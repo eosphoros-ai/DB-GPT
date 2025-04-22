@@ -85,6 +85,12 @@ uv sync --all-packages \
 --extra "dbgpts" \
 --index-url=https://pypi.tuna.tsinghua.edu.cn/simple
 ```
+And we recommend you to configure you pypi index to environment variable `UV_INDEX_URL`
+example:
+```bash
+echo "export UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.bashrc
+```
+
 This tutorial assumes that you can establish network communication with the dependency download sources.
 :::
 

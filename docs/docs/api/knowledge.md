@@ -21,6 +21,7 @@ import TabItem from '@theme/TabItem';
   values={[
     {label: 'Curl', value: 'curl'},
     {label: 'Python', value: 'python'},
+    {label: 'Python(OpenAI SDK)', value: 'openai-sdk'},
   ]
 }>
 
@@ -55,6 +56,41 @@ async for data in client.chat_stream(
     chat_param=SPACE_NAME
 ):
     print(data)
+```
+ </TabItem>
+
+
+<TabItem value="openai-sdk">
+
+```python
+from openai import OpenAI
+
+DBGPT_API_KEY = "dbgpt"
+SPACE_NAME="{YOUR_SPACE_NAME}"
+
+client = OpenAI(
+    api_key=DBGPT_API_KEY,
+    base_url="http://localhost:5670/api/v2"
+)
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "user",
+            "content": "Hello",
+        },
+    ],
+    extra_body={
+        "chat_mode": "chat_knowledge",
+        "chat_param": SPACE_NAME,
+    },
+    stream=True,
+    max_tokens=2048,
+)
+
+for chunk in response:
+    delta_content = chunk.choices[0].delta.content
+    print(delta_content, end="", flush=True)
 ```
  </TabItem>
 </Tabs>

@@ -42,6 +42,8 @@ Also, it is a **LLM to Vision** solution.
 
 ### Installation
 
+Using **Yarn** is recommended for dependency management.
+
 ```sh
 # Install dependencies
 npm install
@@ -63,12 +65,7 @@ yarn dev
 ## 🚀 Use In DB-GPT
 
 ```sh
-npm run compile
-yarn compile
-
-# copy compile file to DB-GPT static file dictory
-cp -rf out/* ../dbgpt/app/static 
-
+bash ../scripts/build_web_static.sh
 ```
 
 ## 📚 Documentation

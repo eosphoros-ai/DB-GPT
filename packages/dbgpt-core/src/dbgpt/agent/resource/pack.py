@@ -4,8 +4,9 @@ Resource pack is a collection of resources(also, it is a resource) that can be e
 together.
 """
 
+import copy
 import dataclasses
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from .base import Resource, ResourceParameters, ResourceType
 
@@ -47,6 +48,11 @@ class ResourcePack(Resource[PackResourceParameters]):
     def _get_resource_by_name(self, name: str) -> Optional[Resource]:
         """Get the resource by name."""
         return self._resources.get(name, None)
+
+    async def preload_resource(self):
+        """Preload the resource."""
+        for sub_resource in self.sub_resources:
+            await sub_resource.preload_resource()
 
     async def get_prompt(
         self,
@@ -117,3 +123,52 @@ class ResourcePack(Resource[PackResourceParameters]):
     def sub_resources(self) -> List[Resource]:
         """Return the resources."""
         return list(self._resources.values())
+
+    def apply(
+        self,
+        apply_func: Optional[
+            Callable[[Resource], Union[Resource, List[Resource], None]]
+        ] = None,
+        apply_pack_func: Optional[
+            Callable[["Resource"], Union["Resource", None]]
+        ] = None,
+    ) -> Union[Resource, None]:
+        """Apply the function to the resource."""
+        if not self.is_pack:
+            return self
+
+        if not apply_func and not apply_pack_func:
+            raise ValueError("No function provided to apply to the resource pack.")
+
+        def _apply_func_to_resource(
+            resource: Resource,
+        ) -> Union[Resource, List[Resource], None]:
+            if resource.is_pack:
+                if apply_pack_func is not None:
+                    return apply_pack_func(resource)
+                resources = []
+                resource_copy = cast(ResourcePack, copy.copy(resource))
+                for resource_copy in resource_copy.sub_resources:
+                    result = _apply_func_to_resource(resource_copy)
+                    if result:
+                        if isinstance(result, list):
+                            resources.extend(result)
+                        else:
+                            resources.append(result)
+                # Replace the resources
+                resource_copy._resources = {
+                    resource.name: resource for resource in resources
+                }
+            else:
+                if apply_func is not None:
+                    return apply_func(resource)
+                else:
+                    return resource
+
+        new_resource = _apply_func_to_resource(self)
+        resource_copy = cast(ResourcePack, copy.copy(self))
+        if isinstance(new_resource, list):
+            resource_copy._resources = {
+                resource.name: resource for resource in new_resource
+            }
+        return new_resource

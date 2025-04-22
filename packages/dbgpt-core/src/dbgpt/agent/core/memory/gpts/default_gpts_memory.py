@@ -147,3 +147,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
     def get_last_message(self, conv_id: str) -> Optional[GptsMessage]:
         """Get the last message in the conversation."""
         return None
+
+    def delete_by_conv_id(self, conv_id: str) -> None:
+        """Delete all messages in the conversation."""
+        self.df.drop(self.df[self.df["conv_id"] == conv_id].index, inplace=True)

@@ -28,19 +28,25 @@ class ChatWithDbQA(BaseChat):
             - select_param:(str) dbname
         """
         self.db_name = chat_param.select_param
+        self.database = None
         self.curr_config = chat_param.real_app_config(ChatWithDBQAConfig)
         super().__init__(chat_param=chat_param, system_app=system_app)
 
+        if self.db_name is None:
+            raise Exception(f"Database: {self.db_name} not found")
         if self.db_name:
             local_db_manager = ConnectorManager.get_instance(self.system_app)
             self.database = local_db_manager.get_connector(self.db_name)
             self.tables = self.database.get_table_names()
-        if self.database.is_graph_type():
+        if self.database is not None and self.database.is_graph_type():
             # When the current graph database retrieves source data from ChatDB, the
             # topk uses the sum of node table and edge table.
             self.top_k = len(list(self.tables))
         else:
-            logger.info(f"Dialect: {self.database.db_type}")
+            logger.info(
+                "Dialect: "
+                f"{self.database.db_type if self.database is not None else None}"
+            )
             self.top_k = self.curr_config.schema_retrieve_top_k
 
     @trace()
@@ -49,6 +55,7 @@ class ChatWithDbQA(BaseChat):
             from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
+        user_input = self.current_user_input.last_text
         table_infos = None
         if self.db_name:
             client = DBSummaryClient(system_app=self.system_app)
@@ -57,7 +64,7 @@ class ChatWithDbQA(BaseChat):
                     self._executor,
                     client.get_db_summary,
                     self.db_name,
-                    self.current_user_input,
+                    user_input,
                     self.top_k,
                 )
             except Exception as e:
@@ -72,7 +79,7 @@ class ChatWithDbQA(BaseChat):
                     table_infos = table_infos[: self.curr_config.schema_max_tokens]
 
         input_values = {
-            "input": self.current_user_input,
+            "input": user_input,
             "table_info": table_infos,
         }
         return input_values

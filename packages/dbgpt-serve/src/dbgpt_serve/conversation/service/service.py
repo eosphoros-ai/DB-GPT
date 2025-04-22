@@ -195,6 +195,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
+        from ...file.serve import Serve as FileServe
+
+        file_serve = FileServe.get_instance(self.system_app)
+
         conv: StorageConversation = self.create_storage_conv(request)
         result = []
         messages = _append_view_messages(conv.messages)
@@ -215,7 +219,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             result.append(
                 MessageVo(
                     role=msg.type,
-                    context=vis_name_change(msg.content),
+                    context=vis_name_change(
+                        msg.get_view_markdown_text(file_serve.replace_uri)
+                    ),
                     order=msg.round_index,
                     model_name=self.config.default_model,
                     feedback=feedback,

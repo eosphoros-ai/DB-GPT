@@ -204,13 +204,39 @@ class TracerManager:
 root_tracer: TracerManager = TracerManager()
 
 
-def trace(operation_name: Optional[str] = None, **trace_kwargs):
+def trace(
+    operation_name: Optional[str] = None, exclude_params: list = None, **trace_kwargs
+):
+    """Decorator for tracing function calls.
+
+    Args:
+        operation_name: Optional name of the operation. If not provided, it will be
+            derived from the function name.
+        exclude_params: List of parameter names to exclude from metadata extraction.
+        **trace_kwargs: Additional keyword arguments for the tracer.
+
+    Returns:
+        Decorated function with tracing functionality.
+    """
+    if exclude_params is None:
+        exclude_params = []
+
+    # Always exclude 'self' and 'cls' by default
+    default_exclude = ["self", "cls"]
+    exclude_params = default_exclude + exclude_params
+
     def decorator(func):
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
             name = (
                 operation_name if operation_name else _parse_operation_name(func, *args)
             )
+
+            # Extract function parameters as metadata if not provided in trace_kwargs
+            if "metadata" not in trace_kwargs:
+                metadata = _extract_function_params(func, args, kwargs, exclude_params)
+                trace_kwargs["metadata"] = metadata
+
             with root_tracer.start_span(name, **trace_kwargs):
                 return func(*args, **kwargs)
 
@@ -219,6 +245,12 @@ def trace(operation_name: Optional[str] = None, **trace_kwargs):
             name = (
                 operation_name if operation_name else _parse_operation_name(func, *args)
             )
+
+            # Extract function parameters as metadata if not provided in trace_kwargs
+            if "metadata" not in trace_kwargs:
+                metadata = _extract_function_params(func, args, kwargs, exclude_params)
+                trace_kwargs["metadata"] = metadata
+
             with root_tracer.start_span(name, **trace_kwargs):
                 return await func(*args, **kwargs)
 
@@ -228,6 +260,58 @@ def trace(operation_name: Optional[str] = None, **trace_kwargs):
             return sync_wrapper
 
     return decorator
+
+
+def _extract_function_params(func, args, kwargs, exclude_params):
+    """Extract function parameters as metadata.
+
+    Args:
+        func: The function being traced.
+        args: Positional arguments passed to the function.
+        kwargs: Keyword arguments passed to the function.
+        exclude_params: List of parameter names to exclude.
+
+    Returns:
+        Dict containing parameter names and their values.
+    """
+    metadata = {}
+
+    # Get function signature
+    sig = inspect.signature(func)
+    parameters = list(sig.parameters.items())
+
+    # Process positional arguments
+    for i, arg in enumerate(args):
+        if i < len(parameters):
+            param_name = parameters[i][0]
+            if param_name not in exclude_params:
+                try:
+                    # Try to make the value JSON serializable by converting to str if
+                    # needed
+                    metadata[param_name] = (
+                        str(arg)
+                        if not isinstance(arg, (str, int, float, bool, type(None)))
+                        else arg
+                    )
+                except Exception:
+                    metadata[param_name] = f"<non-serializable: {type(arg).__name__}>"
+
+    # Process keyword arguments
+    for param_name, param_value in kwargs.items():
+        if param_name not in exclude_params:
+            try:
+                # Try to make the value JSON serializable by converting to str if needed
+                metadata[param_name] = (
+                    str(param_value)
+                    if not isinstance(param_value, (str, int, float, bool, type(None)))
+                    else param_value
+                )
+            except Exception:
+                metadata[param_name] = (
+                    f"<non-serializable: {type(param_value).__name__}>"
+                )
+
+    return metadata
 
 
 def _parse_operation_name(func, *args):

@@ -82,6 +82,7 @@ async def main():
         conv_id="test123", language="en", temperature=0.5, max_new_tokens=2048
     )
     agent_memory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="test123")
 
     user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
@@ -107,7 +108,7 @@ async def main():
     )
 
     # dbgpt-vis message infos
-    print(await agent_memory.gpts_memory.one_chat_completions("test123"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("test123"))
     
 if __name__ == "__main__":
     asyncio.run(main())

@@ -53,10 +53,14 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/ruff format packages
 	$(VENV_BIN)/ruff format --exclude="examples/notebook" examples
 	$(VENV_BIN)/ruff format i18n
+	$(VENV_BIN)/ruff format scripts/update_version_all.py
+	$(VENV_BIN)/ruff format install_help.py
 	# Sort imports
 	$(VENV_BIN)/ruff check --select I --fix packages
 	$(VENV_BIN)/ruff check --select I --fix --exclude="examples/notebook" examples
 	$(VENV_BIN)/ruff check --select I --fix i18n
+	$(VENV_BIN)/ruff check --select I --fix scripts/update_version_all.py
+	$(VENV_BIN)/ruff check --select I --fix install_help.py
 
 	$(VENV_BIN)/ruff check --fix packages \
 		--exclude="packages/dbgpt-serve/src/**"
@@ -87,7 +91,7 @@ test: $(VENV)/.testenv ## Run unit tests
 .PHONY: test-doc
 test-doc: $(VENV)/.testenv ## Run doctests
 	# -k "not test_" skips tests that are not doctests.
-	$(VENV_BIN)/pytest --doctest-modules -k "not test_" dbgpt/core
+	$(VENV_BIN)/pytest --doctest-modules -k "not test_" packages
 
 .PHONY: mypy
 mypy: $(VENV)/.testenv ## Run mypy checks

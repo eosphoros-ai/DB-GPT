@@ -7,7 +7,11 @@ from vllm.utils import random_uuid
 
 from dbgpt.core import ModelOutput
 
-from ...utils.parse_utils import _DEFAULT_THINK_START_TOKEN, parse_chat_message
+from ...utils.parse_utils import (
+    _DEFAULT_THINK_END_TOKEN,
+    _DEFAULT_THINK_START_TOKEN,
+    parse_chat_message,
+)
 
 _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
@@ -31,8 +35,12 @@ async def generate_stream(
     best_of = params.get("best_of", None)
     stop_str = params.get("stop", None)
     think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
     is_reasoning_model = params.get("is_reasoning_model", False)
-    # think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
+
+    reasoning_patterns = [
+        {"start": think_start_token, "end": think_end_token},
+    ]
 
     stop_token_ids = params.get("stop_token_ids", None) or []
     if tokenizer.eos_token_id is not None:
@@ -110,6 +118,7 @@ async def generate_stream(
             msg = parse_chat_message(
                 text_outputs,
                 extract_reasoning=is_reasoning_model,
+                reasoning_patterns=reasoning_patterns,
             )
             yield ModelOutput.build(
                 msg.content,

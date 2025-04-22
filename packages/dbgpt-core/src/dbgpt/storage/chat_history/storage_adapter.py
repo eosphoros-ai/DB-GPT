@@ -34,7 +34,7 @@ class DBStorageConversationItemAdapter(
         summary = item.summary
         latest_user_message = item.get_latest_user_message()
         if not summary and latest_user_message is not None:
-            summary = latest_user_message.content[:250]
+            summary = latest_user_message.last_text[:250]
         return ChatHistoryEntity(
             conv_uid=item.conv_uid,
             chat_mode=item.chat_mode,

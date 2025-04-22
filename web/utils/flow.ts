@@ -80,8 +80,7 @@ export const mapUnderlineToHump = (flowData: IFlowData) => {
 const checkDynamicConnections = (
   nodeId: string,
   fieldType: string,
-  // @typescript-eslint/no-unused-vars
-  fieldIndex: number,
+  _fieldIndex: number,
   edges: any[],
   dynamicMinimum: number,
 ): boolean => {

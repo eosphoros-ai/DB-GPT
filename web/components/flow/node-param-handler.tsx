@@ -66,7 +66,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ formValuesChange, n
                 options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
               />
             ) : (
-              <Input className='w-full' />
+              <Input className='w-full nodrag' />
             )}
           </Form.Item>
         );
@@ -83,7 +83,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ formValuesChange, n
             label={<span className='text-neutral-500'>{data.label}</span>}
             tooltip={data.description ? { title: data.description, icon: <InfoCircleOutlined /> } : ''}
           >
-            <Checkbox className='ml-2' />
+            <Checkbox className='ml-2 nodrag' />
           </Form.Item>
         );
     }

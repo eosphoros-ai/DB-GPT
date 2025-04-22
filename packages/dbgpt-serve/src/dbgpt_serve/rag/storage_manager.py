@@ -68,7 +68,10 @@ class StorageManager(BaseComponent):
         embedding_fn = embedding_factory.create()
         vector_store_config: VectorStoreConfig = storage_config.vector
         return vector_store_config.create_store(
-            name=index_name, embedding_fn=embedding_fn
+            name=index_name,
+            embedding_fn=embedding_fn,
+            max_chunks_once_load=vector_store_config.max_chunks_once_load,
+            max_threads=vector_store_config.max_threads,
         )
 
     def create_kg_store(

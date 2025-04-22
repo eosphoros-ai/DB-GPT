@@ -1,8 +1,11 @@
 import socket
 from enum import Enum
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
+from dbgpt.core.schema.types import (
+    ChatCompletionUserMessageParam,
+)
 
 T = TypeVar("T")
 
@@ -48,7 +51,10 @@ class ConversationVo(BaseModel):
     """ 
     user input 
     """
-    user_input: str = ""
+    user_input: Union[str, ChatCompletionUserMessageParam] = Field(
+        default="", description="User input messages."
+    )
+
     """
     user
     """

@@ -33,9 +33,8 @@ provider = "proxy/siliconflow"
 api_key = "${env:SILICONFLOW_API_KEY}"
 
 [[models.embeddings]]
-name = "BAAI/bge-large-zh-v1.5"
-provider = "proxy/openai"
-api_url = "https://api.siliconflow.cn/v1/embeddings"
+name = "BAAI/bge-m3"
+provider = "proxy/siliconflow"
 api_key = "${env:SILICONFLOW_API_KEY}"
 
 [[models.rerankers]]

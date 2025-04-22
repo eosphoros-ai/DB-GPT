@@ -14,6 +14,7 @@ from dbgpt.model.adapter.llama_cpp_py_adapter import LlamaCppModelParameters
 from dbgpt.model.utils.llm_utils import parse_model_request
 
 from ...utils.parse_utils import (
+    _DEFAULT_THINK_END_TOKEN,
     _DEFAULT_THINK_START_TOKEN,
     ParsedChatMessage,
     parse_chat_message,
@@ -118,7 +119,12 @@ class LlamaCppModel:
         repetition_penalty = float(params.get("repetition_penalty", 1.1))
         top_k = int(params.get("top_k", -1))  # -1 means disable
         think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+        think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
         is_reasoning_model = params.get("is_reasoning_model", False)
+
+        reasoning_patterns = [
+            {"start": think_start_token, "end": think_end_token},
+        ]
         # Handle truncation
         completion_chunks = self.model.create_chat_completion(
             messages=messages,
@@ -153,6 +159,7 @@ class LlamaCppModel:
                 msg = parse_chat_message(
                     text,
                     extract_reasoning=is_reasoning_model,
+                    reasoning_patterns=reasoning_patterns,
                 )
                 finish_reason = delta.get("finish_reason")
             if text:

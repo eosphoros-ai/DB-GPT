@@ -18,6 +18,7 @@ from typing import Dict, Optional
 from dbgpt.core import ModelOutput
 
 from ...utils.parse_utils import (
+    _DEFAULT_THINK_END_TOKEN,
     _DEFAULT_THINK_START_TOKEN,
     ParsedChatMessage,
     parse_chat_message,
@@ -83,7 +84,12 @@ def chat_generate_stream(
     req = _build_chat_completion_request(params, stream=True)
     text = ""
     think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
     is_reasoning_model = params.get("is_reasoning_model", False)
+
+    reasoning_patterns = [
+        {"start": think_start_token, "end": think_end_token},
+    ]
     msg = ParsedChatMessage()
     is_first = True
     for r in model.stream_chat_completion(req):
@@ -101,7 +107,11 @@ def chat_generate_stream(
             text = think_start_token + "\n" + text
             is_first = False
 
-        msg = parse_chat_message(text, extract_reasoning=is_reasoning_model)
+        msg = parse_chat_message(
+            text,
+            extract_reasoning=is_reasoning_model,
+            reasoning_patterns=reasoning_patterns,
+        )
         finish_reason = _parse_finish_reason(r.choices[0].finish_reason)
 
         yield ModelOutput.build(
@@ -170,13 +180,24 @@ def generate(
     if chat_model is None:
         chat_model = True
 
+    think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
+    is_reasoning_model = params.get("is_reasoning_model", False)
+
+    reasoning_patterns = [
+        {"start": think_start_token, "end": think_end_token},
+    ]
     if chat_model:
         req = _build_chat_completion_request(params, stream=False)
         resp = model.chat_completion(req)
         if not resp.choices or not resp.choices[0].message:
             raise ValueError("Response can't be empty")
         content = resp.choices[0].message.content
-        msg = parse_chat_message(content, extract_reasoning=True)
+        msg = parse_chat_message(
+            content,
+            extract_reasoning=is_reasoning_model,
+            reasoning_patterns=reasoning_patterns,
+        )
         return ModelOutput.build(
             msg.content,
             msg.reasoning_content,

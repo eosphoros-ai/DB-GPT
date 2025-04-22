@@ -1,6 +1,6 @@
 [project]
 name = "dbgpt-app"
-version = "0.7.0"
+version = "0.7.1"
 description = "Add your description here"
 authors = [
     { name = "csunny", email = "cfqcsunny@gmail.com" }

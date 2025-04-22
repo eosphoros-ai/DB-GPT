@@ -6,8 +6,8 @@ import ChatDefault from '@/new-components/chat/content/ChatDefault';
 import ChatInputPanel from '@/new-components/chat/input/ChatInputPanel';
 import ChatSider from '@/new-components/chat/sider/ChatSider';
 import { IApp } from '@/types/app';
-import { ChartData, ChatHistoryResponse, IChatDialogueSchema } from '@/types/chat';
-import { getInitMessage } from '@/utils';
+import { ChartData, ChatHistoryResponse, IChatDialogueSchema, UserChatContent } from '@/types/chat';
+import { getInitMessage, transformFileUrl } from '@/utils';
 import { useAsyncEffect, useRequest } from 'ahooks';
 import { Flex, Layout, Spin } from 'antd';
 import dynamic from 'next/dynamic';
@@ -42,7 +42,7 @@ interface ChatContentProps {
   setAgent: React.Dispatch<React.SetStateAction<string>>;
   setCanAbort: React.Dispatch<React.SetStateAction<boolean>>;
   setReplyLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  handleChat: (content: string, data?: Record<string, any>) => Promise<void>; // 处理会话请求逻辑函数
+  handleChat: (content: UserChatContent, data?: Record<string, any>) => Promise<void>; // 处理会话请求逻辑函数
   refreshDialogList: () => void;
   refreshHistory: () => void;
   refreshAppInfo: () => void;
@@ -184,7 +184,7 @@ const Chat: React.FC = () => {
 
   // 会话提问
   const handleChat = useCallback(
-    (content: string, data?: Record<string, any>) => {
+    (content: UserChatContent, data?: Record<string, any>) => {
       return new Promise<void>(resolve => {
         const initMessage = getInitMessage();
         const ctrl = new AbortController();
@@ -194,11 +194,53 @@ const Chat: React.FC = () => {
           const humanList = history?.filter(item => item.role === 'human');
           order.current = (viewList[viewList.length - 1]?.order || humanList[humanList.length - 1]?.order) + 1;
         }
+        // Process the content based on its type
+        let formattedDisplayContent: string = '';
+
+        if (typeof content === 'string') {
+          formattedDisplayContent = content;
+        } else {
+          // Extract content items for display formatting
+          const contentItems = content.content || [];
+          const textItems = contentItems.filter(item => item.type === 'text');
+          const mediaItems = contentItems.filter(item => item.type !== 'text');
+
+          // Format for display in the UI - extract text for main message
+          if (textItems.length > 0) {
+            // Use the text content for the main message display
+            formattedDisplayContent = textItems.map(item => item.text).join(' ');
+          }
+
+          // Format media items for display (using markdown)
+          const mediaMarkdown = mediaItems
+            .map(item => {
+              if (item.type === 'image_url') {
+                const originalUrl = item.image_url?.url || '';
+                // Transform the URL to a service URL that can be displayed
+                const displayUrl = transformFileUrl(originalUrl);
+                const fileName = item.image_url?.fileName || 'image';
+                return `\n![${fileName}](${displayUrl})`;
+              } else if (item.type === 'video') {
+                const originalUrl = item.video || '';
+                const displayUrl = transformFileUrl(originalUrl);
+                return `\n[Video](${displayUrl})`;
+              } else {
+                return `\n[${item.type} attachment]`;
+              }
+            })
+            .join('\n');
+
+          // Combine text and media markup
+          if (mediaMarkdown) {
+            formattedDisplayContent = formattedDisplayContent + '\n' + mediaMarkdown;
+          }
+        }
+
         const tempHistory: ChatHistoryResponse = [
           ...(initMessage && initMessage.id === chatId ? [] : history),
           {
             role: 'human',
-            context: content,
+            context: formattedDisplayContent,
             model_name: data?.model_name || modelValue,
             order: order.current,
             time_stamp: 0,

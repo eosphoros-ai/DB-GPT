@@ -101,7 +101,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
         sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
         sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list; \
     fi && \
-    apt-get update && apt-get install -y --no-install-recommends gnupg ca-certificates apt-transport-https && \
+    apt-get update && apt-get install -y --no-install-recommends git sqlite3 gnupg ca-certificates apt-transport-https && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update && apt-get install -y \
@@ -111,7 +111,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
 
 WORKDIR /app
 # Copy the virtual environment from the previous stage
-# Use antoher name to avoid conflict when mounting user's local .venv
+# Use another name to avoid conflict when mounting user's local .venv
 ENV FINAL_VENV_NAME="/opt/.uv.venv"
 COPY --from=builder /app/.venv ${FINAL_VENV_NAME}
 COPY . .

@@ -12,7 +12,13 @@ from dbgpt._private.pydantic import BaseModel, Field, model_validator
 from dbgpt.util.configure.base import _MISSING, _MISSING_TYPE
 from dbgpt.util.function_utils import parse_param_description, type_to_string
 
-from ..base import Resource, ResourceParameters, ResourceType
+from ..base import (
+    EXECUTE_ARGS_TYPE,
+    PARSE_EXECUTE_ARGS_FUNCTION,
+    Resource,
+    ResourceParameters,
+    ResourceType,
+)
 
 ToolFunc = Union[Callable[..., Any], Callable[..., Awaitable[Any]]]
 
@@ -144,6 +150,7 @@ class FunctionTool(BaseTool):
         description: Optional[str] = None,
         args: Optional[Dict[str, Union[ToolParameter, Dict[str, Any]]]] = None,
         args_schema: Optional[Type[BaseModel]] = None,
+        parse_execute_args_func: Optional[PARSE_EXECUTE_ARGS_FUNCTION] = None,
     ):
         """Create a tool from a function."""
         if not description:
@@ -155,6 +162,7 @@ class FunctionTool(BaseTool):
         self._args: Dict[str, ToolParameter] = _parse_args(func, args, args_schema)
         self._func = func
         self._is_async = asyncio.iscoroutinefunction(func)
+        self._parse_execute_args_func = parse_execute_args_func
 
     @property
     def name(self) -> str:
@@ -175,6 +183,14 @@ class FunctionTool(BaseTool):
     def is_async(self) -> bool:
         """Return whether the tool is asynchronous."""
         return self._is_async
+
+    def parse_execute_args(
+        self, resource_name: Optional[str] = None, input_str: Optional[str] = None
+    ) -> Optional[EXECUTE_ARGS_TYPE]:
+        """Parse the execute arguments."""
+        if self._parse_execute_args_func is not None:
+            return self._parse_execute_args_func(input_str)
+        return None
 
     def execute(
         self,

@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import React, { useContext, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { UserChatContent } from '@/types/chat';
+import { parseResourceValue } from '@/utils';
 import ToolsBar from './ToolsBar';
 
 const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
@@ -19,11 +21,12 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
     temperatureValue,
     maxNewTokensValue,
     resourceValue,
+    setResourceValue,
     refreshDialogList,
   } = useContext(ChatContentContext);
 
   const searchParams = useSearchParams();
-  // const scene = searchParams?.get('scene') ?? ''; // unused
+  const scene = searchParams?.get('scene') ?? '';
   const select_param = searchParams?.get('select_param') ?? '';
 
   const [userInput, setUserInput] = useState<string>('');
@@ -45,7 +48,28 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
       });
       setUserInput('');
     }, 0);
-    await handleChat(userInput, {
+    const resources = parseResourceValue(resourceValue);
+    // Clear the resourceValue if it not empty
+    let newUserInput: UserChatContent;
+    if (resources.length > 0) {
+      if (scene !== 'chat_excel') {
+        // Chat Excel scene does not need to clear the resourceValue
+        // We need to find a better way to handle this
+        setResourceValue(null);
+      }
+      const messages = [...resources];
+      messages.push({
+        type: 'text',
+        text: userInput,
+      });
+      newUserInput = {
+        role: 'user',
+        content: messages,
+      };
+    } else {
+      newUserInput = userInput;
+    }
+    await handleChat(newUserInput, {
       app_code: appInfo.app_code || '',
       ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
       ...(paramKey.includes('max_new_tokens') && { max_new_tokens: maxNewTokensValue }),

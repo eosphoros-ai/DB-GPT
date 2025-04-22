@@ -8,6 +8,7 @@ from dbgpt.core import (
     ModelMetadata,
     RerankEmbeddings,
 )
+from dbgpt.core.interface.media import MediaProcessor
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
@@ -306,6 +307,30 @@ class LLMModelAdapter(ABC):
         """Get the asynchronous generate function of the model"""
         raise NotImplementedError
 
+    def get_media_processor(
+        self,
+        deploy_model_params: LLMDeployModelParameters,  # noqa: F821
+    ) -> Optional[MediaProcessor]:
+        """Get the media processor of the model.
+
+        Some models may need to process the media content before sending to the model,
+        such as image or audio. This method will be called before sending the media.
+
+        If your model provider is proxy model, you may be upload the local file to the
+        public cloud, and then get the url of the file. So you can implement the
+        :meth:`~LLMModelAdapter.get_media_processor` method to upload the files.
+
+        Or in cluster mode and the model deploy locally, we must provide the media
+        processor to download the files to the local disk.
+
+        Args:
+            deploy_model_params (LLMDeployModelParameters): The model parameters.
+
+        Returns:
+            Optional[MediaProcessor]: The media processor.
+        """
+        return None
+
     def get_default_conv_template(
         self, model_name: str, model_path: str
     ) -> Optional[ConversationAdapter]:
@@ -455,6 +480,15 @@ class LLMModelAdapter(ABC):
         """
         return None
 
+    def load_media(self, params: Dict, messages: List[ModelMessage]):
+        """Load the media content from the messages
+
+        Args:
+            params (Dict): The parameters
+            messages (List[ModelMessage]): The model messages
+        """
+        pass
+
     def get_prompt_with_template(
         self,
         params: Dict,
@@ -599,7 +633,7 @@ class LLMModelAdapter(ABC):
         model_name: str,
         model_path: str,
         tokenizer: Any,
-        prompt_template: str = None,
+        prompt_template: Optional[str] = None,
     ) -> Tuple[Dict, Dict]:
         """Params adaptation"""
         messages = params.get("messages")
@@ -626,6 +660,9 @@ class LLMModelAdapter(ABC):
             ]
             params["messages"] = messages
         params["string_prompt"] = ModelMessage.messages_to_string(messages)
+
+        # Load media content to params
+        self.load_media(params, messages)
 
         if not self.apply_conv_template():
             # No need to apply conversation template, now for proxy LLM

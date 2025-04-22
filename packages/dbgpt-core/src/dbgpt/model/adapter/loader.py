@@ -216,7 +216,7 @@ def _hf_try_load_default_quantization_model(
         if model:
             logger.info(f"Load default quantization model {model_name} success")
             return _hf_handle_model_and_tokenizer(
-                model, tokenizer, device, num_gpus, model_params
+                model, tokenizer, device, num_gpus, model_params, to=False
             )
         return None, None
     except Exception as e:
@@ -232,11 +232,13 @@ def _hf_handle_model_and_tokenizer(
     device: str,
     num_gpus: int,
     model_params: HFLLMDeployModelParameters,
+    to: bool = True,
 ):
     if (device == "cuda" and num_gpus == 1) or device == "mps" and tokenizer:
         # TODO: Check cpu_offloading
         try:
-            model.to(device)
+            if to:
+                model.to(device)
         except ValueError:
             pass
         except AttributeError:
