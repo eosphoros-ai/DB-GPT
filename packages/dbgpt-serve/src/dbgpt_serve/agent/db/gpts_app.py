@@ -805,8 +805,8 @@ class GptsAppDao(BaseDao):
                 return app_info
 
     async def auto_team_bin_apps(self, team_app_code: str, bind_apps: List[str]):
+        """Convert the gpts app to a sub-agent of the current application."""
         logger.info(f"auto_team_bin_apps:{team_app_code},{bind_apps}")
-        ### 把应用转换为当前应用的子agent，
         team_app: GptsApp = self.app_detail(team_app_code)
         if not team_app:
             raise ValueError(f"{team_app} is not a app!")

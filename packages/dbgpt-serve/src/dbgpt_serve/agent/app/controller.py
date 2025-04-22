@@ -10,6 +10,7 @@ from dbgpt.agent.util.llm.llm import LLMStrategyType
 from dbgpt_app.openapi.api_view_model import Result
 from dbgpt_serve.agent.app.gpts_server import available_llms
 from dbgpt_serve.agent.db.gpts_app import (
+    BindAppRequest,
     GptsApp,
     GptsAppCollectionDao,
     GptsAppDao,
@@ -373,6 +374,21 @@ async def get_dbgpts(user_code: str = None, sys_code: str = None):
         query.ignore_user = "true"
         response = gpts_dao.app_list(query, True)
         return Result.succ(response.app_list)
+    except Exception as e:
+        logger.error(f"get_dbgpts failed:{str(e)}")
+        return Result.failed(msg=str(e), code="E300003")
+
+
+@router.post("/v1/dbgpts/app/bind", response_model=Result[List[GptsApp]])
+async def app_bind(bind_app: BindAppRequest, sys_code: str = None):
+    """It simply implements an gpts app as an agent to bind to the interface of other gpts app."""  # noqa: E501
+    logger.info(f"app_bind:{bind_app},{sys_code}")
+    try:
+        return Result.succ(
+            await gpts_dao.auto_team_bin_apps(
+                bind_app.team_app_code, bind_app.bin_app_codes
+            )
+        )
     except Exception as e:
         logger.error(f"get_dbgpts failed:{str(e)}")
         return Result.failed(msg=str(e), code="E300003")
