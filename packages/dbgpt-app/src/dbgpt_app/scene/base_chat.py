@@ -17,6 +17,7 @@ from dbgpt.core import (
     ModelRequestContext,
     SystemPromptTemplate,
 )
+from dbgpt.core.interface.file import FileStorageClient
 from dbgpt.core.interface.media import MediaContent
 from dbgpt.core.interface.message import (
     HumanMessage,
@@ -202,6 +203,7 @@ class BaseChat(ABC):
         self._message_version = chat_param.message_version
         self._chat_param = chat_param
         self.vis_convert: VisProtocolConverter = GptVisConverterNew()
+        self.fs_client = FileStorageClient.get_instance(system_app)
 
     async def generate_input_values(self) -> Dict:
         """Generate input to LLM

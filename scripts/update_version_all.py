@@ -40,14 +40,15 @@ Examples:
   uv run version_update.py 0.8.0 --filter dbgpt-core  # Only update dbgpt-core package
 """
 
-import sys
-import re
-import json
 import argparse
-import tomli
-from pathlib import Path
+import json
+import re
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
+
+import tomli
 
 
 @dataclass

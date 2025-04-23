@@ -102,6 +102,7 @@ class ToolPack(ResourcePack):
         args: Optional[Dict[str, Any]] = None,
         function: Optional[Callable] = None,
         parse_execute_args_func: Optional[PARSE_EXECUTE_ARGS_FUNCTION] = None,
+        overwrite: bool = False,
     ) -> None:
         """Add a command to the commands.
 
@@ -118,6 +119,8 @@ class ToolPack(ResourcePack):
                 the command is executed. Defaults to None.
             parse_execute_args (callable, optional): A callable function to parse the
                 execute arguments. Defaults to None.
+            overwrite (bool, optional): Whether to overwrite the command if it already
+                exists. Defaults to False.
         """
         if args is not None:
             tool_args = {}
@@ -151,7 +154,7 @@ class ToolPack(ResourcePack):
             description=command_label,
             parse_execute_args_func=parse_execute_args_func,
         )
-        self.append(ft)
+        self.append(ft, overwrite=overwrite)
 
     def _get_execution_tool(
         self,
@@ -347,6 +350,7 @@ class MCPToolPack(ToolPack):
         ssl_verify: Optional[Dict[str, Union[ssl.SSLContext, str, bool]]] = None,
         default_ssl_verify: Union[ssl.SSLContext, str, bool] = True,
         default_ssl_cafile: Optional[str] = None,
+        overwrite_same_tool: bool = True,
         **kwargs,
     ):
         """Create an Auto-GPT plugin tool pack."""
@@ -363,6 +367,7 @@ class MCPToolPack(ToolPack):
         self._default_ssl_verify = default_ssl_verify
         self._ssl_verify_map = ssl_verify or {}
         self.server_ssl_verify_map = {}
+        self._overwrite_same_tool = overwrite_same_tool
 
     def switch_mcp_input_schema(self, input_schema: dict):
         args = {}
@@ -450,5 +455,6 @@ class MCPToolPack(ToolPack):
                             args,
                             call_mcp_tool,
                             parse_execute_args_func=json_parse_execute_args_func,
+                            overwrite=self._overwrite_same_tool,
                         )
         self._loaded = True
