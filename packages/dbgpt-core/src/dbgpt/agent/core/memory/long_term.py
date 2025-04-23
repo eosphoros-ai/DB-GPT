@@ -144,14 +144,16 @@ class LongTermRetriever(TimeWeightedEmbeddingRetriever):
         rescored_docs = []
         for doc in filtered_docs:
             if _METADATA_LAST_ACCESSED_AT in doc.metadata:
-                last_accessed_time = doc.metadata[_METADATA_LAST_ACCESSED_AT]
+                last_accessed_time = datetime.fromtimestamp(
+                    float(doc.metadata[_METADATA_LAST_ACCESSED_AT])
+                )
                 hours_passed = self._get_hours_passed(current_time, last_accessed_time)
                 time_score = (1.0 - self.decay_rate) ** hours_passed
 
                 # Add importance score if available
                 importance_score = 0
                 if _METADAT_IMPORTANCE in doc.metadata:
-                    importance_score = doc.metadata[_METADAT_IMPORTANCE]
+                    importance_score = float(doc.metadata[_METADAT_IMPORTANCE])
 
                 # Combine scores
                 combined_score = doc.score + time_score + importance_score
@@ -242,7 +244,7 @@ class LongTermMemory(Memory, Generic[T]):
         memory_idx = len(self.memory_retriever.memory_stream)
         metadata = self._metadata
         metadata[_METADAT_IMPORTANCE] = importance
-        metadata[_METADATA_LAST_ACCESSED_AT] = last_accessed_time
+        metadata[_METADATA_LAST_ACCESSED_AT] = last_accessed_time.timestamp()
         if self.session_id:
             metadata[_METADATA_SESSION_ID] = self.session_id
 

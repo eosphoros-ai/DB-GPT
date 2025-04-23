@@ -607,6 +607,7 @@ class APIServer(BaseComponent):
             "input": texts,
             "model": model,
             "query": query,
+            "worker_type": WorkerType.RERANKER.value,
         }
         scores = await worker_manager.embeddings(params)
         return scores[0]
@@ -780,13 +781,16 @@ async def create_relevance(
     request: RelevanceRequest, api_server: APIServer = Depends(get_api_server)
 ):
     """Generate relevance scores for a query and a list of documents."""
-    await api_server.get_model_instances_or_raise(request.model, worker_type="text2vec")
+    await api_server.get_model_instances_or_raise(
+        request.model, worker_type=WorkerType.RERANKER.value
+    )
 
     with root_tracer.start_span(
         "dbgpt.model.apiserver.generate_relevance",
         metadata={
             "model": request.model,
             "query": request.query,
+            "worker_type": WorkerType.RERANKER.value,
         },
     ):
         scores = await api_server.relevance_generate(
