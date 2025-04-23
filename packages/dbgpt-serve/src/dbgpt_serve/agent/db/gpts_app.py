@@ -368,6 +368,7 @@ class GptsAppDetailEntity(Model):
     app_name = Column(String(255), nullable=False, comment="Current AI assistant name")
     type = Column(
         String(255),
+        default="agent",
         nullable=False,
         comment="bind detail agent type. 'app' or 'agent', default 'agent'",
     )
@@ -804,7 +805,7 @@ class GptsAppDao(BaseDao):
             else:
                 return app_info
 
-    async def auto_team_bin_apps(self, team_app_code: str, bind_apps: List[str]):
+    async def app_bind_apps(self, team_app_code: str, bind_apps: List[str]):
         """Convert the gpts app to a sub-agent of the current application."""
         logger.info(f"auto_team_bin_apps:{team_app_code},{bind_apps}")
         team_app: GptsApp = self.app_detail(team_app_code)
@@ -827,19 +828,13 @@ class GptsAppDao(BaseDao):
         for gpt_app in gpt_apps:
             ## 暂时线只支持绑定单agent应用，多Agent应用绑定要把多Agent的子Agent资源提到绑定的TL Agent上，可能需要产品测来定义    #noqa
             if gpt_app.team_mode == TeamMode.SINGLE_AGENT.value:
-                new_detail: GptsAppDetail = gpt_app.details[0].copy()
+                new_detail: GptsAppDetail = GptsAppDetail()
                 new_detail.app_name = team_app.app_name
                 new_detail.app_code = team_app.app_code
-                strategy_values = json.loads(gpt_app.details[0].llm_strategy_value)
-                # 恢复模拟前端的数据
-                new_detail.llm_strategy_value = ",".join(strategy_values)
-                new_detail.agent_describe = gpt_app.app_describe
-                new_detail.agent_role = (
-                    new_detail.agent_role
-                    if new_detail.agent_role
-                    else new_detail.agent_name
-                )
+                new_detail.type = "app"
                 new_detail.agent_name = gpt_app.app_name
+                new_detail.agent_role = gpt_app.app_code
+                new_detail.agent_describe = gpt_app.app_describe
                 team_app.details.append(new_detail)
                 self.edit(team_app)
 

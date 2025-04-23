@@ -611,17 +611,11 @@ class ConversableAgent(Role, Agent):
                             "content": res_content,
                             "avatar": self.avatar,
                         }
-                        if not self.not_null_agent_context.output_process_message:
-                            if self.is_final_role:
-                                await self.memory.gpts_memory.push_message(
-                                    self.not_null_agent_context.conv_id,
-                                    stream_msg=temp_message,
-                                )
-                        else:
-                            await self.memory.gpts_memory.push_message(
-                                self.not_null_agent_context.conv_id,
-                                stream_msg=temp_message,
-                            )
+
+                        await self.memory.gpts_memory.push_message(
+                            self.not_null_agent_context.conv_id,
+                            stream_msg=temp_message,
+                        )
 
                 return res_thinking, res_content, llm_model
             except LLMChatError as e:

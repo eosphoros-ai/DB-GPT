@@ -171,7 +171,7 @@ class DefaultVisConverter(VisProtocolConverter):
                 }
             )
         if stream_msg:
-            simple_message_list.append(self._view_stream_message(stream_msg))
+            simple_message_list.append(await self._view_stream_message(stream_msg))
 
         return simple_message_list
 
@@ -181,7 +181,7 @@ class DefaultVisConverter(VisProtocolConverter):
         messages_view.append(
             {
                 "sender": message["sender"],
-                "receiver": message["receiver"],
+                "receiver": message.get("receiver"),
                 "model": message["model"],
                 "markdown": message["markdown"],
             }
@@ -193,4 +193,4 @@ class DefaultVisConverter(VisProtocolConverter):
         self,
         stream_msg: Optional[Union[Dict, str]] = None,
     ):
-        return self._view_stream_message(stream_msg)
+        return await self._view_stream_message(stream_msg)

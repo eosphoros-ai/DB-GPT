@@ -158,7 +158,7 @@ class AIWrapper:
                     model_request.copy()
                 ):  # type: ignore
                     model_output = output
-                    parsed_output = model_output.text_and_thinking()
+                    parsed_output = model_output.gen_text_and_thinking()
 
                     think_blank = not parsed_output[0] or len(parsed_output[0]) <= 0
                     content_blank = not parsed_output[1] or len(parsed_output[1]) <= 0

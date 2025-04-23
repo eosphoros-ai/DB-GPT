@@ -142,7 +142,7 @@ class MultiAgents(BaseComponent, ABC):
         ).create()
 
         storage_manager = StorageManager.get_instance(self.system_app)
-        index_name = "_agent_memory_"
+        index_name = "agent_memory"
         vector_store = storage_manager.create_vector_store(index_name=index_name)
         if not vector_store.vector_name_exists():
             vector_store.create_collection(collection_name=index_name)
@@ -312,7 +312,9 @@ class MultiAgents(BaseComponent, ABC):
             vis_protocal = None
             # if enable_verbose:
             ## Defaul use gpt_vis ui component‘s package
-            # vis_protocal = GptVisConverter()
+            from dbgpt_ext.vis.gpt_vis.gpt_vis_converter_v2 import GptVisConverterNew
+
+            vis_protocal = GptVisConverterNew()
 
             self.memory.init(
                 agent_conv_id,
