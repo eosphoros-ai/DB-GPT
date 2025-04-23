@@ -477,7 +477,7 @@ class RDBMSConnector(BaseConnector):
         return self._query(sql)
 
     def query_ex(
-        self, query: str, fetch: str = "all", timeout: Optional[float] = None
+        self, query: str, params=None, fetch: str = "all", timeout: Optional[float] = None
     ) -> Tuple[List[str], Optional[List]]:
         """Execute a SQL command and return the results with optional timeout.
 
@@ -485,6 +485,7 @@ class RDBMSConnector(BaseConnector):
 
         Args:
             query (str): SQL query to run
+            params (Optional[dict]): Parameters for the query
             fetch (str): fetch type, either 'all' or 'one'
             timeout (Optional[float]): Query timeout in seconds. If None, no timeout is
                 applied.
@@ -500,14 +501,22 @@ class RDBMSConnector(BaseConnector):
         if not query:
             return [], None
         query = self._format_sql(query)
+        
+        # Initialize params if None
+        if params is None:
+            params = {}
 
-        def _execute_query(session, sql_text):
-            cursor = session.execute(sql_text)
+        def _execute_query(session, sql_text, query_params):
+            cursor = session.execute(sql_text, query_params)
             if cursor.returns_rows:
                 if fetch == "all":
                     result = cursor.fetchall()
                 elif fetch == "one":
                     result = cursor.fetchone()
+                    if result:
+                        result = [result]
+                    else:
+                        result = []
                 else:
                     raise ValueError("Fetch parameter must be either 'one' or 'all'")
                 field_names = list(cursor.keys())
@@ -526,14 +535,14 @@ class RDBMSConnector(BaseConnector):
                         session.execute(
                             text(f"SET SESSION MAX_EXECUTION_TIME = {mysql_timeout}")
                         )
-                        return _execute_query(session, sql)
+                        return _execute_query(session, sql, params)
 
                     elif self.dialect == "postgresql":
                         # PostgreSQL: Set statement_timeout in milliseconds
                         session.execute(
                             text(f"SET statement_timeout = {int(timeout * 1000)}")
                         )
-                        return _execute_query(session, sql)
+                        return _execute_query(session, sql, params)
 
                     elif self.dialect == "oceanbase":
                         # OceanBase: Set ob_query_timeout in microseconds
@@ -541,17 +550,17 @@ class RDBMSConnector(BaseConnector):
                         session.execute(
                             text(f"SET SESSION ob_query_timeout = {ob_timeout}")
                         )
-                        return _execute_query(session, sql)
+                        return _execute_query(session, sql, params)
 
                     elif self.dialect == "mssql":
                         # MSSQL: Use execution_options if supported by driver
                         sql_with_timeout = sql.execution_options(timeout=int(timeout))
-                        return _execute_query(session, sql_with_timeout)
+                        return _execute_query(session, sql_with_timeout, params)
 
                     elif self.dialect == "duckdb":
                         # DuckDB: Use ThreadPoolExecutor for timeout
                         with ThreadPoolExecutor(max_workers=1) as executor:
-                            future = executor.submit(_execute_query, session, sql)
+                            future = executor.submit(_execute_query, session, sql, params)
                             try:
                                 return future.result(timeout=timeout)
                             except FutureTimeoutError:
@@ -564,10 +573,10 @@ class RDBMSConnector(BaseConnector):
                             f"Timeout not supported for dialect: {self.dialect}, "
                             "proceeding without timeout"
                         )
-                        return _execute_query(session, sql)
+                        return _execute_query(session, sql, params)
 
                 # No timeout specified, execute normally
-                return _execute_query(session, sql)
+                return _execute_query(session, sql, params)
 
             except SQLAlchemyError as e:
                 if "timeout" in str(e).lower() or "timed out" in str(e).lower():
