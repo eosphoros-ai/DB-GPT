@@ -39,6 +39,7 @@ class PromptRequest(BaseModel):
 class EmbeddingsRequest(BaseModel):
     model: str
     input: List[str]
+    worker_type: str = WorkerType.TEXT2VEC.value
     span_id: Optional[str] = None
     query: Optional[str] = None
     """For rerank model, query is required"""
