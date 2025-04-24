@@ -493,6 +493,77 @@ class TeiRerankEmbeddings(OpenAPIRerankEmbeddings):
                 return self._parse_results(response_data)
 
 
+@dataclass
+class InfiniAIRerankEmbeddingsParameters(OpenAPIRerankerDeployModelParameters):
+    """InfiniAI Rerank Embeddings Parameters."""
+
+    provider: str = "proxy/infiniai"
+
+    api_url: str = field(
+        default="https://cloud.infini-ai.com/maas/v1/rerank",
+        metadata={
+            "help": _("The URL of the rerank API."),
+        },
+    )
+    api_key: Optional[str] = field(
+        default="${env:INFINIAI_API_KEY}",
+        metadata={
+            "help": _("The API key for the rerank API."),
+        },
+    )
+
+
+class InfiniAIRerankEmbeddings(OpenAPIRerankEmbeddings):
+    """InfiniAI Rerank Model.
+
+    See `InfiniAI API
+    <https://docs.infini-ai.com/gen-studio/api/tutorial-rerank.html>`_ for more details.
+    """
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the InfiniAIRerankEmbeddings."""
+        # If the API key is not provided, try to get it from the environment
+        if "api_key" not in kwargs:
+            kwargs["api_key"] = os.getenv("InfiniAI_API_KEY")
+
+        if "api_url" not in kwargs:
+            env_api_url = os.getenv("InfiniAI_API_BASE")
+            if env_api_url:
+                env_api_url = env_api_url.rstrip("/")
+                kwargs["api_url"] = env_api_url + "/rerank"
+            else:
+                kwargs["api_url"] = "https://cloud.infini-ai.com/maas/v1/rerank"
+
+        if "model_name" not in kwargs:
+            kwargs["model_name"] = "bge-reranker-v2-m3"
+
+        super().__init__(**kwargs)
+
+    @classmethod
+    def param_class(cls) -> Type[InfiniAIRerankEmbeddingsParameters]:
+        """Get the parameter class."""
+        return InfiniAIRerankEmbeddingsParameters
+
+    def _parse_results(self, response: Dict[str, Any]) -> List[float]:
+        """Parse the response from the API.
+
+        Args:
+            response: The response from the API.
+
+        Returns:
+            List[float]: The rank scores of the candidates.
+        """
+        results = response.get("results")
+        if not results:
+            raise RuntimeError("Cannot find results in the response")
+        if not isinstance(results, list):
+            raise RuntimeError("Results should be a list")
+        # Sort by index, 0 in the first element
+        results = sorted(results, key=lambda x: x.get("index", 0))
+        scores = [float(result.get("relevance_score")) for result in results]
+        return scores
+
+
 register_embedding_adapter(
     CrossEncoderRerankEmbeddings, supported_models=RERANKER_COMMON_HF_MODELS
 )
@@ -504,4 +575,7 @@ register_embedding_adapter(
 )
 register_embedding_adapter(
     TeiRerankEmbeddings, supported_models=RERANKER_COMMON_HF_MODELS
+)
+register_embedding_adapter(
+    InfiniAIRerankEmbeddings, supported_models=RERANKER_COMMON_HF_MODELS
 )
