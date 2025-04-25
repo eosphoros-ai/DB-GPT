@@ -91,6 +91,8 @@ class ChromaStore(VectorStoreBase):
         embedding_fn: Optional[Embeddings] = None,
         chroma_client: Optional["PersistentClient"] = None,  # type: ignore # noqa
         collection_metadata: Optional[dict] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a ChromaStore instance.
 
@@ -100,8 +102,12 @@ class ChromaStore(VectorStoreBase):
             embedding_fn(Embeddings): embedding function.
             chroma_client(PersistentClient): chroma client.
             collection_metadata(dict): collection metadata.
+            max_chunks_once_load(int): max chunks once load.
+            max_threads(int): max threads.
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
         try:
             from chromadb import PersistentClient, Settings
@@ -133,15 +139,21 @@ class ChromaStore(VectorStoreBase):
             )
         collection_metadata = collection_metadata or {"hnsw:space": "cosine"}
 
-        self._collection = self._chroma_client.get_or_create_collection(
-            name=self._collection_name,
-            embedding_function=None,
-            metadata=collection_metadata,
+        self._collection = self.create_collection(
+            collection_name=self._collection_name,
+            collection_metadata=collection_metadata,
         )
 
     def get_config(self) -> ChromaVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        return self._chroma_client.get_or_create_collection(
+            name=collection_name,
+            embedding_function=None,
+            metadata=kwargs.get("collection_metadata"),
+        )
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None

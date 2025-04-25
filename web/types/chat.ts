@@ -1,5 +1,20 @@
 import { ParamNeed } from './app';
 
+// Define the content types for the message object
+export interface UserContentItem {
+  type: string;
+  [key: string]: any; // This allows for additional properties based on the type
+}
+
+// Define the message format for object input
+export interface UserMessageObject {
+  role: 'user';
+  content: UserContentItem[];
+}
+
+// Union type for the content parameter
+export type UserChatContent = string | UserMessageObject;
+
 type ChartValue = {
   name: string;
   type: string;
@@ -37,7 +52,7 @@ export type ChatHistoryResponse = IChatDialogueMessageSchema[];
 
 export type IChatDialogueSchema = {
   conv_uid: string;
-  user_input: string;
+  user_input: UserChatContent;
   user_name: string;
   chat_mode:
     | 'chat_with_db_execute'

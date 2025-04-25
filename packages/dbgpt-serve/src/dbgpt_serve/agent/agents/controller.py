@@ -142,7 +142,10 @@ class MultiAgents(BaseComponent, ABC):
         ).create()
 
         storage_manager = StorageManager.get_instance(self.system_app)
-        vector_store = storage_manager.create_vector_store(index_name="_agent_memory_")
+        index_name = "agent_memory_long_term"
+        vector_store = storage_manager.create_vector_store(index_name=index_name)
+        if not vector_store.vector_name_exists():
+            vector_store.create_collection(collection_name=index_name)
         embeddings = EmbeddingFactory.get_instance(self.system_app).create()
         short_term_memory = EnhancedShortTermMemory(
             embeddings, executor=executor, buffer_size=10

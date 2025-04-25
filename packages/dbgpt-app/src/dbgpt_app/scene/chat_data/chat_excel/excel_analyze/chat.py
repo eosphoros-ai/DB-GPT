@@ -131,7 +131,7 @@ class ChatExcel(BaseChat):
         )
 
         input_values = {
-            "user_input": self.current_user_input,
+            "user_input": self.current_user_input.last_text,
             "table_name": self._curr_table,
             "display_type": self._generate_numbered_list(),
             # "table_summary": table_summary,

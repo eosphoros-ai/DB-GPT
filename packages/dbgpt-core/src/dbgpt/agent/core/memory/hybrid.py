@@ -69,7 +69,7 @@ class HybridMemory(Memory, Generic[T]):
     @classmethod
     def from_chroma(
         cls,
-        vstore_name: Optional[str] = "_chroma_agent_memory_",
+        vstore_name: Optional[str] = "agent_memory_long_term",
         vstore_path: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
         executor: Optional[Executor] = None,

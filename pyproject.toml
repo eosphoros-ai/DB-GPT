@@ -29,12 +29,12 @@ explicit = true
 
 [tool.uv.workspace]
 members = [
-  "packages/dbgpt-app", 
+  "packages/dbgpt-app",
   "packages/dbgpt-client",
-  "packages/dbgpt-core", 
-  "packages/dbgpt-ext", 
-  "packages/dbgpt-serve", 
-  "packages/dbgpt-accelerator/dbgpt-acc*"
+  "packages/dbgpt-core",
+  "packages/dbgpt-ext",
+  "packages/dbgpt-serve",
+  "packages/dbgpt-accelerator/dbgpt-acc*",
 ]
 
 [tool.uv]

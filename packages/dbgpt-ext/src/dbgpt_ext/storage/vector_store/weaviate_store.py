@@ -3,7 +3,7 @@
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -96,6 +96,8 @@ class WeaviateStore(VectorStoreBase):
         vector_store_config: WeaviateVectorConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Initialize with Weaviate client."""
         try:
@@ -105,7 +107,9 @@ class WeaviateStore(VectorStoreBase):
                 "Could not import weaviate python package. "
                 "Please install it with `pip install weaviate-client`."
             )
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         self.weaviate_url = vector_store_config.weaviate_url
@@ -120,6 +124,10 @@ class WeaviateStore(VectorStoreBase):
     def get_config(self) -> WeaviateVectorConfig:
         """Get the vector store config."""
         return self._vector_store_config
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        """Create the collection."""
+        return self._default_schema()
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None

@@ -30,7 +30,7 @@ will be created in the temporary directory and will be deleted after the program
 Fist, create a temporary SQLite database and create some tables and insert some data:
 
 ```python
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 
 connector = SQLiteTempConnector.create_temporary_db()
 connector.create_temp_tables(
@@ -140,6 +140,7 @@ async def main():
         conv_id="test123", language="en", temperature=0.5, max_new_tokens=2048
     )
     agent_memory = AgentMemory()
+    agent_memory.gpts_memory.init(conv_id="test123")
 
     user_proxy = await UserProxyAgent().bind(agent_memory).bind(context).build()
 
@@ -167,7 +168,7 @@ async def main():
     )
 
     # dbgpt-vis message infos
-    print(await agent_memory.gpts_memory.one_chat_completions("test123"))
+    print(await agent_memory.gpts_memory.app_link_chat_message("test123"))
 
 
 if __name__ == "__main__":

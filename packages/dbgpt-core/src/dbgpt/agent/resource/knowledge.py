@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 import cachetools
 
+from dbgpt._private.config import Config
 from dbgpt.core import Chunk
+from dbgpt.rag.embedding.embedding_factory import RerankEmbeddingFactory
+from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.util.cache_utils import cached
 
 from .base import Resource, ResourceParameters, ResourceType
@@ -13,6 +16,8 @@ from .base import Resource, ResourceParameters, ResourceType
 if TYPE_CHECKING:
     from dbgpt.rag.retriever.base import BaseRetriever
     from dbgpt.storage.vector_store.filters import MetadataFilters
+
+CFG = Config()
 
 
 @dataclasses.dataclass
@@ -32,6 +37,12 @@ class RetrieverResource(Resource[ResourceParameters]):
         """Create a new RetrieverResource."""
         self._name = name
         self._retriever = retriever
+        app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
+        rerank_embeddings = RerankEmbeddingFactory.get_instance(CFG.SYSTEM_APP).create()
+        self.need_rerank = bool(app_config.models.rerankers)
+        self.reranker = RerankEmbeddingsRanker(
+            rerank_embeddings, topk=app_config.rag.rerank_top_k
+        )
 
     @property
     def name(self) -> str:
@@ -77,6 +88,9 @@ class RetrieverResource(Resource[ResourceParameters]):
         if not question:
             raise ValueError("Question is required for knowledge resource.")
         chunks = await self.retrieve(question)
+        if self.need_rerank and len(chunks) > 1:
+            chunks = self.reranker.rank(candidates_with_scores=chunks, query=question)
+
         content = "\n".join(
             [f"--{i}--:" + chunk.content for i, chunk in enumerate(chunks)]
         )
@@ -97,6 +111,9 @@ class RetrieverResource(Resource[ResourceParameters]):
         if not question:
             raise ValueError("Question is required for knowledge resource.")
         chunks = await self.retrieve(question)
+        if self.need_rerank and len(chunks) > 1:
+            chunks = self.reranker.rank(candidates_with_scores=chunks, query=question)
+
         prompt_template = """Resources-{name}:\n {content}"""
         prompt_template_zh = """资源-{name}:\n {content}"""
         if lang == "en":

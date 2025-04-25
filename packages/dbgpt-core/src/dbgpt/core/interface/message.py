@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt.core.interface.media import MediaContent
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
     ResourceIdentifier,
@@ -17,11 +18,13 @@ from dbgpt.core.interface.storage import (
 
 from ..schema.types import ChatCompletionMessageParam
 
+MessageContentType = Union[str, List[MediaContent]]
+
 
 class BaseMessage(BaseModel, ABC):
     """Message object."""
 
-    content: str
+    content: MessageContentType
     index: int = 0
     round_index: int = 0
     """The round index of the message in the conversation"""
@@ -61,6 +64,61 @@ class BaseMessage(BaseModel, ABC):
             str: The str messages
         """
         return _messages_to_str(messages)
+
+    @classmethod
+    def parse_chat_completion_message(
+        cls,
+        message: Union[str, ChatCompletionMessageParam],
+        role: str = "human",
+        ignore_unknown_media: bool = False,
+    ) -> "BaseMessage":
+        """Parse the chat completion message."""
+        if not message:
+            raise ValueError("The message is empty")
+        if isinstance(message, str):
+            content = message
+        else:
+            content = MediaContent.parse_chat_completion_message(
+                message, ignore_unknown_media=ignore_unknown_media
+            )
+            if not isinstance(content, list):
+                content = [content]
+        if role == "human":
+            return HumanMessage(content=content)
+        elif role == "ai":
+            return AIMessage(content=content)
+        elif role == "system":
+            return SystemMessage(content=content)
+        elif role == "view":
+            return ViewMessage(content=content)
+
+    @property
+    def last_text(self) -> str:
+        """Get the last text of the message.
+
+        Returns:
+            str: The last text of the message
+        """
+        if isinstance(self.content, list):
+            return MediaContent.last_text(self.content)
+        elif isinstance(self.content, str):
+            return self.content
+        raise ValueError("The content is not a string or list of MediaContent")
+
+    def get_view_markdown_text(self, replace_url_func: Callable[[str], str]) -> str:
+        if isinstance(self.content, str):
+            return self.content
+        elif isinstance(self.content, list):
+            return MediaContent.get_view_markdown_text(self.content, replace_url_func)
+
+    @property
+    def has_media(self) -> bool:
+        """Whether the message has media.
+
+        Returns:
+            bool: Whether the message has media
+        """
+        return isinstance(self.content, list) and self.content
 
 
 class HumanMessage(BaseMessage):
@@ -127,7 +185,7 @@ class ModelMessage(BaseModel):
 
     """Similar to openai's message format"""
     role: str
-    content: str
+    content: Union[str, List[MediaContent]]
     round_index: Optional[int] = 0
 
     @property
@@ -371,13 +429,26 @@ class ModelMessage(BaseModel):
         # Add history conversation
         for message in messages:
             if message.role == ModelMessageRoleType.HUMAN:
-                history.append({"role": "user", "content": message.content})
+                history.append(
+                    MediaContent.to_chat_completion_message("user", message.content)
+                )
             elif message.role == ModelMessageRoleType.SYSTEM:
                 if not support_system_role:
                     raise ValueError("Current model not support system role")
-                history.append({"role": "system", "content": message.content})
+                # history.append({"role": "system", "content": message.content})
+                history.append(
+                    MediaContent.to_chat_completion_message(
+                        "system",
+                        message.content,
+                    )
+                )
             elif message.role == ModelMessageRoleType.AI:
-                history.append({"role": "assistant", "content": message.content})
+                history.append(
+                    MediaContent.to_chat_completion_message(
+                        "assistant",
+                        message.content,
+                    )
+                )
             else:
                 pass
         if convert_to_compatible_format:
@@ -703,7 +774,7 @@ class OnceConversation:
         pass
 
     def add_user_message(
-        self, message: str, check_duplicate_type: Optional[bool] = False
+        self, message: MessageContentType, check_duplicate_type: Optional[bool] = False
     ) -> None:
         """Save a user message to the conversation.
 
@@ -723,7 +794,7 @@ class OnceConversation:
         self._append_message(HumanMessage(content=message))
 
     def add_ai_message(
-        self, message: str, update_if_exist: Optional[bool] = False
+        self, message: MessageContentType, update_if_exist: Optional[bool] = False
     ) -> None:
         """Save an AI message to current conversation.
 
@@ -741,7 +812,7 @@ class OnceConversation:
         else:
             self._append_message(AIMessage(content=message))
 
-    def _update_ai_message(self, new_message: str) -> None:
+    def _update_ai_message(self, new_message: MessageContentType) -> None:
         """Update the all AI message to new message.
 
         stream out message update
@@ -753,11 +824,11 @@ class OnceConversation:
             if item.type == "ai":
                 item.content = new_message
 
-    def add_view_message(self, message: str) -> None:
+    def add_view_message(self, message: MessageContentType) -> None:
         """Save a view message to current conversation."""
         self._append_message(ViewMessage(content=message))
 
-    def add_system_message(self, message: str) -> None:
+    def add_system_message(self, message: MessageContentType) -> None:
         """Save a system message to current conversation."""
         self._append_message(SystemMessage(content=message))
 

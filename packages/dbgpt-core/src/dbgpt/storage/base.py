@@ -27,9 +27,16 @@ class IndexStoreConfig(BaseParameters):
 class IndexStoreBase(ABC):
     """Index store base class."""
 
-    def __init__(self, executor: Optional[Executor] = None):
+    def __init__(
+        self,
+        executor: Optional[Executor] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
+    ):
         """Init index store."""
         self._executor = executor or ThreadPoolExecutor()
+        self._max_chunks_once_load = max_chunks_once_load or 10
+        self._max_threads = max_threads or 1
 
     @abstractmethod
     def get_config(self) -> IndexStoreConfig:
@@ -102,7 +109,10 @@ class IndexStoreBase(ABC):
         return True
 
     def load_document_with_limit(
-        self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
+        self,
+        chunks: List[Chunk],
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> List[str]:
         """Load document in index database with specified limit.
 
@@ -114,6 +124,8 @@ class IndexStoreBase(ABC):
         Return:
             List[str]: Chunk ids.
         """
+        max_chunks_once_load = max_chunks_once_load or self._max_chunks_once_load
+        max_threads = max_threads or self._max_threads
         # Group the chunks into chunks of size max_chunks
         chunk_groups = [
             chunks[i : i + max_chunks_once_load]
@@ -141,7 +153,10 @@ class IndexStoreBase(ABC):
         return ids
 
     async def aload_document_with_limit(
-        self, chunks: List[Chunk], max_chunks_once_load: int = 10, max_threads: int = 1
+        self,
+        chunks: List[Chunk],
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> List[str]:
         """Load document in index database with specified limit.
 
@@ -153,6 +168,8 @@ class IndexStoreBase(ABC):
         Return:
             List[str]: Chunk ids.
         """
+        max_chunks_once_load = max_chunks_once_load or self._max_chunks_once_load
+        max_threads = max_threads or self._max_threads
         chunk_groups = [
             chunks[i : i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)

@@ -10,6 +10,12 @@ from typing import Iterable, Optional, TypeAlias, Union
 
 from typing_extensions import Literal, Required, TypedDict
 
+from .ext_types import (
+    ExtChatCompletionContentPartInputAudioParam,
+    ExtChatCompletionContentPartInputFileParam,
+    ExtChatCompletionContentPartInputVideoParam,
+)
+
 
 class ChatCompletionContentPartTextParam(TypedDict, total=False):
     text: Required[str]
@@ -107,6 +113,9 @@ ChatCompletionContentPartParam: TypeAlias = Union[
     ChatCompletionContentPartTextParam,
     ChatCompletionContentPartImageParam,
     ChatCompletionContentPartInputAudioParam,
+    ExtChatCompletionContentPartInputAudioParam,
+    ExtChatCompletionContentPartInputVideoParam,
+    ExtChatCompletionContentPartInputFileParam,
 ]
 ContentArrayOfContentPart: TypeAlias = Union[
     ChatCompletionContentPartTextParam, ChatCompletionContentPartRefusalParam

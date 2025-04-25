@@ -59,7 +59,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/ruff check --select I --fix packages
 	$(VENV_BIN)/ruff check --select I --fix --exclude="examples/notebook" examples
 	$(VENV_BIN)/ruff check --select I --fix i18n
-	$(VENV_BIN)/ruff check --select I --fix update_version_all.py
+	$(VENV_BIN)/ruff check --select I --fix scripts/update_version_all.py
 	$(VENV_BIN)/ruff check --select I --fix install_help.py
 
 	$(VENV_BIN)/ruff check --fix packages \

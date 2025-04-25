@@ -26,7 +26,7 @@ context: AgentContext = AgentContext(
 )
 # Create an agent memory, default memory is ShortTermMemory
 agent_memory: AgentMemory = AgentMemory()
-
+agent_memory.gpts_memory.init(conv_id="test123")
 
 system_prompt_template = """\
 You are a {{ role }}, {% if name %}named {{ name }}, {% endif %}your goal is {{ goal }}.

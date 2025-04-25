@@ -81,9 +81,9 @@ quant_bnb = [
 #   - 2. CUDA: 11.8 or higher
 # AMD:
 #   - 1. Your ROCm version must be compatible with Triton.
-quant_awq = [
-    "autoawq"
-]
+# quant_awq = [
+#     "autoawq"
+# ]
 quant_gptqmodel = [
     "optimum",
     "device-smi>=0.3.3",
@@ -100,15 +100,6 @@ flash_attn = [
 ]
 
 [dependency-groups]
-auto = [
-    # Starting from PyTorch 2.3.0, the minimum requirement for macOS is macOS 11.0+ ARM64.
-    "torch>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
-    "torch>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "torchaudio>=2.2.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
-    "torchaudio>=2.2.1,<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "torchvision>=0.17.1; sys_platform != 'darwin' or platform_machine != 'x86_64'",
-    "torchvision>=0.17.1,<0.18.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
-]
 
 [tool.uv]
 managed = true
@@ -122,7 +113,6 @@ conflicts = [
         { extra = "cuda124" },
     ],
 ]
-default-groups = ["auto"]
 
 # [[tool.uv.index]]
 # name = "pytorch-cpu"
