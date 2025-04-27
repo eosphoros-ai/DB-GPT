@@ -111,12 +111,12 @@ class FinalReportAssistantAgent(ConversableAgent):
                 return resource_prompt, resource_reference
         return None, None
 
-    def init_reply_message(
+    def _init_reply_message(
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
     ) -> AgentMessage:
-        reply_message = super().init_reply_message(received_message, rely_messages)
+        reply_message = super()._init_reply_message(received_message, rely_messages)
         reply_message.context = {
             "user_question": received_message.content,
         }

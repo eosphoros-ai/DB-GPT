@@ -7,7 +7,7 @@ encrypt_key = "your_secret_key"
 # Server Configurations
 [service.web]
 host = "0.0.0.0"
-port = "${env:DBGPT_WEBSERVER_PORT:-8080}"
+port = "5670"
 
 [service.web.database]
 type = "sqlite"
