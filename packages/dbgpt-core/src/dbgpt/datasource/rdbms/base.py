@@ -477,7 +477,11 @@ class RDBMSConnector(BaseConnector):
         return self._query(sql)
 
     def query_ex(
-        self, query: str, params=None, fetch: str = "all", timeout: Optional[float] = None
+        self,
+        query: str,
+        params=None,
+        fetch: str = "all",
+        timeout: Optional[float] = None,
     ) -> Tuple[List[str], Optional[List]]:
         """Execute a SQL command and return the results with optional timeout.
 
@@ -501,7 +505,7 @@ class RDBMSConnector(BaseConnector):
         if not query:
             return [], None
         query = self._format_sql(query)
-        
+
         # Initialize params if None
         if params is None:
             params = {}
@@ -560,7 +564,9 @@ class RDBMSConnector(BaseConnector):
                     elif self.dialect == "duckdb":
                         # DuckDB: Use ThreadPoolExecutor for timeout
                         with ThreadPoolExecutor(max_workers=1) as executor:
-                            future = executor.submit(_execute_query, session, sql, params)
+                            future = executor.submit(
+                                _execute_query, session, sql, params
+                            )
                             try:
                                 return future.result(timeout=timeout)
                             except FutureTimeoutError:

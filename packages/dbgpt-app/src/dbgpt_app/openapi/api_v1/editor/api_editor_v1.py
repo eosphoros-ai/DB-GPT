@@ -5,7 +5,6 @@ import time
 from typing import Dict, List, Tuple
 
 from fastapi import APIRouter, Body, Depends
-import numpy as np
 
 from dbgpt._private.config import Config
 from dbgpt.core.interface.message import OnceConversation
@@ -98,60 +97,70 @@ async def get_editor_sql(
 
 def sanitize_sql(sql: str, db_type: str = None) -> Tuple[bool, str, dict]:
     """Simple SQL sanitizer to prevent injection.
-    
+
     Returns:
         Tuple of (is_safe, reason, params)
     """
     # Normalize SQL (remove comments and excess whitespace)
-    sql = re.sub(r'/\*.*?\*/', ' ', sql)
-    sql = re.sub(r'--.*?$', ' ', sql, flags=re.MULTILINE)
-    sql = re.sub(r'\s+', ' ', sql).strip()
-    
+    sql = re.sub(r"/\*.*?\*/", " ", sql)
+    sql = re.sub(r"--.*?$", " ", sql, flags=re.MULTILINE)
+    sql = re.sub(r"\s+", " ", sql).strip()
+
     # Block multiple statements
-    if re.search(r';\s*(?!--|\*/|$)', sql):
+    if re.search(r";\s*(?!--|\*/|$)", sql):
         return False, "Multiple SQL statements are not allowed", {}
-    
+
     # Block dangerous operations for all databases
     dangerous_patterns = [
-        r'(?i)INTO\s+(?:OUT|DUMP)FILE',
-        r'(?i)LOAD\s+DATA',
-        r'(?i)SYSTEM',
-        r'(?i)EXEC\s+',
-        r'(?i)SHELL\b',
-        r'(?i)DROP\s+DATABASE',
-        r'(?i)DROP\s+USER',
-        r'(?i)GRANT\s+',
-        r'(?i)REVOKE\s+',
-        r'(?i)ALTER\s+(USER|DATABASE)',
+        r"(?i)INTO\s+(?:OUT|DUMP)FILE",
+        r"(?i)LOAD\s+DATA",
+        r"(?i)SYSTEM",
+        r"(?i)EXEC\s+",
+        r"(?i)SHELL\b",
+        r"(?i)DROP\s+DATABASE",
+        r"(?i)DROP\s+USER",
+        r"(?i)GRANT\s+",
+        r"(?i)REVOKE\s+",
+        r"(?i)ALTER\s+(USER|DATABASE)",
     ]
-    
+
     # Add DuckDB specific patterns
-    if db_type == 'duckdb':
-        dangerous_patterns.extend([
-            r'(?i)COPY\b',
-            r'(?i)EXPORT\b',
-            r'(?i)IMPORT\b',
-            r'(?i)INSTALL\b',
-            r'(?i)READ_\w+\b',
-            r'(?i)WRITE_\w+\b',
-            r'(?i)\.EXECUTE\(',
-            r'(?i)PRAGMA\b',
-        ])
-    
+    if db_type == "duckdb":
+        dangerous_patterns.extend(
+            [
+                r"(?i)COPY\b",
+                r"(?i)EXPORT\b",
+                r"(?i)IMPORT\b",
+                r"(?i)INSTALL\b",
+                r"(?i)READ_\w+\b",
+                r"(?i)WRITE_\w+\b",
+                r"(?i)\.EXECUTE\(",
+                r"(?i)PRAGMA\b",
+            ]
+        )
+
     for pattern in dangerous_patterns:
         if re.search(pattern, sql):
             return False, f"Operation not allowed: {pattern}", {}
-    
+
     # Allow SELECT, CREATE TABLE, INSERT, UPDATE, and DELETE operations
     # We're no longer restricting to read-only operations
-    allowed_operations = re.match(r'(?i)^\s*(SELECT|CREATE\s+TABLE|INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER\s+TABLE)\b', sql)
+    allowed_operations = re.match(
+        r"(?i)^\s*(SELECT|CREATE\s+TABLE|INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER\s+TABLE)\b",
+        sql,
+    )
     if not allowed_operations:
-        return False, "Operation not supported. Only SELECT, CREATE TABLE, INSERT, UPDATE, DELETE and ALTER TABLE operations are allowed", {}
-    
+        return (
+            False,
+            "Operation not supported. Only SELECT, CREATE TABLE, INSERT, UPDATE, "
+            "DELETE and ALTER TABLE operations are allowed",
+            {},
+        )
+
     # Extract parameters (simplified)
     params = {}
     param_count = 0
-    
+
     # Extract string literals
     def replace_string(match):
         nonlocal param_count
@@ -159,10 +168,10 @@ def sanitize_sql(sql: str, db_type: str = None) -> Tuple[bool, str, dict]:
         params[param_name] = match.group(1)
         param_count += 1
         return f":{param_name}"
-    
+
     # Replace string literals with parameters
     parameterized_sql = re.sub(r"'([^']*)'", replace_string, sql)
-    
+
     return True, parameterized_sql, params
 
 
@@ -171,7 +180,7 @@ async def editor_sql_run(run_param: dict = Body()):
     logger.info(f"editor_sql_run:{run_param}")
     db_name = run_param["db_name"]
     sql = run_param["sql"]
-    
+
     if not db_name and not sql:
         return Result.failed(msg="SQL run param error！")
 
@@ -184,7 +193,7 @@ async def editor_sql_run(run_param: dict = Body()):
     if not is_safe:
         logger.warning(f"Blocked dangerous SQL: {sql}")
         return Result.failed(msg=f"Operation not allowed: {result}")
-    
+
     try:
         start_time = time.time() * 1000
         # Use the parameterized query and parameters
@@ -255,7 +264,7 @@ async def chart_run(run_param: dict = Body()):
     db_name = run_param["db_name"]
     sql = run_param["sql"]
     chart_type = run_param["chart_type"]
-    
+
     # Get database connection
     db_conn = CFG.local_db_manager.get_connector(db_name)
     db_type = getattr(db_conn, "db_type", "").lower()
@@ -287,7 +296,11 @@ async def chart_run(run_param: dict = Body()):
         for i in range(len(sql_result)):
             row = sql_result[i]
             chart_values.append(
-                {"name": row[0], "type": "value", "value": row[1] if len(row) > 1 else "0"}
+                {
+                    "name": row[0],
+                    "type": "value",
+                    "value": row[1] if len(row) > 1 else "0",
+                }
             )
 
         chart_data: ChartRunData = ChartRunData(
