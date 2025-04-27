@@ -15,6 +15,7 @@ from .embeddings import (  # noqa: F401
 )
 from .rerank import (  # noqa: F401
     CrossEncoderRerankEmbeddings,
+    InfiniAIRerankEmbeddings,
     OpenAPIRerankEmbeddings,
     SiliconFlowRerankEmbeddings,
 )
@@ -31,5 +32,6 @@ __ALL__ = [
     "OpenAPIEmbeddings",
     "OpenAPIRerankEmbeddings",
     "SiliconFlowRerankEmbeddings",
+    "InfiniAIRerankEmbeddings",
     "WrappedEmbeddingFactory",
 ]
