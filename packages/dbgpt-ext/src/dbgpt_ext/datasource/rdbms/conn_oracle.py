@@ -1,8 +1,9 @@
 """Oracle connector using python-oracledb."""
 
 from dataclasses import dataclass, field
-from typing import Type, Optional, List, Tuple, Dict
+from typing import Dict, List, Optional, Tuple, Type
 from urllib.parse import quote_plus
+
 from sqlalchemy import text
 
 from dbgpt.core.awel.flow import (
@@ -19,8 +20,7 @@ from dbgpt.util.i18n_utils import _
     category=ResourceCategory.DATABASE,
     tags={"order": TAGS_ORDER_HIGH},
     description=_(
-        "Enterprise-grade relational database with "
-        "oracledb driver (python-oracledb)."
+        "Enterprise-grade relational database with oracledb driver (python-oracledb)."
     ),
 )
 @dataclass
@@ -52,11 +52,15 @@ class OracleParameters(RDBMSDatasourceParameters):
 
     def db_url(self, ssl: bool = False, charset: Optional[str] = None) -> str:
         if self.service_name:
-            dsn = (f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={self.host})"
-                   f"(PORT={self.port}))(CONNECT_DATA=(SERVICE_NAME={self.service_name})))")
+            dsn = (
+                f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={self.host})"
+                f"(PORT={self.port}))(CONNECT_DATA=(SERVICE_NAME={self.service_name})))"
+            )
         elif self.sid:
-            dsn = (f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={self.host})"
-                   f"(PORT={self.port}))(CONNECT_DATA=(SID={self.sid})))")
+            dsn = (
+                f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={self.host})"
+                f"(PORT={self.port}))(CONNECT_DATA=(SID={self.sid})))"
+            )
         else:
             raise ValueError("Either service_name or sid must be provided for Oracle.")
 
@@ -91,11 +95,15 @@ class OracleConnector(RDBMSConnector):
             raise ValueError("Must provide either sid or service_name")
 
         if service_name:
-            dsn = (f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)"
-                   f"(HOST={host})(PORT={port}))(CONNECT_DATA=(SERVICE_NAME={service_name})))")
+            dsn = (
+                f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)"
+                f"(HOST={host})(PORT={port}))(CONNECT_DATA=(SERVICE_NAME={service_name})))"
+            )
         else:
-            dsn = (f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={host})"
-                   f"(PORT={port}))(CONNECT_DATA=(SID={sid})))")
+            dsn = (
+                f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={host})"
+                f"(PORT={port}))(CONNECT_DATA=(SID={sid})))"
+            )
 
         bm_pwd = quote_plus(pwd)
         db_url = f"{cls.driver}://{user}:{bm_pwd}@{dsn}"
@@ -122,8 +130,10 @@ class OracleConnector(RDBMSConnector):
     def get_charset(self) -> str:
         with self.session_scope() as session:
             cursor = session.execute(
-                text("SELECT VALUE FROM NLS_DATABASE_PARAMETERS "
-                     "WHERE PARAMETER = 'NLS_CHARACTERSET'")
+                text(
+                    "SELECT VALUE FROM NLS_DATABASE_PARAMETERS "
+                    "WHERE PARAMETER = 'NLS_CHARACTERSET'"
+                )
             )
             return cursor.fetchone()[0]
 
@@ -146,9 +156,11 @@ class OracleConnector(RDBMSConnector):
                 ).fetchall()
                 return [name[0] for name in pdbs]
             else:
-                return [session.execute(
-                    text("SELECT sys_context('USERENV', 'CON_NAME') FROM dual")
-                ).fetchone()[0]]
+                return [
+                    session.execute(
+                        text("SELECT sys_context('USERENV', 'CON_NAME') FROM dual")
+                    ).fetchone()[0]
+                ]
 
     def get_table_comments(self, db_name: str) -> List[Tuple[str, str]]:
         with self.session_scope() as session:
@@ -160,13 +172,17 @@ class OracleConnector(RDBMSConnector):
     def get_table_comment(self, table_name: str) -> Dict:
         with self.session_scope() as session:
             cursor = session.execute(
-                text(f"SELECT comments FROM user_tab_comments "
-                     f"WHERE table_name = '{table_name.upper()}'")
+                text(
+                    f"SELECT comments FROM user_tab_comments "
+                    f"WHERE table_name = '{table_name.upper()}'"
+                )
             )
             row = cursor.fetchone()
             return {"text": row[0] if row else ""}
 
-    def get_column_comments(self, db_name: str, table_name: str) -> List[Tuple[str, str]]:
+    def get_column_comments(
+        self, db_name: str, table_name: str
+    ) -> List[Tuple[str, str]]:
         with self.session_scope() as session:
             cursor = session.execute(
                 text(f"""
@@ -180,7 +196,9 @@ class OracleConnector(RDBMSConnector):
     def get_collation(self) -> str:
         with self.session_scope() as session:
             cursor = session.execute(
-                text("SELECT value FROM NLS_DATABASE_PARAMETERS "
-                     "WHERE parameter = 'NLS_SORT'")
+                text(
+                    "SELECT value FROM NLS_DATABASE_PARAMETERS "
+                    "WHERE parameter = 'NLS_SORT'"
+                )
             )
             return cursor.fetchone()[0]

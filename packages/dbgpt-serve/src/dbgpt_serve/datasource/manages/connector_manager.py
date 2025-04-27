@@ -180,7 +180,7 @@ class ConnectorManager(BaseComponent):
             db_path = db_config.get("db_path")
             return connect_instance.from_file_path(db_path)  # type: ignore
         elif db_type.value() == "oracle":
-            print("-------------进入oracle数据源------------")
+            logger.info("-------------Oracle Datasource------------")
             host = db_config.get("db_host")
             port = db_config.get("db_port")
             user = db_config.get("db_user")
