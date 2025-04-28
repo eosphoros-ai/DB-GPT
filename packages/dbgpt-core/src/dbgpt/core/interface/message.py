@@ -407,6 +407,7 @@ class ModelMessage(BaseModel):
         messages: List["ModelMessage"],
         convert_to_compatible_format: bool = False,
         support_system_role: bool = True,
+        support_media_content: bool = True,
     ) -> List[Dict[str, str]]:
         """Cover to common message format.
 
@@ -418,6 +419,7 @@ class ModelMessage(BaseModel):
             messages (List["ModelMessage"]): The model messages
             convert_to_compatible_format (bool): Whether to convert to compatible format
             support_system_role (bool): Whether to support system role
+            support_media_content (bool): Whether to support media content
 
         Returns:
             List[Dict[str, str]]: The common messages
@@ -430,7 +432,11 @@ class ModelMessage(BaseModel):
         for message in messages:
             if message.role == ModelMessageRoleType.HUMAN:
                 history.append(
-                    MediaContent.to_chat_completion_message("user", message.content)
+                    MediaContent.to_chat_completion_message(
+                        "user",
+                        message.content,
+                        support_media_content=support_media_content,
+                    )
                 )
             elif message.role == ModelMessageRoleType.SYSTEM:
                 if not support_system_role:
@@ -440,6 +446,7 @@ class ModelMessage(BaseModel):
                     MediaContent.to_chat_completion_message(
                         "system",
                         message.content,
+                        support_media_content=support_media_content,
                     )
                 )
             elif message.role == ModelMessageRoleType.AI:
@@ -447,6 +454,7 @@ class ModelMessage(BaseModel):
                     MediaContent.to_chat_completion_message(
                         "assistant",
                         message.content,
+                        support_media_content=support_media_content,
                     )
                 )
             else:
