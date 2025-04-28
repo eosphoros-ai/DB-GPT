@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from concurrent.futures import Executor, ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, final
@@ -45,6 +46,7 @@ class ConversableAgent(Role, Agent):
     bind_prompt: Optional[PromptTemplate] = None
     run_mode: Optional[AgentRunMode] = Field(default=None, description="Run mode")
     max_retry_count: int = 3
+    max_timeout: int = 600
     llm_client: Optional[AIWrapper] = None
     # 确认当前Agent是否需要进行流式输出
     stream_out: bool = True
@@ -363,6 +365,7 @@ class ConversableAgent(Role, Agent):
 
             fail_reason = None
             current_retry_counter = 0
+            start_time = time.time()
             is_success = True
             observation = received_message.content or ""
             while current_retry_counter < self.max_retry_count:
@@ -514,6 +517,13 @@ class ConversableAgent(Role, Agent):
                     if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
                         logger.debug(f"Agent {self.name} reply success!{reply_message}")
                         break
+                time_cost = time.time() - start_time
+                if time_cost > self.max_timeout:
+                    logger.warning(
+                        f"Agent {self.name} run time out!{time_cost} > "
+                        f"{self.max_timeout}"
+                    )
+                    break
 
                 # Continue to run the next round
                 current_retry_counter += 1
