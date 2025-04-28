@@ -479,7 +479,7 @@ class RDBMSConnector(BaseConnector):
     def query_ex(
         self,
         query: str,
-        params=None,
+        params: Optional[Dict[str, Any]] = None,
         fetch: str = "all",
         timeout: Optional[float] = None,
     ) -> Tuple[List[str], Optional[List]]:
