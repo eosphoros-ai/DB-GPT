@@ -38,7 +38,7 @@ class GptsPlan:
         """Create a GptsPlan object from a dictionary."""
         return GptsPlan(
             conv_id=d["conv_id"],
-            conv_round=d["conv_id"],
+            conv_round=d["conv_round"],
             task_uid=d["task_uid"],
             sub_task_num=d["sub_task_num"],
             sub_task_id=d["sub_task_id"],
