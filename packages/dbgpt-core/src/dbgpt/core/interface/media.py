@@ -245,7 +245,10 @@ class MediaContent:
 
     @classmethod
     def to_chat_completion_message(
-        cls, role, content: Union[str, "MediaContent", List["MediaContent"]]
+        cls,
+        role,
+        content: Union[str, "MediaContent", List["MediaContent"]],
+        support_media_content: bool = True,
     ) -> ChatCompletionMessageParam:
         """Convert the media contents to chat completion message."""
         if not content:
@@ -255,6 +258,14 @@ class MediaContent:
         if isinstance(content, MediaContent):
             content = [content]
         new_content = [cls._parse_single_media_content(c) for c in content]
+        if not support_media_content:
+            text_content = [
+                c["text"] for c in new_content if c["type"] == "text" and "text" in c
+            ]
+            if not text_content:
+                raise ValueError("No text content found in the media contents")
+            # Not support media content, just pass the string text as content
+            new_content = text_content[0]
         return {
             "role": role,
             "content": new_content,
