@@ -405,10 +405,12 @@ class ConversableAgent(Role, Agent):
                 thinking_messages, resource_info = await self._load_thinking_messages(
                     received_message=received_message,
                     sender=sender,
+                    observation=observation,
                     rely_messages=rely_messages,
                     historical_dialogues=historical_dialogues,
                     context=reply_message.get_dict_context(),
                     is_retry_chat=is_retry_chat,
+                    current_retry_counter=current_retry_counter,
                 )
                 with root_tracer.start_span(
                     "agent.generate_reply.thinking",
@@ -496,6 +498,7 @@ class ConversableAgent(Role, Agent):
                         logger.warning("No retry available!")
                         break
                     fail_reason = reason
+                    observation = fail_reason
                     await self.write_memories(
                         question=question,
                         ai_message=ai_message,
@@ -1082,15 +1085,25 @@ class ConversableAgent(Role, Agent):
         self,
         received_message: AgentMessage,
         sender: Agent,
+        observation: Optional[str] = None,
         rely_messages: Optional[List[AgentMessage]] = None,
         historical_dialogues: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
         is_retry_chat: bool = False,
+        current_retry_counter: Optional[int] = None,
     ) -> Tuple[List[AgentMessage], Optional[Dict]]:
-        observation = received_message.content
-        if not observation:
+        question = received_message.content
+        observation = observation or question
+        if not question:
             raise ValueError("The received message content is empty!")
+        most_recent_memories = ""
+        memory_list = []
+        # Read the memories according to the current observation
         memories = await self.read_memories(observation)
+        if isinstance(memories, list):
+            memory_list = memories
+        else:
+            most_recent_memories = memories
         has_memories = True if memories else False
         reply_message_str = ""
         if context is None:
@@ -1112,8 +1125,9 @@ class ConversableAgent(Role, Agent):
                     elif message.role == ModelMessageRoleType.AI:
                         reply_message_str += f"Observation: {message.content}\n"
         if reply_message_str:
-            memories += "\n" + reply_message_str
+            most_recent_memories += "\n" + reply_message_str
         try:
+            # Load the resource prompt according to the current observation
             resource_prompt_str, resource_references = await self.load_resource(
                 observation, is_retry_chat=is_retry_chat
             )
@@ -1124,21 +1138,19 @@ class ConversableAgent(Role, Agent):
         resource_vars = await self.generate_resource_variables(resource_prompt_str)
 
         system_prompt = await self.build_system_prompt(
-            question=observation,
-            most_recent_memories=memories,
+            question=question,
+            most_recent_memories=most_recent_memories,
             resource_vars=resource_vars,
             context=context,
             is_retry_chat=is_retry_chat,
         )
         user_prompt = await self.build_prompt(
-            question=observation,
+            question=question,
             is_system=False,
-            most_recent_memories=memories,
+            most_recent_memories=most_recent_memories,
             resource_vars=resource_vars,
             **context,
         )
-        if not user_prompt:
-            user_prompt = f"Observation: {observation}"
 
         agent_messages = []
         if system_prompt:
@@ -1163,14 +1175,21 @@ class ConversableAgent(Role, Agent):
                     message.role = ModelMessageRoleType.AI
                     agent_messages.append(message)
 
-        # Current user input information
-        agent_messages.append(
-            AgentMessage(
-                content=user_prompt,
-                role=ModelMessageRoleType.HUMAN,
-            )
-        )
+        if memory_list:
+            agent_messages.extend(memory_list)
 
+        # Current user input information
+        if not user_prompt and (not memory_list or not current_retry_counter):
+            # The user prompt is empty, and the current retry count is 0 or the memory
+            # is empty
+            user_prompt = f"Observation: {observation}"
+        if user_prompt:
+            agent_messages.append(
+                AgentMessage(
+                    content=user_prompt,
+                    role=ModelMessageRoleType.HUMAN,
+                )
+            )
         return agent_messages, resource_references
 
 

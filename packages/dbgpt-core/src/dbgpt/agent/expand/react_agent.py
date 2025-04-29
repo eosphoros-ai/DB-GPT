@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Type, Union
 
 from dbgpt._private.pydantic import Field
 from dbgpt.agent import (
@@ -12,6 +12,7 @@ from dbgpt.agent import (
     ProfileConfig,
     Resource,
     ResourceType,
+    StructuredAgentMemoryFragment,
 )
 from dbgpt.agent.core.role import AgentRunMode
 from dbgpt.agent.resource import BaseTool, ResourcePack, ToolPack
@@ -65,12 +66,9 @@ Please Solve this task:
 Please answer in the same language as the user's question.
 The current time is: {{ now_time }}.
 """
-_REACT_USER_TEMPLATE = """\
-{% if most_recent_memories %}\
-Most recent message:
-{{ most_recent_memories }}
-{% endif %}\
-"""
+
+# Not needed additional user prompt template
+_REACT_USER_TEMPLATE = """"""
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
@@ -227,7 +225,10 @@ class ReActAgent(ConversableAgent):
             steps = self.parser.parse(message_content)
             err_msg = None
             if not steps:
-                err_msg = "No correct response found."
+                err_msg = (
+                    "No correct response found. Please check your response, which must"
+                    " be in the format indicated in the system prompt."
+                )
             elif len(steps) != 1:
                 err_msg = "Only one action is allowed each time."
             if err_msg:
@@ -245,105 +246,66 @@ class ReActAgent(ConversableAgent):
         )
         return action_output
 
-    async def write_memories(
+    @property
+    def memory_fragment_class(self) -> Type[AgentMemoryFragment]:
+        """Return the memory fragment class."""
+        return StructuredAgentMemoryFragment
+
+    async def read_memories(
         self,
-        question: str,
-        ai_message: str,
-        action_output: Optional[ActionOutput] = None,
-        check_pass: bool = True,
-        check_fail_reason: Optional[str] = None,
-        current_retry_counter: Optional[int] = None,
-    ) -> AgentMemoryFragment:
-        """Write the memories to the memory.
-
-        We suggest you to override this method to save the conversation to memory
-        according to your needs.
-
-        Args:
-            question(str): The question received.
-            ai_message(str): The AI message, LLM output.
-            action_output(ActionOutput): The action output.
-            check_pass(bool): Whether the check pass.
-            check_fail_reason(str): The check fail reason.
-
-        Returns:
-            AgentMemoryFragment: The memory fragment created.
-        """
-        if not action_output:
-            raise ValueError("Action output is required to save to memory.")
-
-        mem_thoughts = action_output.thoughts or ai_message
-        action = action_output.action
-        action_input = action_output.action_input
-        observation = check_fail_reason or action_output.observations
-
-        memory_map = {
-            "thought": mem_thoughts,
-            "action": action,
-            "observation": observation,
-        }
-        if action_input:
-            memory_map["action_input"] = action_input
-
-        if current_retry_counter is not None and current_retry_counter == 0:
-            memory_map["question"] = question
-
-        memory_content = json.dumps(memory_map, ensure_ascii=False)
-        # write_memory_template = self.write_memory_template
-        # memory_content = self._render_template(write_memory_template, **memory_map)
-        fragment = AgentMemoryFragment(memory_content)
-        await self.memory.write(fragment)
-        action_output.memory_fragments = {
-            "memory": fragment.raw_observation,
-            "id": fragment.id,
-            "importance": fragment.importance,
-        }
-        return fragment
-
-    async def _read_memories(self, observation: str) -> List[AgentMessage]:
-        """Read the memories from the memory."""
+        observation: str,
+    ) -> Union[str, List["AgentMessage"]]:
         memories = await self.memory.read(observation)
         not_json_memories = []
         messages = []
+        structured_memories = []
         for m in memories:
             if m.raw_observation:
                 try:
                     mem_dict = json.loads(m.raw_observation)
-                    question = mem_dict.get("question")
-                    thought = mem_dict.get("thought")
-                    action = mem_dict.get("action")
-                    action_input = mem_dict.get("action_input")
-                    observation = mem_dict.get("observation")
-                    if question:
-                        messages.append(
-                            AgentMessage(
-                                content=f"Question: {question}",
-                                role=ModelMessageRoleType.HUMAN,
-                            )
-                        )
-                    ai_content = []
-                    if thought:
-                        ai_content.append(f"Thought: {thought}")
-                    if action:
-                        ai_content.append(f"Action: {action}")
-                    if action_input:
-                        ai_content.append(f"Action Input: {action_input}")
-                    messages.append(
-                        AgentMessage(
-                            content="\n".join(ai_content),
-                            role=ModelMessageRoleType.AI,
-                        )
-                    )
-
-                    if observation:
-                        messages.append(
-                            AgentMessage(
-                                content=f"Observation: {observation}",
-                                role=ModelMessageRoleType.HUMAN,
-                            )
-                        )
+                    if isinstance(mem_dict, dict):
+                        structured_memories.append(mem_dict)
+                    elif isinstance(mem_dict, list):
+                        structured_memories.extend(mem_dict)
+                    else:
+                        raise ValueError("Invalid memory format.")
                 except Exception:
                     not_json_memories.append(m.raw_observation)
+
+        for mem_dict in structured_memories:
+            question = mem_dict.get("question")
+            thought = mem_dict.get("thought")
+            action = mem_dict.get("action")
+            action_input = mem_dict.get("action_input")
+            observation = mem_dict.get("observation")
+            if question:
+                messages.append(
+                    AgentMessage(
+                        content=f"Question: {question}",
+                        role=ModelMessageRoleType.HUMAN,
+                    )
+                )
+            ai_content = []
+            if thought:
+                ai_content.append(f"Thought: {thought}")
+            if action:
+                ai_content.append(f"Action: {action}")
+            if action_input:
+                ai_content.append(f"Action Input: {action_input}")
+            messages.append(
+                AgentMessage(
+                    content="\n".join(ai_content),
+                    role=ModelMessageRoleType.AI,
+                )
+            )
+
+            if observation:
+                messages.append(
+                    AgentMessage(
+                        content=f"Observation: {observation}",
+                        role=ModelMessageRoleType.HUMAN,
+                    )
+                )
 
         if not messages and not_json_memories:
             messages.append(
@@ -353,102 +315,3 @@ class ReActAgent(ConversableAgent):
                 )
             )
         return messages
-
-    async def _load_thinking_messages(
-        self,
-        received_message: AgentMessage,
-        sender: Agent,
-        rely_messages: Optional[List[AgentMessage]] = None,
-        historical_dialogues: Optional[List[AgentMessage]] = None,
-        context: Optional[Dict[str, Any]] = None,
-        is_retry_chat: bool = False,
-    ) -> Tuple[List[AgentMessage], Optional[Dict]]:
-        observation = received_message.content
-        if not observation:
-            raise ValueError("The received message content is empty!")
-        memory_list = await self._read_memories(observation)
-
-        has_memories = True if memory_list else False
-        reply_message_str = ""
-        memories = ""
-        if context is None:
-            context = {}
-        if rely_messages:
-            copied_rely_messages = [m.copy() for m in rely_messages]
-            # When directly relying on historical messages, use the execution result
-            # content as a dependency
-            for message in copied_rely_messages:
-                action_report: Optional[ActionOutput] = message.action_report
-                if action_report:
-                    # TODO: Modify in-place, need to be optimized
-                    message.content = action_report.content
-                if message.name != self.role:
-                    # TODO, use name
-                    # Rely messages are not from the current agent
-                    if message.role == ModelMessageRoleType.HUMAN:
-                        reply_message_str += f"Question: {message.content}\n"
-                    elif message.role == ModelMessageRoleType.AI:
-                        reply_message_str += f"Observation: {message.content}\n"
-        if reply_message_str:
-            memories += "\n" + reply_message_str
-        try:
-            resource_prompt_str, resource_references = await self.load_resource(
-                observation, is_retry_chat=is_retry_chat
-            )
-        except Exception as e:
-            logger.exception(f"Load resource error！{str(e)}")
-            raise ValueError(f"Load resource error！{str(e)}")
-
-        resource_vars = await self.generate_resource_variables(resource_prompt_str)
-
-        system_prompt = await self.build_system_prompt(
-            question=observation,
-            # most_recent_memories=memories,
-            resource_vars=resource_vars,
-            context=context,
-            is_retry_chat=is_retry_chat,
-        )
-        user_prompt = await self.build_prompt(
-            question=observation,
-            is_system=False,
-            # most_recent_memories=memories,
-            resource_vars=resource_vars,
-            **context,
-        )
-
-        agent_messages = []
-        if system_prompt:
-            agent_messages.append(
-                AgentMessage(
-                    content=system_prompt,
-                    role=ModelMessageRoleType.SYSTEM,
-                )
-            )
-        if historical_dialogues and not has_memories:
-            # If we can't read the memory, we need to rely on the historical dialogue
-            for i in range(len(historical_dialogues)):
-                if i % 2 == 0:
-                    # The even number starts, and the even number is the user
-                    # information
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.HUMAN
-                    agent_messages.append(message)
-                else:
-                    # The odd number is AI information
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.AI
-                    agent_messages.append(message)
-        if memory_list:
-            agent_messages.extend(memory_list)
-
-        # Current user input information
-        if not user_prompt and not memory_list:
-            user_prompt = f"Observation: {observation}"
-        if user_prompt:
-            agent_messages.append(
-                AgentMessage(
-                    content=user_prompt,
-                    role=ModelMessageRoleType.HUMAN,
-                )
-            )
-        return agent_messages, resource_references

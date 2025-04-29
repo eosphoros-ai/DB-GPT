@@ -1,6 +1,10 @@
 """Memory module for the agent."""
 
-from .agent_memory import AgentMemory, AgentMemoryFragment  # noqa: F401
+from .agent_memory import (  # noqa: F401
+    AgentMemory,
+    AgentMemoryFragment,
+    StructuredAgentMemoryFragment,
+)
 from .base import (  # noqa: F401
     ImportanceScorer,
     InsightExtractor,
