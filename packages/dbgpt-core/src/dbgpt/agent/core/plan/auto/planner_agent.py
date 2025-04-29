@@ -3,12 +3,12 @@
 from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import Field
+from dbgpt.agent.core.agent import Agent, AgentMessage
+from dbgpt.agent.core.base_agent import ConversableAgent
+from dbgpt.agent.core.profile import DynConfig, ProfileConfig
+from dbgpt.agent.resource.pack import ResourcePack
 
-from ...resource.pack import ResourcePack
-from ..agent import Agent, AgentMessage
-from ..base_agent import ConversableAgent
-from ..plan.plan_action import PlanAction
-from ..profile import DynConfig, ProfileConfig
+from .plan_action import PlanAction
 
 
 class PlannerAgent(ConversableAgent):
@@ -35,7 +35,7 @@ class PlannerAgent(ConversableAgent):
             "capabilities, using the provided resources, solve user problems by "
             "coordinating intelligent agents. Please utilize your LLM's knowledge "
             "and understanding ability to comprehend the intent and goals of the "
-            "user's problem, generating a task plan that can be completed through"
+            "user's problem, generating a task reasoning_engine that can be completed through"  # noqa: E501
             " the collaboration of intelligent agents without user assistance.",
             category="agent",
             key="dbgpt_agent_plan_planner_agent_profile_goal",
@@ -47,11 +47,11 @@ class PlannerAgent(ConversableAgent):
         ),
         constraints=DynConfig(
             [
-                "Every step of the task plan should exist to advance towards solving "
+                "Every step of the task reasoning_engine should exist to advance towards solving "  # noqa: E501
                 "the user's goals. Do not generate meaningless task steps; ensure "
                 "that each step has a clear goal and its content is complete.",
                 "Pay attention to the dependencies and logic of each step in the task "
-                "plan. For the steps that are depended upon, consider the data they "
+                "reasoning_engine. For the steps that are depended upon, consider the data they "  # noqa: E501
                 "depend on and whether it can be obtained based on the current goal. "
                 "If it cannot be obtained, please indicate in the goal that the "
                 "dependent data needs to be generated.",
@@ -63,7 +63,7 @@ class PlannerAgent(ConversableAgent):
                 "used, and you may use only the necessary parts of them. Allocate "
                 "them to appropriate steps strictly based on their described "
                 "capabilities and limitations. Each intelligent agent can be reused.",
-                "Utilize the provided resources to assist in generating the plan "
+                "Utilize the provided resources to assist in generating the reasoning_engine "  # noqa: E501
                 "steps according to the actual needs of the user's goals. Do not use "
                 "unnecessary resources.",
                 "Each step should ideally use only one type of resource to accomplish "
@@ -76,10 +76,10 @@ class PlannerAgent(ConversableAgent):
                 "Try to merge continuous steps that have sequential dependencies. If "
                 "the user's goal does not require splitting, you can create a "
                 "single-step task with content that is the user's goal.",
-                "Carefully review the plan to ensure it comprehensively covers all "
+                "Carefully review the reasoning_engine to ensure it comprehensively covers all "  # noqa: E501
                 "information involved in the user's problem and can ultimately "
                 "achieve the goal. Confirm whether each step includes the necessary "
-                "resource information, such as URLs, resource names, etc.",
+                "resource information, such as URLs, resource names, etc.",  # noqa: E501
             ],
             category="agent",
             key="dbgpt_agent_plan_planner_agent_profile_constraints",
@@ -149,7 +149,7 @@ assistants:[
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
     ) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message)
+        reply_message = super()._init_reply_message(received_message, rely_messages)
         reply_message.context = {
             "agents": "\n".join([f"- {item.role}:{item.desc}" for item in self.agents]),
         }

@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 from dbgpt.util.code_utils import UNKNOWN, execute_code, extract_code, infer_lang
 from dbgpt.util.utils import colored
-from dbgpt.vis.tags.vis_code import Vis, VisCode
+from dbgpt.vis import SystemVisTag
 
 from ...core.action.base import Action, ActionOutput
 from ...resource.base import AgentResource
@@ -19,13 +19,9 @@ class CodeAction(Action[None]):
     def __init__(self, **kwargs):
         """Code action init."""
         super().__init__(**kwargs)
-        self._render_protocol = VisCode()
         self._code_execution_config = {}
-
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisCode.value
 
     async def run(
         self,

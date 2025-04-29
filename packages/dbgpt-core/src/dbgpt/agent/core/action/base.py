@@ -26,7 +26,9 @@ from ...._private.pydantic import (
     model_validator,
 )
 from ....util.json_utils import find_json_objects
+from ....vis import VisProtocolConverter
 from ....vis.base import Vis
+from ....vis.vis_converter import DefaultVisConverter
 from ...resource.base import AgentResource, Resource, ResourceType
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,22 @@ class Action(ABC, Generic[T]):
         self.resource: Optional[Resource] = None
         self.language: str = language
         self._name = name
+        self.action_view_tag: Optional[str] = None
+
+        self._render: Optional[VisProtocolConverter] = None
+
+    def init_action(self, **kwargs):
+        self._render: VisProtocolConverter = kwargs.get(
+            "render_protocol", DefaultVisConverter()
+        )
+
+    @property
+    def render_protocol(self) -> Optional[Vis]:
+        """Return the render protocol."""
+        if self.action_view_tag:
+            return self._render.vis_inst(self.action_view_tag)
+        else:
+            return None
 
     def init_resource(self, resource: Optional[Resource]):
         """Initialize the resource."""
@@ -118,11 +136,6 @@ class Action(ABC, Generic[T]):
     def get_action_description(cls) -> str:
         """Return the action description."""
         return cls.__doc__ or ""
-
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return None
 
     def render_prompt(self) -> Optional[str]:
         """Return the render prompt."""

@@ -4,14 +4,13 @@ import logging
 from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.vis.tags.vis_agent_plans import Vis, VisAgentPlans
-
-from ...resource.base import AgentResource
-from ..action.base import Action, ActionOutput
-from ..agent import AgentContext
-from ..memory.gpts.base import GptsPlan
-from ..memory.gpts.gpts_memory import GptsPlansMemory
-from ..schema import Status
+from dbgpt.agent.core.action.base import Action, ActionOutput
+from dbgpt.agent.core.agent import AgentContext
+from dbgpt.agent.core.memory.gpts.base import GptsPlan
+from dbgpt.agent.core.memory.gpts.gpts_memory import GptsPlansMemory
+from dbgpt.agent.core.schema import Status
+from dbgpt.agent.resource.base import AgentResource
+from dbgpt.vis import SystemVisTag
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +38,11 @@ class PlanAction(Action[List[PlanInput]]):
     """Plan action class."""
 
     def __init__(self, **kwargs):
-        """Create a plan action."""
+        """Create a reasoning_engine action."""
         super().__init__(**kwargs)
-        self._render_protocol = VisAgentPlans()
 
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisPlans.value
 
     @property
     def out_model_type(self):
@@ -61,7 +57,7 @@ class PlanAction(Action[List[PlanInput]]):
         need_vis_render: bool = True,
         **kwargs,
     ) -> ActionOutput:
-        """Run the plan action."""
+        """Run the reasoning_engine action."""
         context: AgentContext = kwargs["context"]
         plans_memory: GptsPlansMemory = kwargs["plans_memory"]
         try:
@@ -81,14 +77,15 @@ class PlanAction(Action[List[PlanInput]]):
                 for item in param:
                     plan = GptsPlan(
                         conv_id=context.conv_id,
-                        sub_task_num=item.serial_number,
+                        sub_task_id=str(item.serial_number),
                         sub_task_content=item.content,
+                        conv_round=kwargs.get("round", 0),
                     )
                     plan.resource_name = ""
                     plan.max_retry_times = context.max_retry_round
                     plan.sub_task_agent = item.agent
                     plan.sub_task_title = item.content
-                    plan.rely = item.rely
+                    plan.task_parent = item.rely
                     plan.retry_times = 0
                     plan.state = Status.TODO.value
                     plan_objects.append(plan)
@@ -99,9 +96,9 @@ class PlanAction(Action[List[PlanInput]]):
             except Exception as e:
                 logger.exception(str(e))
                 fail_reason = (
-                    f"The generated plan cannot be stored, reason: {str(e)}."
-                    f" Please check whether it is a problem with the plan content. "
-                    f"If so, please regenerate the correct plan. If not, please return"
+                    f"The generated reasoning_engine cannot be stored, reason: {str(e)}."  # noqa: E501
+                    f" Please check whether it is a problem with the reasoning_engine content. "  # noqa: E501
+                    f"If so, please regenerate the correct reasoning_engine. If not, please return"  # noqa: E501
                     f" 'TERMINATE'."
                 )
                 response_success = False

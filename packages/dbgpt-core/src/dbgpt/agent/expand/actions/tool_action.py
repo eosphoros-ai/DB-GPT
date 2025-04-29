@@ -5,7 +5,7 @@ import logging
 from typing import Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
+from dbgpt.vis import SystemVisTag, Vis
 
 from ...core.action.base import Action, ActionOutput
 from ...core.schema import Status
@@ -37,17 +37,13 @@ class ToolAction(Action[ToolInput]):
     def __init__(self, **kwargs):
         """Tool action init."""
         super().__init__(**kwargs)
-        self._render_protocol = VisPlugin()
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisTool.value
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
         """Return the resource type needed for the action."""
         return ResourceType.Tool
-
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
 
     @property
     def out_model_type(self):

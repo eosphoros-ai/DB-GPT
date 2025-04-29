@@ -5,7 +5,7 @@ import logging
 from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_json
-from dbgpt.vis.tags.vis_chart import Vis, VisChart
+from dbgpt.vis import SystemVisTag
 
 from ...core.action.base import Action, ActionOutput
 from ...resource.base import AgentResource, ResourceType
@@ -34,17 +34,13 @@ class ChartAction(Action[SqlInput]):
     def __init__(self, **kwargs):
         """Chart action init."""
         super().__init__(**kwargs)
-        self._render_protocol = VisChart()
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisChart.value
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
         """Return the resource type needed for the action."""
         return ResourceType.DB
-
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
 
     @property
     def out_model_type(self):
