@@ -265,11 +265,11 @@ CREATE TABLE `gpts_messages` (
   `role` varchar(255) DEFAULT NULL COMMENT 'The role of the current message content',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
-  `message_id` varchar(255) NOT NULL  COMMENT 'message id',
+  `message_id` varchar(255) NOT NULL DEFAULT '' COMMENT 'message id',
   `thinking` longtext DEFAULT NULL COMMENT 'llm thinking text',
   `show_message`  tinyint(4) DEFAULT NULL COMMENT 'Whether the current message needs to be displayed to the user',
-  `sender_name` varchar(255) NOT NULL  COMMENT 'Who(name) speaking in the current conversation turn',
-  `receiver_name` varchar(255) NOT NULL  COMMENT 'Who(name) receive message in the current conversation turn',
+  `sender_name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Who(name) speaking in the current conversation turn',
+  `receiver_name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Who(name) receive message in the current conversation turn',
   `avatar` varchar(255) DEFAULT '' COMMENT 'Who(avatar) send message in the current conversation turn',
   PRIMARY KEY (`id`),
   KEY `idx_q_messages` (`conv_id`,`rounds`,`sender`)
@@ -292,12 +292,12 @@ CREATE TABLE `gpts_plans` (
   `result` longtext COMMENT 'subtask result',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
-  `conv_round`  int(11) NOT NULL COMMENT 'the current conversation turn number',
-  `sub_task_id` varchar(255) NOT NULL COMMENT 'the message task id',
+  `conv_round`  int(11) NOT NULL DEFAULT '0' COMMENT 'the current conversation turn number',
+  `sub_task_id` varchar(255) NOT NULL DEFAULT '' COMMENT 'the message task id',
   `task_parent` varchar(255) DEFAULT '' COMMENT 'Subtask parent task i',
   `action` text DEFAULT NULL COMMENT 'plan action',
   `action_input` longtext DEFAULT NULL COMMENT 'plan action input',
-  `task_uid` varchar(255) NOT NULL COMMENT 'task uid';
+  `task_uid` varchar(255) NOT NULL DEFAULT '' COMMENT 'task uid';
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_sub_task` (`conv_id`,`sub_task_num`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
