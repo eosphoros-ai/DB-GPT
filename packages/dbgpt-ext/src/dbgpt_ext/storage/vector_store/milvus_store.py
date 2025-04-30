@@ -19,6 +19,7 @@ from dbgpt.storage.vector_store.base import (
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util import string_utils
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.json_utils import serialize
 
 logger = logging.getLogger(__name__)
 
@@ -413,7 +414,9 @@ class MilvusStore(VectorStoreBase):
         if len(self.fields) > 2 and metadatas is not None:
             for d in metadatas:
                 # for key, value in d.items():
-                insert_dict.setdefault("metadata", []).append(json.dumps(d))
+                insert_dict.setdefault("metadata", []).append(
+                    json.dumps(d, default=serialize, ensure_ascii=False)
+                )
                 insert_dict.setdefault("props_field", []).append(d)
         # Convert dict to list of lists for insertion
         insert_list = [insert_dict[x] for x in self.fields]
