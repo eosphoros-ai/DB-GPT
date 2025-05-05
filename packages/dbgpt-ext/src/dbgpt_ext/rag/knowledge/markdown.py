@@ -50,21 +50,25 @@ class MarkdownKnowledge(Knowledge):
                 raise ValueError("file path is required")
             with open(self._path, encoding=self._encoding, errors="ignore") as f:
                 markdown_text = f.read()
-                metadata = {"source": self._path, "title": self._path.rsplit("/", 1)[-1]}
+                metadata = {
+                    "source": self._path,
+                    "title": self._path.rsplit("/", 1)[-1],
+                }
                 if self._metadata:
                     metadata.update(self._metadata)  # type: ignore
                 documents = [Document(content=markdown_text, metadata=metadata)]
                 return documents
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 
-    def extract(self,
-                documents: List[Document],
-                chunk_parameter: Optional[ChunkParameters] = None) -> List[Document]:
+    def extract(
+        self,
+        documents: List[Document],
+        chunk_parameter: Optional[ChunkParameters] = None,
+    ) -> List[Document]:
         """Extract knowledge from text."""
         from dbgpt_ext.rag.chunk_manager import ChunkManager
-        chunk_manager = ChunkManager(
-            knowledge=self, chunk_parameter=chunk_parameter
-        )
+
+        chunk_manager = ChunkManager(knowledge=self, chunk_parameter=chunk_parameter)
         chunks = chunk_manager.split(documents)
         for document in documents:
             document.chunks = chunks

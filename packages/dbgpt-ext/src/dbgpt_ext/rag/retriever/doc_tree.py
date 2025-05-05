@@ -2,10 +2,10 @@
 
 import logging
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import Optional, List
+from typing import List, Optional
 
-from dbgpt.core import Chunk, Document
-from dbgpt.rag.retriever import BaseRetriever, QueryRewrite, Ranker, DefaultRanker
+from dbgpt.core import Document
+from dbgpt.rag.retriever import BaseRetriever, DefaultRanker, QueryRewrite, Ranker
 from dbgpt.rag.transformer.base import ExtractorBase
 from dbgpt.storage.vector_store.filters import MetadataFilters
 
@@ -24,10 +24,9 @@ HEADER6 = "Header6"
 class TreeNode:
     """TreeNode class to represent a node in the document tree."""
 
-    def __init__(self, node_id: str,
-                 level_text: str,
-                 level: int,
-                 content: Optional[str] = None):
+    def __init__(
+        self, node_id: str, level_text: str, level: int, content: Optional[str] = None
+    ):
         """Initialize a TreeNode."""
         self.node_id = node_id
         self.level = level  # 0: title, 1: header1, 2: header2, 3: header3
@@ -161,18 +160,16 @@ class DocTreeIndex:
         self._traverse(node, node.level, result)
         return result
 
-    # def display(self):
-    #     """Display the directory structure."""
-    #     self._display_tree(self.root, "")
-
     def display_tree(self, node: TreeNode, prefix: Optional[str] = ""):
         """Recursive function to display the directory structure with visual cues."""
         # Print the current node title with prefix
         if node.content:
-            print(f"{prefix}├── {node.level_text} (node_id: {node.node_id}) (content: {node.content})")
-        else:
             print(
-                f"{prefix}├── {node.level_text} (node_id: {node.node_id})")
+                f"{prefix}├── {node.level_text} (node_id: {node.node_id}) "
+                f"(content: {node.content})"
+            )
+        else:
+            print(f"{prefix}├── {node.level_text} (node_id: {node.node_id})")
 
         # Update prefix for children
         new_prefix = prefix + "│   "  # Extend the prefix for child nodes

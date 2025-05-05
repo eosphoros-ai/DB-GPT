@@ -27,9 +27,7 @@ async def main():
         with_content=False,
     )
     tree_index = retriever._tree_indexes[0]
-    nodes = await retriever.aretrieve(
-        "Introduce awel Operators"
-    )
+    nodes = await retriever.aretrieve("Introduce awel Operators")
     for node in nodes:
         tree_index.display_tree(node)
 
