@@ -291,7 +291,7 @@ class ChromaStore(VectorStoreBase):
         logger.info(f"Total IDs to delete: {total}")
 
         for i in range(0, total, batch_size):
-            batch_ids = id_list[i:i + batch_size]
+            batch_ids = id_list[i : i + batch_size]
             logger.info(f"Deleting batch {i // batch_size + 1}: {len(batch_ids)} IDs")
             try:
                 self._collection.delete(ids=batch_ids)
