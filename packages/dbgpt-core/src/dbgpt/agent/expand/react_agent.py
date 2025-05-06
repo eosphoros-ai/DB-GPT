@@ -1,5 +1,6 @@
+import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, Union
 
 from dbgpt._private.pydantic import Field
 from dbgpt.agent import (
@@ -11,12 +12,14 @@ from dbgpt.agent import (
     ProfileConfig,
     Resource,
     ResourceType,
+    StructuredAgentMemoryFragment,
 )
 from dbgpt.agent.core.role import AgentRunMode
 from dbgpt.agent.resource import BaseTool, ResourcePack, ToolPack
 from dbgpt.agent.util.react_parser import ReActOutputParser
 from dbgpt.util.configure import DynConfig
 
+from ...core import ModelMessageRoleType
 from .actions.react_action import ReActAction, Terminate
 
 logger = logging.getLogger(__name__)
@@ -63,12 +66,9 @@ Please Solve this task:
 Please answer in the same language as the user's question.
 The current time is: {{ now_time }}.
 """
-_REACT_USER_TEMPLATE = """\
-{% if most_recent_memories %}\
-Most recent message:
-{{ most_recent_memories }}
-{% endif %}\
-"""
+
+# Not needed additional user prompt template
+_REACT_USER_TEMPLATE = """"""
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
@@ -225,7 +225,10 @@ class ReActAgent(ConversableAgent):
             steps = self.parser.parse(message_content)
             err_msg = None
             if not steps:
-                err_msg = "No correct response found."
+                err_msg = (
+                    "No correct response found. Please check your response, which must"
+                    " be in the format indicated in the system prompt."
+                )
             elif len(steps) != 1:
                 err_msg = "Only one action is allowed each time."
             if err_msg:
@@ -243,56 +246,72 @@ class ReActAgent(ConversableAgent):
         )
         return action_output
 
-    async def write_memories(
+    @property
+    def memory_fragment_class(self) -> Type[AgentMemoryFragment]:
+        """Return the memory fragment class."""
+        return StructuredAgentMemoryFragment
+
+    async def read_memories(
         self,
-        question: str,
-        ai_message: str,
-        action_output: Optional[ActionOutput] = None,
-        check_pass: bool = True,
-        check_fail_reason: Optional[str] = None,
-        current_retry_counter: Optional[int] = None,
-    ) -> AgentMemoryFragment:
-        """Write the memories to the memory.
+        observation: str,
+    ) -> Union[str, List["AgentMessage"]]:
+        memories = await self.memory.read(observation)
+        not_json_memories = []
+        messages = []
+        structured_memories = []
+        for m in memories:
+            if m.raw_observation:
+                try:
+                    mem_dict = json.loads(m.raw_observation)
+                    if isinstance(mem_dict, dict):
+                        structured_memories.append(mem_dict)
+                    elif isinstance(mem_dict, list):
+                        structured_memories.extend(mem_dict)
+                    else:
+                        raise ValueError("Invalid memory format.")
+                except Exception:
+                    not_json_memories.append(m.raw_observation)
 
-        We suggest you to override this method to save the conversation to memory
-        according to your needs.
+        for mem_dict in structured_memories:
+            question = mem_dict.get("question")
+            thought = mem_dict.get("thought")
+            action = mem_dict.get("action")
+            action_input = mem_dict.get("action_input")
+            observation = mem_dict.get("observation")
+            if question:
+                messages.append(
+                    AgentMessage(
+                        content=f"Question: {question}",
+                        role=ModelMessageRoleType.HUMAN,
+                    )
+                )
+            ai_content = []
+            if thought:
+                ai_content.append(f"Thought: {thought}")
+            if action:
+                ai_content.append(f"Action: {action}")
+            if action_input:
+                ai_content.append(f"Action Input: {action_input}")
+            messages.append(
+                AgentMessage(
+                    content="\n".join(ai_content),
+                    role=ModelMessageRoleType.AI,
+                )
+            )
 
-        Args:
-            question(str): The question received.
-            ai_message(str): The AI message, LLM output.
-            action_output(ActionOutput): The action output.
-            check_pass(bool): Whether the check pass.
-            check_fail_reason(str): The check fail reason.
+            if observation:
+                messages.append(
+                    AgentMessage(
+                        content=f"Observation: {observation}",
+                        role=ModelMessageRoleType.HUMAN,
+                    )
+                )
 
-        Returns:
-            AgentMemoryFragment: The memory fragment created.
-        """
-        if not action_output:
-            raise ValueError("Action output is required to save to memory.")
-
-        mem_thoughts = action_output.thoughts or ai_message
-        action = action_output.action
-        action_input = action_output.action_input
-        observation = check_fail_reason or action_output.observations
-
-        memory_map = {
-            "thought": mem_thoughts,
-            "action": action,
-            "observation": observation,
-        }
-        if action_input:
-            memory_map["action_input"] = action_input
-
-        if current_retry_counter is not None and current_retry_counter == 0:
-            memory_map["question"] = question
-
-        write_memory_template = self.write_memory_template
-        memory_content = self._render_template(write_memory_template, **memory_map)
-        fragment = AgentMemoryFragment(memory_content)
-        await self.memory.write(fragment)
-        action_output.memory_fragments = {
-            "memory": fragment.raw_observation,
-            "id": fragment.id,
-            "importance": fragment.importance,
-        }
-        return fragment
+        if not messages and not_json_memories:
+            messages.append(
+                AgentMessage(
+                    content="\n".join(not_json_memories),
+                    role=ModelMessageRoleType.HUMAN,
+                )
+            )
+        return messages

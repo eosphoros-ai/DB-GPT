@@ -369,6 +369,13 @@ class DefaultModelWorker(ModelWorker):
     def _prepare_generate_stream(
         self, params: Dict, span_operation_name: str, is_stream=True
     ):
+        if self.llm_adapter.is_reasoning_model(
+            self._model_params, self.model_name.lower()
+        ):
+            params["is_reasoning_model"] = True
+        else:
+            params["is_reasoning_model"] = False
+
         params, model_context = self.llm_adapter.model_adaptation(
             params,
             self.model_name,
@@ -427,10 +434,6 @@ class DefaultModelWorker(ModelWorker):
             span_params["messages"] = list(
                 map(lambda m: m.dict(), span_params["messages"])
             )
-        if self.llm_adapter.is_reasoning_model(
-            self._model_params, self.model_name.lower()
-        ):
-            params["is_reasoning_model"] = True
 
         metadata = {
             "is_async_func": self.support_async(),

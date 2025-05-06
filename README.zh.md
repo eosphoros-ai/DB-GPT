@@ -163,6 +163,11 @@
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
 
   - 新增支持模型
+    - 🔥🔥🔥  [Qwen3-235B-A22B](https://huggingface.co/Qwen/Qwen3-235B-A22B)
+    - 🔥🔥🔥  [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+    - 🔥🔥🔥  [Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B)
+    - 🔥🔥🔥  [GLM-Z1-32B-0414](https://huggingface.co/THUDM/GLM-Z1-32B-0414)
+    - 🔥🔥🔥  [GLM-4-32B-0414](https://huggingface.co/THUDM/GLM-4-32B-0414)
     - 🔥🔥🔥  [QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
     - 🔥🔥🔥  [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1)
     - 🔥🔥🔥  [DeepSeek-V3](https://huggingface.co/deepseek-ai/DeepSeek-V3)
