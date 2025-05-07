@@ -14,12 +14,12 @@ class GptsPlansEntity(Model):
     conv_id = Column(
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
-    task_uid = Column(String(255), nullable=False, comment="The uid of the plan task")
+    task_uid = Column(String(255), nullable=False, default='', comment="The uid of the plan task")
     sub_task_num = Column(Integer, nullable=False, comment="Subtask id")
-    conv_round = Column(Integer, nullable=False, comment="The dialogue turns")
+    conv_round = Column(Integer, nullable=False, default=0,  comment="The dialogue turns")
     conv_round_id = Column(String(255), nullable=True, comment="The dialogue turns uid")
 
-    sub_task_id = Column(String(255), nullable=False, comment="Subtask id")
+    sub_task_id = Column(String(255), nullable=False, default='', comment="Subtask id")
     task_parent = Column(String(255), nullable=True, comment="Subtask parent task id")
     sub_task_title = Column(String(255), nullable=False, comment="subtask title")
     sub_task_content = Column(Text, nullable=False, comment="subtask content")
