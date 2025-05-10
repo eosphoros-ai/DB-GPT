@@ -16,6 +16,10 @@ class Document(BaseModel):
         default_factory=dict,
         description="metadata fields",
     )
+    chunks: List["Chunk"] = Field(
+        default_factory=list,
+        description="list of chunks",
+    )
 
     def set_content(self, content: str) -> None:
         """Set document content."""
