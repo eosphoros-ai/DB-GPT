@@ -1,5 +1,6 @@
 """Connection manager."""
 
+import json
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
@@ -58,6 +59,9 @@ class ConnectorManager(BaseComponent):
         from dbgpt_ext.datasource.rdbms.conn_oceanbase import (  # noqa: F401
             OceanBaseConnector,
         )
+
+        # 添加OracleConnector导入
+        from dbgpt_ext.datasource.rdbms.conn_oracle import OracleConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_postgresql import (  # noqa: F401
             PostgreSQLConnector,
         )
@@ -175,6 +179,19 @@ class ConnectorManager(BaseComponent):
         if db_type.is_file_db():
             db_path = db_config.get("db_path")
             return connect_instance.from_file_path(db_path)  # type: ignore
+        elif db_type.value() == "oracle":
+            logger.info("-------------Oracle Datasource------------")
+            host = db_config.get("db_host")
+            port = db_config.get("db_port")
+            user = db_config.get("db_user")
+            pwd = db_config.get("db_pwd")
+            extConfig = db_config.get("ext_config")
+            dbJson = json.loads(extConfig)
+            service_name = dbJson.get("service_name", None)
+            sid = (dbJson.get("sid", None),)
+            return connect_instance.from_uri_db(  # type: ignore
+                host=host, port=port, user=user, pwd=pwd, service_name=service_name
+            )
         else:
             db_host = db_config.get("db_host")
             db_port = db_config.get("db_port")

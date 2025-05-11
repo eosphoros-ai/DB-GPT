@@ -155,6 +155,9 @@ hf_kimi = [
     "blobfile",
     "transformers<4.51.3",
 ]
+hf_qwen3 = [
+    "transformers>=4.51.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -172,6 +175,10 @@ conflicts = [
     ],
     [
         { extra = "hf_glm4" },
+        { extra = "hf_kimi" },
+    ],
+    [
+        { extra = "hf_qwen3" },
         { extra = "hf_kimi" },
     ],
 ]

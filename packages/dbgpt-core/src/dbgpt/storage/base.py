@@ -231,3 +231,47 @@ class IndexStoreBase(ABC):
         return await blocking_func_to_async_no_executor(
             self.similar_search_with_scores, query, topk, score_threshold, filters
         )
+
+    def full_text_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Full text search in index database.
+
+        Args:
+            text(str): The query text.
+            topk(int): The number of similar documents to return.
+            filters(Optional[MetadataFilters]): metadata filters.
+        Return:
+            List[Chunk]: The similar documents.
+        """
+        raise NotImplementedError(
+            "Full text search is not supported in this index store."
+        )
+
+    async def afull_text_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Similar search in index database.
+
+        Args:
+            text(str): The query text.
+            topk(int): The number of similar documents to return.
+            filters(Optional[MetadataFilters]): metadata filters.
+        Return:
+            List[Chunk]: The similar documents.
+        """
+        return await blocking_func_to_async_no_executor(
+            self.full_text_search, text, topk, filters
+        )
+
+    def is_support_full_text_search(self) -> bool:
+        """Support full text search.
+
+        Args:
+            collection_name(str): collection name.
+        Return:
+            bool: The similar documents.
+        """
+        raise NotImplementedError(
+            "Full text search is not supported in this index store."
+        )
