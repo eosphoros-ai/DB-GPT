@@ -1,7 +1,8 @@
 import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import { VerticalAlignBottomOutlined, VerticalAlignTopOutlined } from '@ant-design/icons';
+import { ChatContentContext } from '@/pages/chat';
 import dynamic from 'next/dynamic';
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
@@ -12,6 +13,7 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
   const [isAtTop, setIsAtTop] = useState<boolean>(true);
   const [isAtBottom, setIsAtBottom] = useState<boolean>(false);
+  const { history } = useContext(ChatContentContext);
 
   useImperativeHandle(ref, () => {
     return scrollRef.current;
@@ -43,6 +45,24 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
     const isScrollable = scrollHeight > clientHeight;
     setShowScrollButtons(isScrollable);
   };
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+
+    const container = scrollRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    // dynamic calculate need scroll buffer
+    const buffer = Math.max(50, container.clientHeight * 0.2);
+
+    // auto scroll to bottom when new message is added
+    const isBottomPos = scrollTop + clientHeight >= scrollHeight - buffer;
+    if (isBottomPos) {
+      container.scrollTo({
+        top: scrollHeight - clientHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [history, history[history.length - 1]?.context]);
 
   useEffect(() => {
     if (scrollRef.current) {
