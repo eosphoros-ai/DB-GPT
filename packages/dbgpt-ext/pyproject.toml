@@ -77,7 +77,11 @@ storage_chromadb = [
     "onnxruntime>=1.14.1,<=1.18.1",
     "chromadb>=0.4.22"
     ]
-storage_elasticsearch = ["elasticsearch"]
+storage_elasticsearch = [
+    "elasticsearch==8.17.1",
+    "langchain==0.3.19",
+    "langchain-community==0.3.18",
+    ]
 storage_obvector = ["pyobvector"]
 
 file_oss = [
