@@ -80,7 +80,7 @@ async def _async_heartbeat_sender(
         try:
             await send_heartbeat_func(worker_run_data)
         except Exception as e:
-            logger.warn(f"Send heartbeat func error: {str(e)}")
+            logger.warning(f"Send heartbeat func error: {str(e)}")
         finally:
             await asyncio.sleep(heartbeat_interval)
 

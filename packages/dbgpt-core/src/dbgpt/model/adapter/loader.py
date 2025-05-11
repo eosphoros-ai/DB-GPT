@@ -25,13 +25,13 @@ def _hf_check_quantization(model_params: HFLLMDeployModelParameters):
     has_quantization = model_params.quantization is not None
     if has_quantization:
         if model_params.real_device != "cuda":
-            logger.warn(
+            logger.warning(
                 "8-bit quantization and 4-bit quantization just supported by cuda"
             )
             return False
         elif "chatglm" in model_name:
             if "int4" not in model_name:
-                logger.warn(
+                logger.warning(
                     "chatglm or chatglm2 not support quantization now, see: "
                     "https://github.com/huggingface/transformers/issues/25228"
                 )
@@ -368,7 +368,7 @@ def load_huggingface_quantization_model(
             tokenizer.bos_token_id = 1
             tokenizer.pad_token_id = 0
         except Exception as e:
-            logger.warn(f"{str(e)}")
+            logger.warning(f"{str(e)}")
     else:
         logger.info(
             "Current model type is not LlamaForCausalLM, load tokenizer by "

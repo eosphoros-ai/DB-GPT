@@ -145,7 +145,7 @@ class TiktokenProxyTokenizer(ProxyTokenizer):
             )
         except ImportError:
             self._support_encoding = False
-            logger.warn("tiktoken not installed, cannot count tokens")
+            logger.warning("tiktoken not installed, cannot count tokens")
             return None
         try:
             if not model_name:

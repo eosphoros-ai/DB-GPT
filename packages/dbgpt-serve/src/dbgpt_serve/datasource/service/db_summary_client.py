@@ -88,7 +88,7 @@ class DBSummaryClient:
                 self.db_summary_embedding(item["db_name"], item["db_type"])
             except Exception as e:
                 message = traceback.format_exc()
-                logger.warn(
+                logger.warning(
                     f"{item['db_name']}, {item['db_type']} summary error!{str(e)}, "
                     f"detail: {message}"
                 )
