@@ -1,5 +1,6 @@
 """Index store base class."""
 
+import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -182,9 +183,7 @@ class IndexStoreBase(ABC):
         for chunk_group in chunk_groups:
             tasks.append(self.aload_document(chunk_group))
 
-        import asyncio
-
-        results = await asyncio.gather(*tasks)
+        results = await self._run_tasks_with_concurrency(tasks, max_threads)
 
         ids = []
         loaded_cnt = 0
@@ -194,6 +193,14 @@ class IndexStoreBase(ABC):
             logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
 
         return ids
+
+    async def _run_tasks_with_concurrency(self, tasks, max_concurrent):
+        results = []
+        for i in range(0, len(tasks), max_concurrent):
+            batch = tasks[i : i + max_concurrent]
+            batch_results = await asyncio.gather(*batch, return_exceptions=True)
+            results.extend(batch_results)
+        return results
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
