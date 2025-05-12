@@ -617,6 +617,13 @@ class Qwen3Adapter(QwenAdapter):
                 " transformers package."
             )
 
+    def model_patch(self, deploy_model_params: LLMDeployModelParameters):
+        """Apply the monkey patch to moe model for high inference speed."""
+
+        from ..llm.monkey_patch import apply_qwen3_moe_monkey_patch
+
+        return apply_qwen3_moe_monkey_patch
+
     def is_reasoning_model(
         self,
         deploy_model_params: LLMDeployModelParameters,
