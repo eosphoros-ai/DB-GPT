@@ -84,17 +84,24 @@ export default function DocUploadForm(props: IProps) {
     } else if (docType !== 'DOCUMENT' && !docId) {
       return message.error('Upload failed, please re-upload.');
     }
+
+    let fileList = files
+    if (docType === 'DOCUMENT') {
+      const originFiles = Array.from(data.originFileObj.fileList)
+      fileList = fileList.filter((item: File) => originFiles.some(ofile => ofile.name == item.name))
+    }
+
     handleStepChange({
       label: 'forward',
       files:
         docType === 'DOCUMENT'
-          ? files
+          ? fileList
           : [
-              {
-                name: docName,
-                doc_id: docId || -1,
-              },
-            ],
+            {
+              name: docName,
+              doc_id: docId || -1,
+            },
+          ],
     });
   };
 
