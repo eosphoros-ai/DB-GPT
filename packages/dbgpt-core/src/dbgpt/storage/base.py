@@ -1,5 +1,6 @@
 """Index store base class."""
 
+import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -182,9 +183,7 @@ class IndexStoreBase(ABC):
         for chunk_group in chunk_groups:
             tasks.append(self.aload_document(chunk_group))
 
-        import asyncio
-
-        results = await asyncio.gather(*tasks)
+        results = await self._run_tasks_with_concurrency(tasks, max_threads)
 
         ids = []
         loaded_cnt = 0
@@ -194,6 +193,14 @@ class IndexStoreBase(ABC):
             logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
 
         return ids
+
+    async def _run_tasks_with_concurrency(self, tasks, max_concurrent):
+        results = []
+        for i in range(0, len(tasks), max_concurrent):
+            batch = tasks[i : i + max_concurrent]
+            batch_results = await asyncio.gather(*batch, return_exceptions=True)
+            results.extend(batch_results)
+        return results
 
     def similar_search(
         self, text: str, topk: int, filters: Optional[MetadataFilters] = None
@@ -230,4 +237,48 @@ class IndexStoreBase(ABC):
         """Async similar_search_with_score in vector database."""
         return await blocking_func_to_async_no_executor(
             self.similar_search_with_scores, query, topk, score_threshold, filters
+        )
+
+    def full_text_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Full text search in index database.
+
+        Args:
+            text(str): The query text.
+            topk(int): The number of similar documents to return.
+            filters(Optional[MetadataFilters]): metadata filters.
+        Return:
+            List[Chunk]: The similar documents.
+        """
+        raise NotImplementedError(
+            "Full text search is not supported in this index store."
+        )
+
+    async def afull_text_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Similar search in index database.
+
+        Args:
+            text(str): The query text.
+            topk(int): The number of similar documents to return.
+            filters(Optional[MetadataFilters]): metadata filters.
+        Return:
+            List[Chunk]: The similar documents.
+        """
+        return await blocking_func_to_async_no_executor(
+            self.full_text_search, text, topk, filters
+        )
+
+    def is_support_full_text_search(self) -> bool:
+        """Support full text search.
+
+        Args:
+            collection_name(str): collection name.
+        Return:
+            bool: The similar documents.
+        """
+        raise NotImplementedError(
+            "Full text search is not supported in this index store."
         )

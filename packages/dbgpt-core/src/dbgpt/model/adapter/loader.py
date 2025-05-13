@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from typing import Any, Dict, Optional, cast
+from typing import Any, Callable, Dict, Optional, cast
 
 from dbgpt.core.interface.parameter import LLMDeployModelParameters
 from dbgpt.model.adapter.base import LLMModelAdapter
@@ -146,8 +146,16 @@ def huggingface_loader(
     if model_params.attn_implementation:
         kwargs["attn_implementation"] = model_params.attn_implementation
 
+    model_patch = llm_adapter.model_patch(model_params)
+
     model, tokenizer = _hf_try_load_default_quantization_model(
-        model_path, llm_adapter, device, num_gpus, model_params, kwargs
+        model_path,
+        llm_adapter,
+        device,
+        num_gpus,
+        model_params,
+        kwargs,
+        model_patch=model_patch,
     )
     if model:
         return model, tokenizer
@@ -176,7 +184,7 @@ def huggingface_loader(
         compress_module(model, device)
 
     return _hf_handle_model_and_tokenizer(
-        model, tokenizer, device, num_gpus, model_params
+        model, tokenizer, device, num_gpus, model_params, model_patch=model_patch
     )
 
 
@@ -187,6 +195,7 @@ def _hf_try_load_default_quantization_model(
     num_gpus: int,
     model_params: HFLLMDeployModelParameters,
     kwargs: Dict[str, Any],
+    model_patch: Optional[Callable[[Any], Any]] = None,
 ):
     """Try load default quantization model(Support by huggingface default)"""
     cloned_kwargs = {k: v for k, v in kwargs.items()}
@@ -216,7 +225,13 @@ def _hf_try_load_default_quantization_model(
         if model:
             logger.info(f"Load default quantization model {model_name} success")
             return _hf_handle_model_and_tokenizer(
-                model, tokenizer, device, num_gpus, model_params, to=False
+                model,
+                tokenizer,
+                device,
+                num_gpus,
+                model_params,
+                to=False,
+                model_patch=model_patch,
             )
         return None, None
     except Exception as e:
@@ -233,6 +248,7 @@ def _hf_handle_model_and_tokenizer(
     num_gpus: int,
     model_params: HFLLMDeployModelParameters,
     to: bool = True,
+    model_patch: Optional[Callable[[Any], Any]] = None,
 ):
     if (device == "cuda" and num_gpus == 1) or device == "mps" and tokenizer:
         # TODO: Check cpu_offloading
@@ -243,6 +259,11 @@ def _hf_handle_model_and_tokenizer(
             pass
         except AttributeError:
             pass
+    try:
+        if model_patch:
+            model = model_patch(model)
+    except Exception:
+        pass
     if model_params.verbose:
         print(model)
     return model, tokenizer

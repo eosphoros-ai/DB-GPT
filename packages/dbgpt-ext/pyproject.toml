@@ -47,6 +47,10 @@ datasource_mysql = [
     # libpq-dev and libmysqlclient-dev first.
     "mysqlclient==2.1.0",
 ]
+datasource_oracle = [
+    "oracledb==3.1.0",  # use python-oracledb，new driver for Oracle
+]
+
 datasource_postgres = [
     # "psycopg2", # In production, you can install psycopg2 instead of psycopg2-binary
     "psycopg2-binary",

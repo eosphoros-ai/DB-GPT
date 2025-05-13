@@ -164,7 +164,11 @@ class Knowledge(ABC):
         documents = self._load()
         return self._postprocess(documents)
 
-    def extract(self, documents: List[Document]) -> List[Document]:
+    def extract(
+        self,
+        documents: List[Document],
+        chunk_parameters: Optional[Any] = None,
+    ) -> List[Document]:
         """Extract knowledge from text."""
         return documents
 

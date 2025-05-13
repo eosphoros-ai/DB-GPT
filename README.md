@@ -169,6 +169,11 @@ At present, we have introduced several key features to showcase our current capa
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
   - News
+    - 🔥🔥🔥  [Qwen3-235B-A22B](https://huggingface.co/Qwen/Qwen3-235B-A22B)
+    - 🔥🔥🔥  [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+    - 🔥🔥🔥  [Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B)
+    - 🔥🔥🔥  [GLM-Z1-32B-0414](https://huggingface.co/THUDM/GLM-Z1-32B-0414)
+    - 🔥🔥🔥  [GLM-4-32B-0414](https://huggingface.co/THUDM/GLM-4-32B-0414)
     - 🔥🔥🔥  [QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
     - 🔥🔥🔥  [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1)
     - 🔥🔥🔥  [DeepSeek-V3](https://huggingface.co/deepseek-ai/DeepSeek-V3)
