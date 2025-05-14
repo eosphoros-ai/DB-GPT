@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/eosphoros-ai-db-gpt-badge.png)](https://mseep.ai/app/eosphoros-ai-db-gpt)
+
 # DB-GPT: AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents
 
 <p align="left">
