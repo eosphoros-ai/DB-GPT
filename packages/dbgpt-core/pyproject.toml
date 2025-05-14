@@ -118,8 +118,8 @@ llama_cpp = [
     "llama-cpp-python",
 ]
 llama_cpp_server = [
-    "llama-cpp-server-py-core>=0.1.3",
-    "llama-cpp-server-py>=0.1.3",
+    "llama-cpp-server-py-core>=0.1.4",
+    "llama-cpp-server-py>=0.1.4",
 ]
 proxy_ollama = ["ollama"]
 proxy_zhipuai = ["zhipuai>=2.1.5"]
