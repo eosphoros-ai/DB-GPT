@@ -216,7 +216,7 @@ class ChatPromptTemplate(BasePromptTemplate):
                         "You are a helpful AI assistant."
                     ),
                     MessagesPlaceholder(variable_name="chat_history"),
-                    HumanPromptTemplate.from_template("{question}"),
+                    HumanPromptTemplate.from_template("{input}"),
                 ]
             )
     """
