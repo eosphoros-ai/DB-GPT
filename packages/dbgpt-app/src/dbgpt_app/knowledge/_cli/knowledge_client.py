@@ -58,7 +58,7 @@ class KnowledgeApiClient(ApiClient):
             return self._post("/knowledge/space/add", data=request)
         except Exception as e:
             if "have already named" in str(e):
-                logger.warn(f"you have already named {request.name}")
+                logger.warning(f"you have already named {request.name}")
             else:
                 raise e
 
@@ -143,7 +143,7 @@ def knowledge_init(
                 )
             except Exception as ex:
                 if overwrite and "have already named" in str(ex):
-                    logger.warn(
+                    logger.warning(
                         f"Document {filename} already exist in space {space.name}, "
                         "overwrite it"
                     )
@@ -172,7 +172,7 @@ def knowledge_init(
             return doc_id
         except Exception as e:
             if skip_wrong_doc:
-                logger.warn(f"Upload {filename} to {space.name} failed: {str(e)}")
+                logger.warning(f"Upload {filename} to {space.name} failed: {str(e)}")
             else:
                 raise e
 
@@ -195,7 +195,7 @@ def knowledge_init(
         doc_ids = [r.result() for r in as_completed(tasks)]
         doc_ids = list(filter(lambda x: x, doc_ids))
         if not doc_ids:
-            logger.warn("Warning: no document to sync")
+            logger.warning("Warning: no document to sync")
             return
 
 
@@ -374,7 +374,7 @@ def knowledge_delete(
                 .lower()
             )
             if user_input != "yes":
-                logger.warn("Delete operation cancelled.")
+                logger.warning("Delete operation cancelled.")
                 return
         client.space_delete(space)
         logger.info("Delete the whole knowledge space successfully!")
@@ -390,7 +390,7 @@ def knowledge_delete(
                 .lower()
             )
             if user_input != "yes":
-                logger.warn("Delete operation cancelled.")
+                logger.warning("Delete operation cancelled.")
                 return
         client.document_delete(space_name, KnowledgeDocumentRequest(doc_name=doc_name))
         logger.info(

@@ -610,7 +610,7 @@ class BaseChat(ABC):
         return prompt_define_response
 
     def _blocking_stream_call(self):
-        logger.warn(
+        logger.warning(
             "_blocking_stream_call is only temporarily used in webserver and will be "
             "deleted soon, please use stream_call to replace it for higher performance"
         )

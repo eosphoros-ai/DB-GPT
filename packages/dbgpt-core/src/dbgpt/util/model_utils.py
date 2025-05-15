@@ -12,7 +12,7 @@ def _clear_model_cache(device="cuda"):
 
         _clear_torch_cache(device)
     except ImportError:
-        logger.warn("Torch not installed, skip clear torch cache")
+        logger.warning("Torch not installed, skip clear torch cache")
     # TODO clear other cache
 
 
@@ -30,7 +30,7 @@ def _clear_torch_cache(device="cuda"):
 
                 empty_cache()
             except Exception as e:
-                logger.warn(f"Clear mps torch cache error, {str(e)}")
+                logger.warning(f"Clear mps torch cache error, {str(e)}")
         elif (hasattr(backends, "cuda") and backends.cuda.is_built()) or torch.has_cuda:
             device_count = torch.cuda.device_count()
             for device_id in range(device_count):
