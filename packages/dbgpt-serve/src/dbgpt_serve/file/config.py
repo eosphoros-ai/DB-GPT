@@ -84,7 +84,14 @@ class ServeConfig(BaseServeConfig):
     def get_node_address(self) -> str:
         """Get the node address"""
         file_server_host = self.host
-        if not file_server_host:
+        if (
+            not file_server_host
+            or file_server_host == "0.0.0.0"
+            or file_server_host == "127.0.0.1"
+            or file_server_host == "localhost"
+            or file_server_host == "::1"
+            or file_server_host == "::"
+        ):
             from dbgpt.util.net_utils import _get_ip_address
 
             file_server_host = _get_ip_address()

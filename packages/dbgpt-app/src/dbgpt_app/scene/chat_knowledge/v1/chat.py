@@ -140,7 +140,9 @@ class ChatKnowledge(BaseChat):
             )
         from dbgpt.util.chat_util import run_async_tasks
 
-        tasks = [self.execute_similar_search(self.current_user_input)]
+        user_input = self.current_user_input.last_text
+
+        tasks = [self.execute_similar_search(user_input)]
         candidates_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
         candidates_with_scores = reduce(lambda x, y: x + y, candidates_with_scores)
         self.chunks_with_score = []
@@ -168,7 +170,7 @@ class ChatKnowledge(BaseChat):
         )
         input_values = {
             "context": context,
-            "question": self.current_user_input,
+            "question": user_input,
             "relations": self.relations,
         }
         return input_values

@@ -5,8 +5,10 @@ import json
 import logging
 from asyncio import Queue
 from collections import defaultdict
+from concurrent.futures import Executor, ThreadPoolExecutor
 from typing import Dict, List, Optional, Union
 
+from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.vis.client import VisAgentMessages, VisAgentPlans, VisAppLink, vis_client
 
 from ...action.base import ActionOutput
@@ -26,6 +28,7 @@ class GptsMemory:
         self,
         plans_memory: Optional[GptsPlansMemory] = None,
         message_memory: Optional[GptsMessageMemory] = None,
+        executor: Optional[Executor] = None,
     ):
         """Create a memory to store plans and messages."""
         self._plans_memory: GptsPlansMemory = (
@@ -34,7 +37,7 @@ class GptsMemory:
         self._message_memory: GptsMessageMemory = (
             message_memory if message_memory is not None else DefaultGptsMessageMemory()
         )
-
+        self._executor = executor or ThreadPoolExecutor(max_workers=2)
         self.messages_cache: defaultdict = defaultdict(list)
         self.channels: defaultdict = defaultdict(Queue)
         self.enable_vis_map: defaultdict = defaultdict(bool)
@@ -118,10 +121,10 @@ class GptsMemory:
 
     async def append_message(self, conv_id: str, message: GptsMessage):
         """Append message."""
-        # 中期记忆
         self.messages_cache[conv_id].append(message)
-        # 长期记忆
-        self.message_memory.append(message)
+        await blocking_func_to_async(
+            self._executor, self.message_memory.append, message
+        )
 
         # 消息记忆后发布消息
         await self.push_message(conv_id)
@@ -130,7 +133,9 @@ class GptsMemory:
         """Get message by conv_id."""
         messages = self.messages_cache[conv_id]
         if not messages:
-            messages = self.message_memory.get_by_conv_id(conv_id)
+            messages = await blocking_func_to_async(
+                self._executor, self.message_memory.get_by_conv_id, conv_id
+            )
         return messages
 
     async def get_agent_messages(
@@ -144,28 +149,34 @@ class GptsMemory:
                 result.append(gpt_message)
         return result
 
-    async def get_agent_history_memory(self, conv_id: str, agent_role: str) -> List:
+    async def get_agent_history_memory(
+        self, conv_id: str, agent_role: str
+    ) -> List[ActionOutput]:
         """Get agent history memory."""
-        gpt_messages = self.messages_cache[conv_id]
 
-        agent_messages = []
-        for gpt_message in gpt_messages:
-            if gpt_message.sender == agent_role or gpt_message.receiver == agent_role:
-                agent_messages.append(gpt_message)
-
-        new_list = [
-            {
-                "question": agent_messages[i].content,
-                "ai_message": agent_messages[i + 1].content,
-                "action_output": ActionOutput.from_dict(
+        agent_messages = await blocking_func_to_async(
+            self._executor, self.message_memory.get_by_agent, conv_id, agent_role
+        )
+        new_list = []
+        for i in range(0, len(agent_messages), 2):
+            if i + 1 >= len(agent_messages):
+                break
+            action_report = None
+            if agent_messages[i + 1].action_report:
+                action_report = ActionOutput.from_dict(
                     json.loads(agent_messages[i + 1].action_report)
-                ),
-                "check_pass": agent_messages[i + 1].is_success,
-            }
-            for i in range(0, len(agent_messages), 2)
-        ]
+                )
+            new_list.append(
+                {
+                    "question": agent_messages[i].content,
+                    "ai_message": agent_messages[i + 1].content,
+                    "action_output": action_report,
+                    "check_pass": agent_messages[i + 1].is_success,
+                }
+            )
 
-        return new_list
+        # Just use the action_output now
+        return [m["action_output"] for m in new_list if m["action_output"]]
 
     async def _message_group_vis_build(self, message_group, vis_items: list):
         num: int = 0
@@ -260,7 +271,9 @@ class GptsMemory:
         if messages_cache and len(messages_cache) > 0:
             messages = messages_cache
         else:
-            messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
+            messages = await blocking_func_to_async(
+                self._executor, self.message_memory.get_by_conv_id, conv_id=conv_id
+            )
 
         simple_message_list = []
         for message in messages:
@@ -299,7 +312,9 @@ class GptsMemory:
                 )
                 messages = messages_cache[start_round:]
         else:
-            messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
+            messages = await blocking_func_to_async(
+                self._executor, self.message_memory.get_by_conv_id, conv_id=conv_id
+            )
 
         # VIS消息组装
         temp_group: Dict = {}

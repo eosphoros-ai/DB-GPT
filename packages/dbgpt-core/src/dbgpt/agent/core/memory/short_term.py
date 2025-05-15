@@ -26,7 +26,7 @@ class EnhancedShortTermMemory(ShortTermMemory[T]):
         self,
         embeddings: Embeddings,
         executor: Executor,
-        buffer_size: int = 2,
+        buffer_size: int = 10,
         enhance_similarity_threshold: float = 0.7,
         enhance_threshold: int = 3,
     ):
@@ -74,29 +74,31 @@ class EnhancedShortTermMemory(ShortTermMemory[T]):
             self._embeddings.embed_documents,
         )
         memory_fragment.update_embeddings(memory_fragment_embeddings)
-        for idx, memory_embedding in enumerate(self.short_embeddings):
-            similarity = await blocking_func_to_async(
-                self._executor,
-                cosine_similarity,
-                memory_embedding,
-                memory_fragment_embeddings,
-            )
-            # Sigmoid probability, transform similarity to [0, 1]
-            sigmoid_prob: float = await blocking_func_to_async(
-                self._executor, sigmoid_function, similarity
-            )
-            if (
-                sigmoid_prob >= self.enhance_similarity_threshold
-                and random.random() < sigmoid_prob
-            ):
-                self.enhance_cnt[idx] += 1
-                self.enhance_memories[idx].append(memory_fragment)
-        discard_memories = await self.transfer_to_long_term(memory_fragment)
-        if op == WriteOperation.ADD:
-            self._fragments.append(memory_fragment)
-            self.short_embeddings.append(memory_fragment_embeddings)
-            await self.handle_overflow(self._fragments)
-        return discard_memories
+
+        async with self._lock:
+            for idx, memory_embedding in enumerate(self.short_embeddings):
+                similarity = await blocking_func_to_async(
+                    self._executor,
+                    cosine_similarity,
+                    memory_embedding,
+                    memory_fragment_embeddings,
+                )
+                # Sigmoid probability, transform similarity to [0, 1]
+                sigmoid_prob: float = await blocking_func_to_async(
+                    self._executor, sigmoid_function, similarity
+                )
+                if (
+                    sigmoid_prob >= self.enhance_similarity_threshold
+                    and random.random() < sigmoid_prob
+                ):
+                    self.enhance_cnt[idx] += 1
+                    self.enhance_memories[idx].append(memory_fragment)
+            discard_memories = await self.transfer_to_long_term(memory_fragment)
+            if op == WriteOperation.ADD:
+                self._fragments.append(memory_fragment)
+                self.short_embeddings.append(memory_fragment_embeddings)
+                await self.handle_overflow(self._fragments)
+            return discard_memories
 
     @mutable
     async def transfer_to_long_term(
@@ -163,11 +165,11 @@ class EnhancedShortTermMemory(ShortTermMemory[T]):
 
         Discard the least important memory fragment if the buffer size exceeds.
         """
-        if len(self.short_term_memories) > self._buffer_size:
+        discarded_memories = []
+        if len(self._fragments) > self._buffer_size:
             id2fragments: Dict[int, Dict] = {}
-            for idx in range(len(self.short_term_memories) - 1):
-                # Not discard the last one
-                memory = self.short_term_memories[idx]
+            for idx in range(len(self._fragments) - 1):
+                memory = self._fragments[idx]
                 id2fragments[idx] = {
                     "enhance_count": self.enhance_cnt[idx],
                     "importance": memory.importance,
@@ -180,26 +182,42 @@ class EnhancedShortTermMemory(ShortTermMemory[T]):
                     id2fragments[x]["enhance_count"],
                 ),
             )
+            # Get the ID of the memory fragment to be popped
             pop_id = sorted_ids[0]
-            pop_raw_observation = self.short_term_memories[pop_id].raw_observation
-            self.enhance_cnt.pop(pop_id)
-            self.enhance_cnt.append(0)
-            self.enhance_memories.pop(pop_id)
-            self.enhance_memories.append([])
-
-            discard_memory = self._fragments.pop(pop_id)
+            pop_memory = self._fragments[pop_id]
+            pop_raw_observation = pop_memory.raw_observation
+            # Save the discarded memory
+            discarded_memory = self._fragments.pop(pop_id)
+            discarded_memories.append(discarded_memory)
+            # Remove the corresponding embedding vector
             self.short_embeddings.pop(pop_id)
 
-            # remove the discard_memory from other short-term memory's enhanced list
-            for idx in range(len(self.short_term_memories)):
-                current_enhance_memories: List[T] = self.enhance_memories[idx]
-                to_remove_idx = []
-                for i, ehf in enumerate(current_enhance_memories):
-                    if ehf.raw_observation == pop_raw_observation:
-                        to_remove_idx.append(i)
-                for i in to_remove_idx:
-                    current_enhance_memories.pop(i)
-                self.enhance_cnt[idx] -= len(to_remove_idx)
+            # Reorganize enhance count and enhance memories
+            new_enhance_memories = [[] for _ in range(self._buffer_size)]
+            new_enhance_cnt = [0 for _ in range(self._buffer_size)]
+            # Copy and adjust enhanced memory and count
+            current_idx = 0
+            for idx in range(len(self._fragments)):
+                if idx == pop_id:
+                    continue  # Skip the popped memory
 
-            return memory_fragments, [discard_memory]
-        return memory_fragments, []
+                # Copy the enhanced memory list but remove any items matching the
+                # popped memory
+                current_memories = []
+                removed_count = 0
+
+                for ehf in self.enhance_memories[idx]:
+                    if ehf.raw_observation != pop_raw_observation:
+                        current_memories.append(ehf)
+                    else:
+                        removed_count += 1
+
+                # Update to new array
+                new_enhance_memories[current_idx] = current_memories
+                new_enhance_cnt[current_idx] = self.enhance_cnt[idx] - removed_count
+                current_idx += 1
+            # Update enhanced memories and counts
+            self.enhance_memories = new_enhance_memories
+            self.enhance_cnt = new_enhance_cnt
+
+        return memory_fragments, discarded_memories

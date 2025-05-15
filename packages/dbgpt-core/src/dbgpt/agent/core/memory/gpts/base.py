@@ -258,3 +258,11 @@ class GptsMessageMemory(ABC):
         Returns:
             GptsMessage: The last message in the conversation
         """
+
+    @abstractmethod
+    def delete_by_conv_id(self, conv_id: str) -> None:
+        """Delete messages by conversation id.
+
+        Args:
+            conv_id(str): Conversation id
+        """

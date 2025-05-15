@@ -32,18 +32,11 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
         message.warning(i18n.t('no_context_tip'));
         return;
       }
-
       const params = {
         ...data,
         conv_uid: chatId,
         app_code,
       };
-
-      //       if (!params.conv_uid) {
-      //         message.error('conv_uid 不存在，请刷新后重试');
-      //         return;
-      //       }
-
       try {
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',

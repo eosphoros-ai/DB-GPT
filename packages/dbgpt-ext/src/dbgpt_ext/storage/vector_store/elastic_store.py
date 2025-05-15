@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -157,17 +157,21 @@ class ElasticStore(VectorStoreBase):
         vector_store_config: ElasticsearchStoreConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a ElasticsearchStore instance.
 
         Args:
             vector_store_config (ElasticsearchStoreConfig): ElasticsearchStore config.
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         connect_kwargs = {}
-        elasticsearch_vector_config = vector_store_config.dict()
+        elasticsearch_vector_config = vector_store_config.to_dict()
         self.uri = os.getenv(
             "ELASTICSEARCH_URL", "localhost"
         ) or elasticsearch_vector_config.get("uri")
@@ -224,23 +228,20 @@ class ElasticStore(VectorStoreBase):
                 "`pip install elasticsearch`."
             )
         try:
-            if self.username != "" and self.password != "":
+            # The condition should check for both None and empty string ("")
+            # When reading non-existent keys from env/config files,
+            # the value will be None
+            if self.username and self.password:
                 self.es_client_python = Elasticsearch(
                     f"http://{self.uri}:{self.port}",
                     basic_auth=(self.username, self.password),
                 )
                 # create es index
-                if not self.vector_name_exists():
-                    self.es_client_python.indices.create(
-                        index=self.index_name, body=self.index_settings
-                    )
+                self.create_collection(collection_name=self.index_name)
             else:
                 logger.warning("ElasticSearch not set username and password")
                 self.es_client_python = Elasticsearch(f"http://{self.uri}:{self.port}")
-                if not self.vector_name_exists():
-                    self.es_client_python.indices.create(
-                        index=self.index_name, body=self.index_settings
-                    )
+                self.create_collection(collection_name=self.index_name)
         except ConnectionError:
             logger.error("ElasticSearch connection failed")
         except Exception as e:
@@ -248,7 +249,7 @@ class ElasticStore(VectorStoreBase):
 
         # create es index
         try:
-            if self.username != "" and self.password != "":
+            if self.username and self.password:
                 self.db_init = ElasticsearchStore(
                     es_url=f"http://{self.uri}:{self.port}",
                     index_name=self.index_name,
@@ -275,6 +276,13 @@ class ElasticStore(VectorStoreBase):
     def get_config(self) -> ElasticsearchStoreConfig:
         """Get the vector store config."""
         return self._vector_store_config
+
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
+        if not self.vector_name_exists():
+            self.es_client_python.indices.create(
+                index=collection_name, body=self.index_settings
+            )
+        return True
 
     def load_document(
         self,

@@ -45,7 +45,7 @@
 🚀 **データ3.0時代には、モデルとデータベースを基盤として、企業や開発者がより少ないコードで独自のアプリケーションを構築できます。**
 
 ### AIネイティブデータアプリ
-- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
+- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
   - [サポート MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
   - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
   - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
@@ -162,6 +162,11 @@ DB-GPTのアーキテクチャは以下の図に示されています：
   私たちは、LLaMA/LLaMA2、Baichuan、ChatGLM、Wenxin、Tongyi、Zhipuなど、オープンソースおよびAPIエージェントからの数十の大規模言語モデル（LLM）を含む幅広いモデルをサポートしています。
 
   - ニュース
+    - 🔥🔥🔥  [Qwen3-235B-A22B](https://huggingface.co/Qwen/Qwen3-235B-A22B)
+    - 🔥🔥🔥  [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+    - 🔥🔥🔥  [Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B)
+    - 🔥🔥🔥  [GLM-Z1-32B-0414](https://huggingface.co/THUDM/GLM-Z1-32B-0414)
+    - 🔥🔥🔥  [GLM-4-32B-0414](https://huggingface.co/THUDM/GLM-4-32B-0414)
     - 🔥🔥🔥  [QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
     - 🔥🔥🔥  [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1)
     - 🔥🔥🔥  [DeepSeek-V3](https://huggingface.co/deepseek-ai/DeepSeek-V3)

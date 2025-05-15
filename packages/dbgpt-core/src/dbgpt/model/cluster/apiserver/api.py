@@ -5,6 +5,7 @@ Adapted from https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/openai_
 """
 
 import asyncio
+import json
 import logging
 import os
 from typing import Any, Dict, Generator, List, Optional
@@ -50,9 +51,13 @@ from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
 from dbgpt.util.chat_util import transform_to_sse
 from dbgpt.util.fastapi import create_app
-from dbgpt.util.tracer import initialize_tracer, root_tracer
+from dbgpt.util.tracer import initialize_tracer, root_tracer, trace
 from dbgpt.util.tracer.tracer_impl import TracerParameters
-from dbgpt.util.utils import LoggingParameters, setup_logging
+from dbgpt.util.utils import (
+    LoggingParameters,
+    logging_str_to_uvicorn_level,
+    setup_logging,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -319,28 +324,49 @@ class APIServer(BaseComponent):
             )
             yield transform_to_sse(chunk)
 
+            delta_text = ""
             previous_text = ""
+            thinking_text = ""
+            previous_thinking_text = ""
+            full_text = ""
+
+            span = root_tracer.start_span(
+                "API.chat_completion_stream_generator",
+                metadata={
+                    "model": model_name,
+                    "params": json.dumps(params, ensure_ascii=False),
+                },
+            )
+
             async for model_output in worker_manager.generate_stream(params):
                 model_output: ModelOutput = model_output
                 if model_output.error_code != 0:
                     yield transform_to_sse(model_output.to_dict())
                     yield transform_to_sse("[DONE]")
                     return
-                decoded_unicode = model_output.text.replace("\ufffd", "")
-                delta_text = decoded_unicode[len(previous_text) :]
-                previous_text = (
-                    decoded_unicode
-                    if len(decoded_unicode) > len(previous_text)
-                    else previous_text
-                )
+                if model_output.has_text:
+                    full_text = model_output.text
+                    decoded_unicode = model_output.text.replace("\ufffd", "")
+                    delta_text = decoded_unicode[len(previous_text) :]
+                    previous_text = (
+                        decoded_unicode
+                        if len(decoded_unicode) > len(previous_text)
+                        else previous_text
+                    )
+                if model_output.has_thinking:
+                    decoded_unicode = model_output.thinking_text.replace("\ufffd", "")
+                    thinking_text = decoded_unicode[len(previous_thinking_text) :]
+                    previous_thinking_text = (
+                        decoded_unicode
+                        if len(decoded_unicode) > len(previous_thinking_text)
+                        else previous_thinking_text
+                    )
 
-                if len(delta_text) == 0:
+                if not delta_text:
                     delta_text = None
-                choice_data = ChatCompletionResponseStreamChoice(
-                    index=i,
-                    delta=DeltaMessage(content=delta_text),
-                    finish_reason=model_output.finish_reason,
-                )
+                if not thinking_text:
+                    thinking_text = None
+
                 has_usage = False
                 if model_output.usage:
                     curr_usage = UsageInfo.model_validate(model_output.usage)
@@ -353,17 +379,29 @@ class APIServer(BaseComponent):
                         + curr_usage.completion_tokens,
                     )
                 else:
-                    has_usage = False
                     usage = UsageInfo()
-                chunk = ChatCompletionStreamResponse(
-                    id=id, choices=[choice_data], model=model_name, usage=usage
+                choice_data = ChatCompletionResponseStreamChoice(
+                    index=i,
+                    delta=DeltaMessage(
+                        content=delta_text, reasoning_content=thinking_text
+                    ),
+                    finish_reason=model_output.finish_reason,
                 )
-                if delta_text is None:
+                chunk = ChatCompletionStreamResponse(
+                    id=id, choices=[choice_data], model=model_name or "", usage=usage
+                )
+                if delta_text is None and thinking_text is None:
                     if model_output.finish_reason is not None:
                         finish_stream_events.append(chunk)
                     if not has_usage:
                         continue
+
                 yield transform_to_sse(chunk)
+            span.end(
+                metadata={
+                    "full_text": full_text,
+                }
+            )
 
         # There is not "content" field in the last delta message, so exclude_none to
         # exclude field "content".
@@ -371,6 +409,7 @@ class APIServer(BaseComponent):
             yield transform_to_sse(finish_chunk)
         yield transform_to_sse("[DONE]")
 
+    @trace()
     async def chat_completion_generate(
         self, model_name: str, params: Dict[str, Any], n: int
     ) -> ChatCompletionResponse:
@@ -398,7 +437,11 @@ class APIServer(BaseComponent):
             choices.append(
                 ChatCompletionResponseChoice(
                     index=i,
-                    message=ChatMessage(role="assistant", content=model_output.text),
+                    message=ChatMessage(
+                        role="assistant",
+                        content=model_output.text,
+                        reasoning_content=model_output.thinking_text,
+                    ),
                     finish_reason=model_output.finish_reason or "stop",
                 )
             )
@@ -564,6 +607,7 @@ class APIServer(BaseComponent):
             "input": texts,
             "model": model,
             "query": query,
+            "worker_type": WorkerType.RERANKER.value,
         }
         scores = await worker_manager.embeddings(params)
         return scores[0]
@@ -737,13 +781,16 @@ async def create_relevance(
     request: RelevanceRequest, api_server: APIServer = Depends(get_api_server)
 ):
     """Generate relevance scores for a query and a list of documents."""
-    await api_server.get_model_instances_or_raise(request.model, worker_type="text2vec")
+    await api_server.get_model_instances_or_raise(
+        request.model, worker_type=WorkerType.RERANKER.value
+    )
 
     with root_tracer.start_span(
         "dbgpt.model.apiserver.generate_relevance",
         metadata={
             "model": request.model,
             "query": request.query,
+            "worker_type": WorkerType.RERANKER.value,
         },
     ):
         scores = await api_server.relevance_generate(
@@ -837,7 +884,12 @@ def initialize_apiserver(
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request, exc):
-        return create_error_response(ErrorCode.VALIDATION_TYPE_ERROR, str(exc))
+        message = ""
+        for error in exc.errors():
+            loc = ".".join(list(map(str, error.get("loc"))))
+            message += loc + ":" + error.get("msg") + ";"
+        logger.warning(message)
+        return create_error_response(ErrorCode.VALIDATION_TYPE_ERROR, message)
 
     _initialize_all(apiserver_params.controller_addr, system_app)
 
@@ -852,11 +904,14 @@ def initialize_apiserver(
             allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
+        log_level = "info"
+        if log_config:
+            log_level = logging_str_to_uvicorn_level(log_config.level)
         uvicorn.run(
             cors_app,
             host=apiserver_params.host,
             port=apiserver_params.port,
-            log_level="info",
+            log_level=log_level,
         )
 
 

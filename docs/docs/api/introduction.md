@@ -2,7 +2,7 @@
 
 This is the introduction to the DB-GPT API documentation. You can interact with the API through HTTP requests from any language, via our official Python Client bindings.
 
-# Authentication
+## Authentication
 The DB-GPT API uses API keys for authentication. Visit your API Keys page to retrieve the API key you'll use in your requests.
 
 Production requests must be routed through your own backend server where your API key can be securely loaded from an environment variable or key management service.
@@ -34,10 +34,18 @@ API_KEYS - The list of API keys that are allowed to access the API. Each of the 
 API_KEYS=dbgpt
 ```
 
-## Installation
+## Using the DB-GPT official Python Client
+
 If you use Python, you should install the official DB-GPT Client package from PyPI:
 
 ```bash
-pip install "dbgpt[client]>=0.5.2"
+pip install "dbgpt-client>=0.7.1rc0"
 ```
 
+## Using the OpenAI Python SDK
+
+In some chat cases, you can use the OpenAI Python SDK to interact with the DB-GPT API. The DB-GPT API is compatible with the OpenAI API.
+
+```bash
+pip install openai
+```

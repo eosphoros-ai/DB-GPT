@@ -67,13 +67,14 @@ class ChatDashboard(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
 
+        user_input = self.current_user_input.last_text
         client = DBSummaryClient(system_app=self.system_app)
         try:
             table_infos = await blocking_func_to_async(
                 self._executor,
                 client.get_db_summary,
                 self.db_name,
-                self.current_user_input,
+                user_input,
                 self.curr_config.schema_retrieve_top_k,
             )
             logger.info(f"Retrieved table info: {table_infos}")
@@ -89,7 +90,7 @@ class ChatDashboard(BaseChat):
                 table_infos = table_infos[: self.curr_config.schema_max_tokens]
 
         input_values = {
-            "input": self.current_user_input,
+            "input": user_input,
             "dialect": self.database.dialect,
             "table_info": table_infos,
             "supported_chat_type": self.dashboard_template["supported_chart_type"],

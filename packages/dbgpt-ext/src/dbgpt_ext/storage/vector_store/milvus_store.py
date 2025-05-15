@@ -19,6 +19,7 @@ from dbgpt.storage.vector_store.base import (
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util import string_utils
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.json_utils import serialize
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +198,8 @@ class MilvusStore(VectorStoreBase):
         vector_store_config: MilvusVectorConfig,
         name: Optional[str],
         embedding_fn: Optional[Embeddings] = None,
+        max_chunks_once_load: Optional[int] = None,
+        max_threads: Optional[int] = None,
     ) -> None:
         """Create a MilvusStore instance.
 
@@ -204,7 +207,9 @@ class MilvusStore(VectorStoreBase):
             vector_store_config (MilvusVectorConfig): MilvusStore config.
             refer to https://milvus.io/docs/v2.0.x/manage_connection.md
         """
-        super().__init__()
+        super().__init__(
+            max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
+        )
         self._vector_store_config = vector_store_config
 
         try:
@@ -283,15 +288,14 @@ class MilvusStore(VectorStoreBase):
             password=self.password,
             alias="default",
         )
+        self.col = self.create_collection(collection_name=self.collection_name)
 
-    def init_schema_and_load(self, vector_name, documents) -> List[str]:
+    def create_collection(self, collection_name: str, **kwargs) -> Any:
         """Create a Milvus collection.
 
-        Create a Milvus collection, indexes it with HNSW, load document.
-
+        Create a Milvus collection, indexes it with HNSW, load document
         Args:
-            vector_name (Embeddings): your collection name.
-            documents (List[str]): Text to insert.
+            collection_name (str): your collection name.
         Returns:
             List[str]: document ids.
         """
@@ -317,25 +321,10 @@ class MilvusStore(VectorStoreBase):
                 alias="default",
                 # secure=self.secure,
             )
-        texts = [d.content for d in documents]
-        metadatas = [d.metadata for d in documents]
-        embeddings = self.embedding.embed_query(texts[0])
+        embeddings = self.embedding.embed_query(collection_name)
 
-        if utility.has_collection(self.collection_name):
-            self.col = Collection(self.collection_name, using=self.alias)
-            self.fields = []
-            for x in self.col.schema.fields:
-                self.fields.append(x.name)
-                if x.auto_id:
-                    self.fields.remove(x.name)
-                if x.is_primary:
-                    self.primary_field = x.name
-                if (
-                    x.dtype == DataType.FLOAT_VECTOR
-                    or x.dtype == DataType.BINARY_VECTOR
-                ):
-                    self.vector_field = x.name
-            return self._add_documents(texts, metadatas)
+        if utility.has_collection(collection_name):
+            return Collection(self.collection_name, using=self.alias)
             # return self.collection_name
 
         dim = len(embeddings)
@@ -345,12 +334,8 @@ class MilvusStore(VectorStoreBase):
         text_field = self.text_field
         metadata_field = self.metadata_field
         props_field = self.props_field
-        # self.text_field = text_field
-        collection_name = vector_name
         fields = []
-        max_length = 0
-        for y in texts:
-            max_length = max(max_length, len(y))
+        # max_length = 0
         # Create the text field
         fields.append(FieldSchema(text_field, DataType.VARCHAR, max_length=65535))
         # primary key field
@@ -371,8 +356,32 @@ class MilvusStore(VectorStoreBase):
         # milvus index
         collection.create_index(vector_field, index)
         collection.load()
-        schema = collection.schema
-        for x in schema.fields:
+        return collection
+
+    def _load_documents(self, documents) -> List[str]:
+        """Load documents into Milvus.
+
+        Load documents.
+
+        Args:
+            documents (List[str]): Text to insert.
+        Returns:
+            List[str]: document ids.
+        """
+        try:
+            from pymilvus import (
+                DataType,
+            )
+            from pymilvus.orm.types import infer_dtype_bydata  # noqa: F401
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
+        texts = [d.content for d in documents]
+        metadatas = [d.metadata for d in documents]
+        self.fields = []
+        for x in self.col.schema.fields:
             self.fields.append(x.name)
             if x.auto_id:
                 self.fields.remove(x.name)
@@ -380,9 +389,7 @@ class MilvusStore(VectorStoreBase):
                 self.primary_field = x.name
             if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
                 self.vector_field = x.name
-        ids = self._add_documents(texts, metadatas)
-
-        return ids
+        return self._add_documents(texts, metadatas)
 
     def _add_documents(
         self,
@@ -406,9 +413,10 @@ class MilvusStore(VectorStoreBase):
         # self.fields.extend(metadatas[0].keys())
         if len(self.fields) > 2 and metadatas is not None:
             for d in metadatas:
+                metadata_json = json.dumps(d, default=serialize, ensure_ascii=False)
                 # for key, value in d.items():
-                insert_dict.setdefault("metadata", []).append(json.dumps(d))
-                insert_dict.setdefault("props_field", []).append(d)
+                insert_dict.setdefault("metadata", []).append(metadata_json)
+                insert_dict.setdefault("props_field", []).append(metadata_json)
         # Convert dict to list of lists for insertion
         insert_list = [insert_dict[x] for x in self.fields]
         # Insert into the collection.
@@ -430,7 +438,7 @@ class MilvusStore(VectorStoreBase):
         ]
         doc_ids = []
         for doc_batch in batched_list:
-            doc_ids.extend(self.init_schema_and_load(self.collection_name, doc_batch))
+            doc_ids.extend(self._load_documents(doc_batch))
         doc_ids = [str(doc_id) for doc_id in doc_ids]
         return doc_ids
 
@@ -655,23 +663,23 @@ class MilvusStore(VectorStoreBase):
             if isinstance(metadata_filter.value, str):
                 expr = (
                     f"{self.props_field}['{metadata_filter.key}'] "
-                    f"{FilterOperator.EQ} '{metadata_filter.value}'"
+                    f"{FilterOperator.EQ.value} '{metadata_filter.value}'"
                 )
                 metadata_filters.append(expr)
             elif isinstance(metadata_filter.value, List):
                 expr = (
                     f"{self.props_field}['{metadata_filter.key}'] "
-                    f"{FilterOperator.IN} {metadata_filter.value}"
+                    f"{FilterOperator.IN.value} {metadata_filter.value}"
                 )
                 metadata_filters.append(expr)
             else:
                 expr = (
                     f"{self.props_field}['{metadata_filter.key}'] "
-                    f"{FilterOperator.EQ} {str(metadata_filter.value)}"
+                    f"{FilterOperator.EQ.value} {str(metadata_filter.value)}"
                 )
                 metadata_filters.append(expr)
         if len(metadata_filters) > 1:
-            metadata_filter_expr = f" {filters.condition} ".join(metadata_filters)
+            metadata_filter_expr = f" {filters.condition.value} ".join(metadata_filters)
         else:
             metadata_filter_expr = metadata_filters[0]
         return metadata_filter_expr

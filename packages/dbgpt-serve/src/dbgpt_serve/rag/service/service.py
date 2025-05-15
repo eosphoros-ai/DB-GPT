@@ -322,7 +322,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             if update_chunk:
                 update_chunk.doc_name = request.doc_name
                 self._chunk_dao.update({"id": update_chunk.id}, update_chunk)
-        if len(request.questions) == 0:
+        if not request.questions:
             entity.questions = ""
         else:
             questions = [

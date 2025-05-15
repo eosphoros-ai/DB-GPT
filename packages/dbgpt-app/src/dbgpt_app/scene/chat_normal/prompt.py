@@ -22,6 +22,7 @@ prompt = ChatPromptTemplate(
     messages=[
         SystemPromptTemplate.from_template(PROMPT_SCENE_DEFINE),
         MessagesPlaceholder(variable_name="chat_history"),
+        MessagesPlaceholder(variable_name="media_input"),
         HumanPromptTemplate.from_template("{input}"),
     ]
 )

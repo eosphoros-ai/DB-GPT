@@ -1,6 +1,6 @@
 [project]
 name = "dbgpt"
-version = "0.7.0"
+version = "0.7.1"
 description = """DB-GPT is an experimental open-source project that uses localized GPT \
 large models to interact with your data and environment. With this solution, you can be\
  assured that there is no risk of data leakage, and your data is 100% private and secure.\
@@ -83,6 +83,7 @@ framework = [
     "gTTS==2.3.1",
     "pymysql",
     "jsonschema",
+    "python-jsonpath",
     # TODO move transformers to default
     "tokenizers>=0.14",
     "alembic==1.12.0",
@@ -117,8 +118,8 @@ llama_cpp = [
     "llama-cpp-python",
 ]
 llama_cpp_server = [
-    "llama-cpp-server-py-core>=0.1.3",
-    "llama-cpp-server-py>=0.1.3",
+    "llama-cpp-server-py-core>=0.1.4",
+    "llama-cpp-server-py>=0.1.4",
 ]
 proxy_ollama = ["ollama"]
 proxy_zhipuai = ["zhipuai>=2.1.5"]
@@ -136,6 +137,28 @@ proxy_openai = [
 ]
 proxy_anthropic = ["anthropic"]
 
+# For vision-language models
+model_vl = [
+    "pillow",
+    "librosa"
+]
+hf_qwen_omni = [
+    # 4.52.0 not released yet, you can install by 
+    # uv pip install git+https://github.com/huggingface/transformers@v4.51.3-Qwen2.5-Omni-preview
+    # "transformers>=4.52.0",
+]
+hf_glm4 = [
+    "transformers>=4.51.3",
+]
+hf_kimi = [
+    "tiktoken",
+    "blobfile",
+    "transformers<4.51.3",
+]
+hf_qwen3 = [
+    "transformers>=4.51.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -145,6 +168,20 @@ managed = true
 dev-dependencies = []
 default-groups = ["dev"]
 
+conflicts = [
+    [
+        { extra = "hf_qwen_omni" },
+        { extra = "hf_kimi" },
+    ],
+    [
+        { extra = "hf_glm4" },
+        { extra = "hf_kimi" },
+    ],
+    [
+        { extra = "hf_qwen3" },
+        { extra = "hf_kimi" },
+    ],
+]
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt"]
 exclude = [

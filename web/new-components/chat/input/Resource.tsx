@@ -90,7 +90,7 @@ const Resource: React.FC<{
   // 上传
   const onUpload = useCallback(async () => {
     const formData = new FormData();
-    formData.append('doc_file', fileList?.[0] as any);
+    formData.append('doc_files', fileList?.[0] as any);
     setLoading(true);
     const [_, res] = await apiInterceptors(
       postChatModeParamsFileLoad({
@@ -128,27 +128,49 @@ const Resource: React.FC<{
     case 'excel_file':
     case 'text_file':
     case 'image_file':
+    case 'audio_file':
+    case 'video_file': {
+      // Dynamically set accept attribute based on resource type
+      const getAcceptTypes = () => {
+        switch (resource?.value) {
+          case 'excel_file':
+            return '.csv,.xlsx,.xls';
+          case 'text_file':
+            return '.txt,.doc,.docx,.pdf,.md';
+          case 'image_file':
+            return '.jpg,.jpeg,.png,.gif,.bmp,.webp';
+          case 'audio_file':
+            return '.mp3,.wav,.ogg,.aac';
+          case 'video_file':
+            return '.mp4,.wav,.wav';
+          default:
+            return '';
+        }
+      };
+      // Only disable file upload when scene is "chat_excel", otherwise allow modification
+      const isDisabled = scene === 'chat_excel' ? !!fileName || !!fileList[0]?.name : false;
+      const title = scene === 'chat_excel' ? t('file_tip') : t('file_upload_tip');
+
       return (
         <Upload
           name='file'
-          accept='.csv,.xlsx,.xls'
+          accept={getAcceptTypes()}
           fileList={fileList}
           showUploadList={false}
           beforeUpload={(_, fileList) => {
             setFileList?.(fileList);
           }}
           customRequest={onUpload}
-          disabled={!!fileName || !!fileList[0]?.name}
+          disabled={isDisabled}
         >
-          <Tooltip title={t('file_tip')} arrow={false} placement='bottom'>
+          <Tooltip title={title} arrow={false} placement='bottom'>
             <div className='flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)]'>
-              <FolderAddOutlined
-                className={classNames('text-xl', { 'cursor-pointer': !(!!fileName || !!fileList[0]?.name) })}
-              />
+              <FolderAddOutlined className={classNames('text-xl', { 'cursor-pointer': !isDisabled })} />
             </div>
           </Tooltip>
         </Upload>
       );
+    }
     case 'database':
     case 'knowledge':
     case 'plugin':

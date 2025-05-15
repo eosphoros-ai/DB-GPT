@@ -4,7 +4,7 @@ import json
 import logging
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field, model_to_json
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict, model_to_json
 from dbgpt.vis.tags.vis_chart import Vis, VisChart
 
 from ...core.action.base import Action, ActionOutput
@@ -85,9 +85,16 @@ class ChartAction(Action[SqlInput]):
                 chart=json.loads(model_to_json(param)), data_df=data_df
             )
 
+            param_dict = model_to_dict(param)
+            if not data_df.empty:
+                param_dict["data"] = json.loads(
+                    data_df.to_json(orient="records", date_format="iso", date_unit="s")
+                )
+            content = json.dumps(param_dict)
+
             return ActionOutput(
                 is_exe_success=True,
-                content=model_to_json(param),
+                content=content,
                 view=view,
                 resource_type=self.resource_need.value,
                 resource_value=db._db_name,

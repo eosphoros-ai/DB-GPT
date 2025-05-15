@@ -19,6 +19,8 @@ from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.loader import ModelLoader
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.model.cluster.worker_base import ModelWorker
+from dbgpt.model.proxy.base import TiktokenProxyTokenizer
+from dbgpt.util.executor_utils import blocking_func_to_async_no_executor
 from dbgpt.util.model_utils import _clear_model_cache, _get_current_cuda_memory
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
@@ -43,6 +45,8 @@ class DefaultModelWorker(ModelWorker):
         self._support_generate_func = False
         self.context_len = 4096
         self._device = get_device()
+        # Use tiktoken to count token if model doesn't support
+        self._tiktoken = TiktokenProxyTokenizer()
 
     def load_worker(
         self, model_name: str, deploy_model_params: BaseDeployModelParameters, **kwargs
@@ -193,7 +197,8 @@ class DefaultModelWorker(ModelWorker):
                 yield model_output
             logger.info(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel "
-                f"generate_stream params:\n{params}"
+                f"generate_stream params:\n{params}\n"
+                f"{last_metrics.to_printable_string()}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()
@@ -234,6 +239,10 @@ class DefaultModelWorker(ModelWorker):
                 last_metrics,
                 is_first_generate,
             )
+            last_metrics = current_metrics
+            logger.info(
+                f"generate params:\n{params}\n{last_metrics.to_printable_string()}"
+            )
             return model_output
         else:
             for out in self.generate_stream(params):
@@ -241,18 +250,20 @@ class DefaultModelWorker(ModelWorker):
             return output
 
     def count_token(self, prompt: str) -> int:
-        return _try_to_count_token(prompt, self.tokenizer, self.model)
+        return _try_to_count_token(prompt, self.tokenizer, self.model, self._tiktoken)
 
     async def async_count_token(self, prompt: str) -> int:
-        # TODO if we deploy the model by vllm, it can't work, we should run
-        #  transformer _try_to_count_token to async
         from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
         if isinstance(self.model, ProxyModel) and self.model.proxy_llm_client:
             return await self.model.proxy_llm_client.count_token(
                 self.model.proxy_llm_client.default_model, prompt
             )
-        raise NotImplementedError
+
+        cnt = await blocking_func_to_async_no_executor(
+            _try_to_count_token, prompt, self.tokenizer, self.model, self._tiktoken
+        )
+        return cnt
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
         ext_metadata = ModelExtraMedata(
@@ -314,7 +325,8 @@ class DefaultModelWorker(ModelWorker):
                 yield model_output
             logger.info(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel "
-                f"generate_stream params:\n{params}"
+                f"generate_stream params:\n{params}\n"
+                f"{last_metrics.to_printable_string()}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()
@@ -353,6 +365,10 @@ class DefaultModelWorker(ModelWorker):
                 last_metrics,
                 is_first_generate,
             )
+            last_metrics = current_metrics
+            logger.info(
+                f"generate params:\n{params}\n{last_metrics.to_printable_string()}"
+            )
             return model_output
         else:
             output = None
@@ -363,6 +379,13 @@ class DefaultModelWorker(ModelWorker):
     def _prepare_generate_stream(
         self, params: Dict, span_operation_name: str, is_stream=True
     ):
+        if self.llm_adapter.is_reasoning_model(
+            self._model_params, self.model_name.lower()
+        ):
+            params["is_reasoning_model"] = True
+        else:
+            params["is_reasoning_model"] = False
+
         params, model_context = self.llm_adapter.model_adaptation(
             params,
             self.model_name,
@@ -421,10 +444,6 @@ class DefaultModelWorker(ModelWorker):
             span_params["messages"] = list(
                 map(lambda m: m.dict(), span_params["messages"])
             )
-        if self.llm_adapter.is_reasoning_model(
-            self._model_params, self.model_name.lower()
-        ):
-            params["is_reasoning_model"] = True
 
         metadata = {
             "is_async_func": self.support_async(),
@@ -567,6 +586,17 @@ def _new_metrics_from_model_output(
         # time cost(seconds)
         duration = (metrics.current_time_ms - metrics.start_time_ms) / 1000.0
         metrics.speed_per_second = total_tokens / duration
+    if total_tokens and "prefill_tokens_per_second" in usage:
+        metrics.prefill_tokens_per_second = usage["prefill_tokens_per_second"]
+    if total_tokens and "decode_tokens_per_second" in usage:
+        # Decode speed
+        metrics.decode_tokens_per_second = usage["decode_tokens_per_second"]
+    elif total_tokens and metrics.first_token_time_ms:
+        # time cost(seconds)
+        duration = (metrics.current_time_ms - metrics.first_token_time_ms) / 1000.0
+        if duration > 0:
+            # Calculate decode speed if not provided
+            metrics.decode_tokens_per_second = metrics.completion_tokens / duration
 
     current_gpu_infos = _get_current_cuda_memory()
     metrics.current_gpu_infos = current_gpu_infos
@@ -594,7 +624,9 @@ def _new_metrics_from_model_output(
     return metrics
 
 
-def _try_to_count_token(prompt: str, tokenizer, model) -> int:
+def _try_to_count_token(
+    prompt: str, tokenizer, model, tiktoken: TiktokenProxyTokenizer
+) -> int:
     """Try to count token of prompt
 
     Args:
@@ -612,11 +644,11 @@ def _try_to_count_token(prompt: str, tokenizer, model) -> int:
 
         if isinstance(model, ProxyModel):
             return model.count_token(prompt)
-        # Only support huggingface model now
-        return len(tokenizer(prompt).input_ids[0])
-    except Exception as e:
-        logger.warning(f"Count token error, detail: {e}, return -1")
-        return -1
+        # Only support huggingface and vllm model now
+        return len(tokenizer([prompt]).input_ids[0])
+    except Exception as _e:
+        logger.warning("Failed to count token, try tiktoken")
+        return tiktoken.count_token("cl100k_base", [prompt])[0]
 
 
 def _try_import_torch():

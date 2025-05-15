@@ -69,7 +69,7 @@ class HybridMemory(Memory, Generic[T]):
     @classmethod
     def from_chroma(
         cls,
-        vstore_name: Optional[str] = "_chroma_agent_memory_",
+        vstore_name: Optional[str] = "agent_memory_long_term",
         vstore_path: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
         executor: Optional[Executor] = None,
@@ -81,7 +81,7 @@ class HybridMemory(Memory, Generic[T]):
     ):
         """Create a hybrid memory from Chroma vector store."""
         from dbgpt.configs.model_config import DATA_DIR
-        from dbgpt.storage.vector_store.chroma_store import (
+        from dbgpt_ext.storage.vector_store.chroma_store import (
             ChromaStore,
             ChromaVectorConfig,
         )
@@ -152,6 +152,7 @@ class HybridMemory(Memory, Generic[T]):
         importance_scorer: Optional[ImportanceScorer[T]] = None,
         insight_extractor: Optional[InsightExtractor[T]] = None,
         real_memory_fragment_class: Optional[Type[T]] = None,
+        session_id: Optional[str] = None,
     ) -> None:
         """Initialize the memory.
 
@@ -168,6 +169,7 @@ class HybridMemory(Memory, Generic[T]):
             "importance_scorer": importance_scorer,
             "insight_extractor": insight_extractor,
             "real_memory_fragment_class": real_memory_fragment_class,
+            "session_id": session_id,
         }
         for memory in memories:
             memory.initialize(**kwargs)
@@ -181,8 +183,25 @@ class HybridMemory(Memory, Generic[T]):
         op: WriteOperation = WriteOperation.ADD,
     ) -> Optional[DiscardedMemoryFragments[T]]:
         """Write a memory fragment to the memory."""
+        return await self._write_single(
+            memory_fragment,
+            now=now,
+            op=op,
+            write_long_term=True,
+        )
+
+    async def _write_single(
+        self,
+        memory_fragment: T,
+        now: Optional[datetime] = None,
+        op: WriteOperation = WriteOperation.ADD,
+        write_long_term: bool = True,
+    ) -> Optional[DiscardedMemoryFragments[T]]:
+        """Write a single memory fragment to the memory."""
         # First write to sensory memory
-        sen_discarded_memories = await self._sensory_memory.write(memory_fragment)
+        sen_discarded_memories = await self._sensory_memory.write(
+            memory_fragment, now=now, op=op
+        )
         if not sen_discarded_memories:
             return None
         short_term_discarded_memories = []
@@ -190,7 +209,9 @@ class HybridMemory(Memory, Generic[T]):
         discarded_insights = []
         for sen_memory in sen_discarded_memories.discarded_memory_fragments:
             # Write to short term memory
-            short_discarded_memory = await self._short_term_memory.write(sen_memory)
+            short_discarded_memory = await self._short_term_memory.write(
+                sen_memory, now=now, op=op
+            )
             if short_discarded_memory:
                 short_term_discarded_memories.append(short_discarded_memory)
                 discarded_memory_fragments.extend(
@@ -199,16 +220,35 @@ class HybridMemory(Memory, Generic[T]):
                 for insight in short_discarded_memory.discarded_insights:
                     # Just keep the first insight
                     discarded_insights.append(insight.insights[0])
+        if not write_long_term:
+            return None
         # Obtain the importance of insights
         insight_scores = await self.score_memory_importance(discarded_insights)
         # Get the importance of insights
         for i, ins in enumerate(discarded_insights):
             ins.update_importance(insight_scores[i])
         all_memories = discarded_memory_fragments + discarded_insights
-        if self._long_term_memory:
+        if self._long_term_memory and len(all_memories) > 0:
             # Write to long term memory
             await self._long_term_memory.write_batch(all_memories, self.now)
         return None
+
+    @mutable
+    async def write_batch(
+        self, memory_fragments: List[T], now: Optional[datetime] = None
+    ) -> Optional[DiscardedMemoryFragments[T]]:
+        """Write a batch of memory fragments to the memory.
+
+        For memory recovery, we only write to sensory memory and short term memory.
+        """
+        for memory_fragment in memory_fragments:
+            # Just write to sensory memory and short term memory
+            await self._write_single(
+                memory_fragment,
+                now=now,
+                op=WriteOperation.ADD,
+                write_long_term=False,
+            )
 
     @immutable
     async def read(

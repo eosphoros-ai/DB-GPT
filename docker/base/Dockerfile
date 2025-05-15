@@ -101,7 +101,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
         sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
         sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list; \
     fi && \
-    apt-get update && apt-get install -y --no-install-recommends gnupg ca-certificates apt-transport-https && \
+    apt-get update && apt-get install -y --no-install-recommends git sqlite3 gnupg ca-certificates apt-transport-https && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get update && apt-get install -y \
@@ -111,13 +111,15 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
 
 WORKDIR /app
 # Copy the virtual environment from the previous stage
-# Use antoher name to avoid conflict when mounting user's local .venv
+# Use another name to avoid conflict when mounting user's local .venv
 ENV FINAL_VENV_NAME="/opt/.uv.venv"
 COPY --from=builder /app/.venv ${FINAL_VENV_NAME}
 COPY . .
 # Fix the shebang of the dbgpt script
 RUN sed -i "s|^#\!/app/\.venv/bin/python[0-9.]*|#!/${FINAL_VENV_NAME}/bin/python${PYTHON_VERSION}|" /${FINAL_VENV_NAME}/bin/dbgpt
 RUN sed -i "s|^#\!/app/\.venv/bin/python[0-9.]*|#!/${FINAL_VENV_NAME}/bin/python${PYTHON_VERSION}|" /${FINAL_VENV_NAME}/bin/pip
+RUN sed -i "s|/app/\.venv|${FINAL_VENV_NAME}|g" /${FINAL_VENV_NAME}/bin/activate
+
 ENV PATH="${FINAL_VENV_NAME}/bin:$PATH" \
     VIRTUAL_ENV="${FINAL_VENV_NAME}"
 # Default command

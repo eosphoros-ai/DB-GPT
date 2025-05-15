@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
+from dbgpt.core.interface.media import MediaContent
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
     ResourceIdentifier,
@@ -14,11 +16,15 @@ from dbgpt.core.interface.storage import (
     StorageItem,
 )
 
+from ..schema.types import ChatCompletionMessageParam
+
+MessageContentType = Union[str, List[MediaContent]]
+
 
 class BaseMessage(BaseModel, ABC):
     """Message object."""
 
-    content: str
+    content: MessageContentType
     index: int = 0
     round_index: int = 0
     """The round index of the message in the conversation"""
@@ -58,6 +64,61 @@ class BaseMessage(BaseModel, ABC):
             str: The str messages
         """
         return _messages_to_str(messages)
+
+    @classmethod
+    def parse_chat_completion_message(
+        cls,
+        message: Union[str, ChatCompletionMessageParam],
+        role: str = "human",
+        ignore_unknown_media: bool = False,
+    ) -> "BaseMessage":
+        """Parse the chat completion message."""
+        if not message:
+            raise ValueError("The message is empty")
+        if isinstance(message, str):
+            content = message
+        else:
+            content = MediaContent.parse_chat_completion_message(
+                message, ignore_unknown_media=ignore_unknown_media
+            )
+            if not isinstance(content, list):
+                content = [content]
+        if role == "human":
+            return HumanMessage(content=content)
+        elif role == "ai":
+            return AIMessage(content=content)
+        elif role == "system":
+            return SystemMessage(content=content)
+        elif role == "view":
+            return ViewMessage(content=content)
+
+    @property
+    def last_text(self) -> str:
+        """Get the last text of the message.
+
+        Returns:
+            str: The last text of the message
+        """
+        if isinstance(self.content, list):
+            return MediaContent.last_text(self.content)
+        elif isinstance(self.content, str):
+            return self.content
+        raise ValueError("The content is not a string or list of MediaContent")
+
+    def get_view_markdown_text(self, replace_url_func: Callable[[str], str]) -> str:
+        if isinstance(self.content, str):
+            return self.content
+        elif isinstance(self.content, list):
+            return MediaContent.get_view_markdown_text(self.content, replace_url_func)
+
+    @property
+    def has_media(self) -> bool:
+        """Whether the message has media.
+
+        Returns:
+            bool: Whether the message has media
+        """
+        return isinstance(self.content, list) and self.content
 
 
 class HumanMessage(BaseMessage):
@@ -124,7 +185,7 @@ class ModelMessage(BaseModel):
 
     """Similar to openai's message format"""
     role: str
-    content: str
+    content: Union[str, List[MediaContent]]
     round_index: Optional[int] = 0
 
     @property
@@ -180,8 +241,144 @@ class ModelMessage(BaseModel):
         return result
 
     @staticmethod
+    def _parse_openai_system_message(
+        message: ChatCompletionMessageParam,
+    ) -> List[ModelMessage]:
+        """Parse system message from OpenAI format.
+
+        Args:
+            message (ChatCompletionMessageParam): The OpenAI message
+
+        Returns:
+            List[ModelMessage]: The model messages
+        """
+        content = message["content"]
+        result = []
+        if isinstance(content, str):
+            result.append(
+                ModelMessage(role=ModelMessageRoleType.SYSTEM, content=content)
+            )
+        elif isinstance(content, Iterable):
+            for item in content:
+                if isinstance(item, str):
+                    result.append(
+                        ModelMessage(role=ModelMessageRoleType.SYSTEM, content=item)
+                    )
+                elif isinstance(item, dict) and "type" in item:
+                    type = item["type"]
+                    if type == "text" and "text" in item:
+                        result.append(
+                            ModelMessage(
+                                role=ModelMessageRoleType.SYSTEM, content=item["text"]
+                            )
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown message type: {item} of system message"
+                        )
+                else:
+                    raise ValueError(f"Unknown message type: {item} of system message")
+        else:
+            raise ValueError(f"Unknown content type: {message} of system message")
+        return result
+
+    @staticmethod
+    def _parse_openai_user_message(
+        message: ChatCompletionMessageParam,
+    ) -> List[ModelMessage]:
+        """Parse user message from OpenAI format.
+
+        Args:
+            message (ChatCompletionMessageParam): The OpenAI message
+
+        Returns:
+            List[ModelMessage]: The model messages
+        """
+        result = []
+        content = message["content"]
+        if isinstance(content, str):
+            result.append(
+                ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
+            )
+        elif isinstance(content, Iterable):
+            for item in content:
+                if isinstance(item, str):
+                    result.append(
+                        ModelMessage(role=ModelMessageRoleType.HUMAN, content=item)
+                    )
+                elif isinstance(item, dict) and "type" in item:
+                    type = item["type"]
+                    if type == "text" and "text" in item:
+                        result.append(
+                            ModelMessage(
+                                role=ModelMessageRoleType.HUMAN, content=item["text"]
+                            )
+                        )
+                    elif type == "image_url":
+                        raise ValueError("Image message is not supported now")
+                    elif type == "input_audio":
+                        raise ValueError("Input audio message is not supported now")
+                    else:
+                        raise ValueError(
+                            f"Unknown message type: {item} of human message"
+                        )
+                else:
+                    raise ValueError(f"Unknown message type: {item} of humman message")
+        else:
+            raise ValueError(f"Unknown content type: {message} of humman message")
+        return result
+
+    @staticmethod
+    def _parse_assistant_message(
+        message: ChatCompletionMessageParam,
+    ) -> List[ModelMessage]:
+        """Parse assistant message from OpenAI format.
+
+        Args:
+            message (ChatCompletionMessageParam): The OpenAI message
+
+        Returns:
+            List[ModelMessage]: The model messages
+        """
+        result = []
+        content = message["content"]
+        if isinstance(content, str):
+            result.append(ModelMessage(role=ModelMessageRoleType.AI, content=content))
+        elif isinstance(content, Iterable):
+            for item in content:
+                if isinstance(item, str):
+                    result.append(
+                        ModelMessage(role=ModelMessageRoleType.AI, content=item)
+                    )
+                elif isinstance(item, dict) and "type" in item:
+                    type = item["type"]
+                    if type == "text" and "text" in item:
+                        result.append(
+                            ModelMessage(
+                                role=ModelMessageRoleType.AI, content=item["text"]
+                            )
+                        )
+                    elif type == "refusal" and "refusal" in item:
+                        result.append(
+                            ModelMessage(
+                                role=ModelMessageRoleType.AI, content=item["refusal"]
+                            )
+                        )
+                    else:
+                        raise ValueError(
+                            f"Unknown message type: {item} of assistant message"
+                        )
+                else:
+                    raise ValueError(
+                        f"Unknown message type: {item} of assistant message"
+                    )
+        else:
+            raise ValueError(f"Unknown content type: {message} of assistant message")
+        return result
+
+    @staticmethod
     def from_openai_messages(
-        messages: Union[str, List[Dict[str, str]]],
+        messages: Union[str, List[ChatCompletionMessageParam]],
     ) -> List["ModelMessage"]:
         """Openai message format to current ModelMessage format."""
         if isinstance(messages, str):
@@ -189,19 +386,18 @@ class ModelMessage(BaseModel):
         result = []
         for message in messages:
             msg_role = message["role"]
-            content = message["content"]
             if msg_role == "system":
-                result.append(
-                    ModelMessage(role=ModelMessageRoleType.SYSTEM, content=content)
-                )
+                result.extend(ModelMessage._parse_openai_system_message(message))
             elif msg_role == "user":
-                result.append(
-                    ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
-                )
+                result.extend(ModelMessage._parse_openai_user_message(message))
             elif msg_role == "assistant":
-                result.append(
-                    ModelMessage(role=ModelMessageRoleType.AI, content=content)
+                result.extend(ModelMessage._parse_assistant_message(message))
+            elif msg_role == "function":
+                raise ValueError(
+                    "Function role is not supported in ModelMessage format"
                 )
+            elif msg_role == "tool":
+                raise ValueError("Tool role is not supported in ModelMessage format")
             else:
                 raise ValueError(f"Unknown role: {msg_role}")
         return result
@@ -211,6 +407,7 @@ class ModelMessage(BaseModel):
         messages: List["ModelMessage"],
         convert_to_compatible_format: bool = False,
         support_system_role: bool = True,
+        support_media_content: bool = True,
     ) -> List[Dict[str, str]]:
         """Cover to common message format.
 
@@ -222,6 +419,7 @@ class ModelMessage(BaseModel):
             messages (List["ModelMessage"]): The model messages
             convert_to_compatible_format (bool): Whether to convert to compatible format
             support_system_role (bool): Whether to support system role
+            support_media_content (bool): Whether to support media content
 
         Returns:
             List[Dict[str, str]]: The common messages
@@ -233,13 +431,32 @@ class ModelMessage(BaseModel):
         # Add history conversation
         for message in messages:
             if message.role == ModelMessageRoleType.HUMAN:
-                history.append({"role": "user", "content": message.content})
+                history.append(
+                    MediaContent.to_chat_completion_message(
+                        "user",
+                        message.content,
+                        support_media_content=support_media_content,
+                    )
+                )
             elif message.role == ModelMessageRoleType.SYSTEM:
                 if not support_system_role:
                     raise ValueError("Current model not support system role")
-                history.append({"role": "system", "content": message.content})
+                # history.append({"role": "system", "content": message.content})
+                history.append(
+                    MediaContent.to_chat_completion_message(
+                        "system",
+                        message.content,
+                        support_media_content=support_media_content,
+                    )
+                )
             elif message.role == ModelMessageRoleType.AI:
-                history.append({"role": "assistant", "content": message.content})
+                history.append(
+                    MediaContent.to_chat_completion_message(
+                        "assistant",
+                        message.content,
+                        support_media_content=support_media_content,
+                    )
+                )
             else:
                 pass
         if convert_to_compatible_format:
@@ -565,7 +782,7 @@ class OnceConversation:
         pass
 
     def add_user_message(
-        self, message: str, check_duplicate_type: Optional[bool] = False
+        self, message: MessageContentType, check_duplicate_type: Optional[bool] = False
     ) -> None:
         """Save a user message to the conversation.
 
@@ -585,7 +802,7 @@ class OnceConversation:
         self._append_message(HumanMessage(content=message))
 
     def add_ai_message(
-        self, message: str, update_if_exist: Optional[bool] = False
+        self, message: MessageContentType, update_if_exist: Optional[bool] = False
     ) -> None:
         """Save an AI message to current conversation.
 
@@ -603,7 +820,7 @@ class OnceConversation:
         else:
             self._append_message(AIMessage(content=message))
 
-    def _update_ai_message(self, new_message: str) -> None:
+    def _update_ai_message(self, new_message: MessageContentType) -> None:
         """Update the all AI message to new message.
 
         stream out message update
@@ -615,11 +832,11 @@ class OnceConversation:
             if item.type == "ai":
                 item.content = new_message
 
-    def add_view_message(self, message: str) -> None:
+    def add_view_message(self, message: MessageContentType) -> None:
         """Save a view message to current conversation."""
         self._append_message(ViewMessage(content=message))
 
-    def add_system_message(self, message: str) -> None:
+    def add_system_message(self, message: MessageContentType) -> None:
         """Save a system message to current conversation."""
         self._append_message(SystemMessage(content=message))
 

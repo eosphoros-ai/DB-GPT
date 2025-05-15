@@ -55,6 +55,7 @@ class ChatWithDbAutoExecute(BaseChat):
             from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
+        user_input = self.current_user_input.last_text
         client = DBSummaryClient(system_app=self.system_app)
         try:
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
@@ -62,7 +63,7 @@ class ChatWithDbAutoExecute(BaseChat):
                     self._executor,
                     client.get_db_summary,
                     self.db_name,
-                    self.current_user_input,
+                    user_input,
                     self.curr_config.schema_retrieve_top_k,
                 )
         except Exception as e:
@@ -78,7 +79,7 @@ class ChatWithDbAutoExecute(BaseChat):
 
         input_values = {
             "db_name": self.db_name,
-            "user_input": self.current_user_input,
+            "user_input": user_input,
             "top_k": self.curr_config.max_num_results,
             "dialect": self.database.dialect,
             "table_info": table_infos,

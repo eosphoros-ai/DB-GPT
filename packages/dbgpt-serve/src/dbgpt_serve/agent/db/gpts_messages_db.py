@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import List, Optional
 
@@ -14,6 +15,7 @@ from sqlalchemy import (
     or_,
 )
 
+from dbgpt.agent.util.conv_utils import parse_conv_id
 from dbgpt.storage.metadata import BaseDao, Model
 
 
@@ -111,19 +113,31 @@ class GptsMessagesDao(BaseDao):
         self, conv_id: str, agent: str
     ) -> Optional[List[GptsMessagesEntity]]:
         session = self.get_raw_session()
+        real_conv_id, _ = parse_conv_id(conv_id)
         gpts_messages = session.query(GptsMessagesEntity)
         if agent:
             gpts_messages = gpts_messages.filter(
-                GptsMessagesEntity.conv_id == conv_id
+                GptsMessagesEntity.conv_id.like(f"%{real_conv_id}%")
             ).filter(
                 or_(
                     GptsMessagesEntity.sender == agent,
                     GptsMessagesEntity.receiver == agent,
                 )
             )
-        result = gpts_messages.order_by(GptsMessagesEntity.rounds).all()
+        # Extract results first to apply custom sorting
+        results = gpts_messages.all()
+
+        # Custom sorting based on conv_id suffix and rounds
+        def get_suffix_number(entity):
+            suffix_match = re.search(r"_(\d+)$", entity.conv_id)
+            if suffix_match:
+                return int(suffix_match.group(1))
+            return 0  # Default for entries without a numeric suffix
+
+        # Sort first by numeric suffix, then by rounds
+        sorted_results = sorted(results, key=lambda x: (get_suffix_number(x), x.rounds))
         session.close()
-        return result
+        return sorted_results
 
     def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessagesEntity]]:
         session = self.get_raw_session()

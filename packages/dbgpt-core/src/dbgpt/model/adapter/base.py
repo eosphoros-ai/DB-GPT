@@ -8,6 +8,7 @@ from dbgpt.core import (
     ModelMetadata,
     RerankEmbeddings,
 )
+from dbgpt.core.interface.media import MediaProcessor
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.core.interface.parameter import (
     BaseDeployModelParameters,
@@ -222,6 +223,12 @@ class LLMModelAdapter(ABC):
         """Load model and tokenizer"""
         raise NotImplementedError
 
+    def model_patch(
+        self, deploy_model_params: LLMDeployModelParameters
+    ) -> Optional[Callable[[Any], Any]]:
+        """Patch function for model"""
+        return None
+
     def parse_max_length(self, model, tokenizer) -> Optional[int]:
         """Parse the max_length of the model.
 
@@ -306,6 +313,30 @@ class LLMModelAdapter(ABC):
         """Get the asynchronous generate function of the model"""
         raise NotImplementedError
 
+    def get_media_processor(
+        self,
+        deploy_model_params: LLMDeployModelParameters,  # noqa: F821
+    ) -> Optional[MediaProcessor]:
+        """Get the media processor of the model.
+
+        Some models may need to process the media content before sending to the model,
+        such as image or audio. This method will be called before sending the media.
+
+        If your model provider is proxy model, you may be upload the local file to the
+        public cloud, and then get the url of the file. So you can implement the
+        :meth:`~LLMModelAdapter.get_media_processor` method to upload the files.
+
+        Or in cluster mode and the model deploy locally, we must provide the media
+        processor to download the files to the local disk.
+
+        Args:
+            deploy_model_params (LLMDeployModelParameters): The model parameters.
+
+        Returns:
+            Optional[MediaProcessor]: The media processor.
+        """
+        return None
+
     def get_default_conv_template(
         self, model_name: str, model_path: str
     ) -> Optional[ConversationAdapter]:
@@ -342,7 +373,10 @@ class LLMModelAdapter(ABC):
         return roles
 
     def transform_model_messages(
-        self, messages: List[ModelMessage], convert_to_compatible_format: bool = False
+        self,
+        messages: List[ModelMessage],
+        convert_to_compatible_format: bool = False,
+        support_media_content: bool = True,
     ) -> List[Dict[str, str]]:
         """Transform the model messages
 
@@ -367,6 +401,7 @@ class LLMModelAdapter(ABC):
             messages (List[ModelMessage]): The model messages
             convert_to_compatible_format (bool, optional): Whether to convert to
                 compatible format. Defaults to False.
+            support_media_content (bool, optional): Whether to support media content
 
         Returns:
             List[Dict[str, str]]: The transformed model messages
@@ -374,14 +409,20 @@ class LLMModelAdapter(ABC):
         logger.info(f"support_system_message: {self.support_system_message}")
         if not self.support_system_message and convert_to_compatible_format:
             # We will not do any transform in the future
-            return self._transform_to_no_system_messages(messages)
+            return self._transform_to_no_system_messages(
+                messages, support_media_content=support_media_content
+            )
         else:
             return ModelMessage.to_common_messages(
-                messages, convert_to_compatible_format=convert_to_compatible_format
+                messages,
+                convert_to_compatible_format=convert_to_compatible_format,
+                support_media_content=support_media_content,
             )
 
     def _transform_to_no_system_messages(
-        self, messages: List[ModelMessage]
+        self,
+        messages: List[ModelMessage],
+        support_media_content: bool = True,
     ) -> List[Dict[str, str]]:
         """Transform the model messages to no system messages
 
@@ -408,7 +449,9 @@ class LLMModelAdapter(ABC):
         Returns:
             List[Dict[str, str]]: The transformed model messages
         """
-        openai_messages = ModelMessage.to_common_messages(messages)
+        openai_messages = ModelMessage.to_common_messages(
+            messages, support_media_content=support_media_content
+        )
         system_messages = []
         return_messages = []
         for message in openai_messages:
@@ -454,6 +497,15 @@ class LLMModelAdapter(ABC):
             Optional[str]: The string prompt
         """
         return None
+
+    def load_media(self, params: Dict, messages: List[ModelMessage]):
+        """Load the media content from the messages
+
+        Args:
+            params (Dict): The parameters
+            messages (List[ModelMessage]): The model messages
+        """
+        pass
 
     def get_prompt_with_template(
         self,
@@ -599,7 +651,7 @@ class LLMModelAdapter(ABC):
         model_name: str,
         model_path: str,
         tokenizer: Any,
-        prompt_template: str = None,
+        prompt_template: Optional[str] = None,
     ) -> Tuple[Dict, Dict]:
         """Params adaptation"""
         messages = params.get("messages")
@@ -626,6 +678,9 @@ class LLMModelAdapter(ABC):
             ]
             params["messages"] = messages
         params["string_prompt"] = ModelMessage.messages_to_string(messages)
+
+        # Load media content to params
+        self.load_media(params, messages)
 
         if not self.apply_conv_template():
             # No need to apply conversation template, now for proxy LLM

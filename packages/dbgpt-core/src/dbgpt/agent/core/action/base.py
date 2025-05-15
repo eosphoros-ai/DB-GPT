@@ -46,12 +46,20 @@ class ActionOutput(BaseModel):
     resource_type: Optional[str] = None
     resource_value: Optional[Any] = None
     action: Optional[str] = None
+    action_input: Optional[str] = None
     thoughts: Optional[str] = None
     observations: Optional[str] = None
     have_retry: Optional[bool] = True
     ask_user: Optional[bool] = False
     # 如果当前agent能确定下个发言者，需要在这里指定
     next_speakers: Optional[List[str]] = None
+    # Terminate the conversation, it is a special action
+    # If terminate is True, it means the conversation is over, it will stop the
+    # conversation loop forcibly.
+    terminate: Optional[bool] = None
+    # Memory fragments of current conversation, we can recover the conversation at any
+    # time.
+    memory_fragments: Optional[Dict[str, Any]] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -81,10 +89,11 @@ class ActionOutput(BaseModel):
 class Action(ABC, Generic[T]):
     """Base Action class for defining agent actions."""
 
-    def __init__(self, language: str = "en"):
+    def __init__(self, language: str = "en", name: Optional[str] = None):
         """Create an action."""
         self.resource: Optional[Resource] = None
         self.language: str = language
+        self._name = name
 
     def init_resource(self, resource: Optional[Resource]):
         """Initialize the resource."""
@@ -94,6 +103,21 @@ class Action(ABC, Generic[T]):
     def resource_need(self) -> Optional[ResourceType]:
         """Return the resource type needed for the action."""
         return None
+
+    @property
+    def name(self) -> str:
+        """Return the action name."""
+        if self._name:
+            return self._name
+        _name = self.__class__.__name__
+        if _name.endswith("Action"):
+            return _name[:-6]
+        return _name
+
+    @classmethod
+    def get_action_description(cls) -> str:
+        """Return the action description."""
+        return cls.__doc__ or ""
 
     @property
     def render_protocol(self) -> Optional[Vis]:
@@ -184,6 +208,20 @@ class Action(ABC, Generic[T]):
         else:
             typed_cls = cast(Type[BaseModel], cls)
             return typed_cls.model_validate(json_result)
+
+    @classmethod
+    def parse_action(
+        cls,
+        ai_message: str,
+        default_action: "Action",
+        resource: Optional[Resource] = None,
+        **kwargs,
+    ) -> Optional["Action"]:
+        """Parse the action from the message.
+
+        If you want skip the action, return None.
+        """
+        return default_action
 
     @abstractmethod
     async def run(

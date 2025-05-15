@@ -45,7 +45,7 @@ def extract_char_position(error_message: str) -> int:
         raise ValueError("Character position not found in the error message.")
 
 
-def find_json_objects(text):
+def find_json_objects(text: str):
     json_objects = []
     inside_string = False
     escape_character = False
@@ -91,6 +91,16 @@ def find_json_objects(text):
         escape_character = False if escape_character else escape_character
 
     return json_objects
+
+
+def parse_or_raise_error(text: str, is_array: bool = False):
+    if not text:
+        return None
+    parsed_objs = find_json_objects(text)
+    if not parsed_objs:
+        # Use json.loads to raise raw error
+        return json.loads(text)
+    return parsed_objs if is_array else parsed_objs[0]
 
 
 @staticmethod

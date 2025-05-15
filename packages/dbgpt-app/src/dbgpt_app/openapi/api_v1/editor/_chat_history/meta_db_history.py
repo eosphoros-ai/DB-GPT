@@ -90,6 +90,8 @@ class DbHistoryMemory(BaseChatHistoryMemory):
         chat_history = self.chat_history_dao.get_by_uid(self.chat_seesion_id)
         if chat_history:
             context = chat_history.messages
+            if not context:
+                return []
             return json.loads(context)  # type: ignore
         return []
 

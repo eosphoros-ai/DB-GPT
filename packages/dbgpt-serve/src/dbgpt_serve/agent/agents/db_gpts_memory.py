@@ -84,7 +84,6 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
     def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
         db_results = self.gpts_message.get_by_agent(conv_id, agent)
         results = []
-        db_results = sorted(db_results, key=lambda x: x.rounds)
         for item in db_results:
             results.append(GptsMessage.from_dict(item.__dict__))
         return results
@@ -120,3 +119,6 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
             return GptsMessage.from_dict(db_result.__dict__)
         else:
             return None
+
+    def delete_by_conv_id(self, conv_id: str) -> None:
+        self.gpts_message.delete_chat_message(conv_id)

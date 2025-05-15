@@ -50,8 +50,8 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ### AI-Native Data App 
 ---
-- 🔥🔥🔥 [Released V0.7.0 | A set of significant upgrades](https://docs.dbgpt.cn/docs/changelog/Released_V0.6.0)
-  - [Suppport MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+- 🔥🔥🔥 [Released V0.7.0 | A set of significant upgrades](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
+  - [Support MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
   - [Support DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
   - [Support QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
   - [Refactor the basic modules]()
@@ -169,6 +169,11 @@ At present, we have introduced several key features to showcase our current capa
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
   - News
+    - 🔥🔥🔥  [Qwen3-235B-A22B](https://huggingface.co/Qwen/Qwen3-235B-A22B)
+    - 🔥🔥🔥  [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B)
+    - 🔥🔥🔥  [Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B)
+    - 🔥🔥🔥  [GLM-Z1-32B-0414](https://huggingface.co/THUDM/GLM-Z1-32B-0414)
+    - 🔥🔥🔥  [GLM-4-32B-0414](https://huggingface.co/THUDM/GLM-4-32B-0414)
     - 🔥🔥🔥  [QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
     - 🔥🔥🔥  [DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1)
     - 🔥🔥🔥  [DeepSeek-V3](https://huggingface.co/deepseek-ai/DeepSeek-V3)

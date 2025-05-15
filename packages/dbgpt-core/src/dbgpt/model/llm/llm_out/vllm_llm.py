@@ -7,7 +7,12 @@ from vllm.utils import random_uuid
 
 from dbgpt.core import ModelOutput
 
-from ...utils.parse_utils import _DEFAULT_THINK_START_TOKEN, parse_chat_message
+from ...utils.llm_metrics import LLMPerformanceMonitor
+from ...utils.parse_utils import (
+    _DEFAULT_THINK_END_TOKEN,
+    _DEFAULT_THINK_START_TOKEN,
+    parse_chat_message,
+)
 
 _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
@@ -31,8 +36,12 @@ async def generate_stream(
     best_of = params.get("best_of", None)
     stop_str = params.get("stop", None)
     think_start_token = params.get("think_start_token", _DEFAULT_THINK_START_TOKEN)
+    think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
     is_reasoning_model = params.get("is_reasoning_model", False)
-    # think_end_token = params.get("think_end_token", _DEFAULT_THINK_END_TOKEN)
+
+    reasoning_patterns = [
+        {"start": think_start_token, "end": think_end_token},
+    ]
 
     stop_token_ids = params.get("stop_token_ids", None) or []
     if tokenizer.eos_token_id is not None:
@@ -77,6 +86,13 @@ async def generate_stream(
     )
     # vocab = tokenizer.get_vocab()
 
+    # Initialize the performance monitor with estimated token count
+    estimated_input_tokens = len(tokenizer.encode(prompt))
+    perf_monitor = LLMPerformanceMonitor(input_token_count=estimated_input_tokens)
+
+    # Start measuring prefill phase
+    perf_monitor.start_prefill()
+
     results_generator = model.generate(prompt, sampling_params, request_id)
     usage = None
     finish_reason = None
@@ -93,16 +109,30 @@ async def generate_stream(
         completion_tokens = sum(
             len(output.token_ids) for output in request_output.outputs
         )
+        # If this is the first iteration, update the input token count
+        if perf_monitor.metrics.input_token_count != prompt_tokens:
+            perf_monitor.metrics.input_token_count = prompt_tokens
+
+        # Update performance metrics based on current token count
+        perf_metrics = perf_monitor.on_tokens_received(completion_tokens)
+
         usage = {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
             "total_tokens": prompt_tokens + completion_tokens,
         }
+        # Add performance metrics to usage
+        usage.update(perf_metrics)
+
         finish_reason = (
             request_output.outputs[0].finish_reason
             if len(request_output.outputs) == 1
             else [output.finish_reason for output in request_output.outputs]
         )
+        # Check if generation is complete
+        is_complete = finish_reason is not None
+        if is_complete:
+            perf_monitor.end_generation()
         if text_outputs:
             # Tempora
             if prompt.rstrip().endswith(think_start_token) and is_reasoning_model:
@@ -110,6 +140,7 @@ async def generate_stream(
             msg = parse_chat_message(
                 text_outputs,
                 extract_reasoning=is_reasoning_model,
+                reasoning_patterns=reasoning_patterns,
             )
             yield ModelOutput.build(
                 msg.content,
