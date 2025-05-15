@@ -88,7 +88,7 @@ export default function DocUploadForm(props: IProps) {
     let fileList = files;
     if (docType === 'DOCUMENT') {
       const originFiles = Array.from(data.originFileObj.fileList);
-      fileList = fileList.filter((item: File) => originFiles.some(ofile => ofile.name == item.name));
+      fileList = fileList.filter((item: File) => originFiles.some(ofile => ofile.name === item.name));
     }
 
     handleStepChange({
