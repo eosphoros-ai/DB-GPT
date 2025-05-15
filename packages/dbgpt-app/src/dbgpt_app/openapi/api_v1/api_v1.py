@@ -9,7 +9,7 @@ from typing import List, Optional, cast
 
 import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
@@ -575,12 +575,14 @@ async def chat_completions(
             ):
                 chat: BaseChat = await get_chat_instance(dialogue)
 
-            if not chat.prompt_template.stream_out:
-                return StreamingResponse(
-                    no_stream_generator(chat),
-                    headers=headers,
-                    media_type="text/event-stream",
-                )
+            if not getattr(dialogue, "stream", True):  # 非流式返回
+                result = await chat.nostream_call()
+                if isinstance(result, str):
+                    try:
+                        result = json.loads(result)
+                    except json.JSONDecodeError:
+                        pass
+                return JSONResponse(content=result)
             else:
                 return StreamingResponse(
                     stream_generator(

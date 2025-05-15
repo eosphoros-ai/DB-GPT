@@ -2,9 +2,10 @@ import json
 import logging
 import os
 import uuid
-from typing import Dict, List, Type
+from typing import Any, AsyncGenerator, Dict, List, Type
 
 from dbgpt import SystemApp
+from dbgpt.core import ModelOutput
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 from dbgpt_app.scene import BaseChat, ChatScene
@@ -139,3 +140,33 @@ class ChatDashboard(BaseChat):
             template_introduce=None,
             charts=chart_datas,
         )
+
+    async def stream_call(
+        self, text_output: bool = True, incremental: bool = False
+    ) -> AsyncGenerator[Any, None]:
+        """Stream call method that can be controlled by the stream parameter.
+
+        Args:
+            text_output (bool): Whether to output text. Defaults to True.
+            incremental (bool): Whether to use incremental response. Defaults to False.
+
+        Returns:
+            AsyncGenerator: Yields text chunks or complete response.
+        """
+        try:
+            # Use the parent's stream_call implementation (via BaseChat)
+            async for chunk in super().stream_call(
+                text_output=text_output, incremental=incremental
+            ):
+                if chunk:
+                    # If ModelOutput, convert to text
+                    if isinstance(chunk, ModelOutput):
+                        text = chunk.text if chunk.has_text else ""
+                        yield text
+                    else:
+                        # Otherwise pass through
+                        yield chunk
+
+        except Exception as e:
+            logger.error(f"Error in stream_call: {str(e)}")
+            raise

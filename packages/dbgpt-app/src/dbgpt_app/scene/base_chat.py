@@ -70,6 +70,7 @@ class ChatParam:
     prompt_code: Optional[str] = None
     ext_info: Optional[Dict[str, Any]] = None
     app_config: Optional[GPTsAppCommonConfig] = None
+    stream: bool = True
 
     def real_app_config(self, type_class: Type[C]) -> C:
         if self.app_config is None:
@@ -156,6 +157,7 @@ class BaseChat(ABC):
         ).create()
         self.model_cache_enable = chat_param.model_cache_enable
         self.prompt_code = chat_param.prompt_code
+        self.stream = chat_param.stream
 
         self.prompt_template: AppScenePromptTemplateAdapter = (
             CFG.prompt_template_registry.get_prompt_template(
@@ -373,6 +375,11 @@ class BaseChat(ABC):
     async def stream_call(
         self, text_output: bool = True, incremental: bool = False
     ) -> AsyncIterator[Union[ModelOutput, str]]:
+        if not self.stream:
+            result = await self.nostream_call()
+            yield result
+            return
+
         # TODO Retry when server connection error
         payload = await self._build_model_request()
 
