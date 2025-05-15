@@ -94,12 +94,14 @@ class ChatDashboard(BaseChat):
             "supported_chat_type": self.dashboard_template["supported_chart_type"],
         }
 
-        # 变量名兼容映射：兼容自定义prompt模板变量名
-        # 获取当前prompt的input_variables
+        # Mapping variable names: compatible with custom prompt template variable names
+        # Get the input_variables of the current prompt
         input_variables = []
-        if hasattr(self.prompt_template, 'prompt') and hasattr(self.prompt_template.prompt, 'input_variables'):
+        if hasattr(self.prompt_template, "prompt") and hasattr(
+            self.prompt_template.prompt, "input_variables"
+        ):
             input_variables = self.prompt_template.prompt.input_variables
-        # 兼容question和user_input
+        # Compatible with question and user_input
         if "question" in input_variables:
             input_values["question"] = self.current_user_input
         if "user_input" in input_variables:
