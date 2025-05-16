@@ -139,6 +139,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             user_code=entity.user_code,
             model=entity.model,
             input_variables=entity.input_variables,
+            response_schema=entity.response_schema,
             prompt_language=entity.prompt_language,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
