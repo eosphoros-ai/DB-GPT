@@ -91,6 +91,13 @@ class ConversationVo(BaseModel):
 
     ext_info: Optional[dict] = {}
 
+    stream: bool = Field(
+        default=True,
+        description=(
+            "Whether to stream the response. Default is True for backward compat."
+        ),
+    )
+
 
 class MessageVo(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
