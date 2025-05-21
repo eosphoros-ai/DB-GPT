@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -110,6 +111,22 @@ def _build_conversation(
     )
 
 
+RESPONSE_FORMAT_EXECUTE = {
+    "thoughts": "thoughts summary to say to user",
+    "direct_response": "If the context is sufficient to answer user, reply directly "
+    "without sql",
+    "sql": "SQL Query to run",
+    "display_type": "Data display method",
+}
+
+RESPONSE_FORMAT_DASHBOARD = {
+    "thoughts": "Current thinking and value of data analysis",
+    "showcase": "What type of charts to show",
+    "sql": "data analysis SQL",
+    "title": "Data Analysis Title",
+}
+
+
 class BaseChat(ABC):
     """DB-GPT Chat Service Base Module
     Include:
@@ -170,11 +187,19 @@ class BaseChat(ABC):
         if self.prompt_code:
             # adapt prompt template according to the prompt code
             prompt_template = self._prompt_service.get_template(self.prompt_code)
+            response_format_simple = RESPONSE_FORMAT_EXECUTE
+            if self.chat_mode == ChatScene.ChatDashboard:
+                response_format_simple = RESPONSE_FORMAT_DASHBOARD
             chat_prompt_template = ChatPromptTemplate(
                 messages=[
-                    SystemPromptTemplate.from_template(prompt_template.template),
+                    SystemPromptTemplate.from_template(
+                        prompt_template.template,
+                        response_format=json.dumps(
+                            response_format_simple, ensure_ascii=False, indent=4
+                        ),
+                    ),
                     MessagesPlaceholder(variable_name="chat_history"),
-                    HumanPromptTemplate.from_template("{question}"),
+                    HumanPromptTemplate.from_template("{user_input}"),
                 ]
             )
             self.prompt_template = AppScenePromptTemplateAdapter(
