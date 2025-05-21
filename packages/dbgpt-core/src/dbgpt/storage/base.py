@@ -129,7 +129,7 @@ class IndexStoreBase(ABC):
         max_threads = max_threads or self._max_threads
         # Group the chunks into chunks of size max_chunks
         chunk_groups = [
-            chunks[i : i + max_chunks_once_load]
+            chunks[i: i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)
         ]
         logger.info(
@@ -187,7 +187,11 @@ class IndexStoreBase(ABC):
 
         ids = []
         loaded_cnt = 0
-        for success_ids in results:
+        for idx, success_ids in enumerate(results):
+            if isinstance(success_ids, Exception):
+                raise RuntimeError(
+                    f"Failed to load chunk group {idx + 1}: {str(success_ids)}"
+                ) from success_ids
             ids.extend(success_ids)
             loaded_cnt += len(success_ids)
             logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
