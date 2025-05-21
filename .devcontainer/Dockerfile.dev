@@ -2,7 +2,7 @@ FROM eosphorosai/dbgpt-full:latest
 ARG PYTHON_VERSION=3.11
 ARG PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
 ARG USERNAME
-ARG EXTRAS="base,proxy_openai,rag,storage_chromadb, storage_elasticsearch,cuda121,hf,quant_bnb,dbgpts"
+ARG EXTRAS="base,proxy_openai,graph_rag,rag,storage_chromadb, storage_elasticsearch,cuda121,hf,quant_bnb,dbgpts"
 ARG DEFAULT_VENV=/opt/.uv.venv
 WORKDIR /app
 COPY . .
@@ -22,6 +22,11 @@ RUN apt-get update && apt-get install -y \
     python${PYTHON_VERSION}-dev \
     default-libmysqlclient-dev \
     ssh zsh autojump curl git-flow vim sudo \
+    fonts-wqy-microhei fonts-noto-cjk \
+    locales \
+    && sed -i '/zh_CN.UTF-8/s/^# //g' /etc/locale.gen \
+    && locale-gen zh_CN.UTF-8 \
+    && update-locale LANG=zh_CN.UTF-8 \
     && python${PYTHON_VERSION} -m pip install --upgrade pip \
     && python${PYTHON_VERSION} -m pip install --upgrade pipx \
     && pipx install -i $PIP_INDEX_URL uv --global \
@@ -35,7 +40,9 @@ ENV UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=$DEFAULT_VENV \
     UV_PYTHON=$DEFAULT_VENV/bin/python3 \
     UV_INDEX=$PIP_INDEX_URL \
-    UV_DEFAULT_INDEX=$PIP_INDEX_URL
+    UV_DEFAULT_INDEX=$PIP_INDEX_URL \
+    LANG=zh_CN.UTF-8 \
+    LC_ALL=zh_CN.UTF-8
 
 RUN sed -i "s|/app/\.venv|${FINAL_VENV_NAME}|g" /${DEFAULT_VENV}/bin/activate && \
     pip config set global.index-url $PIP_INDEX_URL && \

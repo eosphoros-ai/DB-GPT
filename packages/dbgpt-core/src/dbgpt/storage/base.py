@@ -129,7 +129,7 @@ class IndexStoreBase(ABC):
         max_threads = max_threads or self._max_threads
         # Group the chunks into chunks of size max_chunks
         chunk_groups = [
-            chunks[i: i + max_chunks_once_load]
+            chunks[i : i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)
         ]
         logger.info(
