@@ -48,7 +48,7 @@ cli = [
 ]
 agent = [
     "termcolor",
-    "pandas==2.0.3",
+    "pandas==2.2.3",
     # numpy should less than 2.0.0
     "numpy>=1.21.0,<2.0.0",
     "auto-gpt-plugin-template>=0.0.3",
