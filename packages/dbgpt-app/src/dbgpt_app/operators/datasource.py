@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.agent.resource.database import DBResource
@@ -19,9 +19,6 @@ from dbgpt.util.i18n_utils import _
 from dbgpt.vis.tags.vis_chart import default_chart_type_prompt
 
 from .llm import HOContextBody
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
