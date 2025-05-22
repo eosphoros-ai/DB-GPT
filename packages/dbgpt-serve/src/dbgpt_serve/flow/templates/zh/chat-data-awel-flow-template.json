@@ -1,0 +1,1508 @@
+{
+    "flow": {
+        "uid": "19a01439-274c-42d0-a89b-e17d4f128bc8",
+        "label": "Chat Data 工作流模板(text2SQL)",
+        "name": "chat_data_awel_flow_template",
+        "flow_category": "chat_flow",
+        "description": "Chat Data 工作流模板，生成SQL查询并执行，然后给出分析报告",
+        "state": "running",
+        "error_message": "",
+        "source": "DBGPT-WEB",
+        "source_url": null,
+        "version": "0.1.1",
+        "define_type": "json",
+        "editable": true,
+        "user_name": null,
+        "sys_code": null,
+        "dag_id": "flow_dag_chat_data_awel_flow_template_19a01439-274c-42d0-a89b-e17d4f128bc8",
+        "gmt_created": "2025-05-22 14:59:25",
+        "gmt_modified": "2025-05-22 14:59:25",
+        "metadata": {
+            "sse_output": false,
+            "streaming_output": false,
+            "tags": {},
+            "triggers": [
+                {
+                    "trigger_type": "http",
+                    "path": "/api/v1/awel/trigger/templates/flow_dag_chat_data_awel_flow_template_19a01439-274c-42d0-a89b-e17d4f128bc8",
+                    "methods": [
+                        "POST"
+                    ],
+                    "trigger_mode": "chat"
+                }
+            ]
+        },
+        "variables": null,
+        "authors": null,
+        "flow_data": {
+            "edges": [
+                {
+                    "source": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "target_order": 1,
+                    "id": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0|operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "source_handle": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0|outputs|0",
+                    "target_handle": "operator_higher_order_llm_operator___$$___llm___$$___v1_0|inputs|1",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|0",
+                    "target_handle": "operator_higher_order_llm_operator___$$___llm___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_higher_order_llm_operator___$$___llm___$$___v1_0|operator_default_sql_output_parser___$$___output_parser___$$___v1_0",
+                    "source_handle": "operator_higher_order_llm_operator___$$___llm___$$___v1_0|outputs|0",
+                    "target_handle": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                    "target_order": 0,
+                    "id": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0|operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                    "source_handle": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0|outputs|0",
+                    "target_handle": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0|parameters|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                    "source_order": 1,
+                    "target": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                    "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|1",
+                    "target_handle": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "target_order": 0,
+                    "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0|operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "source_handle": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0|outputs|0",
+                    "target_handle": "operator_higher_order_llm_operator___$$___llm___$$___v1_0|parameters|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "target_order": 0,
+                    "id": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0|operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "source_handle": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0|outputs|0",
+                    "target_handle": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0|parameters|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0|operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "source_handle": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0|outputs|0",
+                    "target_handle": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                    "source_order": 1,
+                    "target": "operator_report_analyst___$$___database___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|operator_report_analyst___$$___database___$$___v1_0",
+                    "source_handle": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0|outputs|1",
+                    "target_handle": "operator_report_analyst___$$___database___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "source_order": 1,
+                    "target": "operator_report_analyst___$$___database___$$___v1_0",
+                    "target_order": 1,
+                    "id": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0|operator_report_analyst___$$___database___$$___v1_0",
+                    "source_handle": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0|outputs|1",
+                    "target_handle": "operator_report_analyst___$$___database___$$___v1_0|inputs|1",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_string_join_operator___$$___common___$$___v1_0",
+                    "target_order": 0,
+                    "id": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0|operator_string_join_operator___$$___common___$$___v1_0",
+                    "source_handle": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0|outputs|0",
+                    "target_handle": "operator_string_join_operator___$$___common___$$___v1_0|inputs|0",
+                    "type": "buttonedge"
+                },
+                {
+                    "source": "operator_report_analyst___$$___database___$$___v1_0",
+                    "source_order": 0,
+                    "target": "operator_string_join_operator___$$___common___$$___v1_0",
+                    "target_order": 1,
+                    "id": "operator_report_analyst___$$___database___$$___v1_0|operator_string_join_operator___$$___common___$$___v1_0",
+                    "source_handle": "operator_report_analyst___$$___database___$$___v1_0|outputs|0",
+                    "target_handle": "operator_string_join_operator___$$___common___$$___v1_0|inputs|1",
+                    "type": "buttonedge"
+                }
+            ],
+            "viewport": {
+                "x": 1116.3972338038218,
+                "y": 490.6688566220062,
+                "zoom": 0.41591281486101733
+            },
+            "nodes": [
+                {
+                    "width": 320,
+                    "height": 632,
+                    "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                    "position": {
+                        "x": -2313.3658407389785,
+                        "y": -1002.9252154383745,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -2313.3658407389785,
+                        "y": -1002.9252154383745,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "通用大语言模型 HTTP 触发器",
+                        "custom_label": null,
+                        "name": "common_llm_http_trigger",
+                        "description": "通过 HTTP 请求触发工作流，并将请求体解析为通用大语言模型 HTTP 请求体",
+                        "category": "trigger",
+                        "category_label": "Trigger",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_common_llm_http_trigger___$$___trigger___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "input",
+                        "inputs": [],
+                        "outputs": [
+                            {
+                                "type_name": "CommonLLMHttpRequestBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                                "label": "Request Body",
+                                "custom_label": null,
+                                "name": "request_body",
+                                "description": "The request body of the API endpoint, parse as a common LLM http body",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Request String Messages",
+                                "custom_label": null,
+                                "name": "request_string_messages",
+                                "description": "The request string messages of the API endpoint, parsed from 'messages' field of the request body",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": [
+                                    "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger.MessagesOutputMapper"
+                                ]
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "CommonLLMHttpTrigger",
+                        "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpTrigger",
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "API 端点",
+                                "name": "endpoint",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "/example/{dag_id}",
+                                "placeholder": null,
+                                "description": "该 API 端点",
+                                "value": "/templates/{dag_id}",
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 方法",
+                                "name": "methods",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "POST",
+                                "placeholder": null,
+                                "description": "API 端点的方法",
+                                "value": null,
+                                "options": [
+                                    {
+                                        "label": "HTTP Method PUT",
+                                        "name": "http_put",
+                                        "value": "PUT",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "HTTP Method POST",
+                                        "name": "http_post",
+                                        "value": "POST",
+                                        "children": null
+                                    }
+                                ]
+                            },
+                            {
+                                "type_name": "bool",
+                                "type_cls": "builtins.bool",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "流式响应",
+                                "name": "streaming_response",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": false,
+                                "placeholder": null,
+                                "description": "响应是否为流式",
+                                "value": false,
+                                "options": null
+                            },
+                            {
+                                "type_name": "BaseHttpBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.BaseHttpBody",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 响应体",
+                                "name": "http_response_body",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "class",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "API 端点的响应体",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "响应媒体类型",
+                                "name": "response_media_type",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "响应媒体类型",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "HTTP 状态码",
+                                "name": "status_code",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 200,
+                                "placeholder": null,
+                                "description": "HTTP 状态码",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 530,
+                    "height": 510,
+                    "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+                    "position": {
+                        "x": -1184.9263798381871,
+                        "y": -676.5641257209899,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -1184.9263798381871,
+                        "y": -676.5641257209899,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "type_name": "CommonChatPromptTemplate",
+                        "type_cls": "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+                        "label": "通用聊天提示模板",
+                        "custom_label": null,
+                        "name": "common_chat_prompt_template",
+                        "description": "使用静态提示构建提示的算子。",
+                        "category": "prompt",
+                        "category_label": "Prompt",
+                        "flow_type": "resource",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0",
+                            "ui_size": "large"
+                        },
+                        "resource_type": "instance",
+                        "parent_cls": [
+                            "dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate",
+                            "dbgpt.core.interface.prompt.ChatPromptTemplate",
+                            "dbgpt.core.interface.prompt.BasePromptTemplate",
+                            "pydantic.main.BaseModel"
+                        ],
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "系统消息",
+                                "name": "system_message",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "You are a helpful AI Assistant.",
+                                "placeholder": null,
+                                "description": "系统消息。",
+                                "value": "{context}\n\nwhen answering, use the same language as the \"user\".",
+                                "options": null,
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "text_area",
+                                    "size": "large",
+                                    "attr": {
+                                        "disabled": false,
+                                        "status": null,
+                                        "prefix": null,
+                                        "suffix": null,
+                                        "show_count": null,
+                                        "max_length": null,
+                                        "auto_size": {
+                                            "min_rows": 2,
+                                            "max_rows": 20
+                                        }
+                                    },
+                                    "editor": {
+                                        "width": 800,
+                                        "height": 400
+                                    }
+                                }
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "消息占位符",
+                                "name": "message_placeholder",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "chat_history",
+                                "placeholder": null,
+                                "description": "聊天历史消息占位符。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "用户消息",
+                                "name": "human_message",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "{user_input}",
+                                "placeholder": "{user_input}",
+                                "description": "用户消息。",
+                                "value": null,
+                                "options": null,
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "text_area",
+                                    "size": "large",
+                                    "attr": {
+                                        "disabled": false,
+                                        "status": null,
+                                        "prefix": null,
+                                        "suffix": null,
+                                        "show_count": null,
+                                        "max_length": null,
+                                        "auto_size": {
+                                            "min_rows": 2,
+                                            "max_rows": 20
+                                        }
+                                    },
+                                    "editor": {
+                                        "width": 800,
+                                        "height": 400
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 530,
+                    "height": 1591,
+                    "id": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                    "position": {
+                        "x": -1607.0149406814228,
+                        "y": -18.44314634213356,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -1607.0149406814228,
+                        "y": -18.44314634213356,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "数据源检索算子",
+                        "custom_label": null,
+                        "name": "higher_order_datasource_retriever_operator",
+                        "description": "从数据源检索表结构。",
+                        "category": "database",
+                        "category_label": "Database",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_higher_order_datasource_retriever_operator___$$___database___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0",
+                            "ui_size": "large"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "User question",
+                                "custom_label": null,
+                                "name": "query",
+                                "description": "The user question to retrieve table schemas from the datasource",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "HOContextBody",
+                                "type_cls": "dbgpt_app.operators.llm.HOContextBody",
+                                "label": "Retrieved context",
+                                "custom_label": null,
+                                "name": "context",
+                                "description": "The retrieved context from the datasource",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "Chunk",
+                                "type_cls": "dbgpt.core.interface.knowledge.Chunk",
+                                "label": "Retrieved schema chunks",
+                                "custom_label": null,
+                                "name": "chunks",
+                                "description": "The retrieved schema chunks from the datasource",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": true,
+                                "mappers": [
+                                    "dbgpt_app.operators.datasource.HODatasourceRetrieverOperator.ChunkMapper"
+                                ]
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "HODatasourceRetrieverOperator",
+                        "type_cls": "dbgpt_app.operators.datasource.HODatasourceRetrieverOperator",
+                        "parameters": [
+                            {
+                                "type_name": "DBResource",
+                                "type_cls": "dbgpt.agent.resource.database.DBResource",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "数据源",
+                                "name": "datasource",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": false,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "用于获取上下文的数据源",
+                                "value": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0",
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "提示模板",
+                                "name": "prompt_template",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "你是一个数据库专家. \n请根据用户选择的数据库和该库的部分可用表结构定义来回答用户问题.\n数据库名:\n    {db_name}\n表结构定义:\n    {table_info}\n\n约束:\n    1. 请根据用户问题理解用户意图，使用给出表结构定义创建一个语法正确的     {dialect} sql，如果不需要 sql，则直接回答用户问题。\n    2. 除非用户在问题中指定了他希望获得的具体数据行数，    否则始终将查询限制为最多 {max_num_results}  个结果。\n    3. 只能使用表结构信息中提供的表来生成 sql，    如果无法根据提供的表结构中生成 sql ，请说：    “提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。\n    4. 请注意生成SQL时不要弄错表和列的关系\n    5. 请检查SQL的正确性，并保证正确的情况下优化查询性能\n    6.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，将类型名称放入返回要求格式的name参数值中    ，如果找不到最合适的则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}\n用户问题:\n    {user_input}\n请一步步思考并按照以下JSON格式回复：\n      {response}\n确保返回正确的json并且可以被Python json.loads方法解析.\n",
+                                "placeholder": null,
+                                "description": "用于构建数据库提示的提示模板",
+                                "value": null,
+                                "options": null,
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "text_area",
+                                    "size": "large",
+                                    "attr": {
+                                        "disabled": false,
+                                        "status": null,
+                                        "prefix": null,
+                                        "suffix": null,
+                                        "show_count": null,
+                                        "max_length": null,
+                                        "auto_size": {
+                                            "min_rows": 2,
+                                            "max_rows": 20
+                                        }
+                                    },
+                                    "editor": {
+                                        "width": 800,
+                                        "height": 400
+                                    }
+                                }
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "显示类型",
+                                "name": "display_type",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "response_line_chart:used to display comparative trend analysis data\nresponse_pie_chart:suitable for scenarios such as proportion and distribution statistics\nresponse_table:suitable for display with many display columns or non-numeric columns\nresponse_scatter_chart:Suitable for exploring relationships between variables, detecting outliers, etc.\nresponse_bubble_chart:Suitable for relationships between multiple variables, highlighting outliers or special situations, etc.\nresponse_donut_chart:Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc.\nresponse_area_chart:Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc.\nresponse_heatmap:Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc.",
+                                "placeholder": null,
+                                "description": "数据的显示类型",
+                                "value": null,
+                                "options": null,
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "text_area",
+                                    "size": "large",
+                                    "attr": {
+                                        "disabled": false,
+                                        "status": null,
+                                        "prefix": null,
+                                        "suffix": null,
+                                        "show_count": null,
+                                        "max_length": null,
+                                        "auto_size": {
+                                            "min_rows": 2,
+                                            "max_rows": 20
+                                        }
+                                    },
+                                    "editor": {
+                                        "width": 800,
+                                        "height": 400
+                                    }
+                                }
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "最大结果数量",
+                                "name": "max_num_results",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 50,
+                                "placeholder": null,
+                                "description": "返回的最大结果数量",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "响应格式",
+                                "name": "response_format",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "{\n    \"thoughts\": \"thoughts summary to say to user\",\n    \"sql\": \"SQL Query to run\",\n    \"display_type\": \"Data display method\"\n}",
+                                "placeholder": null,
+                                "description": "响应格式，默认为 JSON 格式",
+                                "value": null,
+                                "options": null,
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "text_area",
+                                    "size": "large",
+                                    "attr": {
+                                        "disabled": false,
+                                        "status": null,
+                                        "prefix": null,
+                                        "suffix": null,
+                                        "show_count": null,
+                                        "max_length": null,
+                                        "auto_size": {
+                                            "min_rows": 2,
+                                            "max_rows": 20
+                                        }
+                                    },
+                                    "editor": {
+                                        "width": 800,
+                                        "height": 400
+                                    }
+                                }
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "上下文键",
+                                "name": "context_key",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "context",
+                                "placeholder": null,
+                                "description": "上下文的键，它将用于构建提示信息",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 909,
+                    "id": "operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                    "position": {
+                        "x": -356.756339024138,
+                        "y": -1039.8502354026027,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -356.756339024138,
+                        "y": -1039.8502354026027,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "大语言模型算子",
+                        "custom_label": null,
+                        "name": "higher_order_llm_operator",
+                        "description": "高级大语言模型算子，支持多轮对话（对话窗口、Token 长度和无多轮）。",
+                        "category": "llm",
+                        "category_label": "LLM",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_higher_order_llm_operator___$$___llm___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "CommonLLMHttpRequestBody",
+                                "type_cls": "dbgpt.core.awel.trigger.http_trigger.CommonLLMHttpRequestBody",
+                                "label": "Common LLM Request Body",
+                                "custom_label": null,
+                                "name": "common_llm_request_body",
+                                "description": "The common LLM request body.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "HOContextBody",
+                                "type_cls": "dbgpt_app.operators.llm.HOContextBody",
+                                "label": "Extra Context",
+                                "custom_label": null,
+                                "name": "extra_context",
+                                "description": "Extra context for building prompt(Knowledge context, database schema, etc), you can add multiple context.",
+                                "dynamic": true,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "ModelOutput",
+                                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                                "label": "Model Output",
+                                "custom_label": null,
+                                "name": "model_output",
+                                "description": "The model output.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "HOLLMOperator",
+                        "type_cls": "dbgpt_app.operators.llm.HOLLMOperator",
+                        "parameters": [
+                            {
+                                "type_name": "ChatPromptTemplate",
+                                "type_cls": "dbgpt.core.interface.prompt.ChatPromptTemplate",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "提示模板",
+                                "name": "prompt_template",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "对话的提示模板。",
+                                "value": "resource_dbgpt.core.interface.operators.prompt_operator.CommonChatPromptTemplate_0",
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "模型名称",
+                                "name": "model",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "模型名称。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "LLMClient",
+                                "type_cls": "dbgpt.core.interface.llm.LLMClient",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "LLM 客户端",
+                                "name": "llm_client",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "大语言模型客户端，用于连接到大语言模型，若未提供，则使用 DB-GPT 部署的默认客户端。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "历史消息合并模式",
+                                "name": "history_merge_mode",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "none",
+                                "placeholder": null,
+                                "description": "历史合并模式，支持 'none'、'window' 和 'token'。'none'：不合并历史，'window'：按对话窗口合并，'token'：按 Token 长度合并。",
+                                "value": null,
+                                "options": [
+                                    {
+                                        "label": "No History",
+                                        "name": "none",
+                                        "value": "none",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "Message Window",
+                                        "name": "window",
+                                        "value": "window",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "Token Length",
+                                        "name": "token",
+                                        "value": "token",
+                                        "children": null
+                                    }
+                                ],
+                                "ui": {
+                                    "refresh": false,
+                                    "refresh_depends": null,
+                                    "ui_type": "select",
+                                    "size": null,
+                                    "attr": null
+                                }
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "用户消息键",
+                                "name": "user_message_key",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "user_input",
+                                "placeholder": null,
+                                "description": "提示词中用户消息的键，默认为 'user_input'。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "历史键",
+                                "name": "history_key",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "聊天历史键，用于将聊天历史消息传递给提示模板，若未提供，将解析提示模板以获取该键。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "保留起始轮次",
+                                "name": "keep_start_rounds",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "在聊天历史中保留的起始轮次。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "保留结束轮次",
+                                "name": "keep_end_rounds",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "在聊天历史中保留的结束轮次。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "int",
+                                "type_cls": "builtins.int",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "最大 Token 限制",
+                                "name": "max_token_limit",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": 2048,
+                                "placeholder": null,
+                                "description": "在聊天历史中保留的最大 Token 数量。",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 235,
+                    "id": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0",
+                    "position": {
+                        "x": -451.3013131580019,
+                        "y": 249.34490166592917,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -451.3013131580019,
+                        "y": 249.34490166592917,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "SQL 输出解析器",
+                        "custom_label": null,
+                        "name": "default_sql_output_parser",
+                        "description": "解析大语言模型调用的 SQL 输出。",
+                        "category": "output_parser",
+                        "category_label": "Output Parser",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_default_sql_output_parser___$$___output_parser___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "ModelOutput",
+                                "type_cls": "dbgpt.core.interface.llm.ModelOutput",
+                                "label": "Model Output",
+                                "custom_label": null,
+                                "name": "model_output",
+                                "description": "The model output of upstream.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "dict",
+                                "type_cls": "builtins.dict",
+                                "label": "Dict SQL Output",
+                                "custom_label": null,
+                                "name": "dict",
+                                "description": "The dict output after parsing.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "SQLOutputParser",
+                        "type_cls": "dbgpt.core.interface.output_parser.SQLOutputParser",
+                        "parameters": []
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 416,
+                    "id": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0",
+                    "position": {
+                        "x": -2378.805372792085,
+                        "y": 839.3585168597831,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -2378.805372792085,
+                        "y": 839.3585168597831,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "type_name": "DatasourceResource",
+                        "type_cls": "dbgpt_serve.agent.resource.datasource.DatasourceResource",
+                        "label": "数据源资源",
+                        "custom_label": null,
+                        "name": "datasource",
+                        "description": "连接到数据源（检索表结构并执行 SQL 以获取数据）。",
+                        "category": "database",
+                        "category_label": "Database",
+                        "flow_type": "resource",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "resource_type": "instance",
+                        "parent_cls": [
+                            "dbgpt_serve.agent.resource.datasource.DatasourceResource",
+                            "dbgpt.agent.resource.database.RDBMSConnectorResource",
+                            "dbgpt.agent.resource.database.DBResource",
+                            "dbgpt.agent.resource.base.Resource",
+                            "typing.Generic"
+                        ],
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "数据源名称",
+                                "name": "name",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "datasource",
+                                "placeholder": null,
+                                "description": "数据源的名称，默认为 'datasource'。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "数据库名称",
+                                "name": "db_name",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": false,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "数据库的名称。",
+                                "value": "case_1_student_manager",
+                                "options": [
+                                    {
+                                        "label": "[mysql]test_case_info",
+                                        "name": "test_case_info",
+                                        "value": "test_case_info",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "[mysql]case_2_ecom",
+                                        "name": "case_2_ecom",
+                                        "value": "case_2_ecom",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "[sqlite]sqlite_dbgpt",
+                                        "name": "sqlite_dbgpt",
+                                        "value": "sqlite_dbgpt",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "[mysql]case_5_order_management",
+                                        "name": "case_5_order_management",
+                                        "value": "case_5_order_management",
+                                        "children": null
+                                    },
+                                    {
+                                        "label": "[mysql]case_1_student_manager",
+                                        "name": "case_1_student_manager",
+                                        "value": "case_1_student_manager",
+                                        "children": null
+                                    }
+                                ]
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "提示模板",
+                                "name": "prompt_template",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "数据库类型：{db_type}，相关表结构定义：{schemas}",
+                                "placeholder": null,
+                                "description": "用于构建数据库提示的提示模板。",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 353,
+                    "id": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                    "position": {
+                        "x": -52.331743847159714,
+                        "y": 703.9883784083503,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": -52.331743847159714,
+                        "y": 703.9883784083503,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "数据源执行算子",
+                        "custom_label": null,
+                        "name": "higher_order_datasource_executor_operator",
+                        "description": "从数据源执行上下文。",
+                        "category": "database",
+                        "category_label": "Database",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_higher_order_datasource_executor_operator___$$___database___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "dict",
+                                "type_cls": "builtins.dict",
+                                "label": "SQL dict",
+                                "custom_label": null,
+                                "name": "sql_dict",
+                                "description": "The SQL to be executed wrapped in a dictionary, generated by LLM",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "SQL result",
+                                "custom_label": null,
+                                "name": "sql_result",
+                                "description": "The result of the SQL execution(GPT-Vis format)",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Markdown result",
+                                "custom_label": null,
+                                "name": "markdown_result",
+                                "description": "The markdown result of the SQL execution",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": [
+                                    "dbgpt_app.operators.datasource.HODatasourceExecutorOperator.MarkdownMapper"
+                                ]
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "HODatasourceExecutorOperator",
+                        "type_cls": "dbgpt_app.operators.datasource.HODatasourceExecutorOperator",
+                        "parameters": [
+                            {
+                                "type_name": "DBResource",
+                                "type_cls": "dbgpt.agent.resource.database.DBResource",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "数据源",
+                                "name": "datasource",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": false,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "用于获取上下文的数据源",
+                                "value": "resource_dbgpt_serve.agent.resource.datasource.DatasourceResource_0",
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 475,
+                    "id": "operator_report_analyst___$$___database___$$___v1_0",
+                    "position": {
+                        "x": 535.8317267481011,
+                        "y": 1282.938921503293,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": 535.8317267481011,
+                        "y": 1282.938921503293,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "Report Analyst",
+                        "custom_label": null,
+                        "name": "report_analyst",
+                        "description": "Report Analyst",
+                        "category": "database",
+                        "category_label": "Database",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_report_analyst___$$___database___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "User question",
+                                "custom_label": null,
+                                "name": "question",
+                                "description": "The question of user",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "The data report",
+                                "custom_label": null,
+                                "name": "data_report",
+                                "description": "The data report in markdown format.",
+                                "dynamic": true,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Report Analyst Result",
+                                "custom_label": null,
+                                "name": "report_analyst_result",
+                                "description": "The report analyst result.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "ReportAnalystOperator",
+                        "type_cls": "dbgpt_app.operators.report.ReportAnalystOperator",
+                        "parameters": [
+                            {
+                                "type_name": "ChatPromptTemplate",
+                                "type_cls": "dbgpt.core.interface.prompt.ChatPromptTemplate",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "提示模板",
+                                "name": "prompt_template",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "对话的提示模板。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "模型名称",
+                                "name": "model",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "模型名称。",
+                                "value": null,
+                                "options": null
+                            },
+                            {
+                                "type_name": "LLMClient",
+                                "type_cls": "dbgpt.core.interface.llm.LLMClient",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "LLM 客户端",
+                                "name": "llm_client",
+                                "is_list": false,
+                                "category": "resource",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": null,
+                                "placeholder": null,
+                                "description": "大语言模型客户端，用于连接到大语言模型，若未提供，则使用 DB-GPT 部署的默认客户端。",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                },
+                {
+                    "width": 320,
+                    "height": 398,
+                    "id": "operator_string_join_operator___$$___common___$$___v1_0",
+                    "position": {
+                        "x": 881.1680168204623,
+                        "y": 328.6839328760358,
+                        "zoom": 0.0
+                    },
+                    "type": "customNode",
+                    "position_absolute": {
+                        "x": 881.1680168204623,
+                        "y": 328.6839328760358,
+                        "zoom": 0.0
+                    },
+                    "data": {
+                        "label": "String Join Operator",
+                        "custom_label": null,
+                        "name": "string_join_operator",
+                        "description": "Merge multiple inputs into a single string.",
+                        "category": "common",
+                        "category_label": "Common",
+                        "flow_type": "operator",
+                        "icon": null,
+                        "documentation_url": null,
+                        "id": "operator_string_join_operator___$$___common___$$___v1_0",
+                        "tags": {
+                            "order": "higher-order",
+                            "ui_version": "flow2.0"
+                        },
+                        "operator_type": "map",
+                        "inputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Input Strings",
+                                "custom_label": null,
+                                "name": "input_strings",
+                                "description": "The input strings to join.",
+                                "dynamic": true,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            },
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Input Strings",
+                                "custom_label": null,
+                                "name": "input_strings_1",
+                                "description": "The input strings to join.",
+                                "dynamic": true,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "label": "Joined String",
+                                "custom_label": null,
+                                "name": "joined_string",
+                                "description": "The joined string.",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "is_list": false,
+                                "mappers": null
+                            }
+                        ],
+                        "version": "v1",
+                        "type_name": "StringJoinOperator",
+                        "type_cls": "dbgpt_app.operators.report.StringJoinOperator",
+                        "parameters": [
+                            {
+                                "type_name": "str",
+                                "type_cls": "builtins.str",
+                                "dynamic": false,
+                                "dynamic_minimum": 0,
+                                "label": "Separator",
+                                "name": "separator",
+                                "is_list": false,
+                                "category": "common",
+                                "resource_type": "instance",
+                                "optional": true,
+                                "default": "\n\n",
+                                "placeholder": null,
+                                "description": "The separator to join the strings.",
+                                "value": null,
+                                "options": null
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}
