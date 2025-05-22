@@ -3,6 +3,7 @@ import { Card, CardContent, Typography } from '@mui/joy';
 import { useMemo } from 'react';
 import BarChart from './bar-chart';
 import LineChart from './line-chart';
+import PieChart from './pie-chart';
 import TableChart from './table-chart';
 
 type Props = {
@@ -68,6 +69,8 @@ function Chart({ chartsData }: Props) {
               return <BarChart key={chart.chart_uid} chart={chart} />;
             } else if (chart.chart_type === 'Table' || chart.type === 'TableChartData') {
               return <TableChart key={chart.chart_uid} chart={chart} />;
+            } else if (chart.chart_type === 'PieChart' || chart.type === 'PieChart') {
+              return <PieChart key={chart.chart_uid} chart={chart} />;
             }
           })}
         </div>
