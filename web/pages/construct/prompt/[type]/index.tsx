@@ -349,6 +349,7 @@ const AddOrEditPrompt: React.FC = () => {
       const editData = JSON.parse(localStorage.getItem('edit_prompt_data') || '{}');
       setVariables(JSON.parse(editData.input_variables ?? '[]'));
       setValue(editData?.content);
+      setResponseTemplate(JSON.parse(editData.response_schema));
       topForm.setFieldsValue({
         prompt_type: editData.prompt_type,
         prompt_name: editData.prompt_name,
