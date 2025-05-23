@@ -744,7 +744,7 @@ class RDBMSConnector(BaseConnector):
         sql = sql.strip()
         parsed = sqlparse.parse(sql)[0]
         sql_type = parsed.get_type()
-        if sql_type == "CREATE":
+        if sql_type == "CREATE" or sql_type == "DROP":
             table_name = self._extract_table_name_from_ddl(parsed)
         else:
             table_name = parsed.get_name()

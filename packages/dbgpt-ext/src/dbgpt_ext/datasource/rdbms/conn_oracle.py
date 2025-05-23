@@ -110,6 +110,10 @@ class OracleConnector(RDBMSConnector):
 
         return cls.from_uri(db_url, engine_args=engine_args, **kwargs)
 
+    def get_simple_fields(self, table_name):
+        """Get column fields about specified table."""
+        return self.get_fields(table_name)
+
     def get_fields(self, table_name: str, db_name=None) -> List[Tuple]:
         with self.session_scope() as session:
             query = f"""

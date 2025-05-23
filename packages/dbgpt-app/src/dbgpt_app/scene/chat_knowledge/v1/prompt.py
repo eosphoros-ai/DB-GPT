@@ -25,7 +25,7 @@ _DEFAULT_TEMPLATE_ZH = """ 基于以下给出的已知信息, 准守规范约束
      表格格式:|xxx|xxx|xxx|, 代码格式:```xxx```.
      2.如果无法从提供的内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题" \
      禁止胡乱编造.
-     3.回答的时候最好按照1.2.3.点进行总结, 并以markdwon格式显示.
+     3.回答的时候最好按照1.2.3.点进行总结, 并以markdown格式显示.
             已知内容: 
             {context}
             问题:
@@ -43,7 +43,7 @@ constraints:
     question, state clearly: "The content provided in the knowledge base is not enough \
     to answer this question," and avoid making up answers.
     3.When responding, it is best to summarize the points in the order of 1, 2, 3, And \
-    displayed in markdwon format.
+    displayed in markdown format.
             known information: 
             {context}
             question:
