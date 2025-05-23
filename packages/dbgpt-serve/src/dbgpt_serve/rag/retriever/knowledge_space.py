@@ -11,7 +11,7 @@ from dbgpt.rag.retriever import EmbeddingRetriever, QueryRewrite, Ranker
 from dbgpt.rag.retriever.base import BaseRetriever, RetrieverStrategy
 from dbgpt.rag.transformer.keyword_extractor import KeywordExtractor
 from dbgpt.storage.vector_store.filters import MetadataFilters
-from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
+from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt_ext.rag.retriever.doc_tree import TreeNode
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 from dbgpt_serve.rag.retriever.qa_retriever import QARetriever
@@ -156,9 +156,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         Return:
             List[Chunk]: list of chunks
         """
-        candidates = await self._aretrieve_with_score(
-            query, 0.0, filters
-        )
+        candidates = await self._aretrieve_with_score(query, 0.0, filters)
         return candidates
 
     async def _aretrieve_with_score(
