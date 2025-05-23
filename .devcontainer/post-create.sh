@@ -44,7 +44,8 @@ export ZSH="\$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting autojump)
 source \$ZSH/oh-my-zsh.sh
-
+export LANG=zh_CN.UTF-8
+export LC_ALL=zh_CN.UTF-8
 # Enable autojump
 [[ -s /usr/share/autojump/autojump.sh ]] && source /usr/share/autojump/autojump.sh
 EOF

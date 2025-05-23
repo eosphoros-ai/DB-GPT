@@ -86,6 +86,6 @@ class ElevenLabsSpeech(VoiceBase):
             os.remove("speech.mpeg")
             return True
         else:
-            logger.warn("Request failed with status code:", response.status_code)
+            logger.warning("Request failed with status code:", response.status_code)
             logger.info("Response content:", response.content)
             return False

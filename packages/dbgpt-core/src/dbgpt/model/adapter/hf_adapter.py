@@ -600,6 +600,70 @@ class QwenMoeAdapter(NewHFChatModelAdapter):
         )
 
 
+class Qwen3Adapter(QwenAdapter):
+    support_4bit: bool = True
+    support_8bit: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and (
+            "qwen3" in lower_model_name_or_path
+            and "base" not in lower_model_name_or_path
+        )
+
+    def check_transformer_version(self, current_version: str) -> None:
+        if not current_version >= "4.51.0":
+            raise ValueError(
+                "Qwen3 require transformers.__version__>=4.51.0, please upgrade your"
+                " transformers package."
+            )
+
+    def model_patch(self, deploy_model_params: LLMDeployModelParameters):
+        """Apply the monkey patch to moe model for high inference speed."""
+
+        from ..llm.monkey_patch import apply_qwen3_moe_monkey_patch
+
+        return apply_qwen3_moe_monkey_patch
+
+    def is_reasoning_model(
+        self,
+        deploy_model_params: LLMDeployModelParameters,
+        lower_model_name_or_path: Optional[str] = None,
+    ) -> bool:
+        if (
+            deploy_model_params.reasoning_model is not None
+            and deploy_model_params.reasoning_model is False
+        ):
+            return False
+        return True
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        from transformers import AutoTokenizer
+
+        if not tokenizer:
+            raise ValueError("tokenizer is is None")
+        tokenizer: AutoTokenizer = tokenizer
+
+        is_reasoning_model = params.get("is_reasoning_model", True)
+        messages = self.transform_model_messages(
+            messages, convert_to_compatible_format, support_media_content=False
+        )
+        logger.debug(f"The messages after transform: \n{messages}")
+        str_prompt = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=is_reasoning_model,
+        )
+        return str_prompt
+
+
 class QwenOmniAdapter(NewHFChatModelAdapter):
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
         return lower_model_name_or_path and (
@@ -997,6 +1061,7 @@ register_model_adapter(Gemma2Adapter)
 register_model_adapter(StarlingLMAdapter)
 register_model_adapter(QwenAdapter)
 register_model_adapter(QwenMoeAdapter)
+register_model_adapter(Qwen3Adapter)
 register_model_adapter(QwenOmniAdapter)
 register_model_adapter(Llama3Adapter)
 register_model_adapter(Llama31Adapter)

@@ -5,6 +5,7 @@ import math
 from typing import Optional, Tuple
 
 import torch
+import torch.nn.functional as F
 import transformers
 from torch import nn
 
@@ -119,3 +120,96 @@ def forward(
 def replace_llama_attn_with_non_inplace_operations():
     """Avoid bugs in mps backend by not using in-place operations."""
     transformers.models.llama.modeling_llama.LlamaAttention.forward = forward
+
+
+class ParQwen3MoeSparseMoeBlock(nn.Module):
+    """
+    Adapted from https://huggingface.co/Qwen/Qwen3-30B-A3B/discussions/13
+    """
+
+    def __init__(self, base_moe):
+        super().__init__()
+        self.base_moe = base_moe
+        self.num_experts = base_moe.num_experts
+        self.top_k = base_moe.top_k
+        self.norm_topk_prob = base_moe.norm_topk_prob
+
+        # gating
+        self.gate = base_moe.gate
+        self.experts = base_moe.experts
+
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        batch_size, sequence_length, hidden_dim = hidden_states.shape
+        hidden_states = hidden_states.view(-1, hidden_dim)
+        # router_logits: (batch * sequence_length, n_experts)
+        router_logits = self.gate(hidden_states)
+
+        routing_weights = F.softmax(router_logits, dim=1, dtype=torch.float)
+        routing_weights, selected_experts = torch.topk(
+            routing_weights, self.top_k, dim=-1
+        )
+        if self.norm_topk_prob:  # only diff with mixtral sparse moe block!
+            routing_weights /= routing_weights.sum(dim=-1, keepdim=True)
+        # we cast back to the input dtype
+        routing_weights = routing_weights.to(hidden_states.dtype)
+
+        final_hidden_states = torch.zeros(
+            (batch_size * sequence_length, hidden_dim),
+            dtype=hidden_states.dtype,
+            device=hidden_states.device,
+        )
+
+        # One hot encode the selected experts to create an expert mask
+        # this will be used to easily index which expert is going to be sollicitated
+        expert_mask = torch.nn.functional.one_hot(
+            selected_experts, num_classes=self.num_experts
+        ).permute(2, 1, 0)
+
+        activated_experts = torch.unique(selected_experts)
+        cuda_streams = [torch.cuda.Stream() for _ in activated_experts]
+        # Loop over all available experts in the model and perform the computation on
+        # each expert
+        for expert_idx, cuda_stream in zip(activated_experts, cuda_streams):
+            with torch.cuda.stream(cuda_stream):
+                expert_layer = self.experts[expert_idx]
+                idx, top_x = torch.where(expert_mask[expert_idx])
+
+                # Index the correct hidden states and compute the expert hidden state
+                # for the current expert. We need to make sure to multiply the output
+                # hidden states by `routing_weights` on the corresponding tokens
+                # (top-1 and top-2)
+                current_state = hidden_states[None, top_x].reshape(-1, hidden_dim)
+                current_hidden_states = (
+                    expert_layer(current_state) * routing_weights[top_x, idx, None]
+                )
+
+                # However `index_add_` only support torch tensors for indexing so
+                # we'll use the `top_x` tensor here.
+                final_hidden_states.index_add_(
+                    0, top_x, current_hidden_states.to(hidden_states.dtype)
+                )
+        torch.cuda.synchronize()
+        final_hidden_states = final_hidden_states.reshape(
+            batch_size, sequence_length, hidden_dim
+        )
+        return final_hidden_states, router_logits
+
+
+def apply_qwen3_moe_monkey_patch(model):
+    if not torch.cuda.is_available():
+        # Only apply monkey patch if CUDA is available
+        return model
+
+    for layer in model.model.layers:
+        if type(layer.mlp).__name__ == "Qwen3MoeSparseMoeBlock":
+            layer.mlp = ParQwen3MoeSparseMoeBlock(layer.mlp)
+    return model
+
+
+def recovery_moe_monkey_patch(model):
+    for layer in model.model.layers:
+        if type(layer.mlp).__name__ == "ParQwen3MoeSparseMoeBlock" and hasattr(
+            layer.mlp, "base_moe"
+        ):
+            layer.mlp = layer.mlp.base_moe
+    return model

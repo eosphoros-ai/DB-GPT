@@ -197,7 +197,8 @@ class DefaultModelWorker(ModelWorker):
                 yield model_output
             logger.info(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel "
-                f"generate_stream params:\n{params}"
+                f"generate_stream params:\n{params}\n"
+                f"{last_metrics.to_printable_string()}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()
@@ -237,6 +238,10 @@ class DefaultModelWorker(ModelWorker):
                 model_context,
                 last_metrics,
                 is_first_generate,
+            )
+            last_metrics = current_metrics
+            logger.info(
+                f"generate params:\n{params}\n{last_metrics.to_printable_string()}"
             )
             return model_output
         else:
@@ -320,7 +325,8 @@ class DefaultModelWorker(ModelWorker):
                 yield model_output
             logger.info(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel "
-                f"generate_stream params:\n{params}"
+                f"generate_stream params:\n{params}\n"
+                f"{last_metrics.to_printable_string()}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()
@@ -359,6 +365,10 @@ class DefaultModelWorker(ModelWorker):
                 last_metrics,
                 is_first_generate,
             )
+            last_metrics = current_metrics
+            logger.info(
+                f"generate params:\n{params}\n{last_metrics.to_printable_string()}"
+            )
             return model_output
         else:
             output = None
@@ -369,6 +379,13 @@ class DefaultModelWorker(ModelWorker):
     def _prepare_generate_stream(
         self, params: Dict, span_operation_name: str, is_stream=True
     ):
+        if self.llm_adapter.is_reasoning_model(
+            self._model_params, self.model_name.lower()
+        ):
+            params["is_reasoning_model"] = True
+        else:
+            params["is_reasoning_model"] = False
+
         params, model_context = self.llm_adapter.model_adaptation(
             params,
             self.model_name,
@@ -427,10 +444,6 @@ class DefaultModelWorker(ModelWorker):
             span_params["messages"] = list(
                 map(lambda m: m.dict(), span_params["messages"])
             )
-        if self.llm_adapter.is_reasoning_model(
-            self._model_params, self.model_name.lower()
-        ):
-            params["is_reasoning_model"] = True
 
         metadata = {
             "is_async_func": self.support_async(),
@@ -573,6 +586,17 @@ def _new_metrics_from_model_output(
         # time cost(seconds)
         duration = (metrics.current_time_ms - metrics.start_time_ms) / 1000.0
         metrics.speed_per_second = total_tokens / duration
+    if total_tokens and "prefill_tokens_per_second" in usage:
+        metrics.prefill_tokens_per_second = usage["prefill_tokens_per_second"]
+    if total_tokens and "decode_tokens_per_second" in usage:
+        # Decode speed
+        metrics.decode_tokens_per_second = usage["decode_tokens_per_second"]
+    elif total_tokens and metrics.first_token_time_ms:
+        # time cost(seconds)
+        duration = (metrics.current_time_ms - metrics.first_token_time_ms) / 1000.0
+        if duration > 0:
+            # Calculate decode speed if not provided
+            metrics.decode_tokens_per_second = metrics.completion_tokens / duration
 
     current_gpu_infos = _get_current_cuda_memory()
     metrics.current_gpu_infos = current_gpu_infos

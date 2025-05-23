@@ -48,7 +48,7 @@ cli = [
 ]
 agent = [
     "termcolor",
-    "pandas==2.0.3",
+    "pandas==2.2.3",
     # numpy should less than 2.0.0
     "numpy>=1.21.0,<2.0.0",
     "auto-gpt-plugin-template>=0.0.3",
@@ -118,8 +118,8 @@ llama_cpp = [
     "llama-cpp-python",
 ]
 llama_cpp_server = [
-    "llama-cpp-server-py-core>=0.1.3",
-    "llama-cpp-server-py>=0.1.3",
+    "llama-cpp-server-py-core>=0.1.4",
+    "llama-cpp-server-py>=0.1.4",
 ]
 proxy_ollama = ["ollama"]
 proxy_zhipuai = ["zhipuai>=2.1.5"]
@@ -155,6 +155,9 @@ hf_kimi = [
     "blobfile",
     "transformers<4.51.3",
 ]
+hf_qwen3 = [
+    "transformers>=4.51.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -172,6 +175,10 @@ conflicts = [
     ],
     [
         { extra = "hf_glm4" },
+        { extra = "hf_kimi" },
+    ],
+    [
+        { extra = "hf_qwen3" },
         { extra = "hf_kimi" },
     ],
 ]
