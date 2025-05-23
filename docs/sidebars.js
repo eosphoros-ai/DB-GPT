@@ -93,6 +93,10 @@ const sidebars = {
                   type: "doc",
                   id: "installation/integrations/mssql_install"
                 },
+                {
+                  type: "doc",
+                  id: "installation/integrations/oracle_install"
+                },
               ]
                },
                  {

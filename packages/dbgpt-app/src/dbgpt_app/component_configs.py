@@ -137,18 +137,21 @@ def _initialize_openapi(system_app: SystemApp):
 
 
 def _initialize_operators():
-    from dbgpt_app.operators.code import CodeMapOperator  # noqa: F401
-    from dbgpt_app.operators.converter import StringToInteger  # noqa: F401
-    from dbgpt_app.operators.datasource import (  # noqa: F401
-        HODatasourceExecutorOperator,
-        HODatasourceRetrieverOperator,
-    )
-    from dbgpt_app.operators.llm import (  # noqa: F401
-        HOLLMOperator,
-        HOStreamingLLMOperator,
-    )
-    from dbgpt_app.operators.rag import HOKnowledgeOperator  # noqa: F401
-    from dbgpt_serve.agent.resource.datasource import DatasourceResource  # noqa: F401
+    from dbgpt.core.awel import BaseOperator
+    from dbgpt.util.module_utils import ModelScanner, ScannerConfig
+
+    modules = ["dbgpt_app.operators", "dbgpt_serve.agent.resource"]
+
+    scanner = ModelScanner[BaseOperator]()
+    registered_items = {}
+    for module in modules:
+        config = ScannerConfig(
+            module_path=module,
+            base_class=BaseOperator,
+        )
+        items = scanner.scan_and_register(config)
+        registered_items[module] = items
+    return scanner.get_registered_items()
 
 
 def _initialize_code_server(system_app: SystemApp):
