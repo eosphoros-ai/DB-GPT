@@ -156,8 +156,8 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         Return:
             List[Chunk]: list of chunks
         """
-        candidates = await blocking_func_to_async(
-            self._executor, self._retrieve, query, filters
+        candidates = await self._aretrieve_with_score(
+            query, 0.0, filters
         )
         return candidates
 
