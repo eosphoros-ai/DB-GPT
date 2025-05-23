@@ -226,6 +226,7 @@ class DocTreeRetriever(BaseRetriever):
         rerank: Optional[Ranker] = None,
         keywords_extractor: Optional[ExtractorBase] = None,
         with_content: bool = False,
+        show_tree: bool = True,
         executor: Optional[Executor] = None,
     ):
         """Create DocTreeRetriever.
@@ -248,6 +249,7 @@ class DocTreeRetriever(BaseRetriever):
         self._rerank = rerank or DefaultRanker(self._top_k)
         self._keywords_extractor = keywords_extractor
         self._with_content = with_content
+        self._show_tree = show_tree
         self._tree_indexes = self._initialize_doc_tree(docs)
         self._executor = executor or ThreadPoolExecutor()
 
@@ -305,6 +307,11 @@ class DocTreeRetriever(BaseRetriever):
                 retrieve_node = tree_index.search_keywords(tree_index.root, keyword)
                 if retrieve_node:
                     # If a match is found, return the corresponding chunks
+                    if self._show_tree:
+                        logger.info(
+                            f"DocTreeIndex Match found in: {retrieve_node.level_text}"
+                        )
+                        tree_index.display_tree(retrieve_node)
                     all_nodes.append(retrieve_node)
         return all_nodes
 
@@ -335,12 +342,11 @@ class DocTreeRetriever(BaseRetriever):
         for doc in docs:
             tree_index = DocTreeIndex()
             for chunk in doc.chunks:
-                if not chunk.metadata.get(TITLE):
-                    continue
+                title = chunk.metadata.get("title") or "title"
                 if not self._with_content:
                     tree_index.add_nodes(
                         node_id=chunk.chunk_id,
-                        title=chunk.metadata[TITLE],
+                        title=title,
                         header1=chunk.metadata.get(HEADER1),
                         header2=chunk.metadata.get(HEADER2),
                         header3=chunk.metadata.get(HEADER3),
@@ -351,7 +357,7 @@ class DocTreeRetriever(BaseRetriever):
                 else:
                     tree_index.add_nodes(
                         node_id=chunk.chunk_id,
-                        title=chunk.metadata[TITLE],
+                        title=title,
                         header1=chunk.metadata.get(HEADER1),
                         header2=chunk.metadata.get(HEADER2),
                         header3=chunk.metadata.get(HEADER3),
