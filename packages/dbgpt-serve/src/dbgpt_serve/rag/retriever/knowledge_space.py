@@ -1,5 +1,4 @@
 import ast
-import json
 import logging
 from typing import List, Optional
 
@@ -184,6 +183,9 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         elif self._retrieve_mode == RetrieverStrategy.KEYWORD.value:
             logger.info("Starting Full Text retrieval")
             return await self.full_text_retrieve(query, self._top_k, filters)
+        elif self._retrieve_mode == RetrieverStrategy.Tree.value:
+            logger.info("Starting Doc Tree retrieval")
+            return await self.tree_index_retrieve(query, self._top_k, filters)
         elif self._retrieve_mode == RetrieverStrategy.HYBRID.value:
             logger.info("Starting Hybrid retrieval")
             tasks = []
@@ -236,8 +238,9 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         """Full Text Retrieve knowledge chunks with score.
         refer https://www.elastic.co/guide/en/elasticsearch/reference/8.9/
         index-modules-similarity.html;
-        TF/IDF based similarity that has built-in tf normalization and is supposed to
-        work better for short fields (like names). See Okapi_BM25 for more details.
+        TF/IDF or BM25 based similarity that has built-in tf normalization and is
+        supposed to work better for short fields (like names).
+        See Okapi_BM25 for more details.
 
         Args:
             query (str): query text.

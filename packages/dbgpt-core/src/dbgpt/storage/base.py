@@ -274,11 +274,8 @@ class IndexStoreBase(ABC):
     def is_support_full_text_search(self) -> bool:
         """Support full text search.
 
-        Args:
-            collection_name(str): collection name.
         Return:
             bool: The similar documents.
         """
-        raise NotImplementedError(
-            "Full text search is not supported in this index store."
-        )
+        logger.warning("Full text search is not supported in this index store.")
+        return False
