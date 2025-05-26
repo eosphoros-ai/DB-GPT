@@ -16,12 +16,12 @@ export default function TableChart({ chart, columnNameMap, renderCell }: TableCh
     }
 
     const firstRow = chart.values[0];
-    
+
     // Handle type-value structure
     if ('type' in firstRow && 'value' in firstRow && 'name' in firstRow) {
       // Group by name and transform type-value pairs into columns
       const mergedData = new Map();
-      
+
       chart.values.forEach(item => {
         if (!mergedData.has(item.name)) {
           mergedData.set(item.name, { name: item.name });
@@ -32,7 +32,7 @@ export default function TableChart({ chart, columnNameMap, renderCell }: TableCh
 
       // Get all unique types as columns
       const types = [...new Set(chart.values.map(item => item.type))];
-      
+
       return {
         columns: ['name', ...types],
         dataSource: Array.from(mergedData.values()),
@@ -60,7 +60,7 @@ export default function TableChart({ chart, columnNameMap, renderCell }: TableCh
     if (typeof value === 'number') {
       // Handle percentage and score values (0-100 range)
       if (value >= 0 && value <= 100) {
-        return value.toFixed(2);  // Keep two decimal places for scores/percentages
+        return value.toFixed(2); // Keep two decimal places for scores/percentages
       }
       // For large numbers, use thousand separators
       if (value >= 1000) {
@@ -91,7 +91,9 @@ export default function TableChart({ chart, columnNameMap, renderCell }: TableCh
                 <tr key={i}>
                   {columns.map(col => (
                     <td key={col}>
-                      {renderCell ? renderCell(row[col as keyof typeof row], row, col) : formatCellValue(row[col as keyof typeof row])}
+                      {renderCell
+                        ? renderCell(row[col as keyof typeof row], row, col)
+                        : formatCellValue(row[col as keyof typeof row])}
                     </td>
                   ))}
                 </tr>

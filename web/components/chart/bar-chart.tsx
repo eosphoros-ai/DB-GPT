@@ -31,8 +31,8 @@ export default function BarChart({ chart }: { key: string; chart: ChartData }) {
                 },
               },
               tooltip: {
-                valueFormatter: (v: any) => Number(v).toFixed(2)
-              }
+                valueFormatter: (v: any) => Number(v).toFixed(2),
+              },
             }}
           />
         </div>
