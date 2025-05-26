@@ -218,6 +218,31 @@ class ChromaStore(VectorStoreBase):
         ]
         return self.filter_by_score_threshold(chunks, score_threshold)
 
+    async def afull_text_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Similar search in index database.
+
+        Args:
+            text(str): The query text.
+            topk(int): The number of similar documents to return.
+            filters(Optional[MetadataFilters]): metadata filters.
+        Return:
+            List[Chunk]: The similar documents.
+        """
+        logger.info("ChromaStore do not support full text search")
+        return []
+
+    def is_support_full_text_search(self) -> bool:
+        """Support full text search.
+
+        Args:
+            collection_name(str): collection name.
+        Return:
+            bool: is support full texts earch.
+        """
+        return False
+
     def vector_name_exists(self) -> bool:
         """Whether vector name exists."""
         try:

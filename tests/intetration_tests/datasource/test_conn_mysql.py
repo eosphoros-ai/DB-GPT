@@ -20,7 +20,7 @@
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_mysql import MySQLConnector
+from dbgpt_ext.datasource.rdbms.conn_mysql import MySQLConnector
 
 _create_table_sql = """
             CREATE TABLE IF NOT EXISTS `test` (
