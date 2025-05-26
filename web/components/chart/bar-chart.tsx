@@ -23,8 +23,16 @@ export default function BarChart({ chart }: { key: string; chart: ChartData }) {
               axis: {
                 x: {
                   labelAutoRotate: false,
+                  title: false,
+                },
+                y: {
+                  labelFormatter: (value: any) => Number(value).toFixed(2),
+                  title: false,
                 },
               },
+              tooltip: {
+                valueFormatter: (v: any) => Number(v).toFixed(2)
+              }
             }}
           />
         </div>
