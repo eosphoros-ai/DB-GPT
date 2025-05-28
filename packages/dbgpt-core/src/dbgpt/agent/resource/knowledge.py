@@ -46,6 +46,8 @@ class RetrieverResource(Resource[ResourceParameters]):
             self.reranker = RerankEmbeddingsRanker(
                 rerank_embeddings, topk=app_config.rag.rerank_top_k
             )
+        else:
+            self.reranker = None
 
     @property
     def name(self) -> str:
