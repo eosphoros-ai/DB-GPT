@@ -128,6 +128,7 @@ async def chat_completions(
         or request.chat_mode == ChatMode.CHAT_KNOWLEDGE.value
         or request.chat_mode == ChatMode.CHAT_DATA.value
         or request.chat_mode == ChatMode.CHAT_DB_QA.value
+        or request.chat_mode == ChatMode.CHAT_DASHBOARD.value
     ):
         with root_tracer.start_span(
             "get_chat_instance",
@@ -157,7 +158,7 @@ async def chat_completions(
             detail={
                 "error": {
                     "message": "chat mode now only support chat_normal, chat_app, "
-                    "chat_flow, chat_knowledge, chat_data",
+                    "chat_flow, chat_knowledge, chat_data, chat_dashboard",
                     "type": "invalid_request_error",
                     "param": None,
                     "code": "invalid_chat_mode",

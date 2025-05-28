@@ -38,11 +38,16 @@ class RetrieverResource(Resource[ResourceParameters]):
         self._name = name
         self._retriever = retriever
         app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
-        rerank_embeddings = RerankEmbeddingFactory.get_instance(CFG.SYSTEM_APP).create()
         self.need_rerank = bool(app_config.models.rerankers)
-        self.reranker = RerankEmbeddingsRanker(
-            rerank_embeddings, topk=app_config.rag.rerank_top_k
-        )
+        if self.need_rerank:
+            rerank_embeddings = RerankEmbeddingFactory.get_instance(
+                CFG.SYSTEM_APP
+            ).create()
+            self.reranker = RerankEmbeddingsRanker(
+                rerank_embeddings, topk=app_config.rag.rerank_top_k
+            )
+        else:
+            self.reranker = None
 
     @property
     def name(self) -> str:
