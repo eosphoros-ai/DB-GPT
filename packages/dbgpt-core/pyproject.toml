@@ -157,6 +157,9 @@ hf_kimi = [
 hf_qwen3 = [
     "transformers>=4.51.0",
 ]
+hf_qwen2vl = [
+    "transformers>=4.34.0",
+]
 
 [build-system]
 requires = ["hatchling"]
