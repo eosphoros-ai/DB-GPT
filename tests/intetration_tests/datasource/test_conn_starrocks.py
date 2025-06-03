@@ -21,7 +21,7 @@
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_starrocks import StarRocksConnector
+from dbgpt_ext.datasource.rdbms.conn_starrocks import StarRocksConnector
 
 
 @pytest.fixture
