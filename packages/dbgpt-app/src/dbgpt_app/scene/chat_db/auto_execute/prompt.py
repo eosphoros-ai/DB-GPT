@@ -73,7 +73,7 @@ _DEFAULT_TEMPLATE_ZH = """
     则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}
 用户问题:
     {user_input}
-请一步步思考并按照以下JSON格式回复：
+请分步骤、分段梳理上下文，逐步总结和分析，并按照以下JSON格式回复：
       {response}
 确保返回正确的json并且可以被Python json.loads方法解析.
 
