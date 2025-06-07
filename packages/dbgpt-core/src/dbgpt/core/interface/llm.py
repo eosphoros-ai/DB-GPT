@@ -66,7 +66,14 @@ class ModelInferenceMetrics:
     """The total number of tokens (prompt plus completion)."""
 
     speed_per_second: Optional[float] = None
-    """The average number of tokens generated per second."""
+    """The average number of tokens generated per second. Includes both prefill and 
+    decode time."""
+
+    prefill_tokens_per_second: Optional[float] = None
+    """Prefill speed in tokens per second."""
+
+    decode_tokens_per_second: Optional[float] = None
+    """The average number of tokens generated per second during the decode phase."""
 
     current_gpu_infos: Optional[List[GPUInfo]] = None
     """Current gpu information, all devices"""
@@ -98,6 +105,12 @@ class ModelInferenceMetrics:
         completion_tokens = last_metrics.completion_tokens if last_metrics else None
         total_tokens = last_metrics.total_tokens if last_metrics else None
         speed_per_second = last_metrics.speed_per_second if last_metrics else None
+        prefill_tokens_per_second = (
+            last_metrics.prefill_tokens_per_second if last_metrics else None
+        )
+        decode_tokens_per_second = (
+            last_metrics.decode_tokens_per_second if last_metrics else None
+        )
         current_gpu_infos = last_metrics.current_gpu_infos if last_metrics else None
         avg_gpu_infos = last_metrics.avg_gpu_infos if last_metrics else None
 
@@ -117,6 +130,8 @@ class ModelInferenceMetrics:
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
             speed_per_second=speed_per_second,
+            prefill_tokens_per_second=prefill_tokens_per_second,
+            decode_tokens_per_second=decode_tokens_per_second,
             current_gpu_infos=current_gpu_infos,
             avg_gpu_infos=avg_gpu_infos,
         )
@@ -124,6 +139,65 @@ class ModelInferenceMetrics:
     def to_dict(self) -> Dict:
         """Convert the model inference metrics to dict."""
         return asdict(self)
+
+    def to_printable_string(self) -> str:
+        """Stringify the metrics in an elegant format.
+
+        Returns:
+            str: A formatted string containing first token latency, prefill speed,
+                 decode speed, prompt tokens and completion tokens.
+        """
+        lines = []
+
+        # Calculate first token latency if possible
+        first_token_latency = None
+        if self.first_token_time_ms is not None and self.start_time_ms is not None:
+            first_token_latency = (
+                self.first_token_time_ms - self.start_time_ms
+            ) / 1000.0
+
+        # Add section header
+        lines.append("=== Model Inference Metrics ===")
+
+        # Latency metrics
+        lines.append("\n▶ Latency:")
+        if first_token_latency is not None:
+            lines.append(f"  • First Token Latency: {first_token_latency:.3f}s")
+        else:
+            lines.append("  • First Token Latency: N/A")
+
+        # Speed metrics
+        lines.append("\n▶ Speed:")
+        if self.prefill_tokens_per_second is not None:
+            lines.append(
+                f"  • Prefill Speed: {self.prefill_tokens_per_second:.2f} tokens/s"
+            )
+        else:
+            lines.append("  • Prefill Speed: N/A")
+
+        if self.decode_tokens_per_second is not None:
+            lines.append(
+                f"  • Decode Speed: {self.decode_tokens_per_second:.2f} tokens/s"
+            )
+        else:
+            lines.append("  • Decode Speed: N/A")
+
+        # Token counts
+        lines.append("\n▶ Tokens:")
+        if self.prompt_tokens is not None:
+            lines.append(f"  • Prompt Tokens: {self.prompt_tokens}")
+        else:
+            lines.append("  • Prompt Tokens: N/A")
+
+        if self.completion_tokens is not None:
+            lines.append(f"  • Completion Tokens: {self.completion_tokens}")
+        else:
+            lines.append("  • Completion Tokens: N/A")
+
+        if self.total_tokens is not None:
+            lines.append(f"  • Total Tokens: {self.total_tokens}")
+
+        return "\n".join(lines)
 
 
 @dataclass

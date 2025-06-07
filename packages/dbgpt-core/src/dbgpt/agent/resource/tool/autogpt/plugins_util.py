@@ -68,7 +68,7 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
             logger.debug(f"Created directory: {directory_path}")
             return True
         except OSError as e:
-            logger.warn(f"Error creating directory {directory_path}: {e}")
+            logger.warning(f"Error creating directory {directory_path}: {e}")
             return False
     else:
         logger.info(f"Directory {directory_path} already exists")

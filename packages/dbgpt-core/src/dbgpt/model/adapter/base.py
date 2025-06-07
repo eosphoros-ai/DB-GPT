@@ -223,6 +223,12 @@ class LLMModelAdapter(ABC):
         """Load model and tokenizer"""
         raise NotImplementedError
 
+    def model_patch(
+        self, deploy_model_params: LLMDeployModelParameters
+    ) -> Optional[Callable[[Any], Any]]:
+        """Patch function for model"""
+        return None
+
     def parse_max_length(self, model, tokenizer) -> Optional[int]:
         """Parse the max_length of the model.
 

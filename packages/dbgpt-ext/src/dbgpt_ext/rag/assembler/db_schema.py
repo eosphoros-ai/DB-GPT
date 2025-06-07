@@ -19,10 +19,10 @@ class DBSchemaAssembler(BaseAssembler):
     Example:
         .. code-block:: python
 
-            from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
-            from dbgpt_serve.rag.assembler.db_struct import DBSchemaAssembler
-            from dbgpt.storage.vector_store.connector import VectorStoreBase
-            from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+            from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteTempConnector
+            from dbgpt_ext.rag.assembler.db_schema import DBSchemaAssembler
+            from dbgpt.storage.vector_store.base import VectorStoreBase
+            from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
 
             connection = SQLiteTempConnector.create_temporary_db()
             assembler = DBSchemaAssembler.load_from_connection(

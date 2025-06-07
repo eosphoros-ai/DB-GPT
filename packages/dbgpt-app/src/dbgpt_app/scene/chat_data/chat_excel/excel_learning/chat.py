@@ -38,12 +38,11 @@ class ExcelLearning(BaseChat):
 
     @trace()
     async def generate_input_values(self) -> Dict:
-        # colunms, datas = self.excel_reader.get_sample_data()
-        colunms, datas = await blocking_func_to_async(
+        columns, datas = await blocking_func_to_async(
             self._executor, self.excel_reader.get_sample_data, self._curr_table
         )
-        self.prompt_template.output_parser.update(colunms)
-        datas.insert(0, colunms)
+        self.prompt_template.output_parser.update(columns)
+        datas.insert(0, columns)
 
         table_schema = await blocking_func_to_async(
             self._executor, self.excel_reader.get_create_table_sql, self._curr_table

@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional
+
+from pymilvus.milvus_client import IndexParams, MilvusClient
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -19,6 +22,7 @@ from dbgpt.storage.vector_store.base import (
 from dbgpt.storage.vector_store.filters import FilterOperator, MetadataFilters
 from dbgpt.util import string_utils
 from dbgpt.util.i18n_utils import _
+from dbgpt.util.json_utils import serialize
 
 logger = logging.getLogger(__name__)
 
@@ -211,13 +215,13 @@ class MilvusStore(VectorStoreBase):
         )
         self._vector_store_config = vector_store_config
 
-        try:
-            from pymilvus import connections
-        except ImportError:
-            raise ValueError(
-                "Could not import pymilvus python package. "
-                "Please install it with `pip install pymilvus`."
-            )
+        # try:
+        #     from pymilvus import connections
+        # except ImportError:
+        #     raise ValueError(
+        #         "Could not import pymilvus python package. "
+        #         "Please install it with `pip install pymilvus`."
+        #     )
         connect_kwargs = {}
         milvus_vector_config = vector_store_config.to_dict()
         self.uri = milvus_vector_config.get("uri") or os.getenv(
@@ -226,7 +230,9 @@ class MilvusStore(VectorStoreBase):
         self.port = milvus_vector_config.get("post") or os.getenv(
             "MILVUS_PORT", "19530"
         )
-        self.username = milvus_vector_config.get("user") or os.getenv("MILVUS_USERNAME")
+        self.username = milvus_vector_config.get("user", "") or os.getenv(
+            "MILVUS_USERNAME"
+        )
         self.password = milvus_vector_config.get("password") or os.getenv(
             "MILVUS_PASSWORD"
         )
@@ -244,12 +250,12 @@ class MilvusStore(VectorStoreBase):
         self.embedding: Embeddings = embedding_fn
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"
+        self._consistency_level = "Session"
 
         # use HNSW by default.
         self.index_params = {
             "index_type": "HNSW",
             "metric_type": "COSINE",
-            "params": {"M": 8, "efConstruction": 64},
         }
 
         # use HNSW by default.
@@ -268,6 +274,9 @@ class MilvusStore(VectorStoreBase):
         self.primary_field = milvus_vector_config.get("primary_field") or "pk_id"
         self.vector_field = milvus_vector_config.get("embedding_field") or "vector"
         self.text_field = milvus_vector_config.get("text_field") or "content"
+        self.sparse_vector = (
+            milvus_vector_config.get("sparse_vector") or "sparse_vector"
+        )
         self.metadata_field = milvus_vector_config.get("metadata_field") or "metadata"
         self.props_field = milvus_vector_config.get("props_field") or "props_field"
 
@@ -280,12 +289,9 @@ class MilvusStore(VectorStoreBase):
             connect_kwargs["user"] = self.username
             connect_kwargs["password"] = self.password
 
-        connections.connect(
-            host=self.uri or "127.0.0.1",
-            port=self.port or "19530",
-            user=self.username,
-            password=self.password,
-            alias="default",
+        url = f"http://{self.uri}:{self.port}"
+        self._milvus_client = MilvusClient(
+            uri=url, user=self.username, db_name="default"
         )
         self.col = self.create_collection(collection_name=self.collection_name)
 
@@ -304,6 +310,8 @@ class MilvusStore(VectorStoreBase):
                 CollectionSchema,
                 DataType,
                 FieldSchema,
+                Function,
+                FunctionType,
                 connections,
                 utility,
             )
@@ -332,30 +340,57 @@ class MilvusStore(VectorStoreBase):
         vector_field = self.vector_field
         text_field = self.text_field
         metadata_field = self.metadata_field
+        sparse_vector = self.sparse_vector
         props_field = self.props_field
         fields = []
         # max_length = 0
         # Create the text field
-        fields.append(FieldSchema(text_field, DataType.VARCHAR, max_length=65535))
+        fields.append(
+            FieldSchema(
+                text_field,
+                DataType.VARCHAR,
+                max_length=65535,
+                enable_analyzer=self.is_support_full_text_search(),
+            )
+        )
         # primary key field
         fields.append(
             FieldSchema(primary_field, DataType.INT64, is_primary=True, auto_id=True)
         )
         # vector field
         fields.append(FieldSchema(vector_field, DataType.FLOAT_VECTOR, dim=dim))
+        if self.is_support_full_text_search():
+            fields.append(FieldSchema(sparse_vector, DataType.SPARSE_FLOAT_VECTOR))
 
         fields.append(FieldSchema(metadata_field, DataType.VARCHAR, max_length=65535))
         fields.append(FieldSchema(props_field, DataType.JSON))
         schema = CollectionSchema(fields)
+        if self.is_support_full_text_search():
+            bm25_fn = Function(
+                name="text_bm25_emb",
+                input_field_names=[self.text_field],
+                output_field_names=[self.sparse_vector],
+                function_type=FunctionType.BM25,
+            )
+            schema.add_function(bm25_fn)
         # Create the collection
         collection = Collection(collection_name, schema)
         self.col = collection
+        index_params = IndexParams()
         # index parameters for the collection
-        index = self.index_params
-        # milvus index
-        collection.create_index(vector_field, index)
+        index_params.add_index(field_name=self.vector_field, **self.index_params)
+        # Create Sparse Vector Index for the collection
+        if self.is_support_full_text_search():
+            collection.create_index(
+                self.sparse_vector,
+                {
+                    "index_type": "AUTOINDEX",
+                    "metric_type": "BM25",
+                },
+            )
+        collection.create_index(vector_field, self.index_params)
         collection.load()
-        return collection
+        return self.col
 
     def _load_documents(self, documents) -> List[str]:
         """Load documents into Milvus.
@@ -412,11 +447,12 @@ class MilvusStore(VectorStoreBase):
         # self.fields.extend(metadatas[0].keys())
         if len(self.fields) > 2 and metadatas is not None:
             for d in metadatas:
+                metadata_json = json.dumps(d, default=serialize, ensure_ascii=False)
                 # for key, value in d.items():
-                insert_dict.setdefault("metadata", []).append(json.dumps(d))
-                insert_dict.setdefault("props_field", []).append(d)
+                insert_dict.setdefault("metadata", []).append(metadata_json)
+                insert_dict.setdefault("props_field", []).append(metadata_json)
         # Convert dict to list of lists for insertion
-        insert_list = [insert_dict[x] for x in self.fields]
+        insert_list = [insert_dict[x] for x in self.fields if self.sparse_vector != x]
         # Insert into the collection.
         res = self.col.insert(
             insert_list, partition_name=partition_name, timeout=timeout
@@ -568,13 +604,17 @@ class MilvusStore(VectorStoreBase):
         self.col.load()
         # use default index params.
         if param is None:
-            index_type = self.col.indexes[0].params["index_type"]
-            param = self.index_params_map[index_type]
+            for index in self.col.indexes:
+                if index.params["index_type"] == self.index_params.get("index_type"):
+                    param = index.params
+                    break
         #  query text embedding.
         query_vector = self.embedding.embed_query(query)
         # Determine result metadata fields.
         output_fields = self.fields[:]
         output_fields.remove(self.vector_field)
+        if self.sparse_vector in output_fields:
+            output_fields.remove(self.sparse_vector)
         # milvus search.
         res = self.col.search(
             [query_vector],
@@ -593,7 +633,10 @@ class MilvusStore(VectorStoreBase):
             meta = {x: result.entity.get(x) for x in output_fields}
             ret.append(
                 (
-                    Chunk(content=meta.pop(self.text_field), metadata=meta),
+                    Chunk(
+                        content=meta.pop(self.text_field),
+                        metadata=json.loads(meta.pop(self.metadata_field)),
+                    ),
                     result.distance,
                     result.id,
                 )
@@ -691,3 +734,51 @@ class MilvusStore(VectorStoreBase):
             utility.drop_collection(self.collection_name)
 
         logger.info(f"truncate milvus collection {self.collection_name} success")
+
+    def full_text_search(
+        self, text: str, topk: int = 10, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        if self.is_support_full_text_search():
+            milvus_filters = self.convert_metadata_filters(filters) if filters else None
+            results = self._milvus_client.search(
+                collection_name=self.collection_name,
+                data=[text],
+                anns_field=self.sparse_vector,
+                limit=topk,
+                output_fields=["*"],
+                filter=milvus_filters,
+            )
+            chunk_results = [
+                Chunk(
+                    content=r.get("entity").get("content"),
+                    chunk_id=str(r.get("pk_id")),
+                    score=r.get("distance"),
+                    metadata=json.loads(r.get("entity").get("metadata")),
+                    retriever="full_text",
+                )
+                for r in results[0]
+            ]
+
+            return chunk_results
+
+    def is_support_full_text_search(self) -> bool:
+        """
+        Check Milvus version support full text search.
+        Returns True if the version is >= 2.5.0.
+        """
+        try:
+            milvus_version_text = self._milvus_client.get_server_version()
+            pattern = r"v(\d+\.\d+\.\d+)"
+            match = re.search(pattern, milvus_version_text)
+            if match:
+                milvus_version = match.group(1)
+                logger.info(f"milvus version is {milvus_version}")
+                # Check if the version is >= 2.5.0
+                return milvus_version >= "2.5.0"
+            return False
+        except Exception as e:
+            logger.warning(
+                f"Failed to check Milvus version:{str(e)}."
+                f"do not support full text index."
+            )
+            return False

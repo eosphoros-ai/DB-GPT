@@ -202,7 +202,10 @@ class ConnectConfigDao(BaseDao):
     def get_db_config(self, db_name):
         """Return db connect info by name."""
         session = self.get_raw_session()
-        if db_name:
+        try:
+            if not db_name:
+                raise ValueError("Database name cannot be empty")
+
             select_statement = text(
                 """
                 SELECT
@@ -216,16 +219,16 @@ class ConnectConfigDao(BaseDao):
             params = {"db_name": db_name}
             result = session.execute(select_statement, params)
 
-        else:
-            raise ValueError("Cannot get database by name" + db_name)
+            fields = [field[0] for field in result.cursor.description]
 
-        logger.info(f"Result: {result}")
-        fields = [field[0] for field in result.cursor.description]
-        row_dict = {}
-        row_1 = list(result.cursor.fetchall()[0])
-        for i, field in enumerate(fields):
-            row_dict[field] = row_1[i]
-        return row_dict
+            row = result.cursor.fetchone()
+            if not row:
+                logger.error(f"No database config found for db_name: {db_name}")
+                raise ValueError(f"Database config not found for: {db_name}")
+
+            return {fields[i]: row[i] for i in range(len(fields))}
+        finally:
+            session.close()
 
     def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""

@@ -397,6 +397,21 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         return self.dao.get_list_page(request, page, page_size)
 
     def get_document_list(
+        self, request: QUERY_SPEC
+    ) -> PaginationResult[DocumentServeResponse]:
+        """Get a list of Flow entities by page
+
+        Args:
+            request (SpaceServeRequest): The request
+            page (int): The page number
+            page_size (int): The page size
+
+        Returns:
+            List[SpaceServeResponse]: The response
+        """
+        return self._document_dao.get_list(request)
+
+    def get_document_list_page(
         self, request: QUERY_SPEC, page: int, page_size: int
     ) -> PaginationResult[DocumentServeResponse]:
         """Get a list of Flow entities by page
