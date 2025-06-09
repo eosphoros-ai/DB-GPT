@@ -162,6 +162,8 @@ DB-GPTのアーキテクチャは以下の図に示されています：
   私たちは、LLaMA/LLaMA2、Baichuan、ChatGLM、Wenxin、Tongyi、Zhipuなど、オープンソースおよびAPIエージェントからの数十の大規模言語モデル（LLM）を含む幅広いモデルをサポートしています。
 
   - ニュース
+    - 🔥🔥🔥  [DeepSeek-R1-0528](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528)
+    - 🔥🔥🔥  [DeepSeek-V3-0324](https://huggingface.co/deepseek-ai/DeepSeek-V3-0324)
     - 🔥🔥🔥  [Qwen3-235B-A22B](https://huggingface.co/Qwen/Qwen3-235B-A22B)
     - 🔥🔥🔥  [Qwen3-30B-A3B](https://huggingface.co/Qwen/Qwen3-30B-A3B)
     - 🔥🔥🔥  [Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B)
