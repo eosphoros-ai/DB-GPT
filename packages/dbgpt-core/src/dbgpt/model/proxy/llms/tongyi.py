@@ -143,7 +143,7 @@ register_proxy_model_adapter(
             function_calling=True,
         ),
         ModelMetadata(
-            model="deepseek-r1",
+            model=["deepseek-r1", "deepseek-r1-0528"],
             context_length=64 * 1024,
             max_output_length=8 * 1024,
             description="DeepSeek-R1 by DeepSeek",

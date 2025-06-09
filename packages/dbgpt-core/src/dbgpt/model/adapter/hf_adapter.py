@@ -1106,6 +1106,25 @@ class KimiVLAdapter(NewHFChatModelAdapter):
         return lower_model_name_or_path and "thinking" in lower_model_name_or_path
 
 
+class MiniCPMAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/openbmb/MiniCPM4-8B
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and "minicpm" in lower_model_name_or_path
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        return super().load(model_path, from_pretrained_kwargs)
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(CommonModelAdapter)  # For all of hf models can be matched
@@ -1137,3 +1156,4 @@ register_model_adapter(Qwen2VLAdapter)
 register_model_adapter(Internlm2Adapter)
 register_model_adapter(DeepseekV3R1Adapter, supported_models=COMMON_HF_DEEPSEEK__MODELS)
 register_model_adapter(KimiVLAdapter)
+register_model_adapter(MiniCPMAdapter)

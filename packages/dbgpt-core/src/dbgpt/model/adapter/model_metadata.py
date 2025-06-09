@@ -46,7 +46,18 @@ COMMON_HF_DEEPSEEK__MODELS = [
         function_calling=True,
     ),
     ModelMetadata(
-        model=["deepseek-ai/DeepSeek-V3"],
+        model=[
+            "deepseek-ai/DeepSeek-R1-0528",
+            "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+        ],
+        context_length=128 * 1024,
+        max_output_length=64 * 1024,
+        description="DeepSeek-R1 by DeepSeek",
+        link="https://huggingface.co/deepseek-ai/DeepSeek-R1-0528",
+        function_calling=True,
+    ),
+    ModelMetadata(
+        model=["deepseek-ai/DeepSeek-V3", "deepseek-ai/DeepSeek-V3-0324"],
         context_length=128 * 1024,
         max_output_length=8 * 1024,
         description="DeepSeek-V3 by DeepSeek",
