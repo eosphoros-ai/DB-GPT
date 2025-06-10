@@ -1,11 +1,11 @@
-# DB-GPT: AI原生数据应用开发框架
+# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: AI原生数据应用开发框架
 
-<p align="left">
-  <img src="./assets/LOGO.png" width="100%" />
+<p style="text-align: left;">
+  <img src="./assets/Twitter_LOGO.png" width="100%" />
 </p>
 
 
-<div align="center">
+<div style="text-align: center;">
   <p>
     <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
@@ -22,18 +22,30 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://discord.gg/7uQnPuveTY">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat" />
+    <a href="https://x.com/DBGPT_AI">
+      <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
+    </a>
+    <a href="https://medium.com/@dbgpt0506">
+      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/Dbgpt/orange?icon=medium" />
+    </a>
+    <a href="https://space.bilibili.com/3537113070963392">
+      <img alt="Bilibili Space" src="https://img.shields.io/badge/Bilibili-DB--GPT-blue?style=plastic&logo=bilibili&link=https%3A%2F%2Fspace.bilibili.com%2F3537113070963392" />
     </a>
     <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
       <img alt="Slack" src="https://badgen.net/badge/Slack/Join%20DB-GPT/0abd59?icon=slack" />
     </a>
+    <br/>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx) | [**微信**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+[![English](https://img.shields.io/badge/English-gray?style=flat-square)](README.md)
+[![简体中文](https://img.shields.io/badge/简体中文-gray?style=flat-square)](README.zh.md)
+[![日本語](https://img.shields.io/badge/日本語-gray?style=flat-square)](README.ja.md) 
+
+[**文档**](http://docs.dbgpt.cn/docs/overview/) | [**联系团队**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+
 </div>
 
 ## DB-GPT 是什么？
@@ -43,6 +55,38 @@
 目的是构建大模型领域的基础设施，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
 
 🚀 **数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。**
+
+### 架构方案
+
+<p align="center">
+  <img src="./assets/dbgpt.png" width="800px" />
+</p>
+
+核心能力主要有以下几个部分:
+- **RAG(Retrieval Augmented Generation)**，RAG是当下落地实践最多，也是最迫切的领域，DB-GPT目前已经实现了一套基于RAG的框架，用户可以基于DB-GPT的RAG能力构建知识类应用。 
+
+- **GBI**：生成式BI是DB-GPT项目的核心能力之一，为构建企业报表分析、业务洞察提供基础的数智化技术保障。 
+
+- **微调框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
+
+- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化Multi-Agents框架，目标是可以持续基于数据做决策与执行。 
+
+- **数据工厂**: 数据工厂主要是在大模型时代，做可信知识、数据的清洗加工。 
+
+- **数据源**: 对接各类数据源，实现生产业务数据无缝对接到DB-GPT核心能力。 
+
+#### 子模块
+- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
+- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
+- [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议 
+
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts 是官方提供的数据应用仓库, 包含数据智能应用, 智能体编排流程模版, 通用算子等构建在DB-GPT之上的资源。 
+
+#### RAG生产落地实践架构
+<p align="center">
+  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
+</p>
+
 
 ## 效果演示
 
@@ -68,45 +112,6 @@
 
 ![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
 
-
-## 目录
-- [架构方案](#架构方案)
-- [安装](#安装)
-- [特性简介](#特性一览)
-- [贡献](#贡献)
-- [路线图](#路线图)
-- [联系我们](#联系我们)
-
-## 架构方案
-
-<p align="center">
-  <img src="./assets/dbgpt.png" width="800px" />
-</p>
-
-核心能力主要有以下几个部分:
-- **RAG(Retrieval Augmented Generation)**，RAG是当下落地实践最多，也是最迫切的领域，DB-GPT目前已经实现了一套基于RAG的框架，用户可以基于DB-GPT的RAG能力构建知识类应用。 
-
-- **GBI**：生成式BI是DB-GPT项目的核心能力之一，为构建企业报表分析、业务洞察提供基础的数智化技术保障。 
-
-- **微调框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
-
-- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化Multi-Agents框架，目标是可以持续基于数据做决策与执行。 
-
-- **数据工厂**: 数据工厂主要是在大模型时代，做可信知识、数据的清洗加工。 
-
-- **数据源**: 对接各类数据源，实现生产业务数据无缝对接到DB-GPT核心能力。 
-
-### RAG生产落地实践架构
-<p align="center">
-  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
-</p>
-
-### 子模块
-- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
-- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
-- [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议 
-
-- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts 是官方提供的数据应用仓库, 包含数据智能应用, 智能体编排流程模版, 通用算子等构建在DB-GPT之上的资源。 
 
 ## 安装
 
@@ -251,10 +256,6 @@
 
 🌐 [小程序云部署](https://www.yuque.com/eosphoros/dbgpt-docs/ek12ly8k661tbyn8)
 
-### 多语言切换
-
-在.env 配置文件当中，修改LANGUAGE参数来切换使用不同的语言，默认是英文(中文zh, 英文en, 其他语言待补充)
-
 ## 使用说明
 
 ### 多模型使用
@@ -280,6 +281,10 @@
 ## Licence
 
 The MIT License (MIT)
+
+### 免责声明
+
+- [免责声明](./DISCKAIMER.md)
 
 ## 引用
 如果您发现`DB-GPT`对您的研究或开发有用，请引用以下论文，其中：
