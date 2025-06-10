@@ -1,10 +1,11 @@
-# DB-GPT: データベースとの対話を革新するプライベートLLM技術
+# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: データベースとの対話を革新するプライベートLLM技術
 
-<p align="left">
-  <img src="./assets/LOGO.png" width="100%" />
+
+<p style="text-align: left;">
+  <img src="./assets/Twitter_LOGO.png" width="100%" />
 </p>
 
-<div align="center">
+<div style="text-align: center;">
   <p>
     <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
@@ -21,18 +22,30 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://discord.gg/7uQnPuveTY">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat" />
+    <a href="https://x.com/DBGPT_AI">
+      <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
+    </a>
+    <a href="https://medium.com/@dbgpt0506">
+      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/Dbgpt/orange?icon=medium" />
+    </a>
+    <a href="https://space.bilibili.com/3537113070963392">
+      <img alt="Bilibili Space" src="https://img.shields.io/badge/Bilibili-DB--GPT-blue?style=plastic&logo=bilibili&link=https%3A%2F%2Fspace.bilibili.com%2F3537113070963392" />
     </a>
     <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
       <img alt="Slack" src="https://badgen.net/badge/Slack/Join%20DB-GPT/0abd59?icon=slack" />
     </a>
+    <br/>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**英語**](README.md) | [**中国語**](README.zh.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**ドキュメント**](https://docs.dbgpt.site) | [**微信**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**コミュニティ**](https://github.com/eosphoros-ai/community) | [**論文**](https://arxiv.org/pdf/2312.17449.pdf)
+[![英語](https://img.shields.io/badge/英語-gray?style=flat-square)](README.md)
+[![中国語](https://img.shields.io/badge/中国語-gray?style=flat-square)](README.zh.md)
+[![日本語](https://img.shields.io/badge/日本語-gray?style=flat-square)](README.ja.md) 
+
+[**ドキュメント**](http://docs.dbgpt.cn/docs/overview/) | [**チームに連絡します**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**コミュニティ**](https://github.com/eosphoros-ai/community) | [**論文**](https://arxiv.org/pdf/2312.17449.pdf)
+
 
 </div>
 
@@ -44,33 +57,7 @@
 
 🚀 **データ3.0時代には、モデルとデータベースを基盤として、企業や開発者がより少ないコードで独自のアプリケーションを構築できます。**
 
-### AIネイティブデータアプリ
-- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
-  - [サポート MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
-  - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
-  - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
-  - [基本モジュールをリファクタリングする]()
-    - [dbgpt-app](./packages/dbgpt-app)
-    - [dbgpt-core](./packages/dbgpt-core)
-    - [dbgpt-serve](./packages/dbgpt-serve)
-    - [dbgpt-client](./packages/dbgpt-client)
-    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
-    - [dbgpt-ext](./packages/dbgpt-ext)
-
-![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
-
-![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
-
-![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
-
-## 目次
-- [紹介](#紹介)
-- [インストール](#インストール)
-- [特徴](#特徴)
-- [貢献](#貢献)
-- [連絡先](#連絡先情報)
-
-## 紹介
+### 紹介
 DB-GPTのアーキテクチャは以下の図に示されています：
 
 <p align="center">
@@ -91,7 +78,7 @@ DB-GPTのアーキテクチャは以下の図に示されています：
 
 - **データソース**：DB-GPTのコア機能に生産ビジネスデータをシームレスに接続するために、さまざまなデータソースを統合します。
 
-### サブモジュール
+#### サブモジュール
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) 大規模言語モデル（LLM）上での教師ありファインチューニング（SFT）を適用することにより、高性能なText-to-SQLワークフロー。
 
 - [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgptsは、DB-GPT上で構築されたいくつかのデータアプリ、AWELオペレータ、AWELワークフローテンプレート、およびエージェントを含む公式リポジトリです。
@@ -117,6 +104,31 @@ DB-GPTのアーキテクチャは以下の図に示されています：
 
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) Auto-GPTプラグインを直接実行できるDB-GPTプラグイン
 - [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) 可視化プロトコル
+
+
+### AIネイティブデータアプリ
+- 🔥🔥🔥 [V0.7.0 リリース | 重要なアップグレードのセット](http://docs.dbgpt.cn/blog/db-gpt-v070-release)
+  - [サポート MCP Protocol](https://github.com/eosphoros-ai/DB-GPT/pull/2497)
+  - [サポート DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1)
+  - [サポート QwQ-32B](https://huggingface.co/Qwen/QwQ-32B)
+  - [基本モジュールをリファクタリングする]()
+    - [dbgpt-app](./packages/dbgpt-app)
+    - [dbgpt-core](./packages/dbgpt-core)
+    - [dbgpt-serve](./packages/dbgpt-serve)
+    - [dbgpt-client](./packages/dbgpt-client)
+    - [dbgpt-accelerator](./packages/dbgpt-accelerator)
+    - [dbgpt-ext](./packages/dbgpt-ext)
+
+---
+
+![app_chat_v0 6](https://github.com/user-attachments/assets/a2f0a875-df8c-4f0d-89a3-eed321c02113)
+
+![app_manage_chat_data_v0 6](https://github.com/user-attachments/assets/c8cc85bb-e3c2-4fab-8fb9-7b4b469d0611)
+
+![chat_dashboard_display_v0 6](https://github.com/user-attachments/assets/b15d6ebe-54c4-4527-a16d-02fbbaf20dc9)
+
+![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
+
 
 ## インストール
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -231,9 +243,6 @@ DB-GPTのアーキテクチャは以下の図に示されています：
 
 ## 画像
 🌐 [AutoDLイメージ](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
-
-### 言語切り替え
-    .env設定ファイルでLANGUAGEパラメータを変更して、異なる言語に切り替えることができます。デフォルトは英語です（中国語：zh、英語：en、他の言語は後で追加されます）。
 
 ## 貢献
 

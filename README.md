@@ -1,10 +1,10 @@
-# DB-GPT: AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents
+# <img src="./assets/LOGO_SMALL.png" alt="Logo" style="vertical-align: middle; height: 24px;" /> DB-GPT: AI Native Data App Development framework with AWEL and Agents
 
-<p align="left">
-  <img src="./assets/LOGO.png" width="100%" />
+<p style="text-align: left;">
+  <img src="./assets/Twitter_LOGO.png" width="100%" />
 </p>
 
-<div align="center">
+<div style="text-align: center;">
   <p>
     <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
@@ -21,19 +21,30 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://discord.gg/7uQnPuveTY">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat" />
+    <a href="https://x.com/DBGPT_AI">
+      <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
+    </a>
+    <a href="https://medium.com/@dbgpt0506">
+      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/Dbgpt/orange?icon=medium" />
+    </a>
+    <a href="https://space.bilibili.com/3537113070963392">
+      <img alt="Bilibili Space" src="https://img.shields.io/badge/Bilibili-DB--GPT-blue?style=plastic&logo=bilibili&link=https%3A%2F%2Fspace.bilibili.com%2F3537113070963392" />
     </a>
     <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
       <img alt="Slack" src="https://badgen.net/badge/Slack/Join%20DB-GPT/0abd59?icon=slack" />
     </a>
+    <br/>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
 
-[**简体中文**](README.zh.md) | [**日本語**](README.ja.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**Documents**](https://docs.dbgpt.site) | [**微信**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+[![English](https://img.shields.io/badge/English-gray?style=flat-square)](README.md)
+[![简体中文](https://img.shields.io/badge/简体中文-gray?style=flat-square)](README.zh.md)
+[![日本語](https://img.shields.io/badge/日本語-gray?style=flat-square)](README.ja.md) 
+
+[**Documents**](http://docs.dbgpt.cn/docs/overview/) | [**Concat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 
 </div>
 
@@ -45,8 +56,50 @@ The purpose is to build infrastructure in the field of large models, through the
 
 🚀 **In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.**
 
-### DISCKAIMER
-- [disckaimer](./DISCKAIMER.md)
+### Introduction 
+The architecture of DB-GPT is shown in the following figure:
+
+<p align="center">
+  <img src="./assets/dbgpt.png" width="800" />
+</p>
+
+The core capabilities include the following parts:
+
+- **RAG (Retrieval Augmented Generation)**: RAG is currently the most practically implemented and urgently needed domain. DB-GPT has already implemented a framework based on RAG, allowing users to build knowledge-based applications using the RAG capabilities of DB-GPT.
+
+- **GBI (Generative Business Intelligence)**: Generative BI is one of the core capabilities of the DB-GPT project, providing the foundational data intelligence technology to build enterprise report analysis and business insights.
+
+- **Fine-tuning Framework**: Model fine-tuning is an indispensable capability for any enterprise to implement in vertical and niche domains. DB-GPT provides a complete fine-tuning framework that integrates seamlessly with the DB-GPT project. In recent fine-tuning efforts, an accuracy rate based on the Spider dataset has been achieved at 82.5%.
+
+- **Data-Driven Multi-Agents Framework**: DB-GPT offers a data-driven self-evolving multi-agents framework, aiming to continuously make decisions and execute based on data.
+
+- **Data Factory**: The Data Factory is mainly about cleaning and processing trustworthy knowledge and data in the era of large models.
+
+- **Data Sources**: Integrating various data sources to seamlessly connect production business data to the core capabilities of DB-GPT.
+
+#### SubModule
+- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL workflow with high performance by applying Supervised Fine-Tuning (SFT) on Large Language Models (LLMs).
+
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts is the official repository which contains some data apps、AWEL operators、AWEL workflow templates and agents which build upon DB-GPT.
+
+#### Text2SQL Finetune
+- support llms
+  - [x] LLaMA
+  - [x] LLaMA-2
+  - [x] BLOOM
+  - [x] BLOOMZ
+  - [x] Falcon
+  - [x] Baichuan
+  - [x] Baichuan2
+  - [x] InternLM
+  - [x] Qwen
+  - [x] XVERSE
+  - [x] ChatGLM2
+
+[More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
+
+- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins that can run Auto-GPT plugin directly
+- [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) Visualization protocol
 
 ### AI-Native Data App 
 ---
@@ -71,59 +124,8 @@ The purpose is to build infrastructure in the field of large models, through the
 
 ![agent_prompt_awel_v0 6](https://github.com/user-attachments/assets/40761507-a1e1-49d4-b49a-3dd9a5ea41cc)
 
-## Contents
-- [Introduction](#introduction)
-- [Install](#install)
-- [Features](#features)
-- [Contribution](#contribution)
-- [Contact](#contact-information)
 
-## Introduction 
-The architecture of DB-GPT is shown in the following figure:
-
-<p align="center">
-  <img src="./assets/dbgpt.png" width="800" />
-</p>
-
-The core capabilities include the following parts:
-
-- **RAG (Retrieval Augmented Generation)**: RAG is currently the most practically implemented and urgently needed domain. DB-GPT has already implemented a framework based on RAG, allowing users to build knowledge-based applications using the RAG capabilities of DB-GPT.
-
-- **GBI (Generative Business Intelligence)**: Generative BI is one of the core capabilities of the DB-GPT project, providing the foundational data intelligence technology to build enterprise report analysis and business insights.
-
-- **Fine-tuning Framework**: Model fine-tuning is an indispensable capability for any enterprise to implement in vertical and niche domains. DB-GPT provides a complete fine-tuning framework that integrates seamlessly with the DB-GPT project. In recent fine-tuning efforts, an accuracy rate based on the Spider dataset has been achieved at 82.5%.
-
-- **Data-Driven Multi-Agents Framework**: DB-GPT offers a data-driven self-evolving multi-agents framework, aiming to continuously make decisions and execute based on data.
-
-- **Data Factory**: The Data Factory is mainly about cleaning and processing trustworthy knowledge and data in the era of large models.
-
-- **Data Sources**: Integrating various data sources to seamlessly connect production business data to the core capabilities of DB-GPT.
-
-### SubModule
-- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL workflow with high performance by applying Supervised Fine-Tuning (SFT) on Large Language Models (LLMs).
-
-- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts is the official repository which contains some data apps、AWEL operators、AWEL workflow templates and agents which build upon DB-GPT.
-
-#### Text2SQL Finetune
-- support llms
-  - [x] LLaMA
-  - [x] LLaMA-2
-  - [x] BLOOM
-  - [x] BLOOMZ
-  - [x] Falcon
-  - [x] Baichuan
-  - [x] Baichuan2
-  - [x] InternLM
-  - [x] Qwen
-  - [x] XVERSE
-  - [x] ChatGLM2
-
-[More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
-
-- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins that can run Auto-GPT plugin directly
-- [GPT-Vis](https://github.com/eosphoros-ai/GPT-Vis) Visualization protocol
-
-## Install 
+## Installation / Quick Start 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
@@ -239,8 +241,6 @@ At present, we have introduced several key features to showcase our current capa
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
 
-### Language Switching
-    In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).
 
 ## Contribution
 
@@ -255,10 +255,13 @@ At present, we have introduced several key features to showcase our current capa
 ## Licence
 The MIT License (MIT)
 
-## Citation
-If you want to understand the overall architecture of DB-GPT, please cite <a href="https://arxiv.org/abs/2312.17449" target="_blank">paper</a> and <a href="https:// arxiv.org/abs/2404.10209" target="_blank">Paper</a>
+## DISCKAIMER
+- [disckaimer](./DISCKAIMER.md)
 
-If you want to learn about using DB-GPT for Agent development, please cite the <a href="https://arxiv.org/abs/2412.13520" target="_blank">paper</a>
+## Citation
+If you want to understand the overall architecture of DB-GPT, please cite <a href="https://arxiv.org/abs/2312.17449" target="_blank">Paper</a> and <a href="https://arxiv.org/abs/2404.10209" target="_blank">Paper</a>
+
+If you want to learn about using DB-GPT for Agent development, please cite the <a href="https://arxiv.org/abs/2412.13520" target="_blank">Paper</a>
 ```bibtex
 @article{xue2023dbgpt,
       title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
@@ -287,7 +290,12 @@ If you want to learn about using DB-GPT for Agent development, please cite the <
 
 
 ## Contact Information
-We are working on building a community, if you have any ideas for building the community, feel free to contact us.
-[![](https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat)](https://discord.gg/7uQnPuveTY)
+Thanks to everyone who has contributed to DB-GPT! Your ideas, code, comments, and even sharing them at events and on social platforms can make DB-GPT better.
+We are working on building a community, if you have any ideas for building the community, feel free to contact us.  
+
+- [Github Issues](https://github.com/eosphoros-ai/DB-GPT/issues) ⭐️：For questions about using GB-DPT, see the CONTRIBUTING.  
+- [Github Discussions](https://github.com/orgs/eosphoros-ai/discussions) ⭐️：Share your experience or unique apps.  
+- [Twitter](https://x.com/DBGPT_AI) ⭐️：Please feel free to talk to us.  
+
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
