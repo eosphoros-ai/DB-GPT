@@ -6,11 +6,11 @@ import logging
 from asyncio import Queue
 from collections import defaultdict
 from concurrent.futures import Executor, ThreadPoolExecutor
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.util.executor_utils import blocking_func_to_async
 
-from .....util.json_utils import EnhancedJSONEncoder
+from .....util.id_generator import IdGenerator
 from .....vis.vis_converter import DefaultVisConverter, VisProtocolConverter
 from ...action.base import ActionOutput
 from .base import GptsMessage, GptsMessageMemory, GptsPlan, GptsPlansMemory
@@ -27,6 +27,7 @@ class GptsMemory:
         plans_memory: Optional[GptsPlansMemory] = None,
         message_memory: Optional[GptsMessageMemory] = None,
         executor: Optional[Executor] = None,
+        vis_converter: Optional[VisProtocolConverter] = None,
     ):
         """Create a memory to store plans and messages."""
         self._plans_memory: GptsPlansMemory = (
@@ -36,17 +37,27 @@ class GptsMemory:
             message_memory if message_memory is not None else DefaultGptsMessageMemory()
         )
         self._executor = executor or ThreadPoolExecutor(max_workers=2)
-        self.messages_cache: defaultdict = defaultdict(list)
+
+        self.messages_cache_new: defaultdict = defaultdict(dict)
+        self.messages_id_cache: defaultdict = defaultdict(list)
+        self._message_rounds_generator: dict[str, IdGenerator] = {}
         self.view_cache: defaultdict = defaultdict(list)
         self.plans_cache: defaultdict = defaultdict(list)
         self.channels: defaultdict = defaultdict(Queue)
         self.start_round_map: defaultdict = defaultdict(int)
-        self._vis_converter: VisProtocolConverter = DefaultVisConverter()
+        self._vis_converter: VisProtocolConverter = (
+            vis_converter if vis_converter else DefaultVisConverter()
+        )
+        self.vis_converter_map: defaultdict = defaultdict(Any)
 
-    @property
-    def vis_converter(self):
+    def vis_converter(self, agent_conv_id: str):
         """Return the vis converter"""
+        if agent_conv_id in self.vis_converter_map:
+            return self.vis_converter_map.get(agent_conv_id)
         return self._vis_converter
+
+    def init_agent_converter(self, agent_conv_id: str, converter: VisProtocolConverter):
+        self.vis_converter_map[agent_conv_id] = converter
 
     @property
     def plans_memory(self) -> GptsPlansMemory:
@@ -67,22 +78,28 @@ class GptsMemory:
     ):
         """Gpt memory init."""
         self.channels[conv_id] = asyncio.Queue()
-        self.messages_cache[conv_id] = history_messages if history_messages else []
+        if history_messages:
+            self._cache_messages(conv_id, history_messages)
+
         self.start_round_map[conv_id] = start_round
-        if vis_converter:
-            self._vis_converter = vis_converter
+        self._message_rounds_generator[conv_id] = IdGenerator(start_round + 1)
+        self.init_agent_converter(conv_id, vis_converter)
+
+    def _cache_messages(self, conv_id: str, messages: List[GptsMessage]):
+        for message in messages:
+            self.messages_cache_new[conv_id][message.message_id] = message
+            if message.message_id not in self.messages_id_cache[conv_id]:
+                self.messages_id_cache[conv_id].append(message.message_id)
 
     async def load_persistent_memory(self, conv_id: str):
         """Load persistent memory."""
-        messages = self.messages_cache[conv_id]
-        if not messages:
+        if conv_id not in self.messages_id_cache:
             messages = await blocking_func_to_async(
                 self._executor, self.message_memory.get_by_conv_id, conv_id
             )
-            self.messages_cache[conv_id] = messages
+            self._cache_messages(conv_id, messages)
 
-        plans = self.plans_cache[conv_id]
-        if not plans:
+        if conv_id not in self.plans_cache:
             plans = await blocking_func_to_async(
                 self._executor, self.plans_memory.get_by_conv_id, conv_id
             )
@@ -97,10 +114,14 @@ class GptsMemory:
         # clear last message queue
         queue = self.channels.pop(conv_id)  # noqa
         del queue
-        # clear messages cache'
-        if self.messages_cache.get(conv_id):
-            cache = self.messages_cache.pop(conv_id)  # noqa
-            del cache
+
+        # clear messages cache_new
+        if self.messages_cache_new.get(conv_id):
+            cache_new = self.messages_cache_new.pop(conv_id)  # noqa
+            del cache_new
+        if self.messages_id_cache.get(conv_id):
+            id_cache = self.messages_id_cache.pop(conv_id)  # noqa
+            del id_cache
 
         # clear view cache
         if self.view_cache.get(conv_id):
@@ -111,61 +132,84 @@ class GptsMemory:
         start_round = self.start_round_map.pop(conv_id)  # noqa
         del start_round
 
-    async def push_stream_message(
-        self, conv_id: str, stream_msg: Optional[Union[Dict, str]] = None
-    ):
-        queue = self.queue(conv_id)
-        if not queue:
-            logger.warning(f"There is no message channel available for it！{conv_id}")
-        final_view = self.view_cache[conv_id]
-        await queue.put(
-            final_view + "\n" + self._vis_converter.visualization_stream(stream_msg)
-        )
+        # clear message rounds generator
+        if self._message_rounds_generator.get(conv_id):
+            rounds_generator = self._message_rounds_generator.pop(conv_id)  # noqa
+            del rounds_generator
+
+    async def next_message_rounds(self, conv_id: str) -> int:
+        return await self._message_rounds_generator[conv_id].next()
 
     async def push_message(
         self,
         conv_id: str,
         gpt_msg: Optional[GptsMessage] = None,
         stream_msg: Optional[Union[Dict, str]] = None,
+        is_first_chunk: bool = False,
+        incremental: bool = False,
     ):
         """Push conversation message."""
+
+        from .... import UserProxyAgent
+
+        if gpt_msg and gpt_msg.sender == UserProxyAgent().role:
+            return
+        final_view = await self.vis_messages(
+            conv_id,
+            gpt_msg,
+            stream_msg,
+            is_first_chunk=is_first_chunk,
+            incremental=incremental,
+        )
+        self.view_cache[conv_id] = final_view
         queue = self.queue(conv_id)
         if not queue:
             logger.warning(f"There is no message channel available for it！{conv_id}")
-        final_view = await self.vis_messages(conv_id, gpt_msg, stream_msg)
-        self.view_cache[conv_id] = final_view
-        await queue.put(final_view)
+        else:
+            await queue.put(final_view)
+
+    async def vis_final(self, conv_id: str):
+        messages = await self.get_messages(conv_id)
+        start_round = (
+            self.start_round_map[conv_id] if conv_id in self.start_round_map else 0
+        )
+        messages = messages[start_round:]
+
+        ## merge messages
+        messages = self._merge_messages(messages)
+        ## 消息可视化布局转换
+        vis_view = await self.vis_converter(conv_id).final_view(
+            messages=messages,
+            plans=await self.get_plans(conv_id=conv_id),
+        )
+        return vis_view
 
     async def vis_messages(
         self,
         conv_id: str,
         gpt_msg: Optional[GptsMessage] = None,
         stream_msg: Optional[Union[Dict, str]] = None,
+        is_first_chunk: bool = False,
+        incremental: bool = False,
     ):
-        """Get all persistent messages that have been converted through the
-        visualization protocol(excluding the part that is currently being streamed.)"""  # noqa: E501
+        """Get all persistent messages that have been converted through the visualization protocol(excluding the part that is currently being streamed.)"""  # noqa: E501
         ## 消息数据流准备
-        messages = []
-        if conv_id in self.messages_cache:
-            messages_cache = self.messages_cache[conv_id]
-            if messages_cache and len(messages_cache) > 0:
-                start_round = (
-                    self.start_round_map[conv_id]
-                    if conv_id in self.start_round_map
-                    else 0
-                )
-                messages = messages_cache[start_round:]
-        else:
-            messages = await blocking_func_to_async(
-                self._executor, self.message_memory.get_by_conv_id, conv_id=conv_id
-            )
+        messages = await self.get_messages(conv_id)
+        start_round = (
+            self.start_round_map[conv_id] if conv_id in self.start_round_map else 0
+        )
+        messages = messages[start_round:]
+
+        ## merge messages
         messages = self._merge_messages(messages)
         ## 消息可视化布局转换
-        vis_view = await self._vis_converter.visualization(
+        vis_view = await self.vis_converter(conv_id).visualization(
             messages=messages,
-            plans=await self.get_plans(conv_id=conv_id),
+            # plans=await self.get_plans(conv_id=conv_id),
             gpt_msg=gpt_msg,
             stream_msg=stream_msg,
+            is_first_chunk=is_first_chunk,
+            incremental=incremental,
         )
         return vis_view
 
@@ -175,10 +219,10 @@ class GptsMemory:
 
         while i < len(messages):
             cu_item = messages[i]
-            from dbgpt.agent import UserProxyAgent
 
             # 屏蔽用户消息
-            if cu_item.sender == UserProxyAgent().role:
+            # if cu_item.sender == UserProxyAgent().role:
+            if cu_item.sender == "Human":
                 i += 1
                 continue
             if not cu_item.show_message:
@@ -224,46 +268,40 @@ class GptsMemory:
         if queue:
             await queue.put("[DONE]")
 
-    async def append_message(self, conv_id: str, message: GptsMessage):
+    async def append_message(
+        self,
+        conv_id: str,
+        message: GptsMessage,
+        incremental: bool = False,
+    ):
         """Append message."""
-        cache_idx = next(
-            (
-                idx
-                for idx, c in enumerate(self.messages_cache[conv_id])
-                if c.message_id == message.message_id
-            ),
-            -1,
-        )
-        if cache_idx >= 0:
-            self.messages_cache[conv_id][cache_idx] = message
-        else:
-            self.messages_cache[conv_id].append(message)
-
+        # Add and update messages based on message_id
+        # Cache messages
+        self._cache_messages(conv_id, [message])
+        # Message persistence storage
         await blocking_func_to_async(
-            self._executor, self.message_memory.append, message
+            self._executor, self.message_memory.update, message
         )
-        logger.info(
-            f"[memory.append_message]{json.dumps(message, cls=EnhancedJSONEncoder, ensure_ascii=False)}"  # noqa: E501
-        )
-
-        # 消息记忆后发布消息
-        await self.push_message(conv_id, message)
+        # Publish and display message
+        await self.push_message(conv_id, message, incremental=incremental)
 
     async def get_messages(self, conv_id: str) -> List[GptsMessage]:
         """Get message by conv_id."""
-        messages = self.messages_cache[conv_id]
-        if not messages:
-            messages = await blocking_func_to_async(
-                self._executor, self.message_memory.get_by_conv_id, conv_id
-            )
+        if conv_id not in self.messages_id_cache:
+            await self.load_persistent_memory(conv_id)
+
+        messages = []
+        for msg_id in self.messages_id_cache[conv_id]:
+            messages.append(self.messages_cache_new[conv_id][msg_id])
+
         return messages
 
     async def get_agent_messages(self, conv_id: str, agent: str) -> List[GptsMessage]:
         """Get agent messages."""
-        gpt_messages = self.messages_cache[conv_id]
+        gpt_messages = await self.get_messages(conv_id)
         result = []
         for gpt_message in gpt_messages:
-            if gpt_message.sender == agent or gpt_messages.receiver == agent:
+            if gpt_message.sender == agent or gpt_message.receiver == agent:
                 result.append(gpt_message)
         return result
 

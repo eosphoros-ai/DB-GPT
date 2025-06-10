@@ -55,10 +55,12 @@ class GptVisConverterNew(VisProtocolConverter):
 
     async def visualization(
         self,
-        messages: List[GptsMessage],
-        plans: Optional[List[GptsPlan]] = None,
-        gpt_msg: Optional[GptsMessage] = None,
+        messages: List["GptsMessage"],
+        plans: Optional[List["GptsPlan"]] = None,
+        gpt_msg: Optional["GptsMessage"] = None,
         stream_msg: Optional[Union[Dict, str]] = None,
+        is_first_chunk: bool = False,
+        incremental: bool = False,
     ):
         message_view = await self.app_link_chat_message(messages)
         if stream_msg:

@@ -110,3 +110,48 @@ class VisStepsContent(VisBase):
 class VisThinkingContent(VisBase):
     markdown: str = Field(..., description="vis thinking content")
     think_link: str = Field(None, description="vis thinking link")
+
+
+class VisNode(VisBase):
+    id: str = Field(..., description="id of the node")
+    markdown: str = Field(..., description="content of the node")
+    node_type: str = Field(None, description="type of the node, user/bot")
+    avatar: str = Field(None, description="avatar of the node")
+    agent_name: str = Field(None, description="name of the agent")
+    title: str = Field(None, description="title of the node")
+    status: str = Field(None, description="status of the node")
+
+
+class VisEdge(VisBase):
+    source: str = Field(..., description="source of the edge")
+    target: str = Field(..., description="target of the edge")
+
+
+class VisGraph(VisBase):
+    nodes: list[VisNode] = Field(..., description="nodes in the graph")
+    edges: list[VisEdge] = Field(..., description="edges in the graph")
+
+
+class VisSelectContent(VisBase):
+    markdown: str = Field(..., description="content of the select option")
+    confirm_message: Optional[str] = Field(
+        None,
+        description="When the user selects this option, a message is simulated to be sent by the user, "  # noqa: E501
+        "and this field represents the content of the message.",
+    )
+    extra: Optional[dict] = Field(
+        None,
+        description="When the user selects this option, this extended information will be passed to the system.",  # noqa: E501
+    )
+
+
+class VisReference(VisBase):
+    reference_url: Optional[str] = Field(
+        default=None, description="vis knowledge reference_url"
+    )
+    reference_name: Optional[str] = Field(
+        default=None, description="vis reference name"
+    )
+    reference_offset: Optional[int] = Field(
+        default=None, description="vis reference offset"
+    )

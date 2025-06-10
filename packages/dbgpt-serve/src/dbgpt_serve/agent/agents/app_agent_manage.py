@@ -17,7 +17,7 @@ from dbgpt.agent import (
 )
 from dbgpt.agent.core.schema import Status
 from dbgpt.agent.resource import get_resource_manager
-from dbgpt.agent.util.llm.llm import LLMStrategyType
+from dbgpt.agent.util.llm.strategy_manage import LLMStrategyType
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import LLMClient, PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory

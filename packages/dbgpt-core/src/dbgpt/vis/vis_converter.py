@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Tuple, Type, Union
 
 from dbgpt.vis import Vis
 
+from ..agent.core.memory.gpts import GptsMessage, GptsPlan
+
 
 def scan_vis_tags(vis_tag_paths: List[str]):
     """
@@ -46,13 +48,13 @@ class SystemVisTag(Enum):
     VisTool = "vis-tool"
     VisTools = "vis-tools"
     VisDashboard = "vis-dashboard"
+    VisSelect = "vis-select"
+    VisRefs = "vis-refs"
 
 
 class VisProtocolConverter(ABC):
-    """The default Vis component that needs to exist as the basis for
-    organizing message structures can be overridden.If not overridden,
-     the default component will be used."""
-
+    # The default Vis component that needs to exist as the basis for organizing message structures can be overridden.    # noqa: E501
+    # If not overridden, the default component will be used
     SYSTEM_TAGS = [member.value for member in SystemVisTag]
 
     def __init__(self, paths: Optional[List[str]] = None):
@@ -75,6 +77,7 @@ class VisProtocolConverter(ABC):
             SystemVisTag.VisTool.value: SystemVisTag.VisTool.value,
             SystemVisTag.VisTools.value: SystemVisTag.VisTools.value,
             SystemVisTag.VisDashboard.value: SystemVisTag.VisDashboard.value,
+            SystemVisTag.VisRefs.value: SystemVisTag.VisRefs.value,
         }
 
     def vis(self, vis_tag):
@@ -116,18 +119,21 @@ class VisProtocolConverter(ABC):
 
     async def visualization(
         self,
-        messages: List["GptsMessage"],  # noqa
-        plans: Optional[List["GptsPlan"]] = None,  # noqa
-        gpt_msg: Optional["GptsMessage"] = None,  # noqa
+        messages: List[GptsMessage],
+        plans: Optional[List["GptsPlan"]] = None,
+        gpt_msg: Optional["GptsMessage"] = None,
         stream_msg: Optional[Union[Dict, str]] = None,
+        is_first_chunk: bool = False,
+        incremental: bool = False,
     ):
         pass
 
-    async def visualization_stream(
+    async def final_view(
         self,
-        stream_msg: Optional[Union[Dict, str]] = None,
+        messages: List["GptsMessage"],
+        plans: Optional[List["GptsPlan"]] = None,
     ):
-        pass
+        return await self.visualization(messages, plans)
 
     def get_package_path_dynamic(self) -> str:
         """动态解析模块的包路径"""
@@ -142,10 +148,12 @@ class DefaultVisConverter(VisProtocolConverter):
 
     async def visualization(
         self,
-        messages: List["GptsMessage"],  # noqa
-        plans: Optional[List["GptsPlan"]] = None,  # noqa
-        gpt_msg: Optional["GptsMessage"] = None,  # noqa
+        messages: List["GptsMessage"],
+        plans: Optional[List["GptsPlan"]] = None,
+        gpt_msg: Optional["GptsMessage"] = None,
         stream_msg: Optional[Union[Dict, str]] = None,
+        is_first_chunk: bool = False,
+        incremental: bool = False,
     ):
         from dbgpt.agent import ActionOutput
 
@@ -171,7 +179,7 @@ class DefaultVisConverter(VisProtocolConverter):
                 }
             )
         if stream_msg:
-            simple_message_list.append(await self._view_stream_message(stream_msg))
+            simple_message_list.append(self._view_stream_message(stream_msg))
 
         return simple_message_list
 
@@ -181,16 +189,10 @@ class DefaultVisConverter(VisProtocolConverter):
         messages_view.append(
             {
                 "sender": message["sender"],
-                "receiver": message.get("receiver"),
+                "receiver": message["receiver"],
                 "model": message["model"],
                 "markdown": message["markdown"],
             }
         )
 
         return messages_view
-
-    async def visualization_stream(
-        self,
-        stream_msg: Optional[Union[Dict, str]] = None,
-    ):
-        return await self._view_stream_message(stream_msg)

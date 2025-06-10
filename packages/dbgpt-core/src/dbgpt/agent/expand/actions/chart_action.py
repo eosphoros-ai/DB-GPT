@@ -4,7 +4,7 @@ import json
 import logging
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel, Field,model_to_dict, model_to_json
+from dbgpt._private.pydantic import BaseModel, Field, model_to_dict, model_to_json
 from dbgpt.vis import SystemVisTag
 
 from ...core.action.base import Action, ActionOutput

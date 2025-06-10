@@ -15,7 +15,6 @@ from dbgpt.agent import (
     AutoPlanChatManager,
     ConversableAgent,
     EnhancedShortTermMemory,
-    GptsMemory,
     HybridMemory,
     LLMConfig,
     ResourceType,
@@ -26,7 +25,7 @@ from dbgpt.agent.core.base_team import ManagerAgent
 from dbgpt.agent.core.memory.gpts import GptsMessage
 from dbgpt.agent.core.schema import Status
 from dbgpt.agent.resource import ResourceManager, get_resource_manager
-from dbgpt.agent.util.llm.llm import LLMStrategyType
+from dbgpt.agent.util.llm.strategy_manage import LLMStrategyType
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import PromptTemplate
 from dbgpt.core.awel.flow.flow_factory import FlowCategory
@@ -94,7 +93,11 @@ class MultiAgents(BaseComponent, ABC):
         self.gpts_messages_dao = GptsMessagesDao()
 
         self.gpts_app = GptsAppDao()
-        self.memory = GptsMemory(
+        from dbgpt.agent.core.memory.gpts.disk_cache_gpts_memory import (
+            DiskCacheGptsMemory,
+        )
+
+        self.memory = DiskCacheGptsMemory(
             plans_memory=MetaDbGptsPlansMemory(),
             message_memory=MetaDbGptsMessageMemory(),
         )
@@ -331,6 +334,7 @@ class MultiAgents(BaseComponent, ABC):
                     multi_agents.agent_team_chat_new(
                         user_query,
                         agent_conv_id,
+                        conv_id,
                         gpt_app,
                         agent_memory,
                         is_retry_chat,
@@ -601,7 +605,7 @@ class MultiAgents(BaseComponent, ABC):
     ) -> List[ConversableAgent]:
         """Constructing dialogue members through gpts-related Agent or gpts app information."""  # noqa
         logger.info(
-            f"_build_employees:{[item.agent_role + ',' + item.agent_name for item in app_details] if app_details else ''}"  # noqa
+            f"_build_employees:{[item.agent_role + ',' + item.agent_name for item in app_details] if app_details else ''}"  # noqa:E501
         )
         employees: List[ConversableAgent] = []
         prompt_service: PromptService = get_service()
@@ -615,7 +619,7 @@ class MultiAgents(BaseComponent, ABC):
                     context, agent_memory, rm, gpt_app
                 )
                 logger.info(
-                    f"append employee_agent:{employee_agent.profile.name},{employee_agent.profile.desc},{id(employee_agent)}"  # noqa
+                    f"append employee_agent:{employee_agent.profile.name},{employee_agent.profile.desc},{id(employee_agent)}"  # noqa:E501
                 )
                 employees.append(employee_agent)
             else:
@@ -624,7 +628,7 @@ class MultiAgents(BaseComponent, ABC):
                 )
                 llm_config = LLMConfig(
                     llm_client=self.llm_provider,
-                    lm_strategy=LLMStrategyType(record.llm_strategy),
+                    llm_strategy=LLMStrategyType(record.llm_strategy),
                     strategy_context=record.llm_strategy_value,
                 )
                 prompt_template = None
@@ -651,7 +655,7 @@ class MultiAgents(BaseComponent, ABC):
                     agent.bind(temp_profile)
                 employees.append(agent)
         logger.info(
-            f"_build_employees return:{[item.profile.name if item.profile.name else '' + ',' + str(id(item)) for item in employees]}"  # noqa
+            f"_build_employees return:{[item.profile.name if item.profile.name else '' + ',' + str(id(item)) for item in employees]}"  # noqa:E501
         )
         return employees
 
@@ -659,6 +663,7 @@ class MultiAgents(BaseComponent, ABC):
         self,
         user_query: str,
         conv_uid: str,
+        conv_session_id: str,
         gpts_app: GptsApp,
         agent_memory: AgentMemory,
         is_retry_chat: bool = False,
@@ -677,6 +682,7 @@ class MultiAgents(BaseComponent, ABC):
 
             context: AgentContext = AgentContext(
                 conv_id=conv_uid,
+                conv_session_id=conv_session_id,
                 gpts_app_code=gpts_app.app_code,
                 gpts_app_name=gpts_app.app_name,
                 language=gpts_app.language,
@@ -766,21 +772,7 @@ class MultiAgents(BaseComponent, ABC):
     async def stable_message(
         self, conv_id: str, user_code: str = None, system_app: str = None
     ):
-        gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
-        if gpts_conv:
-            is_complete = (
-                True
-                if gpts_conv.state
-                in [Status.COMPLETE.value, Status.WAITING.value, Status.FAILED.value]
-                else False
-            )
-            if is_complete:
-                return await self.memory.vis_messages(conv_id)
-            else:
-                pass
-
-        else:
-            raise Exception("No conversation record found!")
+        return await self.memory.vis_final(conv_id)
 
     def gpts_conv_list(self, user_code: str = None, system_app: str = None):
         return self.gpts_conversations.get_convs(user_code, system_app)

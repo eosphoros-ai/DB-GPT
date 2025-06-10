@@ -4,7 +4,7 @@ import json
 import logging
 from typing import List, Optional
 
-from ..llm import LLMStrategy, LLMStrategyType, register_llm_strategy_cls
+from dbgpt.agent import LLMStrategy, LLMStrategyType
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +12,8 @@ logger = logging.getLogger(__name__)
 class LLMStrategyPriority(LLMStrategy):
     """Priority strategy for llm model service."""
 
-    @property
-    def type(self) -> LLMStrategyType:
-        """Return the strategy type."""
+    @classmethod
+    def type(cls) -> LLMStrategyType:
         return LLMStrategyType.Priority
 
     async def next_llm(self, excluded_models: Optional[List[str]] = None) -> str:
@@ -39,6 +38,3 @@ class LLMStrategyPriority(LLMStrategy):
         except Exception as e:
             logger.error(f"{self.type} get next llm failed!{str(e)}")
             raise ValueError(f"Failed to allocate model service,{str(e)}!")
-
-
-register_llm_strategy_cls(LLMStrategyType.Priority, LLMStrategyPriority)

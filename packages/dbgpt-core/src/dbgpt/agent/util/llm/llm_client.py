@@ -8,7 +8,7 @@ from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.tracer import root_tracer
 from dbgpt.vis import Vis
 
-from ..llm.llm import _build_model_request
+from ..llm.strategy_manage import _build_model_request
 
 logger = logging.getLogger(__name__)
 
@@ -129,15 +129,16 @@ class AIWrapper:
         params = self._construct_create_params(create_config, extra_kwargs)
         llm_model = extra_kwargs.get("llm_model")
         stream_out = extra_kwargs.get("stream_out", True)
-
+        max_new_tokens = int(params.get("max_new_tokens", 0))
         payload = {
             "model": llm_model,
             "prompt": params.get("prompt"),
             "messages": self._llm_messages_convert(params),
             "temperature": float(params.get("temperature")),
-            "max_new_tokens": int(params.get("max_new_tokens")),
             "echo": self.llm_echo,
         }
+        if max_new_tokens > 0:
+            payload["max_new_tokens"] = max_new_tokens
         logger.info(f"Request: \n{payload}")
         span = root_tracer.start_span(
             "Agent.llm_client.no_streaming_call",
@@ -159,7 +160,6 @@ class AIWrapper:
                 ):  # type: ignore
                     model_output = output
                     parsed_output = model_output.gen_text_and_thinking()
-
                     think_blank = not parsed_output[0] or len(parsed_output[0]) <= 0
                     content_blank = not parsed_output[1] or len(parsed_output[1]) <= 0
                     if think_blank and content_blank:

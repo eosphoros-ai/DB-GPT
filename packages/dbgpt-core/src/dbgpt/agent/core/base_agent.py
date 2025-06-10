@@ -5,8 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import uuid
-import time
 from concurrent.futures import Executor, ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, final
@@ -20,11 +18,11 @@ from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt.util.utils import colored
 
-from ...util.json_utils import serialize
 from ..resource.base import Resource
 from ..util.conv_utils import parse_conv_id
-from ..util.llm.llm import LLMConfig, get_llm_strategy_cls
 from ..util.llm.llm_client import AIWrapper
+from ..util.llm.strategy.base import LLMConfig
+from ..util.llm.strategy_manage import get_llm_strategy_manager
 from .action.base import Action, ActionOutput
 from .agent import Agent, AgentContext, AgentMessage, AgentReviewInfo
 from .memory.agent_memory import AgentMemory
@@ -48,12 +46,15 @@ class ConversableAgent(Role, Agent):
     bind_prompt: Optional[PromptTemplate] = None
     run_mode: Optional[AgentRunMode] = Field(default=None, description="Run mode")
     max_retry_count: int = 3
-    max_timeout: int = 600
+    current_retry_counter: int = 0
     llm_client: Optional[AIWrapper] = None
     # 确认当前Agent是否需要进行流式输出
     stream_out: bool = True
     # 确认当前Agent是否需要进行参考资源展示
     show_reference: bool = False
+
+    # 最后的发言角色
+    is_final_role: bool = False
 
     # 当前Agent消息是否显示
     show_message: bool = True
@@ -97,14 +98,14 @@ class ConversableAgent(Role, Agent):
                 raise ValueError(
                     f"This agent {self.name}[{self.role}] is missing action modules."
                 )
-        # llm check
-        if not self.is_human and (
-            self.llm_config is None or self.llm_config.llm_client is None
-        ):
-            raise ValueError(
-                f"{self.name}[{self.role}] Model configuration is missing or model "
-                "service is unavailable！"
-            )
+        # # llm check
+        # if not self.is_human and (
+        #     self.llm_config is None or self.llm_config.llm_client is None
+        # ):
+        #     raise ValueError(
+        #         f"{self.name}[{self.role}] Model configuration is missing or model "
+        #         "service is unavailable！"
+        #     )
 
     @property
     def not_null_agent_context(self) -> AgentContext:
@@ -163,15 +164,16 @@ class ConversableAgent(Role, Agent):
             action.init_resource(self.resource)
 
         # Initialize LLM Server
-        if not self.is_human:
-            if not self.llm_config or not self.llm_config.llm_client:
-                raise ValueError("LLM client is not initialized！")
+        if self.llm_config and self.llm_config.llm_client:
             self.llm_client = AIWrapper(llm_client=self.llm_config.llm_client)
+        if not self.is_human:
             real_conv_id, _ = parse_conv_id(self.not_null_agent_context.conv_id)
             memory_session = f"{real_conv_id}_{self.role}_{self.name}"
             self.memory.initialize(
                 self.name,
-                self.llm_config.llm_client,
+                self.llm_config.llm_client
+                if self.llm_config and self.llm_config.llm_client
+                else None,
                 importance_scorer=self.memory_importance_scorer,
                 insight_extractor=self.memory_insight_extractor,
                 session_id=memory_session,
@@ -183,10 +185,16 @@ class ConversableAgent(Role, Agent):
             )
             await self.recovering_memory(action_outputs)
 
+        temp_profile = self.profile
+        from copy import deepcopy
+
+        self.profile = deepcopy(temp_profile)
         for action in self.actions:
             action.init_action(
                 language=self.language,
-                render_protocol=self.memory.gpts_memory.vis_converter,
+                render_protocol=self.memory.gpts_memory.vis_converter(
+                    self.not_null_agent_context.conv_id
+                ),
             )
         return self
 
@@ -219,7 +227,6 @@ class ConversableAgent(Role, Agent):
             self.actions.extend(target)
         elif isinstance(target, PromptTemplate):
             self.bind_prompt = target
-
         return self
 
     async def send(
@@ -359,46 +366,18 @@ class ConversableAgent(Role, Agent):
         reply_message = None
 
         try:
-            with root_tracer.start_span(
-                "agent.generate_reply._init_reply_message",
-            ) as span:
-                # initialize reply message
-                a_reply_message: Optional[
-                    AgentMessage
-                ] = await self._a_init_reply_message(received_message=received_message)
-                if a_reply_message:
-                    reply_message = a_reply_message
-                else:
-                    reply_message = self._init_reply_message(
-                        received_message=received_message
-                    )
-                span.metadata["reply_message"] = reply_message.to_dict()
-
             fail_reason = None
-            current_retry_counter = 0
-            start_time = time.time()
+            self.current_retry_counter = 0
             is_success = True
+            done = False
             observation = received_message.content or ""
-            while current_retry_counter < self.max_retry_count:
-                if current_retry_counter > 0:
-                    a_reply_message: Optional[
-                        AgentMessage
-                    ] = await self._a_init_reply_message(
-                        received_message=received_message,
-                        rely_messages=rely_messages,
+            while not done and self.current_retry_counter < self.max_retry_count:
+                if self.current_retry_counter > 0:
+                    retry_message = AgentMessage.init_new(
+                        content=fail_reason or observation,
+                        current_goal=received_message.current_goal,
+                        rounds=reply_message.rounds + 1,
                     )
-                    if a_reply_message:
-                        retry_message = a_reply_message
-                    else:
-                        retry_message = self._init_reply_message(
-                            received_message=received_message,
-                            rely_messages=rely_messages,
-                        )
-
-                    retry_message.rounds = reply_message.rounds + 1
-
-                    retry_message.content = fail_reason or observation
-                    retry_message.current_goal = received_message.current_goal
 
                     # The current message is a self-optimized message that needs to be
                     # recorded.
@@ -407,22 +386,45 @@ class ConversableAgent(Role, Agent):
                     await sender.send(
                         retry_message, self, reviewer, request_reply=False
                     )
-                    reply_message.rounds = retry_message.rounds + 1
+                    received_message.rounds = retry_message.rounds + 1
+
+                with root_tracer.start_span(
+                    "agent.generate_reply.init_reply_message",
+                ) as span:
+                    # initialize reply message
+                    a_reply_message: Optional[
+                        AgentMessage
+                    ] = await self._a_init_reply_message(
+                        received_message=received_message
+                    )
+                    if a_reply_message:
+                        reply_message = a_reply_message
+                    else:
+                        reply_message = await self.init_reply_message(
+                            received_message=received_message, sender=sender
+                        )
+                    span.metadata["reply_message"] = reply_message.to_dict()
 
                 # In manual retry mode, load all messages of the last speaker as dependent messages # noqa
                 logger.info(
-                    f"Depends on the number of historical messages:{len(rely_messages) if rely_messages else 0}！"  # noqa
+                    f"Depends on the number of historical messages:{len(rely_messages) if rely_messages else 0}！"  # noqa: E501
                 )
-                thinking_messages, resource_info = await self._load_thinking_messages(
+                (
+                    thinking_messages,
+                    resource_info,
+                    system_prompt,
+                    user_prompt,
+                ) = await self._load_thinking_messages(
                     received_message=received_message,
                     sender=sender,
-                    observation=observation,
                     rely_messages=rely_messages,
                     historical_dialogues=historical_dialogues,
                     context=reply_message.get_dict_context(),
                     is_retry_chat=is_retry_chat,
-                    current_retry_counter=current_retry_counter,
+                    force_use_historical=kwargs.get("force_use_historical"),
                 )
+                reply_message.system_prompt = system_prompt
+                reply_message.user_prompt = user_prompt
                 with root_tracer.start_span(
                     "agent.generate_reply.thinking",
                     metadata={
@@ -512,14 +514,12 @@ class ConversableAgent(Role, Agent):
                         logger.warning("No retry available!")
                         break
                     fail_reason = reason
-                    observation = fail_reason
                     await self.write_memories(
                         question=question,
                         ai_message=ai_message,
                         action_output=act_out,
                         check_pass=check_pass,
                         check_fail_reason=fail_reason,
-                        current_retry_counter=current_retry_counter,
                     )
                 else:
                     # Successful reply
@@ -529,23 +529,15 @@ class ConversableAgent(Role, Agent):
                         ai_message=ai_message,
                         action_output=act_out,
                         check_pass=check_pass,
-                        current_retry_counter=current_retry_counter,
                     )
                     if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
                         logger.debug(f"Agent {self.name} reply success!{reply_message}")
                         break
-                time_cost = time.time() - start_time
-                if time_cost > self.max_timeout:
-                    logger.warning(
-                        f"Agent {self.name} run time out!{time_cost} > "
-                        f"{self.max_timeout}"
-                    )
-                    break
 
                 # Continue to run the next round
-                current_retry_counter += 1
+                self.current_retry_counter += 1
                 # Send error messages and issue new problem-solving instructions
-                if current_retry_counter < self.max_retry_count:
+                if self.current_retry_counter < self.max_retry_count:
                     await self.send(
                         reply_message, sender, reviewer, request_reply=False
                     )
@@ -558,6 +550,7 @@ class ConversableAgent(Role, Agent):
         except Exception as e:
             logger.exception("Generate reply exception!")
             err_message = AgentMessage(content=str(e))
+            err_message.rounds = 101
             err_message.success = False
             return err_message
         finally:
@@ -587,14 +580,16 @@ class ConversableAgent(Role, Agent):
         while retry_count < 3:
             llm_model = await self._a_select_llm_model(last_model)
             try:
+                logger.info(f"model:{llm_model} chat begin!retry_count:{retry_count}")
                 if prompt:
                     llm_messages = _new_system_message(prompt) + llm_messages
 
                 if not self.llm_client:
                     raise ValueError("LLM client is not initialized!")
 
-                res_thinking = None
-                res_content = None
+                prev_thinking = ""
+                prev_content = ""
+                is_first_chunk = True
                 async for output in self.llm_client.create(
                     context=llm_messages[-1].pop("context", None),
                     messages=llm_messages,
@@ -603,40 +598,73 @@ class ConversableAgent(Role, Agent):
                     temperature=self.not_null_agent_context.temperature,
                     verbose=self.not_null_agent_context.verbose,
                 ):
-                    res_thinking, res_content = output
-                    res_thinking = (
-                        res_thinking.strip().replace("\\n", "\n")
-                        if res_thinking
-                        else res_thinking
-                    )
-                    res_content = (
-                        res_content.strip().replace("\\n", "\n")
-                        if res_content
-                        else res_content
-                    )
+                    current_thinking, current_content = output
+
+                    if self.not_null_agent_context.incremental:
+                        res_thinking = current_thinking[len(prev_thinking) :]
+                        res_content = current_content[len(prev_content) :]
+                        prev_thinking = current_thinking
+                        prev_content = current_content
+
+                    else:
+                        res_thinking = (
+                            current_thinking.strip().replace("\\n", "\n")
+                            if current_thinking
+                            else current_thinking
+                        )
+                        res_content = (
+                            current_content.strip().replace("\\n", "\n")
+                            if current_content
+                            else current_content
+                        )
+                        prev_thinking = res_thinking
+                        prev_content = res_content
+
                     if self.stream_out:
                         temp_message = {
                             "uid": reply_message_id,
                             "type": "incr",
+                            "app_code": self.agent_context.gpts_app_code,
                             "sender": self.name or self.role,
                             "model": llm_model,
                             "thinking": res_thinking,
                             "content": res_content,
                             "avatar": self.avatar,
                         }
+                        if not self.not_null_agent_context.output_process_message:
+                            if self.is_final_role:
+                                await self.memory.gpts_memory.push_message(
+                                    self.not_null_agent_context.conv_id,
+                                    stream_msg=temp_message,
+                                    is_first_chunk=is_first_chunk,
+                                    incremental=self.not_null_agent_context.incremental,
+                                )
+                        else:
+                            await self.memory.gpts_memory.push_message(
+                                self.not_null_agent_context.conv_id,
+                                stream_msg=temp_message,
+                                is_first_chunk=is_first_chunk,
+                                incremental=self.not_null_agent_context.incremental,
+                            )
 
-                        await self.memory.gpts_memory.push_message(
-                            self.not_null_agent_context.conv_id,
-                            stream_msg=temp_message,
-                        )
+                        if is_first_chunk:
+                            is_first_chunk = False
 
-                return res_thinking, res_content, llm_model
+                return prev_thinking, prev_content, llm_model
             except LLMChatError as e:
                 logger.exception(f"model:{llm_model} generate Failed!{str(e)}")
-                retry_count += 1
-                last_model = llm_model
-                last_err = str(e)
-                await asyncio.sleep(10)
+                if e.original_exception and e.original_exception > 0:
+                    ## TODO 可以尝试发一个系统提示消息
+
+                    ## 模型调用返回错误码大于0，可以使用其他模型兜底重试，小于0 没必要重试直接返回异常     # noqa: E501
+                    retry_count += 1
+                    last_model = llm_model
+                    last_err = str(e)
+                    await asyncio.sleep(1)
+                else:
+                    raise
+            except Exception:
+                raise
 
         if last_err:
             raise ValueError(last_err)
@@ -686,7 +714,9 @@ class ConversableAgent(Role, Agent):
                     ai_message=message.content if message.content else "",
                     resource=None,
                     rely_action_out=last_out,
-                    render_protocol=self.memory.gpts_memory.vis_converter,
+                    render_protocol=self.memory.gpts_memory.vis_converter(
+                        self.not_null_agent_context.conv_id
+                    ),
                     message_id=message.message_id,
                     **kwargs,
                 )
@@ -748,12 +778,16 @@ class ConversableAgent(Role, Agent):
             reviewer (Agent): The reviewer agent.
             message (str): The message to send.
         """
-        agent_message = AgentMessage(
-            content=message,
-            current_goal=message,
-            rounds=message_rounds,
-            context=context,
-        )
+        agent_message = AgentMessage.from_messages(
+            [
+                {
+                    "content": message,
+                    "current_goal": message,
+                    "rounds": message_rounds,
+                    "context": context,
+                }
+            ]
+        )[0]
         with root_tracer.start_span(
             "agent.initiate_chat",
             span_type=SpanType.AGENT,
@@ -797,48 +831,14 @@ class ConversableAgent(Role, Agent):
                 self.actions.append(action(language=self.language))
 
     async def _a_append_message(
-        self, message: AgentMessage, role, sender: Agent
+        self,
+        message: AgentMessage,
+        role,
+        sender: Agent,
+        reciver: Optional[Agent] = None,
     ) -> bool:
-        gpts_message: GptsMessage = GptsMessage(
-            conv_id=self.not_null_agent_context.conv_id,
-            sender=sender.role,
-            receiver=self.role,
-            role=role,
-            rounds=message.rounds,
-            is_success=message.success,
-            app_code=(
-                sender.not_null_agent_context.gpts_app_code
-                if isinstance(sender, ConversableAgent)
-                else None
-            ),
-            app_name=(
-                sender.not_null_agent_context.gpts_app_name
-                if isinstance(sender, ConversableAgent)
-                else None
-            ),
-            current_goal=message.current_goal,
-            content=message.content if message.content else "",
-            thinking=message.thinking if message.thinking else "",
-            context=(
-                json.dumps(message.context, default=serialize, ensure_ascii=False)
-                if message.context
-                else None
-            ),
-            review_info=(
-                json.dumps(message.review_info.to_dict(), ensure_ascii=False)
-                if message.review_info
-                else None
-            ),
-            action_report=(
-                json.dumps(message.action_report.to_dict(), ensure_ascii=False)
-                if message.action_report
-                else None
-            ),
-            model_name=message.model_name,
-            resource_info=(
-                json.dumps(message.resource_info) if message.resource_info else None
-            ),
-            show_message=message.show_message,
+        gpts_message: GptsMessage = message.to_gpts_message(
+            sender=sender, role=role, receiver=reciver
         )
 
         with root_tracer.start_span(
@@ -894,7 +894,7 @@ class ConversableAgent(Role, Agent):
         print("\n", "-" * 80, flush=True, sep="")
 
     async def _a_process_received_message(self, message: AgentMessage, sender: Agent):
-        valid = await self._a_append_message(message, None, sender)
+        valid = await self._a_append_message(message, None, sender, self)
         if not valid:
             raise ValueError(
                 "Received message can't be converted into a valid ChatCompletion"
@@ -981,10 +981,13 @@ class ConversableAgent(Role, Agent):
                     ),
                     name=item.sender,
                     role=item.role,
+                    goal_id=item.goal_id,
                     rounds=item.rounds,
                     model_name=item.model_name,
                     success=item.is_success,
                     show_message=item.show_message,
+                    system_prompt=item.system_prompt,
+                    user_prompt=item.user_prompt,
                 )
             )
         return oai_messages
@@ -994,12 +997,12 @@ class ConversableAgent(Role, Agent):
     ) -> str:
         logger.info(f"_a_select_llm_model:{excluded_models}")
         try:
-            llm_strategy_cls = get_llm_strategy_cls(
+            llm_strategy_cls = get_llm_strategy_manager().get_llm_strategy_cls(
                 self.not_null_llm_config.llm_strategy
             )
             if not llm_strategy_cls:
                 raise ValueError(
-                    f"Configured model policy not found {self.not_null_llm_config.llm_strategy}!"  # noqa
+                    f"Configured model policy not found {self.not_null_llm_config.llm_strategy}!"  # noqa: E501
                 )
             llm_strategy = llm_strategy_cls(
                 self.not_null_llm_config.llm_client,
@@ -1011,10 +1014,12 @@ class ConversableAgent(Role, Agent):
             logger.error(f"{self.role} get next llm failed!{str(e)}")
             raise ValueError(f"Failed to allocate model service,{str(e)}!")
 
-    def _init_reply_message(
+    async def init_reply_message(
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
+        sender: Optional[Agent] = None,
+        rounds: Optional[int] = None,
     ) -> AgentMessage:
         """Create a new message from the received message.
 
@@ -1026,15 +1031,18 @@ class ConversableAgent(Role, Agent):
         Returns:
             AgentMessage: A new message
         """
-        return AgentMessage.init_new(
-            content=received_message.content,
+        new_message = AgentMessage.init_new(
+            content="",
             current_goal=received_message.current_goal,
+            goal_id=received_message.goal_id,
             context=received_message.context,
-            rounds=received_message.rounds,
+            rounds=rounds if rounds is not None else received_message.rounds + 1,
             name=self.name,
             role=self.role,
             show_message=self.show_message,
         )
+        await self._a_append_message(new_message, None, self)
+        return new_message
 
     async def _a_init_reply_message(
         self,
@@ -1043,7 +1051,7 @@ class ConversableAgent(Role, Agent):
     ) -> Optional[AgentMessage]:
         """Create a new message from the received message.
 
-        If return not None, the `_init_reply_message` method will not be called.
+        If return not None, the `init_reply_message` method will not be called.
         """
         return None
 
@@ -1132,26 +1140,16 @@ class ConversableAgent(Role, Agent):
         self,
         received_message: AgentMessage,
         sender: Agent,
-        observation: Optional[str] = None,
         rely_messages: Optional[List[AgentMessage]] = None,
         historical_dialogues: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
         is_retry_chat: bool = False,
         force_use_historical: bool = False,
-        current_retry_counter: Optional[int] = None,
-    ) -> Tuple[List[AgentMessage], Optional[Dict]]:
-        question = received_message.content
-        observation = observation or question
-        if not question:
+    ) -> Tuple[List[AgentMessage], Optional[Dict], Optional[str], Optional[str]]:
+        observation = received_message.content
+        if not observation:
             raise ValueError("The received message content is empty!")
-        most_recent_memories = ""
-        memory_list = []
-        # Read the memories according to the current observation
         memories = await self.read_memories(observation)
-        if isinstance(memories, list):
-            memory_list = memories
-        else:
-            most_recent_memories = memories
         has_memories = True if memories else False
         reply_message_str = ""
         if context is None:
@@ -1173,9 +1171,8 @@ class ConversableAgent(Role, Agent):
                     elif message.role == ModelMessageRoleType.AI:
                         reply_message_str += f"Observation: {message.content}\n"
         if reply_message_str:
-            most_recent_memories += "\n" + reply_message_str
+            memories += "\n" + reply_message_str
         try:
-            # Load the resource prompt according to the current observation
             resource_prompt_str, resource_references = await self.load_resource(
                 observation, is_retry_chat=is_retry_chat
             )
@@ -1186,19 +1183,21 @@ class ConversableAgent(Role, Agent):
         resource_vars = await self.generate_resource_variables(resource_prompt_str)
 
         system_prompt = await self.build_system_prompt(
-            question=question,
-            most_recent_memories=most_recent_memories,
+            question=observation,
+            most_recent_memories=memories,
             resource_vars=resource_vars,
             context=context,
             is_retry_chat=is_retry_chat,
         )
         user_prompt = await self.build_prompt(
-            question=question,
+            question=observation,
             is_system=False,
-            most_recent_memories=most_recent_memories,
+            most_recent_memories=memories,
             resource_vars=resource_vars,
             **context,
         )
+        if not user_prompt:
+            user_prompt = "Observation: "
 
         agent_messages = []
         if system_prompt:
@@ -1223,22 +1222,15 @@ class ConversableAgent(Role, Agent):
                     message.role = ModelMessageRoleType.AI
                     agent_messages.append(message)
 
-        if memory_list:
-            agent_messages.extend(memory_list)
-
         # Current user input information
-        if not user_prompt and (not memory_list or not current_retry_counter):
-            # The user prompt is empty, and the current retry count is 0 or the memory
-            # is empty
-            user_prompt = f"Observation: {observation}"
-        if user_prompt:
-            agent_messages.append(
-                AgentMessage(
-                    content=user_prompt,
-                    role=ModelMessageRoleType.HUMAN,
-                )
+        agent_messages.append(
+            AgentMessage(
+                content=user_prompt,
+                role=ModelMessageRoleType.HUMAN,
             )
-        return agent_messages, resource_references
+        )
+
+        return agent_messages, resource_references, system_prompt, user_prompt
 
 
 def _new_system_message(content):

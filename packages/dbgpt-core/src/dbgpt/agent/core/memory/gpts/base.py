@@ -15,6 +15,7 @@ class GptsPlan:
     """Gpts plan."""
 
     conv_id: str
+    conv_session_id: str
     conv_round: int
     sub_task_id: str
     sub_task_num: int
@@ -38,7 +39,8 @@ class GptsPlan:
         """Create a GptsPlan object from a dictionary."""
         return GptsPlan(
             conv_id=d["conv_id"],
-            conv_round=d["conv_round"],
+            conv_session_id=d["conv_session_id"],
+            conv_round=d["conv_id"],
             task_uid=d["task_uid"],
             sub_task_num=d["sub_task_num"],
             sub_task_id=d["sub_task_id"],
@@ -64,25 +66,29 @@ class GptsMessage:
     """Gpts message."""
 
     conv_id: str
+    conv_session_id: str
     sender: str
     sender_name: str
     message_id: str
-    receiver: str
-    receiver_name: str
     role: str
     content: str
     rounds: int = 0
+    receiver: Optional[str] = None
+    receiver_name: Optional[str] = None
     is_success: bool = True
     avatar: Optional[str] = None
     thinking: Optional[str] = None
     app_code: Optional[str] = None
     app_name: Optional[str] = None
+    goal_id: Optional[str] = None
     current_goal: Optional[str] = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
     model_name: Optional[str] = None
     resource_info: Optional[str] = None
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
     show_message: bool = True
     created_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
     updated_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
@@ -92,6 +98,7 @@ class GptsMessage:
         """Create a GptsMessage object from a dictionary."""
         return GptsMessage(
             conv_id=d["conv_id"],
+            conv_session_id=d["conv_session_id"],
             message_id=d["message_id"],
             sender=d["sender"],
             sender_name=d["sender_name"],
@@ -111,6 +118,8 @@ class GptsMessage:
             review_info=d["review_info"],
             action_report=d["action_report"],
             resource_info=d["resource_info"],
+            system_prompt=d["system_prompt"],
+            user_prompt=d["user_prompt"],
             show_message=d["show_message"],
             created_at=d["created_at"],
             updated_at=d["updated_at"],
@@ -152,7 +161,7 @@ class GptsPlansMemory(ABC):
 
         Args:
             conv_id(str): conversation id
-            task_ids(List[int]): List of sequence numbers of plans in the same
+            task_ids(List[str]): List of sequence numbers of plans in the same
                 conversation
 
         Returns:
@@ -206,9 +215,11 @@ class GptsPlansMemory(ABC):
 
         Args:
             conv_id(str): conversation id
+            conv_round(int): conversation round
             task_id(str): Planning step num
             state(str): the status to update to
             retry_times(int): Latest number of retries
+            conv_round_uid(str): conversation round uid
             agent(str): Agent's name
             model(str): Model name
             result(str): Plan step results

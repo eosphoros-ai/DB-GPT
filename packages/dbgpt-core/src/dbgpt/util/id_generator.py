@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 from snowflake import Snowflake, SnowflakeGenerator
@@ -71,3 +72,14 @@ def parse(snowflake_id: int, epoch: int = 0) -> Snowflake:
         Snowflake: The parsed Snowflake object.
     """
     return Snowflake.parse(snowflake_id, epoch=epoch)
+
+
+class IdGenerator:
+    def __init__(self, start_round: int):
+        self._locker = asyncio.Lock()
+        self._next_id = start_round - 1
+
+    async def next(self) -> int:
+        async with self._locker:
+            self._next_id += 1
+            return self._next_id

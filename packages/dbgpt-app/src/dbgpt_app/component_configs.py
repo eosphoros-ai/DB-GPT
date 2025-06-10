@@ -92,9 +92,10 @@ def _initialize_awel(system_app: SystemApp, awel_dirs: Optional[str] = None):
 
 
 def _initialize_agent(system_app: SystemApp):
-    from dbgpt.agent import initialize_agent
+    from dbgpt.agent import initialize_agent, initialize_llm_strategy_manager
 
     initialize_agent(system_app)
+    initialize_llm_strategy_manager(system_app)
 
 
 def _initialize_resource_manager(system_app: SystemApp):

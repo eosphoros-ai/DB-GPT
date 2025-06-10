@@ -64,10 +64,12 @@ class GptVisConverter(VisProtocolConverter):
 
     async def visualization(
         self,
-        messages: List[GptsMessage],
-        plans: Optional[List[GptsPlan]] = None,
-        gpt_msg: Optional[GptsMessage] = None,
+        messages: List["GptsMessage"],
+        plans: Optional[List["GptsPlan"]] = None,
+        gpt_msg: Optional["GptsMessage"] = None,
         stream_msg: Optional[Union[Dict, str]] = None,
+        is_first_chunk: bool = False,
+        incremental: bool = False,
     ):
         # VIS消息组装
         deal_messages: List[GptsMessage] = []

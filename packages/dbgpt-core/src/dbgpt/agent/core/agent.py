@@ -207,12 +207,13 @@ class AgentContext:
     """A class to represent the context of an Agent."""
 
     conv_id: str
+    conv_session_id: str
     gpts_app_code: Optional[str] = None
     gpts_app_name: Optional[str] = None
     language: Optional[str] = None
     max_chat_round: int = 100
     max_retry_round: int = 10
-    max_new_tokens: int = 1024
+    max_new_tokens: int = 0
     temperature: float = 0.5
     allow_format_str_template: Optional[bool] = False
     verbose: bool = False
@@ -220,6 +221,12 @@ class AgentContext:
     app_link_start: bool = False
     # 是否开启VIS协议消息模式，默认开启
     enable_vis_message: bool = True
+    # 是否增量流式输出模型输出信息
+    incremental: bool = False
+    # 是否开启流式输出(默认开启，如果agent强制定义关闭，则无法开启，但是定义开启的可通过这个属性关闭)   # noqa: E501
+    stream: bool = True
+
+    output_process_message: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentContext."""
@@ -288,15 +295,19 @@ class AgentMessage:
     thinking: Optional[str] = None
     name: Optional[str] = None
     rounds: int = 0
+    round_id: Optional[str] = None
     context: Optional[MessageContextType] = None
     action_report: Optional[ActionReportType] = None
     review_info: Optional[AgentReviewInfo] = None
     current_goal: Optional[str] = None
+    goal_id: Optional[str] = None
     model_name: Optional[str] = None
     role: Optional[str] = None
     success: bool = True
     resource_info: Optional[ResourceReferType] = None
     show_message: bool = True
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
 
     def to_dict(self) -> Dict:
         """Return a dictionary representation of the AgentMessage."""
@@ -325,6 +336,7 @@ class AgentMessage:
         cls,
         content: Optional[str] = None,
         current_goal: Optional[str] = None,
+        goal_id: Optional[str] = None,
         context: Optional[dict] = None,
         rounds: Optional[int] = None,
         name: Optional[str] = None,
@@ -335,8 +347,10 @@ class AgentMessage:
             message_id=uuid.uuid4().hex,
             content=content,
             current_goal=current_goal,
+            goal_id=goal_id,
             context=context,
-            rounds=rounds + 1,
+            rounds=rounds,
+            round_id=uuid.uuid4().hex,
             name=name,
             role=role,
             show_message=show_message,
@@ -385,10 +399,13 @@ class AgentMessage:
             action_report=self.action_report,
             review_info=copied_review_info,
             current_goal=self.current_goal,
+            goal_id=self.goal_id,
             model_name=self.model_name,
             role=self.role,
             success=self.success,
             resource_info=self.resource_info,
+            system_prompt=self.system_prompt,
+            user_prompt=self.user_prompt,
         )
 
     def get_dict_context(self) -> Dict[str, Any]:
@@ -399,22 +416,26 @@ class AgentMessage:
 
     def to_gpts_message(
         self,
-        sender: "ConversableAgent",  # noqa
-        receiver: "ConversableAgent",  # noqa
+        sender: "ConversableAgent",  # noqa:F821
+        receiver: Optional["ConversableAgent"] = None,  # noqa:F821
+        role: Optional[str] = None,
     ) -> GptsMessage:
         gpts_message: GptsMessage = GptsMessage(
-            conv_id=receiver.not_null_agent_context.conv_id,
+            conv_id=sender.not_null_agent_context.conv_id,
+            conv_session_id=sender.not_null_agent_context.conv_session_id,
             message_id=self.message_id if self.message_id else uuid.uuid4().hex,
             sender=sender.role,
             sender_name=sender.name,
-            receiver=receiver.role,
-            receiver_name=receiver.name,
-            role=receiver.role,
+            receiver=receiver.role if receiver else sender.role,
+            receiver_name=receiver.name if receiver else sender.name,
+            role=role,
+            avatar=sender.avatar,
             rounds=self.rounds,
             is_success=self.success,
             app_code=sender.not_null_agent_context.gpts_app_code,
             app_name=sender.not_null_agent_context.gpts_app_name,
             current_goal=self.current_goal,
+            goal_id=self.goal_id,
             content=self.content if self.content else "",
             thinking=self.thinking if self.thinking else "",
             context=(
@@ -436,6 +457,8 @@ class AgentMessage:
             resource_info=(
                 json.dumps(self.resource_info) if self.resource_info else None
             ),
+            user_prompt=self.user_prompt,
+            system_prompt=self.system_prompt,
             show_message=self.show_message,
         )
         return gpts_message

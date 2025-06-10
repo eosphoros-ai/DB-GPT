@@ -54,7 +54,7 @@ class GptsAppDetail(BaseModel):
 
     app_code: Optional[str] = None
     app_name: Optional[str] = None
-    type: Optional[str] = None
+    type: Optional[str] = "agent"
     agent_name: Optional[str] = None
     agent_role: Optional[str] = None
     agent_describe: Optional[str] = None

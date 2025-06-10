@@ -91,7 +91,7 @@ class DeepseekLLMClient(OpenAILLMClient):
         **kwargs,
     ):
         api_base = (
-            api_base or os.getenv("DEEPSEEK_API_BASE") or "https://api.deepseek.com/v1"
+            api_base or os.getenv("DEEPSEEK_API_BASE") or "https://api.deepseek.com"
         )
         api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
         model = model or _DEFAULT_MODEL

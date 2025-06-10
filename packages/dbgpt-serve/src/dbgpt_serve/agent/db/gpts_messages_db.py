@@ -37,7 +37,7 @@ class GptsMessagesEntity(Model):
     sender_name = Column(
         String(255),
         nullable=False,
-        default = "",
+        default="",
         comment="Who(name) speaking in the current conversation turn",
     )
     receiver = Column(
