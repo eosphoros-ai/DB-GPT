@@ -13,35 +13,38 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="forks" src="https://img.shields.io/github/forks/eosphoros-ai/db-gpt?style=social" />
     </a>
+    <a href="http://dbgpt.cn/">
+        <img alt="Official Website" src="https://img.shields.io/badge/Official%20website-DB--GPT-blue?style=flat&labelColor=3366CC" />
+    </a>
     <a href="https://opensource.org/licenses/MIT">
-      <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?labelColor=%23FFEC8B" />
+      <img alt="License: MIT" src="https://img.shields.io/github/license/eosphoros-ai/db-gpt?style=flat&labelColor=009966&color=009933" />
     </a>
      <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
-      <img alt="Release Notes" src="https://img.shields.io/github/release/eosphoros-ai/DB-GPT?labelColor=%23FFA54F" />
+      <img alt="Release Notes" src="https://img.shields.io/github/v/release/eosphoros-ai/db-gpt?style=flat&labelColor=FF9933&color=FF6633" />
     </a>
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT?labelColor=%23EEDD82" />
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/db-gpt?style=flat&labelColor=666666&color=333333" />
     </a>
     <a href="https://x.com/DBGPT_AI">
       <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/DBGPT_AI" />
     </a>
     <a href="https://medium.com/@dbgpt0506">
-      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/Dbgpt/orange?icon=medium&labelColor=orange" />
+      <img alt="Medium Follow" src="https://badgen.net/badge/Medium/DB-GPT/333333?icon=medium&labelColor=666666" />
     </a>
     <a href="https://space.bilibili.com/3537113070963392">
-      <img alt="Bilibili Space" src="https://img.shields.io/badge/Bilibili-DB--GPT-blue?style=plastic&logo=bilibili&labelColor=blue&link=https%3A%2F%2Fspace.bilibili.com%2F3537113070963392" />
+      <img alt="Bilibili Space" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Frelation%2Fstat%3Fvmid%3D3537113070963392&query=data.follower&style=flat&logo=bilibili&logoColor=white&label=Bilibili%20Fans&labelColor=F37697&color=6495ED" />
     </a>
     <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
-      <img alt="Slack" src="https://badgen.net/badge/Slack/Join%20DB-GPT/0abd59?icon=slack&labelColor=0abd59" />
+      <img alt="Slack" src="https://img.shields.io/badge/Slack-Join%20us-5d6b98?style=flat&logo=slack&labelColor=7d89b0" />
     </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[![英語](https://img.shields.io/badge/英語-gray?style=flat-square)](README.md)
-[![中国語](https://img.shields.io/badge/中国語-gray?style=flat-square)](README.zh.md)
-[![日本語](https://img.shields.io/badge/日本語-gray?style=flat-square)](README.ja.md) 
+[![英語](https://img.shields.io/badge/英語-d9d9d9?style=flat-square)](README.md)
+[![中国語](https://img.shields.io/badge/中国語-d9d9d9?style=flat-square)](README.zh.md)
+[![日本語](https://img.shields.io/badge/日本語-d9d9d9?style=flat-square)](README.ja.md) 
 
 [**ドキュメント**](http://docs.dbgpt.cn/docs/overview/) | [**チームに連絡します**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**コミュニティ**](https://github.com/eosphoros-ai/community) | [**論文**](https://arxiv.org/pdf/2312.17449.pdf)
 
