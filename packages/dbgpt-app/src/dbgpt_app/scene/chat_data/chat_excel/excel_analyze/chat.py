@@ -201,5 +201,4 @@ class ChatExcel(BaseChat):
         view_msg = self.stream_plugin_call(text_msg)
         view_msg = final_output.gen_text_with_thinking(new_text=view_msg)
         view_msg = view_msg.replace("\n", "\\n")
-
         return final_output.text, view_msg
