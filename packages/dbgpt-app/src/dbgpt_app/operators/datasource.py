@@ -16,7 +16,7 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.core.operators import BaseLLM
 from dbgpt.util.i18n_utils import _
-from dbgpt.vis.tags.vis_chart import default_chart_type_prompt
+from dbgpt_ext.vis.gpt_vis.tags.vis_chart import default_chart_type_prompt
 
 from .llm import HOContextBody
 

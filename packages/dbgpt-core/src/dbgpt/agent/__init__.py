@@ -1,4 +1,4 @@
-"""DB-GPT Multi-Agents Module."""
+"""DERISK Multi-Agents Module."""
 
 from .core.action import *  # noqa: F401, F403
 from .core.agent import (  # noqa: F401
@@ -20,7 +20,13 @@ from .core.profile import *  # noqa: F401, F403
 from .core.schema import PluginStorageType  # noqa: F401
 from .core.user_proxy_agent import UserProxyAgent  # noqa: F401
 from .resource.base import AgentResource, Resource, ResourceType  # noqa: F401
-from .util.llm.llm import LLMConfig  # noqa: F401
+from .util.llm.strategy.base import LLMConfig, LLMStrategyType  # noqa: F401
+from .util.llm.strategy.default import LLMStrategy  # noqa: F401
+from .util.llm.strategy.priority import LLMStrategyPriority  # noqa: F401
+from .util.llm.strategy_manage import (
+    get_llm_strategy_manager,  # noqa: F401
+    initialize_llm_strategy_manager,  # noqa: F401
+)
 
 __ALL__ = [
     "Agent",
@@ -39,4 +45,9 @@ __ALL__ = [
     "ResourceType",
     "PluginStorageType",
     "UserProxyAgent",
+    "LLMStrategyType",
+    "LLMStrategy",
+    "LLMStrategyPriority",
+    "initialize_llm_strategy_manager",
+    "get_llm_strategy_manager",
 ]

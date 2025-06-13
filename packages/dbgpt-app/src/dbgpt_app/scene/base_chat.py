@@ -34,12 +34,14 @@ from dbgpt.util.annotations import Deprecated
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.retry import async_retry
 from dbgpt.util.tracer import root_tracer, trace
+from dbgpt.vis import SystemVisTag, VisProtocolConverter
 from dbgpt_app.scene.base import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.operators.app_operator import (
     AppChatComposerOperator,
     ChatComposerInput,
     build_cached_chat_operator,
 )
+from dbgpt_ext.vis.gpt_vis.gpt_vis_converter_v2 import GptVisConverterNew
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
 from dbgpt_serve.core.config import BufferWindowGPTsAppMemoryConfig, GPTsAppCommonConfig
 from dbgpt_serve.file.serve import Serve as FileServe
@@ -211,6 +213,7 @@ class BaseChat(ABC):
         # will be compatible with all models
         self._message_version = chat_param.message_version
         self._chat_param = chat_param
+        self.vis_convert: VisProtocolConverter = GptVisConverterNew()
         self.fs_client = FileStorageClient.get_instance(system_app)
 
     async def generate_input_values(self) -> Dict:
@@ -434,7 +437,11 @@ class BaseChat(ABC):
                 )
                 text_msg = model_output.text if model_output.has_text else ""
                 view_msg = self.stream_plugin_call(text_msg)
-                view_msg = model_output.gen_text_with_thinking(new_text=view_msg)
+
+                vis_thinking = self.vis_convert.vis_inst(SystemVisTag.VisThinking.value)
+                view_msg = model_output.gen_text_with_thinking(
+                    new_text=view_msg, vis_think=vis_thinking
+                )
                 view_msg = view_msg.replace("\n", "\\n")
 
                 if text_output:
@@ -544,7 +551,13 @@ class BaseChat(ABC):
             self.message_adjust()
             span.end()
         except BaseAppException as e:
-            self.current_message.add_view_message(e.get_ui_error())
+            self.current_message.add_view_message(
+                e.get_ui_error(
+                    vis_thinking=self.vis_convert.vis_inst(
+                        SystemVisTag.VisThinking.value
+                    )
+                )
+            )
             span.end(metadata={"error": str(e)})
         except Exception as e:
             view_message = f"<span style='color:red'>ERROR!</span> {str(e)}"
@@ -601,7 +614,8 @@ class BaseChat(ABC):
             )
             if parsed_output.has_thinking and not incremental:
                 view_message = parsed_output.gen_text_with_thinking(
-                    new_text=view_message
+                    new_text=view_message,
+                    vis_think=self.vis_convert.vis_inst(SystemVisTag.VisThinking.value),
                 )
             return ai_response_text, view_message.replace("\n", "\\n")
         except BaseAppException as e:

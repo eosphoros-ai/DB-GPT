@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 logger = logging.getLogger(__name__)
 

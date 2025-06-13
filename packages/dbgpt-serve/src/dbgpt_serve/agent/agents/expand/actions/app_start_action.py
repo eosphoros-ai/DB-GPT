@@ -3,7 +3,7 @@ from typing import Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.agent import Action, ActionOutput, AgentResource
-from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
+from dbgpt.vis import SystemVisTag
 from dbgpt_serve.agent.agents.expand.actions.intent_recognition_action import (
     IntentRecognitionInput,
 )
@@ -31,11 +31,8 @@ class LinkAppInput(BaseModel):
 class StartAppAction(Action[LinkAppInput]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._render_protocal = VisPlugin()
-
-    @property
-    def render_protocal(self) -> Optional[Vis]:
-        return self._render_protocal
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisTool.value
 
     @property
     def out_model_type(self):

@@ -52,6 +52,7 @@ agent = [
     "numpy>=1.21.0,<2.0.0",
     "auto-gpt-plugin-template>=0.0.3",
     "mcp>=1.4.1",
+    "diskcache>=5.6.3",
 ]
 simple_framework = [
     "jinja2",
@@ -126,7 +127,7 @@ proxy_tongyi = [
     # tongyi supported by openai package
     "openai",
     # For tongyi proxy embedding model
-    "dashscope",
+    "dashscope>= 1.23.3",
 ]
 proxy_qianfan = ["qianfan"]
 proxy_openai = [

@@ -27,7 +27,7 @@ from dbgpt.util.i18n_utils import _
 
 from .... import ActionOutput
 from ....resource.manage import get_resource_manager
-from ....util.llm.llm import LLMConfig
+from ....util.llm.strategy.base import LLMConfig
 from ...agent import Agent, AgentGenerateContext, AgentMessage
 from ...agent_manage import get_agent_manager
 from ...base_agent import ConversableAgent

@@ -16,7 +16,7 @@ from dbgpt.agent import (
 )
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
 from dbgpt.agent.resource.app import AppResource
-from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
+from dbgpt.vis import SystemVisTag
 
 logger = logging.getLogger(__name__)
 
@@ -43,17 +43,13 @@ class AppResourceAction(Action[AppResourceInput]):
     def __init__(self, **kwargs):
         """App action init."""
         super().__init__(**kwargs)
-        self._render_protocol = VisPlugin()
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisTool.value
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
         """Return the resource type needed for the action."""
         return ResourceType.App
-
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
 
     @property
     def out_model_type(self):

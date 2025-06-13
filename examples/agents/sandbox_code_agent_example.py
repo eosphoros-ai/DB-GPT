@@ -35,7 +35,7 @@ from dbgpt.core import ModelMessageRoleType
 from dbgpt.util.code_utils import UNKNOWN, extract_code, infer_lang
 from dbgpt.util.string_utils import str_to_bool
 from dbgpt.util.utils import colored
-from dbgpt.vis.tags.vis_code import Vis, VisCode
+from dbgpt.vis import SystemVisTag
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +46,9 @@ class SandboxCodeAction(Action[None]):
     def __init__(self, **kwargs):
         """Code action init."""
         super().__init__(**kwargs)
-        self._render_protocol = VisCode()
         self._code_execution_config = {}
-
-    @property
-    def render_protocol(self) -> Optional[Vis]:
-        """Return the render protocol."""
-        return self._render_protocol
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisCode.value
 
     async def run(
         self,

@@ -33,6 +33,8 @@ from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.vis import SystemVisTag, VisProtocolConverter
+from dbgpt_ext.vis.gpt_vis.gpt_vis_converter_v2 import GptVisConverterNew
 from dbgpt_serve.core import BaseService, blocking_func_to_async
 
 from ..api.schemas import FlowDebugRequest, FlowInfo, ServeRequest, ServerResponse
@@ -58,7 +60,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._dao: ServeDao = dao
         self._flow_factory: FlowFactory = FlowFactory()
         self._dbgpts_loader: Optional[DBGPTsLoader] = None
-
+        self.vis_convert: VisProtocolConverter = GptVisConverterNew()
         super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp) -> None:
@@ -443,8 +445,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         # Must be non-incremental
         request.incremental = False
+        vis_thinking = self.vis_convert.vis_inst(SystemVisTag.VisThinking.value)
         async for output in self.safe_chat_stream_flow(flow_uid, request):
-            text = output.gen_text_with_thinking()
+            text = output.gen_text_with_thinking(vis_think=vis_thinking)
             if text:
                 text = text.replace("\n", "\\n")
             if output.error_code != 0:
@@ -472,7 +475,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         request.incremental = True
         async for output in self.safe_chat_stream_flow(flow_uid, request):
             if not output.success:
-                yield f"data: {json.dumps(output.to_dict(), ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps(output.to_dict(self.vis_convert.vis_inst(SystemVisTag.VisThinking.value)), ensure_ascii=False)}\n\n"  # noqa: E501
                 yield "data: [DONE]\n\n"
                 return
             text = output.text if output.has_text else ""

@@ -36,6 +36,7 @@ from dbgpt.util.executor_utils import (
 )
 from dbgpt.util.file_client import FileClient
 from dbgpt.util.tracer import SpanType, root_tracer
+from dbgpt.vis import SystemVisTag
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.openapi.api_view_model import (
@@ -60,7 +61,6 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
-
 
 user_recent_app_dao = UserRecentAppsDao()
 
@@ -838,6 +838,11 @@ async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
     dags = dag_manager.get_dags_by_tag(TAG_KEY_KNOWLEDGE_CHAT_DOMAIN_TYPE, domain_type)
     if not dags or not dags[0].leaf_nodes:
         raise ValueError(f"Cant find the DAG for domain type {domain_type}")
+    # VisConvert
+    from dbgpt.vis import VisProtocolConverter
+    from dbgpt_ext.vis.gpt_vis.gpt_vis_converter_v2 import GptVisConverterNew
+
+    vis_convert: VisProtocolConverter = GptVisConverterNew()
 
     end_task = cast(BaseOperator, dags[0].leaf_nodes[0])
     space = dialogue.select_param
@@ -862,7 +867,9 @@ async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
         incremental=dialogue.incremental,
     )
     async for output in safe_chat_stream_with_dag_task(end_task, request, False):
-        text = output.gen_text_with_thinking()
+        text = output.gen_text_with_thinking(
+            vis_think=vis_convert.vis_inst(SystemVisTag.VisThinking.value)
+        )
         if text:
             text = text.replace("\n", "\\n")
         if output.error_code != 0:

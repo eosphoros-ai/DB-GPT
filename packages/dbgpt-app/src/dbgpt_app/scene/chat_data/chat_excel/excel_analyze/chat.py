@@ -11,6 +11,7 @@ from dbgpt.core.interface.file import _SCHEMA, FileStorageClient
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.json_utils import EnhancedJSONEncoder
 from dbgpt.util.tracer import root_tracer, trace
+from dbgpt.vis import SystemVisTag
 from dbgpt_app.scene import BaseChat, ChatScene
 from dbgpt_app.scene.base_chat import ChatParam
 from dbgpt_app.scene.chat_data.chat_excel.config import ChatExcelConfig
@@ -199,7 +200,10 @@ class ChatExcel(BaseChat):
     ):
         text_msg = final_output.text if final_output.has_text else ""
         view_msg = self.stream_plugin_call(text_msg)
-        view_msg = final_output.gen_text_with_thinking(new_text=view_msg)
+        view_msg = final_output.gen_text_with_thinking(
+            new_text=view_msg,
+            vis_think=self.vis_convert.vis_inst(SystemVisTag.VisThinking.value),
+        )
         view_msg = view_msg.replace("\n", "\\n")
 
         return final_output.text, view_msg

@@ -126,7 +126,7 @@ class MCPSSEToolPack(MCPToolPack):
                 },
             )
             no_ssl_verify: bool = dataclasses.field(
-                default=False,
+                default=True,
                 metadata={
                     "help": _(
                         "Disable SSL verification. "

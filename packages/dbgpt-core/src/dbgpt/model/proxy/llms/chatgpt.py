@@ -321,11 +321,16 @@ class OpenAILLMClient(ProxyLLMClient):
             # Check for empty 'choices' issue in Azure GPT-4o responses
             if r.choices[0] is not None and r.choices[0].delta is None:
                 continue
+
             delta_obj = r.choices[0].delta
             if hasattr(delta_obj, "reasoning_content"):
                 reasoning_content += delta_obj.reasoning_content or ""
             if r.choices[0].delta.content is not None:
                 text += r.choices[0].delta.content
+            if r.choices[0].finish_reason == "length":
+                logger.warning(
+                    f"Chat finish by {r.choices[0].finish_reason}! usage:total{r.usage.total_tokens},prompt_tokens:{r.usage.prompt_tokens},completion_tokens:{r.usage.completion_tokens}"  # noqa: E501
+                )
             if text or reasoning_content:
                 if hasattr(r, "usage") and r.usage is not None:
                     usage = r.usage.dict()
