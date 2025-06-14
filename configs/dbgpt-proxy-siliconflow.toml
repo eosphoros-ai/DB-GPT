@@ -34,7 +34,6 @@ api_url = "https://api.siliconflow.cn/v1/embeddings"
 api_key = "${env:SILICONFLOW_API_KEY}"
 
 [[models.rerankers]]
-type = "reranker"
 name = "BAAI/bge-reranker-v2-m3"
 provider = "proxy/siliconflow"
 api_key = "${env:SILICONFLOW_API_KEY}"

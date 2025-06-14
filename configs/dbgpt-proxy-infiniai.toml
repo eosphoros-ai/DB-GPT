@@ -34,7 +34,6 @@ api_url = "https://cloud.infini-ai.com/maas/v1/embeddings"
 api_key = "${env:INFINIAI_API_KEY}"
 
 [[models.rerankers]]
-type = "reranker"
 name = "bge-reranker-v2-m3"
 provider = "proxy/infiniai"
 api_key = "${env:INFINIAI_API_KEY}" 
