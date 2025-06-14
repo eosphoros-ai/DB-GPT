@@ -14,6 +14,7 @@ from dbgpt.model.adapter.base import register_embedding_adapter
 from dbgpt.model.adapter.embed_metadata import (
     EMBED_COMMON_HF_BGE_MODELS,
     EMBED_COMMON_HF_JINA_MODELS,
+    EMBED_COMMON_HF_QWEN_MODELS,
 )
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.tracer import DBGPT_TRACER_SPAN_ID, root_tracer
@@ -958,7 +959,8 @@ register_embedding_adapter(
             languages=["zh"],
         ),
     ]
-    + EMBED_COMMON_HF_JINA_MODELS,
+    + EMBED_COMMON_HF_JINA_MODELS
+    + EMBED_COMMON_HF_QWEN_MODELS,
 )
 register_embedding_adapter(
     HuggingFaceInstructEmbeddings,
