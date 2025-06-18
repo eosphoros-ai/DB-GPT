@@ -172,6 +172,10 @@ const sidebars = {
             },
             {
               type: 'doc',
+              id: 'installation/advanced_usage/mlx_inference',
+            },
+            {
+              type: 'doc',
               id: 'installation/advanced_usage/Llamacpp_server',
             },
             {

@@ -68,6 +68,9 @@ vllm = [
     # Just support GPU version on Linux
     "vllm>=0.7.0; sys_platform == 'linux'",
 ]
+mlx = [
+    "mlx-lm>=0.25.2; sys_platform == 'darwin'",
+]
 # vllm_pascal = [
 #    # https://github.com/sasha0552/pascal-pkgs-ci
 #    "vllm-pascal==0.7.2; sys_platform == 'linux'"
