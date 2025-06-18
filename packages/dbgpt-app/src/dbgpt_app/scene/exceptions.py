@@ -1,8 +1,10 @@
 """Exceptions for Application."""
 
 import logging
+from typing import Optional
 
 from dbgpt.core import ModelOutput
+from dbgpt.vis import Vis
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ class BaseAppException(Exception):
         self.message = message
         self.view = view
 
-    def get_ui_error(self) -> str:
+    def get_ui_error(self, vis_thinking: Optional[Vis] = None) -> str:
         """Get UI Error"""
         return self.view
 
@@ -37,8 +39,10 @@ class ContextAppException(BaseAppException):
         super().__init__(message, view)
         self.model_output: ModelOutput = model_output
 
-    def get_ui_error(self) -> str:
+    def get_ui_error(self, vis_thinking: Optional[Vis] = None) -> str:
         """Get UI Error"""
         if self.model_output.has_thinking:
-            return self.model_output.gen_text_with_thinking(new_text=self.view)
+            return self.model_output.gen_text_with_thinking(
+                new_text=self.view, vis_think=vis_thinking
+            )
         return self.view

@@ -12,6 +12,9 @@ from ..db.gpts_plans_db import GptsPlansDao, GptsPlansEntity
 
 
 class MetaDbGptsPlansMemory(GptsPlansMemory):
+    def get_plans_by_msg_round(self, conv_id: str, rounds_id: str) -> List[GptsPlan]:
+        pass
+
     def __init__(self):
         self.gpts_plan = GptsPlansDao()
 
@@ -77,6 +80,12 @@ class MetaDbGptsPlansMemory(GptsPlansMemory):
 class MetaDbGptsMessageMemory(GptsMessageMemory):
     def __init__(self):
         self.gpts_message = GptsMessagesDao()
+
+    def get_by_message_id(self, message_id: str) -> Optional[GptsMessage]:
+        pass
+
+    def update(self, message: GptsMessage) -> None:
+        pass
 
     def append(self, message: GptsMessage):
         self.gpts_message.append(message.to_dict())

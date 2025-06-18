@@ -15,7 +15,7 @@ from dbgpt.core.awel.flow import (
 
 from ....resource.base import AgentResource, ResourceType
 from ....resource.manage import get_resource_manager
-from ....util.llm.llm import LLMConfig, LLMStrategyType
+from ....util.llm.strategy.base import LLMConfig, LLMStrategyType
 from ...agent_manage import get_agent_manager
 
 

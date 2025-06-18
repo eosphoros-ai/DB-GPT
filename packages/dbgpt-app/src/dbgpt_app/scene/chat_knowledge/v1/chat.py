@@ -14,6 +14,7 @@ from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.rag.retriever.rerank import RerankEmbeddingsRanker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.tracer import root_tracer, trace
+from dbgpt.vis import SystemVisTag
 from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt_app.knowledge.service import KnowledgeService
 from dbgpt_app.scene import BaseChat, ChatScene
@@ -117,7 +118,10 @@ class ChatKnowledge(BaseChat):
         view_message = view_message + reference
 
         if final_output.has_thinking and not incremental:
-            view_message = final_output.gen_text_with_thinking(new_text=view_message)
+            view_message = final_output.gen_text_with_thinking(
+                new_text=view_message,
+                vis_think=self.vis_convert.vis_inst(SystemVisTag.VisThinking.value),
+            )
         return final_output.text, view_message
 
     def stream_call_reinforce_fn(self, text):

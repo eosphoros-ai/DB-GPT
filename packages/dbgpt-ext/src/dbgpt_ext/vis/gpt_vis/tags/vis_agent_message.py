@@ -1,6 +1,6 @@
 """Vis Agent Messages."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisAgentMessages(Vis):

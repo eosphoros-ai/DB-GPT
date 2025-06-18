@@ -1,6 +1,6 @@
 """Vis Code."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisCode(Vis):

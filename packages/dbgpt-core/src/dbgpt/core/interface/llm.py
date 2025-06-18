@@ -25,6 +25,7 @@ from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.util import BaseParameters
 from dbgpt.util.annotations import PublicAPI
 from dbgpt.util.model_utils import GPUInfo
+from dbgpt.vis import Vis
 
 logger = logging.getLogger(__name__)
 
@@ -285,9 +286,9 @@ class ModelOutput:
             ]:
                 setattr(self, k, v)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self, vis_think: Optional[Vis] = None) -> Dict:
         """Convert the model output to dict."""
-        text = self.gen_text_with_thinking()
+        text = self.gen_text_with_thinking(vis_think=vis_think)
         return {
             "error_code": self.error_code,
             "text": text,
@@ -355,19 +356,35 @@ class ModelOutput:
             return thinking_content[-1].get_thinking()
         return None
 
-    def gen_text_with_thinking(self, new_text: Optional[str] = None) -> str:
-        from dbgpt.vis.tags.vis_thinking import VisThinking
-
+    def gen_text_with_thinking(
+        self, new_text: Optional[str] = None, vis_think: Optional[Vis] = None
+    ) -> str:
         msg = ""
         if self.has_thinking:
             msg = self.thinking_text or ""
-            msg = VisThinking().sync_display(content=msg)
+            if vis_think:
+                msg = vis_think.sync_display(content=msg)
+            else:
+                msg = f"<thinking>{msg}</thinking>"  # No vis component is specified, temporarily restore a default format # noqa: E501
             msg += "\n"
         if new_text:
             msg += new_text
         elif self.has_text:
             msg += self.text or ""
         return msg
+
+    def gen_text_and_thinking(self, new_text: Optional[str] = None):
+        thinking_text = ""
+        content_text = ""
+        if self.has_thinking:
+            thinking_text = self.thinking_text
+
+        if new_text:
+            content_text += new_text
+        elif self.has_text:
+            content_text = self.text or ""
+
+        return thinking_text, content_text
 
     @text.setter
     def text(self, value: str):

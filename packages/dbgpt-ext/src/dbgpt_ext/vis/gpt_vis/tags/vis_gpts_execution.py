@@ -1,6 +1,6 @@
 """VisDbgptsFlow."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisDbgptsFlow(Vis):

@@ -1,6 +1,6 @@
 """Viss Agent Plans."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisAgentPlans(Vis):

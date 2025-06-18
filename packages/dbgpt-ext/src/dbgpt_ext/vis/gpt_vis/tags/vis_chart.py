@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, Optional
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 def default_chart_type_prompt() -> str:

@@ -4,7 +4,7 @@ from typing import Optional
 
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.agent import Action, ActionOutput, AgentResource, ResourceType
-from dbgpt.vis.tags.vis_app_link import Vis, VisAppLink
+from dbgpt.vis import SystemVisTag
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +39,12 @@ class IntentRecognitionInput(BaseModel):
 class IntentRecognitionAction(Action[IntentRecognitionInput]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._render_protocal = VisAppLink()
+        ## this action out view vis tag name
+        self.action_view_tag: str = SystemVisTag.VisTool.value
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
         return ResourceType.Knowledge
-
-    @property
-    def render_protocal(self) -> Optional[Vis]:
-        return self._render_protocal
 
     @property
     def out_model_type(self):

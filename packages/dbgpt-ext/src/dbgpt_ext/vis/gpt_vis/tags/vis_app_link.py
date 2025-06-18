@@ -1,6 +1,6 @@
 """Vis App Link."""
 
-from ..base import Vis
+from dbgpt.vis import Vis
 
 
 class VisAppLink(Vis):
