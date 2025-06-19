@@ -37,6 +37,7 @@ def scan_model_providers():
         base_class=LLMDeployModelParameters,
         specific_files=[
             "vllm_adapter",
+            "mlx_adapter",
             "hf_adapter",
             "llama_cpp_adapter",
             "llama_cpp_py_adapter",

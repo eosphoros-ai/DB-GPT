@@ -279,7 +279,9 @@ def load_config(config_file: str = None) -> ApplicationConfig:
     from dbgpt.configs.model_config import ROOT_PATH as DBGPT_ROOT_PATH
 
     if config_file is None:
-        config_file = os.path.join(DBGPT_ROOT_PATH, "configs", "dbgpt-siliconflow.toml")
+        config_file = os.path.join(
+            DBGPT_ROOT_PATH, "configs", "dbgpt-proxy-siliconflow.toml"
+        )
     elif not os.path.isabs(config_file):
         # If config_file is a relative path, make it relative to DBGPT_ROOT_PATH
         config_file = os.path.join(DBGPT_ROOT_PATH, config_file)
