@@ -363,3 +363,47 @@ class HODatasourceDashboardOperator(GPTVisMixin, MapOperator[dict, str]):
         view = await vis.display(charts=chart_params)
         await self.save_view_message(self.current_dag_context, view)
         return view
+
+
+class HODatasourceStructedOperator(MapOperator[dict, str]):
+    """Execute the context from the datasource."""
+
+    metadata = ViewMetadata(
+        label=_("Datasource Structed Operator"),
+        name="higher_order_datasource_structed_operator",
+        description=_(
+            "Execute the context from the datasource and output structed data."),
+        category=OperatorCategory.DATABASE,
+        parameters=[_PARAMETER_DATASOURCE.new()],
+        inputs=[_INPUTS_SQL_DICT_LIST.new()],
+        outputs=[IOField.build_from(_("Dictionary"), "dict", dict)],
+        tags={"order": TAGS_ORDER_HIGH},
+    )
+
+    def __init__(self, datasource: DBResource, **kwargs):
+        """Initialize the operator."""
+        MapOperator.__init__(self, **kwargs)
+        self._datasource = datasource
+
+    async def map(self, sql_dict_list: List[dict]) -> dict:
+        """Execute the context from the datasource."""
+
+        if not isinstance(sql_dict_list, list):
+            raise ValueError(
+                "The input value of datasource executor should be a list of "
+                "dictionaries."
+            )
+        chart_params = []
+        for chart_item in sql_dict_list:
+            chart_dict = {k: v for k, v in chart_item.items()}
+            sql = chart_item.get("sql")
+            try:
+                data_df = await self._datasource.query_to_df(sql)
+                chart_dict["data"] = data_df.to_dict(orient="records")
+            except Exception as e:
+                logger.warning(f"Sql execute failed！{str(e)}")
+                chart_dict["err_msg"] = str(e)
+            chart_params.append(chart_dict)
+        # view = await vis.display(charts=chart_params)
+        # await self.save_view_message(self.current_dag_context, view)
+        return {"data": chart_params}
