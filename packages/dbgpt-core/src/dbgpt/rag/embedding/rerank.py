@@ -457,7 +457,7 @@ class OpenAPIRerankEmbeddings(BaseModel, RerankEmbeddings):
         return cls(
             api_url=parameters.api_url,
             api_key=parameters.api_key,
-            model_name=parameters.real_model_path,
+            model_name=parameters.real_provider_model_name,
             timeout=parameters.timeout,
         )
 
