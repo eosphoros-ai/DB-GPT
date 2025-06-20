@@ -196,6 +196,7 @@ const ExtraAppInfo: React.FC = () => {
                   }
                 }}
                 initValue={curApp?.details}
+                teamMode={curApp?.team_mode}
               />
             )}
             {/* awel_layout模式 */}
