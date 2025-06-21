@@ -173,14 +173,14 @@ class ElasticStore(VectorStoreBase):
         connect_kwargs = {}
         elasticsearch_vector_config = vector_store_config.to_dict()
         self.uri = os.getenv(
-            "ELASTICSEARCH_URL", "localhost"
-        ) or elasticsearch_vector_config.get("uri")
+            "ELASTICSEARCH_URL", None
+        ) or elasticsearch_vector_config.get("uri", "localhost")
         self.port = os.getenv(
-            "ELASTICSEARCH_PORT", "9200"
-        ) or elasticsearch_vector_config.get("post")
+            "ELASTICSEARCH_PORT", None
+        ) or elasticsearch_vector_config.get("post", "9200")
         self.username = os.getenv(
             "ELASTICSEARCH_USERNAME"
-        ) or elasticsearch_vector_config.get("username")
+        ) or elasticsearch_vector_config.get("user")
         self.password = os.getenv(
             "ELASTICSEARCH_PASSWORD"
         ) or elasticsearch_vector_config.get("password")
