@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.agent.core.schema import Status
 from dbgpt.util.json_utils import serialize
+from dbgpt.util.sql_utils import remove_sql_comments
 from dbgpt.util.string_utils import extract_content, extract_content_open_ending
 
 logger = logging.getLogger(__name__)
@@ -105,10 +106,17 @@ class ApiCall:
             all_context = all_context.replace(tag + api_context, api_context)
         return all_context
 
+    def _remove_sql_comments(self, sql: str) -> str:
+        """Remove SQL comments from the given SQL string."""
+        return remove_sql_comments(sql)
+
     def _format_api_context(self, raw_api_context: str) -> str:
         """Format the API context."""
         # Remove newline characters
-
+        if "<sql>" in raw_api_context:
+            # For cases involving SQL, remove comments first—otherwise,
+            # removing line breaks afterward may cause SQL statement errors.
+            raw_api_context = self._remove_sql_comments(raw_api_context)
         raw_api_context = (
             raw_api_context.replace("\\n", " ")
             .replace("\n", " ")
