@@ -16,14 +16,27 @@ interface AgentSelectProps {
   setSelectedTab: React.Dispatch<React.SetStateAction<string>>;
   value?: any;
   onChange?: (value: any) => void;
+  teamMode?: string;
 }
 // 自定义agent选择
-const AgentSelect: React.FC<AgentSelectProps> = ({ value, onChange, agents, selectedTab, setSelectedTab }) => {
+const AgentSelect: React.FC<AgentSelectProps> = ({
+  value,
+  onChange,
+  agents,
+  selectedTab,
+  setSelectedTab,
+  teamMode,
+}) => {
   return (
     <Checkbox.Group
       className='grid grid-cols-4 gap-4'
-      onChange={(value: string[]) => {
-        onChange?.(value);
+      onChange={(checkedValues: string[]) => {
+        if ('single_agent' === teamMode) {
+          const lastSelected = checkedValues.find(v => !value.includes(v));
+          onChange?.(lastSelected ? [lastSelected] : []);
+        } else {
+          onChange?.(checkedValues);
+        }
       }}
       value={value}
     >
@@ -61,7 +74,8 @@ const AutoPlan: React.FC<{
   initValue: any;
   updateData: (data: any) => void;
   classNames?: string;
-}> = ({ initValue, updateData, classNames }) => {
+  teamMode?: string;
+}> = ({ initValue, updateData, classNames, teamMode }) => {
   const { t, i18n } = useTranslation();
   const [form] = Form.useForm();
   const agentName = Form.useWatch('agent_name', form);
@@ -168,7 +182,12 @@ const AutoPlan: React.FC<{
           required
           rules={[{ required: true, message: t('please_choose') + ' agent' }]}
         >
-          <AgentSelect agents={data?.[0]?.[1] || []} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+          <AgentSelect
+            agents={data?.[0]?.[1] || []}
+            selectedTab={selectedTab}
+            setSelectedTab={setSelectedTab}
+            teamMode={teamMode}
+          />
         </Form.Item>
       </Form>
       {data?.[0]?.[1]?.map(item => (
