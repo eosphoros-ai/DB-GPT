@@ -93,6 +93,10 @@ const sidebars = {
                   type: "doc",
                   id: "installation/integrations/mssql_install"
                 },
+                {
+                  type: "doc",
+                  id: "installation/integrations/oracle_install"
+                },
               ]
                },
                  {
@@ -165,6 +169,10 @@ const sidebars = {
             {
               type: 'doc',
               id: 'installation/advanced_usage/vLLM_inference',
+            },
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/mlx_inference',
             },
             {
               type: 'doc',

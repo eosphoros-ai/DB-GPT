@@ -553,6 +553,7 @@ class QwenAdapter(NewHFChatModelAdapter):
             and "1.5" in lower_model_name_or_path
             and "moe" not in lower_model_name_or_path
             and "qwen2" not in lower_model_name_or_path
+            and "vl" not in lower_model_name_or_path
         )
 
 
@@ -565,10 +566,12 @@ class Qwen2Adapter(QwenAdapter):
             (
                 "qwen2" in lower_model_name_or_path
                 and "instruct" in lower_model_name_or_path
+                and "vl" not in lower_model_name_or_path
             )
             or (
                 "qwen2.5" in lower_model_name_or_path
                 and "instruct" in lower_model_name_or_path
+                and "vl" not in lower_model_name_or_path
             )
         )
 
@@ -608,6 +611,7 @@ class Qwen3Adapter(QwenAdapter):
         return lower_model_name_or_path and (
             "qwen3" in lower_model_name_or_path
             and "base" not in lower_model_name_or_path
+            and "vl" not in lower_model_name_or_path
         )
 
     def check_transformer_version(self, current_version: str) -> None:
@@ -662,6 +666,60 @@ class Qwen3Adapter(QwenAdapter):
             enable_thinking=is_reasoning_model,
         )
         return str_prompt
+
+
+class Qwen2VLAdapter(NewHFChatModelAdapter):
+    def check_transformer_version(self, current_version: str) -> None:
+        if not current_version >= "4.37.0":
+            raise ValueError(
+                "Qwen2.5VL model require transformers.__version__>=4.37.0, please "
+                "upgrade your transformers package."
+            )
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "qwen2" in lower_model_name_or_path
+            and "vl" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+        )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        try:
+            from transformers import (
+                Qwen2_5_VLForConditionalGeneration,
+            )
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import qwen2.5 vl model, please upgrade your "
+                "transformers package to 4.37.0 or later."
+            ) from exc
+
+        logger.info(
+            f"Load model from {model_path}, from_pretrained_kwargs: "
+            f"{from_pretrained_kwargs}"
+        )
+
+        revision = from_pretrained_kwargs.get("revision", "main")
+        trust_remote_code = from_pretrained_kwargs.get(
+            "trust_remote_code", self.trust_remote_code
+        )
+        low_cpu_mem_usage = from_pretrained_kwargs.get("low_cpu_mem_usage", False)
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
+        if "low_cpu_mem_usage" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
+
+        tokenizer = self.load_tokenizer(
+            model_path,
+            revision,
+            use_fast=self.use_fast_tokenizer(),
+            trust_remote_code=trust_remote_code,
+        )
+        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_path, **from_pretrained_kwargs
+        )
+        return model, tokenizer
 
 
 class QwenOmniAdapter(NewHFChatModelAdapter):
@@ -1048,6 +1106,25 @@ class KimiVLAdapter(NewHFChatModelAdapter):
         return lower_model_name_or_path and "thinking" in lower_model_name_or_path
 
 
+class MiniCPMAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/openbmb/MiniCPM4-8B
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and "minicpm" in lower_model_name_or_path
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        if not from_pretrained_kwargs:
+            from_pretrained_kwargs = {}
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = True
+        return super().load(model_path, from_pretrained_kwargs)
+
+
 # The following code is used to register the model adapter
 # The last registered model adapter is matched first
 register_model_adapter(CommonModelAdapter)  # For all of hf models can be matched
@@ -1075,6 +1152,8 @@ register_model_adapter(GLM4Adapter, supported_models=COMMON_HF_GLM_MODELS)
 register_model_adapter(GLM40414Adapter)
 register_model_adapter(Codegeex4Adapter)
 register_model_adapter(Qwen2Adapter, supported_models=COMMON_HF_QWEN25_MODELS)
+register_model_adapter(Qwen2VLAdapter)
 register_model_adapter(Internlm2Adapter)
 register_model_adapter(DeepseekV3R1Adapter, supported_models=COMMON_HF_DEEPSEEK__MODELS)
 register_model_adapter(KimiVLAdapter)
+register_model_adapter(MiniCPMAdapter)

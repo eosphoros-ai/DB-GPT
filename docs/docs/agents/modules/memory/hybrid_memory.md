@@ -51,7 +51,7 @@ You need to prepare a vector store, here we use the `ChromaStore` as an example:
 ```python
 
 import shutil
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig, ChromaStore
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig, ChromaStore
 
 # Delete old vector store directory(/tmp/tmp_ltm_vector_stor)
 shutil.rmtree("/tmp/tmp_ltm_vector_store", ignore_errors=True)

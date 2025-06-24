@@ -56,7 +56,7 @@ class LLMExtractor(ExtractorBase, ABC):
         """Inner extract by LLM."""
         # limit check
         if limit and limit < 1:
-            ValueError("optional argument limit >= 1")
+            raise ValueError("optional argument limit >= 1")
 
         template = HumanPromptTemplate.from_template(self._prompt_template)
 

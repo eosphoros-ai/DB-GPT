@@ -1,10 +1,23 @@
 import { ChatContext } from '@/app/chat-context';
 import { ChartData } from '@/types/chat';
 import { Chart } from '@berryv/g2-react';
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 
 export default function LineChart({ chart }: { chart: ChartData }) {
   const { mode } = useContext(ChatContext);
+
+  // Process data to ensure numeric values for proper y-axis ordering
+  const processedChart = useMemo(() => {
+    const processedValues = chart.values.map(item => ({
+      ...item,
+      value: typeof item.value === 'string' ? parseFloat(item.value) || 0 : item.value,
+    }));
+
+    return {
+      ...chart,
+      values: processedValues,
+    };
+  }, [chart]);
 
   return (
     <div className='flex-1 min-w-0 p-4 bg-white dark:bg-theme-dark-container rounded'>
@@ -18,7 +31,7 @@ export default function LineChart({ chart }: { chart: ChartData }) {
               autoFit: true,
               theme: mode,
               type: 'view',
-              data: chart.values,
+              data: processedChart.values,
               children: [
                 {
                   type: 'line',
@@ -46,7 +59,14 @@ export default function LineChart({ chart }: { chart: ChartData }) {
               axis: {
                 x: {
                   labelAutoRotate: false,
+                  title: false,
                 },
+                y: {
+                  title: false,
+                },
+              },
+              scale: {
+                value: { type: 'linear' },
               },
             }}
           />

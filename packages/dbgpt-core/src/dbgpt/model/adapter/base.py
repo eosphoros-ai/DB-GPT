@@ -270,14 +270,18 @@ class LLMModelAdapter(ABC):
         ):
             return True
         return (
-            lower_model_name_or_path
-            and "deepseek" in lower_model_name_or_path
-            and (
-                "r1" in lower_model_name_or_path
-                or "reasoning" in lower_model_name_or_path
-                or "reasoner" in lower_model_name_or_path
+            (
+                lower_model_name_or_path
+                and "deepseek" in lower_model_name_or_path
+                and (
+                    "r1" in lower_model_name_or_path
+                    or "reasoning" in lower_model_name_or_path
+                    or "reasoner" in lower_model_name_or_path
+                )
             )
-        ) or (lower_model_name_or_path and "qwq" in lower_model_name_or_path)
+            or (lower_model_name_or_path and "qwq" in lower_model_name_or_path)
+            or (lower_model_name_or_path and "qwen3" in lower_model_name_or_path)
+        )
 
     def support_async(self) -> bool:
         """Whether the loaded model supports asynchronous calls"""

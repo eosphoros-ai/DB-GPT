@@ -21,7 +21,7 @@ Prepare ClickHouse database service, reference-[ClickHouse Installation](https:/
 
 Then run the following command to start the webserver:
 ```bash
-uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-openai.toml
+uv run dbgpt start webserver --config configs/dbgpt-proxy-openai.toml
 ```
 
 Optionally, you can also use the following command to start the webserver:

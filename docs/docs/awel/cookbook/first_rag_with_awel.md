@@ -75,8 +75,9 @@ import shutil
 from dbgpt.core.awel import DAG
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.knowledge import KnowledgeType
-from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+from dbgpt_ext.rag.operators import EmbeddingAssemblerOperator
+from dbgpt_ext.rag.operators.knowledge import KnowledgeOperator
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 
 # Delete old vector store directory(/tmp/awel_rag_test_vector_store)
 shutil.rmtree("/tmp/awel_rag_test_vector_store", ignore_errors=True)
@@ -254,10 +255,10 @@ from dbgpt.core.awel import DAG, MapOperator, InputOperator, JoinOperator, Input
 from dbgpt.core.operators import PromptBuilderOperator, RequestBuilderOperator
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt.rag.knowledge import KnowledgeType
-from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator,
-    EmbeddingRetrieverOperator
+from dbgpt_ext.rag.operators.embedding import EmbeddingAssemblerOperator, EmbeddingRetrieverOperator
+from dbgpt_ext.rag.operators import KnowledgeOperator
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
-from dbgpt.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
+from dbgpt_ext.storage.vector_store.chroma_store import ChromaStore, ChromaVectorConfig
 from dbgpt.model.operators import LLMOperator
 from dbgpt.model.proxy import OpenAILLMClient
 

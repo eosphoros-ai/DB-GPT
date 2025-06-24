@@ -294,7 +294,7 @@ async def query_page(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get_document_list({}, page, page_size))
+    return Result.succ(service.get_document_list_page({}, page, page_size))
 
 
 @router.post("/documents/chunks/add")

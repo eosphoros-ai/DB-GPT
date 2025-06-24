@@ -1065,7 +1065,7 @@ def _get_graph(dag: DAG):
     try:
         from graphviz import Digraph
     except ImportError:
-        logger.warn("Can't import graphviz, skip visualize DAG")
+        logger.warning("Can't import graphviz, skip visualize DAG")
         return None, None
     dot = Digraph(name=dag.dag_id)
     mermaid_str = "graph TD;\n"  # Initialize Mermaid graph definition

@@ -187,7 +187,11 @@ class IndexStoreBase(ABC):
 
         ids = []
         loaded_cnt = 0
-        for success_ids in results:
+        for idx, success_ids in enumerate(results):
+            if isinstance(success_ids, Exception):
+                raise RuntimeError(
+                    f"Failed to load chunk group {idx + 1}: {str(success_ids)}"
+                ) from success_ids
             ids.extend(success_ids)
             loaded_cnt += len(success_ids)
             logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
@@ -274,11 +278,8 @@ class IndexStoreBase(ABC):
     def is_support_full_text_search(self) -> bool:
         """Support full text search.
 
-        Args:
-            collection_name(str): collection name.
         Return:
             bool: The similar documents.
         """
-        raise NotImplementedError(
-            "Full text search is not supported in this index store."
-        )
+        logger.warning("Full text search is not supported in this index store.")
+        return False

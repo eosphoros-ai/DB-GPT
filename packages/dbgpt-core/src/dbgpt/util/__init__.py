@@ -6,6 +6,7 @@ from .parameter_utils import (  # noqa: F401
     EnvArgumentParser,
     ParameterDescription,
 )
+from .sql_utils import remove_sql_comments  # noqa: F401
 from .utils import get_gpu_memory, get_or_create_event_loop  # noqa: F401
 
 __ALL__ = [
@@ -17,4 +18,5 @@ __ALL__ = [
     "EnvArgumentParser",
     "AppConfig",
     "RegisterParameters",
+    "remove_sql_comments",
 ]

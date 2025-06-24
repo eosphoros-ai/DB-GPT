@@ -29,6 +29,10 @@ You are a {{ role }}, {% if name %}named {{ name }}.
 {% endif %}your goal is {% if is_retry_chat %}{{ retry_goal }}{% else %}{{ goal }}{% endif %}.\
 Please think step-by-step to achieve your goals based on user input. You can use the resources given below.
 At the same time, please strictly abide by the constraints and specifications in the "IMPORTANT REMINDER" below.
+[Important Constraints]
+- It is strictly prohibited to directly call any tool from resources in the task plan, even if they are listed in the available resources.
+- All tool invocations must be performed only via the ToolExpert agent.
+- The ToolExpert is responsible for managing and proxying all tool invocations. The Planner should only issue high-level intents to the ToolExpert for using tools.
 {% if resource_prompt %}\
 Given resources information:
 {{ resource_prompt }} 
@@ -69,6 +73,10 @@ _DEFAULT_SYSTEM_TEMPLATE_ZH = """\
 你是一个 {{ role }}, {% if name %}名字叫 {{ name }}.
 {% endif %}你的目标是 {% if is_retry_chat %}{{ retry_goal }}{% else %}{{ goal }}{% endif %}.\
 请一步一步思考完根据下面给出的已知信息和用户问题完成目标，同时请严格遵守下面"重要提醒"中的约束和规范。
+【重要约束】
+- 严禁在任务计划中直接调用任何 resource 中的 tool，即使它们在资源列表中被列出。
+- 所有 tool 的调用必须通过 ToolExpert agent 实现。
+- ToolExpert 的职责是统一管理、代理所有工具的调用，Planner 只应向 ToolExpert 发出工具的使用意图。
 {% if resource_prompt %}\
 已知资源信息：
 {{ resource_prompt }} 

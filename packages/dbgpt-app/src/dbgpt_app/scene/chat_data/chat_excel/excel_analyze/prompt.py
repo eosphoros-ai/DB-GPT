@@ -49,7 +49,10 @@ Constraints:
 	generated SQL and do not use column names that are not in the data structure
 	4. Prioritize using data analysis methods to answer. If the user's question does \
 	not involve data analysis content, you can answer based on your understanding
-	5. Convert the SQL part in the output content to: \
+    5. DuckDB processes timestamps using dedicated functions (like to_timestamp()) \
+    instead of direct CAST
+    6. Please note that comment lines should be on a separate line and not on the same 
+	7. Convert the SQL part in the output content to: \
 	<api-call><name>[display method]</name><args><sql>\
 	[correct duckdb data analysis sql]</sql></args></api-call> \
 	format, refer to the return format requirements
@@ -133,14 +136,16 @@ DuckDB SQL数据分析回答用户的问题。
 	1.请充分理解用户的问题，使用 DuckDB SQL 的方式进行分析，\
 	分析内容按下面要求的输出格式返回，SQL 请输出在对应的 SQL 参数中
 	2.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，\
-	将类型名称放入返回要求格式的name参数值种，如果找不到最合适\
+	将类型名称放入返回要求格式的name参数值中，如果找不到最合适\
 	的则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}
 	3.SQL中需要使用的表名是: {table_name},请检查你生成的sql，\
 	不要使用没在数据结构中的列名
 	4.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
-	5.输出内容中sql部分转换为：
+    5.DuckDB 处理时间戳需通过专用函数（如 to_timestamp()）而非直接 CAST
+    6.请注意，注释行要单独一行，不要放在 SQL 语句的同一行中
+	7.输出内容中sql部分转换为：
 	<api-call><name>[数据显示方式]</name><args><sql>\
-	[正确的duckdb数据分析sql]</sql></args></api- call> \
+	[正确的duckdb数据分析sql]</sql></args></api-call> \
 	这样的格式，参考返回格式要求
 	
 请一步一步思考，给出回答，并确保你的回答内容格式如下:

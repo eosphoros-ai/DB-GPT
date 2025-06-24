@@ -141,7 +141,7 @@ class AgentEvaluator(Evaluator):
                 RetrieverSimilarityMetric,
             )
             from dbgpt.rag.embedding import DefaultEmbeddingFactory
-            from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+            from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig
             from dbgpt.storage.vector_store.connector import VectorStoreConnector
             from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 

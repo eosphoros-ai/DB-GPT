@@ -57,6 +57,8 @@ def initialize_components(
     register_serve_apps(system_app, param, web_config.host, web_config.port)
     _initialize_operators()
     _initialize_code_server(system_app)
+    # Initialize prompt templates - MUST be after serve apps registration
+    _initialize_prompt_templates()
 
 
 def _initialize_model_cache(system_app: SystemApp, web_config: ServiceWebParameters):
@@ -137,21 +139,70 @@ def _initialize_openapi(system_app: SystemApp):
 
 
 def _initialize_operators():
-    from dbgpt_app.operators.code import CodeMapOperator  # noqa: F401
-    from dbgpt_app.operators.converter import StringToInteger  # noqa: F401
-    from dbgpt_app.operators.datasource import (  # noqa: F401
-        HODatasourceExecutorOperator,
-        HODatasourceRetrieverOperator,
-    )
-    from dbgpt_app.operators.llm import (  # noqa: F401
-        HOLLMOperator,
-        HOStreamingLLMOperator,
-    )
-    from dbgpt_app.operators.rag import HOKnowledgeOperator  # noqa: F401
-    from dbgpt_serve.agent.resource.datasource import DatasourceResource  # noqa: F401
+    from dbgpt.core.awel import BaseOperator
+    from dbgpt.util.module_utils import ModelScanner, ScannerConfig
+
+    modules = ["dbgpt_app.operators", "dbgpt_serve.agent.resource"]
+
+    scanner = ModelScanner[BaseOperator]()
+    registered_items = {}
+    for module in modules:
+        config = ScannerConfig(
+            module_path=module,
+            base_class=BaseOperator,
+        )
+        items = scanner.scan_and_register(config)
+        registered_items[module] = items
+    return scanner.get_registered_items()
 
 
 def _initialize_code_server(system_app: SystemApp):
     from dbgpt.util.code.server import initialize_code_server
 
     initialize_code_server(system_app)
+
+
+def _initialize_prompt_templates():
+    """Initialize all prompt templates by importing scene modules.
+
+    This ensures that all prompt templates are registered in the prompt registry
+    before the application starts serving requests.
+    """
+    logger.info("Initializing prompt templates...")
+
+    try:
+        # Import all scene prompt modules to trigger registration
+        # This is the same list as in ChatFactory.get_implementation()
+        # Verify that templates are registered
+        from dbgpt._private.config import Config
+        from dbgpt_app.scene.chat_dashboard.prompt import prompt  # noqa: F401
+        from dbgpt_app.scene.chat_data.chat_excel.excel_analyze.prompt import (  # noqa: F401,F811
+            prompt,
+        )
+        from dbgpt_app.scene.chat_data.chat_excel.excel_learning.prompt import (  # noqa: F401, F811
+            prompt,
+        )
+        from dbgpt_app.scene.chat_db.auto_execute.prompt import (  # noqa: F401,F811
+            prompt,
+        )
+        from dbgpt_app.scene.chat_db.professional_qa.prompt import (  # noqa: F401, F811
+            prompt,
+        )
+        from dbgpt_app.scene.chat_knowledge.refine_summary.prompt import (  # noqa: F401,F811
+            prompt,
+        )
+        from dbgpt_app.scene.chat_knowledge.v1.prompt import prompt  # noqa: F401,F811
+        from dbgpt_app.scene.chat_normal.prompt import prompt  # noqa: F401,F811
+
+        cfg = Config()
+        registry = cfg.prompt_template_registry.registry
+
+        registered_scenes = list(registry.keys())
+        logger.info(
+            f"Successfully initialized prompt templates for scenes: {registered_scenes}"
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to initialize prompt templates: {e}")
+        # Don't raise exception to avoid breaking the application startup
+        # The templates will be loaded lazily when needed

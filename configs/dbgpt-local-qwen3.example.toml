@@ -30,8 +30,12 @@ provider = "hf"
 # reasoning_model = false
 
 [[models.embeddings]]
-name = "BAAI/bge-large-zh-v1.5"
+name = "Qwen/Qwen3-Embedding-0.6B"
 provider = "hf"
 # If not provided, the model will be downloaded from the Hugging Face model hub
 # uncomment the following line to specify the model path in the local file system
 # path = "the-model-path-in-the-local-file-system"
+
+[[models.rerankers]]
+name = "Qwen/Qwen3-Reranker-0.6B"
+provider = "qwen"

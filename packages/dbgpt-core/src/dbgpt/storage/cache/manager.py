@@ -167,7 +167,7 @@ def initialize_cache(
                 persist_dir, mem_table_buffer_mb=max_memory_mb
             )
         except ImportError as e:
-            logger.warn(
+            logger.warning(
                 f"Can't import DiskCacheStorage, use MemoryCacheStorage, import error "
                 f"message: {str(e)}"
             )
