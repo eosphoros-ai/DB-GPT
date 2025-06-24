@@ -1,5 +1,6 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList } from '@/client/api';
+import PromptBot from '@/components/common/prompt-bot';
 import useChat from '@/hooks/use-chat';
 import ChatContentContainer from '@/new-components/chat/ChatContentContainer';
 import ChatDefault from '@/new-components/chat/content/ChatDefault';
@@ -92,6 +93,12 @@ const Chat: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const order = useRef<number>(1);
 
+  // Create ref for ChatInputPanel to control input value externally
+  const chatInputRef = useRef<any>(null);
+
+  // Use ref to store the selected prompt_code
+  const selectedPromptCodeRef = useRef<string | undefined>(undefined);
+
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [chartsData] = useState<Array<ChartData>>();
   const [replyLoading, setReplyLoading] = useState<boolean>(false);
@@ -119,7 +126,7 @@ const Chat: React.FC = () => {
     if (chatId && scene) {
       setIsContract(false);
     }
-  }, [chatId, scene]);
+  }, [chatId, scene, setIsContract, setIsMenuExpand]);
 
   // 是否是默认小助手
   const isChatDefault = useMemo(() => {
@@ -256,13 +263,29 @@ const Chat: React.FC = () => {
         ];
         const index = tempHistory.length - 1;
         setHistory([...tempHistory]);
+        // Create data object with all fields
+        const apiData: Record<string, any> = {
+          chat_mode: scene,
+          model_name: modelValue,
+          user_input: content,
+        };
+
+        // Add other data fields
+        if (data) {
+          Object.assign(apiData, data);
+        }
+
+        // For non-dashboard scenes, try to get prompt_code from ref or localStorage
+        if (scene !== 'chat_dashboard') {
+          const finalPromptCode = selectedPromptCodeRef.current || localStorage.getItem(`dbgpt_prompt_code_${chatId}`);
+          if (finalPromptCode) {
+            apiData.prompt_code = finalPromptCode;
+            localStorage.removeItem(`dbgpt_prompt_code_${chatId}`);
+          }
+        }
+
         chat({
-          data: {
-            chat_mode: scene,
-            model_name: modelValue,
-            user_input: content,
-            ...data,
-          },
+          data: apiData,
           ctrl,
           chatId,
           onMessage: message => {
@@ -331,7 +354,8 @@ const Chat: React.FC = () => {
         <Spin spinning={historyLoading} className='w-full h-full m-auto'>
           <Content className='flex flex-col h-screen'>
             <ChatContentContainer ref={scrollRef} />
-            <ChatInputPanel ctrl={ctrl} />
+            {/* Pass ref to ChatInputPanel for external control */}
+            <ChatInputPanel ref={chatInputRef} ctrl={ctrl} />
           </Content>
         </Spin>
       );
@@ -377,7 +401,29 @@ const Chat: React.FC = () => {
             historyLoading={historyLoading}
             order={order}
           />
-          <Layout className='bg-transparent'>{contentRender()}</Layout>
+          <Layout className='bg-transparent'>
+            {contentRender()}
+            {/* Render PromptBot at the bottom right */}
+            <PromptBot
+              submit={prompt => {
+                console.log('Selected prompt:', prompt);
+
+                // For chat_dashboard, only store prompt_code in localStorage
+                // The input filling will be handled by the CompletionInput's PromptBot
+                if (scene === 'chat_dashboard') {
+                  localStorage.setItem(`dbgpt_prompt_code_${chatId}`, prompt.prompt_code);
+                  console.log('Stored prompt_code for chat_dashboard:', prompt.prompt_code);
+                } else {
+                  // For other scenes, fill input and store prompt_code
+                  chatInputRef.current?.setUserInput?.(prompt.content);
+                  selectedPromptCodeRef.current = prompt.prompt_code;
+                  localStorage.setItem(`dbgpt_prompt_code_${chatId}`, prompt.prompt_code);
+                  console.log('Filled input and stored prompt_code:', prompt.prompt_code);
+                }
+              }}
+              chat_scene={scene}
+            />
+          </Layout>
         </Layout>
       </Flex>
     </ChatContentContext.Provider>

@@ -3,14 +3,14 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { Button, Input, Spin } from 'antd';
 import classNames from 'classnames';
 import { useSearchParams } from 'next/navigation';
-import React, { useContext, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useContext, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { UserChatContent } from '@/types/chat';
 import { parseResourceValue } from '@/utils';
 import ToolsBar from './ToolsBar';
 
-const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
+const ChatInputPanel: React.ForwardRefRenderFunction<any, { ctrl: AbortController }> = ({ ctrl }, ref) => {
   const { t } = useTranslation();
   const {
     scrollRef,
@@ -69,7 +69,8 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
     } else {
       newUserInput = userInput;
     }
-    await handleChat(newUserInput, {
+
+    const params = {
       app_code: appInfo.app_code || '',
       ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
       ...(paramKey.includes('max_new_tokens') && { max_new_tokens: maxNewTokensValue }),
@@ -80,12 +81,20 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
             ? resourceValue
             : JSON.stringify(resourceValue) || currentDialogue.select_param,
       }),
-    });
+    };
+
+    await handleChat(newUserInput, params);
+
     // 如果应用进来第一次对话，刷新对话列表
     if (submitCountRef.current === 1) {
       await refreshDialogList();
     }
   };
+
+  // expose setUserInput to parent via ref
+  useImperativeHandle(ref, () => ({
+    setUserInput,
+  }));
 
   return (
     <div className='flex flex-col w-5/6 mx-auto pt-4 pb-6 bg-transparent'>
@@ -151,4 +160,4 @@ const ChatInputPanel: React.FC<{ ctrl: AbortController }> = ({ ctrl }) => {
   );
 };
 
-export default ChatInputPanel;
+export default forwardRef(ChatInputPanel);
