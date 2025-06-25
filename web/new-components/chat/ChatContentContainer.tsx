@@ -2,7 +2,7 @@ import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import { ChatContentContext } from '@/pages/chat';
 import { VerticalAlignBottomOutlined, VerticalAlignTopOutlined } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
-import React, { forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
@@ -14,6 +14,7 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   const [isAtTop, setIsAtTop] = useState<boolean>(true);
   const [isAtBottom, setIsAtBottom] = useState<boolean>(false);
   const { history } = useContext(ChatContentContext);
+  const allowAutoScroll = useRef<boolean>(true);
 
   useImperativeHandle(ref, () => {
     return scrollRef.current;
@@ -26,7 +27,14 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
     const scrollTop = container.scrollTop;
     const scrollHeight = container.scrollHeight;
     const clientHeight = container.clientHeight;
-    const buffer = 20; // Small buffer for better UX
+    const buffer = 20;
+
+    // Check Scroll direction
+    const lastScrollTop = Number(container?.dataset?.lastScrollTop) || 0;
+    const direction = scrollTop > lastScrollTop ? 'down' : 'up';
+    container.dataset.lastScrollTop = String(scrollTop);
+    // only allow auto scroll when user is near bottom
+    allowAutoScroll.current = direction === 'down';
 
     // Check if we're at the top
     setIsAtTop(scrollTop <= buffer);
@@ -61,22 +69,34 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!scrollRef.current) return;
+  const scrollToBottomSmooth = useCallback(() => {
+    if (!scrollRef.current || !allowAutoScroll.current) return;
 
     const container = scrollRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
-    // dynamic calculate need scroll buffer
-    const buffer = Math.max(50, container.clientHeight * 0.2);
 
-    // auto scroll to bottom when new message is added
-    const isBottomPos = scrollTop + clientHeight >= scrollHeight - buffer;
-    if (isBottomPos) {
-      container.scrollTo({
-        top: scrollHeight - clientHeight,
-        behavior: 'smooth',
-      });
+    // 只有当用户接近底部时才自动滚动
+    const buffer = Math.max(50, clientHeight * 0.1);
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
+
+    if (!isNearBottom) {
+      return;
     }
+    // use requestAnimationFrame to smooth scroll
+    const frameId = requestAnimationFrame(() => {
+      // 直接设置scrollTop来实现快速滚动，不使用平滑滚动以避免卡顿
+      // container.scrollTop = container.scrollHeight;
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      });
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  useEffect(() => {
+    // 监听 history 变化和最后一条消息的 context 变化
+    scrollToBottomSmooth();
   }, [history, history[history.length - 1]?.context]);
 
   const scrollToTop = () => {
