@@ -2842,6 +2842,24 @@
             ],
             "version": "v1"
         },
+                {
+            "type": "operator",
+            "type_cls": "dbgpt_app.operators.datasource.HODatasourceStructedOperator",
+            "type_name": "HODatasourceStructedOperator",
+            "name": "higher_order_datasource_structed_operator",
+            "id": "operator_higher_order_datasource_structed_operator___$$___database___$$___v1",
+            "category": "database",
+            "parameters": [
+                "datasource"
+            ],
+            "outputs": [
+                "sql_result"
+            ],
+            "inputs": [
+                "sql_dict_list"
+            ],
+            "version": "v1"
+        },
         {
             "type": "operator",
             "type_cls": "dbgpt_app.operators.datasource.HODatasourceRetrieverOperator",
