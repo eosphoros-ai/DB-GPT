@@ -1,20 +1,20 @@
 import { sendSpacePostRequest } from '@/utils/request';
 import { useRequest } from 'ahooks';
 import { ConfigProvider, FloatButton, Form, List, Popover, Select, Tooltip, message } from 'antd';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type SelectTableProps = {
   data: any;
   loading: boolean;
-  submit: (prompt: string) => void;
+  submit: (prompt: any) => void;
   close: () => void;
 };
 
 const SelectTable: React.FC<SelectTableProps> = ({ data, loading, submit, close }) => {
   const { t } = useTranslation();
-  const handleClick = (content: string) => () => {
-    submit(content);
+  const handleClick = (item: any) => () => {
+    submit(item);
     close();
   };
 
@@ -30,7 +30,7 @@ const SelectTable: React.FC<SelectTableProps> = ({ data, loading, submit, close 
         loading={loading}
         rowKey={(record: any) => record.prompt_name}
         renderItem={item => (
-          <List.Item key={item.prompt_name} onClick={handleClick(item.content)}>
+          <List.Item key={item.prompt_name} onClick={handleClick(item)}>
             <Tooltip title={item.content}>
               <List.Item.Meta
                 style={{ cursor: 'copy' }}
@@ -51,28 +51,40 @@ const SelectTable: React.FC<SelectTableProps> = ({ data, loading, submit, close 
 };
 
 type PromptBotProps = {
-  submit: (prompt: string) => void;
+  submit: (prompt: any) => void;
+  chat_scene?: string;
 };
 
-const PromptBot: React.FC<PromptBotProps> = ({ submit }) => {
+const PromptBot: React.FC<PromptBotProps> = ({ submit, chat_scene }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState('common');
 
-  const { data, loading } = useRequest(
+  const { data, loading, run } = useRequest(
     () => {
-      const body = {
-        prompt_type: current,
-      };
+      const body: any = {};
+      if (current !== 'common') {
+        body.prompt_type = current;
+      }
+      if (chat_scene) {
+        body.chat_scene = chat_scene;
+      }
       return sendSpacePostRequest('/prompt/list', body);
     },
     {
-      refreshDeps: [current],
+      refreshDeps: [current, chat_scene],
       onError: err => {
         message.error(err?.message);
       },
+      manual: true,
     },
   );
+
+  useEffect(() => {
+    if (open) {
+      run();
+    }
+  }, [open, current, chat_scene, run]);
 
   const close = () => {
     setOpen(false);

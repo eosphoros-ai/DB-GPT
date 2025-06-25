@@ -70,10 +70,27 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
     }
     try {
       setIsLoading(true);
-      await onSubmit(content, {
+
+      // Get prompt_code from localStorage
+      const storedPromptCode = localStorage.getItem(`dbgpt_prompt_code_${chatId}`);
+      console.log('DEBUG - Completion - prompt_code from localStorage:', storedPromptCode);
+
+      // Create data object with prompt_code if available
+      const submitData: Record<string, any> = {
         select_param: selectParam ?? '',
         // incremental,
-      });
+      };
+
+      // Add prompt_code if it exists
+      if (storedPromptCode) {
+        submitData.prompt_code = storedPromptCode;
+        console.log('DEBUG - Completion - adding prompt_code to submitData:', storedPromptCode);
+
+        // Clear prompt_code from localStorage after use
+        localStorage.removeItem(`dbgpt_prompt_code_${chatId}`);
+      }
+
+      await onSubmit(content, submitData);
     } finally {
       setIsLoading(false);
     }
