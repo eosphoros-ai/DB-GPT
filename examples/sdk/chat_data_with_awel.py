@@ -60,9 +60,7 @@ db_conn.create_temp_tables(
     }
 )
 
-config = ChromaVectorConfig(
-    persist_path=PILOT_PATH
-)
+config = ChromaVectorConfig(persist_path=PILOT_PATH)
 vector_store = ChromaStore(
     config,
     name="db_schema_vector_store",

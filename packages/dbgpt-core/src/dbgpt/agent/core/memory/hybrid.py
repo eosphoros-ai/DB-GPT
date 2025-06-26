@@ -94,11 +94,9 @@ class HybridMemory(Memory, Generic[T]):
         vstore_path = vstore_path or os.path.join(DATA_DIR, "agent_memory")
 
         vector_store = ChromaStore(
-            ChromaVectorConfig(
-                persist_path=vstore_path
-            ),
+            ChromaVectorConfig(persist_path=vstore_path),
             name=vstore_name,
-            embedding_fn=embeddings
+            embedding_fn=embeddings,
         )
         return cls.from_vstore(
             vector_store=vector_store,
