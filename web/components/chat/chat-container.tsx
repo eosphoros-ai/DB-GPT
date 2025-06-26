@@ -219,14 +219,17 @@ const ChatContainer = () => {
         )}
 
         <div
-          className={classNames('flex flex-col overflow-hidden', {
-            'w-full h-1/2 md:h-full md:w-1/4 border-t md:border-t-0 md:border-l dark:border-gray-800':
+          className={classNames('flex flex-col', {
+            'w-full h-1/2 md:h-full md:w-1/4 border-t md:border-t-0 md:border-l dark:border-gray-800 overflow-hidden':
               scene === 'chat_dashboard',
-            'w-full h-full px-4 lg:px-8': scene !== 'chat_dashboard',
+            'w-full h-full px-4 lg:px-8 overflow-hidden': scene !== 'chat_dashboard',
           })}
         >
           {/* Wrap the Completion component in a container with a specific height */}
-          <div className='h-full overflow-hidden'>
+          <div className={classNames('h-full', {
+            'overflow-hidden': scene !== 'chat_dashboard',
+            'flex flex-col': scene === 'chat_dashboard'
+          })}>
             <Completion messages={history} onSubmit={handleChat} onFormatContent={formatToVisThinking} />
           </div>
         </div>
