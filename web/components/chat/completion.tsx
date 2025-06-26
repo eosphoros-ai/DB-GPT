@@ -165,7 +165,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       });
     }
     setShowMessages(tempMessage.filter(item => ['view', 'human'].includes(item.role)));
-  }, [isChartChat, messages, onFormatContent]);
+  }, [isChartChat, messages, onFormatContent, processMessageContent]);
 
   useEffect(() => {
     apiInterceptors(getChatFeedBackSelect())
@@ -185,7 +185,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
         // Force scroll to bottom using multiple methods
         element.scrollTop = element.scrollHeight;
         element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
-        
+
         // Additional force scroll for chat_dashboard
         if (scene === 'chat_dashboard') {
           requestAnimationFrame(() => {
@@ -194,17 +194,16 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
         }
       }
     };
-    
     // Use multiple timeouts to ensure scrolling works even with dynamic content
     setTimeout(scrollToBottom, 50);
     setTimeout(scrollToBottom, 200);
     setTimeout(scrollToBottom, 500);
-    
+
     // Additional timeout for chat_dashboard
     if (scene === 'chat_dashboard') {
       setTimeout(scrollToBottom, 1000);
     }
-    
+
     // Also try immediate scroll
     scrollToBottom();
   }, [messages, showMessages, scene]);
@@ -212,10 +211,13 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
   return (
     <>
       {contextHolder}
-      <div ref={scrollableRef} className={classNames('flex flex-1 overflow-y-auto w-full flex-col', {
-        'h-full': scene !== 'chat_dashboard',
-        'flex-1 min-h-0': scene === 'chat_dashboard'
-      })}>
+      <div
+        ref={scrollableRef}
+        className={classNames('flex flex-1 overflow-y-auto w-full flex-col', {
+          'h-full': scene !== 'chat_dashboard',
+          'flex-1 min-h-0': scene === 'chat_dashboard',
+        })}
+      >
         <div className='flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
           {showMessages.length ? (
             showMessages.map((content, index) => {
