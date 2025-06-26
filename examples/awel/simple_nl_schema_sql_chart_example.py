@@ -52,14 +52,15 @@ INPUT_PROMPT = "\n###Input:\n{}\n###Response:"
 def _create_vector_connector():
     """Create vector connector."""
     config = ChromaVectorConfig(
-        persist_path=PILOT_PATH,
+        persist_path=PILOT_PATH
+    )
+
+    return ChromaStore(
+        config,
         name="embedding_rag_test",
         embedding_fn=DefaultEmbeddingFactory(
             default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
-        ).create(),
-    )
-
-    return ChromaStore(config)
+        ).create(),)
 
 
 def _create_temporary_connection():

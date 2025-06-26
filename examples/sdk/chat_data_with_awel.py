@@ -61,11 +61,13 @@ db_conn.create_temp_tables(
 )
 
 config = ChromaVectorConfig(
-    persist_path=PILOT_PATH,
+    persist_path=PILOT_PATH
+)
+vector_store = ChromaStore(
+    config,
     name="db_schema_vector_store",
     embedding_fn=embeddings,
 )
-vector_store = ChromaStore(config)
 
 antv_charts = [
     {"response_line_chart": "used to display comparative trend analysis data"},
