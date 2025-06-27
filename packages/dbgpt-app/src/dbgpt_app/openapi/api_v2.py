@@ -326,7 +326,7 @@ def check_chat_request(request: ChatCompletionRequestBody = Body()):
                 status_code=400,
                 detail={
                     "error": {
-                        "message": "chart param is None",
+                        "message": "chat param is None",
                         "type": "invalid_request_error",
                         "param": None,
                         "code": "invalid_chat_param",
