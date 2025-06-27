@@ -47,13 +47,11 @@ from dbgpt_ext.storage.vector_store.chroma_store import ChromaVectorConfig, Chro
 # Delete old vector store directory(/tmp/tmp_ltm_vector_stor)
 shutil.rmtree("/tmp/tmp_ltm_vector_store", ignore_errors=True)
 vector_store = ChromaStore(
-    ChromaVectorConfig(
-        embedding_fn=embeddings,
-        vector_store_config=ChromaVectorConfig(
-            name="ltm_vector_store",
-            persist_path="/tmp/tmp_ltm_vector_store",
-        ),
-    )
+    vector_store_config=ChromaVectorConfig(
+        persist_path="/tmp/tmp_ltm_vector_store",
+    ),
+    name="ltm_vector_store",
+    embedding_fn=embeddings,
 )
 ```
 

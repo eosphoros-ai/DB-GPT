@@ -11,7 +11,7 @@ In this example, we will load your knowledge from a URL and store it in a vector
 First, you need to install the `dbgpt` library.
 
 ```bash
-pip install "dbgpt[rag]>=0.5.2"
+pip install "dbgpt[agent,simple_framework, client]>=0.7.1" "dbgpt_ext>=0.7.1" -U
 ````
 
 ### Prepare Embedding Model
@@ -84,10 +84,10 @@ shutil.rmtree("/tmp/awel_rag_test_vector_store", ignore_errors=True)
 
 vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
-        name="test_vstore",
-        persist_path="/tmp/awel_rag_test_vector_store",
-        embedding_fn=embeddings
-    )
+        persist_path="/tmp/awel_rag_test_vector_store"
+    ),
+    name="test_vstore",
+    embedding_fn=embeddings
 )
 
 with DAG("load_knowledge_dag") as knowledge_dag:
@@ -274,10 +274,10 @@ shutil.rmtree("/tmp/awel_rag_test_vector_store", ignore_errors=True)
 
 vector_store = ChromaStore(
     vector_store_config=ChromaVectorConfig(
-        name="test_vstore",
         persist_path="/tmp/awel_rag_test_vector_store",
-        embedding_fn=embeddings
     ),
+    name="test_vstore",
+    embedding_fn=embeddings
 )
 
 with DAG("load_knowledge_dag") as knowledge_dag:
