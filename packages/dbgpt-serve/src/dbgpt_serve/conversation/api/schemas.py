@@ -109,6 +109,20 @@ class ServerResponse(BaseModel):
             "dbgpt",
         ],
     )
+    gmt_created: Optional[str] = Field(
+        default=None,
+        description="The record creation time.",
+        examples=[
+            "2023-01-07 09:00:00",
+        ],
+    )
+    gmt_modified: Optional[str] = Field(
+        default=None,
+        description="The record update time.",
+        examples=[
+            "2023-01-07 09:00:00",
+        ],
+    )
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """Convert the model to a dictionary"""

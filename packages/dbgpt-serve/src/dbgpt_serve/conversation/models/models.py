@@ -60,6 +60,17 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             RES: The response
         """
         # TODO implement your own logic here, transfer the entity to a response
+        gmt_created = (
+            entity.gmt_created.strftime("%Y-%m-%d %H:%M:%S")
+            if entity.gmt_created
+            else None
+        )
+        gmt_modified = (
+            entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
+            if entity.gmt_modified
+            else None
+        )
+
         return ServerResponse(
             app_code=entity.app_code,
             conv_uid=entity.conv_uid,
@@ -67,6 +78,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             chat_mode=entity.chat_mode,
             user_name="",
             sys_code=entity.sys_code,
+            gmt_created=gmt_created,
+            gmt_modified=gmt_modified,
         )
 
     def get_latest_message(self, conv_uid: str) -> Optional[MessageStorageItem]:
