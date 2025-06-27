@@ -14,13 +14,211 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   const [isAtTop, setIsAtTop] = useState<boolean>(true);
   const [isAtBottom, setIsAtBottom] = useState<boolean>(false);
   const { history } = useContext(ChatContentContext);
-  const allowAutoScroll = useRef<boolean>(true);
+  const wasAtBottomRef = useRef<boolean>(true); // Initialize to true, assuming user starts at bottom
 
   useImperativeHandle(ref, () => {
     return scrollRef.current;
   });
 
-  const handleScroll = () => {
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.addEventListener('scroll', handleScroll);
+
+      // Check initially if content is scrollable
+      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
+      setShowScrollButtons(isScrollable);
+    }
+
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      scrollRef.current && scrollRef.current.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const scrollToBottomSmooth = useCallback((force = false, isStreaming = false) => {
+    if (!scrollRef.current) return;
+
+    const container = scrollRef.current;
+    
+    if (force) {
+      // Force scroll for new messages - always scroll regardless of position
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      });
+      return;
+    }
+
+    // For streaming updates, check if user is near bottom
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const buffer = Math.max(100, clientHeight * 0.2);
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
+
+    if (!isNearBottom) {
+      return;
+    }
+
+    // Use smooth scroll for streaming updates
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  // Track message count to detect new messages
+  const prevMessageCountRef = useRef(history.length);
+  const lastScrollTimeRef = useRef(0);
+  const isUserScrollingRef = useRef(false);
+  const lastContentHeightRef = useRef(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isAutoScrollingRef = useRef(false); // Track if we're auto-scrolling
+
+  // Initialize refs
+  useEffect(() => {
+    console.log('ChatContentContainer initializing with history length:', history.length);
+    // Set initial scroll time to allow streaming from the beginning
+    if (lastScrollTimeRef.current === 0) {
+      lastScrollTimeRef.current = Date.now() - 3000; // Set to 3 seconds ago
+    }
+  }, []);
+
+  // Update message count tracking when history changes
+  useEffect(() => {
+    console.log('ChatContentContainer updating prevMessageCountRef:', {
+      currentLength: history.length,
+      prevCount: prevMessageCountRef.current
+    });
+    
+    // Only update if this is the first time (count is 0)
+    if (prevMessageCountRef.current === 0) {
+      prevMessageCountRef.current = history.length;
+    }
+  }, [history.length]);
+
+  // Handle scroll events to detect user interaction
+  const handleScrollEvent = useCallback(() => {
+    // Ignore scroll events caused by auto-scrolling
+    if (isAutoScrollingRef.current) {
+      return;
+    }
+    
+    lastScrollTimeRef.current = Date.now();
+    
+    if (scrollRef.current) {
+      const scrollElement = scrollRef.current;
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 20;
+      isUserScrollingRef.current = !isAtBottom;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+
+    const scrollElement = scrollRef.current;
+    const currentMessageCount = history.length;
+    const isNewMessage = currentMessageCount > prevMessageCountRef.current;
+    const now = Date.now();
+    const userRecentlyScrolled = now - lastScrollTimeRef.current < 2000;
+    
+    console.log('ChatContentContainer scroll check:', {
+      currentMessageCount,
+      prevCount: prevMessageCountRef.current,
+      isNewMessage,
+      historyLength: history.length,
+      userRecentlyScrolled,
+      isUserScrolling: isUserScrollingRef.current,
+      isAutoScrolling: isAutoScrollingRef.current
+    });
+    
+    // Always handle new messages first - this is the highest priority
+    if (isNewMessage) {
+      console.log('ChatContentContainer: New message detected, forcing scroll to bottom');
+      // New message - always scroll to bottom regardless of user position
+      isAutoScrollingRef.current = true;
+      
+      // Reset states IMMEDIATELY to ensure streaming can work
+      lastScrollTimeRef.current = Date.now() - 3000; // Allow streaming immediately
+      isUserScrollingRef.current = false;
+      lastContentHeightRef.current = scrollElement.scrollHeight; // Set current height as baseline
+      
+      scrollElement.scrollTo({
+        top: scrollElement.scrollHeight,
+        behavior: 'smooth',
+      });
+      
+      // Reset auto scroll flag after animation
+      setTimeout(() => {
+        isAutoScrollingRef.current = false;
+      }, 100);
+      
+      prevMessageCountRef.current = currentMessageCount; // Update count immediately
+      return; // Exit early for new messages
+    }
+    
+    // Handle streaming content updates (only if user hasn't manually scrolled recently)
+    if (!userRecentlyScrolled && !isUserScrollingRef.current && !isAutoScrollingRef.current) {
+      // Streaming content - scroll based on content height change
+      const currentHeight = scrollElement.scrollHeight;
+      
+      // Initialize lastContentHeightRef if not set
+      if (lastContentHeightRef.current === 0) {
+        lastContentHeightRef.current = currentHeight;
+      }
+      
+      const heightDiff = currentHeight - lastContentHeightRef.current;
+      
+      console.log('ChatContentContainer streaming check:', {
+        currentHeight,
+        lastHeight: lastContentHeightRef.current,
+        heightDiff,
+        threshold: 12
+      });
+      
+      // Only scroll if content height increased by at least ~0.5 lines (12px) for smoother experience
+      if (heightDiff >= 12) {
+        // Clear any pending scroll timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        
+        console.log('ChatContentContainer: Triggering streaming scroll, heightDiff:', heightDiff);
+        
+        // Debounce scroll calls to avoid conflicts
+        scrollTimeoutRef.current = setTimeout(() => {
+          isAutoScrollingRef.current = true;
+          scrollElement.scrollTo({
+            top: scrollElement.scrollHeight,
+            behavior: 'smooth',
+          });
+          setTimeout(() => {
+            isAutoScrollingRef.current = false;
+          }, 200); // Longer timeout for streaming scroll
+          lastContentHeightRef.current = currentHeight;
+        }, 30); // 30ms debounce for smooth experience
+      }
+    } else {
+      console.log('ChatContentContainer streaming blocked:', {
+        userRecentlyScrolled,
+        isUserScrolling: isUserScrollingRef.current,
+        isAutoScrolling: isAutoScrollingRef.current
+      });
+    }
+  }, [history]);
+
+  // Add scroll event listener
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScrollEvent);
+      return () => {
+        scrollElement.removeEventListener('scroll', handleScrollEvent);
+      };
+    }
+  }, [handleScrollEvent]);
+
+  // Enhanced scroll handler to track user scrolling behavior
+  const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
 
     const container = scrollRef.current;
@@ -29,12 +227,16 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
     const clientHeight = container.clientHeight;
     const buffer = 20;
 
-    // Check Scroll direction
-    const lastScrollTop = Number(container?.dataset?.lastScrollTop) || 0;
-    const direction = scrollTop > lastScrollTop ? 'down' : 'up';
-    container.dataset.lastScrollTop = String(scrollTop);
-    // only allow auto scroll when user is near bottom
-    allowAutoScroll.current = direction === 'down';
+    // Record user scroll time
+    lastScrollTimeRef.current = Date.now();
+    
+    // Determine if user is actively scrolling up
+    const atBottom = scrollTop + clientHeight >= scrollHeight - buffer;
+    isUserScrollingRef.current = !atBottom;
+
+    // Update wasAtBottomRef
+    const atBottomPrecise = scrollTop + clientHeight >= scrollHeight - 5;
+    wasAtBottomRef.current = atBottomPrecise;
 
     // Check if we're at the top
     setIsAtTop(scrollTop <= buffer);
@@ -52,52 +254,7 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
     // Show scroll buttons when content is scrollable
     const isScrollable = scrollHeight > clientHeight;
     setShowScrollButtons(isScrollable);
-  };
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.addEventListener('scroll', handleScroll);
-
-      // Check initially if content is scrollable
-      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
-      setShowScrollButtons(isScrollable);
-    }
-
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      scrollRef.current && scrollRef.current.removeEventListener('scroll', handleScroll);
-    };
   }, []);
-
-  const scrollToBottomSmooth = useCallback(() => {
-    if (!scrollRef.current || !allowAutoScroll.current) return;
-
-    const container = scrollRef.current;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-
-    // 只有当用户接近底部时才自动滚动
-    const buffer = Math.max(50, clientHeight * 0.1);
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
-
-    if (!isNearBottom) {
-      return;
-    }
-    // use requestAnimationFrame to smooth scroll
-    const frameId = requestAnimationFrame(() => {
-      // 直接设置scrollTop来实现快速滚动，不使用平滑滚动以避免卡顿
-      // container.scrollTop = container.scrollHeight;
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'auto',
-      });
-    });
-    return () => cancelAnimationFrame(frameId);
-  }, []);
-
-  useEffect(() => {
-    // 监听 history 变化和最后一条消息的 context 变化
-    scrollToBottomSmooth();
-  }, [history, history[history.length - 1]?.context]);
 
   const scrollToTop = () => {
     if (scrollRef.current) {
@@ -118,8 +275,12 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   };
 
   return (
-    <div className='flex flex-1 overflow-hidden relative'>
-      <div ref={scrollRef} className='h-full w-full mx-auto overflow-y-auto'>
+    <div className='flex flex-1 relative'>
+      <div 
+        ref={scrollRef} 
+        className='h-full w-full mx-auto overflow-y-auto'
+        style={{ scrollBehavior: 'smooth' }}
+      >
         <ChatHeader isScrollToTop={isScrollToTop} />
         <ChatCompletion />
       </div>

@@ -11,7 +11,7 @@ import classNames from 'classnames';
 import copy from 'copy-to-clipboard';
 import { cloneDeep } from 'lodash';
 import { useSearchParams } from 'next/navigation';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import MyEmpty from '../common/MyEmpty';
@@ -177,36 +177,158 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       });
   }, []);
 
+  // Track user scrolling behavior
+  const lastScrollTimeRef = useRef(0);
+  const isUserScrollingRef = useRef(false);
+  const prevMessageCountRef = useRef(showMessages.length);
+  const lastContentHeightRef = useRef(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isAutoScrollingRef = useRef(false); // Track if we're auto-scrolling
+
+  // Initialize refs
   useEffect(() => {
-    // Scroll to bottom when messages change
-    const scrollToBottom = () => {
-      if (scrollableRef.current) {
-        const element = scrollableRef.current;
-        // Force scroll to bottom using multiple methods
-        element.scrollTop = element.scrollHeight;
-        element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
-
-        // Additional force scroll for chat_dashboard
-        if (scene === 'chat_dashboard') {
-          requestAnimationFrame(() => {
-            element.scrollTop = element.scrollHeight;
-          });
-        }
-      }
-    };
-    // Use multiple timeouts to ensure scrolling works even with dynamic content
-    setTimeout(scrollToBottom, 50);
-    setTimeout(scrollToBottom, 200);
-    setTimeout(scrollToBottom, 500);
-
-    // Additional timeout for chat_dashboard
-    if (scene === 'chat_dashboard') {
-      setTimeout(scrollToBottom, 1000);
+    console.log('Completion initializing with showMessages length:', showMessages.length);
+    // Set initial scroll time to allow streaming from the beginning
+    if (lastScrollTimeRef.current === 0) {
+      lastScrollTimeRef.current = Date.now() - 3000; // Set to 3 seconds ago
     }
+  }, []);
 
-    // Also try immediate scroll
-    scrollToBottom();
-  }, [messages, showMessages, scene]);
+  // Update message count tracking when showMessages changes
+  useEffect(() => {
+    console.log('Completion updating prevMessageCountRef:', {
+      currentLength: showMessages.length,
+      prevCount: prevMessageCountRef.current
+    });
+    
+    // Only update if this is the first time (count is 0)
+    if (prevMessageCountRef.current === 0) {
+      prevMessageCountRef.current = showMessages.length;
+    }
+  }, [showMessages.length]);
+
+  // Handle scroll events to detect user interaction
+  const handleScrollEvent = useCallback(() => {
+    // Ignore scroll events caused by auto-scrolling
+    if (isAutoScrollingRef.current) {
+      return;
+    }
+    
+    lastScrollTimeRef.current = Date.now();
+    
+    if (scrollableRef.current) {
+      const scrollElement = scrollableRef.current;
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 20;
+      isUserScrollingRef.current = !isAtBottom;
+    }
+  }, []);
+
+  // Auto-scroll to bottom for new messages or content updates
+  useEffect(() => {
+    if (!scrollableRef.current) return;
+
+    const scrollElement = scrollableRef.current;
+    const currentMessageCount = showMessages.length;
+    const isNewMessage = currentMessageCount > prevMessageCountRef.current;
+    const now = Date.now();
+    const userRecentlyScrolled = now - lastScrollTimeRef.current < 2000;
+
+    console.log('Completion scroll check:', {
+      currentMessageCount,
+      prevCount: prevMessageCountRef.current,
+      isNewMessage,
+      showMessagesLength: showMessages.length,
+      userRecentlyScrolled,
+      isUserScrolling: isUserScrollingRef.current,
+      isAutoScrolling: isAutoScrollingRef.current
+    });
+
+    // Always handle new messages first - this is the highest priority
+    if (isNewMessage) {
+      console.log('Completion: New message detected, forcing scroll to bottom');
+      // New message - always scroll to bottom regardless of user position
+      isAutoScrollingRef.current = true;
+      
+      // Reset states IMMEDIATELY to ensure streaming can work
+      lastScrollTimeRef.current = Date.now() - 3000; // Allow streaming immediately
+      isUserScrollingRef.current = false;
+      lastContentHeightRef.current = scrollElement.scrollHeight; // Set current height as baseline
+      
+      scrollElement.scrollTo({
+        top: scrollElement.scrollHeight,
+        behavior: 'smooth',
+      });
+      
+      // Reset auto scroll flag after animation
+      setTimeout(() => {
+        isAutoScrollingRef.current = false;
+      }, 100);
+      
+      prevMessageCountRef.current = currentMessageCount; // Update count immediately
+      return; // Exit early for new messages
+    }
+    
+    // Handle streaming content updates (only if user hasn't manually scrolled recently)
+    if (!userRecentlyScrolled && !isUserScrollingRef.current && !isAutoScrollingRef.current) {
+      // Streaming content - scroll based on content height change
+      const currentHeight = scrollElement.scrollHeight;
+      
+      // Initialize lastContentHeightRef if not set
+      if (lastContentHeightRef.current === 0) {
+        lastContentHeightRef.current = currentHeight;
+      }
+      
+      const heightDiff = currentHeight - lastContentHeightRef.current;
+      
+      console.log('Completion streaming check:', {
+        currentHeight,
+        lastHeight: lastContentHeightRef.current,
+        heightDiff,
+        threshold: 12
+      });
+      
+      // Only scroll if content height increased by at least ~0.5 lines (12px) for smoother experience
+      if (heightDiff >= 12) {
+        // Clear any pending scroll timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        
+        console.log('Completion: Triggering streaming scroll, heightDiff:', heightDiff);
+        
+        // Debounce scroll calls to avoid conflicts
+        scrollTimeoutRef.current = setTimeout(() => {
+          isAutoScrollingRef.current = true;
+          scrollElement.scrollTo({
+            top: scrollElement.scrollHeight,
+            behavior: 'smooth',
+          });
+          setTimeout(() => {
+            isAutoScrollingRef.current = false;
+          }, 200); // Longer timeout for streaming scroll
+          lastContentHeightRef.current = currentHeight;
+        }, 30); // 30ms debounce for smooth experience
+      }
+    } else {
+      console.log('Completion streaming blocked:', {
+        userRecentlyScrolled,
+        isUserScrolling: isUserScrollingRef.current,
+        isAutoScrolling: isAutoScrollingRef.current
+      });
+    }
+  }, [showMessages, scene]);
+
+  // Add scroll event listener
+  useEffect(() => {
+    const scrollElement = scrollableRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScrollEvent);
+      return () => {
+        scrollElement.removeEventListener('scroll', handleScrollEvent);
+      };
+    }
+  }, [handleScrollEvent]);
 
   return (
     <>
@@ -218,7 +340,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
           'flex-1 min-h-0': scene === 'chat_dashboard',
         })}
       >
-        <div className='flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
+        <div className='flex items-center flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
           {showMessages.length ? (
             showMessages.map((content, index) => {
               if (scene === 'chat_agent') {
