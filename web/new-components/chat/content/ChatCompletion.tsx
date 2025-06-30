@@ -100,9 +100,9 @@ const ChatCompletion: React.FC = () => {
   useEffect(() => {
     console.log('ChatCompletion updating prevMessageCountRef:', {
       currentLength: history.length,
-      prevCount: prevMessageCountRef.current
+      prevCount: prevMessageCountRef.current,
     });
-    
+
     // Only update if this is the first time (count is 0)
     if (prevMessageCountRef.current === 0) {
       prevMessageCountRef.current = history.length;
@@ -115,9 +115,9 @@ const ChatCompletion: React.FC = () => {
     if (isAutoScrollingRef.current) {
       return;
     }
-    
+
     lastScrollTimeRef.current = Date.now();
-    
+
     if (scrollRef.current) {
       const scrollElement = scrollRef.current;
       const { scrollTop, scrollHeight, clientHeight } = scrollElement;
@@ -142,7 +142,7 @@ const ChatCompletion: React.FC = () => {
       historyLength: history.length,
       userRecentlyScrolled,
       isUserScrolling: isUserScrollingRef.current,
-      isAutoScrolling: isAutoScrollingRef.current
+      isAutoScrolling: isAutoScrollingRef.current,
     });
 
     // Always handle new messages first - this is the highest priority
@@ -150,54 +150,54 @@ const ChatCompletion: React.FC = () => {
       console.log('ChatCompletion: New message detected, forcing scroll to bottom');
       // New message - always scroll to bottom regardless of user position
       isAutoScrollingRef.current = true;
-      
+
       // Reset states IMMEDIATELY to ensure streaming can work
       lastScrollTimeRef.current = Date.now() - 3000; // Allow streaming immediately
       isUserScrollingRef.current = false;
       lastContentHeightRef.current = scrollElement.scrollHeight; // Set current height as baseline
-      
+
       scrollElement.scrollTo({
         top: scrollElement.scrollHeight,
         behavior: 'smooth',
       });
-      
+
       // Reset auto scroll flag after animation
       setTimeout(() => {
         isAutoScrollingRef.current = false;
       }, 100);
-      
+
       prevMessageCountRef.current = currentMessageCount; // Update count immediately
       return; // Exit early for new messages
     }
-    
+
     // Handle streaming content updates (only if user hasn't manually scrolled recently)
     if (!userRecentlyScrolled && !isUserScrollingRef.current && !isAutoScrollingRef.current) {
       // Streaming content - scroll based on content height change
       const currentHeight = scrollElement.scrollHeight;
-      
+
       // Initialize lastContentHeightRef if not set
       if (lastContentHeightRef.current === 0) {
         lastContentHeightRef.current = currentHeight;
       }
-      
+
       const heightDiff = currentHeight - lastContentHeightRef.current;
-      
+
       console.log('ChatCompletion streaming check:', {
         currentHeight,
         lastHeight: lastContentHeightRef.current,
         heightDiff,
-        threshold: 12
+        threshold: 12,
       });
-      
+
       // Only scroll if content height increased by at least ~0.5 lines (12px) for smoother experience
       if (heightDiff >= 12) {
         // Clear any pending scroll timeout
         if (scrollTimeoutRef.current) {
           clearTimeout(scrollTimeoutRef.current);
         }
-        
+
         console.log('ChatCompletion: Triggering streaming scroll, heightDiff:', heightDiff);
-        
+
         // Debounce scroll calls to avoid conflicts
         scrollTimeoutRef.current = setTimeout(() => {
           isAutoScrollingRef.current = true;
@@ -215,7 +215,7 @@ const ChatCompletion: React.FC = () => {
       console.log('ChatCompletion streaming blocked:', {
         userRecentlyScrolled,
         isUserScrolling: isUserScrollingRef.current,
-        isAutoScrolling: isAutoScrollingRef.current
+        isAutoScrolling: isAutoScrollingRef.current,
       });
     }
   }, [history]);
