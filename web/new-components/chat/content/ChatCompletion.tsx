@@ -79,7 +79,7 @@ const ChatCompletion: React.FC = () => {
   }, [chatId, currentDialogInfo]);
 
   return (
-    <div className='flex flex-col w-5/6 mx-auto'>
+    <div className='flex flex-col w-full px-8 md:px-16 lg:px-24'>
       {!!showMessages.length &&
         showMessages.map((content, index) => {
           return (

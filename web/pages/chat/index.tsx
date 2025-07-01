@@ -353,7 +353,7 @@ const Chat: React.FC = () => {
       ) : (
         <Spin spinning={historyLoading} className='w-full h-full m-auto'>
           <Content className='flex flex-col h-screen'>
-            <ChatContentContainer ref={scrollRef} />
+            <ChatContentContainer ref={scrollRef} className='flex-1' />
             {/* Pass ref to ChatInputPanel for external control */}
             <ChatInputPanel ref={chatInputRef} ctrl={ctrl} />
           </Content>

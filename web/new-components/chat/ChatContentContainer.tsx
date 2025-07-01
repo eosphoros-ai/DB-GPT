@@ -7,370 +7,95 @@ import React, { forwardRef, useCallback, useContext, useEffect, useImperativeHan
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
 // eslint-disable-next-line no-empty-pattern
-const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
+const ChatContentContainer = ({ className }: { className?: string }, ref: React.ForwardedRef<any>) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollToTop, setIsScrollToTop] = useState<boolean>(false);
   const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
   const [isAtTop, setIsAtTop] = useState<boolean>(true);
   const [isAtBottom, setIsAtBottom] = useState<boolean>(false);
   const { history } = useContext(ChatContentContext);
-  const wasAtBottomRef = useRef<boolean>(true); // Initialize to true, assuming user starts at bottom
+  const allowAutoScroll = useRef<boolean>(true);
 
   useImperativeHandle(ref, () => {
     return scrollRef.current;
   });
 
-  // Initial UI state setup
-  useEffect(() => {
-    if (scrollRef.current) {
-      // Check initially if content is scrollable
-      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
-      setShowScrollButtons(isScrollable);
-    }
-  }, []);
-
-  // Track message count and user scrolling behavior
-  const prevMessageCountRef = useRef(0); // Always start from 0 to detect first message correctly
-  const isUserScrollingRef = useRef(false);
-  const lastContentHeightRef = useRef(0);
-  const isStreamingRef = useRef(false); // Track if we're in streaming mode
-  const streamingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const mutationObserverRef = useRef<MutationObserver | null>(null);
-  const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Initialize refs with current history length
-  useEffect(() => {
-    console.log('ChatContentContainer initializing with history length:', history.length);
-    // Set initial message count to current history length (to avoid triggering new message on first render)
-    prevMessageCountRef.current = history.length;
-  }, []); // No dependencies - only run once
-
-  // Combined scroll event handler for both streaming logic and UI state
-  const handleScrollEvent = useCallback(() => {
+  const handleScroll = () => {
     if (!scrollRef.current) return;
 
-    const scrollElement = scrollRef.current;
-    const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+    const container = scrollRef.current;
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
     const buffer = 20;
 
-    // UI state updates (for scroll buttons and header visibility)
-    const atBottomPrecise = scrollTop + clientHeight >= scrollHeight - 5;
-    wasAtBottomRef.current = atBottomPrecise;
+    // Check Scroll direction
+    const lastScrollTop = Number(container?.dataset?.lastScrollTop) || 0;
+    const direction = scrollTop > lastScrollTop ? 'down' : 'up';
+    container.dataset.lastScrollTop = String(scrollTop);
+    // only allow auto scroll when user is near bottom
+    allowAutoScroll.current = direction === 'down';
 
+    // Check if we're at the top
     setIsAtTop(scrollTop <= buffer);
+
+    // Check if we're at the bottom
     setIsAtBottom(scrollTop + clientHeight >= scrollHeight - buffer);
 
+    // Header visibility
     if (scrollTop >= 42 + 32) {
       setIsScrollToTop(true);
     } else {
       setIsScrollToTop(false);
     }
 
+    // Show scroll buttons when content is scrollable
     const isScrollable = scrollHeight > clientHeight;
     setShowScrollButtons(isScrollable);
+  };
 
-    // Streaming logic - only update user scroll state when not in streaming mode
-    if (!isStreamingRef.current) {
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
-      const wasUserScrolling = isUserScrollingRef.current;
-      isUserScrollingRef.current = !isAtBottom;
-
-      if (wasUserScrolling !== isUserScrollingRef.current) {
-        console.log('ChatContentContainer: User scroll state changed:', {
-          isAtBottom,
-          isUserScrolling: isUserScrollingRef.current,
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-        });
-      }
-    } else {
-      console.log('ChatContentContainer: Ignoring scroll event during streaming');
-    }
-  }, []);
-
-  // Simple and reliable scroll function
-  const scrollToBottomInstant = useCallback(() => {
-    if (!scrollRef.current) return;
-
-    const scrollElement = scrollRef.current;
-    console.log('ChatContentContainer: Scrolling to bottom');
-
-    // Use instant scroll to avoid animation-related event conflicts
-    scrollElement.scrollTo({
-      top: scrollElement.scrollHeight,
-      behavior: 'instant',
-    });
-  }, []);
-
-  // Check for height changes and handle streaming scroll
-  const checkContentHeight = useCallback(() => {
-    if (!scrollRef.current || !isStreamingRef.current) return;
-
-    try {
-      const scrollElement = scrollRef.current;
-      const currentHeight = scrollElement.scrollHeight;
-
-      console.log('ChatContentContainer streaming height check:', {
-        currentHeight,
-        lastHeight: lastContentHeightRef.current,
-        heightDiff: currentHeight - lastContentHeightRef.current,
-        isStreaming: isStreamingRef.current,
-      });
-
-      // Initialize baseline height or check for changes
-      if (lastContentHeightRef.current === 0) {
-        console.log('ChatContentContainer: Setting initial baseline height:', currentHeight);
-        lastContentHeightRef.current = currentHeight;
-        return;
-      }
-
-      const heightDiff = currentHeight - lastContentHeightRef.current;
-
-      // Lower threshold: any height increase triggers scroll during streaming
-      if (heightDiff > 0) {
-        console.log('ChatContentContainer: Content height increased by', heightDiff, 'px, scrolling');
-
-        // Check if user has manually scrolled up significantly during streaming
-        const { scrollTop, clientHeight } = scrollElement;
-        const distanceFromBottom = currentHeight - (scrollTop + clientHeight);
-
-        // If user scrolled up more than 100px, don't force scroll but show a notification
-        if (distanceFromBottom > 100) {
-          console.log('ChatContentContainer: User scrolled away during streaming, not forcing scroll');
-          // Could add a "scroll to bottom" button here
-          return;
-        }
-
-        // Scroll immediately
-        scrollToBottomInstant();
-
-        // Update height tracking
-        lastContentHeightRef.current = currentHeight;
-
-        // Reset streaming timeout - keep streaming mode active
-        if (streamingTimeoutRef.current) {
-          clearTimeout(streamingTimeoutRef.current);
-          streamingTimeoutRef.current = null;
-        }
-
-        streamingTimeoutRef.current = setTimeout(() => {
-          console.log('ChatContentContainer: Exiting streaming mode after content timeout');
-          isStreamingRef.current = false;
-
-          // Clean up MutationObserver when exiting streaming mode
-          if (mutationObserverRef.current) {
-            mutationObserverRef.current.disconnect();
-            mutationObserverRef.current = null;
-            console.log('ChatContentContainer: MutationObserver stopped on timeout');
-          }
-        }, 10000);
-      }
-    } catch (error) {
-      console.error('ChatContentContainer: Error in checkContentHeight:', error);
-    }
-  }, [scrollToBottomInstant]);
-
-  // Force scroll check regardless of height changes
-  const forceScrollCheck = useCallback(() => {
-    if (!scrollRef.current || !isStreamingRef.current) return;
-
-    try {
-      const scrollElement = scrollRef.current;
-      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
-
-      console.log('ChatContentContainer force scroll check:', {
-        scrollTop,
-        scrollHeight,
-        clientHeight,
-        isAtBottom,
-        distanceFromBottom: scrollHeight - (scrollTop + clientHeight),
-      });
-
-      // If not at bottom during streaming, scroll to bottom
-      if (!isAtBottom) {
-        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-
-        // Only respect user scrolling if they scrolled significantly up
-        if (distanceFromBottom <= 100) {
-          console.log('ChatContentContainer: Forcing scroll to bottom during streaming');
-          scrollToBottomInstant();
-        }
-      }
-
-      // Update height tracking
-      lastContentHeightRef.current = scrollElement.scrollHeight;
-
-      // Reset streaming timeout
-      if (streamingTimeoutRef.current) {
-        clearTimeout(streamingTimeoutRef.current);
-        streamingTimeoutRef.current = null;
-      }
-
-      streamingTimeoutRef.current = setTimeout(() => {
-        console.log('ChatContentContainer: Exiting streaming mode after content timeout');
-        isStreamingRef.current = false;
-
-        // Clean up MutationObserver when exiting streaming mode
-        if (mutationObserverRef.current) {
-          mutationObserverRef.current.disconnect();
-          mutationObserverRef.current = null;
-          console.log('ChatContentContainer: MutationObserver stopped on timeout');
-        }
-      }, 10000);
-    } catch (error) {
-      console.error('ChatContentContainer: Error in forceScrollCheck:', error);
-    }
-  }, [scrollToBottomInstant]);
-
-  // Clean up streaming mode
-  const cleanupStreamingMode = useCallback(() => {
-    console.log('ChatContentContainer: Cleaning up streaming mode');
-
-    isStreamingRef.current = false;
-
-    if (streamingTimeoutRef.current) {
-      clearTimeout(streamingTimeoutRef.current);
-      streamingTimeoutRef.current = null;
-    }
-
-    if (backupIntervalRef.current) {
-      clearInterval(backupIntervalRef.current);
-      backupIntervalRef.current = null;
-      console.log('ChatContentContainer: Backup interval cleared');
-    }
-
-    if (mutationObserverRef.current) {
-      try {
-        mutationObserverRef.current.disconnect();
-        mutationObserverRef.current = null;
-        console.log('ChatContentContainer: MutationObserver cleaned up');
-      } catch (error) {
-        console.error('ChatContentContainer: Error disconnecting MutationObserver:', error);
-      }
-    }
-  }, []);
-
-  // Start streaming mode for new messages
-  const startStreamingMode = useCallback(() => {
-    console.log('ChatContentContainer: Starting streaming mode');
-
-    // Clean up any existing streaming mode first
-    cleanupStreamingMode();
-
-    // Enter streaming mode - disable user scroll detection
-    isStreamingRef.current = true;
-    isUserScrollingRef.current = false;
-
-    // Scroll to bottom immediately
-    scrollToBottomInstant();
-
-    // Reset height tracking
-    lastContentHeightRef.current = 0;
-
-    // Set up MutationObserver to watch for DOM changes
+  useEffect(() => {
     if (scrollRef.current) {
-      try {
-        mutationObserverRef.current = new MutationObserver(mutations => {
-          // Only process if we're still in streaming mode
-          if (!isStreamingRef.current) return;
+      scrollRef.current.addEventListener('scroll', handleScroll);
 
-          console.log('ChatContentContainer: MutationObserver detected changes:', mutations.length);
-
-          // Always trigger scroll check for any mutation during streaming
-          // Use both height-based and force-based checks
-          setTimeout(() => {
-            checkContentHeight();
-            forceScrollCheck();
-          }, 5); // Very short delay to let DOM settle
-        });
-
-        // Monitor all possible DOM changes that could affect content
-        mutationObserverRef.current.observe(scrollRef.current, {
-          childList: true, // Child elements added/removed
-          subtree: true, // Monitor entire subtree
-          characterData: true, // Text content changes
-          attributes: true, // All attribute changes
-          attributeOldValue: true, // Track attribute value changes
-          characterDataOldValue: true, // Track text changes
-        });
-
-        console.log('ChatContentContainer: Enhanced MutationObserver started');
-      } catch (error) {
-        console.error('ChatContentContainer: Error creating MutationObserver:', error);
-      }
+      // Check initially if content is scrollable
+      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
+      setShowScrollButtons(isScrollable);
     }
 
-    // Also set up a backup interval to ensure scrolling continues
-    backupIntervalRef.current = setInterval(() => {
-      if (!isStreamingRef.current) {
-        if (backupIntervalRef.current) {
-          clearInterval(backupIntervalRef.current);
-          backupIntervalRef.current = null;
-        }
-        return;
-      }
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      scrollRef.current && scrollRef.current.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
-      console.log('ChatContentContainer: Backup scroll check');
-      forceScrollCheck();
-    }, 500); // Check every 500ms as backup
+  const scrollToBottomSmooth = useCallback(() => {
+    if (!scrollRef.current || !allowAutoScroll.current) return;
 
-    // Exit streaming mode after no content updates for 10 seconds
-    streamingTimeoutRef.current = setTimeout(() => {
-      console.log('ChatContentContainer: Exiting streaming mode after timeout');
-      cleanupStreamingMode();
-    }, 10000);
-  }, [scrollToBottomInstant, checkContentHeight, forceScrollCheck, cleanupStreamingMode]);
+    const container = scrollRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
 
-  // Monitor history changes for new messages
-  useEffect(() => {
-    if (!scrollRef.current) return;
+    // 只有当用户接近底部时才自动滚动
+    const buffer = Math.max(50, clientHeight * 0.1);
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
 
-    const currentMessageCount = history.length;
-    const isNewMessage = currentMessageCount > prevMessageCountRef.current;
-
-    console.log('ChatContentContainer message count check:', {
-      currentMessageCount,
-      prevCount: prevMessageCountRef.current,
-      isNewMessage,
-      isStreaming: isStreamingRef.current,
+    if (!isNearBottom) {
+      return;
+    }
+    // use requestAnimationFrame to smooth scroll
+    const frameId = requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      });
     });
+    return () => cancelAnimationFrame(frameId);
+  }, []);
 
-    // Handle new messages - always scroll to bottom and start streaming mode
-    if (isNewMessage) {
-      console.log('ChatContentContainer: New message detected, starting streaming mode');
-
-      prevMessageCountRef.current = currentMessageCount;
-      startStreamingMode();
-    } else if (!isStreamingRef.current) {
-      // Handle content updates when not in streaming mode (e.g., static content changes)
-      const scrollElement = scrollRef.current;
-      if (scrollElement && !isUserScrollingRef.current) {
-        const currentHeight = scrollElement.scrollHeight;
-        const heightDiff = currentHeight - lastContentHeightRef.current;
-
-        if (heightDiff > 0) {
-          console.log('ChatContentContainer: Non-streaming content change, scrolling');
-          scrollToBottomInstant();
-          lastContentHeightRef.current = currentHeight;
-        }
-      }
-    }
-  }, [history.length, startStreamingMode, scrollToBottomInstant]);
-
-  // Add scroll event listener and cleanup
   useEffect(() => {
-    const scrollElement = scrollRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener('scroll', handleScrollEvent);
-      return () => {
-        scrollElement.removeEventListener('scroll', handleScrollEvent);
-        // Use the centralized cleanup function
-        cleanupStreamingMode();
-      };
-    }
-  }, [handleScrollEvent, cleanupStreamingMode]);
+    // 监听 history 变化和最后一条消息的 context 变化
+    scrollToBottomSmooth();
+  }, [history, history[history.length - 1]?.context, history[history.length - 1]?.thinking]);
 
   const scrollToTop = () => {
     if (scrollRef.current) {
@@ -391,7 +116,7 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   };
 
   return (
-    <div className='flex flex-1 relative'>
+    <div className={`flex flex-1 overflow-hidden relative ${className || ''}`}>
       <div ref={scrollRef} className='h-full w-full mx-auto overflow-y-auto' style={{ scrollBehavior: 'smooth' }}>
         <ChatHeader isScrollToTop={isScrollToTop} />
         <ChatCompletion />

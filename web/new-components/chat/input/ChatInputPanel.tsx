@@ -41,13 +41,9 @@ const ChatInputPanel: React.ForwardRefRenderFunction<any, { ctrl: AbortControlle
 
   const onSubmit = async () => {
     submitCountRef.current++;
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({
-        top: scrollRef.current?.scrollHeight,
-        behavior: 'smooth',
-      });
-      setUserInput('');
-    }, 0);
+    // Remove immediate scroll to avoid conflict with ChatContentContainer's auto-scroll
+    // ChatContentContainer will handle scrolling when new content is added
+    setUserInput('');
     const resources = parseResourceValue(resourceValue);
     // Clear the resourceValue if it not empty
     let newUserInput: UserChatContent;
