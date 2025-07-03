@@ -381,6 +381,7 @@ class LLMModelAdapter(ABC):
         messages: List[ModelMessage],
         convert_to_compatible_format: bool = False,
         support_media_content: bool = True,
+        type_mapping: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, str]]:
         """Transform the model messages
 
@@ -414,19 +415,23 @@ class LLMModelAdapter(ABC):
         if not self.support_system_message and convert_to_compatible_format:
             # We will not do any transform in the future
             return self._transform_to_no_system_messages(
-                messages, support_media_content=support_media_content
+                messages,
+                support_media_content=support_media_content,
+                type_mapping=type_mapping,
             )
         else:
             return ModelMessage.to_common_messages(
                 messages,
                 convert_to_compatible_format=convert_to_compatible_format,
                 support_media_content=support_media_content,
+                type_mapping=type_mapping,
             )
 
     def _transform_to_no_system_messages(
         self,
         messages: List[ModelMessage],
         support_media_content: bool = True,
+        type_mapping: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, str]]:
         """Transform the model messages to no system messages
 
@@ -454,7 +459,9 @@ class LLMModelAdapter(ABC):
             List[Dict[str, str]]: The transformed model messages
         """
         openai_messages = ModelMessage.to_common_messages(
-            messages, support_media_content=support_media_content
+            messages,
+            support_media_content=support_media_content,
+            type_mapping=type_mapping,
         )
         system_messages = []
         return_messages = []

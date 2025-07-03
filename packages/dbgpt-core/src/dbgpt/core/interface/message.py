@@ -408,6 +408,7 @@ class ModelMessage(BaseModel):
         convert_to_compatible_format: bool = False,
         support_system_role: bool = True,
         support_media_content: bool = True,
+        type_mapping: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, str]]:
         """Cover to common message format.
 
@@ -420,6 +421,8 @@ class ModelMessage(BaseModel):
             convert_to_compatible_format (bool): Whether to convert to compatible format
             support_system_role (bool): Whether to support system role
             support_media_content (bool): Whether to support media content
+            type_mapping (Optional[Dict[str, str]]): A mapping of role type to common
+                message, for compatibility with different models.
 
         Returns:
             List[Dict[str, str]]: The common messages
@@ -436,6 +439,7 @@ class ModelMessage(BaseModel):
                         "user",
                         message.content,
                         support_media_content=support_media_content,
+                        type_mapping=type_mapping,
                     )
                 )
             elif message.role == ModelMessageRoleType.SYSTEM:
@@ -447,6 +451,7 @@ class ModelMessage(BaseModel):
                         "system",
                         message.content,
                         support_media_content=support_media_content,
+                        type_mapping=type_mapping,
                     )
                 )
             elif message.role == ModelMessageRoleType.AI:
@@ -455,6 +460,7 @@ class ModelMessage(BaseModel):
                         "assistant",
                         message.content,
                         support_media_content=support_media_content,
+                        type_mapping=type_mapping,
                     )
                 )
             else:

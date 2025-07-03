@@ -149,6 +149,9 @@ hf_qwen_omni = [
 hf_glm4 = [
     "transformers>=4.51.3",
 ]
+hf_glm4_1vl = [
+    "transformers>=4.53.0",
+]
 hf_kimi = [
     "tiktoken",
     "blobfile",
@@ -177,6 +180,10 @@ conflicts = [
     ],
     [
         { extra = "hf_glm4" },
+        { extra = "hf_kimi" },
+    ],
+    [
+        { extra = "hf_glm4_1vl" },
         { extra = "hf_kimi" },
     ],
     [
