@@ -198,19 +198,26 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
   // Handle scroll events to detect user interaction
   const handleScrollEvent = useCallback(() => {
-    // Completely ignore scroll events during streaming to prevent interference
-    if (isStreamingRef.current) {
-      console.log('Ignoring scroll event during streaming');
-      return;
-    }
-
     if (scrollableRef.current) {
       const scrollElement = scrollableRef.current;
       const { scrollTop, scrollHeight, clientHeight } = scrollElement;
       const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
 
       const wasUserScrolling = isUserScrollingRef.current;
+      // Always track user scroll state, even during streaming
+      // This allows users to stop auto-scroll by scrolling up during streaming
       isUserScrollingRef.current = !isAtBottom;
+
+      // If user scrolled up during streaming, exit streaming mode to respect user intention
+      if (isStreamingRef.current && !isAtBottom && wasUserScrolling !== isUserScrollingRef.current) {
+        console.log('User scrolled up during streaming, exiting streaming mode');
+        isStreamingRef.current = false;
+        // Clear streaming timeout
+        if (streamingTimeoutRef.current) {
+          clearTimeout(streamingTimeoutRef.current);
+          streamingTimeoutRef.current = null;
+        }
+      }
 
       if (wasUserScrolling !== isUserScrollingRef.current) {
         console.log('User scroll state changed:', {
@@ -219,6 +226,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
           scrollTop,
           scrollHeight,
           clientHeight,
+          wasStreaming: isStreamingRef.current,
         });
       }
     }

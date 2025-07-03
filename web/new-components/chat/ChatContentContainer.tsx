@@ -2,7 +2,7 @@ import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import { ChatContentContext } from '@/pages/chat';
 import { VerticalAlignBottomOutlined, VerticalAlignTopOutlined } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
-import React, { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState, useMemo } from 'react';
 
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
@@ -15,12 +15,13 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
   const [isAtBottom, setIsAtBottom] = useState<boolean>(false);
   const { history } = useContext(ChatContentContext);
   const allowAutoScroll = useRef<boolean>(true);
+  const animationFrameRef = useRef<number | null>(null);
 
   useImperativeHandle(ref, () => {
     return scrollRef.current;
   });
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
 
     const container = scrollRef.current;
@@ -52,22 +53,24 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
     // Show scroll buttons when content is scrollable
     const isScrollable = scrollHeight > clientHeight;
     setShowScrollButtons(isScrollable);
-  };
+  }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.addEventListener('scroll', handleScroll);
+    const currentScrollRef = scrollRef.current;
+    if (currentScrollRef) {
+      currentScrollRef.addEventListener('scroll', handleScroll);
 
       // Check initially if content is scrollable
-      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
+      const isScrollable = currentScrollRef.scrollHeight > currentScrollRef.clientHeight;
       setShowScrollButtons(isScrollable);
     }
 
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      scrollRef.current && scrollRef.current.removeEventListener('scroll', handleScroll);
+      if (currentScrollRef) {
+        currentScrollRef.removeEventListener('scroll', handleScroll);
+      }
     };
-  }, []);
+  }, [handleScroll]);
 
   const scrollToBottomSmooth = useCallback(() => {
     if (!scrollRef.current || !allowAutoScroll.current) return;
@@ -75,49 +78,72 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
     const container = scrollRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
 
-    // 只有当用户接近底部时才自动滚动
+    // Only auto-scroll when user is near bottom
     const buffer = Math.max(50, clientHeight * 0.1);
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
 
     if (!isNearBottom) {
       return;
     }
+
+    // Clear previous animation frame to prevent memory leaks
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
     // use requestAnimationFrame to smooth scroll
-    const frameId = requestAnimationFrame(() => {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'smooth',
-      });
+    animationFrameRef.current = requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: 'auto',
+        });
+      }
+      animationFrameRef.current = null;
     });
-    return () => cancelAnimationFrame(frameId);
   }, []);
 
-  useEffect(() => {
-    // 监听 history 变化和最后一条消息的 context 变化
-    scrollToBottomSmooth();
-  }, [history, history[history.length - 1]?.context, history[history.length - 1]?.thinking]);
+  // Optimize last message tracking to reduce unnecessary re-renders
+  const lastMessage = useMemo(() => {
+    const last = history[history.length - 1];
+    return last ? { context: last.context, thinking: last.thinking } : null;
+  }, [history]);
 
-  const scrollToTop = () => {
+  useEffect(() => {
+    // Listen for history changes and last message context/thinking changes
+    scrollToBottomSmooth();
+  }, [history.length, lastMessage?.context, lastMessage?.thinking, scrollToBottomSmooth]);
+
+  // Cleanup animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  const scrollToTop = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: 0,
         behavior: 'smooth',
       });
     }
-  };
+  }, []);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
-  };
+  }, []);
 
   return (
     <div className={`flex flex-1 overflow-hidden relative ${className || ''}`}>
-      <div ref={scrollRef} className='h-full w-full mx-auto overflow-y-auto' style={{ scrollBehavior: 'smooth' }}>
+      <div ref={scrollRef} className='h-full w-full mx-auto overflow-y-auto'>
         <ChatHeader isScrollToTop={isScrollToTop} />
         <ChatCompletion />
       </div>
