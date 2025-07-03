@@ -29,7 +29,8 @@ In this guide, we mainly focus on step 1, 2, and 3.
 First, you need to install the `dbgpt` library.
 
 ```bash
-pip install "dbgpt[rag]>=0.7.0" -U
+pip install "dbgpt[rag, agent, client, simple_framework]>=0.7.0" "dbgpt_ext>=0.7.0" -U
+pip install openai
 ````
 
 ## Build Knowledge Base
@@ -92,9 +93,9 @@ shutil.rmtree("/tmp/awel_with_data_vector_store", ignore_errors=True)
 vector_store = ChromaStore(
     ChromaVectorConfig(
         persist_path="/tmp/tmp_ltm_vector_store",
-        name="ltm_vector_store",
-        embedding_fn=embeddings,
-    )
+    ),
+    name="ltm_vector_store",
+    embedding_fn=embeddings,
 )
 
 with DAG("load_schema_dag") as load_schema_dag:
@@ -102,7 +103,7 @@ with DAG("load_schema_dag") as load_schema_dag:
     # Load database schema to vector store
     assembler_task = DBSchemaAssemblerOperator(
         connector=db_conn,
-        index_store=vector_store,
+        table_vector_store_connector=vector_store,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     )
     input_task >> assembler_task
@@ -122,7 +123,8 @@ with DAG("retrieve_schema_dag") as retrieve_schema_dag:
     # Retrieve database schema from vector store
     retriever_task = DBSchemaRetrieverOperator(
         top_k=1,
-        index_store=vector_store,
+        table_vector_store_connector=vector_store,
+        field_vector_store_connector=vector_store
     )
     input_task >> retriever_task
 
@@ -487,10 +489,10 @@ db_conn.create_temp_tables(
 
 vector_store = ChromaStore(
     ChromaVectorConfig(
-        embedding_fn=embeddings,
-        name="db_schema_vector_store",
         persist_path="/tmp/awel_with_data_vector_store",
-    )
+    ),
+    embedding_fn=embeddings,
+    name="db_schema_vector_store",
 )
 
 antv_charts = [
@@ -623,7 +625,7 @@ with DAG("load_schema_dag") as load_schema_dag:
     # Load database schema to vector store
     assembler_task = DBSchemaAssemblerOperator(
         connector=db_conn,
-        index_store=vector_store,
+        table_vector_store_connector=vector_store,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE"),
     )
     input_task >> assembler_task
