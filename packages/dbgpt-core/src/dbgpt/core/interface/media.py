@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from dbgpt.core.schema.types import (
     ChatCompletionContentPartParam,
@@ -249,6 +249,7 @@ class MediaContent:
         role,
         content: Union[str, "MediaContent", List["MediaContent"]],
         support_media_content: bool = True,
+        type_mapping: Optional[Dict[str, str]] = None,
     ) -> ChatCompletionMessageParam:
         """Convert the media contents to chat completion message."""
         if not content:
@@ -257,7 +258,10 @@ class MediaContent:
             return {"role": role, "content": content}
         if isinstance(content, MediaContent):
             content = [content]
-        new_content = [cls._parse_single_media_content(c) for c in content]
+        new_content = [
+            cls._parse_single_media_content(c, type_mapping=type_mapping)
+            for c in content
+        ]
         if not support_media_content:
             text_content = [
                 c["text"] for c in new_content if c["type"] == "text" and "text" in c
@@ -275,40 +279,54 @@ class MediaContent:
     def _parse_single_media_content(
         cls,
         content: "MediaContent",
+        type_mapping: Optional[Dict[str, str]] = None,
     ) -> ChatCompletionContentPartParam:
         """Parse a single content."""
+        if type_mapping is None:
+            type_mapping = {}
         if content.type == MediaContentType.TEXT:
+            real_type = type_mapping.get("text", "text")
             return {
-                "text": str(content.object.data),
-                "type": "text",
+                real_type: str(content.object.data),
+                "type": real_type,
             }
         elif content.type == MediaContentType.IMAGE:
             if content.object.format.startswith("url"):
-                return {
-                    "image_url": {
-                        "url": content.object.data,
-                    },
-                    "type": "image_url",
-                }
+                # Compatibility for most image url formats
+                real_type = type_mapping.get("image_url", "image_url")
+                if real_type == "image_url":
+                    return {
+                        "image_url": {
+                            "url": content.object.data,
+                        },
+                        "type": "image_url",
+                    }
+                else:
+                    return {
+                        real_type: content.object.data,
+                        "type": real_type,
+                    }
             else:
                 raise ValueError(f"Unsupported image format: {content.object.format}")
         elif content.type == MediaContentType.AUDIO:
             if content.object.format.startswith("base64"):
+                real_type = type_mapping.get("input_audio", "input_audio")
                 return {
-                    "input_audio": {
+                    real_type: {
                         "data": content.object.data,
                     },
-                    "type": "input_audio",
+                    "type": real_type,
                 }
             else:
                 raise ValueError(f"Unsupported audio format: {content.object.format}")
         elif content.type == MediaContentType.VIDEO:
             if content.object.format.startswith("url"):
+                real_type = type_mapping.get("video_url", "video_url")
                 return {
-                    "video_url": {
+                    real_type: {
                         "url": content.object.data,
                     },
-                    "type": "video_url",
+                    "type": real_type,
                 }
             else:
                 raise ValueError(f"Unsupported video format: {content.object.format}")

@@ -1034,6 +1034,100 @@ class GLM40414Adapter(NewHFChatModelAdapter):
         return lower_model_name_or_path and "z1" in lower_model_name_or_path
 
 
+class GLM41VAdapter(GLM40414Adapter):
+    """
+    https://huggingface.co/THUDM/GLM-4.1V-9B-Thinking
+    Please make sure your transformers version is >= 4.54.0, and you can install it with
+    following command:
+    uv pip install git+https://github.com/huggingface/transformers.git
+    """
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path and "glm-4.1v" in lower_model_name_or_path
+
+    def is_reasoning_model(
+        self,
+        deploy_model_params: LLMDeployModelParameters,
+        lower_model_name_or_path: Optional[str] = None,
+    ) -> bool:
+        if (
+            deploy_model_params.reasoning_model is not None
+            and deploy_model_params.reasoning_model
+        ):
+            return True
+        return lower_model_name_or_path and "thinking" in lower_model_name_or_path
+
+    def check_transformer_version(self, current_version: str) -> None:
+        if not current_version >= "4.54.0":
+            raise ValueError(
+                "GLM-4.1V require transformers.__version__>= 4.54.0, please upgrade "
+                "your transformers package."
+                "And you can install transformers with "
+                "`uv pip install git+https://github.com/huggingface/transformers.git`"
+            )
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        try:
+            from transformers import (
+                Glm4vForConditionalGeneration,
+            )
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import glm-4.1v model, please upgrade your "
+                "transformers package to 4.54.0 or later."
+            ) from exc
+
+        logger.info(
+            f"Load model from {model_path}, from_pretrained_kwargs: "
+            f"{from_pretrained_kwargs}"
+        )
+
+        revision = from_pretrained_kwargs.get("revision", "main")
+        trust_remote_code = from_pretrained_kwargs.get(
+            "trust_remote_code", self.trust_remote_code
+        )
+        low_cpu_mem_usage = from_pretrained_kwargs.get("low_cpu_mem_usage", False)
+        if "trust_remote_code" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["trust_remote_code"] = trust_remote_code
+        if "low_cpu_mem_usage" not in from_pretrained_kwargs:
+            from_pretrained_kwargs["low_cpu_mem_usage"] = low_cpu_mem_usage
+        model = Glm4vForConditionalGeneration.from_pretrained(
+            model_path, **from_pretrained_kwargs
+        )
+        tokenizer = self.load_tokenizer(
+            model_path,
+            revision,
+            use_fast=self.use_fast_tokenizer(),
+            trust_remote_code=trust_remote_code,
+        )
+        return model, tokenizer
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        from transformers import AutoTokenizer
+
+        if not tokenizer:
+            raise ValueError("tokenizer is is None")
+        tokenizer: AutoTokenizer = tokenizer
+        type_mapping = {
+            "image_url": "image",
+        }
+        messages = self.transform_model_messages(
+            messages, convert_to_compatible_format, type_mapping=type_mapping
+        )
+        logger.debug(f"The messages after transform: \n{messages}")
+        str_prompt = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        return str_prompt
+
+
 class Codegeex4Adapter(GLM4Adapter):
     """
     https://huggingface.co/THUDM/codegeex4-all-9b
@@ -1150,6 +1244,7 @@ register_model_adapter(SQLCoderAdapter)
 register_model_adapter(OpenChatAdapter)
 register_model_adapter(GLM4Adapter, supported_models=COMMON_HF_GLM_MODELS)
 register_model_adapter(GLM40414Adapter)
+register_model_adapter(GLM41VAdapter)
 register_model_adapter(Codegeex4Adapter)
 register_model_adapter(Qwen2Adapter, supported_models=COMMON_HF_QWEN25_MODELS)
 register_model_adapter(Qwen2VLAdapter)

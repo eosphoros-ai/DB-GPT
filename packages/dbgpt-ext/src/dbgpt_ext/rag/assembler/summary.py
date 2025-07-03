@@ -59,7 +59,7 @@ class SummaryAssembler(BaseAssembler):
         model_name = model_name or os.getenv("LLM_MODEL")
 
         if not extractor:
-            from ..transformer.summary import SummaryExtractor
+            from dbgpt.rag.extractor.summary import SummaryExtractor
 
             if not llm_client:
                 raise ValueError("llm_client must be provided.")
