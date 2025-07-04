@@ -73,7 +73,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
       // Get prompt_code from localStorage
       const storedPromptCode = localStorage.getItem(`dbgpt_prompt_code_${chatId}`);
-      console.log('DEBUG - Completion - prompt_code from localStorage:', storedPromptCode);
 
       // Create data object with prompt_code if available
       const submitData: Record<string, any> = {
@@ -84,7 +83,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       // Add prompt_code if it exists
       if (storedPromptCode) {
         submitData.prompt_code = storedPromptCode;
-        console.log('DEBUG - Completion - adding prompt_code to submitData:', storedPromptCode);
 
         // Clear prompt_code from localStorage after use
         localStorage.removeItem(`dbgpt_prompt_code_${chatId}`);
@@ -189,7 +187,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
   // Initialize refs only once
   useEffect(() => {
-    console.log('Completion initializing refs');
     // Initialize message count tracking
     if (prevMessageCountRef.current === 0) {
       prevMessageCountRef.current = 0; // Will be set when first message arrives
@@ -210,24 +207,12 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
       // If user scrolled up during streaming, exit streaming mode to respect user intention
       if (isStreamingRef.current && !isAtBottom && wasUserScrolling !== isUserScrollingRef.current) {
-        console.log('User scrolled up during streaming, exiting streaming mode');
         isStreamingRef.current = false;
         // Clear streaming timeout
         if (streamingTimeoutRef.current) {
           clearTimeout(streamingTimeoutRef.current);
           streamingTimeoutRef.current = null;
         }
-      }
-
-      if (wasUserScrolling !== isUserScrollingRef.current) {
-        console.log('User scroll state changed:', {
-          isAtBottom,
-          isUserScrolling: isUserScrollingRef.current,
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-          wasStreaming: isStreamingRef.current,
-        });
       }
     }
   }, []);
@@ -237,7 +222,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
     if (!scrollableRef.current) return;
 
     const scrollElement = scrollableRef.current;
-    console.log('Scrolling to bottom');
 
     // Use instant scroll to avoid animation-related event conflicts
     scrollElement.scrollTo({
@@ -253,24 +237,11 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
     const currentMessageCount = showMessages.length;
     const isNewMessage = currentMessageCount > prevMessageCountRef.current;
 
-    console.log('Completion scroll check:', {
-      currentMessageCount,
-      prevCount: prevMessageCountRef.current,
-      isNewMessage,
-      isStreaming: isStreamingRef.current,
-      isUserScrolling: isUserScrollingRef.current,
-      lastContentHeight: lastContentHeightRef.current,
-      currentScrollHeight: scrollElement.scrollHeight,
-    });
-
     // Handle new messages - always scroll to bottom and start streaming mode
     if (isNewMessage) {
-      console.log('Completion: New message detected, forcing restart of streaming mode');
-
       // Force exit any existing streaming mode
       if (streamingTimeoutRef.current) {
         clearTimeout(streamingTimeoutRef.current);
-        console.log('Cleared existing streaming timeout');
       }
 
       // Enter streaming mode - disable user scroll detection
@@ -286,7 +257,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
       // Exit streaming mode after no content updates for 3 seconds (increased timeout)
       streamingTimeoutRef.current = setTimeout(() => {
-        console.log('Exiting streaming mode after timeout');
         isStreamingRef.current = false;
       }, 3000); // Increased from 2000 to 3000
 
@@ -297,32 +267,16 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
     if (isStreamingRef.current) {
       const currentHeight = scrollElement.scrollHeight;
 
-      console.log('Completion streaming update:', {
-        currentHeight,
-        lastHeight: lastContentHeightRef.current,
-        isFirstCheck: lastContentHeightRef.current === 0,
-      });
-
       // Initialize baseline height or check for changes
       if (lastContentHeightRef.current === 0) {
-        console.log('Setting initial baseline height:', currentHeight);
         lastContentHeightRef.current = currentHeight;
         // Don't return here - continue to check for immediate height differences
       }
 
       const heightDiff = currentHeight - lastContentHeightRef.current;
 
-      console.log('Completion streaming height check:', {
-        currentHeight,
-        lastHeight: lastContentHeightRef.current,
-        heightDiff,
-        willScroll: heightDiff > 0,
-      });
-
       // Any height increase triggers scroll during streaming
       if (heightDiff > 0) {
-        console.log('Completion: Content height increased by', heightDiff, 'px, scrolling');
-
         // Scroll immediately
         scrollToBottom();
 
@@ -334,11 +288,8 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
           clearTimeout(streamingTimeoutRef.current);
         }
         streamingTimeoutRef.current = setTimeout(() => {
-          console.log('Exiting streaming mode after content timeout');
           isStreamingRef.current = false;
         }, 3000);
-      } else if (heightDiff === 0) {
-        console.log('Completion: No height change during streaming, content may not be updating');
       }
     } else {
       // Not streaming - check if user wants auto-scroll
@@ -347,12 +298,9 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
         const heightDiff = currentHeight - lastContentHeightRef.current;
 
         if (heightDiff > 0) {
-          console.log('Completion: Non-streaming height increase, scrolling');
           scrollToBottom();
           lastContentHeightRef.current = currentHeight;
         }
-      } else {
-        console.log('Completion: User has scrolled away, not auto-scrolling');
       }
     }
   }, [showMessages, scene, scrollToBottom]);
