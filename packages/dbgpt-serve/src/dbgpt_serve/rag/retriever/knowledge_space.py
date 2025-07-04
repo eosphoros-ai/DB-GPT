@@ -182,7 +182,7 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             logger.info("Starting Full Text retrieval")
             return await self.full_text_retrieve(query, self._top_k, filters)
         elif self._retrieve_mode == RetrieverStrategy.Tree.value:
-            logger.info("Starting Doc Tree retrieval")
+            logger.ianfo("Starting Doc Tree retrieval")
             return await self.tree_index_retrieve(query, self._top_k, filters)
         elif self._retrieve_mode == RetrieverStrategy.HYBRID.value:
             logger.info("Starting Hybrid retrieval")

@@ -95,6 +95,12 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
         """Return the retriever desc."""
         return self._retriever_desc
 
+    # @property
+    # def abilities(self) -> List[dict]:
+    #     abilities = []
+    #     if self.reso
+    #     return abilities
+
     @classmethod
     def resource_parameters_class(
         cls, **kwargs
