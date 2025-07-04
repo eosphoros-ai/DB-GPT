@@ -1,4 +1,5 @@
 """RAG STORAGE MANAGER manager."""
+
 import threading
 from typing import List, Optional, Type
 
@@ -102,7 +103,10 @@ class StorageManager(BaseComponent):
             if storage_config.graph:
                 graph_config = storage_config.graph
                 graph_config.llm_model = llm_model
-                if hasattr(graph_config, "enable_summary") and graph_config.enable_summary:
+                if (
+                    hasattr(graph_config, "enable_summary")
+                    and graph_config.enable_summary
+                ):
                     from dbgpt_ext.storage.knowledge_graph.community_summary import (
                         CommunitySummaryKnowledgeGraph,
                     )
