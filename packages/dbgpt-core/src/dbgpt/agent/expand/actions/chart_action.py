@@ -87,9 +87,17 @@ class ChartAction(Action[SqlInput]):
 
             param_dict = model_to_dict(param)
             if not data_df.empty:
+                param_dict["count"] = len(data_df)
+
                 param_dict["data"] = json.loads(
-                    data_df.to_json(orient="records", date_format="iso", date_unit="s")
+                    data_df.to_json(
+                        orient="records",
+                        force_ascii=False,
+                        date_format="iso",
+                        date_unit="s",
+                    )
                 )
+
             content = json.dumps(param_dict)
 
             return ActionOutput(
