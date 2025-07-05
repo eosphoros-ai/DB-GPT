@@ -53,6 +53,9 @@ class ConnectorManager(BaseComponent):
         )
         from dbgpt_ext.datasource.rdbms.conn_doris import DorisConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_duckdb import DuckDbConnector  # noqa: F401
+        from dbgpt_ext.datasource.rdbms.conn_gaussdb import (  # noqa: F401
+            GaussDBConnector,
+        )
         from dbgpt_ext.datasource.rdbms.conn_hive import HiveConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_mssql import MSSQLConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_mysql import MySQLConnector  # noqa: F401

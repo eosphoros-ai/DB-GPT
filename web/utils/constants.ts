@@ -295,6 +295,11 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
     icon: '/icons/postgresql.png',
     desc: 'Powerful open-source relational database with extensibility and SQL standards.',
   },
+  gaussdb: {
+    label: 'GaussDB',
+    icon: '/icons/gaussdb.png',
+    desc: 'Huawei\'s distributed database with PostgreSQL compatibility',
+  },
   vertica: {
     label: 'Vertica',
     icon: '/icons/vertica.png',
