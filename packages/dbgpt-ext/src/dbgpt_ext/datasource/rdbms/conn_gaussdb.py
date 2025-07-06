@@ -23,7 +23,9 @@ logger = logging.getLogger(__name__)
     label=_("GaussDB datasource"),
     category=ResourceCategory.DATABASE,
     tags={"order": TAGS_ORDER_HIGH},
-    description=_("Huawei's distributed database with PostgreSQL/MySQL compatibility."),
+    description=_(
+        "A scalable,enterprise-grade relational database with distributed architecture."
+    ),
 )
 @dataclass
 class GaussDBParameters(RDBMSDatasourceParameters):
