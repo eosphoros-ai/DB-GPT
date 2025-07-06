@@ -1,11 +1,11 @@
 """GaussDB connector."""
+
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-import psycopg2
 from sqlalchemy import text
 
 from dbgpt.core.awel.flow import (
@@ -19,14 +19,11 @@ from dbgpt.util.i18n_utils import _
 logger = logging.getLogger(__name__)
 
 
-
 @auto_register_resource(
     label=_("GaussDB datasource"),
     category=ResourceCategory.DATABASE,
     tags={"order": TAGS_ORDER_HIGH},
-    description=_(
-        "Huawei's distributed database with PostgreSQL/MySQL compatibility."
-    ),
+    description=_("Huawei's distributed database with PostgreSQL/MySQL compatibility."),
 )
 @dataclass
 class GaussDBParameters(RDBMSDatasourceParameters):
@@ -79,6 +76,7 @@ class GaussDBConnector(RDBMSConnector):
             f"{cls.driver}://{quote(user)}:{urlquote(pwd)}@{host}:{str(port)}/{db_name}"
         )
         from sqlalchemy.dialects.postgresql.base import PGDialect
+
         PGDialect._get_server_version_info = lambda *args: (7, 0)
         return cast(GaussDBConnector, cls.from_uri(db_url, engine_args, **kwargs))
 
