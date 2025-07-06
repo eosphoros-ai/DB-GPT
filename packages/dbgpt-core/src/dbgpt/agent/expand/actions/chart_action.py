@@ -98,7 +98,7 @@ class ChartAction(Action[SqlInput]):
                     )
                 )
 
-            content = json.dumps(param_dict)
+            content = json.dumps(param_dict, ensure_ascii=False)
 
             return ActionOutput(
                 is_exe_success=True,
