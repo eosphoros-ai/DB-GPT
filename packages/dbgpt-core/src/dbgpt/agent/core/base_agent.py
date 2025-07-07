@@ -11,7 +11,6 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, final
 
-from jinja2 import Template
 from jinja2.sandbox import SandboxedEnvironment
 
 from dbgpt._private.pydantic import ConfigDict, Field
@@ -40,18 +39,18 @@ class ConversableAgent(Role, Agent):
     """ConversableAgent is an agent that can communicate with other agents."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    
+
     # Dangerous template patterns that could lead to code execution
     _DANGEROUS_TEMPLATE_PATTERNS = [
-        r'\{\{.*__.*\}\}',  # Double underscore methods
-        r'\{\{.*import.*\}\}',  # Import statements  
-        r'\{\{.*exec.*\}\}',  # Exec calls
-        r'\{\{.*eval.*\}\}',  # Eval calls
-        r'\{\{.*open.*\}\}',  # File operations
-        r'\{\{.*subprocess.*\}\}',  # Subprocess calls
-        r'\{\{.*os\..*\}\}',  # OS module access
-        r'\{\{.*globals.*\}\}',  # Globals access
-        r'\{\{.*\[.*\].*\}\}',  # Bracket notation access
+        r"\{\{.*__.*\}\}",  # Double underscore methods
+        r"\{\{.*import.*\}\}",  # Import statements
+        r"\{\{.*exec.*\}\}",  # Exec calls
+        r"\{\{.*eval.*\}\}",  # Eval calls
+        r"\{\{.*open.*\}\}",  # File operations
+        r"\{\{.*subprocess.*\}\}",  # Subprocess calls
+        r"\{\{.*os\..*\}\}",  # OS module access
+        r"\{\{.*globals.*\}\}",  # Globals access
+        r"\{\{.*\[.*\].*\}\}",  # Bracket notation access
     ]
 
     agent_context: Optional[AgentContext] = Field(None, description="Agent context")
@@ -902,13 +901,13 @@ class ConversableAgent(Role, Agent):
         """Sanitize template parameters to prevent injection attacks."""
         if not params:
             return params
-        
+
         return self._sanitize_dict(params)
-    
+
     def _sanitize_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize dictionary values recursively."""
         return {key: self._sanitize_value(value) for key, value in data.items()}
-    
+
     def _sanitize_value(self, value: Any) -> Any:
         """Sanitize a single value based on its type."""
         if isinstance(value, str):
@@ -918,7 +917,7 @@ class ConversableAgent(Role, Agent):
         elif isinstance(value, list):
             return [self._sanitize_value(item) for item in value]
         return value
-    
+
     def _sanitize_string(self, text: str) -> str:
         """Check string for dangerous template injection patterns."""
         for pattern in self._DANGEROUS_TEMPLATE_PATTERNS:
@@ -1100,7 +1099,7 @@ class ConversableAgent(Role, Agent):
         """Build system prompt with security controls."""
         if self.bind_prompt:
             return self._render_bind_prompt(resource_vars, context)
-        
+
         # Fallback to build_prompt with sanitized context
         sanitized_context = self.sanitize_template_params(context or {})
         return await self.build_prompt(
@@ -1111,11 +1110,11 @@ class ConversableAgent(Role, Agent):
             is_retry_chat=is_retry_chat,
             **sanitized_context,
         )
-    
+
     def _render_bind_prompt(
-        self, 
-        resource_vars: Optional[Dict] = None, 
-        context: Optional[Dict[str, Any]] = None
+        self,
+        resource_vars: Optional[Dict] = None,
+        context: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Render bind prompt template with sanitized parameters."""
         prompt_param = {}
@@ -1124,7 +1123,7 @@ class ConversableAgent(Role, Agent):
         if context:
             sanitized_context = self.sanitize_template_params(context)
             prompt_param.update(sanitized_context)
-        
+
         if self.bind_prompt.template_format == "f-string":
             return self.bind_prompt.template.format(**prompt_param)
         elif self.bind_prompt.template_format == "jinja2":
