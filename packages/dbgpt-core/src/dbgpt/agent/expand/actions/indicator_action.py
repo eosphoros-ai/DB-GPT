@@ -49,10 +49,14 @@ class IndicatorAction(Action[IndicatorInput]):
         super().__init__(**kwargs)
         self._render_protocol = VisApiResponse()
         self._blocked_hosts = {
-            '169.254.169.254', 'metadata.google.internal', 'metadata.goog',
-            'localhost', '127.0.0.1', '::1'
+            "169.254.169.254",
+            "metadata.google.internal",
+            "metadata.goog",
+            "localhost",
+            "127.0.0.1",
+            "::1",
         }
-        self._allowed_methods = {'GET', 'POST'}
+        self._allowed_methods = {"GET", "POST"}
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
@@ -92,27 +96,34 @@ class IndicatorAction(Action[IndicatorInput]):
         """Validate URL and method to prevent SSRF attacks."""
         try:
             parsed = urlparse(url)
-            
-            if parsed.scheme not in {'http', 'https'}:
+
+            if parsed.scheme not in {"http", "https"}:
                 return f"Scheme '{parsed.scheme}' not allowed"
-            
+
             if parsed.hostname in self._blocked_hosts:
                 return f"Hostname '{parsed.hostname}' is blocked"
-                
+
             if parsed.hostname:
                 try:
                     ip = ipaddress.ip_address(parsed.hostname)
-                    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+                    if (
+                        ip.is_private
+                        or ip.is_loopback
+                        or ip.is_link_local
+                        or ip.is_multicast
+                    ):
                         return f"Private/internal IP '{parsed.hostname}' is blocked"
                 except ValueError:
                     pass
-                    
-            if any(p in parsed.hostname.lower() for p in ['internal', 'local', 'intranet']):
+
+            if any(
+                p in parsed.hostname.lower() for p in ["internal", "local", "intranet"]
+            ):
                 return f"Hostname pattern '{parsed.hostname}' is blocked"
-                
+
             if method.upper() not in self._allowed_methods:
                 return f"Method '{method}' not allowed"
-                
+
             return None
         except Exception as e:
             return f"URL validation error: {e}"
@@ -143,25 +154,36 @@ class IndicatorAction(Action[IndicatorInput]):
 
         if error := self._validate_request(param.api, param.method):
             logger.warning(f"Blocked request: {error}")
-            return ActionOutput(is_exe_success=False, content=f"Request blocked: {error}")
+            return ActionOutput(
+                is_exe_success=False, content=f"Request blocked: {error}"
+            )
 
         try:
             if param.method.lower() == "get":
                 response = requests.get(
-                    param.api, params=param.args, headers=self.build_headers(),
-                    timeout=10, allow_redirects=False
+                    param.api,
+                    params=param.args,
+                    headers=self.build_headers(),
+                    timeout=10,
+                    allow_redirects=False,
                 )
             elif param.method.lower() == "post":
                 response = requests.post(
-                    param.api, json=param.args, headers=self.build_headers(),
-                    timeout=10, allow_redirects=False
+                    param.api,
+                    json=param.args,
+                    headers=self.build_headers(),
+                    timeout=10,
+                    allow_redirects=False,
                 )
             else:
-                return ActionOutput(is_exe_success=False, content=f"Method '{param.method}' not supported")
-                
+                return ActionOutput(
+                    is_exe_success=False,
+                    content=f"Method '{param.method}' not supported",
+                )
+
             response.raise_for_status()
             logger.info(f"API:{param.api}\nResult:{response.text}")
-            
+
             plugin_param = {
                 "name": param.indicator_name,
                 "args": param.args,
@@ -178,11 +200,11 @@ class IndicatorAction(Action[IndicatorInput]):
             )
 
             return ActionOutput(is_exe_success=True, content=response.text, view=view)
-            
+
         except Exception as e:
             logger.exception(f"API [{param.indicator_name}] failed: {e}")
             error_msg = f"API request failed: {str(e)}"
-            
+
             plugin_param = {
                 "name": param.indicator_name,
                 "args": param.args,
@@ -194,7 +216,8 @@ class IndicatorAction(Action[IndicatorInput]):
 
             view = (
                 await self.render_protocol.display(content=plugin_param)
-                if self.render_protocol else error_msg
+                if self.render_protocol
+                else error_msg
             )
 
             return ActionOutput(is_exe_success=False, content=error_msg, view=view)
