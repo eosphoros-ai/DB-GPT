@@ -64,13 +64,15 @@ async def check_api_key(
     return None
 
 
-def _validate_user_access(requested_user: Optional[str], authenticated_user: Optional[str]) -> str:
+def _validate_user_access(
+    requested_user: Optional[str], authenticated_user: Optional[str]
+) -> str:
     global _api_keys_config
     if _api_keys_config and authenticated_user:
         if requested_user and requested_user != authenticated_user:
             raise HTTPException(
-                status_code=403, 
-                detail="Access denied: Cannot access another user's resources"
+                status_code=403,
+                detail="Access denied: Cannot access another user's resources",
             )
         return requested_user or authenticated_user
     return requested_user or "default"
@@ -89,7 +91,9 @@ class ModulePlugin(BaseComponent, ABC):
             global_api_keys = system_app.config.get("dbgpt.app.global.api_keys")
             if global_api_keys:
                 set_api_keys_config(global_api_keys)
-            elif hasattr(system_app, 'config') and hasattr(system_app.config, 'API_KEYS'):
+            elif hasattr(system_app, "config") and hasattr(
+                system_app.config, "API_KEYS"
+            ):
                 set_api_keys_config(system_app.config.API_KEYS)
         except Exception:
             pass
@@ -149,8 +153,7 @@ async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
 
 @router.post("/v1/agent/my", response_model=Result[List[MyPluginVO]])
 async def my_agents(
-    user: str = None,
-    authenticated_user: Optional[str] = Depends(check_api_key)
+    user: str = None, authenticated_user: Optional[str] = Depends(check_api_key)
 ):
     logger.info(f"my_agents:{user}")
     effective_user = _validate_user_access(user, authenticated_user)
@@ -161,9 +164,9 @@ async def my_agents(
 
 @router.post("/v1/agent/install", response_model=Result[str])
 async def agent_install(
-    plugin_name: str, 
+    plugin_name: str,
     user: str = None,
-    authenticated_user: Optional[str] = Depends(check_api_key)
+    authenticated_user: Optional[str] = Depends(check_api_key),
 ):
     logger.info(f"agent_install:{plugin_name},{user}")
     effective_user = _validate_user_access(user, authenticated_user)
@@ -180,9 +183,9 @@ async def agent_install(
 
 @router.post("/v1/agent/uninstall", response_model=Result[str])
 async def agent_uninstall(
-    plugin_name: str, 
+    plugin_name: str,
     user: str = None,
-    authenticated_user: Optional[str] = Depends(check_api_key)
+    authenticated_user: Optional[str] = Depends(check_api_key),
 ):
     logger.info(f"agent_uninstall:{plugin_name},{user}")
     effective_user = _validate_user_access(user, authenticated_user)
@@ -198,9 +201,9 @@ async def agent_uninstall(
 
 @router.post("/v1/personal/agent/upload", response_model=Result[str])
 async def personal_agent_upload(
-    doc_file: UploadFile = File(...), 
+    doc_file: UploadFile = File(...),
     user: str = None,
-    authenticated_user: Optional[str] = Depends(check_api_key)
+    authenticated_user: Optional[str] = Depends(check_api_key),
 ):
     logger.info(f"personal_agent_upload:{doc_file.filename},{user}")
     effective_user = _validate_user_access(user, authenticated_user)
