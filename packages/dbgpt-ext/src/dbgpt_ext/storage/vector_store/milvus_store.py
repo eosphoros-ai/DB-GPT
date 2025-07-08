@@ -649,15 +649,17 @@ class MilvusStore(VectorStoreBase):
     def vector_name_exists(self):
         """Whether vector name exists."""
         try:
-            from pymilvus import utility
-        except ImportError:
-            raise ValueError(
-                "Could not import pymilvus python package. "
-                "Please install it with `pip install pymilvus`."
-            )
+            if not self._milvus_client.has_collection(self.collection_name):
+                logger.info(f"Collection {self.collection_name} does not exist")
+                return False
 
-        """is vector store name exist."""
-        return utility.has_collection(self.collection_name)
+            stats = self._milvus_client.get_collection_stats(self.collection_name)
+            row_count = stats.get("row_count", 0)
+            return row_count > 0
+
+        except Exception as e:
+            logger.error(f"vector_name_exists error, {str(e)}")
+            return False
 
     def delete_vector_name(self, vector_name: str):
         """Delete vector name."""
