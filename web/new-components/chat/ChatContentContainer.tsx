@@ -2,12 +2,21 @@ import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import { ChatContentContext } from '@/pages/chat';
 import { VerticalAlignBottomOutlined, VerticalAlignTopOutlined } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
-import React, { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
 // eslint-disable-next-line no-empty-pattern
-const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
+const ChatContentContainer = ({ className }: { className?: string }, ref: React.ForwardedRef<any>) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollToTop, setIsScrollToTop] = useState<boolean>(false);
   const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
@@ -15,12 +24,13 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
   const [isAtBottom, setIsAtBottom] = useState<boolean>(false);
   const { history } = useContext(ChatContentContext);
   const allowAutoScroll = useRef<boolean>(true);
+  const animationFrameRef = useRef<number | null>(null);
 
   useImperativeHandle(ref, () => {
     return scrollRef.current;
   });
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
 
     const container = scrollRef.current;
@@ -52,73 +62,119 @@ const ChatContentContainer = ({}, ref: React.ForwardedRef<any>) => {
     // Show scroll buttons when content is scrollable
     const isScrollable = scrollHeight > clientHeight;
     setShowScrollButtons(isScrollable);
-  };
+  }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.addEventListener('scroll', handleScroll);
+    const currentScrollRef = scrollRef.current;
+    if (currentScrollRef) {
+      currentScrollRef.addEventListener('scroll', handleScroll);
 
       // Check initially if content is scrollable
-      const isScrollable = scrollRef.current.scrollHeight > scrollRef.current.clientHeight;
+      const isScrollable = currentScrollRef.scrollHeight > currentScrollRef.clientHeight;
       setShowScrollButtons(isScrollable);
     }
 
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      scrollRef.current && scrollRef.current.removeEventListener('scroll', handleScroll);
+      if (currentScrollRef) {
+        currentScrollRef.removeEventListener('scroll', handleScroll);
+      }
     };
-  }, []);
+  }, [handleScroll]);
 
-  const scrollToBottomSmooth = useCallback(() => {
-    if (!scrollRef.current || !allowAutoScroll.current) return;
+  const scrollToBottomSmooth = useCallback((forceScroll = false) => {
+    if (!scrollRef.current) return;
+
+    // For force scroll (new messages), bypass allowAutoScroll check
+    if (!forceScroll && !allowAutoScroll.current) return;
 
     const container = scrollRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
 
-    // 只有当用户接近底部时才自动滚动
+    // Only auto-scroll when user is near bottom, unless force scroll is requested
     const buffer = Math.max(50, clientHeight * 0.1);
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
 
-    if (!isNearBottom) {
+    if (!isNearBottom && !forceScroll) {
       return;
     }
-    // use requestAnimationFrame to smooth scroll
-    const frameId = requestAnimationFrame(() => {
-      // 直接设置scrollTop来实现快速滚动，不使用平滑滚动以避免卡顿
-      // container.scrollTop = container.scrollHeight;
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'auto',
-      });
+
+    // Clear previous animation frame to prevent memory leaks
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    // Use requestAnimationFrame but with instant scroll to avoid animation conflicts
+    animationFrameRef.current = requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: forceScroll ? 'smooth' : 'auto', // Smooth only for new messages, instant for streaming
+        });
+      }
+      animationFrameRef.current = null;
     });
-    return () => cancelAnimationFrame(frameId);
   }, []);
 
-  useEffect(() => {
-    // 监听 history 变化和最后一条消息的 context 变化
-    scrollToBottomSmooth();
-  }, [history, history[history.length - 1]?.context]);
+  // Optimize last message tracking to reduce unnecessary re-renders
+  const lastMessage = useMemo(() => {
+    const last = history[history.length - 1];
+    return last ? { context: last.context, thinking: last.thinking } : null;
+  }, [history]);
 
-  const scrollToTop = () => {
+  // Track previous history length to detect new messages
+  const prevHistoryLengthRef = useRef(history.length);
+
+  useEffect(() => {
+    const currentHistoryLength = history.length;
+    const isNewMessage = currentHistoryLength > prevHistoryLengthRef.current;
+
+    if (isNewMessage) {
+      // Force scroll to bottom when new message is added
+      scrollToBottomSmooth(true);
+      prevHistoryLengthRef.current = currentHistoryLength;
+    } else {
+      // For streaming content updates, only scroll if user is near bottom
+      scrollToBottomSmooth(false);
+    }
+  }, [history.length, scrollToBottomSmooth]);
+
+  // Handle streaming content updates separately to avoid multiple scroll calls
+  useEffect(() => {
+    // Only trigger scroll for content changes, not for new messages
+    if (history.length === prevHistoryLengthRef.current) {
+      scrollToBottomSmooth(false);
+    }
+  }, [lastMessage?.context, lastMessage?.thinking, history.length, scrollToBottomSmooth]);
+
+  // Cleanup animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  const scrollToTop = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: 0,
         behavior: 'smooth',
       });
     }
-  };
+  }, []);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
-  };
+  }, []);
 
   return (
-    <div className='flex flex-1 overflow-hidden relative'>
+    <div className={`flex flex-1 overflow-hidden relative ${className || ''}`}>
       <div ref={scrollRef} className='h-full w-full mx-auto overflow-y-auto'>
         <ChatHeader isScrollToTop={isScrollToTop} />
         <ChatCompletion />

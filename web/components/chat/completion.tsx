@@ -11,7 +11,7 @@ import classNames from 'classnames';
 import copy from 'copy-to-clipboard';
 import { cloneDeep } from 'lodash';
 import { useSearchParams } from 'next/navigation';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import MyEmpty from '../common/MyEmpty';
@@ -73,7 +73,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
       // Get prompt_code from localStorage
       const storedPromptCode = localStorage.getItem(`dbgpt_prompt_code_${chatId}`);
-      console.log('DEBUG - Completion - prompt_code from localStorage:', storedPromptCode);
 
       // Create data object with prompt_code if available
       const submitData: Record<string, any> = {
@@ -84,7 +83,6 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       // Add prompt_code if it exists
       if (storedPromptCode) {
         submitData.prompt_code = storedPromptCode;
-        console.log('DEBUG - Completion - adding prompt_code to submitData:', storedPromptCode);
 
         // Clear prompt_code from localStorage after use
         localStorage.removeItem(`dbgpt_prompt_code_${chatId}`);
@@ -98,12 +96,15 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
 
   // Process message content - if onFormatContent is provided and this is a dashboard chat,
   // we'll extract the thinking part from vis-thinking code blocks
-  const processMessageContent = (content: any) => {
-    if (isChartChat && onFormatContent && typeof content === 'string') {
-      return onFormatContent(content);
-    }
-    return content;
-  };
+  const processMessageContent = useCallback(
+    (content: any) => {
+      if (isChartChat && onFormatContent && typeof content === 'string') {
+        return onFormatContent(content);
+      }
+      return content;
+    },
+    [isChartChat, onFormatContent],
+  );
 
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -165,7 +166,7 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       });
     }
     setShowMessages(tempMessage.filter(item => ['view', 'human'].includes(item.role)));
-  }, [isChartChat, messages, onFormatContent]);
+  }, [isChartChat, messages, onFormatContent, processMessageContent]);
 
   useEffect(() => {
     apiInterceptors(getChatFeedBackSelect())
@@ -177,17 +178,160 @@ const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
       });
   }, []);
 
+  // Track user scrolling behavior
+  const isUserScrollingRef = useRef(false);
+  const prevMessageCountRef = useRef(0);
+  const lastContentHeightRef = useRef(0);
+  const isStreamingRef = useRef(false); // Track if we're in streaming mode
+  const streamingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize refs only once
   useEffect(() => {
-    setTimeout(() => {
-      scrollableRef.current?.scrollTo(0, scrollableRef.current.scrollHeight);
-    }, 50);
-  }, [messages]);
+    // Initialize message count tracking
+    if (prevMessageCountRef.current === 0) {
+      prevMessageCountRef.current = 0; // Will be set when first message arrives
+    }
+  }, []); // No dependencies - only run once
+
+  // Handle scroll events to detect user interaction
+  const handleScrollEvent = useCallback(() => {
+    if (scrollableRef.current) {
+      const scrollElement = scrollableRef.current;
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+
+      const wasUserScrolling = isUserScrollingRef.current;
+      // Always track user scroll state, even during streaming
+      // This allows users to stop auto-scroll by scrolling up during streaming
+      isUserScrollingRef.current = !isAtBottom;
+
+      // If user scrolled up during streaming, exit streaming mode to respect user intention
+      if (isStreamingRef.current && !isAtBottom && wasUserScrolling !== isUserScrollingRef.current) {
+        isStreamingRef.current = false;
+        // Clear streaming timeout
+        if (streamingTimeoutRef.current) {
+          clearTimeout(streamingTimeoutRef.current);
+          streamingTimeoutRef.current = null;
+        }
+      }
+    }
+  }, []);
+
+  // Simple and reliable scroll function
+  const scrollToBottom = useCallback(() => {
+    if (!scrollableRef.current) return;
+
+    const scrollElement = scrollableRef.current;
+
+    // Use instant scroll to avoid animation-related event conflicts
+    scrollElement.scrollTo({
+      top: scrollElement.scrollHeight,
+      behavior: 'instant',
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!scrollableRef.current) return;
+
+    const scrollElement = scrollableRef.current;
+    const currentMessageCount = showMessages.length;
+    const isNewMessage = currentMessageCount > prevMessageCountRef.current;
+
+    // Handle new messages - always scroll to bottom and start streaming mode
+    if (isNewMessage) {
+      // Force exit any existing streaming mode
+      if (streamingTimeoutRef.current) {
+        clearTimeout(streamingTimeoutRef.current);
+      }
+
+      // Enter streaming mode - disable user scroll detection
+      isStreamingRef.current = true;
+      isUserScrollingRef.current = false;
+
+      // Scroll to bottom immediately
+      scrollToBottom();
+
+      // Update message count but reset height tracking to let streaming content set it
+      prevMessageCountRef.current = currentMessageCount;
+      lastContentHeightRef.current = 0; // Reset to allow streaming to establish new baseline
+
+      // Exit streaming mode after no content updates for 3 seconds (increased timeout)
+      streamingTimeoutRef.current = setTimeout(() => {
+        isStreamingRef.current = false;
+      }, 3000); // Increased from 2000 to 3000
+
+      return;
+    }
+
+    // Handle streaming content updates - always scroll during streaming
+    if (isStreamingRef.current) {
+      const currentHeight = scrollElement.scrollHeight;
+
+      // Initialize baseline height or check for changes
+      if (lastContentHeightRef.current === 0) {
+        lastContentHeightRef.current = currentHeight;
+        // Don't return here - continue to check for immediate height differences
+      }
+
+      const heightDiff = currentHeight - lastContentHeightRef.current;
+
+      // Any height increase triggers scroll during streaming
+      if (heightDiff > 0) {
+        // Scroll immediately
+        scrollToBottom();
+
+        // Update height tracking
+        lastContentHeightRef.current = currentHeight;
+
+        // Reset streaming timeout - keep streaming mode active
+        if (streamingTimeoutRef.current) {
+          clearTimeout(streamingTimeoutRef.current);
+        }
+        streamingTimeoutRef.current = setTimeout(() => {
+          isStreamingRef.current = false;
+        }, 3000);
+      }
+    } else {
+      // Not streaming - check if user wants auto-scroll
+      if (!isUserScrollingRef.current) {
+        const currentHeight = scrollElement.scrollHeight;
+        const heightDiff = currentHeight - lastContentHeightRef.current;
+
+        if (heightDiff > 0) {
+          scrollToBottom();
+          lastContentHeightRef.current = currentHeight;
+        }
+      }
+    }
+  }, [showMessages, scene, scrollToBottom]);
+
+  // Add scroll event listener and cleanup
+  useEffect(() => {
+    const scrollElement = scrollableRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScrollEvent);
+      return () => {
+        scrollElement.removeEventListener('scroll', handleScrollEvent);
+        // Cleanup streaming timeout
+        if (streamingTimeoutRef.current) {
+          clearTimeout(streamingTimeoutRef.current);
+          streamingTimeoutRef.current = null;
+        }
+      };
+    }
+  }, [handleScrollEvent]);
 
   return (
     <>
       {contextHolder}
-      <div ref={scrollableRef} className='flex flex-1 overflow-y-auto h-full w-full flex-col'>
-        <div className='flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
+      <div
+        ref={scrollableRef}
+        className={classNames('flex flex-1 overflow-y-auto w-full flex-col', {
+          'h-full': scene !== 'chat_dashboard',
+          'flex-1 min-h-0': scene === 'chat_dashboard',
+        })}
+      >
+        <div className='flex items-center flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7'>
           {showMessages.length ? (
             showMessages.map((content, index) => {
               if (scene === 'chat_agent') {

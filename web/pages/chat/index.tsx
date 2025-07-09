@@ -353,7 +353,7 @@ const Chat: React.FC = () => {
       ) : (
         <Spin spinning={historyLoading} className='w-full h-full m-auto'>
           <Content className='flex flex-col h-screen'>
-            <ChatContentContainer ref={scrollRef} />
+            <ChatContentContainer ref={scrollRef} className='flex-1' />
             {/* Pass ref to ChatInputPanel for external control */}
             <ChatInputPanel ref={chatInputRef} ctrl={ctrl} />
           </Content>
@@ -406,19 +406,15 @@ const Chat: React.FC = () => {
             {/* Render PromptBot at the bottom right */}
             <PromptBot
               submit={prompt => {
-                console.log('Selected prompt:', prompt);
-
                 // For chat_dashboard, only store prompt_code in localStorage
                 // The input filling will be handled by the CompletionInput's PromptBot
                 if (scene === 'chat_dashboard') {
                   localStorage.setItem(`dbgpt_prompt_code_${chatId}`, prompt.prompt_code);
-                  console.log('Stored prompt_code for chat_dashboard:', prompt.prompt_code);
                 } else {
                   // For other scenes, fill input and store prompt_code
                   chatInputRef.current?.setUserInput?.(prompt.content);
                   selectedPromptCodeRef.current = prompt.prompt_code;
                   localStorage.setItem(`dbgpt_prompt_code_${chatId}`, prompt.prompt_code);
-                  console.log('Filled input and stored prompt_code:', prompt.prompt_code);
                 }
               }}
               chat_scene={scene}
