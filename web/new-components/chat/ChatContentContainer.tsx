@@ -2,7 +2,16 @@ import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import { ChatContentContext } from '@/pages/chat';
 import { VerticalAlignBottomOutlined, VerticalAlignTopOutlined } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
-import React, { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState, useMemo } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 const ChatCompletion = dynamic(() => import('@/new-components/chat/content/ChatCompletion'), { ssr: false });
 
@@ -72,17 +81,20 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
     };
   }, [handleScroll]);
 
-  const scrollToBottomSmooth = useCallback(() => {
-    if (!scrollRef.current || !allowAutoScroll.current) return;
+  const scrollToBottomSmooth = useCallback((forceScroll = false) => {
+    if (!scrollRef.current) return;
+
+    // For force scroll (new messages), bypass allowAutoScroll check
+    if (!forceScroll && !allowAutoScroll.current) return;
 
     const container = scrollRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
 
-    // Only auto-scroll when user is near bottom
+    // Only auto-scroll when user is near bottom, unless force scroll is requested
     const buffer = Math.max(50, clientHeight * 0.1);
     const isNearBottom = scrollTop + clientHeight >= scrollHeight - buffer;
 
-    if (!isNearBottom) {
+    if (!isNearBottom && !forceScroll) {
       return;
     }
 
@@ -91,12 +103,12 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    // use requestAnimationFrame to smooth scroll
+    // Use requestAnimationFrame but with instant scroll to avoid animation conflicts
     animationFrameRef.current = requestAnimationFrame(() => {
       if (scrollRef.current) {
         scrollRef.current.scrollTo({
           top: scrollRef.current.scrollHeight,
-          behavior: 'auto',
+          behavior: forceScroll ? 'smooth' : 'auto', // Smooth only for new messages, instant for streaming
         });
       }
       animationFrameRef.current = null;
@@ -109,10 +121,30 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
     return last ? { context: last.context, thinking: last.thinking } : null;
   }, [history]);
 
+  // Track previous history length to detect new messages
+  const prevHistoryLengthRef = useRef(history.length);
+
   useEffect(() => {
-    // Listen for history changes and last message context/thinking changes
-    scrollToBottomSmooth();
-  }, [history.length, lastMessage?.context, lastMessage?.thinking, scrollToBottomSmooth]);
+    const currentHistoryLength = history.length;
+    const isNewMessage = currentHistoryLength > prevHistoryLengthRef.current;
+
+    if (isNewMessage) {
+      // Force scroll to bottom when new message is added
+      scrollToBottomSmooth(true);
+      prevHistoryLengthRef.current = currentHistoryLength;
+    } else {
+      // For streaming content updates, only scroll if user is near bottom
+      scrollToBottomSmooth(false);
+    }
+  }, [history.length, scrollToBottomSmooth]);
+
+  // Handle streaming content updates separately to avoid multiple scroll calls
+  useEffect(() => {
+    // Only trigger scroll for content changes, not for new messages
+    if (history.length === prevHistoryLengthRef.current) {
+      scrollToBottomSmooth(false);
+    }
+  }, [lastMessage?.context, lastMessage?.thinking, history.length, scrollToBottomSmooth]);
 
   // Cleanup animation frame on unmount
   useEffect(() => {

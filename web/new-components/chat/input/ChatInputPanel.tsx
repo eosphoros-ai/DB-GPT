@@ -13,7 +13,6 @@ import ToolsBar from './ToolsBar';
 const ChatInputPanel: React.ForwardRefRenderFunction<any, { ctrl: AbortController }> = ({ ctrl }, ref) => {
   const { t } = useTranslation();
   const {
-    scrollRef,
     replyLoading,
     handleChat,
     appInfo,
