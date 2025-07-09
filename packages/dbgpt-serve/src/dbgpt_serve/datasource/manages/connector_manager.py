@@ -210,7 +210,11 @@ class ConnectorManager(BaseComponent):
                 db_json = {}
                 schema = None
             return connect_instance.from_uri_db(  # type: ignore
-                host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name,
+                host=db_host,
+                port=db_port,
+                user=db_user,
+                pwd=db_pwd,
+                db_name=db_name,
                 schema=schema,
             )
 
