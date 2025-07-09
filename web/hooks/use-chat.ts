@@ -90,10 +90,10 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               if (scene === 'chat_agent') {
                 message = JSON.parse(message).vis;
               } else {
-                message = JSON.parse(message);
+                message = JSON.parse(message).vis;
               }
             } catch {
-              message.replaceAll('\\n', '\n');
+              // message.replaceAll('\\n', '\n');
             }
             if (typeof message === 'string') {
               if (message === '[DONE]') {

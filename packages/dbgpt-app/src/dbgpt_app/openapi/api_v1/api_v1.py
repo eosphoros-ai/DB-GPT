@@ -790,8 +790,8 @@ async def stream_generator(
                     yield f"data: {_content}\n\n"
             else:
                 msg = chunk.replace("\ufffd", "")
-                msg = msg.replace("\n", "\\n")
-                yield f"data:{msg}\n\n"
+                msg_json = json.dumps({"vis": msg}, ensure_ascii=False)
+                yield f"data:{msg_json}\n\n"
             await asyncio.sleep(0.02)
         if incremental:
             yield "data: [DONE]\n\n"
