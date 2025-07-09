@@ -24,6 +24,7 @@ class DBType(Enum):
     Oracle = DbInfo("oracle")
     MSSQL = DbInfo("mssql")
     Postgresql = DbInfo("postgresql")
+    GaussDB = DbInfo("gaussdb")
     Vertica = DbInfo("vertica")
     Clickhouse = DbInfo("clickhouse")
     StarRocks = DbInfo("starrocks")
