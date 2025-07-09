@@ -200,8 +200,18 @@ class ConnectorManager(BaseComponent):
             db_port = db_config.get("db_port")
             db_user = db_config.get("db_user")
             db_pwd = db_config.get("db_pwd")
+
+            try:
+                ext_config = db_config.get("ext_config")
+                db_json = json.loads(ext_config)
+                schema = db_json.get("schema", None)
+            except json.JSONDecodeError:
+                # 处理解码失败的情况
+                db_json = {}
+                schema = None
             return connect_instance.from_uri_db(  # type: ignore
-                host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
+                host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name,
+                schema=schema,
             )
 
     def _create_parameters(
