@@ -10,11 +10,10 @@ import { useAsyncEffect } from 'ahooks';
 import { Modal } from 'antd';
 import { cloneDeep } from 'lodash';
 import { useSearchParams } from 'next/navigation';
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
 const ChatCompletion: React.FC = () => {
-  const scrollableRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
 
@@ -79,14 +78,8 @@ const ChatCompletion: React.FC = () => {
     }
   }, [chatId, currentDialogInfo]);
 
-  useEffect(() => {
-    setTimeout(() => {
-      scrollableRef.current?.scrollTo(0, scrollableRef.current?.scrollHeight);
-    }, 50);
-  }, [history, history[history.length - 1]?.context]);
-
   return (
-    <div className='flex flex-col w-5/6 mx-auto' ref={scrollableRef}>
+    <div className='flex flex-col w-5/6 mx-auto'>
       {!!showMessages.length &&
         showMessages.map((content, index) => {
           return (
