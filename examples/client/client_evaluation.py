@@ -83,9 +83,12 @@ async def main():
             }
         ],
     )
-    data = await run_evaluation(client, request=request)
-    print(data)
-
+    try:
+        data = await run_evaluation(client, request=request)
+        print(data)
+    finally:
+        # explicitly close client to avoid event loop closed error
+        await client.aclose()
 
 if __name__ == "__main__":
     asyncio.run(main())
