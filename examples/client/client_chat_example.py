@@ -57,12 +57,16 @@ async def main():
     # initialize client
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
-    data = await client.chat(model="Qwen2.5-72B-Instruct", messages="hello")
+    try:
+        data = await client.chat(model="Qwen2.5-72B-Instruct", messages="hello")
+        print(data)
+    finally:
+        # explicitly close client to avoid event loop closed error
+        await client.aclose()
     # async for data in client.chat_stream(
     #     model="chatgpt_proxyllm",
     #     messages="hello",
     # ):
-    print(data)
 
     # res = await client.chat(model="chatgpt_proxyllm" ,messages="hello")
     # print(res)
