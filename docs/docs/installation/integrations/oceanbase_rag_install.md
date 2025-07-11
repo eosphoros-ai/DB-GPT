@@ -1,4 +1,4 @@
-# Oceanbase Vector RAG
+# OceanBase Vector RAG
 
 
 In this example, we will show how to use the Oceanbase Vector as in DB-GPT RAG Storage. Using a graph database to implement RAG can, to some extent, alleviate the uncertainty and interpretability issues brought about by vector database retrieval.
@@ -17,12 +17,12 @@ uv sync --all-packages \
 --extra "dbgpts"
 ````
 
-### Prepare Oceanbase Vector
+### Prepare OceanBase Vector
 
 Prepare Oceanbase Vector database service, reference[Oceanbase Vector](https://open.oceanbase.com/) .
 
 
-### TuGraph Configuration
+### OceanBase Configuration
 
 Set rag storage variables below in `configs/dbgpt-proxy-openai.toml` file, let DB-GPT know how to connect to Oceanbase Vector.
 
