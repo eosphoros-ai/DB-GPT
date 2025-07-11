@@ -13,12 +13,12 @@ from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 logger = logging.getLogger(__name__)
 
 
-class DeepSearchModel(BaseModel):
-    """Chart item model."""
-    status: str = Field(
-        ...,
-        description="The status of the current action, can be split_query, summary, or reflection.",
-    )
+class SplitQueryModel(BaseModel):
+    """Model for splitting queries in deep search actions."""
+    # status: str = Field(
+    #     ...,
+    #     description="The status of the current action, can be split_query, summary, or reflection.",
+    # )
     tools: List[dict] = Field(
         default_factory=list,
         description="List of tools to be used in the action.",
@@ -37,11 +37,40 @@ class DeepSearchModel(BaseModel):
         return model_to_dict(self)
 
 
+class ReflectionModel(BaseModel):
+    """Model for Reflection."""
+    status: str = Field(
+        default_factory=list,
+        description="List of tools to be used in the action.",
+    )
+    knowledge_gap: str = Field(
+        ...,
+        description="The intention of the current action, describing what you want to achieve.",
+    )
+    sub_queries: List[str] = Field(
+        default_factory=list,
+        description="List of sub-queries generated from the current action.",
+    )
+    tools: List[dict] = Field(
+        default_factory=list,
+        description="List of tools to be used in the action.",
+    )
+    thought: str = Field(
+        ...,
+        description="The thought of the current action, describing what you want to achieve.",
+    )
+
+    def to_dict(self):
+        """Convert to dict."""
+        return model_to_dict(self)
+
+
 class DeepSearchAction(ToolAction):
     """React action class."""
 
     def __init__(self, **kwargs):
         """Tool action init."""
+        self.state = "split_query"
         super().__init__(**kwargs)
 
     @property
@@ -73,8 +102,9 @@ class DeepSearchAction(ToolAction):
     ) -> ActionOutput:
         """Perform the action."""
         try:
-            action_param: DeepSearchModel = self._input_convert(
-                ai_message, DeepSearchModel
+            # state = "split_query"
+            action_param: ReflectionModel = self._input_convert(
+                ai_message, ReflectionModel
             )
         except Exception as e:
             logger.exception(str(e))
@@ -83,29 +113,34 @@ class DeepSearchAction(ToolAction):
                 content="The requested correctly structured answer could not be found.",
             )
 
-        if action_param.status == "split_query":
-            sub_queries = action_param.sub_queries
-            # execute knowledge search
-            if not action_param.tools:
-                return ActionOutput(
-                    is_exe_success=False,
-                    content="No tools available for knowledge search.",
-                )
-            if action_param.tools:
-                for tool in action_param.tools:
-                    if tool.get("tool_type") == "KnowledgeRetrieve":
-                        knowledge_args = action_param.get("args", {})
-                        if not knowledge_args:
-                            return ActionOutput(
-                                is_exe_success=False,
-                                content="No arguments provided for knowledge search.",
-                            )
-                        act_out = await self.knowledge_retrieve(
-                            sub_queries,
-                            knowledge_args,
-                            self.resource,
+        sub_queries = action_param.sub_queries
+        if action_param.status == "summarize":
+            return ActionOutput(
+                is_exe_success=True,
+                content=action_param.thought,
+                terminate=True,
+            )
+        if not action_param.tools:
+            return ActionOutput(
+                is_exe_success=False,
+                content="No tools available for knowledge search.",
+            )
+        if action_param.tools:
+            for tool in action_param.tools:
+                # state = "knowledge_search"
+                if tool.get("tool_type") == "KnowledgeRetrieve":
+                    knowledge_args = tool.get("args", {})
+                    if not knowledge_args:
+                        return ActionOutput(
+                            is_exe_success=False,
+                            content="No arguments provided for knowledge search.",
                         )
-
+                    act_out = await self.knowledge_retrieve(
+                        sub_queries,
+                        knowledge_args,
+                        self.resource,
+                    )
+        act_out.terminate = False
 
         # if "parser" in kwargs and isinstance(kwargs["parser"], ReActOutputParser):
         #     parser = kwargs["parser"]
@@ -138,20 +173,16 @@ class DeepSearchAction(ToolAction):
                 lang=self.language, question=query
             )
             query_context_map[query] = resource_prompt
+        content = "\n".join([
+            f"{query}:{context}" for query, context in query_context_map.items()]
+        )
         action_output = ActionOutput(
             is_exe_success=True,
-            content="\n".join([
-                f"{query}:{context}" for query, context in query_context_map.items()]
-            ),
-            view="\n".join([
-                f"{query}:{context}" for query, context in query_context_map.items()]
-            ),
-            observations=query_context_map,
+            content=content,
+            view=content,
+            observations=content,
         )
         return action_output
-
-
-
 
     async def _do_run(
         self,

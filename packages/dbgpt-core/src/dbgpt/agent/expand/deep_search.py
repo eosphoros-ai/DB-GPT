@@ -74,29 +74,36 @@ selecting the right search tools.
 # The current time is: {{ now_time }}.
 # """
 _DEEPSEARCH_SYSTEM_TEMPLATE = """
-你是一个深度搜索助手。你的任务是你将用户原始问题一个或者多个子问题，并且给出可用知识库工具和搜索工具来回答问题或解决问题。
+你是一个深度搜索助手。
+<目标>
+你的任务是根据用户的问题或任务，选择合适的知识检索工具和搜索工具来回答问题或解决问题。
+你需要根据已经搜到的知识和搜索到的信息:
+{{most_recent_memories}}判断是否需要更多的知识或信息来回答问题。
+如果需要更多的知识或信息，你需要提出后续的子问题来扩展你的理解。
+</目标>
 
 <可用工具>
 1. KnowledgeRetrieve: 查询内部知识库以获取信息。\n可用知识库: {{knowledge_tools}}
 2. WebSearch: 进行互联网搜索以获取最新或额外信息。\n 可用搜索工具: {{search_tools}}
-3. 总结: 对多个来源的信息进行总结和综合。
 </可用工具>
 
 <流程>
 1. 分析任务并创建搜索计划。
 2. 选择使用一个或多个工具收集信息。
+3. 对收集到的信息进行反思，判断是否足够回答问题。
 </流程>
 
 <回复格式>
 严格按以下JSON格式输出，确保可直接解析：
 {
-  "status": "split_query (拆解搜索计划) | summary (仅当可用知识可以回答用户问题) | reflection (反思) "
   "tools": [{
     "tool_type": "工具类型"
     "args": "args1",
   }],
   "intention": "当前你的意图,
-  "sub_queries": [],
+  "sub_queries": ["子问题1", "子问题2"],
+  "knowledge_gap": "总结缺乏关于性能指标和基准的信息",
+  "status": "reflection(反思) | summarize(最后总结)",
 }
 </回复格式>
 
@@ -116,13 +123,14 @@ _DEEPSEARCH_SYSTEM_TEMPLATE = """
 : 2022年诺贝尔文学奖得主
 返回
 {
-  "status": "split_query"
+  "status": "reflection"
   "tools"?: [{
     "tool_type": "KnowledgeRetrieve"
     "args": "knowledge_name",
   }],
   "intention": "你的拆解意图,
-  "sub_queries": [],
+  "knowledge_gap": "总结缺乏关于2022年诺贝尔文学奖得主的信息",
+  "sub_queries": ["子问题1","子问题2"],
 }
 </示例>
 
@@ -135,6 +143,36 @@ _DEEPSEARCH_SYSTEM_TEMPLATE = """
 """
 
 _DEEPSEARCH_USER_TEMPLATE = """"""
+_DEEPSEARCH_FINIAL_SUMMARY_TEMPLATE = """
+<GOAL>
+Generate a high-quality summary of the provided context.
+</GOAL>
+
+<REQUIREMENTS>
+When creating a NEW summary:
+1. Highlight the most relevant information related to the user topic from the search results
+2. Ensure a coherent flow of information
+
+When EXTENDING an existing summary:  
+{{most_recent_memories}}                                                                                                               
+1. Read the existing summary and new search results carefully.                                                    
+2. Compare the new information with the existing summary.                                                         
+3. For each piece of new information:                                                                             
+    a. If it's related to existing points, integrate it into the relevant paragraph.                               
+    b. If it's entirely new but relevant, add a new paragraph with a smooth transition.                            
+    c. If it's not relevant to the user topic, skip it.                                                            
+4. Ensure all additions are relevant to the user's topic.                                                         
+5. Verify that your final output differs from the input summary.                                                                                                                                                            
+< /REQUIREMENTS >
+
+< FORMATTING >
+- Start directly with the updated summary, without preamble or titles. Do not use XML tags in the output.  
+< /FORMATTING >
+
+<Task>
+Think carefully about the provided Context first. Then generate a summary of the context to address the User Input.
+</Task>
+"""
 
 
 _REACT_WRITE_MEMORY_TEMPLATE = """\
@@ -176,42 +214,7 @@ class DeepSearchAgent(ConversableAgent):
         """Init indicator AssistantAgent."""
         super().__init__(**kwargs)
 
-        self._init_actions([DeepSearchAction, Terminate])
-
-    # async def _a_init_reply_message(
-    #     self,
-    #     received_message: AgentMessage,
-    #     rely_messages: Optional[List[AgentMessage]] = None,
-    # ) -> AgentMessage:
-    #     reply_message = super()._init_reply_message(received_message, rely_messages)
-    #
-    #     tool_packs = ToolPack.from_resource(self.resource)
-    #     action_space = []
-    #     action_space_names = []
-    #     action_space_simple_desc = []
-    #     if tool_packs:
-    #         tool_pack = tool_packs[0]
-    #         for tool in tool_pack.sub_resources:
-    #             tool_desc, _ = await tool.get_prompt(lang=self.language)
-    #             action_space_names.append(tool.name)
-    #             action_space.append(tool_desc)
-    #             if isinstance(tool, BaseTool):
-    #                 tool_simple_desc = tool.description
-    #             else:
-    #                 tool_simple_desc = tool.get_prompt()
-    #             action_space_simple_desc.append(f"{tool.name}: {tool_simple_desc}")
-    #     else:
-    #         for action in self.actions:
-    #             action_space_names.append(action.name)
-    #             action_space.append(action.get_action_description())
-    #         # self.actions
-    #     reply_message.context = {
-    #         "max_steps": self.max_retry_count,
-    #         "action_space": "\n".join(action_space),
-    #         "action_space_names": ", ".join(action_space_names),
-    #         "action_space_simple_desc": "\n".join(action_space_simple_desc),
-    #     }
-    #     return reply_message
+        self._init_actions([DeepSearchAction])
 
     async def preload_resource(self) -> None:
         await super().preload_resource()
@@ -289,13 +292,43 @@ class DeepSearchAgent(ConversableAgent):
                         "knowledge_desc": self.resource.retriever_desc,
                     })
 
-            # new_resource = self.resource.apply(apply_func=_remove_tool)
-            # if new_resource:
-            #     resource_prompt, resource_reference = await new_resource.get_prompt(
-            #         lang=self.language, question=question
-            #     )
-            #     return resource_prompt, resource_reference
         return json.dumps(abilities, ensure_ascii=False), []
+
+    async def build_system_prompt(
+        self,
+        question: Optional[str] = None,
+        most_recent_memories: Optional[str] = None,
+        resource_vars: Optional[Dict] = None,
+        context: Optional[Dict[str, Any]] = None,
+        is_retry_chat: bool = False,
+    ):
+        """Build system prompt."""
+        system_prompt = None
+        if self.bind_prompt:
+            prompt_param = {}
+            if resource_vars:
+                prompt_param.update(resource_vars)
+            if context:
+                prompt_param.update(context)
+            if self.bind_prompt.template_format == "f-string":
+                system_prompt = self.bind_prompt.template.format(
+                    **prompt_param,
+                )
+            elif self.bind_prompt.template_format == "jinja2":
+                system_prompt = Template(self.bind_prompt.template).render(prompt_param)
+            else:
+                logger.warning("Bind prompt template not exsit or  format not support!")
+        if not system_prompt:
+            param: Dict = context if context else {}
+            system_prompt = await self.build_prompt(
+                question=question,
+                is_system=True,
+                most_recent_memories=most_recent_memories,
+                resource_vars=resource_vars,
+                is_retry_chat=is_retry_chat,
+                **param,
+            )
+        return system_prompt
 
     def prepare_act_param(
         self,
@@ -350,6 +383,8 @@ class DeepSearchAgent(ConversableAgent):
                     rely_action_out=last_out,
                     **kwargs,
                 )
+                if not last_out.terminate:
+                    self.profile.system_prompt_template = _DEEPSEARCH_FINIAL_SUMMARY_TEMPLATE
                 span.metadata["action_out"] = last_out.to_dict() if last_out else None
         if not last_out:
             raise ValueError("Action should return value！")
@@ -366,7 +401,7 @@ class DeepSearchAgent(ConversableAgent):
     ) -> Union[str, List["AgentMessage"]]:
         memories = await self.memory.read(observation)
         not_json_memories = []
-        messages = []
+        # messages = []
         structured_memories = []
         for m in memories:
             if m.raw_observation:
@@ -381,46 +416,48 @@ class DeepSearchAgent(ConversableAgent):
                 except Exception:
                     not_json_memories.append(m.raw_observation)
 
-        for mem_dict in structured_memories:
-            question = mem_dict.get("question")
-            thought = mem_dict.get("thought")
-            action = mem_dict.get("action")
-            action_input = mem_dict.get("action_input")
-            observation = mem_dict.get("observation")
-            if question:
-                messages.append(
-                    AgentMessage(
-                        content=f"Question: {question}",
-                        role=ModelMessageRoleType.HUMAN,
-                    )
-                )
-            ai_content = []
-            if thought:
-                ai_content.append(f"Thought: {thought}")
-            if action:
-                ai_content.append(f"Action: {action}")
-            if action_input:
-                ai_content.append(f"Action Input: {action_input}")
-            messages.append(
-                AgentMessage(
-                    content="\n".join(ai_content),
-                    role=ModelMessageRoleType.AI,
-                )
-            )
-
-            if observation:
-                messages.append(
-                    AgentMessage(
-                        content=f"Observation: {observation}",
-                        role=ModelMessageRoleType.HUMAN,
-                    )
-                )
-
-        if not messages and not_json_memories:
-            messages.append(
-                AgentMessage(
-                    content="\n".join(not_json_memories),
-                    role=ModelMessageRoleType.HUMAN,
-                )
-            )
-        return messages
+        # for mem_dict in structured_memories:
+        #     question = mem_dict.get("question")
+        #     thought = mem_dict.get("thought")
+        #     action = mem_dict.get("action")
+        #     action_input = mem_dict.get("action_input")
+        #     observation = mem_dict.get("observation")
+        #     if question:
+        #         messages.append(
+        #             AgentMessage(
+        #                 content=f"Question: {question}",
+        #                 role=ModelMessageRoleType.HUMAN,
+        #             )
+        #         )
+        #     ai_content = []
+        #     if thought:
+        #         ai_content.append(f"Thought: {thought}")
+        #     if action:
+        #         ai_content.append(f"Action: {action}")
+        #     if action_input:
+        #         ai_content.append(f"Action Input: {action_input}")
+        #     messages.append(
+        #         AgentMessage(
+        #             content="\n".join(ai_content),
+        #             role=ModelMessageRoleType.AI,
+        #         )
+        #     )
+        #
+        #     if observation:
+        #         messages.append(
+        #             AgentMessage(
+        #                 content=f"Observation: {observation}",
+        #                 role=ModelMessageRoleType.HUMAN,
+        #             )
+        #         )
+        #
+        # if not messages and not_json_memories:
+        #     messages.append(
+        #         AgentMessage(
+        #             content="\n".join(not_json_memories),
+        #             role=ModelMessageRoleType.HUMAN,
+        #         )
+        #     )
+        return "\n".join([
+            mem_dict.get("observation") for mem_dict in structured_memories
+        ])
