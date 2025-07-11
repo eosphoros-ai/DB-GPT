@@ -90,5 +90,6 @@ async def main():
         # explicitly close client to avoid event loop closed error
         await client.aclose()
 
+
 if __name__ == "__main__":
     asyncio.run(main())
