@@ -204,7 +204,7 @@ class OceanBaseStore(VectorStoreBase):
                 "Please install it with `pip install pyobvector`."
             )
 
-        if vector_store_config.embedding_fn is None:
+        if embedding_fn is None:
             raise ValueError("embedding_fn is required for OceanBaseStore")
 
         super().__init__(
