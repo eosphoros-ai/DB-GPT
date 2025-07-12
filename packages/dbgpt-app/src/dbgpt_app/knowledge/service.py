@@ -3,7 +3,7 @@ import logging
 import re
 import timeit
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
@@ -641,3 +641,14 @@ class KnowledgeService:
                 }
             )
         return res
+
+    def get_retrieve_strategy_list(self) -> List[Dict]:
+        """get retrieve model list
+        retrieve strategy: dbgpt.rag.retriever.base.RetrieverStrategy
+        """
+        return [
+            {"name": "SEMANTIC", "name_cn": "语义检索", "value": "SEMANTIC"},
+            {"name": "KEYWORD", "name_cn": "全文检索", "value": "KEYWORD"},
+            {"name": "Tree", "name_cn": "树形检索", "value": "Tree"},
+            {"name": "HYBRID", "name_cn": "混合检索", "value": "HYBRID"},
+        ]

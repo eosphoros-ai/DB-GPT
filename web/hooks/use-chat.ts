@@ -46,23 +46,14 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
         });
       }
 
-      // Debug: Log the params object to verify prompt_code is included
-      console.log('DEBUG - API request params:', params);
-      console.log('DEBUG - prompt_code in params:', params.prompt_code);
-      console.log('DEBUG - data object received:', data);
-
       try {
-        // Debug: Log the actual request body that will be sent
-        const requestBody = JSON.stringify(params);
-        console.log('DEBUG - API request body:', requestBody);
-
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             [HEADER_USER_ID_KEY]: getUserId() ?? '',
           },
-          body: requestBody,
+          body: JSON.stringify(params),
           signal: ctrl ? ctrl.signal : null,
           openWhenHidden: true,
           async onopen(response) {
