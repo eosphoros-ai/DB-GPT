@@ -79,9 +79,7 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
         currentScrollRef.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [handleScroll]);
-
-  const scrollToBottomSmooth = useCallback((forceScroll = false) => {
+  }, [handleScroll]);  const scrollToBottomSmooth = useCallback((forceScroll = false) => {
     if (!scrollRef.current) return;
 
     // For force scroll (new messages), bypass allowAutoScroll check
@@ -119,9 +117,7 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
   const lastMessage = useMemo(() => {
     const last = history[history.length - 1];
     return last ? { context: last.context, thinking: last.thinking } : null;
-  }, [history]);
-
-  // Track previous history length to detect new messages
+  }, [history]);  // Track previous history length to detect new messages
   const prevHistoryLengthRef = useRef(history.length);
 
   useEffect(() => {
@@ -153,9 +149,7 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, []);
-
-  const scrollToTop = useCallback(() => {
+  }, []);  const scrollToTop = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: 0,
@@ -181,23 +175,23 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
       </div>
 
       {showScrollButtons && (
-        <div className='absolute right-6 bottom-24 flex flex-col gap-2'>
+        <div className='absolute right-4 md:right-6 bottom-[120px] md:bottom-[100px] flex flex-col gap-2 z-[999]'>
           {!isAtTop && (
             <button
               onClick={scrollToTop}
-              className='w-10 h-10 bg-white dark:bg-[rgba(255,255,255,0.2)] border border-gray-200 dark:border-[rgba(255,255,255,0.2)] rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow'
+              className='w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-[rgba(255,255,255,0.2)] border border-gray-200 dark:border-[rgba(255,255,255,0.2)] rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200'
               aria-label='Scroll to top'
             >
-              <VerticalAlignTopOutlined className='text-[#525964] dark:text-[rgba(255,255,255,0.85)]' />
+              <VerticalAlignTopOutlined className='text-[#525964] dark:text-[rgba(255,255,255,0.85)] text-sm md:text-base' />
             </button>
           )}
           {!isAtBottom && (
             <button
               onClick={scrollToBottom}
-              className='w-10 h-10 bg-white dark:bg-[rgba(255,255,255,0.2)] border border-gray-200 dark:border-[rgba(255,255,255,0.2)] rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow'
+              className='w-9 h-9 md:w-10 md:h-10 bg-white dark:bg-[rgba(255,255,255,0.2)] border border-gray-200 dark:border-[rgba(255,255,255,0.2)] rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200'
               aria-label='Scroll to bottom'
             >
-              <VerticalAlignBottomOutlined className='text-[#525964] dark:text-[rgba(255,255,255,0.85)]' />
+              <VerticalAlignBottomOutlined className='text-[#525964] dark:text-[rgba(255,255,255,0.85)] text-sm md:text-base' />
             </button>
           )}
         </div>
