@@ -24,15 +24,20 @@ docker pull eosphorosai/dbgpt-openai:latest
 
 2. Run the Docker container
 
-This example requires you previde a valid API key for the SiliconFlow API. You can obtain one by signing up at [SiliconFlow](https://siliconflow.cn/) and creating an API key at [API Key](https://cloud.siliconflow.cn/account/ak).
+This example requires you provide a valid API key for the SiliconFlow API. You can obtain one by signing up at [SiliconFlow](https://siliconflow.cn/) and creating an API key at [API Key](https://cloud.siliconflow.cn/account/ak). Alternatively, set `AIMLAPI_API_KEY` to use the AI/ML API service.
 
 
 ```bash
 docker run -it --rm -e SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY} \
  -p 5670:5670 --name dbgpt eosphorosai/dbgpt-openai
 ```
+Or with AI/ML API:
+```bash
+docker run -it --rm -e AIMLAPI_API_KEY=${AIMLAPI_API_KEY} \
+ -p 5670:5670 --name dbgpt eosphorosai/dbgpt-openai
+```
 
-Please replace `${SILICONFLOW_API_KEY}` with your own API key.
+Please replace `${SILICONFLOW_API_KEY}` or `${AIMLAPI_API_KEY}` with your own API key.
 
 
 Then you can visit [http://localhost:5670](http://localhost:5670) in the browser.

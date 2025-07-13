@@ -2,11 +2,16 @@
 
 ## Run via Docker-Compose
 
-This example requires you previde a valid API key for the SiliconFlow API. You can obtain one by signing up at [SiliconFlow](https://siliconflow.cn/) and creating an API key at [API Key](https://cloud.siliconflow.cn/account/ak).
+This example requires you provide a valid API key for the SiliconFlow API. You can obtain one by signing up at [SiliconFlow](https://siliconflow.cn/) and creating an API key at [API Key](https://cloud.siliconflow.cn/account/ak).
+Alternatively you can use the [AI/ML API](https://aimlapi.com/) by setting `AIMLAPI_API_KEY`.
 
 
 ```bash
 SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY} docker compose up -d
+```
+Or use AI/ML API:
+```bash
+AIMLAPI_API_KEY=${AIMLAPI_API_KEY} docker compose up -d
 ```
 
 You will see the following output if the deployment is successful.
