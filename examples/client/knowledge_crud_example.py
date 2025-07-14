@@ -75,16 +75,20 @@ async def main():
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
 
-    res = await create_space(
-        client,
-        SpaceModel(
-            name="test_space_1",
-            vector_type="Chroma",
-            desc="for client space desc",
-            owner="dbgpt",
-        ),
-    )
-    print(res)
+    try:
+        res = await create_space(
+            client,
+            SpaceModel(
+                name="test_space_1",
+                vector_type="Chroma",
+                desc="for client space desc",
+                owner="dbgpt",
+            ),
+        )
+        print(res)
+    finally:
+        # explicitly close client to avoid event loop closed error
+        await client.aclose()
 
     # list all spaces
     # res = await list_space(client)
