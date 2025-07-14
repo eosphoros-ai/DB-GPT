@@ -135,7 +135,7 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit, chat_scene }) => {
         onOpenChange={handleOpenChange}
       >
         <Tooltip title={t('Click_Select') + ' Prompt'}>
-          <FloatButton className='bottom-[30%]' />
+          <FloatButton className='right-4 md:right-6 bottom-[180px] md:bottom-[160px] z-[998]' />
         </Tooltip>
       </Popover>
     </ConfigProvider>

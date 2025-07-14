@@ -112,6 +112,44 @@ pre {
   padding-left: 0.5rem;
 }
 
+/* Floating buttons z-index system */
+.z-float-helper {
+  z-index: 997;
+}
+
+.z-prompt-bot {
+  z-index: 998;
+}
+
+.z-scroll-buttons {
+  z-index: 999;
+}
+
+/* Responsive floating button layout */
+@media (max-width: 768px) {
+  .float-button-container {
+    right: 1rem !important;
+    gap: 0.5rem;
+  }
+  
+  .float-button-container button {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .float-button-container {
+    right: 1.5rem !important;
+    gap: 0.5rem;
+  }
+  
+  .float-button-container button {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+}
+
 table {
   display: block;
   width: 100%;
