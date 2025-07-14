@@ -730,7 +730,7 @@ class MilvusStore(VectorStoreBase):
     def truncate(self):
         """检测pymilvus安装"""
         try:
-            from pymilvus import Collection, utility       
+            from pymilvus import Collection, utility
         except ImportError:
             raise ValueError(
                 "Could not import pymilvus python package. "
@@ -749,8 +749,9 @@ class MilvusStore(VectorStoreBase):
             collection.flush()
             logger.info(f"Truncate Milvus collection {self.collection_name} success")
         else:
-            logger.warning(f"Collection {self.collection_name} not found, skip truncate.")
-        
+            logger.warning(
+                f"Collection {self.collection_name} not found, skip truncate."
+            )
 
     def full_text_search(
         self, text: str, topk: int = 10, filters: Optional[MetadataFilters] = None
