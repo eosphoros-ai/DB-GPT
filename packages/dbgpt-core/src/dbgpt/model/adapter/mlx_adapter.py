@@ -116,12 +116,11 @@ class MLXModelAdapter(LLMModelAdapter):
                 messages, convert_to_compatible_format
             )
             logger.debug(f"The messages after transform: \n{messages}")
-            #wendell-debug 确保每个 message['content'] 是 str
             for msg in messages:
-                if isinstance(msg.get('content'), list):
-                    msg['content'] = ''.join([str(x) for x in msg['content']])
-                elif not isinstance(msg.get('content'), str):
-                    msg['content'] = str(msg.get('content'))
+                if isinstance(msg.get("content"), list):
+                    msg["content"] = "".join([str(x) for x in msg["content"]])
+                elif not isinstance(msg.get("content"), str):
+                    msg["content"] = str(msg.get("content"))
 
             str_prompt = tokenizer.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
