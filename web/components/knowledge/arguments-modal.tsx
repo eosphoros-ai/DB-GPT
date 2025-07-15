@@ -1,9 +1,9 @@
-import { Button, Col, Form, Input, Modal, Row, Spin, Tabs } from 'antd';
+import { Button, Col, Form, Input, Modal, Row, Select, Spin, Tabs } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { apiInterceptors, getArguments, saveArguments } from '@/client/api';
-import { IArguments, ISpace } from '@/types/knowledge';
+import { apiInterceptors, getArguments, getRetrieveStrategyList, saveArguments } from '@/client/api';
+import { IArguments, IRetrieveStrategy, ISpace } from '@/types/knowledge';
 import { AlertFilled, BookOutlined, FileSearchOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
@@ -14,18 +14,31 @@ interface IProps {
   setArgumentsShow: (argumentsShow: boolean) => void;
 }
 
+const getLocalizedName = (item: IRetrieveStrategy, currentLang: string): string => {
+  return currentLang === 'zh' ? item.name_cn : item.name;
+};
+
 export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow }: IProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [newSpaceArguments, setNewSpaceArguments] = useState<IArguments | null>();
+  const [retrieveModeList, setRetrieveModeList] = useState<Array<IRetrieveStrategy> | null>();
   const [spinning, setSpinning] = useState<boolean>(false);
+
+  const currentLanguage = i18n.language;
 
   const fetchArguments = async () => {
     const [_, data] = await apiInterceptors(getArguments(space.name));
     setNewSpaceArguments(data);
   };
 
+  const fetchRetrieveStrategyList = async () => {
+    const [_, data] = await apiInterceptors(getRetrieveStrategyList());
+    setRetrieveModeList(data);
+  };
+
   useEffect(() => {
     fetchArguments();
+    fetchRetrieveStrategyList();
   }, [space.name]);
 
   const renderEmbeddingForm = () => {
@@ -89,6 +102,22 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
             name={['embedding', 'chunk_overlap']}
           >
             <Input className='mb-5  h-12' placeholder={t('Please_input_the_description')} />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item<IArguments>
+            tooltip={t(`The_strategy_of_query_retrival`)}
+            rules={[{ required: true }]}
+            label={t('retrieve_mode')}
+            name={['embedding', 'retrieve_mode']}
+          >
+            <Select className='mb-5  h-12' placeholder={t('Please_input_the_description')}>
+              {retrieveModeList?.map((item: IRetrieveStrategy) => (
+                <Select.Option key={item.name} value={item.value}>
+                  {getLocalizedName(item, currentLanguage)}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
         </Col>
       </Row>

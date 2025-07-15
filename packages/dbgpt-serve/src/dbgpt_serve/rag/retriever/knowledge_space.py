@@ -1,6 +1,7 @@
 import ast
+import json
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.core import Chunk, Document, LLMClient
@@ -50,7 +51,6 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         self._llm_model = llm_model
         app_config = system_app.config.configs.get("app_config")
         self._top_k = top_k or app_config.rag.similarity_top_k
-        self._retrieve_mode = retrieve_mode or RetrieverStrategy.HYBRID.value
         self._embedding_model = embedding_model or app_config.models.default_embedding
         self._system_app = system_app
         embedding_factory = self._system_app.get_component(
@@ -68,6 +68,10 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             self._space.name,
             self._space.vector_type,
             self._llm_model,
+        )
+        context_retrieve_mode = self._extract_space_retrieve_mode(self._space)
+        self._retrieve_mode = (
+            retrieve_mode or context_retrieve_mode or RetrieverStrategy.SEMANTIC.value
         )
         self._executor = self._system_app.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
@@ -333,3 +337,23 @@ class KnowledgeSpaceRetriever(BaseRetriever):
                     )
                 )
         return result
+
+    def _extract_space_retrieve_mode(self, space: Any) -> str | None:
+        """Extract space context and retrieve mode."""
+        if space.context is not None:
+            try:
+                context = json.loads(space.context)
+                if not isinstance(context, dict):
+                    return None
+                embedding_config = context.get("embedding", {})
+                if not isinstance(embedding_config, dict):
+                    return None
+                retrieve_mode = embedding_config.get("retrieve_mode")
+                if retrieve_mode is None:
+                    return None
+                for strategy in RetrieverStrategy:
+                    if retrieve_mode == strategy.name:
+                        return strategy.value
+            except Exception as e:
+                logger.warning(f"Failed to parse space context: {e}")
+        return None

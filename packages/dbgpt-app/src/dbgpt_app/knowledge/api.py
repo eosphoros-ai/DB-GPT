@@ -126,6 +126,17 @@ def space_delete(request: KnowledgeSpaceRequest):
         return Result.failed(code="E000X", msg=f"space delete error {e}")
 
 
+@router.post("/knowledge/retrieve_strategy_list")
+async def retrieve_strategy_list():
+    try:
+        res = await blocking_func_to_async(
+            get_executor(), knowledge_space_service.get_retrieve_strategy_list
+        )
+        return Result.succ(res)
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"get retrieve strategy list error {e}")
+
+
 @router.post("/knowledge/{space_id}/arguments")
 async def arguments(space_id: str):
     logger.info(f"/knowledge/{space_id}/arguments params: {space_id}")
