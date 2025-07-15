@@ -1,0 +1,34 @@
+---
+title: "AI/ML API Proxy LLM Configuration"
+description: "AI/ML API proxy LLM configuration."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "Llm.v1.gpt-3.5-turbo-1106",
+  "description": "OpenAI-compatible chat completion request schema.",
+  "documentationUrl": "https://api.aimlapi.com/docs-public",
+  "parameters": [
+    { "name": "model", "type": "string", "required": true, "description": "ID of the model to use." },
+    { "name": "messages", "type": "array", "required": true, "description": "List of messages comprising the conversation." },
+    { "name": "max_completion_tokens", "type": "integer", "required": false, "description": "Maximum number of tokens to generate for completion." },
+    { "name": "max_tokens", "type": "integer", "required": false, "description": "Alias for max_completion_tokens." },
+    { "name": "stream", "type": "boolean", "required": false, "description": "Whether to stream back partial progress." },
+    { "name": "stream_options", "type": "object", "required": false, "description": "Additional options to control streaming behavior." },
+    { "name": "tools", "type": "array", "required": false, "description": "List of tools (functions or APIs) the model may call." },
+    { "name": "tool_choice", "type": "object", "required": false, "description": "Which tool the model should call, if any." },
+    { "name": "parallel_tool_calls", "type": "boolean", "required": false, "description": "Whether tools can be called in parallel." },
+    { "name": "n", "type": "integer", "required": false, "description": "How many completions to generate for each prompt." },
+    { "name": "stop", "type": "array|string", "required": false, "description": "Sequences where the model will stop generating further tokens." },
+    { "name": "logprobs", "type": "boolean", "required": false, "description": "Whether to include log probabilities for tokens." },
+    { "name": "top_logprobs", "type": "integer", "required": false, "description": "Number of most likely tokens to return logprobs for." },
+    { "name": "logit_bias", "type": "object", "required": false, "description": "Modify likelihood of specified tokens appearing in the completion." },
+    { "name": "frequency_penalty", "type": "number", "required": false, "description": "How much to penalize new tokens based on frequency." },
+    { "name": "presence_penalty", "type": "number", "required": false, "description": "How much to penalize new tokens based on whether they appear in the text so far." },
+    { "name": "seed", "type": "integer", "required": false, "description": "Seed for sampling (for reproducibility)." },
+    { "name": "temperature", "type": "number", "required": false, "description": "Sampling temperature to use (higher = more random)." },
+    { "name": "top_p", "type": "number", "required": false, "description": "Nucleus sampling (top-p) cutoff value." },
+    { "name": "response_format", "type": "object|string", "required": false, "description": "Format to return the completion in, such as 'json' or 'text'." }
+  ]
+}} />
