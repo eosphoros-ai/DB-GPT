@@ -21,6 +21,12 @@ export interface IPrompt {
   sub_chat_scene: string;
   user_name?: string;
   user_id?: string;
+  response_schema?: string;
+  input_variables?: string;
+  model?: string;
+  prompt_language?: string;
+  prompt_desc?: string;
+  prompt_code?: string;
 }
 
 export interface PromptTemplateProps {
