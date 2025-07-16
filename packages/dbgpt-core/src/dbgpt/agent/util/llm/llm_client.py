@@ -217,7 +217,6 @@ class AIWrapper:
             if not model_output:
                 raise ValueError("LLM generate stream is null!")
             parsed_output = model_output.gen_text_with_thinking()
-            parsed_output = parsed_output.strip().replace("\\n", "\n")
 
             if verbose:
                 print("\n", "-" * 80, flush=True, sep="")
