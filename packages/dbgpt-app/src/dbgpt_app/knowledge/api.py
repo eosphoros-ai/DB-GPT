@@ -563,7 +563,7 @@ async def document_summary(request: DocumentSummaryRequest):
 
         if not chat.prompt_template.stream_out:
             return StreamingResponse(
-                no_stream_generator(chat),
+                no_stream_generator(chat, request.model_name),
                 headers=headers,
                 media_type="text/event-stream",
             )

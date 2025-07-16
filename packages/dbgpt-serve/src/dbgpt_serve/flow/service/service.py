@@ -19,6 +19,7 @@ from dbgpt.core.awel.flow.flow_factory import (
 )
 from dbgpt.core.awel.trigger.http_trigger import CommonLLMHttpTrigger
 from dbgpt.core.awel.util.chat_util import (
+    _v1_create_completion_response,
     is_chat_flow_type,
     safe_chat_stream_with_dag_task,
     safe_chat_with_dag_task,
@@ -448,10 +449,17 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             if text:
                 text = text.replace("\n", "\\n")
             if output.error_code != 0:
-                yield f"data:[SERVER_ERROR]{text}\n\n"
+                yield _v1_create_completion_response(
+                    f"[SERVER_ERROR]{text}",
+                    None,
+                    model_name=request.model,
+                    stream_id=request.conv_uid,
+                )
                 break
             else:
-                yield f"data:{text}\n\n"
+                yield _v1_create_completion_response(
+                    text, None, model_name=request.model, stream_id=request.conv_uid
+                )
 
     async def chat_stream_openai(
         self, flow_uid: str, request: CommonLLMHttpRequestBody

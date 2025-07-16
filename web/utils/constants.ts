@@ -298,7 +298,7 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
   gaussdb: {
     label: 'GaussDB',
     icon: '/icons/gaussdb.png',
-    desc: 'Huawei\'s distributed database with PostgreSQL compatibility',
+    desc: "Huawei's distributed database with PostgreSQL compatibility",
   },
   vertica: {
     label: 'Vertica',
