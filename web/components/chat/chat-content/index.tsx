@@ -58,8 +58,7 @@ const pluginViewStatusMapper: Record<DBGPTView['status'], { bgClass: string; ico
 };
 
 function formatMarkdownVal(val: string) {
-  return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>')
-    .replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
+  return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
 }
 
 function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithChildren<Props>) {

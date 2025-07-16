@@ -17,14 +17,14 @@ from dbgpt.configs import TAG_KEY_KNOWLEDGE_CHAT_DOMAIN_TYPE
 from dbgpt.core import ModelOutput
 from dbgpt.core.awel import BaseOperator, CommonLLMHttpRequestBody
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.core.awel.util.chat_util import safe_chat_stream_with_dag_task
+from dbgpt.core.awel.util.chat_util import (
+    _v1_create_completion_response,
+    safe_chat_stream_with_dag_task,
+)
 from dbgpt.core.interface.file import FileStorageClient
 from dbgpt.core.schema.api import (
-    ChatCompletionResponse,
-    ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
-    ChatMessage,
     DeltaMessage,
     UsageInfo,
 )
@@ -545,10 +545,6 @@ async def chat_completions(
                 model=dialogue.model_name,
                 messages=dialogue.user_input,
                 stream=True,
-                # context=flow_ctx,
-                # temperature=
-                # max_new_tokens=
-                # enable_vis=
                 conv_uid=dialogue.conv_uid,
                 span_id=root_tracer.get_current_span_id(),
                 chat_mode=dialogue.chat_mode,
@@ -577,7 +573,7 @@ async def chat_completions(
 
             if not chat.prompt_template.stream_out:
                 return StreamingResponse(
-                    no_stream_generator(chat),
+                    no_stream_generator(chat, dialogue.model_name, dialogue.conv_uid),
                     headers=headers,
                     media_type="text/event-stream",
                 )
@@ -699,10 +695,11 @@ async def flow_stream_generator(func, incremental: bool, model_name: str):
         yield "data: [DONE]\n\n"
 
 
-async def no_stream_generator(chat):
+async def no_stream_generator(chat, model_name: str, conv_uid: Optional[str] = None):
     with root_tracer.start_span("no_stream_generator"):
         msg = await chat.nostream_call()
-        yield f"data: {msg}\n\n"
+        stream_id = conv_uid or f"chatcmpl-{str(uuid.uuid1())}"
+        yield _v1_create_completion_response(msg, None, model_name, stream_id)
 
 
 async def stream_generator(
@@ -711,7 +708,7 @@ async def stream_generator(
     model_name: str,
     text_output: bool = True,
     openai_format: bool = False,
-    conv_uid: str = None,
+    conv_uid: Optional[str] = None,
 ):
     """Generate streaming responses
 
@@ -766,32 +763,20 @@ async def stream_generator(
                     )
                     yield f"data: {_content}\n\n"
                 else:
-                    choice_data = ChatCompletionResponseChoice(
-                        index=0,
-                        message=ChatMessage(
-                            role="assistant",
-                            content=output.text,
-                            reasoning_content=output.thinking_text,
-                        ),
-                    )
                     if output.usage:
                         usage = UsageInfo(**output.usage)
                     else:
                         usage = UsageInfo()
-                    _content = ChatCompletionResponse(
-                        id=stream_id,
-                        choices=[choice_data],
-                        model=model_name,
-                        usage=usage,
+                    _content = _v1_create_completion_response(
+                        text, think_text, model_name, stream_id, usage
                     )
-                    _content = json.dumps(
-                        chunk.dict(exclude_unset=True), ensure_ascii=False
-                    )
-                    yield f"data: {_content}\n\n"
+                    yield _content
             else:
                 msg = chunk.replace("\ufffd", "")
-                msg_json = json.dumps({"vis": msg}, ensure_ascii=False)
-                yield f"data:{msg_json}\n\n"
+                _content = _v1_create_completion_response(
+                    msg, None, model_name, stream_id
+                )
+                yield _content
             await asyncio.sleep(0.02)
         if incremental:
             yield "data: [DONE]\n\n"
@@ -866,7 +851,11 @@ async def chat_with_domain_flow(dialogue: ConversationVo, domain_type: str):
         if text:
             text = text.replace("\n", "\\n")
         if output.error_code != 0:
-            yield f"data:[SERVER_ERROR]{text}\n\n"
+            yield _v1_create_completion_response(
+                f"[SERVER_ERROR]{text}", None, dialogue.model_name, dialogue.conv_uid
+            )
             break
         else:
-            yield f"data:{text}\n\n"
+            yield _v1_create_completion_response(
+                text, None, dialogue.model_name, dialogue.conv_uid
+            )

@@ -69,8 +69,7 @@ const ChatDialog: React.FC<{
   }, [context]);
 
   const formatMarkdownVal = (val: string) => {
-    return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>')
-      .replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
+    return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
   };
 
   const formatMarkdownValForAgent = (val: string) => {
