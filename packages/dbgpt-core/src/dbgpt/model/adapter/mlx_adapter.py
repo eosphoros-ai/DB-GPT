@@ -116,6 +116,12 @@ class MLXModelAdapter(LLMModelAdapter):
                 messages, convert_to_compatible_format
             )
             logger.debug(f"The messages after transform: \n{messages}")
+            for msg in messages:
+                if isinstance(msg.get("content"), list):
+                    msg["content"] = "".join([str(x) for x in msg["content"]])
+                elif not isinstance(msg.get("content"), str):
+                    msg["content"] = str(msg.get("content"))
+
             str_prompt = tokenizer.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )

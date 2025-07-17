@@ -34,6 +34,8 @@ been properly selected in the preceding CTE or query
 especially for columns used in sorting and joining
 4. If a column doesn't need an exact value, you can use the ANY_VALUE() function as an \
 alternative
+5. If the date field is not of DATE or TIMESTAMP type (e.g., it is a string), you must \ 
+use STRPTIME(date, '%Y-%m-%d') to convert it to DATE before using STRFTIME to extract the year or other parts. For example: strftime(strptime(date, '%Y-%m-%d'), '%Y')
 ``````
 Based on the data structure information provided, please answer the user's questions \
 through DuckDB SQL data analysis while meeting the following constraints.
@@ -45,14 +47,15 @@ Constraints:
 	data rendering, and put the type name in the name parameter value of the required \
 	return format. If you cannot find the most suitable one, use 'Table' as the \
 	display method. Available data display methods are: {display_type}
-	3. The table name to be used in the SQL is: {table_name}. Please check your \
+	In SQL, you must strictly use the table name {table_name} - using any other table name is prohibited!
+    4. The table name to be used in the SQL is: {table_name}. Please check your \
 	generated SQL and do not use column names that are not in the data structure
-	4. Prioritize using data analysis methods to answer. If the user's question does \
+	5. Prioritize using data analysis methods to answer. If the user's question does \
 	not involve data analysis content, you can answer based on your understanding
-    5. DuckDB processes timestamps using dedicated functions (like to_timestamp()) \
-    instead of direct CAST
-    6. Please note that comment lines should be on a separate line and not on the same 
-	7. Convert the SQL part in the output content to: \
+    6. parses string to date/time using STRPTIME(date_string, format_string), \ 
+    e.g., STRPTIME('2023.04.24', '%Y.%m.%d')
+    7. Please note that comment lines should be on a separate line and not on the same 
+	8. Convert the SQL part in the output content to: \
 	<api-call><name>[display method]</name><args><sql>\
 	[correct duckdb data analysis sql]</sql></args></api-call> \
 	format, refer to the return format requirements
@@ -128,6 +131,8 @@ DuckDB 中，需要特别注意的 DuckDB 语法规则：
 2. 当在 ORDER BY 或窗口函数中引用某个列时，确保该列已在前面的 CTE 或查询中被正确选择
 3. 在构建多层 CTE 时，需要确保各层之间的列引用一致性，特别是用于排序和连接的列
 4. 如果某列不需要精确值，可以使用 ANY_VALUE() 函数作为替代方案
+5. 如果日期字段不是 DATE 或 TIMESTAMP 类型（如为字符串），必须先用 STRPTIME(date, '%Y-%m-%d') \ 
+转换为 DATE，再用 STRFTIME 提取年份等信息。例如：strftime(strptime(date, '%Y-%m-%d'), '%Y')
 ``````
 
 请基于给你的数据结构信息，在满足下面约束条件下通过\
@@ -138,12 +143,14 @@ DuckDB SQL数据分析回答用户的问题。
 	2.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，\
 	将类型名称放入返回要求格式的name参数值中，如果找不到最合适\
 	的则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}
-	3.SQL中需要使用的表名是: {table_name},请检查你生成的sql，\
+	3.SQL 中必须严格使用表名 {table_name}，禁止使用任何其他表名！
+    4.SQL中需要使用的表名是: {table_name},请检查你生成的sql，\
 	不要使用没在数据结构中的列名
-	4.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
-    5.DuckDB 处理时间戳需通过专用函数（如 to_timestamp()）而非直接 CAST
-    6.请注意，注释行要单独一行，不要放在 SQL 语句的同一行中
-	7.输出内容中sql部分转换为：
+	5.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
+    6.解析字符串为日期/时间应使用 STRPTIME(date_string, format_string)，\ 
+    如 STRPTIME('2023.04.24', '%Y.%m.%d')
+    7.请注意，注释行要单独一行，不要放在 SQL 语句的同一行中
+	8.输出内容中sql部分转换为：
 	<api-call><name>[数据显示方式]</name><args><sql>\
 	[正确的duckdb数据分析sql]</sql></args></api-call> \
 	这样的格式，参考返回格式要求
