@@ -13,7 +13,7 @@ from dbgpt.agent import (
     ProfileConfig,
     Resource,
     ResourceType,
-    StructuredAgentMemoryFragment,
+    StructuredAgentMemoryFragment, BlankAction,
 )
 from dbgpt.agent.core.role import AgentRunMode
 from dbgpt.agent.resource import BaseTool, ResourcePack, ToolPack
@@ -214,7 +214,7 @@ class DeepSearchAgent(ConversableAgent):
         """Init indicator AssistantAgent."""
         super().__init__(**kwargs)
 
-        self._init_actions([DeepSearchAction])
+        self._init_actions([DeepSearchAction, BlankAction])
 
     async def preload_resource(self) -> None:
         await super().preload_resource()
@@ -294,41 +294,41 @@ class DeepSearchAgent(ConversableAgent):
 
         return json.dumps(abilities, ensure_ascii=False), []
 
-    async def build_system_prompt(
-        self,
-        question: Optional[str] = None,
-        most_recent_memories: Optional[str] = None,
-        resource_vars: Optional[Dict] = None,
-        context: Optional[Dict[str, Any]] = None,
-        is_retry_chat: bool = False,
-    ):
-        """Build system prompt."""
-        system_prompt = None
-        if self.bind_prompt:
-            prompt_param = {}
-            if resource_vars:
-                prompt_param.update(resource_vars)
-            if context:
-                prompt_param.update(context)
-            if self.bind_prompt.template_format == "f-string":
-                system_prompt = self.bind_prompt.template.format(
-                    **prompt_param,
-                )
-            elif self.bind_prompt.template_format == "jinja2":
-                system_prompt = Template(self.bind_prompt.template).render(prompt_param)
-            else:
-                logger.warning("Bind prompt template not exsit or  format not support!")
-        if not system_prompt:
-            param: Dict = context if context else {}
-            system_prompt = await self.build_prompt(
-                question=question,
-                is_system=True,
-                most_recent_memories=most_recent_memories,
-                resource_vars=resource_vars,
-                is_retry_chat=is_retry_chat,
-                **param,
-            )
-        return system_prompt
+    # async def build_system_prompt(
+    #     self,
+    #     question: Optional[str] = None,
+    #     most_recent_memories: Optional[str] = None,
+    #     resource_vars: Optional[Dict] = None,
+    #     context: Optional[Dict[str, Any]] = None,
+    #     is_retry_chat: bool = False,
+    # ):
+    #     """Build system prompt."""
+    #     system_prompt = None
+    #     if self.bind_prompt:
+    #         prompt_param = {}
+    #         if resource_vars:
+    #             prompt_param.update(resource_vars)
+    #         if context:
+    #             prompt_param.update(context)
+    #         if self.bind_prompt.template_format == "f-string":
+    #             system_prompt = self.bind_prompt.template.format(
+    #                 **prompt_param,
+    #             )
+    #         elif self.bind_prompt.template_format == "jinja2":
+    #             system_prompt = Template(self.bind_prompt.template).render(prompt_param)
+    #         else:
+    #             logger.warning("Bind prompt template not exsit or  format not support!")
+    #     if not system_prompt:
+    #         param: Dict = context if context else {}
+    #         system_prompt = await self.build_prompt(
+    #             question=question,
+    #             is_system=True,
+    #             most_recent_memories=most_recent_memories,
+    #             resource_vars=resource_vars,
+    #             is_retry_chat=is_retry_chat,
+    #             **param,
+    #         )
+    #     return system_prompt
 
     def prepare_act_param(
         self,
@@ -376,6 +376,12 @@ class DeepSearchAgent(ConversableAgent):
                 # )
                 # if real_action is None:
                 #     continue
+                final_summarize = False
+                if self.profile.system_prompt_template == _DEEPSEARCH_FINIAL_SUMMARY_TEMPLATE:
+                    if isinstance(action, DeepSearchAction):
+                        continue
+                    else:
+                        final_summarize = True
 
                 last_out = await action.run(
                     ai_message=message.content if message.content else "",
@@ -383,6 +389,7 @@ class DeepSearchAgent(ConversableAgent):
                     rely_action_out=last_out,
                     **kwargs,
                 )
+                last_out.terminate = final_summarize
                 if not last_out.terminate:
                     self.profile.system_prompt_template = _DEEPSEARCH_FINIAL_SUMMARY_TEMPLATE
                 span.metadata["action_out"] = last_out.to_dict() if last_out else None
@@ -459,5 +466,6 @@ class DeepSearchAgent(ConversableAgent):
         #         )
         #     )
         return "\n".join([
-            mem_dict.get("observation") for mem_dict in structured_memories
+            mem_dict.get("observation") for mem_dict in structured_memories if mem_dict.get("observation")
         ])
+

@@ -55,8 +55,8 @@ class ReflectionModel(BaseModel):
         default_factory=list,
         description="List of tools to be used in the action.",
     )
-    thought: str = Field(
-        ...,
+    thought: Optional[str] = Field(
+        None,
         description="The thought of the current action, describing what you want to achieve.",
     )
 
@@ -102,7 +102,12 @@ class DeepSearchAction(ToolAction):
     ) -> ActionOutput:
         """Perform the action."""
         try:
-            # state = "split_query"
+            if self.state == "summarize":
+                return ActionOutput(
+                    is_exe_success=True,
+                    content=ai_message,
+                    view=ai_message,
+                )
             action_param: ReflectionModel = self._input_convert(
                 ai_message, ReflectionModel
             )
@@ -115,6 +120,7 @@ class DeepSearchAction(ToolAction):
 
         sub_queries = action_param.sub_queries
         if action_param.status == "summarize":
+            self.state = "summarize"
             return ActionOutput(
                 is_exe_success=True,
                 content=action_param.thought,
