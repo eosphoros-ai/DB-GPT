@@ -5,7 +5,13 @@ import traceback
 from typing import Any, AsyncIterator, Dict, Optional
 
 from ...interface.llm import ModelInferenceMetrics, ModelOutput
-from ...schema.api import ChatCompletionResponseStreamChoice
+from ...schema.api import (
+    ChatCompletionResponse,
+    ChatCompletionResponseChoice,
+    ChatCompletionResponseStreamChoice,
+    ChatMessage,
+    UsageInfo,
+)
 from ..operators.base import BaseOperator
 from ..trigger.http_trigger import CommonLLMHttpResponseBody
 
@@ -379,3 +385,28 @@ def parse_sse_data(output: str) -> Optional[str]:
         return output
     else:
         return None
+
+
+def _v1_create_completion_response(
+    text: str,
+    think_text: Optional[str],
+    model_name: str,
+    stream_id: str,
+    usage: Optional[UsageInfo] = None,
+):
+    choice_data = ChatCompletionResponseChoice(
+        index=0,
+        message=ChatMessage(
+            role="assistant",
+            content=text or "",
+            reasoning_content=think_text,
+        ),
+    )
+    _content = ChatCompletionResponse(
+        id=stream_id,
+        choices=[choice_data],
+        model=model_name,
+        usage=usage or UsageInfo(),
+    )
+    _content = json.dumps(_content.model_dump(exclude_unset=True), ensure_ascii=False)
+    return f"data: {_content}\n\n"

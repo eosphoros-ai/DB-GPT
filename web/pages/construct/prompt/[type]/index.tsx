@@ -349,6 +349,13 @@ const AddOrEditPrompt: React.FC = () => {
       const editData = JSON.parse(localStorage.getItem('edit_prompt_data') || '{}');
       setVariables(JSON.parse(editData.input_variables ?? '[]'));
       setValue(editData?.content);
+      // 设置响应模板
+      try {
+        const responseSchema = editData.response_schema ? JSON.parse(editData.response_schema) : {};
+        setResponseTemplate(responseSchema);
+      } catch {
+        setResponseTemplate({});
+      }
       topForm.setFieldsValue({
         prompt_type: editData.prompt_type,
         prompt_name: editData.prompt_name,

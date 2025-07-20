@@ -80,7 +80,6 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
       }
     };
   }, [handleScroll]);
-
   const scrollToBottomSmooth = useCallback((forceScroll = false) => {
     if (!scrollRef.current) return;
 
@@ -119,9 +118,7 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
   const lastMessage = useMemo(() => {
     const last = history[history.length - 1];
     return last ? { context: last.context, thinking: last.thinking } : null;
-  }, [history]);
-
-  // Track previous history length to detect new messages
+  }, [history]); // Track previous history length to detect new messages
   const prevHistoryLengthRef = useRef(history.length);
 
   useEffect(() => {
@@ -154,7 +151,6 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
       }
     };
   }, []);
-
   const scrollToTop = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({

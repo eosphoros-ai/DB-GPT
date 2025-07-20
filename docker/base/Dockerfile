@@ -124,3 +124,6 @@ ENV PATH="${FINAL_VENV_NAME}/bin:$PATH" \
     VIRTUAL_ENV="${FINAL_VENV_NAME}"
 # Default command
 CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-proxy-siliconflow.toml"]
+
+# Uncomment the following line to use the AI/ML API configuration
+# CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-proxy-aimlapi.toml"]
