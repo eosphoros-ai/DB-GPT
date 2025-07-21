@@ -31,6 +31,7 @@ export type Embedding = {
   recall_score: string | number;
   recall_type: string;
   topk: string;
+  retrieve_mode: string;
 };
 
 export type Prompt = {
@@ -43,10 +44,17 @@ export type Summary = {
   max_iteration: number;
   concurrency_limit: number;
 };
+
 export type IArguments = {
   embedding: Embedding;
   prompt: Prompt;
   summary: Summary;
+};
+
+export type IRetrieveStrategy = {
+  name: string;
+  name_cn: string;
+  value: string;
 };
 
 export type DocumentParams = {

@@ -43,6 +43,7 @@ import {
   IChunkList,
   IChunkStrategyResponse,
   IDocumentResponse,
+  IRetrieveStrategy,
   ISpace,
   ISyncBatchParameter,
   ISyncBatchResponse,
@@ -191,6 +192,9 @@ export const getArguments = (knowledgeName: string) => {
 };
 export const saveArguments = (knowledgeName: string, data: ArgumentsParams) => {
   return POST<ArgumentsParams, IArguments>(`/knowledge/${knowledgeName}/argument/save`, data);
+};
+export const getRetrieveStrategyList = () => {
+  return POST<any, Array<IRetrieveStrategy>>(`/knowledge/retrieve_strategy_list`, {});
 };
 
 export const getSpaceList = (data?: any) => {

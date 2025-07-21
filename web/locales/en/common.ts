@@ -69,7 +69,9 @@ export const CommonEn = {
   chunk_size: 'chunk_size',
   The_size_of_the_data_chunks: 'The size of the data chunks used in processing',
   chunk_overlap: 'chunk_overlap',
+  retrieve_mode: 'retrieve_mode',
   The_amount_of_overlap: 'The amount of overlap between adjacent data chunks',
+  The_strategy_of_query_retrival: 'The strategy of query data retrival in processing',
   Prompt: 'Prompt',
   scene: 'scene',
   A_contextual_parameter:
