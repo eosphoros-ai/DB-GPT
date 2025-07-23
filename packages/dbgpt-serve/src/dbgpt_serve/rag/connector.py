@@ -249,11 +249,18 @@ class VectorStoreConnector:
             - ids: vector ids
         """
         return self.client.delete_by_ids(ids=ids)
+    
+    def delete_by_file_id(self, file_id):
+        """Delete file by ids.
+
+        Args:
+            - ids: vector ids
+        """
+        return self.client.delete_by_file_id(file_id=file_id)
 
     def truncate(self):
         """Truncate data."""
         return self.client.truncate()
-
     @property
     def current_embeddings(self) -> Optional[Embeddings]:
         """Return the current embeddings."""
