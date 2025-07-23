@@ -711,7 +711,7 @@ class MilvusStore(VectorStoreBase):
         delete_expr = f"{self.metadata_field} like '%\"file_id\": {file_id}%'"
         self.col.delete(delete_expr)
         return True
-    
+
     def convert_metadata_filters(self, filters: MetadataFilters) -> str:
         """Convert filter to milvus filters.
 
