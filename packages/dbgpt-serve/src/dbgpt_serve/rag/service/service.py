@@ -606,7 +606,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     vector_ids = await assembler.apersist(
                         max_chunks_once_load=max_chunks_once_load,
                         max_threads=max_threads,
-                        file_id = doc.id,
+                        file_id=doc.id,
                     )
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document persist into index store success"
