@@ -39,7 +39,9 @@ class GraphExtractor(LLMExtractor):
         self._topk = top_k
         self._score_threshold = score_threshold
 
-    async def aload_chunk_context(self, texts: List[str], file_id: Optional[str] = None) -> Dict[str, str]:
+    async def aload_chunk_context(
+        self, texts: List[str], file_id: Optional[str] = None
+    ) -> Dict[str, str]:
         """Load chunk context."""
         text_context_map: Dict[str, str] = {}
 
@@ -55,7 +57,12 @@ class GraphExtractor(LLMExtractor):
             # Save chunk to history
             # here we save the file_id into the metadata
             await self._chunk_history.aload_document_with_limit(
-                [Chunk(content=text, metadata={"relevant_cnt": len(history), "file_id": file_id})],
+                [
+                    Chunk(
+                        content=text,
+                        metadata={"relevant_cnt": len(history), "file_id": file_id},
+                    )
+                ],
                 self._max_chunks_once_load,
                 self._max_threads,
             )
