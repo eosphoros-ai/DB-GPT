@@ -470,7 +470,7 @@ class KnowledgeService:
                 space.vector_type == "KnowledgeGraph"
                 and storage_connector._vector_store_config.__type__ == "milvus"
             ):
-                # this gives the vector store type 
+                # this gives the vector store type
                 # in case this will support chroma in the future
                 embedding_vector_type = storage_connector._vector_store_config.__type__
                 # get the collection name
