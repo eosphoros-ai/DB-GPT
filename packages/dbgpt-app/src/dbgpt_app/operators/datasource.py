@@ -148,6 +148,7 @@ _PARAMETER_CONTEXT_KEY = Parameter.build_from(
     type=str,
     optional=True,
     default="context",
+    alias=["context"],
     description=_("The key of the context, it will be used in building the prompt"),
 )
 _INPUTS_QUESTION = IOField.build_from(
