@@ -158,6 +158,7 @@ class IndexStoreBase(ABC):
         chunks: List[Chunk],
         max_chunks_once_load: Optional[int] = None,
         max_threads: Optional[int] = None,
+        file_id: Optional[str] = None,
     ) -> List[str]:
         """Load document in index database with specified limit.
 
@@ -171,6 +172,7 @@ class IndexStoreBase(ABC):
         """
         max_chunks_once_load = max_chunks_once_load or self._max_chunks_once_load
         max_threads = max_threads or self._max_threads
+        file_id = file_id or None
         chunk_groups = [
             chunks[i : i + max_chunks_once_load]
             for i in range(0, len(chunks), max_chunks_once_load)
@@ -181,7 +183,7 @@ class IndexStoreBase(ABC):
         )
         tasks = []
         for chunk_group in chunk_groups:
-            tasks.append(self.aload_document(chunk_group))
+            tasks.append(self.aload_document(chunk_group, file_id))
 
         results = await self._run_tasks_with_concurrency(tasks, max_threads)
 
