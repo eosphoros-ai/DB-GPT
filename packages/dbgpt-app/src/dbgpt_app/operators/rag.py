@@ -33,10 +33,11 @@ def _load_space_name() -> List[OptionValue]:
 
 _PARAMETER_CONTEXT_KEY = Parameter.build_from(
     _("Context Key"),
-    "context",
+    "context_key",
     type=str,
     optional=True,
     default="context",
+    alias=["context"],
     description=_("The key of the context, it will be used in building the prompt"),
 )
 _PARAMETER_TOP_K = Parameter.build_from(
