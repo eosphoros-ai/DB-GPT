@@ -146,8 +146,9 @@ class EmbeddingAssembler(BaseAssembler):
         # persist chunks into vector store
         max_chunks_once_load = kwargs.get("max_chunks_once_load")
         max_threads = kwargs.get("max_threads")
+        file_id = kwargs.get("file_id", None)
         return await self._index_store.aload_document_with_limit(
-            self._chunks, max_chunks_once_load, max_threads
+            self._chunks, max_chunks_once_load, max_threads, file_id
         )
 
     def _extract_info(self, chunks) -> List[Chunk]:

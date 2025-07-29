@@ -309,12 +309,14 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         """Get the knowledge graph config."""
         return self._embedding_fn
 
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> List[str]:
         """Extract and persist graph from the document file."""
         if not self.vector_name_exists():
             self._graph_store_adapter.create_graph(self._graph_name)
         await self._aload_document_graph(chunks)
-        await self._aload_triplet_graph(chunks)
+        await self._aload_triplet_graph(chunks, file_id)
         await self._community_store.build_communities(
             batch_size=self._community_summary_batch_size
         )
@@ -364,7 +366,9 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
                     chunk=paragraph_chunks[chunk_index - 1], next_chunk=chunk
                 )
 
-    async def _aload_triplet_graph(self, chunks: List[Chunk]) -> None:
+    async def _aload_triplet_graph(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> None:
         """Load the knowledge graph from the chunks.
 
         The chunks include the doc structure.
@@ -379,6 +383,7 @@ class CommunitySummaryKnowledgeGraph(BuiltinKnowledgeGraph):
         graphs_list = await self._graph_extractor.batch_extract(
             [chunk.content for chunk in chunks],
             batch_size=self._triplet_extraction_batch_size,
+            file_id=file_id,
         )
         if not graphs_list:
             raise ValueError("No graphs extracted from the chunks")
