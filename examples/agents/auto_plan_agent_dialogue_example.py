@@ -35,8 +35,6 @@ initialize_tracer(
 async def main():
     from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
 
-    agent_memory = AgentMemory()
-
     llm_client = SiliconFlowLLMClient(
         model_alias=os.getenv(
             "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
