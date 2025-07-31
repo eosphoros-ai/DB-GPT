@@ -73,6 +73,19 @@ export default function Segmentation(props: IProps) {
     }
   };
 
+  const unescapeParamValue = (value: string) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    return value
+      .replace(/\\n/g, '\n') // \n
+      .replace(/\\t/g, '\t') // \t
+      .replace(/\\r/g, '\r') // \r
+      .replace(/\\"/g, '"') // \" -> "
+      .replace(/\\'/g, "'") // \' -> '
+      .replace(/\\\\/g, '\\'); // \\ -> \
+  };
+
   function checkParameter(data: FieldType) {
     let checked = true;
     if (syncStatus === 'RUNNING') {
@@ -94,7 +107,12 @@ export default function Segmentation(props: IProps) {
         // remove unused parameter, otherwise api will failed.
         strategy.parameters.forEach(param => {
           const paramName = param.param_name;
-          newParam[paramName] = (item?.chunk_parameters as any)[paramName];
+          let paramValue = (item?.chunk_parameters as any)[paramName];
+
+          if (param.param_type === 'string' && typeof paramValue === 'string') {
+            paramValue = unescapeParamValue(paramValue);
+          }
+          newParam[paramName] = paramValue;
         });
       }
       item.chunk_parameters = newParam;
