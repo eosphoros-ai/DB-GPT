@@ -80,6 +80,26 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
             try {
               if (scene === 'chat_agent') {
                 message = JSON.parse(message).vis;
+              } else if (scene === 'chat_flow') {
+                // Handle AWEL workflow responses - check if it's JSON and extract content appropriately
+                try {
+                  const parsed = JSON.parse(message);
+                  // If it's a structured response with choices, extract the content
+                  if (parsed.choices?.[0]?.message?.content) {
+                    message = parsed.choices[0].message.content;
+                  } else if (parsed.vis) {
+                    // If it has vis field like agent responses
+                    message = parsed.vis;
+                  } else if (typeof parsed === 'string') {
+                    message = parsed;
+                  } else {
+                    // For other structured responses, stringify for display
+                    message = JSON.stringify(parsed, null, 2);
+                  }
+                } catch {
+                  // If not JSON, use as-is but replace newlines
+                  message = message.replaceAll('\\n', '\n');
+                }
               } else {
                 data = JSON.parse(event.data);
                 message = data.choices?.[0]?.message?.content;
