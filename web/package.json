@@ -11,14 +11,14 @@
   "license": "ISC",
   "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
   "scripts": {
-    "start": "NODE_OPTIONS=--max_old_space_size=8192 next start",
-    "dev": "NODE_OPTIONS=--max_old_space_size=8192 next dev",
-    "build": "NODE_OPTIONS=--max_old_space_size=8192 next build",
-    "build:prod": "APP_ENV=prod  NODE_OPTIONS=--max_old_space_size=8192 next build",
+    "start": "cross-env NODE_OPTIONS=--max_old_space_size=8192 next start",
+    "dev": "cross-env NODE_OPTIONS=--max_old_space_size=8192 next dev",
+    "build": "cross-env NODE_OPTIONS=--max_old_space_size=8192 next build",
+    "build:prod": "cross-env APP_ENV=prod  NODE_OPTIONS=--max_old_space_size=8192 next build",
     "lint": "eslint '**/*.{ts,tsx}' --fix",
     "format": "prettier --write '**/*.{ts,tsx}'",
     "export": "next export",
-    "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export"
+    "compile": "cross-env NODE_OPTIONS=--max_old_space_size=8192 next build && next export"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",
