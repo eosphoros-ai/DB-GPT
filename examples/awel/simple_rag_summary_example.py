@@ -9,6 +9,7 @@ This example shows how to use AWEL to build a simple rag summary example.
         ```
             export OPENAI_API_KEY={your_openai_key}
             export OPENAI_API_BASE={your_openai_base}
+            export MODEL_NAME={LLM_MODEL_NAME}
         ```
         or
         ```
@@ -23,7 +24,7 @@ This example shows how to use AWEL to build a simple rag summary example.
 
         curl -X POST http://127.0.0.1:5555/api/v1/awel/trigger/examples/rag/summary \
         -H "Content-Type: application/json" -d '{
-            "url": "https://docs.dbgpt.site/docs/awel"
+            "url": "http://docs.dbgpt.cn/docs/awel/"
         }'
 """
 
@@ -58,13 +59,17 @@ with DAG("dbgpt_awel_simple_rag_summary_example") as dag:
         "/examples/rag/summary", methods="POST", request_body=TriggerReqBody
     )
     request_handle_task = RequestHandleOperator()
-    path_operator = MapOperator(lambda request: request["url"])
+    path_operator = MapOperator(lambda request: {"source": request["url"]})
     # build knowledge operator
     knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
     # build summary assembler operator
     summary_operator = SummaryAssemblerOperator(
-        llm_client=OpenAILLMClient(api_key=os.getenv("OPENAI_API_KEY", "your api key")),
-        language="en",
+        llm_client=OpenAILLMClient(
+            api_key=os.getenv("OPENAI_API_KEY", "your api key"),
+            api_base=os.getenv("OPENAI_API_BASE", "your api base"),
+        ),
+        language="zh",
+        model_name=os.getenv("MODEL_NAME", "your model name"),
     )
     (
         trigger
