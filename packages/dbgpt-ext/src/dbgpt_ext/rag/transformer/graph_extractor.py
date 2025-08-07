@@ -39,7 +39,9 @@ class GraphExtractor(LLMExtractor):
         self._topk = top_k
         self._score_threshold = score_threshold
 
-    async def aload_chunk_context(self, texts: List[str]) -> Dict[str, str]:
+    async def aload_chunk_context(
+        self, texts: List[str], file_id: Optional[str] = None
+    ) -> Dict[str, str]:
         """Load chunk context."""
         text_context_map: Dict[str, str] = {}
 
@@ -53,8 +55,14 @@ class GraphExtractor(LLMExtractor):
             ]
 
             # Save chunk to history
+            # here we save the file_id into the metadata
             await self._chunk_history.aload_document_with_limit(
-                [Chunk(content=text, metadata={"relevant_cnt": len(history)})],
+                [
+                    Chunk(
+                        content=text,
+                        metadata={"relevant_cnt": len(history), "file_id": file_id},
+                    )
+                ],
                 self._max_chunks_once_load,
                 self._max_threads,
             )
@@ -81,6 +89,7 @@ class GraphExtractor(LLMExtractor):
         texts: List[str],
         batch_size: int = 1,
         limit: Optional[int] = None,
+        file_id: Optional[str] = None,
     ) -> Optional[List[List[Graph]]]:
         """Extract graphs from chunks in batches.
 
@@ -90,7 +99,7 @@ class GraphExtractor(LLMExtractor):
             raise ValueError("batch_size >= 1")
 
         # 1. Load chunk context
-        text_context_map = await self.aload_chunk_context(texts)
+        text_context_map = await self.aload_chunk_context(texts, file_id)
 
         # Pre-allocate results list to maintain order
         graphs_list: List[List[Graph]] = [None] * len(texts)
