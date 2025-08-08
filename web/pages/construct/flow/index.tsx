@@ -103,7 +103,9 @@ function Flow() {
   // }, [loading, handleScroll, loadMoreData]);
 
   const handleChat = async (flow: IFlow) => {
-    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
+    const [, res] = await apiInterceptors(
+      newDialogue({ chat_mode: 'chat_flow', select_param: flow.uid }),
+    );
     if (res) {
       const queryStr = qs.stringify({
         scene: 'chat_flow',

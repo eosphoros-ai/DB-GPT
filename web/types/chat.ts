@@ -46,6 +46,8 @@ export type SceneResponse = {
 export type NewDialogueParam = {
   chat_mode: string;
   model?: string;
+  // select_param is used to bind conversation to a specific resource (e.g., AWEL flow uid)
+  select_param?: string;
 };
 
 export type ChatHistoryResponse = IChatDialogueMessageSchema[];
