@@ -181,11 +181,32 @@ const Chat: React.FC = () => {
     manual: true,
     onSuccess: data => {
       const [, res] = data;
-      const viewList = res?.filter(item => item.role === 'view');
+      // Normalize history: parse JSON-like contexts for agent/flow to avoid showing raw JSON after refresh
+      const normalized = (res || []).map(item => {
+        if (item?.role !== 'view' || typeof item?.context !== 'string') return item;
+        try {
+          const parsed = JSON.parse(item.context);
+          let content: any;
+          if (scene === 'chat_agent') {
+            content = parsed?.vis ?? parsed?.choices?.[0]?.message?.content ??
+              (typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2));
+          } else if (scene === 'chat_flow') {
+            content = parsed?.choices?.[0]?.message?.content ?? parsed?.vis ??
+              (typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2));
+          }
+          if (typeof content === 'string') {
+            return { ...item, context: content.replaceAll('\\n', '\n') };
+          }
+          return item;
+        } catch {
+          return item;
+        }
+      });
+      const viewList = normalized?.filter(item => item.role === 'view');
       if (viewList && viewList.length > 0) {
         order.current = viewList[viewList.length - 1].order + 1;
       }
-      setHistory(res || []);
+      setHistory(normalized || []);
     },
   });
 
@@ -270,6 +291,13 @@ const Chat: React.FC = () => {
           user_input: content,
         };
 
+        // Force chat_flow for AWEL flow chats to prevent server from forking new conv ids
+        const urlSelectParam = searchParams?.get('select_param') ?? '';
+        if (urlSelectParam && scene !== 'chat_flow') {
+          apiData.chat_mode = 'chat_flow';
+          apiData.select_param = urlSelectParam;
+        }
+
         // Add other data fields
         if (data) {
           Object.assign(apiData, data);
@@ -320,7 +348,7 @@ const Chat: React.FC = () => {
         });
       });
     },
-    [chatId, history, modelValue, chat, scene],
+    [chatId, history, modelValue, chat, scene, searchParams],
   );
 
   useAsyncEffect(async () => {
