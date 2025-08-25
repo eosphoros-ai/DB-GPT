@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
@@ -13,7 +14,16 @@ class GptsPlansEntity(Model):
     conv_id = Column(
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
-    sub_task_num = Column(Integer, nullable=False, comment="Subtask number")
+    conv_session_id = Column(
+        String(255), nullable=False, comment="The unique id of the conversation session"
+    )
+    task_uid = Column(String(255), nullable=False, comment="The uid of the plan task")
+    sub_task_num = Column(Integer, nullable=False, comment="Subtask id")
+    conv_round = Column(Integer, nullable=False, comment="The dialogue turns")
+    conv_round_id = Column(String(255), nullable=True, comment="The dialogue turns uid")
+
+    sub_task_id = Column(String(255), nullable=False, comment="Subtask id")
+    task_parent = Column(String(255), nullable=True, comment="Subtask parent task id")
     sub_task_title = Column(String(255), nullable=False, comment="subtask title")
     sub_task_content = Column(Text, nullable=False, comment="subtask content")
     sub_task_agent = Column(
@@ -36,14 +46,17 @@ class GptsPlansEntity(Model):
     state = Column(String(255), nullable=True, comment="subtask status")
     result = Column(Text(length=2**31 - 1), nullable=True, comment="subtask result")
 
-    created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
+    created_at = Column(
+        DateTime, name="gmt_create", default=datetime.utcnow, comment="create time"
+    )
     updated_at = Column(
         DateTime,
+        name="gmt_modified",
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         comment="last update time",
     )
-    __table_args__ = (UniqueConstraint("conv_id", "sub_task_num", name="uk_sub_task"),)
+    __table_args__ = (UniqueConstraint("conv_id", "sub_task_id", name="uk_sub_task"),)
 
 
 class GptsPlansDao(BaseDao):
@@ -53,34 +66,54 @@ class GptsPlansDao(BaseDao):
         session.commit()
         session.close()
 
-    def get_by_conv_id(self, conv_id: str) -> list[GptsPlansEntity]:
+    def get_by_conv_id(
+        self, conv_id: str, conv_round_id: Optional[str] = None
+    ) -> list[GptsPlansEntity]:
         session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if conv_id:
             gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id)
+        if conv_round_id:
+            gpts_plans = gpts_plans.filter(
+                GptsPlansEntity.conv_round_id == conv_round_id
+            )
         result = gpts_plans.all()
         session.close()
         return result
 
-    def get_by_task_id(self, task_id: int) -> list[GptsPlansEntity]:
+    def get_by_task_id(self, task_id: str) -> list[GptsPlansEntity]:
         session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if task_id:
-            gpts_plans = gpts_plans.filter(GptsPlansEntity.id == task_id)
+            gpts_plans = gpts_plans.filter(GptsPlansEntity.sub_task_id == task_id)
         result = gpts_plans.first()
         session.close()
         return result
 
     def get_by_conv_id_and_num(
-        self, conv_id: str, task_nums: list
+        self, conv_id: str, task_ids: list
     ) -> list[GptsPlansEntity]:
         session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if conv_id:
             gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
-                GptsPlansEntity.sub_task_num.in_(task_nums)
+                GptsPlansEntity.sub_task_id.in_(task_ids)
             )
         result = gpts_plans.all()
+        session.close()
+        return result
+
+    def get_by_conv_id_and_content(
+        self, conv_id: str, content: str
+    ) -> Optional[GptsPlansEntity]:
+        session = self.get_raw_session()
+        gpts_plans = session.query(GptsPlansEntity)
+        if conv_id:
+            gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
+                GptsPlansEntity.sub_task_content == content
+            )
+
+        result = gpts_plans.one_or_none()
         session.close()
         return result
 
@@ -115,7 +148,7 @@ class GptsPlansDao(BaseDao):
     def update_task(
         self,
         conv_id: str,
-        task_num: int,
+        task_id: str,
         state: str,
         retry_times: int,
         agent: str = None,
@@ -125,10 +158,11 @@ class GptsPlansDao(BaseDao):
         session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
-            GptsPlansEntity.sub_task_num == task_num
+            GptsPlansEntity.sub_task_id == task_id
         )
         update_param = {}
         update_param[GptsPlansEntity.state] = state
+
         update_param[GptsPlansEntity.retry_times] = retry_times
         update_param[GptsPlansEntity.result] = result
         if agent:

@@ -369,6 +369,15 @@ class ModelOutput:
             msg += self.text or ""
         return msg
 
+    def gen_text_and_thinking(self):
+        thinking_text = ""
+        content_text = ""
+        if self.has_thinking:
+            thinking_text = self.thinking_text
+        if self.has_text:
+            content_text = self.text
+        return thinking_text, content_text
+
     @text.setter
     def text(self, value: str):
         """Set the generated text."""

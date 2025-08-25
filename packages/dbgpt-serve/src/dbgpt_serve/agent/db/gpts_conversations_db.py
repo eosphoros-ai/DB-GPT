@@ -22,6 +22,9 @@ class GptsConversationsEntity(Model):
     conv_id = Column(
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
+    conv_session_id = Column(
+        String(255), nullable=False, comment="The unique id of the conversation record"
+    )
     user_goal = Column(Text, nullable=False, comment="User's goals content")
 
     gpts_name = Column(String(255), nullable=False, comment="The gpts name")
@@ -37,6 +40,9 @@ class GptsConversationsEntity(Model):
 
     user_code = Column(String(255), nullable=True, comment="user code")
     sys_code = Column(String(255), nullable=True, comment="system app ")
+    vis_render = Column(
+        String(255), nullable=True, comment="vis mode of chat conversation "
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
     updated_at = Column(
@@ -76,6 +82,18 @@ class GptsConversationsDao(BaseDao):
             gpts_conv_qry: Query = session.query(GptsConversationsEntity)
             gpts_conv_qry: Query = gpts_conv_qry.filter(
                 GptsConversationsEntity.conv_id.like(f"{conv_id}%")
+            ).order_by(GptsConversationsEntity.id.asc())
+            result = gpts_conv_qry.all()
+        finally:
+            session.close()
+        return result
+
+    def get_by_session_id_asc(self, conv_session_id: str):
+        session = self.get_raw_session()
+        try:
+            gpts_conv_qry: Query = session.query(GptsConversationsEntity)
+            gpts_conv_qry: Query = gpts_conv_qry.filter(
+                GptsConversationsEntity.conv_session_id == conv_session_id
             ).order_by(GptsConversationsEntity.id.asc())
             result = gpts_conv_qry.all()
         finally:

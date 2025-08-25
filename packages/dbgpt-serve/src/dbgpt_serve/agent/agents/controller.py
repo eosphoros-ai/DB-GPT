@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 from abc import ABC
 from typing import Any, Dict, List, Optional, Type
 
@@ -160,6 +161,48 @@ class MultiAgents(BaseComponent, ABC):
 
         return agent_memory
 
+    async def _build_hitory_messages(
+        self, gpts_conversations, gpt_app: Optional[GptsApp] = None
+    ):
+        historical_dialogues: List[GptsMessage] = []
+        ## When creating a new gpts conversation record, determine whether to
+        # include the history of previous topics according to the application
+        # definition.
+
+        # Temporarily use system configuration management, and subsequently use
+        # application configuration management
+        msg_keep_start = 1
+        msg_keep_end = 1
+
+        if CFG.MESSAGES_KEEP_START_ROUNDS and CFG.MESSAGES_KEEP_START_ROUNDS > 0:
+            msg_keep_start = CFG.MESSAGES_KEEP_START_ROUNDS
+        if CFG.MESSAGES_KEEP_END_ROUNDS and CFG.MESSAGES_KEEP_END_ROUNDS > 0:
+            msg_keep_end = CFG.MESSAGES_KEEP_END_ROUNDS
+        if gpt_app:
+            msg_keep_start = gpt_app.keep_start_rounds
+            msg_keep_end = gpt_app.keep_end_rounds
+
+        if msg_keep_start > 0 or msg_keep_end > 0:
+            if gpts_conversations and len(gpts_conversations) > 0:
+                rely_conversations = []
+                if msg_keep_start + msg_keep_end < len(gpts_conversations):
+                    if msg_keep_start > 0:
+                        front = gpts_conversations[msg_keep_start:]
+                        rely_conversations.extend(front)
+                    if msg_keep_end > 0:
+                        back = gpts_conversations[-msg_keep_end:]
+                        rely_conversations.extend(back)
+                else:
+                    rely_conversations = gpts_conversations
+                for gpts_conversation in rely_conversations:
+                    temps: List[GptsMessage] = await self.memory.get_messages(
+                        gpts_conversation.conv_id
+                    )
+                    if temps and len(temps) > 1:
+                        historical_dialogues.append(temps[0])
+                        historical_dialogues.append(temps[-1])
+        return historical_dialogues
+
     async def agent_chat_v2(
         self,
         conv_id: str,
@@ -190,37 +233,53 @@ class MultiAgents(BaseComponent, ABC):
         agent_conv_id = conv_id + "_" + gpt_chat_order
         message_round = 0
         history_message_count = 0
-        is_retry_chat = False
+        is_retry_chat = True
         last_speaker_name = None
         history_messages = None
+        gpt_app = None
         # 检查最后一个对话记录是否完成，如果是等待状态，则要继续进行当前对话
-        if gpts_conversations and len(gpts_conversations) > 0:
-            last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
-            logger.info(f"last conversation status:{last_gpts_conversation.__dict__}")
-            if last_gpts_conversation.state == Status.WAITING.value:
-                is_retry_chat = True
-                agent_conv_id = last_gpts_conversation.conv_id
-
-                gpts_messages: List[GptsMessage] = (
-                    self.gpts_messages_dao.get_by_conv_id(agent_conv_id)
-                )
-                history_message_count = len(gpts_messages)
-                history_messages = gpts_messages
-                last_message = gpts_messages[-1]
-                message_round = last_message.rounds + 1
-
-                from dbgpt_serve.agent.agents.expand.app_start_assisant_agent import (
-                    StartAppAssistantAgent,
-                )
-
-                if last_message.sender == StartAppAssistantAgent().role:
-                    last_message = gpts_messages[-2]
-                last_speaker_name = last_message.sender
-
-                gpt_app: GptsApp = self.gpts_app.app_detail(last_message.app_code)
-
-                if not gpt_app:
-                    raise ValueError(f"Not found app {gpts_name}!")
+        if gpts_name == "ai_analyzer":
+            team_mode = TeamMode.AUTO_PLAN.value
+        else:
+            # Create a new gpts conversation record
+            gpt_app: GptsApp = self.gpts_app.app_detail(gpts_name)
+            if not gpt_app:
+                raise ValueError(f"Not found app {gpts_name}!")
+            team_mode = gpt_app.team_mode
+        # if gpts_conversations and len(gpts_conversations) > 0:
+        #     last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
+        #     logger.info(f"last conversation status:{last_gpts_conversation.__dict__}")
+        #     if last_gpts_conversation.state == Status.WAITING.value:
+        #         is_retry_chat = True
+        #         agent_conv_id = last_gpts_conversation.conv_id
+        #
+        #         gpts_messages: List[GptsMessage] = (
+        #             self.gpts_messages_dao.get_by_conv_id(agent_conv_id)
+        #         )
+        #         history_message_count = len(gpts_messages)
+        #         history_messages = gpts_messages
+        #         last_message = gpts_messages[-1]
+        #         message_round = last_message.rounds + 1
+        #
+        #         from dbgpt_serve.agent.agents.expand.app_start_assisant_agent import (
+        #             StartAppAssistantAgent,
+        #         )
+        #
+        #         if last_message.sender == StartAppAssistantAgent().role:
+        #             last_message = gpts_messages[-2]
+        #         last_speaker_name = last_message.sender
+        #         if gpts_name == "ai_analyzer":
+        #             team_mode = TeamMode.AUTO_PLAN.value
+        #         else:
+        #             # Create a new gpts conversation record
+        #             gpt_app: GptsApp = self.gpts_app.app_detail(gpts_name)
+        #             if not gpt_app:
+        #                 raise ValueError(f"Not found app {gpts_name}!")
+        #             team_mode = gpt_app.team_mode
+        #         # gpt_app: GptsApp = self.gpts_app.app_detail(last_message.app_code)
+        #         #
+        #         # if not gpt_app:
+        #         #     raise ValueError(f"Not found app {gpts_name}!")
 
         historical_dialogues: List[GptsMessage] = []
         if not is_retry_chat:
@@ -268,7 +327,7 @@ class MultiAgents(BaseComponent, ABC):
                     conv_id=agent_conv_id,
                     user_goal=user_query,
                     gpts_name=gpts_name,
-                    team_mode=gpt_app.team_mode,
+                    team_mode=team_mode,
                     state=Status.RUNNING.value,
                     max_auto_reply_round=0,
                     auto_reply_count=0,
@@ -278,7 +337,7 @@ class MultiAgents(BaseComponent, ABC):
             )
 
         if (
-            TeamMode.AWEL_LAYOUT.value == gpt_app.team_mode
+            TeamMode.AWEL_LAYOUT.value == team_mode
             and gpt_app.team_context.flow_category == FlowCategory.CHAT_FLOW
         ):
             team_context = gpt_app.team_context
@@ -309,31 +368,70 @@ class MultiAgents(BaseComponent, ABC):
                 yield None, chunk, agent_conv_id
         else:
             # init gpts  memory
+            vis_render = ext_info.get("vis_render", None)
+
+            logger.warning(f"vis_render_protocol:{vis_render} ！")
+            # 暂时不支持 增量协议
+            ext_info["incremental"] = False
+            from dbgpt_ext.vis.gptvis.gpt_vis_converter_window import GptVisLRConverter
+
+            # vis_protocol = GptVisOldConverter()
+            vis_protocol = GptVisLRConverter()
             self.memory.init(
                 agent_conv_id,
                 enable_vis_message=enable_verbose,
                 history_messages=history_messages,
                 start_round=history_message_count,
+                vis_converter=vis_protocol,
             )
             # init agent memory
             agent_memory = self.get_or_build_agent_memory(conv_id, gpts_name)
+            historical_dialogues = await self._build_hitory_messages(
+                gpts_conversations, gpt_app
+            )
 
             task = None
             try:
-                task = asyncio.create_task(
-                    multi_agents.agent_team_chat_new(
-                        user_query,
-                        agent_conv_id,
-                        gpt_app,
-                        agent_memory,
-                        is_retry_chat,
-                        last_speaker_name=last_speaker_name,
-                        init_message_rounds=message_round,
-                        enable_verbose=enable_verbose,
-                        historical_dialogues=historical_dialogues,
-                        **ext_info,
+                if gpts_name == "ai_analyzer":
+                    from dbgpt_serve.agent.agents.expand.db_agent.db_agent_controller import (
+                        db_analyzer_controller,
                     )
-                )
+
+                    task = asyncio.create_task(
+                        db_analyzer_controller.ai_analyze_chat(
+                            user_query=user_query,
+                            conv_session_id=conv_id,
+                            conv_uid=agent_conv_id,
+                            agent_memory=agent_memory,
+                            gpts_conversations=self.gpts_conversations,
+                            is_retry_chat=is_retry_chat,
+                            last_speaker_name=last_speaker_name,
+                            init_message_rounds=message_round,
+                            historical_dialogues=historical_dialogues,
+                            user_code=user_code,
+                            sys_code=sys_code,
+                            stream=stream,
+                            **ext_info,
+                        )
+                    )
+                else:
+                    task = asyncio.create_task(
+                        multi_agents.agent_team_chat_new(
+                            user_query=user_query,
+                            conv_uid=agent_conv_id,
+                            gpts_app=gpt_app,
+                            agent_memory=agent_memory,
+                            is_retry_chat=is_retry_chat,
+                            last_speaker_name=last_speaker_name,
+                            init_message_rounds=message_round,
+                            enable_verbose=enable_verbose,
+                            historical_dialogues=historical_dialogues,
+                            user_code=user_code,
+                            sys_code=sys_code,
+                            stream=stream,
+                            **ext_info,
+                        )
+                    )
                 if enable_verbose:
                     async for chunk in multi_agents.chat_messages(agent_conv_id):
                         if chunk:
@@ -478,6 +576,7 @@ class MultiAgents(BaseComponent, ABC):
     async def agent_team_chat_new(
         self,
         user_query: str,
+        conv_session_id: str,
         conv_uid: str,
         gpts_app: GptsApp,
         agent_memory: AgentMemory,
@@ -499,6 +598,9 @@ class MultiAgents(BaseComponent, ABC):
 
             context: AgentContext = AgentContext(
                 conv_id=conv_uid,
+                conv_session_id=conv_session_id,
+                trace_id=ext_info.get("trace_id", uuid.uuid4().hex),
+                rpc_id=ext_info.get("rpc_id", "0.1"),
                 gpts_app_code=gpts_app.app_code,
                 gpts_app_name=gpts_app.app_name,
                 language=gpts_app.language,

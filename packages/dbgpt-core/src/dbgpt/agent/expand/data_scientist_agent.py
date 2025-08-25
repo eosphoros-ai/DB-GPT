@@ -18,7 +18,7 @@ class DataScientistAgent(ConversableAgent):
 
     profile: ProfileConfig = ProfileConfig(
         name=DynConfig(
-            "Edgar",
+            "DataScientist",
             category="agent",
             key="dbgpt_agent_expand_dashboard_assistant_agent_profile_name",
         ),

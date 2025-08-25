@@ -1,0 +1,23 @@
+{
+"total_users": "SELECT COUNT() AS total_users FROM "user";",
+"avg_age": "SELECT AVG(age) AS avg_age FROM "user";",
+"min_max_age": "SELECT MIN(age) AS min_age, MAX(age) AS max_age FROM "user";",
+"age_stddev": "WITH stats AS (SELECT AVG(age1.0) AS mu, AVG((age1.0)(age1.0)) AS mu2 FROM "user") SELECT SQRT(mu2 - mumu) AS stddev_age FROM stats;",
+"age_median": "WITH t AS (SELECT age, ROW_NUMBER() OVER (ORDER BY age) AS rn, COUNT() OVER () AS cnt FROM "user") SELECT AVG(age1.0) AS median_age FROM t WHERE rn IN ((cnt + 1)/2, (cnt + 2)/2);",
+"age_mode": "WITH freq AS (SELECT age, COUNT() AS ct FROM "user" GROUP BY age) SELECT age AS mode_age FROM freq ORDER BY ct DESC, age ASC LIMIT 1;",
+"users_above_avg_age": "SELECT COUNT() AS users_above_avg FROM "user" WHERE age > (SELECT AVG(age) FROM "user");",
+"age_percentile_25_50_75": "WITH pr AS (SELECT age, PERCENT_RANK() OVER (ORDER BY age) AS pr FROM "user") SELECT 'p25' AS p, MIN(age) AS age FROM pr WHERE pr >= 0.25 UNION ALL SELECT 'p50' AS p, MIN(age) AS age FROM pr WHERE pr >= 0.50 UNION ALL SELECT 'p75' AS p, MIN(age) AS age FROM pr WHERE pr >= 0.75;",
+"age_p90": "WITH pr AS (SELECT age, PERCENT_RANK() OVER (ORDER BY age) AS pr FROM "user") SELECT MIN(age) AS p90_age FROM pr WHERE pr >= 0.90;",
+"age_bucket_distribution": "WITH base AS (SELECT CASE WHEN age < 13 THEN 'child(<13)' WHEN age BETWEEN 13 AND 17 THEN 'teen(13-17)' WHEN age BETWEEN 18 AND 24 THEN 'youth(18-24)' WHEN age BETWEEN 25 AND 34 THEN 'adult(25-34)' WHEN age BETWEEN 35 AND 49 THEN 'adult(35-49)' ELSE 'senior(>=50)' END AS age_bucket FROM "user"), agg AS (SELECT age_bucket, COUNT() AS cnt FROM base GROUP BY age_bucket) SELECT age_bucket, cnt, ROUND(cnt * 1.0 / SUM(cnt) OVER (), 4) AS ratio FROM agg ORDER BY CASE age_bucket WHEN 'child(<13)' THEN 1 WHEN 'teen(13-17)' THEN 2 WHEN 'youth(18-24)' THEN 3 WHEN 'adult(25-34)' THEN 4 WHEN 'adult(35-49)' THEN 5 ELSE 6 END;",
+"age_deciles": "WITH t AS (SELECT age, NTILE(10) OVER (ORDER BY age) AS decile FROM "user") SELECT decile, MIN(age) AS min_age, MAX(age) AS max_age, COUNT() AS users FROM t GROUP BY decile ORDER BY decile;",
+"age_rankings": "SELECT id, name, age, DENSE_RANK() OVER (ORDER BY age DESC) AS age_rank_desc, DENSE_RANK() OVER (ORDER BY age ASC) AS age_rank_asc FROM "user" ORDER BY age DESC, id ASC;",
+"top_3_oldest_users": "SELECT id, name, age FROM "user" ORDER BY age DESC, id ASC LIMIT 3;",
+"age_cdf": "WITH s AS (SELECT age, COUNT() AS ct FROM "user" GROUP BY age), o AS (SELECT age, ct, SUM(ct) OVER (ORDER BY age) AS cum_ct, SUM(ct) OVER () AS total_ct FROM s) SELECT age, cum_ct * 1.0 / total_ct AS cdf FROM o ORDER BY age;",
+"name_length_stats": "SELECT AVG(LENGTH(name))1.0 AS avg_len, MIN(LENGTH(name)) AS min_len, MAX(LENGTH(name)) AS max_len FROM "user";",
+"initial_letter_distribution": "WITH base AS (SELECT UPPER(SUBSTR(name, 1, 1)) AS initial FROM "user") SELECT initial, COUNT() AS users, ROUND(COUNT() * 1.0 / SUM(COUNT()) OVER (), 4) AS ratio FROM base GROUP BY initial ORDER BY users DESC, initial ASC;",
+"even_odd_id_cohort_avg_age": "SELECT CASE WHEN (id % 2) = 0 THEN 'even_id' ELSE 'odd_id' END AS cohort, AVG(age) AS avg_age, COUNT() AS users FROM "user" GROUP BY CASE WHEN (id % 2) = 0 THEN 'even_id' ELSE 'odd_id' END ORDER BY cohort;",
+"age_zscore_per_user": "WITH stats AS (SELECT AVG(age1.0) AS mu, AVG((age1.0)(age1.0)) AS mu2 FROM "user"), z AS (SELECT u., (age1.0 - s.mu) / NULLIF(SQRT(s.mu2 - s.mus.mu), 0) AS age_z FROM "user" u CROSS JOIN stats s) SELECT id, name, age, ROUND(age_z, 4) AS age_zscore FROM z ORDER BY age DESC, id ASC;",
+"age_gini_coefficient": "WITH a AS (SELECT age1.0 AS age FROM "user"), s AS (SELECT SUM(age) AS sum_age, COUNT() AS n FROM a), pairs AS (SELECT a1.age AS x, a2.age AS y FROM a a1 CROSS JOIN a a2), g AS (SELECT (SUM(ABS(x - y)) * 1.0) / (2.0 * (SELECT n FROM s) * (SELECT sum_age FROM s)) AS gini FROM pairs) SELECT gini FROM g;",
+"age_histogram_step_5": "WITH b AS (SELECT (age / 5) * 5 AS bin_start FROM "user") SELECT bin_start, bin_start + 4 AS bin_end, COUNT() AS users FROM b GROUP BY bin_start ORDER BY bin_start;",
+"age_to_name_agg": "SELECT age, ARRAY_AGG(name ORDER BY name) AS names FROM "user" GROUP BY age ORDER BY age;"
+}
