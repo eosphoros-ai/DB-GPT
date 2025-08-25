@@ -15,8 +15,14 @@ class GptsPlan:
     """Gpts plan."""
 
     conv_id: str
+    conv_session_id: str
+    conv_round: int
+    sub_task_id: str
     sub_task_num: int
+    task_uid: str
     sub_task_content: Optional[str]
+    task_parent: Optional[str] = None
+    conv_round_id: Optional[str] = None
     sub_task_title: Optional[str] = None
     sub_task_agent: Optional[str] = None
     resource_name: Optional[str] = None
@@ -25,6 +31,8 @@ class GptsPlan:
     retry_times: int = 0
     max_retry_times: int = 5
     state: Optional[str] = Status.TODO.value
+    action: Optional[str] = None
+    action_input: Optional[str] = None
     result: Optional[str] = None
 
     @staticmethod
@@ -32,7 +40,13 @@ class GptsPlan:
         """Create a GptsPlan object from a dictionary."""
         return GptsPlan(
             conv_id=d["conv_id"],
+            conv_session_id=d["conv_session_id"],
+            conv_round=d["conv_id"],
+            task_uid=d["task_uid"],
             sub_task_num=d["sub_task_num"],
+            sub_task_id=d["sub_task_id"],
+            conv_round_id=d.get("conv_round_id"),
+            task_parent=d.get("task_parent"),
             sub_task_content=d["sub_task_content"],
             sub_task_agent=d["sub_task_agent"],
             resource_name=d["resource_name"],
@@ -54,21 +68,30 @@ class GptsMessage:
     """Gpts message."""
 
     conv_id: str
+    conv_session_id: str
     sender: str
-
-    receiver: str
+    sender_name: str
+    message_id: str
     role: str
     content: str
     rounds: int = 0
+    receiver: Optional[str] = None
+    receiver_name: Optional[str] = None
     is_success: bool = True
+    avatar: Optional[str] = None
+    thinking: Optional[str] = None
     app_code: Optional[str] = None
     app_name: Optional[str] = None
+    goal_id: Optional[str] = None
     current_goal: Optional[str] = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
     model_name: Optional[str] = None
     resource_info: Optional[str] = None
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
+    show_message: bool = True
     created_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
     updated_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
 
@@ -77,9 +100,15 @@ class GptsMessage:
         """Create a GptsMessage object from a dictionary."""
         return GptsMessage(
             conv_id=d["conv_id"],
+            conv_session_id=d["conv_session_id"],
+            message_id=d["message_id"],
             sender=d["sender"],
+            sender_name=d["sender_name"],
             receiver=d["receiver"],
+            receiver_name=d["receiver_name"],
             role=d["role"],
+            avatar=d.get("avatar"),
+            thinking=d["thinking"],
             content=d["content"],
             rounds=d["rounds"],
             is_success=d["is_success"],
@@ -91,6 +120,9 @@ class GptsMessage:
             review_info=d["review_info"],
             action_report=d["action_report"],
             resource_info=d["resource_info"],
+            system_prompt=d["system_prompt"],
+            user_prompt=d["user_prompt"],
+            show_message=d["show_message"],
             created_at=d["created_at"],
             updated_at=d["updated_at"],
         )
@@ -125,13 +157,13 @@ class GptsPlansMemory(ABC):
 
     @abstractmethod
     def get_by_conv_id_and_num(
-        self, conv_id: str, task_nums: List[int]
+        self, conv_id: str, task_ids: List[str]
     ) -> List[GptsPlan]:
         """Get plans by conv_id and task number.
 
         Args:
             conv_id(str): conversation id
-            task_nums(List[int]): List of sequence numbers of plans in the same
+            task_ids(List[str]): List of sequence numbers of plans in the same
                 conversation
 
         Returns:
@@ -150,12 +182,23 @@ class GptsPlansMemory(ABC):
         """
 
     @abstractmethod
-    def complete_task(self, conv_id: str, task_num: int, result: str) -> None:
+    def get_plans_by_msg_round(self, conv_id: str, rounds_id: str) -> List[GptsPlan]:
+        """Get unfinished planning steps.
+
+        Args:
+            conv_id(str): Conversation id
+            rounds_id(str): rounds id
+        Returns:
+            List[GptsPlan]: List of planning steps
+        """
+
+    @abstractmethod
+    def complete_task(self, conv_id: str, task_id: str, result: str) -> None:
         """Set the planning step to complete.
 
         Args:
             conv_id(str): conversation id
-            task_num(int): Planning step num
+            task_id(str): Planning step id
             result(str): Plan step results
         """
 
@@ -163,7 +206,7 @@ class GptsPlansMemory(ABC):
     def update_task(
         self,
         conv_id: str,
-        task_num: int,
+        task_id: str,
         state: str,
         retry_times: int,
         agent: Optional[str] = None,
@@ -174,9 +217,11 @@ class GptsPlansMemory(ABC):
 
         Args:
             conv_id(str): conversation id
-            task_num(int): Planning step num
+            conv_round(int): conversation round
+            task_id(str): Planning step num
             state(str): the status to update to
             retry_times(int): Latest number of retries
+            conv_round_uid(str): conversation round uid
             agent(str): Agent's name
             model(str): Model name
             result(str): Plan step results
@@ -185,6 +230,14 @@ class GptsPlansMemory(ABC):
     @abstractmethod
     def remove_by_conv_id(self, conv_id: str) -> None:
         """Remove plan by conversation id.
+
+        Args:
+            conv_id(str): conversation id
+        """
+
+    @abstractmethod
+    def get_by_conv_and_content(self, conv_id: str, content: str) -> Optional[GptsPlan]:
+        """get plan by conversation id.
 
         Args:
             conv_id(str): conversation id
@@ -200,6 +253,17 @@ class GptsMessageMemory(ABC):
 
         Args:
             message(GptsMessage): Message object
+        """
+
+    @abstractmethod
+    def update(self, message: GptsMessage) -> None:
+        """Update message.
+
+        Args:
+            message:
+
+        Returns:
+
         """
 
     @abstractmethod
@@ -246,6 +310,17 @@ class GptsMessageMemory(ABC):
             conv_id(str): Conversation id
         Returns:
             List[GptsMessage]: List of messages
+        """
+
+    @abstractmethod
+    def get_by_message_id(self, message_id: str) -> Optional[GptsMessage]:
+        """Return one messages by message id.
+
+        Args:
+            message_id:
+
+        Returns:
+
         """
 
     @abstractmethod

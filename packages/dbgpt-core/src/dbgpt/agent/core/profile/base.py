@@ -162,6 +162,10 @@ class Profile(ABC):
         """Return the goal of current agent."""
         return None
 
+    def get_avatar(self) -> Optional[str]:
+        """Return the goal of current agent."""
+        return None
+
     def get_retry_goal(self) -> Optional[str]:
         """Return the goal of current agent."""
         return None
@@ -348,6 +352,7 @@ class DefaultProfile(BaseModel, Profile):
     role: str = Field("", description="The role of the agent.")
     goal: Optional[str] = Field(None, description="The goal of the agent.")
     retry_goal: Optional[str] = Field(None, description="The retry goal of the agent.")
+    avatar: Optional[str] = Field(None, description="The avatar of the agent.")
     constraints: Optional[List[str]] = Field(
         None, description="The constraints of the agent."
     )
@@ -392,6 +397,10 @@ class DefaultProfile(BaseModel, Profile):
     def get_goal(self) -> Optional[str]:
         """Return the goal of current agent."""
         return self.goal
+
+    def get_avatar(self) -> Optional[str]:
+        """Return the avatar of current agent."""
+        return self.avatar
 
     def get_retry_goal(self) -> Optional[str]:
         """Return the retry goal of current agent."""
@@ -448,6 +457,7 @@ class ProfileFactory:
         goal: Optional[str] = None,
         prefer_prompt_language: Optional[str] = None,
         prefer_model: Optional[str] = None,
+        avatar: Optional[str] = None,
     ) -> Optional[Profile]:
         """Create a profile."""
 
@@ -469,6 +479,7 @@ class LLMProfileFactory(ProfileFactory):
         goal: Optional[str] = None,
         prefer_prompt_language: Optional[str] = None,
         prefer_model: Optional[str] = None,
+        avatar: Optional[str] = None,
     ) -> Optional[Profile]:
         """Create a profile by LLM.
 
@@ -495,6 +506,7 @@ class DatasetProfileFactory(ProfileFactory):
         goal: Optional[str] = None,
         prefer_prompt_language: Optional[str] = None,
         prefer_model: Optional[str] = None,
+        avatar: Optional[str] = None,
     ) -> Optional[Profile]:
         """Create a profile by dataset.
 
@@ -518,6 +530,7 @@ class CompositeProfileFactory(ProfileFactory):
         goal: Optional[str] = None,
         prefer_prompt_language: Optional[str] = None,
         prefer_model: Optional[str] = None,
+        avatar: Optional[str] = None,
     ) -> Optional[Profile]:
         """Create a profile by combining multiple profile factories.
 
@@ -540,6 +553,7 @@ class ProfileConfig(BaseModel):
     name: str | ConfigInfo | None = DynConfig(..., description="The name of the agent.")
     role: str | ConfigInfo | None = DynConfig(..., description="The role of the agent.")
     goal: str | ConfigInfo | None = DynConfig(None, description="The retry goal.")
+    avatar: str | ConfigInfo | None = DynConfig(None, description="The avatar.")
     retry_goal: str | ConfigInfo | None = DynConfig(None, description="The goal.")
     constraints: List[str] | ConfigInfo | None = DynConfig(None, is_list=True)
     retry_constraints: List[str] | ConfigInfo | None = DynConfig(None, is_list=True)
@@ -592,6 +606,7 @@ class ProfileConfig(BaseModel):
         name = self.name
         role = self.role
         goal = self.goal
+        avatar = self.avatar
         retry_goal = self.retry_goal
         retry_constraints = self.retry_constraints
         constraints = self.constraints
@@ -611,6 +626,8 @@ class ProfileConfig(BaseModel):
             role = role.query(**call_args)
         if isinstance(goal, ConfigInfo):
             goal = goal.query(**call_args)
+        if isinstance(avatar, ConfigInfo):
+            avatar = avatar.query(**call_args)
         if isinstance(retry_goal, ConfigInfo):
             retry_goal = retry_goal.query(**call_args)
         if isinstance(constraints, ConfigInfo):
@@ -648,6 +665,7 @@ class ProfileConfig(BaseModel):
                 goal,
                 prefer_prompt_language,
                 prefer_model,
+                avatar,
             )
 
         if factory_profile is not None:
@@ -656,6 +674,7 @@ class ProfileConfig(BaseModel):
             name=name,
             role=role,
             goal=goal,
+            avatar=avatar,
             retry_goal=retry_goal,
             constraints=constraints,
             retry_constraints=retry_constraints,

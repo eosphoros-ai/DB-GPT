@@ -71,6 +71,25 @@ class AgentManager(BaseComponent):
 
         self._core_agents = list(core_agents.values())
 
+        """Register Manager Agent"""
+
+        # from dbgpt.agent.core.plan.report_agent import ReportAssistantAgent
+        # self.register_agent(ReportAssistantAgent)
+        # from dbgpt_serve.agent.agents.expand.db_agent.planning_agent import PlanningAgent
+        # self.register_agent(PlanningAgent)
+
+        # from .plan.react.team_react_plan import ReActPlanChatManager
+        # from .plan.auto.team_auto_plan import AutoPlanChatManager
+        #
+        # self.register_agent(ReActPlanChatManager)
+        # self.register_agent(AutoPlanChatManager)
+
+        # from dbgpt_ext.agent.agents.open_rca.ipython_agent import IpythonAssistantAgent
+        # self.register_agent(IpythonAssistantAgent)
+
+        # from dbgpt_ext.agent.agents.open_rca.rca_planning_agent import RcaPlanningAgent
+        # self.register_agent(RcaPlanningAgent)
+
     def register_agent(
         self, cls: Type[ConversableAgent], ignore_duplicate: bool = False
     ) -> str:
@@ -166,11 +185,13 @@ def scan_agents():
     if _HAS_SCAN:
         return
     scanner = ModelScanner[ConversableAgent]()
-    config = ScannerConfig(
-        module_path="dbgpt.agent.expand",
-        base_class=ConversableAgent,
-        recursive=True,
-    )
-    scanner.scan_and_register(config)
+
+    for path in ["dbgpt.agent.expand", "dbgpt_serve.agent.agents.expands.db_agent"]:
+        config = ScannerConfig(
+            module_path=path,
+            base_class=ConversableAgent,
+            recursive=True,
+        )
+        scanner.scan_and_register(config)
     _HAS_SCAN = True
     return scanner.get_registered_items()

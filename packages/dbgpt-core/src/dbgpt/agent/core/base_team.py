@@ -130,6 +130,7 @@ class ManagerAgent(ConversableAgent, Team):
     )
 
     is_team: bool = True
+    last_rounds: int = 100
 
     # The management agent does not need to retry the exception. The actual execution
     # of the agent has already been retried.
@@ -140,32 +141,28 @@ class ManagerAgent(ConversableAgent, Team):
         ConversableAgent.__init__(self, **kwargs)
         Team.__init__(self, **kwargs)
 
-    async def thinking(
-        self,
-        messages: List[AgentMessage],
-        sender: Optional[Agent] = None,
-        prompt: Optional[str] = None,
-    ) -> Tuple[Optional[str], Optional[str]]:
-        """Think and reason about the current task goal."""
-        # TeamManager, which is based on processes and plans by default, only needs to
-        # ensure execution and does not require additional thinking.
-        if messages is None or len(messages) <= 0:
-            return None, None
-        else:
-            message = messages[-1]
-            self.messages.append(message.to_llm_message())
-            return message.content, None
-
     async def _load_thinking_messages(
         self,
         received_message: AgentMessage,
         sender: Agent,
-        observation: Optional[str] = None,
         rely_messages: Optional[List[AgentMessage]] = None,
         historical_dialogues: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
         is_retry_chat: bool = False,
-        current_retry_counter: Optional[int] = None,
-    ) -> Tuple[List[AgentMessage], Optional[Dict]]:
+        force_use_historical: bool = False,
+    ) -> Tuple[List[AgentMessage], Optional[Dict], Optional[str], Optional[str]]:
         """Load messages for thinking."""
-        return [AgentMessage(content=received_message.content)], None
+        return [AgentMessage(content=received_message.content)], None, None, None
+
+    async def adjust_final_message(
+        self,
+        is_success: bool,
+        reply_message: AgentMessage,
+    ):
+        all_messages = await self.memory.gpts_memory.get_messages(
+            self.agent_context.conv_id
+        )
+        if self.last_rounds > 0:
+            reply_message.rounds = all_messages[-1].rounds + 1
+        reply_message.current_goal = self.current_goal
+        return is_success, reply_message

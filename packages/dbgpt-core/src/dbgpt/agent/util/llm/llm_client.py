@@ -2,13 +2,13 @@
 
 import json
 import logging
-import traceback
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional, Type, Union
 
 from dbgpt.core import LLMClient, ModelOutput, ModelRequestContext
 from dbgpt.core.interface.output_parser import BaseOutputParser
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.tracer import root_tracer
+from dbgpt.vis import Vis
 
 from ..llm.llm import _build_model_request
 
@@ -32,12 +32,16 @@ class AIWrapper:
     }
 
     def __init__(
-        self, llm_client: LLMClient, output_parser: Optional[BaseOutputParser] = None
+        self,
+        llm_client: LLMClient,
+        output_parser: Optional[BaseOutputParser] = None,
+        thinking_render: Optional[Type[Vis]] = None,
     ):
         """Create an AIWrapper instance."""
         self.llm_echo = False
         self.model_cache_enable = False
         self._llm_client = llm_client
+        self._thinking_render = thinking_render
         self._output_parser = output_parser or BaseOutputParser(is_stream_out=False)
 
     @classmethod
@@ -120,39 +124,16 @@ class AIWrapper:
         return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
     async def create(self, verbose: bool = False, **config):
-        """Create llm client request."""
         # merge the input config with the i-th config in the config list
         full_config = {**config}
         # separate the config into create_config and extra_kwargs
         create_config, extra_kwargs = self._separate_create_config(full_config)
-
-        # construct the create params
         params = self._construct_create_params(create_config, extra_kwargs)
-        # get the cache_seed, filter_func and context
-        filter_func = extra_kwargs.get("filter_func")
-        context = extra_kwargs.get("context")
         llm_model = extra_kwargs.get("llm_model")
-        memory = extra_kwargs.get("memory", None)
-        conv_id = extra_kwargs.get("conv_id", None)
-        sender = extra_kwargs.get("sender", None)
         stream_out = extra_kwargs.get("stream_out", True)
 
-        try:
-            response = await self._completions_create(
-                llm_model, params, conv_id, sender, memory, stream_out, verbose
-            )
-        except LLMChatError as e:
-            logger.debug(f"{llm_model} generate failed!{str(e)}")
-            raise e
-        else:
-            pass_filter = filter_func is None or filter_func(
-                context=context, response=response
-            )
-            if pass_filter:
-                # Return the response if it passes the filter
-                return response
-            else:
-                return None
+        async for out in self._completions_create(llm_model, params, stream_out):
+            yield out
 
     def _get_span_metadata(self, payload: Dict) -> Dict:
         metadata = {k: v for k, v in payload.items()}
@@ -168,16 +149,7 @@ class AIWrapper:
 
         return gpts_messages
 
-    async def _completions_create(
-        self,
-        llm_model,
-        params,
-        conv_id: Optional[str] = None,
-        sender: Optional[str] = None,
-        memory: Optional[Any] = None,
-        stream_out: bool = True,
-        verbose: bool = False,
-    ):
+    async def _completions_create(self, llm_model, params, stream_out: bool = True):
         payload = {
             "model": llm_model,
             "prompt": params.get("prompt"),
@@ -185,7 +157,12 @@ class AIWrapper:
             "temperature": float(params.get("temperature")),
             "max_new_tokens": int(params.get("max_new_tokens")),
             "echo": self.llm_echo,
+            "trace_id": params.get("trace_id", None),
+            "rpc_id": params.get("rpc_id", None),
         }
+        # messages_prompt = '\n'.join(item['content'] for item in payload['messages'])
+        # await self._llm_client.count_token(llm_model, messages_prompt)
+        logger.info(f"Model:{llm_model},token count:none")
         logger.info(f"Request: \n{payload}")
         span = root_tracer.start_span(
             "Agent.llm_client.no_streaming_call",
@@ -197,37 +174,56 @@ class AIWrapper:
             payload["context"] = ModelRequestContext(extra=params["context"])
         try:
             model_request = _build_model_request(payload)
-            str_prompt = model_request.messages_to_string()
-            model_output: Optional[ModelOutput] = None
-            async for output in self._llm_client.generate_stream(model_request.copy()):  # type: ignore # noqa
-                model_output = output
-                if memory and stream_out:
-                    from ... import GptsMemory  # noqa: F401
+            from datetime import datetime
 
-                    temp_message = {
-                        "sender": sender,
-                        "receiver": "?",
-                        "model": llm_model,
-                        "markdown": model_output.gen_text_with_thinking(),
-                    }
-                    await memory.push_message(
-                        conv_id,
-                        temp_message,
+            start_time = datetime.now()
+            if stream_out:
+                async for output in self._llm_client.generate_stream(
+                    model_request.copy()
+                ):  # type: ignore
+                    model_output: ModelOutput = output
+                    # 恢复模型调用异常，触发后续的模型兜底策略
+                    # 恢复模型调用异常，触发后续的模型兜底策略
+                    if model_output.error_code != 0:
+                        raise LLMChatError(
+                            model_output.text,
+                            original_exception=model_output.error_code,
+                        )
+
+                    parsed_output = model_output.gen_text_and_thinking()
+
+                    think_blank = not parsed_output[0] or len(parsed_output[0]) <= 0
+                    content_blank = not parsed_output[1] or len(parsed_output[1]) <= 0
+                    if think_blank and content_blank:
+                        continue
+                    first_chunk = False
+
+                    if first_chunk:
+                        end_time = datetime.now()
+                        logger.info(
+                            f"LLM stream generate first token cost:{end_time - start_time} "
+                            f"seconds. output is {parsed_output}"
+                        )
+                    yield parsed_output
+            else:
+                model_output = await self._llm_client.generate(model_request.copy())  # type: ignore
+                # 恢复模型调用异常，触发后续的模型兜底策略
+                if model_output.error_code != 0:
+                    raise LLMChatError(
+                        model_output.text, original_exception=model_output.error_code
                     )
-            if not model_output:
-                raise ValueError("LLM generate stream is null!")
-            parsed_output = model_output.gen_text_with_thinking()
-
-            if verbose:
-                print("\n", "-" * 80, flush=True, sep="")
-                print(f"String Prompt[verbose]: \n{str_prompt}")
-                print(f"LLM Output[verbose]: \n{parsed_output}")
-                print("-" * 80, "\n", flush=True, sep="")
-            return parsed_output
+                parsed_output = model_output.gen_text_and_thinking()
+                # parsed_output = parsed_output.strip().replace("\\n", "\n")
+                end_time = datetime.now()
+                logger.info(
+                    f"LLM no stream generate cost:{end_time - start_time} "
+                    f"seconds. output is {parsed_output}"
+                )
+                yield parsed_output
+        except LLMChatError:
+            raise
         except Exception as e:
-            logger.error(
-                f"Call LLMClient error, {str(e)}, detail: {traceback.format_exc()}"
-            )
-            raise LLMChatError(original_exception=e) from e
+            logger.exception(f"Call LLMClient error, detail: {str(e)}")
+            raise ValueError(f"LLM Request Exception!{str(e)}")
         finally:
             span.end()

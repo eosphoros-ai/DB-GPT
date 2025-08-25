@@ -3,35 +3,38 @@
 import logging
 from typing import Dict, List, Optional, Tuple
 
+from dbgpt.agent import (
+    Agent,
+    AgentMessage,
+    BlankAction,
+    ConversableAgent,
+    ProfileConfig,
+)
 from dbgpt.rag.retriever.rerank import RetrieverNameRanker
-
-from .. import AgentMessage
-from ..core.action.blank_action import BlankAction
-from ..core.base_agent import ConversableAgent
-from ..core.profile import DynConfig, ProfileConfig
+from dbgpt.util.configure import DynConfig
 
 logger = logging.getLogger(__name__)
 
 
-class SummaryAssistantAgent(ConversableAgent):
-    """Summary Assistant Agent."""
+class ReportAssistantAgent(ConversableAgent):
+    """Reporter Assistant Agent."""
 
     profile: ProfileConfig = ProfileConfig(
         name=DynConfig(
-            "数据总结报告助手",
+            "reporter",
             category="agent",
-            key="dbgpt_agent_expand_summary_assistant_agent_profile_name",
+            key="dbgpt_agent_reporter_agent_profile_name",
         ),
         role=DynConfig(
-            "Summarizer",
+            "Report Expert",
             category="agent",
-            key="dbgpt_agent_expand_summary_assistant_agent_profile_role",
+            key="dbgpt_agent_reporter_agent_profile_role",
         ),
         goal=DynConfig(
             "Summarize answer summaries based on user questions from provided "
             "resource information or from historical conversation memories.",
             category="agent",
-            key="dbgpt_agent_expand_summary_assistant_agent_profile_goal",
+            key="dbgpt_agent_reporter_agent_profile_goal",
         ),
         constraints=DynConfig(
             [
@@ -111,12 +114,17 @@ class SummaryAssistantAgent(ConversableAgent):
                 return resource_prompt, resource_reference
         return None, None
 
-    def _init_reply_message(
+    async def init_reply_message(
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
+        sender: Optional[Agent] = None,
     ) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message, rely_messages)
+        reply_message = await super().init_reply_message(
+            received_message=received_message,
+            rely_messages=rely_messages,
+            sender=sender,
+        )
         reply_message.context = {
             "user_question": received_message.content,
         }
