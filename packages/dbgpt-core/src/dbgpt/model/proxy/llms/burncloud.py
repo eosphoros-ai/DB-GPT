@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
 
@@ -142,6 +143,24 @@ class BurnCloudLLMClient(OpenAILLMClient):
     def param_class(cls) -> Type[BurnCloudDeployModelParameters]:
         """Get the deploy model parameters class."""
         return BurnCloudDeployModelParameters
+
+    @classmethod
+    def new_client(
+        cls,
+        model_params: BurnCloudDeployModelParameters,
+        default_executor: Optional[Executor] = None,
+    ) -> "BurnCloudLLMClient":
+        """Create a new client with the model parameters."""
+        return cls(
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
+            proxy=model_params.http_proxy,
+            model_alias=model_params.real_provider_model_name,
+            context_length=max(model_params.context_length or 8192, 8192),
+        )
 
     @classmethod
     def generate_stream_function(
