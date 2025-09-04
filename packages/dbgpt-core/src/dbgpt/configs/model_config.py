@@ -105,6 +105,7 @@ LLM_MODEL_CONFIG = {
     # https://docs.siliconflow.cn/quickstart
     "siliconflow_proxyllm": "siliconflow_proxyllm",
     "gitee_proxyllm": "gitee_proxyllm",
+    "burncloud_proxyllm": "burncloud_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),

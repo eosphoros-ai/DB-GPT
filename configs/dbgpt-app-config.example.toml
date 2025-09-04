@@ -40,6 +40,13 @@ provider = "${env:LLM_MODEL_PROVIDER:-proxy/openai}"
 api_base = "${env:OPENAI_API_BASE:-https://api.openai.com/v1}"
 api_key = "${env:OPENAI_API_KEY}"
 
+# BurnCloud Configuration Example
+# [[models.llms]]
+# name = "claude-sonnet-4-20250514"
+# provider = "proxy/burncloud"
+# api_base = "https://ai.burncloud.com/v1"
+# api_key = "${env:BURNCLOUD_API_KEY}"
+
 [[models.embeddings]]
 name = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
 provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
