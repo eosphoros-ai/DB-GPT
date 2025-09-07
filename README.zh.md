@@ -80,7 +80,9 @@
 #### 子模块
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
-- [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议 
+- [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts 是官方提供的数据应用仓库, 包含数据智能应用, 智能体编排流程模版, 通用算子等构建在DB-GPT之上的资源。 
+
 
 #### DeepWiki
 - [DB-GPT](https://deepwiki.com/eosphoros-ai/DB-GPT)
@@ -88,7 +90,6 @@
 - [dbgpts](https://deepwiki.com/eosphoros-ai/dbgpts)
 
 
-- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts 是官方提供的数据应用仓库, 包含数据智能应用, 智能体编排流程模版, 通用算子等构建在DB-GPT之上的资源。 
 
 #### Text2SQL 微调模型
 
