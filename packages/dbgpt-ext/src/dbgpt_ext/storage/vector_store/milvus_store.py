@@ -693,6 +693,25 @@ class MilvusStore(VectorStoreBase):
         self.col.delete(delete_expr)
         return True
 
+    # delete the corresponding vectors by file_id
+    def delete_by_file_id(self, file_id: str):
+        print("MilvusStore.delete_by_file_id")
+        """Delete vector by file_id."""
+        try:
+            from pymilvus import Collection
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
+        self.col = Collection(self.collection_name)
+        print(self.col)
+        # milvus delete vectors by file_id
+        logger.info(f"begin delete milvus file_id: {file_id}")
+        delete_expr = f"{self.metadata_field} like '%\"file_id\": {file_id}%'"
+        self.col.delete(delete_expr)
+        return True
+
     def convert_metadata_filters(self, filters: MetadataFilters) -> str:
         """Convert filter to milvus filters.
 
