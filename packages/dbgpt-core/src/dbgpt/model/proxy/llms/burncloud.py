@@ -95,12 +95,16 @@ class BurnCloudLLMClient(OpenAILLMClient):
         )
         api_key = api_key or os.getenv("BURNCLOUD_API_KEY")
         model = model or _DEFAULT_MODEL
-        
+
         # Set context length based on model
         if not context_length:
-            if any(x in model for x in ["claude-opus-4", "claude-sonnet-4", "gpt-5", "o3"]):
+            if any(
+                x in model for x in ["claude-opus-4", "claude-sonnet-4", "gpt-5", "o3"]
+            ):
                 context_length = 200 * 1024  # 200K
-            elif any(x in model for x in ["claude-3", "gpt-4", "gemini-2.5", "DeepSeek-V3"]):
+            elif any(
+                x in model for x in ["claude-3", "gpt-4", "gemini-2.5", "DeepSeek-V3"]
+            ):
                 context_length = 128 * 1024  # 128K
             else:
                 context_length = 32 * 1024  # Default 32K
