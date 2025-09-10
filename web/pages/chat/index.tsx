@@ -188,10 +188,14 @@ const Chat: React.FC = () => {
           const parsed = JSON.parse(item.context);
           let content: any;
           if (scene === 'chat_agent') {
-            content = parsed?.vis ?? parsed?.choices?.[0]?.message?.content ??
+            content =
+              parsed?.vis ??
+              parsed?.choices?.[0]?.message?.content ??
               (typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2));
           } else if (scene === 'chat_flow') {
-            content = parsed?.choices?.[0]?.message?.content ?? parsed?.vis ??
+            content =
+              parsed?.choices?.[0]?.message?.content ??
+              parsed?.vis ??
               (typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2));
           }
           if (typeof content === 'string') {
