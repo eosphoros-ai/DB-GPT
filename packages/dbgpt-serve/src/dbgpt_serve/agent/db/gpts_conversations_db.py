@@ -23,7 +23,7 @@ class GptsConversationsEntity(Model):
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
     conv_session_id = Column(
-        String(255), nullable=False, comment="The unique id of the conversation record"
+        String(255), nullable=True, comment="The unique id of the conversation record"
     )
     user_goal = Column(Text, nullable=False, comment="User's goals content")
 

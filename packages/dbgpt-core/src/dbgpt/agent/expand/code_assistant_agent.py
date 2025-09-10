@@ -128,7 +128,8 @@ class CodeAssistantAgent(ConversableAgent):
         action_report = message.action_report
         if not action_report:
             return False, "No execution solution results were checked"
-        check_result, model = await self.thinking(
+        agent_msg = AgentMessage()
+        llm_think, check_result, model_name = await self.thinking(
             messages=[
                 AgentMessage(
                     role=ModelMessageRoleType.HUMAN,
@@ -138,6 +139,8 @@ class CodeAssistantAgent(ConversableAgent):
                     f"Execution Result: {action_report.content}",
                 )
             ],
+            reply_message_id=agent_msg.message_id,
+            reply_message=agent_msg,
             prompt=CHECK_RESULT_SYSTEM_MESSAGE,
         )
         success = str_to_bool(check_result)

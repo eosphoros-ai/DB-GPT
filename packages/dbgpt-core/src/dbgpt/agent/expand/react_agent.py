@@ -2,10 +2,9 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Type, Union
 
-from dbgpt._private.pydantic import Field
 from dbgpt.agent import (
     ActionOutput,
-    Agent,
+    ActorProxyAgent,
     AgentMemoryFragment,
     AgentMessage,
     ConversableAgent,
@@ -100,25 +99,45 @@ class ReActAgent(ConversableAgent):
             category="agent",
             key="dbgpt_agent_expand_plugin_assistant_agent_goal",
         ),
+        desc=DynConfig(
+            "Utilize various tools to assist AI in solving a variety of user "
+            "problems. If you believe you need some tools to address user issues, "
+            "you can try this Agent.",
+            category="agent",
+            key="dbgpt_agent_expand_plugin_assistant_agent_desc",
+        ),
         system_prompt_template=_REACT_SYSTEM_TEMPLATE,
         user_prompt_template=_REACT_USER_TEMPLATE,
         write_memory_template=_REACT_WRITE_MEMORY_TEMPLATE,
     )
-    parser: ReActOutputParser = Field(default_factory=ReActOutputParser)
 
-    def __init__(self, **kwargs):
+    def __init__(self, parser: Optional[ReActOutputParser] = None, **kwargs):
         """Init indicator AssistantAgent."""
         super().__init__(**kwargs)
+        self.parser = parser or ReActOutputParser()
 
         self._init_actions([ReActAction, Terminate])
 
-    async def _a_init_reply_message(
+    async def init_reply_message(
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
+        sender: Optional[ActorProxyAgent] = None,
+        rounds: Optional[int] = None,
     ) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message, rely_messages)
+        reply_message = await super().init_reply_message(
+            received_message, rely_messages
+        )
 
+        action_detail = await self._action_detail()
+        reply_message.context = {
+            "max_steps": self.max_retry_count,
+            **action_detail,
+        }
+        return reply_message
+
+    async def _action_detail(self) -> Dict[str, Any]:
+        """Get the action details."""
         tool_packs = ToolPack.from_resource(self.resource)
         action_space = []
         action_space_names = []
@@ -138,14 +157,11 @@ class ReActAgent(ConversableAgent):
             for action in self.actions:
                 action_space_names.append(action.name)
                 action_space.append(action.get_action_description())
-            # self.actions
-        reply_message.context = {
-            "max_steps": self.max_retry_count,
+        return {
             "action_space": "\n".join(action_space),
             "action_space_names": ", ".join(action_space_names),
             "action_space_simple_desc": "\n".join(action_space_simple_desc),
         }
-        return reply_message
 
     async def preload_resource(self) -> None:
         await super().preload_resource()
@@ -196,10 +212,18 @@ class ReActAgent(ConversableAgent):
                 return resource_prompt, resource_reference
         return None, None
 
+    async def agent_full_desc(self) -> str:
+        desc = await super().agent_full_desc()
+        action_detail = await self._action_detail()
+        action_space_simple_desc = action_detail.get("action_space_simple_desc", "")
+        if action_space_simple_desc:
+            desc = f"{desc}, available tools:\n{action_space_simple_desc}"
+        return desc
+
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
@@ -211,8 +235,8 @@ class ReActAgent(ConversableAgent):
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,

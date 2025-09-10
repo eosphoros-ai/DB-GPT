@@ -4,6 +4,7 @@ import uuid
 from abc import ABC
 from typing import List, Optional
 
+import lyricore as lc
 from fastapi import APIRouter
 
 from dbgpt._private.config import Config
@@ -39,6 +40,7 @@ class DBAnalyzerController(ABC):
         conv_session_id: str,
         conv_uid: str,
         agent_memory: AgentMemory,
+        to_free_resources: List[lc.ActorRef],
         gpts_conversations: GptsConversationsDao,
         is_retry_chat: bool = False,
         last_speaker_name: str = None,

@@ -4,8 +4,10 @@ import logging
 import time
 import uuid
 from abc import ABC
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Type
 
+import lyricore as lc
 from fastapi import APIRouter
 
 from dbgpt._private.config import Config
@@ -20,25 +22,33 @@ from dbgpt.agent import (
     GptsMemory,
     HybridMemory,
     LLMConfig,
+    Memory,
     ResourceType,
     UserProxyAgent,
     get_agent_manager,
+)
+from dbgpt.agent.core.actor_agent import ActorGptsMemory, AgentActorMonitor, MemoryActor
+from dbgpt.agent.core.memory.base import (
+    DiscardedMemoryFragments,
+    ImportanceScorer,
+    InsightExtractor,
+    M,
+    T,
+    WriteOperation,
 )
 from dbgpt.agent.core.memory.gpts import GptsMessage
 from dbgpt.agent.core.schema import Status
 from dbgpt.agent.resource import get_resource_manager
 from dbgpt.agent.util.llm.llm import LLMStrategyType
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
-from dbgpt.core import PromptTemplate
+from dbgpt.core import LLMClient, PromptTemplate
 from dbgpt.core.awel.flow.flow_factory import FlowCategory
 from dbgpt.core.interface.message import StorageConversation
-from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.model.cluster import WorkerManager, WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.json_utils import serialize
 from dbgpt.util.tracer import TracerManager
-from dbgpt_app.dbgpt_server import system_app
-from dbgpt_app.scene.base import ChatScene
 from dbgpt_serve.conversation.serve import Serve as ConversationServe
 from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.prompt.api.endpoints import get_service
@@ -68,6 +78,8 @@ def _build_conversation(
     user_name: Optional[str] = "",
     sys_code: Optional[str] = "",
 ) -> StorageConversation:
+    from dbgpt_app.scene.base import ChatScene
+
     return StorageConversation(
         conv_uid=conv_id,
         chat_mode=ChatScene.ChatAgent.value(),
@@ -81,6 +93,163 @@ def _build_conversation(
         conv_storage=conv_serve.conv_storage,
         message_storage=conv_serve.message_storage,
     )
+
+
+class GptsMemoryActor(MemoryActor):
+    def __init__(self):
+        super().__init__(
+            plans_memory=MetaDbGptsPlansMemory(),
+            message_memory=MetaDbGptsMessageMemory(),
+        )
+
+
+class MyHybridMemoryActor:
+    def __init__(self):
+        self.inner_memory = None
+
+    async def check_or_init(self):
+        system_app = CFG.SYSTEM_APP
+        if self.inner_memory is None:
+            executor = system_app.get_component(
+                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+            ).create()
+
+            from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
+            from dbgpt_serve.rag.storage_manager import StorageManager
+
+            storage_manager = StorageManager.get_instance(system_app)
+            index_name = "agent_memory_long_term"
+            vector_store = storage_manager.create_vector_store(index_name=index_name)
+            if not vector_store.vector_name_exists():
+                vector_store.create_collection(collection_name=index_name)
+            embeddings = EmbeddingFactory.get_instance(system_app).create()
+            short_term_memory = EnhancedShortTermMemory(
+                embeddings, executor=executor, buffer_size=10
+            )
+            memory = HybridMemory.from_vstore(
+                vector_store,
+                embeddings=embeddings,
+                executor=executor,
+                short_term_memory=short_term_memory,
+            )
+            self.inner_memory = memory
+        return self.inner_memory
+
+    async def initialize(
+        self,
+        name: Optional[str] = None,
+        llm_client: Optional[LLMClient] = None,
+        importance_scorer: Optional[ImportanceScorer] = None,
+        insight_extractor: Optional[InsightExtractor] = None,
+        real_memory_fragment_class: Optional[Type[T]] = None,
+        session_id: Optional[str] = None,
+    ) -> None:
+        try:
+            memory = await self.check_or_init()
+            await memory.initialize(
+                name,
+                llm_client,
+                importance_scorer,
+                insight_extractor,
+                real_memory_fragment_class,
+                session_id,
+            )
+        except Exception as e:
+            logger.exception(f"MyHybridMemoryActor initialize error!{str(e)}")
+
+    async def write(
+        self,
+        memory_fragment: T,
+        now: Optional[datetime] = None,
+        op: WriteOperation = WriteOperation.ADD,
+    ) -> Optional[DiscardedMemoryFragments[T]]:
+        try:
+            memory = await self.check_or_init()
+            return await memory.write(memory_fragment, now, op)
+        except Exception as e:
+            logger.exception(f"MyHybridMemoryActor write error!{str(e)}")
+            return None
+
+    async def read(
+        self,
+        observation: str,
+        alpha: Optional[float] = None,
+        beta: Optional[float] = None,
+        gamma: Optional[float] = None,
+    ) -> List[T]:
+        try:
+            memory = await self.check_or_init()
+            return await memory.read(observation, alpha, beta, gamma)
+        except Exception as e:
+            logger.exception(f"MyHybridMemoryActor read error!{str(e)}")
+            return []
+
+    async def clear(self) -> List[T]:
+        memory = await self.check_or_init()
+        return await memory.clear()
+
+
+class MyHybridMemory(Memory):
+    def __init__(self, memory_ref: lc.ActorRef):
+        self.memory_ref = memory_ref
+
+    async def initialize(
+        self,
+        name: Optional[str] = None,
+        llm_client: Optional[LLMClient] = None,
+        importance_scorer: Optional[ImportanceScorer] = None,
+        insight_extractor: Optional[InsightExtractor] = None,
+        real_memory_fragment_class: Optional[Type[T]] = None,
+        session_id: Optional[str] = None,
+    ) -> None:
+        try:
+            await self.memory_ref.initialize.ask(
+                name,
+                llm_client,
+                importance_scorer,
+                insight_extractor,
+                real_memory_fragment_class,
+                session_id,
+            )
+        except Exception as e:
+            logger.exception(f"MyHybridMemory initialize error!{str(e)}")
+
+    def structure_clone(self: M, now: Optional[datetime] = None) -> M:
+        return MyHybridMemory(self.memory_ref)
+
+    async def write(
+        self,
+        memory_fragment: T,
+        now: Optional[datetime] = None,
+        op: WriteOperation = WriteOperation.ADD,
+    ) -> Optional[DiscardedMemoryFragments[T]]:
+        return await self.memory_ref.write.ask(memory_fragment, now, op)
+
+    async def read(
+        self,
+        observation: str,
+        alpha: Optional[float] = None,
+        beta: Optional[float] = None,
+        gamma: Optional[float] = None,
+    ) -> List[T]:
+        return await self.memory_ref.read.ask(observation, alpha, beta, gamma)
+
+    async def clear(self) -> List[T]:
+        return await self.memory_ref.clear.ask()
+
+
+class AgentLLMClient(DefaultLLMClient):
+    @property
+    def worker_manager(self) -> WorkerManager:
+        """Get the worker manager instance.
+        If not set, get the worker manager from the system app. If not set, raise
+        ValueError.
+        """
+        if not self._worker_manager:
+            self._worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
+        return self._worker_manager
 
 
 class MultiAgents(BaseComponent, ABC):
@@ -134,35 +303,44 @@ class MultiAgents(BaseComponent, ABC):
         """get app"""
         return self.gpts_app.app_detail(app_code)
 
-    def get_or_build_agent_memory(self, conv_id: str, dbgpts_name: str) -> AgentMemory:
+    def get_or_build_agent_memory(
+        self, conv_id: str, dbgpts_name: str, gpts_memory, memory_ref: lc.ActorRef
+    ) -> AgentMemory:
         from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
+        from dbgpt.util.serialization.check import check_serializable
         from dbgpt_serve.rag.storage_manager import StorageManager
 
-        executor = self.system_app.get_component(
-            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-        ).create()
+        # executor = self.system_app.get_component(
+        #     ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        # ).create()
+        #
+        # storage_manager = StorageManager.get_instance(self.system_app)
+        # index_name = "agent_memory_long_term"
+        # vector_store = storage_manager.create_vector_store(index_name=index_name)
+        # if not vector_store.vector_name_exists():
+        #     vector_store.create_collection(collection_name=index_name)
+        # embeddings = EmbeddingFactory.get_instance(self.system_app).create()
+        # short_term_memory = EnhancedShortTermMemory(
+        #     embeddings, executor=executor, buffer_size=10
+        # )
+        # memory = HybridMemory.from_vstore(
+        #     vector_store,
+        #     embeddings=embeddings,
+        #     executor=executor,
+        #     short_term_memory=short_term_memory,
+        # )
 
-        storage_manager = StorageManager.get_instance(self.system_app)
-        index_name = "agent_memory_long_term"
-        vector_store = storage_manager.create_vector_store(index_name=index_name)
-        if not vector_store.vector_name_exists():
-            vector_store.create_collection(collection_name=index_name)
-        embeddings = EmbeddingFactory.get_instance(self.system_app).create()
-        short_term_memory = EnhancedShortTermMemory(
-            embeddings, executor=executor, buffer_size=10
-        )
-        memory = HybridMemory.from_vstore(
-            vector_store,
-            embeddings=embeddings,
-            executor=executor,
-            short_term_memory=short_term_memory,
-        )
-        agent_memory = AgentMemory(memory, gpts_memory=self.memory)
+        memory = MyHybridMemory(memory_ref)
+
+        agent_memory = AgentMemory(memory, gpts_memory=gpts_memory)
 
         return agent_memory
 
     async def _build_hitory_messages(
-        self, gpts_conversations, gpt_app: Optional[GptsApp] = None
+        self,
+        gpts_conversations,
+        gpts_memory: ActorGptsMemory,
+        gpt_app: Optional[GptsApp] = None,
     ):
         historical_dialogues: List[GptsMessage] = []
         ## When creating a new gpts conversation record, determine whether to
@@ -195,7 +373,7 @@ class MultiAgents(BaseComponent, ABC):
                 else:
                     rely_conversations = gpts_conversations
                 for gpts_conversation in rely_conversations:
-                    temps: List[GptsMessage] = await self.memory.get_messages(
+                    temps: List[GptsMessage] = await gpts_memory.get_messages(
                         gpts_conversation.conv_id
                     )
                     if temps and len(temps) > 1:
@@ -203,12 +381,15 @@ class MultiAgents(BaseComponent, ABC):
                         historical_dialogues.append(temps[-1])
         return historical_dialogues
 
-    async def agent_chat_v2(
+    async def _agent_chat_v2(
         self,
         conv_id: str,
         new_order: int,
         gpts_name: str,
         user_query: str,
+        to_free_resources: List[lc.ActorRef],
+        agent_memory: AgentMemory,
+        gpts_memory: ActorGptsMemory,
         user_code: str = None,
         sys_code: str = None,
         enable_verbose: bool = True,
@@ -231,13 +412,22 @@ class MultiAgents(BaseComponent, ABC):
             "1" if not gpts_conversations else str(len(gpts_conversations) + 1)
         )
         agent_conv_id = conv_id + "_" + gpt_chat_order
+        # TODO: Set the memory start round according to the history
         message_round = 0
         history_message_count = 0
-        is_retry_chat = True
+        is_retry_chat = False
         last_speaker_name = None
         history_messages = None
         gpt_app = None
-        # 检查最后一个对话记录是否完成，如果是等待状态，则要继续进行当前对话
+        if gpts_conversations and len(gpts_conversations) > 0:
+            last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
+            gpts_messages: List[GptsMessage] = self.gpts_messages_dao.get_by_conv_id(
+                last_gpts_conversation.conv_id
+            )
+            last_message = gpts_messages[-1]
+            message_round = last_message.rounds + 1
+            # TODO: 检查最后一个对话记录是否完成，如果是等待状态，则要继续进行当前对话
+
         if gpts_name == "ai_analyzer":
             team_mode = TeamMode.AUTO_PLAN.value
         else:
@@ -246,40 +436,6 @@ class MultiAgents(BaseComponent, ABC):
             if not gpt_app:
                 raise ValueError(f"Not found app {gpts_name}!")
             team_mode = gpt_app.team_mode
-        # if gpts_conversations and len(gpts_conversations) > 0:
-        #     last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
-        #     logger.info(f"last conversation status:{last_gpts_conversation.__dict__}")
-        #     if last_gpts_conversation.state == Status.WAITING.value:
-        #         is_retry_chat = True
-        #         agent_conv_id = last_gpts_conversation.conv_id
-        #
-        #         gpts_messages: List[GptsMessage] = (
-        #             self.gpts_messages_dao.get_by_conv_id(agent_conv_id)
-        #         )
-        #         history_message_count = len(gpts_messages)
-        #         history_messages = gpts_messages
-        #         last_message = gpts_messages[-1]
-        #         message_round = last_message.rounds + 1
-        #
-        #         from dbgpt_serve.agent.agents.expand.app_start_assisant_agent import (
-        #             StartAppAssistantAgent,
-        #         )
-        #
-        #         if last_message.sender == StartAppAssistantAgent().role:
-        #             last_message = gpts_messages[-2]
-        #         last_speaker_name = last_message.sender
-        #         if gpts_name == "ai_analyzer":
-        #             team_mode = TeamMode.AUTO_PLAN.value
-        #         else:
-        #             # Create a new gpts conversation record
-        #             gpt_app: GptsApp = self.gpts_app.app_detail(gpts_name)
-        #             if not gpt_app:
-        #                 raise ValueError(f"Not found app {gpts_name}!")
-        #             team_mode = gpt_app.team_mode
-        #         # gpt_app: GptsApp = self.gpts_app.app_detail(last_message.app_code)
-        #         #
-        #         # if not gpt_app:
-        #         #     raise ValueError(f"Not found app {gpts_name}!")
 
         historical_dialogues: List[GptsMessage] = []
         if not is_retry_chat:
@@ -315,7 +471,7 @@ class MultiAgents(BaseComponent, ABC):
                     else:
                         rely_conversations = gpts_conversations
                     for gpts_conversation in rely_conversations:
-                        temps: List[GptsMessage] = await self.memory.get_messages(
+                        temps: List[GptsMessage] = await gpts_memory.get_messages(
                             gpts_conversation.conv_id
                         )
                         if temps and len(temps) > 1:
@@ -373,21 +529,34 @@ class MultiAgents(BaseComponent, ABC):
             logger.warning(f"vis_render_protocol:{vis_render} ！")
             # 暂时不支持 增量协议
             ext_info["incremental"] = False
+            from dbgpt_ext.vis.gptvis.gpt_vis_converter_old import GptVisOldConverter
             from dbgpt_ext.vis.gptvis.gpt_vis_converter_window import GptVisLRConverter
 
-            # vis_protocol = GptVisOldConverter()
-            vis_protocol = GptVisLRConverter()
-            self.memory.init(
+            vis_protocol = GptVisOldConverter()
+            # vis_protocol = GptVisLRConverter()
+            await gpts_memory.init(
                 agent_conv_id,
                 enable_vis_message=enable_verbose,
                 history_messages=history_messages,
                 start_round=history_message_count,
                 vis_converter=vis_protocol,
             )
-            # init agent memory
-            agent_memory = self.get_or_build_agent_memory(conv_id, gpts_name)
+            # # init agent memory
+            # memory_actor_ref = await self.system_app._actor_system.spawn(
+            #     GptsMemoryActor,
+            #     "gpts_memory_actor",
+            # )
+            # mem_ref = await self.system_app._actor_system.spawn(
+            #     MyHybridMemoryActor,
+            #     "my_hybrid_memory_actor",
+            # )
+            # gpts_memory = ActorGptsMemory(memory_actor_ref)
+            #
+            # agent_memory = self.get_or_build_agent_memory(
+            #     conv_id, gpts_name, gpts_memory, mem_ref
+            # )
             historical_dialogues = await self._build_hitory_messages(
-                gpts_conversations, gpt_app
+                gpts_conversations, gpts_memory, gpt_app
             )
 
             task = None
@@ -403,6 +572,7 @@ class MultiAgents(BaseComponent, ABC):
                             conv_session_id=conv_id,
                             conv_uid=agent_conv_id,
                             agent_memory=agent_memory,
+                            to_free_resources=to_free_resources,
                             gpts_conversations=self.gpts_conversations,
                             is_retry_chat=is_retry_chat,
                             last_speaker_name=last_speaker_name,
@@ -416,11 +586,14 @@ class MultiAgents(BaseComponent, ABC):
                     )
                 else:
                     task = asyncio.create_task(
-                        multi_agents.agent_team_chat_new(
+                        multi_agents._agent_team_chat_new(
                             user_query=user_query,
+                            conv_session_id=conv_id,
                             conv_uid=agent_conv_id,
                             gpts_app=gpt_app,
                             agent_memory=agent_memory,
+                            gpts_memory=gpts_memory,
+                            to_free_resources=to_free_resources,
                             is_retry_chat=is_retry_chat,
                             last_speaker_name=last_speaker_name,
                             init_message_rounds=message_round,
@@ -433,7 +606,9 @@ class MultiAgents(BaseComponent, ABC):
                         )
                     )
                 if enable_verbose:
-                    async for chunk in multi_agents.chat_messages(agent_conv_id):
+                    async for chunk in multi_agents.chat_messages(
+                        agent_conv_id, gpts_memory
+                    ):
                         if chunk:
                             try:
                                 chunk = json.dumps(
@@ -463,7 +638,9 @@ class MultiAgents(BaseComponent, ABC):
                     )
                     # 开启简略消息模式，不进行vis协议封装，获取极简流式消息直接输出
                     final_message_chunk = None
-                    async for chunk in multi_agents.chat_messages(agent_conv_id):
+                    async for chunk in multi_agents.chat_messages(
+                        agent_conv_id, gpts_memory
+                    ):
                         if chunk:
                             try:
                                 if chunk is None or len(chunk) <= 0:
@@ -503,7 +680,7 @@ class MultiAgents(BaseComponent, ABC):
                     yield task, str(e), agent_conv_id
 
             finally:
-                self.memory.clear(agent_conv_id)
+                await gpts_memory.clear(agent_conv_id)
 
     async def app_agent_chat(
         self,
@@ -517,7 +694,6 @@ class MultiAgents(BaseComponent, ABC):
         **ext_info,
     ):
         # logger.info(f"app_agent_chat:{gpts_name},{user_query},{conv_uid}")
-
         # Temporary compatible scenario messages
         conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
         current_message: StorageConversation = _build_conversation(
@@ -535,12 +711,43 @@ class MultiAgents(BaseComponent, ABC):
         agent_conv_id = None
         agent_task = None
         default_final_message = None
+        to_free_resources = []
+        # init agent memory
         try:
-            async for task, chunk, agent_conv_id in multi_agents.agent_chat_v2(
+            memory_actor_ref = await self.system_app._actor_system.actor_of(
+                f"/user/gpts_memory_actor_{conv_uid}"
+            )
+        except Exception:
+            memory_actor_ref = await self.system_app._actor_system.spawn(
+                GptsMemoryActor,
+                f"gpts_memory_actor_{conv_uid}",
+            )
+        try:
+            mem_ref = await self.system_app._actor_system.actor_of(
+                f"/user/my_hybrid_memory_actor_{conv_uid}"
+            )
+        except Exception:
+            mem_ref = await self.system_app._actor_system.spawn(
+                MyHybridMemoryActor,
+                f"my_hybrid_memory_actor_{conv_uid}",
+            )
+        gpts_memory = ActorGptsMemory(memory_actor_ref)
+
+        agent_memory = self.get_or_build_agent_memory(
+            conv_uid, gpts_name, gpts_memory, mem_ref
+        )
+        to_free_resources.append(memory_actor_ref)
+        to_free_resources.append(mem_ref)
+
+        try:
+            async for task, chunk, agent_conv_id in multi_agents._agent_chat_v2(
                 conv_uid,
                 current_message.chat_order,
                 gpts_name,
                 user_query,
+                to_free_resources,
+                agent_memory,
+                gpts_memory,
                 user_code,
                 sys_code,
                 enable_verbose=enable_verbose,
@@ -563,23 +770,30 @@ class MultiAgents(BaseComponent, ABC):
         finally:
             logger.info(f"save agent chat info！{conv_uid}")
             if agent_task:
-                final_message = await self.stable_message(agent_conv_id)
+                final_message = await self.stable_message(agent_conv_id, gpts_memory)
                 if final_message:
                     current_message.add_view_message(final_message)
-            else:
+            elif default_final_message:
                 default_final_message = default_final_message.replace("data:", "")
                 current_message.add_view_message(default_final_message)
 
             current_message.end_current_round()
             current_message.save_to_storage()
+            for ref in to_free_resources:
+                try:
+                    await ref.stop()
+                except Exception:
+                    pass
 
-    async def agent_team_chat_new(
+    async def _agent_team_chat_new(
         self,
         user_query: str,
         conv_session_id: str,
         conv_uid: str,
         gpts_app: GptsApp,
         agent_memory: AgentMemory,
+        gpts_memory: ActorGptsMemory,
+        to_free_resources: List[lc.ActorRef],
         is_retry_chat: bool = False,
         last_speaker_name: str = None,
         init_message_rounds: int = 0,
@@ -591,9 +805,10 @@ class MultiAgents(BaseComponent, ABC):
         **ext_info,
     ):
         gpts_status = Status.COMPLETE.value
+        actor_system = CFG.SYSTEM_APP._actor_system
+        employees: List[Agent] = []
+        llm_configs = []
         try:
-            employees: List[Agent] = []
-
             self.agent_manage = get_agent_manager()
 
             context: AgentContext = AgentContext(
@@ -606,19 +821,17 @@ class MultiAgents(BaseComponent, ABC):
                 language=gpts_app.language,
                 app_link_start=app_link_start,
                 enable_vis_message=enable_verbose,
+                incremental=ext_info.get("incremental", True),
             )
 
             prompt_service: PromptService = get_service()
             rm = get_resource_manager()
 
             # init llm provider
-            ### init chat param
-            worker_manager = CFG.SYSTEM_APP.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-            self.llm_provider = DefaultLLMClient(
-                worker_manager, auto_convert_message=True
-            )
+            self.llm_provider = AgentLLMClient()
+
+            state_queue = lc.Queue(actor_system)
+            await state_queue._ensure_initialized()
 
             for record in gpts_app.details:
                 cls: Type[ConversableAgent] = self.agent_manage.get_by_name(
@@ -637,16 +850,30 @@ class MultiAgents(BaseComponent, ABC):
                 depend_resource = await blocking_func_to_async(
                     CFG.SYSTEM_APP, rm.build_resource, record.resources
                 )
-                agent = (
-                    await cls()
-                    .bind(context)
-                    .bind(agent_memory)
-                    .bind(llm_config)
-                    .bind(depend_resource)
-                    .bind(prompt_template)
-                    .build(is_retry_chat=is_retry_chat)
+                # agent = (
+                #     await cls()
+                #     .bind(context)
+                #     .bind(agent_memory)
+                #     .bind(llm_config)
+                #     .bind(depend_resource)
+                #     .bind(prompt_template)
+                #     .build(is_retry_chat=is_retry_chat)
+                # )
+                agent_ref = await actor_system.spawn(
+                    cls,
+                    f"_current_actor_{record.agent_name}_{conv_uid}_{uuid.uuid4().hex}",
+                    agent_context=context,
+                    llm_config=llm_config,
+                    memory=agent_memory,
+                    resource=depend_resource,
+                    bind_prompt=prompt_template,
+                    state_queue=state_queue,
                 )
+                agent = await agent_ref.self_proxy(with_ref=False)
+                agent.actor_ref = agent_ref
                 employees.append(agent)
+                to_free_resources.append(agent)
+                llm_configs.append(llm_config)
 
             team_mode = TeamMode(gpts_app.team_mode)
             if team_mode == TeamMode.SINGLE_AGENT:
@@ -655,31 +882,54 @@ class MultiAgents(BaseComponent, ABC):
                 if TeamMode.AUTO_PLAN == team_mode:
                     if not gpts_app.details or len(gpts_app.details) < 0:
                         raise ValueError("APP exception no available agent！")
-                    llm_config = employees[0].llm_config
-                    manager = AutoPlanChatManager()
+                    llm_config = llm_configs[0]
+                    # manager = AutoPlanChatManager()
+                    manager_ref = await actor_system.spawn(
+                        AutoPlanChatManager,
+                        f"auto_plan_manager_actor_{conv_uid}",
+                        agent_context=context,
+                        llm_config=llm_config,
+                        memory=agent_memory,
+                        state_queue=state_queue,
+                    )
                 elif TeamMode.AWEL_LAYOUT == team_mode:
                     if not gpts_app.team_context:
                         raise ValueError(
                             "Your APP has not been developed yet, please bind Flow!"
                         )
-                    manager = DefaultAWELLayoutManager(dag=gpts_app.team_context)
+                    # manager = DefaultAWELLayoutManager(dag=gpts_app.team_context)
                     llm_config = LLMConfig(
                         llm_client=self.llm_provider,
                         llm_strategy=LLMStrategyType.Priority,
                         strategy_context=json.dumps(["bailing_proxyllm"]),
                     )  # TODO
+                    manager_ref = await actor_system.spawn(
+                        DefaultAWELLayoutManager,
+                        f"awel_layout_manager_actor_{conv_uid}",
+                        agent_context=context,
+                        llm_config=llm_config,
+                        memory=agent_memory,
+                        dag=gpts_app.team_context,
+                        state_queue=state_queue,
+                    )
                 elif TeamMode.NATIVE_APP == team_mode:
                     raise ValueError("Native APP chat not supported!")
                 else:
                     raise ValueError(f"Unknown Agent Team Mode!{team_mode}")
-                manager = (
-                    await manager.bind(context)
-                    .bind(agent_memory)
-                    .bind(llm_config)
-                    .build()
-                )
-                manager.hire(employees)
+                # manager = (
+                #     await manager.bind(context)
+                #     .bind(agent_memory)
+                #     .bind(llm_config)
+                #     .build()
+                # )
+                # manager.hire(employees)
+                manager = await manager_ref.self_proxy(with_ref=False)
+                manager.actor_ref = manager_ref
+                # Hire employees
+                await manager_ref.hire(employees)
+
                 recipient = manager
+                to_free_resources.append(manager)
 
             if is_retry_chat:
                 # retry chat
@@ -695,16 +945,35 @@ class MultiAgents(BaseComponent, ABC):
                     message_rounds=init_message_rounds,
                 )
             else:
-                user_proxy: UserProxyAgent = (
-                    await UserProxyAgent().bind(context).bind(agent_memory).build()
+                try:
+                    user_proxy = await actor_system.actor_of(
+                        f"/user/user_proxy_actor_{conv_uid}"
+                    )
+                    await user_proxy.stop()
+                except Exception:
+                    pass
+                user_proxy = await actor_system.spawn(
+                    UserProxyAgent,
+                    f"user_proxy_actor_{conv_uid}",
+                    agent_context=context,
+                    memory=agent_memory,
+                    state_queue=state_queue,
                 )
+                to_free_resources.append(user_proxy)
+                monitor_ref = await actor_system.spawn(
+                    AgentActorMonitor,
+                    f"agent_actor_monitor_{conv_uid}",
+                    gpts_memory=gpts_memory,
+                )
+                await recipient.subscribe(monitor_ref)
+
                 await user_proxy.initiate_chat(
                     recipient=recipient,
                     message=user_query,
                     is_retry_chat=is_retry_chat,
                     last_speaker_name=last_speaker_name,
                     message_rounds=init_message_rounds,
-                    historical_dialogues=user_proxy.convert_to_agent_message(
+                    historical_dialogues=UserProxyAgent.convert_to_agent_message(
                         historical_dialogues
                     ),
                     rely_messages=rely_messages,
@@ -713,7 +982,9 @@ class MultiAgents(BaseComponent, ABC):
 
             if user_proxy:
                 # Check if the user has received a question.
-                if user_proxy.have_ask_user():
+                # Set the conversation status to waiting
+                have_ask_user = await user_proxy.have_ask_user()
+                if have_ask_user:
                     gpts_status = Status.WAITING.value
             if not app_link_start:
                 self.gpts_conversations.update(conv_uid, gpts_status)
@@ -722,30 +993,27 @@ class MultiAgents(BaseComponent, ABC):
             self.gpts_conversations.update(conv_uid, Status.FAILED.value)
         finally:
             if not app_link_start:
-                await self.memory.complete(conv_uid)
-
+                # await self.memory.complete(conv_uid)
+                # await gpts_memory.complete(conv_uid)
+                pass
         return conv_uid
 
     async def chat_messages(
         self,
         conv_id: str,
+        gpts_memory: ActorGptsMemory,
         user_code: str = None,
         system_app: str = None,
     ):
-        while True:
-            queue = self.memory.queue(conv_id)
-            if not queue:
-                break
-            item = await queue.get()
-            if item == "[DONE]":
-                queue.task_done()
-                break
-            else:
-                yield item
-                await asyncio.sleep(0.005)
+        async for msg in gpts_memory.stream_messages(conv_id):
+            yield msg
 
     async def stable_message(
-        self, conv_id: str, user_code: str = None, system_app: str = None
+        self,
+        conv_id: str,
+        gpts_memory: ActorGptsMemory,
+        user_code: str = None,
+        system_app: str = None,
     ):
         gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
         if gpts_conv:
@@ -756,10 +1024,7 @@ class MultiAgents(BaseComponent, ABC):
                 else False
             )
             if is_complete:
-                return await self.memory.app_link_chat_message(conv_id)
-            else:
-                pass
-
+                return await gpts_memory.app_link_chat_message(conv_id)
         else:
             raise Exception("No conversation record found!")
 
@@ -808,4 +1073,4 @@ def _format_vis_msg(msg: str):
     return f"data:{content} \n\n"
 
 
-multi_agents = MultiAgents(system_app)
+multi_agents = MultiAgents(CFG.SYSTEM_APP)

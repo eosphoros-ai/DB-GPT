@@ -845,7 +845,9 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
             timeout=parameters.timeout,
         )
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(
+        self, texts: List[str], max_batch_chunks_size=25
+    ) -> List[List[float]]:
         """Get the embeddings for a list of texts.
 
         Args:
@@ -861,13 +863,18 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         if self.pass_trace_id and current_span_id:
             # Set the trace ID if available
             headers[DBGPT_TRACER_SPAN_ID] = current_span_id
-        res = self.session.post(  # type: ignore
-            self.api_url,
-            json={"input": texts, "model": self.model_name},
-            timeout=self.timeout,
-            headers=headers,
-        )
-        return _handle_request_result(res)
+        embeddings = []
+        for i in range(0, len(texts), max_batch_chunks_size):
+            batch_texts = texts[i : i + max_batch_chunks_size]
+            res = self.session.post(  # type: ignore
+                self.api_url,
+                json={"input": batch_texts, "model": self.model_name},
+                timeout=self.timeout,
+                headers=headers,
+            )
+            curr_embeddings = _handle_request_result(res)
+            embeddings.extend(curr_embeddings)
+        return embeddings
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a OpenAPI embedding model.

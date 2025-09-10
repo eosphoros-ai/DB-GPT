@@ -223,6 +223,11 @@ class OpenAILLMClient(ProxyLLMClient):
         """
         return chatgpt_generate_stream
 
+    def __getstate__(self):
+        state = super().__getstate__()
+        state["_client"] = None
+        return state
+
     @property
     def client(self) -> "ClientType":
         if self._client is None:

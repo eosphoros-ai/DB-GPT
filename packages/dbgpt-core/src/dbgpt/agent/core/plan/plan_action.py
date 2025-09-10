@@ -1,6 +1,7 @@
 """Plan Action."""
 
 import logging
+import uuid
 from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
@@ -63,7 +64,7 @@ class PlanAction(Action[List[PlanInput]]):
     ) -> ActionOutput:
         """Run the plan action."""
         context: AgentContext = kwargs["context"]
-        plans_memory: GptsPlansMemory = kwargs["plans_memory"]
+        plans_memory: GptsPlansMemory = kwargs["gpts_memory"]
         try:
             param: List[PlanInput] = self._input_convert(ai_message, List[PlanInput])
         except Exception as e:
@@ -81,8 +82,12 @@ class PlanAction(Action[List[PlanInput]]):
                 for item in param:
                     plan = GptsPlan(
                         conv_id=context.conv_id,
+                        conv_session_id=context.conv_session_id,
+                        conv_round=0,
                         sub_task_num=item.serial_number,
                         sub_task_content=item.content,
+                        sub_task_id=item.serial_number,
+                        task_uid=uuid.uuid4().hex,
                     )
                     plan.resource_name = ""
                     plan.max_retry_times = context.max_retry_round
@@ -93,8 +98,8 @@ class PlanAction(Action[List[PlanInput]]):
                     plan.state = Status.TODO.value
                     plan_objects.append(plan)
 
-                plans_memory.remove_by_conv_id(context.conv_id)
-                plans_memory.batch_save(plan_objects)
+                await plans_memory.remove_by_conv_id(context.conv_id)
+                await plans_memory.batch_save(plan_objects)
 
             except Exception as e:
                 logger.exception(str(e))

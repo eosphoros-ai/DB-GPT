@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Tuple
 
 from dbgpt.agent import (
     ActionOutput,
+    ActorProxyAgent,
     Agent,
     AgentMessage,
     ConversableAgent,
@@ -63,8 +64,8 @@ class DBAnalyzerManager(ManagerAgent):
     async def act(
         self,
         message: Optional[AgentMessage],
-        sender: Optional[Agent] = None,
-        reviewer: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
+        reviewer: Optional[ActorProxyAgent] = None,
         **kwargs,
     ) -> Optional[ActionOutput]:
         """Perform an action based on the received message."""
@@ -327,7 +328,7 @@ class DBAnalyzerManager(ManagerAgent):
         messages: List[AgentMessage],
         reply_message_id: str,
         reply_message: AgentMessage,
-        sender: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
         prompt: Optional[str] = None,
         current_goal: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:

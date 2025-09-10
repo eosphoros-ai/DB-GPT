@@ -252,7 +252,7 @@ class MediaContent:
         type_mapping: Optional[Dict[str, str]] = None,
     ) -> ChatCompletionMessageParam:
         """Convert the media contents to chat completion message."""
-        if not content:
+        if content is None:
             raise ValueError("The content are empty")
         if isinstance(content, str):
             return {"role": role, "content": content}

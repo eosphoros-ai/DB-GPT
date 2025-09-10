@@ -2,6 +2,7 @@
 
 from .core.action import *  # noqa: F401, F403
 from .core.agent import (  # noqa: F401
+    ActorProxyAgent,
     Agent,
     AgentContext,
     AgentGenerateContext,
@@ -28,6 +29,7 @@ __ALL__ = [
     "AgentGenerateContext",
     "AgentMessage",
     "AgentManager",
+    "ActorProxyAgent",
     "initialize_agent",
     "get_agent_manager",
     "ConversableAgent",

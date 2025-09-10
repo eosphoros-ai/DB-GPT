@@ -93,8 +93,21 @@ class AgentMemoryFragment(MemoryFragment):
         Returns:
             List[float]: Embeddings of the memory fragment
         """
-        embeddings = embedding_func([self.observation])
-        return embeddings[0]
+        try:
+            embeddings = embedding_func([self.observation])
+            return embeddings[0]
+        except Exception:
+            try:
+                cut_site = int(0.3 * len(self.observation))
+                embeddings = embedding_func([self.observation[0:cut_site]])
+                return embeddings[0]
+            except Exception as e:
+                logger.warning(
+                    "Failed to compute embeddings for observation: %s, error: %s",
+                    self.observation,
+                    e,
+                )
+                return []
 
     @property
     def is_insight(self) -> bool:
@@ -321,7 +334,7 @@ class AgentMemory(Memory[AgentMemoryFragment]):
         return m
 
     @mutable
-    def initialize(
+    async def initialize(
         self,
         name: Optional[str] = None,
         llm_client: Optional[LLMClient] = None,
@@ -331,7 +344,7 @@ class AgentMemory(Memory[AgentMemoryFragment]):
         session_id: Optional[str] = None,
     ) -> None:
         """Initialize the memory."""
-        self.memory.initialize(
+        await self.memory.initialize(
             name=name,
             llm_client=llm_client,
             importance_scorer=importance_scorer or self.importance_scorer,

@@ -51,6 +51,27 @@ class GptsMemory:
         self.start_round_map: defaultdict = defaultdict(int)
         self._vis_converter: VisProtocolConverter = DefaultVisConverter()
 
+    def __getstate__(self):
+        """Customize the serialization of the object"""
+        state = self.__dict__.copy()
+        # Remove the executor as it's not serializable
+        executor_max_workers = state["_executor"]._max_workers
+        state["___executor_max_workers__"] = executor_max_workers
+        state.pop("_executor", None)
+        state.pop("_plans_memory", None)
+        state.pop("_message_memory", None)
+
+        return state
+
+    def __setstate__(self, state):
+        """Customize the deserialization of the object"""
+        self.__dict__.update(state)
+        # Recreate the executor
+        max_workers = state.get("___executor_max_workers__", 2)
+        self._executor = ThreadPoolExecutor(max_workers=max_workers)
+        self._plans_memory = DefaultGptsPlansMemory()
+        self._message_memory = DefaultGptsMessageMemory()
+
     @property
     def vis_converter(self):
         """Return the vis converter"""
@@ -158,10 +179,8 @@ class GptsMemory:
     ):
         """Push conversation message."""
 
-        from .... import UserProxyAgent
-
-        if gpt_msg and gpt_msg.sender == UserProxyAgent().role:
-            return
+        # if gpt_msg and gpt_msg.sender == UserProxyAgent.curr_cls_role():
+        #     return
         final_view = await self.vis_messages(
             conv_id,
             gpt_msg,
@@ -512,8 +531,8 @@ class GptsMemory:
     async def app_link_chat_message(self, conv_id: str):
         """Get app link chat message."""
         messages = []
-        if conv_id in self.messages_cache:
-            messages_cache = self.messages_cache[conv_id]
+        if conv_id in self.messages_cache_new:
+            messages_cache = self.messages_cache_new[conv_id]
             if messages_cache and len(messages_cache) > 0:
                 start_round = (
                     self.start_round_map[conv_id]

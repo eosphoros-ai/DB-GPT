@@ -15,14 +15,14 @@ class GptsPlansEntity(Model):
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
     conv_session_id = Column(
-        String(255), nullable=False, comment="The unique id of the conversation session"
+        String(255), nullable=True, comment="The unique id of the conversation session"
     )
-    task_uid = Column(String(255), nullable=False, comment="The uid of the plan task")
+    task_uid = Column(String(255), nullable=True, comment="The uid of the plan task")
     sub_task_num = Column(Integer, nullable=False, comment="Subtask id")
-    conv_round = Column(Integer, nullable=False, comment="The dialogue turns")
+    conv_round = Column(Integer, nullable=True, comment="The dialogue turns")
     conv_round_id = Column(String(255), nullable=True, comment="The dialogue turns uid")
 
-    sub_task_id = Column(String(255), nullable=False, comment="Subtask id")
+    sub_task_id = Column(String(255), nullable=True, comment="Subtask id")
     task_parent = Column(String(255), nullable=True, comment="Subtask parent task id")
     sub_task_title = Column(String(255), nullable=False, comment="subtask title")
     sub_task_content = Column(Text, nullable=False, comment="subtask content")
@@ -129,11 +129,11 @@ class GptsPlansDao(BaseDao):
         session.close()
         return result
 
-    def complete_task(self, conv_id: str, task_num: int, result: str):
+    def complete_task(self, conv_id: str, task_id: str, result: str):
         session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
-            GptsPlansEntity.sub_task_num == task_num
+            GptsPlansEntity.task_uid == task_id
         )
         gpts_plans.update(
             {

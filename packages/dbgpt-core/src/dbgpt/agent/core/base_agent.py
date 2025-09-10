@@ -1,74 +1,118 @@
 """Base agent class for conversable agents."""
 
-from __future__ import annotations
-
 import asyncio
 import json
 import logging
-import time
 from concurrent.futures import Executor, ThreadPoolExecutor
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, final
 
+import lyricore as lc
 from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
 
-from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import LLMClient, ModelMessageRoleType, PromptTemplate
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import SpanType, root_tracer
 from dbgpt.util.utils import colored
 
+from ...util.annotations import Deprecated
 from ..resource.base import Resource
 from ..util.conv_utils import parse_conv_id
 from ..util.llm.llm import LLMConfig, LLMStrategyType
 from ..util.llm.llm_client import AIWrapper
 from .action.base import Action, ActionOutput
-from .agent import Agent, AgentContext, AgentMessage, AgentReviewInfo
+from .actor_messages import (
+    ActionRequest,
+    AgentLoopInitMessage,
+    ReviewRequest,
+    ThinkingRequest,
+    ThinkingResponse,
+)
+from .agent import (
+    ActorProxyAgent,
+    Agent,
+    AgentContext,
+    AgentMessage,
+    AgentMessageRequest,
+    AgentReviewInfo,
+    AgentState,
+    AgentStateActing,
+    AgentStateIdleMessage,
+    AgentStateMessage,
+    AgentStateTaskResult,
+    AgentStateThinking,
+)
 from .memory.agent_memory import AgentMemory
 from .memory.gpts.base import GptsMessage
 from .memory.gpts.gpts_memory import GptsMemory
 from .profile.base import ProfileConfig
-from .role import AgentRunMode, Role
+from .role import AgentRunMode, ConversableAgentMeta, Role
 
 logger = logging.getLogger(__name__)
 
 
-class ConversableAgent(Role, Agent):
+class ConversableAgent(Role, Agent, metaclass=ConversableAgentMeta):
     """ConversableAgent is an agent that can communicate with other agents."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    agent_context: Optional[AgentContext] = Field(None, description="Agent context")
-    actions: List[Action] = Field(default_factory=list)
-    resource: Optional[Resource] = Field(None, description="Resource")
-    llm_config: Optional[LLMConfig] = None
-    bind_prompt: Optional[PromptTemplate] = None
-    run_mode: Optional[AgentRunMode] = Field(default=None, description="Run mode")
-    max_retry_count: int = 3
-    max_timeout: int = 600
-    llm_client: Optional[AIWrapper] = None
-    # 确认当前Agent是否需要进行流式输出
-    stream_out: bool = True
-    # 确认当前Agent是否需要进行参考资源展示
-    show_reference: bool = False
-
-    # 最后的发言角色
-    is_final_role: bool = False
-
-    # 当前Agent消息是否显示
-    show_message: bool = True
-
-    executor: Executor = Field(
-        default_factory=lambda: ThreadPoolExecutor(max_workers=1),
-        description="Executor for running tasks",
-    )
-    current_goal: Optional[str] = None
-
-    def __init__(self, **kwargs):
-        """Create a new agent."""
-        Role.__init__(self, **kwargs)
+    def __init__(
+        self,
+        profile: ProfileConfig,
+        memory: AgentMemory,
+        fixed_subgoal: Optional[str] = None,
+        language: str = "en",
+        is_human: bool = False,
+        is_team: bool = False,
+        template_env: Optional[SandboxedEnvironment] = None,
+        # Role parameters end
+        agent_context: Optional[AgentContext] = None,
+        actions: Optional[List[Action]] = None,
+        resource: Optional[Resource] = None,
+        llm_config: Optional[LLMConfig] = None,
+        bind_prompt: Optional[PromptTemplate] = None,
+        run_mode: Optional[AgentRunMode] = None,
+        max_retry_count: int = 3,
+        max_timeout: int = 600,
+        llm_client: Optional[AIWrapper] = None,
+        stream_out: bool = True,
+        show_reference: bool = False,
+        executor: Optional[Executor] = None,
+        is_final_role: bool = False,
+        show_message: bool = True,
+        current_goal: Optional[str] = None,
+        state_queue: Optional[lc.Queue] = None,  # Distributed state reporting queue
+        **kwargs,
+    ):
+        Role.__init__(
+            self,
+            profile=profile,
+            memory=memory,
+            fixed_subgoal=fixed_subgoal,
+            language=language,
+            is_human=is_human,
+            is_team=is_team,
+            template_env=template_env,
+        )
         Agent.__init__(self)
+        self.agent_context = agent_context
+        self.actions = actions or []
+        self.resource = resource
+        self.llm_config = llm_config
+        self.bind_prompt = bind_prompt
+        self.run_mode = run_mode
+        self.max_retry_count = max_retry_count
+        self.max_timeout = max_timeout
+        self.llm_client = llm_client
+        self.stream_out = stream_out
+        self.show_reference = show_reference
+        self.executor = executor or ThreadPoolExecutor(max_workers=1)
+        self.is_final_role = is_final_role
+        self.show_message = show_message
+        self.current_goal = current_goal
+        self.state_queue = state_queue
+        self._eventbus = None
 
     def check_available(self) -> None:
         """Check if the agent is available.
@@ -150,6 +194,37 @@ class ConversableAgent(Role, Agent):
         if self.resource:
             await self.resource.preload_resource()
 
+    async def on_start(self, ctx):
+        try:
+            await self.build()
+            await self.report_state(
+                AgentStateIdleMessage(name=self.name, role=self.role)
+            )
+        except Exception as e:
+            logger.error(f"Agent {self.name} failed to build: {e}")
+            raise e
+
+    async def subscribe(self, ref, topic: Optional[str] = "agent.state"):
+        """Subscribe to a topic."""
+        if not self._eventbus:
+            logger.warning("Event bus is not initialized!")
+            raise ValueError("Event bus is not initialized!")
+        try:
+            await self._eventbus.subscribe(ref, topic)
+            stats = await self._eventbus.get_stats()
+            logger.debug(f"Subscribed to topic {topic}, eventbus stats: {stats}")
+        except Exception as e:
+            logger.error(f"Failed to subscribe to topic {topic}: {e}")
+
+    async def report_state(self, state_message: AgentStateMessage):
+        """Report the state of the agent."""
+        if self.state_queue:
+            await self.state_queue.put(state_message)
+        else:
+            logger.warning("State queue is not initialized!")
+        if self._eventbus:
+            await self._eventbus.publish(state_message, topic="agent.state")
+
     async def build(self, is_retry_chat: bool = False) -> "ConversableAgent":
         """Build the agent."""
         # Preload resources
@@ -171,7 +246,7 @@ class ConversableAgent(Role, Agent):
             self.llm_client = AIWrapper(llm_client=self.llm_config.llm_client)
             real_conv_id, _ = parse_conv_id(self.not_null_agent_context.conv_id)
             memory_session = f"{real_conv_id}_{self.role}_{self.name}"
-            self.memory.initialize(
+            await self.memory.initialize(
                 self.name,
                 self.llm_config.llm_client,
                 importance_scorer=self.memory_importance_scorer,
@@ -185,15 +260,14 @@ class ConversableAgent(Role, Agent):
             )
             await self.recovering_memory(action_outputs)
 
-        temp_profile = self.profile
-        from copy import deepcopy
-
-        self.profile = deepcopy(temp_profile)
+        self.profile = deepcopy(self.profile)
         for action in self.actions:
             action.init_action(
                 language=self.language,
                 render_protocol=self.memory.gpts_memory.vis_converter,
             )
+        if not self._eventbus:
+            self._eventbus = lc.EventBus()
         return self
 
     def bind(self, target: Any) -> "ConversableAgent":
@@ -228,107 +302,10 @@ class ConversableAgent(Role, Agent):
 
         return self
 
-    async def send(
-        self,
-        message: AgentMessage,
-        recipient: Agent,
-        reviewer: Optional[Agent] = None,
-        request_reply: Optional[bool] = True,
-        is_recovery: Optional[bool] = False,
-        silent: Optional[bool] = False,
-        is_retry_chat: bool = False,
-        last_speaker_name: Optional[str] = None,
-        rely_messages: Optional[List[AgentMessage]] = None,
-        historical_dialogues: Optional[List[AgentMessage]] = None,
-    ) -> None:
-        """Send a message to recipient agent."""
-        with root_tracer.start_span(
-            "agent.send",
-            metadata={
-                "sender": self.name,
-                "recipient": recipient.name,
-                "reviewer": reviewer.name if reviewer else None,
-                "agent_message": json.dumps(message.to_dict(), ensure_ascii=False),
-                "request_reply": request_reply,
-                "is_recovery": is_recovery,
-                "conv_uid": self.not_null_agent_context.conv_id,
-            },
-        ):
-            await recipient.receive(
-                message=message,
-                sender=self,
-                reviewer=reviewer,
-                request_reply=request_reply,
-                is_recovery=is_recovery,
-                silent=silent,
-                is_retry_chat=is_retry_chat,
-                last_speaker_name=last_speaker_name,
-                historical_dialogues=historical_dialogues,
-                rely_messages=rely_messages,
-            )
-
-    async def receive(
-        self,
-        message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
-        request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
-        is_recovery: Optional[bool] = False,
-        is_retry_chat: bool = False,
-        last_speaker_name: Optional[str] = None,
-        historical_dialogues: Optional[List[AgentMessage]] = None,
-        rely_messages: Optional[List[AgentMessage]] = None,
-    ) -> None:
-        """Receive a message from another agent."""
-        with root_tracer.start_span(
-            "agent.receive",
-            metadata={
-                "sender": sender.name,
-                "recipient": self.name,
-                "reviewer": reviewer.name if reviewer else None,
-                "agent_message": json.dumps(message.to_dict(), ensure_ascii=False),
-                "request_reply": request_reply,
-                "silent": silent,
-                "is_recovery": is_recovery,
-                "conv_uid": self.not_null_agent_context.conv_id,
-                "is_human": self.is_human,
-            },
-        ):
-            if not message.current_goal and self.current_goal:
-                message.current_goal = self.current_goal
-            await self._a_process_received_message(message, sender)
-            if request_reply is False or request_reply is None:
-                return
-
-            if not self.is_human:
-                if isinstance(sender, ConversableAgent) and sender.is_human:
-                    reply = await self.generate_reply(
-                        received_message=message,
-                        sender=sender,
-                        reviewer=reviewer,
-                        is_retry_chat=is_retry_chat,
-                        last_speaker_name=last_speaker_name,
-                        historical_dialogues=historical_dialogues,
-                        rely_messages=rely_messages,
-                    )
-                else:
-                    reply = await self.generate_reply(
-                        received_message=message,
-                        sender=sender,
-                        reviewer=reviewer,
-                        is_retry_chat=is_retry_chat,
-                        historical_dialogues=historical_dialogues,
-                        rely_messages=rely_messages,
-                    )
-
-                if reply is not None:
-                    await self.send(reply, sender)
-
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
@@ -336,248 +313,262 @@ class ConversableAgent(Role, Agent):
         return {}
 
     @final
-    async def generate_reply(
-        self,
-        received_message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
-        rely_messages: Optional[List[AgentMessage]] = None,
-        historical_dialogues: Optional[List[AgentMessage]] = None,
-        is_retry_chat: bool = False,
-        last_speaker_name: Optional[str] = None,
-        **kwargs,
-    ) -> AgentMessage:
-        """Generate a reply based on the received messages."""
-        logger.info(
-            f"generate agent reply!sender={sender}, rely_messages_len={rely_messages}"
+    async def generate_reply(self, request: AgentMessageRequest):
+        self_ref = lc.get_current_message_context().self_ref
+        received_message = request.message
+        sender = request.sender
+        reviewer = request.reviewer
+        rely_messages = request.rely_messages
+        historical_dialogues = request.historical_dialogues
+        is_retry_chat = request.is_retry_chat
+        current_retry_counter = request.current_retry_counter
+        reply_message = await self.init_reply_message(
+            received_message=received_message, sender=sender
         )
-        root_span = root_tracer.start_span(
-            "agent.generate_reply",
-            metadata={
-                "sender": sender.name,
-                "recipient": self.name,
-                "reviewer": reviewer.name if reviewer else None,
-                "received_message": json.dumps(received_message.to_dict()),
-                "conv_uid": self.not_null_agent_context.conv_id,
-                "rely_messages": (
-                    [msg.to_dict() for msg in rely_messages] if rely_messages else None
-                ),
-            },
+        (
+            thinking_messages,
+            resource_info,
+            system_prompt,
+            user_prompt,
+        ) = await self._load_thinking_messages(
+            received_message=received_message,
+            sender=sender,
+            rely_messages=rely_messages,
+            historical_dialogues=historical_dialogues,
+            context=reply_message.get_dict_context(),
+            is_retry_chat=is_retry_chat,
+            current_retry_counter=current_retry_counter,
         )
-        reply_message = None
+        init_message = AgentLoopInitMessage(
+            request=request,
+            reply_message=reply_message,
+            sender=sender,
+            thinking_messages=thinking_messages,
+            received_message=received_message,
+            current_retry_counter=current_retry_counter,
+            resource_references=resource_info,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            historical_dialogues=historical_dialogues,
+        )
+        thinking_request = ThinkingRequest(
+            init_message=init_message,
+            current_goal=received_message.current_goal or self.current_goal,
+        )
+        # Send to self for processing
+        await self_ref.tell(thinking_request)
 
-        try:
-            fail_reason = None
-            current_retry_counter = 0
-            start_time = time.time()
-            is_success = True
-            observation = received_message.content or ""
-            while current_retry_counter < self.max_retry_count:
-                if current_retry_counter > 0:
-                    retry_message = AgentMessage.init_new(
-                        content=fail_reason or observation,
-                        current_goal=received_message.current_goal
-                        or self.current_gogal,
-                        rounds=reply_message.rounds + 1,
-                    )
+    @lc.on(ThinkingRequest)
+    async def handle_thinking_request(self, request: ThinkingRequest, ctx):
+        self_ref = lc.get_current_message_context().self_ref
 
-                    # The current message is a self-optimized message that needs to be
-                    # recorded.
-                    # It is temporarily set to be initiated by the originating end to
-                    # facilitate the organization of historical memory context.
-                    await sender.send(
-                        retry_message, self, reviewer, request_reply=False
-                    )
-                    received_message.rounds = retry_message.rounds + 1
+        thinking_messages = request.init_message.thinking_messages
+        current_retry_counter = request.init_message.current_retry_counter
+        reply_message = request.init_message.reply_message
+        sender = request.init_message.sender
+        current_goal = request.current_goal
+        resource_info = request.init_message.resource_references
 
-                with root_tracer.start_span(
-                    "agent.generate_reply.init_reply_message",
-                ) as span:
-                    # initialize reply message
-                    a_reply_message: Optional[
-                        AgentMessage
-                    ] = await self._a_init_reply_message(
-                        received_message=received_message
-                    )
-                    if a_reply_message:
-                        reply_message = a_reply_message
-                    else:
-                        reply_message = await self.init_reply_message(
-                            received_message=received_message, sender=sender
-                        )
-                    span.metadata["reply_message"] = reply_message.to_dict()
+        # Report thinking state
+        await self.report_state(
+            AgentStateThinking(
+                name=self.name,
+                role=self.role,
+                current_retry_counter=current_retry_counter,
+                conv_id=self.not_null_agent_context.conv_id,
+            )
+        )
 
-                # In manual retry mode, load all messages of the last speaker as dependent messages # noqa
-                logger.info(
-                    f"Depends on the number of historical messages:{len(rely_messages) if rely_messages else 0}！"
-                    # noqa
+        llm_thinking, llm_content, model_name = await self.thinking(
+            thinking_messages,
+            reply_message.message_id,
+            reply_message,
+            sender,
+            current_goal=current_goal,
+        )
+        # Some models may not return content but only thinking
+        llm_content = llm_content or llm_thinking
+        reply_message.model_name = model_name
+        reply_message.thinking = llm_thinking
+        reply_message.content = llm_content
+        reply_message.resource_info = resource_info
+        thinking_response = ThinkingResponse(
+            init_message=request.init_message,
+            model_name=model_name,
+            text=llm_content,
+            thinking_text=llm_thinking,
+        )
+        review_request = ReviewRequest(thinking_response=thinking_response)
+        await self_ref.tell(review_request)
+
+    @lc.on(ReviewRequest)
+    async def handle_review_request(self, request: ReviewRequest, ctx):
+        self_ref = lc.get_current_message_context().self_ref
+        thinking_response = request.thinking_response
+        reply_message = thinking_response.init_message.reply_message
+        llm_reply = thinking_response.thinking_text
+        approve, comments = await self.review(llm_reply, self.self_proxy())
+        reply_message.review_info = AgentReviewInfo(
+            approve=approve,
+            comments=comments,
+        )
+        action_request = ActionRequest(thinking_response=thinking_response)
+        await self_ref.tell(action_request)
+
+    @lc.on(ActionRequest)
+    async def handle_action_request(self, request: ActionRequest, ctx):
+        # TODO: Handle exceptions in each step
+        self_ref = self.self_proxy()
+        init_message = request.thinking_response.init_message
+        sender: ActorProxyAgent = init_message.sender
+        reviewer = init_message.reviewer
+        thinking_response = request.thinking_response
+        reply_message = init_message.reply_message
+        received_message = init_message.received_message
+        historical_dialogues = init_message.historical_dialogues
+
+        act_extent_param = self.prepare_act_param(
+            received_message=received_message,
+            sender=sender,
+            rely_messages=None,  # No rely messages in this flow
+            historical_dialogues=historical_dialogues,
+            reply_message=reply_message,
+        )
+
+        await self.report_state(
+            AgentStateActing(
+                name=self.name,
+                role=self.role,
+                current_retry_counter=init_message.current_retry_counter,
+                conv_id=self.not_null_agent_context.conv_id,
+            )
+        )
+
+        act_out: ActionOutput = await self.act(
+            message=reply_message,
+            sender=sender,
+            reviewer=None,
+            is_retry_chat=False,
+            last_speaker_name=None,
+            **act_extent_param,
+        )
+        if act_out:
+            reply_message.action_report = act_out
+
+        check_pass, reason = await self.verify(reply_message, sender, reviewer=reviewer)
+        is_success = check_pass
+
+        question: str = init_message.observation or received_message.content or ""
+        ai_message: str = thinking_response.text
+        # 5.Optimize wrong answers myself
+        break_loop = False
+        current_retry_counter = init_message.current_retry_counter
+        if not check_pass:
+            if not act_out.have_retry:
+                logger.warning("No retry available!")
+                break_loop = True
+            fail_reason = reason
+            latest_observation = fail_reason
+            await self.write_memories(
+                question=question,
+                ai_message=ai_message,
+                action_output=act_out,
+                check_pass=check_pass,
+                check_fail_reason=fail_reason,
+                current_retry_counter=current_retry_counter,
+            )
+        else:
+            # Successful reply
+            latest_observation = act_out.observations
+            await self.write_memories(
+                question=question,
+                ai_message=ai_message,
+                action_output=act_out,
+                check_pass=check_pass,
+                current_retry_counter=current_retry_counter,
+            )
+            if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
+                logger.debug(f"Agent {self.name} reply success!{reply_message}")
+                break_loop = True
+        if not break_loop:
+            # Continue to run the next round
+            init_message.observation = latest_observation
+            init_message.reply_message.content = latest_observation
+            init_message.current_retry_counter += 1
+
+            retry_message = AgentMessage.init_new(
+                content=latest_observation,
+                current_goal=received_message.current_goal or self.current_goal,
+                rounds=reply_message.rounds + 1,
+            )
+            # The current message is a self-optimized message that needs to be
+            # recorded.
+            # It is temporarily set to be initiated by the originating end to
+            # facilitate the organization of historical memory context.
+            await self_ref.tell(
+                retry_message,
+                reviewer=reviewer,
+                request_reply=False,
+                sender_agent=sender,
+            )
+            received_message.rounds = retry_message.rounds + 1
+
+        reply_message.success = is_success
+        # if init_message.current_retry_counter < self.max_retry_count:
+        # Send current reply message to sender
+        await sender.tell(
+            reply_message,
+            reviewer=reviewer,
+            request_reply=False,
+            sender_agent=self_ref,
+        )
+        await self.adjust_final_message(is_success, reply_message)
+
+        if not break_loop:
+            # Send to self for next thinking
+            init_message.reply_message.rounds += 1
+            await self_ref.tell(
+                init_message.reply_message,
+                reviewer=reviewer,
+                sender=sender,
+                sender_agent=sender,
+                current_retry_counter=init_message.current_retry_counter,
+            )
+        else:
+            # TODO: Find a better way to end the loop
+            action_report = reply_message.action_report
+            if is_success:
+                state = AgentState.TASK_SUCCEEDED
+                result = (
+                    reply_message.action_report
+                    if reply_message.action_report
+                    else reply_message.content
                 )
-                (
-                    thinking_messages,
-                    resource_info,
-                    system_prompt,
-                    user_prompt,
-                ) = await self._load_thinking_messages(
-                    received_message=received_message,
-                    sender=sender,
-                    rely_messages=rely_messages,
-                    historical_dialogues=historical_dialogues,
-                    context=reply_message.get_dict_context(),
-                    is_retry_chat=is_retry_chat,
-                    # current_retry_counter=current_retry_counter,
+            else:
+                state = AgentState.TASK_FAILED
+                result = reason or reply_message.content
+            await self.report_state(
+                AgentStateTaskResult(
+                    name=self.name,
+                    role=self.role,
+                    state=state,
+                    conv_id=self.not_null_agent_context.conv_id,
+                    result=result,
+                    action_report=action_report,
+                    rounds=reply_message.rounds,
+                    current_retry_counter=current_retry_counter,
                 )
-                with root_tracer.start_span(
-                    "agent.generate_reply.thinking",
-                    metadata={
-                        "thinking_messages": json.dumps(
-                            [msg.to_dict() for msg in thinking_messages],
-                            ensure_ascii=False,
-                        )
-                    },
-                ) as span:
-                    # 1.Think about how to do things
-                    # llm_reply, model_name = await self.thinking(
-                    #     thinking_messages, sender
-                    # )
-                    llm_reply, llm_content, model_name = await self.thinking(
-                        thinking_messages,
-                        reply_message.message_id,
-                        reply_message,
-                        sender,
-                        current_goal=received_message.current_goal,
-                    )
-                    reply_message.model_name = model_name
-                    reply_message.thinking = llm_reply
-                    reply_message.content = llm_content
-                    reply_message.resource_info = resource_info
-                    span.metadata["llm_reply"] = llm_content
-                    span.metadata["model_name"] = model_name
-
-                with root_tracer.start_span(
-                    "agent.generate_reply.review",
-                    metadata={"llm_reply": llm_reply, "censored": self.name},
-                ) as span:
-                    # 2.Review whether what is being done is legal
-                    approve, comments = await self.review(llm_reply, self)
-                    reply_message.review_info = AgentReviewInfo(
-                        approve=approve,
-                        comments=comments,
-                    )
-                    span.metadata["approve"] = approve
-                    span.metadata["comments"] = comments
-
-                act_extent_param = self.prepare_act_param(
-                    received_message=received_message,
-                    sender=sender,
-                    rely_messages=rely_messages,
-                    historical_dialogues=historical_dialogues,
-                    reply_message=reply_message,
-                )
-                with root_tracer.start_span(
-                    "agent.generate_reply.act",
-                    metadata={
-                        "llm_reply": llm_content,
-                        "sender": sender.name,
-                        "reviewer": reviewer.name if reviewer else None,
-                        "act_extent_param": act_extent_param,
-                    },
-                ) as span:
-                    # 3.Act based on the results of your thinking
-                    act_out: ActionOutput = await self.act(
-                        message=reply_message,
-                        sender=sender,
-                        reviewer=reviewer,
-                        is_retry_chat=is_retry_chat,
-                        last_speaker_name=last_speaker_name,
-                        **act_extent_param,
-                    )
-                    if act_out:
-                        reply_message.action_report = act_out
-                    span.metadata["action_report"] = (
-                        act_out.to_dict() if act_out else None
-                    )
-
-                with root_tracer.start_span(
-                    "agent.generate_reply.verify",
-                    metadata={
-                        "llm_reply": llm_content,
-                        "sender": sender.name,
-                        "reviewer": reviewer.name if reviewer else None,
-                    },
-                ) as span:
-                    # 4.Reply information verification
-                    check_pass, reason = await self.verify(
-                        reply_message, sender, reviewer
-                    )
-                    is_success = check_pass
-                    span.metadata["check_pass"] = check_pass
-                    span.metadata["reason"] = reason
-
-                question: str = received_message.content or ""
-                ai_message: str = llm_content
-                # 5.Optimize wrong answers myself
-                if not check_pass:
-                    if not act_out.have_retry:
-                        logger.warning("No retry available!")
-                        break
-                    fail_reason = reason
-                    observation = fail_reason
-                    await self.write_memories(
-                        question=question,
-                        ai_message=ai_message,
-                        action_output=act_out,
-                        check_pass=check_pass,
-                        check_fail_reason=fail_reason,
-                    )
-                else:
-                    # Successful reply
-                    observation = act_out.observations
-                    await self.write_memories(
-                        question=question,
-                        ai_message=ai_message,
-                        action_output=act_out,
-                        check_pass=check_pass,
-                    )
-                    if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
-                        logger.debug(f"Agent {self.name} reply success!{reply_message}")
-                        break
-                time_cost = time.time() - start_time
-                if time_cost > self.max_timeout:
-                    logger.warning(
-                        f"Agent {self.name} run time out!{time_cost} > "
-                        f"{self.max_timeout}"
-                    )
-                    break
-
-                # Continue to run the next round
-                current_retry_counter += 1
-                # Send error messages and issue new problem-solving instructions
-                if current_retry_counter < self.max_retry_count:
-                    await self.send(
-                        reply_message, sender, reviewer, request_reply=False
-                    )
-
-            reply_message.success = is_success
-            # 6.final message adjustment
-            await self.adjust_final_message(is_success, reply_message)
-            return reply_message
-
-        except Exception as e:
-            logger.exception("Generate reply exception!")
-            err_message = AgentMessage(content=str(e))
-            err_message.success = False
-            return err_message
-        finally:
-            if reply_message:
-                root_span.metadata["reply_message"] = reply_message.to_dict()
-            root_span.end()
+            )
+            # Can't complete if multiple agents are involved
+            # await self.memory.gpts_memory.complete(self.not_null_agent_context.conv_id)
+            logger.info(f"Agent {self.name} finished the conversation loop.")
 
     async def thinking(
         self,
         messages: List[AgentMessage],
         reply_message_id: str,
         reply_message: AgentMessage,
-        sender: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
         prompt: Optional[str] = None,
         current_goal: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
@@ -679,15 +670,17 @@ class ConversableAgent(Role, Agent):
         else:
             raise ValueError("LLM model inference failed!")
 
-    async def review(self, message: Optional[str], censored: Agent) -> Tuple[bool, Any]:
+    async def review(
+        self, message: Optional[str], censored: ActorProxyAgent
+    ) -> Tuple[bool, Any]:
         """Review the message based on the censored message."""
         return True, None
 
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,
@@ -726,6 +719,8 @@ class ConversableAgent(Role, Agent):
                     message_id=message.message_id,
                     **kwargs,
                 )
+                if last_out.terminate:
+                    break
                 span.metadata["action_out"] = last_out.to_dict() if last_out else None
         if not last_out:
             raise ValueError("Action should return value！")
@@ -740,8 +735,8 @@ class ConversableAgent(Role, Agent):
     async def verify(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         **kwargs,
     ) -> Tuple[bool, Optional[str]]:
         """Verify the current execution results."""
@@ -764,10 +759,27 @@ class ConversableAgent(Role, Agent):
         # agent output correctness check
         return await self.correctness_check(message)
 
+    def self_proxy(self, with_ref: bool = True) -> ActorProxyAgent:
+        """Get the self sender."""
+        if with_ref:
+            actor_ctx = lc.get_current_message_context()
+            self_ref = actor_ctx.self_ref
+        else:
+            self_ref = None
+        sender = ActorProxyAgent(
+            agent_context=self.agent_context,
+            actor_ref=self_ref,
+            name=self.name,
+            role=self.role,
+            desc=self.desc,
+            avatar=self.avatar,
+        )
+        return sender
+
     async def initiate_chat(
         self,
-        recipient: Agent,
-        reviewer: Optional[Agent] = None,
+        recipient: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         message: Optional[str] = None,
         request_reply: bool = True,
         is_retry_chat: bool = False,
@@ -775,13 +787,14 @@ class ConversableAgent(Role, Agent):
         message_rounds: int = 0,
         historical_dialogues: Optional[List[AgentMessage]] = None,
         rely_messages: Optional[List[AgentMessage]] = None,
+        ctx: Optional[lc.ActorContext] = None,
         **context,
     ):
         """Initiate a chat with another agent.
 
         Args:
-            recipient (Agent): The recipient agent.
-            reviewer (Agent): The reviewer agent.
+            recipient (ActorProxyAgent): The recipient agent.
+            reviewer (ActorProxyAgent): The reviewer agent.
             message (str): The message to send.
         """
         agent_message = AgentMessage(
@@ -803,16 +816,35 @@ class ConversableAgent(Role, Agent):
                 "conv_uid": self.not_null_agent_context.conv_id,
             },
         ):
-            await self.send(
-                agent_message,
-                recipient,
-                reviewer,
-                historical_dialogues=historical_dialogues,
-                rely_messages=rely_messages,
+            req = AgentMessageRequest(
+                message=agent_message,
+                sender=self.self_proxy(),
+                reviewer=reviewer,
                 request_reply=request_reply,
                 is_retry_chat=is_retry_chat,
                 last_speaker_name=last_speaker_name,
+                rely_messages=rely_messages,
+                historical_dialogues=historical_dialogues,
             )
+            res = await recipient.tell_request(req)
+            return res
+
+    @lc.on(AgentMessageRequest)
+    async def handle_agent_request(self, request: AgentMessageRequest, ctx):
+        message = request.message
+        sender = request.sender
+        request_reply = request.request_reply
+
+        await self._a_process_received_message(message, sender)
+        if not request_reply:
+            return
+
+        if not self.is_human:
+            if isinstance(sender, ConversableAgent) and sender.is_human:
+                pass
+            else:
+                request.last_speaker_name = None
+            await self.generate_reply(request)
 
     async def adjust_final_message(
         self,
@@ -836,56 +868,19 @@ class ConversableAgent(Role, Agent):
         self,
         message: AgentMessage,
         role,
-        sender: Agent,
-        receiver: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        receiver: Optional[ActorProxyAgent] = None,
     ) -> bool:
         logger.info(f"_a_append_message:{message}")
+        receiver_role: Optional[str] = receiver.role if receiver else None
+        receiver_name: Optional[str] = receiver.name if receiver else None
         gpts_message: GptsMessage = message.to_gpts_message(
-            sender=sender, role=role, receiver=receiver
+            sender=sender,
+            role=role,
+            receiver=receiver,
+            receiver_role=receiver_role,
+            receiver_name=receiver_name,
         )
-        # gpts_message: GptsMessage = GptsMessage(
-        #     conv_id=self.not_null_agent_context.conv_id,
-        #     sender=sender.role,
-        #     conv_session_id=sender.not_null_agent_context.conv_session_id,
-        #     message_id=self.message_id if self.message_id else uuid.uuid4().hex,
-        #     sender_name=sender.name,
-        #     receiver=self.role,
-        #     role=role,
-        #     rounds=message.rounds,
-        #     is_success=message.success,
-        #     app_code=(
-        #         sender.not_null_agent_context.gpts_app_code
-        #         if isinstance(sender, ConversableAgent)
-        #         else None
-        #     ),
-        #     app_name=(
-        #         sender.not_null_agent_context.gpts_app_name
-        #         if isinstance(sender, ConversableAgent)
-        #         else None
-        #     ),
-        #     current_goal=message.current_goal,
-        #     content=message.content if message.content else "",
-        #     context=(
-        #         json.dumps(message.context, ensure_ascii=False)
-        #         if message.context
-        #         else None
-        #     ),
-        #     review_info=(
-        #         json.dumps(message.review_info.to_dict(), ensure_ascii=False)
-        #         if message.review_info
-        #         else None
-        #     ),
-        #     action_report=(
-        #         json.dumps(message.action_report.to_dict(), ensure_ascii=False)
-        #         if message.action_report
-        #         else None
-        #     ),
-        #     model_name=message.model_name,
-        #     resource_info=(
-        #         json.dumps(message.resource_info) if message.resource_info else None
-        #     ),
-        # )
-
         with root_tracer.start_span(
             "agent.save_message_to_memory",
             metadata={
@@ -898,7 +893,7 @@ class ConversableAgent(Role, Agent):
             )
             return True
 
-    def _print_received_message(self, message: AgentMessage, sender: Agent):
+    def _print_received_message(self, message: AgentMessage, sender: ActorProxyAgent):
         # print the message received
         print("\n", "-" * 80, flush=True, sep="")
         _print_name = self.name if self.name else self.role
@@ -938,8 +933,10 @@ class ConversableAgent(Role, Agent):
 
         print("\n", "-" * 80, flush=True, sep="")
 
-    async def _a_process_received_message(self, message: AgentMessage, sender: Agent):
-        valid = await self._a_append_message(message, None, sender)
+    async def _a_process_received_message(
+        self, message: AgentMessage, sender: ActorProxyAgent
+    ):
+        valid = await self._a_append_message(message, None, sender, self.self_proxy())
         if not valid:
             raise ValueError(
                 "Received message can't be converted into a valid ChatCompletion"
@@ -956,6 +953,24 @@ class ConversableAgent(Role, Agent):
             )
             return resource_prompt, resource_reference
         return None, None
+
+    async def agent_full_desc(self) -> str:
+        """The full description of the agent.
+
+        It will be as the description when it as a member of a team.
+
+        If this is a tool agent, the description will include the simple tool list and
+        their simple description.
+
+        If this is an agent which has other resources, the description will include
+        the simple resource list and their simple description.
+
+        Returns:
+            str: The full description of the agent.
+        """
+        desc = f"{self.role}:{self.desc}"
+        # TODO: Add tool list and resource list
+        return desc
 
     async def generate_resource_variables(
         self, resource_prompt: Optional[str] = None
@@ -997,8 +1012,9 @@ class ConversableAgent(Role, Agent):
 
         return can_uses
 
+    @classmethod
     def convert_to_agent_message(
-        self,
+        cls,
         gpts_messages: List[GptsMessage],
         is_rery_chat: bool = False,
     ) -> Optional[List[AgentMessage]]:
@@ -1068,7 +1084,7 @@ class ConversableAgent(Role, Agent):
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
-        sender: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
         rounds: Optional[int] = None,
     ) -> AgentMessage:
         """Create a new message from the received message.
@@ -1077,6 +1093,9 @@ class ConversableAgent(Role, Agent):
 
         Args:
             received_message(AgentMessage): The received message
+            rely_messages(List[AgentMessage], optional): The messages to rely on.
+            sender(ActorProxyAgent, optional): The sender of the message.
+            rounds(int, optional): The rounds of the message.
 
         Returns:
             AgentMessage: A new message
@@ -1094,6 +1113,11 @@ class ConversableAgent(Role, Agent):
         await self._a_append_message(new_message, None, self)
         return new_message
 
+    @Deprecated(
+        reason="Use `init_reply_message` instead",
+        version="0.7.4",
+        remove_version="0.8.0",
+    )
     async def _a_init_reply_message(
         self,
         received_message: AgentMessage,
@@ -1103,7 +1127,7 @@ class ConversableAgent(Role, Agent):
 
         If return not None, the `_init_reply_message` method will not be called.
         """
-        return None
+        return await self.init_reply_message(received_message, rely_messages)
 
     def _convert_to_ai_message(
         self,
@@ -1189,7 +1213,7 @@ class ConversableAgent(Role, Agent):
     async def _load_thinking_messages(
         self,
         received_message: AgentMessage,
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         historical_dialogues: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,

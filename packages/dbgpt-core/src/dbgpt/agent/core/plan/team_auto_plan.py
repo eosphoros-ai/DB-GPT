@@ -3,12 +3,21 @@
 import logging
 from typing import Dict, List, Optional, Tuple
 
+import lyricore as lc
+
 from dbgpt.core.interface.message import ModelMessageRoleType
 
 from ..action.base import ActionOutput
-from ..agent import Agent, AgentMessage
+from ..actor_messages import ActionRequest, ReviewRequest
+from ..agent import (
+    ActorProxyAgent,
+    AgentMessage,
+    AgentMessageRequest,
+    AgentReviewInfo,
+    AgentStateMessage,
+    AgentStateTaskResult,
+)
 from ..agent_manage import mentioned_agents, participant_roles
-from ..base_agent import ConversableAgent
 from ..base_team import ManagerAgent
 from ..memory.gpts.base import GptsPlan
 from ..plan.planner_agent import PlannerAgent
@@ -49,10 +58,12 @@ class AutoPlanChatManager(ManagerAgent):
     def __init__(self, **kwargs):
         """Create a new AutoPlanChatManager instance."""
         super().__init__(**kwargs)
+        self._plan_cls = PlannerAgent
+        self._plan: Dict = {}
+        self.current_rounds = 0
+        self._worker_agent_to_plan: Dict[str, GptsPlan] = {}
 
-    async def process_rely_message(
-        self, conv_id: str, now_plan: GptsPlan, speaker: Agent
-    ):
+    async def process_rely_message(self, conv_id: str, now_plan: GptsPlan):
         """Process the dependent message."""
         rely_prompt = None
         rely_messages: List[Dict] = []
@@ -60,7 +71,7 @@ class AutoPlanChatManager(ManagerAgent):
         if now_plan.rely and len(now_plan.rely) > 0:
             rely_tasks_list = now_plan.rely.split(",")
             rely_tasks_list_int = [int(i) for i in rely_tasks_list]
-            rely_tasks = self.memory.plans_memory.get_by_conv_id_and_num(
+            rely_tasks = await self.memory.gpts_memory.get_by_conv_id_and_num(
                 conv_id, rely_tasks_list_int
             )
             if rely_tasks:
@@ -85,7 +96,7 @@ class AutoPlanChatManager(ManagerAgent):
                     )
         return rely_prompt, rely_messages
 
-    def select_speaker_msg(self, agents: List[Agent]) -> str:
+    def select_speaker_msg(self, agents: List[ActorProxyAgent]) -> str:
         """Return the message for selecting the next speaker."""
         agent_names = [agent.name for agent in agents]
         return (
@@ -98,11 +109,11 @@ class AutoPlanChatManager(ManagerAgent):
 
     async def select_speaker(
         self,
-        last_speaker: Agent,
-        selector: Agent,
+        last_speaker: ActorProxyAgent,
+        selector: ActorProxyAgent,
         now_goal_context: Optional[str] = None,
         pre_allocated: Optional[str] = None,
-    ) -> Tuple[Agent, Optional[str]]:
+    ) -> Tuple[ActorProxyAgent, Optional[str]]:
         """Select the next speaker."""
         agents = self.agents
 
@@ -151,167 +162,265 @@ class AutoPlanChatManager(ManagerAgent):
             logger.exception(f"auto select speaker failed!{str(e)}")
             raise ValueError("Unable to select next speaker!")
 
+    @lc.on(ReviewRequest)
+    async def handle_review_request(self, request: ReviewRequest, ctx):
+        # self_ref = lc.get_current_message_context().self_ref
+        thinking_response = request.thinking_response
+        reply_message = thinking_response.init_message.reply_message
+        llm_reply = thinking_response.thinking_text
+        approve, comments = await self.review(llm_reply, self)
+        reply_message.review_info = AgentReviewInfo(
+            approve=approve,
+            comments=comments,
+        )
+        self.thinking_response = thinking_response
+        await self._start_plan(reply_message.content, reply_message.rounds)
+
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,
     ) -> ActionOutput:
         """Perform an action based on the received message."""
-        if not sender:
+        if not message.action_report:
             return ActionOutput(
                 is_exe_success=False,
-                content="The sender cannot be empty!",
+                content="The action_report cannot be empty!",
             )
-        speaker: Agent = sender
-        final_message = message.content
-        rounds = message.rounds
-        for i in range(self.max_round):
-            if not self.memory:
-                return ActionOutput(
+        return message.action_report
+
+    async def _complete_plan(self, action_report: Optional[ActionOutput] = None):
+        self_ref = lc.get_current_message_context().self_ref
+        thinking_response = self.thinking_response
+        reply_message = thinking_response.init_message.reply_message
+        reply_message.action_report = action_report
+        action_request = ActionRequest(thinking_response=thinking_response)
+        await self_ref.tell(action_request)
+
+    @lc.on(AgentStateTaskResult)
+    async def handle_agent_state_message(self, state: AgentStateTaskResult, ctx):
+        if not isinstance(state, AgentStateTaskResult):
+            # Ignore non-task-result state messages
+            return
+        self.current_rounds = max(self.current_rounds, state.rounds)
+        if state.role == self._plan_cls.curr_cls_role():
+            if not state.is_success:
+                err_msg = f"Planning agent reported failure: {state.result if state.result else ''}"
+                logger.error(err_msg)
+                action_report = ActionOutput(
                     is_exe_success=False,
-                    content="The memory cannot be empty!",
+                    content=err_msg,
                 )
-            plans = self.memory.plans_memory.get_by_conv_id(
-                self.not_null_agent_context.conv_id
-            )
-
-            if not plans or len(plans) <= 0:
-                if i > 3:
-                    return ActionOutput(
-                        is_exe_success=False,
-                        content="Retrying 3 times based on current application "
-                        "resources still fails to build a valid plan！",
-                    )
-                planner: ConversableAgent = (
-                    await PlannerAgent()
-                    .bind(self.memory)
-                    .bind(self.agent_context)
-                    .bind(self.llm_config)
-                    .bind_agents(self.agents)
-                    .build()
-                )
-
-                plan_message = await planner.generate_reply(
-                    received_message=AgentMessage.from_llm_message(
-                        {"content": message.content, "rounds": rounds}
-                    ),
-                    sender=self,
-                    reviewer=reviewer,
-                )
-                rounds = plan_message.rounds
-                await planner.send(
-                    message=plan_message, recipient=self, request_reply=False
-                )
+                await self._complete_plan(action_report)
+                return
             else:
-                todo_plans = [
-                    plan
-                    for plan in plans
-                    if plan.state in [Status.TODO.value, Status.RETRYING.value]
-                ]
-                if not todo_plans or len(todo_plans) <= 0:
-                    # The plan has been fully executed and a success message is sent
-                    # to the user.
-                    # complete
-                    return ActionOutput(
-                        is_exe_success=True,
-                        content=final_message,  # work results message
-                    )
+                plans = await self.memory.gpts_memory.get_by_conv_id(
+                    self.not_null_agent_context.conv_id
+                )
+                task_num_to_plan = {plan.sub_task_num: plan for plan in plans}
+                plan_dependencies: Dict[int, List[int]] = {}
+                for plan in plans:
+                    sub_task_num = plan.sub_task_num
+                    rely_tasks_list = plan.rely.split(",")
+                    rely_tasks_list_int = [
+                        int(i) for i in rely_tasks_list if i.strip() != ""
+                    ]
+                    plan_dependencies[sub_task_num] = rely_tasks_list_int
+
+                self._plan = {
+                    "plans": task_num_to_plan,
+                    "dependencies": plan_dependencies,
+                    "status": {plan.sub_task_num: plan.state for plan in plans},
+                }
+                await self._start_ready_tasks()
+                return
+
+        # Handle task result messages from worker agents
+        action_report, final_message = await self._handle_task_result(state)
+        if action_report:
+            await self._complete_plan(action_report)
+            return
+
+        need_adjustment = await self._check_plan_adjustment_need(state)
+        if not need_adjustment:
+            # No need to adjust the plan
+            if state.is_success:
+                to_run_tasks = await self._start_ready_tasks()
+                if to_run_tasks > 0:
+                    logger.info(f"Started {to_run_tasks} ready tasks.")
                 else:
-                    try:
-                        now_plan: GptsPlan = todo_plans[0]
-                        current_goal_message = AgentMessage(
-                            content=now_plan.sub_task_content,
-                            current_goal=now_plan.sub_task_content,
-                            context={
-                                "plan_task": now_plan.sub_task_content,
-                                "plan_task_num": now_plan.sub_task_num,
-                            },
-                            rounds=rounds + 1,
-                        )
-                        # select the next speaker
-                        speaker, model = await self.select_speaker(
-                            speaker,
-                            self,
-                            now_plan.sub_task_content,
-                            now_plan.sub_task_agent,
-                        )
-                        # Tell the speaker the dependent history information
-                        rely_prompt, rely_messages = await self.process_rely_message(
-                            conv_id=self.not_null_agent_context.conv_id,
-                            now_plan=now_plan,
-                            speaker=speaker,
-                        )
-                        if rely_prompt:
-                            current_goal_message.content = (
-                                rely_prompt + current_goal_message.content
-                            )
+                    logger.info("No ready tasks to start.")
+                    action_report = ActionOutput(
+                        is_exe_success=True,
+                        content=final_message,
+                    )
+                    await self._complete_plan(action_report)
+            else:
+                logger.error(
+                    f"Task {state.name} failed: {state.result if state.result else ''}"
+                )
+                action_report = ActionOutput(
+                    is_exe_success=False,
+                    content=state.result if state.result else "",
+                )
+                await self._complete_plan(action_report)
+        else:
+            # Plan adjustment needed (not implemented)
+            logger.warning("Plan adjustment needed but not implemented.")
+            action_report = ActionOutput(
+                is_exe_success=False,
+                content="Plan adjustment needed but not implemented.",
+            )
+            await self._complete_plan(action_report)
 
-                        await self.send(
-                            message=current_goal_message,
-                            recipient=speaker,
-                            reviewer=reviewer,
-                            request_reply=False,
-                        )
-                        agent_reply_message = await speaker.generate_reply(
-                            received_message=current_goal_message,
-                            sender=self,
-                            reviewer=reviewer,
-                            rely_messages=AgentMessage.from_messages(rely_messages),
-                        )
-                        is_success = agent_reply_message.success
-                        reply_message = agent_reply_message.to_llm_message()
-                        await speaker.send(
-                            agent_reply_message, self, reviewer, request_reply=False
-                        )
-                        rounds = agent_reply_message.rounds
+    async def _handle_task_result(self, state: AgentStateTaskResult):
+        task_uniq_key = self.get_worker_agent_key(state.role, state.name)
+        plan = self._worker_agent_to_plan.get(task_uniq_key, None)
+        final_message = None
+        if not plan:
+            logger.error(f"Cannot find the plan for agent {task_uniq_key}")
+            return ActionOutput(
+                is_exe_success=False,
+                content=f"Cannot find the plan for agent {task_uniq_key}",
+            ), None
+        final_message = state.result
+        if state.is_success:
+            action_report = state.action_report
+            if action_report:
+                plan_result = action_report.content
+                final_message = action_report.view or action_report.content
+            # TODO: run update_task in a separate thread to avoid blocking
+            await self.memory.gpts_memory.complete_task(
+                self.not_null_agent_context.conv_id,
+                plan.task_uid,
+                plan_result,
+            )
+            plan.state = Status.COMPLETE.value
+            return None, final_message
+        else:
+            plan_result = state.result
+            # TODO: run update_task in a separate thread to avoid blocking
+            await self.memory.gpts_memory.update_task(
+                self.not_null_agent_context.conv_id,
+                plan.sub_task_num,
+                Status.FAILED.value,
+                plan.retry_times + 1,
+                state.name,
+                "",
+                plan_result,
+            )
+            plan.state = Status.FAILED.value
+            return ActionOutput(
+                is_exe_success=False, content=plan_result
+            ), final_message
 
-                        plan_result = ""
-                        final_message = reply_message["content"]
-                        if is_success:
-                            if reply_message:
-                                action_report = agent_reply_message.action_report
-                                if action_report:
-                                    plan_result = action_report.content
-                                    final_message = action_report.view
+    async def _start_ready_tasks(self):
+        ready_tasks = []
+        for task_num, plan in self._plan["plans"].items():
+            if plan.state in [Status.TODO.value, Status.RETRYING.value]:
+                dependencies = self._plan["dependencies"].get(task_num, [])
+                if all(
+                    self._plan["plans"][dep].state == Status.COMPLETE.value
+                    for dep in dependencies
+                ):
+                    ready_tasks.append(plan)
+        # Start all ready tasks concurrently
+        for plan in ready_tasks:
+            await self._start_task(plan, self.current_rounds)
+        return len(ready_tasks)
 
-                            # The current planned Agent generation verification is
-                            # successful
-                            # Plan executed successfully
-                            self.memory.plans_memory.complete_task(
-                                self.not_null_agent_context.conv_id,
-                                now_plan.sub_task_num,
-                                plan_result,
-                            )
-                        else:
-                            plan_result = reply_message["content"]
-                            self.memory.plans_memory.update_task(
-                                self.not_null_agent_context.conv_id,
-                                now_plan.sub_task_num,
-                                Status.FAILED.value,
-                                now_plan.retry_times + 1,
-                                speaker.name,
-                                "",
-                                plan_result,
-                            )
-                            return ActionOutput(
-                                is_exe_success=False, content=plan_result
-                            )
+    async def _check_plan_adjustment_need(self, state: AgentStateMessage) -> bool:
+        return False
 
-                    except Exception as e:
-                        logger.exception(
-                            f"An exception was encountered during the execution of the"
-                            f" current plan step.{str(e)}"
-                        )
-                        return ActionOutput(
-                            is_exe_success=False,
-                            content=f"An exception was encountered during the execution"
-                            f" of the current plan step.{str(e)}",
-                        )
-        return ActionOutput(
-            is_exe_success=False,
-            content=f"Maximum number of dialogue rounds exceeded.{self.max_round}",
+    def get_worker_agent_key(self, role: str, name: str) -> str:
+        return f"{role}___$$$___{name}"
+
+    async def _start_task(self, plan: GptsPlan, rounds: int):
+        current_goal_message = AgentMessage(
+            content=plan.sub_task_content,
+            current_goal=plan.sub_task_content,
+            context={
+                "plan_task": plan.sub_task_content,
+                "plan_task_num": plan.sub_task_num,
+            },
+            rounds=rounds + 1,
         )
+        # select the next speaker
+        last_speaker = None
+        speaker, model = await self.select_speaker(
+            last_speaker,
+            self,
+            plan.sub_task_content,
+            plan.sub_task_agent,
+        )
+        task_uniq_key = self.get_worker_agent_key(speaker.role, speaker.name)
+        self._worker_agent_to_plan[task_uniq_key] = plan
+
+        # Tell the speaker the dependent history information
+        rely_prompt, rely_messages = await self.process_rely_message(
+            conv_id=self.not_null_agent_context.conv_id,
+            now_plan=plan,
+        )
+        if rely_prompt:
+            current_goal_message.content = rely_prompt + current_goal_message.content
+        req = AgentMessageRequest(
+            message=current_goal_message,
+            sender=self.self_proxy(),
+            # reviewer=reviewer,
+            rely_messages=AgentMessage.from_messages(rely_messages),
+        )
+        # monitor_ref = await actor_ctx.spawn(AgentStateMonitorActor, f"_agent_state_actor_{self.not_null_agent_context.conv_id}_{plan.sub_task_num}")
+        await speaker.subscribe(self.self_proxy())
+        # await speaker.subscribe.tell(monitor_ref)
+        await speaker.tell_request(req)
+        plan.state = Status.RUNNING.value
+
+    async def _start_plan(self, current_goal: str, rounds: int):
+        actor_ctx = lc.get_current_message_context()
+        conv_uid = self.not_null_agent_context.conv_id
+        i = 0
+
+        planner_ref = await actor_ctx.spawn(
+            self._plan_cls,
+            f"_planner_agent_{self._plan_cls.curr_cls_name()}_{conv_uid}_{i}",
+            agent_context=self.agent_context,
+            llm_config=self.llm_config,
+            memory=self.memory,
+            # agents=self.agents,
+        )
+        await planner_ref.bind_agents(self.agents)
+        req = AgentMessageRequest(
+            message=AgentMessage.from_llm_message(
+                {"content": current_goal, "rounds": rounds}
+            ),
+            sender=self.self_proxy(),
+            # reviewer=reviewer,
+        )
+        # Subscribe to the planner agent's state messages
+        # monitor_ref = await actor_ctx.spawn(AgentStateMonitorActor, f"_agent_state_actor_{conv_uid}_{i}")
+        await planner_ref.subscribe.tell(actor_ctx.self_ref)
+        # await planner_ref.subscribe.tell(monitor_ref)
+        await planner_ref.tell(req)
+
+    async def thinking(
+        self,
+        messages: List[AgentMessage],
+        reply_message_id: str,
+        reply_message: AgentMessage,
+        sender: Optional[ActorProxyAgent] = None,
+        prompt: Optional[str] = None,
+        current_goal: Optional[str] = None,
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """Think and reason about the current task goal."""
+        # TeamManager, which is based on processes and plans by default, only needs to
+        # ensure execution and does not require additional thinking.
+        if messages is None or len(messages) <= 0:
+            return None, None, None
+        else:
+            message = messages[-1]
+            self.messages.append(message.to_llm_message())
+            return None, message.content, None

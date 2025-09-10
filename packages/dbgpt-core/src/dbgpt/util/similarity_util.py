@@ -20,6 +20,9 @@ def cosine_similarity(embedding1: List[float], embedding2: List[float]) -> float
         import numpy as np
     except ImportError:
         raise ImportError("numpy is required for SimilarityMetric")
+    if not embedding1 or not embedding2:
+        # If either embedding is empty, return 0 similarity
+        return np.dot([], [])
     dot_product = np.dot(embedding1, embedding2)
     norm1 = np.linalg.norm(embedding1)
     norm2 = np.linalg.norm(embedding2)
