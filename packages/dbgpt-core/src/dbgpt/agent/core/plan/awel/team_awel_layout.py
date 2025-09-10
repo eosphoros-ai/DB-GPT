@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Optional, cast
+from typing import Optional, cast
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import (
@@ -16,7 +16,7 @@ from dbgpt.core.awel import DAG
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 
 from ...action.base import ActionOutput
-from ...agent import Agent, AgentGenerateContext, AgentMessage
+from ...agent import ActorProxyAgent, AgentGenerateContext, AgentMessage
 from ...base_team import ManagerAgent
 from ...profile import DynConfig, ProfileConfig
 from .agent_operator import AWELAgentOperator, WrappedAgentOperator
@@ -104,35 +104,6 @@ class AWELBaseManager(ManagerAgent, ABC):
         ),
     )
 
-    async def receive(
-        self,
-        message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
-        request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
-        is_recovery: Optional[bool] = False,
-        is_retry_chat: bool = False,
-        last_speaker_name: Optional[str] = None,
-        historical_dialogues: Optional[List[AgentMessage]] = None,
-        rely_messages: Optional[List[AgentMessage]] = None,
-    ) -> None:
-        """Recive message by base team."""
-        if request_reply is False or request_reply is None:
-            return
-
-        if not self.is_human:
-            await self.generate_reply(
-                received_message=message,
-                sender=sender,
-                reviewer=reviewer,
-                is_retry_chat=is_retry_chat,
-                last_speaker_name=last_speaker_name,
-            )
-
-        # if reply is not None:
-        #     await self.a_send(reply, sender)
-
     @abstractmethod
     def get_dag(self) -> DAG:
         """Get the DAG of the manager."""
@@ -140,8 +111,8 @@ class AWELBaseManager(ManagerAgent, ABC):
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,
@@ -243,8 +214,8 @@ class WrappedAWELLayoutManager(AWELBaseManager):
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,

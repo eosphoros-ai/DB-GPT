@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import Field
-from dbgpt.agent.core.agent import Agent, AgentMessage
+from dbgpt.agent.core.agent import ActorProxyAgent, Agent, AgentMessage
 from dbgpt.agent.core.base_agent import ConversableAgent
 from dbgpt.agent.core.plan.planning_action import ReActAction
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
@@ -79,24 +79,29 @@ class PlanningAgent(ConversableAgent):
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
-        sender: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
+        rounds: Optional[int] = None,
     ) -> AgentMessage:
         reply_message = await super().init_reply_message(
             received_message=received_message,
             rely_messages=rely_messages,
             sender=sender,
         )
+        agent_desc = []
+        for item in self.agents:
+            full_desc = await item.agent_full_desc()
+            agent_desc.append(f"- {full_desc}")
         reply_message.context = {
-            "agents": "\n".join([f"- {item.name}:{item.desc}" for item in self.agents]),
+            "agents": "\n".join(agent_desc),
         }
         return reply_message
 
-    def hire(self, agents: List[ConversableAgent]):
+    def hire(self, agents: List[ActorProxyAgent]):
         """Bind the agents to the planner agent."""
         valid_agents = []
         reporter = None
         for agent in agents:
-            if isinstance(agent, SummaryAssistantAgent):
+            if agent.role == SummaryAssistantAgent.curr_cls_role():
                 reporter = agent
             else:
                 valid_agents.append(agent)
@@ -108,7 +113,7 @@ class PlanningAgent(ConversableAgent):
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:

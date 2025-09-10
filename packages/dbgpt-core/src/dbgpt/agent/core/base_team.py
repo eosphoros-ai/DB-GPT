@@ -3,9 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
-
-from .agent import Agent, AgentMessage
+from .agent import ActorProxyAgent, AgentMessage
 from .base_agent import ConversableAgent
 from .profile import ProfileConfig
 
@@ -65,21 +63,24 @@ def _content_str(content: Union[str, List, None]) -> str:
     return rst
 
 
-class Team(BaseModel):
+class Team:
     """Team class for managing a group of agents in a team chat."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    agents: List[Agent] = Field(default_factory=list)
-    messages: List[Dict] = Field(default_factory=list)
-    max_round: int = 100
-    is_team: bool = True
-
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        agents: Optional[List[ActorProxyAgent]] = None,
+        messages: Optional[List[Dict]] = None,
+        max_round: int = 100,
+        is_team: bool = True,
+        **kwargs,
+    ):
         """Create a new Team instance."""
-        super().__init__(**kwargs)
+        self.agents = agents or []
+        self.messages = messages or []
+        self.max_round = max_round
+        self.is_team = is_team
 
-    def hire(self, agents: List[Agent]):
+    def hire(self, agents: List[ActorProxyAgent]):
         """Hire roles to cooperate."""
         self.agents.extend(agents)
 
@@ -88,17 +89,17 @@ class Team(BaseModel):
         """Return the names of the agents in the group chat."""
         return [agent.role for agent in self.agents]
 
-    def agent_by_name(self, name: str) -> Agent:
+    def agent_by_name(self, name: str) -> ActorProxyAgent:
         """Return the agent with a given name."""
         return self.agents[self.agent_names.index(name)]
 
     async def select_speaker(
         self,
-        last_speaker: Agent,
-        selector: Agent,
+        last_speaker: ActorProxyAgent,
+        selector: ActorProxyAgent,
         now_goal_context: Optional[str] = None,
         pre_allocated: Optional[str] = None,
-    ) -> Tuple[Agent, Optional[str]]:
+    ) -> Tuple[ActorProxyAgent, Optional[str]]:
         """Select the next speaker in the group chat."""
         raise NotImplementedError
 
@@ -119,11 +120,9 @@ class Team(BaseModel):
 class ManagerAgent(ConversableAgent, Team):
     """Manager Agent class."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     profile: ProfileConfig = ProfileConfig(
         name="ManagerAgent",
-        profile="TeamManager",
+        role="TeamManager",
         goal="manage all hired intelligent agents to complete mission objectives",
         constraints=[],
         desc="manage all hired intelligent agents to complete mission objectives",
@@ -144,12 +143,12 @@ class ManagerAgent(ConversableAgent, Team):
     async def _load_thinking_messages(
         self,
         received_message: AgentMessage,
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         historical_dialogues: Optional[List[AgentMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
         is_retry_chat: bool = False,
-        force_use_historical: bool = False,
+        current_retry_counter: Optional[int] = None,
     ) -> Tuple[List[AgentMessage], Optional[Dict], Optional[str], Optional[str]]:
         """Load messages for thinking."""
         return [AgentMessage(content=received_message.content)], None, None, None

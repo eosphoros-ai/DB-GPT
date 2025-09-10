@@ -1,13 +1,25 @@
 """Role class for role-based conversation."""
 
-from abc import ABC
+import functools
+import logging
+from abc import ABCMeta
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from jinja2 import Environment, Template, meta
 from jinja2.sandbox import SandboxedEnvironment
-
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 from .action.base import ActionOutput
 from .memory.agent_memory import (
@@ -20,6 +32,10 @@ from .profile import Profile, ProfileConfig
 
 if TYPE_CHECKING:
     from .agent import AgentMessage
+    from .base_agent import ConversableAgent
+
+logger = logging.getLogger(__name__)
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class AgentRunMode(str, Enum):
@@ -31,24 +47,44 @@ class AgentRunMode(str, Enum):
     LOOP = "loop"
 
 
-class Role(ABC, BaseModel):
+class Role:
     """Role class for role-based conversation."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    profile: ProfileConfig = Field(
-        ...,
-        description="The profile of the role.",
-    )
-    memory: AgentMemory = Field(default_factory=AgentMemory)
-
-    fixed_subgoal: Optional[str] = Field(None, description="Fixed subgoal")
-
+    profile: ProfileConfig = ProfileConfig()
     language: str = "en"
-    is_human: bool = False
-    is_team: bool = False
 
-    template_env: SandboxedEnvironment = Field(default_factory=SandboxedEnvironment)
+    @classmethod
+    def curr_cls_role(cls) -> str:
+        profile = cls.profile.create_profile(prefer_prompt_language=cls.language)
+        return profile.get_role()
+
+    @classmethod
+    def curr_cls_name(cls) -> str:
+        profile = cls.profile.create_profile(prefer_prompt_language=cls.language)
+        return profile.get_name()
+
+    @classmethod
+    def curr_cls_goal(cls) -> Optional[str]:
+        profile = cls.profile.create_profile(prefer_prompt_language=cls.language)
+        return profile.get_goal()
+
+    def __init__(
+        self,
+        profile: ProfileConfig,
+        memory: AgentMemory,
+        fixed_subgoal: Optional[str] = None,
+        language: str = "en",
+        is_human: bool = False,
+        is_team: bool = False,
+        template_env: Optional[SandboxedEnvironment] = None,
+    ):
+        self.profile = profile
+        self.memory = memory
+        self.fixed_subgoal = fixed_subgoal
+        self.language = language
+        self.is_human = is_human
+        self.is_team = is_team
+        self.template_env = template_env or SandboxedEnvironment()
 
     async def build_prompt(
         self,
@@ -310,3 +346,212 @@ class Role(ABC, BaseModel):
                 )
                 fragments.append(fragment)
         await self.memory.write_batch(fragments)
+
+
+class ConversableAgentMeta(ABCMeta):
+    """
+    Metaclass for ConversableAgent to handle initialization defaults and compatibility.
+
+    This metaclass provides automatic default value injection for ConversableAgent subclasses,
+    allowing users to define class-level field defaults that are automatically applied during
+    instance creation, similar to pydantic BaseModel behavior but without the dependency.
+    """
+
+    @classmethod
+    def _collect_field_defaults(
+        cls, namespace: Dict[str, Any], bases: tuple
+    ) -> Dict[str, Any]:
+        """
+        Collect all field default values defined as class attributes.
+
+        This method scans both the current class and its base classes to find type-annotated
+        attributes that have default values assigned. It handles inheritance properly by
+        allowing subclasses to override parent class defaults.
+
+        Args:
+            namespace: The class namespace containing the class attributes and methods
+            bases: Tuple of base classes in the class hierarchy
+
+        Returns:
+            Dict mapping field names to their default values
+
+        Example:
+            class MyAgent(ConversableAgent):
+                profile: ProfileConfig = ProfileConfig(name="MyAgent")
+                max_retry_count: int = 5
+
+            # This method would return:
+            # {'profile': ProfileConfig(name="MyAgent"), 'max_retry_count': 5}
+        """
+        defaults = {}
+
+        # First, collect defaults from the current class being defined
+        # We only consider type-annotated fields that have actual values assigned
+        annotations = namespace.get("__annotations__", {})
+        for field_name in annotations:
+            # Check if this field has a value assigned in the class definition
+            if (
+                field_name in namespace
+                and not field_name.startswith("_")  # Skip private/magic attributes
+                and not callable(namespace.get(field_name))
+            ):  # Skip methods
+                defaults[field_name] = namespace[field_name]
+                logger.debug(
+                    f"Collected field default from current class: {field_name}"
+                )
+
+        # Then, collect defaults from base classes (in reverse MRO order)
+        # This ensures proper inheritance: parent defaults are collected first,
+        # then can be overridden by child class defaults
+        for base_class in reversed(bases):
+            if hasattr(base_class, "__annotations__"):
+                try:
+                    base_annotations = getattr(base_class, "__annotations__", {})
+                    for field_name in base_annotations:
+                        # Only add if not already defined in a subclass (child overrides parent)
+                        # and the base class actually has this attribute with a non-callable value
+                        if (
+                            field_name not in defaults  # Preserve child class overrides
+                            and hasattr(base_class, field_name)
+                            and not field_name.startswith("_")
+                        ):  # Skip private attributes
+                            field_value = getattr(base_class, field_name)
+                            if not callable(field_value):  # Skip methods and functions
+                                defaults[field_name] = field_value
+                                logger.debug(
+                                    f"Collected field default from base class {base_class.__name__}: {field_name}"
+                                )
+
+                except (AttributeError, RuntimeError) as e:
+                    # Handle cases where base class attribute access fails
+                    # This can happen with complex inheritance or dynamic attributes
+                    logger.debug(
+                        f"Failed to collect defaults from base class {base_class}: {e}"
+                    )
+                    continue
+
+        logger.debug(f"Total collected field defaults: {list(defaults.keys())}")
+        return defaults
+
+    @classmethod
+    def _apply_defaults(cls, func: F, field_defaults: Dict[str, Any]) -> F:
+        """
+        Create a wrapper function that applies default values before calling the original __init__.
+
+        This decorator intercepts the __init__ call and automatically injects default values
+        for any parameters that weren't explicitly provided by the caller.
+
+        Args:
+            func: The original __init__ method
+            field_defaults: Dictionary of field names to default values collected from class attributes
+
+        Returns:
+            Wrapped function that applies defaults before calling the original
+        """
+
+        # Define all known parameters that ConversableAgent and its parents accept
+        # This avoids the need to inspect function signatures which can be unreliable
+        # when users define __init__ with *args, **kwargs
+        KNOWN_PARAMS = {
+            # Role parameters (inherited from Role class)
+            "profile",
+            "memory",
+            "fixed_subgoal",
+            "language",
+            "is_human",
+            "is_team",
+            "template_env",
+            # Agent parameters (specific to ConversableAgent)
+            "agent_context",
+            "actions",
+            "resource",
+            "llm_config",
+            "bind_prompt",
+            "run_mode",
+            "max_retry_count",
+            "max_timeout",
+            "llm_client",
+            "stream_out",
+            "show_reference",
+            "executor",
+        }
+
+        @functools.wraps(func)
+        def apply_defaults(self: "ConversableAgent", *args: Any, **kwargs: Any) -> Any:
+            logger.debug(f"Applying defaults for {self.__class__.__name__}.__init__")
+            logger.debug(f"Field defaults available: {list(field_defaults.keys())}")
+
+            # Priority 1: Apply class-level field defaults (highest priority)
+            # These are defaults defined as class attributes like: profile = ProfileConfig(...)
+            for param_name, default_value in field_defaults.items():
+                if param_name not in kwargs and param_name in KNOWN_PARAMS:
+                    kwargs[param_name] = default_value
+                    logger.debug(f"Applied field default: {param_name}")
+
+            # Priority 2: Apply built-in framework defaults (lower priority)
+            # These are sensible defaults for common parameters when not specified by class attributes
+            builtin_defaults = {
+                "actions": [],  # Empty action list by default
+                "max_retry_count": 3,  # Standard retry count
+                "max_timeout": 600,  # 10 minutes timeout
+                "stream_out": True,  # Enable streaming by default
+                "show_reference": False,  # Don't show references by default
+            }
+
+            for param_name, default_value in builtin_defaults.items():
+                if (
+                    param_name not in kwargs
+                    and param_name in KNOWN_PARAMS
+                    and param_name not in field_defaults
+                ):  # Only if not overridden by class attribute
+                    kwargs[param_name] = default_value
+                    logger.debug(f"Applied builtin default: {param_name}")
+
+            # Special handling for executor: create a new ThreadPoolExecutor instance
+            # This needs to be created fresh for each instance to avoid sharing executors
+            if "executor" not in kwargs and "executor" not in field_defaults:
+                kwargs["executor"] = ThreadPoolExecutor(max_workers=1)
+                logger.debug("Applied default ThreadPoolExecutor")
+
+            return func(self, *args, **kwargs)
+
+        return cast(F, apply_defaults)
+
+    def __new__(cls, name, bases, namespace, **kwargs):
+        """
+        Create a new ConversableAgent class with automatic default value handling.
+
+        This method is called when a new class inheriting from ConversableAgent is defined.
+        It collects field defaults and wraps the __init__ method to apply them automatically.
+
+        Args:
+            name: Name of the class being created
+            bases: Tuple of base classes
+            namespace: Class namespace dictionary
+            **kwargs: Additional keyword arguments
+
+        Returns:
+            The new class with enhanced __init__ method
+        """
+
+        # Collect all field defaults from class attributes
+        field_defaults = cls._collect_field_defaults(namespace, bases)
+
+        # Create the new class using the standard metaclass machinery
+        new_cls = super().__new__(cls, name, bases, namespace, **kwargs)
+
+        # Store field defaults on the class for introspection and debugging
+        new_cls._field_defaults = field_defaults
+
+        # Wrap the __init__ method to apply defaults automatically
+        # We check if __init__ exists in current namespace or any base class
+        if "__init__" in namespace or any(hasattr(base, "__init__") for base in bases):
+            original_init = new_cls.__init__
+            new_cls.__init__ = cls._apply_defaults(original_init, field_defaults)
+            logger.debug(f"Enhanced {name}.__init__ with default value injection")
+
+        # Allow classes to define post-creation hooks
+        if hasattr(new_cls, "after_define"):
+            new_cls.after_define()
+
+        return new_cls

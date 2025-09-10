@@ -28,7 +28,7 @@ from dbgpt.util.i18n_utils import _
 from .... import ActionOutput
 from ....resource.manage import get_resource_manager
 from ....util.llm.llm import LLMConfig
-from ...agent import Agent, AgentGenerateContext, AgentMessage
+from ...agent import ActorProxyAgent, Agent, AgentGenerateContext, AgentMessage
 from ...agent_manage import get_agent_manager
 from ...base_agent import ConversableAgent
 from .agent_operator_resource import AWELAgent
@@ -41,12 +41,12 @@ class BaseAgentOperator:
 
     SHARE_DATA_KEY_MODEL_NAME = "share_data_key_agent_name"
 
-    def __init__(self, agent: Optional[Agent] = None):
+    def __init__(self, agent: Optional[ActorProxyAgent] = None):
         """Create an AgentOperator."""
         self._agent = agent
 
     @property
-    def agent(self) -> Agent:
+    def agent(self) -> ActorProxyAgent:
         """Return the Agent."""
         if not self._agent:
             raise ValueError("agent is not set")

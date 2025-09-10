@@ -349,7 +349,7 @@ class Memory(ABC, Generic[T]):
     session_id: Optional[str] = None
 
     @mutable
-    def initialize(
+    async def initialize(
         self,
         name: Optional[str] = None,
         llm_client: Optional[LLMClient] = None,
@@ -362,6 +362,8 @@ class Memory(ABC, Generic[T]):
 
         Some agent may need to initialize memory before using it.
         """
+        if not real_memory_fragment_class:
+            real_memory_fragment_class = MemoryFragment
         self.name = name
         self.llm_client = llm_client
         self.importance_scorer = importance_scorer
@@ -613,7 +615,7 @@ class Memory(ABC, Generic[T]):
     def real_memory_fragment_class(self) -> Type[T]:
         """Return the real memory fragment class."""
         if not self._real_memory_fragment_class:
-            raise ValueError("The real memory fragment class is not set.")
+            return MemoryFragment
         return self._real_memory_fragment_class
 
 

@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from dbgpt.agent import (
     ActionOutput,
+    ActorProxyAgent,
     Agent,
     AgentMessage,
     ConversableAgent,
@@ -53,7 +54,7 @@ class StartAppAssistantAgent(ConversableAgent):
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
@@ -82,42 +83,45 @@ class StartAppAssistantAgent(ConversableAgent):
     async def thinking(
         self,
         messages: List[AgentMessage],
-        sender: Optional[Agent] = None,
+        reply_message_id: str,
+        reply_message: AgentMessage,
+        sender: Optional[ActorProxyAgent] = None,
         prompt: Optional[str] = None,
+        current_goal: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
         return messages[0].action_report.content, None
 
-    async def receive(
-        self,
-        message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
-        request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
-        is_recovery: Optional[bool] = False,
-        is_retry_chat: bool = False,
-        last_speaker_name: str = None,
-        historical_dialogues: Optional[List[AgentMessage]] = None,
-        rely_messages: Optional[List[AgentMessage]] = None,
-    ) -> None:
-        await self._a_process_received_message(message, sender)
-        if request_reply is False or request_reply is None:
-            return
-
-        if sender.agent_context.app_link_start:
-            self.last_rounds = message.rounds
-
-        elif not self.is_human and not sender.agent_context.app_link_start:
-            is_success, reply = await self.generate_reply(
-                received_message=message,
-                sender=sender,
-                reviewer=reviewer,
-                is_retry_chat=is_retry_chat,
-                last_speaker_name=last_speaker_name,
-            )
-            if reply is not None:
-                await self.a_send(reply, sender, silent=True)
-
+    # async def receive(
+    #     self,
+    #     message: AgentMessage,
+    #     sender: Agent,
+    #     reviewer: Optional[Agent] = None,
+    #     request_reply: Optional[bool] = None,
+    #     silent: Optional[bool] = False,
+    #     is_recovery: Optional[bool] = False,
+    #     is_retry_chat: bool = False,
+    #     last_speaker_name: str = None,
+    #     historical_dialogues: Optional[List[AgentMessage]] = None,
+    #     rely_messages: Optional[List[AgentMessage]] = None,
+    # ) -> None:
+    #     await self._a_process_received_message(message, sender)
+    #     if request_reply is False or request_reply is None:
+    #         return
+    #
+    #     if sender.agent_context.app_link_start:
+    #         self.last_rounds = message.rounds
+    #
+    #     elif not self.is_human and not sender.agent_context.app_link_start:
+    #         is_success, reply = await self.generate_reply(
+    #             received_message=message,
+    #             sender=sender,
+    #             reviewer=reviewer,
+    #             is_retry_chat=is_retry_chat,
+    #             last_speaker_name=last_speaker_name,
+    #         )
+    #         if reply is not None:
+    #             await self.a_send(reply, sender, silent=True)
+    #
     async def adjust_final_message(
         self,
         is_success: bool,
@@ -130,8 +134,8 @@ class StartAppAssistantAgent(ConversableAgent):
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,

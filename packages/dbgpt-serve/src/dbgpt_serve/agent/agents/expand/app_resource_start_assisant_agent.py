@@ -6,7 +6,7 @@ from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.agent import (
     Action,
     ActionOutput,
-    Agent,
+    ActorProxyAgent,
     AgentMessage,
     AgentResource,
     ConversableAgent,
@@ -213,7 +213,7 @@ class AppStarterAgent(ConversableAgent):
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:

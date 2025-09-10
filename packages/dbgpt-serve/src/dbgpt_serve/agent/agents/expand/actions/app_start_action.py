@@ -85,7 +85,7 @@ class StartAppAction(Action[LinkAppInput]):
             else:
                 from dbgpt_serve.agent.agents.controller import multi_agents
 
-                await multi_agents.agent_team_chat_new(
+                await multi_agents._agent_team_chat_new(
                     new_user_input if new_user_input else user_input,
                     conv_id,
                     gpts_app,

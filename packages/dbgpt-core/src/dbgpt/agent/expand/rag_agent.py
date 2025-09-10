@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from dbgpt._private.pydantic import Field
 from dbgpt.agent import (
     ActionOutput,
-    Agent,
+    ActorProxyAgent,
     AgentMessage,
     ConversableAgent,
     ProfileConfig,
@@ -245,7 +245,7 @@ class RAGAgent(ConversableAgent):
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
@@ -257,8 +257,8 @@ class RAGAgent(ConversableAgent):
     async def act(
         self,
         message: AgentMessage,
-        sender: Agent,
-        reviewer: Optional[Agent] = None,
+        sender: ActorProxyAgent,
+        reviewer: Optional[ActorProxyAgent] = None,
         is_retry_chat: bool = False,
         last_speaker_name: Optional[str] = None,
         **kwargs,

@@ -2,7 +2,6 @@ import hashlib
 import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
-from functools import cache
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -91,6 +90,19 @@ class TiktokenProxyTokenizer(ProxyTokenizer):
             max_size=cache_size, max_memory_mb=cache_memory_mb
         )
         self._cache = {}
+
+    def __getstate__(self):
+        """Customize serialization to exclude non-serializable objects"""
+        state = self.__dict__.copy()
+        # Don't serialize the encoding cache as tiktoken objects are not serializable
+        state["_cache"] = {}
+        return state
+
+    def __setstate__(self, state):
+        """Customize deserialization to restore the cache"""
+        self.__dict__.update(state)
+        if "_cache" not in self.__dict__:
+            self._cache = {}
 
     def count_token(self, model_name: str, prompts: List[str]) -> List[int]:
         encoding_model = self._get_or_create_encoding_model(model_name)
@@ -196,16 +208,20 @@ class ProxyLLMClient(LLMClient):
         self.context_length = context_length
         self.executor = executor or ThreadPoolExecutor()
         self._proxy_tokenizer = proxy_tokenizer
+        # Cache for models - use simple dict instead of @cache decorator
+        self._models_cache = None
 
     def __getstate__(self):
         """Customize the serialization of the object"""
         state = self.__dict__.copy()
-        state.pop("executor")
+        # Remove the executor as it's not serializable
+        state.pop("executor", None)
         return state
 
     def __setstate__(self, state):
         """Customize the deserialization of the object"""
         self.__dict__.update(state)
+        # Recreate the executor
         self.executor = ThreadPoolExecutor()
 
     @property
@@ -387,14 +403,16 @@ class ProxyLLMClient(LLMClient):
         """
         return self.model_names[0]
 
-    @cache
     def _models(self) -> List[ModelMetadata]:
-        results = []
-        for model in self.model_names:
-            results.append(
-                ModelMetadata(model=model, context_length=self.context_length)
-            )
-        return results
+        """Get models with manual caching instead of @cache decorator"""
+        if self._models_cache is None:
+            results = []
+            for model in self.model_names:
+                results.append(
+                    ModelMetadata(model=model, context_length=self.context_length)
+                )
+            self._models_cache = results
+        return self._models_cache
 
     def local_covert_message(
         self,
@@ -413,7 +431,7 @@ class ProxyLLMClient(LLMClient):
         """
         if not message_converter:
             return request
-        metadata = self._models[0].ext_metadata
+        metadata = self._models()[0].ext_metadata
         new_request = request.copy()
         new_messages = message_converter.convert(request.messages, metadata)
         new_request.messages = new_messages

@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import Field
-from dbgpt.agent.core.agent import Agent, AgentMessage
+from dbgpt.agent.core.agent import ActorProxyAgent, Agent, AgentMessage
 from dbgpt.agent.core.base_agent import ConversableAgent
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
 
@@ -81,21 +81,24 @@ class DataPlanningAgent(PlanningAgent):
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
-        sender: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
+        rounds: Optional[int] = None,
     ) -> AgentMessage:
         reply_message = await super().init_reply_message(
             received_message=received_message,
             rely_messages=rely_messages,
             sender=sender,
         )
-        # received_message.content = "如何修改列类型"
+        agent_desc = []
+        for item in self.agents:
+            full_desc = await item.agent_full_desc()
+            agent_desc.append(f"- {full_desc}")
         reply_message.context = {
-            "agents": "\n".join([f"- {item.name}:{item.desc}" for item in self.agents]),
-            # "background": schema,
+            "agents": "\n".join(agent_desc),
         }
         return reply_message
 
-    def bind_agents(self, agents: List[ConversableAgent]) -> ConversableAgent:
+    async def bind_agents(self, agents: List[ActorProxyAgent]):
         """Bind the agents to the planner agent."""
         self.agents = agents
         # resources = []
@@ -103,7 +106,6 @@ class DataPlanningAgent(PlanningAgent):
         #     if agent.resource:
         #         resources.append(agent.resource)
         # self.resource = ResourcePack(resources)
-        return self
 
     def prepare_act_param(
         self,

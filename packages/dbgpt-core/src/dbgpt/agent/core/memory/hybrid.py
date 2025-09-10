@@ -143,7 +143,7 @@ class HybridMemory(Memory, Generic[T]):
             )
         return cls(now, sensory_memory, short_term_memory, long_term_memory, **kwargs)
 
-    def initialize(
+    async def initialize(
         self,
         name: Optional[str] = None,
         llm_client: Optional[LLMClient] = None,
@@ -170,8 +170,8 @@ class HybridMemory(Memory, Generic[T]):
             "session_id": session_id,
         }
         for memory in memories:
-            memory.initialize(**kwargs)
-        super().initialize(**kwargs)
+            await memory.initialize(**kwargs)
+        await super().initialize(**kwargs)
 
     @mutable
     async def write(

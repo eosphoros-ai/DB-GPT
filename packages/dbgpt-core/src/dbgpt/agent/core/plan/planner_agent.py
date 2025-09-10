@@ -2,10 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from dbgpt._private.pydantic import Field
-
-from ...resource.pack import ResourcePack
-from ..agent import Agent, AgentMessage
+from ..agent import ActorProxyAgent, AgentMessage
 from ..base_agent import ConversableAgent
 from ..plan.plan_action import PlanAction
 from ..profile import DynConfig, ProfileConfig
@@ -16,8 +13,6 @@ class PlannerAgent(ConversableAgent):
 
     Planner agent, realizing task goal planning decomposition through LLM.
     """
-
-    agents: List[ConversableAgent] = Field(default_factory=list)
 
     profile: ProfileConfig = ProfileConfig(
         name=DynConfig(
@@ -143,37 +138,40 @@ assistants:[
         """Create a new PlannerAgent instance."""
         super().__init__(**kwargs)
         self._init_actions([PlanAction])
+        self.agents: List[ActorProxyAgent] = []
 
-    def _init_reply_message(
+    async def init_reply_message(
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
+        sender: Optional[ActorProxyAgent] = None,
+        rounds: Optional[int] = None,
     ) -> AgentMessage:
-        reply_message = super()._init_reply_message(received_message)
+        reply_message = await super().init_reply_message(
+            received_message, rely_messages, sender, rounds
+        )
+        agent_desc = []
+        for item in self.agents:
+            full_desc = await item.agent_full_desc()
+            agent_desc.append(f"- {full_desc}")
         reply_message.context = {
-            "agents": "\n".join([f"- {item.role}:{item.desc}" for item in self.agents]),
+            "agents": "\n".join(agent_desc),
         }
         return reply_message
 
-    def bind_agents(self, agents: List[ConversableAgent]) -> ConversableAgent:
+    async def bind_agents(self, agents: List[ActorProxyAgent]):
         """Bind the agents to the planner agent."""
         self.agents = agents
-        resources = []
-        for agent in self.agents:
-            if agent.resource:
-                resources.append(agent.resource)
-        self.resource = ResourcePack(resources)
-        return self
 
     def prepare_act_param(
         self,
         received_message: Optional[AgentMessage],
-        sender: Agent,
+        sender: ActorProxyAgent,
         rely_messages: Optional[List[AgentMessage]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """Prepare the parameters for the act method."""
         return {
             "context": self.not_null_agent_context,
-            "plans_memory": self.memory.plans_memory,
+            "gpts_memory": self.memory.gpts_memory,
         }

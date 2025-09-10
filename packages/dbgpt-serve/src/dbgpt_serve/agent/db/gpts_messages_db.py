@@ -27,10 +27,10 @@ class GptsMessagesEntity(Model):
         String(255), nullable=False, comment="The unique id of the conversation record"
     )
     conv_session_id = Column(
-        String(255), nullable=False, comment="The unique id of the conversation record"
+        String(255), nullable=True, comment="The unique id of the conversation record"
     )
     message_id = Column(
-        String(255), nullable=False, comment="The unique id of the messages"
+        String(255), nullable=True, comment="The unique id of the messages"
     )
     sender = Column(
         String(255),
@@ -39,7 +39,7 @@ class GptsMessagesEntity(Model):
     )
     sender_name = Column(
         String(255),
-        nullable=False,
+        nullable=True,
         comment="Who(name) speaking in the current conversation turn",
     )
     receiver = Column(
@@ -49,7 +49,7 @@ class GptsMessagesEntity(Model):
     )
     receiver_name = Column(
         String(255),
-        nullable=False,
+        nullable=True,
         comment="Who(name) receive message in the current conversation turn",
     )
     model_name = Column(String(255), nullable=True, comment="message generate model")

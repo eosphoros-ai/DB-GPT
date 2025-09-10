@@ -7,13 +7,13 @@ from typing import Dict, List, Optional, Set, Tuple, Type, cast
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
-from .agent import Agent
+from .agent import ActorProxyAgent
 from .base_agent import ConversableAgent
 
 logger = logging.getLogger(__name__)
 
 
-def participant_roles(agents: List[Agent]) -> str:
+def participant_roles(agents: List[ActorProxyAgent]) -> str:
     """Return a string listing the roles of the agents."""
     # Default to all agents registered
     roles = []
@@ -22,7 +22,7 @@ def participant_roles(agents: List[Agent]) -> str:
     return "\n".join(roles)
 
 
-def mentioned_agents(message_content: str, agents: List[Agent]) -> Dict:
+def mentioned_agents(message_content: str, agents: List[ActorProxyAgent]) -> Dict:
     """Return a dictionary mapping agent names to mention counts.
 
     Finds and counts agent mentions in the string message_content, taking word
@@ -94,13 +94,13 @@ class AgentManager(BaseComponent):
         self, cls: Type[ConversableAgent], ignore_duplicate: bool = False
     ) -> str:
         """Register an agent."""
-        inst = cls()
-        profile = inst.role
+        profile = cls.curr_cls_role()
+        goal = cls.curr_cls_goal()
         if profile in self._agents and (
             profile in self._core_agents or not ignore_duplicate
         ):
             raise ValueError(f"Agent:{profile} already register!")
-        self._agents[profile] = (cls, inst)
+        self._agents[profile] = (cls, goal)
         return profile
 
     def get_by_name(self, name: str) -> Type[ConversableAgent]:
@@ -119,26 +119,12 @@ class AgentManager(BaseComponent):
             raise ValueError(f"Agent:{name} not register!")
         return self._agents[name][0]
 
-    def get_describe_by_name(self, name: str) -> str:
-        """Return the description of an agent by name."""
-        return self._agents[name][1].desc or ""
-
-    def all_agents(self) -> Dict[str, str]:
-        """Return a dictionary of all registered agents and their descriptions."""
-        result = {}
-        for name, value in self._agents.items():
-            result[name] = value[1].desc or ""
-        return result
-
     def list_agents(self):
         """Return a list of all registered agents and their descriptions."""
         result = []
         for name, value in self._agents.items():
             result.append(
-                {
-                    "name": value[1].role,
-                    "desc": value[1].goal,
-                }
+                {"name": value[0].curr_cls_role(), "desc": value[0].curr_cls_goal()}
             )
         return result
 
