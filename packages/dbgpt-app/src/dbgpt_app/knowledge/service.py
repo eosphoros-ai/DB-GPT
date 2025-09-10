@@ -464,6 +464,23 @@ class KnowledgeService:
             )
             # delete vector by ids
             storage_connector.delete_by_ids(vector_ids)
+
+            # we next delete the corresponding CHUNK HISTORY data in Milvus
+            if (
+                space.vector_type == "KnowledgeGraph"
+                and storage_connector._vector_store_config.__type__ == "milvus"
+            ):
+                # this gives the vector store type
+                # in case this will support chroma in the future
+                embedding_vector_type = storage_connector._vector_store_config.__type__
+                # get the collection name
+                space_name = space_name + "_CHUNK_HISTORY"
+                storage_connector = self.storage_manager.get_storage_connector(
+                    index_name=space_name, storage_type=embedding_vector_type
+                )
+                # documents[0].id is the id we use to find the corresponding document
+                storage_connector.delete_by_file_id(documents[0].id)
+
         # delete chunks
         document_chunk_dao.raw_delete(documents[0].id)
         # delete document

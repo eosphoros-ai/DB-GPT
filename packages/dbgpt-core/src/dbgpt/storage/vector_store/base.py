@@ -187,7 +187,9 @@ class VectorStoreBase(IndexStoreBase, ABC):
         """Return a similarity score on a scale [0, 1]."""
         return 1.0 - distance / math.sqrt(2)
 
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:  # type: ignore
+    async def aload_document(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> List[str]:  # type: ignore
         """Async load document in index database.
 
         Args:
