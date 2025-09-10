@@ -176,25 +176,34 @@ class MultiAgents(BaseComponent, ABC):
             f"agent_chat_v2 conv_id:{conv_id},gpts_name:{gpts_name},user_query:"
             f"{user_query}"
         )
-        gpts_conversations: List[GptsConversationsEntity] = (
-            self.gpts_conversations.get_like_conv_id_asc(conv_id)
-        )
+        # Determine whether this is an AWEL flow chat to decide conversation id strategy
+        is_awel_chat = str(ext_info.get("chat_mode", "")).lower() == "chat_flow"
 
-        logger.info(
-            f"gpts_conversations count:{conv_id}, "
-            f"{len(gpts_conversations) if gpts_conversations else 0}"
-        )
-        gpt_chat_order = (
-            "1" if not gpts_conversations else str(len(gpts_conversations) + 1)
-        )
-        agent_conv_id = conv_id + "_" + gpt_chat_order
+        if is_awel_chat:
+            # For AWEL(chat_flow), reuse the original conv_id to avoid
+            # creating derived conversations
+            gpts_conversations = []
+            agent_conv_id = conv_id
+        else:
+            gpts_conversations: List[GptsConversationsEntity] = (
+                self.gpts_conversations.get_like_conv_id_asc(conv_id)
+            )
+
+            logger.info(
+                f"gpts_conversations count:{conv_id}, "
+                f"{len(gpts_conversations) if gpts_conversations else 0}"
+            )
+            gpt_chat_order = (
+                "1" if not gpts_conversations else str(len(gpts_conversations) + 1)
+            )
+            agent_conv_id = conv_id + "_" + gpt_chat_order
         message_round = 0
         history_message_count = 0
         is_retry_chat = False
         last_speaker_name = None
         history_messages = None
         # 检查最后一个对话记录是否完成，如果是等待状态，则要继续进行当前对话
-        if gpts_conversations and len(gpts_conversations) > 0:
+        if (not is_awel_chat) and gpts_conversations and len(gpts_conversations) > 0:
             last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
             logger.info(f"last conversation status:{last_gpts_conversation.__dict__}")
             if last_gpts_conversation.state == Status.WAITING.value:
@@ -263,19 +272,21 @@ class MultiAgents(BaseComponent, ABC):
                             historical_dialogues.append(temps[0])
                             historical_dialogues.append(temps[-1])
 
-            self.gpts_conversations.add(
-                GptsConversationsEntity(
-                    conv_id=agent_conv_id,
-                    user_goal=user_query,
-                    gpts_name=gpts_name,
-                    team_mode=gpt_app.team_mode,
-                    state=Status.RUNNING.value,
-                    max_auto_reply_round=0,
-                    auto_reply_count=0,
-                    user_code=user_code,
-                    sys_code=sys_code,
+            # Only add derived conversation record for non-AWEL chats
+            if not is_awel_chat:
+                self.gpts_conversations.add(
+                    GptsConversationsEntity(
+                        conv_id=agent_conv_id,
+                        user_goal=user_query,
+                        gpts_name=gpts_name,
+                        team_mode=gpt_app.team_mode,
+                        state=Status.RUNNING.value,
+                        max_auto_reply_round=0,
+                        auto_reply_count=0,
+                        user_code=user_code,
+                        sys_code=sys_code,
+                    )
                 )
-            )
 
         if (
             TeamMode.AWEL_LAYOUT.value == gpt_app.team_mode

@@ -1,5 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, getAppList, recommendApps } from '@/client/api';
+import { apiInterceptors, getAppList, newDialogue, recommendApps } from '@/client/api';
 import { getRecommendQuestions } from '@/client/api/chat';
 import TabContent from '@/new-components/app/TabContent';
 import ChatInput from '@/new-components/chat/input/ChatInput';
@@ -63,7 +63,7 @@ function Default() {
         if (activeKey === 'recommend') {
           return setApps({
             app_list: data,
-            total_count: data?.length || 0,
+            total_count: (data as any[])?.length || 0,
           });
         }
         setApps(data || {});
@@ -137,7 +137,7 @@ function Default() {
               <span>发现更多</span>
             </span>
           </div>
-          <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
+          <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} type={activeKey as any} />
           {helps && helps.length > 0 && (
             <div>
               <h2 className='font-medium text-xl my-4'>我可以帮您：</h2>
@@ -147,22 +147,31 @@ function Default() {
                     key={help.id}
                     className='flex gap-4 items-center backdrop-filter backdrop-blur-lg cursor-pointer bg-white bg-opacity-70 border-0 rounded-lg shadow p-2 relative dark:bg-[#6f7f95] dark:bg-opacity-60'
                     onClick={() => {
-                      setCurrentDialogInfo?.({
-                        chat_scene: help.chat_mode,
-                        app_code: help.app_code,
-                      });
-                      localStorage.setItem(
-                        'cur_dialog_info',
-                        JSON.stringify({
+                      (async () => {
+                        // Update current dialog info for the upcoming chat
+                        setCurrentDialogInfo?.({
                           chat_scene: help.chat_mode,
                           app_code: help.app_code,
-                        }),
-                      );
-                      localStorage.setItem(
-                        STORAGE_INIT_MESSAGE_KET,
-                        JSON.stringify({ id: help.app_code, message: help.question }),
-                      );
-                      router.push(`/chat/?scene=${help.chat_mode}&id=${help.app_code}`);
+                        });
+                        localStorage.setItem(
+                          'cur_dialog_info',
+                          JSON.stringify({
+                            chat_scene: help.chat_mode,
+                            app_code: help.app_code,
+                          }),
+                        );
+
+                        // Always create a new conversation via API and use conv_uid, not app_code
+                        const [, res] = await apiInterceptors(newDialogue({ chat_mode: help.chat_mode }));
+                        if (res?.conv_uid) {
+                          // Store initial message bound to the newly created conv id
+                          localStorage.setItem(
+                            STORAGE_INIT_MESSAGE_KET,
+                            JSON.stringify({ id: res.conv_uid, message: help.question }),
+                          );
+                          router.push(`/chat/?scene=${help.chat_mode}&id=${res.conv_uid}`);
+                        }
+                      })();
                     }}
                   >
                     <span>{help.question}</span>
