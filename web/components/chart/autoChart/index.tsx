@@ -83,7 +83,10 @@ export const AutoChart = (props: AutoChartProps) => {
       // 合并模型推荐的图表类型和 ava 推荐的图表类型
       const allAdvices = getMergedAdvices(avaAdvices);
       setAdvices(allAdvices);
-      setRenderChartType(allAdvices[0]?.type as ChartType);
+      // 仅当当前 renderChartType 不在候选列表中时才重置，避免视图切换被意外回退
+      if (!renderChartType || !allAdvices.some(a => a.type === renderChartType)) {
+        setRenderChartType(allAdvices[0]?.type as ChartType);
+      }
     }
   }, [JSON.stringify(data), advisor, chartType]);
 
