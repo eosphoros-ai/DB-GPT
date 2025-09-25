@@ -36,7 +36,9 @@ from dbgpt_app.base import (
 from dbgpt_app.component_configs import initialize_components
 from dbgpt_app.config import ApplicationConfig, ServiceWebParameters, SystemParameters
 from dbgpt_serve.core import add_exception_handler
-from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import BenchmarkDataManager, get_benchmark_manager
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
+    get_benchmark_manager,
+)
 
 logger = logging.getLogger(__name__)
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -152,8 +154,6 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         loop.create_task(load_benchmark_data())
     else:
         loop.run_until_complete(load_benchmark_data())
-
-
 
     binding_port = web_config.port
     binding_host = web_config.host
@@ -341,8 +341,7 @@ async def load_benchmark_data():
         async with manager:
             logger.info("Fetching data from GitHub repository...")
             result = await manager.load_from_github(
-                repo_url="https://github.com/inclusionAI/Falcon",
-                data_dir="data/source"
+                repo_url="https://github.com/inclusionAI/Falcon", data_dir="data/source"
             )
 
             # Log detailed results
@@ -351,21 +350,19 @@ async def load_benchmark_data():
             logger.info(f"Successfully imported: {result['successful']}")
             logger.info(f"Failed imports: {result['failed']}")
 
-            if result['failed'] > 0:
+            if result["failed"] > 0:
                 logger.warning(f"Encountered {result['failed']} failures during import")
 
             # Verify the loaded data
             table_info = await manager.get_table_info()
             logger.info(f"Loaded {len(table_info)} tables into database")
 
-            return {
-                'import_result': result,
-                'table_info': table_info
-            }
+            return {"import_result": result, "table_info": table_info}
 
     except Exception as e:
         logger.error("Failed to load benchmark data", exc_info=True)
         raise RuntimeError(f"Benchmark data loading failed: {str(e)}") from e
+
 
 if __name__ == "__main__":
     # Parse command line arguments
