@@ -26,8 +26,8 @@ class BenchmarkDataConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     cache_dir: str = "cache"
-    db_path: str = "benchmark_data.db"
-    table_mapping_file: Optional[str] = None
+    db_path: str = "pilot/benchmark_meta_data/benchmark_data.db"
+    table_mapping_file: str = "pilot/benchmark_meta_data/table_mapping.json"
     cache_expiry_days: int = 1
 
 
