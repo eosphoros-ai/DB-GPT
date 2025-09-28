@@ -1,6 +1,6 @@
-# DB-GPT 数据分析多智能体实践指南（基于Superstore数据集）
+# DB-GPT 数据分析应用实践案例
 
-本指南旨在帮助入门者使用 DB-GPT 数据分析多智能体应用对 Superstore 数据集进行分析。通过本指南，您将学会如何部署项目、配置环境、准备数据，并成功运行针对 Superstore 销售数据的分析应用。
+本实践案例旨在帮助入门者使用 DB-GPT 创建数据分析的多智能体应用对 Superstore 数据集进行分析。通过本案例，您将学会如何部署项目、配置环境、准备数据，并成功运行针对 Superstore 销售数据的分析应用。
 
 ## 1. 项目部署
 
@@ -29,7 +29,7 @@ uv --version
 
 根据您使用的模型类型，选择相应的依赖安装方式：
 
-#### 使用 OpenAI 代理模型（推荐入门使用）
+#### 使用 OpenAI 代理模型
 
 ```bash
 uv sync --all-packages \
@@ -129,13 +129,55 @@ provider = "hf"
 # path = "the-model-path-in-the-local-file-system"
 ```
 
-## 2. 知识库准备
+## 2. 数据集与数据库准备
 
-数据分析多智能体应用需要业务相关的知识文件来描述 Superstore 数据集的指标信息，包括指标名、计算规则、字段等。
+在开始分析之前，需要获取 Superstore 数据集并将其导入数据库中。您可以从以下链接下载数据集：
 
-### 2.1 Superstore 指标信息文件格式
+数据集网址：https://www.kaggle.com/datasets/jr2ngb/superstore-data
 
-创建`指标.txt`文本文件来描述 Superstore 业务指标，不同指标的描述可用"###"分隔，方便后续分片处理。针对当前案例设置两个指标：订单数量和订单占比。
+本案例使用MySQL数据库进行演示，具体步骤如下：
+
+1. 首先确保您已安装MySQL数据库并启动服务
+2. 创建数据库：
+   ```sql
+   CREATE DATABASE superstore;
+   USE superstore;
+   ```
+3. 创建 `superstore_dataset` 表：
+   ```sql
+   CREATE TABLE `superstore_dataset`  (
+     `row_id` int NOT NULL COMMENT 'Unique ID for each row',
+     `order_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Unique Order ID for each Customer.',
+     `order_date` date NULL DEFAULT NULL COMMENT 'Order Date of the product.',
+     `ship_date` date NULL DEFAULT NULL COMMENT 'Shipping Date of the Product.',
+     `ship_mode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Shipping Mode specified by the Customer.',
+     `customer_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Unique ID to identify each Customer.',
+     `customer_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Name of the Customer.',
+     `segment` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'The segment where the Customer belongs.',
+     `country` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT ' Country of residence of the Customer.',
+     `city` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'city where the customer lives.',
+     `state` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'State of residence of the Customer.',
+     `postal_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Postal Code of every Customer.',
+     `region` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Region where the Customer belong.',
+     `market` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'market name',
+     `product_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Unique ID of the Product.',
+     `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Category of the product ordered.',
+     `sub_category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Sub-Category of the product ordered.',
+     `product_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'Name of the Product',
+     `sales` float(10, 2) NULL DEFAULT NULL COMMENT 'Product sales price',
+     `quantity` int NULL DEFAULT NULL COMMENT 'Quantity of the Product.',
+     `discount` float(10, 3) NULL DEFAULT NULL COMMENT 'Discount provided.',
+     `profit` float(10, 4) NULL DEFAULT NULL COMMENT 'Profit/Loss incurred.',
+     `shipping_cost` float(10, 2) NULL DEFAULT NULL COMMENT 'shipping cost',
+     `order_priority` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL COMMENT 'order priority',
+     PRIMARY KEY (`row_id`) USING BTREE
+   ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = Dynamic;
+   ```
+4. 将下载的数据导入到表中
+
+## 3. 知识库准备
+
+数据分析多智能体应用需要业务相关的知识文件来描述 Superstore 数据集的指标信息，包括指标名、计算规则、字段等。创建`指标.txt`文本文件来描述 Superstore 业务指标，不同指标的描述可用"###"分隔，方便后续分片处理。针对当前案例设置两个指标：订单数量和订单占比。
 
 ```
 ###
@@ -152,32 +194,11 @@ provider = "hf"
 阈值：0.05
 ```
 
-## 3. 数据库准备
-
-数据分析多智能体应用需要准备 Superstore 业务数据库。系统支持多种数据库类型，包括 MySQL、PostgreSQL、SQLite 等。本案例使用MySQL进行演示。
-
-### 3.1 Superstore 数据集准备
-
-将 Superstore 数据集存储在 MySQL 数据库中，表名为 `superstore_dataset`。
-
-#### 数据表结构
-
-```sql
-CREATE TABLE `superstore_dataset`
-(
-    "region" VARCHAR(255) COLLATE "UTF8MB4_BIN" COMMENT "Region where the Customer belong.",
-    "quantity" INTEGER COMMENT "Quantity of the Product.",
-    "category" VARCHAR(255) COLLATE "UTF8MB4_BIN" COMMENT "Category of the product ordered.",
-    "ship_mode" VARCHAR(255) COLLATE "UTF8MB4_BIN" COMMENT "Shipping Mode specified by the Customer.",
-    "sub_category" VARCHAR(255) COLLATE "UTF8MB4_BIN" COMMENT "Sub-Category of the product ordered."
-) COMMENT "None"
-```
-
 ## 4. 修改planner
 
 为了使用数据分析应用，需要将 `PlannerAgent` 修改为 `DataAnalysisPlannerAgent`。修改 `packages/dbgpt-core/src/dbgpt/agent/core/plan/team_auto_plan.py` 文件中的相关代码，确保系统使用 `DataAnalysisPlannerAgent`：
 
-首先导入相关包：
+首先增加包导入代码：
 
 ```python
 from ..plan.data_analysis_planner_agent import DataAnalysisPlannerAgent
@@ -218,13 +239,15 @@ uv run dbgpt start webserver --config configs/dbgpt-proxy-openai.toml
 uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 ```
 
-打开浏览器并访问：`http://localhost:5671`
+打开浏览器并访问：`http://localhost:5670`
 
 ![](../../../static/img/data_analysis/app.png)
 
 ### 5.1 知识库接入
 
-1. 点击“应用管理”，选择“知识库”
+1. 选择知识库
+
+点击“应用管理”，选择“知识库”
 
 ![](../../../static/img/data_analysis/5_1_1.png)
 
@@ -234,9 +257,13 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 3. 知识库配置
 
+填写相关配置信息。
+
 ![](../../../static/img/data_analysis/5_1_3.png)
 
 4. 知识库类型
+
+此处选择文档。
 
 ![](../../../static/img/data_analysis/5_1_4.png)
 
@@ -258,7 +285,7 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 ### 5.2 创建数据库
 
-1. 选择“数据库”
+1. 选择数据库
 
 ![](../../../static/img/data_analysis/5_2_1.png)
 
@@ -268,7 +295,7 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 3. 配置数据源
 
-输入准备好的数据库连接信息。
+配置准备好的数据库连接信息。
 
 ![](../../../static/img/data_analysis/5_2_3.png)
 
@@ -351,4 +378,3 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 最终生成分析报告。
 
 ![](../../../static/img/data_analysis/5_4_4.png)
-
