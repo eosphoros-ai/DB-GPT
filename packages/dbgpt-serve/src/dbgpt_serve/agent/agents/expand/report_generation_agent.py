@@ -69,6 +69,15 @@ class ReportGenerationAgent(ConversableAgent):
         super().__init__(**kwargs)
         self._init_actions([ReportGenerationAction])
 
+    async def build(self, is_retry_chat: bool = False) -> "ConversableAgent":
+        """Build the agent."""
+        # Build the parent class first
+        agent = await super().build(is_retry_chat)
+        # Set higher max_new_tokens for report generation to allow longer reports
+        if self.agent_context:
+            self.agent_context.max_new_tokens = 4096
+        return agent
+
 
 agent_manage = get_agent_manager()
 agent_manage.register_agent(ReportGenerationAgent)
