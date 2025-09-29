@@ -1,15 +1,25 @@
-from typing import Dict, List, Optional
-from models import DataCompareResult, DataCompareResultEnum, DataCompareStrategyConfig, AnswerExecuteModel
-from copy import deepcopy
 import hashlib
 import json
-from decimal import Decimal, ROUND_HALF_UP
+from copy import deepcopy
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Dict, List, Optional
+
+from models import (
+    AnswerExecuteModel,
+    DataCompareResult,
+    DataCompareResultEnum,
+    DataCompareStrategyConfig,
+)
+
 
 def md5_list(values: List[str]) -> str:
     s = ",".join([v if v is not None else "" for v in values])
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
-def accurate_decimal(table: Dict[str, List[str]], scale: int = 2) -> Dict[str, List[str]]:
+
+def accurate_decimal(
+    table: Dict[str, List[str]], scale: int = 2
+) -> Dict[str, List[str]]:
     out = {}
     for k, col in table.items():
         new_col = []
@@ -20,13 +30,18 @@ def accurate_decimal(table: Dict[str, List[str]], scale: int = 2) -> Dict[str, L
             vs = str(v)
             try:
                 d = Decimal(vs)
-                new_col.append(str(d.quantize(Decimal("1." + "0"*scale), rounding=ROUND_HALF_UP)))
-            except:
+                new_col.append(
+                    str(d.quantize(Decimal("1." + "0" * scale), rounding=ROUND_HALF_UP))
+                )
+            except Exception as e:
                 new_col.append(vs)
         out[k] = new_col
     return out
 
-def sort_columns_by_key(table: Dict[str, List[str]], sort_key: str) -> Dict[str, List[str]]:
+
+def sort_columns_by_key(
+    table: Dict[str, List[str]], sort_key: str
+) -> Dict[str, List[str]]:
     if sort_key not in table:
         raise ValueError(f"base col not exist: {sort_key}")
     base = table[sort_key]
@@ -41,11 +56,21 @@ def sort_columns_by_key(table: Dict[str, List[str]], sort_key: str) -> Dict[str,
         sorted_table[k] = [table[k][i] for i in indices]
     return sorted_table
 
+
 class DataCompareService:
-    def compare(self, standard_model: AnswerExecuteModel, target_result: Optional[Dict[str, List[str]]]) -> DataCompareResult:
+    def compare(
+        self,
+        standard_model: AnswerExecuteModel,
+        target_result: Optional[Dict[str, List[str]]],
+    ) -> DataCompareResult:
         if target_result is None:
             return DataCompareResult.failed("targetResult is null")
-        cfg: DataCompareStrategyConfig = standard_model.strategyConfig or DataCompareStrategyConfig(strategy="EXACT_MATCH", order_by=True, standard_result=None)
+        cfg: DataCompareStrategyConfig = (
+            standard_model.strategyConfig
+            or DataCompareStrategyConfig(
+                strategy="EXACT_MATCH", order_by=True, standard_result=None
+            )
+        )
         if not cfg.standard_result:
             return DataCompareResult.failed("leftResult is null")
 
@@ -62,7 +87,12 @@ class DataCompareService:
                 return res
         return DataCompareResult.wrong("compareResult wrong!")
 
-    def _compare_ordered(self, std: Dict[str, List[str]], cfg: DataCompareStrategyConfig, tgt: Dict[str, List[str]]) -> DataCompareResult:
+    def _compare_ordered(
+        self,
+        std: Dict[str, List[str]],
+        cfg: DataCompareStrategyConfig,
+        tgt: Dict[str, List[str]],
+    ) -> DataCompareResult:
         try:
             std_md5 = set()
             for col_vals in std.values():
@@ -89,7 +119,12 @@ class DataCompareService:
         except Exception as e:
             return DataCompareResult.exception(f"compareResult Exception! {e}")
 
-    def _compare_unordered(self, std: Dict[str, List[str]], cfg: DataCompareStrategyConfig, tgt: Dict[str, List[str]]) -> DataCompareResult:
+    def _compare_unordered(
+        self,
+        std: Dict[str, List[str]],
+        cfg: DataCompareStrategyConfig,
+        tgt: Dict[str, List[str]],
+    ) -> DataCompareResult:
         try:
             tgt_md5 = []
             tgt_cols = []
@@ -115,7 +150,7 @@ class DataCompareService:
                 ordered_cfg = DataCompareStrategyConfig(
                     strategy=cfg.strategy,
                     order_by=True,
-                    standard_result=cfg.standard_result
+                    standard_result=cfg.standard_result,
                 )
                 res = self._compare_ordered(std_sorted, ordered_cfg, tgt_sorted)
                 if res.compare_result == DataCompareResultEnum.RIGHT:
@@ -124,7 +159,9 @@ class DataCompareService:
         except Exception as e:
             return DataCompareResult.exception(f"compareResult Exception! {e}")
 
-    def compare_json_by_config(self, standard_answer: str, answer: str, compare_config: Dict[str, str]) -> DataCompareResult:
+    def compare_json_by_config(
+        self, standard_answer: str, answer: str, compare_config: Dict[str, str]
+    ) -> DataCompareResult:
         try:
             if not standard_answer or not answer:
                 return DataCompareResult.failed("standardAnswer or answer is null")

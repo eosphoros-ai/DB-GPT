@@ -1,11 +1,12 @@
-# app/services/models.py
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+
 class BenchmarkModeTypeEnum(str, Enum):
     BUILD = "BUILD"
     EXECUTE = "EXECUTE"
+
 
 @dataclass
 class DataCompareStrategyConfig:
@@ -13,11 +14,13 @@ class DataCompareStrategyConfig:
     order_by: bool = True
     standard_result: Optional[List[Dict[str, List[str]]]] = None  # 改为 list[dict]
 
+
 class DataCompareResultEnum(str, Enum):
     RIGHT = "RIGHT"
     WRONG = "WRONG"
     FAILED = "FAILED"
     EXCEPTION = "EXCEPTION"
+
 
 @dataclass
 class DataCompareResult:
@@ -25,13 +28,21 @@ class DataCompareResult:
     msg: str = ""
 
     @staticmethod
-    def right(msg=""): return DataCompareResult(DataCompareResultEnum.RIGHT, msg)
+    def right(msg=""):
+        return DataCompareResult(DataCompareResultEnum.RIGHT, msg)
+
     @staticmethod
-    def wrong(msg=""): return DataCompareResult(DataCompareResultEnum.WRONG, msg)
+    def wrong(msg=""):
+        return DataCompareResult(DataCompareResultEnum.WRONG, msg)
+
     @staticmethod
-    def failed(msg=""): return DataCompareResult(DataCompareResultEnum.FAILED, msg)
+    def failed(msg=""):
+        return DataCompareResult(DataCompareResultEnum.FAILED, msg)
+
     @staticmethod
-    def exception(msg=""): return DataCompareResult(DataCompareResultEnum.EXCEPTION, msg)
+    def exception(msg=""):
+        return DataCompareResult(DataCompareResultEnum.EXCEPTION, msg)
+
 
 @dataclass
 class BaseInputModel:
@@ -41,6 +52,7 @@ class BaseInputModel:
     selfDefineTags: Optional[str] = None
     prompt: Optional[str] = None
     knowledge: Optional[str] = None
+
 
 @dataclass
 class AnswerExecuteModel:
@@ -62,7 +74,7 @@ class AnswerExecuteModel:
             strategy_config = DataCompareStrategyConfig(
                 strategy=cfg.get("strategy"),
                 order_by=cfg.get("order_by", True),
-                standard_result=std_list if isinstance(std_list, list) else None
+                standard_result=std_list if isinstance(std_list, list) else None,
             )
         return AnswerExecuteModel(
             serialNo=d["serialNo"],
@@ -81,7 +93,7 @@ class AnswerExecuteModel:
             cfg = dict(
                 strategy=self.strategyConfig.strategy,
                 order_by=self.strategyConfig.order_by,
-                standard_result=self.strategyConfig.standard_result
+                standard_result=self.strategyConfig.standard_result,
             )
         return dict(
             serialNo=self.serialNo,
@@ -91,8 +103,9 @@ class AnswerExecuteModel:
             executeResult=self.executeResult,
             errorMsg=self.errorMsg,
             strategyConfig=cfg,
-            cotTokens=self.cotTokens
+            cotTokens=self.cotTokens,
         )
+
 
 @dataclass
 class RoundAnswerConfirmModel:
@@ -107,6 +120,7 @@ class RoundAnswerConfirmModel:
     executeResult: Optional[Dict[str, List[str]]] = None
     errorMsg: Optional[str] = None
     compareResult: Optional[DataCompareResultEnum] = None
+
 
 @dataclass
 class BenchmarkExecuteConfig:
