@@ -5,8 +5,8 @@ import os
 from typing import List
 
 import pandas as pd
-from openpyxl.reader.excel import load_workbook
 
+from openpyxl.reader.excel import load_workbook
 from dbgpt.util.benchmarks.ExcelUtils import ExcelUtils
 
 from .models import (
@@ -161,6 +161,7 @@ class FileParseService:
                 )
             )
         return outputs
+
 
 
 class ExcelFileParseService(FileParseService):

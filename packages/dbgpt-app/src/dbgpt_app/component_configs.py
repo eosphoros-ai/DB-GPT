@@ -59,6 +59,7 @@ def initialize_components(
     _initialize_code_server(system_app)
     # Initialize prompt templates - MUST be after serve apps registration
     _initialize_prompt_templates()
+    _initialize_benchmark_data(system_app)
 
 
 def _initialize_model_cache(system_app: SystemApp, web_config: ServiceWebParameters):
@@ -206,3 +207,11 @@ def _initialize_prompt_templates():
         logger.error(f"Failed to initialize prompt templates: {e}")
         # Don't raise exception to avoid breaking the application startup
         # The templates will be loaded lazily when needed
+
+
+def _initialize_benchmark_data(system_app: SystemApp):
+    from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
+        initialize_benchmark_data,
+    )
+
+    initialize_benchmark_data(system_app)
