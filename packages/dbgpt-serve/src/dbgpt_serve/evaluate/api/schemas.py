@@ -37,3 +37,23 @@ class EvaluateServeRequest(BaseModel):
 class EvaluateServeResponse(EvaluateServeRequest):
     class Config:
         title = f"EvaluateServeResponse for {SERVE_APP_NAME_HUMP}"
+
+
+class BenchmarkServeRequest(BaseModel):
+    evaluate_code: Optional[str] = Field(None, description="evaluation code")
+    scene_key: Optional[str] = Field(None, description="evaluation scene key")
+    scene_value: Optional[str] = Field(None, description="evaluation scene value")
+    input_file_path: Optional[str] = Field(
+        None, description="input benchmark file path"
+    )
+    output_file_path: Optional[str] = Field(None, description="output result file path")
+    model_list: Optional[List[str]] = Field(
+        None, description="execute benchmark model name list"
+    )
+    user_name: Optional[str] = Field(None, description="user name")
+    user_id: Optional[str] = Field(None, description="user id")
+    sys_code: Optional[str] = Field(None, description="system code")
+    parallel_num: Optional[int] = Field(None, description="system code")
+    state: Optional[str] = Field(None, description="evaluation state")
+    temperature: Optional[str] = Field(None, description="evaluation state")
+    max_tokens: Optional[str] = Field(None, description="evaluation state")

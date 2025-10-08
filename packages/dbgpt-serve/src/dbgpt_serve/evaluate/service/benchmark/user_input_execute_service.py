@@ -1,14 +1,32 @@
 # app/services/user_input_execute_service.py
-from typing import List
-from models import (
-    BaseInputModel, AnswerExecuteModel, RoundAnswerConfirmModel,
-    BenchmarkExecuteConfig, BenchmarkModeTypeEnum, DataCompareResultEnum, DataCompareStrategyConfig
+import logging
+from typing import Dict, List
+
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
+    get_benchmark_manager,
 )
-from file_parse_service import FileParseService
-from data_compare_service import DataCompareService
+
+from .data_compare_service import DataCompareService
+from .file_parse_service import FileParseService
+from .models import (
+    AnswerExecuteModel,
+    BaseInputModel,
+    BenchmarkExecuteConfig,
+    BenchmarkModeTypeEnum,
+    DataCompareResultEnum,
+    DataCompareStrategyConfig,
+    InputType,
+    ReasoningResponse,
+    RoundAnswerConfirmModel,
+)
+
+logger = logging.getLogger(__name__)
+
 
 class UserInputExecuteService:
-    def __init__(self, file_service: FileParseService, compare_service: DataCompareService):
+    def __init__(
+        self, file_service: FileParseService, compare_service: DataCompareService
+    ):
         self.file_service = file_service
         self.compare_service = compare_service
 
@@ -20,16 +38,38 @@ class UserInputExecuteService:
         left_outputs: List[AnswerExecuteModel],
         right_outputs: List[AnswerExecuteModel],
         input_file_path: str,
-        output_file_path: str
+        output_file_path: str,
     ):
         try:
-            if config.benchmarkModeType == BenchmarkModeTypeEnum.BUILD and config.compareResultEnable:
+            if (
+                config.benchmark_mode_type == BenchmarkModeTypeEnum.BUILD
+                and config.compare_result_enable
+            ):
                 if left_outputs and right_outputs:
-                    self._execute_llm_compare_result(output_file_path, round_id, inputs, left_outputs, right_outputs, config)
-            elif config.benchmarkModeType == BenchmarkModeTypeEnum.EXECUTE and config.compareResultEnable:
-                if config.standardFilePath and right_outputs:
-                    standard_sets = self.file_service.parse_standard_benchmark_sets(config.standardFilePath)
-                    self._execute_llm_compare_result(output_file_path, 1, inputs, standard_sets, right_outputs, config)
+                    self._execute_llm_compare_result(
+                        output_file_path,
+                        round_id,
+                        inputs,
+                        left_outputs,
+                        right_outputs,
+                        config,
+                    )
+            elif (
+                config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE
+                and config.compare_result_enable
+            ):
+                if config.standard_file_path and right_outputs:
+                    standard_sets = self.file_service.parse_standard_benchmark_sets(
+                        config.standard_file_path
+                    )
+                    self._execute_llm_compare_result(
+                        output_file_path,
+                        1,
+                        inputs,
+                        standard_sets,
+                        right_outputs,
+                        config,
+                    )
         except Exception as e:
             print(f"[post_dispatch] compare error: {e}")
 
@@ -40,7 +80,7 @@ class UserInputExecuteService:
         inputs: List[BaseInputModel],
         left_answers: List[AnswerExecuteModel],
         right_answers: List[AnswerExecuteModel],
-        config: BenchmarkExecuteConfig
+        config: BenchmarkExecuteConfig,
     ):
         left_map = {a.serialNo: a for a in left_answers}
         right_map = {a.serialNo: a for a in right_answers}
@@ -57,7 +97,7 @@ class UserInputExecuteService:
             standard_sql = None
             if left is not None:
                 standard_sql = left.llmOutput
-                if config.benchmarkModeType == BenchmarkModeTypeEnum.EXECUTE:
+                if config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE:
                     strategy_cfg = left.strategyConfig
                 else:
                     standard_result_list = []
@@ -66,13 +106,17 @@ class UserInputExecuteService:
                     strategy_cfg = DataCompareStrategyConfig(
                         strategy="EXACT_MATCH",
                         order_by=True,
-                        standard_result=standard_result_list if standard_result_list else None
+                        standard_result=standard_result_list
+                        if standard_result_list
+                        else None,
                     )
 
             if right is not None:
-                if config.compareConfig and isinstance(config.compareConfig, dict):
+                if config.compare_config and isinstance(config.compare_config, dict):
                     res = self.compare_service.compare_json_by_config(
-                        left.llmOutput if left else "", right.llmOutput or "", config.compareConfig
+                        left.llmOutput if left else "",
+                        right.llmOutput or "",
+                        config.compare_config,
                     )
                     compare_result = res.compare_result
                 else:
@@ -80,14 +124,16 @@ class UserInputExecuteService:
                         compare_result = DataCompareResultEnum.FAILED
                     else:
                         res = self.compare_service.compare(
-                            left if left else AnswerExecuteModel(
+                            left
+                            if left
+                            else AnswerExecuteModel(
                                 serialNo=inp.serialNo,
                                 analysisModelId=inp.analysisModelId,
                                 question=inp.question,
                                 llmOutput=None,
-                                executeResult=None
+                                executeResult=None,
                             ),
-                            right.executeResult
+                            right.executeResult,
                         )
                         compare_result = res.compare_result
                 confirm = RoundAnswerConfirmModel(
@@ -101,8 +147,146 @@ class UserInputExecuteService:
                     llmOutput=right.llmOutput if right else None,
                     executeResult=right.executeResult if right else None,
                     errorMsg=right.errorMsg if right else None,
-                    compareResult=compare_result
+                    compareResult=compare_result,
                 )
                 confirm_list.append(confirm)
 
-        self.file_service.write_data_compare_result(location, round_id, confirm_list, config.benchmarkModeType == BenchmarkModeTypeEnum.EXECUTE, 2)
+        self.file_service.write_data_compare_result(
+            location,
+            round_id,
+            confirm_list,
+            config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE,
+            2,
+        )
+
+    def _convert_query_result_to_column_format(
+        self, result: List[Dict]
+    ) -> Dict[str, List[str]]:
+        """
+        将查询结果从 List[Dict] 格式转换为 Dict[str, List[str]] 格式
+
+        Args:
+            result: 查询结果，格式为 [{"col1": "val1", "col2": "val2"},
+             {"col1": "val3", "col2": "val4"}]
+
+        Returns:
+            转换后的结果，格式为 {"col1": ["val1", "val3"], "col2": ["val2", "val4"]}
+
+        Raises:
+            ValueError: 当输入数据为空或格式不正确时
+        """
+        if not result:
+            return {}
+
+        if not isinstance(result, list):
+            raise ValueError(f"Expected List[Dict], got {type(result)}")
+
+        # 检查第一行以获取列名
+        if not result[0] or not isinstance(result[0], dict):
+            raise ValueError("Query result must contain dictionary rows")
+
+        # 获取所有列名（从第一行获取）
+        column_names = list(result[0].keys())
+
+        # 初始化结果字典
+        column_data: Dict[str, List[str]] = {col: [] for col in column_names}
+
+        # 遍历每一行数据
+        for row_idx, row in enumerate(result):
+            if not isinstance(row, dict):
+                logger.warning(f"Skipping non-dict row at index {row_idx}: {row}")
+                continue
+
+            # 确保所有行都有相同的列结构
+            for col in column_names:
+                value = row.get(col)
+                # 将所有值转换为字符串，处理None值
+                if value is None:
+                    column_data[col].append("")
+                else:
+                    column_data[col].append(str(value))
+
+        return column_data
+
+    def build_output(self, config, input: InputType, response: ReasoningResponse):
+        return self._post_sql_query(response.content, input, config, response)
+
+    def _post_sql_query(
+        self,
+        content: str,
+        input: InputType,
+        config: BenchmarkExecuteConfig,
+        response: ReasoningResponse,
+    ) -> AnswerExecuteModel:
+        sql = self._extract_sql_content(content)
+        execute_result = None
+        error_msg = None
+
+        if config.execute_llm_result:
+            logger.info("[benchmark_task] queryResult start!")
+            try:
+                result: List[Dict] = get_benchmark_manager().query(sql)
+                execute_result = self._convert_query_result_to_column_format(result)
+            except Exception as e:
+                logger.error(
+                    f"[benchmark_task] queryResult error! sql = {sql}, errorMsg: {e}"
+                )
+            logger.info(f"[benchmark_task] queryResult end! result = {execute_result}")
+
+        return AnswerExecuteModel(
+            serialNo=input.serial_no,
+            analysisModelId=input.analysis_model_id,
+            question=input.question,
+            llmOutput=sql,
+            executeResult=execute_result,
+            cotTokens=response.cot_tokens,
+            errorMsg=error_msg,
+        )
+
+    def _extract_sql_content(self, content: str) -> str:
+        """
+        Extract Execute SQL from the LLM response content.
+        """
+        if not content:
+            return ""
+
+        content_upper = content.upper()
+
+        if "WITH" in content_upper:
+            # 包含 with
+            with_before_upper = content_upper.split("WITH", 1)[0]
+            with_before_lower = content.split("with", 1)[0]
+            with_before = (
+                with_before_lower if "WITH" in with_before_upper else with_before_upper
+            )
+            # 删除with 前面的语句
+            sql = content[len(with_before) :]
+            # 删除最后一个markdown格式之后的数据
+            if "```" in sql.upper():
+                sql = sql.split("```", 1)[0]
+            # 删除qwen72b 模型输出的多余字符
+            if '"}]' in sql:
+                sql = sql.rsplit('"}]', 1)[0]
+            return sql.strip()
+        else:
+            # 不包含 with，那就看是否包含 Select
+            if "SELECT" in content_upper:
+                select_before_upper = content_upper.split("SELECT", 1)[0]
+                select_before_lower = content.split("select", 1)[0]
+                select_before = (
+                    select_before_lower
+                    if "SELECT" in select_before_upper
+                    else select_before_upper
+                )
+                # 删除select 前面的语句
+                sql = content[len(select_before) :]
+                # 删除最后一个markdown格式之后的数据
+                if "```" in sql.upper():
+                    sql = sql.split("```", 1)[0]
+                # 删除qwen72b 模型输出的多余字符
+                if '"}]' in sql:
+                    sql = sql.rsplit('"}]', 1)[0]
+                return sql.strip()
+            else:
+                logger.error(f"error sql format! content : {content}")
+                return content.strip()

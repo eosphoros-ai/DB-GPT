@@ -1,7 +1,8 @@
-from file_parse_service import FileParseService
 from data_compare_service import DataCompareService
-from user_input_execute_service import UserInputExecuteService
+from file_parse_service import FileParseService
 from models import BenchmarkExecuteConfig, BenchmarkModeTypeEnum
+from user_input_execute_service import UserInputExecuteService
+
 
 def run_build_mode():
     fps = FileParseService()
@@ -16,7 +17,7 @@ def run_build_mode():
         benchmarkModeType=BenchmarkModeTypeEnum.BUILD,
         compareResultEnable=True,
         standardFilePath=None,
-        compareConfig={"check":"FULL_TEXT"}
+        compareConfig={"check": "FULL_TEXT"},
     )
 
     svc.post_dispatch(
@@ -26,11 +27,14 @@ def run_build_mode():
         left_outputs=left,
         right_outputs=right,
         input_file_path="data/input_round1.jsonl",
-        output_file_path="data/output_round1_modelB.jsonl"
+        output_file_path="data/output_round1_modelB.jsonl",
     )
 
-    fps.summary_and_write_multi_round_benchmark_result("data/output_round1_modelB.jsonl", 1)
+    fps.summary_and_write_multi_round_benchmark_result(
+        "data/output_round1_modelB.jsonl", 1
+    )
     print("BUILD compare path:", "data/output_round1_modelB.round1.compare.jsonl")
+
 
 def run_execute_mode():
     fps = FileParseService()
@@ -44,7 +48,7 @@ def run_execute_mode():
         benchmarkModeType=BenchmarkModeTypeEnum.EXECUTE,
         compareResultEnable=True,
         standardFilePath="data/standard_answers.xlsx",
-        compareConfig=None
+        compareConfig=None,
     )
 
     svc.post_dispatch(
@@ -54,11 +58,14 @@ def run_execute_mode():
         left_outputs=[],
         right_outputs=right,
         input_file_path="data/input_round1.jsonl",
-        output_file_path="data/output_execute_model.jsonl"
+        output_file_path="data/output_execute_model.jsonl",
     )
 
-    fps.summary_and_write_multi_round_benchmark_result("data/output_execute_model.jsonl", 1)
+    fps.summary_and_write_multi_round_benchmark_result(
+        "data/output_execute_model.jsonl", 1
+    )
     print("EXECUTE compare path:", "data/output_execute_model.round1.compare.jsonl")
+
 
 if __name__ == "__main__":
     run_build_mode()

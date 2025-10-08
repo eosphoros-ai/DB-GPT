@@ -8,11 +8,15 @@ from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt_serve.core import Result
-from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
+from dbgpt_serve.evaluate.api.schemas import BenchmarkServeRequest, EvaluateServeRequest
 from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.evaluate.service.service import Service
 
 from ...prompt.service.service import Service as PromptService
+from ..service.benchmark.benchmark_service import (
+    BENCHMARK_SERVICE_COMPONENT_NAME,
+    BenchmarkService,
+)
 
 router = APIRouter()
 
@@ -25,6 +29,13 @@ logger = logging.getLogger(__name__)
 def get_service() -> Service:
     """Get the service instance"""
     return global_system_app.get_component(SERVE_SERVICE_COMPONENT_NAME, Service)
+
+
+def get_benchmark_service() -> BenchmarkService:
+    """Get the benchmark service instance"""
+    return global_system_app.get_component(
+        BENCHMARK_SERVICE_COMPONENT_NAME, BenchmarkService
+    )
 
 
 def get_prompt_service() -> PromptService:
@@ -146,8 +157,34 @@ async def evaluation(
     )
 
 
+@router.post("/execute_benchmark_task")
+async def execute_benchmark_task(
+    request: BenchmarkServeRequest,
+    service: BenchmarkService = Depends(get_benchmark_service),
+) -> Result:
+    """execute benchmark task
+
+    Args:
+        request (EvaluateServeRequest): The request
+        service (Service): The service
+    Returns:
+        ServerResponse: The response
+    """
+    return Result.succ(
+        await service.run_dataset_benchmark(
+            request.evaluate_code,
+            request.scene_key,
+            request.scene_value,
+            request.input_file_path,
+            request.output_file_path,
+            request.model_list,
+        )
+    )
+
+
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""
     global global_system_app
     system_app.register(Service, config=config)
+    system_app.register(BenchmarkService, config=config)
     global_system_app = system_app
