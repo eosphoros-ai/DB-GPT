@@ -8,9 +8,16 @@ from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt_serve.core import Result
-from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest
+from dbgpt_serve.evaluate.api.schemas import EvaluateServeRequest, BuildDemoRequest, ExecuteDemoRequest
 from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.evaluate.service.service import Service
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
+import json
+from dbgpt_serve.evaluate.service.benchmark.file_parse_service import FileParseService
+from dbgpt_serve.evaluate.service.benchmark.data_compare_service import DataCompareService
+from dbgpt_serve.evaluate.service.benchmark.user_input_execute_service import UserInputExecuteService
+from dbgpt_serve.evaluate.service.benchmark.models import BenchmarkExecuteConfig, BenchmarkModeTypeEnum
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import get_benchmark_manager
 
 from ...prompt.service.service import Service as PromptService
 
@@ -122,28 +129,69 @@ async def get_scenes():
     return Result.succ(scene_list)
 
 
-@router.post("/evaluation")
-async def evaluation(
-    request: EvaluateServeRequest,
-    service: Service = Depends(get_service),
-) -> Result:
-    """Evaluate results by the scene
+@router.get("/benchmark/compare", dependencies=[Depends(check_api_key)])
+async def list_benchmark_compare(
+    round_id: int,
+    limit: int = 50,
+    offset: int = 0,
+):
+    dao = BenchmarkResultDao()
+    rows = dao.list_compare_by_round(round_id, limit=limit, offset=offset)
+    result = []
+    for r in rows:
+        result.append({
+            "id": r.id,
+            "round_id": r.round_id,
+            "mode": r.mode,
+            "serialNo": r.serial_no,
+            "analysisModelId": r.analysis_model_id,
+            "question": r.question,
+            "selfDefineTags": r.self_define_tags,
+            "prompt": r.prompt,
+            "standardAnswerSql": r.standard_answer_sql,
+            "llmOutput": r.llm_output,
+            "executeResult": json.loads(r.execute_result) if r.execute_result else None,
+            "errorMsg": r.error_msg,
+            "compareResult": r.compare_result,
+            "isExecute": r.is_execute,
+            "llmCount": r.llm_count,
+            "outputPath": r.output_path,
+            "gmtCreated": r.gmt_created.isoformat() if r.gmt_created else None,
+        })
+    return Result.succ(result)
 
-    Args:
-        request (EvaluateServeRequest): The request
-        service (Service): The service
-    Returns:
-        ServerResponse: The response
-    """
-    return Result.succ(
-        await service.run_evaluation(
-            request.scene_key,
-            request.scene_value,
-            request.datasets,
-            request.context,
-            request.evaluate_metrics,
-        )
+
+@router.post("/benchmark/run_build", dependencies=[Depends(check_api_key)])
+async def benchmark_run_build(req: BuildDemoRequest):
+    fps = FileParseService()
+    dcs = DataCompareService()
+    svc = UserInputExecuteService(fps, dcs)
+
+    inputs = fps.parse_input_sets(req.input_file_path)
+    left = fps.parse_llm_outputs(req.left_output_file_path)
+    right = fps.parse_llm_outputs(req.right_output_file_path)
+
+    config = BenchmarkExecuteConfig(
+        benchmarkModeType=BenchmarkModeTypeEnum.BUILD,
+        compareResultEnable=True,
+        standardFilePath=None,
+        compareConfig=req.compare_config or {"check": "FULL_TEXT"},
     )
+
+    svc.post_dispatch(
+        round_id=req.round_id,
+        config=config,
+        inputs=inputs,
+        left_outputs=left,
+        right_outputs=right,
+        input_file_path=req.input_file_path,
+        output_file_path=req.right_output_file_path,
+    )
+
+    summary = fps.summary_and_write_multi_round_benchmark_result(
+        req.right_output_file_path, req.round_id
+    )
+    return Result.succ({"summary": json.loads(summary)})
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
@@ -151,3 +199,57 @@ def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     global global_system_app
     system_app.register(Service, config=config)
     global_system_app = system_app
+
+
+@router.get("/benchmark/datasets", dependencies=[Depends(check_api_key)])
+async def list_benchmark_datasets():
+    manager = get_benchmark_manager(global_system_app)
+    info = await manager.get_table_info()
+    result = [
+        {"name": name, "rowCount": meta.get("row_count", 0), "columns": meta.get("columns", [])}
+        for name, meta in info.items()
+    ]
+    return Result.succ(result)
+
+
+@router.get("/benchmark/datasets/{table}/rows", dependencies=[Depends(check_api_key)])
+async def get_benchmark_table_rows(table: str, limit: int = 10):
+    manager = get_benchmark_manager(global_system_app)
+    info = await manager.get_table_info()
+    if table not in info:
+        raise HTTPException(status_code=404, detail=f"table '{table}' not found")
+    sql = f'SELECT * FROM "{table}" LIMIT :limit'
+    rows = await manager.query(sql, {"limit": limit})
+    return Result.succ({"table": table, "limit": limit, "rows": rows})
+
+
+@router.post("/benchmark/run_execute", dependencies=[Depends(check_api_key)])
+async def benchmark_run_execute(req: ExecuteDemoRequest):
+    fps = FileParseService()
+    dcs = DataCompareService()
+    svc = UserInputExecuteService(fps, dcs)
+
+    inputs = fps.parse_input_sets(req.input_file_path)
+    right = fps.parse_llm_outputs(req.right_output_file_path)
+
+    config = BenchmarkExecuteConfig(
+        benchmarkModeType=BenchmarkModeTypeEnum.EXECUTE,
+        compareResultEnable=True,
+        standardFilePath=req.standard_file_path,
+        compareConfig=req.compare_config,
+    )
+
+    svc.post_dispatch(
+        round_id=req.round_id,
+        config=config,
+        inputs=inputs,
+        left_outputs=[],
+        right_outputs=right,
+        input_file_path=req.input_file_path,
+        output_file_path=req.right_output_file_path,
+    )
+
+    summary = fps.summary_and_write_multi_round_benchmark_result(
+        req.right_output_file_path, req.round_id
+    )
+    return Result.succ({"summary": json.loads(summary)})

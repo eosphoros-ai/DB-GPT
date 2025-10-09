@@ -4,7 +4,7 @@ from copy import deepcopy
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, List, Optional
 
-from models import (
+from .models import (
     AnswerExecuteModel,
     DataCompareResult,
     DataCompareResultEnum,

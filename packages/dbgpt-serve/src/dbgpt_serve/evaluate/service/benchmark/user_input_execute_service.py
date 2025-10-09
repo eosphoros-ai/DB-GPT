@@ -1,9 +1,9 @@
 # app/services/user_input_execute_service.py
 from typing import List
 
-from data_compare_service import DataCompareService
-from file_parse_service import FileParseService
-from models import (
+from .data_compare_service import DataCompareService
+from .file_parse_service import FileParseService
+from .models import (
     AnswerExecuteModel,
     BaseInputModel,
     BenchmarkExecuteConfig,
