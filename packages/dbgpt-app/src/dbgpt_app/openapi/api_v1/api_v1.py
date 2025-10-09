@@ -45,7 +45,11 @@ from dbgpt_app.openapi.api_view_model import (
     Result,
 )
 from dbgpt_app.scene import BaseChat, ChatFactory, ChatParam, ChatScene
-from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
+from dbgpt_serve.agent.db.gpts_app import (
+    GptsAppDao,
+    UserRecentAppsDao,
+    adapt_native_app_model,
+)
 from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.datasource.manages.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
@@ -521,6 +525,39 @@ async def chat_completions(
     }
     try:
         domain_type = _parse_domain_type(dialogue)
+
+        # AWEL fallback: If the app is an AWEL layout chat flow but client
+        # sent chat_agent, rewrite to chat_flow to avoid creating derived
+        # conversations.
+        if dialogue.chat_mode == ChatScene.ChatAgent.value():
+            try:
+                gpts_app = GptsAppDao().app_detail(dialogue.app_code)
+            except Exception:
+                gpts_app = None
+            if gpts_app:
+                team_mode = getattr(gpts_app, "team_mode", "") or ""
+                team_context = getattr(gpts_app, "team_context", {}) or {}
+                # support both object-like and dict-like access
+                flow_category = (
+                    getattr(team_context, "flow_category", None)
+                    if not isinstance(team_context, dict)
+                    else team_context.get("flow_category")
+                )
+                flow_uid = (
+                    getattr(team_context, "uid", None)
+                    if not isinstance(team_context, dict)
+                    else team_context.get("uid")
+                )
+                if (
+                    str(team_mode).lower() == "awel_layout"
+                    and str(flow_category).lower() == "chat_flow"
+                ):
+                    # rewrite to chat_flow branch
+                    dialogue.chat_mode = ChatScene.ChatFlow.value()
+                    if not dialogue.select_param:
+                        dialogue.select_param = flow_uid or dialogue.select_param
+                    # fallthrough to ChatFlow handler below
+
         if dialogue.chat_mode == ChatScene.ChatAgent.value():
             from dbgpt_serve.agent.agents.controller import multi_agents
 

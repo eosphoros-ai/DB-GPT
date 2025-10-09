@@ -41,7 +41,13 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
   }
 
   const handleChat = async () => {
-    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
+    // Try to reuse existing flow conversation or create new one
+    const [, res] = await apiInterceptors(
+      newDialogue({
+        chat_mode: 'chat_flow',
+        select_param: flow.uid,
+      }),
+    );
     if (res) {
       const queryStr = qs.stringify({
         scene: 'chat_flow',
