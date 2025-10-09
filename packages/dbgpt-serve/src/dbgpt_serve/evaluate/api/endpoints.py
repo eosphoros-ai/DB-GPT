@@ -128,37 +128,63 @@ async def get_scenes():
 
     return Result.succ(scene_list)
 
-
-@router.get("/benchmark/compare", dependencies=[Depends(check_api_key)])
-async def list_benchmark_compare(
-    round_id: int,
-    limit: int = 50,
-    offset: int = 0,
-):
+@router.get("/benchmark/list_results", dependencies=[Depends(check_api_key)])
+async def list_compare_runs(limit: int = 50, offset: int = 0):
     dao = BenchmarkResultDao()
-    rows = dao.list_compare_by_round(round_id, limit=limit, offset=offset)
+    rows = dao.list_summaries(limit=limit, offset=offset)
     result = []
-    for r in rows:
+    for s in rows:
         result.append({
-            "id": r.id,
-            "round_id": r.round_id,
-            "mode": r.mode,
-            "serialNo": r.serial_no,
-            "analysisModelId": r.analysis_model_id,
-            "question": r.question,
-            "selfDefineTags": r.self_define_tags,
-            "prompt": r.prompt,
-            "standardAnswerSql": r.standard_answer_sql,
-            "llmOutput": r.llm_output,
-            "executeResult": json.loads(r.execute_result) if r.execute_result else None,
-            "errorMsg": r.error_msg,
-            "compareResult": r.compare_result,
-            "isExecute": r.is_execute,
-            "llmCount": r.llm_count,
-            "outputPath": r.output_path,
-            "gmtCreated": r.gmt_created.isoformat() if r.gmt_created else None,
+            "id": s.id,
+            "roundId": s.round_id,
+            "outputPath": s.output_path,
+            "right": s.right,
+            "wrong": s.wrong,
+            "failed": s.failed,
+            "exception": s.exception,
+            "gmtCreated": s.gmt_created.isoformat() if s.gmt_created else None,
         })
     return Result.succ(result)
+
+
+@router.get("/benchmark/result/{summary_id}", dependencies=[Depends(check_api_key)])
+async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int = 0):
+    dao = BenchmarkResultDao()
+    s = dao.get_summary_by_id(summary_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="compare run not found")
+    compares = dao.list_compare_by_round_and_path(s.round_id, s.output_path, limit=limit, offset=offset)
+    detail = {
+        "id": s.id,
+        "roundId": s.round_id,
+        "outputPath": s.output_path,
+        "summary": {
+            "right": s.right,
+            "wrong": s.wrong,
+            "failed": s.failed,
+            "exception": s.exception,
+        },
+        "items": [
+            {
+                "id": r.id,
+                "serialNo": r.serial_no,
+                "analysisModelId": r.analysis_model_id,
+                "question": r.question,
+                "prompt": r.prompt,
+                "standardAnswerSql": r.standard_answer_sql,
+                "llmOutput": r.llm_output,
+                "executeResult": json.loads(r.execute_result) if r.execute_result else None,
+                "errorMsg": r.error_msg,
+                "compareResult": r.compare_result,
+                "isExecute": r.is_execute,
+                "llmCount": r.llm_count,
+                "gmtCreated": r.gmt_created.isoformat() if r.gmt_created else None,
+            }
+            for r in compares
+        ],
+    }
+    return Result.succ(detail)
+
 
 
 @router.post("/benchmark/run_build", dependencies=[Depends(check_api_key)])
@@ -188,10 +214,19 @@ async def benchmark_run_build(req: BuildDemoRequest):
         output_file_path=req.right_output_file_path,
     )
 
-    summary = fps.summary_and_write_multi_round_benchmark_result(
-        req.right_output_file_path, req.round_id
-    )
-    return Result.succ({"summary": json.loads(summary)})
+    dao = BenchmarkResultDao()
+    summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
+    summary = dao.get_summary(req.round_id, req.right_output_file_path)
+    result = {
+        "compareRunId": summary_id,
+        "summary": {
+            "right": summary.right if summary else 0,
+            "wrong": summary.wrong if summary else 0,
+            "failed": summary.failed if summary else 0,
+            "exception": summary.exception if summary else 0,
+        },
+    }
+    return Result.succ(result)
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
@@ -249,7 +284,16 @@ async def benchmark_run_execute(req: ExecuteDemoRequest):
         output_file_path=req.right_output_file_path,
     )
 
-    summary = fps.summary_and_write_multi_round_benchmark_result(
-        req.right_output_file_path, req.round_id
-    )
-    return Result.succ({"summary": json.loads(summary)})
+    dao = BenchmarkResultDao()
+    summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
+    summary = dao.get_summary(req.round_id, req.right_output_file_path)
+    result = {
+        "compareRunId": summary_id,
+        "summary": {
+            "right": summary.right if summary else 0,
+            "wrong": summary.wrong if summary else 0,
+            "failed": summary.failed if summary else 0,
+            "exception": summary.exception if summary else 0,
+        },
+    }
+    return Result.succ(result)

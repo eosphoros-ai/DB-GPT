@@ -208,3 +208,38 @@ class BenchmarkResultDao(BaseDao):
                 .first()
             )
 
+    # New helpers for listing summaries and detail by id
+    def list_summaries(self, limit: int = 100, offset: int = 0):
+        with self.session(commit=False) as session:
+            return (
+                session.query(BenchmarkSummaryEntity)
+                .order_by(desc(BenchmarkSummaryEntity.id))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+
+    def get_summary_by_id(self, summary_id: int) -> Optional[BenchmarkSummaryEntity]:
+        with self.session(commit=False) as session:
+            return (
+                session.query(BenchmarkSummaryEntity)
+                .filter(BenchmarkSummaryEntity.id == summary_id)
+                .first()
+            )
+
+    def list_compare_by_round_and_path(
+        self, round_id: int, output_path: str, limit: int = 200, offset: int = 0
+    ):
+        with self.session(commit=False) as session:
+            return (
+                session.query(BenchmarkCompareEntity)
+                .filter(
+                    BenchmarkCompareEntity.round_id == round_id,
+                    BenchmarkCompareEntity.output_path == output_path,
+                )
+                .order_by(desc(BenchmarkCompareEntity.id))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+
