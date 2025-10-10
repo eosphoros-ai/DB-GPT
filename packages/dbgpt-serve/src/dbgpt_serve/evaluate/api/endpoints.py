@@ -242,48 +242,6 @@ async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int 
     return Result.succ(detail)
 
 
-@router.post("/benchmark/run_build", dependencies=[Depends(check_api_key)])
-async def benchmark_run_build(req: BuildDemoRequest):
-    fps = FileParseService()
-    dcs = DataCompareService()
-    svc = UserInputExecuteService(fps, dcs)
-
-    inputs = fps.parse_input_sets(req.input_file_path)
-    left = fps.parse_llm_outputs(req.left_output_file_path)
-    right = fps.parse_llm_outputs(req.right_output_file_path)
-
-    config = BenchmarkExecuteConfig(
-        benchmarkModeType=BenchmarkModeTypeEnum.BUILD,
-        compareResultEnable=True,
-        standardFilePath=None,
-        compareConfig=req.compare_config or {"check": "FULL_TEXT"},
-    )
-
-    svc.post_dispatch(
-        round_id=req.round_id,
-        config=config,
-        inputs=inputs,
-        left_outputs=left,
-        right_outputs=right,
-        input_file_path=req.input_file_path,
-        output_file_path=req.right_output_file_path,
-    )
-
-    dao = BenchmarkResultDao()
-    summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
-    summary = dao.get_summary(req.round_id, req.right_output_file_path)
-    result = {
-        "compareRunId": summary_id,
-        "summary": {
-            "right": summary.right if summary else 0,
-            "wrong": summary.wrong if summary else 0,
-            "failed": summary.failed if summary else 0,
-            "exception": summary.exception if summary else 0,
-        },
-    }
-    return Result.succ(result)
-
-
 @router.post("/execute_benchmark_task")
 async def execute_benchmark_task(
     request: BenchmarkServeRequest,
@@ -333,47 +291,6 @@ async def get_benchmark_table_rows(table: str, limit: int = 10):
     sql = f'SELECT * FROM "{table}" LIMIT :limit'
     rows = await manager.query(sql, {"limit": limit})
     return Result.succ({"table": table, "limit": limit, "rows": rows})
-
-
-@router.post("/benchmark/run_execute", dependencies=[Depends(check_api_key)])
-async def benchmark_run_execute(req: ExecuteDemoRequest):
-    fps = FileParseService()
-    dcs = DataCompareService()
-    svc = UserInputExecuteService(fps, dcs)
-
-    inputs = fps.parse_input_sets(req.input_file_path)
-    right = fps.parse_llm_outputs(req.right_output_file_path)
-
-    config = BenchmarkExecuteConfig(
-        benchmarkModeType=BenchmarkModeTypeEnum.EXECUTE,
-        compareResultEnable=True,
-        standardFilePath=req.standard_file_path,
-        compareConfig=req.compare_config,
-    )
-
-    svc.post_dispatch(
-        round_id=req.round_id,
-        config=config,
-        inputs=inputs,
-        left_outputs=[],
-        right_outputs=right,
-        input_file_path=req.input_file_path,
-        output_file_path=req.right_output_file_path,
-    )
-
-    dao = BenchmarkResultDao()
-    summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
-    summary = dao.get_summary(req.round_id, req.right_output_file_path)
-    result = {
-        "compareRunId": summary_id,
-        "summary": {
-            "right": summary.right if summary else 0,
-            "wrong": summary.wrong if summary else 0,
-            "failed": summary.failed if summary else 0,
-            "exception": summary.exception if summary else 0,
-        },
-    }
-    return Result.succ(result)
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

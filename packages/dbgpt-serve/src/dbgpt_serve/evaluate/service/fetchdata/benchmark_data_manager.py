@@ -9,7 +9,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import aiohttp
 from sqlalchemy import text
@@ -100,6 +100,9 @@ class BenchmarkDataManager(BaseComponent):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+
+    def get_connector(self):
+        return self._connector
 
     async def init_connector(self):
         """Initialize SQLiteConnector"""
@@ -688,4 +691,5 @@ def get_benchmark_manager(
         if not system_app:
             system_app = SystemApp()
         initialize_benchmark_data(system_app)
-    return BenchmarkDataManager.get_instance(system_app)
+    app = system_app or _SYSTEM_APP
+    return BenchmarkDataManager.get_instance(cast(SystemApp, app))

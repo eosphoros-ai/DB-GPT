@@ -20,6 +20,8 @@ from .models import (
     RoundAnswerConfirmModel,
 )
 
+BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
+
 logger = logging.getLogger(__name__)
 
 
@@ -208,10 +210,10 @@ class UserInputExecuteService:
 
         return column_data
 
-    def build_output(self, config, input: InputType, response: ReasoningResponse):
-        return self._post_sql_query(response.content, input, config, response)
+    async def build_output(self, config, input: InputType, response: ReasoningResponse):
+        return await self._post_sql_query(response.content, input, config, response)
 
-    def _post_sql_query(
+    async def _post_sql_query(
         self,
         content: str,
         input: InputType,
@@ -219,13 +221,14 @@ class UserInputExecuteService:
         response: ReasoningResponse,
     ) -> AnswerExecuteModel:
         sql = self._extract_sql_content(content)
+        sql = self._process_sql_db_schema(sql)
         execute_result = None
         error_msg = None
 
         if config.execute_llm_result:
             logger.info("[benchmark_task] queryResult start!")
             try:
-                result: List[Dict] = get_benchmark_manager().query(sql)
+                result: List[Dict] = await get_benchmark_manager().query(sql)
                 execute_result = self._convert_query_result_to_column_format(result)
             except Exception as e:
                 logger.error(
@@ -290,3 +293,13 @@ class UserInputExecuteService:
             else:
                 logger.error(f"error sql format! content : {content}")
                 return content.strip()
+
+    def _process_sql_db_schema(self, sql: str) -> str:
+        """
+            Process SQL remove database schema to compatible with SQLite syntax
+        """
+        if not sql or not isinstance(sql, str):
+            return sql
+            
+        # only replace the "ant_icube_dev." prefix
+        return sql.replace(BENCHMARK_DEFAULT_DB_SCHEMA, "")

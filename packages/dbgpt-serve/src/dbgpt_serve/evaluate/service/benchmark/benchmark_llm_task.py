@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
 from dbgpt_serve.evaluate.service.benchmark.models import ReasoningResponse
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import get_benchmark_manager
 
 logger = logging.getLogger(__name__)
 
@@ -14,28 +15,41 @@ class BenchmarkLLMTask:
         self,
         llm_client: LLMClient,
         model_name: Optional[str],
-        prompt_template: Optional[str],
+        prompt_template: Optional[str] = None,
     ):
         """Initialize the BenchmarkLLMTask"""
         self._llm_client = llm_client
         self._model_name = model_name
         self._prompt_template = prompt_template
+        db_connector = get_benchmark_manager().get_connector()
+        if db_connector:
+            self.dialect = db_connector.dialect
 
     async def invoke_llm(
-        self, text: Optional[str] = None, prompt: Optional[str] = None
+        self, prompt: Optional[str] = None, **kwargs
     ) -> Union[ReasoningResponse, None]:
-        """Extract by LLM."""
-        return await self._invoke_task(text, prompt)
+        """
+        Invoke by LLM.
+        
+        Args:
+            prompt (Optional[str]): The prompt to use for the LLM.
+            **kwargs: Keyword arguments for variable replacement in prompt template.
+                     For example: text="user input", question="What is AI?", etc.
+        """
+        return await self._invoke_task(prompt, **kwargs)
 
     async def _invoke_task(
-        self, text: Optional[str], prompt: Optional[str]
+        self, prompt: Optional[str], **kwargs
     ) -> Union[ReasoningResponse, None]:
         if self._prompt_template:
             prompt = self._prompt_template
         template = HumanPromptTemplate.from_template(
             template=prompt, template_is_strict=False
         )
-        messages = template.format_messages(text=text)
+        if self.dialect and 'dialect' not in kwargs:
+            kwargs['dialect'] = self.dialect
+        
+        messages = template.format_messages(**kwargs)
 
         # use default model if needed
         if not self._model_name:

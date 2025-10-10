@@ -51,16 +51,6 @@ class DataCompareResult:
 
 
 @dataclass
-class BaseInputModel:
-    serialNo: int
-    analysisModelId: str
-    question: str
-    selfDefineTags: Optional[str] = None
-    prompt: Optional[str] = None
-    knowledge: Optional[str] = None
-
-
-@dataclass
 class AnswerExecuteModel:
     serialNo: int
     analysisModelId: str
@@ -158,26 +148,23 @@ class ContentTypeEnum(Enum):
 
 @dataclass
 class BenchmarkExecuteConfig:
-    benchmarkModeType: BenchmarkModeTypeEnum
-    compareResultEnable: bool
-    standardFilePath: Optional[str] = None
-    compareConfig: Optional[Dict[str, str]] = None
-
     """
     Benchmark Execute Config
     """
 
     # base config
-    file_parse_type: FileParseTypeEnum = FileParseTypeEnum.OSS
+    file_parse_type: FileParseTypeEnum = FileParseTypeEnum.EXCEL
     format_type: FormatTypeEnum = FormatTypeEnum.TEXT
     content_type: ContentTypeEnum = ContentTypeEnum.SQL
     benchmark_mode_type: BenchmarkModeTypeEnum = BenchmarkModeTypeEnum.EXECUTE
 
     # file path config
     output_file_path: Optional[str] = None
-    standard_file_path: Optional[str] = None
+    standard_file_path: str = None
 
     # runtime execute config
+
+    # current only support 1 round to execute benchmark
     round_time: int = 1
     generate_ratio: int = 5
     execute_llm_result: bool = True
@@ -260,6 +247,18 @@ class BaseInputModel:
     llm_output: str = ""
     llm_code: str = ""
     prompt: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "serial_no": self.serial_no,
+            "analysis_model_id": self.analysis_model_id,
+            "question": self.question,
+            "self_define_tags": self.self_define_tags,
+            "knowledge": self.knowledge,
+            "llm_output": self.llm_output,
+            "llm_code": self.llm_code,
+            "prompt": self.prompt,
+        }
 
 
 @dataclass

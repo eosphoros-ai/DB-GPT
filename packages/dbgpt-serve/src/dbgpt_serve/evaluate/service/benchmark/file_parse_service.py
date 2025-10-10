@@ -33,10 +33,10 @@ class FileParseService:
                 obj = json.loads(line)
                 data.append(
                     BaseInputModel(
-                        serialNo=obj["serialNo"],
-                        analysisModelId=obj["analysisModelId"],
+                        serial_no=obj["serialNo"],
+                        analysis_model_id=obj["analysisModelId"],
                         question=obj["question"],
-                        selfDefineTags=obj.get("selfDefineTags"),
+                        self_define_tags=obj.get("selfDefineTags"),
                         prompt=obj.get("prompt"),
                         knowledge=obj.get("knowledge"),
                     )

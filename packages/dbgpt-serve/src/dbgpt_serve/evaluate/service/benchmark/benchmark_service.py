@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import threading
 import time
 import uuid
@@ -13,6 +14,7 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.benchmarks import StorageUtil
+from dbgpt.util import get_or_create_event_loop
 
 from ....core import BaseService
 from ....prompt.service.service import Service as PromptService
@@ -46,7 +48,7 @@ BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
 STANDARD_BENCHMARK_FILE_PATH = (
     "pilot/benchmark_meta_data/"
-    "2025_07_27_public_500_standard_benchmark_question_list.xlsx"
+    "2025_07_27_public_500_standard_benchmark_question_list_v2.xlsx"
 )
 
 
@@ -83,6 +85,13 @@ class BenchmarkService(
         self.trigger_executor = ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
         )
+        
+        # 设置列配置文件路径
+        self._column_config_file_path = os.path.join(
+            os.path.dirname(__file__), 
+            "template", 
+            "benchmark_column_config_template.json"
+        )
 
     def init_app(self, system_app: SystemApp) -> None:
         """Initialize the service
@@ -113,314 +122,21 @@ class BenchmarkService(
         ).create()
         return DefaultLLMClient(worker_manager, True)
 
-    async def run_dataset_benchmark(
-        self,
-        evaluate_code: str,
-        scene_key: str,
-        scene_value: str,
-        input_file_path: str,
-        output_file_path: str,
-        model_list: List[str],
-    ) -> List[BenchmarkTaskResult[OutputType]]:
+    def _load_column_config(self) -> List[Dict]:
         """
-        Run the dataset benchmark
-        """
-        logger.info(
-            f"Run dataset benchmark, evaluate_code: {evaluate_code},"
-            f" scene_key: {scene_key}, scene_value: {scene_value},"
-            f" input_file_path: {input_file_path}, output_file_path: {output_file_path}"
-        )
-        if not input_file_path:
-            input_file_path = STANDARD_BENCHMARK_FILE_PATH
-
-        config = await self._build_benchmark_config(model_list, output_file_path)
-
-        # read input file
-        input_list: List[BaseInputModel] = self.read_input_file(input_file_path)
-
-        result_list = []
-        for i in range(1, config.round_time + 1):
-            round_result_list = []
-
-            llm_index = 0
-            for llm_code, thread_num in config.llm_thread_map.items():
-                # 执行的线程数
-                offset = (
-                    len(config.llm_thread_map) * len(input_list) * (i - 1)
-                    + len(input_list) * llm_index
-                )
-
-                llm_result = BenchmarkTaskResult[OutputType]()
-                try:
-                    llm_result = self.batch_execute(
-                        config,
-                        input_list,
-                        llm_code,
-                        thread_num,
-                        i,
-                        output_file_path,
-                        offset,
-                    )
-                except Exception as e:
-                    logger.error(f"batchExecute error! {e}")
-
-                if llm_result is not None:
-                    round_result_list.append(llm_result)
-                    llm_index += 1
-
-            self.user_input_execute_service.post_dispatch(
-                i,
-                config,
-                input_list,
-                round_result_list,
-                input_file_path,
-                output_file_path,
-            )
-            result_list.extend(round_result_list)
-
-        return result_list
-
-    def read_input_file(
-        self, input_file_path: str
-    ) -> Union[List[BaseInputModel], None]:
-        file_parse_type: FileParseTypeEnum = StorageUtil.get_file_parse_type(
-            input_file_path
-        )
-        if file_parse_type == FileParseTypeEnum.EXCEL:
-            input_sets: BenchmarkDataSets = ExcelFileParseService().parse_input_sets(
-                input_file_path
-            )
-            return input_sets.data_list
-        return None
-
-    async def _build_benchmark_config(self, model_list, output_file_path):
-        config = BenchmarkExecuteConfig()
-        config.output_file_path = output_file_path
-        config.standard_file_path = STANDARD_BENCHMARK_FILE_PATH
-        config.benchmark_mode_type = BenchmarkModeTypeEnum.EXECUTE
-        config.content_type = ContentTypeEnum.SQL
-        config.round_time = 1
-        config.thread_num = 1
-        config.execute_llm_result = True
-        config.invoke_llm = True
-        config.compare_result_enable = True
-        config.file_parse_type = FileParseTypeEnum.EXCEL
-        config.llm_thread_map = {model: 1 for model in model_list}
-        return config
-
-    def batch_execute(
-        self,
-        config: BenchmarkExecuteConfig,
-        inputs: List[InputType],
-        llm_code: str,
-        thread_num: int,
-        round_id: int,
-        output_file_path: str,
-        offset: int,
-    ) -> BenchmarkTaskResult[OutputType]:
-        """
-        Batch execute the benchmark Task with LLM
-        """
-        result = BenchmarkTaskResult[OutputType]()
-        result.trace_id = str(uuid.uuid4()).replace("-", "")
-        result.task_id = str(uuid.uuid4())
-        result.start_time = datetime.now()
-
-        executor = ThreadPoolExecutor(
-            max_workers=thread_num, thread_name_prefix="benchmark-USER_INPUT_EXECUTE"
-        )
-
-        output_sets = BenchmarkDataSets[OutputType]()
-        output_list = []
-
-        written_batches = set()  # 记录已写入批次
-        complete_map = {}  # 记录任务完成状态，使用Dict[int, OutputType]
-
-        # 线程锁，保证线程安全
-        lock = threading.Lock()
-
-        def execute_task(input_data: InputType):
-            """task execution function"""
-            try:
-                input_data.llm_code = llm_code
-                logger.info(
-                    f"[benchmark_task]start executeBenchmark!"
-                    f" input={json.dumps(input_data)}"
-                )
-
-                start_time = time.time()
-                output = self.execute(config, input_data)
-                cost_time = int(time.time() - start_time)
-
-                output.cost_time = cost_time
-                logger.info(
-                    f"[benchmark_task]end executeBenchmark! output={json.dumps(output)}"
-                )
-
-                # 线程安全地添加结果
-                with lock:
-                    output_list.append(output)
-
-                # 检查并触发批次处理
-                self.check_and_trigger_batch(
-                    output,
-                    inputs,
-                    round_id,
-                    config,
-                    output_file_path,
-                    written_batches,
-                    complete_map,
-                    offset,
-                )
-            except Exception as e:
-                logger.error(f"executeSingleTimeBenchmark error, error: {e}")
-
-        # 提交所有任务
-        futures = [executor.submit(execute_task, input_data) for input_data in inputs]
-
-        # 等待所有任务完成
-        for future in futures:
-            future.result()
-
-        executor.shutdown(wait=True)
-
-        output_sets.data_list = output_list
-        result.benchmark_data_sets = output_sets
-        return result
-
-    def execute(
-        self, config: BenchmarkExecuteConfig, input: InputType
-    ) -> Union[OutputType, None]:
-        """
-        Execute LLM Benchmark Task
-        """
-        try:
-            # 1. 组装评测输入
-            if input.prompt is None:
-                raise Exception("benchmark datasets not have prompt template!")
-            input.prompt = input.prompt
-
-            # 2. 执行评测
-            benchmark_llm_task_service = BenchmarkLLMTask(
-                llm_client=self.llm_client, model_name=input.llm_code
-            )
-            response: ReasoningResponse = benchmark_llm_task_service.invoke_llm(
-                prompt=input.prompt
-            )
-
-            # 3. 组装评测输出
-            return self.user_input_execute_service.build_output(config, input, response)
-        except Exception as e:
-            logger.error(
-                f"execute benchmark error! input_data: {json.dumps(input)}, error: {e}"
-            )
-        return None
-
-    def check_and_trigger_batch(
-        self,
-        output: OutputType,
-        inputs: List[BaseInputModel],
-        round_id: int,
-        config: BenchmarkExecuteConfig,
-        output_file_path: str,
-        written_batches: set,
-        complete_map: Dict[int, OutputType],
-        offset: int,
-    ):
-        """
-        Check if all tasks in the current batch are completed
-        and trigger batch processing.
-        """
-        with self.batch_lock:
-            complete_map[output.serialNo] = output
-            batch_size = 10
-
-            # 查找当前任务的索引
-            task_index = -1
-            for i in range(len(inputs)):
-                if inputs[i].serial_no == output.serialNo:
-                    task_index = i
-                    break
-
-            batch_index = task_index // batch_size
-
-            # 避免重复写入
-            if batch_index in written_batches:
-                return
-
-            # 计算批次范围
-            batch_start = batch_index * batch_size
-            batch_end = min(len(inputs), (batch_index + 1) * batch_size)
-
-            # 检查当前批次是否全部完成
-            is_batch_complete = True
-            batch_outputs: List[OutputType] = []
-
-            for i in range(batch_start, batch_end):
-                serial_no = inputs[i].serial_no
-                if serial_no not in complete_map:
-                    is_batch_complete = False
-                    break
-                batch_outputs.append(complete_map[serial_no])
-
-            if is_batch_complete:
-                # 触发异步任务并写入
-                def batch_write_task():
-                    try:
-                        # 执行写入逻辑
-                        batch_outputs.sort(key=lambda x: x.serialNo)
-                        self.write_output_file(
-                            output_file_path,
-                            round_id,
-                            config,
-                            inputs,
-                            batch_outputs,
-                            batch_start,
-                            offset,
-                        )
-                    except Exception as e:
-                        logger.error(f"Batch write error: {e}")
-
-                self.trigger_executor.submit(batch_write_task)
-                written_batches.add(batch_index)
-
-    def write_output_file(
-        self,
-        output_file_path: str,
-        round_id: int,
-        config: BenchmarkExecuteConfig,
-        inputs: List[BaseInputModel],
-        outputs: List[OutputType],
-        start_index: int,
-        offset: int,
-    ) -> bool:
-        """
-        Write the output file
-        创建一个excel文件，将结果数据写入到excel文件中，需要创建表头，并且结果数据和表头对齐
-
-        Args:
-            output_file_path: 输出文件路径
-            round_id: 轮次ID
-            config: 基准测试配置
-            inputs: 输入数据列表
-            outputs: 输出数据列表
-            start_index: 起始索引
-            offset: 偏移量
+        Load column configuration from JSON file
 
         Returns:
-            bool: 写入成功返回True，失败返回False
+            List[Dict]: List of column configurations
         """
         try:
-            from pathlib import Path
-
-            import pandas as pd
-
-            # 确保输出目录存在
-            output_dir = Path(output_file_path).parent
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            # 根据表头定义创建列配置
-            column_config = [
+            with open(self._column_config_file_path, 'r', encoding='utf-8') as file:
+                config_data = json.load(file)
+                return config_data.get("columns", [])
+        except Exception as e:
+            logger.error(f"Failed to load column configuration file: {e},"
+                         f" using default configuration")
+            return [
                 {
                     "index": 0,
                     "header": "编号",
@@ -521,11 +237,330 @@ class BenchmarkService(
                 },
             ]
 
+    async def run_dataset_benchmark(
+        self,
+        evaluate_code: str,
+        scene_key: str,
+        scene_value: str,
+        input_file_path: str,
+        output_file_path: str,
+        model_list: List[str],
+    ) -> List[BenchmarkTaskResult[OutputType]]:
+        """
+        Run the dataset benchmark
+        """
+        logger.info(
+            f"Run dataset benchmark, evaluate_code: {evaluate_code},"
+            f" scene_key: {scene_key}, scene_value: {scene_value},"
+            f" input_file_path: {input_file_path}, output_file_path: {output_file_path}"
+        )
+        if not input_file_path:
+            input_file_path = STANDARD_BENCHMARK_FILE_PATH
+
+        config = await self._build_benchmark_config(model_list, output_file_path)
+
+        # read input file
+        input_list: List[BaseInputModel] = self.read_input_file(input_file_path)
+
+        result_list = []
+        for i in range(1, config.round_time + 1):
+            round_result_list = []
+
+            llm_index = 0
+            for llm_code, thread_num in config.llm_thread_map.items():
+                # 每个llm_code对应的偏移量：llm_index * input_list长度
+                offset = len(input_list) * llm_index
+
+                llm_result = BenchmarkTaskResult[OutputType]()
+                try:
+                    llm_result = self.batch_execute(
+                        config,
+                        input_list,
+                        llm_code,
+                        thread_num,
+                        i,
+                        output_file_path,
+                        offset,
+                    )
+                except Exception as e:
+                    logger.error(f"batchExecute error! {e}")
+
+                if llm_result is not None:
+                    round_result_list.append(llm_result)
+                    llm_index += 1
+
+            self.user_input_execute_service.post_dispatch(
+                i,
+                config,
+                input_list,
+                round_result_list,
+                input_file_path,
+                output_file_path,
+            )
+            result_list.extend(round_result_list)
+
+        return result_list
+
+    def read_input_file(
+        self, input_file_path: str
+    ) -> Union[List[BaseInputModel], None]:
+        file_parse_type: FileParseTypeEnum = StorageUtil.get_file_parse_type(
+            input_file_path
+        )
+        if file_parse_type == FileParseTypeEnum.EXCEL:
+            input_sets: BenchmarkDataSets = ExcelFileParseService().parse_input_sets(
+                input_file_path
+            )
+            return input_sets.data_list
+        return None
+
+    async def _build_benchmark_config(self, model_list, output_file_path):
+        config = BenchmarkExecuteConfig(
+            benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
+            standard_file_path=STANDARD_BENCHMARK_FILE_PATH,
+        )
+        config.output_file_path = output_file_path
+        config.content_type = ContentTypeEnum.SQL
+        config.round_time = 1
+        config.thread_num = 1
+        config.execute_llm_result = True
+        config.invoke_llm = True
+        config.compare_result_enable = True
+        config.file_parse_type = FileParseTypeEnum.EXCEL
+        config.llm_thread_map = {model: 1 for model in model_list}
+        return config
+
+    def batch_execute(
+        self,
+        config: BenchmarkExecuteConfig,
+        inputs: List[InputType],
+        llm_code: str,
+        thread_num: int,
+        round_id: int,
+        output_file_path: str,
+        offset: int,
+    ) -> BenchmarkTaskResult[OutputType]:
+        """
+        Batch execute the benchmark Task with LLM
+        """
+        result = BenchmarkTaskResult[OutputType]()
+        result.trace_id = str(uuid.uuid4()).replace("-", "")
+        result.task_id = str(uuid.uuid4())
+        result.start_time = datetime.now()
+
+        executor = ThreadPoolExecutor(
+            max_workers=thread_num, thread_name_prefix="benchmark-USER_INPUT_EXECUTE"
+        )
+
+        output_sets = BenchmarkDataSets[OutputType]()
+        output_list = []
+
+        written_batches = set()  # 记录已写入批次
+        complete_map = {}  # 记录任务完成状态，使用Dict[int, OutputType]
+
+        # 线程锁，保证线程安全
+        lock = threading.Lock()
+
+        def execute_task(input_data: InputType):
+            """task execution function"""
+            try:
+                input_data.llm_code = llm_code
+                logger.info(
+                    f"[benchmark_task]start executeBenchmark!"
+                    f" input={json.dumps(input_data.to_dict(), ensure_ascii=False)}"
+                )
+
+                start_time = time.time()
+                loop = get_or_create_event_loop()
+                output: OutputType = loop.run_until_complete(
+                    self.execute(config, input_data)
+                )
+                cost_time = int(time.time() - start_time)
+
+                output.cost_time = cost_time
+                logger.info(
+                    f"[benchmark_task]end executeBenchmark!"
+                    f" output={json.dumps(output.to_dict(), ensure_ascii=False)}"
+                )
+
+                # 线程安全地添加结果
+                with lock:
+                    output_list.append(output)
+
+                # 检查并触发批次处理
+                self.check_and_trigger_batch(
+                    output,
+                    inputs,
+                    round_id,
+                    config,
+                    output_file_path,
+                    written_batches,
+                    complete_map,
+                    offset,
+                )
+            except Exception as e:
+                logger.error(f"executeSingleTimeBenchmark error, error: {e}")
+
+        # 提交所有任务
+        futures = [executor.submit(execute_task, input_data) for input_data in inputs]
+
+        # 等待所有任务完成
+        for future in futures:
+            future.result()
+
+        executor.shutdown(wait=True)
+
+        output_sets.data_list = output_list
+        result.benchmark_data_sets = output_sets
+        return result
+
+    async def execute(
+            self, config: BenchmarkExecuteConfig, input: InputType
+    ) -> Union[OutputType, None]:
+        """
+        Execute LLM Benchmark Task
+        """
+        try:
+            # 1. 组装评测输入
+            if input.prompt is None:
+                raise Exception("benchmark datasets not have prompt template!")
+            input.prompt = input.prompt
+
+            # 2. 执行评测 - 使用同步方式调用异步方法
+            benchmark_llm_task_service = BenchmarkLLMTask(
+                llm_client=self.llm_client, model_name=input.llm_code
+            )
+
+            response: ReasoningResponse = await (
+                benchmark_llm_task_service.invoke_llm(prompt=input.prompt)
+            )
+
+            # 3. 组装评测输出
+            return await self.user_input_execute_service.build_output(config, input, response)
+        except Exception as e:
+            logger.error(
+                f"execute benchmark error!  error: {e}"
+            )
+        return None
+
+    def check_and_trigger_batch(
+        self,
+        output: OutputType,
+        inputs: List[BaseInputModel],
+        round_id: int,
+        config: BenchmarkExecuteConfig,
+        output_file_path: str,
+        written_batches: set,
+        complete_map: Dict[int, OutputType],
+        offset: int,
+    ):
+        """
+        Check if all tasks in the current batch are completed
+        and trigger batch processing.
+        """
+        with self.batch_lock:
+            complete_map[output.serialNo] = output
+            batch_size = 10
+
+            # 查找当前任务的索引
+            task_index = -1
+            for i in range(len(inputs)):
+                if inputs[i].serial_no == output.serialNo:
+                    task_index = i
+                    break
+
+            batch_index = task_index // batch_size
+
+            # 避免重复写入
+            if batch_index in written_batches:
+                return
+
+            # 计算批次范围
+            batch_start = batch_index * batch_size
+            batch_end = min(len(inputs), (batch_index + 1) * batch_size)
+
+            # 检查当前批次是否全部完成
+            is_batch_complete = True
+            batch_outputs: List[OutputType] = []
+
+            for i in range(batch_start, batch_end):
+                serial_no = inputs[i].serial_no
+                if serial_no not in complete_map:
+                    is_batch_complete = False
+                    break
+                batch_outputs.append(complete_map[serial_no])
+
+            if is_batch_complete:
+                # 触发异步任务并写入
+                def batch_write_task():
+                    try:
+                        # 执行写入逻辑
+                        batch_outputs.sort(key=lambda x: x.serialNo)
+                        self.write_output_file(
+                            output_file_path,
+                            round_id,
+                            config,
+                            inputs,
+                            batch_outputs,
+                            batch_start,
+                            offset,
+                        )
+                    except Exception as e:
+                        logger.error(f"Batch write error: {e}")
+
+                self.trigger_executor.submit(batch_write_task)
+                written_batches.add(batch_index)
+
+    def write_output_file(
+        self,
+        output_file_path: str,
+        round_id: int,
+        config: BenchmarkExecuteConfig,
+        inputs: List[BaseInputModel],
+        outputs: List[OutputType],
+        start_index: int,
+        offset: int,
+    ) -> bool:
+        """
+        Write the output file
+
+        Args:
+            output_file_path: Output file path
+            round_id: Round ID
+            config: Benchmark configuration
+            inputs: List of input data
+            outputs: List of output data
+            start_index: Starting index (batch start row index)
+            offset: Offset(file rows offset)
+
+        Returns:
+            bool: Returns True if write is successful, False otherwise
+        """
+        try:
+            from pathlib import Path
+            import pandas as pd
+            from openpyxl import load_workbook, Workbook
+
+            # 确保输出目录存在
+            output_dir = Path(output_file_path).parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # 从JSON文件加载列配置
+            column_config = self._load_column_config()
+
             # 按index排序确保列顺序正确
             column_config.sort(key=lambda x: x["index"])
 
             # 创建表头
             headers = [col["header"] for col in column_config]
+
+            # 构造文件名：每个round_id一个文件
+            base_name = Path(output_file_path).stem
+            extension = Path(output_file_path).suffix
+            if extension.lower() not in [".xlsx", ".xls"]:
+                extension = ".xlsx"
+            
+            output_file = output_dir / f"{base_name}_round{round_id}{extension}"
 
             # 创建输入数据映射，便于查找
             input_map = {inp.serial_no: inp for inp in inputs}
@@ -563,6 +598,10 @@ class BenchmarkService(
                             value = input_data.knowledge
                         elif field == "prompt":
                             value = input_data.prompt
+                    elif source_type == "PARAM":
+                        # 从参数获取
+                        if field == "roundId":
+                            value = str(round_id)
                     elif source_type == "OUTPUT":
                         # 从输出数据获取
                         if field == "cotLength":
@@ -614,49 +653,60 @@ class BenchmarkService(
 
                 data_rows.append(row_data)
 
-            # 创建DataFrame
-            df = pd.DataFrame(data_rows, columns=headers)
+            # 检查文件是否存在
+            if output_file.exists():
+                # 文件存在，读取现有工作簿
+                workbook = load_workbook(str(output_file))
+                if "dataset_evaluation_result" in workbook.sheetnames:
+                    worksheet = workbook["dataset_evaluation_result"]
+                else:
+                    worksheet = workbook.create_sheet("dataset_evaluation_result")
+            else:
+                # 文件不存在，创建新工作簿
+                workbook = Workbook()
+                worksheet = workbook.active
+                worksheet.title = "dataset_evaluation_result"
+                
+                # 写入表头（第1行）
+                for col_idx, header in enumerate(headers, 1):
+                    worksheet.cell(row=1, column=col_idx, value=header)
 
-            # 生成输出文件名（如果是批次写入，添加批次信息）
-            base_name = Path(output_file_path).stem
-            extension = Path(output_file_path).suffix
-            if extension.lower() not in [".xlsx", ".xls"]:
-                extension = ".xlsx"
+            # 计算写入的起始行号
+            # 公式：start_index + offset + 2（+1是因为Excel行号从1开始，+1是因为表头占一行）
+            write_start_row = start_index + offset + 2
 
-            # 构造文件名：原名_round{轮次}_batch{批次索引}.xlsx
-            batch_index = start_index // 10  # 假设批次大小为10
-            output_file = (
-                output_dir
-                / f"{base_name}_round{round_id}_batch{batch_index}{extension}"
-            )
+            # 写入数据行
+            for row_idx, row_data in enumerate(data_rows):
+                excel_row = write_start_row + row_idx
+                for col_idx, value in enumerate(row_data, 1):
+                    worksheet.cell(row=excel_row, column=col_idx, value=value)
 
-            # 写入Excel文件
-            with pd.ExcelWriter(str(output_file), engine="openpyxl") as writer:
-                df.to_excel(writer, sheet_name="多轮评测结果", index=False)
+            # 调整列宽以适应内容
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
 
-                # 获取工作表以进行格式调整
-                worksheet = writer.sheets["多轮评测结果"]
+                for cell in column:
+                    try:
+                        if cell.value and len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except Exception as e:
+                        logger.warning(
+                            f"error while compute column length: {str(e)}"
+                        )
+                # 设置列宽，最小10，最大50
+                adjusted_width = min(max(max_length + 2, 10), 50)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
 
-                # 调整列宽以适应内容
-                for column in worksheet.columns:
-                    max_length = 0
-                    column_letter = column[0].column_letter
-
-                    for cell in column:
-                        try:
-                            if len(str(cell.value)) > max_length:
-                                max_length = len(str(cell.value))
-                        except Exception as e:
-                            logger.warning(
-                                f"error while compute column length: {str(e)}"
-                            )
-                    # 设置列宽，最小10，最大50
-                    adjusted_width = min(max(max_length + 2, 10), 50)
-                    worksheet.column_dimensions[column_letter].width = adjusted_width
+            # 保存工作簿
+            workbook.save(str(output_file))
+            workbook.close()
 
             logger.info(
-                f"write excel file success: {output_file},"
-                f" final row size: {len(data_rows)}"
+                f"write excel file success: {output_file}, "
+                f"write_start_row: {write_start_row}, "
+                f"data_rows: {len(data_rows)}, "
+                f"start_index: {start_index}, offset: {offset}"
             )
             return True
 
