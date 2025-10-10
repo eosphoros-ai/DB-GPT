@@ -1,3 +1,4 @@
+import json
 import logging
 from functools import cache
 from typing import List, Optional
@@ -8,16 +9,29 @@ from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt_serve.core import Result
-from dbgpt_serve.evaluate.api.schemas import BenchmarkServeRequest, EvaluateServeRequest
+from dbgpt_serve.evaluate.api.schemas import (
+    BenchmarkServeRequest,
+    BuildDemoRequest,
+    EvaluateServeRequest,
+    ExecuteDemoRequest,
+)
 from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
-from dbgpt_serve.evaluate.service.service import Service
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
-import json
+from dbgpt_serve.evaluate.service.benchmark.data_compare_service import (
+    DataCompareService,
+)
 from dbgpt_serve.evaluate.service.benchmark.file_parse_service import FileParseService
-from dbgpt_serve.evaluate.service.benchmark.data_compare_service import DataCompareService
-from dbgpt_serve.evaluate.service.benchmark.user_input_execute_service import UserInputExecuteService
-from dbgpt_serve.evaluate.service.benchmark.models import BenchmarkExecuteConfig, BenchmarkModeTypeEnum
-from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import get_benchmark_manager
+from dbgpt_serve.evaluate.service.benchmark.models import (
+    BenchmarkExecuteConfig,
+    BenchmarkModeTypeEnum,
+)
+from dbgpt_serve.evaluate.service.benchmark.user_input_execute_service import (
+    UserInputExecuteService,
+)
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
+    get_benchmark_manager,
+)
+from dbgpt_serve.evaluate.service.service import Service
 
 from ...prompt.service.service import Service as PromptService
 from ..service.benchmark.benchmark_service import (
@@ -139,6 +153,7 @@ async def get_scenes():
 
     return Result.succ(scene_list)
 
+
 @router.post("/evaluation")
 async def evaluation(
     request: EvaluateServeRequest,
@@ -162,22 +177,25 @@ async def evaluation(
         )
     )
 
+
 @router.get("/benchmark/list_results", dependencies=[Depends(check_api_key)])
 async def list_compare_runs(limit: int = 50, offset: int = 0):
     dao = BenchmarkResultDao()
     rows = dao.list_summaries(limit=limit, offset=offset)
     result = []
     for s in rows:
-        result.append({
-            "id": s.id,
-            "roundId": s.round_id,
-            "outputPath": s.output_path,
-            "right": s.right,
-            "wrong": s.wrong,
-            "failed": s.failed,
-            "exception": s.exception,
-            "gmtCreated": s.gmt_created.isoformat() if s.gmt_created else None,
-        })
+        result.append(
+            {
+                "id": s.id,
+                "roundId": s.round_id,
+                "outputPath": s.output_path,
+                "right": s.right,
+                "wrong": s.wrong,
+                "failed": s.failed,
+                "exception": s.exception,
+                "gmtCreated": s.gmt_created.isoformat() if s.gmt_created else None,
+            }
+        )
     return Result.succ(result)
 
 
@@ -187,7 +205,9 @@ async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int 
     s = dao.get_summary_by_id(summary_id)
     if not s:
         raise HTTPException(status_code=404, detail="compare run not found")
-    compares = dao.list_compare_by_round_and_path(s.round_id, s.output_path, limit=limit, offset=offset)
+    compares = dao.list_compare_by_round_and_path(
+        s.round_id, s.output_path, limit=limit, offset=offset
+    )
     detail = {
         "id": s.id,
         "roundId": s.round_id,
@@ -207,7 +227,9 @@ async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int 
                 "prompt": r.prompt,
                 "standardAnswerSql": r.standard_answer_sql,
                 "llmOutput": r.llm_output,
-                "executeResult": json.loads(r.execute_result) if r.execute_result else None,
+                "executeResult": json.loads(r.execute_result)
+                if r.execute_result
+                else None,
                 "errorMsg": r.error_msg,
                 "compareResult": r.compare_result,
                 "isExecute": r.is_execute,
@@ -218,6 +240,7 @@ async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int 
         ],
     }
     return Result.succ(detail)
+
 
 @router.post("/benchmark/run_build", dependencies=[Depends(check_api_key)])
 async def benchmark_run_build(req: BuildDemoRequest):
@@ -244,6 +267,7 @@ async def benchmark_run_build(req: BuildDemoRequest):
         right_outputs=right,
         input_file_path=req.input_file_path,
         output_file_path=req.right_output_file_path,
+    )
 
     dao = BenchmarkResultDao()
     summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
@@ -290,7 +314,11 @@ async def list_benchmark_datasets():
     manager = get_benchmark_manager(global_system_app)
     info = await manager.get_table_info()
     result = [
-        {"name": name, "rowCount": meta.get("row_count", 0), "columns": meta.get("columns", [])}
+        {
+            "name": name,
+            "rowCount": meta.get("row_count", 0),
+            "columns": meta.get("columns", []),
+        }
         for name, meta in info.items()
     ]
     return Result.succ(result)

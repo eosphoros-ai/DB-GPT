@@ -33,7 +33,9 @@ class BenchmarkCompareEntity(Model):
         ),
     )
 
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="autoincrement id")
+    id = Column(
+        Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
+    )
     # Round and mode
     round_id = Column(Integer, nullable=False, comment="Benchmark round id")
     mode = Column(String(16), nullable=False, comment="BUILD or EXECUTE")
@@ -47,18 +49,29 @@ class BenchmarkCompareEntity(Model):
 
     standard_answer_sql = Column(Text, nullable=True, comment="Standard answer SQL")
     llm_output = Column(Text, nullable=True, comment="LLM output text or JSON")
-    execute_result = Column(Text, nullable=True, comment="Execution result JSON (serialized)")
+    execute_result = Column(
+        Text, nullable=True, comment="Execution result JSON (serialized)"
+    )
     error_msg = Column(Text, nullable=True, comment="Error message")
 
-    compare_result = Column(String(16), nullable=True, comment="RIGHT/WRONG/FAILED/EXCEPTION")
+    compare_result = Column(
+        String(16), nullable=True, comment="RIGHT/WRONG/FAILED/EXCEPTION"
+    )
     is_execute = Column(Boolean, default=False, comment="Whether this is EXECUTE mode")
     llm_count = Column(Integer, default=0, comment="Number of LLM outputs compared")
 
     # Source path for traceability (original output jsonl file path)
-    output_path = Column(String(512), nullable=False, comment="Original output file path")
+    output_path = Column(
+        String(512), nullable=False, comment="Original output file path"
+    )
 
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
-    gmt_modified = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="Record update time")
+    gmt_modified = Column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.now,
+        comment="Record update time",
+    )
 
     Index("idx_bm_comp_round", "round_id")
     Index("idx_bm_comp_mode", "mode")
@@ -76,9 +89,13 @@ class BenchmarkSummaryEntity(Model):
         UniqueConstraint("round_id", "output_path", name="uk_round_output"),
     )
 
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="autoincrement id")
+    id = Column(
+        Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
+    )
     round_id = Column(Integer, nullable=False, comment="Benchmark round id")
-    output_path = Column(String(512), nullable=False, comment="Original output file path")
+    output_path = Column(
+        String(512), nullable=False, comment="Original output file path"
+    )
 
     right = Column(Integer, default=0, comment="RIGHT count")
     wrong = Column(Integer, default=0, comment="WRONG count")
@@ -86,7 +103,12 @@ class BenchmarkSummaryEntity(Model):
     exception = Column(Integer, default=0, comment="EXCEPTION count")
 
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
-    gmt_modified = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="Record update time")
+    gmt_modified = Column(
+        DateTime,
+        default=datetime.now,
+        onupdate=datetime.now,
+        comment="Record update time",
+    )
 
     Index("idx_bm_sum_round", "round_id")
 
@@ -105,7 +127,8 @@ class BenchmarkResultDao(BaseDao):
     ) -> int:
         """Write multiple compare records to DB.
 
-        records: each dict contains keys like in FileParseService.write_data_compare_result rows.
+        records: each dict contains keys like in
+                 FileParseService.write_data_compare_result rows.
         Returns number of records inserted.
         """
         inserted = 0
@@ -122,7 +145,9 @@ class BenchmarkResultDao(BaseDao):
                         prompt=r.get("prompt"),
                         standard_answer_sql=r.get("standardAnswerSql"),
                         llm_output=r.get("llmOutput"),
-                        execute_result=json.dumps(r.get("executeResult")) if r.get("executeResult") is not None else None,
+                        execute_result=json.dumps(r.get("executeResult"))
+                        if r.get("executeResult") is not None
+                        else None,
                         error_msg=r.get("errorMsg"),
                         compare_result=r.get("compareResult"),
                         is_execute=is_execute,
@@ -136,7 +161,9 @@ class BenchmarkResultDao(BaseDao):
             session.commit()
         return inserted
 
-    def compute_and_save_summary(self, round_id: int, output_path: str) -> Optional[int]:
+    def compute_and_save_summary(
+        self, round_id: int, output_path: str
+    ) -> Optional[int]:
         """Compute summary from compare table and save to summary table.
         Returns summary id if saved, else None.
         """
@@ -197,7 +224,9 @@ class BenchmarkResultDao(BaseDao):
                 .all()
             )
 
-    def get_summary(self, round_id: int, output_path: str) -> Optional[BenchmarkSummaryEntity]:
+    def get_summary(
+        self, round_id: int, output_path: str
+    ) -> Optional[BenchmarkSummaryEntity]:
         with self.session(commit=False) as session:
             return (
                 session.query(BenchmarkSummaryEntity)
@@ -242,4 +271,3 @@ class BenchmarkResultDao(BaseDao):
                 .offset(offset)
                 .all()
             )
-

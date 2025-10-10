@@ -1,7 +1,7 @@
 from .benchmark_db import (
     BenchmarkCompareEntity,
-    BenchmarkSummaryEntity,
     BenchmarkResultDao,
+    BenchmarkSummaryEntity,
 )
 
 __all__ = [

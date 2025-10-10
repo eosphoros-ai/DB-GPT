@@ -13,6 +13,7 @@ class BenchmarkModeTypeEnum(str, Enum):
     BUILD = "BUILD"
     EXECUTE = "EXECUTE"
 
+
 @dataclass
 class DataCompareStrategyConfig:
     strategy: str  # "EXACT_MATCH" | "CONTAIN_MATCH"
@@ -128,7 +129,6 @@ class RoundAnswerConfirmModel:
     executeResult: Optional[Dict[str, List[str]]] = None
     errorMsg: Optional[str] = None
     compareResult: Optional[DataCompareResultEnum] = None
-
 
 
 class FileParseTypeEnum(Enum):

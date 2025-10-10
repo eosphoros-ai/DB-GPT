@@ -1,26 +1,23 @@
 import io
 import json
 import logging
-import os
 from typing import List
 
 import pandas as pd
-
 from openpyxl.reader.excel import load_workbook
+
 from dbgpt.util.benchmarks.ExcelUtils import ExcelUtils
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 
 from .models import (
     AnswerExecuteModel,
     BaseInputModel,
     BenchmarkDataSets,
-    DataCompareResultEnum,
     DataCompareStrategyConfig,
     RoundAnswerConfirmModel,
 )
 
 logger = logging.getLogger(__name__)
-
-from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 
 
 class FileParseService:
@@ -101,7 +98,10 @@ class FileParseService:
             failed=summary.failed if summary else 0,
             exception=summary.exception if summary else 0,
         )
-        print(f"[summary] summary saved to DB for round={round_id}, output_path={output_path} -> {result}")
+        logger.info(
+            f"[summary] summary saved to DB for round={round_id},"
+            f" output_path={output_path} -> {result}"
+        )
         return json.dumps(result, ensure_ascii=False)
 
     def parse_standard_benchmark_sets(
@@ -151,7 +151,6 @@ class FileParseService:
                 )
             )
         return outputs
-
 
 
 class ExcelFileParseService(FileParseService):
