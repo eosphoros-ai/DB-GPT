@@ -11,6 +11,13 @@ from dbgpt_serve.core import Result
 from dbgpt_serve.evaluate.api.schemas import BenchmarkServeRequest, EvaluateServeRequest
 from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.evaluate.service.service import Service
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
+import json
+from dbgpt_serve.evaluate.service.benchmark.file_parse_service import FileParseService
+from dbgpt_serve.evaluate.service.benchmark.data_compare_service import DataCompareService
+from dbgpt_serve.evaluate.service.benchmark.user_input_execute_service import UserInputExecuteService
+from dbgpt_serve.evaluate.service.benchmark.models import BenchmarkExecuteConfig, BenchmarkModeTypeEnum
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import get_benchmark_manager
 
 from ...prompt.service.service import Service as PromptService
 from ..service.benchmark.benchmark_service import (
@@ -132,7 +139,6 @@ async def get_scenes():
 
     return Result.succ(scene_list)
 
-
 @router.post("/evaluation")
 async def evaluation(
     request: EvaluateServeRequest,
@@ -155,6 +161,103 @@ async def evaluation(
             request.evaluate_metrics,
         )
     )
+
+@router.get("/benchmark/list_results", dependencies=[Depends(check_api_key)])
+async def list_compare_runs(limit: int = 50, offset: int = 0):
+    dao = BenchmarkResultDao()
+    rows = dao.list_summaries(limit=limit, offset=offset)
+    result = []
+    for s in rows:
+        result.append({
+            "id": s.id,
+            "roundId": s.round_id,
+            "outputPath": s.output_path,
+            "right": s.right,
+            "wrong": s.wrong,
+            "failed": s.failed,
+            "exception": s.exception,
+            "gmtCreated": s.gmt_created.isoformat() if s.gmt_created else None,
+        })
+    return Result.succ(result)
+
+
+@router.get("/benchmark/result/{summary_id}", dependencies=[Depends(check_api_key)])
+async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int = 0):
+    dao = BenchmarkResultDao()
+    s = dao.get_summary_by_id(summary_id)
+    if not s:
+        raise HTTPException(status_code=404, detail="compare run not found")
+    compares = dao.list_compare_by_round_and_path(s.round_id, s.output_path, limit=limit, offset=offset)
+    detail = {
+        "id": s.id,
+        "roundId": s.round_id,
+        "outputPath": s.output_path,
+        "summary": {
+            "right": s.right,
+            "wrong": s.wrong,
+            "failed": s.failed,
+            "exception": s.exception,
+        },
+        "items": [
+            {
+                "id": r.id,
+                "serialNo": r.serial_no,
+                "analysisModelId": r.analysis_model_id,
+                "question": r.question,
+                "prompt": r.prompt,
+                "standardAnswerSql": r.standard_answer_sql,
+                "llmOutput": r.llm_output,
+                "executeResult": json.loads(r.execute_result) if r.execute_result else None,
+                "errorMsg": r.error_msg,
+                "compareResult": r.compare_result,
+                "isExecute": r.is_execute,
+                "llmCount": r.llm_count,
+                "gmtCreated": r.gmt_created.isoformat() if r.gmt_created else None,
+            }
+            for r in compares
+        ],
+    }
+    return Result.succ(detail)
+
+@router.post("/benchmark/run_build", dependencies=[Depends(check_api_key)])
+async def benchmark_run_build(req: BuildDemoRequest):
+    fps = FileParseService()
+    dcs = DataCompareService()
+    svc = UserInputExecuteService(fps, dcs)
+
+    inputs = fps.parse_input_sets(req.input_file_path)
+    left = fps.parse_llm_outputs(req.left_output_file_path)
+    right = fps.parse_llm_outputs(req.right_output_file_path)
+
+    config = BenchmarkExecuteConfig(
+        benchmarkModeType=BenchmarkModeTypeEnum.BUILD,
+        compareResultEnable=True,
+        standardFilePath=None,
+        compareConfig=req.compare_config or {"check": "FULL_TEXT"},
+    )
+
+    svc.post_dispatch(
+        round_id=req.round_id,
+        config=config,
+        inputs=inputs,
+        left_outputs=left,
+        right_outputs=right,
+        input_file_path=req.input_file_path,
+        output_file_path=req.right_output_file_path,
+
+    dao = BenchmarkResultDao()
+    summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
+    summary = dao.get_summary(req.round_id, req.right_output_file_path)
+    result = {
+        "compareRunId": summary_id,
+        "summary": {
+            "right": summary.right if summary else 0,
+            "wrong": summary.wrong if summary else 0,
+            "failed": summary.failed if summary else 0,
+            "exception": summary.exception if summary else 0,
+        },
+    }
+    return Result.succ(result)
 
 
 @router.post("/execute_benchmark_task")
@@ -180,6 +283,69 @@ async def execute_benchmark_task(
             request.model_list,
         )
     )
+
+
+@router.get("/benchmark/datasets", dependencies=[Depends(check_api_key)])
+async def list_benchmark_datasets():
+    manager = get_benchmark_manager(global_system_app)
+    info = await manager.get_table_info()
+    result = [
+        {"name": name, "rowCount": meta.get("row_count", 0), "columns": meta.get("columns", [])}
+        for name, meta in info.items()
+    ]
+    return Result.succ(result)
+
+
+@router.get("/benchmark/datasets/{table}/rows", dependencies=[Depends(check_api_key)])
+async def get_benchmark_table_rows(table: str, limit: int = 10):
+    manager = get_benchmark_manager(global_system_app)
+    info = await manager.get_table_info()
+    if table not in info:
+        raise HTTPException(status_code=404, detail=f"table '{table}' not found")
+    sql = f'SELECT * FROM "{table}" LIMIT :limit'
+    rows = await manager.query(sql, {"limit": limit})
+    return Result.succ({"table": table, "limit": limit, "rows": rows})
+
+
+@router.post("/benchmark/run_execute", dependencies=[Depends(check_api_key)])
+async def benchmark_run_execute(req: ExecuteDemoRequest):
+    fps = FileParseService()
+    dcs = DataCompareService()
+    svc = UserInputExecuteService(fps, dcs)
+
+    inputs = fps.parse_input_sets(req.input_file_path)
+    right = fps.parse_llm_outputs(req.right_output_file_path)
+
+    config = BenchmarkExecuteConfig(
+        benchmarkModeType=BenchmarkModeTypeEnum.EXECUTE,
+        compareResultEnable=True,
+        standardFilePath=req.standard_file_path,
+        compareConfig=req.compare_config,
+    )
+
+    svc.post_dispatch(
+        round_id=req.round_id,
+        config=config,
+        inputs=inputs,
+        left_outputs=[],
+        right_outputs=right,
+        input_file_path=req.input_file_path,
+        output_file_path=req.right_output_file_path,
+    )
+
+    dao = BenchmarkResultDao()
+    summary_id = dao.compute_and_save_summary(req.round_id, req.right_output_file_path)
+    summary = dao.get_summary(req.round_id, req.right_output_file_path)
+    result = {
+        "compareRunId": summary_id,
+        "summary": {
+            "right": summary.right if summary else 0,
+            "wrong": summary.wrong if summary else 0,
+            "failed": summary.failed if summary else 0,
+            "exception": summary.exception if summary else 0,
+        },
+    }
+    return Result.succ(result)
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

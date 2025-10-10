@@ -2,6 +2,8 @@
 import logging
 from typing import Dict, List
 
+from .data_compare_service import DataCompareService
+from .file_parse_service import FileParseService
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     get_benchmark_manager,
 )

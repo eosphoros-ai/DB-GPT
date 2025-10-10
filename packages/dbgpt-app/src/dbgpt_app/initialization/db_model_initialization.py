@@ -19,6 +19,7 @@ from dbgpt_serve.prompt.models.models import ServeEntity as PromptManageEntity
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkCompareEntity, BenchmarkSummaryEntity
 
 _MODELS = [
     PluginHubEntity,
@@ -36,4 +37,6 @@ _MODELS = [
     FlowServeEntity,
     RecommendQuestionEntity,
     FlowVariableEntity,
+    BenchmarkCompareEntity,
+    BenchmarkSummaryEntity,
 ]

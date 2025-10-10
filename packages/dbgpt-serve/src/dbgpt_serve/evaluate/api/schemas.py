@@ -39,6 +39,22 @@ class EvaluateServeResponse(EvaluateServeRequest):
         title = f"EvaluateServeResponse for {SERVE_APP_NAME_HUMP}"
 
 
+class BuildDemoRequest(BaseModel):
+    round_id: int = Field(..., description="benchmark round id")
+    input_file_path: str = Field(..., description="path to input jsonl")
+    left_output_file_path: str = Field(..., description="path to left llm outputs jsonl")
+    right_output_file_path: str = Field(..., description="path to right llm outputs jsonl")
+    compare_config: Optional[dict] = Field(None, description="compare config, e.g. {'check': 'FULL_TEXT'}")
+
+
+class ExecuteDemoRequest(BaseModel):
+    round_id: int = Field(..., description="benchmark round id")
+    input_file_path: str = Field(..., description="path to input jsonl")
+    right_output_file_path: str = Field(..., description="path to right llm outputs jsonl")
+    standard_file_path: str = Field(..., description="path to standard answers excel")
+    compare_config: Optional[dict] = Field(None, description="optional compare config for json compare")
+
+
 class BenchmarkServeRequest(BaseModel):
     evaluate_code: Optional[str] = Field(None, description="evaluation code")
     scene_key: Optional[str] = Field(None, description="evaluation scene key")

@@ -20,8 +20,13 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
+
 
 class FileParseService:
+    def __init__(self):
+        self._benchmark_dao = BenchmarkResultDao()
+
     def parse_input_sets(self, path: str) -> List[BaseInputModel]:
         data = []
         with open(path, "r", encoding="utf-8") as f:
@@ -59,59 +64,44 @@ class FileParseService:
         is_execute: bool,
         llm_count: int,
     ):
-        if not path.endswith(".jsonl"):
-            raise ValueError(f"output_file_path must end with .jsonl, got {path}")
-        out_path = path.replace(".jsonl", f".round{round_id}.compare.jsonl")
-        with open(out_path, "w", encoding="utf-8") as f:
-            for cm in confirm_models:
-                row = dict(
-                    serialNo=cm.serialNo,
-                    analysisModelId=cm.analysisModelId,
-                    question=cm.question,
-                    selfDefineTags=cm.selfDefineTags,
-                    prompt=cm.prompt,
-                    standardAnswerSql=cm.standardAnswerSql,
-                    llmOutput=cm.llmOutput,
-                    executeResult=cm.executeResult,
-                    errorMsg=cm.errorMsg,
-                    compareResult=cm.compareResult.value if cm.compareResult else None,
-                    isExecute=is_execute,
-                    llmCount=llm_count,
-                )
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
-        print(f"[write_data_compare_result] compare written to: {out_path}")
+        mode = "EXECUTE" if is_execute else "BUILD"
+        records = []
+        for cm in confirm_models:
+            row = dict(
+                serialNo=cm.serialNo,
+                analysisModelId=cm.analysisModelId,
+                question=cm.question,
+                selfDefineTags=cm.selfDefineTags,
+                prompt=cm.prompt,
+                standardAnswerSql=cm.standardAnswerSql,
+                llmOutput=cm.llmOutput,
+                executeResult=cm.executeResult,
+                errorMsg=cm.errorMsg,
+                compareResult=cm.compareResult.value if cm.compareResult else None,
+            )
+            records.append(row)
+        self._benchmark_dao.write_compare_results(
+            round_id=round_id,
+            mode=mode,
+            output_path=path,
+            records=records,
+            is_execute=is_execute,
+            llm_count=llm_count,
+        )
+        print(f"[write_data_compare_result] compare written to DB for: {path}")
 
     def summary_and_write_multi_round_benchmark_result(
         self, output_path: str, round_id: int
     ) -> str:
-        if not output_path.endswith(".jsonl"):
-            raise ValueError(
-                f"output_file_path must end with .jsonl, got {output_path}"
-            )
-        compare_path = output_path.replace(".jsonl", f".round{round_id}.compare.jsonl")
-        right, wrong, failed, exception = 0, 0, 0, 0
-        if os.path.exists(compare_path):
-            with open(compare_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if not line.strip():
-                        continue
-                    obj = json.loads(line)
-                    cr = obj.get("compareResult")
-                    if cr == DataCompareResultEnum.RIGHT.value:
-                        right += 1
-                    elif cr == DataCompareResultEnum.WRONG.value:
-                        wrong += 1
-                    elif cr == DataCompareResultEnum.FAILED.value:
-                        failed += 1
-                    elif cr == DataCompareResultEnum.EXCEPTION.value:
-                        exception += 1
-        else:
-            print(f"[summary] compare file not found: {compare_path}")
-        summary_path = output_path.replace(".jsonl", f".round{round_id}.summary.json")
-        result = dict(right=right, wrong=wrong, failed=failed, exception=exception)
-        with open(summary_path, "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-        print(f"[summary] summary written to: {summary_path} -> {result}")
+        summary_id = self._benchmark_dao.compute_and_save_summary(round_id, output_path)
+        summary = self._benchmark_dao.get_summary(round_id, output_path)
+        result = dict(
+            right=summary.right if summary else 0,
+            wrong=summary.wrong if summary else 0,
+            failed=summary.failed if summary else 0,
+            exception=summary.exception if summary else 0,
+        )
+        print(f"[summary] summary saved to DB for round={round_id}, output_path={output_path} -> {result}")
         return json.dumps(result, ensure_ascii=False)
 
     def parse_standard_benchmark_sets(
