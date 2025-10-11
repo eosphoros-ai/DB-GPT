@@ -1,10 +1,13 @@
 import io
 import json
 import logging
-from typing import List
+import os
+from abc import ABC, abstractmethod
+from typing import List, Any, Dict
 
 import pandas as pd
-from openpyxl.reader.excel import load_workbook
+from pathlib import Path
+from openpyxl import load_workbook, Workbook
 
 from dbgpt.util.benchmarks.ExcelUtils import ExcelUtils
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
@@ -14,34 +17,33 @@ from .models import (
     BaseInputModel,
     BenchmarkDataSets,
     DataCompareStrategyConfig,
-    RoundAnswerConfirmModel,
+    RoundAnswerConfirmModel, BenchmarkExecuteConfig, OutputType,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class FileParseService:
+class FileParseService(ABC):
+
     def __init__(self):
         self._benchmark_dao = BenchmarkResultDao()
 
-    def parse_input_sets(self, path: str) -> List[BaseInputModel]:
-        data = []
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                if not line.strip():
-                    continue
-                obj = json.loads(line)
-                data.append(
-                    BaseInputModel(
-                        serial_no=obj["serialNo"],
-                        analysis_model_id=obj["analysisModelId"],
-                        question=obj["question"],
-                        self_define_tags=obj.get("selfDefineTags"),
-                        prompt=obj.get("prompt"),
-                        knowledge=obj.get("knowledge"),
-                    )
-                )
-        return data
+        # export column configuration file path
+        self._column_config_file_path = os.path.join(
+            os.path.dirname(__file__),
+            "template",
+            "benchmark_column_config_template.json"
+        )
+
+    @abstractmethod
+    def parse_input_sets(self, path: str) -> BenchmarkDataSets:
+        """
+        Parse input sets from file
+        Args:
+            location: File location path
+        Returns:
+            BenchmarkDataSets: Parsed data sets
+        """
 
     def parse_llm_outputs(self, path: str) -> List[AnswerExecuteModel]:
         data = []
@@ -104,68 +106,81 @@ class FileParseService:
         )
         return json.dumps(result, ensure_ascii=False)
 
+    def get_input_stream(self, location: str):
+        """Get input stream from location
+
+        Args:
+            location: File location path
+
+        Returns:
+            Optional[io.BytesIO]: File input stream or None if not found
+        """
+        try:
+            with open(location, "rb") as file:
+                return io.BytesIO(file.read())
+        except FileNotFoundError:
+            logger.error(f"file Not found with: {location}")
+            return None
+        except Exception as e:
+            logger.error(f"Error reading file: {location}, errorMsg: {e}")
+            return None
+
+    @abstractmethod
     def parse_standard_benchmark_sets(
         self, standard_excel_path: str
     ) -> List[AnswerExecuteModel]:
-        df = pd.read_excel(standard_excel_path, sheet_name="Sheet1")
-        outputs: List[AnswerExecuteModel] = []
-        for _, row in df.iterrows():
-            try:
-                serial_no = int(row["编号"])
-            except Exception:
-                continue
-            question = row.get("用户问题")
-            analysis_model_id = row.get("数据集ID")
-            llm_output = (
-                None if pd.isna(row.get("标准答案SQL")) else str(row.get("标准答案SQL"))
-            )
-            order_by = True
-            if not pd.isna(row.get("是否排序")):
-                try:
-                    order_by = bool(int(row.get("是否排序")))
-                except Exception:
-                    order_by = True
+        """
+        Parse standard benchmark sets from file.
+        This method must be implemented by subclasses.
+        
+        Args:
+            standard_excel_path: Path to the standard benchmark file
+            
+        Returns:
+            List[AnswerExecuteModel]: List of parsed answer execute models
+        """
+        pass
 
-            std_result = None
-            if not pd.isna(row.get("标准结果")):
-                try:
-                    std_result = json.loads(row.get("标准结果"))
-                except Exception:
-                    std_result = None
+    @abstractmethod
+    def write_multi_round_benchmark_result(
+            self,
+            output_file_path: str,
+            round_id: int,
+            config: BenchmarkExecuteConfig,
+            inputs: List[BaseInputModel],
+            outputs: List[OutputType],
+            start_index: int,
+            offset: int,
+    ) -> bool:
+        """
+        Write Benchmark Task Multi round Result
 
-            strategy_config = DataCompareStrategyConfig(
-                strategy="CONTAIN_MATCH",
-                order_by=order_by,
-                standard_result=[std_result]
-                if std_result is not None
-                else None,  # 使用 list
-            )
-            outputs.append(
-                AnswerExecuteModel(
-                    serialNo=serial_no,
-                    analysisModelId=analysis_model_id,
-                    question=question,
-                    llmOutput=llm_output,
-                    executeResult=std_result,
-                    strategyConfig=strategy_config,
-                )
-            )
-        return outputs
+        Args:
+            output_file_path: Output file path
+            round_id: Round ID
+            config: Benchmark configuration
+            inputs: List of input data
+            outputs: List of output data
+            start_index: Starting index (batch start row index)
+            offset: Offset(file rows offset)
+        """
+
 
 
 class ExcelFileParseService(FileParseService):
-    def parse_input_sets(self, location: str) -> BenchmarkDataSets:
+
+    def parse_input_sets(self, path: str) -> BenchmarkDataSets:
         """
         Parse input sets from excel file
         Args:
-            location: File location path
+            path: File location path
         Returns:
             BenchmarkDataSets: Parsed data sets
         """
-        input_stream = self.get_input_stream(location)
+        input_stream = self.get_input_stream(path)
 
         if input_stream is None:
-            raise RuntimeError(f"file not found! path: {location}")
+            raise RuntimeError(f"file not found! path: {path}")
 
         # Parse excel file to get data sets
         input_sets = BenchmarkDataSets()
@@ -215,33 +230,316 @@ class ExcelFileParseService(FileParseService):
 
             input_sets.data_list = input_list
         except Exception as e:
-            logger.error(f"parse excel error, location: {location}, errorMsg: {e}")
+            logger.error(f"parse excel error, path: {path}, errorMsg: {e}")
         finally:
             try:
                 if workbook is not None:
                     workbook.close()
             except Exception as e:
                 logger.error(
-                    f"close workbook error, location: {location}, errorMsg: {e}"
+                    f"close workbook error, path: {path}, errorMsg: {e}"
                 )
 
         return input_sets
 
-    def get_input_stream(self, location: str):
-        """Get input stream from location
+    def parse_standard_benchmark_sets(
+        self, standard_excel_path: str
+    ) -> List[AnswerExecuteModel]:
+        df = pd.read_excel(standard_excel_path, sheet_name="Sheet1")
+        outputs: List[AnswerExecuteModel] = []
+        for _, row in df.iterrows():
+            try:
+                serial_no = int(row["编号"])
+            except Exception:
+                continue
+            question = row.get("用户问题")
+            analysis_model_id = row.get("数据集ID")
+            llm_output = (
+                None if pd.isna(row.get("标准答案SQL")) else str(row.get("标准答案SQL"))
+            )
+            order_by = True
+            if not pd.isna(row.get("是否排序")):
+                try:
+                    order_by = bool(int(row.get("是否排序")))
+                except Exception:
+                    order_by = True
+
+            std_result = None
+            if not pd.isna(row.get("标准结果")):
+                try:
+                    std_result = json.loads(row.get("标准结果"))
+                except Exception:
+                    std_result = None
+
+            strategy_config = DataCompareStrategyConfig(
+                strategy="CONTAIN_MATCH",
+                order_by=order_by,
+                standard_result=[std_result]
+                if std_result is not None
+                else None,  # 使用 list
+            )
+            outputs.append(
+                AnswerExecuteModel(
+                    serialNo=serial_no,
+                    analysisModelId=analysis_model_id,
+                    question=question,
+                    llmOutput=llm_output,
+                    executeResult=std_result,
+                    strategyConfig=strategy_config,
+                )
+            )
+        return outputs
+
+    def write_multi_round_benchmark_result(
+            self,
+            output_file_path: str,
+            round_id: int,
+            config: BenchmarkExecuteConfig,
+            inputs: List[BaseInputModel],
+            outputs: List[OutputType],
+            start_index: int,
+            offset: int,
+    ) -> bool:
+        """
+        Write the benchmark Result to Excel File With Multi Round
 
         Args:
-            location: File location path
+            output_file_path: Output file path
+            round_id: Round ID
+            config: Benchmark configuration
+            inputs: List of input data
+            outputs: List of output data
+            start_index: Starting index (batch start row index)
+            offset: Offset(file rows offset)
 
         Returns:
-            Optional[io.BytesIO]: File input stream or None if not found
+            bool: Returns True if write is successful, False otherwise
         """
         try:
-            with open(location, "rb") as file:
-                return io.BytesIO(file.read())
-        except FileNotFoundError:
-            logger.error(f"file Not found with: {location}")
-            return None
+            # 确保输出目录存在
+            output_dir = Path(output_file_path).parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # 从JSON文件加载列配置
+            column_config = self._load_column_config()
+
+            # 按index排序确保列顺序正确
+            column_config.sort(key=lambda x: x["index"])
+
+            # 创建表头
+            headers = [col["header"] for col in column_config]
+
+            base_name = Path(output_file_path).stem
+            extension = Path(output_file_path).suffix
+            if extension.lower() not in [".xlsx", ".xls"]:
+                extension = ".xlsx"
+
+            # TODO 这里的文件名称需要加上评测任务ID，否则会导致每次的评测都是同一个文件名称，数据被覆盖
+            # TODO 需要保存评测任务记录
+            # TODO 需要修改output_file_path的逻辑，默认给一个文件路径和base_name，非前端传的必填字段
+            output_file = output_dir / f"{base_name}_round{round_id}{extension}"
+
+            # 创建输入数据映射，便于查找
+            input_map = {inp.serial_no: inp for inp in inputs}
+
+            # 准备数据行
+            data_rows = []
+
+            for output in outputs:
+                # 获取对应的输入数据
+                input_data = input_map.get(output.serialNo)
+
+                # 构建数据行
+                row_data = []
+                for col in column_config:
+                    field = col["field"]
+                    source_type = col["sourceType"]
+                    processor_type = col["processorType"]
+
+                    # Determine data source based on sourceType
+                    value = self._get_value_by_source_type(
+                        field, source_type, processor_type, input_data, output, round_id
+                    )
+                    # Process value based on processorType
+                    value = self._process_value_by_type(value, processor_type)
+
+                    row_data.append(value)
+                data_rows.append(row_data)
+
+            # 检查文件是否存在
+            if output_file.exists():
+                # 文件存在，读取现有工作簿
+                workbook = load_workbook(str(output_file))
+                if "dataset_evaluation_result" in workbook.sheetnames:
+                    worksheet = workbook["dataset_evaluation_result"]
+                else:
+                    worksheet = workbook.create_sheet("dataset_evaluation_result")
+            else:
+                # 文件不存在，创建新工作簿
+                workbook = Workbook()
+                worksheet = workbook.active
+                worksheet.title = "dataset_evaluation_result"
+
+                # 写入表头（第1行）
+                for col_idx, header in enumerate(headers, 1):
+                    worksheet.cell(row=1, column=col_idx, value=header)
+
+            # 计算写入的起始行号
+            # 公式：start_index + offset + 2（+1是因为Excel行号从1开始，+1是因为表头占一行）
+            write_start_row = start_index + offset + 2
+
+            # 写入数据行
+            for row_idx, row_data in enumerate(data_rows):
+                excel_row = write_start_row + row_idx
+                for col_idx, value in enumerate(row_data, 1):
+                    worksheet.cell(row=excel_row, column=col_idx, value=value)
+
+            # 调整列宽以适应内容
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+
+                for cell in column:
+                    try:
+                        if cell.value and len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except Exception as e:
+                        logger.warning(
+                            f"error while compute column length: {str(e)}"
+                        )
+                # 设置列宽，最小10，最大50
+                adjusted_width = min(max(max_length + 2, 10), 50)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+
+            # 保存工作簿
+            workbook.save(str(output_file))
+            workbook.close()
+
+            logger.info(
+                f"write excel file success: {output_file}, "
+                f"write_start_row: {write_start_row}, "
+                f"data_rows: {len(data_rows)}, "
+                f"start_index: {start_index}, offset: {offset}"
+            )
+            return True
+
         except Exception as e:
-            logger.error(f"Error reading file: {location}")
-            return None
+            logger.error(f"write excel file error: {e}", exc_info=True)
+            return False
+
+    def _get_value_by_source_type(
+            self,
+            field: str,
+            source_type: str,
+            processor_type: str,
+            input_data,
+            output,
+            round_id: int
+    ) -> Any:
+        """
+        Get the value based on the source type
+
+        Args:
+            field: Field name
+            source_type: Source type
+            processor_type: Processor type
+            input_data: Input data
+            output: Output data
+            round_id: Round ID
+
+        Returns:
+            The retrieved value
+        """
+        value = None
+
+        # 根据sourceType确定数据来源
+        if source_type == "INPUT" and input_data:
+            # 从输入数据获取
+            if field == "serialNo":
+                value = input_data.serial_no
+            elif field == "llmCode":
+                value = getattr(input_data, "llm_code", "")
+            elif field == "analysisModelId":
+                value = input_data.analysis_model_id
+            elif field == "question":
+                value = input_data.question
+            elif field == "selfDefineTags":
+                value = input_data.self_define_tags
+            elif field == "knowledge":
+                value = input_data.knowledge
+            elif field == "prompt":
+                value = input_data.prompt
+        elif source_type == "PARAM":
+            # 从参数获取
+            if field == "roundId":
+                value = str(round_id)
+        elif source_type == "OUTPUT":
+            # 从输出数据获取
+            if field == "cotLength":
+                value = getattr(output, "cotTokens", 0) or 0
+            elif field == "llmOutput":
+                value = output.llmOutput
+            elif field == "executeResult":
+                # JSON处理器：将字典转换为JSON字符串
+                if processor_type == "JsonProcessor":
+                    value = (
+                        json.dumps(output.executeResult, ensure_ascii=False)
+                        if output.executeResult
+                        else ""
+                    )
+                else:
+                    value = (
+                        str(output.executeResult)
+                        if output.executeResult
+                        else ""
+                    )
+            elif field == "errorMsg":
+                value = output.errorMsg
+            elif field == "traceId":
+                value = ""  # traceId需要从其他地方获取，这里暂时留空
+            elif field == "costTime":
+                value = getattr(output, "cost_time", "") or ""
+
+        return value
+
+    def _process_value_by_type(self, value, processor_type: str) -> Any:
+        """
+        Process value based on processor type
+        Args:
+            value: Original value
+            processor_type: Processor type
+        """
+        if processor_type == "IntegerProcessor":
+            try:
+                return int(value) if value is not None else 0
+            except (ValueError, TypeError):
+                return 0
+        elif processor_type == "LongProcessor":
+            try:
+                return int(value) if value is not None else 0
+            except (ValueError, TypeError):
+                return 0
+        elif processor_type in [
+            "StringProcessor",
+            "LongTextProcessor",
+            "JsonProcessor",
+        ]:
+            return str(value) if value is not None else ""
+        else:
+            return str(value) if value is not None else ""
+
+    def _load_column_config(self) -> List[Dict]:
+        """
+        Load column configuration from JSON file
+
+        Returns:
+            List[Dict]: List of column configurations
+        """
+        try:
+            with open(self._column_config_file_path, 'r', encoding='utf-8') as file:
+                config_data = json.load(file)
+                return config_data.get("columns", [])
+        except Exception as e:
+            logger.error(f"Failed to load column configuration file: {e},"
+                         f" using default configuration")
+            raise ValueError("Failed to load column configuration file")

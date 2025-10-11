@@ -6,9 +6,12 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from pathlib import Path
+from typing import Dict, List, Optional, Union, Any
 
+from dbgpt.agent.core.schema import Status
 from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs.model_config import BENCHMARK_DATA_ROOT_PATH
 from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
@@ -20,7 +23,7 @@ from ....core import BaseService
 from ....prompt.service.service import Service as PromptService
 from ....rag.service.service import Service as RagService
 from ....rag.storage_manager import StorageManager
-from ...api.schemas import EvaluateServeRequest, EvaluateServeResponse
+from ...api.schemas import EvaluateServeRequest, EvaluateServeResponse, StorageType, EvaluationScene
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
 from .benchmark_llm_task import BenchmarkLLMTask
@@ -46,9 +49,14 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
-STANDARD_BENCHMARK_FILE_PATH = (
-    "pilot/benchmark_meta_data/"
-    "2025_07_27_public_500_standard_benchmark_question_list_v2.xlsx"
+STANDARD_BENCHMARK_FILE_PATH = os.path.join(
+    BENCHMARK_DATA_ROOT_PATH,
+    "2025_07_27_public_500_standard_benchmark_question_list_v2_local_test.xlsx"
+)
+
+BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(
+    BENCHMARK_DATA_ROOT_PATH,
+    "result"
 )
 
 
@@ -78,20 +86,16 @@ class BenchmarkService(
         self.rag_service = get_rag_service(system_app)
         self.prompt_service = get_prompt_service(system_app)
 
-        fps = FileParseService()
+        fps = ExcelFileParseService()
         dcs = DataCompareService()
         self.user_input_execute_service = UserInputExecuteService(fps, dcs)
 
         self.trigger_executor = ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
         )
-        
-        # 设置列配置文件路径
-        self._column_config_file_path = os.path.join(
-            os.path.dirname(__file__), 
-            "template", 
-            "benchmark_column_config_template.json"
-        )
+
+        self.output_base_file_name = f"{datetime.now().strftime('%Y%m%d')}_multi_round_benchmark_result.xlsx"
+
 
     def init_app(self, system_app: SystemApp) -> None:
         """Initialize the service
@@ -99,6 +103,7 @@ class BenchmarkService(
         Args:
             system_app (SystemApp): The system app
         """
+        self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
 
     @property
@@ -122,120 +127,81 @@ class BenchmarkService(
         ).create()
         return DefaultLLMClient(worker_manager, True)
 
-    def _load_column_config(self) -> List[Dict]:
-        """
-        Load column configuration from JSON file
 
-        Returns:
-            List[Dict]: List of column configurations
+    def create_benchmark_task(
+        self,
+        config: BenchmarkExecuteConfig,
+        evaluate_code: str,
+        scene_key: str,
+        scene_value: str,
+        input_file_path: str,
+        output_file_path: str
+    ) -> bool:
+        """
+        Save the benchmark task to the database
+
+        Args:
+            config: Benchmark execute config
+            evaluate_code: Evaluation code
+            scene_key: Scene key
+            scene_value: Scene value
+            input_file_path: Input file path
+            output_file_path: Output file path
+            model_list: Model list
         """
         try:
-            with open(self._column_config_file_path, 'r', encoding='utf-8') as file:
-                config_data = json.load(file)
-                return config_data.get("columns", [])
+            # 构建请求对象
+            request_data = EvaluateServeRequest(
+                evaluate_code=evaluate_code,
+                scene_key=scene_key,
+                scene_value=scene_value,
+                datasets_name=os.path.basename(input_file_path) if input_file_path else None,
+                datasets=None,
+                storage_type=StorageType.FILE.value,
+                parallel_num=1,
+                state=Status.RUNNING.value,
+                result=output_file_path,
+                context={
+                    "benchmark_config": json.dumps(config.to_dict(), ensure_ascii=False),
+                },
+                user_id=None,
+                user_name=None,
+                sys_code="benchmark_system",
+            )
+            
+            response = self.create(request_data)
+            logger.info(
+                f"Successfully saved benchmark task to database: "
+                f"evaluate_code={evaluate_code}, scene_key={scene_key}, "
+                f"scene_value={scene_value}, response: {response}"
+            )
+            return True
         except Exception as e:
-            logger.error(f"Failed to load column configuration file: {e},"
-                         f" using default configuration")
-            return [
-                {
-                    "index": 0,
-                    "header": "编号",
-                    "field": "serialNo",
-                    "sourceType": "INPUT",
-                    "processorType": "IntegerProcessor",
-                },
-                {
-                    "index": 1,
-                    "header": "大模型名称",
-                    "field": "llmCode",
-                    "sourceType": "INPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 2,
-                    "header": "轮次",
-                    "field": "roundId",
-                    "sourceType": "PARAM",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 3,
-                    "header": "数据集ID",
-                    "field": "analysisModelId",
-                    "sourceType": "INPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 4,
-                    "header": "用户问题",
-                    "field": "question",
-                    "sourceType": "INPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 5,
-                    "header": "自定义标签",
-                    "field": "selfDefineTags",
-                    "sourceType": "INPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 6,
-                    "header": "知识",
-                    "field": "knowledge",
-                    "sourceType": "INPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 7,
-                    "header": "prompt",
-                    "field": "prompt",
-                    "sourceType": "INPUT",
-                    "processorType": "LongTextProcessor",
-                },
-                {
-                    "index": 8,
-                    "header": "Cot长度",
-                    "field": "cotLength",
-                    "sourceType": "OUTPUT",
-                    "processorType": "LongProcessor",
-                },
-                {
-                    "index": 9,
-                    "header": "LLM输出结果",
-                    "field": "llmOutput",
-                    "sourceType": "OUTPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 10,
-                    "header": "结果执行",
-                    "field": "executeResult",
-                    "sourceType": "OUTPUT",
-                    "processorType": "JsonProcessor",
-                },
-                {
-                    "index": 11,
-                    "header": "执行结果的报错信息",
-                    "field": "errorMsg",
-                    "sourceType": "OUTPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 12,
-                    "header": "traceId",
-                    "field": "traceId",
-                    "sourceType": "OUTPUT",
-                    "processorType": "StringProcessor",
-                },
-                {
-                    "index": 13,
-                    "header": "耗时（秒）",
-                    "field": "costTime",
-                    "sourceType": "OUTPUT",
-                    "processorType": "StringProcessor",
-                },
-            ]
+            logger.error(
+                f"Failed to save benchmark task to database: {e}, "
+                f"evaluate_code={evaluate_code}, scene_key={scene_key}, "
+                f"scene_value={scene_value}"
+            )
+            return False
+
+    def _generate_output_file_full_path(self, output_file_path: str, evaluate_code: str) -> str:
+        """
+        Generate the complete output file path,
+        including the evaluate_code subfolder and default filename
+
+        Args:
+            output_file_path: Base path of the output file
+            evaluate_code: Evaluation code, used as subfolder name
+
+        Returns:
+            str: Complete output file path
+        """
+        if not output_file_path or not evaluate_code:
+            return output_file_path
+
+        base_path = Path(output_file_path)
+        new_path = base_path / evaluate_code / self.output_base_file_name
+        return str(new_path)
 
     async def run_dataset_benchmark(
         self,
@@ -256,11 +222,27 @@ class BenchmarkService(
         )
         if not input_file_path:
             input_file_path = STANDARD_BENCHMARK_FILE_PATH
+        if not evaluate_code:
+            evaluate_code = uuid.uuid4().hex
+        if not output_file_path:
+            output_file_path = BENCHMARK_OUTPUT_RESULT_PATH
+        if not scene_key:
+            scene_key = EvaluationScene.DATASET.value
 
-        config = await self._build_benchmark_config(model_list, output_file_path)
+        output_file_path = (
+            self._generate_output_file_full_path(output_file_path, evaluate_code)
+        )
+
+        config = await self._build_benchmark_config(model_list, output_file_path,
+                                                    evaluate_code, scene_key)
+        # save benchmark task
+        self.create_benchmark_task(config, evaluate_code, scene_key, scene_value,
+                                   input_file_path, output_file_path)
 
         # read input file
-        input_list: List[BaseInputModel] = self.read_input_file(input_file_path)
+        input_list: List[BaseInputModel] = (
+            self.user_input_execute_service.read_input_file(input_file_path)
+        )
 
         result_list = []
         for i in range(1, config.round_time + 1):
@@ -283,7 +265,7 @@ class BenchmarkService(
                         offset,
                     )
                 except Exception as e:
-                    logger.error(f"batchExecute error! {e}")
+                    logger.error(f"batch execute error! {e}, llm_code: {llm_code}")
 
                 if llm_result is not None:
                     round_result_list.append(llm_result)
@@ -301,20 +283,8 @@ class BenchmarkService(
 
         return result_list
 
-    def read_input_file(
-        self, input_file_path: str
-    ) -> Union[List[BaseInputModel], None]:
-        file_parse_type: FileParseTypeEnum = StorageUtil.get_file_parse_type(
-            input_file_path
-        )
-        if file_parse_type == FileParseTypeEnum.EXCEL:
-            input_sets: BenchmarkDataSets = ExcelFileParseService().parse_input_sets(
-                input_file_path
-            )
-            return input_sets.data_list
-        return None
-
-    async def _build_benchmark_config(self, model_list, output_file_path):
+    async def _build_benchmark_config(self, model_list, output_file_path,
+                                      evaluate_code, scene_key) -> BenchmarkExecuteConfig:
         config = BenchmarkExecuteConfig(
             benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
             standard_file_path=STANDARD_BENCHMARK_FILE_PATH,
@@ -328,6 +298,9 @@ class BenchmarkService(
         config.compare_result_enable = True
         config.file_parse_type = FileParseTypeEnum.EXCEL
         config.llm_thread_map = {model: 1 for model in model_list}
+        config.evaluate_code = evaluate_code
+        config.scene_key = scene_key
+
         return config
 
     def batch_execute(
@@ -344,8 +317,8 @@ class BenchmarkService(
         Batch execute the benchmark Task with LLM
         """
         result = BenchmarkTaskResult[OutputType]()
-        result.trace_id = str(uuid.uuid4()).replace("-", "")
-        result.task_id = str(uuid.uuid4())
+        result.trace_id = uuid.uuid4().hex
+        result.task_id = config.evaluate_code if config.evaluate_code else uuid.uuid4().hex
         result.start_time = datetime.now()
 
         executor = ThreadPoolExecutor(
@@ -496,7 +469,7 @@ class BenchmarkService(
                     try:
                         # 执行写入逻辑
                         batch_outputs.sort(key=lambda x: x.serialNo)
-                        self.write_output_file(
+                        self.user_input_execute_service.write_output_file(
                             output_file_path,
                             round_id,
                             config,
@@ -510,206 +483,3 @@ class BenchmarkService(
 
                 self.trigger_executor.submit(batch_write_task)
                 written_batches.add(batch_index)
-
-    def write_output_file(
-        self,
-        output_file_path: str,
-        round_id: int,
-        config: BenchmarkExecuteConfig,
-        inputs: List[BaseInputModel],
-        outputs: List[OutputType],
-        start_index: int,
-        offset: int,
-    ) -> bool:
-        """
-        Write the output file
-
-        Args:
-            output_file_path: Output file path
-            round_id: Round ID
-            config: Benchmark configuration
-            inputs: List of input data
-            outputs: List of output data
-            start_index: Starting index (batch start row index)
-            offset: Offset(file rows offset)
-
-        Returns:
-            bool: Returns True if write is successful, False otherwise
-        """
-        try:
-            from pathlib import Path
-            import pandas as pd
-            from openpyxl import load_workbook, Workbook
-
-            # 确保输出目录存在
-            output_dir = Path(output_file_path).parent
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            # 从JSON文件加载列配置
-            column_config = self._load_column_config()
-
-            # 按index排序确保列顺序正确
-            column_config.sort(key=lambda x: x["index"])
-
-            # 创建表头
-            headers = [col["header"] for col in column_config]
-
-            # 构造文件名：每个round_id一个文件
-            base_name = Path(output_file_path).stem
-            extension = Path(output_file_path).suffix
-            if extension.lower() not in [".xlsx", ".xls"]:
-                extension = ".xlsx"
-            
-            output_file = output_dir / f"{base_name}_round{round_id}{extension}"
-
-            # 创建输入数据映射，便于查找
-            input_map = {inp.serial_no: inp for inp in inputs}
-
-            # 准备数据行
-            data_rows = []
-
-            for output in outputs:
-                # 获取对应的输入数据
-                input_data = input_map.get(output.serialNo)
-
-                # 构建数据行
-                row_data = []
-                for col in column_config:
-                    field = col["field"]
-                    source_type = col["sourceType"]
-                    processor_type = col["processorType"]
-
-                    value = None
-
-                    # 根据sourceType确定数据来源
-                    if source_type == "INPUT" and input_data:
-                        # 从输入数据获取
-                        if field == "serialNo":
-                            value = input_data.serial_no
-                        elif field == "llmCode":
-                            value = getattr(input_data, "llm_code", "")
-                        elif field == "analysisModelId":
-                            value = input_data.analysis_model_id
-                        elif field == "question":
-                            value = input_data.question
-                        elif field == "selfDefineTags":
-                            value = input_data.self_define_tags
-                        elif field == "knowledge":
-                            value = input_data.knowledge
-                        elif field == "prompt":
-                            value = input_data.prompt
-                    elif source_type == "PARAM":
-                        # 从参数获取
-                        if field == "roundId":
-                            value = str(round_id)
-                    elif source_type == "OUTPUT":
-                        # 从输出数据获取
-                        if field == "cotLength":
-                            value = getattr(output, "cotTokens", 0) or 0
-                        elif field == "llmOutput":
-                            value = output.llmOutput
-                        elif field == "executeResult":
-                            # JSON处理器：将字典转换为JSON字符串
-                            if processor_type == "JsonProcessor":
-                                value = (
-                                    json.dumps(output.executeResult, ensure_ascii=False)
-                                    if output.executeResult
-                                    else ""
-                                )
-                            else:
-                                value = (
-                                    str(output.executeResult)
-                                    if output.executeResult
-                                    else ""
-                                )
-                        elif field == "errorMsg":
-                            value = output.errorMsg
-                        elif field == "traceId":
-                            value = ""  # traceId需要从其他地方获取，这里暂时留空
-                        elif field == "costTime":
-                            value = getattr(output, "cost_time", "") or ""
-
-                    # 根据processorType处理值
-                    if processor_type == "IntegerProcessor":
-                        try:
-                            value = int(value) if value is not None else 0
-                        except (ValueError, TypeError):
-                            value = 0
-                    elif processor_type == "LongProcessor":
-                        try:
-                            value = int(value) if value is not None else 0
-                        except (ValueError, TypeError):
-                            value = 0
-                    elif processor_type in [
-                        "StringProcessor",
-                        "LongTextProcessor",
-                        "JsonProcessor",
-                    ]:
-                        value = str(value) if value is not None else ""
-                    else:
-                        value = str(value) if value is not None else ""
-
-                    row_data.append(value)
-
-                data_rows.append(row_data)
-
-            # 检查文件是否存在
-            if output_file.exists():
-                # 文件存在，读取现有工作簿
-                workbook = load_workbook(str(output_file))
-                if "dataset_evaluation_result" in workbook.sheetnames:
-                    worksheet = workbook["dataset_evaluation_result"]
-                else:
-                    worksheet = workbook.create_sheet("dataset_evaluation_result")
-            else:
-                # 文件不存在，创建新工作簿
-                workbook = Workbook()
-                worksheet = workbook.active
-                worksheet.title = "dataset_evaluation_result"
-                
-                # 写入表头（第1行）
-                for col_idx, header in enumerate(headers, 1):
-                    worksheet.cell(row=1, column=col_idx, value=header)
-
-            # 计算写入的起始行号
-            # 公式：start_index + offset + 2（+1是因为Excel行号从1开始，+1是因为表头占一行）
-            write_start_row = start_index + offset + 2
-
-            # 写入数据行
-            for row_idx, row_data in enumerate(data_rows):
-                excel_row = write_start_row + row_idx
-                for col_idx, value in enumerate(row_data, 1):
-                    worksheet.cell(row=excel_row, column=col_idx, value=value)
-
-            # 调整列宽以适应内容
-            for column in worksheet.columns:
-                max_length = 0
-                column_letter = column[0].column_letter
-
-                for cell in column:
-                    try:
-                        if cell.value and len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except Exception as e:
-                        logger.warning(
-                            f"error while compute column length: {str(e)}"
-                        )
-                # 设置列宽，最小10，最大50
-                adjusted_width = min(max(max_length + 2, 10), 50)
-                worksheet.column_dimensions[column_letter].width = adjusted_width
-
-            # 保存工作簿
-            workbook.save(str(output_file))
-            workbook.close()
-
-            logger.info(
-                f"write excel file success: {output_file}, "
-                f"write_start_row: {write_start_row}, "
-                f"data_rows: {len(data_rows)}, "
-                f"start_index: {start_index}, offset: {offset}"
-            )
-            return True
-
-        except Exception as e:
-            logger.error(f"write excel file error: {e}", exc_info=True)
-            return False

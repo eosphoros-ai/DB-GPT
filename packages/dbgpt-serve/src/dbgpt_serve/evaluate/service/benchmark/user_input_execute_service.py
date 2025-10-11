@@ -1,7 +1,8 @@
 # app/services/user_input_execute_service.py
 import logging
-from typing import Dict, List
+from typing import Dict, List, Union
 
+from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     get_benchmark_manager,
 )
@@ -17,7 +18,7 @@ from .models import (
     DataCompareStrategyConfig,
     InputType,
     ReasoningResponse,
-    RoundAnswerConfirmModel,
+    RoundAnswerConfirmModel, OutputType, FileParseTypeEnum, BenchmarkDataSets,
 )
 
 BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
@@ -26,11 +27,34 @@ logger = logging.getLogger(__name__)
 
 
 class UserInputExecuteService:
+
     def __init__(
         self, file_service: FileParseService, compare_service: DataCompareService
     ):
         self.file_service = file_service
         self.compare_service = compare_service
+
+    def read_input_file(
+        self, input_file_path: str
+    ) -> Union[List[BaseInputModel], None]:
+        """
+        Read input file and return input data list
+
+        Args:
+            input_file_path: Input file path
+
+        Returns:
+            List[BaseInputModel]: Input data list
+        """
+        file_parse_type: FileParseTypeEnum = StorageUtil.get_file_parse_type(
+            input_file_path
+        )
+        if file_parse_type == FileParseTypeEnum.EXCEL:
+            input_sets: BenchmarkDataSets = self.file_service.parse_input_sets(
+                input_file_path
+            )
+            return input_sets.data_list
+        return None
 
     def post_dispatch(
         self,
@@ -303,3 +327,32 @@ class UserInputExecuteService:
             
         # only replace the "ant_icube_dev." prefix
         return sql.replace(BENCHMARK_DEFAULT_DB_SCHEMA, "")
+
+    def write_output_file(
+        self,
+        output_file_path: str,
+        round_id: int,
+        config: BenchmarkExecuteConfig,
+        inputs: List[BaseInputModel],
+        outputs: List[OutputType],
+        start_index: int,
+        offset: int,
+    ) -> bool:
+        """
+        Write the output file
+
+        Args:
+            output_file_path: Output file path
+            round_id: Round ID
+            config: Benchmark configuration
+            inputs: List of input data
+            outputs: List of output data
+            start_index: Starting index (batch start row index)
+            offset: Offset(file rows offset)
+
+        Returns:
+            bool: Returns True if write is successful, False otherwise
+        """
+        return self.file_service.write_multi_round_benchmark_result(
+            output_file_path, round_id, config, inputs, outputs, start_index, offset)
+

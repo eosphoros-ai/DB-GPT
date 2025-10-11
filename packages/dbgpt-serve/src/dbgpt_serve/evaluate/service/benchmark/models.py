@@ -181,6 +181,10 @@ class BenchmarkExecuteConfig:
     # user config
     user_id: Optional[str] = None
 
+    # task config
+    evaluate_code: Optional[str] = None
+    scene_key: Optional[str] = None
+
     def get_llm_thread(self, llm_code: str) -> int:
         return self.llm_thread_map.get(llm_code, 1)
 
@@ -209,6 +213,8 @@ class BenchmarkExecuteConfig:
             "compare_config": self.compare_config,
             "thread_num": self.thread_num,
             "user_id": self.user_id,
+            "evaluate_code": self.evaluate_code,
+            "scene_key": self.scene_key,
         }
 
     @classmethod
@@ -234,6 +240,8 @@ class BenchmarkExecuteConfig:
             compare_config=config_dict.get("compare_config", {}),
             thread_num=config_dict.get("thread_num"),
             user_id=config_dict.get("user_id"),
+            evaluate_code=config_dict.get("evaluate_code"),
+            scene_key=config_dict.get("scene_key"),
         )
 
 

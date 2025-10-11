@@ -11,23 +11,10 @@ from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManage
 from dbgpt_serve.core import Result
 from dbgpt_serve.evaluate.api.schemas import (
     BenchmarkServeRequest,
-    BuildDemoRequest,
     EvaluateServeRequest,
-    ExecuteDemoRequest,
 )
 from dbgpt_serve.evaluate.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
-from dbgpt_serve.evaluate.service.benchmark.data_compare_service import (
-    DataCompareService,
-)
-from dbgpt_serve.evaluate.service.benchmark.file_parse_service import FileParseService
-from dbgpt_serve.evaluate.service.benchmark.models import (
-    BenchmarkExecuteConfig,
-    BenchmarkModeTypeEnum,
-)
-from dbgpt_serve.evaluate.service.benchmark.user_input_execute_service import (
-    UserInputExecuteService,
-)
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     get_benchmark_manager,
 )

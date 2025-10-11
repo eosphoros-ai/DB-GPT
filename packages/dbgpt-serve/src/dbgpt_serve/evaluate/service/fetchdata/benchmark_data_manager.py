@@ -16,6 +16,7 @@ from sqlalchemy import text
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
+from dbgpt.configs.model_config import BENCHMARK_DATA_ROOT_PATH
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,8 @@ class BenchmarkDataConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     cache_dir: str = "cache"
-    db_path: str = "pilot/benchmark_meta_data/ant_icube_dev.db"
-    table_mapping_file: str = "pilot/benchmark_meta_data/table_mapping.json"
+    db_path: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, "ant_icube_dev.db")
+    table_mapping_file: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, "table_mapping.json")
     cache_expiry_days: int = 1
     repo_url: str = "https://github.com/inclusionAI/Falcon"
     data_dir: str = "data/source"

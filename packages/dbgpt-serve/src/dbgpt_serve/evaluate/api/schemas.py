@@ -9,6 +9,7 @@ from ..config import SERVE_APP_NAME_HUMP
 class EvaluationScene(Enum):
     RECALL = "recall"
     APP = "app"
+    DATASET = "dataset"
 
 
 class EvaluateServeRequest(BaseModel):
@@ -83,3 +84,9 @@ class BenchmarkServeRequest(BaseModel):
     state: Optional[str] = Field(None, description="evaluation state")
     temperature: Optional[str] = Field(None, description="evaluation state")
     max_tokens: Optional[str] = Field(None, description="evaluation state")
+
+
+class StorageType(Enum):
+    FILE = "FILE"
+    OSS = "OSS"
+    YU_QUE = "YU_QUE"
