@@ -80,5 +80,6 @@
   "data_source_25_bakutech_bakutech_customer_lookup": "ant_icube_dev.tech_sales_customer_lookup",
   "data_source_25_bakutech_bakutech_product_categories": "ant_icube_dev.tech_sales_product_categories",
   "data_source_25_bakutech_bakutech_products_lookup": "ant_icube_dev.tech_sales_product_lookup",
-  "data_source_25_bakutech_bakutech_dates": "ant_icube_dev.tech_sales_dates"
+  "data_source_25_bakutech_bakutech_dates": "ant_icube_dev.tech_sales_dates",
+  "data_source_3_stock_details_5_years 3": "ant_icube_dev.di_massive_yahoo_finance_dataset_0805"
 }
