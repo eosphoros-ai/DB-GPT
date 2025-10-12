@@ -1,4 +1,5 @@
 """Module for Knowledge Base."""
+
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -215,6 +216,6 @@ class Knowledge(ABC):
     def parse_document_body(body: str) -> str:
         result = re.sub(r'<a name="(.*)"></a>', "", body)
         result = re.sub(r"<br\s*/?>", "", result)
-        soup = BeautifulSoup(result, 'html.parser')
+        soup = BeautifulSoup(result, "html.parser")
         result = soup.get_text()
         return result
