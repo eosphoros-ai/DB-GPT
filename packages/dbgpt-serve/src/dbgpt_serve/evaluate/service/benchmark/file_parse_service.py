@@ -84,6 +84,7 @@ class FileParseService(ABC):
                 "selfDefineTags",
                 "prompt",
                 "standardAnswerSql",
+                "standardAnswer",
                 "llmCode",
                 "llmOutput",
                 "executeResult",
@@ -121,6 +122,9 @@ class FileParseService(ABC):
                     cm.selfDefineTags,
                     cm.prompt,
                     cm.standardAnswerSql,
+                    json.dumps(cm.standardAnswer, ensure_ascii=False)
+                    if cm.standardAnswer is not None
+                    else "",
                     cm.llmCode,
                     cm.llmOutput,
                     json.dumps(cm.executeResult, ensure_ascii=False)
