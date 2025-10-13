@@ -268,6 +268,7 @@ class UserInputExecuteService:
             executeResult=execute_result,
             cotTokens=response.cot_tokens,
             errorMsg=error_msg,
+            llm_code=input.llm_code,
         )
 
     def _extract_sql_content(self, content: str) -> str:

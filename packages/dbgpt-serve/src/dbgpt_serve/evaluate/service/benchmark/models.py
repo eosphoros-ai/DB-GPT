@@ -61,6 +61,7 @@ class AnswerExecuteModel:
     strategyConfig: Optional[DataCompareStrategyConfig] = None
     cotTokens: Optional[Any] = None
     cost_time: Optional[int] = None
+    llm_code: Optional[str] = None
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "AnswerExecuteModel":
@@ -83,6 +84,7 @@ class AnswerExecuteModel:
             strategyConfig=strategy_config,
             cotTokens=d.get("cotTokens"),
             cost_time=d.get("cost_time"),
+            llm_code=d.get("llm_code"),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -103,6 +105,7 @@ class AnswerExecuteModel:
             strategyConfig=cfg,
             cotTokens=self.cotTokens,
             cost_time=self.cost_time,
+            llm_code=self.llm_code,
         )
 
 

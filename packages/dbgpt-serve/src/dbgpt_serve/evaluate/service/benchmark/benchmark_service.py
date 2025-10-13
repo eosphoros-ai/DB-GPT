@@ -326,10 +326,10 @@ class BenchmarkService(
         )
 
         output_sets = BenchmarkDataSets[OutputType]()
-        output_list = []
+        output_list: List[OutputType] = []
 
-        written_batches = set()  # 记录已写入批次
-        complete_map = {}  # 记录任务完成状态，使用Dict[int, OutputType]
+        written_batches: set[int] = set()
+        complete_map: Dict[int, OutputType] = {}
 
         # 线程锁，保证线程安全
         lock = threading.Lock()
@@ -356,7 +356,6 @@ class BenchmarkService(
                     f" output={json.dumps(output.to_dict(), ensure_ascii=False)}"
                 )
 
-                # 线程安全地添加结果
                 with lock:
                     output_list.append(output)
 
@@ -490,15 +489,16 @@ class BenchmarkService(
                       input_file_path: str, output_file_path: str):
         """
             Post dispatch processing standard result compare LLM execute result
-             and write compare result to file
+            and write compare result to file
         """
-        self.user_input_execute_service.post_dispatch(
-            i,
-            config,
-            input_list,
-            None,
-            output_list[0].benchmark_data_sets.data_list,
-            input_file_path,
-            output_file_path,
-        )
+        for j, output_result in enumerate(output_list):
+            self.user_input_execute_service.post_dispatch(
+                i,
+                config,
+                input_list,
+                None,
+                output_result.benchmark_data_sets.data_list,
+                input_file_path,
+                output_file_path,
+            )
 
