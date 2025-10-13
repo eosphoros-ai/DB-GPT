@@ -246,7 +246,7 @@ class BenchmarkService(
 
         result_list = []
         for i in range(1, config.round_time + 1):
-            round_result_list = []
+            round_result_list: List[BenchmarkTaskResult[OutputType]] = []
 
             llm_index = 0
             for llm_code, thread_num in config.llm_thread_map.items():
@@ -271,7 +271,7 @@ class BenchmarkService(
                     round_result_list.append(llm_result)
                     llm_index += 1
 
-            self.user_input_execute_service.post_dispatch(
+            self.post_dispatch(
                 i,
                 config,
                 input_list,
@@ -483,3 +483,22 @@ class BenchmarkService(
 
                 self.trigger_executor.submit(batch_write_task)
                 written_batches.add(batch_index)
+
+    def post_dispatch(self, i: int, config: BenchmarkExecuteConfig,
+                      input_list: List[BaseInputModel],
+                      output_list: List[BenchmarkTaskResult[OutputType]],
+                      input_file_path: str, output_file_path: str):
+        """
+            Post dispatch processing standard result compare LLM execute result
+             and write compare result to file
+        """
+        self.user_input_execute_service.post_dispatch(
+            i,
+            config,
+            input_list,
+            None,
+            output_list[0].benchmark_data_sets.data_list,
+            input_file_path,
+            output_file_path,
+        )
+

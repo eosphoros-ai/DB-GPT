@@ -245,7 +245,7 @@ class ExcelFileParseService(FileParseService):
     def parse_standard_benchmark_sets(
         self, standard_excel_path: str
     ) -> List[AnswerExecuteModel]:
-        df = pd.read_excel(standard_excel_path, sheet_name="Sheet1")
+        df = pd.read_excel(standard_excel_path, sheet_name=0)
         outputs: List[AnswerExecuteModel] = []
         for _, row in df.iterrows():
             try:
@@ -334,9 +334,6 @@ class ExcelFileParseService(FileParseService):
             if extension.lower() not in [".xlsx", ".xls"]:
                 extension = ".xlsx"
 
-            # TODO 这里的文件名称需要加上评测任务ID，否则会导致每次的评测都是同一个文件名称，数据被覆盖
-            # TODO 需要保存评测任务记录
-            # TODO 需要修改output_file_path的逻辑，默认给一个文件路径和base_name，非前端传的必填字段
             output_file = output_dir / f"{base_name}_round{round_id}{extension}"
 
             # 创建输入数据映射，便于查找

@@ -1,6 +1,6 @@
 # app/services/user_input_execute_service.py
 import logging
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
@@ -61,7 +61,7 @@ class UserInputExecuteService:
         round_id: int,
         config: BenchmarkExecuteConfig,
         inputs: List[BaseInputModel],
-        left_outputs: List[AnswerExecuteModel],
+        left_outputs: Optional[List[AnswerExecuteModel]],
         right_outputs: List[AnswerExecuteModel],
         input_file_path: str,
         output_file_path: str,
@@ -97,7 +97,7 @@ class UserInputExecuteService:
                         config,
                     )
         except Exception as e:
-            print(f"[post_dispatch] compare error: {e}")
+            logger.error(f"[post_dispatch] execute compare error: {e}")
 
     def _execute_llm_compare_result(
         self,
@@ -113,8 +113,8 @@ class UserInputExecuteService:
         confirm_list: List[RoundAnswerConfirmModel] = []
 
         for inp in inputs:
-            left = left_map.get(inp.serialNo)
-            right = right_map.get(inp.serialNo)
+            left = left_map.get(inp.serial_no)
+            right = right_map.get(inp.serial_no)
 
             if left is None and right is None:
                 continue
@@ -153,8 +153,8 @@ class UserInputExecuteService:
                             left
                             if left
                             else AnswerExecuteModel(
-                                serialNo=inp.serialNo,
-                                analysisModelId=inp.analysisModelId,
+                                serialNo=inp.serial_no,
+                                analysisModelId=inp.analysis_model_id,
                                 question=inp.question,
                                 llmOutput=None,
                                 executeResult=None,
@@ -163,10 +163,10 @@ class UserInputExecuteService:
                         )
                         compare_result = res.compare_result
                 confirm = RoundAnswerConfirmModel(
-                    serialNo=inp.serialNo,
-                    analysisModelId=inp.analysisModelId,
+                    serialNo=inp.serial_no,
+                    analysisModelId=inp.analysis_model_id,
                     question=inp.question,
-                    selfDefineTags=inp.selfDefineTags,
+                    selfDefineTags=inp.self_define_tags,
                     prompt=inp.prompt,
                     standardAnswerSql=standard_sql,
                     strategyConfig=strategy_cfg,
