@@ -92,7 +92,7 @@ class FileParseService(ABC):
             ]
 
             # Load or create workbook and sheet
-            if output_file.exists():
+            if Path(output_file).exists():
                 workbook = load_workbook(str(output_file))
                 if "benchmark_compare_result" in workbook.sheetnames:
                     worksheet = workbook["benchmark_compare_result"]
@@ -421,7 +421,7 @@ class ExcelFileParseService(FileParseService):
             if extension.lower() not in [".xlsx", ".xls"]:
                 extension = ".xlsx"
 
-            output_file = output_dir / f"{base_name}_round{round_id}{extension}"
+            output_file = output_dir / f"{base_name}{extension}"
 
             # 创建输入数据映射，便于查找
             input_map = {inp.serial_no: inp for inp in inputs}
