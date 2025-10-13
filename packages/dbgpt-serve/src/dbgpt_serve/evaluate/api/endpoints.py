@@ -1,11 +1,13 @@
 import json
 import logging
+import asyncio
 from functools import cache
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
+from dbgpt.agent.core.schema import Status
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt_serve.core import Result
@@ -32,6 +34,37 @@ router = APIRouter()
 
 global_system_app: Optional[SystemApp] = None
 logger = logging.getLogger(__name__)
+
+def _run_benchmark_task_sync(
+    service: BenchmarkService,
+    evaluate_code: str,
+    scene_key: str,
+    scene_value: str,
+    input_file_path: str,
+    output_file_path: str,
+    model_list: List[str],
+):
+    """同步执行benchmark任务的辅助函数，用于在后台任务中运行"""
+    try:
+        # 创建新的事件循环来运行异步任务
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(
+                service.run_dataset_benchmark(
+                    evaluate_code,
+                    scene_key,
+                    scene_value,
+                    input_file_path,
+                    output_file_path,
+                    model_list,
+                )
+            )
+            logger.info(f"Benchmark task run sync finish, evaluate_code: {evaluate_code}")
+        finally:
+            loop.close()
+    except Exception as e:
+        logger.error(f"Benchmark task failed for evaluate_code: {evaluate_code}, error: {str(e)}")
 
 
 def get_service() -> Service:
@@ -232,24 +265,52 @@ async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int 
 @router.post("/execute_benchmark_task")
 async def execute_benchmark_task(
     request: BenchmarkServeRequest,
+    background_tasks: BackgroundTasks,
     service: BenchmarkService = Depends(get_benchmark_service),
 ) -> Result:
     """execute benchmark task
 
     Args:
-        request (EvaluateServeRequest): The request
-        service (Service): The service
+        request (BenchmarkServeRequest): The request
+        background_tasks (BackgroundTasks): FastAPI background tasks
+        service (BenchmarkService): The service
     Returns:
-        ServerResponse: The response
+        Result: The response
+    """
+    # 使用FastAPI的BackgroundTasks来执行后台任务
+    background_tasks.add_task(
+        _run_benchmark_task_sync,
+        service,
+        request.evaluate_code,
+        request.scene_key,
+        request.scene_value,
+        request.input_file_path,
+        request.output_file_path,
+        request.model_list,
+    )
+
+    # 立即返回成功响应
+    return Result.succ({
+        "evaluate_code": request.evaluate_code,
+        "status": Status.RUNNING.value
+    })
+
+
+@router.get("/benchmark_task_list")
+async def benchmark_task_list(
+    request: EvaluateServeRequest,
+    page: Optional[int] = Query(default=1, description="current page"),
+    page_size: Optional[int] = Query(default=20, description="page size"),
+    service: BenchmarkService = Depends(get_benchmark_service),
+) -> Result:
+    """
+        Query benchmark task list
     """
     return Result.succ(
-        await service.run_dataset_benchmark(
-            request.evaluate_code,
-            request.scene_key,
-            request.scene_value,
-            request.input_file_path,
-            request.output_file_path,
-            request.model_list,
+        service.get_list_by_page(
+            request,
+            page,
+            page_size,
         )
     )
 

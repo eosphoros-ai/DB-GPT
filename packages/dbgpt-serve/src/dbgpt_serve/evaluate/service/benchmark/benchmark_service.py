@@ -16,8 +16,7 @@ from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
-from dbgpt.util.benchmarks import StorageUtil
-from dbgpt.util import get_or_create_event_loop
+from dbgpt.util import get_or_create_event_loop, PaginationResult
 
 from ....core import BaseService
 from ....prompt.service.service import Service as PromptService
@@ -281,6 +280,8 @@ class BenchmarkService(
             )
             result_list.extend(round_result_list)
 
+        logger.info(f"Benchmark task completed successfully for evaluate_code:"
+                    f" {evaluate_code}, output_file_path: {output_file_path}")
         return result_list
 
     async def _build_benchmark_config(self, model_list, output_file_path,
@@ -501,4 +502,20 @@ class BenchmarkService(
                 input_file_path,
                 output_file_path,
             )
+
+    def get_list_by_page(
+        self, request: EvaluateServeRequest, page: int, page_size: int
+    ) -> PaginationResult[EvaluateServeResponse]:
+        """Get a list of Evaluate entities by page
+
+        Args:
+            request (EvaluateServeRequest): The request
+            page (int): The page number
+            page_size (int): The page size
+
+        Returns:
+            List[EvaluateServeResponse]: The response
+        """
+        query_request = request
+        return self.dao.get_list_page(query_request, page, page_size, ServeEntity.id.name)
 

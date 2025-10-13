@@ -84,6 +84,8 @@ class BenchmarkServeRequest(BaseModel):
     state: Optional[str] = Field(None, description="evaluation state")
     temperature: Optional[str] = Field(None, description="evaluation state")
     max_tokens: Optional[str] = Field(None, description="evaluation state")
+    gmt_create: Optional[str] = Field(None, description="create time")
+    gmt_modified: Optional[str] = Field(None, description="create time")
 
 
 class StorageType(Enum):
