@@ -63,48 +63,137 @@ class FileParseService(ABC):
         is_execute: bool,
         llm_count: int,
     ):
-        mode = "EXECUTE" if is_execute else "BUILD"
-        records = []
-        for cm in confirm_models:
-            row = dict(
-                serialNo=cm.serialNo,
-                analysisModelId=cm.analysisModelId,
-                question=cm.question,
-                selfDefineTags=cm.selfDefineTags,
-                prompt=cm.prompt,
-                standardAnswerSql=cm.standardAnswerSql,
-                llmOutput=cm.llmOutput,
-                executeResult=cm.executeResult,
-                errorMsg=cm.errorMsg,
-                compareResult=cm.compareResult.value if cm.compareResult else None,
+        """Write compare results to an Excel file instead of DB.
+
+        The output Excel file will be named as '<base>_round{round_id}.xlsx' and
+        sheet name is 'benchmark_compare_result'. If the file exists, it will
+        append rows; otherwise it will create a new file with headers.
+        """
+        try:
+            # Ensure output directory exists
+            output_dir = Path(path).parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Determine final excel file path: <base>_round{round_id}.xlsx
+            base_name = Path(path).stem
+            extension = Path(path).suffix
+            if extension.lower() not in [".xlsx", ".xls"]:
+                extension = ".xlsx"
+            output_file = output_dir / f"{base_name}_round{round_id}{extension}"
+
+            headers = [
+                "serialNo",
+                "analysisModelId",
+                "question",
+                "selfDefineTags",
+                "prompt",
+                "standardAnswerSql",
+                "llmOutput",
+                "executeResult",
+                "errorMsg",
+                "compareResult",
+            ]
+
+            # Load or create workbook and sheet
+            if output_file.exists():
+                workbook = load_workbook(str(output_file))
+                if "benchmark_compare_result" in workbook.sheetnames:
+                    worksheet = workbook["benchmark_compare_result"]
+                else:
+                    worksheet = workbook.create_sheet("benchmark_compare_result")
+                    # Write headers if new sheet
+                    for col_idx, header in enumerate(headers, 1):
+                        worksheet.cell(row=1, column=col_idx, value=header)
+            else:
+                workbook = Workbook()
+                worksheet = workbook.active
+                worksheet.title = "benchmark_compare_result"
+                # Write headers
+                for col_idx, header in enumerate(headers, 1):
+                    worksheet.cell(row=1, column=col_idx, value=header)
+
+            # Determine start row to append
+            start_row = worksheet.max_row + 1 if worksheet.max_row else 2
+
+            # Append rows
+            for idx, cm in enumerate(confirm_models):
+                row_data = [
+                    cm.serialNo,
+                    cm.analysisModelId,
+                    cm.question,
+                    cm.selfDefineTags,
+                    cm.prompt,
+                    cm.standardAnswerSql,
+                    cm.llmOutput,
+                    json.dumps(cm.executeResult, ensure_ascii=False)
+                    if cm.executeResult is not None
+                    else "",
+                    cm.errorMsg,
+                    cm.compareResult.value if cm.compareResult else None,
+                ]
+                for col_idx, value in enumerate(row_data, 1):
+                    worksheet.cell(row=start_row + idx, column=col_idx, value=value)
+
+            # Autosize columns (simple strategy)
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if cell.value and len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except Exception:
+                        pass
+                adjusted_width = min(max(max_length + 2, 10), 80)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+
+            workbook.save(str(output_file))
+            workbook.close()
+            logger.info(
+                f"[write_data_compare_result] compare written to Excel: {output_file}"
             )
-            records.append(row)
-        self._benchmark_dao.write_compare_results(
-            round_id=round_id,
-            mode=mode,
-            output_path=path,
-            records=records,
-            is_execute=is_execute,
-            llm_count=llm_count,
-        )
-        print(f"[write_data_compare_result] compare written to DB for: {path}")
+        except Exception as e:
+            logger.error(
+                f"[write_data_compare_result] write excel error for path={path}: {e}",
+                exc_info=True,
+            )
 
     def summary_and_write_multi_round_benchmark_result(
         self, output_path: str, round_id: int
     ) -> str:
-        summary_id = self._benchmark_dao.compute_and_save_summary(round_id, output_path)
-        summary = self._benchmark_dao.get_summary(round_id, output_path)
-        result = dict(
-            right=summary.right if summary else 0,
-            wrong=summary.wrong if summary else 0,
-            failed=summary.failed if summary else 0,
-            exception=summary.exception if summary else 0,
-        )
-        logger.info(
-            f"[summary] summary saved to DB for round={round_id},"
-            f" output_path={output_path} -> {result}"
-        )
-        return json.dumps(result, ensure_ascii=False)
+        """Compute summary from the Excel file and return JSON string.
+
+        It will read the '<base>_round{round_id}.xlsx' file and sheet
+        'benchmark_compare_result', then count the compareResult column
+        (RIGHT/WRONG/FAILED/EXCEPTION) to build summary.
+        """
+        try:
+            base_name = Path(output_path).stem
+            extension = Path(output_path).suffix
+            if extension.lower() not in [".xlsx", ".xls"]:
+                extension = ".xlsx"
+            excel_file = Path(output_path).parent / f"{base_name}_round{round_id}{extension}"
+            if not excel_file.exists():
+                logger.warning(f"summary excel not found: {excel_file}")
+                result = dict(right=0, wrong=0, failed=0, exception=0)
+                return json.dumps(result, ensure_ascii=False)
+
+            df = pd.read_excel(str(excel_file), sheet_name="benchmark_compare_result")
+            right = int((df["compareResult"] == "RIGHT").sum()) if "compareResult" in df.columns else 0
+            wrong = int((df["compareResult"] == "WRONG").sum()) if "compareResult" in df.columns else 0
+            failed = int((df["compareResult"] == "FAILED").sum()) if "compareResult" in df.columns else 0
+            exception = int((df["compareResult"] == "EXCEPTION").sum()) if "compareResult" in df.columns else 0
+
+            result = dict(right=right, wrong=wrong, failed=failed, exception=exception)
+            logger.info(
+                f"[summary] summary computed from Excel for round={round_id},"
+                f" output_path={output_path} -> {result}"
+            )
+            return json.dumps(result, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"summary compute error from excel: {e}", exc_info=True)
+            result = dict(right=0, wrong=0, failed=0, exception=0)
+            return json.dumps(result, ensure_ascii=False)
 
     def get_input_stream(self, location: str):
         """Get input stream from location
