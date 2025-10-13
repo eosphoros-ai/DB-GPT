@@ -122,6 +122,7 @@ class RoundAnswerConfirmModel:
     executeResult: Optional[Dict[str, List[str]]] = None
     errorMsg: Optional[str] = None
     compareResult: Optional[DataCompareResultEnum] = None
+    llmCode: Optional[str] = None
 
 
 class FileParseTypeEnum(Enum):

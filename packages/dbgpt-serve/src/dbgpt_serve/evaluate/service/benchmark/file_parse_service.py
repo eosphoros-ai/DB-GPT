@@ -75,11 +75,7 @@ class FileParseService(ABC):
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # Determine final excel file path: <base>_round{round_id}.xlsx
-            base_name = Path(path).stem
-            extension = Path(path).suffix
-            if extension.lower() not in [".xlsx", ".xls"]:
-                extension = ".xlsx"
-            output_file = output_dir / f"{base_name}_round{round_id}{extension}"
+            output_file = path
 
             headers = [
                 "serialNo",
@@ -88,6 +84,7 @@ class FileParseService(ABC):
                 "selfDefineTags",
                 "prompt",
                 "standardAnswerSql",
+                "llmCode",
                 "llmOutput",
                 "executeResult",
                 "errorMsg",
@@ -124,6 +121,7 @@ class FileParseService(ABC):
                     cm.selfDefineTags,
                     cm.prompt,
                     cm.standardAnswerSql,
+                    cm.llmCode,
                     cm.llmOutput,
                     json.dumps(cm.executeResult, ensure_ascii=False)
                     if cm.executeResult is not None
