@@ -274,6 +274,7 @@ class UserInputExecuteService:
                 logger.error(
                     f"[benchmark_task] queryResult error! sql = {sql}, errorMsg: {e}"
                 )
+                error_msg = str(e)
             logger.info(f"[benchmark_task] queryResult end! result = {execute_result}")
 
         return AnswerExecuteModel(
@@ -285,6 +286,8 @@ class UserInputExecuteService:
             cotTokens=response.cot_tokens,
             errorMsg=error_msg,
             llm_code=input.llm_code,
+            knowledge=input.knowledge,
+            prompt=input.prompt,
         )
 
     def _extract_sql_content(self, content: str) -> str:

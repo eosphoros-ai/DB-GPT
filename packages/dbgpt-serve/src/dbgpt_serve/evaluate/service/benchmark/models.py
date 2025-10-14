@@ -62,6 +62,8 @@ class AnswerExecuteModel:
     cotTokens: Optional[Any] = None
     cost_time: Optional[int] = None
     llm_code: Optional[str] = None
+    knowledge: Optional[str] = None
+    prompt: Optional[str] = None
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "AnswerExecuteModel":

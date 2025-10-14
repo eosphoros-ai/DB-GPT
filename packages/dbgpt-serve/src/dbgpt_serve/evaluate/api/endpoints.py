@@ -5,6 +5,7 @@ from functools import cache
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.agent.core.schema import Status
@@ -262,7 +263,7 @@ async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int 
     return Result.succ(detail)
 
 
-@router.post("/execute_benchmark_task")
+@router.post("/execute_benchmark_task", dependencies=[Depends(check_api_key)])
 async def execute_benchmark_task(
     request: BenchmarkServeRequest,
     background_tasks: BackgroundTasks,
@@ -296,7 +297,7 @@ async def execute_benchmark_task(
     })
 
 
-@router.get("/benchmark_task_list")
+@router.get("/benchmark_task_list", dependencies=[Depends(check_api_key)])
 async def benchmark_task_list(
     request: EvaluateServeRequest,
     page: Optional[int] = Query(default=1, description="current page"),
@@ -339,6 +340,52 @@ async def get_benchmark_table_rows(table: str, limit: int = 10):
     sql = f'SELECT * FROM "{table}" LIMIT :limit'
     rows = await manager.query(sql, {"limit": limit})
     return Result.succ({"table": table, "limit": limit, "rows": rows})
+
+
+@router.get("/benchmark_result_download", dependencies=[Depends(check_api_key)])
+async def download_benchmark_result(
+        evaluate_code: Optional[str] = Query(default=None, description="evaluate code"),
+        service: BenchmarkService = Depends(get_benchmark_service),
+):
+    """Download benchmark result file
+    
+    Args:
+        evaluate_code: The evaluation code to identify the benchmark result
+        service: The benchmark service instance
+        
+    Returns:
+        StreamingResponse: File download response
+        
+    Raises:
+        HTTPException: If evaluation code is missing or file not found
+    """
+    logger.info(f"download benchmark result: {evaluate_code}")
+    
+    if not evaluate_code:
+        raise HTTPException(status_code=400, detail="evaluate_code is required")
+    
+    try:
+        # 获取文件名和文件流
+        file_name, file_stream = await service.get_benchmark_file_stream(evaluate_code)
+
+        from urllib.parse import quote
+        
+        # 对文件名进行编码处理，支持中文和特殊字符
+        encoded_filename = quote(file_name)
+        
+        # 返回文件下载响应
+        return StreamingResponse(
+            content=file_stream,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}; filename={encoded_filename}",
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to download benchmark result for {evaluate_code}: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

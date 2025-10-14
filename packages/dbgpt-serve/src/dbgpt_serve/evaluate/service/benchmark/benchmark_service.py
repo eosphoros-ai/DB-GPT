@@ -7,7 +7,8 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Union, Any, Tuple
+import io
 
 from dbgpt.agent.core.schema import Status
 from dbgpt.component import ComponentType, SystemApp
@@ -481,7 +482,7 @@ class BenchmarkService(
                     except Exception as e:
                         logger.error(f"Batch write error: {e}")
 
-                self.trigger_executor.submit(batch_write_task)
+                batch_write_task()
                 written_batches.add(batch_index)
 
     def post_dispatch(self, i: int, config: BenchmarkExecuteConfig,
@@ -519,3 +520,53 @@ class BenchmarkService(
         query_request = request
         return self.dao.get_list_page(query_request, page, page_size, ServeEntity.id.name)
 
+    async def get_benchmark_file_stream(self, evaluate_code: str) -> Tuple[str, io.BytesIO]:
+        """Get benchmark result file stream for download
+
+        Args:
+            evaluate_code (str): The evaluation code
+
+        Returns:
+            Tuple[str, io.BytesIO]: File name and file stream
+
+        Raises:
+            Exception: If evaluation record not found or file not exists
+        """
+        if not evaluate_code:
+            raise Exception("evaluate_code is required")
+
+        # 1. 根据evaluate_code查询评测信息
+        try:
+            entity = self.dao.get_one({"evaluate_code": evaluate_code})
+            if not entity:
+                raise Exception(f"Evaluation record not found for code: {evaluate_code}")
+        except Exception as e:
+            logger.error(f"Failed to query evaluation record: {e}")
+            raise Exception(f"Failed to query evaluation record: {str(e)}")
+
+        # 2. 根据result的文件路径拿到文件
+        file_path = entity.result
+        if not file_path:
+            raise Exception(f"No result file path found for evaluate_code: {evaluate_code}")
+
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            raise Exception(f"Result file not found: {file_path}")
+
+        try:
+            # 读取文件内容到内存
+            with open(file_path, 'rb') as file:
+                file_content = file.read()
+            
+            # 创建字节流
+            file_stream = io.BytesIO(file_content)
+            
+            # 获取文件名
+            file_name = os.path.basename(file_path)
+            
+            logger.info(f"Successfully prepared file stream for download: {file_name}")
+            return file_name, file_stream
+            
+        except Exception as e:
+            logger.error(f"Failed to read result file {file_path}: {e}")
+            raise Exception(f"Failed to read result file: {str(e)}")

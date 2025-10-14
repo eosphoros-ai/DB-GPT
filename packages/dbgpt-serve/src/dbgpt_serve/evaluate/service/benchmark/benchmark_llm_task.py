@@ -70,7 +70,9 @@ class BenchmarkLLMTask:
             return None
 
         if response.has_text:
-            return ReasoningResponse(content=self._get_answer(response.text))
+            return ReasoningResponse(cot_tokens=response.usage.get("total_tokens", 0),
+                                     think=response.thinking_text if response.has_thinking else None,
+                                     content=self._get_answer(response.text))
         else:
             return None
 
