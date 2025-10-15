@@ -161,8 +161,11 @@ class BenchmarkDataManager(BaseComponent):
             "\n",
             "\x00",
         ]
+        while name and name[-1] in invalid_chars:
+            name = name[:-1]
         for ch in invalid_chars:
-            name = name.replace(ch, "_")
+            if ch in name:
+                name = name.replace(ch, "_")
         while "__" in name:
             name = name.replace("__", "_")
         if name and not (name[0].isalpha() or name[0] == "_"):
@@ -303,9 +306,10 @@ class BenchmarkDataManager(BaseComponent):
 
     def _sanitize_table_name(self, name: str) -> str:
         """Normalize table names using mappings"""
-        mapped_name = self._table_mappings.get(name.lower())
+        mapped_name = self._table_mappings.get(name.lower(), name)
+        if mapped_name is None:
+            mapped_name = name or ""
 
-        # Clean special characters
         invalid_chars = [
             "-",
             " ",
@@ -324,12 +328,15 @@ class BenchmarkDataManager(BaseComponent):
             "{",
             "}",
         ]
+        while mapped_name and mapped_name[-1] in invalid_chars:
+            mapped_name = mapped_name[:-1]
         for char in invalid_chars:
-            mapped_name = mapped_name.replace(char, "_")
+            if char in mapped_name:
+                mapped_name = mapped_name.replace(char, "_")
         while "__" in mapped_name:
             mapped_name = mapped_name.replace("__", "_")
 
-        return mapped_name.lower()
+        return (mapped_name or "").lower()
 
     async def _download_repo_contents(self, repo_url: str) -> str:
         """Download repository with caching"""
