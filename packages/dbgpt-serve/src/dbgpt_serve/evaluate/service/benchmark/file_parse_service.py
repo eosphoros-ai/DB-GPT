@@ -3,11 +3,11 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import List, Any, Dict
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
-from pathlib import Path
-from openpyxl import load_workbook, Workbook
+from openpyxl import Workbook, load_workbook
 
 from dbgpt.util.benchmarks.ExcelUtils import ExcelUtils
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
@@ -16,15 +16,16 @@ from .models import (
     AnswerExecuteModel,
     BaseInputModel,
     BenchmarkDataSets,
+    BenchmarkExecuteConfig,
     DataCompareStrategyConfig,
-    RoundAnswerConfirmModel, BenchmarkExecuteConfig, OutputType,
+    OutputType,
+    RoundAnswerConfirmModel,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class FileParseService(ABC):
-
     def __init__(self):
         self._benchmark_dao = BenchmarkResultDao()
 
@@ -32,7 +33,7 @@ class FileParseService(ABC):
         self._column_config_file_path = os.path.join(
             os.path.dirname(__file__),
             "template",
-            "benchmark_column_config_template.json"
+            "benchmark_column_config_template.json",
         )
 
     @abstractmethod
@@ -174,17 +175,35 @@ class FileParseService(ABC):
             extension = Path(output_path).suffix
             if extension.lower() not in [".xlsx", ".xls"]:
                 extension = ".xlsx"
-            excel_file = Path(output_path).parent / f"{base_name}_round{round_id}{extension}"
+            excel_file = (
+                Path(output_path).parent / f"{base_name}_round{round_id}{extension}"
+            )
             if not excel_file.exists():
                 logger.warning(f"summary excel not found: {excel_file}")
                 result = dict(right=0, wrong=0, failed=0, exception=0)
                 return json.dumps(result, ensure_ascii=False)
 
             df = pd.read_excel(str(excel_file), sheet_name="benchmark_compare_result")
-            right = int((df["compareResult"] == "RIGHT").sum()) if "compareResult" in df.columns else 0
-            wrong = int((df["compareResult"] == "WRONG").sum()) if "compareResult" in df.columns else 0
-            failed = int((df["compareResult"] == "FAILED").sum()) if "compareResult" in df.columns else 0
-            exception = int((df["compareResult"] == "EXCEPTION").sum()) if "compareResult" in df.columns else 0
+            right = (
+                int((df["compareResult"] == "RIGHT").sum())
+                if "compareResult" in df.columns
+                else 0
+            )
+            wrong = (
+                int((df["compareResult"] == "WRONG").sum())
+                if "compareResult" in df.columns
+                else 0
+            )
+            failed = (
+                int((df["compareResult"] == "FAILED").sum())
+                if "compareResult" in df.columns
+                else 0
+            )
+            exception = (
+                int((df["compareResult"] == "EXCEPTION").sum())
+                if "compareResult" in df.columns
+                else 0
+            )
 
             result = dict(right=right, wrong=wrong, failed=failed, exception=exception)
             logger.info(
@@ -223,10 +242,10 @@ class FileParseService(ABC):
         """
         Parse standard benchmark sets from file.
         This method must be implemented by subclasses.
-        
+
         Args:
             standard_excel_path: Path to the standard benchmark file
-            
+
         Returns:
             List[AnswerExecuteModel]: List of parsed answer execute models
         """
@@ -234,14 +253,14 @@ class FileParseService(ABC):
 
     @abstractmethod
     def write_multi_round_benchmark_result(
-            self,
-            output_file_path: str,
-            round_id: int,
-            config: BenchmarkExecuteConfig,
-            inputs: List[BaseInputModel],
-            outputs: List[OutputType],
-            start_index: int,
-            offset: int,
+        self,
+        output_file_path: str,
+        round_id: int,
+        config: BenchmarkExecuteConfig,
+        inputs: List[BaseInputModel],
+        outputs: List[OutputType],
+        start_index: int,
+        offset: int,
     ) -> bool:
         """
         Write Benchmark Task Multi round Result
@@ -257,9 +276,7 @@ class FileParseService(ABC):
         """
 
 
-
 class ExcelFileParseService(FileParseService):
-
     def parse_input_sets(self, path: str) -> BenchmarkDataSets:
         """
         Parse input sets from excel file
@@ -327,9 +344,7 @@ class ExcelFileParseService(FileParseService):
                 if workbook is not None:
                     workbook.close()
             except Exception as e:
-                logger.error(
-                    f"close workbook error, path: {path}, errorMsg: {e}"
-                )
+                logger.error(f"close workbook error, path: {path}, errorMsg: {e}")
 
         return input_sets
 
@@ -355,17 +370,15 @@ class ExcelFileParseService(FileParseService):
                 except Exception:
                     order_by = True
 
-            std_result = None
+            std_result: Optional[List[Dict[str, List[str]]]] = None
             if not pd.isna(row.get("标准结果")):
-                try:
-                    std_result = json.loads(row.get("标准结果"))
-                except Exception:
-                    std_result = None
+                std_result_raw = str(row.get("标准结果"))
+                std_result = self._parse_multi_standard_result(std_result_raw)
 
             strategy_config = DataCompareStrategyConfig(
                 strategy="CONTAIN_MATCH",
                 order_by=order_by,
-                standard_result=[std_result]
+                standard_result=std_result
                 if std_result is not None
                 else None,  # 使用 list
             )
@@ -382,14 +395,14 @@ class ExcelFileParseService(FileParseService):
         return outputs
 
     def write_multi_round_benchmark_result(
-            self,
-            output_file_path: str,
-            round_id: int,
-            config: BenchmarkExecuteConfig,
-            inputs: List[BaseInputModel],
-            outputs: List[OutputType],
-            start_index: int,
-            offset: int,
+        self,
+        output_file_path: str,
+        round_id: int,
+        config: BenchmarkExecuteConfig,
+        inputs: List[BaseInputModel],
+        outputs: List[OutputType],
+        start_index: int,
+        offset: int,
     ) -> bool:
         """
         Write the benchmark Result to Excel File With Multi Round
@@ -472,8 +485,8 @@ class ExcelFileParseService(FileParseService):
                 for col_idx, header in enumerate(headers, 1):
                     worksheet.cell(row=1, column=col_idx, value=header)
 
-            # 计算写入的起始行号
-            # 公式：start_index + offset + 2（+1是因为Excel行号从1开始，+1是因为表头占一行）
+            # 计算写入的起始行号 公式：start_index + offset + 2
+            # (+1是因为Excel行号从1开始，+1是因为表头占一行)
             write_start_row = start_index + offset + 2
 
             # 写入数据行
@@ -492,9 +505,7 @@ class ExcelFileParseService(FileParseService):
                         if cell.value and len(str(cell.value)) > max_length:
                             max_length = len(str(cell.value))
                     except Exception as e:
-                        logger.warning(
-                            f"error while compute column length: {str(e)}"
-                        )
+                        logger.warning(f"error while compute column length: {str(e)}")
                 # 设置列宽，最小10，最大50
                 adjusted_width = min(max(max_length + 2, 10), 50)
                 worksheet.column_dimensions[column_letter].width = adjusted_width
@@ -516,13 +527,13 @@ class ExcelFileParseService(FileParseService):
             return False
 
     def _get_value_by_source_type(
-            self,
-            field: str,
-            source_type: str,
-            processor_type: str,
-            input_data,
-            output,
-            round_id: int
+        self,
+        field: str,
+        source_type: str,
+        processor_type: str,
+        input_data,
+        output,
+        round_id: int,
     ) -> Any:
         """
         Get the value based on the source type
@@ -576,11 +587,7 @@ class ExcelFileParseService(FileParseService):
                         else ""
                     )
                 else:
-                    value = (
-                        str(output.executeResult)
-                        if output.executeResult
-                        else ""
-                    )
+                    value = str(output.executeResult) if output.executeResult else ""
             elif field == "errorMsg":
                 value = output.errorMsg
             elif field == "traceId":
@@ -616,6 +623,46 @@ class ExcelFileParseService(FileParseService):
         else:
             return str(value) if value is not None else ""
 
+    def _parse_multi_standard_result(
+        self, std_result_raw: str
+    ) -> Optional[List[Dict[str, List[str]]]]:
+        """
+        Parse multiple standard results from raw string data.
+
+        Handles multiple results separated by newlines and parses each line as a dict.
+
+        Args:
+            std_result_raw (str): Raw standard result string with multiple lines
+
+        Returns:
+            Optional[List[Dict[str, List[str]]]]: List of parsed dictionaries,
+            or None if parsing fails or no valid data
+        """
+        try:
+            std_result_raw = std_result_raw.strip()
+            if not std_result_raw:
+                return None
+
+            # 处理多个结果，通过换行符分隔
+            result_lines = std_result_raw.split("\n")
+            result_list = []
+
+            for line in result_lines:
+                line = line.strip()
+                if line:
+                    try:
+                        result_list.append(json.loads(line))
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to parse line as JSON: {line}, error: {e}"
+                        )
+                        continue
+
+            return result_list if result_list else None
+        except Exception as e:
+            logger.error(f"parse multiple standard results error: {e}")
+            return None
+
     def _load_column_config(self) -> List[Dict]:
         """
         Load column configuration from JSON file
@@ -624,10 +671,12 @@ class ExcelFileParseService(FileParseService):
             List[Dict]: List of column configurations
         """
         try:
-            with open(self._column_config_file_path, 'r', encoding='utf-8') as file:
+            with open(self._column_config_file_path, "r", encoding="utf-8") as file:
                 config_data = json.load(file)
                 return config_data.get("columns", [])
         except Exception as e:
-            logger.error(f"Failed to load column configuration file: {e},"
-                         f" using default configuration")
+            logger.error(
+                f"Failed to load column configuration file: {e},"
+                f" using default configuration"
+            )
             raise ValueError("Failed to load column configuration file")

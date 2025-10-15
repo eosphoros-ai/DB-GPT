@@ -18,7 +18,12 @@ class BenchmarkModeTypeEnum(str, Enum):
 class DataCompareStrategyConfig:
     strategy: str  # "EXACT_MATCH" | "CONTAIN_MATCH"
     order_by: bool = True
-    standard_result: Optional[List[Dict[str, List[str]]]] = None  # 改为 list[dict]
+    """
+    Standard answer, each dict in the list represents a reference answer
+    containing multiple columns of data. If any reference answer is matched,
+    the result is considered correct
+    """
+    standard_result: Optional[List[Dict[str, List[str]]]] = None
 
 
 class DataCompareResultEnum(str, Enum):

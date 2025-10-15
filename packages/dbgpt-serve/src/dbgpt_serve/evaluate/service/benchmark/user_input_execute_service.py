@@ -1,6 +1,6 @@
 # app/services/user_input_execute_service.py
 import logging
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Optional, Union
 
 from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
@@ -12,13 +12,16 @@ from .file_parse_service import FileParseService
 from .models import (
     AnswerExecuteModel,
     BaseInputModel,
+    BenchmarkDataSets,
     BenchmarkExecuteConfig,
     BenchmarkModeTypeEnum,
     DataCompareResultEnum,
     DataCompareStrategyConfig,
+    FileParseTypeEnum,
     InputType,
+    OutputType,
     ReasoningResponse,
-    RoundAnswerConfirmModel, OutputType, FileParseTypeEnum, BenchmarkDataSets,
+    RoundAnswerConfirmModel,
 )
 
 BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
@@ -27,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class UserInputExecuteService:
-
     def __init__(
         self, file_service: FileParseService, compare_service: DataCompareService
     ):
@@ -116,7 +118,9 @@ class UserInputExecuteService:
         confirm_list: List[RoundAnswerConfirmModel] = []
 
         # compute unique llm_count across all right answers
-        llm_codes = set([a.llm_code for a in right_answers if getattr(a, "llm_code", None)])
+        llm_codes = set(
+            [a.llm_code for a in right_answers if getattr(a, "llm_code", None)]
+        )
         llm_count = len(llm_codes) if llm_codes else len(right_answers)
 
         for inp in inputs:
@@ -133,7 +137,8 @@ class UserInputExecuteService:
                 standard_sql = left.llmOutput
                 if config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE:
                     strategy_cfg = left.strategyConfig
-                    # 优先使用左侧的执行结果作为标准答案；若无，则尝试从策略配置的 standard_result 取第一项
+                    # 优先使用左侧的执行结果作为标准答案；若无，
+                    # 则尝试从策略配置的 standard_result 取第一项
                     if left.executeResult is not None:
                         standard_answer = left.executeResult
                     elif left.strategyConfig and left.strategyConfig.standard_result:
@@ -149,7 +154,9 @@ class UserInputExecuteService:
                     strategy_cfg = DataCompareStrategyConfig(
                         strategy="EXACT_MATCH",
                         order_by=True,
-                        standard_result=standard_result_list if standard_result_list else None,
+                        standard_result=standard_result_list
+                        if standard_result_list
+                        else None,
                     )
 
             # for each right answer (per model)
@@ -166,7 +173,9 @@ class UserInputExecuteService:
                         compare_result = DataCompareResultEnum.FAILED
                     else:
                         res = self.compare_service.compare(
-                            left if left else AnswerExecuteModel(
+                            left
+                            if left
+                            else AnswerExecuteModel(
                                 serialNo=inp.serial_no,
                                 analysisModelId=inp.analysis_model_id,
                                 question=inp.question,
@@ -266,7 +275,7 @@ class UserInputExecuteService:
         error_msg = None
 
         if config.execute_llm_result:
-            logger.info("[benchmark_task] queryResult start!")
+            logger.info(f"[benchmark_task] queryResult start!, sql:{sql}")
             try:
                 result: List[Dict] = await get_benchmark_manager().query(sql)
                 execute_result = self._convert_query_result_to_column_format(result)
@@ -275,7 +284,7 @@ class UserInputExecuteService:
                     f"[benchmark_task] queryResult error! sql = {sql}, errorMsg: {e}"
                 )
                 error_msg = str(e)
-            logger.info(f"[benchmark_task] queryResult end! result = {execute_result}")
+            logger.info(f"[benchmark_task] queryResult end!")
 
         return AnswerExecuteModel(
             serialNo=input.serial_no,
@@ -340,11 +349,11 @@ class UserInputExecuteService:
 
     def _process_sql_db_schema(self, sql: str) -> str:
         """
-            Process SQL remove database schema to compatible with SQLite syntax
+        Process SQL remove database schema to compatible with SQLite syntax
         """
         if not sql or not isinstance(sql, str):
             return sql
-            
+
         # only replace the "ant_icube_dev." prefix
         return sql.replace(BENCHMARK_DEFAULT_DB_SCHEMA, "")
 
@@ -374,5 +383,5 @@ class UserInputExecuteService:
             bool: Returns True if write is successful, False otherwise
         """
         return self.file_service.write_multi_round_benchmark_result(
-            output_file_path, round_id, config, inputs, outputs, start_index, offset)
-
+            output_file_path, round_id, config, inputs, outputs, start_index, offset
+        )

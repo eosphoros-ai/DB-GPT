@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -7,8 +8,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any, Tuple
-import io
+from typing import Dict, List, Optional, Tuple, Union
 
 from dbgpt.agent.core.schema import Status
 from dbgpt.component import ComponentType, SystemApp
@@ -17,18 +17,23 @@ from dbgpt.core import LLMClient
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
-from dbgpt.util import get_or_create_event_loop, PaginationResult
+from dbgpt.util import PaginationResult, get_or_create_event_loop
 
 from ....core import BaseService
 from ....prompt.service.service import Service as PromptService
 from ....rag.service.service import Service as RagService
 from ....rag.storage_manager import StorageManager
-from ...api.schemas import EvaluateServeRequest, EvaluateServeResponse, StorageType, EvaluationScene
+from ...api.schemas import (
+    EvaluateServeRequest,
+    EvaluateServeResponse,
+    EvaluationScene,
+    StorageType,
+)
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
 from .benchmark_llm_task import BenchmarkLLMTask
 from .data_compare_service import DataCompareService
-from .file_parse_service import ExcelFileParseService, FileParseService
+from .file_parse_service import ExcelFileParseService
 from .models import (
     BaseInputModel,
     BenchmarkDataSets,
@@ -49,15 +54,13 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
+# TODO 需要修改为正式文件
 STANDARD_BENCHMARK_FILE_PATH = os.path.join(
     BENCHMARK_DATA_ROOT_PATH,
-    "2025_07_27_public_500_standard_benchmark_question_list_v2_local_test.xlsx"
+    "2025_07_27_public_500_standard_benchmark_question_list_multi_anwser.xlsx",
 )
 
-BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(
-    BENCHMARK_DATA_ROOT_PATH,
-    "result"
-)
+BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")
 
 
 def get_rag_service(system_app) -> RagService:
@@ -94,8 +97,9 @@ class BenchmarkService(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
         )
 
-        self.output_base_file_name = f"{datetime.now().strftime('%Y%m%d')}_multi_round_benchmark_result.xlsx"
-
+        self.output_base_file_name = (
+            f"{datetime.now().strftime('%Y%m%d%H%M')}_multi_round_benchmark_result.xlsx"
+        )
 
     def init_app(self, system_app: SystemApp) -> None:
         """Initialize the service
@@ -127,7 +131,6 @@ class BenchmarkService(
         ).create()
         return DefaultLLMClient(worker_manager, True)
 
-
     def create_benchmark_task(
         self,
         config: BenchmarkExecuteConfig,
@@ -135,7 +138,7 @@ class BenchmarkService(
         scene_key: str,
         scene_value: str,
         input_file_path: str,
-        output_file_path: str
+        output_file_path: str,
     ) -> bool:
         """
         Save the benchmark task to the database
@@ -155,20 +158,24 @@ class BenchmarkService(
                 evaluate_code=evaluate_code,
                 scene_key=scene_key,
                 scene_value=scene_value,
-                datasets_name=os.path.basename(input_file_path) if input_file_path else None,
+                datasets_name=os.path.basename(input_file_path)
+                if input_file_path
+                else None,
                 datasets=None,
                 storage_type=StorageType.FILE.value,
                 parallel_num=1,
                 state=Status.RUNNING.value,
                 result=output_file_path,
                 context={
-                    "benchmark_config": json.dumps(config.to_dict(), ensure_ascii=False),
+                    "benchmark_config": json.dumps(
+                        config.to_dict(), ensure_ascii=False
+                    ),
                 },
                 user_id=None,
                 user_name=None,
                 sys_code="benchmark_system",
             )
-            
+
             response = self.create(request_data)
             logger.info(
                 f"Successfully saved benchmark task to database: "
@@ -184,7 +191,9 @@ class BenchmarkService(
             )
             return False
 
-    def _generate_output_file_full_path(self, output_file_path: str, evaluate_code: str) -> str:
+    def _generate_output_file_full_path(
+        self, output_file_path: str, evaluate_code: str
+    ) -> str:
         """
         Generate the complete output file path,
         including the evaluate_code subfolder and default filename
@@ -229,15 +238,22 @@ class BenchmarkService(
         if not scene_key:
             scene_key = EvaluationScene.DATASET.value
 
-        output_file_path = (
-            self._generate_output_file_full_path(output_file_path, evaluate_code)
+        output_file_path = self._generate_output_file_full_path(
+            output_file_path, evaluate_code
         )
 
-        config = await self._build_benchmark_config(model_list, output_file_path,
-                                                    evaluate_code, scene_key)
+        config = await self._build_benchmark_config(
+            model_list, output_file_path, evaluate_code, scene_key
+        )
         # save benchmark task
-        self.create_benchmark_task(config, evaluate_code, scene_key, scene_value,
-                                   input_file_path, output_file_path)
+        self.create_benchmark_task(
+            config,
+            evaluate_code,
+            scene_key,
+            scene_value,
+            input_file_path,
+            output_file_path,
+        )
 
         # read input file
         input_list: List[BaseInputModel] = (
@@ -281,12 +297,15 @@ class BenchmarkService(
             )
             result_list.extend(round_result_list)
 
-        logger.info(f"Benchmark task completed successfully for evaluate_code:"
-                    f" {evaluate_code}, output_file_path: {output_file_path}")
+        logger.info(
+            f"Benchmark task completed successfully for evaluate_code:"
+            f" {evaluate_code}, output_file_path: {output_file_path}"
+        )
         return result_list
 
-    async def _build_benchmark_config(self, model_list, output_file_path,
-                                      evaluate_code, scene_key) -> BenchmarkExecuteConfig:
+    async def _build_benchmark_config(
+        self, model_list, output_file_path, evaluate_code, scene_key
+    ) -> BenchmarkExecuteConfig:
         config = BenchmarkExecuteConfig(
             benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
             standard_file_path=STANDARD_BENCHMARK_FILE_PATH,
@@ -320,7 +339,9 @@ class BenchmarkService(
         """
         result = BenchmarkTaskResult[OutputType]()
         result.trace_id = uuid.uuid4().hex
-        result.task_id = config.evaluate_code if config.evaluate_code else uuid.uuid4().hex
+        result.task_id = (
+            config.evaluate_code if config.evaluate_code else uuid.uuid4().hex
+        )
         result.start_time = datetime.now()
 
         executor = ThreadPoolExecutor(
@@ -389,7 +410,7 @@ class BenchmarkService(
         return result
 
     async def execute(
-            self, config: BenchmarkExecuteConfig, input: InputType
+        self, config: BenchmarkExecuteConfig, input: InputType
     ) -> Union[OutputType, None]:
         """
         Execute LLM Benchmark Task
@@ -405,16 +426,16 @@ class BenchmarkService(
                 llm_client=self.llm_client, model_name=input.llm_code
             )
 
-            response: ReasoningResponse = await (
-                benchmark_llm_task_service.invoke_llm(prompt=input.prompt)
+            response: ReasoningResponse = await benchmark_llm_task_service.invoke_llm(
+                prompt=input.prompt
             )
 
             # 3. 组装评测输出
-            return await self.user_input_execute_service.build_output(config, input, response)
-        except Exception as e:
-            logger.error(
-                f"execute benchmark error!  error: {e}"
+            return await self.user_input_execute_service.build_output(
+                config, input, response
             )
+        except Exception as e:
+            logger.error(f"execute benchmark error!  error: {e}")
         return None
 
     def check_and_trigger_batch(
@@ -485,13 +506,18 @@ class BenchmarkService(
                 batch_write_task()
                 written_batches.add(batch_index)
 
-    def post_dispatch(self, i: int, config: BenchmarkExecuteConfig,
-                      input_list: List[BaseInputModel],
-                      output_list: List[BenchmarkTaskResult[OutputType]],
-                      input_file_path: str, output_file_path: str):
+    def post_dispatch(
+        self,
+        i: int,
+        config: BenchmarkExecuteConfig,
+        input_list: List[BaseInputModel],
+        output_list: List[BenchmarkTaskResult[OutputType]],
+        input_file_path: str,
+        output_file_path: str,
+    ):
         """
-            Post dispatch processing standard result compare LLM execute result
-            and write compare result to file
+        Post dispatch processing standard result compare LLM execute result
+        and write compare result to file
         """
         for j, output_result in enumerate(output_list):
             self.user_input_execute_service.post_dispatch(
@@ -518,9 +544,13 @@ class BenchmarkService(
             List[EvaluateServeResponse]: The response
         """
         query_request = request
-        return self.dao.get_list_page(query_request, page, page_size, ServeEntity.id.name)
+        return self.dao.get_list_page(
+            query_request, page, page_size, ServeEntity.id.name
+        )
 
-    async def get_benchmark_file_stream(self, evaluate_code: str) -> Tuple[str, io.BytesIO]:
+    async def get_benchmark_file_stream(
+        self, evaluate_code: str
+    ) -> Tuple[str, io.BytesIO]:
         """Get benchmark result file stream for download
 
         Args:
@@ -539,7 +569,9 @@ class BenchmarkService(
         try:
             entity = self.dao.get_one({"evaluate_code": evaluate_code})
             if not entity:
-                raise Exception(f"Evaluation record not found for code: {evaluate_code}")
+                raise Exception(
+                    f"Evaluation record not found for code: {evaluate_code}"
+                )
         except Exception as e:
             logger.error(f"Failed to query evaluation record: {e}")
             raise Exception(f"Failed to query evaluation record: {str(e)}")
@@ -547,7 +579,9 @@ class BenchmarkService(
         # 2. 根据result的文件路径拿到文件
         file_path = entity.result
         if not file_path:
-            raise Exception(f"No result file path found for evaluate_code: {evaluate_code}")
+            raise Exception(
+                f"No result file path found for evaluate_code: {evaluate_code}"
+            )
 
         # 检查文件是否存在
         if not os.path.exists(file_path):
@@ -555,18 +589,18 @@ class BenchmarkService(
 
         try:
             # 读取文件内容到内存
-            with open(file_path, 'rb') as file:
+            with open(file_path, "rb") as file:
                 file_content = file.read()
-            
+
             # 创建字节流
             file_stream = io.BytesIO(file_content)
-            
+
             # 获取文件名
             file_name = os.path.basename(file_path)
-            
+
             logger.info(f"Successfully prepared file stream for download: {file_name}")
             return file_name, file_stream
-            
+
         except Exception as e:
             logger.error(f"Failed to read result file {file_path}: {e}")
             raise Exception(f"Failed to read result file: {str(e)}")

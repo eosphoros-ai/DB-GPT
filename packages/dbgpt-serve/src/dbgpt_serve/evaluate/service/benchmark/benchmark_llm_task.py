@@ -3,7 +3,9 @@ from typing import Optional, Union
 
 from dbgpt.core import HumanPromptTemplate, LLMClient, ModelMessage, ModelRequest
 from dbgpt_serve.evaluate.service.benchmark.models import ReasoningResponse
-from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import get_benchmark_manager
+from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
+    get_benchmark_manager,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ class BenchmarkLLMTask:
     ) -> Union[ReasoningResponse, None]:
         """
         Invoke by LLM.
-        
+
         Args:
             prompt (Optional[str]): The prompt to use for the LLM.
             **kwargs: Keyword arguments for variable replacement in prompt template.
@@ -46,9 +48,9 @@ class BenchmarkLLMTask:
         template = HumanPromptTemplate.from_template(
             template=prompt, template_is_strict=False
         )
-        if self.dialect and 'dialect' not in kwargs:
-            kwargs['dialect'] = self.dialect
-        
+        if self.dialect and "dialect" not in kwargs:
+            kwargs["dialect"] = self.dialect
+
         messages = template.format_messages(**kwargs)
 
         # use default model if needed
@@ -70,9 +72,11 @@ class BenchmarkLLMTask:
             return None
 
         if response.has_text:
-            return ReasoningResponse(cot_tokens=response.usage.get("total_tokens", 0),
-                                     think=response.thinking_text if response.has_thinking else None,
-                                     content=self._get_answer(response.text))
+            return ReasoningResponse(
+                cot_tokens=response.usage.get("total_tokens", 0),
+                think=response.thinking_text if response.has_thinking else None,
+                content=self._get_answer(response.text),
+            )
         else:
             return None
 

@@ -1,10 +1,10 @@
+import asyncio
 import json
 import logging
-import asyncio
 from functools import cache
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -36,6 +36,7 @@ router = APIRouter()
 global_system_app: Optional[SystemApp] = None
 logger = logging.getLogger(__name__)
 
+
 def _run_benchmark_task_sync(
     service: BenchmarkService,
     evaluate_code: str,
@@ -61,11 +62,15 @@ def _run_benchmark_task_sync(
                     model_list,
                 )
             )
-            logger.info(f"Benchmark task run sync finish, evaluate_code: {evaluate_code}")
+            logger.info(
+                f"Benchmark task run sync finish, evaluate_code: {evaluate_code}"
+            )
         finally:
             loop.close()
     except Exception as e:
-        logger.error(f"Benchmark task failed for evaluate_code: {evaluate_code}, error: {str(e)}")
+        logger.error(
+            f"Benchmark task failed for evaluate_code: {evaluate_code}, error: {str(e)}"
+        )
 
 
 def get_service() -> Service:
@@ -291,10 +296,9 @@ async def execute_benchmark_task(
     )
 
     # 立即返回成功响应
-    return Result.succ({
-        "evaluate_code": request.evaluate_code,
-        "status": Status.RUNNING.value
-    })
+    return Result.succ(
+        {"evaluate_code": request.evaluate_code, "status": Status.RUNNING.value}
+    )
 
 
 @router.get("/benchmark_task_list", dependencies=[Depends(check_api_key)])
@@ -305,7 +309,7 @@ async def benchmark_task_list(
     service: BenchmarkService = Depends(get_benchmark_service),
 ) -> Result:
     """
-        Query benchmark task list
+    Query benchmark task list
     """
     return Result.succ(
         service.get_list_by_page(
@@ -344,47 +348,51 @@ async def get_benchmark_table_rows(table: str, limit: int = 10):
 
 @router.get("/benchmark_result_download", dependencies=[Depends(check_api_key)])
 async def download_benchmark_result(
-        evaluate_code: Optional[str] = Query(default=None, description="evaluate code"),
-        service: BenchmarkService = Depends(get_benchmark_service),
+    evaluate_code: Optional[str] = Query(default=None, description="evaluate code"),
+    service: BenchmarkService = Depends(get_benchmark_service),
 ):
     """Download benchmark result file
-    
+
     Args:
         evaluate_code: The evaluation code to identify the benchmark result
         service: The benchmark service instance
-        
+
     Returns:
         StreamingResponse: File download response
-        
+
     Raises:
         HTTPException: If evaluation code is missing or file not found
     """
     logger.info(f"download benchmark result: {evaluate_code}")
-    
+
     if not evaluate_code:
         raise HTTPException(status_code=400, detail="evaluate_code is required")
-    
+
     try:
         # 获取文件名和文件流
         file_name, file_stream = await service.get_benchmark_file_stream(evaluate_code)
 
         from urllib.parse import quote
-        
+
         # 对文件名进行编码处理，支持中文和特殊字符
         encoded_filename = quote(file_name)
-        
+
         # 返回文件下载响应
         return StreamingResponse(
             content=file_stream,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
-                "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}; filename={encoded_filename}",
-                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            }
+                "Content-Disposition": f"attachment; filename*=UTF-8''"
+                f"{encoded_filename}; filename={encoded_filename}",
+                "Content-Type": "application/vnd.openxmlformats-"
+                "officedocument.spreadsheetml.sheet",
+            },
         )
-        
+
     except Exception as e:
-        logger.error(f"Failed to download benchmark result for {evaluate_code}: {str(e)}")
+        logger.error(
+            f"Failed to download benchmark result for {evaluate_code}: {str(e)}"
+        )
         raise HTTPException(status_code=404, detail=str(e))
 
 

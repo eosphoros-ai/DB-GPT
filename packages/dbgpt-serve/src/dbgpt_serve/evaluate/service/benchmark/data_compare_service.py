@@ -74,6 +74,7 @@ class DataCompareService:
         if not cfg.standard_result:
             return DataCompareResult.failed("leftResult is null")
 
+        # 对每个标准答案都进行对比，只要包含了一个标准答案，即认为结果正确，否则结果错误
         for std in cfg.standard_result:
             if not isinstance(std, dict):
                 continue

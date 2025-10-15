@@ -29,7 +29,9 @@ class BenchmarkDataConfig(BaseModel):
 
     cache_dir: str = "cache"
     db_path: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, "ant_icube_dev.db")
-    table_mapping_file: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, "table_mapping.json")
+    table_mapping_file: str = os.path.join(
+        BENCHMARK_DATA_ROOT_PATH, "table_mapping.json"
+    )
     cache_expiry_days: int = 1
     repo_url: str = "https://github.com/inclusionAI/Falcon"
     data_dir: str = "data/source"
