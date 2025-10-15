@@ -97,10 +97,6 @@ class BenchmarkService(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
         )
 
-        self.output_base_file_name = (
-            f"{datetime.now().strftime('%Y%m%d%H%M')}_multi_round_benchmark_result.xlsx"
-        )
-
     def init_app(self, system_app: SystemApp) -> None:
         """Initialize the service
 
@@ -209,7 +205,10 @@ class BenchmarkService(
             return output_file_path
 
         base_path = Path(output_file_path)
-        new_path = base_path / evaluate_code / self.output_base_file_name
+        output_base_file_name = (
+            f"{datetime.now().strftime('%Y%m%d%H%M')}_multi_round_benchmark_result.xlsx"
+        )
+        new_path = base_path / evaluate_code / output_base_file_name
         return str(new_path)
 
     async def run_dataset_benchmark(

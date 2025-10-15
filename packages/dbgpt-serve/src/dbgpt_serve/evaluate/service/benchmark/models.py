@@ -124,7 +124,6 @@ class RoundAnswerConfirmModel:
     selfDefineTags: Optional[str]
     prompt: Optional[str]
     standardAnswerSql: Optional[str] = None
-    standardAnswer: Optional[Dict[str, List[str]]] = None
     strategyConfig: Optional[DataCompareStrategyConfig] = None
     llmOutput: Optional[str] = None
     executeResult: Optional[Dict[str, List[str]]] = None

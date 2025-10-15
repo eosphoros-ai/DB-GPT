@@ -132,25 +132,14 @@ class UserInputExecuteService:
 
             strategy_cfg = None
             standard_sql = None
-            standard_answer = None
             if left is not None:
                 standard_sql = left.llmOutput
                 if config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE:
                     strategy_cfg = left.strategyConfig
-                    # 优先使用左侧的执行结果作为标准答案；若无，
-                    # 则尝试从策略配置的 standard_result 取第一项
-                    if left.executeResult is not None:
-                        standard_answer = left.executeResult
-                    elif left.strategyConfig and left.strategyConfig.standard_result:
-                        try:
-                            standard_answer = left.strategyConfig.standard_result[0]
-                        except Exception:
-                            standard_answer = None
                 else:
                     standard_result_list = []
                     if left.executeResult:
                         standard_result_list.append(left.executeResult)
-                        standard_answer = left.executeResult
                     strategy_cfg = DataCompareStrategyConfig(
                         strategy="EXACT_MATCH",
                         order_by=True,
@@ -192,7 +181,6 @@ class UserInputExecuteService:
                     selfDefineTags=inp.self_define_tags,
                     prompt=inp.prompt,
                     standardAnswerSql=standard_sql,
-                    standardAnswer=standard_answer,
                     strategyConfig=strategy_cfg,
                     llmOutput=right.llmOutput if right else None,
                     executeResult=right.executeResult if right else None,
@@ -284,7 +272,7 @@ class UserInputExecuteService:
                     f"[benchmark_task] queryResult error! sql = {sql}, errorMsg: {e}"
                 )
                 error_msg = str(e)
-            logger.info(f"[benchmark_task] queryResult end!")
+            logger.info("[benchmark_task] queryResult end!")
 
         return AnswerExecuteModel(
             serialNo=input.serial_no,

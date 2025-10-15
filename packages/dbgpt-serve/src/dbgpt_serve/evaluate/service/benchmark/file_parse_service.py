@@ -56,6 +56,7 @@ class FileParseService(ABC):
                 data.append(AnswerExecuteModel.from_dict(obj))
         return data
 
+    @abstractmethod
     def write_data_compare_result(
         self,
         path: str,
@@ -64,102 +65,15 @@ class FileParseService(ABC):
         is_execute: bool,
         llm_count: int,
     ):
-        """Write compare results to an Excel file instead of DB.
+        """Write compare results to File
 
-        The output Excel file will be named as '<base>_round{round_id}.xlsx' and
-        sheet name is 'benchmark_compare_result'. If the file exists, it will
-        append rows; otherwise it will create a new file with headers.
+        Args:
+            path: Output file path
+            round_id: Round ID
+            confirm_models: List of answer confirm models
+            is_execute: Whether to execute the comparison
+            llm_count: LLM count
         """
-        try:
-            # Ensure output directory exists
-            output_dir = Path(path).parent
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            # Determine final excel file path: <base>_round{round_id}.xlsx
-            output_file = path
-
-            headers = [
-                "serialNo",
-                "analysisModelId",
-                "question",
-                "selfDefineTags",
-                "prompt",
-                "standardAnswerSql",
-                "standardAnswer",
-                "llmCode",
-                "llmOutput",
-                "executeResult",
-                "errorMsg",
-                "compareResult",
-            ]
-
-            # Load or create workbook and sheet
-            if Path(output_file).exists():
-                workbook = load_workbook(str(output_file))
-                if "benchmark_compare_result" in workbook.sheetnames:
-                    worksheet = workbook["benchmark_compare_result"]
-                else:
-                    worksheet = workbook.create_sheet("benchmark_compare_result")
-                    # Write headers if new sheet
-                    for col_idx, header in enumerate(headers, 1):
-                        worksheet.cell(row=1, column=col_idx, value=header)
-            else:
-                workbook = Workbook()
-                worksheet = workbook.active
-                worksheet.title = "benchmark_compare_result"
-                # Write headers
-                for col_idx, header in enumerate(headers, 1):
-                    worksheet.cell(row=1, column=col_idx, value=header)
-
-            # Determine start row to append
-            start_row = worksheet.max_row + 1 if worksheet.max_row else 2
-
-            # Append rows
-            for idx, cm in enumerate(confirm_models):
-                row_data = [
-                    cm.serialNo,
-                    cm.analysisModelId,
-                    cm.question,
-                    cm.selfDefineTags,
-                    cm.prompt,
-                    cm.standardAnswerSql,
-                    json.dumps(cm.standardAnswer, ensure_ascii=False)
-                    if cm.standardAnswer is not None
-                    else "",
-                    cm.llmCode,
-                    cm.llmOutput,
-                    json.dumps(cm.executeResult, ensure_ascii=False)
-                    if cm.executeResult is not None
-                    else "",
-                    cm.errorMsg,
-                    cm.compareResult.value if cm.compareResult else None,
-                ]
-                for col_idx, value in enumerate(row_data, 1):
-                    worksheet.cell(row=start_row + idx, column=col_idx, value=value)
-
-            # Autosize columns (simple strategy)
-            for column in worksheet.columns:
-                max_length = 0
-                column_letter = column[0].column_letter
-                for cell in column:
-                    try:
-                        if cell.value and len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except Exception:
-                        pass
-                adjusted_width = min(max(max_length + 2, 10), 80)
-                worksheet.column_dimensions[column_letter].width = adjusted_width
-
-            workbook.save(str(output_file))
-            workbook.close()
-            logger.info(
-                f"[write_data_compare_result] compare written to Excel: {output_file}"
-            )
-        except Exception as e:
-            logger.error(
-                f"[write_data_compare_result] write excel error for path={path}: {e}",
-                exc_info=True,
-            )
 
     def summary_and_write_multi_round_benchmark_result(
         self, output_path: str, round_id: int
@@ -378,9 +292,7 @@ class ExcelFileParseService(FileParseService):
             strategy_config = DataCompareStrategyConfig(
                 strategy="CONTAIN_MATCH",
                 order_by=order_by,
-                standard_result=std_result
-                if std_result is not None
-                else None,  # 使用 list
+                standard_result=std_result if std_result is not None else None,
             )
             outputs.append(
                 AnswerExecuteModel(
@@ -526,6 +438,109 @@ class ExcelFileParseService(FileParseService):
             logger.error(f"write excel file error: {e}", exc_info=True)
             return False
 
+    def write_data_compare_result(
+        self,
+        path: str,
+        round_id: int,
+        confirm_models: List[RoundAnswerConfirmModel],
+        is_execute: bool,
+        llm_count: int,
+    ):
+        """Write compare results to an Excel file
+
+        The output Excel file will be named as '<base>.xlsx' and
+        sheet name is 'benchmark_compare_result'. If the file exists, it will
+        append rows; otherwise it will create a new file with headers.
+        """
+        try:
+            # Ensure output directory exists
+            output_dir = Path(path).parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            output_file = path
+
+            headers = [
+                "serialNo",
+                "analysisModelId",
+                "question",
+                "selfDefineTags",
+                "prompt",
+                "standardAnswerSql",
+                "standardAnswer",
+                "llmCode",
+                "llmOutput",
+                "executeResult",
+                "errorMsg",
+                "compareResult",
+            ]
+
+            # Load or create workbook and sheet
+            if Path(output_file).exists():
+                workbook = load_workbook(str(output_file))
+                if "benchmark_compare_result" in workbook.sheetnames:
+                    worksheet = workbook["benchmark_compare_result"]
+                else:
+                    worksheet = workbook.create_sheet("benchmark_compare_result")
+                    # Write headers if new sheet
+                    for col_idx, header in enumerate(headers, 1):
+                        worksheet.cell(row=1, column=col_idx, value=header)
+            else:
+                workbook = Workbook()
+                worksheet = workbook.active
+                worksheet.title = "benchmark_compare_result"
+                # Write headers
+                for col_idx, header in enumerate(headers, 1):
+                    worksheet.cell(row=1, column=col_idx, value=header)
+
+            # Determine start row to append
+            start_row = worksheet.max_row + 1 if worksheet.max_row else 2
+
+            # Append rows
+            for idx, cm in enumerate(confirm_models):
+                row_data = [
+                    cm.serialNo,
+                    cm.analysisModelId,
+                    cm.question,
+                    cm.selfDefineTags,
+                    cm.prompt,
+                    cm.standardAnswerSql,
+                    self._format_set_result(cm.strategyConfig.standard_result)
+                    if cm.strategyConfig is not None
+                    else "",
+                    cm.llmCode,
+                    cm.llmOutput,
+                    json.dumps(cm.executeResult, ensure_ascii=False)
+                    if cm.executeResult is not None
+                    else "",
+                    cm.errorMsg,
+                    cm.compareResult.value if cm.compareResult else None,
+                ]
+                for col_idx, value in enumerate(row_data, 1):
+                    worksheet.cell(row=start_row + idx, column=col_idx, value=value)
+
+            # Autosize columns (simple strategy)
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if cell.value and len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except Exception:
+                        pass
+                adjusted_width = min(max(max_length + 2, 10), 80)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+
+            workbook.save(str(output_file))
+            workbook.close()
+            logger.info(
+                f"[write_data_compare_result] compare written to Excel: {output_file}"
+            )
+        except Exception as e:
+            logger.error(
+                f"[write_data_compare_result] write excel error for path={path}: {e}"
+            )
+
     def _get_value_by_source_type(
         self,
         field: str,
@@ -662,6 +677,23 @@ class ExcelFileParseService(FileParseService):
         except Exception as e:
             logger.error(f"parse multiple standard results error: {e}")
             return None
+
+    def _format_set_result(
+        self, sql_result: List[Dict[str, List[str]]]
+    ) -> Optional[str]:
+        """
+        Format Multi StandardAnswer result
+        Returns:
+            Optional[str]: Formatted result string with newline separators
+        """
+        if not sql_result:
+            return None
+
+        result_list = []
+        for result in sql_result:
+            result_list.append(json.dumps(result, ensure_ascii=False))
+
+        return "\n".join(result_list)
 
     def _load_column_config(self) -> List[Dict]:
         """
