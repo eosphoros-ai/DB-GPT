@@ -303,7 +303,7 @@ class BenchmarkDataManager(BaseComponent):
 
     def _sanitize_table_name(self, name: str) -> str:
         """Normalize table names using mappings"""
-        mapped_name = self._table_mappings.get(name.lower(), name)
+        mapped_name = self._table_mappings.get(name.lower())
 
         # Clean special characters
         invalid_chars = [
@@ -440,6 +440,9 @@ class BenchmarkDataManager(BaseComponent):
                 table_name = "_".join(path_parts + [Path(file_info["file_name"]).stem])
                 table_name = self._sanitize_table_name(table_name)
 
+                with self._connector.session_scope() as session:
+                    session.execute(text(f'DROP TABLE IF EXISTS "{table_name}"'))
+                    session.commit()
                 encodings = ["utf-8-sig", "utf-8", "latin-1", "iso-8859-1", "cp1252"]
 
                 for encoding in encodings:
