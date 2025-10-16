@@ -298,32 +298,49 @@ async def benchmark_task_list(
         )
     )
 
-
-@router.get("/benchmark/datasets", dependencies=[Depends(check_api_key)])
+@router.get("/benchmark/list_datasets", dependencies=[Depends(check_api_key)])
 async def list_benchmark_datasets():
     manager = get_benchmark_manager(global_system_app)
     info = await manager.get_table_info()
     result = [
         {
-            "name": name,
-            "rowCount": meta.get("row_count", 0),
-            "columns": meta.get("columns", []),
+            "dataset_id": "1",
+            "name": "Falcon",
+            "tableCount": len(info.items())
         }
-        for name, meta in info.items()
     ]
     return Result.succ(result)
 
+@router.get("/benchmark/dataset/{dataset_id}", dependencies=[Depends(check_api_key)])
+async def list_benchmark_dataset_tables(dataset_id: str, limit: int = 200, offset: int = 0):
+    if dataset_id == "1":
+        manager = get_benchmark_manager(global_system_app)
+        info = await manager.get_table_info()
+        result = [
+            {
+                "name": name,
+                "rowCount": meta.get("row_count", 0),
+                "columns": meta.get("columns", []),
+            }
+            for name, meta in info.items()
+        ]
+        return Result.succ(result)
+    else:
+        return Result.succ("dataset not found")
 
-@router.get("/benchmark/datasets/{table}/rows", dependencies=[Depends(check_api_key)])
-async def get_benchmark_table_rows(table: str, limit: int = 10):
-    manager = get_benchmark_manager(global_system_app)
-    info = await manager.get_table_info()
-    if table not in info:
-        raise HTTPException(status_code=404, detail=f"table '{table}' not found")
-    sql = f'SELECT * FROM "{table}" LIMIT :limit'
-    rows = await manager.query(sql, {"limit": limit})
-    return Result.succ({"table": table, "limit": limit, "rows": rows})
 
+@router.get("/benchmark/dataset/{dataset_id}/{table}/rows", dependencies=[Depends(check_api_key)])
+async def get_benchmark_table_rows(dataset_id:str, table: str, limit: int = 10):
+    if dataset_id == "1":
+        manager = get_benchmark_manager(global_system_app)
+        info = await manager.get_table_info()
+        if table not in info:
+            raise HTTPException(status_code=404, detail=f"table '{table}' not found")
+        sql = f'SELECT * FROM "{table}" LIMIT :limit'
+        rows = await manager.query(sql, {"limit": limit})
+        return Result.succ({"table": table, "limit": limit, "rows": rows})
+    else:
+        return Result.succ("dataset not found")
 
 @router.get("/benchmark_result_download", dependencies=[Depends(check_api_key)])
 async def download_benchmark_result(
