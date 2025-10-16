@@ -286,7 +286,6 @@ async def execute_benchmark_task(
 
 @router.get("/benchmark_task_list", dependencies=[Depends(check_api_key)])
 async def benchmark_task_list(
-    request: EvaluateServeRequest,
     page: Optional[int] = Query(default=1, description="current page"),
     page_size: Optional[int] = Query(default=20, description="page size"),
     service: BenchmarkService = Depends(get_benchmark_service),
@@ -296,7 +295,7 @@ async def benchmark_task_list(
     """
     return Result.succ(
         service.get_list_by_page(
-            request,
+            {},
             page,
             page_size,
         )
