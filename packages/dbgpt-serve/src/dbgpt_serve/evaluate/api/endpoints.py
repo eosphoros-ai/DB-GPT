@@ -204,68 +204,47 @@ async def evaluation(
     )
 
 
-@router.get("/benchmark/list_results", dependencies=[Depends(check_api_key)])
-async def list_compare_runs(limit: int = 50, offset: int = 0):
+@router.get("/benchmark/result/{serial_no}", dependencies=[Depends(check_api_key)])
+async def get_compare_run_detail(serial_no: str, limit: int = 200, offset: int = 0):
     dao = BenchmarkResultDao()
-    rows = dao.list_summaries(limit=limit, offset=offset)
-    result = []
-    for s in rows:
-        result.append(
+    summaries = dao.list_summaries_by_task(serial_no, limit=10000, offset=0)
+    if not summaries:
+        return Result.succ(
+            {"serialNo": serial_no, "summaries": [], "metrics": {}, "cotTokens": {"total": 0, "byModel": {}}})
+
+    detail_list = []
+    total_counts = {"right": 0, "wrong": 0, "failed": 0, "exception": 0}
+    round_ids = set()
+    for s in summaries:
+        r, w, f, e = s.right, s.wrong, s.failed, s.exception
+        denom_exec = max(r + w + f + e, 1)
+        accuracy = r / denom_exec
+        exec_rate = (r + w) / denom_exec
+        total_counts["right"] += r
+        total_counts["wrong"] += w
+        total_counts["failed"] += f
+        total_counts["exception"] += e
+        round_ids.add(s.round_id)
+        detail_list.append(
             {
-                "id": s.id,
                 "roundId": s.round_id,
+                "llmCode": getattr(s, "llm_code", None),
+                "right": r,
+                "wrong": w,
+                "failed": f,
+                "exception": e,
+                "accuracy": accuracy,
+                "execRate": exec_rate,
                 "outputPath": s.output_path,
-                "right": s.right,
-                "wrong": s.wrong,
-                "failed": s.failed,
-                "exception": s.exception,
-                "gmtCreated": s.gmt_created.isoformat() if s.gmt_created else None,
             }
         )
-    return Result.succ(result)
 
-
-@router.get("/benchmark/result/{summary_id}", dependencies=[Depends(check_api_key)])
-async def get_compare_run_detail(summary_id: int, limit: int = 200, offset: int = 0):
-    dao = BenchmarkResultDao()
-    s = dao.get_summary_by_id(summary_id)
-    if not s:
-        raise HTTPException(status_code=404, detail="compare run not found")
-    compares = dao.list_compare_by_round_and_path(
-        s.round_id, s.output_path, limit=limit, offset=offset
+    return Result.succ(
+        {
+            "serialNo": serial_no,
+            "summaries": detail_list,
+        }
     )
-    detail = {
-        "id": s.id,
-        "roundId": s.round_id,
-        "outputPath": s.output_path,
-        "summary": {
-            "right": s.right,
-            "wrong": s.wrong,
-            "failed": s.failed,
-            "exception": s.exception,
-        },
-        "items": [
-            {
-                "id": r.id,
-                "serialNo": r.serial_no,
-                "analysisModelId": r.analysis_model_id,
-                "question": r.question,
-                "prompt": r.prompt,
-                "standardAnswerSql": r.standard_answer_sql,
-                "llmOutput": r.llm_output,
-                "executeResult": json.loads(r.execute_result)
-                if r.execute_result
-                else None,
-                "errorMsg": r.error_msg,
-                "compareResult": r.compare_result,
-                "isExecute": r.is_execute,
-                "llmCount": r.llm_count,
-                "gmtCreated": r.gmt_created.isoformat() if r.gmt_created else None,
-            }
-            for r in compares
-        ],
-    }
-    return Result.succ(detail)
 
 
 @router.post("/execute_benchmark_task", dependencies=[Depends(check_api_key)])
@@ -395,6 +374,32 @@ async def download_benchmark_result(
         )
         raise HTTPException(status_code=404, detail=str(e))
 
+
+@router.get("/benchmark/list_compare_tasks", dependencies=[Depends(check_api_key)])
+async def list_benchmark_tasks(limit: int = 50, offset: int = 0):
+    dao = BenchmarkResultDao()
+    tasks = dao.list_tasks(limit=limit, offset=offset)
+    result = []
+    for task_id in tasks:
+        summaries = dao.list_summaries_by_task(task_id, limit=10000, offset=0)
+        result.append(
+            {
+                "serialNo": task_id,
+                "summaries": [
+                    {
+                        "roundId": s.round_id,
+                        "llmCode": getattr(s, "llm_code", None),
+                        "right": s.right,
+                        "wrong": s.wrong,
+                        "failed": s.failed,
+                        "exception": s.exception,
+                        "outputPath": s.output_path,
+                    }
+                    for s in summaries
+                ],
+            }
+        )
+    return Result.succ(result)
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""

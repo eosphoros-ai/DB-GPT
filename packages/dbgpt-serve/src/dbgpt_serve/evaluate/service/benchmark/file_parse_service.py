@@ -78,57 +78,54 @@ class FileParseService(ABC):
     def summary_and_write_multi_round_benchmark_result(
         self, output_path: str, round_id: int
     ) -> str:
-        """Compute summary from the Excel file and return JSON string.
+        """Compute summary from the Excel file grouped by llmCode and return JSON list.
 
-        It will read the '<base>_round{round_id}.xlsx' file and sheet
-        'benchmark_compare_result', then count the compareResult column
-        (RIGHT/WRONG/FAILED/EXCEPTION) to build summary.
+        It reads the '<base>_round{round_id}.xlsx' file and sheet
+        'benchmark_compare_result', then for each llmCode counts the compareResult column
+        (RIGHT/WRONG/FAILED/EXCEPTION) to build summary list.
         """
         try:
             base_name = Path(output_path).stem
             extension = Path(output_path).suffix
             if extension.lower() not in [".xlsx", ".xls"]:
                 extension = ".xlsx"
-            excel_file = (
-                Path(output_path).parent / f"{base_name}_round{round_id}{extension}"
-            )
+            excel_file = Path(output_path).parent / f"{base_name}_round{round_id}{extension}"
             if not excel_file.exists():
                 logger.warning(f"summary excel not found: {excel_file}")
-                result = dict(right=0, wrong=0, failed=0, exception=0)
-                return json.dumps(result, ensure_ascii=False)
+                return json.dumps([], ensure_ascii=False)
 
             df = pd.read_excel(str(excel_file), sheet_name="benchmark_compare_result")
-            right = (
-                int((df["compareResult"] == "RIGHT").sum())
-                if "compareResult" in df.columns
-                else 0
-            )
-            wrong = (
-                int((df["compareResult"] == "WRONG").sum())
-                if "compareResult" in df.columns
-                else 0
-            )
-            failed = (
-                int((df["compareResult"] == "FAILED").sum())
-                if "compareResult" in df.columns
-                else 0
-            )
-            exception = (
-                int((df["compareResult"] == "EXCEPTION").sum())
-                if "compareResult" in df.columns
-                else 0
-            )
+            if "compareResult" not in df.columns:
+                logger.warning("compareResult column missing in excel")
+                return json.dumps([], ensure_ascii=False)
 
-            result = dict(right=right, wrong=wrong, failed=failed, exception=exception)
+            # ensure llmCode column exists
+            if "llmCode" not in df.columns:
+                df["llmCode"] = None
+
+            summaries = []
+            for llm_code, group in df.groupby("llmCode"):
+                right = int((group["compareResult"] == "RIGHT").sum())
+                wrong = int((group["compareResult"] == "WRONG").sum())
+                failed = int((group["compareResult"] == "FAILED").sum())
+                exception = int((group["compareResult"] == "EXCEPTION").sum())
+                summaries.append(
+                    {
+                        "llmCode": None if pd.isna(llm_code) else str(llm_code),
+                        "right": right,
+                        "wrong": wrong,
+                        "failed": failed,
+                        "exception": exception,
+                    }
+                )
+
             logger.info(
-                f"[summary] summary computed from Excel for round={round_id},"
-                f" output_path={output_path} -> {result}"
+                f"[summary] computed per llmCode for round={round_id}, output_path={output_path} -> {summaries}"
             )
-            return json.dumps(result, ensure_ascii=False)
+            return json.dumps(summaries, ensure_ascii=False)
         except Exception as e:
             logger.error(f"summary compute error from excel: {e}", exc_info=True)
-            result = dict(right=0, wrong=0, failed=0, exception=0)
-            return json.dumps(result, ensure_ascii=False)
+            return json.dumps([], ensure_ascii=False)
 
     def get_input_stream(self, location: str):
         """Get input stream from location

@@ -13,6 +13,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     desc,
+    func,
 )
 
 from dbgpt.storage.metadata import BaseDao, Model
@@ -81,12 +82,12 @@ class BenchmarkCompareEntity(Model):
 class BenchmarkSummaryEntity(Model):
     """Summary result for one round and one output path.
 
-    Counts of RIGHT/WRONG/FAILED/EXCEPTION.
+    Counts of RIGHT/WRONG/FAILED/EXCEPTION, per llm_code.
     """
 
     __tablename__ = "benchmark_summary"
     __table_args__ = (
-        UniqueConstraint("round_id", "output_path", name="uk_round_output"),
+        UniqueConstraint("round_id", "output_path", "llm_code", name="uk_round_output_llm"),
     )
 
     id = Column(
@@ -96,6 +97,8 @@ class BenchmarkSummaryEntity(Model):
     output_path = Column(
         String(512), nullable=False, comment="Original output file path"
     )
+    task_serial_no = Column(String(255), nullable=True, comment="Task serial number (unique id per submitted task)")
+    llm_code = Column(String(255), nullable=True, comment="LLM code for this summary")
 
     right = Column(Integer, default=0, comment="RIGHT count")
     wrong = Column(Integer, default=0, comment="WRONG count")
@@ -111,6 +114,7 @@ class BenchmarkSummaryEntity(Model):
     )
 
     Index("idx_bm_sum_round", "round_id")
+    Index("idx_bm_sum_task", "task_serial_no")
 
 
 class BenchmarkResultDao(BaseDao):
@@ -212,6 +216,53 @@ class BenchmarkResultDao(BaseDao):
                 session.commit()
                 return summary.id
 
+    def upsert_summary(
+        self,
+        round_id: int,
+        output_path: str,
+        llm_code: Optional[str],
+        right: int,
+        wrong: int,
+        failed: int,
+        exception: int,
+        task_serial_no: Optional[str] = None,
+    ) -> int:
+        """Upsert summary counts directly into DB (per llm_code), with task serial no."""
+        with self.session() as session:
+            existing = (
+                session.query(BenchmarkSummaryEntity)
+                .filter(
+                    BenchmarkSummaryEntity.round_id == round_id,
+                    BenchmarkSummaryEntity.output_path == output_path,
+                    BenchmarkSummaryEntity.llm_code == llm_code,
+                )
+                .first()
+            )
+            if existing:
+                existing.right = right
+                existing.wrong = wrong
+                existing.failed = failed
+                existing.exception = exception
+                if task_serial_no is not None:
+                    existing.task_serial_no = task_serial_no
+                existing.gmt_modified = datetime.now()
+                session.commit()
+                return existing.id
+            else:
+                summary = BenchmarkSummaryEntity(
+                    round_id=round_id,
+                    output_path=output_path,
+                    llm_code=llm_code,
+                    right=right,
+                    wrong=wrong,
+                    failed=failed,
+                    exception=exception,
+                    task_serial_no=task_serial_no,
+                )
+                session.add(summary)
+                session.commit()
+                return summary.id
+
     # Basic query helpers
     def list_compare_by_round(self, round_id: int, limit: int = 100, offset: int = 0):
         with self.session(commit=False) as session:
@@ -237,7 +288,33 @@ class BenchmarkResultDao(BaseDao):
                 .first()
             )
 
-    # New helpers for listing summaries and detail by id
+    def list_summaries_by_round(self, round_id: int, limit: int = 100, offset: int = 0):
+        with self.session(commit=False) as session:
+            return (
+                session.query(BenchmarkSummaryEntity)
+                .filter(BenchmarkSummaryEntity.round_id == round_id)
+                .order_by(desc(BenchmarkSummaryEntity.id))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+
+    def list_rounds(self, limit: int = 100, offset: int = 0):
+        with self.session(commit=False) as session:
+            rows = (
+                session.query(
+                    BenchmarkSummaryEntity.round_id,
+                    func.max(BenchmarkSummaryEntity.gmt_created).label("last_time"),
+                )
+                .group_by(BenchmarkSummaryEntity.round_id)
+                .order_by(desc("last_time"))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+            # return only round ids in order
+            return [r[0] for r in rows]
+
     def list_summaries(self, limit: int = 100, offset: int = 0):
         with self.session(commit=False) as session:
             return (
@@ -256,17 +333,32 @@ class BenchmarkResultDao(BaseDao):
                 .first()
             )
 
-    def list_compare_by_round_and_path(
-        self, round_id: int, output_path: str, limit: int = 200, offset: int = 0
+    def list_tasks(self, limit: int = 100, offset: int = 0) -> List[str]:
+        """List submitted task ids (task_serial_no), ordered by latest summary time."""
+        with self.session(commit=False) as session:
+            rows = (
+                session.query(
+                    BenchmarkSummaryEntity.task_serial_no,
+                    func.max(BenchmarkSummaryEntity.gmt_created).label("last_time"),
+                )
+                .filter(BenchmarkSummaryEntity.task_serial_no.isnot(None))
+                .group_by(BenchmarkSummaryEntity.task_serial_no)
+                .order_by(desc("last_time"))
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+            return [r[0] for r in rows]
+
+    def list_summaries_by_task(
+        self, task_serial_no: str, limit: int = 1000, offset: int = 0
     ):
+        """List summaries for a given task (may include multiple rounds)."""
         with self.session(commit=False) as session:
             return (
-                session.query(BenchmarkCompareEntity)
-                .filter(
-                    BenchmarkCompareEntity.round_id == round_id,
-                    BenchmarkCompareEntity.output_path == output_path,
-                )
-                .order_by(desc(BenchmarkCompareEntity.id))
+                session.query(BenchmarkSummaryEntity)
+                .filter(BenchmarkSummaryEntity.task_serial_no == task_serial_no)
+                .order_by(desc(BenchmarkSummaryEntity.id))
                 .limit(limit)
                 .offset(offset)
                 .all()
