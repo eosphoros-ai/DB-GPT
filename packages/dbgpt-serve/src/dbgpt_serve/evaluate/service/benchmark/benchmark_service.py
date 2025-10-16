@@ -1,0 +1,605 @@
+import io
+import json
+import logging
+import os
+import threading
+import time
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
+
+from dbgpt.agent.core.schema import Status
+from dbgpt.component import ComponentType, SystemApp
+from dbgpt.configs.model_config import BENCHMARK_DATA_ROOT_PATH
+from dbgpt.core import LLMClient
+from dbgpt.model import DefaultLLMClient
+from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.storage.metadata import BaseDao
+from dbgpt.util import PaginationResult, get_or_create_event_loop
+
+from ....core import BaseService
+from ....prompt.service.service import Service as PromptService
+from ....rag.service.service import Service as RagService
+from ....rag.storage_manager import StorageManager
+from ...api.schemas import (
+    EvaluateServeRequest,
+    EvaluateServeResponse,
+    EvaluationScene,
+    StorageType,
+)
+from ...config import ServeConfig
+from ...models.models import ServeDao, ServeEntity
+from .benchmark_llm_task import BenchmarkLLMTask
+from .data_compare_service import DataCompareService
+from .file_parse_service import ExcelFileParseService
+from .models import (
+    BaseInputModel,
+    BenchmarkDataSets,
+    BenchmarkExecuteConfig,
+    BenchmarkModeTypeEnum,
+    BenchmarkTaskResult,
+    ContentTypeEnum,
+    FileParseTypeEnum,
+    InputType,
+    OutputType,
+    ReasoningResponse,
+)
+from .user_input_execute_service import UserInputExecuteService
+
+logger = logging.getLogger(__name__)
+
+executor = ThreadPoolExecutor(max_workers=5)
+
+BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
+
+# TODO 需要修改为正式文件
+STANDARD_BENCHMARK_FILE_PATH = os.path.join(
+    BENCHMARK_DATA_ROOT_PATH,
+    "2025_07_27_public_500_standard_benchmark_question_list_multi_anwser.xlsx",
+)
+
+BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")
+
+
+def get_rag_service(system_app) -> RagService:
+    return system_app.get_component("dbgpt_rag_service", RagService)
+
+
+def get_prompt_service(system_app) -> PromptService:
+    return system_app.get_component("dbgpt_serve_prompt_service", PromptService)
+
+
+class BenchmarkService(
+    BaseService[ServeEntity, EvaluateServeRequest, EvaluateServeResponse]
+):
+    """The benchmark service class for Evaluate"""
+
+    name = BENCHMARK_SERVICE_COMPONENT_NAME
+    batch_lock = threading.RLock()
+
+    def __init__(
+        self, system_app: SystemApp, config: ServeConfig, dao: Optional[ServeDao] = None
+    ):
+        self._system_app = system_app
+        self._serve_config: ServeConfig = config
+        self._dao: ServeDao = dao
+        super().__init__(system_app)
+        self.rag_service = get_rag_service(system_app)
+        self.prompt_service = get_prompt_service(system_app)
+
+        fps = ExcelFileParseService()
+        dcs = DataCompareService()
+        self.user_input_execute_service = UserInputExecuteService(fps, dcs)
+
+        self.trigger_executor = ThreadPoolExecutor(
+            max_workers=5, thread_name_prefix="benchmark-fileWrite"
+        )
+
+    def init_app(self, system_app: SystemApp) -> None:
+        """Initialize the service
+
+        Args:
+            system_app (SystemApp): The system app
+        """
+        self._dao = self._dao or ServeDao(self._serve_config)
+        self._system_app = system_app
+
+    @property
+    def storage_manager(self):
+        return StorageManager.get_instance(self._system_app)
+
+    @property
+    def dao(self) -> BaseDao[ServeEntity, EvaluateServeRequest, EvaluateServeResponse]:
+        """Returns the internal DAO."""
+        return self._dao
+
+    @property
+    def config(self) -> ServeConfig:
+        """Returns the internal ServeConfig."""
+        return self._serve_config
+
+    @property
+    def llm_client(self) -> LLMClient:
+        worker_manager = self._system_app.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        return DefaultLLMClient(worker_manager, True)
+
+    def create_benchmark_task(
+        self,
+        config: BenchmarkExecuteConfig,
+        evaluate_code: str,
+        scene_key: str,
+        scene_value: str,
+        input_file_path: str,
+        output_file_path: str,
+    ) -> bool:
+        """
+        Save the benchmark task to the database
+
+        Args:
+            config: Benchmark execute config
+            evaluate_code: Evaluation code
+            scene_key: Scene key
+            scene_value: Scene value
+            input_file_path: Input file path
+            output_file_path: Output file path
+            model_list: Model list
+        """
+        try:
+            # 构建请求对象
+            request_data = EvaluateServeRequest(
+                evaluate_code=evaluate_code,
+                scene_key=scene_key,
+                scene_value=scene_value,
+                datasets_name=os.path.basename(input_file_path)
+                if input_file_path
+                else None,
+                datasets=None,
+                storage_type=StorageType.FILE.value,
+                parallel_num=1,
+                state=Status.RUNNING.value,
+                result=output_file_path,
+                context={
+                    "benchmark_config": json.dumps(
+                        config.to_dict(), ensure_ascii=False
+                    ),
+                },
+                user_id=None,
+                user_name=None,
+                sys_code="benchmark_system",
+            )
+
+            response = self.create(request_data)
+            logger.info(
+                f"Successfully saved benchmark task to database: "
+                f"evaluate_code={evaluate_code}, scene_key={scene_key}, "
+                f"scene_value={scene_value}, response: {response}"
+            )
+            return True
+        except Exception as e:
+            logger.error(
+                f"Failed to save benchmark task to database: {e}, "
+                f"evaluate_code={evaluate_code}, scene_key={scene_key}, "
+                f"scene_value={scene_value}"
+            )
+            return False
+
+    def _generate_output_file_full_path(
+        self, output_file_path: str, evaluate_code: str
+    ) -> str:
+        """
+        Generate the complete output file path,
+        including the evaluate_code subfolder and default filename
+
+        Args:
+            output_file_path: Base path of the output file
+            evaluate_code: Evaluation code, used as subfolder name
+
+        Returns:
+            str: Complete output file path
+        """
+        if not output_file_path or not evaluate_code:
+            return output_file_path
+
+        base_path = Path(output_file_path)
+        output_base_file_name = (
+            f"{datetime.now().strftime('%Y%m%d%H%M')}_multi_round_benchmark_result.xlsx"
+        )
+        new_path = base_path / evaluate_code / output_base_file_name
+        return str(new_path)
+
+    async def run_dataset_benchmark(
+        self,
+        evaluate_code: str,
+        scene_key: str,
+        scene_value: str,
+        input_file_path: str,
+        output_file_path: str,
+        model_list: List[str],
+    ) -> List[BenchmarkTaskResult[OutputType]]:
+        """
+        Run the dataset benchmark
+        """
+        logger.info(
+            f"Run dataset benchmark, evaluate_code: {evaluate_code},"
+            f" scene_key: {scene_key}, scene_value: {scene_value},"
+            f" input_file_path: {input_file_path}, output_file_path: {output_file_path}"
+        )
+        if not input_file_path:
+            input_file_path = STANDARD_BENCHMARK_FILE_PATH
+        if not evaluate_code:
+            evaluate_code = uuid.uuid4().hex
+        if not output_file_path:
+            output_file_path = BENCHMARK_OUTPUT_RESULT_PATH
+        if not scene_key:
+            scene_key = EvaluationScene.DATASET.value
+
+        output_file_path = self._generate_output_file_full_path(
+            output_file_path, evaluate_code
+        )
+
+        config = await self._build_benchmark_config(
+            model_list, output_file_path, evaluate_code, scene_key
+        )
+        # save benchmark task
+        self.create_benchmark_task(
+            config,
+            evaluate_code,
+            scene_key,
+            scene_value,
+            input_file_path,
+            output_file_path,
+        )
+
+        # read input file
+        input_list: List[BaseInputModel] = (
+            self.user_input_execute_service.read_input_file(input_file_path)
+        )
+
+        result_list = []
+        for i in range(1, config.round_time + 1):
+            round_result_list: List[BenchmarkTaskResult[OutputType]] = []
+
+            llm_index = 0
+            for llm_code, thread_num in config.llm_thread_map.items():
+                # 每个llm_code对应的偏移量：llm_index * input_list长度
+                offset = len(input_list) * llm_index
+
+                llm_result = BenchmarkTaskResult[OutputType]()
+                try:
+                    llm_result = self.batch_execute(
+                        config,
+                        input_list,
+                        llm_code,
+                        thread_num,
+                        i,
+                        output_file_path,
+                        offset,
+                    )
+                except Exception as e:
+                    logger.error(f"batch execute error! {e}, llm_code: {llm_code}")
+
+                if llm_result is not None:
+                    round_result_list.append(llm_result)
+                    llm_index += 1
+
+            self.post_dispatch(
+                i,
+                config,
+                input_list,
+                round_result_list,
+                input_file_path,
+                output_file_path,
+            )
+            result_list.extend(round_result_list)
+
+        logger.info(
+            f"Benchmark task completed successfully for evaluate_code:"
+            f" {evaluate_code}, output_file_path: {output_file_path}"
+        )
+        return result_list
+
+    async def _build_benchmark_config(
+        self, model_list, output_file_path, evaluate_code, scene_key
+    ) -> BenchmarkExecuteConfig:
+        config = BenchmarkExecuteConfig(
+            benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
+            standard_file_path=STANDARD_BENCHMARK_FILE_PATH,
+        )
+        config.output_file_path = output_file_path
+        config.content_type = ContentTypeEnum.SQL
+        config.round_time = 1
+        config.thread_num = 1
+        config.execute_llm_result = True
+        config.invoke_llm = True
+        config.compare_result_enable = True
+        config.file_parse_type = FileParseTypeEnum.EXCEL
+        config.llm_thread_map = {model: 1 for model in model_list}
+        config.evaluate_code = evaluate_code
+        config.scene_key = scene_key
+
+        return config
+
+    def batch_execute(
+        self,
+        config: BenchmarkExecuteConfig,
+        inputs: List[InputType],
+        llm_code: str,
+        thread_num: int,
+        round_id: int,
+        output_file_path: str,
+        offset: int,
+    ) -> BenchmarkTaskResult[OutputType]:
+        """
+        Batch execute the benchmark Task with LLM
+        """
+        result = BenchmarkTaskResult[OutputType]()
+        result.trace_id = uuid.uuid4().hex
+        result.task_id = (
+            config.evaluate_code if config.evaluate_code else uuid.uuid4().hex
+        )
+        result.start_time = datetime.now()
+
+        executor = ThreadPoolExecutor(
+            max_workers=thread_num, thread_name_prefix="benchmark-USER_INPUT_EXECUTE"
+        )
+
+        output_sets = BenchmarkDataSets[OutputType]()
+        output_list: List[OutputType] = []
+
+        written_batches: set[int] = set()
+        complete_map: Dict[int, OutputType] = {}
+
+        # 线程锁，保证线程安全
+        lock = threading.Lock()
+
+        def execute_task(input_data: InputType):
+            """task execution function"""
+            try:
+                input_data.llm_code = llm_code
+                logger.info(
+                    f"[benchmark_task]start executeBenchmark!"
+                    f" input={json.dumps(input_data.to_dict(), ensure_ascii=False)}"
+                )
+
+                start_time = time.time()
+                loop = get_or_create_event_loop()
+                output: OutputType = loop.run_until_complete(
+                    self.execute(config, input_data)
+                )
+                cost_time = int(time.time() - start_time)
+
+                output.cost_time = cost_time
+                logger.info(
+                    f"[benchmark_task]end executeBenchmark!"
+                    f" output={json.dumps(output.to_dict(), ensure_ascii=False)}"
+                )
+
+                with lock:
+                    output_list.append(output)
+
+                # 检查并触发批次处理
+                self.check_and_trigger_batch(
+                    output,
+                    inputs,
+                    round_id,
+                    config,
+                    output_file_path,
+                    written_batches,
+                    complete_map,
+                    offset,
+                )
+            except Exception as e:
+                logger.error(f"executeSingleTimeBenchmark error, error: {e}")
+
+        # 提交所有任务
+        futures = [executor.submit(execute_task, input_data) for input_data in inputs]
+
+        # 等待所有任务完成
+        for future in futures:
+            future.result()
+
+        executor.shutdown(wait=True)
+
+        output_sets.data_list = output_list
+        result.benchmark_data_sets = output_sets
+        return result
+
+    async def execute(
+        self, config: BenchmarkExecuteConfig, input: InputType
+    ) -> Union[OutputType, None]:
+        """
+        Execute LLM Benchmark Task
+        """
+        try:
+            # 1. 组装评测输入
+            if input.prompt is None:
+                raise Exception("benchmark datasets not have prompt template!")
+            input.prompt = input.prompt
+
+            # 2. 执行评测 - 使用同步方式调用异步方法
+            benchmark_llm_task_service = BenchmarkLLMTask(
+                llm_client=self.llm_client, model_name=input.llm_code
+            )
+
+            response: ReasoningResponse = await benchmark_llm_task_service.invoke_llm(
+                prompt=input.prompt
+            )
+
+            # 3. 组装评测输出
+            return await self.user_input_execute_service.build_output(
+                config, input, response
+            )
+        except Exception as e:
+            logger.error(f"execute benchmark error!  error: {e}")
+        return None
+
+    def check_and_trigger_batch(
+        self,
+        output: OutputType,
+        inputs: List[BaseInputModel],
+        round_id: int,
+        config: BenchmarkExecuteConfig,
+        output_file_path: str,
+        written_batches: set,
+        complete_map: Dict[int, OutputType],
+        offset: int,
+    ):
+        """
+        Check if all tasks in the current batch are completed
+        and trigger batch processing.
+        """
+        with self.batch_lock:
+            complete_map[output.serialNo] = output
+            batch_size = 10
+
+            # 查找当前任务的索引
+            task_index = -1
+            for i in range(len(inputs)):
+                if inputs[i].serial_no == output.serialNo:
+                    task_index = i
+                    break
+
+            batch_index = task_index // batch_size
+
+            # 避免重复写入
+            if batch_index in written_batches:
+                return
+
+            # 计算批次范围
+            batch_start = batch_index * batch_size
+            batch_end = min(len(inputs), (batch_index + 1) * batch_size)
+
+            # 检查当前批次是否全部完成
+            is_batch_complete = True
+            batch_outputs: List[OutputType] = []
+
+            for i in range(batch_start, batch_end):
+                serial_no = inputs[i].serial_no
+                if serial_no not in complete_map:
+                    is_batch_complete = False
+                    break
+                batch_outputs.append(complete_map[serial_no])
+
+            if is_batch_complete:
+                # 触发异步任务并写入
+                def batch_write_task():
+                    try:
+                        # 执行写入逻辑
+                        batch_outputs.sort(key=lambda x: x.serialNo)
+                        self.user_input_execute_service.write_output_file(
+                            output_file_path,
+                            round_id,
+                            config,
+                            inputs,
+                            batch_outputs,
+                            batch_start,
+                            offset,
+                        )
+                    except Exception as e:
+                        logger.error(f"Batch write error: {e}")
+
+                batch_write_task()
+                written_batches.add(batch_index)
+
+    def post_dispatch(
+        self,
+        i: int,
+        config: BenchmarkExecuteConfig,
+        input_list: List[BaseInputModel],
+        output_list: List[BenchmarkTaskResult[OutputType]],
+        input_file_path: str,
+        output_file_path: str,
+    ):
+        """
+        Post dispatch processing standard result compare LLM execute result
+        and write compare result to file
+        """
+        for j, output_result in enumerate(output_list):
+            self.user_input_execute_service.post_dispatch(
+                i,
+                config,
+                input_list,
+                None,
+                output_result.benchmark_data_sets.data_list,
+                input_file_path,
+                output_file_path,
+            )
+
+    def get_list_by_page(
+        self, request: EvaluateServeRequest, page: int, page_size: int
+    ) -> PaginationResult[EvaluateServeResponse]:
+        """Get a list of Evaluate entities by page
+
+        Args:
+            request (EvaluateServeRequest): The request
+            page (int): The page number
+            page_size (int): The page size
+
+        Returns:
+            List[EvaluateServeResponse]: The response
+        """
+        query_request = request
+        return self.dao.get_list_page(
+            query_request, page, page_size, ServeEntity.id.name
+        )
+
+    async def get_benchmark_file_stream(
+        self, evaluate_code: str
+    ) -> Tuple[str, io.BytesIO]:
+        """Get benchmark result file stream for download
+
+        Args:
+            evaluate_code (str): The evaluation code
+
+        Returns:
+            Tuple[str, io.BytesIO]: File name and file stream
+
+        Raises:
+            Exception: If evaluation record not found or file not exists
+        """
+        if not evaluate_code:
+            raise Exception("evaluate_code is required")
+
+        # 1. 根据evaluate_code查询评测信息
+        try:
+            entity = self.dao.get_one({"evaluate_code": evaluate_code})
+            if not entity:
+                raise Exception(
+                    f"Evaluation record not found for code: {evaluate_code}"
+                )
+        except Exception as e:
+            logger.error(f"Failed to query evaluation record: {e}")
+            raise Exception(f"Failed to query evaluation record: {str(e)}")
+
+        # 2. 根据result的文件路径拿到文件
+        file_path = entity.result
+        if not file_path:
+            raise Exception(
+                f"No result file path found for evaluate_code: {evaluate_code}"
+            )
+
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            raise Exception(f"Result file not found: {file_path}")
+
+        try:
+            # 读取文件内容到内存
+            with open(file_path, "rb") as file:
+                file_content = file.read()
+
+            # 创建字节流
+            file_stream = io.BytesIO(file_content)
+
+            # 获取文件名
+            file_name = os.path.basename(file_path)
+
+            logger.info(f"Successfully prepared file stream for download: {file_name}")
+            return file_name, file_stream
+
+        except Exception as e:
+            logger.error(f"Failed to read result file {file_path}: {e}")
+            raise Exception(f"Failed to read result file: {str(e)}")
