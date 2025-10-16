@@ -212,7 +212,7 @@ class UserInputExecuteService:
                 wrong = int(item.get("wrong", 0))
                 failed = int(item.get("failed", 0))
                 exception = int(item.get("exception", 0))
-                dao.upsert_summary(round_id, location, llm_code, right, wrong, failed, exception, task_serial_no=config.evaluate_code)
+                dao.upsert_summary(round_id, location, llm_code, right, wrong, failed, exception, evaluate_code=config.evaluate_code)
         except Exception as e:
             logger.error(
                 f"[execute_llm_compare_result] summary from excel or write db failed: {e}",

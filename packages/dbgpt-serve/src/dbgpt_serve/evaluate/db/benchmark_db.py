@@ -97,7 +97,7 @@ class BenchmarkSummaryEntity(Model):
     output_path = Column(
         String(512), nullable=False, comment="Original output file path"
     )
-    task_serial_no = Column(String(255), nullable=True, comment="Task serial number (unique id per submitted task)")
+    evaluate_code = Column(String(255), nullable=True, comment="Task evaluate_code (unique id per submitted task)")
     llm_code = Column(String(255), nullable=True, comment="LLM code for this summary")
 
     right = Column(Integer, default=0, comment="RIGHT count")
@@ -118,104 +118,7 @@ class BenchmarkSummaryEntity(Model):
 
 
 class BenchmarkResultDao(BaseDao):
-    """DAO for benchmark compare and summary results."""
-
-    def write_compare_results(
-        self,
-        round_id: int,
-        mode: str,  # "BUILD" or "EXECUTE"
-        output_path: str,
-        records: List[dict],
-        is_execute: bool,
-        llm_count: int,
-    ) -> int:
-        """Write multiple compare records to DB.
-
-        records: each dict contains keys like in
-                 FileParseService.write_data_compare_result rows.
-        Returns number of records inserted.
-        """
-        inserted = 0
-        with self.session() as session:
-            for r in records:
-                try:
-                    entity = BenchmarkCompareEntity(
-                        round_id=round_id,
-                        mode=mode,
-                        serial_no=r.get("serialNo"),
-                        analysis_model_id=r.get("analysisModelId"),
-                        question=r.get("question"),
-                        self_define_tags=r.get("selfDefineTags"),
-                        prompt=r.get("prompt"),
-                        standard_answer_sql=r.get("standardAnswerSql"),
-                        llm_output=r.get("llmOutput"),
-                        execute_result=json.dumps(r.get("executeResult"))
-                        if r.get("executeResult") is not None
-                        else None,
-                        error_msg=r.get("errorMsg"),
-                        compare_result=r.get("compareResult"),
-                        is_execute=is_execute,
-                        llm_count=llm_count,
-                        output_path=output_path,
-                    )
-                    session.add(entity)
-                    inserted += 1
-                except Exception as e:
-                    logger.error(f"Insert compare record failed: {e}")
-            session.commit()
-        return inserted
-
-    def compute_and_save_summary(
-        self, round_id: int, output_path: str
-    ) -> Optional[int]:
-        """Compute summary from compare table and save to summary table.
-        Returns summary id if saved, else None.
-        """
-        with self.session() as session:
-            # compute counts
-            q = (
-                session.query(BenchmarkCompareEntity.compare_result)
-                .filter(
-                    BenchmarkCompareEntity.round_id == round_id,
-                    BenchmarkCompareEntity.output_path == output_path,
-                )
-                .all()
-            )
-            right = sum(1 for x in q if x[0] == "RIGHT")
-            wrong = sum(1 for x in q if x[0] == "WRONG")
-            failed = sum(1 for x in q if x[0] == "FAILED")
-            exception = sum(1 for x in q if x[0] == "EXCEPTION")
-
-            # upsert summary
-            existing = (
-                session.query(BenchmarkSummaryEntity)
-                .filter(
-                    BenchmarkSummaryEntity.round_id == round_id,
-                    BenchmarkSummaryEntity.output_path == output_path,
-                )
-                .first()
-            )
-            if existing:
-                existing.right = right
-                existing.wrong = wrong
-                existing.failed = failed
-                existing.exception = exception
-                existing.gmt_modified = datetime.now()
-                session.commit()
-                return existing.id
-            else:
-                summary = BenchmarkSummaryEntity(
-                    round_id=round_id,
-                    output_path=output_path,
-                    right=right,
-                    wrong=wrong,
-                    failed=failed,
-                    exception=exception,
-                )
-                session.add(summary)
-                session.commit()
-                return summary.id
-
+    """DAO for benchmark summary results."""
     def upsert_summary(
         self,
         round_id: int,
@@ -225,8 +128,8 @@ class BenchmarkResultDao(BaseDao):
         wrong: int,
         failed: int,
         exception: int,
-        task_serial_no: Optional[str] = None,
-    ) -> int:
+        evaluate_code: Optional[str] = None,
+    ):
         """Upsert summary counts directly into DB (per llm_code), with task serial no."""
         with self.session() as session:
             existing = (
@@ -243,8 +146,8 @@ class BenchmarkResultDao(BaseDao):
                 existing.wrong = wrong
                 existing.failed = failed
                 existing.exception = exception
-                if task_serial_no is not None:
-                    existing.task_serial_no = task_serial_no
+                if evaluate_code is not None:
+                    existing.evaluate_code = evaluate_code
                 existing.gmt_modified = datetime.now()
                 session.commit()
                 return existing.id
@@ -252,16 +155,15 @@ class BenchmarkResultDao(BaseDao):
                 summary = BenchmarkSummaryEntity(
                     round_id=round_id,
                     output_path=output_path,
+                    evaluate_code=evaluate_code,
                     llm_code=llm_code,
                     right=right,
                     wrong=wrong,
                     failed=failed,
                     exception=exception,
-                    task_serial_no=task_serial_no,
                 )
                 session.add(summary)
                 session.commit()
-                return summary.id
 
     # Basic query helpers
     def list_compare_by_round(self, round_id: int, limit: int = 100, offset: int = 0):
@@ -334,15 +236,15 @@ class BenchmarkResultDao(BaseDao):
             )
 
     def list_tasks(self, limit: int = 100, offset: int = 0) -> List[str]:
-        """List submitted task ids (task_serial_no), ordered by latest summary time."""
+        """List submitted task ids (evaluate_code), ordered by latest summary time."""
         with self.session(commit=False) as session:
             rows = (
                 session.query(
-                    BenchmarkSummaryEntity.task_serial_no,
+                    BenchmarkSummaryEntity.evaluate_code,
                     func.max(BenchmarkSummaryEntity.gmt_created).label("last_time"),
                 )
-                .filter(BenchmarkSummaryEntity.task_serial_no.isnot(None))
-                .group_by(BenchmarkSummaryEntity.task_serial_no)
+                .filter(BenchmarkSummaryEntity.evaluate_code.isnot(None))
+                .group_by(BenchmarkSummaryEntity.evaluate_code)
                 .order_by(desc("last_time"))
                 .limit(limit)
                 .offset(offset)
@@ -351,13 +253,13 @@ class BenchmarkResultDao(BaseDao):
             return [r[0] for r in rows]
 
     def list_summaries_by_task(
-        self, task_serial_no: str, limit: int = 1000, offset: int = 0
+        self, evaluate_code: str, limit: int = 1000, offset: int = 0
     ):
         """List summaries for a given task (may include multiple rounds)."""
         with self.session(commit=False) as session:
             return (
                 session.query(BenchmarkSummaryEntity)
-                .filter(BenchmarkSummaryEntity.task_serial_no == task_serial_no)
+                .filter(BenchmarkSummaryEntity.evaluate_code == evaluate_code)
                 .order_by(desc(BenchmarkSummaryEntity.id))
                 .limit(limit)
                 .offset(offset)

@@ -89,7 +89,7 @@ class FileParseService(ABC):
             extension = Path(output_path).suffix
             if extension.lower() not in [".xlsx", ".xls"]:
                 extension = ".xlsx"
-            excel_file = Path(output_path).parent / f"{base_name}_round{round_id}{extension}"
+            excel_file = Path(output_path).parent / f"{base_name}{extension}"
             if not excel_file.exists():
                 logger.warning(f"summary excel not found: {excel_file}")
                 return json.dumps([], ensure_ascii=False)
