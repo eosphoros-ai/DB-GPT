@@ -1,4 +1,5 @@
 # app/services/user_input_execute_service.py
+import json
 import logging
 from typing import Dict, List, Optional, Union
 
@@ -191,6 +192,7 @@ class UserInputExecuteService:
                 )
                 confirm_list.append(confirm)
 
+        # write compare result to file
         self.file_service.write_data_compare_result(
             location,
             round_id,
@@ -198,15 +200,28 @@ class UserInputExecuteService:
             config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE,
             llm_count,
         )
+        # summary compare result and save to db
+        self._process_benchmark_summary_and_save(location, round_id, config)
+
+    def _process_benchmark_summary_and_save(
+        self, location: str, round_id: int, config: BenchmarkExecuteConfig
+    ):
+        """
+        Process benchmark summary and save to database
+
+        Args:
+            location: File location
+            round_id: Round ID
+            config: Benchmark execution configuration
+        """
         try:
             summary_json = (
                 self.file_service.summary_and_write_multi_round_benchmark_result(
                     location, round_id
                 )
             )
-            import json as _json
 
-            results = _json.loads(summary_json) if summary_json else []
+            results = json.loads(summary_json) if summary_json else []
             dao = BenchmarkResultDao()
             for item in results:
                 llm_code = item.get("llmCode")
@@ -226,7 +241,7 @@ class UserInputExecuteService:
                 )
         except Exception as e:
             logger.error(
-                f"[execute_llm_compare_result] summary from excel"
+                f"[_process_benchmark_summary_and_save_to_db] summary from excel"
                 f" or write db failed: {e}",
             )
 
