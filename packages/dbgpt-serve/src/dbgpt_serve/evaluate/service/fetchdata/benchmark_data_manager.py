@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, cast
 
@@ -191,27 +192,75 @@ class BenchmarkDataManager(BaseComponent):
     # ==========================================================
 
     # 通用查询（阻塞实现，在线程池中调用）
-    def _query_blocking(self, sql: str, params: Optional[Dict[str, Any]] = None):
+    def _query_blocking(
+        self, sql: str, params: Optional[Any] = None, timeout: Optional[float] = None
+    ):
         assert self._connector is not None, "Connector not initialized"
-        with self._connector.session_scope() as session:
-            cursor = session.execute(text(sql), params or {})
-            rows = cursor.fetchall()
-            # SQLAlchemy 2.0: cursor.keys() 提供列名
-            cols = list(cursor.keys())
-            return cols, rows
+        
+        def _execute_query():
+            with self._connector.session_scope() as session:
+                # 如果params是tuple，转换为dict格式或直接使用
+                if isinstance(params, tuple):
+                    # 对于tuple参数，直接传递给execute
+                    cursor = session.execute(text(sql), params)
+                else:
+                    # 对于dict参数或None，使用原有逻辑
+                    cursor = session.execute(text(sql), params or {})
+                
+                # 检查是否返回行数据
+                if cursor.returns_rows:
+                    rows = cursor.fetchall()
+                    # SQLAlchemy 2.0: cursor.keys() 提供列名
+                    cols = list(cursor.keys())
+                    return cols, rows
+                else:
+                    # 对于DDL语句等不返回行的操作，返回空结果
+                    return [], []
+        
+        if timeout is not None:
+            # 使用ThreadPoolExecutor实现超时控制，类似于基类中DuckDB的实现
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_execute_query)
+                try:
+                    return future.result(timeout=timeout)
+                except FutureTimeoutError:
+                    raise TimeoutError(f"Sql query exceeded timeout of {timeout} seconds")
+        else:
+            return _execute_query()
 
     # 通用写入（阻塞实现，在线程池中调用）
-    def _execute_blocking(self, sql: str, params: Optional[Dict[str, Any]] = None):
+    def _execute_blocking(
+        self, sql: str, params: Optional[Dict[str, Any]] = None, timeout: Optional[float] = None
+    ):
         assert self._connector is not None, "Connector not initialized"
-        with self._connector.session_scope() as session:
-            result = session.execute(text(sql), params or {})
-            session.commit()
-            return result.rowcount
+        
+        def _execute_write():
+            with self._connector.session_scope() as session:
+                result = session.execute(text(sql), params or {})
+                session.commit()
+                return result.rowcount
+        
+        if timeout is not None:
+            # 使用ThreadPoolExecutor实现超时控制，类似于基类中DuckDB的实现
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_execute_write)
+                try:
+                    return future.result(timeout=timeout)
+                except FutureTimeoutError:
+                    raise TimeoutError(f"Sql Execute exceeded timeout of {timeout} seconds")
+        else:
+            return _execute_write()
 
-    async def query(self, query: str, params: tuple = ()) -> List[Dict]:
-        """Execute query and return results as dict list"""
+    async def query(self, query: str, params: tuple = (), timeout: Optional[float] = None) -> List[Dict]:
+        """Execute query and return results as dict list
+        
+        Args:
+            query: SQL query string
+            params: Query parameters
+            timeout: Query timeout in seconds (optional)
+        """
         await self.init_connector()
-        cols, rows = await self._run_in_thread(self._query_blocking, query, params)
+        cols, rows = await self._run_in_thread(self._query_blocking, query, params, timeout)
         return [dict(zip(cols, row)) for row in rows]
 
     async def load_from_github(
