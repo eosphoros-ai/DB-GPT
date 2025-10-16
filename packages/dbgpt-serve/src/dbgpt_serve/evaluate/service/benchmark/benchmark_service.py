@@ -58,7 +58,7 @@ BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 # TODO 需要修改为正式文件
 STANDARD_BENCHMARK_FILE_PATH = os.path.join(
     BENCHMARK_DATA_ROOT_PATH,
-    "2025_07_27_public_500_standard_benchmark_question_list_multi_anwser.xlsx",
+    "2025_07_27_public_500_standard_benchmark_question_list_v2.xlsx",
 )
 
 BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")
@@ -220,6 +220,8 @@ class BenchmarkService(
         input_file_path: str,
         output_file_path: str,
         model_list: List[str],
+        temperature: Optional[float],
+        max_tokens: Optional[int],
     ) -> List[BenchmarkTaskResult[OutputType]]:
         """
         Run the dataset benchmark
