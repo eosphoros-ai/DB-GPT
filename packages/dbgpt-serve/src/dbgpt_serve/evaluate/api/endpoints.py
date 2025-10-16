@@ -375,7 +375,7 @@ async def download_benchmark_result(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/benchmark/list_compare_tasks", dependencies=[Depends(check_api_key)])
+@router.get("/benchmark/list_results", dependencies=[Depends(check_api_key)])
 async def list_benchmark_tasks(limit: int = 50, offset: int = 0):
     dao = BenchmarkResultDao()
     tasks = dao.list_tasks(limit=limit, offset=offset)
