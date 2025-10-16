@@ -172,6 +172,7 @@ class BenchmarkExecuteConfig:
     # file path config
     output_file_path: Optional[str] = None
     standard_file_path: str = None
+    input_file_path: Optional[str] = None
 
     # runtime execute config
 

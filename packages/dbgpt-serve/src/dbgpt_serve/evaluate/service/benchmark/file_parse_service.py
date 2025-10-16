@@ -81,8 +81,8 @@ class FileParseService(ABC):
         """Compute summary from the Excel file grouped by llmCode and return JSON list.
 
         It reads the '<base>_round{round_id}.xlsx' file and sheet
-        'benchmark_compare_result', then for each llmCode counts the compareResult column
-        (RIGHT/WRONG/FAILED/EXCEPTION) to build summary list.
+        'benchmark_compare_result', then for each llmCode counts the compareResult
+         column (RIGHT/WRONG/FAILED/EXCEPTION) to build summary list.
         """
         try:
             base_name = Path(output_path).stem
@@ -120,7 +120,8 @@ class FileParseService(ABC):
                 )
 
             logger.info(
-                f"[summary] computed per llmCode for round={round_id}, output_path={output_path} -> {summaries}"
+                f"[summary] computed per llmCode for round={round_id},"
+                f" output_path={output_path} -> {summaries}"
             )
             return json.dumps(summaries, ensure_ascii=False)
         except Exception as e:

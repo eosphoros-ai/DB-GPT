@@ -3,10 +3,10 @@ import logging
 from typing import Dict, List, Optional, Union
 
 from dbgpt.util.benchmarks import StorageUtil
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     get_benchmark_manager,
 )
-from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 
 from .data_compare_service import DataCompareService
 from .file_parse_service import FileParseService
@@ -199,8 +199,10 @@ class UserInputExecuteService:
             llm_count,
         )
         try:
-            summary_json = self.file_service.summary_and_write_multi_round_benchmark_result(
-                location, round_id
+            summary_json = (
+                self.file_service.summary_and_write_multi_round_benchmark_result(
+                    location, round_id
+                )
             )
             import json as _json
 
@@ -212,11 +214,20 @@ class UserInputExecuteService:
                 wrong = int(item.get("wrong", 0))
                 failed = int(item.get("failed", 0))
                 exception = int(item.get("exception", 0))
-                dao.upsert_summary(round_id, location, llm_code, right, wrong, failed, exception, evaluate_code=config.evaluate_code)
+                dao.upsert_summary(
+                    round_id,
+                    location,
+                    llm_code,
+                    right,
+                    wrong,
+                    failed,
+                    exception,
+                    evaluate_code=config.evaluate_code,
+                )
         except Exception as e:
             logger.error(
-                f"[execute_llm_compare_result] summary from excel or write db failed: {e}",
-                exc_info=True,
+                f"[execute_llm_compare_result] summary from excel"
+                f" or write db failed: {e}",
             )
 
     def _convert_query_result_to_column_format(
