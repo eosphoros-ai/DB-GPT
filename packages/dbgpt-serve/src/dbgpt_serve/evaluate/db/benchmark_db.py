@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import datetime
 from typing import List, Optional
@@ -87,7 +86,9 @@ class BenchmarkSummaryEntity(Model):
 
     __tablename__ = "benchmark_summary"
     __table_args__ = (
-        UniqueConstraint("round_id", "output_path", "llm_code", name="uk_round_output_llm"),
+        UniqueConstraint(
+            "round_id", "output_path", "llm_code", name="uk_round_output_llm"
+        ),
     )
 
     id = Column(
@@ -97,7 +98,11 @@ class BenchmarkSummaryEntity(Model):
     output_path = Column(
         String(512), nullable=False, comment="Original output file path"
     )
-    evaluate_code = Column(String(255), nullable=True, comment="Task evaluate_code (unique id per submitted task)")
+    evaluate_code = Column(
+        String(255),
+        nullable=True,
+        comment="Task evaluate_code (unique id per submitted task)",
+    )
     llm_code = Column(String(255), nullable=True, comment="LLM code for this summary")
 
     right = Column(Integer, default=0, comment="RIGHT count")
@@ -119,6 +124,7 @@ class BenchmarkSummaryEntity(Model):
 
 class BenchmarkResultDao(BaseDao):
     """DAO for benchmark summary results."""
+
     def upsert_summary(
         self,
         round_id: int,
@@ -130,7 +136,7 @@ class BenchmarkResultDao(BaseDao):
         exception: int,
         evaluate_code: Optional[str] = None,
     ):
-        """Upsert summary counts directly into DB (per llm_code), with task serial no."""
+        """Upsert summary counts directly into DB (per llm_code) with task"""
         with self.session() as session:
             existing = (
                 session.query(BenchmarkSummaryEntity)

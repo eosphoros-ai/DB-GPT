@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from functools import cache
 from typing import List, Optional
@@ -210,7 +209,13 @@ async def get_compare_run_detail(evaluate_code: str, limit: int = 200, offset: i
     summaries = dao.list_summaries_by_task(evaluate_code, limit=10000, offset=0)
     if not summaries:
         return Result.succ(
-            {"evaluate_code": evaluate_code, "summaries": [], "metrics": {}, "cotTokens": {"total": 0, "byModel": {}}})
+            {
+                "evaluate_code": evaluate_code,
+                "summaries": [],
+                "metrics": {},
+                "cotTokens": {"total": 0, "byModel": {}},
+            }
+        )
 
     detail_list = []
     total_counts = {"right": 0, "wrong": 0, "failed": 0, "exception": 0}
@@ -262,7 +267,6 @@ async def execute_benchmark_task(
     Returns:
         Result: The response
     """
-    # 使用FastAPI的BackgroundTasks来执行后台任务
     background_tasks.add_task(
         _run_benchmark_task_sync,
         service,
@@ -299,30 +303,49 @@ async def benchmark_task_list(
     )
 
 
-@router.get("/benchmark/datasets", dependencies=[Depends(check_api_key)])
+@router.get("/benchmark/list_datasets", dependencies=[Depends(check_api_key)])
 async def list_benchmark_datasets():
     manager = get_benchmark_manager(global_system_app)
     info = await manager.get_table_info()
-    result = [
-        {
-            "name": name,
-            "rowCount": meta.get("row_count", 0),
-            "columns": meta.get("columns", []),
-        }
-        for name, meta in info.items()
-    ]
+    result = [{"dataset_id": "1", "name": "Falcon", "tableCount": len(info.items())}]
     return Result.succ(result)
 
 
-@router.get("/benchmark/datasets/{table}/rows", dependencies=[Depends(check_api_key)])
-async def get_benchmark_table_rows(table: str, limit: int = 10):
-    manager = get_benchmark_manager(global_system_app)
-    info = await manager.get_table_info()
-    if table not in info:
-        raise HTTPException(status_code=404, detail=f"table '{table}' not found")
-    sql = f'SELECT * FROM "{table}" LIMIT :limit'
-    rows = await manager.query(sql, {"limit": limit})
-    return Result.succ({"table": table, "limit": limit, "rows": rows})
+@router.get("/benchmark/dataset/{dataset_id}", dependencies=[Depends(check_api_key)])
+async def list_benchmark_dataset_tables(
+    dataset_id: str, limit: int = 200, offset: int = 0
+):
+    if dataset_id == "1":
+        manager = get_benchmark_manager(global_system_app)
+        info = await manager.get_table_info()
+        result = [
+            {
+                "name": name,
+                "rowCount": meta.get("row_count", 0),
+                "columns": meta.get("columns", []),
+            }
+            for name, meta in info.items()
+        ]
+        return Result.succ(result)
+    else:
+        return Result.succ("dataset not found")
+
+
+@router.get(
+    "/benchmark/dataset/{dataset_id}/{table}/rows",
+    dependencies=[Depends(check_api_key)],
+)
+async def get_benchmark_table_rows(dataset_id: str, table: str, limit: int = 10):
+    if dataset_id == "1":
+        manager = get_benchmark_manager(global_system_app)
+        info = await manager.get_table_info()
+        if table not in info:
+            raise HTTPException(status_code=404, detail=f"table '{table}' not found")
+        sql = f'SELECT * FROM "{table}" LIMIT :limit'
+        rows = await manager.query(sql, {"limit": limit})
+        return Result.succ({"table": table, "limit": limit, "rows": rows})
+    else:
+        return Result.succ("dataset not found")
 
 
 @router.get("/benchmark_result_download", dependencies=[Depends(check_api_key)])
@@ -400,6 +423,7 @@ async def list_benchmark_tasks(limit: int = 50, offset: int = 0):
             }
         )
     return Result.succ(result)
+
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""

@@ -24,6 +24,7 @@ from ....prompt.service.service import Service as PromptService
 from ....rag.service.service import Service as RagService
 from ....rag.storage_manager import StorageManager
 from ...api.schemas import (
+    BenchmarkServeResponse,
     EvaluateServeRequest,
     EvaluateServeResponse,
     EvaluationScene,
@@ -254,51 +255,67 @@ class BenchmarkService(
             output_file_path,
         )
 
-        # read input file
-        input_list: List[BaseInputModel] = (
-            self.user_input_execute_service.read_input_file(input_file_path)
-        )
-
         result_list = []
-        for i in range(1, config.round_time + 1):
-            round_result_list: List[BenchmarkTaskResult[OutputType]] = []
-
-            llm_index = 0
-            for llm_code, thread_num in config.llm_thread_map.items():
-                # 每个llm_code对应的偏移量：llm_index * input_list长度
-                offset = len(input_list) * llm_index
-
-                llm_result = BenchmarkTaskResult[OutputType]()
-                try:
-                    llm_result = self.batch_execute(
-                        config,
-                        input_list,
-                        llm_code,
-                        thread_num,
-                        i,
-                        output_file_path,
-                        offset,
-                    )
-                except Exception as e:
-                    logger.error(f"batch execute error! {e}, llm_code: {llm_code}")
-
-                if llm_result is not None:
-                    round_result_list.append(llm_result)
-                    llm_index += 1
-
-            self.post_dispatch(
-                i,
-                config,
-                input_list,
-                round_result_list,
-                input_file_path,
-                output_file_path,
+        start_time = time.time()
+        try:
+            # read input file
+            input_list: List[BaseInputModel] = (
+                self.user_input_execute_service.read_input_file(input_file_path)
             )
-            result_list.extend(round_result_list)
+
+            for i in range(1, config.round_time + 1):
+                round_result_list: List[BenchmarkTaskResult[OutputType]] = []
+
+                llm_index = 0
+                for llm_code, thread_num in config.llm_thread_map.items():
+                    # 每个llm_code对应的偏移量：llm_index * input_list长度
+                    offset = len(input_list) * llm_index
+
+                    llm_result = BenchmarkTaskResult[OutputType]()
+                    try:
+                        llm_result = self.batch_execute(
+                            config,
+                            input_list,
+                            llm_code,
+                            thread_num,
+                            i,
+                            output_file_path,
+                            offset,
+                        )
+                    except Exception as e:
+                        logger.error(f"batch execute error! {e}, llm_code: {llm_code}")
+
+                    if llm_result is not None:
+                        round_result_list.append(llm_result)
+                        llm_index += 1
+
+                self.post_dispatch(
+                    i,
+                    config,
+                    input_list,
+                    round_result_list,
+                    input_file_path,
+                    output_file_path,
+                )
+                result_list.extend(round_result_list)
+
+            cost_time = int(time.time() - start_time)
+            self._update_benchmark_task_status(
+                evaluate_code, Status.COMPLETE.value, cost_time
+            )
+        except Exception as e:
+            logger.error(
+                f"Benchmark execution failed: {e}, evaluate_code: {evaluate_code}"
+            )
+            cost_time = int(time.time() - start_time)
+            self._update_benchmark_task_status(
+                evaluate_code, Status.FAILED.value, cost_time, error_message=str(e)
+            )
 
         logger.info(
             f"Benchmark task completed successfully for evaluate_code:"
-            f" {evaluate_code}, output_file_path: {output_file_path}"
+            f" {evaluate_code}, output_file_path: {output_file_path}, "
+            f"benchmark task costTime: {cost_time}"
         )
         return result_list
 
@@ -322,6 +339,61 @@ class BenchmarkService(
         config.scene_key = scene_key
 
         return config
+
+    def _update_benchmark_task_status(
+        self,
+        evaluate_code: str,
+        status: str,
+        cost_time: int,
+        error_message: Optional[str] = None,
+    ) -> None:
+        """
+        Update the status and execution time information of the benchmark task
+
+        Args:
+            evaluate_code: Evaluation code
+            status: Task status (Status.COMPLETE.value or Status.FAILED.value)
+            cost_time: Execution time (in seconds)
+            error_message: Error message
+        """
+        try:
+            running_info = {"cost_time": cost_time}
+
+            # 获取现有的context数据并保留原有结构
+            context_data = {}
+            existing_entity: EvaluateServeResponse = self.dao.get_one(
+                {"evaluate_code": evaluate_code}
+            )
+            if existing_entity and existing_entity.context:
+                try:
+                    if isinstance(existing_entity.context, dict):
+                        context_data = existing_entity.context.copy()
+                    elif isinstance(existing_entity.context, str):
+                        existing_context = json.loads(existing_entity.context)
+                        if isinstance(existing_context, dict):
+                            context_data = existing_context.copy()
+                except (json.JSONDecodeError, TypeError):
+                    context_data = {}
+
+            context_data["benchmark_running_info"] = json.dumps(
+                running_info, ensure_ascii=False
+            )
+
+            update_request = EvaluateServeRequest(
+                state=status,
+                context=context_data,
+                log_info=error_message,
+            )
+            self.dao.update({"evaluate_code": evaluate_code}, update_request)
+            logger.info(
+                f"Successfully updated benchmark task status to {status} "
+                f"with cost_time: {cost_time}s, evaluate_code: {evaluate_code}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to update benchmark task status to {status}: {e}, "
+                f"evaluate_code: {evaluate_code}"
+            )
 
     def batch_execute(
         self,
@@ -531,7 +603,7 @@ class BenchmarkService(
 
     def get_list_by_page(
         self, request: EvaluateServeRequest, page: int, page_size: int
-    ) -> PaginationResult[EvaluateServeResponse]:
+    ) -> PaginationResult[BenchmarkServeResponse]:
         """Get a list of Evaluate entities by page
 
         Args:
@@ -540,11 +612,93 @@ class BenchmarkService(
             page_size (int): The page size
 
         Returns:
-            List[EvaluateServeResponse]: The response
+            PaginationResult[BenchmarkServeResponse]: The response
         """
         query_request = request
-        return self.dao.get_list_page(
+        original_result = self.dao.get_list_page(
             query_request, page, page_size, ServeEntity.id.name
+        )
+
+        benchmark_items = []
+        for item in original_result.items:
+            benchmark_response = self._convert_to_benchmark_response(item)
+            benchmark_items.append(benchmark_response)
+
+        return PaginationResult[BenchmarkServeResponse](
+            items=benchmark_items,
+            total_count=original_result.total_count,
+            total_pages=original_result.total_pages,
+            page=original_result.page,
+            page_size=original_result.page_size,
+        )
+
+    def _convert_to_benchmark_response(
+        self, evaluate_response: EvaluateServeResponse
+    ) -> BenchmarkServeResponse:
+        """Convert EvaluateServeResponse to BenchmarkServeResponse
+
+        Args:
+            evaluate_response: The original EvaluateServeResponse
+
+        Returns:
+            BenchmarkServeResponse: The converted response
+        """
+        cost_time = None
+        model_list = None
+        parallel_num = None
+        round_time = None
+
+        # parse context data
+        if evaluate_response.context:
+            try:
+                context_data = evaluate_response.context
+                if isinstance(context_data, str):
+                    context_data = json.loads(context_data)
+
+                if "benchmark_config" in context_data:
+                    benchmark_config_str = context_data["benchmark_config"]
+                    if isinstance(benchmark_config_str, str):
+                        benchmark_config = json.loads(benchmark_config_str)
+                        if "llm_thread_map" in benchmark_config:
+                            llm_thread_map = benchmark_config["llm_thread_map"]
+                            if isinstance(llm_thread_map, dict):
+                                model_list = list(llm_thread_map.keys())
+                        if "thread_num" in benchmark_config:
+                            parallel_num = benchmark_config["thread_num"]
+                        if "round_time" in benchmark_config:
+                            round_time = benchmark_config["round_time"]
+
+                if "benchmark_running_info" in context_data:
+                    running_info_str = context_data["benchmark_running_info"]
+                    if isinstance(running_info_str, str):
+                        running_info = json.loads(running_info_str)
+                        if "cost_time" in running_info:
+                            cost_time = running_info["cost_time"]
+
+            except (json.JSONDecodeError, TypeError, KeyError) as e:
+                logger.warning(f"Failed to parse context data: {e}")
+
+        return BenchmarkServeResponse(
+            evaluate_code=evaluate_response.evaluate_code,
+            scene_key=evaluate_response.scene_key,
+            scene_value=evaluate_response.scene_value,
+            datasets_name=evaluate_response.datasets_name,
+            input_file_path=evaluate_response.datasets_name,
+            output_file_path=evaluate_response.result,
+            model_list=model_list,
+            context=evaluate_response.context,
+            user_name=evaluate_response.user_name,
+            user_id=evaluate_response.user_id,
+            sys_code=evaluate_response.sys_code,
+            parallel_num=parallel_num,
+            state=evaluate_response.state,
+            temperature=None,
+            max_tokens=None,
+            log_info=evaluate_response.log_info,
+            gmt_create=evaluate_response.gmt_create,
+            gmt_modified=evaluate_response.gmt_modified,
+            cost_time=cost_time,
+            round_time=round_time,
         )
 
     async def get_benchmark_file_stream(
