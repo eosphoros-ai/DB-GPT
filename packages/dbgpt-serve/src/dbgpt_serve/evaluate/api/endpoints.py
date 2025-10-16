@@ -204,13 +204,13 @@ async def evaluation(
     )
 
 
-@router.get("/benchmark/result/{serial_no}", dependencies=[Depends(check_api_key)])
-async def get_compare_run_detail(serial_no: str, limit: int = 200, offset: int = 0):
+@router.get("/benchmark/result/{evaluate_code}", dependencies=[Depends(check_api_key)])
+async def get_compare_run_detail(evaluate_code: str, limit: int = 200, offset: int = 0):
     dao = BenchmarkResultDao()
-    summaries = dao.list_summaries_by_task(serial_no, limit=10000, offset=0)
+    summaries = dao.list_summaries_by_task(evaluate_code, limit=10000, offset=0)
     if not summaries:
         return Result.succ(
-            {"serialNo": serial_no, "summaries": [], "metrics": {}, "cotTokens": {"total": 0, "byModel": {}}})
+            {"evaluate_code": evaluate_code, "summaries": [], "metrics": {}, "cotTokens": {"total": 0, "byModel": {}}})
 
     detail_list = []
     total_counts = {"right": 0, "wrong": 0, "failed": 0, "exception": 0}
@@ -241,7 +241,7 @@ async def get_compare_run_detail(serial_no: str, limit: int = 200, offset: int =
 
     return Result.succ(
         {
-            "serialNo": serial_no,
+            "evaluate_code": evaluate_code,
             "summaries": detail_list,
         }
     )
