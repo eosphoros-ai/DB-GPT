@@ -5,6 +5,7 @@ import { EvaluationHeader } from "./EvaluationHeader";
 import { TabKey } from "@/types/models_evaluation";
 import { EvaluationList } from "./EvaluationList";
 import { EvaluationProvider } from "./context/EvaluationContext";
+import { Layout } from "./Layout";
 
 const ModelsEvaluation = () => {
 
@@ -31,10 +32,12 @@ const ModelsEvaluation = () => {
             onSearch={setFilterValue}
           />
           <div className='flex flex-col h-full w-full overflow-y-auto'>
-            <EvaluationList
-              filterValue={filterValue}
-              type={activeKey}
-            />
+            <Layout>
+              <EvaluationList
+                filterValue={filterValue}
+                type={activeKey}
+              />
+            </Layout>
           </div>
         </div>
       </EvaluationProvider>

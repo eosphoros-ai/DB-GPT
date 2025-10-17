@@ -1,7 +1,7 @@
 import { Button, Table, Tag, Tooltip } from "antd";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { EvaluationItem } from "@/types/models_evaluation";
-import { useEvaluation } from "./context/EvaluationContext";
+import { useEvaluation, useEvaluationItem } from "./context/EvaluationContext";
 import { useRouter } from "next/router";
 
 interface EvaluationListProps {
@@ -14,9 +14,20 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
   const { data, loading, getModelsEvaluation } = useEvaluation();
 
   const router = useRouter();
+  const { setData: setActivedEvaluation } = useEvaluationItem();
 
   useEffect(() => {
     getModelsEvaluation?.(1, 20);
+  }, []);
+
+  const goToDetail = useCallback((record: EvaluationItem) => {
+    setActivedEvaluation({
+      name: record.scene_value,
+      id: record.evaluate_code,
+      createTime: record.gmt_create,
+      modifiedTime: record.gmt_modified,
+    })
+    router.push(`/models_evaluation/${record.evaluate_code}`);
   }, []);
 
   const columns = [
@@ -103,7 +114,13 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       key: 'action',
       render: (_: any, record: EvaluationItem) => {
         return (
-          <Button type="link" onClick={() => router.push(`/models_evaluation/${record.evaluate_code}`)} disabled={record.state !== 'complete'}>查看</Button>
+          <Button
+            type="link"
+            disabled={record.state !== 'complete'}
+            onClick={() => goToDetail(record)}
+          >
+            查看
+          </Button>
         );
       },
     },
