@@ -42,6 +42,7 @@ export interface EvaluationItem {
   log_info: null;
   gmt_create: string;
   gmt_modified: string;
+  round_time: number;
 }
 
 export interface EvaluationData {

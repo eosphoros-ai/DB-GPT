@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from "react";
 import { EvaluationItem } from "@/types/models_evaluation";
 import { useEvaluation } from "./context/EvaluationContext";
 import { useRouter } from "next/router";
-
+import styles from './styles.module.css';
 interface EvaluationListProps {
   filterValue?: string;
   type?: string;
@@ -25,16 +25,27 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'evaluate_code',
-      key: 'evaluate_code',
-      width: '20%',
+      title: '评测场景',
+      dataIndex: 'scene_key',
+      key: 'scene_key',
+      width: '10%',
     },
     {
       title: '任务名称',
       dataIndex: 'scene_value',
       key: 'scene_value',
       width: '10%',
+    },
+    {
+      title: '评测集名称',
+      dataIndex: 'datasets_name',
+      key: 'datasets_name',
+      width: '20%',
+      render: (datasets_name: string) => (
+        <Tooltip title={datasets_name}>
+          <p className="truncate">{datasets_name}</p>
+        </Tooltip>
+      ),
     },
     {
       title: '创建时间',
@@ -61,6 +72,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       title: '状态',
       dataIndex: 'state',
       key: 'state',
+      width: '5%',
       render: (state: string, record: EvaluationItem) => {
         let color = 'default';
         let text = state;
@@ -91,19 +103,14 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       },
     },
     {
-      title: '可执行率',
-      key: 'executable_rate',
+      title: '评测轮次',
+      dataIndex: 'round_time',
+      key: 'round_time',
       width: '10%',
-      render: () => <span>--</span>, // 暂时显示默认值
-    },
-    {
-      title: '正确率',
-      key: 'correct_rate',
-      width: '10%',
-      render: () => <span>--</span>, // 暂时显示默认值
     },
     {
       title: '操作',
+      width: '5%',
       key: 'action',
       render: (_: any, record: EvaluationItem) => {
         return (
@@ -121,7 +128,8 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
 
   return (
     <Table
-      className='w-full'
+      tableLayout="fixed"
+      className={`w-full ${styles.table}`}
       pagination={{
         total: data?.total_count || 0,
         current: data?.page || 1,

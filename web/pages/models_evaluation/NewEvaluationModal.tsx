@@ -1,5 +1,4 @@
-import { apiInterceptors } from "@/client/api";
-import { getUsableModels } from "@/client/api/models_evaluation/model";
+import { apiInterceptors, getUsableModels } from "@/client/api";
 import { createBenchmarkTask } from "@/client/api/models_evaluation";
 import { useRequest } from "ahooks";
 import { Form, Input, InputNumber, Modal, Select, Slider, message } from "antd";

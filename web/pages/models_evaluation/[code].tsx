@@ -36,6 +36,8 @@ interface ChartData {
 const EvaluationDetail = () => {
   const router = useRouter();
 
+  const { code } = router.query;
+
   const goToList = useCallback(() => {
     router.push('/models_evaluation');
   }, []);
@@ -44,12 +46,20 @@ const EvaluationDetail = () => {
     <div className="flex flex-col h-full w-full dark:bg-gradient-dark bg-gradient-light bg-cover bg-center px-6 py-2 pt-12">
       <Card
         title={
-          <>
-            <span>模型评估详情</span>
-            <Button type="link" onClick={() => goToList()}>
-              回到列表
-            </Button>
-          </>
+          <div className="flex justify-between">
+            <div>
+              <span>模型评估详情</span>
+              <Button type="link" onClick={() => goToList()}>
+                回到列表
+              </Button>
+            </div>
+            <Button
+              type="link"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
+            >下载结果</Button>
+          </div>
         }
         className={`w-full h-full flex flex-col ${styles['models-evaluation-detail']}`}
       >
@@ -258,8 +268,9 @@ const ModelsTable = ({ data }: {data: BenchmarkSummary[] }) => {
 
   return (
     <Table
+      tableLayout="fixed"
       pagination={false}
-      className='w-full'
+      className={`w-full ${styles.table}`}
       columns={columns}
       dataSource={data}
     />

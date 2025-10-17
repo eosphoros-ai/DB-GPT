@@ -1,3 +1,7 @@
 .models-evaluation-detail :global .ant-card-body {
   overflow-y: auto;
 }
+
+.table :global table {
+  display: table;
+}
