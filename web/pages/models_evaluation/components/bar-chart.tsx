@@ -12,6 +12,12 @@ interface BarChartProps {
   height?: number;
 }
 
+interface InnerDataItem {
+  name: string;
+  color: string;
+  value: number;
+}
+
 export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
   // 转换数据格式以适应Ant Design Charts
   const chartData = data.map(item => ({
@@ -30,9 +36,13 @@ export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
         labelFormatter: '.00%',
       }
     },
+    label: {
+      text: (d: InnerDataItem) => (d.value * 100).toFixed(2) + '%',
+      textBaseline: 'bottom',
+    },
     interaction: {
       tooltip: {
-        render: (e: any, {title, items}: { title: string, items: {name: string, value: number, color: string}[]}) => {
+        render: (e: any, {title, items}: { title: string, items: InnerDataItem[]}) => {
           return (
             <div key={title}>
               <h4>{title}</h4>

@@ -1,13 +1,10 @@
-import { Card, Typography, Spin, Descriptions, Row, Col, Statistic, Button, Tabs } from "antd";
+import { Card, Typography, Spin, Descriptions, Row, Col, Statistic, Button, Tabs, Table } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { apiInterceptors } from "@/client/api";
 import { getBenchmarkResultDetail } from "@/client/api/models_evaluation/result";
 import { BarChart } from "./components/bar-chart";
-import Link from "next/link";
 import styles from "./styles.module.css";
-import { Layout } from "./Layout";
-import { useEvaluationItem } from "./context/EvaluationContext";
 
 const { Title } = Typography;
 
@@ -39,15 +36,7 @@ interface ChartData {
 const EvaluationDetail = () => {
   const router = useRouter();
 
-  const { setData: setActivedEvaluationItem } = useEvaluationItem();
-
   const goToList = useCallback(() => {
-    setActivedEvaluationItem({
-      name: '',
-      id: '',
-      createTime: '',
-      modifiedTime: '',
-    });
     router.push('/models_evaluation');
   }, []);
 
@@ -77,7 +66,6 @@ const EvaluationDetailContent = () => {
   const [loading, setLoading] = useState(true);
   const [resultData, setResultData] = useState<BenchmarkResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { data: activedEvaluationItem } = useEvaluationItem();
 
   useEffect(() => {
     if (code) {
@@ -158,10 +146,6 @@ const EvaluationDetailContent = () => {
         bordered
         items={[{
           key: '1',
-          label: '任务名称',
-          children: activedEvaluationItem?.name
-        }, {
-          key: '2',
           label: '任务ID',
           children: resultData.evaluate_code
         }]}
@@ -206,6 +190,10 @@ const EvaluationDetailContent = () => {
         </Row>
       </div>
 
+      <ModelsTable
+        data={resultData.summaries ?? []}
+      />
+
       <Tabs
         items={[
           {
@@ -215,18 +203,67 @@ const EvaluationDetailContent = () => {
           }
         ]}
       />
-      <Button></Button>
-
     </>
   )
 };
 
-const EvaluationDetailWrapper = () => {
+const ModelsTable = ({ data }: {data: BenchmarkSummary[] }) => {
+  const columns = [{
+    title: '轮次',
+    dataIndex: 'roundId',
+    width: '12.5%',
+    key: 'roundId'
+  }, {
+    title: '模型',
+    dataIndex: 'llmCode',
+    width: '12.5%',
+    key: 'llmCode'
+  }, {
+    title: '题目数',
+    width: '12.5%',
+    key: 'total',
+    render: (record: any) => record.right + record.wrong + record.failed,
+  }, {
+    title: '正确题数',
+    dataIndex: 'right',
+    width: '12.5%',
+    key: 'right'
+  }, {
+    title: '错误题数',
+    dataIndex: 'wrong',
+    width: '12.5%',
+    key: 'wrong'
+  }, {
+    title: '失败题数',
+    dataIndex: 'failed',
+    width: '12.5%',
+    key: 'failed'
+  }, {
+    title: '正确率',
+    dataIndex: 'accuracy',
+    width: '12.5%',
+    key: 'accuracy',
+    render: (value: number) => {
+      return `${(value * 100).toFixed(2)}%`;
+    }
+  },{
+    title: '可执行率',
+    dataIndex: 'execRate',
+    width: '12.5%',
+    key: 'execRate',
+    render: (value: number) => {
+      return `${(value * 100).toFixed(2)}%`;
+    }
+  }];
+
   return (
-    <Layout>
-      <EvaluationDetail />
-    </Layout>
+    <Table
+      pagination={false}
+      className='w-full'
+      columns={columns}
+      dataSource={data}
+    />
   )
 }
 
-export default EvaluationDetailWrapper;
+export default EvaluationDetail;

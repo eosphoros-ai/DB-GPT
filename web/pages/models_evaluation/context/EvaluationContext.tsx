@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useEvaluationList } from '../hooks/useEvaluationList';
 
 interface EvaluationContextType {
@@ -52,50 +52,3 @@ export const useEvaluation = () => {
   }
   return context;
 };
-
-interface EvaluationItemContextType {
-  data: {
-    name: string;
-    id: string,
-    createTime: string;
-    modifiedTime: string;
-  },
-  setData: (data: EvaluationItemContextType['data']) => void;
-}
-
-interface EvaluationItemProviderProps {
-  children: React.ReactNode;
-}
-
-export const EvaluationItemContext = createContext<EvaluationItemContextType | undefined>(undefined);
-
-export const EvaluationItemProvider: React.FC<EvaluationItemProviderProps> = ({
-  children
-}) => {
-
-  const [data, setData] = useState({
-    name: '',
-    id: '',
-    createTime: '',
-    modifiedTime: '',
-  })
-
-  return (
-    <EvaluationItemContext.Provider
-      value={{
-        data,
-        setData,
-      }}
-    >
-      {children}
-    </EvaluationItemContext.Provider>
-  )
-}
-
-export const useEvaluationItem = () => {
-  const context = useContext(EvaluationItemContext);
-  if (context === undefined) {
-    throw new Error('useEvaluationItem must be used within an EvaluationItemProvider');
-  }
-  return context;
-}

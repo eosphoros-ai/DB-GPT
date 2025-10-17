@@ -2,8 +2,8 @@ import { apiInterceptors } from "@/client/api";
 import { getUsableModels } from "@/client/api/models_evaluation/model";
 import { createBenchmarkTask } from "@/client/api/models_evaluation";
 import { useRequest } from "ahooks";
-import { Button, Form, Input, InputNumber, Modal, Select, Slider, message } from "antd";
-import { useEffect, useState } from "react";
+import { Form, Input, InputNumber, Modal, Select, Slider, message } from "antd";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createBenchmarkTaskRequest } from "@/types/models_evaluation";
 
