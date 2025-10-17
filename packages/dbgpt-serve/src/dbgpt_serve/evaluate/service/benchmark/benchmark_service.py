@@ -57,7 +57,7 @@ BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
 STANDARD_BENCHMARK_FILE_PATH = os.path.join(
     BENCHMARK_DATA_ROOT_PATH,
-    "2025_07_27_public_500_standard_benchmark_question_list_v2.xlsx",
+    "2025_07_27_public_500_standard_benchmark_question_list.xlsx",
 )
 
 BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")

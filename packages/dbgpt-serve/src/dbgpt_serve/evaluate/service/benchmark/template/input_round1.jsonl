@@ -1,4 +1,0 @@
-{"serialNo":1,"analysisModelId":"D2025050900161503000025249569","question":"各性别的平均年龄是多少，并按年龄顺序显示结果？","selfDefineTags":"KAGGLE_DS_1,CTE1","prompt":"...","knowledge":""}
-{"serialNo":2,"analysisModelId":"D2025050900161503000025249569","question":"不同投资目标下政府债券的总量是多少，并按目标名称排序？","selfDefineTags":"KAGGLE_DS_1,CTE1","prompt":"...","knowledge":""}
-{"serialNo":3,"analysisModelId":"D2025050900161503000025249569","question":"用于触发双模型结果数不相等的case","selfDefineTags":"TEST","prompt":"...","knowledge":""}
-{"serialNo":4,"analysisModelId":"D2025050900161503000025249569","question":"用于JSON对比策略的case","selfDefineTags":"TEST_JSON","prompt":"...","knowledge":""}

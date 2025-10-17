@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Union
 from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
-    get_benchmark_manager,
+    get_benchmark_manager, BENCHMARK_DEFAULT_DB_SCHEMA,
 )
 
 from .data_compare_service import DataCompareService
@@ -25,8 +25,6 @@ from .models import (
     ReasoningResponse,
     RoundAnswerConfirmModel,
 )
-
-BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
 
 logger = logging.getLogger(__name__)
 

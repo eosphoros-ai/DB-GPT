@@ -24,6 +24,7 @@ from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 logger = logging.getLogger(__name__)
 
+BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
 
 class BenchmarkDataConfig(BaseModel):
     """Configuration for Benchmark Data Manager"""
@@ -31,7 +32,7 @@ class BenchmarkDataConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     cache_dir: str = "cache"
-    db_path: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, "ant_icube_dev.db")
+    db_path: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, f"{BENCHMARK_DEFAULT_DB_SCHEMA}db")
     table_mapping_file: str = os.path.join(
         BENCHMARK_DATA_ROOT_PATH, "table_mapping.json"
     )

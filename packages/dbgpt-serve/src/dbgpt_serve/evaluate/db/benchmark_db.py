@@ -3,13 +3,11 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import (
-    Boolean,
     Column,
     DateTime,
     Index,
     Integer,
     String,
-    Text,
     UniqueConstraint,
     desc,
     func,
@@ -18,64 +16,6 @@ from sqlalchemy import (
 from dbgpt.storage.metadata import BaseDao, Model
 
 logger = logging.getLogger(__name__)
-
-
-class BenchmarkCompareEntity(Model):
-    """Single compare record for one input serialNo in one round.
-
-    Fields match the JSON lines produced by FileParseService.write_data_compare_result.
-    """
-
-    __tablename__ = "benchmark_compare"
-    __table_args__ = (
-        UniqueConstraint(
-            "round_id", "serial_no", "output_path", name="uk_round_serial_output"
-        ),
-    )
-
-    id = Column(
-        Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
-    )
-    # Round and mode
-    round_id = Column(Integer, nullable=False, comment="Benchmark round id")
-    mode = Column(String(16), nullable=False, comment="BUILD or EXECUTE")
-
-    # Input & outputs
-    serial_no = Column(Integer, nullable=False, comment="Input serial number")
-    analysis_model_id = Column(String(255), nullable=False, comment="Analysis model id")
-    question = Column(Text, nullable=False, comment="User question")
-    self_define_tags = Column(String(255), nullable=True, comment="Self define tags")
-    prompt = Column(Text, nullable=True, comment="Prompt text")
-
-    standard_answer_sql = Column(Text, nullable=True, comment="Standard answer SQL")
-    llm_output = Column(Text, nullable=True, comment="LLM output text or JSON")
-    execute_result = Column(
-        Text, nullable=True, comment="Execution result JSON (serialized)"
-    )
-    error_msg = Column(Text, nullable=True, comment="Error message")
-
-    compare_result = Column(
-        String(16), nullable=True, comment="RIGHT/WRONG/FAILED/EXCEPTION"
-    )
-    is_execute = Column(Boolean, default=False, comment="Whether this is EXECUTE mode")
-    llm_count = Column(Integer, default=0, comment="Number of LLM outputs compared")
-
-    # Source path for traceability (original output jsonl file path)
-    output_path = Column(
-        String(512), nullable=False, comment="Original output file path"
-    )
-
-    gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
-    gmt_modified = Column(
-        DateTime,
-        default=datetime.now,
-        onupdate=datetime.now,
-        comment="Record update time",
-    )
-
-    Index("idx_bm_comp_round", "round_id")
-    Index("idx_bm_comp_mode", "mode")
-    Index("idx_bm_comp_serial", "serial_no")
 
 
 class BenchmarkSummaryEntity(Model):
@@ -170,18 +110,6 @@ class BenchmarkResultDao(BaseDao):
                 )
                 session.add(summary)
                 session.commit()
-
-    # Basic query helpers
-    def list_compare_by_round(self, round_id: int, limit: int = 100, offset: int = 0):
-        with self.session(commit=False) as session:
-            return (
-                session.query(BenchmarkCompareEntity)
-                .filter(BenchmarkCompareEntity.round_id == round_id)
-                .order_by(desc(BenchmarkCompareEntity.id))
-                .limit(limit)
-                .offset(offset)
-                .all()
-            )
 
     def get_summary(
         self, round_id: int, output_path: str
