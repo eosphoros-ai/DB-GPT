@@ -89,7 +89,8 @@ class BenchmarkServeRequest(BaseModel):
         description="What sampling temperature to use, between 0 and 2. Higher values "
         "like 0.8 will make the output more random, "
         "while lower values like 0.2 will "
-        "make it more focused and deterministic.",)
+        "make it more focused and deterministic.",
+    )
     max_tokens: Optional[int] = Field(None, description="Max tokens")
     log_info: Optional[str] = Field(None, description="evaluation task error message")
     gmt_create: Optional[str] = Field(None, description="create time")

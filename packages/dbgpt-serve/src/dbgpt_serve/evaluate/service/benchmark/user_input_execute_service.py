@@ -39,7 +39,7 @@ class UserInputExecuteService:
         self.compare_service = compare_service
 
         # sql query timeout in seconds
-        self.query_timeout = 180
+        self.query_timeout = 200.0
 
     def read_input_file(
         self, input_file_path: str
@@ -315,7 +315,9 @@ class UserInputExecuteService:
         if config.execute_llm_result:
             logger.info(f"[benchmark_task] queryResult start!, sql:{sql}")
             try:
-                result: List[Dict] = await get_benchmark_manager().query(sql, timeout=self.query_timeout)
+                result: List[Dict] = await get_benchmark_manager().query(
+                    sql, timeout=self.query_timeout
+                )
                 execute_result = self._convert_query_result_to_column_format(result)
             except Exception as e:
                 logger.error(
