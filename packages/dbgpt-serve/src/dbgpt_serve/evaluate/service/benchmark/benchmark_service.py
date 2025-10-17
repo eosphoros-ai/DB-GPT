@@ -55,7 +55,6 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
-# TODO 需要修改为正式文件
 STANDARD_BENCHMARK_FILE_PATH = os.path.join(
     BENCHMARK_DATA_ROOT_PATH,
     "2025_07_27_public_500_standard_benchmark_question_list_v2.xlsx",
@@ -436,7 +435,7 @@ class BenchmarkService(
                 input_data.llm_code = llm_code
                 logger.info(
                     f"[benchmark_task]start executeBenchmark!"
-                    f" input={json.dumps(input_data.to_dict(), ensure_ascii=False)}"
+                    f" question={input_data.question}"
                 )
 
                 start_time = time.time()
@@ -448,8 +447,7 @@ class BenchmarkService(
 
                 output.cost_time = cost_time
                 logger.info(
-                    f"[benchmark_task]end executeBenchmark!"
-                    f" output={json.dumps(output.to_dict(), ensure_ascii=False)}"
+                    f"[benchmark_task]end executeBenchmark! serial_no={output.serialNo}"
                 )
 
                 with lock:

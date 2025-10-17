@@ -36,10 +36,7 @@ global_system_app: Optional[SystemApp] = None
 logger = logging.getLogger(__name__)
 
 
-def _run_benchmark_task_sync(
-    service: BenchmarkService,
-    request: BenchmarkServeRequest
-):
+def _run_benchmark_task_sync(service: BenchmarkService, request: BenchmarkServeRequest):
     """同步执行benchmark任务的辅助函数，用于在后台任务中运行"""
     try:
         # 创建新的事件循环来运行异步任务
@@ -58,15 +55,11 @@ def _run_benchmark_task_sync(
                     request.max_tokens,
                 )
             )
-            logger.info(
-                f"Benchmark task run sync finish, request: {request}"
-            )
+            logger.info(f"Benchmark task run sync finish, request: {request}")
         finally:
             loop.close()
     except Exception as e:
-        logger.error(
-            f"Benchmark task failed for request: {request}, error: {str(e)}"
-        )
+        logger.error(f"Benchmark task failed for request: {request}, error: {str(e)}")
 
 
 def get_service() -> Service:
@@ -264,11 +257,7 @@ async def execute_benchmark_task(
     Returns:
         Result: The response
     """
-    background_tasks.add_task(
-        _run_benchmark_task_sync,
-        service,
-        request
-    )
+    background_tasks.add_task(_run_benchmark_task_sync, service, request)
 
     # 立即返回成功响应
     return Result.succ(
