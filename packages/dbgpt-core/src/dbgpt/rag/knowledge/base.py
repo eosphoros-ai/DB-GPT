@@ -1,8 +1,11 @@
 """Module for Knowledge Base."""
 
+import re
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
+
+from bs4 import BeautifulSoup
 
 from dbgpt.core import Document
 from dbgpt.rag.text_splitter.text_splitter import (
@@ -208,3 +211,11 @@ class Knowledge(ABC):
             ChunkStrategy: default chunk strategy
         """
         return ChunkStrategy.CHUNK_BY_SIZE
+
+    @staticmethod
+    def parse_document_body(body: str) -> str:
+        result = re.sub(r'<a name="(.*)"></a>', "", body)
+        result = re.sub(r"<br\s*/?>", "", result)
+        soup = BeautifulSoup(result, "html.parser")
+        result = soup.get_text()
+        return result
