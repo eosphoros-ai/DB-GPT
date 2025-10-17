@@ -293,6 +293,21 @@ function SideBar() {
         ),
         path: '/construct/app',
       },
+      {
+        key: 'models_evaluation',
+        name: t('models_evaluation'),
+        isActive: pathname.startsWith('/models_evaluation'),
+        icon: (
+          <Image
+            key='image_construct'
+            src={pathname.startsWith('/models_evaluation') ? '/pictures/app_active.png' : '/pictures/app.png'}
+            alt='construct_image'
+            width={40}
+            height={40}
+          />
+        ),
+        path: '/models_evaluation',
+      }
     ];
     if (hasAdmin) {
       items.push({
