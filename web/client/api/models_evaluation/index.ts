@@ -1,7 +1,4 @@
-import type {
-  getBenchmarkTaskListRequest,
-  createBenchmarkTaskRequest,
-} from '@/types/models_evaluation';
+import type { createBenchmarkTaskRequest, getBenchmarkTaskListRequest } from '@/types/models_evaluation';
 import { getUserId } from '@/utils';
 import { GET, POST } from '../index';
 

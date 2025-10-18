@@ -1,10 +1,10 @@
-import { apiInterceptors, getUsableModels } from "@/client/api";
-import { createBenchmarkTask } from "@/client/api/models_evaluation";
-import { useRequest } from "ahooks";
-import { Form, Input, InputNumber, Modal, Select, Slider, message } from "antd";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { createBenchmarkTaskRequest } from "@/types/models_evaluation";
+import { apiInterceptors, getUsableModels } from '@/client/api';
+import { createBenchmarkTask } from '@/client/api/models_evaluation';
+import { createBenchmarkTaskRequest } from '@/types/models_evaluation';
+import { useRequest } from 'ahooks';
+import { Form, Input, InputNumber, Modal, Select, Slider, message } from 'antd';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   open: boolean;
@@ -25,17 +25,17 @@ export const NewEvaluationModal = (props: Props) => {
       return data || [];
     },
     {
-      onSuccess: (data) => {
+      onSuccess: data => {
         const options = data.map((item: string) => ({
           label: item,
           value: item,
         }));
         setModelOptions(options);
       },
-      onError: (error) => {
+      onError: error => {
         message.error(t('get_model_list_failed') + ': ' + error.message);
       },
-    }
+    },
   );
 
   // 创建评测任务
@@ -60,10 +60,10 @@ export const NewEvaluationModal = (props: Props) => {
         onOk?.(); // 触发外部的onOk回调，用于刷新列表
         onCancel();
       },
-      onError: (error) => {
+      onError: error => {
         message.error(t('create_evaluation_failed') + ': ' + error.message);
       },
-    }
+    },
   );
 
   const handleOk = async () => {
@@ -91,7 +91,7 @@ export const NewEvaluationModal = (props: Props) => {
     >
       <Form
         form={form}
-        layout="vertical"
+        layout='vertical'
         requiredMark={false}
         initialValues={{
           temperature: 0.2,
@@ -100,34 +100,34 @@ export const NewEvaluationModal = (props: Props) => {
       >
         <Form.Item
           label={t('task_name')}
-          name="scene_value"
+          name='scene_value'
           rules={[{ required: true, message: t('please_input_task_name') }]}
         >
           <Input placeholder={t('please_input_task_name')} />
         </Form.Item>
-        
+
         <Form.Item
           label={t('models_to_evaluate')}
-          name="model_list"
+          name='model_list'
           rules={[
             { required: true, message: t('please_select_models_to_evaluate') },
-            { type: 'array', min: 1, message: t('please_select_at_least_one_model') }
+            { type: 'array', min: 1, message: t('please_select_at_least_one_model') },
           ]}
         >
           <Select
-            mode="multiple"
+            mode='multiple'
             placeholder={t('please_select_models_to_evaluate')}
             options={modelOptions}
             loading={modelLoading}
             showSearch
-            optionFilterProp="label"
+            optionFilterProp='label'
             allowClear
           />
         </Form.Item>
 
         <Form.Item
           label={t('temperature')}
-          name="temperature"
+          name='temperature'
           rules={[{ required: true, message: t('please_input_temperature') }]}
         >
           <Slider
@@ -144,15 +144,10 @@ export const NewEvaluationModal = (props: Props) => {
 
         <Form.Item
           label={t('max_new_tokens')}
-          name="max_tokens"
+          name='max_tokens'
           rules={[{ required: true, message: t('please_input_max_new_tokens') }]}
         >
-          <InputNumber
-            min={1}
-            max={32768}
-            style={{ width: '100%' }}
-            placeholder={t('please_input_max_new_tokens')}
-          />
+          <InputNumber min={1} max={32768} style={{ width: '100%' }} placeholder={t('please_input_max_new_tokens')} />
         </Form.Item>
       </Form>
     </Modal>

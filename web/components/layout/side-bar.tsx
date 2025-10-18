@@ -307,7 +307,7 @@ function SideBar() {
           />
         ),
         path: '/models_evaluation',
-      }
+      },
     ];
     if (hasAdmin) {
       items.push({

@@ -65,7 +65,7 @@ export interface getBenchmarkTaskListRequest {
   page_size: number;
   filter_param?: string;
   sys_code?: string;
-};
+}
 
 // 新的创建评测任务请求类型
 export type createBenchmarkTaskRequest = {

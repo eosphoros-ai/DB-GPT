@@ -1,5 +1,5 @@
-import React from 'react';
 import { Column } from '@ant-design/plots';
+import React from 'react';
 
 interface ChartData {
   name: string;
@@ -34,7 +34,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data }) => {
     axis: {
       y: {
         labelFormatter: '.00%',
-      }
+      },
     },
     label: {
       text: (d: InnerDataItem) => (d.value * 100).toFixed(2) + '%',
@@ -42,14 +42,14 @@ export const BarChart: React.FC<BarChartProps> = ({ data }) => {
     },
     interaction: {
       tooltip: {
-        render: (e: any, {title, items}: { title: string, items: InnerDataItem[]}) => {
+        render: (e: any, { title, items }: { title: string; items: InnerDataItem[] }) => {
           return (
             <div key={title}>
               <h4>{title}</h4>
-              {items.map((item) => {
+              {items.map(item => {
                 const { name, value, color } = item;
                 return (
-                  <div className="flex justify-between gap-4">
+                  <div className='flex justify-between gap-4'>
                     <div>
                       <span
                         style={{
@@ -68,10 +68,10 @@ export const BarChart: React.FC<BarChartProps> = ({ data }) => {
                 );
               })}
             </div>
-          )
-        }
-      }
-    }
+          );
+        },
+      },
+    },
   };
 
   return <Column {...config} />;

@@ -1,13 +1,12 @@
-import { ConfigProvider } from "antd";
-import React, { useState } from "react";
+import { ConfigProvider } from 'antd';
+import { useState } from 'react';
 
-import { EvaluationHeader } from "./EvaluationHeader";
-import { TabKey } from "@/types/models_evaluation";
-import { EvaluationList } from "./EvaluationList";
-import { EvaluationProvider } from "./context/EvaluationContext";
+import { TabKey } from '@/types/models_evaluation';
+import { EvaluationHeader } from './EvaluationHeader';
+import { EvaluationList } from './EvaluationList';
+import { EvaluationProvider } from './context/EvaluationContext';
 
 const ModelsEvaluation = () => {
-
   const [activeKey, setActiveKey] = useState<TabKey>('all');
   const [filterValue, setFilterValue] = useState<string>('');
 
@@ -31,15 +30,12 @@ const ModelsEvaluation = () => {
             onSearch={setFilterValue}
           />
           <div className='flex flex-col h-full w-full overflow-y-auto'>
-            <EvaluationList
-              filterValue={filterValue}
-              type={activeKey}
-            />
+            <EvaluationList filterValue={filterValue} type={activeKey} />
           </div>
         </div>
       </EvaluationProvider>
     </ConfigProvider>
-  )
-}
+  );
+};
 
 export default ModelsEvaluation;

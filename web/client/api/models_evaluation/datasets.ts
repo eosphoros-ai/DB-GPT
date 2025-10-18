@@ -11,6 +11,6 @@ export const getBenchmarkDatasetTables = (datasetId: string) => {
 };
 
 // 获取表数据
-export const getBenchmarkTableRows = (datasetId: string, table: string ) => {
+export const getBenchmarkTableRows = (datasetId: string, table: string) => {
   return GET<null, any>(`/api/v2/serve/evaluate/benchmark/dataset/${datasetId}/${table}/rows`);
 };

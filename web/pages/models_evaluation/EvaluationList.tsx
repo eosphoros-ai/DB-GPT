@@ -1,15 +1,15 @@
-import { Button, Table, Tag, Tooltip } from "antd";
-import React, { useCallback, useEffect } from "react";
-import { EvaluationItem } from "@/types/models_evaluation";
-import { useEvaluation } from "./context/EvaluationContext";
-import { useRouter } from "next/router";
+import { EvaluationItem } from '@/types/models_evaluation';
+import { Button, Table, Tag, Tooltip } from 'antd';
+import { useRouter } from 'next/router';
+import React, { useCallback, useEffect } from 'react';
+import { useEvaluation } from './context/EvaluationContext';
 import styles from './styles.module.css';
 interface EvaluationListProps {
   filterValue?: string;
   type?: string;
 }
 
-export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
+export const EvaluationList: React.FC<EvaluationListProps> = props => {
   const { filterValue = '', type = 'all' } = props;
   const { data, loading, getModelsEvaluation } = useEvaluation();
 
@@ -43,7 +43,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       width: '20%',
       render: (datasets_name: string) => (
         <Tooltip title={datasets_name}>
-          <p className="truncate">{datasets_name}</p>
+          <p className='truncate'>{datasets_name}</p>
         </Tooltip>
       ),
     },
@@ -64,9 +64,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       dataIndex: 'model_list',
       key: 'model_list',
       width: '10%',
-      render: (model_list: string[]) => (
-        <span>{model_list.join(',')}</span>
-      ),
+      render: (model_list: string[]) => <span>{model_list.join(',')}</span>,
     },
     {
       title: '状态',
@@ -76,7 +74,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       render: (state: string, record: EvaluationItem) => {
         let color = 'default';
         let text = state;
-        
+
         if (state === 'running') {
           color = 'blue';
           text = '运行中';
@@ -96,7 +94,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
             <Tooltip title={record.log_info}>
               <Tag color={color}>{text}</Tag>
             </Tooltip>
-          )
+          );
         }
 
         return <Tag color={color}>{text}</Tag>;
@@ -114,11 +112,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       key: 'action',
       render: (_: any, record: EvaluationItem) => {
         return (
-          <Button
-            type="link"
-            disabled={record.state !== 'complete'}
-            onClick={() => goToDetail(record)}
-          >
+          <Button type='link' disabled={record.state !== 'complete'} onClick={() => goToDetail(record)}>
             查看
           </Button>
         );
@@ -128,7 +122,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
 
   return (
     <Table
-      tableLayout="fixed"
+      tableLayout='fixed'
       className={`w-full ${styles.table}`}
       pagination={{
         total: data?.total_count || 0,
@@ -141,7 +135,7 @@ export const EvaluationList: React.FC<EvaluationListProps> = (props) => {
       loading={loading}
       columns={columns}
       dataSource={data?.items || []}
-      rowKey="evaluate_code"
+      rowKey='evaluate_code'
     />
   );
 };

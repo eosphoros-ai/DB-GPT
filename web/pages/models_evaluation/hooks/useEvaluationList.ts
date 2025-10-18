@@ -1,8 +1,8 @@
-import { apiInterceptors } from "@/client/api";
-import { getBenchmarkTaskList } from "@/client/api/models_evaluation";
-import { useRequest } from "ahooks";
-import { message } from "antd";
-import { EvaluationData, getBenchmarkTaskListRequest } from "@/types/models_evaluation";
+import { apiInterceptors } from '@/client/api';
+import { getBenchmarkTaskList } from '@/client/api/models_evaluation';
+import { EvaluationData, getBenchmarkTaskListRequest } from '@/types/models_evaluation';
+import { useRequest } from 'ahooks';
+import { message } from 'antd';
 
 interface UseEvaluationListProps {
   filterValue?: string;
@@ -26,18 +26,16 @@ export const useEvaluationList = (props: UseEvaluationListProps) => {
         sys_code: type === 'all' ? undefined : type,
       };
 
-      const [_, data] = await apiInterceptors(
-        getBenchmarkTaskList(params)
-      );
+      const [_, data] = await apiInterceptors(getBenchmarkTaskList(params));
 
       return data as EvaluationData;
     },
     {
       manual: true,
-      onError: (e) => {
+      onError: e => {
         message.error(e.message || '获取评估列表失败');
       },
-    }
+    },
   );
 
   return {

@@ -1,11 +1,11 @@
-import { Card, Typography, Spin, Descriptions, Row, Col, Statistic, Button, Tabs, Table } from "antd";
-import React, { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { apiInterceptors } from "@/client/api";
-import { getBenchmarkResultDetail } from "@/client/api/models_evaluation/result";
-import { BarChart } from "./components/bar-chart";
-import styles from "./styles.module.css";
-import { NavTo } from "./components/nav-to";
+import { apiInterceptors } from '@/client/api';
+import { getBenchmarkResultDetail } from '@/client/api/models_evaluation/result';
+import { Button, Card, Col, Descriptions, Row, Spin, Statistic, Table, Tabs, Typography } from 'antd';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useState } from 'react';
+import { BarChart } from './components/bar-chart';
+import { NavTo } from './components/nav-to';
+import styles from './styles.module.css';
 
 const { Title } = Typography;
 
@@ -44,29 +44,26 @@ const EvaluationDetail = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full w-full dark:bg-gradient-dark bg-gradient-light bg-cover bg-center px-6 py-2 pt-12">
+    <div className='flex flex-col h-full w-full dark:bg-gradient-dark bg-gradient-light bg-cover bg-center px-6 py-2 pt-12'>
       <Card
         title={
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <div>
               <span>模型评估详情</span>
-              <NavTo
-                href="/models_evaluation"
-              >
-                回到列表
-              </NavTo>
+              <NavTo href='/models_evaluation'>回到列表</NavTo>
             </div>
             <div>
-              <NavTo
-                href="/models_evaluation/datasets"
-                openNewTab={true}
-              >查看评测数据</NavTo>
+              <NavTo href='/models_evaluation/datasets' openNewTab={true}>
+                查看评测数据
+              </NavTo>
               <Button
-                type="link"
-                target="_blank"
-                rel="noopener noreferrer"
+                type='link'
+                target='_blank'
+                rel='noopener noreferrer'
                 href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
-              >下载结果</Button>
+              >
+                下载结果
+              </Button>
             </div>
           </div>
         }
@@ -75,11 +72,10 @@ const EvaluationDetail = () => {
         <EvaluationDetailContent />
       </Card>
     </div>
-  )
-}
+  );
+};
 
 const EvaluationDetailContent = () => {
-
   const router = useRouter();
   const { code } = router.query;
   const [loading, setLoading] = useState(true);
@@ -96,7 +92,7 @@ const EvaluationDetailContent = () => {
     try {
       setLoading(true);
       const [err, data] = await apiInterceptors(getBenchmarkResultDetail(evaluateCode));
-      
+
       if (err) {
         setError(err.message || '获取评测结果失败');
         return;
@@ -113,31 +109,31 @@ const EvaluationDetailContent = () => {
 
   if (router.isFallback) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <Spin size="large" />
+      <div className='flex justify-center items-center h-full'>
+        <Spin size='large' />
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <Spin size="large" />
+      <div className='flex justify-center items-center h-full'>
+        <Spin size='large' />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <div className="text-red-500">{error}</div>
+      <div className='flex justify-center items-center h-full'>
+        <div className='text-red-500'>{error}</div>
       </div>
     );
   }
 
   if (!resultData) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className='flex justify-center items-center h-full'>
         <div>暂无数据</div>
       </div>
     );
@@ -149,141 +145,132 @@ const EvaluationDetailContent = () => {
   const totalFailed = resultData.summaries.reduce((sum, item) => sum + item.failed, 0);
   const totalException = resultData.summaries.reduce((sum, item) => sum + item.exception, 0);
   const totalQuestions = totalRight + totalWrong + totalFailed + totalException;
-  
+
   // const overallAccuracy = totalQuestions > 0 ? totalRight / totalQuestions : 0;
   // const overallExecRate = totalQuestions > 0 ? (totalRight + totalWrong) / totalQuestions : 0;
 
   // 准备图表数据
-  const chartData: ChartData[] = resultData.summaries.map(item => [
-    { name: '可执行率', label: item.llmCode, value: item.execRate },
-    { name: '正确率', label: item.llmCode, value: item.accuracy }
-  ]).flat();
+  const chartData: ChartData[] = resultData.summaries
+    .map(item => [
+      { name: '可执行率', label: item.llmCode, value: item.execRate },
+      { name: '正确率', label: item.llmCode, value: item.accuracy },
+    ])
+    .flat();
 
   return (
     <>
       <Descriptions
         bordered
-        items={[{
-          key: '1',
-          label: '任务ID',
-          children: resultData.evaluate_code
-        }]}
+        items={[
+          {
+            key: '1',
+            label: '任务ID',
+            children: resultData.evaluate_code,
+          },
+        ]}
       />
-      <div className="mt-6">
-        <Row gutter={16} className="mb-4">
+      <div className='mt-6'>
+        <Row gutter={16} className='mb-4'>
           <Col span={4}>
-            <Statistic
-              title="模型数"
-              value={resultData.summaries?.length}
-              className="border rounded-lg p-4"
-            />
+            <Statistic title='模型数' value={resultData.summaries?.length} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic
-              title="总题数"
-              value={totalQuestions}
-              className="border rounded-lg p-4"
-            />
+            <Statistic title='总题数' value={totalQuestions} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic
-              title="正确题数"
-              value={totalRight}
-              className="border rounded-lg p-4"
-            />
+            <Statistic title='正确题数' value={totalRight} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic
-              title="错误题数"
-              value={totalWrong}
-              className="border rounded-lg p-4"
-            />
+            <Statistic title='错误题数' value={totalWrong} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic
-              title="失败题数"
-              value={totalFailed}
-              className="border rounded-lg p-4"
-            />
+            <Statistic title='失败题数' value={totalFailed} className='border rounded-lg p-4' />
           </Col>
         </Row>
       </div>
 
-      <ModelsTable
-        data={resultData.summaries ?? []}
-      />
+      <ModelsTable data={resultData.summaries ?? []} />
 
       <Tabs
         items={[
           {
             key: 'overview',
             label: '概览',
-            children: <BarChart data={chartData} />
-          }
+            children: <BarChart data={chartData} />,
+          },
         ]}
       />
     </>
-  )
+  );
 };
 
-const ModelsTable = ({ data }: {data: BenchmarkSummary[] }) => {
-  const columns = [{
-    title: '轮次',
-    dataIndex: 'roundId',
-    width: '12.5%',
-    key: 'roundId'
-  }, {
-    title: '模型',
-    dataIndex: 'llmCode',
-    width: '12.5%',
-    key: 'llmCode'
-  }, {
-    title: '题目数',
-    width: '12.5%',
-    key: 'total',
-    render: (record: any) => record.right + record.wrong + record.failed,
-  }, {
-    title: '正确题数',
-    dataIndex: 'right',
-    width: '12.5%',
-    key: 'right'
-  }, {
-    title: '错误题数',
-    dataIndex: 'wrong',
-    width: '12.5%',
-    key: 'wrong'
-  }, {
-    title: '失败题数',
-    dataIndex: 'failed',
-    width: '12.5%',
-    key: 'failed'
-  }, {
-    title: '正确率',
-    dataIndex: 'accuracy',
-    width: '12.5%',
-    key: 'accuracy',
-    render: (value: number) => {
-      return `${(value * 100).toFixed(2)}%`;
-    }
-  },{
-    title: '可执行率',
-    dataIndex: 'execRate',
-    width: '12.5%',
-    key: 'execRate',
-    render: (value: number) => {
-      return `${(value * 100).toFixed(2)}%`;
-    }
-  }];
+const ModelsTable = ({ data }: { data: BenchmarkSummary[] }) => {
+  const columns = [
+    {
+      title: '轮次',
+      dataIndex: 'roundId',
+      width: '12.5%',
+      key: 'roundId',
+    },
+    {
+      title: '模型',
+      dataIndex: 'llmCode',
+      width: '12.5%',
+      key: 'llmCode',
+    },
+    {
+      title: '题目数',
+      width: '12.5%',
+      key: 'total',
+      render: (record: any) => record.right + record.wrong + record.failed,
+    },
+    {
+      title: '正确题数',
+      dataIndex: 'right',
+      width: '12.5%',
+      key: 'right',
+    },
+    {
+      title: '错误题数',
+      dataIndex: 'wrong',
+      width: '12.5%',
+      key: 'wrong',
+    },
+    {
+      title: '失败题数',
+      dataIndex: 'failed',
+      width: '12.5%',
+      key: 'failed',
+    },
+    {
+      title: '正确率',
+      dataIndex: 'accuracy',
+      width: '12.5%',
+      key: 'accuracy',
+      render: (value: number) => {
+        return `${(value * 100).toFixed(2)}%`;
+      },
+    },
+    {
+      title: '可执行率',
+      dataIndex: 'execRate',
+      width: '12.5%',
+      key: 'execRate',
+      render: (value: number) => {
+        return `${(value * 100).toFixed(2)}%`;
+      },
+    },
+  ];
 
   return (
     <Table
-      tableLayout="fixed"
+      tableLayout='fixed'
       pagination={false}
       className={`w-full ${styles.table}`}
       columns={columns}
       dataSource={data}
     />
-  )
-}
+  );
+};
 
 export default EvaluationDetail;
