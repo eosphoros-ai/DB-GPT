@@ -1,10 +1,10 @@
 import { ConfigProvider } from 'antd';
 import { useState } from 'react';
 
+import { EvaluationHeader } from '@/components/models_evaluation/EvaluationHeader';
+import { EvaluationList } from '@/components/models_evaluation/EvaluationList';
+import { EvaluationProvider } from '@/components/models_evaluation/context/EvaluationContext';
 import { TabKey } from '@/types/models_evaluation';
-import { EvaluationHeader } from './EvaluationHeader';
-import { EvaluationList } from './EvaluationList';
-import { EvaluationProvider } from './context/EvaluationContext';
 
 const ModelsEvaluation = () => {
   const [activeKey, setActiveKey] = useState<TabKey>('all');

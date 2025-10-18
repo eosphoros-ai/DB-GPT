@@ -42,14 +42,14 @@ export const BarChart: React.FC<BarChartProps> = ({ data }) => {
     },
     interaction: {
       tooltip: {
-        render: (e: any, { title, items }: { title: string; items: InnerDataItem[] }) => {
+        render: (_e: any, { title, items }: { title: string; items: InnerDataItem[] }) => {
           return (
             <div key={title}>
               <h4>{title}</h4>
               {items.map(item => {
                 const { name, value, color } = item;
                 return (
-                  <div className='flex justify-between gap-4'>
+                  <div className='flex justify-between gap-4' key={item.name}>
                     <div>
                       <span
                         style={{

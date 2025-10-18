@@ -9,8 +9,8 @@ interface EvaluationListProps {
   type?: string;
 }
 
-export const EvaluationList: React.FC<EvaluationListProps> = props => {
-  const { filterValue = '', type = 'all' } = props;
+export const EvaluationList: React.FC<EvaluationListProps> = () => {
+  // const { filterValue = '', type = 'all' } = props;
   const { data, loading, getModelsEvaluation } = useEvaluation();
 
   const router = useRouter();

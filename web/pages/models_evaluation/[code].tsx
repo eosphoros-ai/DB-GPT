@@ -1,13 +1,11 @@
 import { apiInterceptors } from '@/client/api';
 import { getBenchmarkResultDetail } from '@/client/api/models_evaluation/result';
-import { Button, Card, Col, Descriptions, Row, Spin, Statistic, Table, Tabs, Typography } from 'antd';
+import { BarChart } from '@/components/models_evaluation/components/bar-chart';
+import { NavTo } from '@/components/models_evaluation/components/nav-to';
+import { Button, Card, Col, Descriptions, Row, Spin, Statistic, Table, Tabs } from 'antd';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useState } from 'react';
-import { BarChart } from './components/bar-chart';
-import { NavTo } from './components/nav-to';
+import { useEffect, useState } from 'react';
 import styles from './styles.module.css';
-
-const { Title } = Typography;
 
 // 定义数据类型
 interface BenchmarkSummary {
@@ -38,10 +36,6 @@ const EvaluationDetail = () => {
   const router = useRouter();
 
   const { code } = router.query;
-
-  const goToList = useCallback(() => {
-    router.push('/models_evaluation');
-  }, []);
 
   return (
     <div className='flex flex-col h-full w-full dark:bg-gradient-dark bg-gradient-light bg-cover bg-center px-6 py-2 pt-12'>

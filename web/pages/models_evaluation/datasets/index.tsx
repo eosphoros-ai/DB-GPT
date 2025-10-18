@@ -4,9 +4,9 @@ import {
   getBenchmarkDatasets,
   getBenchmarkTableRows,
 } from '@/client/api/models_evaluation/datasets';
+import { NavTo } from '@/components/models_evaluation/components/nav-to';
 import { Card, Spin, Table, Tree, TreeDataNode, Typography } from 'antd';
 import React, { Key, useEffect, useState } from 'react';
-import { NavTo } from '../components/nav-to';
 import styles from '../styles.module.css';
 
 const { Title, Text } = Typography;
