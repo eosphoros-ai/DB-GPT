@@ -5,6 +5,7 @@ import { apiInterceptors } from "@/client/api";
 import { getBenchmarkResultDetail } from "@/client/api/models_evaluation/result";
 import { BarChart } from "./components/bar-chart";
 import styles from "./styles.module.css";
+import { NavTo } from "./components/nav-to";
 
 const { Title } = Typography;
 
@@ -49,16 +50,24 @@ const EvaluationDetail = () => {
           <div className="flex justify-between">
             <div>
               <span>模型评估详情</span>
-              <Button type="link" onClick={() => goToList()}>
+              <NavTo
+                href="/models_evaluation"
+              >
                 回到列表
-              </Button>
+              </NavTo>
             </div>
-            <Button
-              type="link"
-              target="_blank"
-              rel="noopener noreferrer"
-              href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
-            >下载结果</Button>
+            <div>
+              <NavTo
+                href="/models_evaluation/datasets"
+                openNewTab={true}
+              >查看评测数据</NavTo>
+              <Button
+                type="link"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
+              >下载结果</Button>
+            </div>
           </div>
         }
         className={`w-full h-full flex flex-col ${styles['models-evaluation-detail']}`}
@@ -209,7 +218,7 @@ const EvaluationDetailContent = () => {
           {
             key: 'overview',
             label: '概览',
-            children: <BarChart data={chartData} height={400} />
+            children: <BarChart data={chartData} />
           }
         ]}
       />

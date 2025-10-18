@@ -421,7 +421,7 @@ function SideBar() {
     const language = i18n.language;
     if (language === 'zh') moment.locale('zh-cn');
     if (language === 'en') moment.locale('en');
-  }, []);
+  }, [i18n.language]);
 
   useEffect(() => {
     setLogo(mode === 'dark' ? '/logo_s_latest.png' : '/logo_zh_latest.png');

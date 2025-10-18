@@ -5,3 +5,8 @@
 .table :global table {
   display: table;
 }
+
+.page-card :global .ant-card-body {
+  height: 100%;
+  overflow: hidden;
+}

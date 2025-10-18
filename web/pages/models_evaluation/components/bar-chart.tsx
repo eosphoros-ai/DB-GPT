@@ -18,7 +18,7 @@ interface InnerDataItem {
   value: number;
 }
 
-export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
+export const BarChart: React.FC<BarChartProps> = ({ data }) => {
   // 转换数据格式以适应Ant Design Charts
   const chartData = data.map(item => ({
     ...item,

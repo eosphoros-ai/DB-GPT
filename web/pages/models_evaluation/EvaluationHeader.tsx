@@ -1,10 +1,11 @@
 import { TabKey } from "@/types/models_evaluation";
-import Icon, { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { Button, Input, Segmented, Tooltip } from "antd";
 import { t } from "i18next";
 import { useState } from "react";
 import { NewEvaluationModal } from "./NewEvaluationModal";
 import { useEvaluation } from "./context/EvaluationContext";
+import { NavTo } from "./components/nav-to";
 
 type Props = {
   activeKey?: TabKey,
@@ -56,14 +57,22 @@ export const EvaluationHeader = (props: Props) => {
         <Tooltip title={'刷新'}>
           <ReloadOutlined onClick={refresh} className='p-2 cursor-pointer' />
         </Tooltip>
+        <NavTo
+          href="/models_evaluation/datasets"
+          className='border-none text-white bg-button-gradient h-full m-2'
+          type="primary"
+          openNewTab={true}
+        >
+          查看评测数据
+        </NavTo>
         <Button
           className='border-none text-white bg-button-gradient h-full'
           onClick={createEvaluations}
         >
           {t('create_evaluation')}
         </Button>
-        <NewEvaluationModal 
-          open={evaluationVisible} 
+        <NewEvaluationModal
+          open={evaluationVisible}
           onCancel={() => setEvaluationVisible(false)}
           onOk={refresh}
         />
