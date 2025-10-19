@@ -94,8 +94,7 @@ export const NewEvaluationModal = (props: Props) => {
         layout='vertical'
         requiredMark={false}
         initialValues={{
-          temperature: 0.2,
-          max_tokens: 1024,
+          temperature: 0.6,
         }}
       >
         <Form.Item
@@ -145,7 +144,7 @@ export const NewEvaluationModal = (props: Props) => {
         <Form.Item
           label={t('max_new_tokens')}
           name='max_tokens'
-          rules={[{ required: true, message: t('please_input_max_new_tokens') }]}
+          rules={[{ required: false, message: t('please_input_max_new_tokens') }]}
         >
           <InputNumber min={1} max={32768} style={{ width: '100%' }} placeholder={t('please_input_max_new_tokens')} />
         </Form.Item>

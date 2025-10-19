@@ -54,7 +54,7 @@ export const EvaluationHeader = (props: Props) => {
         />
       </div>
       <div>
-        <Tooltip title={'刷新'}>
+        <Tooltip title={t('refresh_list')}>
           <ReloadOutlined onClick={refresh} className='p-2 cursor-pointer' />
         </Tooltip>
         <NavTo
@@ -63,7 +63,7 @@ export const EvaluationHeader = (props: Props) => {
           type='primary'
           openNewTab={true}
         >
-          查看评测数据
+          {t('evaluation_dataset_info')}
         </NavTo>
         <Button className='border-none text-white bg-button-gradient h-full' onClick={createEvaluations}>
           {t('create_evaluation')}

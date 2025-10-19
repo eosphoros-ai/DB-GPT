@@ -244,7 +244,12 @@ class BenchmarkService(
         )
 
         config = await self._build_benchmark_config(
-            model_list, output_file_path, evaluate_code, scene_key
+            model_list,
+            output_file_path,
+            evaluate_code,
+            scene_key,
+            temperature,
+            max_tokens,
         )
         # save benchmark task
         self.create_benchmark_task(
@@ -321,7 +326,13 @@ class BenchmarkService(
         return result_list
 
     async def _build_benchmark_config(
-        self, model_list, output_file_path, evaluate_code, scene_key
+        self,
+        model_list,
+        output_file_path,
+        evaluate_code,
+        scene_key,
+        temperature,
+        max_tokens,
     ) -> BenchmarkExecuteConfig:
         config = BenchmarkExecuteConfig(
             benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
@@ -338,6 +349,8 @@ class BenchmarkService(
         config.llm_thread_map = {model: 1 for model in model_list}
         config.evaluate_code = evaluate_code
         config.scene_key = scene_key
+        config.temperature = temperature
+        config.max_tokens = max_tokens
 
         return config
 
@@ -492,13 +505,15 @@ class BenchmarkService(
                 raise Exception("benchmark datasets not have prompt template!")
             input.prompt = input.prompt
 
-            # 2. 执行评测 - 使用同步方式调用异步方法
+            # 2. 执行评测
             benchmark_llm_task_service = BenchmarkLLMTask(
                 llm_client=self.llm_client, model_name=input.llm_code
             )
 
             response: ReasoningResponse = await benchmark_llm_task_service.invoke_llm(
-                prompt=input.prompt
+                prompt=input.prompt,
+                temperature=config.temperature,
+                max_tokens=config.max_tokens,
             )
 
             # 3. 组装评测输出
@@ -682,7 +697,7 @@ class BenchmarkService(
             evaluate_code=evaluate_response.evaluate_code,
             scene_key=evaluate_response.scene_key,
             scene_value=evaluate_response.scene_value,
-            datasets_name=evaluate_response.datasets_name,
+            datasets_name="Falcon评测集",
             input_file_path=evaluate_response.datasets_name,
             output_file_path=evaluate_response.result,
             model_list=model_list,

@@ -1,5 +1,6 @@
 import { EvaluationItem } from '@/types/models_evaluation';
 import { Button, Table, Tag, Tooltip } from 'antd';
+import { t } from 'i18next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect } from 'react';
 import { useEvaluation } from './context/EvaluationContext';
@@ -25,22 +26,22 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
 
   const columns = [
     {
-      title: '评测场景',
+      title: t('evaluation_scene'),
       dataIndex: 'scene_key',
       key: 'scene_key',
-      width: '10%',
+      width: '5%',
     },
     {
-      title: '任务名称',
+      title: t('task_name'),
       dataIndex: 'scene_value',
       key: 'scene_value',
-      width: '10%',
+      width: '12%',
     },
     {
-      title: '评测集名称',
+      title: t('evaluation_dataset_name'),
       dataIndex: 'datasets_name',
       key: 'datasets_name',
-      width: '20%',
+      width: '6%',
       render: (datasets_name: string) => (
         <Tooltip title={datasets_name}>
           <p className='truncate'>{datasets_name}</p>
@@ -48,26 +49,26 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
       ),
     },
     {
-      title: '创建时间',
+      title: t('create_time'),
       dataIndex: 'gmt_create',
       key: 'gmt_create',
       width: '10%',
     },
     {
-      title: '完成时间',
+      title: t('finish_time'),
       dataIndex: 'gmt_modified',
       key: 'gmt_modified',
       width: '10%',
     },
     {
-      title: '模型名称',
+      title: t('model_name'),
       dataIndex: 'model_list',
       key: 'model_list',
       width: '10%',
       render: (model_list: string[]) => <span>{model_list.join(',')}</span>,
     },
     {
-      title: '状态',
+      title: t('task_status'),
       dataIndex: 'state',
       key: 'state',
       width: '5%',
@@ -101,19 +102,19 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
       },
     },
     {
-      title: '评测轮次',
+      title: t('round_time'),
       dataIndex: 'round_time',
       key: 'round_time',
-      width: '10%',
+      width: '5%',
     },
     {
-      title: '操作',
-      width: '5%',
+      title: t('operator'),
+      width: '6%',
       key: 'action',
       render: (_: any, record: EvaluationItem) => {
         return (
           <Button type='link' disabled={record.state !== 'complete'} onClick={() => goToDetail(record)}>
-            查看
+            {t('View_details')}
           </Button>
         );
       },

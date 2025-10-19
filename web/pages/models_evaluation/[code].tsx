@@ -43,12 +43,12 @@ const EvaluationDetail = () => {
         title={
           <div className='flex justify-between'>
             <div>
-              <span>模型评估详情</span>
+              <span>数据集评测详情</span>
               <NavTo href='/models_evaluation'>回到列表</NavTo>
             </div>
             <div>
               <NavTo href='/models_evaluation/datasets' openNewTab={true}>
-                查看评测数据
+                查看数据集详情
               </NavTo>
               <Button
                 type='link'
@@ -56,7 +56,7 @@ const EvaluationDetail = () => {
                 rel='noopener noreferrer'
                 href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
               >
-                下载结果
+                下载评测结果
               </Button>
             </div>
           </div>
@@ -166,7 +166,7 @@ const EvaluationDetailContent = () => {
       <div className='mt-6'>
         <Row gutter={16} className='mb-4'>
           <Col span={4}>
-            <Statistic title='模型数' value={resultData.summaries?.length} className='border rounded-lg p-4' />
+            <Statistic title='模型数量' value={resultData.summaries?.length} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
             <Statistic title='总题数' value={totalQuestions} className='border rounded-lg p-4' />

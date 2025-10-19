@@ -6,7 +6,8 @@ from typing import Dict, List, Optional, Union
 from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
-    get_benchmark_manager, BENCHMARK_DEFAULT_DB_SCHEMA,
+    BENCHMARK_DEFAULT_DB_SCHEMA,
+    get_benchmark_manager,
 )
 
 from .data_compare_service import DataCompareService
@@ -296,22 +297,25 @@ class UserInputExecuteService:
         return column_data
 
     async def build_output(self, config, input: InputType, response: ReasoningResponse):
-        return await self._post_sql_query(response.content, input, config, response)
+        return await self._post_sql_query(input, config, response)
 
     async def _post_sql_query(
         self,
-        content: str,
         input: InputType,
         config: BenchmarkExecuteConfig,
         response: ReasoningResponse,
     ) -> AnswerExecuteModel:
+        content = response.content if response else ""
         sql = self._extract_sql_content(content)
         sql = self._process_sql_db_schema(sql)
         execute_result = None
         error_msg = None
 
-        if config.execute_llm_result:
-            logger.info(f"[benchmark_task] queryResult start!, sql:{sql}")
+        if config.execute_llm_result and sql:
+            logger.info(
+                f"[benchmark_task] queryResult start!, seriaNo:{input.serial_no},"
+                f"question:{input.question}"
+            )
             try:
                 result: List[Dict] = await get_benchmark_manager().query(
                     sql, timeout=self.query_timeout
@@ -323,6 +327,11 @@ class UserInputExecuteService:
                 )
                 error_msg = str(e)
             logger.info("[benchmark_task] queryResult end!")
+        else:
+            logger.info(
+                f"[benchmark_task] queryResult skip! execute_llm_result:"
+                f" {config.execute_llm_result}, sql: {sql}"
+            )
 
         return AnswerExecuteModel(
             serialNo=input.serial_no,
@@ -330,7 +339,7 @@ class UserInputExecuteService:
             question=input.question,
             llmOutput=sql,
             executeResult=execute_result,
-            cotTokens=response.cot_tokens,
+            cotTokens=response.cot_tokens if response else 0,
             errorMsg=error_msg,
             llm_code=input.llm_code,
             knowledge=input.knowledge,

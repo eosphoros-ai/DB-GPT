@@ -62,7 +62,17 @@ class BenchmarkLLMTask:
             logger.info(f"Using model {self._model_name} to extract")
 
         model_messages = ModelMessage.from_base_messages(messages)
-        request = ModelRequest(model=self._model_name, messages=model_messages)
+        request_kwargs = {}
+        # Map kwargs to ModelRequest parameters if provided
+        if "temperature" in kwargs:
+            request_kwargs["temperature"] = kwargs.get("temperature")
+        if "max_tokens" in kwargs:
+            # ModelRequest uses max_new_tokens
+            request_kwargs["max_new_tokens"] = kwargs.get("max_tokens")
+
+        request = ModelRequest(
+            model=self._model_name, messages=model_messages, **request_kwargs
+        )
         response = await self._llm_client.generate(request=request)
 
         if not response.success:
