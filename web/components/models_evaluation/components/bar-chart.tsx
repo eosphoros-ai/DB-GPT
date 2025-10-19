@@ -1,5 +1,5 @@
-import React from 'react';
 import { Column } from '@ant-design/plots';
+import React from 'react';
 
 interface ChartData {
   name: string;
@@ -18,7 +18,7 @@ interface InnerDataItem {
   value: number;
 }
 
-export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
+export const BarChart: React.FC<BarChartProps> = ({ data }) => {
   // 转换数据格式以适应Ant Design Charts
   const chartData = data.map(item => ({
     ...item,
@@ -34,7 +34,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
     axis: {
       y: {
         labelFormatter: '.00%',
-      }
+      },
     },
     label: {
       text: (d: InnerDataItem) => (d.value * 100).toFixed(2) + '%',
@@ -42,14 +42,14 @@ export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
     },
     interaction: {
       tooltip: {
-        render: (e: any, {title, items}: { title: string, items: InnerDataItem[]}) => {
+        render: (_e: any, { title, items }: { title: string; items: InnerDataItem[] }) => {
           return (
             <div key={title}>
               <h4>{title}</h4>
-              {items.map((item) => {
+              {items.map(item => {
                 const { name, value, color } = item;
                 return (
-                  <div className="flex justify-between gap-4">
+                  <div className='flex justify-between gap-4' key={item.name}>
                     <div>
                       <span
                         style={{
@@ -68,10 +68,10 @@ export const BarChart: React.FC<BarChartProps> = ({ data, height = 400 }) => {
                 );
               })}
             </div>
-          )
-        }
-      }
-    }
+          );
+        },
+      },
+    },
   };
 
   return <Column {...config} />;
