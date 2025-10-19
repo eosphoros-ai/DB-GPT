@@ -1,17 +1,18 @@
-import { TabKey } from "@/types/models_evaluation";
-import Icon, { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Input, Segmented, Tooltip } from "antd";
-import { t } from "i18next";
-import { useState } from "react";
-import { NewEvaluationModal } from "./NewEvaluationModal";
-import { useEvaluation } from "./context/EvaluationContext";
+import { TabKey } from '@/types/models_evaluation';
+import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Input, Segmented, Tooltip } from 'antd';
+import { t } from 'i18next';
+import { useState } from 'react';
+import { NewEvaluationModal } from './NewEvaluationModal';
+import { NavTo } from './components/nav-to';
+import { useEvaluation } from './context/EvaluationContext';
 
 type Props = {
-  activeKey?: TabKey,
+  activeKey?: TabKey;
   onTabChange?: (v: TabKey) => void;
   filterValue?: string;
   onSearch?: (v: string) => void;
-}
+};
 
 export const EvaluationHeader = (props: Props) => {
   const { onTabChange, activeKey = 'all', filterValue = '', onSearch } = props;
@@ -21,14 +22,14 @@ export const EvaluationHeader = (props: Props) => {
 
   const onFilterChange = (e: any) => {
     onSearch?.(e.target?.value);
-  }
+  };
 
   const createEvaluations = () => {
     setEvaluationVisible(true);
-  }
+  };
 
   return (
-    <div className="flex items-center justify-between">
+    <div className='flex items-center justify-between'>
       <div className='flex items-center gap-4'>
         <Segmented
           className='backdrop-filter h-10 backdrop-blur-lg bg-white bg-opacity-30 border border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
@@ -56,18 +57,19 @@ export const EvaluationHeader = (props: Props) => {
         <Tooltip title={'刷新'}>
           <ReloadOutlined onClick={refresh} className='p-2 cursor-pointer' />
         </Tooltip>
-        <Button
-          className='border-none text-white bg-button-gradient h-full'
-          onClick={createEvaluations}
+        <NavTo
+          href='/models_evaluation/datasets'
+          className='border-none text-white bg-button-gradient h-full m-2'
+          type='primary'
+          openNewTab={true}
         >
+          查看评测数据
+        </NavTo>
+        <Button className='border-none text-white bg-button-gradient h-full' onClick={createEvaluations}>
           {t('create_evaluation')}
         </Button>
-        <NewEvaluationModal 
-          open={evaluationVisible} 
-          onCancel={() => setEvaluationVisible(false)}
-          onOk={refresh}
-        />
+        <NewEvaluationModal open={evaluationVisible} onCancel={() => setEvaluationVisible(false)} onOk={refresh} />
       </div>
     </div>
   );
-}
+};

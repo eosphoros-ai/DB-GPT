@@ -16,17 +16,8 @@ interface EvaluationProviderProps {
   type?: string;
 }
 
-export const EvaluationProvider: React.FC<EvaluationProviderProps> = ({
-  children, 
-  filterValue = '', 
-  type = 'all' 
-}) => {
-  const {
-    data,
-    loading,
-    getModelsEvaluation,
-    refresh,
-  } = useEvaluationList({
+export const EvaluationProvider: React.FC<EvaluationProviderProps> = ({ children, filterValue = '', type = 'all' }) => {
+  const { data, loading, getModelsEvaluation, refresh } = useEvaluationList({
     filterValue,
     type,
   });
@@ -34,10 +25,10 @@ export const EvaluationProvider: React.FC<EvaluationProviderProps> = ({
   return (
     <EvaluationContext.Provider
       value={{
-        refresh, 
+        refresh,
         data,
-        loading, 
-        getModelsEvaluation
+        loading,
+        getModelsEvaluation,
       }}
     >
       {children}
