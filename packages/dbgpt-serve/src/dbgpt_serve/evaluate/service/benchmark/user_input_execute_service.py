@@ -1,12 +1,14 @@
 # app/services/user_input_execute_service.py
+import json
 import logging
 from typing import Dict, List, Optional, Union
 
 from dbgpt.util.benchmarks import StorageUtil
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
+    BENCHMARK_DEFAULT_DB_SCHEMA,
     get_benchmark_manager,
 )
-from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 
 from .data_compare_service import DataCompareService
 from .file_parse_service import FileParseService
@@ -25,8 +27,6 @@ from .models import (
     RoundAnswerConfirmModel,
 )
 
-BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
-
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +36,9 @@ class UserInputExecuteService:
     ):
         self.file_service = file_service
         self.compare_service = compare_service
+
+        # sql query timeout in seconds
+        self.query_timeout = 200.0
 
     def read_input_file(
         self, input_file_path: str
@@ -191,6 +194,7 @@ class UserInputExecuteService:
                 )
                 confirm_list.append(confirm)
 
+        # write compare result to file
         self.file_service.write_data_compare_result(
             location,
             round_id,
@@ -198,13 +202,28 @@ class UserInputExecuteService:
             config.benchmark_mode_type == BenchmarkModeTypeEnum.EXECUTE,
             llm_count,
         )
-        try:
-            summary_json = self.file_service.summary_and_write_multi_round_benchmark_result(
-                location, round_id
-            )
-            import json as _json
+        # summary compare result and save to db
+        self._process_benchmark_summary_and_save(location, round_id, config)
 
-            results = _json.loads(summary_json) if summary_json else []
+    def _process_benchmark_summary_and_save(
+        self, location: str, round_id: int, config: BenchmarkExecuteConfig
+    ):
+        """
+        Process benchmark summary and save to database
+
+        Args:
+            location: File location
+            round_id: Round ID
+            config: Benchmark execution configuration
+        """
+        try:
+            summary_json = (
+                self.file_service.summary_and_write_multi_round_benchmark_result(
+                    location, round_id
+                )
+            )
+
+            results = json.loads(summary_json) if summary_json else []
             dao = BenchmarkResultDao()
             for item in results:
                 llm_code = item.get("llmCode")
@@ -212,11 +231,20 @@ class UserInputExecuteService:
                 wrong = int(item.get("wrong", 0))
                 failed = int(item.get("failed", 0))
                 exception = int(item.get("exception", 0))
-                dao.upsert_summary(round_id, location, llm_code, right, wrong, failed, exception, evaluate_code=config.evaluate_code)
+                dao.upsert_summary(
+                    round_id,
+                    location,
+                    llm_code,
+                    right,
+                    wrong,
+                    failed,
+                    exception,
+                    evaluate_code=config.evaluate_code,
+                )
         except Exception as e:
             logger.error(
-                f"[execute_llm_compare_result] summary from excel or write db failed: {e}",
-                exc_info=True,
+                f"[_process_benchmark_summary_and_save_to_db] summary from excel"
+                f" or write db failed: {e}",
             )
 
     def _convert_query_result_to_column_format(
@@ -269,24 +297,29 @@ class UserInputExecuteService:
         return column_data
 
     async def build_output(self, config, input: InputType, response: ReasoningResponse):
-        return await self._post_sql_query(response.content, input, config, response)
+        return await self._post_sql_query(input, config, response)
 
     async def _post_sql_query(
         self,
-        content: str,
         input: InputType,
         config: BenchmarkExecuteConfig,
         response: ReasoningResponse,
     ) -> AnswerExecuteModel:
+        content = response.content if response else ""
         sql = self._extract_sql_content(content)
         sql = self._process_sql_db_schema(sql)
         execute_result = None
         error_msg = None
 
-        if config.execute_llm_result:
-            logger.info(f"[benchmark_task] queryResult start!, sql:{sql}")
+        if config.execute_llm_result and sql:
+            logger.info(
+                f"[benchmark_task] queryResult start!, seriaNo:{input.serial_no},"
+                f"question:{input.question}"
+            )
             try:
-                result: List[Dict] = await get_benchmark_manager().query(sql)
+                result: List[Dict] = await get_benchmark_manager().query(
+                    sql, timeout=self.query_timeout
+                )
                 execute_result = self._convert_query_result_to_column_format(result)
             except Exception as e:
                 logger.error(
@@ -294,6 +327,11 @@ class UserInputExecuteService:
                 )
                 error_msg = str(e)
             logger.info("[benchmark_task] queryResult end!")
+        else:
+            logger.info(
+                f"[benchmark_task] queryResult skip! execute_llm_result:"
+                f" {config.execute_llm_result}, sql: {sql}"
+            )
 
         return AnswerExecuteModel(
             serialNo=input.serial_no,
@@ -301,7 +339,7 @@ class UserInputExecuteService:
             question=input.question,
             llmOutput=sql,
             executeResult=execute_result,
-            cotTokens=response.cot_tokens,
+            cotTokens=response.cot_tokens if response else 0,
             errorMsg=error_msg,
             llm_code=input.llm_code,
             knowledge=input.knowledge,

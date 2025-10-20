@@ -70,6 +70,7 @@ class BenchmarkServeRequest(BaseModel):
     evaluate_code: Optional[str] = Field(None, description="evaluation code")
     scene_key: Optional[str] = Field(None, description="evaluation scene key")
     scene_value: Optional[str] = Field(None, description="evaluation scene value")
+    datasets_name: Optional[str] = Field(None, description="evaluation datasets name")
     input_file_path: Optional[str] = Field(
         None, description="input benchmark file path"
     )
@@ -77,15 +78,31 @@ class BenchmarkServeRequest(BaseModel):
     model_list: Optional[List[str]] = Field(
         None, description="execute benchmark model name list"
     )
+    context: Optional[dict] = Field(None, description="The context of the evaluate")
     user_name: Optional[str] = Field(None, description="user name")
     user_id: Optional[str] = Field(None, description="user id")
     sys_code: Optional[str] = Field(None, description="system code")
-    parallel_num: Optional[int] = Field(None, description="system code")
+    parallel_num: Optional[int] = Field(None, description="task parallel num")
     state: Optional[str] = Field(None, description="evaluation state")
-    temperature: Optional[str] = Field(None, description="evaluation state")
-    max_tokens: Optional[str] = Field(None, description="evaluation state")
+    temperature: Optional[float] = Field(
+        0.7,
+        description="What sampling temperature to use, between 0 and 2. Higher values "
+        "like 0.8 will make the output more random, "
+        "while lower values like 0.2 will "
+        "make it more focused and deterministic.",
+    )
+    max_tokens: Optional[int] = Field(None, description="Max tokens")
+    log_info: Optional[str] = Field(None, description="evaluation task error message")
     gmt_create: Optional[str] = Field(None, description="create time")
-    gmt_modified: Optional[str] = Field(None, description="create time")
+    gmt_modified: Optional[str] = Field(None, description="modified time")
+
+
+class BenchmarkServeResponse(BenchmarkServeRequest):
+    cost_time: Optional[int] = Field(None, description="evaluation cost time")
+    round_time: Optional[int] = Field(None, description="evaluation round time")
+
+    class Config:
+        title = f"BenchmarkServeResponse for {SERVE_APP_NAME_HUMP}"
 
 
 class StorageType(Enum):

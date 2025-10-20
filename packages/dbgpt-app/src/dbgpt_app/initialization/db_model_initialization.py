@@ -12,10 +12,7 @@ from dbgpt_serve.agent.app.recommend_question.recommend_question import (
 from dbgpt_serve.agent.hub.db.my_plugin_db import MyPluginEntity
 from dbgpt_serve.agent.hub.db.plugin_hub_db import PluginHubEntity
 from dbgpt_serve.datasource.manages.connect_config_db import ConnectConfigEntity
-from dbgpt_serve.evaluate.db.benchmark_db import (
-    BenchmarkCompareEntity,
-    BenchmarkSummaryEntity,
-)
+from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkSummaryEntity
 from dbgpt_serve.file.models.models import ServeEntity as FileServeEntity
 from dbgpt_serve.flow.models.models import ServeEntity as FlowServeEntity
 from dbgpt_serve.flow.models.models import VariablesEntity as FlowVariableEntity
@@ -40,6 +37,5 @@ _MODELS = [
     FlowServeEntity,
     RecommendQuestionEntity,
     FlowVariableEntity,
-    BenchmarkCompareEntity,
     BenchmarkSummaryEntity,
 ]

@@ -6,8 +6,11 @@ import logging
 import os
 import shutil
 import tempfile
+import threading
 import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, cast
 
@@ -21,6 +24,8 @@ from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 logger = logging.getLogger(__name__)
 
+BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
+
 
 class BenchmarkDataConfig(BaseModel):
     """Configuration for Benchmark Data Manager"""
@@ -28,7 +33,9 @@ class BenchmarkDataConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     cache_dir: str = "cache"
-    db_path: str = os.path.join(BENCHMARK_DATA_ROOT_PATH, "ant_icube_dev.db")
+    db_path: str = os.path.join(
+        BENCHMARK_DATA_ROOT_PATH, f"{BENCHMARK_DEFAULT_DB_SCHEMA}db"
+    )
     table_mapping_file: str = os.path.join(
         BENCHMARK_DATA_ROOT_PATH, "table_mapping.json"
     )
@@ -190,28 +197,127 @@ class BenchmarkDataManager(BaseComponent):
 
     # ==========================================================
 
-    # 通用查询（阻塞实现，在线程池中调用）
-    def _query_blocking(self, sql: str, params: Optional[Dict[str, Any]] = None):
+    # 通用查询（阻塞实现，在线程池中调用，支持超时与可中断）
+    def _query_blocking(
+        self, sql: str, params: Optional[Any] = None, timeout: Optional[float] = None
+    ):
         assert self._connector is not None, "Connector not initialized"
-        with self._connector.session_scope() as session:
-            cursor = session.execute(text(sql), params or {})
-            rows = cursor.fetchall()
-            # SQLAlchemy 2.0: cursor.keys() 提供列名
-            cols = list(cursor.keys())
-            return cols, rows
+
+        # 结果容器与同步事件
+        result: Dict[str, Any] = {"data": None, "error": None}
+        done_event = threading.Event()
+        cancel_event = threading.Event()
+
+        def _execute_query():
+            dbapi_conn = None
+            progress_installed = False
+            try:
+                with self._connector.session_scope() as session:
+                    # SQLite 下安装 progress handler，以便在取消时中断执行
+                    try:
+                        if getattr(self._connector, "dialect", None) == "sqlite":
+                            conn = session.connection()
+                            dbapi_conn = getattr(conn, "connection", None)
+                            if dbapi_conn is not None and hasattr(
+                                dbapi_conn, "set_progress_handler"
+                            ):
+
+                                def _progress_handler():
+                                    # 置位取消后返回非零，中断当前语句
+                                    return 1 if cancel_event.is_set() else 0
+
+                                dbapi_conn.set_progress_handler(
+                                    _progress_handler, 10000
+                                )
+                                progress_installed = True
+                    except Exception:
+                        # 安装失败则忽略，回退为不可中断
+                        progress_installed = False
+
+                    # 执行查询（保持对 tuple/dict 参数的兼容）
+                    if isinstance(params, tuple):
+                        cursor = session.execute(text(sql), params)
+                    else:
+                        cursor = session.execute(text(sql), params or {})
+
+                    if cursor.returns_rows:
+                        rows = cursor.fetchall()
+                        cols = list(cursor.keys())
+                        result["data"] = (cols, rows)
+                    else:
+                        result["data"] = ([], [])
+            except Exception as e:
+                result["error"] = e
+            finally:
+                # 清理 progress handler，避免影响连接的后续使用
+                if progress_installed and dbapi_conn is not None:
+                    try:
+                        dbapi_conn.set_progress_handler(None, 0)
+                    except Exception:
+                        pass
+                done_event.set()
+
+        # 启动查询线程（daemon=True确保程序可以正常退出）
+        thread = threading.Thread(target=_execute_query, daemon=True)
+        thread.start()
+
+        # 等待查询完成或超时
+        if timeout is None:
+            done_event.wait()
+        else:
+            if not done_event.wait(timeout=timeout):
+                # 触发取消标记，要求后台线程尽快中断
+                cancel_event.set()
+                # 尽力等待子线程尽快退出，避免成为“僵尸线程”
+                thread.join(timeout=2.0)
+                raise TimeoutError(f"Sql query exceeded timeout of {timeout} seconds")
+
+        if result["error"] is not None:
+            raise result["error"]
+        return cast(Tuple[List[str], List[Tuple]], result["data"])
 
     # 通用写入（阻塞实现，在线程池中调用）
-    def _execute_blocking(self, sql: str, params: Optional[Dict[str, Any]] = None):
+    def _execute_blocking(
+        self,
+        sql: str,
+        params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = None,
+    ):
         assert self._connector is not None, "Connector not initialized"
-        with self._connector.session_scope() as session:
-            result = session.execute(text(sql), params or {})
-            session.commit()
-            return result.rowcount
 
-    async def query(self, query: str, params: tuple = ()) -> List[Dict]:
-        """Execute query and return results as dict list"""
+        def _execute_write():
+            with self._connector.session_scope() as session:
+                result = session.execute(text(sql), params or {})
+                session.commit()
+                return result.rowcount
+
+        if timeout is not None:
+            # 使用ThreadPoolExecutor实现超时控制，类似于基类中DuckDB的实现
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(_execute_write)
+                try:
+                    return future.result(timeout=timeout)
+                except FutureTimeoutError:
+                    raise TimeoutError(
+                        f"Sql Execute exceeded timeout of {timeout} seconds"
+                    )
+        else:
+            return _execute_write()
+
+    async def query(
+        self, query: str, params: tuple = (), timeout: Optional[float] = None
+    ) -> List[Dict]:
+        """Execute query and return results as dict list
+
+        Args:
+            query: SQL query string
+            params: Query parameters
+            timeout: Query timeout in seconds (optional)
+        """
         await self.init_connector()
-        cols, rows = await self._run_in_thread(self._query_blocking, query, params)
+        cols, rows = await self._run_in_thread(
+            self._query_blocking, query, params, timeout
+        )
         return [dict(zip(cols, row)) for row in rows]
 
     async def load_from_github(

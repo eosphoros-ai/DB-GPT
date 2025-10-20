@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from functools import cache
 from typing import List, Optional
@@ -37,15 +36,7 @@ global_system_app: Optional[SystemApp] = None
 logger = logging.getLogger(__name__)
 
 
-def _run_benchmark_task_sync(
-    service: BenchmarkService,
-    evaluate_code: str,
-    scene_key: str,
-    scene_value: str,
-    input_file_path: str,
-    output_file_path: str,
-    model_list: List[str],
-):
+def _run_benchmark_task_sync(service: BenchmarkService, request: BenchmarkServeRequest):
     """同步执行benchmark任务的辅助函数，用于在后台任务中运行"""
     try:
         # 创建新的事件循环来运行异步任务
@@ -54,23 +45,21 @@ def _run_benchmark_task_sync(
         try:
             loop.run_until_complete(
                 service.run_dataset_benchmark(
-                    evaluate_code,
-                    scene_key,
-                    scene_value,
-                    input_file_path,
-                    output_file_path,
-                    model_list,
+                    request.evaluate_code,
+                    request.scene_key,
+                    request.scene_value,
+                    request.input_file_path,
+                    request.output_file_path,
+                    request.model_list,
+                    request.temperature,
+                    request.max_tokens,
                 )
             )
-            logger.info(
-                f"Benchmark task run sync finish, evaluate_code: {evaluate_code}"
-            )
+            logger.info(f"Benchmark task run sync finish, request: {request}")
         finally:
             loop.close()
     except Exception as e:
-        logger.error(
-            f"Benchmark task failed for evaluate_code: {evaluate_code}, error: {str(e)}"
-        )
+        logger.error(f"Benchmark task failed for request: {request}, error: {str(e)}")
 
 
 def get_service() -> Service:
@@ -210,7 +199,13 @@ async def get_compare_run_detail(evaluate_code: str, limit: int = 200, offset: i
     summaries = dao.list_summaries_by_task(evaluate_code, limit=10000, offset=0)
     if not summaries:
         return Result.succ(
-            {"evaluate_code": evaluate_code, "summaries": [], "metrics": {}, "cotTokens": {"total": 0, "byModel": {}}})
+            {
+                "evaluate_code": evaluate_code,
+                "summaries": [],
+                "metrics": {},
+                "cotTokens": {"total": 0, "byModel": {}},
+            }
+        )
 
     detail_list = []
     total_counts = {"right": 0, "wrong": 0, "failed": 0, "exception": 0}
@@ -262,17 +257,7 @@ async def execute_benchmark_task(
     Returns:
         Result: The response
     """
-    # 使用FastAPI的BackgroundTasks来执行后台任务
-    background_tasks.add_task(
-        _run_benchmark_task_sync,
-        service,
-        request.evaluate_code,
-        request.scene_key,
-        request.scene_value,
-        request.input_file_path,
-        request.output_file_path,
-        request.model_list,
-    )
+    background_tasks.add_task(_run_benchmark_task_sync, service, request)
 
     # 立即返回成功响应
     return Result.succ(
@@ -282,7 +267,7 @@ async def execute_benchmark_task(
 
 @router.get("/benchmark_task_list", dependencies=[Depends(check_api_key)])
 async def benchmark_task_list(
-    request: EvaluateServeRequest,
+    state: Optional[str] = Query(default=None, description="benchmark task state"),
     page: Optional[int] = Query(default=1, description="current page"),
     page_size: Optional[int] = Query(default=20, description="page size"),
     service: BenchmarkService = Depends(get_benchmark_service),
@@ -290,6 +275,9 @@ async def benchmark_task_list(
     """
     Query benchmark task list
     """
+    request = EvaluateServeRequest(
+        state=state,
+    )
     return Result.succ(
         service.get_list_by_page(
             request,
@@ -298,21 +286,19 @@ async def benchmark_task_list(
         )
     )
 
+
 @router.get("/benchmark/list_datasets", dependencies=[Depends(check_api_key)])
 async def list_benchmark_datasets():
     manager = get_benchmark_manager(global_system_app)
     info = await manager.get_table_info()
-    result = [
-        {
-            "dataset_id": "1",
-            "name": "Falcon",
-            "tableCount": len(info.items())
-        }
-    ]
+    result = [{"dataset_id": "1", "name": "Falcon", "tableCount": len(info.items())}]
     return Result.succ(result)
 
+
 @router.get("/benchmark/dataset/{dataset_id}", dependencies=[Depends(check_api_key)])
-async def list_benchmark_dataset_tables(dataset_id: str, limit: int = 200, offset: int = 0):
+async def list_benchmark_dataset_tables(
+    dataset_id: str, limit: int = 200, offset: int = 0
+):
     if dataset_id == "1":
         manager = get_benchmark_manager(global_system_app)
         info = await manager.get_table_info()
@@ -329,8 +315,11 @@ async def list_benchmark_dataset_tables(dataset_id: str, limit: int = 200, offse
         return Result.succ("dataset not found")
 
 
-@router.get("/benchmark/dataset/{dataset_id}/{table}/rows", dependencies=[Depends(check_api_key)])
-async def get_benchmark_table_rows(dataset_id:str, table: str, limit: int = 10):
+@router.get(
+    "/benchmark/dataset/{dataset_id}/{table}/rows",
+    dependencies=[Depends(check_api_key)],
+)
+async def get_benchmark_table_rows(dataset_id: str, table: str, limit: int = 10):
     if dataset_id == "1":
         manager = get_benchmark_manager(global_system_app)
         info = await manager.get_table_info()
@@ -341,6 +330,7 @@ async def get_benchmark_table_rows(dataset_id:str, table: str, limit: int = 10):
         return Result.succ({"table": table, "limit": limit, "rows": rows})
     else:
         return Result.succ("dataset not found")
+
 
 @router.get("/benchmark_result_download", dependencies=[Depends(check_api_key)])
 async def download_benchmark_result(
@@ -417,6 +407,7 @@ async def list_benchmark_tasks(limit: int = 50, offset: int = 0):
             }
         )
     return Result.succ(result)
+
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the endpoints"""

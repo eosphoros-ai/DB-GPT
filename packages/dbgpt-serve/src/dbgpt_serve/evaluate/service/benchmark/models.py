@@ -172,6 +172,7 @@ class BenchmarkExecuteConfig:
     # file path config
     output_file_path: Optional[str] = None
     standard_file_path: str = None
+    input_file_path: Optional[str] = None
 
     # runtime execute config
 
@@ -184,6 +185,8 @@ class BenchmarkExecuteConfig:
 
     # llm thread config
     llm_thread_map: Dict[str, int] = field(default=None)
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
 
     # compare result config
     compare_result_enable: bool = True
@@ -226,6 +229,8 @@ class BenchmarkExecuteConfig:
             "user_id": self.user_id,
             "evaluate_code": self.evaluate_code,
             "scene_key": self.scene_key,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
         }
 
     @classmethod
@@ -253,6 +258,8 @@ class BenchmarkExecuteConfig:
             user_id=config_dict.get("user_id"),
             evaluate_code=config_dict.get("evaluate_code"),
             scene_key=config_dict.get("scene_key"),
+            temperature=config_dict.get("temperature"),
+            max_tokens=config_dict.get("max_tokens"),
         )
 
 
