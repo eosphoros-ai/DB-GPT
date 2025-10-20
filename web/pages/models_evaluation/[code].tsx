@@ -23,6 +23,7 @@ interface BenchmarkSummary {
 
 interface BenchmarkResultData {
   evaluate_code: string;
+  scene_value: string;
   summaries: BenchmarkSummary[];
 }
 
@@ -158,8 +159,8 @@ const EvaluationDetailContent = () => {
         items={[
           {
             key: '1',
-            label: t('task_id'),
-            children: resultData.evaluate_code,
+            label: t('task_name'),
+            children: resultData.scene_value,
           },
         ]}
       />

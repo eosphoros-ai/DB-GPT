@@ -580,11 +580,19 @@ class BenchmarkDataManager(BaseComponent):
                             try:
                                 dialect = sniffer.sniff(sample_for_sniff)
                             except Exception:
-
-                                # Fallback: choose delimiter by counting common separators in header/data line
+                                # Fallback: choose delimiter by counting common
+                                # separators in header/data line
                                 delims = [",", "\t", ";", "|"]
-                                counts = {d: (header_line.count(d) if header_line else 0) + (data_line.count(d) if data_line else 0) for d in delims}
-                                best = max(counts, key=counts.get) if any(counts.values()) else ","
+                                counts = {
+                                    d: (header_line.count(d) if header_line else 0)
+                                    + (data_line.count(d) if data_line else 0)
+                                    for d in delims
+                                }
+                                best = (
+                                    max(counts, key=counts.get)
+                                    if any(counts.values())
+                                    else ","
+                                )
 
                                 class _DefaultDialect(csv.Dialect):
                                     delimiter = best
@@ -612,18 +620,29 @@ class BenchmarkDataManager(BaseComponent):
                                 else []
                             )
 
-                            # Heuristic: if has_header is False but header_row looks like names (mostly alphabetic), treat as header
+                            # Heuristic: if has_header is False but header_row looks
+                            # like names (mostly alphabetic), treat as header
                             if not has_header:
+
                                 def _looks_like_header(tokens: List[str]) -> bool:
                                     if not tokens:
                                         return False
                                     # 非空、重复少、字母比例高
-                                    cleaned = [str(t).strip() for t in tokens if str(t).strip()]
+                                    cleaned = [
+                                        str(t).strip() for t in tokens if str(t).strip()
+                                    ]
                                     if not cleaned:
                                         return False
                                     # 允许少量数字，但大多以字母开头
-                                    alpha_starts = sum(1 for t in cleaned if t and (t[0].isalpha() or t[0] == '_'))
-                                    return alpha_starts >= max(1, int(0.6 * len(cleaned)))
+                                    alpha_starts = sum(
+                                        1
+                                        for t in cleaned
+                                        if t and (t[0].isalpha() or t[0] == "_")
+                                    )
+                                    return alpha_starts >= max(
+                                        1, int(0.6 * len(cleaned))
+                                    )
+
                                 if _looks_like_header(header_row):
                                     has_header = True
 

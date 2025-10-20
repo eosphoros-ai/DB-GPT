@@ -194,7 +194,9 @@ async def evaluation(
 
 
 @router.get("/benchmark/result/{evaluate_code}", dependencies=[Depends(check_api_key)])
-async def get_compare_run_detail(evaluate_code: str, limit: int = 200, offset: int = 0):
+async def get_compare_run_detail(
+    evaluate_code: str, service: BenchmarkService = Depends(get_benchmark_service)
+):
     dao = BenchmarkResultDao()
     summaries = dao.list_summaries_by_task(evaluate_code, limit=10000, offset=0)
     if not summaries:
@@ -206,6 +208,7 @@ async def get_compare_run_detail(evaluate_code: str, limit: int = 200, offset: i
                 "cotTokens": {"total": 0, "byModel": {}},
             }
         )
+    entity = service.get_benchmark_by_evaluate_code(evaluate_code)
 
     detail_list = []
     total_counts = {"right": 0, "wrong": 0, "failed": 0, "exception": 0}
@@ -237,6 +240,7 @@ async def get_compare_run_detail(evaluate_code: str, limit: int = 200, offset: i
     return Result.succ(
         {
             "evaluate_code": evaluate_code,
+            "scene_value": entity.scene_value if entity else None,
             "summaries": detail_list,
         }
     )
