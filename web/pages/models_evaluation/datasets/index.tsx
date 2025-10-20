@@ -7,6 +7,7 @@ import {
 import { NavTo } from '@/components/models_evaluation/components/nav-to';
 import { Card, Spin, Table, Tree, TreeDataNode, Typography } from 'antd';
 import React, { Key, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from '../styles.module.css';
 
 const { Title, Text } = Typography;
@@ -52,6 +53,7 @@ const DatasetsForEvaluation = () => {
   });
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const { t } = useTranslation();
   // 构造树结构数据
   const [treeData, setTreeData] = useState<CustomTreeDataNode[]>([]);
 
@@ -61,7 +63,7 @@ const DatasetsForEvaluation = () => {
       const result: Dataset[] = await fetchDatasets();
       setTreeData(
         result.map((item: Dataset) => ({
-          title: `${item.name}(${item.tableCount}张表)`,
+          title: `${item.name}(${item.tableCount} ${t('tables')})`,
           key: item.dataset_id,
           selectable: false,
         })),
@@ -81,13 +83,13 @@ const DatasetsForEvaluation = () => {
       const [err, data] = await apiInterceptors(getBenchmarkDatasets());
 
       if (err) {
-        console.error('获取数据集列表失败:', err);
+        console.error(t('get_dataset_list_failed'), err);
         return;
       }
 
       return data || [];
     } catch (err) {
-      console.error('获取数据集列表失败:', err);
+      console.error(t('get_dataset_list_failed'), err);
     } finally {
       setLoading(prev => ({ ...prev, datasets: false }));
     }
@@ -102,13 +104,13 @@ const DatasetsForEvaluation = () => {
       const [err, data] = await apiInterceptors(getBenchmarkDatasetTables(datasetId));
 
       if (err) {
-        console.error('获取表列表失败:', err);
+        console.error(t('get_table_list_failed'), err);
         return [];
       }
 
       return data || [];
     } catch (err) {
-      console.error('获取表列表失败:', err);
+      console.error(t('get_table_list_failed'), err);
       return [];
     } finally {
       setLoading(prev => ({ ...prev, tables: false }));
@@ -169,13 +171,13 @@ const DatasetsForEvaluation = () => {
       const [err, data] = await apiInterceptors(getBenchmarkTableRows(datasetId, tableName));
 
       if (err) {
-        console.error('获取表数据失败:', err);
+        console.error(t('get_table_data_failed'), err);
         return;
       }
 
       setTableData(data || null);
     } catch (err) {
-      console.error('获取表数据失败:', err);
+      console.error(t('get_table_data_failed'), err);
     } finally {
       setLoading(prev => ({ ...prev, tableData: false }));
     }
@@ -207,8 +209,8 @@ const DatasetsForEvaluation = () => {
       <Card
         title={
           <>
-            评测数据集
-            <NavTo href='/models_evaluation'>返回评测任务列表</NavTo>
+            {t('evaluation_datasets')}
+            <NavTo href='/models_evaluation'>{t('back_to_evaluation_task_list')}</NavTo>
           </>
         }
         className={`w-full h-full flex-1 flex flex-col ${styles['page-card']}`}
@@ -217,7 +219,7 @@ const DatasetsForEvaluation = () => {
           {/* 左侧数据集列表 */}
           <div className='w-1/4 pr-4 border-r flex flex-col'>
             <Title level={5} className='mb-4'>
-              数据集列表
+              {t('dataset_list')}
             </Title>
             <div className='overflow-y-auto h-full'>
               <Tree loadData={loadTreeData} treeData={treeData} onSelect={onTableSelected} />
@@ -228,7 +230,8 @@ const DatasetsForEvaluation = () => {
           <div className='w-3/4 pl-4 flex flex-col'>
             <div className='flex justify-between items-center mb-4'>
               <Title level={5} className='mb-0'>
-                表数据<span className='font-normal text-sm'>（仅展示前10条数据）</span>
+                {t('table_data')}
+                <span className='font-normal text-sm'>{t('only_show_first_10_data')}</span>
               </Title>
               {selectedTable && <Text type='secondary'>{selectedTable}</Text>}
             </div>
@@ -247,9 +250,9 @@ const DatasetsForEvaluation = () => {
                   size='small'
                 />
               ) : selectedTable ? (
-                <Text type='secondary'>暂无数据</Text>
+                <Text type='secondary'>{t('no_data')}</Text>
               ) : (
-                <Text type='secondary'>请先选择一个表</Text>
+                <Text type='secondary'>{t('please_select_a_table_first')}</Text>
               )}
             </div>
           </div>

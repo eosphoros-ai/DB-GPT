@@ -5,10 +5,12 @@ import { EvaluationHeader } from '@/components/models_evaluation/EvaluationHeade
 import { EvaluationList } from '@/components/models_evaluation/EvaluationList';
 import { EvaluationProvider } from '@/components/models_evaluation/context/EvaluationContext';
 import { TabKey } from '@/types/models_evaluation';
+import { useTranslation } from 'react-i18next';
 
 const ModelsEvaluation = () => {
   const [activeKey, setActiveKey] = useState<TabKey>('all');
   const [filterValue, setFilterValue] = useState<string>('');
+  const { t: _t } = useTranslation();
 
   return (
     <ConfigProvider
