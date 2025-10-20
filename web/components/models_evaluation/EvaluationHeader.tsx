@@ -1,6 +1,6 @@
 import { TabKey } from '@/types/models_evaluation';
-import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Input, Segmented, Tooltip } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import { Button, Segmented, Tooltip } from 'antd';
 import { t } from 'i18next';
 import { useState } from 'react';
 import { NewEvaluationModal } from './NewEvaluationModal';
@@ -15,14 +15,10 @@ type Props = {
 };
 
 export const EvaluationHeader = (props: Props) => {
-  const { onTabChange, activeKey = 'all', filterValue = '', onSearch } = props;
+  const { onTabChange, activeKey = 'all' } = props;
   const { refresh } = useEvaluation();
 
   const [evaluationVisible, setEvaluationVisible] = useState(false);
-
-  const onFilterChange = (e: any) => {
-    onSearch?.(e.target?.value);
-  };
 
   const createEvaluations = () => {
     setEvaluationVisible(true);
@@ -42,7 +38,7 @@ export const EvaluationHeader = (props: Props) => {
           onChange={onTabChange}
           value={activeKey}
         />
-        <Input
+        {/* <Input
           variant='filled'
           value={filterValue}
           prefix={<SearchOutlined />}
@@ -51,7 +47,7 @@ export const EvaluationHeader = (props: Props) => {
           onPressEnter={onFilterChange}
           allowClear
           className='w-[230px] h-[40px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
-        />
+        /> */}
       </div>
       <div>
         <Tooltip title={t('refresh_list')}>

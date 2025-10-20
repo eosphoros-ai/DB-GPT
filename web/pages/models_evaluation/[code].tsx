@@ -5,6 +5,7 @@ import { NavTo } from '@/components/models_evaluation/components/nav-to';
 import { Button, Card, Col, Descriptions, Row, Spin, Statistic, Table, Tabs } from 'antd';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './styles.module.css';
 
 // 定义数据类型
@@ -34,6 +35,7 @@ interface ChartData {
 
 const EvaluationDetail = () => {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const { code } = router.query;
 
@@ -43,12 +45,12 @@ const EvaluationDetail = () => {
         title={
           <div className='flex justify-between'>
             <div>
-              <span>数据集评测详情</span>
-              <NavTo href='/models_evaluation'>回到列表</NavTo>
+              <span>{t('dataset_evaluation_detail')}</span>
+              <NavTo href='/models_evaluation'>{t('back_to_list')}</NavTo>
             </div>
             <div>
               <NavTo href='/models_evaluation/datasets' openNewTab={true}>
-                查看数据集详情
+                {t('evaluation_dataset_info')}
               </NavTo>
               <Button
                 type='link'
@@ -56,7 +58,7 @@ const EvaluationDetail = () => {
                 rel='noopener noreferrer'
                 href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
               >
-                下载评测结果
+                {t('download_evaluation_result')}
               </Button>
             </div>
           </div>
@@ -75,6 +77,7 @@ const EvaluationDetailContent = () => {
   const [loading, setLoading] = useState(true);
   const [resultData, setResultData] = useState<BenchmarkResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (code) {
@@ -88,14 +91,14 @@ const EvaluationDetailContent = () => {
       const [err, data] = await apiInterceptors(getBenchmarkResultDetail(evaluateCode));
 
       if (err) {
-        setError(err.message || '获取评测结果失败');
+        setError(err.message || t('get_evaluation_result_failed'));
         return;
       }
 
       setResultData(data || null);
     } catch (err) {
-      setError('获取评测结果失败');
-      console.error('获取评测结果失败:', err);
+      setError(t('get_evaluation_result_failed'));
+      console.error(t('get_evaluation_result_failed'), err);
     } finally {
       setLoading(false);
     }
@@ -128,7 +131,7 @@ const EvaluationDetailContent = () => {
   if (!resultData) {
     return (
       <div className='flex justify-center items-center h-full'>
-        <div>暂无数据</div>
+        <div>{t('no_data')}</div>
       </div>
     );
   }
@@ -140,14 +143,11 @@ const EvaluationDetailContent = () => {
   const totalException = resultData.summaries.reduce((sum, item) => sum + item.exception, 0);
   const totalQuestions = totalRight + totalWrong + totalFailed + totalException;
 
-  // const overallAccuracy = totalQuestions > 0 ? totalRight / totalQuestions : 0;
-  // const overallExecRate = totalQuestions > 0 ? (totalRight + totalWrong) / totalQuestions : 0;
-
   // 准备图表数据
   const chartData: ChartData[] = resultData.summaries
     .map(item => [
-      { name: '可执行率', label: item.llmCode, value: item.execRate },
-      { name: '正确率', label: item.llmCode, value: item.accuracy },
+      { name: t('executable_rate'), label: item.llmCode, value: item.execRate },
+      { name: t('accuracy'), label: item.llmCode, value: item.accuracy },
     ])
     .flat();
 
@@ -158,7 +158,7 @@ const EvaluationDetailContent = () => {
         items={[
           {
             key: '1',
-            label: '任务ID',
+            label: t('task_id'),
             children: resultData.evaluate_code,
           },
         ]}
@@ -166,19 +166,23 @@ const EvaluationDetailContent = () => {
       <div className='mt-6'>
         <Row gutter={16} className='mb-4'>
           <Col span={4}>
-            <Statistic title='模型数量' value={resultData.summaries?.length} className='border rounded-lg p-4' />
+            <Statistic
+              title={t('model_count')}
+              value={resultData.summaries?.length}
+              className='border rounded-lg p-4'
+            />
           </Col>
           <Col span={4}>
-            <Statistic title='总题数' value={totalQuestions} className='border rounded-lg p-4' />
+            <Statistic title={t('total_questions')} value={totalQuestions} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic title='正确题数' value={totalRight} className='border rounded-lg p-4' />
+            <Statistic title={t('correct_questions')} value={totalRight} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic title='错误题数' value={totalWrong} className='border rounded-lg p-4' />
+            <Statistic title={t('wrong_questions')} value={totalWrong} className='border rounded-lg p-4' />
           </Col>
           <Col span={4}>
-            <Statistic title='失败题数' value={totalFailed} className='border rounded-lg p-4' />
+            <Statistic title={t('failed_questions')} value={totalFailed} className='border rounded-lg p-4' />
           </Col>
         </Row>
       </div>
@@ -189,7 +193,7 @@ const EvaluationDetailContent = () => {
         items={[
           {
             key: 'overview',
-            label: '概览',
+            label: t('overview'),
             children: <BarChart data={chartData} />,
           },
         ]}
@@ -199,45 +203,47 @@ const EvaluationDetailContent = () => {
 };
 
 const ModelsTable = ({ data }: { data: BenchmarkSummary[] }) => {
+  const { t } = useTranslation();
+
   const columns = [
     {
-      title: '轮次',
+      title: t('round'),
       dataIndex: 'roundId',
       width: '12.5%',
       key: 'roundId',
     },
     {
-      title: '模型',
+      title: t('model'),
       dataIndex: 'llmCode',
       width: '12.5%',
       key: 'llmCode',
     },
     {
-      title: '题目数',
+      title: t('question_count'),
       width: '12.5%',
       key: 'total',
       render: (record: any) => record.right + record.wrong + record.failed,
     },
     {
-      title: '正确题数',
+      title: t('correct_questions'),
       dataIndex: 'right',
       width: '12.5%',
       key: 'right',
     },
     {
-      title: '错误题数',
+      title: t('wrong_questions'),
       dataIndex: 'wrong',
       width: '12.5%',
       key: 'wrong',
     },
     {
-      title: '失败题数',
+      title: t('failed_questions'),
       dataIndex: 'failed',
       width: '12.5%',
       key: 'failed',
     },
     {
-      title: '正确率',
+      title: t('accuracy'),
       dataIndex: 'accuracy',
       width: '12.5%',
       key: 'accuracy',
@@ -246,7 +252,7 @@ const ModelsTable = ({ data }: { data: BenchmarkSummary[] }) => {
       },
     },
     {
-      title: '可执行率',
+      title: t('executable_rate'),
       dataIndex: 'execRate',
       width: '12.5%',
       key: 'execRate',
