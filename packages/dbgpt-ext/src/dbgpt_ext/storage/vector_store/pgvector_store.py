@@ -1,6 +1,7 @@
 """Postgres vector store."""
 
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
@@ -99,8 +100,10 @@ class PGVectorStore(VectorStoreBase):
             max_chunks_once_load=max_chunks_once_load, max_threads=max_threads
         )
         self._vector_store_config = vector_store_config
+        self.connection_string = vector_store_config.connection_string or os.getenv(
+            "PGVECTOR_CONNECTION_STRING"
+        )
 
-        self.connection_string = vector_store_config.connection_string
         self.embeddings = embedding_fn
         self.collection_name = name
 
