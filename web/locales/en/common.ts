@@ -383,7 +383,7 @@ export const CommonEn = {
   round_time: 'Round Time',
   operator: 'Operator',
   // Models Evaluation translations
-  dataset_evaluation_detail: 'Dataset Evaluation Detail',
+  dataset_evaluation_detail: 'Dataset Evaluation Report',
   back_to_list: 'Back to List',
   download_evaluation_result: 'Download Evaluation Result',
   get_evaluation_result_failed: 'Failed to get evaluation result',

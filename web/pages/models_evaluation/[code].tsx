@@ -57,7 +57,7 @@ const EvaluationDetail = () => {
                 type='link'
                 target='_blank'
                 rel='noopener noreferrer'
-                href={`${process.env.API_BASE_URL}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
+                href={`${process.env.API_BASE_URL ?? ''}/api/v1/evaluate/benchmark_result_download?evaluate_code=${code}`}
               >
                 {t('download_evaluation_result')}
               </Button>

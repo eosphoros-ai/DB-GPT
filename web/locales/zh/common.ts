@@ -388,7 +388,7 @@ export const CommonZh: Resources['translation'] = {
   round_time: '评测轮次',
   operator: '操作',
   // Models Evaluation translations
-  dataset_evaluation_detail: '数据集评测详情',
+  dataset_evaluation_detail: '数据集评测报告',
   back_to_list: '回到列表',
   download_evaluation_result: '下载评测结果',
   get_evaluation_result_failed: '获取评测结果失败',
