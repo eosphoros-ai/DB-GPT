@@ -772,3 +772,18 @@ class BenchmarkService(
         except Exception as e:
             logger.error(f"Failed to read result file {file_path}: {e}")
             raise Exception(f"Failed to read result file: {str(e)}")
+
+    def get_benchmark_by_evaluate_code(self, evaluate_code: str):
+        if not evaluate_code:
+            return None
+        try:
+            entity = self.dao.get_one({"evaluate_code": evaluate_code})
+            if not entity:
+                return None
+            return entity
+        except Exception as e:
+            logger.error(
+                f"Failed to query evaluation record by evaluate_code:"
+                f" {evaluate_code}, error: {e}"
+            )
+            raise Exception(f"Failed to query evaluation record: {str(e)}")

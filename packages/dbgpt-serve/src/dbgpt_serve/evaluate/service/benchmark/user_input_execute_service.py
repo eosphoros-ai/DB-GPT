@@ -1,6 +1,7 @@
 # app/services/user_input_execute_service.py
 import json
 import logging
+import os
 from typing import Dict, List, Optional, Union
 
 from dbgpt.util.benchmarks import StorageUtil
@@ -38,7 +39,7 @@ class UserInputExecuteService:
         self.compare_service = compare_service
 
         # sql query timeout in seconds
-        self.query_timeout = 200.0
+        self.query_timeout = float(os.getenv("BENCHMARK_SQL_TIMEOUT", 360.0))
 
     def read_input_file(
         self, input_file_path: str
