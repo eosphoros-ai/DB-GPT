@@ -47,15 +47,40 @@ class StorageManager(BaseComponent):
         elif storage_type == "KnowledgeGraph":
             if not storage_config.graph:
                 raise ValueError(
-                    "Graph storage is not configured.please check your config."
-                    "reference configs/dbgpt-graphrag.toml"
+                    "Graph storage is not configured. To use Knowledge Graph:\n"
+                    "1. Make sure TuGraph database is running "
+                    "(docker run -d -p 7687:7687 --name tugraph_demo "
+                    "tugraph/tugraph-runtime-centos7:latest)\n"
+                    "2. Start the webserver with graph storage config:\n"
+                    "   python dbgpt_server.py --config configs/dbgpt-graphrag.toml\n"
+                    "3. Or add [rag.storage.graph] section to your current config "
+                    "file:\n"
+                    "   [rag.storage.graph]\n"
+                    '   type = "TuGraph"\n'
+                    '   host = "127.0.0.1"\n'
+                    "   port = 7687\n"
+                    '   username = "admin"\n'
+                    '   password = "73@TuGraph"\n'
+                    "See docs/docs/installation/integrations/graph_rag_install.md "
+                    "for details."
                 )
             return self.create_kg_store(index_name, llm_model)
         elif storage_type == "FullText":
             if not storage_config.full_text:
                 raise ValueError(
-                    "FullText storage is not configured.please check your config."
-                    "reference configs/dbgpt-bm25-rag.toml"
+                    "FullText storage is not configured. To use Full-Text "
+                    "Search (BM25):\n"
+                    "1. Make sure Elasticsearch is running (docker run -d -p "
+                    '9200:9200 -e "discovery.type=single-node" elasticsearch:8.7.0)\n'
+                    "2. Start the webserver with full-text config:\n"
+                    "   python dbgpt_server.py --config configs/dbgpt-bm25-rag.toml\n"
+                    "3. Or add [rag.storage.full_text] section to your current "
+                    "config file:\n"
+                    "   [rag.storage.full_text]\n"
+                    '   type = "elasticsearch"\n'
+                    '   host = "127.0.0.1"\n'
+                    "   port = 9200\n"
+                    "See documentation for details."
                 )
             return self.create_full_text_store(index_name)
         else:
