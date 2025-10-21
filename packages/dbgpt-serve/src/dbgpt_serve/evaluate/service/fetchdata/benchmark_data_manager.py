@@ -40,7 +40,7 @@ class BenchmarkDataConfig(BaseModel):
         BENCHMARK_DATA_ROOT_PATH, "table_mapping.json"
     )
     cache_expiry_days: int = 1
-    repo_url: str = "https://github.com/inclusionAI/Falcon"
+    repo_url: str = "https://github.com/eosphoros-ai/Falcon"
     data_dir: str = "data/source"
 
 
