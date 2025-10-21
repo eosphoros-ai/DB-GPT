@@ -1,7 +1,7 @@
 """Postgres vector store."""
 
-import os
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
