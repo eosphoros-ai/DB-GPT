@@ -2,6 +2,8 @@
 
 For Text2SQL tasks, we provide a dataset benchmarking capability. It evaluates different large language models (LLMs) and agents on Text2SQL, covering syntax correctness, semantic accuracy, and execution validity. It outputs metrics such as executability rate and accuracy rate, and provides an evaluation report.
 
+1. DB-GPT open-source Text2SQL benchmark dataset: [Falcon](https://github.com/eosphoros-ai/Falcon)
+2. DB-GPT supports LLM evaluation based on the Falcon benchmark dataset
 
 # Introduction
 
