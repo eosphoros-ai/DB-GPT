@@ -67,6 +67,10 @@ Core capabilities of the benchmarking module:
   <img src={'/img/module/benchmark/env_load.png'} width="1000px"/>
 </p>
 
+- Register LLM on the DB-GPT platform 
+  - Method 1: Configure via configuration file. Reference: [ProxyModel Configuration](http://docs.dbgpt.cn/docs/next/installation/advanced_usage/More_proxyllms)
+  - Method 2: Configure via product page. Reference: [Models](http://docs.dbgpt.cn/docs/next/application/llms)
+
 ## Create Evaluation Task
 - Step1: Click "Create Benchmark" to create an evaluation task
 - Step2: Enter the task name and select model list
