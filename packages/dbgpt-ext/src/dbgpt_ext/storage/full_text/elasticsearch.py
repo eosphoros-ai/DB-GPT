@@ -65,6 +65,10 @@ class ElasticDocumentStore(FullTextStoreBase):
                 hosts=[f"http://{self._es_url}:{self._es_port}"],
             )
         self._es_index_settings = {
+            "number_of_shards": 1,
+            # replica number # # Avoid yellow status in standalone es,
+            # TODO: setting in config toml
+            "number_of_replicas": 0,
             "analysis": {"analyzer": {"default": {"type": "standard"}}},
             "similarity": {
                 "custom_bm25": {
