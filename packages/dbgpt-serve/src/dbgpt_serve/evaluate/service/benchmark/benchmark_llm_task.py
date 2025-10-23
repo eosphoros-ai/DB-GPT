@@ -76,7 +76,7 @@ class BenchmarkLLMTask:
         response = await self._llm_client.generate(request=request)
 
         if not response:
-            logger.error(f"[benchmarkLLMTask] request llm failed, repsonse is None")
+            logger.error("[benchmarkLLMTask] request llm failed, response is None")
             return None
 
         if not response.success:
@@ -89,7 +89,7 @@ class BenchmarkLLMTask:
             cot_tokens = 0
             if response.usage and isinstance(response.usage, dict):
                 cot_tokens = response.usage.get("total_tokens", 0)
-            
+
             return ReasoningResponse(
                 cot_tokens=cot_tokens,
                 think=response.thinking_text if response.has_thinking else None,
