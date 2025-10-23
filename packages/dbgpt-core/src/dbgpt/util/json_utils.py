@@ -4,7 +4,7 @@ import json
 import logging
 import re
 from dataclasses import asdict, is_dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,8 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         if isinstance(obj, datetime):
             return obj.isoformat()
         if isinstance(obj, date):
+            return obj.isoformat()
+        if isinstance(obj, time):
             return obj.isoformat()
         return super().default(obj)
 
