@@ -1,0 +1,103 @@
+{
+  "tableName": "dataset_evaluation_result",
+  "columns": [
+    {
+      "index": 0,
+      "header": "编号",
+      "field": "serialNo",
+      "sourceType" : "INPUT",
+      "processorType" : "IntegerProcessor"
+    },
+    {
+      "index": 1,
+      "header": "大模型名称",
+      "field": "llmCode",
+      "sourceType" : "INPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 2,
+      "header": "轮次",
+      "field": "roundId",
+      "sourceType" : "PARAM",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 3,
+      "header": "数据集ID",
+      "field": "analysisModelId",
+      "sourceType" : "INPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 4,
+      "header": "用户问题",
+      "field": "question",
+      "sourceType" : "INPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 5,
+      "header": "自定义标签",
+      "field": "selfDefineTags",
+      "sourceType" : "INPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 6,
+      "header": "知识",
+      "field": "knowledge",
+      "sourceType" : "INPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 7,
+      "header": "prompt",
+      "field": "prompt",
+      "sourceType" : "INPUT",
+      "processorType" : "LongTextProcessor"
+    },
+    {
+      "index": 8,
+      "header": "Cot长度",
+      "field": "cotLength",
+      "sourceType" : "OUTPUT",
+      "processorType" : "LongProcessor"
+    },
+    {
+      "index": 9,
+      "header": "LLM输出结果",
+      "field": "llmOutput",
+      "sourceType" : "OUTPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 10,
+      "header": "结果执行",
+      "field": "executeResult",
+      "sourceType" : "OUTPUT",
+      "processorType" : "JsonProcessor"
+    },
+    {
+      "index": 11,
+      "header": "执行结果的报错信息",
+      "field": "errorMsg",
+      "sourceType" : "OUTPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 12,
+      "header": "traceId",
+      "field": "traceId",
+      "sourceType" : "OUTPUT",
+      "processorType" : "StringProcessor"
+    },
+    {
+      "index": 13,
+      "header": "耗时（秒）",
+      "field": "costTime",
+      "sourceType" : "OUTPUT",
+      "processorType" : "StringProcessor"
+    }
+  ]
+}

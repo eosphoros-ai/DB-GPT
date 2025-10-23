@@ -353,3 +353,4 @@ KNOWLEDGE_UPLOAD_ROOT_PATH = DATA_DIR
 KNOWLEDGE_CACHE_ROOT_PATH = os.path.join(
     KNOWLEDGE_UPLOAD_ROOT_PATH, "_knowledge_cache_"
 )
+BENCHMARK_DATA_ROOT_PATH = os.path.join(PILOT_PATH, "benchmark_meta_data")

@@ -9,8 +9,10 @@ from typing import Any, Dict, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt.agent.core.schema import Status
 from dbgpt.storage.metadata import BaseDao, Model
+from dbgpt.storage.metadata._base_dao import QUERY_SPEC, REQ, RES
 
 from ..api.schemas import EvaluateServeRequest, EvaluateServeResponse
 from ..config import ServeConfig
@@ -164,3 +166,33 @@ class ServeDao(BaseDao[ServeEntity, EvaluateServeRequest, EvaluateServeResponse]
             gmt_create=gmt_created_str,
             gmt_modified=gmt_modified_str,
         )
+
+    def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:
+        """Update an entity object.
+
+        Args:
+            query_request (REQ): The request schema object or dict for query.
+            update_request (REQ): The request schema object for update.
+        Returns:
+            RES: The response schema object.
+        """
+        with self.session() as session:
+            query = self._create_query_object(session, query_request)
+            entry = query.first()
+            if entry is None:
+                raise Exception("Invalid request")
+            update_request = (
+                update_request
+                if isinstance(update_request, dict)
+                else model_to_dict(update_request)
+            )
+            for key, value in update_request.items():  # type: ignore
+                if isinstance(value, dict) or isinstance(value, list):
+                    value = json.dumps(value, ensure_ascii=False)
+                if value is not None:
+                    setattr(entry, key, value)
+            session.merge(entry)
+            # res = self.get_one(self.to_request(entry))
+            # if not res:
+            #     raise Exception("Update failed")
+            return self.to_response(entry)
