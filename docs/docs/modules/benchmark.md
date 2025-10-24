@@ -47,29 +47,37 @@ Core capabilities of the benchmarking module:
 # Dataset Structure
 
 ## Standard Benchmark Structure
-| Field   | Description                                                                                            | example                                                                        |
-|---------|--------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| 编号      | Question serial number                                                                                 | 1, 2...                                                                        |
-| 数据集ID   | Dataset ID                                                                                             | D2025050900161503000025249569, ...                                             |
-| 用户问题    | Question title                                                                                         | 各性别的平均年龄是多少，并按年龄顺序显示结果？                                                        |
-| 自定义标签   | Question source, SQL type                                                                              | KAGGLE_DS_1, CTE1                                                              |
-| 知识      | Knowledge context required                                                                             | 暂无                                                                             |
+| Field   | Description                                                                                            | example                                                                      |
+|---------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| 编号      | Question serial number                                                                                 | 1, 2...                                                                      |
+| 数据集ID   | Dataset ID                                                                                             | D2025050900161503000025249569, ...                                           |
+| 用户问题    | Question title                                                                                         | 各性别的平均年龄是多少，并按年龄顺序显示结果？                                                      |
+| 自定义标签   | Question source, SQL type                                                                              | KAGGLE_DS_1, CTE1                                                            |
+| 知识      | Knowledge context required                                                                             | 暂无                                                                           |
 | 标准答案SQL | Correct SQL for the question(based on Alibaba Cloud MaxCompute syntax)                                 | SELECT gender, AVG(age) AS avg_age FROM users GROUP BY gender ORDER BY avg_age |
-| 标准结果    | Correct SQL query result on the Alibaba Cloud MaxCompute engine (some questions have multiple answers) | {"性别":["Female","Male"],"平均年龄":["27.73","27.84"]}                              |
-| 是否排序    | Whether the question involves sorting                                                                  | {"性别":["Female","Male"],"平均年龄":[27.73,27.84]}                                  |
+| 标准结果    | Correct SQL query result on the Alibaba Cloud MaxCompute engine (some questions have multiple answers) | `{"性别":["Female","Male"],"平均年龄":["27.73","27.84"]}`                              |
+| 是否排序    | Whether the question involves sorting                                                                  | `{"性别":["Female","Male"],"平均年龄":[27.73,27.84]}`                                  |
 | prompt  | Model conversation prompt                                                                              | 已知以下数据集，包含了字段名及其采样信息：...                                                       |
 
 
 # How To Use
 
 ## Environment Setup
-- Start the DB-GPT service, and wait for the benchmark dataset to load automatically. When you see the log line, the dataset has finished loading (about 1~3 minute).
+- Step1: Upgrade to V0.7.4 and upgrade the metadata database
+
+    For SQLite, the table schema is upgraded automatically by default. For MySQL, you need to run the DDL manually. The file assets/schema/dbgpt.sql contains the complete DDL for the current version. Version-specific DDL changes can be found under assets/schema/upgrade. For example, if you are upgrading from v0.7.1 to v0.7.4, you can run the following DDL:
+ 
+    ```
+    mysql -h127.0.0.1 -uroot -p{your_password} < assets/schema/upgrade/v0_7_4/upgrade_to_v0.7.4.sql
+    ```
+
+- Step2: Start the DB-GPT service, and wait for the benchmark dataset to load automatically. When you see the log line, the dataset has finished loading (about 1~5 minute).
 
 <p align="left">
   <img src={'/img/module/benchmark/env_load.png'} width="1000px"/>
 </p>
 
-- Register LLM on the DB-GPT platform 
+- Step3: Register LLM on the DB-GPT platform 
   - Method 1: Configure via configuration file. Reference: [ProxyModel Configuration](http://docs.dbgpt.cn/docs/next/installation/advanced_usage/More_proxyllms)
   - Method 2: Configure via product page. Reference: [Models](http://docs.dbgpt.cn/docs/next/application/llms)
 
@@ -144,7 +152,7 @@ Core capabilities of the benchmarking module:
 | prompt    | Model conversation prompt             | 已知以下数据集，包含了字段名及其采样信息：...                                                                                                                |
 | Cot长度     | CoT tokens consumed                   | 100                                                                                                                                     |
 | LLM输出结果   | SQL generated by the LLM              | select gender as `gender`, avg(cast(age as real)) as `average_age` from di_finance_data group by gender order by avg(cast(age as real)) |
-| 结果执行      | Query result of the LLM-generated SQL | {"性别":["Female","Male"],"平均年龄":[27.73,27.84]}                                                                                           |
+| 结果执行      | Query result of the LLM-generated SQL | `{"性别":["Female","Male"],"平均年龄":[27.73,27.84]}`                                                                                           |
 | 执行结果的报错信息 | Error message if the SQL fails        |                                                                                                                                         |
 | traceId   | Log ID                                | 暂无                                                                                                                                      |
 | 耗时（秒）     | Time consumed                         | 10                                                                                                                                      |
@@ -169,10 +177,10 @@ Core capabilities of the benchmarking module:
 | selfDefineTags    | Question source, SQL type                                                                              | KAGGLE_DS_1, CTE1                                                                                                                       |
 | prompt            | Model conversation prompt                                                                              | 已知以下数据集，包含了字段名及其采样信息：...                                                                                                                |
 | standardAnswerSql | Correct SQL for the question(based on Alibaba Cloud MaxCompute syntax)                                 | select gender as `gender`, avg(cast(age as real)) as `average_age` from di_finance_data group by gender order by avg(cast(age as real)) |
-| standardAnswer    | Correct SQL query result on the Alibaba Cloud MaxCompute engine (some questions have multiple answers) | {"性别": ["Female", "Male"], "平均年龄": ["27.73", "27.84"]}                                                                                  |
+| standardAnswer    | Correct SQL query result on the Alibaba Cloud MaxCompute engine (some questions have multiple answers) | `{"性别": ["Female", "Male"], "平均年龄": ["27.73", "27.84"]}`                                                                                  |
 | llmCode           | Evaluated model name                                                                                   | DeepSeek-V3.1                                                                                                                           |
 | llmOutput         | SQL generated by the LLM                                                                               | select gender as `gender`, avg(cast(age as real)) as `average_age` from di_finance_data group by gender order by avg(cast(age as real)) |
-| executeResult     | Query result of the LLM-generated SQL                                                                  | {"性别":["Female","Male"],"平均年龄":[27.73,27.84]}                                                                                           |
+| executeResult     | Query result of the LLM-generated SQL                                                                  | `{"性别":["Female","Male"],"平均年龄":[27.73,27.84]}`                                                                                           |
 | errorMsg          | Comparison error message                                                                               |                                                                                                                                         |
 | compareResult     | Comparison result between the reference answer and the LLM output                                      | RIGHT: correct; WRONG: incorrect; FAILED: failed (usually the SQL has issues)                                                           |
 

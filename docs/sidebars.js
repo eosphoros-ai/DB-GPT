@@ -581,6 +581,10 @@ const sidebars = {
           type: 'doc',
           id: 'modules/visual',
         },
+       {
+          type: 'doc',
+          id: 'modules/benchmark',
+        },
         
       ],
       link: {
