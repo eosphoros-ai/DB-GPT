@@ -7,7 +7,6 @@ import lyricore as lc
 from ...vis.vis_converter import DefaultVisConverter, VisProtocolConverter
 from .. import ActionOutput
 from .agent import AgentStateTaskResult
-from .base_agent import ConversableAgent
 from .memory.gpts import (
     DefaultGptsMessageMemory,
     DefaultGptsPlansMemory,
@@ -19,13 +18,6 @@ from .memory.gpts import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class AgentActor(ConversableAgent):
-    """An actor agent that can perform actions and interact with other agents."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 class MemoryActor:

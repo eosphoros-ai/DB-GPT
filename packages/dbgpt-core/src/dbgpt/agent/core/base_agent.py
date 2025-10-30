@@ -70,6 +70,7 @@ class ConversableAgent(Role, Agent, metaclass=ConversableAgentMeta):
         agent_context: Optional[AgentContext] = None,
         actions: Optional[List[Action]] = None,
         resource: Optional[Resource] = None,
+        resource_factory: Optional[Callable[[], Resource]] = None,
         llm_config: Optional[LLMConfig] = None,
         bind_prompt: Optional[PromptTemplate] = None,
         run_mode: Optional[AgentRunMode] = None,
@@ -99,6 +100,7 @@ class ConversableAgent(Role, Agent, metaclass=ConversableAgentMeta):
         self.agent_context = agent_context
         self.actions = actions or []
         self.resource = resource
+        self.resource_factory = resource_factory
         self.llm_config = llm_config
         self.bind_prompt = bind_prompt
         self.run_mode = run_mode
@@ -225,8 +227,13 @@ class ConversableAgent(Role, Agent, metaclass=ConversableAgentMeta):
         if self._eventbus:
             await self._eventbus.publish(state_message, topic="agent.state")
 
+    async def _build_factory(self):
+        if not self.resource and self.resource_factory:
+            self.resource = self.resource_factory()
+
     async def build(self, is_retry_chat: bool = False) -> "ConversableAgent":
         """Build the agent."""
+        await self._build_factory()
         # Preload resources
         await self.preload_resource()
         # Check if agent is available

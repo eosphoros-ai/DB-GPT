@@ -54,6 +54,16 @@ class DefaultLLMClient(LLMClient):
         self._worker_manager = worker_manager
         self._auto_covert_message = auto_convert_message
 
+    def __getstate__(self):
+        """Customize the serialization of the object"""
+        state = self.__dict__.copy()
+        state["_worker_manager"] = None
+        return state
+
+    def __setstate__(self, state):
+        """Customize the deserialization of the object"""
+        self.__dict__.update(state)
+
     @property
     def worker_manager(self) -> WorkerManager:
         """Get the worker manager instance.

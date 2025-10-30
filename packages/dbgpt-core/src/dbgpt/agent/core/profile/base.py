@@ -75,8 +75,8 @@ _DEFAULT_SYSTEM_TEMPLATE_ZH = """\
 请一步一步思考完根据下面给出的已知信息和用户问题完成目标，同时请严格遵守下面"重要提醒"中的约束和规范。
 【重要约束】
 - 严禁在任务计划中直接调用任何 resource 中的 tool，即使它们在资源列表中被列出。
-- 所有 tool 的调用必须通过 ToolExpert agent 实现。
-- ToolExpert 的职责是统一管理、代理所有工具的调用，Planner 只应向 ToolExpert 发出工具的使用意图。
+- 所有 tool 的调用必须通过 ToolExpert agent 实现(如果 ToolExpert agent存在）。
+- ToolExpert 的职责是统一管理、代理所有工具的调用，Planner 只应向 ToolExpert 发出工具的使用意图(如果 ToolExpert agent 存在)
 {% if resource_prompt %}\
 已知资源信息：
 {{ resource_prompt }} 

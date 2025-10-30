@@ -3,8 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from dbgpt._private.pydantic import Field
-from dbgpt.agent.core.agent import ActorProxyAgent, Agent, AgentMessage
+from dbgpt.agent.core.agent import ActorProxyAgent, AgentMessage
 from dbgpt.agent.core.base_agent import ConversableAgent
 from dbgpt.agent.core.plan.planning_action import ReActAction
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
@@ -19,7 +18,6 @@ class PlanningAgent(ConversableAgent):
     Planner agent, realizing task goal planning decomposition through LLM.
     """
 
-    agents: List[ConversableAgent] = Field(default_factory=list)
     profile: ProfileConfig = ProfileConfig(
         name=DynConfig(
             "planner",
@@ -74,6 +72,7 @@ class PlanningAgent(ConversableAgent):
         """Create a new PlannerAgent instance."""
         super().__init__(**kwargs)
         self._init_actions([ReActAction])
+        self.agents: List[ActorProxyAgent] = []
 
     async def init_reply_message(
         self,
@@ -108,7 +107,7 @@ class PlanningAgent(ConversableAgent):
         valid_agents.append(reporter)
 
         self.report_agent = reporter
-        self.agents = valid_agents
+        self.agents = [agent for agent in valid_agents if agent is not None]
 
     def prepare_act_param(
         self,
@@ -123,8 +122,10 @@ class PlanningAgent(ConversableAgent):
             raise "planner agent need reply_message params!"
         return {
             "context": self.not_null_agent_context,
-            "plans_memory": self.memory.plans_memory,
+            "gpts_memory": self.memory.gpts_memory,
             "round": reply_message.rounds,
             "round_id": reply_message.round_id,
-            "retry_times": self.current_retry_counter,
+            # "retry_times": self.current_retry_counter,
+            "retry_times": 0,
+            "need_vis_render": False,
         }

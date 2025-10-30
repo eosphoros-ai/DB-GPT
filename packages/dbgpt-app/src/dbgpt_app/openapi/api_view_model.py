@@ -1,4 +1,5 @@
 import socket
+import uuid
 from enum import Enum
 from typing import Any, Dict, Generic, Optional, TypeVar, Union
 
@@ -47,7 +48,9 @@ class ConversationVo(BaseModel):
     dialogue_uid
     """
 
-    conv_uid: str = ""
+    conv_uid: str = Field(
+        default_factory=lambda: str(uuid.uuid4()), description="conversation uid"
+    )
     """ 
     user input 
     """

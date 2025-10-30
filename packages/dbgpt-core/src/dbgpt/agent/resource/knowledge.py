@@ -49,6 +49,24 @@ class RetrieverResource(Resource[ResourceParameters]):
         else:
             self.reranker = None
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove the retriever from the state to avoid serialization issues
+        if "reranker" in state:
+            del state["reranker"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        if self.need_rerank:
+            app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
+            rerank_embeddings = RerankEmbeddingFactory.get_instance(
+                CFG.SYSTEM_APP
+            ).create()
+            self.reranker = RerankEmbeddingsRanker(
+                rerank_embeddings, topk=app_config.rag.rerank_top_k
+            )
+
     @property
     def name(self) -> str:
         """Return the resource name."""

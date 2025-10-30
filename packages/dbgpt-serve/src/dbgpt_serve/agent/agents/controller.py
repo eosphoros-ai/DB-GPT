@@ -541,20 +541,6 @@ class MultiAgents(BaseComponent, ABC):
                 start_round=history_message_count,
                 vis_converter=vis_protocol,
             )
-            # # init agent memory
-            # memory_actor_ref = await self.system_app._actor_system.spawn(
-            #     GptsMemoryActor,
-            #     "gpts_memory_actor",
-            # )
-            # mem_ref = await self.system_app._actor_system.spawn(
-            #     MyHybridMemoryActor,
-            #     "my_hybrid_memory_actor",
-            # )
-            # gpts_memory = ActorGptsMemory(memory_actor_ref)
-            #
-            # agent_memory = self.get_or_build_agent_memory(
-            #     conv_id, gpts_name, gpts_memory, mem_ref
-            # )
             historical_dialogues = await self._build_hitory_messages(
                 gpts_conversations, gpts_memory, gpt_app
             )
@@ -574,6 +560,7 @@ class MultiAgents(BaseComponent, ABC):
                             agent_memory=agent_memory,
                             to_free_resources=to_free_resources,
                             gpts_conversations=self.gpts_conversations,
+                            llm_client=AgentLLMClient(),
                             is_retry_chat=is_retry_chat,
                             last_speaker_name=last_speaker_name,
                             init_message_rounds=message_round,
@@ -714,20 +701,16 @@ class MultiAgents(BaseComponent, ABC):
         to_free_resources = []
         # init agent memory
         try:
-            memory_actor_ref = await self.system_app._actor_system.actor_of(
-                f"/user/gpts_memory_actor_{conv_uid}"
-            )
+            memory_actor_ref = await lc.actor_of(f"/user/gpts_memory_actor_{conv_uid}")
         except Exception:
-            memory_actor_ref = await self.system_app._actor_system.spawn(
+            memory_actor_ref = await lc.spawn(
                 GptsMemoryActor,
                 f"gpts_memory_actor_{conv_uid}",
             )
         try:
-            mem_ref = await self.system_app._actor_system.actor_of(
-                f"/user/my_hybrid_memory_actor_{conv_uid}"
-            )
+            mem_ref = await lc.actor_of(f"/user/my_hybrid_memory_actor_{conv_uid}")
         except Exception:
-            mem_ref = await self.system_app._actor_system.spawn(
+            mem_ref = await lc.spawn(
                 MyHybridMemoryActor,
                 f"my_hybrid_memory_actor_{conv_uid}",
             )
@@ -805,7 +788,6 @@ class MultiAgents(BaseComponent, ABC):
         **ext_info,
     ):
         gpts_status = Status.COMPLETE.value
-        actor_system = CFG.SYSTEM_APP._actor_system
         employees: List[Agent] = []
         llm_configs = []
         try:
@@ -830,7 +812,7 @@ class MultiAgents(BaseComponent, ABC):
             # init llm provider
             self.llm_provider = AgentLLMClient()
 
-            state_queue = lc.Queue(actor_system)
+            state_queue = lc.Queue(lc.global_actor_system())
             await state_queue._ensure_initialized()
 
             for record in gpts_app.details:
@@ -859,7 +841,7 @@ class MultiAgents(BaseComponent, ABC):
                 #     .bind(prompt_template)
                 #     .build(is_retry_chat=is_retry_chat)
                 # )
-                agent_ref = await actor_system.spawn(
+                agent_ref = await lc.spawn(
                     cls,
                     f"_current_actor_{record.agent_name}_{conv_uid}_{uuid.uuid4().hex}",
                     agent_context=context,
@@ -884,7 +866,7 @@ class MultiAgents(BaseComponent, ABC):
                         raise ValueError("APP exception no available agent！")
                     llm_config = llm_configs[0]
                     # manager = AutoPlanChatManager()
-                    manager_ref = await actor_system.spawn(
+                    manager_ref = await lc.spawn(
                         AutoPlanChatManager,
                         f"auto_plan_manager_actor_{conv_uid}",
                         agent_context=context,
@@ -903,7 +885,7 @@ class MultiAgents(BaseComponent, ABC):
                         llm_strategy=LLMStrategyType.Priority,
                         strategy_context=json.dumps(["bailing_proxyllm"]),
                     )  # TODO
-                    manager_ref = await actor_system.spawn(
+                    manager_ref = await lc.spawn(
                         DefaultAWELLayoutManager,
                         f"awel_layout_manager_actor_{conv_uid}",
                         agent_context=context,
@@ -946,13 +928,11 @@ class MultiAgents(BaseComponent, ABC):
                 )
             else:
                 try:
-                    user_proxy = await actor_system.actor_of(
-                        f"/user/user_proxy_actor_{conv_uid}"
-                    )
+                    user_proxy = await lc.actor_of(f"/user/user_proxy_actor_{conv_uid}")
                     await user_proxy.stop()
                 except Exception:
                     pass
-                user_proxy = await actor_system.spawn(
+                user_proxy = await lc.spawn(
                     UserProxyAgent,
                     f"user_proxy_actor_{conv_uid}",
                     agent_context=context,
@@ -960,11 +940,12 @@ class MultiAgents(BaseComponent, ABC):
                     state_queue=state_queue,
                 )
                 to_free_resources.append(user_proxy)
-                monitor_ref = await actor_system.spawn(
+                monitor_ref = await lc.spawn(
                     AgentActorMonitor,
                     f"agent_actor_monitor_{conv_uid}",
                     gpts_memory=gpts_memory,
                 )
+                to_free_resources.append(monitor_ref)
                 await recipient.subscribe(monitor_ref)
 
                 await user_proxy.initiate_chat(

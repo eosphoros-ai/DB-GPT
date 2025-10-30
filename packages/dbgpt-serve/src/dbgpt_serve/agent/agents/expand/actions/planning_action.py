@@ -64,7 +64,6 @@ class SrePlanningAction(Action[TaskPlan]):
         """Run the plan action."""
         try:
             context: AgentContext = kwargs["context"]
-            plans_memory: GptsPlansMemory = kwargs["plans_memory"]
             message_id = kwargs.get("message_id")
             task_plan: TaskPlan = self._input_convert(ai_message, TaskPlan)
 
