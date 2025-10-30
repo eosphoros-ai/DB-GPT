@@ -63,7 +63,7 @@ class AgentStateActing(AgentStateMessage):
 class AgentStateTaskResult(AgentStateMessage):
     state: Union[AgentState.TASK_SUCCEEDED, AgentState.TASK_FAILED]
     result: Optional[str] = None
-    action_report: Optional[ActionOutput] = (None,)
+    action_report: Optional[ActionOutput] = None
     conv_id: Optional[str] = None
     rounds: Optional[int] = 0
     current_retry_counter: int = 0

@@ -99,6 +99,7 @@ class PlanAction(Action[List[PlanInput]]):
                     plan_objects.append(plan)
 
                 await plans_memory.remove_by_conv_id(context.conv_id)
+                # await plans_memory.batch_save(plan_objects)
                 await plans_memory.batch_save(plan_objects)
 
             except Exception as e:

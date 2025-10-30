@@ -86,6 +86,16 @@ class Role:
         self.is_team = is_team
         self.template_env = template_env or SandboxedEnvironment()
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove the memory from the state to avoid serialization issues
+        state.pop("system_app", None)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.system_app = None
+
     async def build_prompt(
         self,
         question: Optional[str] = None,

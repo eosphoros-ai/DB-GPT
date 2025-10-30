@@ -70,6 +70,8 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
         system_app: SystemApp = None,
     ):
         # TODO: Build the retriever in a thread pool, it will block the event loop
+        self._space_name = space_name
+        self._top_k = top_k
         retriever = KnowledgeSpaceRetriever(
             space_id=space_name,
             top_k=top_k,
@@ -84,6 +86,26 @@ class KnowledgeSpaceRetrieverResource(RetrieverResource):
         else:
             self._retriever_name = None
             self._retriever_desc = None
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        # Remove the retriever from the state to avoid serialization issues
+        if "_retriever" in state:
+            del state["_retriever"]
+        return state
+
+    def __setstate__(self, state):
+        from dbgpt._private.config import Config
+
+        CFG = Config()
+
+        super().__setstate__(state)
+        # Recreate the retriever if needed (you may need to store additional info to do this)
+        self._retriever = KnowledgeSpaceRetriever(
+            space_id=self._space_name,
+            top_k=self._top_k,
+            system_app=CFG.SYSTEM_APP,
+        )
 
     @property
     def retriever_name(self) -> str:

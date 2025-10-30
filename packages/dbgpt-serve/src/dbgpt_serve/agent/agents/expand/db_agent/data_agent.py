@@ -1,25 +1,25 @@
 """Auto reasoning_engine chat manager agent."""
 
-import json
 import logging
-import uuid
 from typing import Dict, List, Optional, Tuple
+
+import lyricore as lc
 
 from dbgpt.agent import (
     ActionOutput,
     ActorProxyAgent,
-    Agent,
     AgentMessage,
-    ConversableAgent,
     ProfileConfig,
 )
+from dbgpt.agent.core.actor_messages import ReviewRequest
+from dbgpt.agent.core.agent import AgentMessageRequest, AgentStateTaskResult
+from dbgpt.agent.core.agent_manage import mentioned_agents
 from dbgpt.agent.core.base_team import ManagerAgent
 from dbgpt.agent.core.memory.gpts import GptsPlan
+from dbgpt.agent.core.role import AgentRunMode
 from dbgpt.agent.core.schema import Status
+from dbgpt.core.interface.message import ModelMessageRoleType
 from dbgpt.util.configure import DynConfig
-
-from ..actions.planning_action import TaskPlan
-from .knowledge_agent import KnowledgeAgent
 
 logger = logging.getLogger(__name__)
 
@@ -53,275 +53,431 @@ class DBAnalyzerManager(ManagerAgent):
         avatar="dbgpt.jpg",
     )
     concurrency_limit: int = 6
-    # 当前Agent消息是否显示
     show_message: bool = False
     current_goal: str = None
+    run_mode: AgentRunMode = AgentRunMode.LOOP
 
     def __init__(self, **kwargs):
-        """Create a new AutoPlanChatManager instance."""
+        """Create a new DBAnalyzerManager instance."""
         super().__init__(**kwargs)
+        self.planner: Optional[ActorProxyAgent] = None
+        self._plan_cls_role = "PlanningAgent"
+        self._reporter: Optional[ActorProxyAgent] = None
+
+    async def _build_agents(self, message: AgentMessage):
+        """Build and initialize agents for the team."""
+        from dbgpt_serve.agent.agents.expand.db_agent.dashboard_agent import (
+            ReportAssistantAgent,
+        )
+
+        from .planning_agent import PlanningAgent
+
+        conv_id = self.not_null_agent_context.conv_id
+        rounds = message.rounds
+
+        # handle bound agents, if no planner and reporter, build default ones
+        valid_agents: List[ActorProxyAgent] = []
+        reporter: Optional[ActorProxyAgent] = None
+        planner: Optional[ActorProxyAgent] = None
+
+        for agent in self.agents:
+            if (
+                hasattr(agent, "role")
+                and agent.role == ReportAssistantAgent.curr_cls_role()
+            ):
+                reporter = agent
+            elif hasattr(agent, "role") and agent.role == PlanningAgent.curr_cls_role():
+                planner = agent
+            else:
+                valid_agents.append(agent)
+
+        # If no reporter, create one
+        if not reporter:
+            reporter_ref = await lc.spawn(
+                ReportAssistantAgent,
+                f"reporter-{conv_id}_{rounds}",
+                memory=self.memory,
+                agent_context=self.agent_context,
+                llm_config=self.llm_config,
+            )
+            reporter = await reporter_ref.self_proxy(with_ref=False)
+            reporter.actor_ref = reporter_ref
+
+        valid_agents.append(reporter)
+
+        # If no planner, create one
+        if not planner:
+            planner_ref = await lc.spawn(
+                PlanningAgent,
+                f"planner-{conv_id}_{rounds}",
+                memory=self.memory,
+                agent_context=self.agent_context,
+                llm_config=self.llm_config,
+            )
+            planner = await planner_ref.self_proxy(with_ref=False)
+            planner.actor_ref = planner_ref
+
+        # Hire agents to the planner
+        if hasattr(planner, "hire"):
+            await planner.hire(valid_agents)
+
+        # Update the agent list
+        self.agents = valid_agents
+        self.planner = planner
+        self._reporter = reporter
+        logger.info(f"all valid agents:{[item.name for item in valid_agents]}")
+
+    async def process_rely_message(self, conv_id: str, now_plan: GptsPlan):
+        """Process the dependent message."""
+        rely_prompt = None
+        rely_messages: List[Dict] = []
+
+        if now_plan.rely and len(now_plan.rely) > 0:
+            rely_tasks_list = now_plan.rely.split(",")
+            rely_tasks_list_int = [int(i) for i in rely_tasks_list]
+            rely_tasks = await self.memory.gpts_memory.get_by_conv_id_and_num(
+                conv_id, rely_tasks_list_int
+            )
+            if rely_tasks:
+                rely_prompt = (
+                    "Read the result data of the dependent steps in the above"
+                    " historical message to complete the current goal:"
+                )
+                for rely_task in rely_tasks:
+                    rely_messages.append(
+                        {
+                            "content": rely_task.sub_task_content,
+                            "role": ModelMessageRoleType.HUMAN,
+                            "name": rely_task.sub_task_agent,
+                        }
+                    )
+                    rely_messages.append(
+                        {
+                            "content": rely_task.result,
+                            "role": ModelMessageRoleType.AI,
+                            "name": rely_task.sub_task_agent,
+                        }
+                    )
+        return rely_prompt, rely_messages
+
+    def select_speaker_msg(self, agents: List[ActorProxyAgent]) -> str:
+        """Return the message for selecting the next speaker."""
+        agent_names = [agent.name for agent in agents]
+        return (
+            "You are in a role play game. The following roles are available:\n"
+            f"   {', '.join(agent_names)}.\n"
+            "   Read the following conversation.\n"
+            f"   Then select the next role from {agent_names} to play.\n"
+            "   The role can be selected repeatedly.Only return the role."
+        )
+
+    async def select_speaker(
+        self,
+        last_speaker: ActorProxyAgent,
+        selector: ActorProxyAgent,
+        now_goal_context: Optional[str] = None,
+        pre_allocated: Optional[str] = None,
+    ) -> Tuple[ActorProxyAgent, Optional[str]]:
+        """Select the next speaker."""
+        agents = self.agents
+
+        if pre_allocated:
+            logger.info(f"Preselect speakers:{pre_allocated}")
+            name = pre_allocated
+            model = None
+        else:
+            agent_names = [agent.name for agent in agents]
+            if agent_names:
+                name = agent_names[0]
+                model = None
+            else:
+                raise ValueError("No available agents!")
+
+        # If exactly one agent is mentioned, use it. Otherwise, leave the OAI response
+        # unmodified
+        mentions = mentioned_agents(name, agents)
+        if len(mentions) == 1:
+            name = next(iter(mentions))
+        else:
+            logger.warning(
+                "GroupChat select_speaker failed to resolve the next speaker's name. "
+                f"This is because the speaker selection OAI call returned:\n{name}"
+            )
+        for agent in agents:
+            if agent.name == name:
+                return agent, model
+
+        raise ValueError(f"Unable to find agent: {name}")
+
+    async def _start_plan(self, current_goal: str, rounds: int):
+        """Start the planning process."""
+        actor_ctx = lc.get_current_message_context()
+        conv_uid = self.not_null_agent_context.conv_id
+        planner_ref = self.planner.actor_ref
+
+        # Build planning request message
+        req = AgentMessageRequest(
+            message=AgentMessage.from_llm_message(
+                {"content": current_goal, "rounds": rounds}
+            ),
+            sender=self.self_proxy(),
+        )
+
+        # Subscribe to the planner's state messages and send the request
+        await planner_ref.subscribe.tell(actor_ctx.self_ref)
+        await planner_ref.tell(req)
+
+    def is_finished(self, state: AgentStateTaskResult) -> bool:
+        """Check if the current plan is finished."""
+        # If the reporter reports, the plan is finished
+        # TODO: Check is_success status
+        return state.role == self._reporter.role
+
+    @lc.on(AgentStateTaskResult)
+    async def handle_agent_state_message(self, state: AgentStateTaskResult, ctx):
+        """Handle agent state messages."""
+        if not hasattr(state, "role") or not hasattr(state, "is_success"):
+            return
+
+        self.current_rounds = max(self.current_rounds, getattr(state, "rounds", 0))
+
+        # Handle planning agent's state messages
+        if (
+            self.planner
+            and hasattr(self.planner, "role")
+            and state.role == self.planner.role
+        ):
+            if not state.is_success:
+                err_msg = (
+                    f"Planning agent reported failure: {getattr(state, 'result', '')}"
+                )
+                logger.error(err_msg)
+                reply_message = self.thinking_response.init_message.reply_message
+                replan_message = f"继续根据给定的规则对目标问题进行推理:\n\n{reply_message.content}\n\n"
+                await self._start_plan(replan_message, self.current_rounds + 1)
+                return
+            else:
+                # Planning succeeded, build dependency graph
+                plans = await self.memory.gpts_memory.get_by_conv_id(
+                    self.not_null_agent_context.conv_id
+                )
+                task_num_to_plan = {plan.sub_task_num: plan for plan in plans}
+                plan_dependencies: Dict[int, List[int]] = {}
+
+                errors = []
+                for plan in plans:
+                    sub_task_num = plan.sub_task_num
+
+                    try:
+                        # Check and assign speaker for each plan
+                        speaker, model = await self.select_speaker(
+                            None,
+                            self.self_proxy(),
+                            plan.sub_task_content,
+                            plan.sub_task_agent,
+                        )
+                    except Exception as e:
+                        errors.append(str(e))
+                    if plan.rely:
+                        rely_tasks_list = plan.rely.split(",")
+                        rely_tasks_list_int = [
+                            int(i) for i in rely_tasks_list if i.strip() != ""
+                        ]
+                        plan_dependencies[sub_task_num] = rely_tasks_list_int
+                if errors:
+                    err_msg = "Errors occurred while select agent:\n" + "\n".join(
+                        errors
+                    )
+                    logger.error(err_msg)
+                    reply_message = self.thinking_response.init_message.reply_message
+                    replan_message = f"规划错误了: {err_msg}, 继续根据给定的规则对目标问题进行推理:\n\n{reply_message.content}\n\n"
+                    await self._start_plan(replan_message, self.current_rounds + 1)
+                    return
+
+                self._plan = {
+                    "plans": task_num_to_plan,
+                    "dependencies": plan_dependencies,
+                    "status": {plan.sub_task_num: plan.state for plan in plans},
+                }
+                await self._start_ready_tasks()
+                return
+
+        # Handle task result from worker agents
+        action_report, final_message = await self._handle_task_result(state)
+        if action_report:
+            action_report.terminate = self.is_finished(state)
+            await self._complete_plan(action_report)
+            return
+
+        # Check if plan adjustment is needed
+        need_adjustment = await self._check_plan_adjustment_need(state)
+        if not need_adjustment:
+            if state.is_success:
+                to_run_tasks = await self._start_ready_tasks()
+                if to_run_tasks > 0:
+                    logger.info(f"Started {to_run_tasks} ready tasks.")
+                else:
+                    logger.info("No ready tasks to start.")
+                    action_report = ActionOutput(
+                        is_exe_success=True,
+                        content=final_message,
+                    )
+                    await self._complete_plan(action_report)
+            else:
+                logger.error(
+                    f"Task {getattr(state, 'name', '')} failed: {getattr(state, 'result', '')}"
+                )
+                action_report = ActionOutput(
+                    is_exe_success=False,
+                    content=getattr(state, "result", ""),
+                )
+                await self._complete_plan(action_report)
+        else:
+            content = state.action_report.view or state.action_report.content
+            action_report = ActionOutput(
+                is_exe_success=False,
+                content=content,
+            )
+            await self._complete_plan(action_report)
+
+    async def _handle_task_result(self, state):
+        """Handle task result from worker agents."""
+        task_uniq_key = self.get_worker_agent_key(state.role, state.name)
+        plan = self._worker_agent_to_plan.get(task_uniq_key, None)
+        final_message = None
+
+        if not plan:
+            logger.error(f"Cannot find the plan for agent {task_uniq_key}")
+            return ActionOutput(
+                is_exe_success=False,
+                content=f"Cannot find the plan for agent {task_uniq_key}",
+            ), None
+
+        final_message = getattr(state, "result", None)
+        if state.is_success:
+            action_report = getattr(state, "action_report", None)
+            if action_report:
+                plan_result = action_report.content
+                final_message = getattr(action_report, "view", action_report.content)
+
+            await self.memory.gpts_memory.complete_task(
+                self.not_null_agent_context.conv_id,
+                plan.task_uid,
+                plan_result,
+            )
+            plan.state = Status.COMPLETE.value
+            return None, final_message
+        else:
+            plan_result = getattr(state, "result", "")
+            await self.memory.gpts_memory.update_task(
+                self.not_null_agent_context.conv_id,
+                plan.sub_task_num,
+                Status.FAILED.value,
+                plan.retry_times + 1,
+                state.name,
+                "",
+                plan_result,
+            )
+            plan.state = Status.FAILED.value
+            return ActionOutput(
+                is_exe_success=False, content=plan_result
+            ), final_message
+
+    async def _start_ready_tasks(self):
+        """Start tasks that are ready to run."""
+        ready_tasks = []
+        for task_num, plan in self._plan["plans"].items():
+            if plan.state in [Status.TODO.value, Status.RETRYING.value]:
+                dependencies = self._plan["dependencies"].get(task_num, [])
+                if all(
+                    self._plan["plans"][dep].state == Status.COMPLETE.value
+                    for dep in dependencies
+                ):
+                    ready_tasks.append(plan)
+
+        # Start all ready tasks
+        for plan in ready_tasks:
+            await self._start_task(plan, self.current_rounds)
+        return len(ready_tasks)
+
+    async def _check_plan_adjustment_need(self, state):
+        """Check if plan adjustment is needed."""
+        return True
+
+    async def _start_task(self, plan: GptsPlan, rounds: int):
+        """Start a single task."""
+        current_goal_message = AgentMessage(
+            content=plan.sub_task_content,
+            current_goal=plan.sub_task_content,
+            context={
+                "plan_task": plan.sub_task_content,
+                "plan_task_num": plan.sub_task_num,
+            },
+            rounds=rounds + 1,
+        )
+
+        last_speaker = None
+        speaker, model = await self.select_speaker(
+            last_speaker,
+            self.self_proxy(),
+            plan.sub_task_content,
+            plan.sub_task_agent,
+        )
+
+        task_uniq_key = self.get_worker_agent_key(speaker.role, speaker.name)
+        self._worker_agent_to_plan[task_uniq_key] = plan
+
+        # Handle dependent messages
+        rely_prompt, rely_messages = await self.process_rely_message(
+            conv_id=self.not_null_agent_context.conv_id,
+            now_plan=plan,
+        )
+        if rely_prompt:
+            current_goal_message.content = rely_prompt + current_goal_message.content
+
+        req = AgentMessageRequest(
+            message=current_goal_message,
+            sender=self.self_proxy(),
+            rely_messages=[AgentMessage.from_dict(msg) for msg in rely_messages]
+            if rely_messages
+            else None,
+        )
+
+        # Subscribe to state messages and send the request
+        if hasattr(speaker, "subscribe"):
+            await speaker.subscribe(self.self_proxy())
+        if hasattr(speaker, "tell_request"):
+            await speaker.tell_request(req)
+
+        plan.state = Status.RUNNING.value
 
     async def act(
         self,
-        message: Optional[AgentMessage],
-        sender: Optional[ActorProxyAgent] = None,
+        message: AgentMessage,
+        sender: ActorProxyAgent,
         reviewer: Optional[ActorProxyAgent] = None,
+        is_retry_chat: bool = False,
+        last_speaker_name: Optional[str] = None,
         **kwargs,
-    ) -> Optional[ActionOutput]:
-        """Perform an action based on the received message."""
-        if not sender:
+    ) -> ActionOutput:
+        """Nothing to do in the act phase of the management agent."""
+        if not message.action_report:
             return ActionOutput(
                 is_exe_success=False,
-                content="The sender cannot be empty!",
+                content="The action_report cannot be empty!",
             )
+        return message.action_report
 
-        try:
-            all_task_messages: List = []
-            all_messages: List = []
-            ## 绑定Agent处理，和解决内外置规划、总结Agent逻辑
-            from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
+    @lc.on(ReviewRequest)
+    async def handle_review_request(self, request, ctx):
+        """Handle review request and start planning."""
+        # Build agents first
+        thinking_response = request.thinking_response
+        reply_message = thinking_response.init_message.reply_message
 
-            from .planning_agent import PlanningAgent
+        await self._build_agents(reply_message)
 
-            ### 处理绑定的Agent 如果没有规划和总结，构建默认规划总结Agent， 如果有绑定使用绑定的，如果绑定多个使用最后一个
-            valid_agents: List[ConversableAgent] = []
-            from dbgpt_serve.agent.agents.expand.db_agent.dashboard_agent import (
-                ReportAssistantAgent,
-            )
-
-            reporter: Optional[ReportAssistantAgent] = None
-            planner: Optional[PlanningAgent] = None
-            for agent in self.agents:
-                if isinstance(agent, ReportAssistantAgent):
-                    reporter = agent
-                elif isinstance(agent, PlanningAgent):
-                    planner = agent
-                else:
-                    valid_agents.append(agent)
-
-            if not reporter:
-                reporter = (
-                    await ReportAssistantAgent()
-                    .bind(self.memory)
-                    .bind(self.agent_context)
-                    .bind(self.llm_config)
-                    .build()
-                )
-            valid_agents.append(reporter)
-
-            if not planner:
-                planner = (
-                    await PlanningAgent()
-                    .bind(self.memory)
-                    .bind(self.agent_context)
-                    .bind(self.llm_config)
-                    .build()
-                )
-            planner.hire(valid_agents)
-
-            ## 处理后的所有有效Agent
-            self.agents = valid_agents
-            logger.info(f"all valid agents:{[item.name for item in valid_agents]}")
-
-            plan_round_count = message.rounds
-            for i in range(self.max_round):
-                if not self.memory:
-                    return ActionOutput(
-                        is_exe_success=False,
-                        content="The memory cannot be empty!",
-                    )
-
-                ## 读取历史消息进展
-                plan_in_rounds = plan_round_count * self.max_round
-                ## 规划新的任务步骤
-                if i <= 0:
-                    plan_in_message = AgentMessage.init_new(
-                        content=message.content,
-                        rounds=plan_in_rounds,
-                        current_goal=f"Round {i + 1} - {planner.current_goal}",
-                    )
-                else:
-                    plan_in_message = AgentMessage.init_new(
-                        content=f"继续根据给定的规则对目标问题进行推理:\n\n{message.content}\n\n",
-                        rounds=plan_in_rounds,
-                        current_goal=f"Round {i + 1} - {planner.current_goal}",
-                    )
-                plan_round_count = plan_round_count + 1
-                await self.send(
-                    message=plan_in_message, recipient=planner, request_reply=False
-                )
-
-                plan_message = await planner.generate_reply(
-                    received_message=plan_in_message,
-                    sender=self,
-                    reviewer=reviewer,
-                    historical_dialogues=sorted(
-                        all_task_messages, key=lambda obj: obj.rounds
-                    ),
-                    force_use_historical=True,
-                )
-
-                all_messages.append(plan_in_message)
-                await planner.send(
-                    message=plan_message, recipient=self, request_reply=False
-                )
-
-                all_messages.append(plan_message)
-                if plan_message.action_report.is_exe_success:
-                    task_list = json.loads(plan_message.action_report.content)
-                    task_params: List[TaskPlan] = [
-                        TaskPlan(**item) for item in task_list
-                    ]
-                else:
-                    continue
-
-                ## 执行新的任务步骤(排除需要用户代理处理的任务)
-                api_tasks = []
-                from dbgpt.agent import get_agent_manager
-
-                ask_user = None
-                agent_role_map = {agent.name: agent for agent in self.agents}
-                task_map = {}
-
-                ## 考虑重试，分支等逻辑，给每个子Agent分配一个百位段的 round区间（可根据最大轮次动态配置）
-                task_round_count = 1
-                task_max_round = 10
-
-                reporter_agent = None
-                reporter_in_message = None
-
-                for task in task_params:
-                    agent_goal_id = task.task_id
-                    agent_name = task.agent
-                    agent_goal = task.instruction
-
-                    plan: GptsPlan = GptsPlan(
-                        conv_id=self.agent_context.conv_id,
-                        conv_session_id=self.agent_context.conv_session_id,
-                        conv_round=0,
-                        sub_task_id=agent_goal_id,
-                        sub_task_num=0,
-                        task_uid=uuid.uuid4().hex,
-                        sub_task_content=agent_goal,
-                        sub_task_title=task.task_step,
-                        sub_task_agent=agent_name,
-                        state=Status.TODO.value,
-                    )
-                    await self.memory.gpts_memory.append_plans(
-                        conv_id=self.agent_context.conv_id, plans=[plan]
-                    )
-
-                    task_round_init = task_round_count * task_max_round
-                    if agent_name == "Human":
-                        ask_user = agent_goal
-                        continue
-                    if not agent_name:
-                        raise ValueError(
-                            f"have not found available agent[{agent_name}]!"
-                        )
-
-                    task_agent: ConversableAgent = agent_role_map.get(agent_name)
-                    if not task_agent:
-                        logger.warning(f"agent{agent_name}have not found!")
-                        continue
-                    agent_role_map.update({task_agent.name: task_agent})
-
-                    task_in_message = AgentMessage.init_new(
-                        content=f"{agent_goal}",
-                        current_goal=agent_goal,
-                        goal_id=agent_goal_id,
-                        rounds=plan_in_rounds + task_round_init,
-                    )
-
-                    plan.state = Status.RUNNING.value
-                    await self.memory.gpts_memory.update_plan(
-                        self.agent_context.conv_id, plan
-                    )
-
-                    task_map[task.agent] = plan
-                    if task_agent.name == reporter.name:
-                        reporter_agent = task_agent
-                        task_in_message.current_goal = self.current_goal
-                        reporter_in_message = task_in_message
-                    else:
-                        # task_agent.stream_out = False
-                        task_round_count = task_round_count + 1
-                        api_tasks.append(
-                            task_agent.generate_reply(
-                                received_message=task_in_message,
-                                sender=self,
-                                reviewer=reviewer,
-                            )
-                        )
-
-                        await self.send(
-                            message=task_in_message,
-                            recipient=task_agent,
-                            request_reply=False,
-                        )
-
-                        all_task_messages.append(task_in_message)
-                        all_messages.append(task_in_message)
-
-                if reporter_agent:
-                    api_tasks.append(
-                        reporter_agent.generate_reply(
-                            received_message=reporter_in_message,
-                            sender=self,
-                            reviewer=reviewer,
-                            rely_messages=None,  # 会变成单轮消息
-                            historical_dialogues=sorted(
-                                all_task_messages, key=lambda obj: obj.rounds
-                            ),  # 会变成多轮历史消息
-                            force_use_historical=True,
-                        )
-                    )
-
-                from dbgpt.util.chat_util import run_async_tasks
-
-                results: List[AgentMessage] = await run_async_tasks(
-                    tasks=api_tasks, concurrency_limit=self.concurrency_limit
-                )
-
-                ## 检察所有计划任务输出，有效输出记录消息
-                for result in results:
-                    task_agent = agent_role_map.get(result.name)
-                    plan = task_map.get(result.name)
-                    if result.action_report.is_exe_success:
-                        plan.state = Status.COMPLETE.value
-                    else:
-                        plan.state = Status.FAILED.value
-                    await self.memory.gpts_memory.update_plan(
-                        self.agent_context.conv_id, plan
-                    )
-
-                    if result.name == reporter.name:
-                        logger.info(f"reporter result:{result.action_report}")
-
-                        if task_agent:
-                            await task_agent.send(
-                                message=result, recipient=self, request_reply=False
-                            )
-                        self.current_goal = reporter.current_goal
-                        return ActionOutput(
-                            is_exe_success=True, content="Data Analysis Success!"
-                        )
-                    else:
-                        ## 如果没有用户任务，重新进入下一个阶段直到出现终止任务的Agent
-                        logger.info(f"消息发送给:{task_agent},{result.name},{result}")
-                        if task_agent:
-                            await task_agent.send(
-                                message=result, recipient=self, request_reply=False
-                            )
-                            all_task_messages.append(result)
-                            all_messages.append(result)
-
-                ## 处理用户代理任务，终断循环，进入用户交互
-                if ask_user:
-                    return ActionOutput(is_exe_success=True, content=ask_user)
-        except Exception as e:
-            logger.exception("ReAct Team Chat Exception！")
-            return ActionOutput(is_exe_success=False, content=str(e))
+        await super().handle_review_request(request, ctx)
 
     async def thinking(
         self,
@@ -333,8 +489,6 @@ class DBAnalyzerManager(ManagerAgent):
         current_goal: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """Think and reason about the current task goal."""
-        # TeamManager, which is based on processes and plans by default, only needs to
-        # ensure execution and does not require additional thinking.
         if messages is None or len(messages) <= 0:
             return None, None, None
         else:

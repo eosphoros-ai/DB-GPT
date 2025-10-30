@@ -8,13 +8,10 @@ import lyricore as lc
 from dbgpt.core.interface.message import ModelMessageRoleType
 
 from ..action.base import ActionOutput
-from ..actor_messages import ActionRequest, ReviewRequest
 from ..agent import (
     ActorProxyAgent,
     AgentMessage,
     AgentMessageRequest,
-    AgentReviewInfo,
-    AgentStateMessage,
     AgentStateTaskResult,
 )
 from ..agent_manage import mentioned_agents, participant_roles
@@ -162,45 +159,6 @@ class AutoPlanChatManager(ManagerAgent):
             logger.exception(f"auto select speaker failed!{str(e)}")
             raise ValueError("Unable to select next speaker!")
 
-    @lc.on(ReviewRequest)
-    async def handle_review_request(self, request: ReviewRequest, ctx):
-        # self_ref = lc.get_current_message_context().self_ref
-        thinking_response = request.thinking_response
-        reply_message = thinking_response.init_message.reply_message
-        llm_reply = thinking_response.thinking_text
-        approve, comments = await self.review(llm_reply, self)
-        reply_message.review_info = AgentReviewInfo(
-            approve=approve,
-            comments=comments,
-        )
-        self.thinking_response = thinking_response
-        await self._start_plan(reply_message.content, reply_message.rounds)
-
-    async def act(
-        self,
-        message: AgentMessage,
-        sender: ActorProxyAgent,
-        reviewer: Optional[ActorProxyAgent] = None,
-        is_retry_chat: bool = False,
-        last_speaker_name: Optional[str] = None,
-        **kwargs,
-    ) -> ActionOutput:
-        """Perform an action based on the received message."""
-        if not message.action_report:
-            return ActionOutput(
-                is_exe_success=False,
-                content="The action_report cannot be empty!",
-            )
-        return message.action_report
-
-    async def _complete_plan(self, action_report: Optional[ActionOutput] = None):
-        self_ref = lc.get_current_message_context().self_ref
-        thinking_response = self.thinking_response
-        reply_message = thinking_response.init_message.reply_message
-        reply_message.action_report = action_report
-        action_request = ActionRequest(thinking_response=thinking_response)
-        await self_ref.tell(action_request)
-
     @lc.on(AgentStateTaskResult)
     async def handle_agent_state_message(self, state: AgentStateTaskResult, ctx):
         if not isinstance(state, AgentStateTaskResult):
@@ -318,67 +276,6 @@ class AutoPlanChatManager(ManagerAgent):
                 is_exe_success=False, content=plan_result
             ), final_message
 
-    async def _start_ready_tasks(self):
-        ready_tasks = []
-        for task_num, plan in self._plan["plans"].items():
-            if plan.state in [Status.TODO.value, Status.RETRYING.value]:
-                dependencies = self._plan["dependencies"].get(task_num, [])
-                if all(
-                    self._plan["plans"][dep].state == Status.COMPLETE.value
-                    for dep in dependencies
-                ):
-                    ready_tasks.append(plan)
-        # Start all ready tasks concurrently
-        for plan in ready_tasks:
-            await self._start_task(plan, self.current_rounds)
-        return len(ready_tasks)
-
-    async def _check_plan_adjustment_need(self, state: AgentStateMessage) -> bool:
-        return False
-
-    def get_worker_agent_key(self, role: str, name: str) -> str:
-        return f"{role}___$$$___{name}"
-
-    async def _start_task(self, plan: GptsPlan, rounds: int):
-        current_goal_message = AgentMessage(
-            content=plan.sub_task_content,
-            current_goal=plan.sub_task_content,
-            context={
-                "plan_task": plan.sub_task_content,
-                "plan_task_num": plan.sub_task_num,
-            },
-            rounds=rounds + 1,
-        )
-        # select the next speaker
-        last_speaker = None
-        speaker, model = await self.select_speaker(
-            last_speaker,
-            self,
-            plan.sub_task_content,
-            plan.sub_task_agent,
-        )
-        task_uniq_key = self.get_worker_agent_key(speaker.role, speaker.name)
-        self._worker_agent_to_plan[task_uniq_key] = plan
-
-        # Tell the speaker the dependent history information
-        rely_prompt, rely_messages = await self.process_rely_message(
-            conv_id=self.not_null_agent_context.conv_id,
-            now_plan=plan,
-        )
-        if rely_prompt:
-            current_goal_message.content = rely_prompt + current_goal_message.content
-        req = AgentMessageRequest(
-            message=current_goal_message,
-            sender=self.self_proxy(),
-            # reviewer=reviewer,
-            rely_messages=AgentMessage.from_messages(rely_messages),
-        )
-        # monitor_ref = await actor_ctx.spawn(AgentStateMonitorActor, f"_agent_state_actor_{self.not_null_agent_context.conv_id}_{plan.sub_task_num}")
-        await speaker.subscribe(self.self_proxy())
-        # await speaker.subscribe.tell(monitor_ref)
-        await speaker.tell_request(req)
-        plan.state = Status.RUNNING.value
-
     async def _start_plan(self, current_goal: str, rounds: int):
         actor_ctx = lc.get_current_message_context()
         conv_uid = self.not_null_agent_context.conv_id
@@ -392,7 +289,7 @@ class AutoPlanChatManager(ManagerAgent):
             memory=self.memory,
             # agents=self.agents,
         )
-        await planner_ref.bind_agents(self.agents)
+        await planner_ref.hire(self.agents)
         req = AgentMessageRequest(
             message=AgentMessage.from_llm_message(
                 {"content": current_goal, "rounds": rounds}
@@ -405,22 +302,3 @@ class AutoPlanChatManager(ManagerAgent):
         await planner_ref.subscribe.tell(actor_ctx.self_ref)
         # await planner_ref.subscribe.tell(monitor_ref)
         await planner_ref.tell(req)
-
-    async def thinking(
-        self,
-        messages: List[AgentMessage],
-        reply_message_id: str,
-        reply_message: AgentMessage,
-        sender: Optional[ActorProxyAgent] = None,
-        prompt: Optional[str] = None,
-        current_goal: Optional[str] = None,
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        """Think and reason about the current task goal."""
-        # TeamManager, which is based on processes and plans by default, only needs to
-        # ensure execution and does not require additional thinking.
-        if messages is None or len(messages) <= 0:
-            return None, None, None
-        else:
-            message = messages[-1]
-            self.messages.append(message.to_llm_message())
-            return None, message.content, None

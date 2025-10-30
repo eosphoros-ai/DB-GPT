@@ -90,7 +90,8 @@ class ReActAction(Action[List[TaskParam]]):
         """Run the plan action."""
         try:
             context: AgentContext = kwargs["context"]
-            plans_memory: GptsPlansMemory = kwargs["plans_memory"]
+            # plans_memory: GptsPlansMemory = kwargs["plans_memory"]
+            plans_memory: GptsPlansMemory = kwargs["gpts_memory"]
             message_id = kwargs.get("message_id")
             task_params: List[TaskParam] = self._input_convert(
                 ai_message, List[TaskParam]
@@ -105,10 +106,11 @@ class ReActAction(Action[List[TaskParam]]):
                 plan = GptsPlan(
                     conv_id=context.conv_id,
                     task_uid=task_uid,
+                    conv_session_id=context.conv_session_id,
                     sub_task_num=0,
                     sub_task_id=item.task_id,
                     sub_task_title=item.task_goal,
-                    sub_task_content=json.dumps(item.slots),
+                    sub_task_content=json.dumps(item.slots, ensure_ascii=False),
                     task_parent=item.parent_id,
                     conv_round=kwargs.get("round", 0),
                     conv_round_id=kwargs.get("round_id", None),
@@ -148,9 +150,8 @@ class ReActAction(Action[List[TaskParam]]):
             else:
                 view = None
 
-            ## 任务规划记录，方便后续做进展跟踪
-            # plans_memory.remove_by_conv_id(context.conv_id)
-            plans_memory.batch_save(plan_objects)
+            # await plans_memory.remove_by_conv_id(context.conv_id)
+            await plans_memory.batch_save(plan_objects)
 
             return ActionOutput(
                 is_exe_success=True,

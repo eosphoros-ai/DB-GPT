@@ -50,6 +50,18 @@ class DBResource(Resource[P], Generic[P]):
         self._executor = executor or ThreadPoolExecutor()
         self._prompt_template = prompt_template
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove the executor from the state to avoid serialization issues
+        if "_executor" in state:
+            del state["_executor"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # TODO: Reuse the existing executor if possible
+        self._executor = ThreadPoolExecutor()
+
     @classmethod
     def type(cls) -> ResourceType:
         """Return the resource type."""

@@ -159,7 +159,7 @@ assistants:[
         }
         return reply_message
 
-    async def bind_agents(self, agents: List[ActorProxyAgent]):
+    async def hire(self, agents: List[ActorProxyAgent]):
         """Bind the agents to the planner agent."""
         self.agents = agents
 

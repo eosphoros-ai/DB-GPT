@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 from dbgpt.agent import (
-    Agent,
+    ActorProxyAgent,
     AgentMessage,
     BlankAction,
     ConversableAgent,
@@ -118,7 +118,8 @@ class ReportAssistantAgent(ConversableAgent):
         self,
         received_message: AgentMessage,
         rely_messages: Optional[List[AgentMessage]] = None,
-        sender: Optional[Agent] = None,
+        sender: Optional[ActorProxyAgent] = None,
+        rounds: Optional[int] = None,
     ) -> AgentMessage:
         reply_message = await super().init_reply_message(
             received_message=received_message,

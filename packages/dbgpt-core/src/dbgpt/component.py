@@ -176,8 +176,6 @@ class SystemApp(LifeCycle):
         asgi_app: Optional["FastAPI"] = None,
         app_config: Optional[AppConfig] = None,
     ) -> None:
-        import lyricore as lc
-
         self.components: Dict[
             str, BaseComponent
         ] = {}  # Dictionary to store registered components.
@@ -185,7 +183,6 @@ class SystemApp(LifeCycle):
         self._app_config = app_config or AppConfig()
         self._stop_event = threading.Event()
         self._stop_event.clear()
-        self._actor_system = lc.ActorSystem("dbgpt")
         self._build()
 
     @property
@@ -343,9 +340,11 @@ class SystemApp(LifeCycle):
 
             async def _startup_func():
                 try:
+                    import lyricore as lc
+
                     await self.async_after_start()
                     logger.info(f"System app started successfully. {id(self)}")
-                    await self._actor_system.start()
+                    await lc.init("dbgpt")
                 except Exception as e:
                     logger.error(f"Error starting system app: {e}")
                     sys.exit(1)

@@ -120,7 +120,7 @@ class DataPlanningAgent(PlanningAgent):
             raise "planner agent need reply_message params!"
         return {
             "context": self.not_null_agent_context,
-            "plans_memory": self.memory.plans_memory,
+            # "gpts_memory": self.memory.gpts_memory,
             "round": reply_message.rounds,
             "round_id": reply_message.round_id,
         }
