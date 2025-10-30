@@ -46,8 +46,9 @@ class AnomalyDetectionAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_anomaly_detection_agent_profile_constraints",
         ),
         desc=DynConfig(
-            "Detect anomalies in business metrics by comparing baseline and "
-            "current period data.",
+            "用于判断业务指标是否存在异常波动。该智能体需要接收指标的基期值（如上一周期）、"
+            "当期值（如当前周期）以及该指标的波动阈值（通常来自指标元信息），并据此判断是否"
+            "发生显著异常。",
             category="agent",
             key="dbgpt_ant_agent_agents_anomaly_detection_agent_profile_desc",
         ),

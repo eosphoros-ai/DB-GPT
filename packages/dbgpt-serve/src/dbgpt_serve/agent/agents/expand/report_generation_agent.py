@@ -56,8 +56,9 @@ class ReportGenerationAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_report_generation_agent_profile_constraints",
         ),
         desc=DynConfig(
-            "Generate structured analysis reports in Markdown format with "
-            "comprehensive insights.",
+            "用于整合所有分析结果（包括原始数据、异常判断、归因结论等），生成结构清晰、"
+            "内容完整的 Markdown 格式分析报告。应在所有分析步骤完成后调用，且其输入应"
+            "明确依赖前面所有相关步骤的输出。",
             category="agent",
             key="dbgpt_ant_agent_agents_report_generation_agent_profile_desc",
         ),

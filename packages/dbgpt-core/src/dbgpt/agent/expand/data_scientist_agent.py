@@ -62,8 +62,12 @@ class DataScientistAgent(ConversableAgent):
             key="dbgpt_agent_expand_dashboard_assistant_agent_profile_constraints",
         ),
         desc=DynConfig(
-            "Use database resources to conduct data analysis, analyze SQL, and provide "
-            "recommended rendering methods.",
+            "用于执行具体的数据库查询任务，包括编写和执行 SQL。当用户问题涉及时间对比类"
+            "分析（如“月环比”“同比”“较上周变化”等）时，DataScientist 不应直接计算环比或"
+            "变化率，而应被分别调用两次：一次用于计算基期值（例如“上月的订单数量”），另一次"
+            "用于计算当期值（例如“本月的订单数量”）。Planner 应以自然语言形式明确指定时"
+            "间范围和指标，例如：“计算上月（基期）的成交转化率”、“计算本月（当期）的订单数量”。"
+            "DataScientist 仅返回原始计算结果，不负责异常检测、归因或报告生成。",
             category="agent",
             key="dbgpt_agent_expand_dashboard_assistant_agent_profile_desc",
         ),

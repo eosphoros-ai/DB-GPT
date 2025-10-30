@@ -194,40 +194,7 @@ provider = "hf"
 阈值：0.05
 ```
 
-## 4. 修改planner
-
-为了使用数据分析应用，需要将 `PlannerAgent` 修改为 `DataAnalysisPlannerAgent`。修改 `packages/dbgpt-core/src/dbgpt/agent/core/plan/team_auto_plan.py` 文件中的相关代码，确保系统使用 `DataAnalysisPlannerAgent`：
-
-首先增加包导入代码：
-
-```python
-from ..plan.data_analysis_planner_agent import DataAnalysisPlannerAgent
-```
-
-将`planner`改为`DataAnalysisPlannerAgent`：
-
-```python
-# 修改前
-planner: ConversableAgent = (
-    await PlannerAgent()
-    .bind(self.memory)
-    .bind(self.agent_context)
-    .bind(self.llm_config)
-    .bind_agents(self.agents)
-    .build()
-)
-# 修改后
-planner: ConversableAgent = (
-    await DataAnalysisPlannerAgent()
-    .bind(self.memory)
-    .bind(self.agent_context)
-    .bind(self.llm_config)
-    .bind_agents(self.agents)
-    .build()
-)
-```
-
-## 5. 数据分析
+## 4. 数据分析
 
 使用配置文件启动 DB-GPT 服务：
 
@@ -243,7 +210,7 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 ![](../../../static/img/data_analysis/app.png)
 
-### 5.1 知识库接入
+### 4.1 知识库接入
 
 1. 选择知识库
 
@@ -283,7 +250,7 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 ![](../../../static/img/data_analysis/5_1_7.png)
 
-### 5.2 创建数据库
+### 4.2 创建数据库
 
 1. 选择数据库
 
@@ -305,7 +272,7 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 
 
-### 5.3 创建数据分析应用
+### 4.3 创建数据分析应用
 
 1. 创建应用
 
@@ -355,7 +322,7 @@ uv run dbgpt start webserver --config configs/dbgpt-local-glm.toml
 
 ![](../../../static/img/data_analysis/5_3_8.png)
 
-### 5.4 使用
+### 4.4 使用
 
 1. 开始对话
 

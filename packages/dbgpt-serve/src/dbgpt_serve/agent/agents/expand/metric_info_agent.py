@@ -46,7 +46,9 @@ class MetricInfoAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_metric_info_agent_profile_constraints",
         ),
         desc=DynConfig(
-            "Retrieve specific metric information from knowledge base resources.",
+            "用于从知识库资源中检索相关指标的元信息，包括字段名、计算规则、建议分析维度、波动阈值等"
+            "当用户问题涉及某个业务指标时（如“订单数量”、“成交转化率”）时，必须首先调用此智能体获取"
+            "指标信息。",
             category="agent",
             key="dbgpt_ant_agent_agents_metric_info_agent_profile_desc",
         ),

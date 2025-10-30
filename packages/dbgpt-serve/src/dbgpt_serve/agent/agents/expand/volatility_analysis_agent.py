@@ -29,9 +29,9 @@ class VolatilityAnalysisAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_volatility_analysis_agent_profile_role",
         ),
         goal=DynConfig(
-            "Perform an analysis on a single dimension by calculating the contribution "
-            "rates of its constituent factors to determine which ones are responsible "
-            "for the metric anomaly",  # noqa: E501
+            "Perform an analysis on a single dimension by calculating the "
+            "contribution rates of its constituent factors to determine "
+            "which ones are responsible for the metric anomaly",
             category="agent",
             key="dbgpt_ant_agent_agents_volatility_analysis_agent_profile_goal",
         ),
@@ -44,8 +44,10 @@ class VolatilityAnalysisAgent(ConversableAgent):
             key="dbgpt_ant_agent_agents_volatility_analysis_agent_profile_constraints",
         ),
         desc=DynConfig(
-            "Perform attribution analysis to identify the root causes of metric "
-            "anomalies.",
+            "用于对存在异常的指标进行归因分析，识别导致波动的根本原因。"
+            "该智能体须在 AnomalyDetector 确认异常后调用，并应基于 "
+            "MetricInfoRetriever 提供的“建议分析维度”（如“地区”）进行下钻分析。"
+            "不得在未检测到异常时主动执行归因。",
             category="agent",
             key="dbgpt_ant_agent_agents_volatility_analysis_agent_profile_desc",
         ),
