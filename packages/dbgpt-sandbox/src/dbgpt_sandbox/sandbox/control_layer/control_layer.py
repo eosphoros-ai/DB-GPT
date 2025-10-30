@@ -6,10 +6,10 @@ import asyncio
 import uuid
 from typing import Any, Dict
 
-from config import WORKING_DIR
-from execution_layer.base import ExecutionResult, ExecutionStatus, SessionConfig
-from execution_layer.runtime_factory import RuntimeFactory
-from user_layer.schemas import TASK_TYPES, TaskObject
+from ..config import WORKING_DIR
+from ..execution_layer.base import ExecutionResult, ExecutionStatus, SessionConfig
+from ..execution_layer.runtime_factory import RuntimeFactory
+from ..user_layer.schemas import TASK_TYPES, TaskObject
 
 
 class ControlLayer:
@@ -50,7 +50,7 @@ class ControlLayer:
         config = SessionConfig(
             language=task.language,
             working_dir=WORKING_DIR,
-            max_memory=task.config.get("max_memory", "512m"),
+            max_memory=512 * 1024 * 1024,  # 512MB in bytes
             max_cpus=task.config.get("max_cpus", 1),
             environment_vars=task.config.get("env", {}),
             network_disabled=task.config.get("network_disabled", False),

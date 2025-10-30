@@ -20,6 +20,7 @@ dbgpt-serve = { workspace = true }
 dbgpt-app = { workspace = true }
 dbgpt-acc-auto = { workspace = true }
 dbgpt-acc-flash-attn = { workspace = true }
+dbgpt-sandbox = { workspace = true }
 
 [[tool.uv.index]]
 name = "testpypi"
@@ -34,6 +35,7 @@ members = [
   "packages/dbgpt-core",
   "packages/dbgpt-ext",
   "packages/dbgpt-serve",
+  "packages/dbgpt-sandbox",
   "packages/dbgpt-accelerator/dbgpt-acc*",
 ]
 
@@ -80,4 +82,4 @@ select = ["E", "F", "I"]
 
 [tool.ruff.lint.isort]
 # Specify the local modules (first-party)
-known-first-party = ["dbgpt", "dbgpt_acc_auto", "dbgpt_client", "dbgpt_ext", "dbgpt_serve", "dbgpt_app"]
+known-first-party = ["dbgpt", "dbgpt_acc_auto", "dbgpt_client", "dbgpt_ext", "dbgpt_serve", "dbgpt_app", "dbgpt_sandbox"]

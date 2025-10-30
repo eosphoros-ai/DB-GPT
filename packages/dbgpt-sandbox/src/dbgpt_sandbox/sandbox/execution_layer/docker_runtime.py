@@ -16,10 +16,9 @@ try:
 except ImportError:
     docker = None
 
-from config import LANGUAGE_IMAGES, get_command_by_language
-from display_layer.display_layer import DisplayResult
-from utils_function.logger import print_log
-
+from ..config import LANGUAGE_IMAGES, get_command_by_language
+from ..display_layer.display_layer import DisplayResult
+from ..utils_function.logger import print_log
 from .base import (
     ExecutionResult,
     ExecutionStatus,

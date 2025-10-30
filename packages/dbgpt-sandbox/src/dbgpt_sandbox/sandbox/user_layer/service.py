@@ -1,13 +1,32 @@
+import logging
 from typing import Any, Dict, List
 
-from control_layer.control_layer import ControlLayer
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from pydantic import BaseModel
-from user_layer.schemas import TaskObject
+
+from ..control_layer.control_layer import ControlLayer
+from .schemas import TaskObject
+
+logger = logging.getLogger(__name__)
+
+# 创建全局路由器
+router = APIRouter()
+
+# 全局用户层实例
+user_layer_instance = None
 
 
-# -------------------- 用户层 --------------------
+def get_user_layer() -> "UserLayer":
+    """获取用户层实例"""
+    global user_layer_instance
+    if user_layer_instance is None:
+        user_layer_instance = UserLayer()
+    return user_layer_instance
+
+
 class UserLayer:
+    """用户层：处理用户请求和会话管理"""
+
     def __init__(self):
         self.control = ControlLayer()
         self.active_sessions: Dict[str, str] = {}  # session_id -> task_id
@@ -141,34 +160,43 @@ class UserLayer:
 
     def get_available_methods(self) -> List[Dict[str, str]]:
         return [
-            {"path": "/connect", "method": "POST", "description": "建立沙箱会话"},
-            {"path": "/configure", "method": "POST", "description": "配置沙箱环境"},
+            {"path": "/api/connect", "method": "POST", "description": "建立沙箱会话"},
+            {"path": "/api/configure", "method": "POST", "description": "配置沙箱环境"},
             {
-                "path": "/disconnect",
+                "path": "/api/disconnect",
                 "method": "POST",
                 "description": "断开并销毁沙箱会话",
             },
-            {"path": "/execute", "method": "POST", "description": "执行代码"},
-            {"path": "/manual", "method": "POST", "description": "进入手动操作模式"},
-            {"path": "/status", "method": "POST", "description": "获取任务/会话状态"},
-            {"path": "/sessions", "method": "GET", "description": "列出所有活跃会话"},
+            {"path": "/api/execute", "method": "POST", "description": "执行代码"},
             {
-                "path": "/get_file",
+                "path": "/api/manual",
+                "method": "POST",
+                "description": "进入手动操作模式",
+            },
+            {
+                "path": "/api/status",
+                "method": "POST",
+                "description": "获取任务/会话状态",
+            },
+            {
+                "path": "/api/sessions",
+                "method": "GET",
+                "description": "列出所有活跃会话",
+            },
+            {
+                "path": "/api/get_file",
                 "method": "POST",
                 "description": "获取沙箱内指定文件内容",
             },
             {
-                "path": "/methods",
+                "path": "/api/methods",
                 "method": "GET",
                 "description": "获取所有可用接口和方法",
             },
         ]
 
 
-app = FastAPI(title="Sandbox User API, by dbgpt")
-user_layer = UserLayer()
-
-
+# -------------------- API 请求模型 --------------------
 class ConnectRequest(BaseModel):
     user_id: str
     task_id: str
@@ -207,56 +235,116 @@ class FileRequest(BaseModel):
 
 
 # -------------------- API 路由 --------------------
-@app.post("/connect")
+@router.get("/health")
+async def api_health_check():
+    """健康检查 API"""
+    return {"status": "ok"}
+
+
+@router.post("/connect")
 async def api_connect(req: ConnectRequest):
+    """建立沙箱会话"""
+    user_layer = get_user_layer()
     return await user_layer.connect(req.user_id, req.task_id, req.image_type)
 
 
-@app.post("/configure")
+@router.post("/configure")
 async def api_configure(req: ConfigureRequest):
+    """配置沙箱环境"""
+    user_layer = get_user_layer()
     return await user_layer.configure_environment(
         req.user_id, req.task_id, req.config_info
     )
 
 
-@app.post("/disconnect")
+@router.post("/disconnect")
 async def api_disconnect(req: DisconnectRequest):
+    """断开并销毁沙箱会话"""
+    user_layer = get_user_layer()
     return await user_layer.disconnect(req.user_id, req.task_id)
 
 
-@app.post("/execute")
+@router.post("/execute")
 async def api_execute(req: ExecuteRequest):
+    """执行代码"""
+    user_layer = get_user_layer()
     return await user_layer.execute_code(
         req.session_id, req.code_type, req.code_content
     )
 
 
-@app.post("/manual")
+@router.post("/manual")
 async def api_manual(req: ManualOperationRequest):
+    """进入手动操作模式"""
+    user_layer = get_user_layer()
     return await user_layer.manual_operation(req.session_id, req.action)
 
 
-@app.post("/status")
+@router.post("/status")
 async def api_status(req: StatusRequest):
+    """获取任务/会话状态"""
+    user_layer = get_user_layer()
     return await user_layer.get_execution_status(req.session_id)
 
 
-@app.get("/sessions")
+@router.get("/sessions")
 async def api_list_sessions():
+    """列出所有活跃会话"""
+    user_layer = get_user_layer()
     sessions = await user_layer.list_sessions()
     return {"sessions": sessions}
 
 
-@app.post("/get_file")
+@router.post("/get_file")
 async def api_get_file(req: FileRequest):
+    """获取沙箱内指定文件内容"""
+    user_layer = get_user_layer()
     return await user_layer.get_file(req.session_id, req.file_name)
 
 
-@app.get("/methods")
+@router.get("/methods")
 async def api_methods():
-    routes = []
-    for route in app.routes:
-        if hasattr(route, "methods"):
-            methods = ",".join(route.methods)
-            routes.append({"path": route.path, "methods": methods})
-    return {"available_endpoints": routes}
+    """获取所有可用接口和方法"""
+    user_layer = get_user_layer()
+    return {"methods": user_layer.get_available_methods()}
+
+
+def initialize_sandbox(
+    app: FastAPI = None,
+    host: str = "0.0.0.0",
+    port: int = 8000,
+    log_level: str = "info",
+):
+    """初始化沙箱服务
+
+    Args:
+        app: FastAPI 应用实例，如果为 None 则创建新实例并运行服务器
+        host: 主机地址
+        port: 端口号
+        log_level: 日志级别
+    """
+    if app:
+        # 将路由注册到现有应用
+        app.include_router(router, tags=["Sandbox"])
+        logger.info("Sandbox routes registered to existing FastAPI app")
+    else:
+        # 创建新应用并运行服务器
+        import uvicorn
+        from fastapi import FastAPI
+
+        app = FastAPI(
+            title="DB-GPT Sandbox API",
+            description="Secure sandbox execution environment for DB-GPT Agent",
+            version="0.7.3",
+        )
+
+        # 包含路由
+        app.include_router(router, prefix="/api", tags=["Sandbox"])
+
+        # 添加根路径
+        @app.get("/")
+        async def root():
+            return {"message": "DB-GPT Sandbox API is running"}
+
+        logger.info(f"Starting DB-GPT Sandbox server on {host}:{port}")
+        uvicorn.run(app, host=host, port=port, log_level=log_level)

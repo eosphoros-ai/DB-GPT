@@ -4,8 +4,7 @@
 根据本机环境优先级自动选择 Docker/Podman/Nerdctl/Local 运行时。
 """
 
-from config import SANDBOX_RUNTIME
-
+from ..config import SANDBOX_RUNTIME
 from .docker_runtime import DockerRuntime
 from .local_runtime import LocalRuntime
 from .nerdctl_runtime import NerdctlRuntime

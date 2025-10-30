@@ -1,3 +1,5 @@
+import os
+
 LANGUAGE_IMAGES = {
     "python": "python:3.11-slim",
     "python-vnc": "vnc-gui-browser:latest",
@@ -32,4 +34,7 @@ MAX_DEPENDENCY_INSTALL_TIME = 300  # seconds
 MAX_DEPENDENCY_INSTALL_SIZE = 200 * 1024 * 1024  # 200MB
 MAX_PROCESSES = 10
 
-SANDBOX_RUNTIME = "docker"  # 可选值: docker, podman, nerdctl, local
+
+SANDBOX_RUNTIME = os.getenv(
+    "SANDBOX_RUNTIME", "local"
+)  # Optional values: docker, podman, nerdctl, local

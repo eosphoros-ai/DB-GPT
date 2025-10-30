@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import psutil
-from config import (
+
+from ..config import (
     MAX_CPU_PERCENT,
     MAX_EXECUTION_TIME,
     MAX_FILE_SIZE,

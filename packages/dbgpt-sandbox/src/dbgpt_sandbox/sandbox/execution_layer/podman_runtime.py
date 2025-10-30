@@ -1,5 +1,5 @@
 """
-通过 nerdctl CLI 与 containerd 交互，提供与 Docker/Podman 一致的沙箱能力。
+基于 Podman 容器的代码执行环境，支持多语言和状态保持
 """
 
 import asyncio
@@ -9,9 +9,8 @@ import tempfile
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from display_layer.display_layer import DisplayResult
-from utils_function.logger import print_log
-
+from ..display_layer.display_layer import DisplayResult
+from ..utils_function.logger import print_log
 from .base import (
     ExecutionResult,
     ExecutionStatus,
@@ -24,6 +23,7 @@ from .base import (
 async def _run_cmd(
     cmd: List[str], timeout: Optional[int] = None, cwd: Optional[str] = None
 ) -> Tuple[int, str, str]:
+    """以异步方式运行命令并返回 (code, stdout, stderr)"""
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -43,8 +43,8 @@ async def _run_cmd(
     )
 
 
-class NerdctlSandboxSession(SandboxSession):
-    """异步 Nerdctl 沙箱会话实现"""
+class PodmanSandboxSession(SandboxSession):
+    """异步 Podman 沙箱会话实现"""
 
     def __init__(self, session_id: str, config: SessionConfig):
         super().__init__(session_id, config)
@@ -64,9 +64,10 @@ class NerdctlSandboxSession(SandboxSession):
         return language_images.get(language, "docker.io/library/python:3.11-slim")
 
     async def start(self) -> bool:
+        """启动 Podman 容器"""
         try:
             args = [
-                "nerdctl",
+                "podman",
                 "run",
                 "-d",
                 "--name",
@@ -75,23 +76,32 @@ class NerdctlSandboxSession(SandboxSession):
                 str(self.config.max_memory),
             ]
 
+            # CPU 限制
             if getattr(self.config, "max_cpus", None):
                 args += ["--cpus", str(self.config.max_cpus)]
 
-            # nerdctl 的网络隔离先忽略
+            # 网络
+            if getattr(self.config, "network_disabled", False):
+                args += ["--network", "none"]
 
+            # 工作目录
             if getattr(self.config, "working_dir", None):
                 args += ["-w", self.config.working_dir]
 
+            # 环境变量
             for k, v in (self.config.environment_vars or {}).items():
                 args += ["-e", f"{k}={v}"]
 
+            # 挂载临时目录
             args += ["-v", f"{tempfile.gettempdir()}:/tmp:rw"]
 
+            # VNC GUI 容器端口映射
             is_vnc = str(self.config.language).endswith("-vnc")
             if is_vnc:
+                # 简化处理：固定映射 5900, 6080 端口。若端口占用将启动失败。
                 args += ["-p", "5900:5900", "-p", "6080:6080"]
 
+            # 镜像和命令
             if is_vnc:
                 args += [self.image_name, "sh", "-lc", "/startup.sh"]
             else:
@@ -99,14 +109,15 @@ class NerdctlSandboxSession(SandboxSession):
 
             code, out, err = await _run_cmd(args, timeout=60)
             if code != 0:
-                print_log("ERROR", f"nerdctl 启动失败: {err.strip()}")
+                print_log("ERROR", f"Podman 启动失败: {err.strip()}")
                 return False
 
             self._is_active = True
+            # 拉起后创建工作目录，以防镜像中不存在
             if getattr(self.config, "working_dir", None):
                 await _run_cmd(
                     [
-                        "nerdctl",
+                        "podman",
                         "exec",
                         "-w",
                         "/",
@@ -119,17 +130,17 @@ class NerdctlSandboxSession(SandboxSession):
                 )
             return True
         except Exception as e:
-            print_log("ERROR", f"启动 nerdctl 容器失败: {e}")
+            print_log("ERROR", f"启动 Podman 容器失败: {e}")
             return False
 
     async def stop(self) -> bool:
         try:
-            await _run_cmd(["nerdctl", "stop", self.container_name], timeout=30)
-            await _run_cmd(["nerdctl", "rm", self.container_name], timeout=30)
+            await _run_cmd(["podman", "stop", self.container_name], timeout=30)
+            await _run_cmd(["podman", "rm", self.container_name], timeout=30)
             self._is_active = False
             return True
         except Exception as e:
-            print_log("ERROR", f"停止 nerdctl 容器失败: {e}")
+            print_log("ERROR", f"停止 Podman 容器失败: {e}")
             return False
 
     def _create_code_file(self, code: str) -> str:
@@ -164,7 +175,7 @@ class NerdctlSandboxSession(SandboxSession):
         return cmds.get(self.config.language, f"cat {filename}")
 
     async def install_dependencies(self, dependencies: List[str]) -> ExecutionResult:
-        """通过 nerdctl exec 安装 pip/npm 依赖。"""
+        """通过 podman exec 安装 pip/npm 依赖。"""
         if not self._is_active:
             return ExecutionResult(
                 status=ExecutionStatus.ERROR, error="容器未启动", exit_code=-1
@@ -184,7 +195,7 @@ class NerdctlSandboxSession(SandboxSession):
                 for dep in dependencies:
                     code, out, err = await _run_cmd(
                         [
-                            "nerdctl",
+                            "podman",
                             "exec",
                             self.container_name,
                             "sh",
@@ -199,9 +210,10 @@ class NerdctlSandboxSession(SandboxSession):
                         break
                     outputs.append(f"installed: {dep}")
             elif self.config.language == "javascript":
+                # 确保初始化
                 await _run_cmd(
                     [
-                        "nerdctl",
+                        "podman",
                         "exec",
                         "-w",
                         workdir,
@@ -215,7 +227,7 @@ class NerdctlSandboxSession(SandboxSession):
                 dep_str = " ".join(dependencies)
                 code, out, err = await _run_cmd(
                     [
-                        "nerdctl",
+                        "podman",
                         "exec",
                         "-w",
                         workdir,
@@ -280,14 +292,14 @@ class NerdctlSandboxSession(SandboxSession):
         self.update_last_accessed()
         code_file = self._create_code_file(code)
         try:
+            # 拷贝代码到容器
             workdir = self.config.working_dir or "/workspace"
             code_basename = os.path.basename(code_file)
             code_in_container = f"{workdir}/{code_basename}"
 
-            # nerdctl cp 支持
             cp_code, _, cp_err = await _run_cmd(
                 [
-                    "nerdctl",
+                    "podman",
                     "cp",
                     code_file,
                     f"{self.container_name}:{code_in_container}",
@@ -303,11 +315,12 @@ class NerdctlSandboxSession(SandboxSession):
                     exit_code=-1,
                 )
 
+            # 执行命令
             exec_cmd = self._get_exec_command(code_basename)
             start = time.time()
             code, out, err = await _run_cmd(
                 [
-                    "nerdctl",
+                    "podman",
                     "exec",
                     "-w",
                     workdir,
@@ -352,8 +365,10 @@ class NerdctlSandboxSession(SandboxSession):
         if not self._is_active:
             return {"status": "stopped"}
         try:
+            # podman inspect 读取状态
             code, out, err = await _run_cmd(
-                ["nerdctl", "ps", "-a", "--format", "{{json .}}"], timeout=15
+                ["podman", "inspect", self.container_name, "--format", "json"],
+                timeout=15,
             )
             if code != 0:
                 return {"status": "error", "error": err.strip()}
@@ -367,8 +382,10 @@ class NerdctlSandboxSession(SandboxSession):
             return {"status": "error", "error": str(e)}
 
 
-class NerdctlRuntime(SandboxRuntime):
-    def __init__(self, runtime_id: str = "nerdctl"):
+class PodmanRuntime(SandboxRuntime):
+    """异步 Podman 沙箱运行时管理"""
+
+    def __init__(self, runtime_id: str = "podman"):
         super().__init__(runtime_id)
         self.supported_languages = [
             "python",
@@ -386,7 +403,7 @@ class NerdctlRuntime(SandboxRuntime):
     ) -> SandboxSession:
         if session_id in self.sessions:
             raise ValueError(f"会话 {session_id} 已存在")
-        sess = NerdctlSandboxSession(session_id, config)
+        sess = PodmanSandboxSession(session_id, config)
         ok = await sess.start()
         if not ok:
             raise RuntimeError(f"启动会话 {session_id} 失败")
@@ -420,7 +437,7 @@ class NerdctlRuntime(SandboxRuntime):
 
     async def health_check(self) -> Dict[str, Any]:
         try:
-            code, out, err = await _run_cmd(["nerdctl", "version"], timeout=10)
+            code, out, err = await _run_cmd(["podman", "version"], timeout=10)
             if code == 0:
                 return {"status": "healthy", "version": out}
             return {"status": "unhealthy", "error": err}
