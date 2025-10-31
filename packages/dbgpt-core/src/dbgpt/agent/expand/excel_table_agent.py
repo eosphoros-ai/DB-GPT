@@ -10,12 +10,10 @@ from ..core.agent import Agent, AgentMessage
 from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
 from ..resource.database import DBResource
-from .actions.insert_action import Excel2TableAction
 from . import excel_path
+from .actions.insert_action import Excel2TableAction
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def find_excel_files(directory: str) -> list[str]:
