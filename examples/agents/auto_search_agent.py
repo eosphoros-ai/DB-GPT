@@ -15,7 +15,7 @@ from dbgpt.model.proxy import TongyiLLMClient
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 connector = SQLiteConnector.from_file_path(
-    "/home/me/DB-GPT/examples/agents/student_course_db.db"
+    "../test_files/datamanus_test.db"
 )
 db_resource = RDBMSConnectorResource("user_manager", connector=connector)
 api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"

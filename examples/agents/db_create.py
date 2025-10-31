@@ -16,13 +16,44 @@ from dbgpt.model.proxy import TongyiLLMClient
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 connector = SQLiteConnector.from_file_path(
-    "/home/me/DB-GPT/examples/test_files/datamanus_test.db"
+    "../test_files/datamanus_test.db"
 )
 db_resource = RDBMSConnectorResource("user_manager", connector=connector)
 api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 api_key = "sk-xxx"
 model = "qwen3-32b"
 
+# 待分析的所有Excel文件所在目录
+excel_path = "../test_files"
+
+def find_excel_files(directory: str) -> list[str]:
+        """
+        查找指定目录下所有.csv和.xlsx文件，并返回它们的绝对路径
+        
+        参数:
+            directory: 要搜索的目录路径
+            
+        返回:
+            包含所有.csv和.xlsx文件绝对路径的列表，如果目录不存在则返回空列表
+        """
+        # 检查目录是否存在
+        if not os.path.isdir(directory):
+            print(f"错误: 目录 '{directory}' 不存在")
+            return []
+        
+        # 存储结果的列表
+        file_paths = []
+        
+        # 遍历目录及其子目录
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                # 检查文件扩展名
+                if file.lower().endswith(('.csv', '.xlsx')):
+                    # 获取文件的绝对路径并添加到列表
+                    absolute_path = os.path.abspath(os.path.join(root, file))
+                    file_paths.append(absolute_path)
+        
+        return file_paths
 
 def read_excel_headers_and_data(
     file_path: str,
@@ -76,7 +107,7 @@ def data2md(headers, table_data):
 
 
 async def main():
-    excel_files = ["", ""]
+    excel_files = find_excel_files(excel_path)
     all_file_data = []
     # 读取Excel部分文件数据，可自行替换
     for excel_file in excel_files:
