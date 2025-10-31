@@ -48,6 +48,13 @@ class ReportGenerationAction(Action[ReportGenerationInput]):
         """Return the output model type."""
         return ReportGenerationInput
 
+    @property
+    def ai_out_schema(self) -> Optional[str]:
+        """Return the AI output schema."""
+        # For ReportGenerationAgent, we don't want to enforce a specific output schema
+        # as it generates free-form markdown reports
+        return None
+
     async def run(
         self,
         ai_message: str,
