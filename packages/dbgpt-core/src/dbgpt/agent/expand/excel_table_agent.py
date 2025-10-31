@@ -11,11 +11,11 @@ from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
 from ..resource.database import DBResource
 from .actions.insert_action import Excel2TableAction
+from . import excel_path
 
 logger = logging.getLogger(__name__)
 
-# 待分析的所有Excel文件所在目录
-excel_path = "../test_files"
+
 
 
 def find_excel_files(directory: str) -> list[str]:
