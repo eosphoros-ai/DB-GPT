@@ -10,19 +10,16 @@ import pandas as pd
 from dbgpt.agent import AgentContext, AgentMemory, LLMConfig, UserProxyAgent
 from dbgpt.agent.expand.actions.insert_action import Excel2TableAction
 from dbgpt.agent.expand.data_scientist_agent import DataScientistAgent
-from dbgpt.agent.expand.excel_table_agent import Excel2TableAgent,excel_files
+from dbgpt.agent.expand.excel_table_agent import Excel2TableAgent, excel_files
 from dbgpt.agent.resource import RDBMSConnectorResource
 from dbgpt.model.proxy import TongyiLLMClient
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
-connector = SQLiteConnector.from_file_path(
-    "../test_files/datamanus_test.db"
-)
+connector = SQLiteConnector.from_file_path("../test_files/datamanus_test.db")
 db_resource = RDBMSConnectorResource("user_manager", connector=connector)
 api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 api_key = "sk-xxx"
 model = "qwen3-32b"
-
 
 
 def read_excel_headers_and_data(
@@ -79,7 +76,7 @@ def data2md(headers, table_data):
 async def main():
     all_file_data = []
     # To read some data from Excel files, you can go to excel_table_agent.py
-    # by yourself and replace the excel_file variable 
+    # by yourself and replace the excel_file variable
     # as the default directory where the excel file is located
     for excel_file in excel_files:
         filename_with_ext = os.path.basename(excel_file)

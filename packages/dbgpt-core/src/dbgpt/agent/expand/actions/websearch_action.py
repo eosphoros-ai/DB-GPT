@@ -163,13 +163,13 @@ def get_bing_search_results(query, num_results=5, worker=None):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "zh-CN,zh;q=0.9",
             "Referer": "https://www.bing.com/",
-            "DNT": "1", 
+            "DNT": "1",
             "Connection": "keep-alive",
-            # You can set cookies and other request headers here to better perform data crawling
+            # You can set cookies and other request headers here
             # "cookie": "your_cookie_here",
         }
 
-        # user headers in request   
+        # user headers in request
         response = session.get(url, headers=headers, timeout=10)
         response.raise_for_status()
 
