@@ -31,7 +31,6 @@ logging.basicConfig(
     ],
 )
 
-COOKIE = "your_cookie_here"
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
@@ -154,7 +153,6 @@ def get_page_content(url, worker=None):
     return extracted_text if extracted_text else "无法提取内容"
 
 
-# -------------------------- 必应搜索核心函数（优化广告过滤） --------------------------
 def get_bing_search_results(query, num_results=5, worker=None):
     query_encoded = urllib.parse.quote_plus(query)
     url = f"https://www.bing.com/search?q={query_encoded}"
@@ -165,12 +163,13 @@ def get_bing_search_results(query, num_results=5, worker=None):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "zh-CN,zh;q=0.9",
             "Referer": "https://www.bing.com/",
-            "DNT": "1",  # 告诉服务器不跟踪
+            "DNT": "1", 
             "Connection": "keep-alive",
-            "cookie": COOKIE,
+            # You can set cookies and other request headers here to better perform data crawling
+            # "cookie": "your_cookie_here",
         }
 
-        # 在请求中使用headers
+        # user headers in request   
         response = session.get(url, headers=headers, timeout=10)
         response.raise_for_status()
 

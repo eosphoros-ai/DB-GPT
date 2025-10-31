@@ -14,10 +14,7 @@ from dbgpt.agent.resource import RDBMSConnectorResource
 from dbgpt.model.proxy import TongyiLLMClient
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
-connector = SQLiteConnector.from_file_path(
-    "../test_files/datamanus_test.db"
-)
-db_resource = RDBMSConnectorResource("user_manager", connector=connector)
+
 api_base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 api_key = "sk-xxx"
 model = "qwen3-32b"
@@ -86,11 +83,6 @@ def data2md(headers, table_data):
 
 
 async def main():
-    excel_file = your_directory_path
-    filename_with_ext = os.path.basename(excel_file)
-    headers, table_data = read_excel_headers_and_data(excel_file)
-    mdstr = data2md(headers, table_data)
-
     llm_client = TongyiLLMClient(api_base=api_base, api_key=api_key, model=model)
     context: AgentContext = AgentContext(
         conv_id="test123", language="zh", temperature=0.5, max_new_tokens=2048
@@ -104,7 +96,6 @@ async def main():
         await WebSearchAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
-        .bind(db_resource)
         .bind(agent_memory)
         .build()
     )

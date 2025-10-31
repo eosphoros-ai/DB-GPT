@@ -14,6 +14,9 @@ from .actions.insert_action import Excel2TableAction
 
 logger = logging.getLogger(__name__)
 
+# 待分析的所有Excel文件所在目录
+excel_path = "../test_files"
+excel_files = find_excel_files(excel_path)
 
 class Excel2TableAgent(ConversableAgent):
     """Excel Scientist Agent."""
@@ -91,10 +94,6 @@ class Excel2TableAgent(ConversableAgent):
         sender: Optional[Agent] = None,
         prompt: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str]]:
-        # 待分析的所有Excel文件所在目录
-        excel_path = "../test_files"
-        excel_files = find_excel_files(excel_path)
-
         all_file_data = []
         for excel_file in excel_files:
             filename_with_ext = os.path.basename(excel_file)

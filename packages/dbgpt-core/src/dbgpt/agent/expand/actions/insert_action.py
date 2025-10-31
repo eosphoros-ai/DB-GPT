@@ -14,6 +14,7 @@ from dbgpt.vis.tags.vis_chart import Vis
 from ...core.action.base import Action, ActionOutput
 from ...resource.base import AgentResource, ResourceType
 from ...resource.database import DBResource
+from .excel_table_agent import excel_files
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +33,12 @@ class Excel2TableInput(BaseModel):
     )
 
 
-# 待分析的所有Excel文件所在目录
-excel_path = "../test_files"
-
 
 class Excel2TableAction(Action[Excel2TableInput]):
     def __init__(self, file_paths: List[str] = [], **kwargs):
         """Initialize Excel2TableAction with list of file paths."""
         super().__init__(**kwargs)
-        self.file_paths = find_excel_files(excel_path)
+        self.file_paths = excel_files
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
