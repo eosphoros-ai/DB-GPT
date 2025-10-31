@@ -1055,8 +1055,6 @@ class ConversableAgent(Role, Agent):
     ):
         """Build system prompt."""
         system_prompt = None
-        if self.profile.name.default == "ReportGenerator":
-            pass
         if self.bind_prompt:
             prompt_param = {}
             if resource_vars:
