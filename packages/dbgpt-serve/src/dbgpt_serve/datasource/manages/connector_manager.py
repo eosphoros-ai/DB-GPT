@@ -8,6 +8,7 @@ from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata
 from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
 from dbgpt.util.annotations import Deprecated
+from dbgpt.util.configure.manager import _resolve_env_vars
 from dbgpt.util.executor_utils import ExecutorFactory
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 from dbgpt_ext.datasource.schema import DBType
@@ -175,6 +176,11 @@ class ConnectorManager(BaseComponent):
             db_name (str): database name
         """
         db_config = self.storage.get_db_config(db_name)
+
+        pwd = db_config["db_pwd"]
+        if pwd:
+            db_config["db_pwd"] = _resolve_env_vars(pwd)
+
         db_type = DBType.of_db_type(db_config.get("db_type"))
         if not db_type:
             raise ValueError("Unsupported Db Type！" + db_config.get("db_type"))
@@ -299,6 +305,10 @@ class ConnectorManager(BaseComponent):
             bool: True if connection is successful.
         """
         try:
+            pwd = request.params["password"]
+            if pwd:
+                request.params["password"] = _resolve_env_vars(pwd)
+
             param = self._create_parameters(request)
             _connector = self.create_connector(param)
             return True
