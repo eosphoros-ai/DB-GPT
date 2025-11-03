@@ -212,11 +212,14 @@ class BuiltinKnowledgeGraph(KnowledgeGraphBase):
         loop.close()
         return result
 
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:  # type: ignore
+    async def aload_document(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> List[str]:  # type: ignore
         """Extract and persist triplets to graph store.
 
         Args:
             chunks: List[Chunk]: document chunks.
+            file_id: Optional[str]: file id for document-level graph structure tracking.
         Return:
             List[str]: chunk ids.
         """
