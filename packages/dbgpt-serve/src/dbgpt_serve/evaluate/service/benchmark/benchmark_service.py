@@ -32,6 +32,7 @@ from ...api.schemas import (
 )
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
+from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 from .benchmark_llm_task import BenchmarkLLMTask
 from .data_compare_service import DataCompareService
 from .file_parse_service import ExcelFileParseService
@@ -48,7 +49,6 @@ from .models import (
     ReasoningResponse,
 )
 from .user_input_execute_service import UserInputExecuteService
-from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +244,8 @@ class BenchmarkService(
             manager = get_benchmark_manager(self._system_app)
             await manager.load_data()
             logger.info(
-                f"Benchmark dataset loaded from {manager._config.repo_url} dir={manager._config.data_dir}"
+                f"Benchmark dataset loaded from {manager._config.repo_url} "
+                f"dir={manager._config.data_dir}"
             )
         except Exception as e:
             logger.error(f"Failed to load benchmark dataset before run: {e}")
