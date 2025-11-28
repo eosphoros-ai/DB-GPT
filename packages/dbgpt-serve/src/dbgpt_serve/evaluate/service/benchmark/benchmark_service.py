@@ -48,6 +48,7 @@ from .models import (
     ReasoningResponse,
 )
 from .user_input_execute_service import UserInputExecuteService
+from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +239,16 @@ class BenchmarkService(
             output_file_path = BENCHMARK_OUTPUT_RESULT_PATH
         if not scene_key:
             scene_key = EvaluationScene.DATASET.value
+
+        try:
+            manager = get_benchmark_manager(self._system_app)
+            await manager.load_data()
+            logger.info(
+                f"Benchmark dataset loaded from {manager._config.repo_url} dir={manager._config.data_dir}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to load benchmark dataset before run: {e}")
+            raise
 
         output_file_path = self._generate_output_file_full_path(
             output_file_path, evaluate_code

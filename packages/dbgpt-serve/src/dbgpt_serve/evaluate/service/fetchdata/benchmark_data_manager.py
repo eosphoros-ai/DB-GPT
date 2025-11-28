@@ -74,27 +74,6 @@ class BenchmarkDataManager(BaseComponent):
     async def async_after_start(self):
         logger.info("BenchmarkDataManager: async_after_start.")
 
-        try:
-            if not self._config.repo_url:
-                logger.info("BenchmarkDataManager: repo_url not set, skip auto load.")
-                return
-
-            if self._startup_loaded:
-                logger.info("BenchmarkDataManager: already loaded on startup, skip.")
-                return
-
-            logger.info(
-                f"BenchmarkDataManager: auto loading repo {self._config.repo_url} "
-                f"dir={self._config.data_dir}"
-            )
-            await get_benchmark_manager(self.system_app).load_from_github(
-                repo_url=self._config.repo_url, data_dir=self._config.data_dir
-            )
-            self._startup_loaded = True
-            logger.info("BenchmarkDataManager: auto load finished.")
-        except Exception as e:
-            logger.error(f"BenchmarkDataManager: auto load failed: {e}")
-
     async def async_before_stop(self):
         try:
             logger.info("BenchmarkDataManager: closing resources before stop...")
@@ -141,6 +120,30 @@ class BenchmarkDataManager(BaseComponent):
     async def _run_in_thread(self, func, *args, **kwargs):
         """Run blocking function in thread to avoid blocking event loop"""
         return await asyncio.to_thread(func, *args, **kwargs)
+
+    async def load_data(self):
+        logger.info("BenchmarkDataManager: start load_data.")
+
+        try:
+            if not self._config.repo_url:
+                logger.info("BenchmarkDataManager: repo_url not set, skip auto load.")
+                return
+
+            if self._startup_loaded:
+                logger.info("BenchmarkDataManager: already loaded on startup, skip.")
+                return
+
+            logger.info(
+                f"BenchmarkDataManager: auto loading repo {self._config.repo_url} "
+                f"dir={self._config.data_dir}"
+            )
+            await get_benchmark_manager(self.system_app).load_from_github(
+                repo_url=self._config.repo_url, data_dir=self._config.data_dir
+            )
+            self._startup_loaded = True
+            logger.info("BenchmarkDataManager: auto load finished.")
+        except Exception as e:
+            logger.error(f"BenchmarkDataManager: auto load failed: {e}")
 
     def _sanitize_column_name(self, name: str) -> str:
         if name is None:
