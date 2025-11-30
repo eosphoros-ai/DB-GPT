@@ -32,6 +32,7 @@ from ...api.schemas import (
 )
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
+from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 from .benchmark_llm_task import BenchmarkLLMTask
 from .data_compare_service import DataCompareService
 from .file_parse_service import ExcelFileParseService
@@ -238,6 +239,17 @@ class BenchmarkService(
             output_file_path = BENCHMARK_OUTPUT_RESULT_PATH
         if not scene_key:
             scene_key = EvaluationScene.DATASET.value
+
+        try:
+            manager = get_benchmark_manager(self._system_app)
+            await manager.load_data()
+            logger.info(
+                f"Benchmark dataset loaded from {manager._config.repo_url} "
+                f"dir={manager._config.data_dir}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to load benchmark dataset before run: {e}")
+            raise
 
         output_file_path = self._generate_output_file_full_path(
             output_file_path, evaluate_code
