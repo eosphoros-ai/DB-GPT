@@ -18,6 +18,8 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util import PaginationResult, get_or_create_event_loop
+from .ext.excel_file_parse import ExcelFileParseService
+from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 
 from ....core import BaseService
 from ....prompt.service.service import Service as PromptService
@@ -32,9 +34,11 @@ from ...api.schemas import (
 )
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
-from .benchmark_llm_task import BenchmarkLLMTask
+from dbgpt_serve.evaluate.service.benchmark.task.benchmark_llm_task import BenchmarkLLMTask
+from dbgpt_serve.evaluate.service.benchmark.task.benchmark_agent_task import (
+    BenchmarkAgentTask,
+)
 from .data_compare_service import DataCompareService
-from .file_parse_service import ExcelFileParseService
 from .models import (
     BaseInputModel,
     BenchmarkDataSets,
@@ -42,10 +46,9 @@ from .models import (
     BenchmarkModeTypeEnum,
     BenchmarkTaskResult,
     ContentTypeEnum,
-    FileParseTypeEnum,
     InputType,
     OutputType,
-    ReasoningResponse,
+    BenchmarkInvokeType, FileParseTypeEnum
 )
 from .user_input_execute_service import UserInputExecuteService
 
@@ -88,6 +91,7 @@ class BenchmarkService(
         super().__init__(system_app)
         self.rag_service = get_rag_service(system_app)
         self.prompt_service = get_prompt_service(system_app)
+        self._file_parse_type = FileParseTypeEnum.EXCEL
 
         fps = ExcelFileParseService()
         dcs = DataCompareService()
@@ -221,6 +225,12 @@ class BenchmarkService(
         model_list: List[str],
         temperature: Optional[float],
         max_tokens: Optional[int],
+        benchmark_type: Optional[str],
+        api_url: Optional[str],
+        http_method: Optional[str],
+        headers: Optional[dict],
+        parse_strategy: Optional[str],
+        response_mapping: Optional[dict],
     ) -> List[BenchmarkTaskResult[OutputType]]:
         """
         Run the dataset benchmark
@@ -250,7 +260,15 @@ class BenchmarkService(
             scene_key,
             temperature,
             max_tokens,
+            benchmark_type,
+            api_url,
+            http_method,
+            headers,
+            parse_strategy,
+            response_mapping
         )
+        logger.info(f"run benchmark with benchmarkConfig={config}")
+
         # save benchmark task
         self.create_benchmark_task(
             config,
@@ -325,6 +343,56 @@ class BenchmarkService(
         )
         return result_list
 
+    def _parse_http_method(self, http_method: Optional[str]):
+        from .models import HttpMethod
+        
+        if not http_method:
+            return HttpMethod.POST
+        
+        try:
+            return HttpMethod(http_method.upper())
+        except ValueError:
+            logger.warning(
+                f"Invalid HTTP method: {http_method}, using default POST"
+            )
+            return HttpMethod.POST
+
+    def _parse_response_strategy(self, parse_strategy: Optional[str]):
+        from .models import ResponseParseStrategy
+        
+        if not parse_strategy:
+            return ResponseParseStrategy.JSON_PATH
+        
+        try:
+            return ResponseParseStrategy(parse_strategy.upper())
+        except ValueError:
+            logger.warning(
+                f"Invalid parse strategy: {parse_strategy}, using default JSON_PATH"
+            )
+            return ResponseParseStrategy.JSON_PATH
+
+    def _create_agent_config(
+        self,
+        api_url: str,
+        http_method: Optional[str],
+        headers: Optional[dict],
+        parse_strategy: Optional[str],
+        response_mapping: Optional[dict],
+    ):
+        from .models import AgentApiConfig
+        
+        http_method_enum = self._parse_http_method(http_method)
+        parse_strategy_enum = self._parse_response_strategy(parse_strategy)
+        
+        agent_config = AgentApiConfig(
+            api_url=api_url,
+            http_method=http_method_enum,
+            headers=headers or {},
+            parse_strategy=parse_strategy_enum,
+            response_mapping=response_mapping,
+        )
+        return agent_config
+
     async def _build_benchmark_config(
         self,
         model_list,
@@ -333,26 +401,65 @@ class BenchmarkService(
         scene_key,
         temperature,
         max_tokens,
+        benchmark_type,
+        api_url,
+        http_method,
+        headers,
+        parse_strategy,
+        response_mapping
     ) -> BenchmarkExecuteConfig:
         config = BenchmarkExecuteConfig(
             benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
             standard_file_path=STANDARD_BENCHMARK_FILE_PATH,
+            output_file_path=output_file_path,
+            content_type=ContentTypeEnum.SQL,
+            round_time=1,
+            thread_num=1,
+            execute_llm_result=True,
+            invoke_llm=True,
+            compare_result_enable=True,
+            file_parse_type=self._file_parse_type,
+            evaluate_code=evaluate_code,
+            scene_key=scene_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
-        config.output_file_path = output_file_path
-        config.content_type = ContentTypeEnum.SQL
-        config.round_time = 1
-        config.thread_num = 1
-        config.execute_llm_result = True
-        config.invoke_llm = True
-        config.compare_result_enable = True
-        config.file_parse_type = FileParseTypeEnum.EXCEL
-        config.llm_thread_map = {model: 1 for model in model_list}
-        config.evaluate_code = evaluate_code
-        config.scene_key = scene_key
-        config.temperature = temperature
-        config.max_tokens = max_tokens
+        if benchmark_type == BenchmarkInvokeType.AGENT.name:
+            config.invoke_type = BenchmarkInvokeType.AGENT
+            config.llm_thread_map = {"agent": config.thread_num}
+            config.agent_config = self._create_agent_config(
+                api_url, http_method, headers, parse_strategy, response_mapping
+            )
+        else:
+            config.invoke_type = BenchmarkInvokeType.LLM
+            config.llm_thread_map = {model: 1 for model in model_list}
 
         return config
+
+    def _format_prompt_template(
+        self, 
+        prompt: str, 
+    ) -> str:
+        try:
+            dialect = self._get_database_dialect()
+            format_params = {
+                "dialect": dialect,
+            }
+            return prompt.format(**format_params)
+        except Exception as e:
+            logger.warning(
+                f"Failed to format prompt template: {e}. "
+            )
+            return prompt
+
+    def _get_database_dialect(self) -> str | None:
+        try:
+            db_connector = get_benchmark_manager().get_connector()
+            if db_connector and hasattr(db_connector, "dialect"):
+                return db_connector.dialect
+        except Exception as e:
+            logger.warning(f"Failed to get database dialect: {e}")
+        return None
 
     def _update_benchmark_task_status(
         self,
@@ -497,24 +604,47 @@ class BenchmarkService(
         self, config: BenchmarkExecuteConfig, input: InputType
     ) -> Union[OutputType, None]:
         """
-        Execute LLM Benchmark Task
+        Execute Benchmark Task (LLM or Agent)
         """
         try:
             # 1. 组装评测输入
             if input.prompt is None:
                 raise Exception("benchmark datasets not have prompt template!")
-            input.prompt = input.prompt
+            
+            # format prompt template
+            input.prompt = self._format_prompt_template(input.prompt)
 
             # 2. 执行评测
-            benchmark_llm_task_service = BenchmarkLLMTask(
-                llm_client=self.llm_client, model_name=input.llm_code
-            )
+            if config.invoke_type == BenchmarkInvokeType.AGENT:
+                agent_config = config.agent_config
+                if not agent_config:
+                    raise Exception(
+                        f"Agent API configuration not found for agent: {input.llm_code}"
+                    )
+                benchmark_agent_task = BenchmarkAgentTask(
+                    api_config=agent_config,
+                )
+                
+                # 调用 Agent 执行评测
+                response = await benchmark_agent_task.invoke_agent(
+                    prompt=input.prompt,
+                    question=input.question,
+                    knowledge=input.knowledge,
+                    self_define_tags=input.self_define_tags,
+                    temperature=config.temperature,
+                    max_tokens=config.max_tokens,
+                )
+            else:
+                # LLM 模式：调用本地 LLM Client
+                benchmark_llm_task_service = BenchmarkLLMTask(
+                    llm_client=self.llm_client, model_name=input.llm_code
+                )
 
-            response: ReasoningResponse = await benchmark_llm_task_service.invoke_llm(
-                prompt=input.prompt,
-                temperature=config.temperature,
-                max_tokens=config.max_tokens,
-            )
+                response = await benchmark_llm_task_service.invoke_llm(
+                    prompt=input.prompt,
+                    temperature=config.temperature,
+                    max_tokens=config.max_tokens,
+                )
 
             # 3. 组装评测输出
             return await self.user_input_execute_service.build_output(
