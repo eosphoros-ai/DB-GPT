@@ -255,6 +255,7 @@ class CommonLLMHttpRequestBody(BaseHttpBody):
     conv_uid: Optional[str] = Field(
         default=None, description="The conversation id of the model inference"
     )
+    app_code: Optional[str] = Field(default=None, description="The app id of the app")
     span_id: Optional[str] = Field(
         default=None, description="The span id of the model inference"
     )

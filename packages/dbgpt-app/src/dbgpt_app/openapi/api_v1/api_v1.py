@@ -535,6 +535,7 @@ async def chat_completions(
                     user_query=dialogue.user_input,
                     user_code=dialogue.user_name,
                     sys_code=dialogue.sys_code,
+                    app_code=dialogue.app_code,
                     **dialogue.ext_info,
                 ),
                 headers=headers,
@@ -551,6 +552,7 @@ async def chat_completions(
                 chat_param=dialogue.select_param,
                 user_name=dialogue.user_name,
                 sys_code=dialogue.sys_code,
+                app_code=dialogue.app_code,
                 incremental=dialogue.incremental,
             )
             return StreamingResponse(
