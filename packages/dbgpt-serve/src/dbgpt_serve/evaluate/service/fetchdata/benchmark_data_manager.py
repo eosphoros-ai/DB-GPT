@@ -71,9 +71,6 @@ class BenchmarkDataManager(BaseComponent):
         """Initialize the AgentManager."""
         self.system_app = system_app
 
-    async def async_after_start(self):
-        logger.info("BenchmarkDataManager: async_after_start.")
-
     async def async_before_stop(self):
         try:
             logger.info("BenchmarkDataManager: closing resources before stop...")

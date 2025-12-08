@@ -252,17 +252,6 @@ class BenchmarkService(
         if not scene_key:
             scene_key = EvaluationScene.DATASET.value
 
-        try:
-            manager = get_benchmark_manager(self._system_app)
-            await manager.load_data()
-            logger.info(
-                f"Benchmark dataset loaded from {manager._config.repo_url} "
-                f"dir={manager._config.data_dir}"
-            )
-        except Exception as e:
-            logger.error(f"Failed to load benchmark dataset before run: {e}")
-            raise e
-
         output_file_path = self._generate_output_file_full_path(
             output_file_path, evaluate_code
         )
@@ -282,6 +271,7 @@ class BenchmarkService(
             response_mapping,
         )
         logger.info(f"run benchmark with benchmarkConfig={config}")
+        start_time = time.time()
 
         # save benchmark task
         self.create_benchmark_task(
@@ -293,8 +283,23 @@ class BenchmarkService(
             output_file_path,
         )
 
+        # Priority: load Falcon github benchmark dataset
+        try:
+            manager = get_benchmark_manager(self._system_app)
+            await manager.load_data()
+            logger.info(
+                f"Benchmark dataset loaded from {manager._config.repo_url} "
+                f"dir={manager._config.data_dir}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to load Falcon benchmark dataset before run task: {e}")
+            cost_time = int(time.time() - start_time)
+            self._update_benchmark_task_status(
+                evaluate_code, Status.FAILED.value, cost_time, error_message=str(e)
+            )
+            raise e
+
         result_list = []
-        start_time = time.time()
         try:
             # read input file
             input_list: List[BaseInputModel] = (
