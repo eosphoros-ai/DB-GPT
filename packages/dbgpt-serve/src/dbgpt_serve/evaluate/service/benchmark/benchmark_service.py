@@ -34,6 +34,7 @@ from ...api.schemas import (
 )
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
+from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 from dbgpt_serve.evaluate.service.benchmark.task.benchmark_llm_task import BenchmarkLLMTask
 from dbgpt_serve.evaluate.service.benchmark.task.benchmark_agent_task import (
     BenchmarkAgentTask,
@@ -249,6 +250,17 @@ class BenchmarkService(
         if not scene_key:
             scene_key = EvaluationScene.DATASET.value
 
+        try:
+            manager = get_benchmark_manager(self._system_app)
+            await manager.load_data()
+            logger.info(
+                f"Benchmark dataset loaded from {manager._config.repo_url} "
+                f"dir={manager._config.data_dir}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to load benchmark dataset before run: {e}")
+            raise
+
         output_file_path = self._generate_output_file_full_path(
             output_file_path, evaluate_code
         )
@@ -345,10 +357,10 @@ class BenchmarkService(
 
     def _parse_http_method(self, http_method: Optional[str]):
         from .models import HttpMethod
-        
+
         if not http_method:
             return HttpMethod.POST
-        
+
         try:
             return HttpMethod(http_method.upper())
         except ValueError:
@@ -359,10 +371,10 @@ class BenchmarkService(
 
     def _parse_response_strategy(self, parse_strategy: Optional[str]):
         from .models import ResponseParseStrategy
-        
+
         if not parse_strategy:
             return ResponseParseStrategy.JSON_PATH
-        
+
         try:
             return ResponseParseStrategy(parse_strategy.upper())
         except ValueError:
@@ -380,10 +392,10 @@ class BenchmarkService(
         response_mapping: Optional[dict],
     ):
         from .models import AgentApiConfig
-        
+
         http_method_enum = self._parse_http_method(http_method)
         parse_strategy_enum = self._parse_response_strategy(parse_strategy)
-        
+
         agent_config = AgentApiConfig(
             api_url=api_url,
             http_method=http_method_enum,
@@ -437,8 +449,8 @@ class BenchmarkService(
         return config
 
     def _format_prompt_template(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
     ) -> str:
         try:
             dialect = self._get_database_dialect()
@@ -610,7 +622,7 @@ class BenchmarkService(
             # 1. 组装评测输入
             if input.prompt is None:
                 raise Exception("benchmark datasets not have prompt template!")
-            
+
             # format prompt template
             input.prompt = self._format_prompt_template(input.prompt)
 
@@ -624,7 +636,7 @@ class BenchmarkService(
                 benchmark_agent_task = BenchmarkAgentTask(
                     api_config=agent_config,
                 )
-                
+
                 # 调用 Agent 执行评测
                 response = await benchmark_agent_task.invoke_agent(
                     prompt=input.prompt,
