@@ -18,8 +18,12 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util import PaginationResult, get_or_create_event_loop
-from .ext.excel_file_parse import ExcelFileParseService
-from ..fetchdata.benchmark_data_manager import get_benchmark_manager
+from dbgpt_serve.evaluate.service.benchmark.task.benchmark_agent_task import (
+    BenchmarkAgentTask,
+)
+from dbgpt_serve.evaluate.service.benchmark.task.benchmark_llm_task import (
+    BenchmarkLLMTask,
+)
 
 from ....core import BaseService
 from ....prompt.service.service import Service as PromptService
@@ -35,21 +39,19 @@ from ...api.schemas import (
 from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
 from ..fetchdata.benchmark_data_manager import get_benchmark_manager
-from dbgpt_serve.evaluate.service.benchmark.task.benchmark_llm_task import BenchmarkLLMTask
-from dbgpt_serve.evaluate.service.benchmark.task.benchmark_agent_task import (
-    BenchmarkAgentTask,
-)
 from .data_compare_service import DataCompareService
+from .ext.excel_file_parse import ExcelFileParseService
 from .models import (
     BaseInputModel,
     BenchmarkDataSets,
     BenchmarkExecuteConfig,
+    BenchmarkInvokeType,
     BenchmarkModeTypeEnum,
     BenchmarkTaskResult,
     ContentTypeEnum,
+    FileParseTypeEnum,
     InputType,
     OutputType,
-    BenchmarkInvokeType, FileParseTypeEnum
 )
 from .user_input_execute_service import UserInputExecuteService
 
@@ -259,7 +261,7 @@ class BenchmarkService(
             )
         except Exception as e:
             logger.error(f"Failed to load benchmark dataset before run: {e}")
-            raise
+            raise e
 
         output_file_path = self._generate_output_file_full_path(
             output_file_path, evaluate_code
@@ -277,7 +279,7 @@ class BenchmarkService(
             http_method,
             headers,
             parse_strategy,
-            response_mapping
+            response_mapping,
         )
         logger.info(f"run benchmark with benchmarkConfig={config}")
 
@@ -364,9 +366,7 @@ class BenchmarkService(
         try:
             return HttpMethod(http_method.upper())
         except ValueError:
-            logger.warning(
-                f"Invalid HTTP method: {http_method}, using default POST"
-            )
+            logger.warning(f"Invalid HTTP method: {http_method}, using default POST")
             return HttpMethod.POST
 
     def _parse_response_strategy(self, parse_strategy: Optional[str]):
@@ -418,7 +418,7 @@ class BenchmarkService(
         http_method,
         headers,
         parse_strategy,
-        response_mapping
+        response_mapping,
     ) -> BenchmarkExecuteConfig:
         config = BenchmarkExecuteConfig(
             benchmark_mode_type=BenchmarkModeTypeEnum.EXECUTE,
@@ -459,9 +459,7 @@ class BenchmarkService(
             }
             return prompt.format(**format_params)
         except Exception as e:
-            logger.warning(
-                f"Failed to format prompt template: {e}. "
-            )
+            logger.warning(f"Failed to format prompt template: {e}. ")
             return prompt
 
     def _get_database_dialect(self) -> str | None:

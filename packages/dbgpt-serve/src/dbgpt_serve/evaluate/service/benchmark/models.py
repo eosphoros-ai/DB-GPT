@@ -157,6 +157,7 @@ class ContentTypeEnum(Enum):
     SQL = "SQL"
     JSON = "JSON"
 
+
 class BenchmarkInvokeType(str, Enum):
     LLM = "LLM"
     AGENT = "AGENT"
@@ -177,6 +178,7 @@ class ResponseParseStrategy(str, Enum):
 
     JSON_PATH = "JSON_PATH"  # Use JSON path to extract content
     DIRECT = "DIRECT"  # Directly use response as content
+
 
 @dataclass
 class AgentApiConfig:
@@ -253,6 +255,7 @@ class AgentApiConfig:
             verify_ssl=config_dict.get("verify_ssl", True),
             extra_config=config_dict.get("extra_config", {}),
         )
+
 
 @dataclass
 class BenchmarkExecuteConfig:
@@ -439,12 +442,13 @@ class ReasoningResponse:
         self.think = think
         self.content = content
 
+
 @dataclass
 class AgentCompletionRequest:
     """benchmark Agent request entity."""
 
     model: Optional[str] = None
-    messages: Optional[List[dict]] = None,
+    messages: Optional[List[dict]] = (None,)
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     top_k: Optional[int] = None

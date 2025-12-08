@@ -95,12 +95,18 @@ class BenchmarkServeRequest(BaseModel):
     log_info: Optional[str] = Field(None, description="evaluation task error message")
     gmt_create: Optional[str] = Field(None, description="create time")
     gmt_modified: Optional[str] = Field(None, description="modified time")
-    benchmark_type: Optional[str] = Field(None, description="execute benchmark type, llm or agent")
+    benchmark_type: Optional[str] = Field(
+        None, description="execute benchmark type, llm or agent"
+    )
     api_url: Optional[str] = Field(None, description="api url")
     http_method: Optional[str] = Field(None, description="http method")
     headers: Optional[dict] = Field(None, description="http headers")
-    parse_strategy: Optional[str] = Field(None, description="agent response parse strategy")
-    response_mapping: Optional[dict] = Field(None, description="agent  response extract result mapping")
+    parse_strategy: Optional[str] = Field(
+        None, description="agent response parse strategy"
+    )
+    response_mapping: Optional[dict] = Field(
+        None, description="agent  response extract result mapping"
+    )
 
 
 class BenchmarkServeResponse(BenchmarkServeRequest):
