@@ -292,7 +292,9 @@ class BenchmarkService(
                 f"dir={manager._config.data_dir}"
             )
         except Exception as e:
-            logger.error(f"Failed to load Falcon benchmark dataset before run task: {e}")
+            logger.error(
+                f"Failed to load Falcon benchmark dataset before run task: {e}"
+            )
             cost_time = int(time.time() - start_time)
             self._update_benchmark_task_status(
                 evaluate_code, Status.FAILED.value, cost_time, error_message=str(e)
