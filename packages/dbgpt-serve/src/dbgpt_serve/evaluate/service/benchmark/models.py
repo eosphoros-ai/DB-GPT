@@ -138,6 +138,7 @@ class FileParseTypeEnum(Enum):
     OSS = "OSS"
     YU_QUE = "YU_QUE"
     EXCEL = "EXCEL"
+    GITHUB = "GITHUB"
 
 
 class FormatTypeEnum(Enum):
@@ -155,6 +156,105 @@ class ContentTypeEnum(Enum):
 
     SQL = "SQL"
     JSON = "JSON"
+
+
+class BenchmarkInvokeType(str, Enum):
+    LLM = "LLM"
+    AGENT = "AGENT"
+
+
+class HttpMethod(str, Enum):
+    """HTTP method enumeration."""
+
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
+    PATCH = "PATCH"
+
+
+class ResponseParseStrategy(str, Enum):
+    """Response parsing strategy enumeration."""
+
+    JSON_PATH = "JSON_PATH"  # Use JSON path to extract content
+    DIRECT = "DIRECT"  # Directly use response as content
+
+
+@dataclass
+class AgentApiConfig:
+    """Agent API configuration.
+
+    This class holds the configuration for calling remote agent APIs,
+    including endpoint URL, request parameters, headers, and response parsing rules.
+    """
+
+    # API endpoint configuration
+    api_url: str
+    http_method: HttpMethod = HttpMethod.POST
+    timeout: int = 300  # Default timeout 300 seconds for agent tasks
+
+    # Request configuration
+    headers: Dict[str, str] = field(default_factory=dict)
+    query_params: Dict[str, Any] = field(default_factory=dict)
+
+    # Response parsing configuration
+    parse_strategy: ResponseParseStrategy = ResponseParseStrategy.JSON_PATH
+
+    # JSON path expressions for extracting response fields
+    # Example: {"content": "$.data.result", "tokens": "$.data.usage.total_tokens"}
+    response_mapping: Dict[str, str] = field(default_factory=dict)
+
+    # Retry configuration
+    max_retries: int = 3
+    retry_delay: int = 1  # seconds
+
+    # Additional configuration
+    verify_ssl: bool = True
+    extra_config: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate configuration after initialization."""
+        if not self.api_url:
+            raise ValueError("api_url is required")
+
+        # Set default headers
+        if "Content-Type" not in self.headers:
+            self.headers["Content-Type"] = "application/json; charset=UTF-8"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary."""
+        return {
+            "api_url": self.api_url,
+            "http_method": self.http_method.value,
+            "timeout": self.timeout,
+            "headers": self.headers,
+            "query_params": self.query_params,
+            "parse_strategy": self.parse_strategy.value,
+            "response_mapping": self.response_mapping,
+            "max_retries": self.max_retries,
+            "retry_delay": self.retry_delay,
+            "verify_ssl": self.verify_ssl,
+            "extra_config": self.extra_config,
+        }
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "AgentApiConfig":
+        """Create configuration from dictionary."""
+        return cls(
+            api_url=config_dict.get("api_url", ""),
+            http_method=HttpMethod(config_dict.get("http_method", "POST")),
+            timeout=config_dict.get("timeout", 300),
+            headers=config_dict.get("headers", {}),
+            query_params=config_dict.get("query_params", {}),
+            parse_strategy=ResponseParseStrategy(
+                config_dict.get("parse_strategy", "JSON_PATH")
+            ),
+            response_mapping=config_dict.get("response_mapping", {}),
+            max_retries=config_dict.get("max_retries", 3),
+            retry_delay=config_dict.get("retry_delay", 1),
+            verify_ssl=config_dict.get("verify_ssl", True),
+            extra_config=config_dict.get("extra_config", {}),
+        )
 
 
 @dataclass
@@ -182,6 +282,7 @@ class BenchmarkExecuteConfig:
     execute_llm_result: bool = True
     invoke_llm: bool = True
     thread_num: Optional[int] = None
+    invoke_type: BenchmarkInvokeType = BenchmarkInvokeType.LLM
 
     # llm thread config
     llm_thread_map: Dict[str, int] = field(default=None)
@@ -198,6 +299,9 @@ class BenchmarkExecuteConfig:
     # task config
     evaluate_code: Optional[str] = None
     scene_key: Optional[str] = None
+
+    # agent config
+    agent_config: AgentApiConfig = None
 
     def get_llm_thread(self, llm_code: str) -> int:
         return self.llm_thread_map.get(llm_code, 1)
@@ -337,3 +441,18 @@ class ReasoningResponse:
         self.cot_tokens = cot_tokens
         self.think = think
         self.content = content
+
+
+@dataclass
+class AgentCompletionRequest:
+    """benchmark Agent request entity."""
+
+    model: Optional[str] = None
+    messages: Optional[List[dict]] = (None,)
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    max_tokens: Optional[int] = None
+    stream: Optional[bool] = None
+    user: Optional[str] = None
+    app_name: str = "dbgpt"
