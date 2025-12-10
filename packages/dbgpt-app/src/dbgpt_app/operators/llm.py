@@ -215,6 +215,7 @@ class BaseHOLLMOperator(
             chat_mode=req.chat_mode,
             user_name=req.user_name,
             sys_code=req.sys_code,
+            app_code=req.app_code,
             conv_storage=self.storage,
             message_storage=self.message_storage,
             param_type="",

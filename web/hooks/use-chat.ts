@@ -79,7 +79,8 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
             let message = event.data;
             try {
               if (scene === 'chat_agent') {
-                message = JSON.parse(message).vis;
+                data = JSON.parse(message);
+                message = data.vis ? data.vis : data.choices?.[0]?.message?.content;
               } else {
                 data = JSON.parse(event.data);
                 message = data.choices?.[0]?.message?.content;
@@ -88,6 +89,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               message.replaceAll('\\n', '\n');
             }
             if (typeof message === 'string') {
+              message = message.replaceAll('\\n', '\n');
               if (message === '[DONE]') {
                 onDone?.();
               } else if (message?.startsWith('[ERROR]')) {
