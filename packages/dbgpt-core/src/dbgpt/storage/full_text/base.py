@@ -19,6 +19,33 @@ class FullTextStoreBase(IndexStoreBase):
     def __init__(self, executor: Optional[Executor] = None):
         """Initialize vector store."""
         super().__init__(executor)
+   
+    def is_support_full_text_search(self) -> bool:
+        # 重写，新增抽象类 
+        """Support full text search.
+        
+        Full text store should support full text search by default.
+        
+        Return:
+            bool: True, full text stores always support full text search.
+        """
+        return True  # 全文检索存储类应该始终支持全文检索
+
+    def full_text_search(self, text: str, topk: int , filters: Optional[MetadataFilters] = None) -> List[Chunk]:
+        # 重写，新增抽象类
+        """Full text search.
+        
+        Args:
+            text (str): The query text.
+            topk (int): Number of results to return. Default is 10.
+            
+        Returns:
+            List[Chunk]: Search results as chunks.
+        """
+        # 调用抽象方法 similar_search_with_scores，但可以忽略分数阈值
+        # 或者子类需要实现具体的全文检索逻辑
+    
+        return self.similar_search_with_scores(text, topk, score_threshold=0.0, filters=filters)    
 
     @abstractmethod
     def load_document(self, chunks: List[Chunk]) -> List[str]:

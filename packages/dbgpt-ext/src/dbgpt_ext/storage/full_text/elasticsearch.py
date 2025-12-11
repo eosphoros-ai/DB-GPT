@@ -93,6 +93,35 @@ class ElasticDocumentStore(FullTextStoreBase):
                 settings=self._es_index_settings,
             )
         self._executor = executor or ThreadPoolExecutor()
+     
+    def is_support_full_text_search(self) -> bool:
+        # 重写，避免继承父类(DB-GPT/packages/dbgpt-ext/src/dbgpt_ext/storage/full_text/elasticsearch.py)的默认实现
+        """ Support full text search.
+        
+           Elasticsearch supports full text search.
+        
+        Return:
+            bool: True if full text search is supported.
+        """
+        return True  # Elasticsearch 支持全文检索
+        
+    def full_text_search(self, text: str, topk: int, filters: Optional[MetadataFilters] = None) -> List[Chunk]:
+        # 重写，使用现有的 similar_search_with_scores 方法实现全文检索
+        """Full text search in Elasticsearch.
+
+        Args:
+            text (str): The query text.
+            topk (int): Number of results to return. Default is 10.
+
+        Returns:
+            List[Chunk]: Search results as chunks.
+        """
+        score_threshold = 0.0
+        return self.similar_search_with_scores(
+            text=text, 
+            top_k=topk, 
+            score_threshold=score_threshold, 
+            filters=filters)
 
     def get_config(self) -> IndexStoreConfig:
         """Get the es store config."""
@@ -196,7 +225,8 @@ class ElasticDocumentStore(FullTextStoreBase):
             )
         return chunks_with_scores[:top_k]
 
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(self, chunks: List[Chunk], embeddings=None) -> List[str]:
+        # 之前只给了2个参数，实际上传入3个参数，会报错，增加embeddings参数。
         """Async load document in elasticsearch.
 
         Args:
