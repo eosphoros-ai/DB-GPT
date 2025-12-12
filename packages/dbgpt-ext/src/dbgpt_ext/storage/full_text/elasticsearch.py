@@ -95,7 +95,7 @@ class ElasticDocumentStore(FullTextStoreBase):
         self._executor = executor or ThreadPoolExecutor()
 
     def is_support_full_text_search(self) -> bool:
-        # 重写，避免继承父类(DB-GPT/packages/dbgpt-ext/src/dbgpt_ext/storage/full_text/elasticsearch.py)的默认实现
+        # 重写，避免继承父类的默认实现
         """Support full text search.
 
            Elasticsearch supports full text search.
