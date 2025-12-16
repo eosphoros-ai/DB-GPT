@@ -40,7 +40,7 @@ from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
 from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 from .data_compare_service import DataCompareService
-from .ext.excel_file_parse import ExcelFileParseService
+from .file_parse_service import ExcelFileParseService
 from .models import (
     BaseInputModel,
     BenchmarkDataSets,
