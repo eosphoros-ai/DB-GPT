@@ -61,7 +61,9 @@ class FullTextStoreBase(IndexStoreBase):
             List[str]: chunk ids.
         """
 
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> List[str]:
         """Async load document in index database.
 
         Args:
