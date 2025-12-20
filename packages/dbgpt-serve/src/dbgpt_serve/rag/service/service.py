@@ -628,9 +628,12 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             ]
             self._chunk_dao.create_documents_chunks(chunk_entities)
         except Exception as e:
+            import traceback
             doc.status = SyncStatus.FAILED.name
             doc.result = "document embedding failed" + str(e)
+            error_traceback = traceback.format_exc()
             logger.error(f"document embedding, failed:{doc.doc_name}, {str(e)}")
+            logger.error(f"Full traceback:\n{error_traceback}")
         return self._document_dao.update_knowledge_document(doc)
 
     def get_space_context(self, space_id):
