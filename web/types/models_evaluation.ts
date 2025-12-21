@@ -70,7 +70,17 @@ export interface getBenchmarkTaskListRequest {
 // 新的创建评测任务请求类型
 export type createBenchmarkTaskRequest = {
   scene_value: string;
-  model_list: string[];
-  temperature: number;
-  max_tokens: number;
+  benchmark_type: string;
+  // LLM 评测相关字段 (可选)
+  model_list?: string[];
+  temperature?: number;
+  max_tokens?: number;
+  // Agent 评测相关字段 (可选)
+  api_url?: string;
+  headers?: Record<string, any>;
+  parse_strategy?: string;
+  response_mapping?: Record<string, any>;
+  http_method?: string;
+  timeout?: number;
+  max_retries?: number;
 };
