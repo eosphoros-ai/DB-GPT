@@ -313,4 +313,9 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
     icon: '/icons/tugraph.png',
     desc: 'TuGraph is a high-performance graph database jointly developed by Ant Group and Tsinghua University.',
   },
+  neo4j: {
+    label: 'Neo4j',
+    icon: '/icons/neo4j.png',
+    desc: 'Neo4j is a highly scalable native graph database, purpose-built to leverage data relationships.',
+  },
 };

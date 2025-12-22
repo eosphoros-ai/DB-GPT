@@ -3,8 +3,12 @@
 import logging
 
 from dbgpt.storage.graph_store.base import GraphStoreBase
+from dbgpt_ext.storage.graph_store.neo4j_store import Neo4jStore
 from dbgpt_ext.storage.graph_store.tugraph_store import TuGraphStore
 from dbgpt_ext.storage.knowledge_graph.community.base import GraphStoreAdapter
+from dbgpt_ext.storage.knowledge_graph.community.neo4j_store_adapter import (
+    Neo4jStoreAdapter,
+)
 from dbgpt_ext.storage.knowledge_graph.community.tugraph_store_adapter import (
     TuGraphStoreAdapter,
 )
@@ -24,6 +28,9 @@ class GraphStoreAdapterFactory:
         """
         if isinstance(graph_store, TuGraphStore):
             return TuGraphStoreAdapter(graph_store)
+        elif isinstance(graph_store, Neo4jStore):
+            # Neo4j has its own adapter due to different syntax and data model
+            return Neo4jStoreAdapter(graph_store)
         else:
             raise Exception(
                 "create community store adapter for %s failed",
