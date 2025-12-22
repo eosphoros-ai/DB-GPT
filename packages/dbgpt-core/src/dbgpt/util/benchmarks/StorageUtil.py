@@ -10,6 +10,8 @@ class StorageUtil:
 
     YUQUE_URL_PREFIX = "https://yuque.com"
 
+    GITHUB_FALCON_PREFIX = "https://github.com/eosphoros-ai/Falcon"
+
     @staticmethod
     def get_file_parse_type(file_path: Optional[str]) -> FileParseTypeEnum:
         """Get file parsing type based on file path
@@ -28,5 +30,7 @@ class StorageUtil:
 
         if file_path.strip().startswith(StorageUtil.YUQUE_URL_PREFIX):
             return FileParseTypeEnum.YU_QUE
+        if file_path.strip().startswith(StorageUtil.GITHUB_FALCON_PREFIX):
+            return FileParseTypeEnum.GITHUB
 
         return FileParseTypeEnum.EXCEL

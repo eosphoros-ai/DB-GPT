@@ -4,15 +4,17 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
 import threading
 import time
+import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast, Literal
 
 import aiohttp
 from sqlalchemy import text
@@ -23,6 +25,90 @@ from dbgpt.configs.model_config import BENCHMARK_DATA_ROOT_PATH
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 logger = logging.getLogger(__name__)
+
+# ---- Unified model result definitions for load_file_from_github ----
+class FailureDetail(BaseModel):
+    line_no: int
+    error: str
+    line: str
+
+class Row(BaseModel):
+    line_no: int
+    data: Any
+
+class FileLoadResult(BaseModel):
+    type: Literal["jsonl", "json", "text"]
+    file_path: str
+    file_name: str
+    encoding: Optional[str] = None
+    rows: List[Row]
+    count: int
+    failed_count: int
+    failures: List[FailureDetail] = []
+
+
+class SqlFileItem(BaseModel):
+    """Represents a single SQL file with its ID and content"""
+
+    sql_id: str
+    sql_content: str
+    file_path: str
+    file_name: str
+    encoding: Optional[str] = None
+
+
+class GoldenSqlListResult(BaseModel):
+    """Result object for golden SQL list loading
+
+    Provides efficient lookup by SQL ID with dict-like interface.
+    """
+    sql_items: Dict[str, SqlFileItem]
+    total_count: int
+    failed_count: int
+
+    def get_by_id(self, sql_id: str) -> Optional[SqlFileItem]:
+        """Get SQL item by ID
+
+        Args:
+            sql_id: The SQL file ID (filename prefix without extension)
+
+        Returns:
+            SqlFileItem if found, None otherwise
+        """
+        return self.sql_items.get(sql_id)
+
+    def get_sql_content(self, sql_id: str) -> Optional[str]:
+        """Get SQL content by ID
+
+        Args:
+            sql_id: The SQL file ID (filename prefix without extension)
+
+        Returns:
+            SQL content string if found, None otherwise
+        """
+        item = self.sql_items.get(sql_id)
+        return item.sql_content if item else None
+
+    def list_all_ids(self) -> List[str]:
+        """Get list of all SQL IDs
+
+        Returns:
+            List of SQL IDs sorted alphabetically
+        """
+        return sorted(self.sql_items.keys())
+
+    def __len__(self) -> int:
+        """Return number of successfully loaded SQL files"""
+        return len(self.sql_items)
+
+    def __contains__(self, sql_id: str) -> bool:
+        """Check if SQL ID exists"""
+        return sql_id in self.sql_items
+
+    def __iter__(self):
+        """Iterate over SQL items"""
+        return iter(self.sql_items.values())
+
 
 BENCHMARK_DEFAULT_DB_SCHEMA = "ant_icube_dev."
 
@@ -36,12 +122,10 @@ class BenchmarkDataConfig(BaseModel):
     db_path: str = os.path.join(
         BENCHMARK_DATA_ROOT_PATH, f"{BENCHMARK_DEFAULT_DB_SCHEMA}db"
     )
-    table_mapping_file: str = os.path.join(
-        BENCHMARK_DATA_ROOT_PATH, "table_mapping.json"
-    )
+    table_mapping_file: Optional[str] = None
     cache_expiry_days: int = 1
     repo_url: str = "https://github.com/eosphoros-ai/Falcon"
-    data_dir: str = "data/source"
+    data_dirs: List[str] = ["dev_data/dev_databases", "test_data/dev_databases"]
 
 
 class BenchmarkDataManager(BaseComponent):
@@ -56,7 +140,6 @@ class BenchmarkDataManager(BaseComponent):
         self._config = config or BenchmarkDataConfig()
         self._http_session: Optional[aiohttp.ClientSession] = None
         self._connector: Optional[SQLiteConnector] = None
-        self._table_mappings = self._load_mappings()
         self._lock = asyncio.Lock()
         self.temp_dir: Optional[str] = None
 
@@ -73,9 +156,7 @@ class BenchmarkDataManager(BaseComponent):
 
     async def async_before_stop(self):
         try:
-            logger.info("BenchmarkDataManager: closing resources before stop...")
             await self.close()
-            logger.info("BenchmarkDataManager: close done.")
         except Exception as e:
             logger.warning(f"BenchmarkDataManager: close failed: {e}")
 
@@ -120,7 +201,6 @@ class BenchmarkDataManager(BaseComponent):
 
     async def load_data(self):
         logger.info("BenchmarkDataManager: start load_data.")
-
         try:
             if not self._config.repo_url:
                 logger.info("BenchmarkDataManager: repo_url not set, skip auto load.")
@@ -132,68 +212,15 @@ class BenchmarkDataManager(BaseComponent):
 
             logger.info(
                 f"BenchmarkDataManager: auto loading repo {self._config.repo_url} "
-                f"dir={self._config.data_dir}"
+                f"dirs={self._config.data_dirs}"
             )
             await get_benchmark_manager(self.system_app).load_from_github(
-                repo_url=self._config.repo_url, data_dir=self._config.data_dir
+                repo_url=self._config.repo_url, data_dirs=self._config.data_dirs
             )
             self._startup_loaded = True
             logger.info("BenchmarkDataManager: auto load finished.")
         except Exception as e:
             logger.error(f"BenchmarkDataManager: auto load failed: {e}")
-
-    def _sanitize_column_name(self, name: str) -> str:
-        if name is None:
-            return ""
-        name = str(name).strip().strip('"').strip("'")
-        invalid_chars = [
-            "-",
-            " ",
-            ".",
-            ",",
-            ";",
-            ":",
-            "!",
-            "?",
-            "'",
-            '"',
-            "(",
-            ")",
-            "[",
-            "]",
-            "{",
-            "}",
-            "\t",
-            "\r",
-            "\n",
-            "\x00",
-        ]
-        while name and name[-1] in invalid_chars:
-            name = name[:-1]
-        for ch in invalid_chars:
-            if ch in name:
-                name = name.replace(ch, "_")
-        while "__" in name:
-            name = name.replace("__", "_")
-        if name and not (name[0].isalpha() or name[0] == "_"):
-            name = "_" + name
-        return name.lower()
-
-    def _sanitize_and_dedup_headers(self, headers: List[str]) -> List[str]:
-        sanitized: List[str] = []
-        used: set = set()
-        for idx, h in enumerate(headers):
-            name = self._sanitize_column_name(h)
-            if not name:
-                name = f"col_{idx}"
-            base = name
-            k = 2
-            while name in used or not name:
-                name = f"{base}_{k}"
-                k += 1
-            used.add(name)
-            sanitized.append(name)
-        return sanitized
 
     # ==========================================================
 
@@ -321,7 +348,9 @@ class BenchmarkDataManager(BaseComponent):
         return [dict(zip(cols, row)) for row in rows]
 
     async def load_from_github(
-        self, repo_url: str, data_dir: str = "data/source"
+            self,
+            repo_url: str,
+            data_dirs: List[str] = ["dev_data/dev_databases", "test_data/dev_databases"],
     ) -> Dict:
         """Main method to load data from GitHub repository"""
         try:
@@ -330,14 +359,26 @@ class BenchmarkDataManager(BaseComponent):
             # 1. Download or use cached repository
             repo_dir = await self._download_repo_contents(repo_url)
 
-            # 2. Find all CSV files recursively
-            csv_files = self._discover_csv_files(repo_dir, data_dir)
-            if not csv_files:
-                raise ValueError("No CSV files found")
-            logger.info(f"Found {len(csv_files)} CSV files")
+            # 2. Find all SQLite files recursively in the specified data_dirs
+            all_sqlite_files = []
+            for d_dir in data_dirs:
+                try:
+                    files = self._discover_sqlite_files(repo_dir, d_dir)
+                    logger.info(f"Found {len(files)} SQLite files in {d_dir}")
+                    all_sqlite_files.extend(files)
+                except ValueError as ve:
+                    # 如果某个目录不存在，记录警告但不中断整个流程
+                    logger.warning(f"Skip directory {d_dir}: {ve}")
 
-            # 3. Import to SQLite
-            result = await self._import_to_database(csv_files)
+            if not all_sqlite_files:
+                raise ValueError(
+                    f"No SQLite files found in any of the directories: {data_dirs}"
+                )
+
+            logger.info(f"Total SQLite files to merge: {len(all_sqlite_files)}")
+
+            # 3. Merge all SQLite files into the main database
+            result = await self._merge_sqlite_databases(all_sqlite_files)
             return result
 
         except Exception as e:
@@ -345,6 +386,280 @@ class BenchmarkDataManager(BaseComponent):
             raise RuntimeError(f"Benchmark data loading failed: {e}") from e
         finally:
             self._cleanup_temp_dir()
+
+    async def load_file_from_github(self, file_name: Optional[str] = None
+    ) -> Optional[FileLoadResult]:
+        """Download and read a specified file from a GitHub repository.
+
+        Supported file types: .json / .jsonl
+        `file_name` can be a relative path within the repository or a plain filename (will be searched recursively).
+
+        Unified return structure (FileLoadResult):
+          - type: "json" | "jsonl"
+          - file_path, file_name, encoding
+          - rows: List[{line_no:int, data:Any}] where data is parsed JSON object
+          - count: total number of rows
+          - failed_count: number of failed lines (non-zero for jsonl or malformed json)
+          - failures: details for failed lines
+
+        For JSON files:
+          - If the file contains a JSON array, each element becomes a Row
+          - If the file contains a single JSON object, it becomes one Row
+          - The structure is flexible and doesn't depend on specific keys
+        """
+        try:
+            if not file_name or not str(file_name).strip():
+                return None
+
+            # Download or use cached repository
+            repo_dir = await self._download_repo_contents(self._config.repo_url)
+
+            # Allowed file extensions
+            allowed_exts = {".jsonl", ".json"}
+
+            # Pre-check extension of `file_name` (if provided), otherwise filter by allowed list later
+            _, requested_ext = os.path.splitext(str(file_name).lower())
+            if requested_ext and requested_ext not in allowed_exts:
+                raise ValueError(f"Unsupported file type: {requested_ext}")
+
+            # Handle both relative path and plain filename cases
+            normalized = str(file_name).strip().lstrip("/").replace("\\", os.sep)
+            candidate_paths: List[str] = []
+
+            # Prefer direct path resolution using the relative path
+            direct_path = os.path.join(repo_dir, normalized)
+            if os.path.isfile(direct_path):
+                ext = os.path.splitext(direct_path.lower())[1]
+                if not requested_ext:
+                    if ext in allowed_exts:
+                        candidate_paths.append(direct_path)
+                elif ext == requested_ext:
+                    candidate_paths.append(direct_path)
+
+            # If not found, recursively search by filename match
+            if not candidate_paths:
+                target_name = os.path.basename(normalized)
+                for root, _, files in os.walk(repo_dir):
+                    for f in files:
+                        if f == target_name:
+                            full = os.path.join(root, f)
+                            ext = os.path.splitext(f.lower())[1]
+                            if not requested_ext:
+                                if ext in allowed_exts:
+                                    candidate_paths.append(full)
+                            elif ext == requested_ext:
+                                candidate_paths.append(full)
+
+            if not candidate_paths:
+                raise FileNotFoundError(f"File not found: {file_name}")
+
+            # Choose a stable candidate (sorted by path length and lexicographical order)
+            chosen = sorted(candidate_paths, key=lambda p: (len(p), p))[0]
+            chosen_ext = os.path.splitext(chosen.lower())[1]
+
+            # Build repository-relative path for the file (avoid returning temp local path)
+            rel_path = os.path.relpath(chosen, repo_dir)
+            rel_path_posix = rel_path.replace(os.sep, "/")
+
+            # Try multiple encodings
+            encodings = ["utf-8", "iso-8859-1"]
+
+            # Handle .json files (array or single object)
+            if chosen_ext == ".json":
+                return await self._parse_json_file(
+                    chosen, rel_path_posix, encodings
+                )
+            
+            # Handle .jsonl files (line-delimited JSON)
+            elif chosen_ext == ".jsonl":
+                return await self._parse_jsonl_file(
+                    chosen, rel_path_posix, encodings
+                )
+            
+            else:
+                raise ValueError(f"Unsupported file extension: {chosen_ext}")
+                
+        except Exception as e:
+            logger.error(f"Falcon repository Import failed: {str(e)}")
+            raise RuntimeError(f"Falcon repository file data loading failed: {e}") from e
+        finally:
+            self._cleanup_temp_dir()
+
+    async def _parse_json_file(
+        self, file_path: str, rel_path_posix: str, encodings: List[str]
+    ) -> FileLoadResult:
+        """Parse a JSON file (array or single object).
+        
+        Args:
+            file_path: Absolute path to the JSON file
+            rel_path_posix: Repository-relative path in POSIX format
+            encodings: List of encodings to try
+            
+        Returns:
+            FileLoadResult with parsed data
+        """
+        rows: List[Row] = []
+        failures: List[FailureDetail] = []
+        used_encoding: Optional[str] = None
+        
+        # Try reading with different encodings
+        for enc in encodings:
+            try:
+                with open(file_path, "r", encoding=enc) as f:
+                    content = f.read()
+                    
+                try:
+                    data = json.loads(content)
+                    
+                    # Handle JSON array
+                    if isinstance(data, list):
+                        for idx, item in enumerate(data, start=1):
+                            rows.append(Row(line_no=idx, data=item))
+                    # Handle single JSON object
+                    elif isinstance(data, dict):
+                        rows.append(Row(line_no=1, data=data))
+                    else:
+                        # Handle primitive types (string, number, etc.)
+                        rows.append(Row(line_no=1, data=data))
+                        
+                    used_encoding = enc
+                    break
+                    
+                except json.JSONDecodeError as e:
+                    failures.append(
+                        FailureDetail(
+                            line_no=1,
+                            error=f"JSON decode error: {str(e)}",
+                            line=content[:200],
+                        )
+                    )
+                    used_encoding = enc
+                    break
+                    
+            except UnicodeDecodeError:
+                continue
+            except Exception as e:
+                logger.warning(f"Read json with encoding {enc} failed: {e}")
+                continue
+        
+        # Fallback: read as bytes and decode with ASCII ignoring errors
+        if used_encoding is None:
+            try:
+                with open(file_path, "rb") as f:
+                    content = f.read().decode("ascii", errors="ignore")
+                    
+                try:
+                    data = json.loads(content)
+                    
+                    if isinstance(data, list):
+                        for idx, item in enumerate(data, start=1):
+                            rows.append(Row(line_no=idx, data=item))
+                    elif isinstance(data, dict):
+                        rows.append(Row(line_no=1, data=data))
+                    else:
+                        rows.append(Row(line_no=1, data=data))
+                        
+                except json.JSONDecodeError as e:
+                    failures.append(
+                        FailureDetail(
+                            line_no=1,
+                            error=f"JSON decode error: {str(e)}",
+                            line=content[:200],
+                        )
+                    )
+                    
+                used_encoding = "ascii-ignore"
+            except Exception as e:
+                raise ValueError(f"Failed to read json file: {e}")
+        
+        return FileLoadResult(
+            type="json",
+            file_path=rel_path_posix,
+            file_name=os.path.basename(file_path),
+            encoding=used_encoding,
+            rows=rows,
+            count=len(rows) + len(failures),
+            failed_count=len(failures),
+            failures=failures,
+        )
+
+    async def _parse_jsonl_file(
+        self, file_path: str, rel_path_posix: str, encodings: List[str]
+    ) -> FileLoadResult:
+        """Parse a JSONL file (line-delimited JSON).
+        
+        Args:
+            file_path: Absolute path to the JSONL file
+            rel_path_posix: Repository-relative path in POSIX format
+            encodings: List of encodings to try
+            
+        Returns:
+            FileLoadResult with parsed data
+        """
+        rows: List[Row] = []
+        failures: List[FailureDetail] = []
+        used_encoding: Optional[str] = None
+
+        # Prefer reading in text mode with multiple encodings
+        for enc in encodings:
+            try:
+                with open(file_path, "r", encoding=enc) as f:
+                    for idx, line in enumerate(f, start=1):
+                        s = line.strip()
+                        if not s:
+                            continue
+                        try:
+                            obj = json.loads(s)
+                            rows.append(Row(line_no=idx, data=obj))
+                        except Exception as e:
+                            failures.append(
+                                FailureDetail(
+                                    line_no=idx,
+                                    error=str(e),
+                                    line=s[:200],
+                                )
+                            )
+                used_encoding = enc
+                break
+            except UnicodeDecodeError:
+                continue
+            except Exception as e:
+                logger.warning(f"Read jsonl with encoding {enc} failed: {e}")
+                continue
+
+        # Fallback: read as bytes and decode with ASCII ignoring errors
+        if used_encoding is None:
+            try:
+                with open(file_path, "rb") as f:
+                    for idx, raw_line in enumerate(f, start=1):
+                        s = raw_line.decode("ascii", errors="ignore").strip()
+                        if not s:
+                            continue
+                        try:
+                            obj = json.loads(s)
+                            rows.append(Row(line_no=idx, data=obj))
+                        except Exception as e:
+                            failures.append(
+                                FailureDetail(
+                                    line_no=idx,
+                                    error=str(e),
+                                    line=s[:200],
+                                )
+                            )
+                used_encoding = "ascii-ignore"
+            except Exception as e:
+                raise ValueError(f"Failed to read jsonl file: {e}")
+                
+        return FileLoadResult(
+            type="jsonl",
+            file_path=rel_path_posix,
+            file_name=os.path.basename(file_path),
+            encoding=used_encoding,
+            rows=rows,
+            count=(len(rows) + len(failures)),
+            failed_count=len(failures),
+            failures=failures,
+        )
 
     async def get_table_info(self) -> Dict:
         """Get metadata about all tables"""
@@ -445,7 +760,7 @@ class BenchmarkDataManager(BaseComponent):
         return (mapped_name or "").lower()
 
     async def _download_repo_contents(self, repo_url: str) -> str:
-        """Download repository with caching"""
+        """Download repository with caching, supporting branch URLs"""
         cache_path = self._get_cache_path(repo_url)
 
         # Use cache if valid
@@ -455,21 +770,45 @@ class BenchmarkDataManager(BaseComponent):
 
         # Download fresh copy
         self.temp_dir = tempfile.mkdtemp()
-        zip_url = (
-            repo_url.replace("github.com", "api.github.com/repos") + "/zipball/main"
-        )
+
+        # Simple parsing for github.com URLs
+        github_pattern = r"github\.com/([^/]+)/([^/]+)(?:/tree/(.+))?"
+        match = re.search(github_pattern, repo_url)
+
+        if match:
+            owner, repo, branch = match.groups()
+            branch = branch or "main"  # Default to main if no tree/branch specified
+            zip_url = f"https://api.github.com/repos/{owner}/{repo}/zipball/{branch}"
+        else:
+            # Fallback for generic structure or direct zip links
+            if repo_url.endswith(".zip"):
+                zip_url = repo_url
+            else:
+                # Default fallback behavior from original code
+                zip_url = (
+                        repo_url.replace("github.com", "api.github.com/repos")
+                        + "/zipball/main"
+                )
+
         logger.info(f"Downloading from GitHub repo: {zip_url}")
 
         try:
             if self._http_session is None:
                 self._http_session = aiohttp.ClientSession()
-            async with self._http_session.get(zip_url) as response:
-                response.raise_for_status()
+
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            async with self._http_session.get(zip_url, headers=headers) as response:
+                if response.status != 200:
+                    text_resp = await response.text()
+                    raise RuntimeError(
+                        f"GitHub API Error {response.status}: {text_resp}"
+                    )
+
                 zip_path = os.path.join(self.temp_dir, "repo.zip")
 
                 with open(zip_path, "wb") as f:
                     while True:
-                        chunk = await response.content.read(1024)
+                        chunk = await response.content.read(1024 * 1024)  # 1MB chunks
                         if not chunk:
                             break
                         f.write(chunk)
@@ -479,7 +818,6 @@ class BenchmarkDataManager(BaseComponent):
                 logger.info(f"Saved repository to cache: {cache_path}")
 
                 return self._extract_zip(zip_path)
-
         except Exception as e:
             self._cleanup_temp_dir()
             raise RuntimeError(f"Failed to download repository: {str(e)}") from e
@@ -515,252 +853,112 @@ class BenchmarkDataManager(BaseComponent):
             raise ValueError("No valid directory found after extraction")
         return os.path.join(self.temp_dir, extracted_dirs[0])
 
-    def _discover_csv_files(self, base_dir: str, search_dir: str) -> List[Dict]:
-        """Find all CSV files recursively"""
+    def _discover_sqlite_files(self, base_dir: str, search_dir: str) -> List[str]:
+        """Find all SQLite files recursively in the search directory"""
         full_search_dir = os.path.join(base_dir, search_dir) if search_dir else base_dir
         if not os.path.exists(full_search_dir):
             raise ValueError(f"Directory not found: {full_search_dir}")
 
-        csv_files = []
+        sqlite_files = []
         for root, _, files in os.walk(full_search_dir):
             for file in files:
-                if file.lower().endswith(".csv"):
-                    rel_path = os.path.relpath(root, start=base_dir)
-                    csv_files.append(
-                        {
-                            "full_path": os.path.join(root, file),
-                            "rel_path": rel_path,
-                            "file_name": file,
-                        }
-                    )
-        return csv_files
+                if file.lower().endswith(".sqlite"):
+                    full_path = os.path.join(root, file)
+                    sqlite_files.append(full_path)
+        return sqlite_files
 
-    async def _import_to_database(self, csv_files: List[Dict]) -> Dict:
-        """Import CSV data to SQLite"""
+    async def _merge_sqlite_databases(self, sqlite_files: List[str]) -> Dict:
+        """Merge multiple SQLite files into the main database"""
         await self.init_connector()
         assert self._connector is not None
-        results = {
-            "total_files": len(csv_files),
-            "successful": 0,
-            "failed": 0,
-            "tables_created": [],
-        }
 
-        def _process_one_file(file_info: Dict) -> Tuple[bool, Optional[str]]:
-            table_name = ""
-            try:
-                path_parts = [p for p in file_info["rel_path"].split(os.sep) if p]
-                table_name = "_".join(path_parts + [Path(file_info["file_name"]).stem])
-                table_name = self._sanitize_table_name(table_name)
+        def _worker():
+            results = {
+                "total_files": len(sqlite_files),
+                "successful": 0,
+                "failed": 0,
+                "tables_merged": [],
+            }
 
-                with self._connector.session_scope() as session:
-                    session.execute(text(f'DROP TABLE IF EXISTS "{table_name}"'))
-                    session.commit()
-                encodings = ["utf-8-sig", "utf-8", "latin-1", "iso-8859-1", "cp1252"]
-
-                for encoding in encodings:
-                    try:
-                        with open(file_info["full_path"], "r", encoding=encoding) as f:
-                            content = f.read()
-
-                        if not content.strip():
-                            raise ValueError("File is empty")
-
-                        content = content.replace("\r\n", "\n").replace("\r", "\n")
-                        lines = [line for line in content.split("\n") if line.strip()]
-                        if not lines:
-                            raise ValueError("No data after normalization")
-
-                        header_line = lines[0]
-                        data_line = lines[1] if len(lines) > 1 else ""
-
-                        try:
-                            sample_for_sniff = "\n".join(lines[:10])
-                            sniffer = csv.Sniffer()
-                            try:
-                                dialect = sniffer.sniff(sample_for_sniff)
-                            except Exception:
-                                # Fallback: choose delimiter by counting common
-                                # separators in header/data line
-                                delims = [",", "\t", ";", "|"]
-                                counts = {
-                                    d: (header_line.count(d) if header_line else 0)
-                                    + (data_line.count(d) if data_line else 0)
-                                    for d in delims
-                                }
-                                best = (
-                                    max(counts, key=counts.get)
-                                    if any(counts.values())
-                                    else ","
-                                )
-
-                                class _DefaultDialect(csv.Dialect):
-                                    delimiter = best
-                                    quotechar = '"'
-                                    doublequote = True
-                                    skipinitialspace = False
-                                    lineterminator = "\n"
-                                    quoting = csv.QUOTE_MINIMAL
-
-                                dialect = _DefaultDialect()
-
-                            try:
-                                has_header = sniffer.has_header("\n".join(lines[:50]))
-                            except Exception:
-                                has_header = True
-
-                            header_row = (
-                                list(csv.reader([header_line], dialect))[0]
-                                if header_line
-                                else []
-                            )
-                            first_data_row = (
-                                list(csv.reader([data_line], dialect))[0]
-                                if data_line
-                                else []
-                            )
-
-                            # Heuristic: if has_header is False but header_row looks
-                            # like names (mostly alphabetic), treat as header
-                            if not has_header:
-
-                                def _looks_like_header(tokens: List[str]) -> bool:
-                                    if not tokens:
-                                        return False
-                                    # 非空、重复少、字母比例高
-                                    cleaned = [
-                                        str(t).strip() for t in tokens if str(t).strip()
-                                    ]
-                                    if not cleaned:
-                                        return False
-                                    # 允许少量数字，但大多以字母开头
-                                    alpha_starts = sum(
-                                        1
-                                        for t in cleaned
-                                        if t and (t[0].isalpha() or t[0] == "_")
-                                    )
-                                    return alpha_starts >= max(
-                                        1, int(0.6 * len(cleaned))
-                                    )
-
-                                if _looks_like_header(header_row):
-                                    has_header = True
-
-                            if not has_header:
-                                num_cols_guess = len(header_row)
-                                headers = [f"col_{i}" for i in range(num_cols_guess)]
-                                first_data_row = header_row
-                            else:
-                                headers = header_row
-
-                            num_cols = (
-                                len(first_data_row) if first_data_row else len(headers)
-                            )
-
-                            # no header
-                            if not headers or all(
-                                (not str(h).strip()) for h in headers
-                            ):
-                                headers = [f"col_{i}" for i in range(num_cols or 1)]
-
-                            headers = self._sanitize_and_dedup_headers(headers)
-
-                            if num_cols <= 0:
-                                num_cols = len(headers)
-                            headers = headers[:num_cols]
-                            if not headers or any(
-                                h is None or h == "" for h in headers
-                            ):
-                                raise csv.Error("Invalid headers after sanitization")
-
-                            create_sql = f'''
-                                CREATE TABLE IF NOT EXISTS "{table_name}" (
-                                    {", ".join([f'"{h}" TEXT' for h in headers])}
-                                )
-                            '''
-                            insert_sql = f'''
-                                INSERT INTO "{table_name}" ({
-                                ", ".join([f'"{h}"' for h in headers])
-                            })
-                                VALUES ({
-                                ", ".join([":" + f"p{i}" for i in range(len(headers))])
-                            })
-                            '''
-
-                            with self._connector.session_scope() as session:
-                                logger.debug(
-                                    f"Table: {table_name}, headers(final): {headers}"
-                                )
-                                session.execute(text(create_sql))
-
-                                reader = csv.reader(lines, dialect)
-                                if has_header:
-                                    next(reader, None)
-
-                                batch_params: List[Dict[str, Any]] = []
-                                for row in reader:
-                                    if not row:
-                                        continue
-                                    if len(row) != len(headers):
-                                        if len(row) < len(headers):
-                                            row += [None] * (len(headers) - len(row))
-                                        else:
-                                            row = row[: len(headers)]
-                                    params = {
-                                        f"p{i}": (row[i] if i < len(row) else None)
-                                        for i in range(len(headers))
-                                    }
-                                    batch_params.append(params)
-                                    if len(batch_params) >= 1000:
-                                        session.execute(text(insert_sql), batch_params)
-                                        batch_params = []
-                                if batch_params:
-                                    session.execute(text(insert_sql), batch_params)
-                                session.commit()
-
-                            return True, table_name
-
-                        except csv.Error:
-                            self._import_with_simple_split_blocking(table_name, content)
-                            return True, table_name
-
-                    except UnicodeDecodeError:
-                        continue
-                    except Exception as e:
-                        logger.warning(f"Error with encoding {encoding}: {str(e)}")
-                        continue
-
+            with self._connector.session_scope() as session:
+                # 获取底层的 sqlite3 连接对象
+                connection_proxy = session.connection()
+                # 兼容不同版本的 SQLAlchemy 获取底层连接的方式
                 try:
-                    with open(file_info["full_path"], "rb") as f:
-                        content = f.read().decode("ascii", errors="ignore")
-                        if content.strip():
-                            self._import_with_simple_split_blocking(table_name, content)
-                            return True, table_name
-                        else:
-                            raise ValueError("File is empty or unreadable")
-                except Exception as e:
-                    return (
-                        False,
-                        f"Failed to process {file_info['file_name']}: {str(e)}",
-                    )
+                    # SQLAlchemy 1.4+ / 2.0
+                    raw_conn = connection_proxy.connection.dbapi_connection
+                except AttributeError:
+                    try:
+                        # 旧版本或某些驱动
+                        raw_conn = connection_proxy.connection
+                    except AttributeError:
+                        # 最后的尝试
+                        raw_conn = session.get_bind().raw_connection()
 
-            except Exception as e:
-                return (
-                    False,
-                    f"Failed to process {file_info.get('full_path', '')}: {str(e)}",
-                )
+                # 确保 raw_conn 是 sqlite3 的连接对象
+                if not raw_conn:
+                    raise RuntimeError("Failed to get raw sqlite3 connection")
 
-        for file_info in csv_files:
-            ok, info = await self._run_in_thread(_process_one_file, file_info)
-            if ok:
-                results["successful"] += 1
-                if info:
-                    results["tables_created"].append(info)
-            else:
-                results["failed"] += 1
-                logger.error(info)
+                cursor = raw_conn.cursor()
 
-        return results
+                for db_path in sqlite_files:
+                    src_alias = f"src_db_{uuid.uuid4().hex[:8]}"
+                    try:
+                        try:
+                            cursor.execute("PRAGMA database_list")
+                            attached_dbs = cursor.fetchall()
+                            for _, name, _ in attached_dbs:
+                                if name not in ("main", "temp"):
+                                    cursor.execute(f"DETACH DATABASE {name}")
+                        except Exception as cleanup_err:
+                            logger.warning(f"Cleanup warning: {cleanup_err}")
+
+                        cursor.execute(f"ATTACH DATABASE ? AS {src_alias}", (db_path,))
+
+                        cursor.execute(
+                            f"SELECT name, sql FROM {src_alias}.sqlite_master "
+                            f"WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                        )
+                        tables = cursor.fetchall()
+
+                        for table_name, create_sql in tables:
+                            cursor.execute(
+                                "SELECT name FROM sqlite_master "
+                                "WHERE type='table' "
+                                "AND name=?",
+                                (table_name,),
+                            )
+                            if not cursor.fetchone():
+                                cursor.execute(create_sql)
+                                cursor.execute(
+                                    f'INSERT INTO main."{table_name}" '
+                                    f'SELECT * FROM {src_alias}."{table_name}"'
+                                )
+                                results["tables_merged"].append(table_name)
+                            else:
+                                logger.warning(
+                                    f"Table '{table_name}' exists. Skipping."
+                                )
+
+                        raw_conn.commit()
+                        results["successful"] += 1
+
+                    except Exception as e:
+                        logger.error(f"Failed to merge {db_path}: {e}")
+                        results["failed"] += 1
+                        try:
+                            raw_conn.rollback()
+                        except Exception:
+                            pass
+                    finally:
+                        try:
+                            cursor.execute(f"DETACH DATABASE {src_alias}")
+                        except Exception:
+                            pass
+
+            return results
+
+        return await self._run_in_thread(_worker)
 
     def _import_with_simple_split_blocking(self, table_name: str, content: str):
         """Fallback method for malformed CSV files (blocking, 使用 SQLAlchemy 执行)"""

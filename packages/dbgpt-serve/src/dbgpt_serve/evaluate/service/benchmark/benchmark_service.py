@@ -18,6 +18,7 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util import PaginationResult, get_or_create_event_loop
+from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.service.benchmark.task.benchmark_agent_task import (
     BenchmarkAgentTask,
 )
@@ -40,7 +41,6 @@ from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
 from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 from .data_compare_service import DataCompareService
-from .ext.excel_file_parse import ExcelFileParseService
 from .models import (
     BaseInputModel,
     BenchmarkDataSets,
@@ -49,7 +49,6 @@ from .models import (
     BenchmarkModeTypeEnum,
     BenchmarkTaskResult,
     ContentTypeEnum,
-    FileParseTypeEnum,
     InputType,
     OutputType,
 )
@@ -61,10 +60,7 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
-STANDARD_BENCHMARK_FILE_PATH = os.path.join(
-    BENCHMARK_DATA_ROOT_PATH,
-    "2025_07_27_public_500_standard_benchmark_question_list.xlsx",
-)
+STANDARD_BENCHMARK_FILE_PATH = "https://github.com/eosphoros-ai/Falcon"
 
 BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")
 
@@ -94,11 +90,10 @@ class BenchmarkService(
         super().__init__(system_app)
         self.rag_service = get_rag_service(system_app)
         self.prompt_service = get_prompt_service(system_app)
-        self._file_parse_type = FileParseTypeEnum.EXCEL
+        self._file_parse_type = StorageUtil.get_file_parse_type(STANDARD_BENCHMARK_FILE_PATH)
 
-        fps = ExcelFileParseService()
         dcs = DataCompareService()
-        self.user_input_execute_service = UserInputExecuteService(fps, dcs)
+        self.user_input_execute_service = UserInputExecuteService(dcs, self._file_parse_type)
 
         self.trigger_executor = ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
@@ -289,7 +284,7 @@ class BenchmarkService(
             await manager.load_data()
             logger.info(
                 f"Benchmark dataset loaded from {manager._config.repo_url} "
-                f"dir={manager._config.data_dir}"
+                f"dir={manager._config.data_dirs}"
             )
         except Exception as e:
             logger.error(

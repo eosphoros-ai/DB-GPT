@@ -4,7 +4,6 @@ import logging
 import os
 from typing import Dict, List, Optional, Union
 
-from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkResultDao
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     BENCHMARK_DEFAULT_DB_SCHEMA,
@@ -12,6 +11,8 @@ from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
 )
 
 from .data_compare_service import DataCompareService
+from .ext.excel_file_parse import ExcelFileParseService
+from .ext.falcon_file_parse import FalconFileParseService
 from .file_parse_service import FileParseService
 from .models import (
     AnswerExecuteModel,
@@ -33,13 +34,27 @@ logger = logging.getLogger(__name__)
 
 class UserInputExecuteService:
     def __init__(
-        self, file_service: FileParseService, compare_service: DataCompareService
+        self, compare_service: DataCompareService, file_type: FileParseTypeEnum = None
     ):
-        self.file_service = file_service
         self.compare_service = compare_service
+        self.file_service = self.file_service(file_type)
 
+        self.dao = BenchmarkResultDao()
         # sql query timeout in seconds
         self.query_timeout = float(os.getenv("BENCHMARK_SQL_TIMEOUT", 360.0))
+
+    def file_service(self, file_type: FileParseTypeEnum) -> FileParseService:
+        """
+        Get file service instance based on file type.
+
+        Returns:
+            FileParseService: File service instance
+        """
+        if file_type == FileParseTypeEnum.GITHUB:
+            return FalconFileParseService()
+        elif file_type == FileParseTypeEnum.EXCEL:
+            return ExcelFileParseService()
+        raise NotImplementedError(f"filePraseType: {file_type} is not implemented yet")
 
     def read_input_file(
         self, input_file_path: str
@@ -53,15 +68,10 @@ class UserInputExecuteService:
         Returns:
             List[BaseInputModel]: Input data list
         """
-        file_parse_type: FileParseTypeEnum = StorageUtil.get_file_parse_type(
+        input_sets: BenchmarkDataSets = self.file_service.parse_input_sets(
             input_file_path
         )
-        if file_parse_type == FileParseTypeEnum.EXCEL:
-            input_sets: BenchmarkDataSets = self.file_service.parse_input_sets(
-                input_file_path
-            )
-            return input_sets.data_list
-        return None
+        return input_sets.data_list
 
     def post_dispatch(
         self,
@@ -225,14 +235,13 @@ class UserInputExecuteService:
             )
 
             results = json.loads(summary_json) if summary_json else []
-            dao = BenchmarkResultDao()
             for item in results:
                 llm_code = item.get("llmCode")
                 right = int(item.get("right", 0))
                 wrong = int(item.get("wrong", 0))
                 failed = int(item.get("failed", 0))
                 exception = int(item.get("exception", 0))
-                dao.upsert_summary(
+                self.dao.upsert_summary(
                     round_id,
                     location,
                     llm_code,
