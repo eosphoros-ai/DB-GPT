@@ -45,14 +45,20 @@ def _run_benchmark_task_sync(service: BenchmarkService, request: BenchmarkServeR
         try:
             loop.run_until_complete(
                 service.run_dataset_benchmark(
-                    request.evaluate_code,
-                    request.scene_key,
-                    request.scene_value,
-                    request.input_file_path,
-                    request.output_file_path,
-                    request.model_list,
-                    request.temperature,
-                    request.max_tokens,
+                    evaluate_code=request.evaluate_code,
+                    scene_key=request.scene_key,
+                    scene_value=request.scene_value,
+                    input_file_path=request.input_file_path,
+                    output_file_path=request.output_file_path,
+                    model_list=request.model_list,
+                    temperature=request.temperature,
+                    max_tokens=request.max_tokens,
+                    benchmark_type=request.benchmark_type,
+                    api_url=request.api_url,
+                    http_method=request.http_method,
+                    headers=request.headers,
+                    parse_strategy=request.parse_strategy,
+                    response_mapping=request.response_mapping,
                 )
             )
             logger.info(f"Benchmark task run sync finish, request: {request}")
