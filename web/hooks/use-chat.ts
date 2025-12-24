@@ -77,22 +77,28 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
           },
           onmessage: event => {
             let message = event.data;
-            data = JSON.parse(message);
+            let needReplaceNewline = false;
+            let parsedData;
 
             try {
+              parsedData = JSON.parse(message);
               if (scene === 'chat_agent') {
-                message = data.vis ? data.vis : data.choices?.[0]?.message?.content;
+                if (parsedData.vis) {
+                  message = parsedData.vis;
+                } else {
+                  needReplaceNewline = true;
+                  message = parsedData.choices?.[0]?.message?.content;
+                }
               } else {
-                message = data.choices?.[0]?.message?.content;
+                message = parsedData.choices?.[0]?.message?.content;
               }
             } catch {
               message.replaceAll('\\n', '\n');
             }
             if (typeof message === 'string') {
-              if (!data.vis) {
+              if (needReplaceNewline) {
                 message = message.replaceAll('\\n', '\n');
               }
-
               if (message === '[DONE]') {
                 onDone?.();
               } else if (message?.startsWith('[ERROR]')) {
