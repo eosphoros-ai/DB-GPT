@@ -13,6 +13,7 @@ class BenchmarkModeTypeEnum(str, Enum):
     BUILD = "BUILD"
     EXECUTE = "EXECUTE"
 
+
 class EvaluationEnv(str, Enum):
     DEV = "DEV"
     TEST = "TEST"

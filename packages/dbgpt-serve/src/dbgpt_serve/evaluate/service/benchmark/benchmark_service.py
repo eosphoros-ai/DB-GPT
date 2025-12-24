@@ -91,10 +91,14 @@ class BenchmarkService(
         super().__init__(system_app)
         self.rag_service = get_rag_service(system_app)
         self.prompt_service = get_prompt_service(system_app)
-        self._file_parse_type = StorageUtil.get_file_parse_type(STANDARD_BENCHMARK_FILE_PATH)
+        self._file_parse_type = StorageUtil.get_file_parse_type(
+            STANDARD_BENCHMARK_FILE_PATH
+        )
 
         dcs = DataCompareService()
-        self.user_input_execute_service = UserInputExecuteService(dcs, self._file_parse_type)
+        self.user_input_execute_service = UserInputExecuteService(
+            dcs, self._file_parse_type
+        )
 
         self.trigger_executor = ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
@@ -303,7 +307,9 @@ class BenchmarkService(
         try:
             # read input file
             input_list: List[BaseInputModel] = (
-                self.user_input_execute_service.read_input_file(input_file_path, config.evaluation_env)
+                self.user_input_execute_service.read_input_file(
+                    input_file_path, config.evaluation_env
+                )
             )
 
             for i in range(1, config.round_time + 1):

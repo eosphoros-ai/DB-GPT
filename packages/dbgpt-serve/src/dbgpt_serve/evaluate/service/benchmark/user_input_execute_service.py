@@ -22,11 +22,12 @@ from .models import (
     BenchmarkModeTypeEnum,
     DataCompareResultEnum,
     DataCompareStrategyConfig,
+    EvaluationEnv,
     FileParseTypeEnum,
     InputType,
     OutputType,
     ReasoningResponse,
-    RoundAnswerConfirmModel, EvaluationEnv,
+    RoundAnswerConfirmModel,
 )
 
 logger = logging.getLogger(__name__)

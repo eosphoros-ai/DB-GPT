@@ -3,7 +3,7 @@ import logging
 from typing import Dict, List, Optional
 
 import pandas as pd
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 
 from dbgpt.util.benchmarks.ExcelUtils import ExcelUtils
 
@@ -12,14 +12,17 @@ from ..models import (
     AnswerExecuteModel,
     BaseInputModel,
     BenchmarkDataSets,
-    DataCompareStrategyConfig, EvaluationEnv,
+    DataCompareStrategyConfig,
+    EvaluationEnv,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class ExcelFileParseService(FileParseService):
-    def parse_input_sets(self, path: str, evaluation_env: EvaluationEnv) -> BenchmarkDataSets:
+    def parse_input_sets(
+        self, path: str, evaluation_env: EvaluationEnv
+    ) -> BenchmarkDataSets:
         """
         Parse input sets from excel file
         Args:
@@ -92,7 +95,9 @@ class ExcelFileParseService(FileParseService):
         return input_sets
 
     def parse_standard_benchmark_sets(
-        self, standard_excel_path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV
+        self,
+        standard_excel_path: str,
+        evaluation_env: EvaluationEnv = EvaluationEnv.DEV,
     ) -> List[AnswerExecuteModel]:
         df = pd.read_excel(standard_excel_path, sheet_name=0)
         outputs: List[AnswerExecuteModel] = []

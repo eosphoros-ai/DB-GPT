@@ -4,7 +4,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from openpyxl import Workbook, load_workbook
@@ -14,8 +14,9 @@ from .models import (
     BaseInputModel,
     BenchmarkDataSets,
     BenchmarkExecuteConfig,
+    EvaluationEnv,
     OutputType,
-    RoundAnswerConfirmModel, EvaluationEnv,
+    RoundAnswerConfirmModel,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,9 @@ class FileParseService(ABC):
         )
 
     @abstractmethod
-    def parse_input_sets(self, path: str, evaluation_env: EvaluationEnv) -> BenchmarkDataSets:
+    def parse_input_sets(
+        self, path: str, evaluation_env: EvaluationEnv
+    ) -> BenchmarkDataSets:
         """
         Parse input sets from file
         Args:

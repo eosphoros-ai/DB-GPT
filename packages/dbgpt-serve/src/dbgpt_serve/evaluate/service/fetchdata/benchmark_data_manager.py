@@ -1,5 +1,4 @@
 import asyncio
-import csv
 import hashlib
 import json
 import logging
@@ -13,8 +12,7 @@ import uuid
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, cast, Literal
+from typing import Any, Dict, List, Literal, Optional, Tuple, cast
 
 import aiohttp
 from sqlalchemy import text
@@ -26,15 +24,18 @@ from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 logger = logging.getLogger(__name__)
 
+
 # ---- Unified model result definitions for load_file_from_github ----
 class FailureDetail(BaseModel):
     line_no: int
     error: str
     line: str
 
+
 class Row(BaseModel):
     line_no: int
     data: Any
+
 
 class FileLoadResult(BaseModel):
     type: Literal["jsonl", "json", "text"]
@@ -62,6 +63,7 @@ class GoldenSqlListResult(BaseModel):
 
     Provides efficient lookup by SQL ID with dict-like interface.
     """
+
     sql_items: Dict[str, SqlFileItem]
     total_count: int
     failed_count: int
@@ -348,9 +350,9 @@ class BenchmarkDataManager(BaseComponent):
         return [dict(zip(cols, row)) for row in rows]
 
     async def load_from_github(
-            self,
-            repo_url: str,
-            data_dirs: List[str] = ["dev_data/dev_databases", "test_data/dev_databases"],
+        self,
+        repo_url: str,
+        data_dirs: List[str] = ["dev_data/dev_databases", "test_data/dev_databases"],
     ) -> Dict:
         """Main method to load data from GitHub repository"""
         try:
@@ -387,12 +389,13 @@ class BenchmarkDataManager(BaseComponent):
         finally:
             self._cleanup_temp_dir()
 
-    async def load_file_from_github(self, file_name: Optional[str] = None
+    async def load_file_from_github(
+        self, file_name: Optional[str] = None
     ) -> Optional[FileLoadResult]:
         """Download and read a specified file from a GitHub repository.
 
         Supported file types: .json / .jsonl
-        `file_name` can be a relative path within the repository or a plain filename (will be searched recursively).
+        `file_name` can be a relative path within the repository or a plain filename
 
         Unified return structure (FileLoadResult):
           - type: "json" | "jsonl"
@@ -417,7 +420,7 @@ class BenchmarkDataManager(BaseComponent):
             # Allowed file extensions
             allowed_exts = {".jsonl", ".json"}
 
-            # Pre-check extension of `file_name` (if provided), otherwise filter by allowed list later
+            # Pre-check extension of `file_name`
             _, requested_ext = os.path.splitext(str(file_name).lower())
             if requested_ext and requested_ext not in allowed_exts:
                 raise ValueError(f"Unsupported file type: {requested_ext}")
@@ -453,11 +456,9 @@ class BenchmarkDataManager(BaseComponent):
             if not candidate_paths:
                 raise FileNotFoundError(f"File not found: {file_name}")
 
-            # Choose a stable candidate (sorted by path length and lexicographical order)
             chosen = sorted(candidate_paths, key=lambda p: (len(p), p))[0]
             chosen_ext = os.path.splitext(chosen.lower())[1]
 
-            # Build repository-relative path for the file (avoid returning temp local path)
             rel_path = os.path.relpath(chosen, repo_dir)
             rel_path_posix = rel_path.replace(os.sep, "/")
 
@@ -466,22 +467,20 @@ class BenchmarkDataManager(BaseComponent):
 
             # Handle .json files (array or single object)
             if chosen_ext == ".json":
-                return await self._parse_json_file(
-                    chosen, rel_path_posix, encodings
-                )
-            
+                return await self._parse_json_file(chosen, rel_path_posix, encodings)
+
             # Handle .jsonl files (line-delimited JSON)
             elif chosen_ext == ".jsonl":
-                return await self._parse_jsonl_file(
-                    chosen, rel_path_posix, encodings
-                )
-            
+                return await self._parse_jsonl_file(chosen, rel_path_posix, encodings)
+
             else:
                 raise ValueError(f"Unsupported file extension: {chosen_ext}")
-                
+
         except Exception as e:
             logger.error(f"Falcon repository Import failed: {str(e)}")
-            raise RuntimeError(f"Falcon repository file data loading failed: {e}") from e
+            raise RuntimeError(
+                f"Falcon repository file data loading failed: {e}"
+            ) from e
         finally:
             self._cleanup_temp_dir()
 
@@ -489,28 +488,28 @@ class BenchmarkDataManager(BaseComponent):
         self, file_path: str, rel_path_posix: str, encodings: List[str]
     ) -> FileLoadResult:
         """Parse a JSON file (array or single object).
-        
+
         Args:
             file_path: Absolute path to the JSON file
             rel_path_posix: Repository-relative path in POSIX format
             encodings: List of encodings to try
-            
+
         Returns:
             FileLoadResult with parsed data
         """
         rows: List[Row] = []
         failures: List[FailureDetail] = []
         used_encoding: Optional[str] = None
-        
+
         # Try reading with different encodings
         for enc in encodings:
             try:
                 with open(file_path, "r", encoding=enc) as f:
                     content = f.read()
-                    
+
                 try:
                     data = json.loads(content)
-                    
+
                     # Handle JSON array
                     if isinstance(data, list):
                         for idx, item in enumerate(data, start=1):
@@ -521,10 +520,10 @@ class BenchmarkDataManager(BaseComponent):
                     else:
                         # Handle primitive types (string, number, etc.)
                         rows.append(Row(line_no=1, data=data))
-                        
+
                     used_encoding = enc
                     break
-                    
+
                 except json.JSONDecodeError as e:
                     failures.append(
                         FailureDetail(
@@ -535,22 +534,22 @@ class BenchmarkDataManager(BaseComponent):
                     )
                     used_encoding = enc
                     break
-                    
+
             except UnicodeDecodeError:
                 continue
             except Exception as e:
                 logger.warning(f"Read json with encoding {enc} failed: {e}")
                 continue
-        
+
         # Fallback: read as bytes and decode with ASCII ignoring errors
         if used_encoding is None:
             try:
                 with open(file_path, "rb") as f:
                     content = f.read().decode("ascii", errors="ignore")
-                    
+
                 try:
                     data = json.loads(content)
-                    
+
                     if isinstance(data, list):
                         for idx, item in enumerate(data, start=1):
                             rows.append(Row(line_no=idx, data=item))
@@ -558,7 +557,7 @@ class BenchmarkDataManager(BaseComponent):
                         rows.append(Row(line_no=1, data=data))
                     else:
                         rows.append(Row(line_no=1, data=data))
-                        
+
                 except json.JSONDecodeError as e:
                     failures.append(
                         FailureDetail(
@@ -567,11 +566,11 @@ class BenchmarkDataManager(BaseComponent):
                             line=content[:200],
                         )
                     )
-                    
+
                 used_encoding = "ascii-ignore"
             except Exception as e:
                 raise ValueError(f"Failed to read json file: {e}")
-        
+
         return FileLoadResult(
             type="json",
             file_path=rel_path_posix,
@@ -587,12 +586,12 @@ class BenchmarkDataManager(BaseComponent):
         self, file_path: str, rel_path_posix: str, encodings: List[str]
     ) -> FileLoadResult:
         """Parse a JSONL file (line-delimited JSON).
-        
+
         Args:
             file_path: Absolute path to the JSONL file
             rel_path_posix: Repository-relative path in POSIX format
             encodings: List of encodings to try
-            
+
         Returns:
             FileLoadResult with parsed data
         """
@@ -649,7 +648,7 @@ class BenchmarkDataManager(BaseComponent):
                 used_encoding = "ascii-ignore"
             except Exception as e:
                 raise ValueError(f"Failed to read jsonl file: {e}")
-                
+
         return FileLoadResult(
             type="jsonl",
             file_path=rel_path_posix,
@@ -786,8 +785,8 @@ class BenchmarkDataManager(BaseComponent):
             else:
                 # Default fallback behavior from original code
                 zip_url = (
-                        repo_url.replace("github.com", "api.github.com/repos")
-                        + "/zipball/main"
+                    repo_url.replace("github.com", "api.github.com/repos")
+                    + "/zipball/main"
                 )
 
         logger.info(f"Downloading from GitHub repo: {zip_url}")

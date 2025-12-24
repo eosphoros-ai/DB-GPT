@@ -6,8 +6,11 @@ from typing import Dict, List, Optional, Tuple
 from dbgpt.util import get_or_create_event_loop
 from dbgpt_serve.evaluate.service.benchmark.file_parse_service import FileParseService
 from dbgpt_serve.evaluate.service.benchmark.models import (
+    AnswerExecuteModel,
     BaseInputModel,
-    BenchmarkDataSets, AnswerExecuteModel, DataCompareStrategyConfig, EvaluationEnv,
+    BenchmarkDataSets,
+    DataCompareStrategyConfig,
+    EvaluationEnv,
 )
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     FileLoadResult,
@@ -27,11 +30,13 @@ Based on the above information, please generate the SQL for the following questi
 {Query}
 
 [Output Requirements]
-* Field names in the generated SQL must use the actual field names from the table schema.
-* Table names in the generated SQL must use the actual table names provided in the schema.
-* Physical field names in the generated SQL must originate from the corresponding physical tables; generating fields that do not exist in the table is not allowed.
-* Cartesian product calculations are not allowed in the generated SQL. This includes `CROSS JOIN`, `JOIN` operations missing `ON` or `USING` conditions, and multi-table joins without conditions set for all relationships between tables.
-* The generated SQL must strictly adhere to {dialect} syntax. If it does not comply with this syntax, please regenerate it.
+* Field names in the generated SQL must use the actual field names from
+  the table schema.
+* Table names in the generated SQL must use the actual table names 
+  provided in the schema.
+* Physical field names in the generated SQL must originate from the corresponding
+  physical tables; generating fields that do not exist in the table is not allowed.
+* The generated SQL must strictly adhere to {dialect} syntax. 
 * Output only pure, executable SQL without any additional information.
 
 [Example]
@@ -86,6 +91,7 @@ class BenchmarkDataItem:
             is_order=data.get("is_order", "0"),
         )
 
+
 @dataclass
 class ColumnItem:
     """column info Item"""
@@ -98,10 +104,10 @@ class ColumnItem:
     @staticmethod
     def from_dict(data: dict) -> "ColumnItem":
         """从字典创建 ColumnItem 实例
-        
+
         Args:
             data: 包含列信息的字典
-            
+
         Returns:
             ColumnItem: 列信息实例
         """
@@ -125,16 +131,16 @@ class TableDDLItem:
     @staticmethod
     def from_dict(data: dict) -> "TableDDLItem":
         """从字典创建 TableDDLItem 实例
-        
+
         Args:
             data: 包含表信息的字典
-            
+
         Returns:
             TableDDLItem: 表信息实例
         """
         columns_data = data.get("columns", [])
         columns = [ColumnItem.from_dict(col) for col in columns_data]
-        
+
         return TableDDLItem(
             table_id=data.get("table_id", 0),
             table_name=data.get("table_name", ""),
@@ -153,24 +159,25 @@ class TableDataItem:
     @staticmethod
     def from_dict(data: dict) -> "TableDataItem":
         """从字典创建 TableDataItem 实例
-        
+
         Args:
             data: 包含数据库表信息的字典
-            
+
         Returns:
             TableDataItem: 数据库表信息实例
         """
         tables_data = data.get("tables", [])
         table_ddl = [TableDDLItem.from_dict(table) for table in tables_data]
-        
+
         return TableDataItem(
             db_id=str(data.get("db_id", "")),
             table_ddl=table_ddl,
         )
 
+
 class SafeDict(dict):
     def __missing__(self, key):
-        return '{' + key + '}'
+        return "{" + key + "}"
 
 
 class FalconFileParseService(FileParseService):
@@ -188,7 +195,7 @@ class FalconFileParseService(FileParseService):
         self._dev_data: Optional[FileLoadResult] = None
         self._dev_table_ddl: Optional[FileLoadResult] = None
         self._dev_data_loaded = False
-        
+
         # TEST Env Data
         self._test_data: Optional[FileLoadResult] = None
         self._test_table_ddl: Optional[FileLoadResult] = None
@@ -197,67 +204,86 @@ class FalconFileParseService(FileParseService):
     @staticmethod
     def _format_answer_list(answer_list: List[Dict[str, List[str]]]) -> str:
         """格式化 answer 列表为字符串
-        
+
         Args:
             answer_list: 答案列表，每个元素是字典，字典的值是字符串列表
-            
+
         Returns:
             str: JSON 格式的字符串，如果列表为空则返回空字符串
         """
         if not answer_list:
             return ""
-        
+
         try:
             import json
+
             # 将答案列表转换为 JSON 字符串，每个答案一行
-            return "\n".join(json.dumps(item, ensure_ascii=False) for item in answer_list)
+            return "\n".join(
+                json.dumps(item, ensure_ascii=False) for item in answer_list
+            )
         except Exception as e:
             logger.warning(f"Failed to format answer list: {e}")
             return str(answer_list)
 
-    def _get_env_data(self, evaluation_env: EvaluationEnv) -> Tuple[Optional[FileLoadResult], Optional[FileLoadResult]]:
+    def _get_env_data(
+        self, evaluation_env: EvaluationEnv
+    ) -> Tuple[Optional[FileLoadResult], Optional[FileLoadResult]]:
         """获取指定环境的数据,如果未加载则自动加载
         Args:
             evaluation_env: 评测环境枚举(DEV 或 TEST)
         Returns:
-            Tuple[Optional[FileLoadResult], Optional[FileLoadResult]]: (数据文件, 表DDL文件)
+            Tuple[Optional[FileLoadResult], Optional[FileLoadResult]]: file parse result
         Raises:
             RuntimeError: 如果数据加载失败
         """
         if evaluation_env == EvaluationEnv.TEST:
             # 检查 TEST 环境数据是否已加载
             if not self._test_data_loaded:
-                logger.info("Loading TEST environment benchmark data for the first time...")
+                logger.info(
+                    "Loading TEST environment benchmark data for the first time..."
+                )
                 try:
                     self._test_data, self._test_table_ddl = self._load_data_sync(
-                        self._test_data_file,
-                        self._test_table_ddl_file
+                        self._test_data_file, self._test_table_ddl_file
                     )
                     self._test_data_loaded = True
                     logger.info("TEST environment benchmark data loaded successfully")
                 except Exception as e:
-                    logger.error(f"Failed to load TEST environment benchmark data: {e}", exc_info=True)
-                    raise RuntimeError(f"Failed to load TEST environment benchmark data: {e}")
-            
+                    logger.error(
+                        f"Failed to load TEST environment benchmark data: {e}",
+                        exc_info=True,
+                    )
+                    raise RuntimeError(
+                        f"Failed to load TEST environment benchmark data: {e}"
+                    )
+
             return self._test_data, self._test_table_ddl
         else:
             # DEV 环境(默认)
             if not self._dev_data_loaded:
-                logger.info("Loading DEV environment benchmark data for the first time...")
+                logger.info(
+                    "Loading DEV environment benchmark data for the first time..."
+                )
                 try:
                     self._dev_data, self._dev_table_ddl = self._load_data_sync(
-                        self._dev_data_file, 
-                        self._dev_table_ddl_file
+                        self._dev_data_file, self._dev_table_ddl_file
                     )
                     self._dev_data_loaded = True
                     logger.info("DEV environment benchmark data loaded successfully")
                 except Exception as e:
-                    logger.error(f"Failed to load DEV environment benchmark data: {e}", exc_info=True)
-                    raise RuntimeError(f"Failed to load DEV environment benchmark data: {e}")
-            
+                    logger.error(
+                        f"Failed to load DEV environment benchmark data: {e}",
+                        exc_info=True,
+                    )
+                    raise RuntimeError(
+                        f"Failed to load DEV environment benchmark data: {e}"
+                    )
+
             return self._dev_data, self._dev_table_ddl
 
-    def parse_input_sets(self, path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV) -> BenchmarkDataSets:
+    def parse_input_sets(
+        self, path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV
+    ) -> BenchmarkDataSets:
         """
         Parse input sets from github repo
         Args:
@@ -268,7 +294,7 @@ class FalconFileParseService(FileParseService):
         """
         # 获取环境对应的数据(如果未加载会自动加载)
         data_file, table_ddl_file = self._get_env_data(evaluation_env)
-        
+
         try:
             # 1. 解析评测数据
             benchmark_data_list = self._parse_benchmark_data(data_file)
@@ -293,10 +319,15 @@ class FalconFileParseService(FileParseService):
                     self_define_tags="",
                     knowledge="",
                     llm_output=self._format_answer_list(question_item.answer),
-                    prompt=self.load_benchmark_prompt_template(question_item, table_ddl_data_map.get(question_item.db_id)),
+                    prompt=self.load_benchmark_prompt_template(
+                        question_item, table_ddl_data_map.get(question_item.db_id)
+                    ),
                 )
                 input_models.append(input_model)
-            logger.info(f"Successfully parsed {len(input_models)} question items from {evaluation_env.value} environment")
+            logger.info(
+                f"Successfully parsed {len(input_models)} question items from "
+                f"{evaluation_env.value} environment"
+            )
             return BenchmarkDataSets(data_list=input_models)
         except Exception as e:
             logger.error(
@@ -306,20 +337,22 @@ class FalconFileParseService(FileParseService):
             return BenchmarkDataSets(data_list=[])
 
     def parse_standard_benchmark_sets(
-        self, standard_excel_path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV
+        self,
+        standard_excel_path: str,
+        evaluation_env: EvaluationEnv = EvaluationEnv.DEV,
     ) -> List[AnswerExecuteModel]:
         """解析标准评测数据集
-        
+
         Args:
             standard_excel_path: 标准Excel文件路径
             evaluation_env: 评测环境,默认为DEV
-            
+
         Returns:
             List[AnswerExecuteModel]: 标准答案执行模型列表
         """
         # 获取环境对应的数据(如果未加载会自动加载)
         data_file, _ = self._get_env_data(evaluation_env)
-        
+
         outputs: List[AnswerExecuteModel] = []
         # 1. 解析评测数据
         benchmark_data_list = self._parse_benchmark_data(data_file)
@@ -358,7 +391,10 @@ class FalconFileParseService(FileParseService):
                     strategyConfig=strategy_config,
                 )
             )
-        logger.info(f"Successfully parsed {len(outputs)} standard benchmark items from {evaluation_env.value} environment")
+        logger.info(
+            f"Successfully parsed {len(outputs)} standard benchmark items from "
+            f"{evaluation_env.value} environment"
+        )
         return outputs
 
     def _parse_benchmark_data(
@@ -414,7 +450,6 @@ class FalconFileParseService(FileParseService):
         )
         return benchmark_data_list
 
-
     def _parse_table_ddl_data(
         self, table_ddl_data: Optional[FileLoadResult]
     ) -> Optional[List[TableDataItem]]:
@@ -443,10 +478,7 @@ class FalconFileParseService(FileParseService):
 
             table_ddl_data_item = TableDataItem.from_dict(row.data)
 
-            if (
-                    not table_ddl_data_item.db_id
-                    or not table_ddl_data_item.table_ddl
-            ):
+            if not table_ddl_data_item.db_id or not table_ddl_data_item.table_ddl:
                 logger.warning(
                     f"Row {row.line_no} missing required fields: "
                     f"db_id={table_ddl_data_item.db_id}, "
@@ -465,7 +497,6 @@ class FalconFileParseService(FileParseService):
         )
         return table_ddl_data_list
 
-
     async def _async_load_data(
         self, data_file: str, table_ddl_file: str
     ) -> Tuple[
@@ -475,7 +506,7 @@ class FalconFileParseService(FileParseService):
         """并发加载两个文件数据
 
         使用 asyncio.gather 并发执行两个异步任务，提高加载效率
-        
+
         Args:
             data_file: 数据文件路径
             table_ddl_file: 表DDL文件路径
@@ -500,7 +531,7 @@ class FalconFileParseService(FileParseService):
         智能检测当前事件循环状态：
         - 如果事件循环正在运行，使用线程池在新线程中执行异步代码
         - 如果没有运行中的事件循环，直接使用 run_until_complete
-        
+
         Args:
             data_file: 数据文件路径
             table_ddl_file: 表DDL文件路径
@@ -511,65 +542,74 @@ class FalconFileParseService(FileParseService):
         try:
             asyncio.get_running_loop()
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(asyncio.run, self._async_load_data(data_file, table_ddl_file))
+                future = executor.submit(
+                    asyncio.run, self._async_load_data(data_file, table_ddl_file)
+                )
                 return future.result()
         except RuntimeError:
             loop = get_or_create_event_loop()
-            return loop.run_until_complete(self._async_load_data(data_file, table_ddl_file))
+            return loop.run_until_complete(
+                self._async_load_data(data_file, table_ddl_file)
+            )
 
     @staticmethod
     def _build_table_schema_info(table_ddl_list: Optional[List[TableDDLItem]]) -> str:
         """构建表的 Schema 信息
-        
+
         Args:
             table_ddl_list: 表 DDL 信息列表
-            
+
         Returns:
             str: 格式化的表 Schema 信息字符串
         """
         if not table_ddl_list:
             return ""
-        
+
         schema_parts = []
-        
+
         for idx, table in enumerate(table_ddl_list, start=1):
             # 表头信息
             schema_parts.append(f"** Table {idx} Information")
             schema_parts.append(f"*** Table Name: {table.table_name}")
-            
+
             # 如果有 DDL，添加 DDL 信息
             if table.ddl:
-                schema_parts.append(f"*** DDL Statement:")
+                schema_parts.append("*** DDL Statement:")
                 # DDL 可能是多行的，需要缩进处理
-                ddl_lines = table.ddl.strip().split('\n')
+                ddl_lines = table.ddl.strip().split("\n")
                 for ddl_line in ddl_lines:
                     schema_parts.append(f"    {ddl_line}")
-            
+
             # 列信息表头 - 使用更清晰的格式
             schema_parts.append("*** Field Information:")
             schema_parts.append("|Field Name|Field Type|Sample Data|")
             schema_parts.append("|:--:|:--:|:--:|")
-            
+
             # 添加每一列的信息
             for column in table.columns:
                 # 格式化样本值 - 限制在合理长度内
                 if column.sample_values:
                     # 取前3-5个样本值，用逗号连接，避免过长
                     sample_count = min(3, len(column.sample_values))
-                    sample_str = ",".join(str(val) for val in column.sample_values[:sample_count])
+                    sample_str = ",".join(
+                        str(val) for val in column.sample_values[:sample_count]
+                    )
                     # 如果样本值过长，截断
                     if len(sample_str) > 100:
                         sample_str = sample_str[:97] + "..."
                 else:
                     sample_str = "-"
-                
-                schema_parts.append(f"|{column.column_name}|{column.column_type}|{sample_str}|")
-            
+
+                schema_parts.append(
+                    f"|{column.column_name}|{column.column_type}|{sample_str}|"
+                )
+
             # 表之间添加空行分隔
             if idx < len(table_ddl_list):
                 schema_parts.append("")
-        
+
         return "\n".join(schema_parts)
 
     def _parse_multi_standard_result(
@@ -577,10 +617,10 @@ class FalconFileParseService(FileParseService):
     ) -> Optional[List[Dict[str, List[str]]]]:
         """
         解析标准答案结果
-        
+
         Args:
             answer_list: 答案列表，已经是正确的格式
-            
+
         Returns:
             Optional[List[Dict[str, List[str]]]]: 返回答案列表，如果为空返回 None
         """
@@ -592,7 +632,9 @@ class FalconFileParseService(FileParseService):
             logger.error(f"parse standard results error: {e}")
             return None
 
-    def load_benchmark_prompt_template(self, question_item: BenchmarkDataItem, table_ddl: List[TableDDLItem]) -> str:
+    def load_benchmark_prompt_template(
+        self, question_item: BenchmarkDataItem, table_ddl: List[TableDDLItem]
+    ) -> str:
         """
         build benchmark prompt template
         """
@@ -600,7 +642,7 @@ class FalconFileParseService(FileParseService):
         format_params = {
             "Schema": schema,
             "Knowledge": "",
-            "Query": question_item.question
+            "Query": question_item.question,
         }
         # 使用 SafeDict 和 format_map 实现非严格模式，缺失的变量不会报错
         return TEXT_SQL_PROMPT.format_map(SafeDict(format_params))
