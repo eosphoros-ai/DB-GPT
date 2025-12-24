@@ -1,7 +1,6 @@
 import json
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 from openpyxl import Workbook, load_workbook
@@ -13,18 +12,19 @@ from ..models import (
     AnswerExecuteModel,
     BaseInputModel,
     BenchmarkDataSets,
-    DataCompareStrategyConfig,
+    DataCompareStrategyConfig, EvaluationEnv,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class ExcelFileParseService(FileParseService):
-    def parse_input_sets(self, path: str) -> BenchmarkDataSets:
+    def parse_input_sets(self, path: str, evaluation_env: EvaluationEnv) -> BenchmarkDataSets:
         """
         Parse input sets from excel file
         Args:
             path: File location path
+            evaluation_env: Evaluation environment
         Returns:
             BenchmarkDataSets: Parsed data sets
         """
@@ -92,7 +92,7 @@ class ExcelFileParseService(FileParseService):
         return input_sets
 
     def parse_standard_benchmark_sets(
-        self, standard_excel_path: str
+        self, standard_excel_path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV
     ) -> List[AnswerExecuteModel]:
         df = pd.read_excel(standard_excel_path, sheet_name=0)
         outputs: List[AnswerExecuteModel] = []

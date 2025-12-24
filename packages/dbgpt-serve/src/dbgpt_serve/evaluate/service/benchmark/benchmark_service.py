@@ -49,6 +49,7 @@ from .models import (
     BenchmarkModeTypeEnum,
     BenchmarkTaskResult,
     ContentTypeEnum,
+    EvaluationEnv,
     InputType,
     OutputType,
 )
@@ -159,7 +160,7 @@ class BenchmarkService(
                 datasets_name=os.path.basename(input_file_path)
                 if input_file_path
                 else None,
-                datasets=None,
+                datasets=config.evaluation_env.value,
                 storage_type=StorageType.FILE.value,
                 parallel_num=1,
                 state=Status.RUNNING.value,
@@ -229,6 +230,7 @@ class BenchmarkService(
         headers: Optional[dict],
         parse_strategy: Optional[str],
         response_mapping: Optional[dict],
+        evaluation_env: Optional[str],
     ) -> List[BenchmarkTaskResult[OutputType]]:
         """
         Run the dataset benchmark
@@ -258,6 +260,7 @@ class BenchmarkService(
             scene_key,
             temperature,
             max_tokens,
+            evaluation_env,
             benchmark_type,
             api_url,
             http_method,
@@ -300,7 +303,7 @@ class BenchmarkService(
         try:
             # read input file
             input_list: List[BaseInputModel] = (
-                self.user_input_execute_service.read_input_file(input_file_path)
+                self.user_input_execute_service.read_input_file(input_file_path, config.evaluation_env)
             )
 
             for i in range(1, config.round_time + 1):
@@ -385,6 +388,14 @@ class BenchmarkService(
             )
             return ResponseParseStrategy.JSON_PATH
 
+    def _parse_evaluation_env(self, evaluation_env: Optional[str]) -> EvaluationEnv:
+        if not evaluation_env:
+            return EvaluationEnv.DEV
+        try:
+            return EvaluationEnv(evaluation_env.upper())
+        except ValueError:
+            return EvaluationEnv.DEV
+
     def _create_agent_config(
         self,
         api_url: str,
@@ -415,6 +426,7 @@ class BenchmarkService(
         scene_key,
         temperature,
         max_tokens,
+        evaluation_env,
         benchmark_type,
         api_url,
         http_method,
@@ -437,6 +449,7 @@ class BenchmarkService(
             scene_key=scene_key,
             temperature=temperature,
             max_tokens=max_tokens,
+            evaluation_env=self._parse_evaluation_env(evaluation_env),
         )
         if benchmark_type == BenchmarkInvokeType.AGENT.name:
             config.invoke_type = BenchmarkInvokeType.AGENT
@@ -839,6 +852,7 @@ class BenchmarkService(
             evaluate_code=evaluate_response.evaluate_code,
             scene_key=evaluate_response.scene_key,
             scene_value=evaluate_response.scene_value,
+            evaluation_env=evaluate_response.datasets,
             datasets_name="Falcon评测集",
             input_file_path=evaluate_response.datasets_name,
             output_file_path=evaluate_response.result,

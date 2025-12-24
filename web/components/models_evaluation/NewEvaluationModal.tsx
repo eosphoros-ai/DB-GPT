@@ -1,10 +1,12 @@
+import { QuestionCircleOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
+import { Form, Input, InputNumber, Modal, Radio, Select, Slider, Tooltip, message } from 'antd';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { apiInterceptors, getUsableModels } from '@/client/api';
 import { createBenchmarkTask } from '@/client/api/models_evaluation';
 import { createBenchmarkTaskRequest } from '@/types/models_evaluation';
-import { useRequest } from 'ahooks';
-import { Form, Input, InputNumber, Modal, Radio, Select, Slider, message } from 'antd';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const { TextArea } = Input;
 
@@ -53,6 +55,7 @@ export const NewEvaluationModal = (props: Props) => {
           temperature: values.temperature,
           max_tokens: values.max_tokens,
           benchmark_type: values.evaluation_type,
+          evaluation_env: values.evaluation_env,
         };
 
         const [_, data] = await apiInterceptors(createBenchmarkTask(params));
@@ -61,13 +64,13 @@ export const NewEvaluationModal = (props: Props) => {
         let parsedHeaders = {};
         let parsedMapping = {};
 
-        // 解析JSON字符串，提供错误处理
+        // 解析JSON字符串,提供错误处理
         try {
           if (values.headers) {
             parsedHeaders = JSON.parse(values.headers);
           }
         } catch (_error) {
-          throw new Error('Header信息格式不正确，请输入有效的JSON格式');
+          throw new Error('Header信息格式不正确,请输入有效的JSON格式');
         }
 
         try {
@@ -75,13 +78,14 @@ export const NewEvaluationModal = (props: Props) => {
             parsedMapping = JSON.parse(values.response_mapping);
           }
         } catch (_error) {
-          throw new Error('Response Mapping配置格式不正确，请输入有效的JSON格式');
+          throw new Error('Response Mapping配置格式不正确,请输入有效的JSON格式');
         }
 
-        // 构造Agent评测参数，使用Agent专有字段
+        // 构造Agent评测参数,使用Agent专有字段
         const agentParams: createBenchmarkTaskRequest = {
           scene_value: values.scene_value,
           benchmark_type: values.evaluation_type,
+          evaluation_env: values.evaluation_env,
           api_url: values.api_url,
           headers: parsedHeaders,
           parse_strategy: values.parse_strategy,
@@ -145,6 +149,7 @@ export const NewEvaluationModal = (props: Props) => {
           parse_strategy: 'JSON_PATH',
           http_method: 'POST',
           timeout: 300,
+          evaluation_env: 'DEV',
         }}
       >
         <Form.Item
@@ -153,6 +158,27 @@ export const NewEvaluationModal = (props: Props) => {
           rules={[{ required: true, message: t('please_input_task_name') }]}
         >
           <Input placeholder={t('please_input_task_name')} />
+        </Form.Item>
+
+        <Form.Item
+          label={t('evaluation_env')}
+          name='evaluation_env'
+          rules={[{ required: true, message: t('please_select_evaluation_env') }]}
+        >
+          <Radio.Group>
+            <Radio value='DEV'>
+              {t('evaluation_env_dev')}{' '}
+              <Tooltip title={t('evaluation_env_dev_tooltip')}>
+                <QuestionCircleOutlined style={{ color: '#999', cursor: 'help' }} />
+              </Tooltip>
+            </Radio>
+            <Radio value='TEST'>
+              {t('evaluation_env_test')}{' '}
+              <Tooltip title={t('evaluation_env_test_tooltip')}>
+                <QuestionCircleOutlined style={{ color: '#999', cursor: 'help' }} />
+              </Tooltip>
+            </Radio>
+          </Radio.Group>
         </Form.Item>
 
         <Form.Item

@@ -125,7 +125,7 @@ class BenchmarkDataConfig(BaseModel):
     table_mapping_file: Optional[str] = None
     cache_expiry_days: int = 1
     repo_url: str = "https://github.com/eosphoros-ai/Falcon"
-    data_dirs: List[str] = ["dev_data/dev_databases", "test_data/dev_databases"]
+    data_dirs: List[str] = ["dev_data/dev_databases", "test_data/test_databases"]
 
 
 class BenchmarkDataManager(BaseComponent):
@@ -935,10 +935,6 @@ class BenchmarkDataManager(BaseComponent):
                                     f'SELECT * FROM {src_alias}."{table_name}"'
                                 )
                                 results["tables_merged"].append(table_name)
-                            else:
-                                logger.warning(
-                                    f"Table '{table_name}' exists. Skipping."
-                                )
 
                         raw_conn.commit()
                         results["successful"] += 1

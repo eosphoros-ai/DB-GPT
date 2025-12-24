@@ -437,5 +437,11 @@ export const CommonZh: Resources['translation'] = {
   api_timeout: 'API超时时间',
   please_input_api_timeout: '请输入API超时时间',
   timeout_range_validation: '超时时间必须在1-2000秒之间',
-  api_timeout_placeholder: '请输入超时时间，例如：300',
+  api_timeout_placeholder: '请输入超时时间,例如:300',
+  evaluation_env: '评测环境',
+  please_select_evaluation_env: '请选择评测环境',
+  evaluation_env_dev: '开发集',
+  evaluation_env_test: '测试集',
+  evaluation_env_dev_tooltip: '用于本地开发、验证和调试的数据集',
+  evaluation_env_test_tooltip: '用于正式评测打榜的数据集,结果用于评测集打榜排名',
 } as const;

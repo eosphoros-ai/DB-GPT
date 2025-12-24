@@ -26,7 +26,7 @@ from .models import (
     InputType,
     OutputType,
     ReasoningResponse,
-    RoundAnswerConfirmModel,
+    RoundAnswerConfirmModel, EvaluationEnv,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,19 +57,20 @@ class UserInputExecuteService:
         raise NotImplementedError(f"filePraseType: {file_type} is not implemented yet")
 
     def read_input_file(
-        self, input_file_path: str
+        self, input_file_path: str, evaluation_env: EvaluationEnv
     ) -> Union[List[BaseInputModel], None]:
         """
         Read input file and return input data list
 
         Args:
             input_file_path: Input file path
+            evaluation_env: Evaluation environment
 
         Returns:
             List[BaseInputModel]: Input data list
         """
         input_sets: BenchmarkDataSets = self.file_service.parse_input_sets(
-            input_file_path
+            input_file_path, evaluation_env
         )
         return input_sets.data_list
 
@@ -103,7 +104,7 @@ class UserInputExecuteService:
             ):
                 if config.standard_file_path and right_outputs:
                     standard_sets = self.file_service.parse_standard_benchmark_sets(
-                        config.standard_file_path
+                        config.standard_file_path, config.evaluation_env
                     )
                     self._execute_llm_compare_result(
                         output_file_path,

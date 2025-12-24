@@ -15,7 +15,7 @@ from .models import (
     BenchmarkDataSets,
     BenchmarkExecuteConfig,
     OutputType,
-    RoundAnswerConfirmModel,
+    RoundAnswerConfirmModel, EvaluationEnv,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,11 +31,12 @@ class FileParseService(ABC):
         )
 
     @abstractmethod
-    def parse_input_sets(self, path: str) -> BenchmarkDataSets:
+    def parse_input_sets(self, path: str, evaluation_env: EvaluationEnv) -> BenchmarkDataSets:
         """
         Parse input sets from file
         Args:
-            location: File location path
+            path: File location path
+            evaluation_env: Evaluation environment
         Returns:
             BenchmarkDataSets: Parsed data sets
         """
@@ -227,7 +228,7 @@ class FileParseService(ABC):
 
     @abstractmethod
     def parse_standard_benchmark_sets(
-        self, standard_excel_path: str
+        self, standard_excel_path: str, evaluation_env: EvaluationEnv
     ) -> List[AnswerExecuteModel]:
         """
         Parse standard benchmark sets from file.
@@ -235,6 +236,7 @@ class FileParseService(ABC):
 
         Args:
             standard_excel_path: Path to the standard benchmark file
+            evaluation_env: EvaluationEnv environment
 
         Returns:
             List[AnswerExecuteModel]: List of parsed answer execute models

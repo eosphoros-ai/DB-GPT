@@ -7,11 +7,10 @@ from dbgpt.util import get_or_create_event_loop
 from dbgpt_serve.evaluate.service.benchmark.file_parse_service import FileParseService
 from dbgpt_serve.evaluate.service.benchmark.models import (
     BaseInputModel,
-    BenchmarkDataSets, AnswerExecuteModel, DataCompareStrategyConfig,
+    BenchmarkDataSets, AnswerExecuteModel, DataCompareStrategyConfig, EvaluationEnv,
 )
 from dbgpt_serve.evaluate.service.fetchdata.benchmark_data_manager import (
     FileLoadResult,
-    GoldenSqlListResult,
     get_benchmark_manager,
 )
 
@@ -180,11 +179,20 @@ class FalconFileParseService(FileParseService):
         self._dev_data_file = "dev_data/dev.json"
         self._dev_table_ddl_file = "dev_data/tables.json"
 
+        self._test_data_file = "test_data/test.json"
+        self._test_table_ddl_file = "test_data/tables.json"
+
         self.benchmark_manager = get_benchmark_manager()
 
+        # DEV Env Data
         self._dev_data: Optional[FileLoadResult] = None
         self._dev_table_ddl: Optional[FileLoadResult] = None
-        self._data_loaded = False
+        self._dev_data_loaded = False
+        
+        # TEST Env Data
+        self._test_data: Optional[FileLoadResult] = None
+        self._test_table_ddl: Optional[FileLoadResult] = None
+        self._test_data_loaded = False
 
     @staticmethod
     def _format_answer_list(answer_list: List[Dict[str, List[str]]]) -> str:
@@ -207,38 +215,69 @@ class FalconFileParseService(FileParseService):
             logger.warning(f"Failed to format answer list: {e}")
             return str(answer_list)
 
-    def _ensure_data_loaded(self):
-        if self._data_loaded:
-            return
-        logger.info("Loading benchmark data for the first time...")
-        try:
-            self._dev_data, self._dev_table_ddl = self._load_data_sync()
-            self._data_loaded = True
-            logger.info("Benchmark data loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load benchmark data: {e}", exc_info=True)
-            raise RuntimeError(f"Failed to load benchmark data: {e}")
+    def _get_env_data(self, evaluation_env: EvaluationEnv) -> Tuple[Optional[FileLoadResult], Optional[FileLoadResult]]:
+        """获取指定环境的数据,如果未加载则自动加载
+        Args:
+            evaluation_env: 评测环境枚举(DEV 或 TEST)
+        Returns:
+            Tuple[Optional[FileLoadResult], Optional[FileLoadResult]]: (数据文件, 表DDL文件)
+        Raises:
+            RuntimeError: 如果数据加载失败
+        """
+        if evaluation_env == EvaluationEnv.TEST:
+            # 检查 TEST 环境数据是否已加载
+            if not self._test_data_loaded:
+                logger.info("Loading TEST environment benchmark data for the first time...")
+                try:
+                    self._test_data, self._test_table_ddl = self._load_data_sync(
+                        self._test_data_file,
+                        self._test_table_ddl_file
+                    )
+                    self._test_data_loaded = True
+                    logger.info("TEST environment benchmark data loaded successfully")
+                except Exception as e:
+                    logger.error(f"Failed to load TEST environment benchmark data: {e}", exc_info=True)
+                    raise RuntimeError(f"Failed to load TEST environment benchmark data: {e}")
+            
+            return self._test_data, self._test_table_ddl
+        else:
+            # DEV 环境(默认)
+            if not self._dev_data_loaded:
+                logger.info("Loading DEV environment benchmark data for the first time...")
+                try:
+                    self._dev_data, self._dev_table_ddl = self._load_data_sync(
+                        self._dev_data_file, 
+                        self._dev_table_ddl_file
+                    )
+                    self._dev_data_loaded = True
+                    logger.info("DEV environment benchmark data loaded successfully")
+                except Exception as e:
+                    logger.error(f"Failed to load DEV environment benchmark data: {e}", exc_info=True)
+                    raise RuntimeError(f"Failed to load DEV environment benchmark data: {e}")
+            
+            return self._dev_data, self._dev_table_ddl
 
-
-    def parse_input_sets(self, path: str) -> BenchmarkDataSets:
+    def parse_input_sets(self, path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV) -> BenchmarkDataSets:
         """
         Parse input sets from github repo
         Args:
             path: File URL path
+            evaluation_env: Evaluation environment
         Returns:
             BenchmarkDataSets: Parsed data sets
         """
-        self._ensure_data_loaded()
+        # 获取环境对应的数据(如果未加载会自动加载)
+        data_file, table_ddl_file = self._get_env_data(evaluation_env)
         
         try:
             # 1. 解析评测数据
-            benchmark_data_list = self._parse_benchmark_data(self._dev_data)
+            benchmark_data_list = self._parse_benchmark_data(data_file)
             if not benchmark_data_list:
                 logger.error("Failed to parse benchmark data")
                 return BenchmarkDataSets(data_list=[])
 
             # 2. 解析表结构
-            table_ddl_data_list = self._parse_table_ddl_data(self._dev_table_ddl)
+            table_ddl_data_list = self._parse_table_ddl_data(table_ddl_file)
             if not table_ddl_data_list:
                 logger.error("Failed to parse talbe ddl data")
                 return BenchmarkDataSets(data_list=[])
@@ -257,7 +296,7 @@ class FalconFileParseService(FileParseService):
                     prompt=self.load_benchmark_prompt_template(question_item, table_ddl_data_map.get(question_item.db_id)),
                 )
                 input_models.append(input_model)
-            logger.info(f"Successfully parsed {len(input_models)} question items")
+            logger.info(f"Successfully parsed {len(input_models)} question items from {evaluation_env.value} environment")
             return BenchmarkDataSets(data_list=input_models)
         except Exception as e:
             logger.error(
@@ -267,14 +306,23 @@ class FalconFileParseService(FileParseService):
             return BenchmarkDataSets(data_list=[])
 
     def parse_standard_benchmark_sets(
-        self, standard_excel_path: str
+        self, standard_excel_path: str, evaluation_env: EvaluationEnv = EvaluationEnv.DEV
     ) -> List[AnswerExecuteModel]:
-
-        self._ensure_data_loaded()
+        """解析标准评测数据集
+        
+        Args:
+            standard_excel_path: 标准Excel文件路径
+            evaluation_env: 评测环境,默认为DEV
+            
+        Returns:
+            List[AnswerExecuteModel]: 标准答案执行模型列表
+        """
+        # 获取环境对应的数据(如果未加载会自动加载)
+        data_file, _ = self._get_env_data(evaluation_env)
         
         outputs: List[AnswerExecuteModel] = []
         # 1. 解析评测数据
-        benchmark_data_list = self._parse_benchmark_data(self._dev_data)
+        benchmark_data_list = self._parse_benchmark_data(data_file)
         if not benchmark_data_list:
             logger.error("Failed to parse benchmark data")
             return outputs
@@ -310,6 +358,7 @@ class FalconFileParseService(FileParseService):
                     strategyConfig=strategy_config,
                 )
             )
+        logger.info(f"Successfully parsed {len(outputs)} standard benchmark items from {evaluation_env.value} environment")
         return outputs
 
     def _parse_benchmark_data(
@@ -363,8 +412,7 @@ class FalconFileParseService(FileParseService):
             f"Successfully parsed {len(benchmark_data_list)} benchmark data"
             f" from {len(benchmark_data.rows)} rows"
         )
-        # TODO 临时只取前 100 条数据
-        return benchmark_data_list[:100]
+        return benchmark_data_list
 
 
     def _parse_table_ddl_data(
@@ -419,7 +467,7 @@ class FalconFileParseService(FileParseService):
 
 
     async def _async_load_data(
-        self,
+        self, data_file: str, table_ddl_file: str
     ) -> Tuple[
         Optional[FileLoadResult],
         Optional[FileLoadResult],
@@ -427,18 +475,22 @@ class FalconFileParseService(FileParseService):
         """并发加载两个文件数据
 
         使用 asyncio.gather 并发执行两个异步任务，提高加载效率
+        
+        Args:
+            data_file: 数据文件路径
+            table_ddl_file: 表DDL文件路径
 
         Returns:
-            Tuple: (dev_data, dev_table_ddl)
+            Tuple: (data, table_ddl)
         """
-        dev_data, dev_table_ddl = await asyncio.gather(
-            self.benchmark_manager.load_file_from_github(self._dev_data_file),
-            self.benchmark_manager.load_file_from_github(self._dev_table_ddl_file),
+        data, table_ddl = await asyncio.gather(
+            self.benchmark_manager.load_file_from_github(data_file),
+            self.benchmark_manager.load_file_from_github(table_ddl_file),
         )
-        return dev_data, dev_table_ddl
+        return data, table_ddl
 
     def _load_data_sync(
-        self,
+        self, data_file: str, table_ddl_file: str
     ) -> Tuple[
         Optional[FileLoadResult],
         Optional[FileLoadResult],
@@ -448,41 +500,23 @@ class FalconFileParseService(FileParseService):
         智能检测当前事件循环状态：
         - 如果事件循环正在运行，使用线程池在新线程中执行异步代码
         - 如果没有运行中的事件循环，直接使用 run_until_complete
+        
+        Args:
+            data_file: 数据文件路径
+            table_ddl_file: 表DDL文件路径
 
         Returns:
-            Tuple: (dev_data, dev_table_ddl)
+            Tuple: (data, table_ddl)
         """
         try:
-            # 尝试获取当前运行中的事件循环
             asyncio.get_running_loop()
-            # 如果到这里说明有运行中的循环，使用线程池执行
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(asyncio.run, self._async_load_data())
+                future = executor.submit(asyncio.run, self._async_load_data(data_file, table_ddl_file))
                 return future.result()
         except RuntimeError:
-            # 没有运行中的循环，正常执行
             loop = get_or_create_event_loop()
-            return loop.run_until_complete(self._async_load_data())
-
-    def _run_in_new_loop(
-        self,
-    ) -> Tuple[
-        Optional[FileLoadResult],
-        Optional[FileLoadResult],
-    ]:
-        """
-        在新的事件循环中运行异步任务
-
-        Returns:
-            Tuple: (dev_data, dev_table_ddl)
-        """
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        try:
-            return new_loop.run_until_complete(self._async_load_data())
-        finally:
-            new_loop.close()
+            return loop.run_until_complete(self._async_load_data(data_file, table_ddl_file))
 
     @staticmethod
     def _build_table_schema_info(table_ddl_list: Optional[List[TableDDLItem]]) -> str:
