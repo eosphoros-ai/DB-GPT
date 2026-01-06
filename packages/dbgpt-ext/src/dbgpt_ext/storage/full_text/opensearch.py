@@ -20,7 +20,9 @@ class OpenSearch(FullTextStoreBase):
         """
         pass
 
-    def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    def aload_document(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> List[str]:
         """Async load document in index database.
 
         Args:
