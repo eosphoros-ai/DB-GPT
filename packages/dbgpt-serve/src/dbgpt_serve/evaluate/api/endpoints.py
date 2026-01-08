@@ -59,6 +59,7 @@ def _run_benchmark_task_sync(service: BenchmarkService, request: BenchmarkServeR
                     headers=request.headers,
                     parse_strategy=request.parse_strategy,
                     response_mapping=request.response_mapping,
+                    evaluation_env=request.evaluation_env,
                 )
             )
             logger.info(f"Benchmark task run sync finish, request: {request}")

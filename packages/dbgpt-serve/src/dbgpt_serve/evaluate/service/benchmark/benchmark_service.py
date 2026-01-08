@@ -18,6 +18,7 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util import PaginationResult, get_or_create_event_loop
+from dbgpt.util.benchmarks import StorageUtil
 from dbgpt_serve.evaluate.service.benchmark.task.benchmark_agent_task import (
     BenchmarkAgentTask,
 )
@@ -40,7 +41,6 @@ from ...config import ServeConfig
 from ...models.models import ServeDao, ServeEntity
 from ..fetchdata.benchmark_data_manager import get_benchmark_manager
 from .data_compare_service import DataCompareService
-from .file_parse_service import ExcelFileParseService
 from .models import (
     BaseInputModel,
     BenchmarkDataSets,
@@ -49,7 +49,7 @@ from .models import (
     BenchmarkModeTypeEnum,
     BenchmarkTaskResult,
     ContentTypeEnum,
-    FileParseTypeEnum,
+    EvaluationEnv,
     InputType,
     OutputType,
 )
@@ -61,10 +61,7 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 BENCHMARK_SERVICE_COMPONENT_NAME = "dbgpt_serve_evaluate_benchmark_service"
 
-STANDARD_BENCHMARK_FILE_PATH = os.path.join(
-    BENCHMARK_DATA_ROOT_PATH,
-    "2025_07_27_public_500_standard_benchmark_question_list.xlsx",
-)
+STANDARD_BENCHMARK_FILE_PATH = "https://github.com/eosphoros-ai/Falcon"
 
 BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")
 
@@ -94,11 +91,14 @@ class BenchmarkService(
         super().__init__(system_app)
         self.rag_service = get_rag_service(system_app)
         self.prompt_service = get_prompt_service(system_app)
-        self._file_parse_type = FileParseTypeEnum.EXCEL
+        self._file_parse_type = StorageUtil.get_file_parse_type(
+            STANDARD_BENCHMARK_FILE_PATH
+        )
 
-        fps = ExcelFileParseService()
         dcs = DataCompareService()
-        self.user_input_execute_service = UserInputExecuteService(fps, dcs)
+        self.user_input_execute_service = UserInputExecuteService(
+            dcs, self._file_parse_type
+        )
 
         self.trigger_executor = ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="benchmark-fileWrite"
@@ -164,7 +164,7 @@ class BenchmarkService(
                 datasets_name=os.path.basename(input_file_path)
                 if input_file_path
                 else None,
-                datasets=None,
+                datasets=config.evaluation_env.value,
                 storage_type=StorageType.FILE.value,
                 parallel_num=1,
                 state=Status.RUNNING.value,
@@ -234,6 +234,7 @@ class BenchmarkService(
         headers: Optional[dict],
         parse_strategy: Optional[str],
         response_mapping: Optional[dict],
+        evaluation_env: Optional[str],
     ) -> List[BenchmarkTaskResult[OutputType]]:
         """
         Run the dataset benchmark
@@ -263,6 +264,7 @@ class BenchmarkService(
             scene_key,
             temperature,
             max_tokens,
+            evaluation_env,
             benchmark_type,
             api_url,
             http_method,
@@ -289,7 +291,7 @@ class BenchmarkService(
             await manager.load_data()
             logger.info(
                 f"Benchmark dataset loaded from {manager._config.repo_url} "
-                f"dir={manager._config.data_dir}"
+                f"dir={manager._config.data_dirs}"
             )
         except Exception as e:
             logger.error(
@@ -305,7 +307,9 @@ class BenchmarkService(
         try:
             # read input file
             input_list: List[BaseInputModel] = (
-                self.user_input_execute_service.read_input_file(input_file_path)
+                self.user_input_execute_service.read_input_file(
+                    input_file_path, config.evaluation_env
+                )
             )
 
             for i in range(1, config.round_time + 1):
@@ -390,6 +394,14 @@ class BenchmarkService(
             )
             return ResponseParseStrategy.JSON_PATH
 
+    def _parse_evaluation_env(self, evaluation_env: Optional[str]) -> EvaluationEnv:
+        if not evaluation_env:
+            return EvaluationEnv.DEV
+        try:
+            return EvaluationEnv(evaluation_env.upper())
+        except ValueError:
+            return EvaluationEnv.DEV
+
     def _create_agent_config(
         self,
         api_url: str,
@@ -420,6 +432,7 @@ class BenchmarkService(
         scene_key,
         temperature,
         max_tokens,
+        evaluation_env,
         benchmark_type,
         api_url,
         http_method,
@@ -442,6 +455,7 @@ class BenchmarkService(
             scene_key=scene_key,
             temperature=temperature,
             max_tokens=max_tokens,
+            evaluation_env=self._parse_evaluation_env(evaluation_env),
         )
         if benchmark_type == BenchmarkInvokeType.AGENT.name:
             config.invoke_type = BenchmarkInvokeType.AGENT
@@ -844,6 +858,7 @@ class BenchmarkService(
             evaluate_code=evaluate_response.evaluate_code,
             scene_key=evaluate_response.scene_key,
             scene_value=evaluate_response.scene_value,
+            evaluation_env=evaluate_response.datasets,
             datasets_name="Falcon评测集",
             input_file_path=evaluate_response.datasets_name,
             output_file_path=evaluate_response.result,

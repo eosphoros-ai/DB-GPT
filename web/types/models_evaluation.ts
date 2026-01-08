@@ -71,6 +71,7 @@ export interface getBenchmarkTaskListRequest {
 export type createBenchmarkTaskRequest = {
   scene_value: string;
   benchmark_type: string;
+  evaluation_env?: string; // 评测环境: 'dev' | 'test'
   // LLM 评测相关字段 (可选)
   model_list?: string[];
   temperature?: number;

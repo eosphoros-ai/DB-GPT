@@ -435,4 +435,10 @@ export const CommonEn = {
   please_input_api_timeout: 'Please input API timeout',
   timeout_range_validation: 'Timeout must be between 1-2000 seconds',
   api_timeout_placeholder: 'Please enter timeout, e.g.: 300',
+  evaluation_env: 'Evaluation Environment',
+  please_select_evaluation_env: 'Please select evaluation environment',
+  evaluation_env_dev: 'Dev Set',
+  evaluation_env_test: 'Test Set',
+  evaluation_env_dev_tooltip: 'Dataset for local development, validation and debugging',
+  evaluation_env_test_tooltip: 'Dataset for official evaluation and leaderboard ranking',
 } as const;

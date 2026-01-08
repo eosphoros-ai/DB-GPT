@@ -14,6 +14,11 @@ class BenchmarkModeTypeEnum(str, Enum):
     EXECUTE = "EXECUTE"
 
 
+class EvaluationEnv(str, Enum):
+    DEV = "DEV"
+    TEST = "TEST"
+
+
 @dataclass
 class DataCompareStrategyConfig:
     strategy: str  # "EXACT_MATCH" | "CONTAIN_MATCH"
@@ -268,6 +273,7 @@ class BenchmarkExecuteConfig:
     format_type: FormatTypeEnum = FormatTypeEnum.TEXT
     content_type: ContentTypeEnum = ContentTypeEnum.SQL
     benchmark_mode_type: BenchmarkModeTypeEnum = BenchmarkModeTypeEnum.EXECUTE
+    evaluation_env: EvaluationEnv = EvaluationEnv.DEV
 
     # file path config
     output_file_path: Optional[str] = None
@@ -320,6 +326,8 @@ class BenchmarkExecuteConfig:
             "format_type": self.format_type.value,
             "content_type": self.content_type.value,
             "benchmark_mode_type": self.benchmark_mode_type.value,
+            "evaluation_env": self.evaluation_env.value,
+            "invoke_type": self.invoke_type.value,
             "output_file_path": self.output_file_path,
             "standard_file_path": self.standard_file_path,
             "round_time": self.round_time,

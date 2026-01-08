@@ -38,6 +38,20 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
       width: '12%',
     },
     {
+      title: t('evaluation_env'),
+      dataIndex: 'evaluation_env',
+      key: 'evaluation_env',
+      width: '5%',
+      render: (evaluation_env: string) => {
+        if (evaluation_env === 'DEV') {
+          return <span>{t('evaluation_env_dev')}</span>;
+        } else if (evaluation_env === 'TEST') {
+          return <span>{t('evaluation_env_test')}</span>;
+        }
+        return <span>{evaluation_env}</span>;
+      },
+    },
+    {
       title: t('evaluation_dataset_name'),
       dataIndex: 'datasets_name',
       key: 'datasets_name',
