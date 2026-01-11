@@ -2,7 +2,6 @@
 
 import json
 import logging
-import uuid
 from typing import Any, AsyncGenerator, Dict, Iterator, List, Optional, Tuple, Union
 
 from dbgpt.storage.graph_store.graph import (
@@ -38,7 +37,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
 
     async def discover_communities(self, **kwargs) -> List[str]:
         """Run community discovery.
-        
+
         Note: Neo4j Graph Data Science library would be optimal for this.
         For now, we return communities based on existing _community_id values.
         """
@@ -48,7 +47,9 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         RETURN DISTINCT n._community_id as community_id
         """
         result = self.graph_store.conn.run(query)
-        community_ids = [record["community_id"] for record in result if record.get("community_id")]
+        community_ids = [
+            record["community_id"] for record in result if record.get("community_id")
+        ]
         logger.info(f"Discovered {len(community_ids)} communities.")
         return community_ids
 
@@ -107,7 +108,8 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
 
     def get_document_vertex(self, doc_name: str) -> Vertex:
         """Get the document vertex in the graph."""
-        query = f"""MATCH (n:{GraphElemType.DOCUMENT.value}) WHERE n.name = $doc_name RETURN n LIMIT 1"""
+        query = f"""MATCH (n:{GraphElemType.DOCUMENT.value}) 
+        WHERE n.name = $doc_name RETURN n LIMIT 1"""
         graph = self.query(query, doc_name=doc_name)
         if graph.vertex_count > 0:
             return list(graph.vertices())[0]
@@ -118,17 +120,22 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         try:
             # Get node labels
             node_query = "CALL db.labels()"
-            labels = [record["label"] for record in self.graph_store.conn.run(node_query)]
+            labels = [
+                record["label"] for record in self.graph_store.conn.run(node_query)
+            ]
 
             # Get relationship types
             rel_query = "CALL db.relationshipTypes()"
-            rel_types = [record["relationshipType"] for record in self.graph_store.conn.run(rel_query)]
-            
+            rel_types = [
+                record["relationshipType"]
+                for record in self.graph_store.conn.run(rel_query)
+            ]
+
             schema = {
                 "node_labels": labels,
                 "relationship_types": rel_types,
             }
-            
+
             return json.dumps(schema, indent=2)
         except Exception as e:
             logger.error(f"Failed to get schema: {e}")
@@ -140,10 +147,8 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             limit = self.MAX_QUERY_LIMIT
         if limit <= 0:
             raise ValueError("Limit must be greater than 0.")
-        
-        graph_result = self.query(
-            f"MATCH (n)-[r]-(m) RETURN n, r, m LIMIT {limit}"
-        )
+
+        graph_result = self.query(f"MATCH (n)-[r]-(m) RETURN n, r, m LIMIT {limit}")
         full_graph = MemoryGraph()
         for vertex in graph_result.vertices():
             full_graph.upsert_vertex(vertex)
@@ -168,7 +173,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                 "_chunk_id": entity.get_prop("_chunk_id") or "0",
                 "_community_id": entity.get_prop("_community_id") or "0",
             }
-            
+
             query = f"""
             MERGE (n:{GraphElemType.ENTITY.value} {{id: $id}})
             SET n += $props
@@ -186,7 +191,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                 "description": edge.get_prop("description") or "",
                 "_chunk_id": edge.get_prop("_chunk_id") or "",
             }
-            
+
             query = f"""
             MATCH (src:{src_type} {{id: $sid}})
             MATCH (dst:{dst_type} {{id: $tid}})
@@ -210,7 +215,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                     "name": chunk.name or chunk.vid,
                     "content": chunk.get_prop("content") or "",
                 }
-            
+
             query = f"""
             MERGE (n:{GraphElemType.CHUNK.value} {{id: $id}})
             SET n += $props
@@ -234,7 +239,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                     "name": document.name or document.vid,
                     "content": "",
                 }
-            
+
             query = f"""
             MERGE (n:{GraphElemType.DOCUMENT.value} {{id: $id}})
             SET n += $props
@@ -251,7 +256,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         SET o.name = $obj
         """
         self.graph_store.conn.run(query, subj=subj, obj=obj)
-        
+
         # Create relationship
         edge_query = f"""
         MATCH (s:{GraphElemType.ENTITY.value} {{id: $subj}})
@@ -332,13 +337,17 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
     def upsert_doc_include_chunk(self, chunk: ParagraphChunk) -> None:
         """Convert chunk to document include chunk."""
         # Create document vertex
-        doc_id = f"doc_{chunk.chunk_name}" if chunk.chunk_name else f"doc_{chunk.chunk_id}"
+        doc_id = (
+            f"doc_{chunk.chunk_name}" if chunk.chunk_name else f"doc_{chunk.chunk_id}"
+        )
         doc_query = f"""
         MERGE (d:{GraphElemType.DOCUMENT.value} {{id: $doc_id}})
         SET d.name = $doc_name
         """
-        self.graph_store.conn.run(query=doc_query, doc_id=doc_id, doc_name=chunk.chunk_name or doc_id)
-        
+        self.graph_store.conn.run(
+            query=doc_query, doc_id=doc_id, doc_name=chunk.chunk_name or doc_id
+        )
+
         # Create chunk vertex
         chunk_query = f"""
         MERGE (c:{GraphElemType.CHUNK.value} {{id: $chunk_id}})
@@ -348,9 +357,9 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             query=chunk_query,
             chunk_id=chunk.chunk_id,
             chunk_name=chunk.chunk_name or chunk.chunk_id,
-            content=chunk.content or ""
+            content=chunk.content or "",
         )
-        
+
         # Create relationship
         rel_query = f"""
         MATCH (d:{GraphElemType.DOCUMENT.value} {{id: $doc_id}})
@@ -362,7 +371,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             query=rel_query,
             doc_id=doc_id,
             chunk_id=chunk.chunk_id,
-            rel_id=f"{doc_id}_{chunk.chunk_id}"
+            rel_id=f"{doc_id}_{chunk.chunk_id}",
         )
 
     def upsert_chunk_include_chunk(self, chunk: ParagraphChunk) -> None:
@@ -377,7 +386,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             query=chunk_query,
             chunk_id=chunk.chunk_id,
             chunk_name=chunk.chunk_name or chunk.chunk_id,
-            content=chunk.content or ""
+            content=chunk.content or "",
         )
 
     def upsert_chunk_next_chunk(
@@ -394,9 +403,9 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                 query=chunk_query,
                 chunk_id=c.chunk_id,
                 chunk_name=c.chunk_name or c.chunk_id,
-                content=c.content or ""
+                content=c.content or "",
             )
-        
+
         # Create NEXT relationship
         rel_query = f"""
         MATCH (c1:{GraphElemType.CHUNK.value} {{id: $chunk_id1}})
@@ -408,7 +417,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             query=rel_query,
             chunk_id1=chunk.chunk_id,
             chunk_id2=next_chunk.chunk_id,
-            rel_id=f"{chunk.chunk_id}_{next_chunk.chunk_id}"
+            rel_id=f"{chunk.chunk_id}_{next_chunk.chunk_id}",
         )
 
     def upsert_chunk_include_entity(
@@ -424,9 +433,9 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             query=chunk_query,
             chunk_id=chunk.chunk_id,
             chunk_name=chunk.chunk_name or chunk.chunk_id,
-            content=chunk.content or ""
+            content=chunk.content or "",
         )
-        
+
         # Create entity
         entity_query = f"""
         MERGE (e:{GraphElemType.ENTITY.value} {{id: $entity_id}})
@@ -435,9 +444,9 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         self.graph_store.conn.run(
             query=entity_query,
             entity_id=entity.vid,
-            entity_name=entity.name or entity.vid
+            entity_name=entity.name or entity.vid,
         )
-        
+
         # Create relationship
         rel_query = f"""
         MATCH (c:{GraphElemType.CHUNK.value} {{id: $chunk_id}})
@@ -449,13 +458,13 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             query=rel_query,
             chunk_id=chunk.chunk_id,
             entity_id=entity.vid,
-            rel_id=f"{chunk.chunk_id}_{entity.vid}"
+            rel_id=f"{chunk.chunk_id}_{entity.vid}",
         )
 
     def delete_document(self, chunk_id: str) -> None:
         """Delete document in the graph."""
         chunkids_list = [c.strip() for c in chunk_id.split(",")]
-        
+
         # Delete chunks
         del_chunk_query = f"""
         MATCH (n:{GraphElemType.CHUNK.value})
@@ -463,15 +472,16 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         DETACH DELETE n
         """
         self.graph_store.conn.run(del_chunk_query, chunk_ids=chunkids_list)
-        
+
         # Delete relations related to these chunks
         del_relation_query = f"""
-        MATCH (m:{GraphElemType.ENTITY.value})-[r:{GraphElemType.RELATION.value}]-(n:{GraphElemType.ENTITY.value})
+        MATCH (m:{GraphElemType.ENTITY.value})-[r:{GraphElemType.RELATION.value}]
+        -(n:{GraphElemType.ENTITY.value})
         WHERE r._chunk_id IN $chunk_ids
         DELETE r
         """
         self.graph_store.conn.run(del_relation_query, chunk_ids=chunkids_list)
-        
+
         # Delete orphan nodes
         delete_orphan_query = """
         MATCH (n)
@@ -496,28 +506,33 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
 
     def create_graph(self, graph_name: str):
         """Create indexes for the graph.
-        
+
         Note: In Neo4j, we don't create separate graphs like in TuGraph.
         All data is stored in the configured database, and we use labels
         to organize different knowledge spaces.
         """
         logger.info(f"Setting up Neo4j for knowledge space: {graph_name}")
-        
+
         # Create indexes for common properties
         # Note: These run on the database specified in the connection config
         indexes = [
-            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.ENTITY.value}) ON (n.id)",
-            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.ENTITY.value}) ON (n._community_id)",
+            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.ENTITY.value}) ON"
+            f" (n.id)",
+            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.ENTITY.value}) ON"
+            f" (n._community_id)",
             f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.CHUNK.value}) ON (n.id)",
-            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.CHUNK.value}) ON (n.content)",
-            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.DOCUMENT.value}) ON (n.id)",
-            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.DOCUMENT.value}) ON (n.name)",
+            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.CHUNK.value}) ON"
+            f" (n.content)",
+            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.DOCUMENT.value}) ON"
+            f" (n.id)",
+            f"CREATE INDEX IF NOT EXISTS FOR (n:{GraphElemType.DOCUMENT.value}) ON"
+            f" (n.name)",
         ]
-        
+
         for index_query in indexes:
             try:
                 self.graph_store.conn.run(index_query)
-                logger.info(f"Successfully created/verified index")
+                logger.info("Successfully created/verified index")
             except Exception as e:
                 # Log as info instead of warning - indexes might already exist
                 logger.info(f"Index creation note: {str(e)[:200]}")
@@ -529,7 +544,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         graph_properties: List[Dict[str, Union[str, bool]]],
     ) -> None:
         """Create a graph label.
-        
+
         Neo4j creates labels dynamically, so we just log this for compatibility.
         """
         logger.info(f"Neo4j: Label {graph_elem_type.value} will be created dynamically")
@@ -537,10 +552,10 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
     def truncate(self):
         """Truncate Graph."""
         logger.warning("Truncating all data from Neo4j database")
-        
+
         # Delete all relationships first
         self.graph_store.conn.run("MATCH ()-[r]->() DELETE r")
-        
+
         # Then delete all nodes
         self.graph_store.conn.run("MATCH (n) DELETE n")
 
@@ -584,19 +599,19 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
 
         # Build query for each subject
         result_graph = MemoryGraph()
-        
+
         for sub in subs:
             if isinstance(sub, list):
                 # Embedding search not yet implemented for Neo4j
                 continue
-                
+
             query = f"""
             MATCH path = (start:{GraphElemType.ENTITY.value} {{id: $sub}})
             -[*1..{depth}]-{direction_str}(end)
             RETURN nodes(path) as nodes, relationships(path) as rels
             LIMIT {limit}
             """
-            
+
             try:
                 results = self.graph_store.conn.run(query, sub=sub)
                 for record in results:
@@ -604,7 +619,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                     for node in record.get("nodes", []):
                         vertex = self._neo4j_node_to_vertex(node)
                         result_graph.upsert_vertex(vertex)
-                    
+
                     # Process relationships
                     for rel in record.get("rels", []):
                         edge = self._neo4j_relationship_to_edge(rel)
@@ -632,7 +647,7 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             limit = self.MAX_QUERY_LIMIT
 
         result_graph = MemoryGraph()
-        
+
         for sub in subs:
             # Find chunks connected to this entity
             query = f"""
@@ -644,11 +659,11 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             RETURN e, c, d
             LIMIT {limit}
             """
-            
+
             try:
                 results = self.graph_store.conn.run(query, sub=sub)
                 for record in results:
-                    for key in ['e', 'c', 'd']:
+                    for key in ["e", "c", "d"]:
                         if key in record and record[key]:
                             vertex = self._neo4j_node_to_vertex(record[key])
                             result_graph.upsert_vertex(vertex)
@@ -675,12 +690,12 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             limit = self.MAX_QUERY_LIMIT
 
         result_graph = MemoryGraph()
-        
+
         for sub in subs:
             if isinstance(sub, list):
                 # Embedding search not yet implemented
                 continue
-            
+
             # Find chunks containing the keyword
             query = f"""
             MATCH (c:{GraphElemType.CHUNK.value})
@@ -690,11 +705,11 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
             RETURN c, d
             LIMIT {limit}
             """
-            
+
             try:
                 results = self.graph_store.conn.run(query, keyword=sub)
                 for record in results:
-                    for key in ['c', 'd']:
+                    for key in ["c", "d"]:
                         if key in record and record[key]:
                             vertex = self._neo4j_node_to_vertex(record[key])
                             result_graph.upsert_vertex(vertex)
@@ -706,10 +721,10 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
     def query(self, query: str, **kwargs) -> MemoryGraph:
         """Execute a Cypher query and return results as a MemoryGraph."""
         graph = MemoryGraph()
-        
+
         try:
             results = self.graph_store.conn.run(query, **kwargs)
-            
+
             for record in results:
                 # Process each value in the record
                 for key, value in record.items():
@@ -721,10 +736,10 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
                     elif hasattr(value, "type"):  # It's a relationship
                         edge = self._neo4j_relationship_to_edge(value)
                         graph.append_edge(edge)
-                        
+
         except Exception as e:
             logger.error(f"Query execution failed: {e}\nQuery: {query}")
-            
+
         return graph
 
     async def stream_query(self, query: str, **kwargs) -> AsyncGenerator[Graph, None]:
@@ -738,10 +753,10 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
         props = dict(node.items())
         vertex_id = props.get("id", str(node.id))
         labels = list(node.labels)
-        
+
         if labels:
             props["vertex_type"] = labels[0]
-            
+
         return Vertex(vid=vertex_id, props=props)
 
     def _neo4j_relationship_to_edge(self, rel) -> Edge:
@@ -751,8 +766,8 @@ class Neo4jStoreAdapter(GraphStoreAdapter):
 
         # Get source and target node custom IDs (not internal Neo4j IDs)
         # Nodes are stored with custom 'id' property, must use that for consistency
-        start_node = rel.start_node if hasattr(rel, 'start_node') else rel.nodes[0]
-        end_node = rel.end_node if hasattr(rel, 'end_node') else rel.nodes[1]
+        start_node = rel.start_node if hasattr(rel, "start_node") else rel.nodes[0]
+        end_node = rel.end_node if hasattr(rel, "end_node") else rel.nodes[1]
 
         # Extract custom 'id' property from nodes, fallback to internal id if missing
         sid = str(dict(start_node.items()).get("id", start_node.id))

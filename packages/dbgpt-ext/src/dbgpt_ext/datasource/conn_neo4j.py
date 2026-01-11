@@ -119,11 +119,11 @@ class Neo4jConnector(BaseConnector):
 
     def create_graph(self, graph_name: str) -> bool:
         """Create a graph in Neo4j.
-        
+
         Note: In Neo4j, databases are created at the system level.
         For knowledge graphs, we don't need to explicitly create a graph structure.
         This method is here for compatibility with TuGraph adapter.
-        
+
         Returns:
             bool: True (graph always exists in Neo4j)
         """
@@ -133,10 +133,10 @@ class Neo4jConnector(BaseConnector):
 
     def is_exist(self, graph_name: str) -> bool:
         """Check if a database exists in Neo4j.
-        
+
         Args:
             graph_name: Database name to check
-            
+
         Returns:
             bool: True if database exists
         """
@@ -149,7 +149,7 @@ class Neo4jConnector(BaseConnector):
 
     def delete_graph(self, graph_name: str) -> None:
         """Delete all data from the current database.
-        
+
         Note: This deletes all nodes and relationships, not the database itself.
         """
         with self._driver.session(database=self._database) as session:
@@ -171,11 +171,11 @@ class Neo4jConnector(BaseConnector):
                         system_info["neo4j_version"] = versions[0]
                         # For compatibility with TuGraph adapter
                         system_info["lgraph_version"] = versions[0]
-        except Exception as e:
+        except Exception:
             # Fallback for older Neo4j versions
             system_info["neo4j_version"] = "unknown"
             system_info["lgraph_version"] = "5.0.0"  # Default compatible version
-        
+
         return system_info
 
     def get_table_names(self) -> Iterator[str]:
@@ -187,7 +187,9 @@ class Neo4jConnector(BaseConnector):
 
             # Get relationship types
             result = session.run("CALL db.relationshipTypes()")
-            rel_types = [record["relationshipType"] + "_relationship" for record in result]
+            rel_types = [
+                record["relationshipType"] + "_relationship" for record in result
+            ]
 
             return iter(node_labels + rel_types)
 
@@ -340,4 +342,3 @@ class Neo4jConnector(BaseConnector):
     def is_graph_type(cls) -> bool:
         """Return whether the connector is a graph database connector."""
         return True
-
