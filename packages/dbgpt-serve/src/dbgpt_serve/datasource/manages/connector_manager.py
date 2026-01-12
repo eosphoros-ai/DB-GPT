@@ -47,6 +47,7 @@ class ConnectorManager(BaseComponent):
         Load all connector classes.
         """
         from dbgpt.datasource.rdbms.base import RDBMSConnector  # noqa: F401
+        from dbgpt_ext.datasource.conn_neo4j import Neo4jConnector  # noqa: F401
         from dbgpt_ext.datasource.conn_spark import SparkConnector  # noqa: F401
         from dbgpt_ext.datasource.conn_tugraph import TuGraphConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_clickhouse import (  # noqa: F401
@@ -209,10 +210,10 @@ class ConnectorManager(BaseComponent):
 
             try:
                 ext_config = db_config.get("ext_config")
-                db_json = json.loads(ext_config)
+                db_json = json.loads(ext_config) if ext_config else {}
                 schema = db_json.get("schema", None)
-            except json.JSONDecodeError:
-                # 处理解码失败的情况
+            except (json.JSONDecodeError, TypeError):
+                # Handle JSON decode failure and None/invalid types
                 db_json = {}
                 schema = None
             return connect_instance.from_uri_db(  # type: ignore
