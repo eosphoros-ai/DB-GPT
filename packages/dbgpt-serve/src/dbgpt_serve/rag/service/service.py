@@ -629,6 +629,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             self._chunk_dao.create_documents_chunks(chunk_entities)
         except Exception as e:
             import traceback
+
             doc.status = SyncStatus.FAILED.name
             doc.result = "document embedding failed" + str(e)
             error_traceback = traceback.format_exc()
