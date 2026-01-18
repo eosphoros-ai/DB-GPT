@@ -28,7 +28,6 @@ def find_excel_files(directory: str) -> list[str]:
     """
     # 检查目录是否存在
     if not os.path.isdir(directory):
-        print(f"错误: 目录 '{directory}' 不存在")
         return []
 
     # 存储结果的列表
