@@ -183,7 +183,7 @@ class IndexStoreBase(ABC):
         )
         tasks = []
         for chunk_group in chunk_groups:
-            tasks.append(self.aload_document(chunk_group, file_id))
+            tasks.append(self.aload_document(chunk_group))
 
         results = await self._run_tasks_with_concurrency(tasks, max_threads)
 
