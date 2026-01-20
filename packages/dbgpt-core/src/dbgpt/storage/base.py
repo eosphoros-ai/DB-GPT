@@ -55,11 +55,14 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(
+        self, chunks: List[Chunk], file_id: Optional[str] = None
+    ) -> List[str]:
         """Load document in index database.
 
         Args:
             chunks(List[Chunk]): document chunks.
+            file_id(Optional[str]): file id for document-level tracking.
 
         Return:
             List[str]: chunk ids.
