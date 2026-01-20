@@ -55,11 +55,12 @@ class IndexStoreBase(ABC):
         """
 
     @abstractmethod
-    async def aload_document(self, chunks: List[Chunk]) -> List[str]:
+    async def aload_document(self, chunks: List[Chunk],  file_id: Optional[str] = None) -> List[str]:
         """Load document in index database.
 
         Args:
             chunks(List[Chunk]): document chunks.
+            file_id(Optional[str]): file id for document-level tracking.
 
         Return:
             List[str]: chunk ids.
@@ -183,7 +184,7 @@ class IndexStoreBase(ABC):
         )
         tasks = []
         for chunk_group in chunk_groups:
-            tasks.append(self.aload_document(chunk_group))
+            tasks.append(self.aload_document(chunk_group, file_id))
 
         results = await self._run_tasks_with_concurrency(tasks, max_threads)
 
