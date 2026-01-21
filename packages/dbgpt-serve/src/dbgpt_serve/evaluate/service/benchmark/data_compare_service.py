@@ -36,10 +36,11 @@ def accurate_decimal(
                 new_col.append("")
                 continue
 
-            # 布尔值处理：将 True/False 统一转为 1/0，解决不同数据库驱动返回类型不一致的问题
-            if vs_lower == 'true':
+            # 布尔值处理
+            # 将 True/False 统一转为 1/0，解决不同数据库驱动返回类型不一致的问题
+            if vs_lower == "true":
                 vs = "1"
-            elif vs_lower == 'false':
+            elif vs_lower == "false":
                 vs = "0"
             else:
                 vs = vs_raw
