@@ -27,7 +27,23 @@ def accurate_decimal(
             if v is None:
                 new_col.append("")
                 continue
-            vs = str(v)
+
+            vs_raw = str(v)
+            vs_lower = vs_raw.lower()
+
+            # Null 字符串处理
+            if vs_lower == "null":
+                new_col.append("")
+                continue
+
+            # 布尔值处理：将 True/False 统一转为 1/0，解决不同数据库驱动返回类型不一致的问题
+            if vs_lower == 'true':
+                vs = "1"
+            elif vs_lower == 'false':
+                vs = "0"
+            else:
+                vs = vs_raw
+
             try:
                 d = Decimal(vs)
                 new_col.append(
