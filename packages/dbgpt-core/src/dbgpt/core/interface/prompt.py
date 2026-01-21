@@ -23,16 +23,17 @@ T = TypeVar("T", bound="BasePromptTemplate")
 
 
 def _jinja2_formatter(template: str, **kwargs: Any) -> str:
-    """Format a template using jinja2."""
+    """Format a template using jinja2 with sandboxed environment for security."""
     try:
-        from jinja2 import Template
+        from jinja2.sandbox import SandboxedEnvironment
     except ImportError:
         raise ImportError(
             "jinja2 not installed, which is needed to use the jinja2_formatter. "
             "Please install it with `pip install jinja2`."
         )
 
-    return Template(template).render(**kwargs)
+    env = SandboxedEnvironment()
+    return env.from_string(template).render(**kwargs)
 
 
 _DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
