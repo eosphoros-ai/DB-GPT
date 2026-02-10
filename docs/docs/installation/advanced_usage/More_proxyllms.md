@@ -213,7 +213,7 @@ uv run dbgpt start webserver --config configs/dbgpt-proxy-tongyi.toml
 # Use uv to install dependencies needed for Zhipu (ChatGLM) proxy
 uv sync --all-packages \
 --extra "base" \
---extra "proxy_zhipu" \
+--extra "proxy_zhipuai" \
 --extra "rag" \
 --extra "storage_chromadb" \
 --extra "dbgpts"
