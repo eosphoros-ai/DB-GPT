@@ -332,8 +332,9 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
                         charts: List = view_data.get("charts")
                         find_chart = list(
                             filter(
-                                lambda x: x["chart_name"]
-                                == chart_edit_context.chart_title,
+                                lambda x: (
+                                    x["chart_name"] == chart_edit_context.chart_title
+                                ),
                                 charts,
                             )
                         )[0]

@@ -428,8 +428,10 @@ class MemoryGraph(Graph):
         def remove_matches(es: Set[Edge]):
             return set(
                 filter(
-                    lambda e: not (
-                        (name == e.name if name else True) and e.has_props(**props)
+                    lambda e: (
+                        not (
+                            (name == e.name if name else True) and e.has_props(**props)
+                        )
                     ),
                     es,
                 )

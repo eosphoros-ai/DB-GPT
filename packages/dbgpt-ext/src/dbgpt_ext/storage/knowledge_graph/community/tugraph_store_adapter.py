@@ -318,8 +318,9 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
         """
         # Get the iterators of all the vertices and the edges from the graph
         documents: Iterator[Vertex] = graph.vertices(
-            filter_fn=lambda x: x.get_prop("vertex_type")
-            == GraphElemType.DOCUMENT.value
+            filter_fn=lambda x: (
+                x.get_prop("vertex_type") == GraphElemType.DOCUMENT.value
+            )
         )
         chunks: Iterator[Vertex] = graph.vertices(
             filter_fn=lambda x: x.get_prop("vertex_type") == GraphElemType.CHUNK.value
@@ -328,20 +329,24 @@ class TuGraphStoreAdapter(GraphStoreAdapter):
             filter_fn=lambda x: x.get_prop("vertex_type") == GraphElemType.ENTITY.value
         )
         doc_include_chunk: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type")
-            == GraphElemType.DOCUMENT_INCLUDE_CHUNK.value
+            filter_fn=lambda x: (
+                x.get_prop("edge_type") == GraphElemType.DOCUMENT_INCLUDE_CHUNK.value
+            )
         )
         chunk_include_chunk: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type")
-            == GraphElemType.CHUNK_INCLUDE_CHUNK.value
+            filter_fn=lambda x: (
+                x.get_prop("edge_type") == GraphElemType.CHUNK_INCLUDE_CHUNK.value
+            )
         )
         chunk_include_entity: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type")
-            == GraphElemType.CHUNK_INCLUDE_ENTITY.value
+            filter_fn=lambda x: (
+                x.get_prop("edge_type") == GraphElemType.CHUNK_INCLUDE_ENTITY.value
+            )
         )
         chunk_next_chunk: Iterator[Edge] = graph.edges(
-            filter_fn=lambda x: x.get_prop("edge_type")
-            == GraphElemType.CHUNK_NEXT_CHUNK.value
+            filter_fn=lambda x: (
+                x.get_prop("edge_type") == GraphElemType.CHUNK_NEXT_CHUNK.value
+            )
         )
         relation: Iterator[Edge] = graph.edges(
             filter_fn=lambda x: x.get_prop("edge_type") == GraphElemType.RELATION.value
