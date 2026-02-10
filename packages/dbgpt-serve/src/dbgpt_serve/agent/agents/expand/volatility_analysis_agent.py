@@ -8,6 +8,7 @@ from dbgpt_serve.agent.agents.expand.actions.volatility_analysis_action import (
 
 logger = logging.getLogger(__name__)
 
+
 # TODO Implementation of Excel Agent Function, temp hidden Agent display for page
 class VolatilityAnalysisAgent(ConversableAgent):
     """Volatility Analysis Agent.

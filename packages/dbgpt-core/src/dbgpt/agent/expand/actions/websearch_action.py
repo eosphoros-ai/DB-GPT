@@ -320,8 +320,10 @@ class WebSearchAction(Action[WebSearchInput]):
                     "'yes' or 'no'(lowercase), no other values allowed.",
                 )
             if is_need == "no" or (is_need == "yes" and not keywords.strip()):
-                return ActionOutput(is_exe_success=True, content="No web search needed.")
-            
+                return ActionOutput(
+                    is_exe_success=True, content="No web search needed."
+                )
+
             data_df = pd.DataFrame()
             if is_need == "yes":
                 results = get_bing_search_results(keywords, num_results=3)
@@ -335,9 +337,11 @@ class WebSearchAction(Action[WebSearchInput]):
             else:
                 return ActionOutput(
                     is_exe_success=False,
-                    content="Error: No data retrieved from web search with these keywords.",
+                    content=(
+                        "Error: No data retrieved from web search with these keywords."
+                    ),
                 )
-            
+
             content = (
                 "Through online search, we retrieved the following content: "
                 + json.dumps(param_dict, ensure_ascii=False, indent=2)

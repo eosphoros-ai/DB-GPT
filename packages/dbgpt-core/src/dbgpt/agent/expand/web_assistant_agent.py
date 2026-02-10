@@ -25,45 +25,54 @@ class WebSearchAgent(ConversableAgent):
             key="dbgpt_agent_expand_data_aware_search_agent_profile_role",
         ),
         goal=DynConfig(
-            "Comprehensively analyze user questions and existing context data "
-            "to determine whether real-time external information is needed. "
-            "When necessary, generate accurate search keywords to obtain the "
-            "missing information required for a complete answer.",
+            "Comprehensively analyze user questions and existing context "
+            "data to determine whether real-time external information is "
+            "needed. When necessary, generate accurate search keywords to "
+            "obtain the missing information required for a complete answer.",
             category="agent",
             key="dbgpt_agent_expand_data_aware_search_agent_profile_goal",
         ),
         constraints=DynConfig(
             [
-                "Must first conduct a thorough analysis of existing data and context "
-                "to identify what information is already available and what is missing.",
-                "Only generate search keywords when existing data is insufficient to "
-                "answer the user's question, and the missing information can only be "
-                "obtained through real-time search.",
-                "For time-sensitive questions (e.g., holidays, current events, latest "
-                "policies), prioritize using web search to obtain real-time information.",
-                "For queries about specific regions, entities, or events, verify if "
-                "relevant information exists in the data; if absent, generate precise "
-                "search keywords.",
-                "Keywords must be specific, unambiguous, and directly address the "
-                "identified information gap. Avoid overly broad or irrelevant terms.",
-                "If all necessary information is already present in the existing data "
-                "and no external information is needed, strictly output 'NO_SEARCH_REQUIRED'.",
-                "Do not make assumptions about missing data; only generate searches for "
-                "information that is explicitly needed to answer the user's question.",
-                "Generated search keywords should be concise and clear, typically no more "
-                "than 10 words, ensuring search engines can return relevant results.",
-                "When analyzing data, pay special attention to fields, values, and "
-                "relationships relevant to the user's query topic.",
+                "Must first conduct a thorough analysis of existing data "
+                "and context to identify what information is already "
+                "available and what is missing.",
+                "Only generate search keywords when existing data is "
+                "insufficient to answer the user's question, and the "
+                "missing information can only be obtained through "
+                "real-time search.",
+                "For time-sensitive questions (e.g., holidays, current "
+                "events, latest policies), prioritize using web search "
+                "to obtain real-time information.",
+                "For queries about specific regions, entities, or events, "
+                "verify if relevant information exists in the data; if "
+                "absent, generate precise search keywords.",
+                "Keywords must be specific, unambiguous, and directly "
+                "address the identified information gap. Avoid overly "
+                "broad or irrelevant terms.",
+                "If all necessary information is already present in the "
+                "existing data and no external information is needed, "
+                "strictly output 'NO_SEARCH_REQUIRED'.",
+                "Do not make assumptions about missing data; only generate "
+                "searches for information that is explicitly needed to "
+                "answer the user's question.",
+                "Generated search keywords should be concise and clear, "
+                "typically no more than 10 words, ensuring search engines "
+                "can return relevant results.",
+                "When analyzing data, pay special attention to fields, "
+                "values, and relationships relevant to the user's query "
+                "topic.",
             ],
             category="agent",
             key="dbgpt_agent_expand_data_aware_search_agent_profile_constraints",
         ),
         desc=DynConfig(
-            "Intelligent web search agent specialized in identifying parts of user "
-            "questions that require real-time external information. When user questions "
-            "involve information missing from existing data or beyond the model's "
-            "knowledge (e.g., holiday schedules, current events, real-time data), "
-            "automatically triggers web search to retrieve the latest information.",
+            "Intelligent web search agent specialized in identifying parts "
+            "of user questions that require real-time external information. "
+            "When user questions involve information missing from existing "
+            "data or beyond the model's knowledge (e.g., holiday schedules, "
+            "current events, real-time data), automatically triggers web "
+            "search to retrieve the latest information.",
             category="agent",
             key="dbgpt_agent_expand_data_aware_search_agent_profile_desc",
         ),
@@ -84,7 +93,7 @@ class WebSearchAgent(ConversableAgent):
     async def correctness_check(
         self, message: AgentMessage
     ) -> Tuple[bool, Optional[str]]:
-        """Verify whether the current execution results meet the target expectations."""
+        """Verify if the current execution results meet expectations."""
         action_out = message.action_report
         if action_out is None:
             return (
