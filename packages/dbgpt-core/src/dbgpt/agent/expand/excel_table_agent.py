@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 
 from ..core.agent import Agent, AgentMessage
-from ..core.base_agent import ConversableAgent
 from ..core.profile import DynConfig, ProfileConfig
 from ..resource.database import DBResource
 from . import excel_path
@@ -49,7 +48,9 @@ def find_excel_files(directory: str) -> list[str]:
 excel_files = find_excel_files(excel_path)
 
 
-class Excel2TableAgent(ConversableAgent):
+# TODO Implementation of Excel Agent Function, temp hidden Agent display for page
+# class Excel2TableAgent(ConversableAgent):
+class Excel2TableAgent:
     """Excel Scientist Agent."""
 
     profile: ProfileConfig = ProfileConfig(

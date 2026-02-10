@@ -1,6 +1,6 @@
 import logging
 
-from dbgpt.agent import ConversableAgent, get_agent_manager
+from dbgpt.agent import ConversableAgent
 from dbgpt.agent.core.profile import DynConfig, ProfileConfig
 from dbgpt_serve.agent.agents.expand.actions.volatility_analysis_action import (
     VolatilityAnalysisAction,
@@ -8,7 +8,7 @@ from dbgpt_serve.agent.agents.expand.actions.volatility_analysis_action import (
 
 logger = logging.getLogger(__name__)
 
-
+# TODO Implementation of Excel Agent Function, temp hidden Agent display for page
 class VolatilityAnalysisAgent(ConversableAgent):
     """Volatility Analysis Agent.
 
@@ -60,5 +60,5 @@ class VolatilityAnalysisAgent(ConversableAgent):
         self._init_actions([VolatilityAnalysisAction])
 
 
-agent_manage = get_agent_manager()
-agent_manage.register_agent(VolatilityAnalysisAgent)
+# agent_manage = get_agent_manager()
+# agent_manage.register_agent(VolatilityAnalysisAgent)

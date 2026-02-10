@@ -14,8 +14,6 @@ from bs4 import BeautifulSoup
 from dbgpt._private.pydantic import BaseModel, Field, model_to_dict
 from dbgpt.vis.tags.vis_chart import VisChart
 
-# from dbgpt.agent.core.action.base import Action, ActionOutput
-# from dbgpt.agent.resource.base import AgentResource, ResourceType
 from ...core.action.base import Action, ActionOutput
 from ...resource.base import AgentResource
 
@@ -216,7 +214,7 @@ def get_bing_search_results(query, num_results=5, worker=None):
         if link.startswith("https://www.zhihu.com"):
             continue  # 过滤知乎链接
 
-        print(f"候选结果: {title} - {link}")
+        logging.info(f"候选结果: {title} - {link}")
         # 只保存必要的基础信息，不包含内容字段
         links.append({"title": title, "link": link, "snippet": snippet})
 
@@ -263,23 +261,8 @@ def get_bing_search_results(query, num_results=5, worker=None):
     return results
 
 
-# if __name__ == "__main__":
-#     test_query = "2025年中秋节日期？"
-#     try:
-#         search_results = get_bing_search_results(test_query, num_results=3)
-#         for idx, res in enumerate(search_results):
-#             print(f"结果 {idx+1}:")
-#             print(f"标题: {res['title']}")
-#             print(f"链接: {res['link']}")
-#             print(f"摘要: {res['snippet']}")
-#             print(f"内容预览: {res['content'][:200]}...")  # 只显示前200字符
-#             print("-" * 80)
-#     except Exception as e:
-#         print(f"搜索失败: {e}")
-
-
-class SqlInput(BaseModel):
-    """SQL input model."""
+class WebSearchInput(BaseModel):
+    """Web search input model."""
 
     is_need: str = Field(
         ...,
@@ -297,18 +280,18 @@ class SqlInput(BaseModel):
     thought: str = Field(..., description="Summary of thoughts to the user")
 
 
-class WebSearchAction(Action[SqlInput]):
-    """Chart action class."""
+class WebSearchAction(Action[WebSearchInput]):
+    """Web search action class."""
 
     def __init__(self, **kwargs):
-        """Chart action init."""
+        """Web search action init."""
         super().__init__(**kwargs)
         self._render_protocol = VisChart()
 
     @property
     def out_model_type(self):
         """Return the output model type."""
-        return SqlInput
+        return WebSearchInput
 
     async def run(
         self,
@@ -320,12 +303,12 @@ class WebSearchAction(Action[SqlInput]):
     ) -> ActionOutput:
         """Perform the action."""
         try:
-            param: SqlInput = self._input_convert(ai_message, SqlInput)
+            param: WebSearchInput = self._input_convert(ai_message, WebSearchInput)
         except Exception as e:
             logger.exception(f"{str(e)}! \n {ai_message}")
             return ActionOutput(
                 is_exe_success=False,
-                content="Error:The answer is not output in the required format.",
+                content="Error: The answer is not output in the required format.",
             )
         try:
             is_need = param.is_need.lower()
@@ -333,11 +316,12 @@ class WebSearchAction(Action[SqlInput]):
             if is_need not in ["yes", "no"]:
                 return ActionOutput(
                     is_exe_success=False,
-                    content="Error:The value of 'is_need' must be strictly "
+                    content="Error: The value of 'is_need' must be strictly "
                     "'yes' or 'no'(lowercase), no other values allowed.",
                 )
             if is_need == "no" or (is_need == "yes" and not keywords.strip()):
-                ActionOutput(is_exe_success=True, content="No web search needed.")
+                return ActionOutput(is_exe_success=True, content="No web search needed.")
+            
             data_df = pd.DataFrame()
             if is_need == "yes":
                 results = get_bing_search_results(keywords, num_results=3)
@@ -351,18 +335,19 @@ class WebSearchAction(Action[SqlInput]):
             else:
                 return ActionOutput(
                     is_exe_success=False,
-                    content="Error:No data retrieved from web search in this keywords.",
+                    content="Error: No data retrieved from web search with these keywords.",
                 )
+            
             content = (
-                "Through online search, we retrieved the following content："
-                + json.dumps(param_dict)
+                "Through online search, we retrieved the following content: "
+                + json.dumps(param_dict, ensure_ascii=False, indent=2)
             )
 
             return ActionOutput(is_exe_success=True, content=content)
-        except Exception:
-            logger.exception("Check your questions,the websearch run failed!")
+        except Exception as e:
+            logger.exception("Check your questions, the websearch run failed!")
             return ActionOutput(
                 is_exe_success=False,
-                content="Error:Check your questions,the websearch run failed!"
-                "Reason:{str(e)}",
+                content=f"Error: Check your questions, the websearch run failed! "
+                f"Reason: {str(e)}",
             )
