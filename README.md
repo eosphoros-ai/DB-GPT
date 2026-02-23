@@ -328,12 +328,12 @@ If you want to learn about using DB-GPT for Agent development, please cite the <
       title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
       author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
       year={2023},
-      journal={arXiv preprint arXiv:2312.17449},
-      url={https://arxiv.org/abs/2312.17449}
+      journal={arX
 }
 @misc{huang2024romasrolebasedmultiagentdatabase,
       title={ROMAS: A Role-Based Multi-Agent System for Database monitoring and Planning}, 
-      author={Yi Huang and Fangyin Cheng and Fan Zhou and Jiahui Li and Jian Gong and Hongjun Yang and Zhidong Fan and Caigao Jiang and Siqiao Xue and Faqiang Chen},
+      author={Yi Huang and Fangyin Cheng and Fan Zhou and Jiahui Li and Jian Gong and Hongjun Yang and Zhidoiv preprint arXiv:2312.17449},
+      url={https://arxiv.org/abs/2312.17449}ng Fan and Caigao Jiang and Siqiao Xue and Faqiang Chen},
       year={2024},
       eprint={2412.13520},
       archivePrefix={arXiv},
