@@ -90,9 +90,7 @@ class MiniMaxLLMClient(OpenAILLMClient):
         **kwargs,
     ):
         api_base = (
-            api_base
-            or os.getenv("MINIMAX_API_BASE")
-            or "https://api.minimax.io/v1"
+            api_base or os.getenv("MINIMAX_API_BASE") or "https://api.minimax.io/v1"
         )
         api_key = api_key or os.getenv("MINIMAX_API_KEY")
         model = model or _DEFAULT_MODEL
@@ -166,9 +164,7 @@ register_proxy_model_adapter(
             model="MiniMax-M2.5",
             context_length=204800,
             max_output_length=192000,
-            description=(
-                "MiniMax-M2.5 by MiniMax. Peak Performance. Ultimate Value."
-            ),
+            description=("MiniMax-M2.5 by MiniMax. Peak Performance. Ultimate Value."),
             link="https://platform.minimax.io/docs/api-reference/text-openai-api",
             function_calling=True,
         ),
