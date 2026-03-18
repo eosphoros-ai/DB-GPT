@@ -122,8 +122,6 @@ clean-dist: ## Clean up the distribution
 .PHONY: build 
 build: clean-dist ## Package the project for distribution
 	uv build --all-packages
-	rm -rf dist/dbgpt_app-*
-	rm -rf dist/dbgpt_serve-*
 
 .PHONY: publish
 publish: build ## Upload the package to PyPI
