@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
-_DEFAULT_MODEL = "MiniMax-M2.5"
+_DEFAULT_MODEL = "MiniMax-M2.7"
 
 
 @auto_register_resource(
@@ -160,6 +160,28 @@ class MiniMaxLLMClient(OpenAILLMClient):
 register_proxy_model_adapter(
     MiniMaxLLMClient,
     supported_models=[
+        ModelMetadata(
+            model="MiniMax-M2.7",
+            context_length=204800,
+            max_output_length=192000,
+            description=(
+                "MiniMax-M2.7 by MiniMax. Latest flagship model with enhanced "
+                "reasoning and coding."
+            ),
+            link="https://platform.minimax.io/docs/api-reference/text-openai-api",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model="MiniMax-M2.7-highspeed",
+            context_length=204800,
+            max_output_length=192000,
+            description=(
+                "MiniMax-M2.7-highspeed by MiniMax. High-speed version of M2.7 "
+                "for low-latency scenarios."
+            ),
+            link="https://platform.minimax.io/docs/api-reference/text-openai-api",
+            function_calling=True,
+        ),
         ModelMetadata(
             model="MiniMax-M2.5",
             context_length=204800,

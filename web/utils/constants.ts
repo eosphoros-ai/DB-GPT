@@ -38,7 +38,7 @@ export const MODEL_ICON_INFO: Record<string, ModelIconInfo> = {
   minimax: {
     label: 'MiniMax',
     icon: '/models/minimax.png',
-    patterns: ['minimax', 'm2.5', 'm2.1', 'm2'],
+    patterns: ['minimax', 'm2.7', 'm2.5', 'm2.1', 'm2'],
   },
   doubao: {
     label: 'Doubao',
