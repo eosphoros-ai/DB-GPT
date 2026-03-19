@@ -3,6 +3,8 @@ import re
 from dataclasses import dataclass
 from typing import Any, List, Optional
 
+from dbgpt.vis.tags.vis_thinking import VisThinking
+
 
 @dataclass
 class ReActStep:
@@ -61,6 +63,37 @@ class ReActOutputParser:
         self.action_input_prefix_escaped = re.escape(action_input_prefix)
         self.observation_prefix_escaped = re.escape(observation_prefix)
 
+    def _strip_leading_vis_thinking_block(self, text: str) -> str:
+        """Remove the leading vis-thinking wrapper produced by VisThinking."""
+        if not text:
+            return text
+
+        stripped = text.lstrip()
+        fence = "`" * 6
+        opening = f"{fence}{VisThinking.vis_tag()}"
+        if not stripped.startswith(opening):
+            return text
+
+        lines = stripped.splitlines()
+        if len(lines) < 3 or lines[0].strip() != opening:
+            return text
+
+        closing_index = None
+        for idx in range(1, len(lines)):
+            if lines[idx].strip() == fence:
+                trailing_content = "\n".join(lines[idx + 1 :]).lstrip()
+                if not trailing_content or trailing_content.startswith(
+                    self.thought_prefix
+                ):
+                    closing_index = idx
+                    break
+
+        if closing_index is None:
+            return text
+
+        stripped_content = "\n".join(lines[closing_index + 1 :]).lstrip()
+        return stripped_content
+
     def parse(self, text: str) -> List[ReActStep]:
         """
         Parse the ReAct format output text into structured steps.
@@ -76,7 +109,7 @@ class ReActOutputParser:
         steps = []
 
         # Remove any leading/trailing whitespace
-        text = text.strip()
+        text = self._strip_leading_vis_thinking_block(text).strip()
 
         # Find all instances of the thought prefix
         thought_matches = list(re.finditer(rf"{self.thought_prefix_escaped}\s*", text))
