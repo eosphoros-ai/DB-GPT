@@ -6,9 +6,9 @@ from unittest.mock import patch
 import pytest
 
 from dbgpt.model.proxy.llms.minimax import (
+    _DEFAULT_MODEL,
     MiniMaxDeployModelParameters,
     MiniMaxLLMClient,
-    _DEFAULT_MODEL,
 )
 
 
@@ -37,29 +37,29 @@ class TestMiniMaxModelList:
 
     def test_model_list_contains_m27(self):
         # Import triggers registration
-        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
         from dbgpt.model.adapter.base import get_model_adapter
+        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
 
         adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.7")
         assert adapter is not None
 
     def test_model_list_contains_m27_highspeed(self):
-        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
         from dbgpt.model.adapter.base import get_model_adapter
+        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
 
         adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.7-highspeed")
         assert adapter is not None
 
     def test_model_list_contains_m25(self):
-        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
         from dbgpt.model.adapter.base import get_model_adapter
+        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
 
         adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.5")
         assert adapter is not None
 
     def test_model_list_contains_m25_highspeed(self):
-        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
         from dbgpt.model.adapter.base import get_model_adapter
+        from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient  # noqa: F811
 
         adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.5-highspeed")
         assert adapter is not None
