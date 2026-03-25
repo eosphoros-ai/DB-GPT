@@ -112,6 +112,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
             azure_deployment=api_azure_deployment,
             azure_endpoint=openai_params["base_url"],
             timeout=60.0,
+            max_retries=3,
         )
     else:
         from openai import AsyncOpenAI
@@ -127,7 +128,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
             http_client = httpx.AsyncClient(proxies=init_params.proxies)
         else:
             http_client = httpx.AsyncClient()
-        async_client = AsyncOpenAI(**openai_params, http_client=http_client, timeout=60.0)
+        async_client = AsyncOpenAI(**openai_params, http_client=http_client, timeout=60.0, max_retries=3)
     return api_type, async_client
 
 
