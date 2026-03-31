@@ -53,15 +53,25 @@ function Database() {
   };
 
   const dbTypeList = useMemo(() => {
-    const supportDbList = dbSupportList.map(item => {
-      const db_type = item?.name;
-      return { ...dbMapper[db_type], value: db_type, isFileDb: true, parameters: item.parameters };
-    }) as DBOption[];
+    const uniqueSupportDbList = Array.from(new Map(dbSupportList.map(item => [item?.name, item])).values());
+    const supportDbList = uniqueSupportDbList
+      .filter(item => Boolean(dbMapper[item?.name as DBType]))
+      .map(item => {
+        const db_type = item?.name as DBType;
+        const mapper = dbMapper[db_type];
+
+        return {
+          ...mapper,
+          value: db_type,
+          isFileDb: true,
+          parameters: item.parameters,
+        };
+      }) as DBOption[];
     const unSupportDbList = Object.keys(dbMapper)
       .filter(item => !supportDbList.some(db => db.value === item))
       .map(item => ({
         ...dbMapper[item],
-        value: dbMapper[item].label,
+        value: item as DBType,
         disabled: true,
       })) as DBOption[];
     return [...supportDbList, ...unSupportDbList];

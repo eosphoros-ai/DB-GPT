@@ -9,6 +9,25 @@ The DB-GPT data source module is designed to manage the structured and semi-stru
 
 You can add data sources through the upper right corner **Add a data source** button to add. In the pop-up dialog box, select the corresponding database type and fill in the required parameters to complete the addition.
 
+## Supported Datasource Types
+
+The current documentation covers or is being extended for the following datasources:
+
+- MySQL
+- SQLite
+- ClickHouse
+- PostgreSQL
+- DuckDB
+- Hive
+- MSSQL
+- Oracle
+- OceanBase
+- GaussDB
+- openGauss
+- Apache Doris
+- StarRocks
+- Vertica
+
 <p align="center">
   <img src={'/img/app/datasource_add.jpg'} width="800px" />
 </p>

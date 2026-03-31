@@ -17,6 +17,7 @@ DB-GPT 支持多种数据源、RAG 存储以及图谱存储集成，帮助你把
 | Spark | ✅ | `--extra datasource_spark` |
 | Oracle | ✅ | `--extra datasource_oracle` |
 | GaussDB | ✅ | `--extra datasource_postgres` |
+| openGauss | ✅ | `--extra datasource_postgres` |
 
 ## RAG 存储提供方
 

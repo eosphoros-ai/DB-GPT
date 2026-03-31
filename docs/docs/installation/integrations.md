@@ -21,6 +21,7 @@ Integration Packages
 | Spark       | ✅       | --extra datasource_spark        |
 | Oracle      | ✅       | --extra datasource_oracle       |
 | Gaussdb     | ✅       | --extra datasource_postgres     |
+| openGauss   | ✅       | --extra datasource_postgres     |
 
 
 # RAG Storage Providers

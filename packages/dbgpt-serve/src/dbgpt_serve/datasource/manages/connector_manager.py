@@ -64,6 +64,9 @@ class ConnectorManager(BaseComponent):
         from dbgpt_ext.datasource.rdbms.conn_oceanbase import (  # noqa: F401
             OceanBaseConnector,
         )
+        from dbgpt_ext.datasource.rdbms.conn_openGauss import (  # noqa: F401
+            openGaussConnector,
+        )
 
         # 添加OracleConnector导入
         from dbgpt_ext.datasource.rdbms.conn_oracle import OracleConnector  # noqa: F401
@@ -110,42 +113,37 @@ class ConnectorManager(BaseComponent):
     )
     def get_all_completed_types(self) -> List[DBType]:
         """Get all completed types."""
-        chat_classes = self._get_all_subclasses(BaseConnector)  # type: ignore
-        support_types = []
-        for cls in chat_classes:
-            if cls.db_type and cls.is_normal_type():
-                db_type = DBType.of_db_type(cls.db_type)
-                if db_type:
-                    support_types.append(db_type)
+        support_types: List[DBType] = []
+        for db_type in self._supported_types():
+            db_type_enum = DBType.of_db_type(db_type)
+            if db_type_enum:
+                support_types.append(db_type_enum)
         return support_types
 
     def get_supported_types(self) -> ResourceTypes:
         """Get supported types."""
-
-        chat_classes = self._get_all_subclasses(BaseConnector)  # type: ignore
         support_type_params = []
-        for cls in chat_classes:
-            if cls.db_type and cls.is_normal_type():
-                db_type = DBType.of_db_type(cls.db_type)
-                if not db_type:
-                    continue
-                param_cls = cls.param_class()
-                parameters = _get_parameter_descriptions(param_cls)
-                label = db_type.value()
-                description = label
-                metadata_name = f"_resource_metadata_{param_cls.__name__}"
-                if hasattr(param_cls, metadata_name):
-                    flow_metadata: ResourceMetadata = getattr(param_cls, metadata_name)
-                    label = flow_metadata.label
-                    description = flow_metadata.description
-                support_type_params.append(
-                    ResourceParameters(
-                        name=db_type.value(),
-                        label=label,
-                        description=description,
-                        parameters=parameters,
-                    )
+        for db_type_name, cls in self._supported_types().items():
+            db_type = DBType.of_db_type(db_type_name)
+            if not db_type:
+                continue
+            param_cls = cls.param_class()
+            parameters = _get_parameter_descriptions(param_cls)
+            label = db_type.value()
+            description = label
+            metadata_name = f"_resource_metadata_{param_cls.__name__}"
+            if hasattr(param_cls, metadata_name):
+                flow_metadata: ResourceMetadata = getattr(param_cls, metadata_name)
+                label = flow_metadata.label
+                description = flow_metadata.description
+            support_type_params.append(
+                ResourceParameters(
+                    name=db_type.value(),
+                    label=label,
+                    description=description,
+                    parameters=parameters,
                 )
+            )
         return ResourceTypes(types=support_type_params)
 
     def _supported_types(self) -> Dict[str, Type[BaseConnector]]:

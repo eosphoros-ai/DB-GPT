@@ -25,6 +25,7 @@ class DBType(Enum):
     MSSQL = DbInfo("mssql")
     Postgresql = DbInfo("postgresql")
     GaussDB = DbInfo("gaussdb")
+    openGauss = DbInfo("openGauss")
     Vertica = DbInfo("vertica")
     Clickhouse = DbInfo("clickhouse")
     StarRocks = DbInfo("starrocks")

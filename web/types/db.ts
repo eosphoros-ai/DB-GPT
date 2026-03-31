@@ -18,6 +18,7 @@ export type DBType =
   | 'clickhouse'
   | 'oracle'
   | 'postgresql'
+  | 'openGauss'
   | 'vertica'
   | 'db2'
   | 'access'
