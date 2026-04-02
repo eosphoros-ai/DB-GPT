@@ -26,7 +26,7 @@ build-backend = "hatchling.build"
 
 [project.optional-dependencies]
 rag = [
-    "spacy==3.8.14",
+    "spacy>=3.7",
     "markdown",
     "bs4",
     "python-pptx",
@@ -74,7 +74,7 @@ datasource_duckdb = [
 storage_milvus = ["pymilvus"]
 storage_weaviate = ["weaviate-client"]
 storage_chromadb = [
-    "onnxruntime>=1.14.1,<=1.25",
+    "onnxruntime>=1.14.1",
     "chromadb>=0.4.22"
     ]
 storage_elasticsearch = ["elasticsearch"]
