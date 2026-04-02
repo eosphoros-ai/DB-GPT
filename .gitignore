@@ -206,4 +206,4 @@ test_docs
 .trade/
 .qoder/
 .qwencode/
-.sisyphus/
+.sisyphus/*.bak
