@@ -228,7 +228,7 @@ class RDBMSConnector(BaseConnector):
 
         # SQL will raise error with schema
         _schema = (
-            None if self.db_type == DBType.SQLite.value() else self._engine.url.database
+            None if self.db_type in (DBType.SQLite.value(),DBType.DuckDb.value() ) else self._engine.url.database
         )
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
