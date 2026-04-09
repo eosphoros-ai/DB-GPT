@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 SHELL=/bin/bash
-VENV = .venv.make
+VENV ?= .venv313
 
 # Detect the operating system and set the virtualenv bin directory
 ifeq ($(OS),Windows_NT)
@@ -15,8 +15,8 @@ setup: $(VENV)/bin/activate
 $(VENV)/bin/activate: $(VENV)/.venv-timestamp
 
 $(VENV)/.venv-timestamp: uv.lock
-	# Create new virtual environment if setup.py has changed
-	uv venv --python 3.11 $(VENV)
+	# Create the project virtual environment if it does not exist yet.
+	test -x $(VENV_BIN)/python || /opt/python313/bin/python3.13 -m venv $(VENV)
 	uv pip install --prefix $(VENV) ruff
 	uv pip install --prefix $(VENV) mypy
 	uv pip install --prefix $(VENV) pytest
@@ -43,7 +43,8 @@ $(VENV)/.testenv: $(VENV)/bin/activate
 			--extra "dbgpts" \
 			--link-mode=copy; \
 	fi
-	cp .devcontainer/dbgpt.pth $(VENV)/lib/python3.11/site-packages
+	SITE_PACKAGES="$$( $(VENV_BIN)/python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])' )"; \
+		cp .devcontainer/dbgpt.pth "$$SITE_PACKAGES"
 	touch $(VENV)/.testenv
 
 

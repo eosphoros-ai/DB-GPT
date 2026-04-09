@@ -12,6 +12,7 @@ requires-python = ">= 3.10"
 dependencies = [
     "dbgpt>=0.7.0",
     "pymysql",
+    "onnxruntime>=1.14.1",
 ]
 
 [project.urls]
@@ -68,7 +69,7 @@ datasource_hive = [
 datasource_vertica = ["vertica-python"]
 datasource_duckdb = [
     "duckdb",
-    "duckdb-engine==0.9.1",
+    "duckdb-engine",
 ]
 # datasource_doris = ["pydoris>=1.0.2,<2.0.0"]
 storage_milvus = ["pymilvus"]

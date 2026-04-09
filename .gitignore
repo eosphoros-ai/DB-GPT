@@ -115,6 +115,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv*/
 env/
 venv/
 ENV/
@@ -206,6 +207,6 @@ test_docs
 .trade/
 .qoder/
 .qwencode/
-.sisyphus
+.sisyphus/
 *.bak
 
