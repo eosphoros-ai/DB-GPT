@@ -149,11 +149,32 @@ class ChromaStore(VectorStoreBase):
         return self._vector_store_config
 
     def create_collection(self, collection_name: str, **kwargs) -> Any:
-        return self._chroma_client.get_or_create_collection(
+        collection_metadata = kwargs.get("collection_metadata")
+        collection = self._chroma_client.get_or_create_collection(
             name=collection_name,
             embedding_function=None,
-            metadata=kwargs.get("collection_metadata"),
+            metadata=collection_metadata,
         )
+        if (
+            collection_metadata
+            and collection_metadata.get("hnsw:space")
+            and (
+                not collection.metadata
+                or collection.metadata.get("hnsw:space") != collection_metadata.get("hnsw:space")
+            )
+        ):
+            logger.warning(
+                f"Collection '{collection_name}' exists but has incorrect metadata "
+                f"(current: {collection.metadata}, expected: {collection_metadata}). "
+                f"Deleting and recreating with correct metadata."
+            )
+            self._chroma_client.delete_collection(collection_name)
+            collection = self._chroma_client.get_or_create_collection(
+                name=collection_name,
+                embedding_function=None,
+                metadata=collection_metadata,
+            )
+        return collection
 
     def similar_search(
         self, text, topk, filters: Optional[MetadataFilters] = None
@@ -286,7 +307,8 @@ class ChromaStore(VectorStoreBase):
         try:
             # Check if collection exists first
             collections = self._chroma_client.list_collections()
-            collection_exists = self._collection.name in collections
+            collection_names = [c.name if hasattr(c, 'name') else str(c) for c in collections]
+            collection_exists = self._collection.name in collection_names
 
             if not collection_exists:
                 logger.warning(
@@ -295,8 +317,13 @@ class ChromaStore(VectorStoreBase):
                 return True
 
             # Delete collection if it exists
-            self._chroma_client.delete_collection(self._collection.name)
+            deleted_name = self._collection.name
+            self._chroma_client.delete_collection(deleted_name)
             SharedSystemClient.clear_system_cache()
+            self._collection = self._chroma_client.get_or_create_collection(
+                name=self._collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
             return True
 
         except Exception as e:
