@@ -155,6 +155,10 @@ class ChromaStore(VectorStoreBase):
             embedding_function=None,
             metadata=collection_metadata,
         )
+        # Fix: if the existing collection was created without proper distance
+        # function metadata (e.g., hnsw:space=cosine), the default L2 distance
+        # makes score = 1 - distance always negative, causing all results to be
+        # filtered out. We must delete and recreate with correct metadata.
         if (
             collection_metadata
             and collection_metadata.get("hnsw:space")
@@ -320,6 +324,8 @@ class ChromaStore(VectorStoreBase):
             deleted_name = self._collection.name
             self._chroma_client.delete_collection(deleted_name)
             SharedSystemClient.clear_system_cache()
+            # Re-create the collection so self._collection points to a valid object
+            # Must pass collection metadata to ensure correct distance function (cosine)
             self._collection = self._chroma_client.get_or_create_collection(
                 name=self._collection_name,
                 metadata={"hnsw:space": "cosine"},
