@@ -1698,7 +1698,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
         try:
             tmp_path = os.path.join(work_dir, "_run.py")
-            with open(tmp_path, "w") as tmp:
+            with open(tmp_path, "w", encoding="utf-8") as tmp:
                 tmp.write(full_code)
 
             proc = await asyncio.create_subprocess_exec(
