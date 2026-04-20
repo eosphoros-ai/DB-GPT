@@ -32,7 +32,7 @@ class TongyiEmbeddingDeployModelParameters(EmbeddingDeployModelParameters):
     @property
     def real_provider_model_name(self) -> str:
         """Get the real provider model name."""
-        return self.backend or self.name
+        return self.name or self.backend
 
 
 class TongYiEmbeddings(BaseModel, Embeddings):
