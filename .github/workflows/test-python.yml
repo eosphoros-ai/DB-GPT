@@ -46,7 +46,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install uv
-          uv sync --all-packages --dev \
+          uv sync --python "${{ matrix.python-version }}" --all-packages --dev \
             --extra "base" \
             --extra "proxy_openai" \
             --extra "rag" \
@@ -58,7 +58,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest packages/dbgpt-core/src/dbgpt --cov=dbgpt --cov-report=xml:coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml --cov-report=html:htmlcov-${{ matrix.python-version }}-${{ matrix.os }} --junitxml=pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
+          uv run --python "${{ matrix.python-version }}" pytest packages/dbgpt-core/src/dbgpt --cov=dbgpt --cov-report=xml:coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml --cov-report=html:htmlcov-${{ matrix.python-version }}-${{ matrix.os }} --junitxml=pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
 
       - name: Generate coverage report summary
         if: matrix.os == 'ubuntu-latest'
