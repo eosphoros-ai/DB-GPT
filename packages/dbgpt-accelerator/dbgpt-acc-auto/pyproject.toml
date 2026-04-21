@@ -103,10 +103,10 @@ flash_attn = [
 ]
 
 [dependency-groups]
+dev = []
 
 [tool.uv]
 managed = true
-dev-dependencies = []
 conflicts = [
     [
         { extra = "auto" },

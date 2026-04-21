@@ -8,6 +8,7 @@ pytest-cov
 pytest-integration
 pytest-mock
 pytest-recording
+beautifulsoup4
 pytesseract==0.3.10
 aioresponses
 # for git hooks

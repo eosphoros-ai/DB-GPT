@@ -170,7 +170,6 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 managed = true
-dev-dependencies = []
 default-groups = ["dev"]
 
 conflicts = [
@@ -203,3 +202,8 @@ exclude = [
 ]
 [project.scripts]
 dbgpt = "dbgpt.cli.cli_scripts:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+]

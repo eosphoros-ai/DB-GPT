@@ -41,7 +41,9 @@ members = [
 
 [tool.uv]
 managed = true
-dev-dependencies = [
+
+[dependency-groups]
+dev = [
     "pip",
     "tomli>=2.0.2",
     "tomli-w>=1.1.0",

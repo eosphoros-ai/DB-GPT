@@ -53,6 +53,7 @@ jobs:
             --extra "storage_chromadb" \
             --extra "dbgpts" \
             --link-mode=copy
+          uv pip install -e "./packages/dbgpt-app[base,dbgpts]"
           uv pip install -r requirements/dev-requirements.txt
 
       - name: Run tests

@@ -12,7 +12,7 @@ requires-python = ">= 3.10"
 dependencies = [
     "dbgpt>=0.7.0",
     "pymysql",
-    "onnxruntime>=1.14.1",
+    "onnxruntime>=1.21.0",
 ]
 
 [project.urls]
@@ -75,7 +75,7 @@ datasource_duckdb = [
 storage_milvus = ["pymilvus"]
 storage_weaviate = ["weaviate-client"]
 storage_chromadb = [
-    "onnxruntime>=1.14.1",
+    "onnxruntime>=1.21.0",
     "chromadb>=0.4.22"
     ]
 storage_elasticsearch = ["elasticsearch"]
@@ -90,7 +90,9 @@ file_s3 = [
 
 [tool.uv]
 managed = true
-dev-dependencies = [
+
+[dependency-groups]
+dev = [
     "pytest>=8.3.4",
 ]
 
