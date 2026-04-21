@@ -1,5 +1,5 @@
 # Testing and dev dependencies
-pytest
+pytest<9
 pytest-cov
 asynctest
 pytest-asyncio
