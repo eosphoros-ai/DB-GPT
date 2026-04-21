@@ -19,6 +19,11 @@ from dbgpt.core.awel.flow.flow_factory import (
     FlowPanel,
     FlowVariables,
 )
+from dbgpt.core.interface.variables import (
+    StorageVariables,
+    StorageVariablesProvider,
+    VariablesIdentifier,
+)
 
 
 class MyVariablesOperator(MapOperator[str, str]):
@@ -218,10 +223,25 @@ def json_flow():
 
 
 @pytest.fixture
-def variables_provider():
-    from dbgpt_serve.flow.api.variables_provider import BuiltinFlowVariablesProvider
-
-    provider = BuiltinFlowVariablesProvider()
+def variables_provider(request):
+    provider = StorageVariablesProvider()
+    param = getattr(request, "param", {})
+    vars = param.get("vars", {})
+    for param_var in vars.values():
+        key = param_var.get("key")
+        value = param_var.get("value")
+        value_type = param_var.get("value_type")
+        category = param_var.get("category", "common")
+        identifier = VariablesIdentifier.from_str_identifier(key)
+        provider.save(
+            StorageVariables.from_identifier(
+                identifier,
+                value,
+                value_type,
+                label="",
+                category=category,
+            )
+        )
     yield provider
 
 
