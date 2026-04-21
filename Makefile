@@ -16,7 +16,7 @@ $(VENV)/bin/activate: $(VENV)/.venv-timestamp
 
 $(VENV)/.venv-timestamp: uv.lock
 	# Create the project virtual environment if it does not exist yet.
-	test -x $(VENV_BIN)/python || /opt/python313/bin/python3.13 -m venv $(VENV)
+	test -x $(VENV_BIN)/python || $$(command -v python3.13 || command -v python3) -m venv $(VENV)
 	uv pip install --prefix $(VENV) ruff
 	uv pip install --prefix $(VENV) mypy
 	uv pip install --prefix $(VENV) pytest
