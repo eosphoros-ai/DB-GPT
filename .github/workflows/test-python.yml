@@ -32,25 +32,33 @@ jobs:
       matrix:
         # TODO: Add windows-latest support
         os: [ubuntu-latest, macos-latest]
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[openai]"
-          pip install -r requirements/dev-requirements.txt
+          python -m pip install uv
+          uv sync --python "${{ matrix.python-version }}" --all-packages --dev \
+            --extra "base" \
+            --extra "proxy_openai" \
+            --extra "rag" \
+            --extra "storage_chromadb" \
+            --extra "dbgpts" \
+            --link-mode=copy
+          uv pip install -e "./packages/dbgpt-app[base,dbgpts]"
+          uv pip install -r requirements/dev-requirements.txt
 
       - name: Run tests
         run: |
-          pytest dbgpt --cov=dbgpt --cov-report=xml:coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml --cov-report=html:htmlcov-${{ matrix.python-version }}-${{ matrix.os }} --junitxml=pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
+          uv run --python "${{ matrix.python-version }}" pytest packages/dbgpt-core/src/dbgpt --cov=dbgpt --cov-report=xml:coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml --cov-report=html:htmlcov-${{ matrix.python-version }}-${{ matrix.os }} --junitxml=pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
 
       - name: Generate coverage report summary
         if: matrix.os == 'ubuntu-latest'
@@ -88,7 +96,7 @@ jobs:
 #          curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -X POST --data "{ \"body\": \"$PR_COMMENT\" }" "$PR_COMMENTS_URL"
 #
       - name: Upload test and coverage results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-and-coverage-results-${{ matrix.python-version }}-${{ matrix.os }}

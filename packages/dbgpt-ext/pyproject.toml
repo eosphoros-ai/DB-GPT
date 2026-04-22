@@ -12,6 +12,8 @@ requires-python = ">= 3.10"
 dependencies = [
     "dbgpt>=0.7.0",
     "pymysql",
+    "onnxruntime>=1.23.1,<1.24; python_version < '3.11'",
+    "onnxruntime>=1.24.0; python_version >= '3.11'",
 ]
 
 [project.urls]
@@ -26,7 +28,7 @@ build-backend = "hatchling.build"
 
 [project.optional-dependencies]
 rag = [
-    "spacy==3.7",
+    "spacy>=3.7",
     "markdown",
     "bs4",
     "python-pptx",
@@ -68,13 +70,14 @@ datasource_hive = [
 datasource_vertica = ["vertica-python"]
 datasource_duckdb = [
     "duckdb",
-    "duckdb-engine==0.9.1",
+    "duckdb-engine",
 ]
 # datasource_doris = ["pydoris>=1.0.2,<2.0.0"]
 storage_milvus = ["pymilvus"]
 storage_weaviate = ["weaviate-client"]
 storage_chromadb = [
-    "onnxruntime>=1.14.1,<=1.18.1",
+    "onnxruntime>=1.23.1,<1.24; python_version < '3.11'",
+    "onnxruntime>=1.24.0; python_version >= '3.11'",
     "chromadb>=0.4.22"
     ]
 storage_elasticsearch = ["elasticsearch"]
@@ -89,7 +92,9 @@ file_s3 = [
 
 [tool.uv]
 managed = true
-dev-dependencies = [
+
+[dependency-groups]
+dev = [
     "pytest>=8.3.4",
 ]
 

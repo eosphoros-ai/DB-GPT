@@ -1,5 +1,5 @@
 # Testing and dev dependencies
-pytest
+pytest<9
 pytest-cov
 asynctest
 pytest-asyncio
@@ -8,6 +8,7 @@ pytest-cov
 pytest-integration
 pytest-mock
 pytest-recording
+beautifulsoup4
 pytesseract==0.3.10
 aioresponses
 # for git hooks

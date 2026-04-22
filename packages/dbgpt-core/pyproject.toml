@@ -12,7 +12,7 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">= 3.10"
 dependencies = [
-    "aiohttp==3.8.4",
+    "aiohttp",
     "chardet==5.1.0",
     "importlib-resources==5.12.0",
     "cachetools",
@@ -47,9 +47,9 @@ cli = [
 ]
 agent = [
     "termcolor",
-    "pandas==2.2.3",
+    "pandas>=2.2.3",
     # numpy should less than 2.0.0
-    "numpy>=1.21.0,<2.0.0",
+    "numpy>=1.21.0",
     "auto-gpt-plugin-template>=0.0.3",
     "mcp>=1.4.1",
 ]
@@ -58,7 +58,7 @@ simple_framework = [
     "uvicorn",
     "shortuuid",
     # 2.0.29 not support duckdb now
-    "SQLAlchemy>=2.0.25, <2.0.29",
+    "SQLAlchemy>=2.0.36,<3.0",
     # for cache
     "msgpack",
     # for AWEL operator serialization
@@ -170,7 +170,6 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 managed = true
-dev-dependencies = []
 default-groups = ["dev"]
 
 conflicts = [
@@ -203,3 +202,8 @@ exclude = [
 ]
 [project.scripts]
 dbgpt = "dbgpt.cli.cli_scripts:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+]

@@ -40,7 +40,6 @@ dev = [
 
 [tool.uv]
 managed = true
-dev-dependencies = []
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt_sandbox"]
