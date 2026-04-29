@@ -1,8 +1,9 @@
 """DBSummaryClient class."""
 
 import logging
+import threading
 import traceback
-from typing import Tuple
+from typing import Dict, Tuple
 
 from dbgpt.component import SystemApp
 from dbgpt.core import Embeddings
@@ -16,6 +17,26 @@ from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.rag.storage_manager import StorageManager
 
 logger = logging.getLogger(__name__)
+
+
+# Per-database mutexes to prevent concurrent indexing of the same db_name from
+# trampling each other (e.g. startup auto-summary racing with a manual /refresh
+# call). When two indexing flows run for the same db, one path's
+# delete_db_profile() can drop a chroma collection while the other path still
+# has 1000s of writes queued against its UUID, producing
+# ``Collection <uuid> does not exist`` errors for every chunk.
+_DB_INDEX_LOCKS: Dict[str, threading.Lock] = {}
+_DB_INDEX_LOCKS_GUARD = threading.Lock()
+
+
+def _get_db_index_lock(dbname: str) -> threading.Lock:
+    """Return (creating if needed) the per-db indexing mutex."""
+    with _DB_INDEX_LOCKS_GUARD:
+        lock = _DB_INDEX_LOCKS.get(dbname)
+        if lock is None:
+            lock = threading.Lock()
+            _DB_INDEX_LOCKS[dbname] = lock
+        return lock
 
 
 class DBSummaryClient:
@@ -46,7 +67,19 @@ class DBSummaryClient:
         return embedding_factory.create()
 
     def db_summary_embedding(self, dbname, db_type):
-        """Put db profile and table profile summary into vector store."""
+        """Put db profile and table profile summary into vector store.
+
+        Serializes per-db so that concurrent triggers (startup auto-summary,
+        ``/refresh`` API, retries on failure) cannot race and delete each
+        other's in-flight chroma collections.
+        """
+        lock = _get_db_index_lock(dbname)
+        if not lock.acquire(blocking=False):
+            logger.info(
+                f"{dbname} summary already in progress; "
+                "skipping concurrent trigger to avoid race with in-flight writes."
+            )
+            return
         try:
             db_summary_client = self.create_summary_client(dbname, db_type)
 
@@ -59,6 +92,8 @@ class DBSummaryClient:
                 f"{dbname}, {db_type} summary error!{str(e)}, detail: {message}"
             )
             raise
+        finally:
+            lock.release()
 
     def get_db_summary(self, dbname, query, topk):
         """Get user query related tables info."""
@@ -130,17 +165,25 @@ class DBSummaryClient:
         logger.info("initialize db summary profile success...")
 
     def delete_db_profile(self, dbname):
-        """Delete db profile."""
-        table_vector_store_name = dbname + "_profile"
-        field_vector_store_name = dbname + "_profile_field"
+        """Delete db profile.
 
-        table_vector_connector, field_vector_connector = (
-            self._get_vector_connector_by_db(dbname)
-        )
+        Held under the per-db indexing lock so a delete cannot race with a
+        concurrent embedding flow (which would otherwise see chroma drop the
+        collection mid-write and fail every subsequent chunk with
+        ``Collection <uuid> does not exist``).
+        """
+        lock = _get_db_index_lock(dbname)
+        with lock:
+            table_vector_store_name = dbname + "_profile"
+            field_vector_store_name = dbname + "_profile_field"
 
-        table_vector_connector.delete_vector_name(table_vector_store_name)
-        field_vector_connector.delete_vector_name(field_vector_store_name)
-        logger.info(f"delete db profile {dbname} success")
+            table_vector_connector, field_vector_connector = (
+                self._get_vector_connector_by_db(dbname)
+            )
+
+            table_vector_connector.delete_vector_name(table_vector_store_name)
+            field_vector_connector.delete_vector_name(field_vector_store_name)
+            logger.info(f"delete db profile {dbname} success")
 
     @staticmethod
     def create_summary_client(dbname: str, db_type: str):
