@@ -39,13 +39,14 @@ _DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 
 @auto_register_resource(
-    label=_("LiteLLM Proxy LLM"),
+    label=_("LiteLLM AI Gateway"),
     category=ResourceCategory.LLM_CLIENT,
     tags={"order": TAGS_ORDER_HIGH},
     description=_(
-        "LiteLLM proxy LLM. Call 100+ LLM providers (OpenAI, Anthropic, Vertex AI, "
-        "Bedrock, Azure, Cohere, Mistral, Groq, Ollama, ...) through a unified "
-        "interface. Specify the model with a provider prefix, for example "
+        "LiteLLM as an embedded AI gateway — call 100+ LLM providers (OpenAI, "
+        "Anthropic, Vertex AI, Bedrock, Azure, Cohere, Mistral, Groq, Ollama, ...) "
+        "through a single client without running a separate proxy server. Specify "
+        "the model with a provider prefix, for example "
         "'anthropic/claude-3-5-sonnet-20241022', 'vertex_ai/gemini-1.5-pro', "
         "'bedrock/anthropic.claude-3-haiku-20240307-v1:0', or 'azure/gpt-4o'."
     ),
@@ -54,7 +55,7 @@ _DEFAULT_MODEL = "openai/gpt-4o-mini"
 )
 @dataclass
 class LiteLLMDeployModelParameters(OpenAICompatibleDeployModelParameters):
-    """Deploy model parameters for LiteLLM."""
+    """Deploy model parameters for the embedded LiteLLM gateway."""
 
     provider: str = "proxy/litellm"
 
@@ -93,14 +94,16 @@ async def litellm_generate_stream(
 
 
 class LiteLLMClient(ProxyLLMClient):
-    """LiteLLM Proxy LLM Client.
+    """Embedded LiteLLM AI gateway client.
 
-    Routes every request through ``litellm.acompletion`` so a single client can
-    talk to OpenAI, Anthropic, Vertex AI, Bedrock, Azure, Cohere, Mistral, Groq,
-    Ollama, and 90+ other providers. The model is selected via the standard
-    LiteLLM provider-prefixed name (``anthropic/...``, ``vertex_ai/...``, etc.)
-    and credentials are resolved from provider-specific environment variables
-    (``ANTHROPIC_API_KEY``, ``OPENAI_API_KEY``, ``AWS_ACCESS_KEY_ID``, ...).
+    Routes every request through ``litellm.acompletion`` (the LiteLLM Python
+    SDK), so a single DB-GPT model entry can talk to OpenAI, Anthropic, Vertex
+    AI, Bedrock, Azure, Cohere, Mistral, Groq, Ollama, and 90+ other providers
+    *without running a separate LiteLLM proxy server*. The model is selected
+    via the standard LiteLLM provider-prefixed name (``anthropic/...``,
+    ``vertex_ai/...``, etc.) and credentials are resolved from provider-specific
+    environment variables (``ANTHROPIC_API_KEY``, ``OPENAI_API_KEY``,
+    ``AWS_ACCESS_KEY_ID``, ...).
 
     ``drop_params=True`` is enabled by default so kwargs that some providers
     reject (``frequency_penalty`` / ``presence_penalty`` on Anthropic, Gemini,

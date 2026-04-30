@@ -22,9 +22,11 @@ persist_path = "pilot/data"
 
 # Model Configurations
 #
-# LiteLLM routes to 100+ providers via a unified interface. Specify the model
-# with a provider prefix (e.g. "anthropic/...", "vertex_ai/...", "bedrock/...",
-# "azure/...", "groq/...") and set the matching provider environment variable
+# LiteLLM is used here as an embedded AI gateway (the Python SDK), NOT as a
+# separate proxy server — DB-GPT imports litellm directly and routes every
+# completion through litellm.acompletion(). Specify the model with a provider
+# prefix (e.g. "anthropic/...", "vertex_ai/...", "bedrock/...", "azure/...",
+# "groq/...") and set the matching provider environment variable
 # (ANTHROPIC_API_KEY, OPENAI_API_KEY, AWS_ACCESS_KEY_ID, AZURE_API_KEY, ...).
 # See https://docs.litellm.ai/docs/providers for the full list.
 [models]
