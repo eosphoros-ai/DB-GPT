@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
     from dbgpt.model.proxy.llms.gitee import GiteeLLMClient
     from dbgpt.model.proxy.llms.infiniai import InfiniAILLMClient
+    from dbgpt.model.proxy.llms.litellm import LiteLLMClient
     from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient
     from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
     from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
@@ -40,6 +41,7 @@ def __lazy_import(name):
         "DeepseekLLMClient": "dbgpt.model.proxy.llms.deepseek",
         "GiteeLLMClient": "dbgpt.model.proxy.llms.gitee",
         "InfiniAILLMClient": "dbgpt.model.proxy.llms.infiniai",
+        "LiteLLMClient": "dbgpt.model.proxy.llms.litellm",
         "MiniMaxLLMClient": "dbgpt.model.proxy.llms.minimax",
     }
 
@@ -71,5 +73,6 @@ __all__ = [
     "DeepseekLLMClient",
     "GiteeLLMClient",
     "InfiniAILLMClient",
+    "LiteLLMClient",
     "MiniMaxLLMClient",
 ]
