@@ -108,7 +108,8 @@ class LiteLLMClient(ProxyLLMClient):
     ``drop_params=True`` is enabled by default so kwargs that some providers
     reject (``frequency_penalty`` / ``presence_penalty`` on Anthropic, Gemini,
     Bedrock; ``response_format`` on Bedrock; etc.) are silently dropped instead
-    of raising ``UnsupportedParamsError``. Override via ``litellm_kwargs={"drop_params": False}``.
+    of raising ``UnsupportedParamsError``. Override via
+    ``litellm_kwargs={"drop_params": False}``.
     """
 
     def __init__(
@@ -267,33 +268,40 @@ class LiteLLMClient(ProxyLLMClient):
             response = await litellm.acompletion(messages=messages, **payload)
             text = ""
             reasoning_content = ""
-            usage = None
+            usage: Optional[Dict[str, Any]] = None
             async for chunk in response:
-                if not getattr(chunk, "choices", None):
-                    # Final usage-only chunk in OpenAI streaming format.
-                    if hasattr(chunk, "usage") and chunk.usage is not None:
-                        usage = chunk.usage.model_dump()
+                # Some providers (Anthropic, Bedrock via LiteLLM) attach usage on
+                # the final content chunk; OpenAI / Azure with
+                # stream_options=include_usage emit a trailing usage-only chunk
+                # with empty choices. Capture either form.
+                chunk_usage = getattr(chunk, "usage", None)
+                if chunk_usage is not None:
+                    usage = chunk_usage.model_dump()
+                choices = getattr(chunk, "choices", None) or []
+                if not choices:
                     continue
-                if chunk.choices[0] is None or chunk.choices[0].delta is None:
+                choice = choices[0]
+                if choice is None or choice.delta is None:
                     continue
-                delta_obj = chunk.choices[0].delta
-                if hasattr(delta_obj, "reasoning_content"):
-                    reasoning_content += delta_obj.reasoning_content or ""
-                if delta_obj.content is not None:
-                    text += delta_obj.content
-                if hasattr(chunk, "usage") and chunk.usage is not None:
-                    usage = chunk.usage.model_dump()
-                if text or reasoning_content:
+                delta_obj = choice.delta
+                new_reasoning = ""
+                if (
+                    hasattr(delta_obj, "reasoning_content")
+                    and delta_obj.reasoning_content
+                ):
+                    new_reasoning = delta_obj.reasoning_content
+                    reasoning_content += new_reasoning
+                new_content = delta_obj.content if delta_obj.content is not None else ""
+                if new_content:
+                    text += new_content
+                # Only yield when this chunk carried new content/reasoning so we
+                # don't emit duplicate frames on finish-only chunks.
+                if new_content or new_reasoning:
                     yield ModelOutput.build(text, reasoning_content, usage=usage)
-            if usage is not None and (text or reasoning_content):
-                # Emit a final frame so callers see the usage even if it arrived
-                # in a usage-only chunk after content was complete.
-                yield ModelOutput.build(text, reasoning_content, usage=usage)
         except Exception as e:
             yield ModelOutput(
                 text=(
-                    "**LLMServer Generate Stream Error, "
-                    f"Please CheckErrorInfo.**: {e}"
+                    f"**LLMServer Generate Stream Error, Please CheckErrorInfo.**: {e}"
                 ),
                 error_code=1,
             )
