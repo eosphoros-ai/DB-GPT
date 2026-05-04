@@ -794,7 +794,8 @@ class MilvusStore(VectorStoreBase):
             # content + metadata + pk for chunk construction below; this
             # mirrors the pattern in similar_search_with_scores' _search().
             output_fields = [
-                f for f in self.fields
+                f
+                for f in self.fields
                 if f != self.sparse_vector and f != self.vector_field
             ]
             results = self._milvus_client.search(
