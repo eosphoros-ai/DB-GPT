@@ -207,6 +207,10 @@ class Service(
                 detail=f"there is no datasource name:{db_name} exists",
             )
         res = self._dao.update({"id": datasources.id}, persisted_state)
+        # Connection params (host/user/pwd/ext_config/...) may have just
+        # changed; drop any cached connector so the next get_connector
+        # reflects the new config.
+        self.datasource_manager.invalidate_connector(db_name)
         return self._to_query_response(res)
 
     def get(self, datasource_id: str) -> Optional[DatasourceQueryResponse]:
@@ -236,6 +240,10 @@ class Service(
         if db_config:
             self._db_summary_client.delete_db_profile(db_config.db_name)
             self._dao.delete({"id": datasource_id})
+            # Datasource is gone; drop the cached connector so we don't
+            # hand callers a connector pointing at a config row that no
+            # longer exists.
+            self.datasource_manager.invalidate_connector(db_config.db_name)
         return db_config
 
     def get_list(self, db_type: Optional[str] = None) -> List[DatasourceQueryResponse]:
@@ -302,6 +310,9 @@ class Service(
             raise HTTPException(status_code=404, detail="datasource not found")
 
         self._db_summary_client.delete_db_profile(db_config.db_name)
+        # The cached connector's reflected MetaData may be stale relative
+        # to whatever caused the refresh; force a rebuild on next access.
+        self.datasource_manager.invalidate_connector(db_config.db_name)
 
         # async embedding
         executor = self._system_app.get_component(
