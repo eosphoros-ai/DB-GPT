@@ -18,6 +18,13 @@ available to answer this question." Feel free to fudge information.
 Use the following tables generate sql if have any table info:
 {table_info}
 
+NOTE: the table list above contains only the TOP-K most relevant tables \
+retrieved from a vector store; it is NOT the complete list of tables in \
+the database. If the user asks for a total count of tables, a list of all \
+tables, a schema overview, or any other metadata that requires knowing the \
+whole database, generate a SQL query against INFORMATION_SCHEMA (or the \
+dialect-specific system catalog) instead of answering from the list above.
+
 user question:
 {input}
 think step by step.
@@ -27,8 +34,13 @@ _DEFAULT_TEMPLATE_ZH = """
 根据要求和问题，提供专业的答案。如果无法从提供的内容中获取答案，请说：\
 “知识库中提供的信息不足以回答此问题。” 禁止随意捏造信息。
 
-使用以下表结构信息: 
+使用以下表结构信息:
 {table_info}
+
+注意：以上表清单只是从向量库检索到的 TOP-K 最相关表，并非数据库中所有表的\
+完整清单。当用户询问表的总数、所有表的列表、schema 结构总览，或其他需要\
+了解整个数据库元信息的问题时，请改用对 INFORMATION_SCHEMA（或方言对应的\
+系统目录）的 SQL 查询，而不是仅根据以上显示的表清单作答。
 
 问题:
 {input}
