@@ -130,10 +130,12 @@ class IndexStoreBase(ABC):
             return self.load_document(chunk_group)
         except Exception as group_err:
             if len(chunk_group) <= 1:
+                first_id = (
+                    getattr(chunk_group[0], "chunk_id", "?") if chunk_group else "?"
+                )
                 logger.warning(
                     "Skipping chunk that failed to load: "
-                    f"chunk_id={getattr(chunk_group[0], 'chunk_id', '?') if chunk_group else '?'} "
-                    f"error={group_err}"
+                    f"chunk_id={first_id} error={group_err}"
                 )
                 return []
             logger.warning(
@@ -160,10 +162,12 @@ class IndexStoreBase(ABC):
             return await self.aload_document(chunk_group, file_id)
         except Exception as group_err:
             if len(chunk_group) <= 1:
+                first_id = (
+                    getattr(chunk_group[0], "chunk_id", "?") if chunk_group else "?"
+                )
                 logger.warning(
                     "Skipping chunk that failed to load: "
-                    f"chunk_id={getattr(chunk_group[0], 'chunk_id', '?') if chunk_group else '?'} "
-                    f"error={group_err}"
+                    f"chunk_id={first_id} error={group_err}"
                 )
                 return []
             logger.warning(
