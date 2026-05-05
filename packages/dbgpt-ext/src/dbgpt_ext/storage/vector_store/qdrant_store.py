@@ -6,7 +6,10 @@ import logging
 import os
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from qdrant_client.models import Distance
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -224,7 +227,7 @@ class QdrantStore(VectorStoreBase):
         )
 
     @staticmethod
-    def _resolve_distance(name: str) -> "Distance":  # type: ignore[name-defined]
+    def _resolve_distance(name: str) -> "Distance":
         from qdrant_client.models import Distance
 
         mapping = {
