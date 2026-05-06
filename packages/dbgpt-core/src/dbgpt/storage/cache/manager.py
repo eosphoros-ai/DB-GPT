@@ -172,6 +172,17 @@ def initialize_cache(
                 f"message: {str(e)}"
             )
             cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
+    elif storage_type == "valkey":
+        try:
+            from dbgpt_ext.storage.cache.valkey_cache import ValkeyCacheStorage
+
+            cache_storage = ValkeyCacheStorage()
+        except ImportError as e:
+            logger.warning(
+                f"Can't import ValkeyCacheStorage, use MemoryCacheStorage, "
+                f"import error message: {str(e)}"
+            )
+            cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
     else:
         cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
     system_app.register(
