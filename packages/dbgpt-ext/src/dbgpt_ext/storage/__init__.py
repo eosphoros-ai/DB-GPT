@@ -66,6 +66,15 @@ def _import_qdrant() -> Tuple[Type, Type]:
     return QdrantStore, QdrantVectorConfig
 
 
+def _import_valkey() -> Tuple[Type, Type]:
+    from dbgpt_ext.storage.vector_store.valkey_store import (
+        ValkeyStore,
+        ValkeyVectorConfig,
+    )
+
+    return ValkeyStore, ValkeyVectorConfig
+
+
 def _import_builtin_knowledge_graph() -> Tuple[Type, Type]:
     from dbgpt_ext.storage.knowledge_graph.knowledge_graph import (
         BuiltinKnowledgeGraph,
@@ -112,6 +121,8 @@ def _select_rag_storage(name: str) -> Tuple[Type, Type]:
         return _import_elastic()
     elif name == "Qdrant":
         return _import_qdrant()
+    elif name == "Valkey":
+        return _import_valkey()
     elif name == "KnowledgeGraph":
         return _import_builtin_knowledge_graph()
     elif name == "CommunitySummaryKnowledgeGraph":
@@ -161,6 +172,7 @@ __vector_store__ = [
     "PGVector",
     "ElasticSearch",
     "Qdrant",
+    "Valkey",
 ]
 
 __knowledge_graph__ = ["KnowledgeGraph", "CommunitySummaryKnowledgeGraph", "OpenSPG"]

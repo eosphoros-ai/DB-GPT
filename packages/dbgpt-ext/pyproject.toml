@@ -80,6 +80,7 @@ storage_chromadb = [
 storage_elasticsearch = ["elasticsearch"]
 storage_qdrant = ["qdrant-client>=1.17.1; python_version < '3.13'"]
 storage_obvector = ["pyobvector"]
+storage_valkey = ["valkey-glide>=2.3.0"]
 
 file_oss = [
     "oss2" # Aliyun OSS
