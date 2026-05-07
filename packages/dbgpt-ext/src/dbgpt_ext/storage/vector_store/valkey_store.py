@@ -14,9 +14,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-import uuid
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -42,6 +41,7 @@ _VALKEY_VECTOR_FIELD = "vector"
 _VALKEY_CONTENT_FIELD = "content"
 _VALKEY_METADATA_FIELD = "metadata"
 _VALKEY_CHUNK_ID_FIELD = "chunk_id"
+_VALKEY_METADATA_PREFIX = "meta_"
 
 
 @register_resource(
@@ -181,6 +181,17 @@ class ValkeyVectorConfig(VectorStoreConfig):
         default=10,
         metadata={"help": _("HNSW: runtime search quality factor.")},
     )
+    metadata_schema: Optional[Dict[str, str]] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Metadata fields to index for filtering. Dict mapping field name "
+                "to type: 'tag' (string) or 'numeric'. "
+                "E.g. {'source': 'tag', 'page': 'numeric'}. "
+                "Must be defined at store creation time."
+            )
+        },
+    )
 
     def create_store(self, **kwargs) -> "ValkeyStore":
         """Create ValkeyStore."""
@@ -253,6 +264,17 @@ class ValkeyStore(VectorStoreBase):
         import asyncio
 
         self._loop = asyncio.new_event_loop()
+
+    def close(self):
+        """Close the client connection and event loop."""
+        if self._client:
+            try:
+                self._loop.run_until_complete(self._client.close())
+            except Exception:
+                pass
+            self._client = None
+        if self._loop and not self._loop.is_closed():
+            self._loop.close()
 
     @property
     def client(self) -> Any:
@@ -336,6 +358,7 @@ class ValkeyStore(VectorStoreBase):
         """Build the FT.CREATE schema fields."""
         from glide import (
             DistanceMetricType,
+            NumericField,
             TagField,
             TextField,
             VectorAlgorithm,
@@ -360,6 +383,16 @@ class ValkeyStore(VectorStoreBase):
             TextField(_VALKEY_METADATA_FIELD),
             TagField(_VALKEY_CHUNK_ID_FIELD),
         ]
+
+        # Add user-defined metadata fields to schema
+        if config.metadata_schema:
+            for field_name, field_type in config.metadata_schema.items():
+                prefixed = _VALKEY_METADATA_PREFIX + field_name
+                if field_type.lower() == "numeric":
+                    fields.append(NumericField(prefixed))
+                else:
+                    # Default to TAG for string fields
+                    fields.append(TagField(prefixed))
 
         # Vector field with algorithm-specific parameters
         if config.index_type.upper() == "FLAT":
@@ -420,8 +453,7 @@ class ValkeyStore(VectorStoreBase):
         vectors = self._embedding_fn.embed_documents(texts)
 
         for chunk, vector in zip(chunks, vectors):
-            chunk_id = chunk.chunk_id or str(uuid.uuid4())
-            key = self._key_prefix + chunk_id
+            key = self._key_prefix + chunk.chunk_id
 
             # Pack vector as binary float32
             vector_bytes = struct.pack(f"{len(vector)}f", *vector)
@@ -432,9 +464,17 @@ class ValkeyStore(VectorStoreBase):
                 _VALKEY_METADATA_FIELD: json.dumps(
                     chunk.metadata if chunk.metadata else {}
                 ),
-                _VALKEY_CHUNK_ID_FIELD: chunk_id,
+                _VALKEY_CHUNK_ID_FIELD: chunk.chunk_id,
                 _VALKEY_VECTOR_FIELD: vector_bytes,
             }
+
+            # Store indexed metadata fields as top-level hash fields
+            metadata_schema = self._vector_store_config.metadata_schema
+            if metadata_schema and chunk.metadata:
+                for field_name in metadata_schema:
+                    if field_name in chunk.metadata:
+                        prefixed = _VALKEY_METADATA_PREFIX + field_name
+                        field_map[prefixed] = str(chunk.metadata[field_name])
 
             self._run_async(self.client.hset(key, field_map))
 
@@ -527,7 +567,7 @@ class ValkeyStore(VectorStoreBase):
         The result format from valkey-glide ft.search is:
         [total_count, {key1: {field: value, ...}, key2: {field: value, ...}}]
         """
-        chunks = []
+        chunks: List[Chunk] = []
 
         if not result:
             return chunks
@@ -596,11 +636,18 @@ class ValkeyStore(VectorStoreBase):
             score_raw = fields.get("score", 0.0)
             if isinstance(score_raw, bytes):
                 score_raw = score_raw.decode()
-            # Convert distance to similarity score
-            # For COSINE: distance is 0 (identical) to 2 (opposite)
-            # We convert to similarity: 1 - distance
+            # Convert distance to similarity score based on metric
             distance = float(score_raw)
-            score = 1.0 - distance
+            metric = self._vector_store_config.distance_metric.upper()
+            if metric == "COSINE":
+                # COSINE distance range: 0 (identical) to 2 (opposite)
+                score = 1.0 - distance
+            elif metric == "IP":
+                # Inner Product: returned as negative inner product
+                score = 1.0 + distance
+            else:
+                # L2 (Euclidean): distance >= 0, convert via 1/(1+d)
+                score = 1.0 / (1.0 + distance)
 
             return Chunk(
                 content=content,
@@ -612,16 +659,6 @@ class ValkeyStore(VectorStoreBase):
             logger.warning(f"Failed to parse search result document: {e}")
             return None
 
-    def _fields_to_chunk(self, fields) -> Optional[Chunk]:
-        """Convert a field list or dict to a Chunk."""
-        if isinstance(fields, list):
-            field_dict = {}
-            for j in range(0, len(fields), 2):
-                key = fields[j] if isinstance(fields[j], str) else fields[j].decode()
-                field_dict[key] = fields[j + 1]
-            return self._doc_to_chunk(field_dict)
-        return self._doc_to_chunk(fields)
-
     def _build_filter_expression(self, filters: Optional[MetadataFilters]) -> str:
         """Build a Valkey search filter expression.
 
@@ -632,6 +669,14 @@ class ValkeyStore(VectorStoreBase):
             Filter expression string for FT.SEARCH query.
         """
         if not filters or not filters.filters:
+            return "*"
+
+        if not self._vector_store_config.metadata_schema:
+            logger.warning(
+                "Metadata filters provided but no metadata_schema configured. "
+                "Filters will not match any documents. Configure metadata_schema "
+                "in ValkeyVectorConfig to enable filtering."
+            )
             return "*"
 
         expressions = []
@@ -651,7 +696,7 @@ class ValkeyStore(VectorStoreBase):
 
     def _single_filter_to_expr(self, f) -> Optional[str]:
         """Convert a single MetadataFilter to a Valkey search expression."""
-        key = f.key
+        key = _VALKEY_METADATA_PREFIX + f.key
         op = f.operator
         val = f.value
 
@@ -721,7 +766,7 @@ class ValkeyStore(VectorStoreBase):
 
         logger.info(f"Deleting Valkey vector index: {self._index_name}")
         try:
-            # Drop the index (DD flag deletes the indexed hashes too)
+            # Drop the index (does not delete the underlying hash keys)
             self._run_async(ft.dropindex(self.client, self._index_name))
         except Exception as e:
             logger.warning(f"Error dropping index: {e}")

@@ -1,15 +1,15 @@
 """Unit tests for ValkeyStore.
 
-These tests use mocked valkey-glide client and do not require a running Valkey server.
+These tests cover pure logic that does not require a running Valkey server
+or heavy mocking. Integration tests cover actual Valkey operations.
 """
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dbgpt.core import Chunk
 from dbgpt.storage.vector_store.filters import (
     FilterCondition,
     FilterOperator,
@@ -21,6 +21,10 @@ from dbgpt_ext.storage.vector_store.valkey_store import (
     ValkeyVectorConfig,
     _escape_tag_value,
 )
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -50,22 +54,20 @@ def valkey_config():
         hnsw_m=16,
         hnsw_ef_construction=200,
         hnsw_ef_runtime=10,
+        metadata_schema={
+            "source": "tag",
+            "page": "numeric",
+            "score": "numeric",
+            "category": "tag",
+            "status": "tag",
+        },
     )
 
 
 @pytest.fixture
-def mock_client():
-    """Create a mock Valkey client."""
-    client = AsyncMock()
-    client.hset = AsyncMock(return_value=None)
-    client.delete = AsyncMock(return_value=1)
-    client.custom_command = AsyncMock(return_value=[b"0", []])
-    return client
-
-
-@pytest.fixture
-def valkey_store(valkey_config, mock_embedding_fn, mock_client):
-    """Create a ValkeyStore with mocked client."""
+def valkey_store(valkey_config, mock_embedding_fn):
+    """Create a ValkeyStore with mocked client for pure logic tests."""
+    mock_client = MagicMock()
     with (
         patch.object(ValkeyStore, "_create_client", return_value=mock_client),
         patch.object(ValkeyStore, "_index_exists", return_value=True),
@@ -77,6 +79,11 @@ def valkey_store(valkey_config, mock_embedding_fn, mock_client):
         )
         store._client = mock_client
         return store
+
+
+# ---------------------------------------------------------------------------
+# ValkeyVectorConfig tests (pure dataclass logic)
+# ---------------------------------------------------------------------------
 
 
 class TestValkeyVectorConfig:
@@ -92,6 +99,7 @@ class TestValkeyVectorConfig:
         assert config.hnsw_m == 16
         assert config.hnsw_ef_construction == 200
         assert config.hnsw_ef_runtime == 10
+        assert config.metadata_schema is None
 
     def test_custom_config(self, valkey_config):
         """Test custom configuration values."""
@@ -100,6 +108,13 @@ class TestValkeyVectorConfig:
         assert valkey_config.key_prefix == "test_vec:"
         assert valkey_config.index_type == "HNSW"
         assert valkey_config.distance_metric == "COSINE"
+        assert valkey_config.metadata_schema == {
+            "source": "tag",
+            "page": "numeric",
+            "score": "numeric",
+            "category": "tag",
+            "status": "tag",
+        }
 
     def test_config_type(self, valkey_config):
         """Test that __type__ is set correctly."""
@@ -116,21 +131,14 @@ class TestValkeyVectorConfig:
             config = ValkeyVectorConfig(distance_metric=metric)
             assert config.distance_metric == metric
 
-    def test_create_store(self, valkey_config, mock_embedding_fn, mock_client):
-        """Test create_store factory method."""
-        with (
-            patch.object(ValkeyStore, "_create_client", return_value=mock_client),
-            patch.object(ValkeyStore, "_index_exists", return_value=True),
-        ):
-            store = valkey_config.create_store(
-                name="test", embedding_fn=mock_embedding_fn
-            )
-            assert store is not None
-            assert store._collection_name == "test"
+
+# ---------------------------------------------------------------------------
+# Store initialization tests (pure validation logic)
+# ---------------------------------------------------------------------------
 
 
 class TestValkeyStoreInit:
-    """Tests for ValkeyStore initialization."""
+    """Tests for ValkeyStore initialization logic."""
 
     def test_init_without_embedding_raises(self, valkey_config):
         """Test that init without embedding_fn raises ValueError."""
@@ -149,151 +157,40 @@ class TestValkeyStoreInit:
         """Test that key prefix includes collection name."""
         assert valkey_store._key_prefix == "test_vec:test_collection:"
 
+    def test_init_default_collection_name(self, valkey_config, mock_embedding_fn):
+        """Test default collection name when none is provided."""
+        mock_client = MagicMock()
+        with (
+            patch.object(ValkeyStore, "_create_client", return_value=mock_client),
+            patch.object(ValkeyStore, "_index_exists", return_value=True),
+        ):
+            store = ValkeyStore(
+                vector_store_config=valkey_config,
+                embedding_fn=mock_embedding_fn,
+            )
+            assert store._collection_name == "dbgpt_collection"
+
     def test_get_config(self, valkey_store, valkey_config):
         """Test get_config returns the config."""
         assert valkey_store.get_config() == valkey_config
 
 
-class TestValkeyStoreLoadDocument:
-    """Tests for document loading."""
-
-    def test_load_document(self, valkey_store):
-        """Test loading documents into Valkey."""
-        chunks = [
-            Chunk(content="Hello world", metadata={"source": "test"}, chunk_id="c1"),
-            Chunk(content="Foo bar", metadata={"source": "test2"}, chunk_id="c2"),
-        ]
-
-        calls = []
-
-        def track_run_async(coro):
-            calls.append(coro)
-            return None
-
-        with patch.object(valkey_store, "create_collection"):
-            valkey_store._run_async = track_run_async
-            result = valkey_store.load_document(chunks)
-
-        assert result == ["c1", "c2"]
-        assert len(calls) == 2  # Two hset calls
-
-    def test_load_document_empty(self, valkey_store):
-        """Test loading empty document list."""
-        with patch.object(valkey_store, "create_collection"):
-            result = valkey_store.load_document([])
-            assert result == []
-
-
-class TestValkeyStoreSearch:
-    """Tests for search operations."""
-
-    def test_similar_search(self, valkey_store):
-        """Test similar_search delegates to _search."""
-        mock_chunks = [Chunk(content="result", score=0.9, chunk_id="c1")]
-        with patch.object(valkey_store, "_search", return_value=mock_chunks):
-            result = valkey_store.similar_search("query text", topk=5)
-            assert result == mock_chunks
-
-    def test_similar_search_with_scores(self, valkey_store):
-        """Test similar_search_with_scores applies threshold."""
-        mock_chunks = [
-            Chunk(content="high score", score=0.9, chunk_id="c1"),
-            Chunk(content="low score", score=0.3, chunk_id="c2"),
-        ]
-
-        with patch.object(valkey_store, "_search", return_value=mock_chunks):
-            result = valkey_store.similar_search_with_scores(
-                "query", topk=5, score_threshold=0.5
-            )
-            assert len(result) == 1
-            assert result[0].content == "high score"
-
-    def test_search_with_no_results(self, valkey_store):
-        """Test search returning empty results."""
-        with patch.object(valkey_store, "_search", return_value=[]):
-            result = valkey_store.similar_search("query", topk=5)
-            assert result == []
-
-
-class TestValkeyStoreDelete:
-    """Tests for delete operations."""
-
-    def test_delete_by_ids(self, valkey_store):
-        """Test deleting vectors by IDs."""
-        with patch.object(valkey_store, "_run_async", return_value=1):
-            result = valkey_store.delete_by_ids("c1, c2, c3")
-        assert result == ["c1", "c2", "c3"]
-
-    def test_delete_by_ids_single(self, valkey_store):
-        """Test deleting a single vector by ID."""
-        with patch.object(valkey_store, "_run_async", return_value=1):
-            result = valkey_store.delete_by_ids("c1")
-        assert result == ["c1"]
-
-    def test_delete_vector_name(self, valkey_store):
-        """Test deleting the entire vector index."""
-        with (
-            patch.object(valkey_store, "_run_async", return_value=None),
-            patch.object(
-                valkey_store, "_delete_keys_with_prefix", return_value=["k1", "k2"]
-            ),
-        ):
-            result = valkey_store.delete_vector_name("test_collection")
-            assert result is True
-
-    def test_truncate(self, valkey_store):
-        """Test truncating all data."""
-        with patch.object(
-            valkey_store,
-            "_delete_keys_with_prefix",
-            return_value=["test_vec:test_collection:c1", "test_vec:test_collection:c2"],
-        ):
-            result = valkey_store.truncate()
-            assert len(result) == 2
-
-
-class TestValkeyStoreVectorNameExists:
-    """Tests for vector_name_exists."""
-
-    def test_vector_name_exists_true(self, valkey_store):
-        """Test vector_name_exists when index has data."""
-        with (
-            patch.object(valkey_store, "_index_exists", return_value=True),
-            patch.object(
-                valkey_store, "_run_async", return_value={b"num_docs": b"5"}
-            ),
-        ):
-            assert valkey_store.vector_name_exists() is True
-
-    def test_vector_name_exists_false_no_index(self, valkey_store):
-        """Test vector_name_exists when index doesn't exist."""
-        with patch.object(valkey_store, "_index_exists", return_value=False):
-            assert valkey_store.vector_name_exists() is False
-
-    def test_vector_name_exists_false_empty(self, valkey_store):
-        """Test vector_name_exists when index exists but has no data."""
-        with (
-            patch.object(valkey_store, "_index_exists", return_value=True),
-            patch.object(
-                valkey_store, "_run_async", return_value={b"num_docs": b"0"}
-            ),
-        ):
-            assert valkey_store.vector_name_exists() is False
+# ---------------------------------------------------------------------------
+# Filter expression building (pure string logic)
+# ---------------------------------------------------------------------------
 
 
 class TestValkeyStoreFilters:
-    """Tests for metadata filter conversion."""
+    """Tests for metadata filter conversion — pure logic, no I/O."""
 
     def test_no_filters(self, valkey_store):
         """Test that no filters returns wildcard."""
-        result = valkey_store._build_filter_expression(None)
-        assert result == "*"
+        assert valkey_store._build_filter_expression(None) == "*"
 
     def test_empty_filters(self, valkey_store):
         """Test that empty filter list returns wildcard."""
         filters = MetadataFilters(filters=[])
-        result = valkey_store._build_filter_expression(filters)
-        assert result == "*"
+        assert valkey_store._build_filter_expression(filters) == "*"
 
     def test_eq_string_filter(self, valkey_store):
         """Test equality filter for string values."""
@@ -303,7 +200,7 @@ class TestValkeyStoreFilters:
             ]
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "@source:{web}" in result
+        assert "@meta_source:{web}" in result
 
     def test_eq_numeric_filter(self, valkey_store):
         """Test equality filter for numeric values."""
@@ -311,7 +208,7 @@ class TestValkeyStoreFilters:
             filters=[MetadataFilter(key="page", operator=FilterOperator.EQ, value=5)]
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "@page:[5 5]" in result
+        assert "@meta_page:[5 5]" in result
 
     def test_gt_filter(self, valkey_store):
         """Test greater-than filter."""
@@ -319,7 +216,17 @@ class TestValkeyStoreFilters:
             filters=[MetadataFilter(key="score", operator=FilterOperator.GT, value=0.5)]
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "@score:[(0.5 +inf]" in result
+        assert "@meta_score:[(0.5 +inf]" in result
+
+    def test_gte_filter(self, valkey_store):
+        """Test greater-than-or-equal filter."""
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="score", operator=FilterOperator.GTE, value=0.5)
+            ]
+        )
+        result = valkey_store._build_filter_expression(filters)
+        assert "@meta_score:[0.5 +inf]" in result
 
     def test_lt_filter(self, valkey_store):
         """Test less-than filter."""
@@ -327,7 +234,17 @@ class TestValkeyStoreFilters:
             filters=[MetadataFilter(key="score", operator=FilterOperator.LT, value=0.8)]
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "@score:[-inf (0.8]" in result
+        assert "@meta_score:[-inf (0.8]" in result
+
+    def test_lte_filter(self, valkey_store):
+        """Test less-than-or-equal filter."""
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="score", operator=FilterOperator.LTE, value=0.8)
+            ]
+        )
+        result = valkey_store._build_filter_expression(filters)
+        assert "@meta_score:[-inf 0.8]" in result
 
     def test_in_filter(self, valkey_store):
         """Test IN filter."""
@@ -339,20 +256,40 @@ class TestValkeyStoreFilters:
             ]
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "@category:{a|b|c}" in result
+        assert "@meta_category:{a|b|c}" in result
 
-    def test_ne_filter(self, valkey_store):
-        """Test not-equal filter."""
+    def test_nin_filter(self, valkey_store):
+        """Test NOT IN filter."""
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="category", operator=FilterOperator.NIN, value=["x", "y"]
+                )
+            ]
+        )
+        result = valkey_store._build_filter_expression(filters)
+        assert "-@meta_category:{x|y}" in result
+
+    def test_ne_string_filter(self, valkey_store):
+        """Test not-equal filter for strings."""
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key="status", operator=FilterOperator.NE, value="draft")
             ]
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "-@status:{draft}" in result
+        assert "-@meta_status:{draft}" in result
+
+    def test_ne_numeric_filter(self, valkey_store):
+        """Test not-equal filter for numeric values."""
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key="page", operator=FilterOperator.NE, value=3)]
+        )
+        result = valkey_store._build_filter_expression(filters)
+        assert "-@meta_page:[3 3]" in result
 
     def test_and_condition(self, valkey_store):
-        """Test AND condition with multiple filters."""
+        """Test AND condition joins with space."""
         filters = MetadataFilters(
             condition=FilterCondition.AND,
             filters=[
@@ -361,11 +298,13 @@ class TestValkeyStoreFilters:
             ],
         )
         result = valkey_store._build_filter_expression(filters)
-        assert "@source:{web}" in result
-        assert "@page:[(1 +inf]" in result
+        assert "@meta_source:{web}" in result
+        assert "@meta_page:[(1 +inf]" in result
+        # AND uses space separator
+        assert " | " not in result
 
     def test_or_condition(self, valkey_store):
-        """Test OR condition with multiple filters."""
+        """Test OR condition joins with pipe."""
         filters = MetadataFilters(
             condition=FilterCondition.OR,
             filters=[
@@ -376,17 +315,44 @@ class TestValkeyStoreFilters:
         result = valkey_store._build_filter_expression(filters)
         assert " | " in result
 
+    def test_filters_without_metadata_schema(self, mock_embedding_fn):
+        """Test that filters return wildcard when no metadata_schema is set."""
+        config = ValkeyVectorConfig(key_prefix="test_vec:", metadata_schema=None)
+        mock_client = MagicMock()
+        with (
+            patch.object(ValkeyStore, "_create_client", return_value=mock_client),
+            patch.object(ValkeyStore, "_index_exists", return_value=True),
+        ):
+            store = ValkeyStore(
+                vector_store_config=config,
+                name="test_no_schema",
+                embedding_fn=mock_embedding_fn,
+            )
+            store._client = mock_client
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="source", operator=FilterOperator.EQ, value="web")
+            ]
+        )
+        assert store._build_filter_expression(filters) == "*"
+
+
+# ---------------------------------------------------------------------------
+# Result parsing (pure logic)
+# ---------------------------------------------------------------------------
+
 
 class TestValkeyStoreParseResults:
-    """Tests for search result parsing."""
+    """Tests for search result parsing — pure logic, no I/O."""
 
     def test_parse_empty_results(self, valkey_store):
-        """Test parsing empty search results."""
+        """Test parsing None and empty list."""
         assert valkey_store._parse_search_results(None) == []
         assert valkey_store._parse_search_results([]) == []
 
     def test_parse_structured_results(self, valkey_store):
-        """Test parsing structured results with .results attribute."""
+        """Test parsing results with .results attribute (newer glide)."""
         mock_doc = MagicMock(spec=[])
         mock_doc.fields = {
             "content": "test content",
@@ -402,7 +368,26 @@ class TestValkeyStoreParseResults:
         assert len(chunks) == 1
         assert chunks[0].content == "test content"
         assert chunks[0].chunk_id == "c1"
-        assert chunks[0].score == 0.9  # 1.0 - 0.1 distance
+        assert chunks[0].score == pytest.approx(0.9)
+
+    def test_parse_list_results_with_dict(self, valkey_store):
+        """Test parsing list-based results with dict format."""
+        result = [
+            1,  # total count
+            {
+                b"key1": {
+                    b"content": b"hello",
+                    b"metadata": b'{"k": "v"}',
+                    b"chunk_id": b"id1",
+                    b"score": b"0.3",
+                }
+            },
+        ]
+        chunks = valkey_store._parse_search_results(result)
+        assert len(chunks) == 1
+        assert chunks[0].content == "hello"
+        assert chunks[0].chunk_id == "id1"
+        assert chunks[0].score == pytest.approx(0.7)
 
     def test_doc_to_chunk_with_bytes(self, valkey_store):
         """Test parsing document with bytes values."""
@@ -432,6 +417,90 @@ class TestValkeyStoreParseResults:
         assert chunk.content == "string content"
         assert chunk.score == pytest.approx(1.0)
 
+    def test_doc_to_chunk_with_flat_list(self, valkey_store):
+        """Test parsing flat list format [field, value, field, value, ...]."""
+        doc = [
+            "content",
+            "list content",
+            "metadata",
+            "{}",
+            "chunk_id",
+            "c3",
+            "score",
+            "0.5",
+        ]
+        chunk = valkey_store._doc_to_chunk(doc)
+        assert chunk is not None
+        assert chunk.content == "list content"
+        assert chunk.chunk_id == "c3"
+        assert chunk.score == pytest.approx(0.5)
+
+    def test_doc_to_chunk_invalid_returns_none(self, valkey_store):
+        """Test that invalid doc types return None."""
+        assert valkey_store._doc_to_chunk(42) is None
+        assert valkey_store._doc_to_chunk("invalid") is None
+
+
+# ---------------------------------------------------------------------------
+# Score conversion for different metrics (pure logic)
+# ---------------------------------------------------------------------------
+
+
+class TestScoreConversion:
+    """Tests for distance-to-similarity score conversion."""
+
+    def _make_store_with_metric(self, metric, mock_embedding_fn):
+        """Helper to create a store with a specific distance metric."""
+        config = ValkeyVectorConfig(
+            key_prefix="test_vec:",
+            distance_metric=metric,
+        )
+        mock_client = MagicMock()
+        with (
+            patch.object(ValkeyStore, "_create_client", return_value=mock_client),
+            patch.object(ValkeyStore, "_index_exists", return_value=True),
+        ):
+            store = ValkeyStore(
+                vector_store_config=config,
+                name="test",
+                embedding_fn=mock_embedding_fn,
+            )
+            store._client = mock_client
+            return store
+
+    def test_cosine_score(self, mock_embedding_fn):
+        """COSINE: score = 1.0 - distance."""
+        store = self._make_store_with_metric("COSINE", mock_embedding_fn)
+        doc = {"content": "x", "metadata": "{}", "chunk_id": "c1", "score": "0.3"}
+        chunk = store._doc_to_chunk(doc)
+        assert chunk.score == pytest.approx(0.7)
+
+    def test_l2_score(self, mock_embedding_fn):
+        """L2: score = 1/(1+distance)."""
+        store = self._make_store_with_metric("L2", mock_embedding_fn)
+        doc = {"content": "x", "metadata": "{}", "chunk_id": "c1", "score": "4.0"}
+        chunk = store._doc_to_chunk(doc)
+        assert chunk.score == pytest.approx(0.2)  # 1/(1+4)
+
+    def test_l2_score_zero_distance(self, mock_embedding_fn):
+        """L2: identical vectors have distance 0, score = 1.0."""
+        store = self._make_store_with_metric("L2", mock_embedding_fn)
+        doc = {"content": "x", "metadata": "{}", "chunk_id": "c1", "score": "0.0"}
+        chunk = store._doc_to_chunk(doc)
+        assert chunk.score == pytest.approx(1.0)
+
+    def test_ip_score(self, mock_embedding_fn):
+        """IP: score = 1.0 + distance (distance is negative inner product)."""
+        store = self._make_store_with_metric("IP", mock_embedding_fn)
+        doc = {"content": "x", "metadata": "{}", "chunk_id": "c1", "score": "-0.8"}
+        chunk = store._doc_to_chunk(doc)
+        assert chunk.score == pytest.approx(0.2)  # 1.0 + (-0.8)
+
+
+# ---------------------------------------------------------------------------
+# Tag value escaping (pure function)
+# ---------------------------------------------------------------------------
+
 
 class TestEscapeTagValue:
     """Tests for tag value escaping."""
@@ -440,28 +509,21 @@ class TestEscapeTagValue:
         """Test that simple values pass through."""
         assert _escape_tag_value("hello") == "hello"
 
-    def test_special_chars(self):
-        """Test that special characters are escaped."""
+    def test_space(self):
+        """Test that spaces are escaped."""
         assert _escape_tag_value("hello world") == "hello\\ world"
 
-    def test_multiple_special_chars(self):
-        """Test escaping multiple special characters."""
+    def test_dot_and_comma(self):
+        """Test escaping dots and commas."""
         assert _escape_tag_value("a.b,c") == "a\\.b\\,c"
 
+    def test_special_chars_comprehensive(self):
+        """Test all special chars that need escaping."""
+        # Braces are special in Valkey tag queries
+        assert _escape_tag_value("a{b}c") == "a\\{b\\}c"
+        assert _escape_tag_value("x@y") == "x\\@y"
+        assert _escape_tag_value("path/to") == "path\\/to"
 
-class TestValkeyStoreIndexSchema:
-    """Tests for index schema building."""
-
-    def test_hnsw_config_values(self, valkey_config):
-        """Test HNSW index configuration values."""
-        assert valkey_config.index_type == "HNSW"
-        assert valkey_config.distance_metric == "COSINE"
-        assert valkey_config.hnsw_m == 16
-        assert valkey_config.hnsw_ef_construction == 200
-        assert valkey_config.hnsw_ef_runtime == 10
-
-    def test_flat_config_values(self):
-        """Test FLAT index type configuration."""
-        flat_config = ValkeyVectorConfig(index_type="FLAT", distance_metric="L2")
-        assert flat_config.index_type == "FLAT"
-        assert flat_config.distance_metric == "L2"
+    def test_empty_string(self):
+        """Test empty string passes through."""
+        assert _escape_tag_value("") == ""
