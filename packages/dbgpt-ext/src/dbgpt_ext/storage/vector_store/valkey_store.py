@@ -76,14 +76,6 @@ _VALKEY_METADATA_PREFIX = "meta_"
             default=None,
         ),
         Parameter.build_from(
-            _("Database"),
-            "db",
-            int,
-            description=_("The database number to use."),
-            optional=True,
-            default=0,
-        ),
-        Parameter.build_from(
             _("Use SSL"),
             "use_ssl",
             bool,
@@ -133,10 +125,6 @@ class ValkeyVectorConfig(VectorStoreConfig):
         default_factory=lambda: os.getenv("VALKEY_PASSWORD"),
         metadata={"help": _("The password for Valkey store.")},
     )
-    db: int = field(
-        default_factory=lambda: int(os.getenv("VALKEY_DB", "0")),
-        metadata={"help": _("The database number.")},
-    )
     use_ssl: bool = field(
         default=False,
         metadata={"help": _("Whether to use SSL for the Valkey connection.")},
@@ -180,6 +168,15 @@ class ValkeyVectorConfig(VectorStoreConfig):
     hnsw_ef_runtime: int = field(
         default=10,
         metadata={"help": _("HNSW: runtime search quality factor.")},
+    )
+    request_timeout: int = field(
+        default_factory=lambda: int(os.getenv("VALKEY_REQUEST_TIMEOUT", "5000")),
+        metadata={
+            "help": _(
+                "Request timeout in milliseconds for Valkey operations. "
+                "Prevents indefinite hangs on network issues."
+            )
+        },
     )
     metadata_schema: Optional[Dict[str, str]] = field(
         default=None,
@@ -276,6 +273,11 @@ class ValkeyStore(VectorStoreBase):
         if self._loop and not self._loop.is_closed():
             self._loop.close()
 
+    def __del__(self):
+        """Clean up resources if close() was not called explicitly."""
+        if hasattr(self, "_loop"):
+            self.close()
+
     @property
     def client(self) -> Any:
         """Get or create the Valkey client (lazy initialization)."""
@@ -296,12 +298,14 @@ class ValkeyStore(VectorStoreBase):
             client_config = GlideClientConfiguration(
                 addresses=[node],
                 use_tls=config.use_ssl,
+                request_timeout=config.request_timeout,
                 credentials=ServerCredentials(password=config.password),
             )
         else:
             client_config = GlideClientConfiguration(
                 addresses=[node],
                 use_tls=config.use_ssl,
+                request_timeout=config.request_timeout,
             )
 
         # GlideClient.create() is async — run it in our dedicated loop
@@ -315,6 +319,8 @@ class ValkeyStore(VectorStoreBase):
 
     def _run_async(self, coro):
         """Run an async coroutine synchronously using the dedicated event loop."""
+        if self._loop.is_closed():
+            raise RuntimeError("ValkeyStore has been closed")
         return self._loop.run_until_complete(coro)
 
     def get_config(self) -> ValkeyVectorConfig:
@@ -429,11 +435,11 @@ class ValkeyStore(VectorStoreBase):
         """Check if the index already exists."""
         from glide import ft
 
-        try:
-            self._run_async(ft.info(self.client, self._index_name))
-            return True
-        except Exception:
-            return False
+        existing = self._run_async(ft.list(self.client))
+        names = {
+            i.decode() if isinstance(i, bytes) else str(i) for i in (existing or [])
+        }
+        return self._index_name in names
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document chunks into Valkey.
@@ -643,8 +649,8 @@ class ValkeyStore(VectorStoreBase):
                 # COSINE distance range: 0 (identical) to 2 (opposite)
                 score = 1.0 - distance
             elif metric == "IP":
-                # Inner Product: returned as negative inner product
-                score = 1.0 + distance
+                # Inner Product: assumes normalized vectors; clamp for safety
+                score = max(0.0, min(1.0, 1.0 + distance))
             else:
                 # L2 (Euclidean): distance >= 0, convert via 1/(1+d)
                 score = 1.0 / (1.0 + distance)
@@ -672,12 +678,10 @@ class ValkeyStore(VectorStoreBase):
             return "*"
 
         if not self._vector_store_config.metadata_schema:
-            logger.warning(
+            raise ValueError(
                 "Metadata filters provided but no metadata_schema configured. "
-                "Filters will not match any documents. Configure metadata_schema "
-                "in ValkeyVectorConfig to enable filtering."
+                "Configure metadata_schema in ValkeyVectorConfig to enable filtering."
             )
-            return "*"
 
         expressions = []
         for f in filters.filters:
@@ -829,7 +833,7 @@ class ValkeyStore(VectorStoreBase):
                     deleted_keys.extend(key_list)
             else:
                 break
-            if cursor == "0":
+            if str(cursor) == "0":
                 break
         return deleted_keys
 
@@ -854,7 +858,7 @@ def _escape_tag_value(value: str) -> str:
     Returns:
         Escaped tag value safe for use in FT.SEARCH queries.
     """
-    special_chars = r".,<>{}[]\"':;!@#$%^&*()-+=~/ "
+    special_chars = r".,<>{}[]\"':;!@#$%^&*()-+=~/ |"
     escaped = ""
     for char in value:
         if char in special_chars:

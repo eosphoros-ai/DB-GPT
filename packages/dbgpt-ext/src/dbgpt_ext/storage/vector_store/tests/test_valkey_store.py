@@ -46,7 +46,6 @@ def valkey_config():
         host="localhost",
         port=6379,
         password=None,
-        db=0,
         use_ssl=False,
         index_type="HNSW",
         distance_metric="COSINE",
@@ -316,7 +315,7 @@ class TestValkeyStoreFilters:
         assert " | " in result
 
     def test_filters_without_metadata_schema(self, mock_embedding_fn):
-        """Test that filters return wildcard when no metadata_schema is set."""
+        """Test that filters raise ValueError when no metadata_schema is set."""
         config = ValkeyVectorConfig(key_prefix="test_vec:", metadata_schema=None)
         mock_client = MagicMock()
         with (
@@ -335,7 +334,8 @@ class TestValkeyStoreFilters:
                 MetadataFilter(key="source", operator=FilterOperator.EQ, value="web")
             ]
         )
-        assert store._build_filter_expression(filters) == "*"
+        with pytest.raises(ValueError, match="no metadata_schema configured"):
+            store._build_filter_expression(filters)
 
 
 # ---------------------------------------------------------------------------
@@ -523,6 +523,10 @@ class TestEscapeTagValue:
         assert _escape_tag_value("a{b}c") == "a\\{b\\}c"
         assert _escape_tag_value("x@y") == "x\\@y"
         assert _escape_tag_value("path/to") == "path\\/to"
+
+    def test_pipe_escaped(self):
+        """Test that pipe character is escaped to prevent OR injection."""
+        assert _escape_tag_value("foo|bar") == "foo\\|bar"
 
     def test_empty_string(self):
         """Test empty string passes through."""
