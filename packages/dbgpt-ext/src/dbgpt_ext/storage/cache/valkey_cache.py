@@ -37,6 +37,7 @@ class ValkeyCacheStorage(CacheStorage):
         use_ssl: bool = False,
         key_prefix: str = "dbgpt_cache:",
         ttl_seconds: Optional[int] = None,
+        request_timeout: Optional[int] = 5000,
     ):
         """Initialize ValkeyCacheStorage.
 
@@ -48,6 +49,8 @@ class ValkeyCacheStorage(CacheStorage):
             key_prefix: Prefix for all cache keys.
             ttl_seconds: Optional TTL in seconds for cache entries.
                 If None, entries don't expire.
+            request_timeout: Request timeout in milliseconds. Defaults to 5000ms.
+                If None, no timeout is set.
         """
         try:
             import glide  # noqa: F401
@@ -62,6 +65,7 @@ class ValkeyCacheStorage(CacheStorage):
         self._use_ssl = use_ssl
         self._key_prefix = key_prefix
         self._ttl_seconds = ttl_seconds
+        self._request_timeout = request_timeout
         self._client = None
         self._async_client = None
         self._loop = asyncio.new_event_loop()
@@ -79,18 +83,19 @@ class ValkeyCacheStorage(CacheStorage):
 
         node = NodeAddress(host=self._host, port=self._port)
 
+        kwargs = {
+            "addresses": [node],
+            "use_tls": self._use_ssl,
+        }
+        if self._request_timeout is not None:
+            kwargs["request_timeout"] = self._request_timeout
+
         if self._password:
             from glide import ServerCredentials
 
-            return GlideClientConfiguration(
-                addresses=[node],
-                use_tls=self._use_ssl,
-                credentials=ServerCredentials(password=self._password),
-            )
-        return GlideClientConfiguration(
-            addresses=[node],
-            use_tls=self._use_ssl,
-        )
+            kwargs["credentials"] = ServerCredentials(password=self._password)
+
+        return GlideClientConfiguration(**kwargs)
 
     async def _create_client_async(self):
         """Create a Valkey-glide client on the current event loop."""
@@ -121,7 +126,10 @@ class ValkeyCacheStorage(CacheStorage):
                 pass
             self._client = None
         if self._async_client is not None:
-            # async_client is closed from an async context if needed
+            try:
+                self._loop.run_until_complete(self._async_client.close())
+            except Exception:
+                pass
             self._async_client = None
         if self._loop and not self._loop.is_closed():
             self._loop.close()
@@ -177,7 +185,7 @@ class ValkeyCacheStorage(CacheStorage):
         try:
             return StorageItem.deserialize(data)
         except Exception as e:
-            logger.warning(f"Failed to deserialize cache item: {e}")
+            logger.warning("Failed to deserialize cache item: %s", e)
             return None
 
     async def aget(
@@ -206,7 +214,7 @@ class ValkeyCacheStorage(CacheStorage):
         try:
             return StorageItem.deserialize(data)
         except Exception as e:
-            logger.warning(f"Failed to deserialize cache item: {e}")
+            logger.warning("Failed to deserialize cache item: %s", e)
             return None
 
     def set(
@@ -226,7 +234,7 @@ class ValkeyCacheStorage(CacheStorage):
         item = StorageItem.build_from_kv(key, value)
         data = item.serialize()
 
-        if self._ttl_seconds:
+        if self._ttl_seconds is not None:
             from glide import ExpirySet, ExpiryType
 
             expiry = ExpirySet(ExpiryType.SEC, self._ttl_seconds)
@@ -234,7 +242,7 @@ class ValkeyCacheStorage(CacheStorage):
         else:
             self._run_async(self.client.set(valkey_key, data))
 
-        logger.debug(f"ValkeyCacheStorage set key hash={valkey_key}")
+        logger.debug("ValkeyCacheStorage set key hash=%s", valkey_key)
 
     async def aset(
         self,
@@ -254,7 +262,7 @@ class ValkeyCacheStorage(CacheStorage):
         data = item.serialize()
 
         client = await self._get_async_client()
-        if self._ttl_seconds:
+        if self._ttl_seconds is not None:
             from glide import ExpirySet, ExpiryType
 
             expiry = ExpirySet(ExpiryType.SEC, self._ttl_seconds)
@@ -262,7 +270,7 @@ class ValkeyCacheStorage(CacheStorage):
         else:
             await client.set(valkey_key, data)
 
-        logger.debug(f"ValkeyCacheStorage aset key hash={valkey_key}")
+        logger.debug("ValkeyCacheStorage aset key hash=%s", valkey_key)
 
     def exists(
         self, key: CacheKey[K], cache_config: Optional[CacheConfig] = None

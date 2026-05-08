@@ -185,8 +185,10 @@ def initialize_cache(
             cache_storage = ValkeyCacheStorage()
         except ImportError as e:
             logger.warning(
-                f"Can't import ValkeyCacheStorage, use MemoryCacheStorage, "
-                f"import error message: {str(e)}"
+                "Can't import ValkeyCacheStorage (valkey-glide not installed). "
+                "Falling back to MemoryCacheStorage — cache will NOT be shared "
+                "across nodes. Import error: %s",
+                e,
             )
             cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
     else:

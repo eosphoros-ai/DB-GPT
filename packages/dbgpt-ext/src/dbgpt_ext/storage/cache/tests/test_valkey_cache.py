@@ -315,3 +315,94 @@ class TestValkeyCacheStorageClose:
         valkey_cache.close()
         # Second call should not raise
         valkey_cache.close()
+
+    def test_close_releases_async_client(self, valkey_cache, mock_client):
+        """Test close properly closes _async_client (not just sets to None)."""
+        async_client = AsyncMock()
+        async_client.close = AsyncMock()
+        valkey_cache._async_client = async_client
+
+        valkey_cache.close()
+
+        async_client.close.assert_called_once()
+        assert valkey_cache._async_client is None
+
+
+class TestValkeyCacheStorageTTLZero:
+    """Tests for TTL=0 edge case (falsy but valid)."""
+
+    def test_set_with_ttl_zero(self, mock_client):
+        """Test that ttl_seconds=0 still applies TTL (not skipped as falsy)."""
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(
+                host="localhost",
+                port=6379,
+                key_prefix="test_cache:",
+                ttl_seconds=0,
+            )
+            storage._client = mock_client
+
+            key = MockCacheKey("zero_ttl_key")
+            value = MockCacheValue("zero_ttl_value")
+
+            storage.set(key, value)
+            mock_client.set.assert_called_once()
+            call_kwargs = mock_client.set.call_args[1]
+            assert "expiry" in call_kwargs
+
+    @pytest.mark.asyncio
+    async def test_aset_with_ttl_zero(self, mock_client):
+        """Test that async ttl_seconds=0 still applies TTL."""
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(
+                host="localhost",
+                port=6379,
+                key_prefix="test_cache:",
+                ttl_seconds=0,
+            )
+            storage._client = mock_client
+            storage._async_client = mock_client
+
+            key = MockCacheKey("async_zero_ttl_key")
+            value = MockCacheValue("async_zero_ttl_value")
+
+            await storage.aset(key, value)
+            mock_client.set.assert_called_once()
+            call_kwargs = mock_client.set.call_args[1]
+            assert "expiry" in call_kwargs
+
+
+class TestValkeyCacheStorageRequestTimeout:
+    """Tests for request_timeout configuration."""
+
+    def test_default_request_timeout(self, mock_client):
+        """Test default request_timeout is 5000ms."""
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(host="localhost", port=6379)
+            assert storage._request_timeout == 5000
+
+    def test_custom_request_timeout(self, mock_client):
+        """Test custom request_timeout is stored."""
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(
+                host="localhost", port=6379, request_timeout=10000
+            )
+            assert storage._request_timeout == 10000
+
+    def test_none_request_timeout(self, mock_client):
+        """Test None request_timeout disables timeout."""
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(
+                host="localhost", port=6379, request_timeout=None
+            )
+            assert storage._request_timeout is None
