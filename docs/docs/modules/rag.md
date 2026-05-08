@@ -95,6 +95,7 @@ When creating a knowledge base, you can choose from three storage types:
 | **ChromaDB** | Default embedded vector database, zero setup | `storage_chromadb` |
 | **Milvus** | Distributed vector database for production scale | `storage_milvus` |
 | **PGVector** | PostgreSQL extension for vector operations | `storage_pgvector` |
+| **Valkey** | High-performance in-memory vector store with HNSW/FLAT indexing | `storage_valkey` |
 | **Weaviate** | Cloud-native vector search engine | `storage_weaviate` |
 | **Elasticsearch** | Full-text + vector hybrid search | `storage_elasticsearch` |
 | **OceanBase** | Cloud-native distributed database | `storage_oceanbase` |

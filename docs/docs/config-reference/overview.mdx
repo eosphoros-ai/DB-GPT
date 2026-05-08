@@ -9,17 +9,17 @@ This document provides an overview of all configuration classes organized by typ
 ## Configuration Types
 
 - [app](#type-app) (6 classes)
-- [datasource](#type-datasource) (14 classes)
-- [embedding](#type-embedding) (6 classes)
-- [graph_store](#type-graph_store) (4 classes)
-- [llm](#type-llm) (22 classes)
+- [datasource](#type-datasource) (18 classes)
+- [embedding](#type-embedding) (8 classes)
+- [graph_store](#type-graph_store) (3 classes)
+- [llm](#type-llm) (28 classes)
 - [memory](#type-memory) (2 classes)
 - [other](#type-other) (1 classes)
-- [reranker](#type-reranker) (3 classes)
+- [reranker](#type-reranker) (6 classes)
 - [serve](#type-serve) (13 classes)
 - [service](#type-service) (1 classes)
 - [utils](#type-utils) (2 classes)
-- [vector_store](#type-vector_store) (6 classes)
+- [vector_store](#type-vector_store) (7 classes)
 
 ## Type Details
 
@@ -42,7 +42,7 @@ This type contains 6 configuration classes.
 
 ### datasource {#type-datasource}
 
-This type contains 14 configuration classes.
+This type contains 18 configuration classes.
 
 #### Configuration Classes
 
@@ -51,10 +51,13 @@ This type contains 14 configuration classes.
 | [ClickhouseParameters](datasource/conn_clickhouse_clickhouseparameters_4a1237) |  |
 | [DorisParameters](datasource/conn_doris_dorisparameters_e33c53) |  |
 | [DuckDbConnectorParameters](datasource/conn_duckdb_duckdbconnectorparameters_c672c7) |  |
+| [GaussDBParameters](datasource/conn_gaussdb_gaussdbparameters_9c9811) |  |
 | [HiveParameters](datasource/conn_hive_hiveparameters_ec3601) |  |
 | [MSSQLParameters](datasource/conn_mssql_mssqlparameters_d79d1c) |  |
 | [MySQLParameters](datasource/conn_mysql_mysqlparameters_4393c4) |  |
+| [Neo4jParameters](datasource/conn_neo4j_neo4jparameters_041b12) |  |
 | [OceanBaseParameters](datasource/conn_oceanbase_oceanbaseparameters_260d2d) |  |
+| [OracleParameters](datasource/conn_oracle_oracleparameters_c011ed) |  |
 | [PostgreSQLParameters](datasource/conn_postgresql_postgresqlparameters_22efa5) |  |
 | [RDBMSDatasourceParameters](datasource/base_rdbmsdatasourceparameters_4f774f) |  |
 | [SQLiteConnectorParameters](datasource/conn_sqlite_sqliteconnectorparameters_82c8b5) |  |
@@ -62,35 +65,37 @@ This type contains 14 configuration classes.
 | [StarRocksParameters](datasource/conn_starrocks_starrocksparameters_e511f7) |  |
 | [TuGraphParameters](datasource/conn_tugraph_tugraphparameters_0c844e) |  |
 | [VerticaParameters](datasource/conn_vertica_verticaparameters_c712b8) |  |
+| [openGaussParameters](datasource/conn_opengauss_opengaussparameters_85409c) |  |
 
 ---
 
 ### embedding {#type-embedding}
 
-This type contains 6 configuration classes.
+This type contains 8 configuration classes.
 
 #### Configuration Classes
 
 | Class | Description |
 |-------|-------------|
+| [AimlapiEmbeddingDeployModelParameters](embedding/aimlapi_aimlapiembeddingdeploymodelparameters_97d1c4) |  |
 | [HFEmbeddingDeployModelParameters](embedding/embeddings_hfembeddingdeploymodelparameters_f588e1) |  |
 | [JinaEmbeddingsDeployModelParameters](embedding/jina_jinaembeddingsdeploymodelparameters_40b0f2) |  |
 | [OllamaEmbeddingDeployModelParameters](embedding/ollama_ollamaembeddingdeploymodelparameters_b511e0) |  |
 | [OpenAPIEmbeddingDeployModelParameters](embedding/embeddings_openapiembeddingdeploymodelparameters_f9ba47) |  |
 | [QianfanEmbeddingDeployModelParameters](embedding/qianfan_qianfanembeddingdeploymodelparameters_257d2a) |  |
+| [SiliconFlowEmbeddingDeployModelParameters](embedding/siliconflow_siliconflowembeddingdeploymodelparameters_113c43) |  |
 | [TongyiEmbeddingDeployModelParameters](embedding/tongyi_tongyiembeddingdeploymodelparameters_a7cbb4) |  |
 
 ---
 
 ### graph_store {#type-graph_store}
 
-This type contains 4 configuration classes.
+This type contains 3 configuration classes.
 
 #### Configuration Classes
 
 | Class | Description |
 |-------|-------------|
-| [BuiltinKnowledgeGraphConfig](graph_store/knowledge_graph_builtinknowledgegraphconfig_f26e05) |  |
 | [Neo4jStoreConfig](graph_store/neo4j_store_neo4jstoreconfig_a4db5d) |  |
 | [OpenSPGConfig](graph_store/open_spg_openspgconfig_a744fd) |  |
 | [TuGraphStoreConfig](graph_store/tugraph_store_tugraphstoreconfig_7ca8a8) |  |
@@ -99,7 +104,7 @@ This type contains 4 configuration classes.
 
 ### llm {#type-llm}
 
-This type contains 22 configuration classes.
+This type contains 28 configuration classes.
 
 #### Relationships
 
@@ -114,17 +119,23 @@ graph TD
 
 | Class | Description |
 |-------|-------------|
+| [AimlapiDeployModelParameters](llm/aimlapi_aimlapideploymodelparameters_7c1b54) |  |
 | [BaichuanDeployModelParameters](llm/baichuan_baichuandeploymodelparameters_0bf9cc) |  |
 | [BitsandbytesQuantization](llm/parameter_bitsandbytesquantization_d40e3b) |  |
 | [BitsandbytesQuantization4bits](llm/parameter_bitsandbytesquantization4bits_52b778) |  |
 | [BitsandbytesQuantization8bits](llm/parameter_bitsandbytesquantization8bits_909aed) |  |
+| [BurnCloudDeployModelParameters](llm/burncloud_burnclouddeploymodelparameters_e59cbb) |  |
 | [ClaudeDeployModelParameters](llm/claude_claudedeploymodelparameters_1f0c45) |  |
 | [DeepSeekDeployModelParameters](llm/deepseek_deepseekdeploymodelparameters_194cbd) |  |
 | [GeminiDeployModelParameters](llm/gemini_geminideploymodelparameters_5113b9) |  |
 | [GiteeDeployModelParameters](llm/gitee_giteedeploymodelparameters_d1bdb3) |  |
 | [HFLLMDeployModelParameters](llm/hf_adapter_hfllmdeploymodelparameters_103e81) |  |
+| [InfiniAIDeployModelParameters](llm/infiniai_infiniaideploymodelparameters_682301) |  |
+| [LiteLLMDeployModelParameters](llm/litellm_litellmdeploymodelparameters_d053f9) |  |
 | [LlamaCppModelParameters](llm/llama_cpp_py_adapter_llamacppmodelparameters_e88874) |  |
 | [LlamaServerParameters](llm/llama_cpp_adapter_llamaserverparameters_421f40) |  |
+| [MLXDeployModelParameters](llm/mlx_adapter_mlxdeploymodelparameters_f26f45) |  |
+| [MiniMaxDeployModelParameters](llm/minimax_minimaxdeploymodelparameters_97ce61) |  |
 | [MoonshotDeployModelParameters](llm/moonshot_moonshotdeploymodelparameters_aa2f6b) |  |
 | [OllamaDeployModelParameters](llm/ollama_ollamadeploymodelparameters_d55be6) |  |
 | [OpenAICompatibleDeployModelParameters](llm/chatgpt_openaicompatibledeploymodelparameters_c3d426) |  |
@@ -166,15 +177,18 @@ This type contains 1 configuration classes.
 
 ### reranker {#type-reranker}
 
-This type contains 3 configuration classes.
+This type contains 6 configuration classes.
 
 #### Configuration Classes
 
 | Class | Description |
 |-------|-------------|
 | [CrossEncoderRerankEmbeddingsParameters](reranker/rerank_crossencoderrerankembeddingsparameters_63ec13) |  |
+| [InfiniAIRerankEmbeddingsParameters](reranker/rerank_infiniairerankembeddingsparameters_879440) |  |
 | [OpenAPIRerankerDeployModelParameters](reranker/rerank_openapirerankerdeploymodelparameters_778108) |  |
+| [QwenRerankEmbeddingsParameters](reranker/rerank_qwenrerankembeddingsparameters_18e7d2) |  |
 | [SiliconFlowRerankEmbeddingsParameters](reranker/rerank_siliconflowrerankembeddingsparameters_af0257) |  |
+| [TeiEmbeddingsParameters](reranker/rerank_teiembeddingsparameters_e38e28) |  |
 
 ---
 
@@ -229,7 +243,7 @@ This type contains 2 configuration classes.
 
 ### vector_store {#type-vector_store}
 
-This type contains 6 configuration classes.
+This type contains 7 configuration classes.
 
 #### Configuration Classes
 
@@ -237,9 +251,10 @@ This type contains 6 configuration classes.
 |-------|-------------|
 | [ChromaVectorConfig](vector_store/chroma_store_chromavectorconfig_16224f) |  |
 | [ElasticsearchStoreConfig](vector_store/elastic_store_elasticsearchstoreconfig_15bdb6) |  |
-| [MilvusVectorConfig](vector_store/milvus_store_milvusvectorconfig_20af52) |  |
 | [OceanBaseConfig](vector_store/oceanbase_store_oceanbaseconfig_220e36) |  |
 | [PGVectorConfig](vector_store/pgvector_store_pgvectorconfig_3ef448) |  |
+| [QdrantVectorConfig](vector_store/qdrant_store_qdrantvectorconfig_3d0339) |  |
+| [ValkeyVectorConfig](vector_store/valkey_store_valkeyvectorconfig_a0fffb) |  |
 | [WeaviateVectorConfig](vector_store/weaviate_store_weaviatevectorconfig_093ce3) |  |
 
 ---
@@ -251,18 +266,18 @@ The following diagram shows relationships between different configuration types:
 ```mermaid
 graph TD
     other[other - 1 classes]
-    datasource[datasource - 14 classes]
-    llm[llm - 22 classes]
-    embedding[embedding - 6 classes]
-    reranker[reranker - 3 classes]
+    datasource[datasource - 18 classes]
+    llm[llm - 28 classes]
+    embedding[embedding - 8 classes]
+    reranker[reranker - 6 classes]
     service[service - 1 classes]
-    graph_store[graph_store - 4 classes]
-    vector_store[vector_store - 6 classes]
+    graph_store[graph_store - 3 classes]
+    vector_store[vector_store - 7 classes]
     serve[serve - 13 classes]
     memory[memory - 2 classes]
     app[app - 6 classes]
     utils[utils - 2 classes]
-    service -->|14 connections| datasource
+    service -->|18 connections| datasource
     other -->|13 connections| serve
     serve -->|2 connections| utils
     app -->|14 connections| memory

@@ -369,6 +369,7 @@ The core framework is included by default when you `pip install dbgpt-app`. Use 
 |-------|---------|-------------|
 | `storage_chromadb` | ChromaDB | `chromadb`, `onnxruntime` |
 | `storage_milvus` | Milvus | `pymilvus` |
+| `storage_valkey` | Valkey | `valkey-glide` |
 | `storage_weaviate` | Weaviate | `weaviate-client` |
 | `storage_elasticsearch` | Elasticsearch | `elasticsearch` |
 | `storage_obvector` | OBVector | `pyobvector` |

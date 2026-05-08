@@ -1,0 +1,115 @@
+---
+title: "Valkey Config Configuration"
+description: "Valkey vector store config."
+---
+
+import { ConfigDetail } from "@site/src/components/mdx/ConfigDetail";
+
+<ConfigDetail config={{
+  "name": "ValkeyVectorConfig",
+  "description": "Valkey vector store config.",
+  "documentationUrl": null,
+  "parameters": [
+    {
+      "name": "user",
+      "type": "string",
+      "required": false,
+      "description": "The user of vector store, if not set, will use the default user."
+    },
+    {
+      "name": "password",
+      "type": "string",
+      "required": false,
+      "description": "The password for Valkey store."
+    },
+    {
+      "name": "max_chunks_once_load",
+      "type": "integer",
+      "required": false,
+      "description": "The max chunks once load in vector store, if not set, will use the default value 10."
+    },
+    {
+      "name": "max_threads",
+      "type": "integer",
+      "required": false,
+      "description": "The max threads in vector store, if not set, will use the default value 1."
+    },
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "description": "The host of Valkey store.",
+      "defaultValue": "localhost"
+    },
+    {
+      "name": "port",
+      "type": "integer",
+      "required": false,
+      "description": "The port of Valkey store.",
+      "defaultValue": "6379"
+    },
+    {
+      "name": "use_ssl",
+      "type": "boolean",
+      "required": false,
+      "description": "Whether to use SSL for the Valkey connection.",
+      "defaultValue": "False"
+    },
+    {
+      "name": "index_type",
+      "type": "string",
+      "required": false,
+      "description": "The vector index type: 'HNSW' (approximate, fast) or 'FLAT' (exact, slower).",
+      "defaultValue": "HNSW"
+    },
+    {
+      "name": "distance_metric",
+      "type": "string",
+      "required": false,
+      "description": "The distance metric: 'COSINE', 'L2' (Euclidean), or 'IP' (Inner Product).",
+      "defaultValue": "COSINE"
+    },
+    {
+      "name": "key_prefix",
+      "type": "string",
+      "required": false,
+      "description": "The key prefix for all vector store keys.",
+      "defaultValue": "dbgpt_vec:"
+    },
+    {
+      "name": "hnsw_m",
+      "type": "integer",
+      "required": false,
+      "description": "HNSW: number of connections per node.",
+      "defaultValue": "16"
+    },
+    {
+      "name": "hnsw_ef_construction",
+      "type": "integer",
+      "required": false,
+      "description": "HNSW: construction time quality factor.",
+      "defaultValue": "200"
+    },
+    {
+      "name": "hnsw_ef_runtime",
+      "type": "integer",
+      "required": false,
+      "description": "HNSW: runtime search quality factor.",
+      "defaultValue": "10"
+    },
+    {
+      "name": "request_timeout",
+      "type": "integer",
+      "required": false,
+      "description": "Request timeout in milliseconds for Valkey operations. Prevents indefinite hangs on network issues.",
+      "defaultValue": "5000"
+    },
+    {
+      "name": "metadata_schema",
+      "type": "object",
+      "required": false,
+      "description": "Metadata fields to index for filtering. Dict mapping field name to type: 'tag' (string) or 'numeric'. E.g. {'source': 'tag', 'page': 'numeric'}. Must be defined at store creation time."
+    }
+  ]
+}} />
+
