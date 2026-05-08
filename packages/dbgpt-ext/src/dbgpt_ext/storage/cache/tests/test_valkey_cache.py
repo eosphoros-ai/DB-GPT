@@ -219,3 +219,99 @@ class TestValkeyCacheStorageKeyGeneration:
         key1 = MockCacheKey("key_a")
         key2 = MockCacheKey("key_b")
         assert valkey_cache._make_key(key1) != valkey_cache._make_key(key2)
+
+
+class TestValkeyCacheStorageAsync:
+    """Tests for async operations."""
+
+    @pytest.mark.asyncio
+    async def test_aget_miss(self, valkey_cache, mock_client):
+        """Test async cache miss returns None."""
+        mock_client.get = AsyncMock(return_value=None)
+        valkey_cache._async_client = mock_client
+        key = MockCacheKey("async_missing")
+        result = await valkey_cache.aget(key)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_aget_hit(self, valkey_cache, mock_client):
+        """Test async cache hit returns StorageItem."""
+        key = MockCacheKey("async_hit")
+        value = MockCacheValue("async_value")
+        item = StorageItem.build_from_kv(key, value)
+        serialized = item.serialize()
+
+        mock_client.get = AsyncMock(return_value=serialized)
+        valkey_cache._async_client = mock_client
+        result = await valkey_cache.aget(key)
+
+        assert result is not None
+        assert result.key_data == b"async_hit"
+        assert result.value_data == b"async_value"
+
+    @pytest.mark.asyncio
+    async def test_aget_corrupt_data(self, valkey_cache, mock_client):
+        """Test async corrupt data returns None gracefully."""
+        mock_client.get = AsyncMock(return_value=b"not_valid_msgpack")
+        valkey_cache._async_client = mock_client
+        key = MockCacheKey("async_corrupt")
+        result = await valkey_cache.aget(key)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_aset_without_ttl(self, valkey_cache, mock_client):
+        """Test async setting a value without TTL."""
+        valkey_cache._async_client = mock_client
+        key = MockCacheKey("async_set_key")
+        value = MockCacheValue("async_set_value")
+
+        await valkey_cache.aset(key, value)
+
+        mock_client.set.assert_called_once()
+        call_args = mock_client.set.call_args[0]
+        assert call_args[0] == "test_cache:" + b"async_set_key".hex()
+        assert isinstance(call_args[1], bytes)
+
+    @pytest.mark.asyncio
+    async def test_aset_with_ttl(self, mock_client):
+        """Test async setting a value with TTL."""
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(
+                host="localhost",
+                port=6379,
+                key_prefix="test_cache:",
+                ttl_seconds=3600,
+            )
+            storage._client = mock_client
+            storage._async_client = mock_client
+
+            key = MockCacheKey("async_ttl_key")
+            value = MockCacheValue("async_ttl_value")
+
+            await storage.aset(key, value)
+            mock_client.set.assert_called_once()
+            call_kwargs = mock_client.set.call_args[1]
+            assert "expiry" in call_kwargs
+
+
+class TestValkeyCacheStorageClose:
+    """Tests for close/cleanup."""
+
+    def test_close_releases_resources(self, valkey_cache, mock_client):
+        """Test close releases client and event loop."""
+        mock_client.close = AsyncMock()
+        # Access client to ensure it's set
+        _ = valkey_cache.client
+        valkey_cache.close()
+
+        assert valkey_cache._client is None
+        assert valkey_cache._loop.is_closed()
+
+    def test_close_idempotent(self, valkey_cache, mock_client):
+        """Test calling close multiple times is safe."""
+        mock_client.close = AsyncMock()
+        valkey_cache.close()
+        # Second call should not raise
+        valkey_cache.close()

@@ -182,3 +182,46 @@ class TestValkeyCacheStorageIntegration:
         ttl = storage._run_async(storage.client.ttl(valkey_key))
         assert ttl > 0
         assert ttl <= 60
+
+    @pytest.mark.asyncio
+    async def test_aset_and_aget(self, storage):
+        """Test async set and get."""
+        key = MockCacheKey("async_int_test")
+        value = MockCacheValue("async hello")
+
+        await storage.aset(key, value)
+        result = await storage.aget(key)
+
+        assert result is not None
+        assert result.key_data == b"key_data:async_int_test"
+        assert result.value_data == b"value_data:async hello"
+
+    @pytest.mark.asyncio
+    async def test_aget_miss(self, storage):
+        """Test async get on non-existent key returns None."""
+        key = MockCacheKey("async_nonexistent")
+        result = await storage.aget(key)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_aset_with_ttl(self, storage):
+        """Test async set respects TTL."""
+        key = MockCacheKey("async_ttl_test")
+        value = MockCacheValue("async expires")
+
+        await storage.aset(key, value)
+
+        valkey_key = storage._make_key(key)
+        client = await storage._get_async_client()
+        ttl = await client.ttl(valkey_key)
+        assert ttl > 0
+        assert ttl <= 60
+
+    def test_close(self, storage):
+        """Test close releases resources without error."""
+        key = MockCacheKey("close_test")
+        value = MockCacheValue("data")
+        storage.set(key, value)
+
+        storage.close()
+        assert storage._client is None

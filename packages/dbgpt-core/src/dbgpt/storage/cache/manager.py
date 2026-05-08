@@ -176,6 +176,8 @@ def initialize_cache(
         try:
             from dbgpt_ext.storage.cache.valkey_cache import ValkeyCacheStorage
 
+            # Configuration is read from environment variables:
+            # VALKEY_HOST, VALKEY_PORT, VALKEY_PASSWORD
             cache_storage = ValkeyCacheStorage()
         except ImportError as e:
             logger.warning(

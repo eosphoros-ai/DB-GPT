@@ -34,7 +34,6 @@ class ValkeyCacheStorage(CacheStorage):
         host: Optional[str] = None,
         port: Optional[int] = None,
         password: Optional[str] = None,
-        db: int = 0,
         use_ssl: bool = False,
         key_prefix: str = "dbgpt_cache:",
         ttl_seconds: Optional[int] = None,
@@ -45,7 +44,6 @@ class ValkeyCacheStorage(CacheStorage):
             host: Valkey server host. Defaults to VALKEY_HOST env or localhost.
             port: Valkey server port. Defaults to VALKEY_PORT env or 6379.
             password: Valkey password. Defaults to VALKEY_PASSWORD env.
-            db: Valkey database number.
             use_ssl: Whether to use TLS.
             key_prefix: Prefix for all cache keys.
             ttl_seconds: Optional TTL in seconds for cache entries.
@@ -61,45 +59,72 @@ class ValkeyCacheStorage(CacheStorage):
         self._host = host or os.getenv("VALKEY_HOST", "localhost")
         self._port = port or int(os.getenv("VALKEY_PORT", "6379"))
         self._password = password or os.getenv("VALKEY_PASSWORD")
-        self._db = db
         self._use_ssl = use_ssl
         self._key_prefix = key_prefix
         self._ttl_seconds = ttl_seconds
         self._client = None
+        self._async_client = None
         self._loop = asyncio.new_event_loop()
 
     @property
     def client(self):
-        """Get or create the Valkey client (lazy initialization)."""
+        """Get or create the Valkey client for sync operations (lazy initialization)."""
         if self._client is None:
-            self._client = self._create_client()
+            self._client = self._loop.run_until_complete(self._create_client_async())
         return self._client
 
-    def _create_client(self):
-        """Create a Valkey-glide client."""
-        from glide import GlideClient, GlideClientConfiguration, NodeAddress
+    def _get_client_config(self):
+        """Build the GlideClientConfiguration."""
+        from glide import GlideClientConfiguration, NodeAddress
 
         node = NodeAddress(host=self._host, port=self._port)
 
         if self._password:
             from glide import ServerCredentials
 
-            client_config = GlideClientConfiguration(
+            return GlideClientConfiguration(
                 addresses=[node],
                 use_tls=self._use_ssl,
                 credentials=ServerCredentials(password=self._password),
             )
-        else:
-            client_config = GlideClientConfiguration(
-                addresses=[node],
-                use_tls=self._use_ssl,
-            )
+        return GlideClientConfiguration(
+            addresses=[node],
+            use_tls=self._use_ssl,
+        )
 
-        return self._loop.run_until_complete(GlideClient.create(client_config))
+    async def _create_client_async(self):
+        """Create a Valkey-glide client on the current event loop."""
+        from glide import GlideClient
+
+        return await GlideClient.create(self._get_client_config())
+
+    def _create_client(self):
+        """Create a Valkey-glide client (sync helper, used by tests)."""
+        return self._loop.run_until_complete(self._create_client_async())
+
+    async def _get_async_client(self):
+        """Get or create a client bound to the current running event loop."""
+        if self._async_client is None:
+            self._async_client = await self._create_client_async()
+        return self._async_client
 
     def _run_async(self, coro):
         """Run an async coroutine synchronously using the dedicated event loop."""
         return self._loop.run_until_complete(coro)
+
+    def close(self):
+        """Close the client connection and event loop."""
+        if self._client is not None:
+            try:
+                self._loop.run_until_complete(self._client.close())
+            except Exception:
+                pass
+            self._client = None
+        if self._async_client is not None:
+            # async_client is closed from an async context if needed
+            self._async_client = None
+        if self._loop and not self._loop.is_closed():
+            self._loop.close()
 
     def _make_key(self, key: CacheKey[K]) -> str:
         """Build the full Valkey key from a CacheKey."""
@@ -170,7 +195,8 @@ class ValkeyCacheStorage(CacheStorage):
         self.check_config(cache_config, raise_error=True)
         valkey_key = self._make_key(key)
 
-        data = await self.client.get(valkey_key)
+        client = await self._get_async_client()
+        data = await client.get(valkey_key)
         if data is None:
             return None
 
@@ -227,13 +253,14 @@ class ValkeyCacheStorage(CacheStorage):
         item = StorageItem.build_from_kv(key, value)
         data = item.serialize()
 
+        client = await self._get_async_client()
         if self._ttl_seconds:
             from glide import ExpirySet, ExpiryType
 
             expiry = ExpirySet(ExpiryType.SEC, self._ttl_seconds)
-            await self.client.set(valkey_key, data, expiry=expiry)
+            await client.set(valkey_key, data, expiry=expiry)
         else:
-            await self.client.set(valkey_key, data)
+            await client.set(valkey_key, data)
 
         logger.debug(f"ValkeyCacheStorage aset key hash={valkey_key}")
 
