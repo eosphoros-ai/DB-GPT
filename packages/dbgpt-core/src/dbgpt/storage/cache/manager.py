@@ -33,7 +33,11 @@ class ModelCacheParameters(BaseParameters):
     storage_type: str = field(
         default="memory",
         metadata={
-            "help": _("The storage type, default is memory"),
+            "help": _(
+                "The storage type. Supported values: memory, disk, valkey. "
+                "For valkey, configure via env vars: VALKEY_HOST, VALKEY_PORT, "
+                "VALKEY_PASSWORD."
+            ),
         },
     )
     max_memory_mb: int = field(
