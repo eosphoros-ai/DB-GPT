@@ -68,11 +68,14 @@ class ValkeyCacheStorage(CacheStorage):
         self._request_timeout = request_timeout
         self._client = None
         self._async_client = None
+        self._async_loop = None
         self._loop = asyncio.new_event_loop()
 
     @property
     def client(self):
         """Get or create the Valkey client for sync operations (lazy initialization)."""
+        if self._loop.is_closed():
+            raise RuntimeError("ValkeyCacheStorage has been closed")
         if self._client is None:
             self._client = self._loop.run_until_complete(self._create_client_async())
         return self._client
@@ -108,9 +111,20 @@ class ValkeyCacheStorage(CacheStorage):
         return self._loop.run_until_complete(self._create_client_async())
 
     async def _get_async_client(self):
-        """Get or create a client bound to the current running event loop."""
-        if self._async_client is None:
+        """Get or create a client bound to the current running event loop.
+
+        If called from a different event loop than self._loop, creates a fresh
+        client on the current loop to avoid cross-loop issues.
+        """
+        current_loop = asyncio.get_running_loop()
+        if self._async_client is None or self._async_loop != current_loop:
+            if self._async_client is not None:
+                try:
+                    await self._async_client.close()
+                except Exception:
+                    pass
             self._async_client = await self._create_client_async()
+            self._async_loop = current_loop
         return self._async_client
 
     def _run_async(self, coro):
@@ -133,6 +147,30 @@ class ValkeyCacheStorage(CacheStorage):
             self._async_client = None
         if self._loop and not self._loop.is_closed():
             self._loop.close()
+
+    def __enter__(self):
+        """Support usage as a context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Close resources on context manager exit."""
+        self.close()
+        return False
+
+    async def __aenter__(self):
+        """Support usage as an async context manager."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Close resources on async context manager exit."""
+        if self._async_client is not None:
+            try:
+                await self._async_client.close()
+            except Exception:
+                pass
+            self._async_client = None
+        self.close()
+        return False
 
     def _make_key(self, key: CacheKey[K]) -> str:
         """Build the full Valkey key from a CacheKey."""

@@ -5,6 +5,7 @@ These tests use mocked valkey-glide client and do not require a running Valkey s
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -229,6 +230,7 @@ class TestValkeyCacheStorageAsync:
         """Test async cache miss returns None."""
         mock_client.get = AsyncMock(return_value=None)
         valkey_cache._async_client = mock_client
+        valkey_cache._async_loop = asyncio.get_running_loop()
         key = MockCacheKey("async_missing")
         result = await valkey_cache.aget(key)
         assert result is None
@@ -243,6 +245,7 @@ class TestValkeyCacheStorageAsync:
 
         mock_client.get = AsyncMock(return_value=serialized)
         valkey_cache._async_client = mock_client
+        valkey_cache._async_loop = asyncio.get_running_loop()
         result = await valkey_cache.aget(key)
 
         assert result is not None
@@ -254,6 +257,7 @@ class TestValkeyCacheStorageAsync:
         """Test async corrupt data returns None gracefully."""
         mock_client.get = AsyncMock(return_value=b"not_valid_msgpack")
         valkey_cache._async_client = mock_client
+        valkey_cache._async_loop = asyncio.get_running_loop()
         key = MockCacheKey("async_corrupt")
         result = await valkey_cache.aget(key)
         assert result is None
@@ -262,6 +266,7 @@ class TestValkeyCacheStorageAsync:
     async def test_aset_without_ttl(self, valkey_cache, mock_client):
         """Test async setting a value without TTL."""
         valkey_cache._async_client = mock_client
+        valkey_cache._async_loop = asyncio.get_running_loop()
         key = MockCacheKey("async_set_key")
         value = MockCacheValue("async_set_value")
 
@@ -286,6 +291,7 @@ class TestValkeyCacheStorageAsync:
             )
             storage._client = mock_client
             storage._async_client = mock_client
+            storage._async_loop = asyncio.get_running_loop()
 
             key = MockCacheKey("async_ttl_key")
             value = MockCacheValue("async_ttl_value")
@@ -366,6 +372,7 @@ class TestValkeyCacheStorageTTLZero:
             )
             storage._client = mock_client
             storage._async_client = mock_client
+            storage._async_loop = asyncio.get_running_loop()
 
             key = MockCacheKey("async_zero_ttl_key")
             value = MockCacheValue("async_zero_ttl_value")
@@ -406,3 +413,46 @@ class TestValkeyCacheStorageRequestTimeout:
                 host="localhost", port=6379, request_timeout=None
             )
             assert storage._request_timeout is None
+
+
+class TestValkeyCacheStorageContextManager:
+    """Tests for context manager support."""
+
+    def test_sync_context_manager(self, mock_client):
+        """Test usage as a sync context manager."""
+        mock_client.close = AsyncMock()
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            with ValkeyCacheStorage(host="localhost", port=6379) as storage:
+                storage._client = mock_client
+                assert storage is not None
+            # After exiting, resources should be cleaned up
+            assert storage._client is None
+
+    def test_client_access_after_close_raises(self, mock_client):
+        """Test that accessing client after close raises RuntimeError."""
+        mock_client.close = AsyncMock()
+        with patch.object(
+            ValkeyCacheStorage, "_create_client", return_value=mock_client
+        ):
+            storage = ValkeyCacheStorage(host="localhost", port=6379)
+            storage._client = mock_client
+            storage.close()
+            with pytest.raises(RuntimeError, match="has been closed"):
+                _ = storage.client
+
+
+class TestValkeyCacheStorageEventLoopSafety:
+    """Tests for event loop safety in async client."""
+
+    @pytest.mark.asyncio
+    async def test_async_client_tracks_loop(self, valkey_cache, mock_client):
+        """Test that _get_async_client tracks the current event loop."""
+        valkey_cache._async_client = None
+        mock_create = AsyncMock(return_value=mock_client)
+        valkey_cache._create_client_async = mock_create
+
+        client = await valkey_cache._get_async_client()
+        assert client is mock_client
+        assert valkey_cache._async_loop == asyncio.get_running_loop()
