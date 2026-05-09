@@ -237,7 +237,9 @@ class FullContextCompression:
                 old_indices.add(i)
 
         old_msgs = [conv_msgs[i] for i in sorted(old_indices)]
-        recent_msgs = [conv_msgs[i] for i in range(len(conv_msgs)) if i not in old_indices]
+        recent_msgs = [
+            conv_msgs[i] for i in range(len(conv_msgs)) if i not in old_indices
+        ]
 
         # Build conversation text for summarization
         conv_lines = []

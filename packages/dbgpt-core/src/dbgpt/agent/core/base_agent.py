@@ -1374,11 +1374,6 @@ class ConversableAgent(Role, Agent):
 
         # Multi-layer context management: compress if budget exceeded
         ctx_mgr: Optional[ContextManager] = getattr(self, "_context_manager", None)
-        logger.warning(
-            "[CTX-DEBUG] _context_manager lookup: agent=%s, found=%s",
-            self.name,
-            ctx_mgr is not None,
-        )
         if ctx_mgr is not None:
             agent_messages = await ctx_mgr.manage_context(
                 messages=agent_messages,

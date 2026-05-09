@@ -109,7 +109,6 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
             let message = event.data;
             let needReplaceNewline = false;
             let parsedData;
-            console.log('[CTX-DEBUG] SSE onmessage raw:', message?.substring(0, 200));
 
             try {
               parsedData = JSON.parse(message);
@@ -119,7 +118,6 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               // React-agent format: {"type": "context.status", "used": ..., "budget": ..., ...}
               const cs = parsedData.context_status ?? (parsedData.type === 'context.status' ? parsedData : null);
               if (cs) {
-                console.log('[CTX-DEBUG] Received context_status SSE event:', cs);
                 // Only show banner when Layer 3 (LLM compression) is active
                 if (cs.compact_layer === 'layer3') {
                   setContextStatus({
