@@ -102,7 +102,7 @@ framework = [
 hf = [
     "transformers>=4.46.0",
     "sentencepiece",
-    "sentence-transformers",
+    "sentence-transformers>=4.0.0",
 ]
 code = [
     "msgpack",

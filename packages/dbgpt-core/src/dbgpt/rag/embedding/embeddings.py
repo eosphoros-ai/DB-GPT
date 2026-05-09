@@ -459,18 +459,21 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         """Initialize the sentence_transformer."""
         try:
             import sentence_transformers
-
+            from sentence_transformers.models import Transformer, Pooling
+            from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise ImportError(
                 "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
+                "Please install it with `pip install sentence-transformers`."
             ) from exc
 
-        kwargs["client"] = sentence_transformers.SentenceTransformer(
-            kwargs.get("model_name"),
-            cache_folder=kwargs.get("cache_folder"),
-            **(kwargs.get("model_kwargs") or {}),
-        )
+        model_name = kwargs.get("model_name")
+        cache_folder = kwargs.get("cache_folder")
+        model_kwargs = kwargs.get("model_kwargs") or {}
+
+        transformer = Transformer(model_name, cache_dir=cache_folder, **model_kwargs)
+        pooling = Pooling(transformer.get_embedding_dimension())
+        kwargs["client"] = SentenceTransformer(modules=[transformer, pooling])
 
         super().__init__(**kwargs)
         if "-zh" in self.model_name:

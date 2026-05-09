@@ -2,16 +2,19 @@
 # Load language from environment variable(It is set by the hook)
 language = "${env:DBGPT_LANG:-zh}"
 api_keys = []
-encrypt_key = "your_secret_key"
+encrypt_key = "stargazer"
 
-# Server Configurations
 [service.web]
 host = "0.0.0.0"
 port = 5670
 
 [service.web.database]
-type = "sqlite"
-path = "pilot/meta_data/dbgpt.db"
+type = "mysql"
+host = "127.0.0.1"
+port = 3306
+user = "root"
+database = "dbgpt"
+password = "123456"
 [service.model.worker]
 host = "127.0.0.1"
 
@@ -23,10 +26,9 @@ persist_path = "pilot/data"
 # Model Configurations
 [models]
 [[models.llms]]
-name = "deepseek-reasoner"
-# name = "deepseek-chat"
+name = "deepseek-v4-flash"
 provider = "proxy/deepseek"
-api_key = "your_deepseek_api_key"
+api_key = "sk-e1d076bc86f44ede9011f79bea88a712"
 
 [[models.embeddings]]
 name = "BAAI/bge-large-zh-v1.5"

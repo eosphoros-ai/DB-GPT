@@ -155,7 +155,12 @@ class CrossEncoderRerankEmbeddings(BaseModel, RerankEmbeddings):
         Returns:
             List[float]: The rank scores of the candidates.
         """
-        from sentence_transformers import CrossEncoder
+        try:
+            from sentence_transformers import CrossEncoder
+        except ImportError:
+            raise ImportError(
+                "Please `pip install sentence-transformers`",
+            )
 
         query_content_pairs = [[query, candidate] for candidate in candidates]
         _model = cast(CrossEncoder, self.client)
