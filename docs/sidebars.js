@@ -218,6 +218,7 @@ const sidebars = {
               label: "Memory",
               items: [
                 { type: "doc", id: "agents/modules/memory/memory" },
+                { type: "doc", id: "agents/modules/context-management", label: "Context Management" },
                 { type: "doc", id: "agents/modules/memory/sensory_memory" },
                 { type: "doc", id: "agents/modules/memory/short_term_memory" },
                 { type: "doc", id: "agents/modules/memory/long_term_memory" },
