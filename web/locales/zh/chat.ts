@@ -143,4 +143,12 @@ export const ChatZh: Resources['translation'] = {
   running: '运行中...',
   files_count: '{{count}} 个文件',
   click_to_execute: '点击执行',
+  task_plan_label: '计划',
+  task_plan_new_badge: '新计划',
+  task_plan_init_title: '初始化任务计划',
+  task_plan_update_title: '更新任务状态 ({{done}}/{{total}} 完成)',
+  task_plan_done_title: '任务全部完成 ({{total}}/{{total}})',
+  task_plan_progress_summary: '共 {{total}} 个任务，已完成 {{done}} 个',
+  task_plan_all_done: '{{total}} 个任务全部完成',
+  task_plan_current: '当前：{{task}}',
 } as const;

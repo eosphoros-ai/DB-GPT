@@ -9,6 +9,7 @@
  * - step.chunk: Streaming chunk { type, id, output_type, content }
  * - step.meta: Step metadata { type, id, thought, action, action_input }
  * - step.done: Step completed { type, id, status }
+ * - context.status: Context budget status { type, used, budget, ratio, state, compact_layer }
  * - final: Final answer { type, content }
  * - done: Stream completed { type }
  */
@@ -54,13 +55,34 @@ export interface SSEDoneEvent {
   type: 'done';
 }
 
+export interface SSEContextStatusEvent {
+  type: 'context.status';
+  used: number;
+  budget: number;
+  ratio: number;
+  /** Backend sends lowercase ("normal","warning","error","critical","overflow");
+   *  mapped to display states in handleContextStatus. */
+  state: string;
+  compact_layer?: string | null;
+}
+
 export type SSEEvent =
   | SSEStepStartEvent
   | SSEStepChunkEvent
   | SSEStepMetaEvent
   | SSEStepDoneEvent
+  | SSEContextStatusEvent
   | SSEFinalEvent
   | SSEDoneEvent;
+
+// Internal state for tracking context budget
+export interface ContextStatus {
+  used: number;
+  budget: number;
+  ratio: number;
+  state: 'OK' | 'WARNING' | 'ERROR';
+  compactLayer?: string | null;
+}
 
 // Internal state for tracking steps
 interface StepState {
@@ -85,6 +107,7 @@ export class ReActSSEState {
   private isDone: boolean = false;
   private startTime: number;
   private endTime?: number;
+  private _contextStatus: ContextStatus | null = null;
 
   constructor() {
     this.startTime = Date.now();
@@ -106,6 +129,9 @@ export class ReActSSEState {
         break;
       case 'step.done':
         this.handleStepDone(event);
+        break;
+      case 'context.status':
+        this.handleContextStatus(event);
         break;
       case 'final':
         this.handleFinal(event);
@@ -172,6 +198,38 @@ export class ReActSSEState {
   private handleDone(): void {
     this.isDone = true;
     this.endTime = Date.now();
+  }
+
+  private handleContextStatus(event: SSEContextStatusEvent): void {
+    // Map backend state values (lowercase: "normal", "warning", "error",
+    // "critical", "overflow") to frontend display states ("OK", "WARNING", "ERROR").
+    const stateMap: Record<string, 'OK' | 'WARNING' | 'ERROR'> = {
+      normal: 'OK',
+      warning: 'WARNING',
+      error: 'ERROR',
+      critical: 'ERROR',
+      overflow: 'ERROR',
+      // Also accept the frontend format directly (idempotent)
+      OK: 'OK',
+      WARNING: 'WARNING',
+      ERROR: 'ERROR',
+    };
+    const mappedState = stateMap[event.state] || 'OK';
+
+    this._contextStatus = {
+      used: event.used,
+      budget: event.budget,
+      ratio: event.ratio,
+      state: mappedState,
+      compactLayer: event.compact_layer,
+    };
+  }
+
+  /**
+   * Get latest context budget status (null if none received yet)
+   */
+  getContextStatus(): ContextStatus | null {
+    return this._contextStatus;
   }
 
   /**

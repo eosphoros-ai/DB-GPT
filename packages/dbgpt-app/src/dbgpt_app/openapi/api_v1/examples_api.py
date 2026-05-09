@@ -71,27 +71,17 @@ def _resolve_example_source(example: dict) -> Optional[str]:
        (PyPI install mode).
     """
     # --- 1. Source-code / work_dir mode ---
-    candidates_dirs = [os.getcwd()]
+    base_dir = os.getcwd()
     if (
         CFG.SYSTEM_APP
         and hasattr(CFG.SYSTEM_APP, "work_dir")
         and CFG.SYSTEM_APP.work_dir
     ):
-        candidates_dirs.insert(0, CFG.SYSTEM_APP.work_dir)
+        base_dir = CFG.SYSTEM_APP.work_dir
 
-    # Also try ROOT_PATH which reliably resolves to the project root in dev mode
-    try:
-        from dbgpt.configs.model_config import ROOT_PATH
-
-        if ROOT_PATH not in candidates_dirs:
-            candidates_dirs.append(ROOT_PATH)
-    except ImportError:
-        pass
-
-    for base_dir in candidates_dirs:
-        candidate = os.path.join(base_dir, example["source_path"])
-        if os.path.isfile(candidate):
-            return candidate
+    candidate = os.path.join(base_dir, example["source_path"])
+    if os.path.isfile(candidate):
+        return candidate
 
     # --- 2. Builtin examples bundled in the wheel ---
     try:

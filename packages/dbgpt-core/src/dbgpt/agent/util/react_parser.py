@@ -14,6 +14,8 @@ class ReActStep:
 
     thought: Optional[str] = None
     phase: Optional[str] = None
+    action_intention: Optional[str] = None
+    action_reason: Optional[str] = None
     action: Optional[str] = None
     action_input: Optional[Any] = None
     observation: Optional[Any] = None
@@ -32,6 +34,8 @@ class ReActOutputParser:
         self,
         thought_prefix: str = "Thought:",
         phase_prefix: str = "Phase:",
+        action_intention_prefix: str = "Action Intention:",
+        action_reason_prefix: str = "Action Reason:",
         action_prefix: str = "Action:",
         action_input_prefix: str = "Action Input:",
         observation_prefix: str = "Observation:",
@@ -51,6 +55,8 @@ class ReActOutputParser:
         """
         self.thought_prefix = thought_prefix
         self.phase_prefix = phase_prefix
+        self.action_intention_prefix = action_intention_prefix
+        self.action_reason_prefix = action_reason_prefix
         self.action_prefix = action_prefix
         self.action_input_prefix = action_input_prefix
         self.observation_prefix = observation_prefix
@@ -59,6 +65,8 @@ class ReActOutputParser:
         # Escape special regex characters in prefixes
         self.thought_prefix_escaped = re.escape(thought_prefix)
         self.phase_prefix_escaped = re.escape(phase_prefix)
+        self.action_intention_prefix_escaped = re.escape(action_intention_prefix)
+        self.action_reason_prefix_escaped = re.escape(action_reason_prefix)
         self.action_prefix_escaped = re.escape(action_prefix)
         self.action_input_prefix_escaped = re.escape(action_input_prefix)
         self.observation_prefix_escaped = re.escape(observation_prefix)
@@ -158,7 +166,7 @@ class ReActOutputParser:
 
         # Extract thought
         thought_match = re.search(
-            rf"{self.thought_prefix_escaped}\s*(.*?)(?={self.phase_prefix_escaped}|{self.action_prefix_escaped}|{self.observation_prefix_escaped}|$)",
+            rf"{self.thought_prefix_escaped}\s*(.*?)(?={self.phase_prefix_escaped}|{self.action_intention_prefix_escaped}|{self.action_reason_prefix_escaped}|{self.action_prefix_escaped}|{self.observation_prefix_escaped}|$)",
             step_text,
             re.DOTALL,
         )
@@ -168,12 +176,32 @@ class ReActOutputParser:
         # Extract phase (optional, between thought and action)
         phase = None
         phase_match = re.search(
-            rf"{self.phase_prefix_escaped}\s*(.*?)(?={self.action_prefix_escaped}|{self.action_input_prefix_escaped}|{self.observation_prefix_escaped}|$)",
+            rf"{self.phase_prefix_escaped}\s*(.*?)(?={self.action_intention_prefix_escaped}|{self.action_reason_prefix_escaped}|{self.action_prefix_escaped}|{self.action_input_prefix_escaped}|{self.observation_prefix_escaped}|$)",
             step_text,
             re.DOTALL,
         )
         if phase_match:
             phase = phase_match.group(1).strip() or None
+
+        # Extract action intention (optional, short user-facing intent)
+        action_intention = None
+        action_intention_match = re.search(
+            rf"{self.action_intention_prefix_escaped}\s*(.*?)(?={self.action_reason_prefix_escaped}|{self.action_prefix_escaped}|{self.action_input_prefix_escaped}|{self.observation_prefix_escaped}|$)",
+            step_text,
+            re.DOTALL,
+        )
+        if action_intention_match:
+            action_intention = action_intention_match.group(1).strip() or None
+
+        # Extract action reason (optional, short user-facing reason)
+        action_reason = None
+        action_reason_match = re.search(
+            rf"{self.action_reason_prefix_escaped}\s*(.*?)(?={self.action_intention_prefix_escaped}|{self.action_prefix_escaped}|{self.action_input_prefix_escaped}|{self.observation_prefix_escaped}|$)",
+            step_text,
+            re.DOTALL,
+        )
+        if action_reason_match:
+            action_reason = action_reason_match.group(1).strip() or None
 
         # Extract action
         action_match = re.search(
@@ -234,6 +262,8 @@ class ReActOutputParser:
             return ReActStep(
                 thought=thought,
                 phase=phase,
+                action_intention=action_intention,
+                action_reason=action_reason,
                 action=action,
                 action_input=action_input,
                 observation=observation,
