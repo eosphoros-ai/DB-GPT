@@ -13,3 +13,6 @@ CREATE TABLE `share_links` (
   KEY `ix_share_links_token` (`token`),
   KEY `ix_share_links_conv_uid` (`conv_uid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Conversation share link table';
+
+-- gpts_messages
+ALTER TABLE gpts_messages MODIFY COLUMN content longtext COMMENT 'Content of the speech';
