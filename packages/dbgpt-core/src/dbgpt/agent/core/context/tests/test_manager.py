@@ -3,7 +3,7 @@
 import pytest
 
 from dbgpt.agent.core.agent import AgentMessage
-from dbgpt.agent.core.context.budget import ContextBudgetConfig, TokenState
+from dbgpt.agent.core.context.budget import ContextBudgetConfig
 from dbgpt.agent.core.context.manager import ContextManager
 from dbgpt.core import ModelMessageRoleType
 

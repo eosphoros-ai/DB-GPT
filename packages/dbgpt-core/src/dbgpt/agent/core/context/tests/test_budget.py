@@ -1,7 +1,5 @@
 """Tests for context budget tracking."""
 
-import pytest
-
 from dbgpt.agent.core.context.budget import (
     ContextBudgetConfig,
     ContextBudgetTracker,

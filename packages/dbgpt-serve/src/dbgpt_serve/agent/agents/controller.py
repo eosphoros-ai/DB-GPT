@@ -344,7 +344,12 @@ class MultiAgents(BaseComponent, ABC):
                                 "__CONTEXT_STATUS__"
                             ):
                                 payload = chunk[len("__CONTEXT_STATUS__") :]
-                                resp = f"data:{json.dumps({'context_status': json.loads(payload)}, ensure_ascii=False)}\n\n"
+                                context_status = {"context_status": json.loads(payload)}
+                                resp = (
+                                    "data:"
+                                    f"{json.dumps(context_status, ensure_ascii=False)}"
+                                    "\n\n"
+                                )
                                 yield task, resp, agent_conv_id
                                 continue
 

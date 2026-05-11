@@ -1,7 +1,5 @@
 """Tests for four-layer compaction strategies."""
 
-import pytest
-
 from dbgpt.agent.core.agent import AgentMessage
 from dbgpt.agent.core.context.budget import ContextBudgetConfig, ContextBudgetTracker
 from dbgpt.agent.core.context.compact import (
@@ -119,9 +117,7 @@ class TestObservationMicroCompact:
 
 class TestSessionMemoryCompact:
     def test_drops_old_rounds(self):
-        tracker = _make_tracker(
-            min_keep_recent_rounds=1, min_keep_tokens=0
-        )
+        tracker = _make_tracker(min_keep_recent_rounds=1, min_keep_tokens=0)
         layer2 = SessionMemoryCompact()
 
         msgs = [
@@ -163,9 +159,7 @@ class TestSessionMemoryCompact:
 
     def test_triplet_integrity(self):
         """Ensure complete triplets are never split."""
-        tracker = _make_tracker(
-            min_keep_recent_rounds=1, min_keep_tokens=0
-        )
+        tracker = _make_tracker(min_keep_recent_rounds=1, min_keep_tokens=0)
         layer2 = SessionMemoryCompact()
 
         msgs = [
