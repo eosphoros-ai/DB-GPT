@@ -128,7 +128,7 @@ const Chat: React.FC = () => {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [initMsg, chatId, history.length, replyLoading]);
+  }, [chatId, handleChat, history.length, initMsg, replyLoading]);
 
   useEffect(() => {
     setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.6);
@@ -212,23 +212,13 @@ const Chat: React.FC = () => {
   // 会话提问
   const handleChat = useCallback(
     (content: UserChatContent, data?: Record<string, any>) => {
-      return new Promise<void>(async resolve => {
+      return new Promise<void>(resolve => {
         const initMessage = getInitMessage();
         setReplyLoading(true);
         if (history && history.length > 0) {
           const viewList = history?.filter(item => item.role === 'view');
           const humanList = history?.filter(item => item.role === 'human');
           order.current = (viewList[viewList.length - 1]?.order || humanList[humanList.length - 1]?.order) + 1;
-        }
-
-        // Extract display-friendly text from content
-        let userInputStr: string;
-        if (typeof content === 'string') {
-          userInputStr = content;
-        } else {
-          const contentItems = content.content || [];
-          const textItems = contentItems.filter(item => item.type === 'text');
-          userInputStr = textItems.map(item => item.text).join(' ');
         }
 
         // Process content for display formatting
@@ -342,7 +332,7 @@ const Chat: React.FC = () => {
         });
       });
     },
-    [chatId, history, modelValue, chat, scene, currentDialogInfo],
+    [chat, chatId, history, modelValue, scene],
   );
 
   useAsyncEffect(async () => {
