@@ -458,7 +458,6 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         try:
-            import sentence_transformers
             from sentence_transformers.models import Transformer, Pooling
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
