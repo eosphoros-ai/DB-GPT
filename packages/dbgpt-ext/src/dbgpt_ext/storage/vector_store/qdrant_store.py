@@ -6,7 +6,10 @@ import logging
 import os
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from qdrant_client.models import Distance
 
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
@@ -89,6 +92,17 @@ def _chunk_id_to_uuid(chunk_id: str) -> str:
             optional=True,
             default=6334,
         ),
+        Parameter.build_from(
+            _("Distance"),
+            "distance",
+            str,
+            description=_(
+                "Distance metric used to compare vectors. One of: "
+                "Cosine, Euclid, Dot, Manhattan."
+            ),
+            optional=True,
+            default="Cosine",
+        ),
     ],
 )
 @dataclass
@@ -124,6 +138,15 @@ class QdrantVectorConfig(VectorStoreConfig):
     grpc_port: int = field(
         default_factory=lambda: int(os.getenv("QDRANT_GRPC_PORT", "6334")),
         metadata={"help": _("The gRPC port of Qdrant store.")},
+    )
+    distance: str = field(
+        default_factory=lambda: os.getenv("QDRANT_DISTANCE", "Cosine"),
+        metadata={
+            "help": _(
+                "Distance metric used to compare vectors. One of: "
+                "Cosine, Euclid, Dot, Manhattan."
+            )
+        },
     )
 
     def create_store(self, **kwargs) -> "QdrantStore":
@@ -189,7 +212,7 @@ class QdrantStore(VectorStoreBase):
 
     def create_collection(self, collection_name: str, **kwargs) -> None:
         """Create a Qdrant collection."""
-        from qdrant_client.models import Distance, VectorParams
+        from qdrant_client.models import VectorParams
 
         if self._client.collection_exists(collection_name):
             return
@@ -197,8 +220,29 @@ class QdrantStore(VectorStoreBase):
         dim = len(self.embeddings.embed_query("probe"))
         self._client.create_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+            vectors_config=VectorParams(
+                size=dim,
+                distance=self._resolve_distance(self._vector_store_config.distance),
+            ),
         )
+
+    @staticmethod
+    def _resolve_distance(name: str) -> "Distance":
+        from qdrant_client.models import Distance
+
+        mapping = {
+            "cosine": Distance.COSINE,
+            "euclid": Distance.EUCLID,
+            "dot": Distance.DOT,
+            "manhattan": Distance.MANHATTAN,
+        }
+        try:
+            return mapping[name.strip().lower()]
+        except (AttributeError, KeyError):
+            raise ValueError(
+                f"Unsupported Qdrant distance metric: {name!r}. "
+                f"Expected one of: {sorted(mapping)}"
+            )
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in vector database."""
