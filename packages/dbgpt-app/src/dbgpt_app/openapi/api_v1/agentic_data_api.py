@@ -1368,6 +1368,56 @@ print(json.dumps(summary, ensure_ascii=False))
 
     @tool(description="Execute a tool by name with JSON args.")
     async def execute_tool(tool_name: str, args: dict) -> str:
+        try:
+            from dbgpt.agent.resource.connector.confirmation import (
+                _PENDING_CONFIRMATIONS,
+            )
+            from dbgpt.agent.resource.connector.manager import (
+                ConnectorManager as _ConnectorManager,
+            )
+
+            _cm = CFG.SYSTEM_APP.get_component(
+                "connector_manager", _ConnectorManager, default_component=None
+            )
+            if _cm is not None:
+                _interceptor = _cm.get_confirmation_interceptor()
+                _registry = _cm.get_confirmation_registry()
+                if _interceptor.should_confirm(tool_name, args):
+                    import asyncio as _asyncio
+                    import uuid as _uuid
+
+                    _confirm_id = str(_uuid.uuid4())
+                    _registry.register(_confirm_id)
+                    _PENDING_CONFIRMATIONS[_confirm_id] = {
+                        "confirm_id": _confirm_id,
+                        "tool_name": tool_name,
+                        "args_summary": _interceptor._summarize_args(args),
+                        "message": f"即将执行写操作 {tool_name}，是否确认？",
+                        "timeout": 300,
+                    }
+                    try:
+                        _approved = await _asyncio.wait_for(
+                            _registry.wait_for(_confirm_id), timeout=300
+                        )
+                    except _asyncio.TimeoutError:
+                        _approved = False
+                    finally:
+                        _PENDING_CONFIRMATIONS.pop(_confirm_id, None)
+                    if not _approved:
+                        return json.dumps(
+                            {
+                                "chunks": [
+                                    {
+                                        "output_type": "text",
+                                        "content": "用户拒绝了此操作，工具执行已取消。",
+                                    }
+                                ]
+                            },
+                            ensure_ascii=False,
+                        )
+        except Exception:
+            pass
+
         rm = get_resource_manager(CFG.SYSTEM_APP)
         try:
             tool_resource = rm.build_resource_by_type(
@@ -2602,6 +2652,27 @@ print(json.dumps(summary, ensure_ascii=False))
     is_skill_mode = pre_matched_skill is not None
     _skill_name = pre_matched_skill.metadata.name if pre_matched_skill else "skill"
 
+    # Inject connector tools (safe: no-op if manager not registered or no active connectors)
+    connector_tool_extras: List[Any] = []
+    try:
+        from dbgpt.agent.resource.connector.manager import (
+            ConnectorManager as _ConnectorManager,
+        )
+
+        _connector_manager = CFG.SYSTEM_APP.get_component(
+            "connector_manager", _ConnectorManager, default_component=None
+        )
+        if _connector_manager is not None:
+            _connector_packs = _connector_manager.get_all_tools()
+            if _connector_packs:
+                connector_tool_extras.extend(_connector_packs)
+                logger.info(
+                    "_react_agent_stream: injected %d connector tool pack(s)",
+                    len(_connector_packs),
+                )
+    except Exception:
+        pass  # graceful degradation — connector tools are optional
+
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
@@ -2721,6 +2792,7 @@ Action Input: The JSON format of tool parameters
                 Terminate(),
             ]
             + business_tools
+            + connector_tool_extras
         )
     else:
         # Full prompt with all tools when no skill is pre-selected
@@ -2839,6 +2911,7 @@ Action Input: The JSON format of tool parameters
                 Terminate(),
             ]
             + business_tools
+            + connector_tool_extras
         )
 
     # Debug: print all registered tools
@@ -2850,6 +2923,41 @@ Action Input: The JSON format of tool parameters
     all_resources = [tool_pack]
     if knowledge_resources:
         all_resources.extend(knowledge_resources)
+
+    # --- Connector system prompt injection (T11) ---
+    try:
+        from dbgpt.agent.resource.connector.manager import (
+            ConnectorManager as _ConnectorManager,
+        )
+
+        _cm = CFG.SYSTEM_APP.get_component(
+            "connector_manager", _ConnectorManager, default_component=None
+        )
+        if _cm is not None:
+            _active = _cm.list_active()
+            if _active:
+                _connector_lines = []
+                for _c in _active:
+                    _tool_names = ", ".join(
+                        t.name
+                        for t in (_c.get("tools", []) if isinstance(_c, dict) else [])
+                    )
+                    _connector_lines.append(
+                        f"- {_c.get('name', 'unknown')} ({_c.get('connector_type', 'unknown')}): "
+                        f"{_c.get('description', '')}\n"
+                        f"  Available tools: {_tool_names}\n"
+                        f"  Note: Write operations require user confirmation."
+                    )
+                _connector_prompt = (
+                    "\n\n## Available External Connectors\n"
+                    "You have access to the following external connectors:\n"
+                    + "\n".join(_connector_lines)
+                )
+                workflow_prompt += _connector_prompt
+    except Exception:
+        pass  # graceful degradation
+    # --- End connector system prompt injection ---
+
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
     workflow_prompt_template = PromptTemplate(

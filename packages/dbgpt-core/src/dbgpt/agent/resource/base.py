@@ -55,6 +55,7 @@ class ResourceType(str, Enum):
     App = "app"
     # Resource type for resource pack
     Pack = "pack"
+    Connector = "connector"
 
 
 @dataclasses.dataclass

@@ -29,6 +29,7 @@ def scan_serve_configs():
         "dbgpt_serve.model",
         "dbgpt_serve.prompt",
         "dbgpt_serve.rag",
+        "dbgpt_serve.connector",  # External connectors serve
     ]
 
     scanner = ModelScanner[BaseServeConfig]()
