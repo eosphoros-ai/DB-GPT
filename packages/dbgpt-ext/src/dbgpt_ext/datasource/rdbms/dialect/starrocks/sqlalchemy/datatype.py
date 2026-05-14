@@ -79,6 +79,7 @@ class STRUCT(TypeEngine):  # pylint: disable=no-init
         """Return the Python type for this SQL type."""
         return None
 
+
 class VARBINARY(sqltypes.VARBINARY):
     """StarRocks VARBINARY type.
     
@@ -88,6 +89,7 @@ class VARBINARY(sqltypes.VARBINARY):
 
     __visit_name__ = "VARBINARY"
 
+
 class BINARY(sqltypes.BINARY):
     """StarRocks BINARY type.
     
@@ -96,6 +98,7 @@ class BINARY(sqltypes.BINARY):
     """
 
     __visit_name__ = "BINARY"
+
 
 _type_map = {
     # === Boolean ===
