@@ -79,6 +79,23 @@ class STRUCT(TypeEngine):  # pylint: disable=no-init
         """Return the Python type for this SQL type."""
         return None
 
+class VARBINARY(sqltypes.VARBINARY):
+    """StarRocks VARBINARY type.
+    
+    Supported since StarRocks 3.0.
+    Used to store binary data with maximum length of 1048576 bytes.
+    """
+
+    __visit_name__ = "VARBINARY"
+
+class BINARY(sqltypes.BINARY):
+    """StarRocks BINARY type.
+    
+    Supported since StarRocks 3.0.
+    Used to store fixed-length binary data with maximum length of 1048576 bytes.
+    """
+
+    __visit_name__ = "BINARY"
 
 _type_map = {
     # === Boolean ===
@@ -109,6 +126,9 @@ _type_map = {
     "hll": HLL,
     "percentile": PERCENTILE,
     "bitmap": BITMAP,
+    # === Binary (since StarRocks 3.0) ===
+    "binary": BINARY,
+    "varbinary": VARBINARY,
 }
 
 
