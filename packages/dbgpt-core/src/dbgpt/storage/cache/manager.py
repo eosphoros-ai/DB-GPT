@@ -33,7 +33,11 @@ class ModelCacheParameters(BaseParameters):
     storage_type: str = field(
         default="memory",
         metadata={
-            "help": _("The storage type, default is memory"),
+            "help": _(
+                "The storage type. Supported values: memory, disk, valkey. "
+                "For valkey, configure via env vars: VALKEY_HOST, VALKEY_PORT, "
+                "VALKEY_PASSWORD."
+            ),
         },
     )
     max_memory_mb: int = field(
@@ -170,6 +174,21 @@ def initialize_cache(
             logger.warning(
                 f"Can't import DiskCacheStorage, use MemoryCacheStorage, import error "
                 f"message: {str(e)}"
+            )
+            cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
+    elif storage_type == "valkey":
+        try:
+            from dbgpt_ext.storage.cache.valkey_cache import ValkeyCacheStorage
+
+            # Configuration is read from environment variables:
+            # VALKEY_HOST, VALKEY_PORT, VALKEY_PASSWORD
+            cache_storage = ValkeyCacheStorage()
+        except ImportError as e:
+            logger.warning(
+                "Can't import ValkeyCacheStorage (valkey-glide not installed). "
+                "Falling back to MemoryCacheStorage — cache will NOT be shared "
+                "across nodes. Import error: %s",
+                e,
             )
             cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
     else:
