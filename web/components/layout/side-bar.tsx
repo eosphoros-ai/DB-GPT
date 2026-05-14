@@ -238,7 +238,8 @@ function SideBar() {
         <EditOutlined className='text-orange-500' />
         <span>{t('prompts')}</span>
       </div>
-      <div
+      {/* dbgpts社区，暂时不展示*/}
+      {/* <div
         onClick={() => {
           router.push('/construct/dbgpts');
           setSettingsOpen(false);
@@ -252,7 +253,7 @@ function SideBar() {
       >
         <GlobalOutlined className='text-purple-500' />
         <span>{t('dbgpts_community')}</span>
-      </div>
+      </div> */}
       <div
         onClick={() => {
           router.push('/models_evaluation');

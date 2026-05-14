@@ -471,7 +471,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         model_kwargs = kwargs.get("model_kwargs") or {}
 
         transformer = Transformer(model_name, cache_dir=cache_folder, **model_kwargs)
-        pooling = Pooling(transformer.get_embedding_dimension())
+        pooling = Pooling(transformer.get_word_embedding_dimension())
         kwargs["client"] = SentenceTransformer(modules=[transformer, pooling])
 
         super().__init__(**kwargs)

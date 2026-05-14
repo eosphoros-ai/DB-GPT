@@ -2,7 +2,6 @@ import MarkDownContext from '@/new-components/common/MarkdownContext';
 import ConstructLayout from '@/new-components/layout/Construct';
 import axios from '@/utils/ctx-axios';
 import {
-  CloseOutlined,
   CloudUploadOutlined,
   DownOutlined,
   EllipsisOutlined,
@@ -95,7 +94,13 @@ function Skills() {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState('');
   const [officialOnly, setOfficialOnly] = useState(false);
-  const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({});
+  const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('skills_enabled_map') || '{}');
+    } catch {
+      return {};
+    }
+  });
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -138,6 +143,10 @@ function Skills() {
   useEffect(() => {
     fetchSkillsList();
   }, [fetchSkillsList]);
+
+  useEffect(() => {
+    localStorage.setItem('skills_enabled_map', JSON.stringify(enabledMap));
+  }, [enabledMap]);
 
   const fetchDetail = useCallback(async (skillName: string, filePath: string) => {
     setDetailLoading(true);
@@ -440,13 +449,14 @@ function Skills() {
 
       {/* Detail Modal */}
       <Modal
+        key={selectedSkill?.name || 'detail'}
         open={detailOpen}
         onCancel={handleCloseDetail}
         footer={null}
         width='80vw'
         style={{ maxWidth: 1000, top: 40 }}
-        closable={false}
         styles={{ body: { padding: 0 } }}
+        maskClosable={true}
         destroyOnClose
       >
         {/* Modal Header */}
@@ -464,10 +474,6 @@ function Skills() {
               {t('skills_try_btn')}
             </Button>
             <EllipsisOutlined className='p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer' />
-            <CloseOutlined
-              className='p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer'
-              onClick={handleCloseDetail}
-            />
           </div>
         </div>
 

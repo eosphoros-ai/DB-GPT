@@ -1,7 +1,6 @@
 import { ModelSvg } from '@/components/icons';
 import Icon, {
   AppstoreOutlined,
-  BuildOutlined,
   ConsoleSqlOutlined,
   ForkOutlined,
   MessageOutlined,
@@ -73,12 +72,13 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       path: '/skills',
       icon: <ThunderboltOutlined />,
     },
-    {
-      key: 'dbgpts',
-      name: t('dbgpts_community'),
-      path: '/dbgpts',
-      icon: <BuildOutlined />,
-    },
+    // 删除dbgpts社区相关功能
+    // {
+    //   key: 'dbgpts',
+    //   name: t('dbgpts_community'),
+    //   path: '/dbgpts',
+    //   icon: <BuildOutlined />,
+    // },
   ];
   const router = useRouter();
   const activeKey = router.pathname.split('/')[2];

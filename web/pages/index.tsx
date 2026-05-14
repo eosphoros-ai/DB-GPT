@@ -690,6 +690,15 @@ const Playground: NextPage = () => {
     }
   });
 
+  const enabledSkillsList = (skillsList || []).filter(s => {
+    try {
+      const map = JSON.parse(localStorage.getItem('skills_enabled_map') || '{}');
+      return map[s.id] !== false;
+    } catch {
+      return true; // if localStorage parse fails, show the skill
+    }
+  });
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -2541,7 +2550,7 @@ const Playground: NextPage = () => {
                                     />
                                   </div>
                                   <div className='max-h-[300px] overflow-y-auto'>
-                                    {(skillsList || [])
+                                    {enabledSkillsList
                                       .filter(
                                         skill =>
                                           !skillSearchQuery ||
@@ -2593,7 +2602,7 @@ const Playground: NextPage = () => {
                                           )}
                                         </div>
                                       ))}
-                                    {(skillsList || []).filter(
+                                    {enabledSkillsList.filter(
                                       skill =>
                                         !skillSearchQuery ||
                                         skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) ||
@@ -2609,7 +2618,7 @@ const Playground: NextPage = () => {
                                   </div>
                                   <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                     <span className='text-[10px] text-gray-400'>
-                                      {(skillsList || []).length} 个技能可用
+                                      {enabledSkillsList.length} 个技能可用
                                     </span>
                                     <Button
                                       type='link'
@@ -2967,7 +2976,7 @@ const Playground: NextPage = () => {
                                   />
                                 </div>
                                 <div className='max-h-[300px] overflow-y-auto'>
-                                  {(skillsList || [])
+                                  {enabledSkillsList
                                     .filter(
                                       skill =>
                                         !skillSearchQuery ||
@@ -3019,7 +3028,7 @@ const Playground: NextPage = () => {
                                         )}
                                       </div>
                                     ))}
-                                  {(skillsList || []).filter(
+                                  {enabledSkillsList.filter(
                                     skill =>
                                       !skillSearchQuery ||
                                       skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) ||
@@ -3035,7 +3044,7 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length} 个技能可用
+                                    {enabledSkillsList.length} 个技能可用
                                   </span>
                                   <Button
                                     type='link'
