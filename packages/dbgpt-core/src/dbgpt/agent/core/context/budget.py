@@ -10,6 +10,8 @@ from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MAX_CONTEXT_TOKENS = 120000
+
 
 class TokenState(Enum):
     """Context budget state levels."""
@@ -42,7 +44,7 @@ class ContextBudgetConfig:
 
     def __init__(
         self,
-        max_context_tokens: int = 120000,
+        max_context_tokens: int = DEFAULT_MAX_CONTEXT_TOKENS,
         warning_threshold: float = 0.70,
         error_threshold: float = 0.90,
         critical_threshold: float = 0.95,
@@ -53,7 +55,14 @@ class ContextBudgetConfig:
         truncated_observation_max_chars: int = 200,
         min_keep_tokens: int = 10000,
     ):
-        self.max_context_tokens = max_context_tokens
+        # `max_context_tokens <= 0` means "auto-detect from model metadata".
+        # If the caller could not resolve metadata, keep the context window usable
+        # by falling back to the system default budget instead of leaving it at 0.
+        self.max_context_tokens = (
+            max_context_tokens
+            if max_context_tokens and max_context_tokens > 0
+            else DEFAULT_MAX_CONTEXT_TOKENS
+        )
         self.warning_threshold = warning_threshold
         self.error_threshold = error_threshold
         self.critical_threshold = critical_threshold

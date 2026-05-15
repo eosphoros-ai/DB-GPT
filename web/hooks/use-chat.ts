@@ -118,12 +118,17 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               // React-agent format: {"type": "context.status", "used": ..., "budget": ..., ...}
               const cs = parsedData.context_status ?? (parsedData.type === 'context.status' ? parsedData : null);
               if (cs) {
+                const budget = Number(cs.budget ?? 0);
+                if (!Number.isFinite(budget) || budget <= 0) {
+                  setContextStatus(null);
+                  return;
+                }
                 // Only show banner when Layer 3 (LLM compression) is active
                 if (cs.compact_layer === 'layer3') {
                   setContextStatus({
                     state: mapContextState(cs.state || 'normal'),
                     used_tokens: cs.used ?? 0,
-                    max_tokens: cs.budget ?? 0,
+                    max_tokens: budget,
                     usage_percent: (cs.ratio ?? 0) * 100,
                     layer: cs.compact_layer,
                     message: cs.message,

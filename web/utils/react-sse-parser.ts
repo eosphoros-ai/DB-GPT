@@ -201,6 +201,10 @@ export class ReActSSEState {
   }
 
   private handleContextStatus(event: SSEContextStatusEvent): void {
+    if (!Number.isFinite(event.budget) || event.budget <= 0) {
+      this._contextStatus = null;
+      return;
+    }
     // Map backend state values (lowercase: "normal", "warning", "error",
     // "critical", "overflow") to frontend display states ("OK", "WARNING", "ERROR").
     const stateMap: Record<string, 'OK' | 'WARNING' | 'ERROR'> = {

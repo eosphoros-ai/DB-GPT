@@ -276,8 +276,8 @@ Agent context management can be configured in the application TOML file:
 
 ```toml
 [service.web.agent_context]
-# Set to 0 to auto-detect from the selected model metadata.
-max_context_tokens = 0
+# Non-positive values fall back to the default context budget.
+max_context_tokens = 120000
 reserved_tokens = 4096
 warning_threshold = 0.70
 error_threshold = 0.90
@@ -289,11 +289,8 @@ min_keep_tokens = 10000
 max_compact_failures = 3
 ```
 
-When `max_context_tokens` is `0`, DB-GPT tries to read the selected model's
-`context_length` from `llm_client.get_model_metadata(model_name)`. If the model
-metadata is unavailable, it falls back to the default budget.
-
-For stable behavior, set `context_length` on each LLM deployment:
+For stable behavior, set `context_length` on each LLM deployment when you want
+the model metadata to reflect the real provider window:
 
 ```toml
 [[models.llms]]

@@ -94,12 +94,13 @@ class TestContextManagerCompaction:
 
 
 class TestReactiveCompact:
-    def test_reactive_compact_reduces_messages(self):
+    @pytest.mark.asyncio
+    async def test_reactive_compact_reduces_messages(self):
         cfg = ContextBudgetConfig()
         mgr = ContextManager(config=cfg)
 
         msgs = _build_long_conversation(num_rounds=10)
-        result = mgr.reactive_compact(msgs)
+        result = await mgr.reactive_compact(msgs)
         # Should keep system + last 2 rounds only
         assert len(result) == 1 + 2 * 3  # system + 2 rounds × 3 msgs
 
@@ -114,3 +115,17 @@ class TestContextManagerRecordsHistory:
         await mgr.manage_context(msgs, current_round=0)
         assert len(mgr.tracker.token_history) == 1
         assert mgr.tracker.token_history[0] > 0
+
+    @pytest.mark.asyncio
+    async def test_skip_status_emit_when_effective_budget_invalid(self):
+        received = []
+
+        async def _on_status(status):
+            received.append(status)
+
+        cfg = ContextBudgetConfig(max_context_tokens=1, reserved_tokens=10)
+        mgr = ContextManager(config=cfg, on_status_event=_on_status)
+
+        msgs = [_sys("system"), _ai("T"), _human("A"), _obs("data")]
+        await mgr.manage_context(msgs, current_round=0)
+        assert received == []

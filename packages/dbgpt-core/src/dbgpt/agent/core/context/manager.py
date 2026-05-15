@@ -59,6 +59,12 @@ class ContextManager:
     ) -> None:
         """Push a context.status event to the registered callback (if any)."""
         budget = self.tracker.config.effective_budget
+        if budget <= 0:
+            logger.debug(
+                "Skip context status emit because effective budget is non-positive: %d",
+                budget,
+            )
+            return
         ratio = round(token_count / budget, 4) if budget > 0 else 1.0
         logger.info(
             "Context status: tokens=%d, budget=%d, ratio=%.4f, state=%s, layer=%s",

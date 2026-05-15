@@ -243,8 +243,7 @@ Observation: <observation text>
 
 ```toml
 [service.web.agent_context]
-# 设置为 0 时，会从当前模型 metadata 自动读取上下文窗口。
-max_context_tokens = 0
+max_context_tokens = 120000
 reserved_tokens = 4096
 warning_threshold = 0.70
 error_threshold = 0.90
@@ -256,9 +255,7 @@ min_keep_tokens = 10000
 max_compact_failures = 3
 ```
 
-当 `max_context_tokens` 为 `0` 时，DB-GPT 会尝试通过 `llm_client.get_model_metadata(model_name)` 读取所选模型的 `context_length`。如果模型 metadata 不可用，则回退到默认预算。
-
-为了让行为稳定，建议在每个 LLM 部署配置中显式设置 `context_length`：
+为了让行为稳定，建议在每个 LLM 部署配置中显式设置 `context_length`，这样模型 metadata 也会反映真实的 provider 上下文窗口：
 
 ```toml
 [[models.llms]]

@@ -1,6 +1,7 @@
 """Tests for context budget tracking."""
 
 from dbgpt.agent.core.context.budget import (
+    DEFAULT_MAX_CONTEXT_TOKENS,
     ContextBudgetConfig,
     ContextBudgetTracker,
     TokenState,
@@ -41,6 +42,13 @@ class TestContextBudgetConfig:
         assert cfg.warning_threshold == 0.60
         assert cfg.error_threshold == 0.80
         assert cfg.critical_threshold == 0.90
+
+    def test_non_positive_max_context_tokens_falls_back_to_default(self):
+        cfg = ContextBudgetConfig(max_context_tokens=0)
+        assert cfg.max_context_tokens == DEFAULT_MAX_CONTEXT_TOKENS
+
+        cfg = ContextBudgetConfig(max_context_tokens=-1)
+        assert cfg.max_context_tokens == DEFAULT_MAX_CONTEXT_TOKENS
 
 
 class _FakeMsg:

@@ -81,12 +81,9 @@ async def _load_context_budget_config(
         app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
         web_config = getattr(getattr(app_config, "service", None), "web", None)
         agent_context = getattr(web_config, "agent_context", None)
-        max_context_tokens = _value(agent_context, "max_context_tokens", 0)
-        if max_context_tokens <= 0:
-            max_context_tokens = (
-                await _resolve_model_context_tokens(llm_client, model_name)
-                or defaults.max_context_tokens
-            )
+        max_context_tokens = _value(
+            agent_context, "max_context_tokens", defaults.max_context_tokens
+        )
         return ContextBudgetConfig(
             max_context_tokens=max_context_tokens,
             warning_threshold=_value(
@@ -133,9 +130,6 @@ async def _load_context_budget_config(
         logger.debug(
             "Failed to load agent context config; using defaults", exc_info=True
         )
-        metadata_tokens = await _resolve_model_context_tokens(llm_client, model_name)
-        if metadata_tokens:
-            return ContextBudgetConfig(max_context_tokens=metadata_tokens)
         return defaults
 
 

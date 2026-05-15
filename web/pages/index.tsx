@@ -1562,6 +1562,11 @@ const Playground: NextPage = () => {
           return;
         }
         if (payload.type === 'context.status') {
+          const budget = Number(payload.budget ?? 0);
+          if (!Number.isFinite(budget) || budget <= 0) {
+            setContextStatus(null);
+            return;
+          }
           const stateMap: Record<string, 'OK' | 'WARNING' | 'ERROR'> = {
             normal: 'OK',
             warning: 'WARNING',
@@ -1572,7 +1577,7 @@ const Playground: NextPage = () => {
           setContextStatus({
             state: stateMap[payload.state] || 'OK',
             used_tokens: payload.used ?? 0,
-            max_tokens: payload.budget ?? 0,
+            max_tokens: budget,
             usage_percent: (payload.ratio ?? 0) * 100,
             layer: payload.compact_layer ?? null,
           });
