@@ -80,6 +80,26 @@ class STRUCT(TypeEngine):  # pylint: disable=no-init
         return None
 
 
+class VARBINARY(sqltypes.VARBINARY):  # pylint: disable=no-init
+    """StarRocks VARBINARY type.
+
+    Supported since StarRocks 3.0.
+    Used to store binary data with maximum length of 1048576 bytes.
+    """
+
+    __visit_name__ = "VARBINARY"
+
+
+class BINARY(sqltypes.BINARY):  # pylint: disable=no-init
+    """StarRocks BINARY type.
+
+    Supported since StarRocks 3.0.
+    Used to store fixed-length binary data with maximum length of 1048576 bytes.
+    """
+
+    __visit_name__ = "BINARY"
+
+
 _type_map = {
     # === Boolean ===
     "boolean": sqltypes.BOOLEAN,
@@ -98,6 +118,9 @@ _type_map = {
     "varchar": sqltypes.VARCHAR,
     "char": sqltypes.CHAR,
     "json": sqltypes.JSON,
+    # === Binary (since StarRocks 3.0) ===
+    "binary": BINARY,
+    "varbinary": VARBINARY,
     # === Date and time ===
     "date": sqltypes.DATE,
     "datetime": sqltypes.DATETIME,
