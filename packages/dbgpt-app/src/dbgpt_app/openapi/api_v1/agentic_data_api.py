@@ -3992,6 +3992,7 @@ async def delete_share_link(
 @router.get("/v1/agent/files/download")
 async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     """Download a file created by agent tools (shell_interpreter, code_interpreter).
 
@@ -4013,11 +4014,10 @@ async def download_agent_file(
     except (ValueError, OSError):
         raise HTTPException(status_code=400, detail="Invalid file path")
 
-    # Allowed base directories for agent-created files
+    # Allowed base directories for agent-created files.
     allowed_dirs = [
         os.path.realpath("/tmp"),
         os.path.realpath(os.path.join(PILOT_PATH, "tmp")),
-        os.path.realpath(ROOT_PATH),
     ]
 
     if not any(resolved.startswith(d + os.sep) or resolved == d for d in allowed_dirs):
