@@ -46,6 +46,21 @@ def test_entity_create(default_entity_dict):
         session.add(entity)
 
 
+def test_to_response_preserves_user_name(dao):
+    entity = ServeEntity(
+        conv_uid="test_conv_uid",
+        summary="hello",
+        chat_mode="chat_normal",
+        user_name="request_user",
+        sys_code="dbgpt",
+        app_code="chat_normal",
+    )
+
+    response = dao.to_response(entity)
+
+    assert response.user_name == "request_user"
+
+
 def test_entity_unique_key(default_entity_dict):
     # TODO: implement your test case
     pass
