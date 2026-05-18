@@ -5,16 +5,19 @@ import Icon, {
   ForkOutlined,
   MessageOutlined,
   PartitionOutlined,
+  TeamOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
+import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { ConfigProvider, Tabs } from 'antd';
-import { t } from 'i18next';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import './style.css';
 
 function ConstructLayout({ children }: { children: React.ReactNode }) {
-  const items = [
+  const { t, i18n } = useTranslation();
+  const items = useMemo(() => [
     {
       key: 'app',
       name: t('App'),
@@ -72,6 +75,12 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       path: '/skills',
       icon: <ThunderboltOutlined />,
     },
+    {
+      key: 'user',
+      name: t('user_management'),
+      path: '/user',
+      icon: <TeamOutlined />,
+    },
     // 删除dbgpts社区相关功能
     // {
     //   key: 'dbgpts',
@@ -79,10 +88,22 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
     //   path: '/dbgpts',
     //   icon: <BuildOutlined />,
     // },
-  ];
+  ], [t, i18n.language]);
   const router = useRouter();
   const activeKey = router.pathname.split('/')[2];
   // const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches; // unused
+
+  const isSuperAdmin = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_USERINFO_KEY);
+      if (raw) {
+        return JSON.parse(raw).role === 'super_admin';
+      }
+    } catch {
+      /* empty */
+    }
+    return false;
+  };
 
   return (
     <div className='flex flex-col h-full w-full  dark:bg-gradient-dark bg-gradient-light bg-cover bg-center'>
@@ -108,7 +129,9 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
           //   color: !isDarkMode ? 'white' : 'black',
           // }}
           activeKey={activeKey}
-          items={items.map(items => {
+          items={items
+            .filter(item => item.key !== 'user' || isSuperAdmin())
+            .map(items => {
             return {
               key: items.key,
               label: items.name,

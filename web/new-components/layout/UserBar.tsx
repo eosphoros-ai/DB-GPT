@@ -1,11 +1,25 @@
-import { UserInfoResponse } from '@/types/userinfo';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { Avatar } from 'antd';
 import cls from 'classnames';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+interface StoredUserInfo {
+  user_id: string;
+  user_no: string;
+  user_name: string;
+  nick_name: string;
+  real_name?: string;
+  role: 'super_admin' | 'normal';
+  user_group_id: number | null;
+  user_group_name: string | null;
+  phone?: string;
+  email?: string;
+}
 
 function UserBar({ onlyAvatar = false }) {
-  const [userInfo, setUserInfo] = useState<UserInfoResponse>();
+  const { t } = useTranslation();
+  const [userInfo, setUserInfo] = useState<StoredUserInfo>();
   useEffect(() => {
     try {
       const user = JSON.parse(localStorage.getItem(STORAGE_USERINFO_KEY) ?? '');
@@ -15,11 +29,7 @@ function UserBar({ onlyAvatar = false }) {
     }
   }, []);
 
-  // TODO: delete unused function
-  // const logout = () => {
-  //   localStorage.removeItem(STORAGE_USERINFO_KEY);
-  //   window.location.href = `${process.env.LOGOUT_URL}&goto=${encodeURIComponent(window.location.href)}`;
-  // };
+  const roleLabel = userInfo?.role === 'super_admin' ? t('user_super_admin') : t('user_normal');
 
   return (
     <div className='flex flex-1 items-center justify-center'>
@@ -29,7 +39,7 @@ function UserBar({ onlyAvatar = false }) {
           'justify-between': !onlyAvatar,
         })}
       >
-        <span className='flex gap-2 items-center'>
+        <span className='flex gap-2 items-center whitespace-nowrap'>
           <Avatar src={userInfo?.avatar_url} className='bg-gradient-to-tr from-[#31afff] to-[#1677ff] cursor-pointer'>
             {userInfo?.nick_name}
           </Avatar>
@@ -38,15 +48,9 @@ function UserBar({ onlyAvatar = false }) {
               hidden: onlyAvatar,
             })}
           >
-            {userInfo?.nick_name}
+            {roleLabel}
           </span>
         </span>
-        {/* <LogoutOutlined
-          onClick={logout}
-          className={cls('cursor-pointer opacity-0 transition-all hover:opacity-100 group-hover:opacity-70', {
-            hidden: onlyAvatar,
-          })}
-        /> */}
       </div>
     </div>
   );

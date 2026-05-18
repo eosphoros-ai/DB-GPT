@@ -1,5 +1,5 @@
 import { getUserId } from '@/utils';
-import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
+import { HEADER_USER_ID_KEY, STORAGE_TOKEN_KEY } from '@/utils/constants/index';
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 export type ResponseType<T = any> = {
@@ -44,6 +44,10 @@ ins.interceptors.request.use(request => {
     request.timeout = isLongTimeApi ? 60000 : 100000;
   }
   request.headers.set(HEADER_USER_ID_KEY, getUserId());
+  const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+  if (token) {
+    request.headers.set('Authorization', `Bearer ${token}`);
+  }
   return request;
 });
 

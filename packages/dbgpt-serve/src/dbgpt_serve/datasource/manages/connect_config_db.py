@@ -230,17 +230,30 @@ class ConnectConfigDao(BaseDao):
         finally:
             session.close()
 
-    def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
-        """Get db list."""
+    def get_db_list(
+        self,
+        db_name: Optional[str] = None,
+        user_id: Optional[str] = None,
+        user_ids: Optional[list] = None,
+    ):
+        """Get db list.
+
+        Args:
+            db_name: Optional database name filter
+            user_id: Optional single user id filter (owner or public)
+            user_ids: Optional list of user ids to include (for group-based filtering)
+        """
         session = self.get_raw_session()
-        if db_name and user_id:
-            sql = f"SELECT * FROM connect_config where (user_id='{user_id}' or user_id='' or user_id IS NULL) and db_name='{db_name}'"  # noqa
-        elif user_id:
-            sql = f"SELECT * FROM connect_config where user_id='{user_id}' or user_id='' or user_id IS NULL"  # noqa
+        if db_name and (user_id or user_ids):
+            id_condition = self._build_user_filter(user_id, user_ids)
+            sql = f"SELECT * FROM connect_config where ({id_condition}) and db_name='{db_name}'"
+        elif user_id or user_ids:
+            id_condition = self._build_user_filter(user_id, user_ids)
+            sql = f"SELECT * FROM connect_config where {id_condition}"
         elif db_name:
-            sql = f"SELECT * FROM connect_config where  db_name='{db_name}'"  # noqa
+            sql = f"SELECT * FROM connect_config where db_name='{db_name}'"
         else:
-            sql = f"SELECT * FROM connect_config"  # noqa
+            sql = f"SELECT * FROM connect_config"
 
         result = session.execute(text(sql))
         fields = [field[0] for field in result.cursor.description]  # type: ignore
@@ -250,7 +263,26 @@ class ConnectConfigDao(BaseDao):
             for i, field in enumerate(fields):
                 row_dict[field] = row[i]
             data.append(row_dict)
+        session.close()
         return data
+
+    @staticmethod
+    def _build_user_filter(
+        user_id: Optional[str] = None,
+        user_ids: Optional[list] = None,
+    ) -> str:
+        """Build the WHERE clause for user filtering."""
+        ids = []
+        if user_id:
+            ids.append(user_id)
+        if user_ids:
+            ids.extend(user_ids)
+        if not ids:
+            return "1=1"
+        # Remove duplicates
+        unique_ids = list(set(ids))
+        escaped = "','".join(str(uid) for uid in unique_ids)
+        return f"user_id IN ('{escaped}') or user_id='' or user_id IS NULL"
 
     def delete_db(self, db_name):
         """Delete db connect info."""

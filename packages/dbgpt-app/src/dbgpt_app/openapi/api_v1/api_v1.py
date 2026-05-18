@@ -176,9 +176,18 @@ async def db_connect_list(
     db_name: Optional[str] = Query(default=None, description="database name"),
     user_info: UserRequest = Depends(get_user_from_headers),
 ):
-    results = CFG.local_db_manager.get_db_list(
-        db_name=db_name, user_id=user_info.user_id
-    )
+    # Data isolation: super admin sees all, normal users see own + same-group + public
+    if user_info.role == "super_admin" or not user_info.user_id:
+        results = CFG.local_db_manager.get_db_list(db_name=db_name)
+    else:
+        same_group_user_ids = _get_same_group_user_ids(
+            user_info.user_id, user_info.user_group_id
+        )
+        results = CFG.local_db_manager.get_db_list(
+            db_name=db_name,
+            user_id=user_info.user_id,
+            user_ids=same_group_user_ids,
+        )
     # 排除部分数据库不允许用户访问
     if results and len(results):
         results = [
@@ -187,6 +196,32 @@ async def db_connect_list(
             if d.get("db_name") not in ["auth", "dbgpt", "test", "public"]
         ]
     return Result.succ(results)
+
+
+def _get_same_group_user_ids(user_id: str, user_group_id: Optional[int]) -> list:
+    """Get user IDs belonging to the same group, excluding the current user."""
+    if not user_group_id:
+        return []
+    try:
+        from dbgpt.storage.metadata import db
+        from dbgpt_serve.user.models.models import UserEntity
+
+        session = db._session()
+        try:
+            users = (
+                session.query(UserEntity)
+                .filter(
+                    UserEntity.user_group_id == user_group_id,
+                    UserEntity.id != int(user_id) if user_id.isdigit() else True,
+                )
+                .all()
+            )
+            return [str(u.id) for u in users]
+        finally:
+            session.close()
+    except Exception as e:
+        logger.warning(f"Failed to get same-group user IDs: {e}")
+        return []
 
 
 @router.post("/v1/chat/db/add", response_model=Result)

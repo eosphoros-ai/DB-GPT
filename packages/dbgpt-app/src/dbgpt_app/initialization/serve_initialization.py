@@ -29,6 +29,7 @@ def scan_serve_configs():
         "dbgpt_serve.model",
         "dbgpt_serve.prompt",
         "dbgpt_serve.rag",
+        "dbgpt_serve.user",
     ]
 
     scanner = ModelScanner[BaseServeConfig]()
@@ -306,3 +307,17 @@ def register_serve_apps(
             api_keys=global_api_keys,
         ),
     )
+
+    # ################################ User Serve Register Begin #####################
+    from dbgpt_serve.user.serve import Serve as UserServe
+
+    system_app.register(
+        UserServe,
+        config=get_config(
+            serve_configs,
+            UserServe.name,
+            dbgpt_serve.user.serve.ServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ################################ User Serve Register End #######################

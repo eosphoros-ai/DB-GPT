@@ -422,9 +422,14 @@ class ConnectorManager(BaseComponent):
             logger.error(f"Test connection Failure!{str(e)}")
             raise ValueError(f"Test connection Failure!{str(e)}")
 
-    def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
+    def get_db_list(
+        self,
+        db_name: Optional[str] = None,
+        user_id: Optional[str] = None,
+        user_ids: Optional[list] = None,
+    ):
         """Get db list."""
-        return self.storage.get_db_list(db_name, user_id)
+        return self.storage.get_db_list(db_name, user_id, user_ids)
 
     @Deprecated(
         version="0.7.0",

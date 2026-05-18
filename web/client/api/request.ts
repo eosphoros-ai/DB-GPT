@@ -74,10 +74,6 @@ const buildUrl = (baseUrl: string, params: any) => {
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 };
 
-export const addUser = (data: UserParam) => {
-  return POST<UserParam, UserParamResponse>('/api/v1/user/add', data);
-};
-
 /** Database Page */
 export const getDbList = () => {
   return GET<null, DbListResponse>('/api/v2/serve/datasources');

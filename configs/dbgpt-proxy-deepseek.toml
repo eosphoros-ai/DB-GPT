@@ -7,6 +7,7 @@ encrypt_key = "stargazer"
 [service.web]
 host = "0.0.0.0"
 port = 5670
+new_web_ui = true
 
 [service.web.database]
 type = "mysql"
@@ -28,7 +29,7 @@ persist_path = "pilot/data"
 [[models.llms]]
 name = "deepseek-v4-flash"
 provider = "proxy/deepseek"
-api_key = "sk-e1d076bc86f44ede9011f79bea88a712"
+api_key = "sk-19894c5cfe3c442787cef29aa6b92a7e"
 
 [[models.embeddings]]
 name = "BAAI/bge-large-zh-v1.5"

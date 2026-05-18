@@ -13,6 +13,7 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
@@ -569,6 +570,24 @@ const Playground: NextPage = () => {
 
   const [isKnowledgePanelOpen, setIsKnowledgePanelOpen] = useState(false);
   const [knowledgeSearchQuery, setKnowledgeSearchQuery] = useState('');
+  const [userInfo, setUserInfo] = useState<{
+    user_name: string;
+    nick_name: string;
+    role: 'super_admin' | 'normal';
+    user_group_name: string | null;
+    phone?: string;
+    email?: string;
+    avatar_url?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_USERINFO_KEY);
+      if (raw) setUserInfo(JSON.parse(raw));
+    } catch {
+      /* empty */
+    }
+  }, []);
 
   const [isDbPanelOpen, setIsDbPanelOpen] = useState(false);
   const [dbSearchQuery, setDbSearchQuery] = useState('');
@@ -2268,7 +2287,52 @@ const Playground: NextPage = () => {
               <div className='flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-medium'>
                 <ThunderboltOutlined className='text-yellow-500' /> <span>300</span>
               </div>
-              <Avatar size='small' icon={<UserOutlined />} className='bg-blue-500' />
+              <Popover
+                content={
+                  <div className='w-56 py-1'>
+                    <div className='px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider'>
+                      {t('user_info')}
+                    </div>
+                    <div className='px-3 py-2 text-sm text-gray-700 dark:text-gray-300'>
+                      <div className='flex justify-between py-1'>
+                        <span className='text-gray-400'>{t('user_name')}</span>
+                        <span>{userInfo?.user_name || '-'}</span>
+                      </div>
+                      <div className='flex justify-between py-1'>
+                        <span className='text-gray-400'>{t('user_group')}</span>
+                        <span>{userInfo?.user_group_name || '-'}</span>
+                      </div>
+                      <div className='flex justify-between py-1'>
+                        <span className='text-gray-400'>{t('user_role')}</span>
+                        <span>{userInfo?.role === 'super_admin' ? t('user_super_admin') : t('user_normal')}</span>
+                      </div>
+                      {userInfo?.phone && (
+                        <div className='flex justify-between py-1'>
+                          <span className='text-gray-400'>{t('user_phone')}</span>
+                          <span>{userInfo.phone}</span>
+                        </div>
+                      )}
+                      {userInfo?.email && (
+                        <div className='flex justify-between py-1'>
+                          <span className='text-gray-400'>{t('user_email')}</span>
+                          <span>{userInfo.email}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                }
+                trigger='click'
+                placement='bottomRight'
+                arrow={false}
+                overlayInnerStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
+              >
+                <Avatar
+                  src={userInfo?.avatar_url}
+                  size='small'
+                  icon={<UserOutlined />}
+                  className='bg-gradient-to-tr from-[#31afff] to-[#1677ff] cursor-pointer'
+                />
+              </Popover>
             </div>
           </div>
 

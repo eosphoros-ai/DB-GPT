@@ -1,0 +1,19 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="8" result="effect1_foregroundBlur"/>
+    </filter>
+    <linearGradient id="grad" x1="40" y1="14" x2="40" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17D7FF"/>
+      <stop offset="1" stop-color="#1E5BFF"/>
+    </linearGradient>
+  </defs>
+  <!-- Soft glow halo -->
+  <g filter="url(#glow)">
+    <circle cx="40" cy="40" r="22" fill="#8FE7FF" fill-opacity="0.6"/>
+  </g>
+  <!-- Lightning bolt: gradient fill -->
+  <path d="M44 14L26 42H38L34 66L58 34H44L48 14H44Z" fill="url(#grad)"/>
+</svg>

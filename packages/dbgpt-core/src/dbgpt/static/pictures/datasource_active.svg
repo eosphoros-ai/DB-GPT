@@ -1,0 +1,39 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="8" result="effect1_foregroundBlur"/>
+    </filter>
+    <linearGradient id="bodyGrad" x1="34" y1="21" x2="34" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17D7FF"/>
+      <stop offset="1" stop-color="#1E5BFF"/>
+    </linearGradient>
+    <linearGradient id="pipeGrad" x1="46" y1="35" x2="58" y2="51" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17D7FF"/>
+      <stop offset="1" stop-color="#1E5BFF"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="58" y1="46" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17D7FF"/>
+      <stop offset="1" stop-color="#1E5BFF"/>
+    </linearGradient>
+  </defs>
+  <!-- Soft glow halo -->
+  <g filter="url(#glow)">
+    <circle cx="40" cy="38" r="20" fill="#8FE7FF" fill-opacity="0.65"/>
+  </g>
+  <!-- Cylinder body: gradient fill -->
+  <path d="M22 27C22 23.6863 27.4772 21 34 21C40.5228 21 46 23.6863 46 27V50C46 53.3137 40.5228 56 34 56C27.4772 56 22 53.3137 22 50V27Z" fill="url(#bodyGrad)"/>
+  <!-- Top cap -->
+  <ellipse cx="34" cy="27" rx="12" ry="6" fill="white" fill-opacity="0.9"/>
+  <!-- Mid stripe as white line accent -->
+  <path d="M22 36C22 39.3137 27.4772 42 34 42C40.5228 42 46 39.3137 46 36" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Bottom stripe -->
+  <path d="M22 44C22 47.3137 27.4772 50 34 50C40.5228 50 46 47.3137 46 44" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Pipe: gradient stroke -->
+  <path d="M46 35H52C55.3137 35 58 37.6863 58 41V44" stroke="url(#pipeGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Terminal node: gradient fill -->
+  <circle cx="58" cy="51" r="5" fill="url(#nodeGrad)"/>
+  <!-- Node center dot: white -->
+  <circle cx="58" cy="51" r="1.5" fill="white"/>
+</svg>

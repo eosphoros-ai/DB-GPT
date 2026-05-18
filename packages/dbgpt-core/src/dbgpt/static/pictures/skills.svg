@@ -1,0 +1,4 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lightning bolt: white fill + gray stroke, matching app.png/chat.png style -->
+  <path d="M44 14L26 42H38L34 66L58 34H44L48 14H44Z" fill="white" stroke="#5F6470" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

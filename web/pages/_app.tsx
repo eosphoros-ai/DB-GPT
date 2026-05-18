@@ -1,7 +1,9 @@
 import { ChatContext, ChatContextProvider } from '@/app/chat-context';
+import { apiInterceptors, getUserMenus } from '@/client/api';
+import LoginForm from '@/components/auth/LoginForm';
 import SideBar from '@/components/layout/side-bar';
 import FloatHelper from '@/new-components/layout/FloatHelper';
-import { STORAGE_LANG_KEY, STORAGE_USERINFO_KEY, STORAGE_USERINFO_VALID_TIME_KEY } from '@/utils/constants/index';
+import { STORAGE_LANG_KEY, STORAGE_TOKEN_KEY, STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
@@ -59,34 +61,65 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
 
-  // 登录检测
   const handleAuth = async () => {
-    setIsLogin(false);
-    // 如果已有登录信息，直接展示首页
-    // if (localStorage.getItem(STORAGE_USERINFO_KEY)) {
-    //   setIsLogin(true);
-    //   return;
-    // }
-
-    // MOCK User info
-    const user = {
-      user_channel: `dbgpt`,
-      user_no: `001`,
-      nick_name: `dbgpt`,
-    };
-    if (user) {
-      localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
-      localStorage.setItem(STORAGE_USERINFO_VALID_TIME_KEY, Date.now().toString());
+    // Skip auth for share pages
+    if (router.pathname.startsWith('/share')) {
       setIsLogin(true);
+      return;
+    }
+
+    const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+    if (!token) {
+      setIsLogin(false);
+      return;
+    }
+
+    // Already logged in and on login page — redirect to home
+    if (router.pathname.startsWith('/login')) {
+      router.replace('/');
+      return;
+    }
+
+    // Token exists, show page immediately while validating in background
+    setIsLogin(true);
+
+    try {
+      const [err, menus] = await apiInterceptors(getUserMenus());
+      if (err || !menus) {
+        localStorage.removeItem(STORAGE_TOKEN_KEY);
+        localStorage.removeItem(STORAGE_USERINFO_KEY);
+        setIsLogin(false);
+        return;
+      }
+      localStorage.setItem('__db_gpt_menus_key', JSON.stringify(menus));
+    } catch {
+      localStorage.removeItem(STORAGE_TOKEN_KEY);
+      localStorage.removeItem(STORAGE_USERINFO_KEY);
+      setIsLogin(false);
     }
   };
 
   useEffect(() => {
     handleAuth();
-  }, []);
+  }, [router.pathname]);
 
   if (!isLogin && !router.pathname.startsWith('/share')) {
-    return null;
+    return (
+      <ConfigProvider
+        locale={i18n.language === 'en' ? enUS : zhCN}
+        theme={{
+          token: {
+            colorPrimary: '#0C75FC',
+            borderRadius: 4,
+          },
+          algorithm: mode === 'dark' ? antdDarkTheme : undefined,
+        }}
+      >
+        <App>
+          <LoginForm />
+        </App>
+      </ConfigProvider>
+    );
   }
 
   const renderContent = () => {

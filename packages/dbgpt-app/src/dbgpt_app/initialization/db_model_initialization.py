@@ -21,6 +21,7 @@ from dbgpt_serve.prompt.models.models import ServeEntity as PromptManageEntity
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
+from dbgpt_serve.user.models.models import UserEntity, UserGroupEntity, UserGroupMenuEntity
 
 _MODELS = [
     PluginHubEntity,
@@ -40,4 +41,7 @@ _MODELS = [
     FlowVariableEntity,
     BenchmarkSummaryEntity,
     ShareLinkEntity,
+    UserEntity,
+    UserGroupEntity,
+    UserGroupMenuEntity,
 ]

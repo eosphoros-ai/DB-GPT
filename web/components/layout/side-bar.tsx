@@ -4,7 +4,7 @@ import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
-import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { STORAGE_LANG_KEY, STORAGE_THEME_KEY, STORAGE_TOKEN_KEY, STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
   AppstoreOutlined,
@@ -12,11 +12,13 @@ import Icon, {
   EditOutlined,
   GlobalOutlined,
   LineChartOutlined,
+  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageOutlined,
   PlusOutlined,
   RightOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { Popover, Skeleton, Tooltip, message } from 'antd';
 import cls from 'classnames';
@@ -137,6 +139,26 @@ function SideBar() {
     localStorage.setItem(STORAGE_LANG_KEY, language);
   }, [i18n]);
 
+  const allowedMenus = useMemo(() => {
+    try {
+      const stored = localStorage.getItem('__db_gpt_menus_key');
+      if (stored) {
+        return JSON.parse(stored).map((m: { menu_key: string }) => m.menu_key);
+      }
+    } catch {
+      /* empty */
+    }
+    return [];
+  }, []);
+
+  const isAllowed = useCallback(
+    (menuKey: string) => {
+      if (allowedMenus.length === 0) return true;
+      return allowedMenus.includes(menuKey);
+    },
+    [allowedMenus],
+  );
+
   const functions = useMemo(() => {
     const items: RouteItem[] = [
       {
@@ -172,72 +194,89 @@ function SideBar() {
         path: '/construct/knowledge',
       },
     ];
-    return items;
-  }, [t, pathname]);
+    return items.filter(item => isAllowed(item.key));
+  }, [t, pathname, isAllowed]);
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem(STORAGE_TOKEN_KEY);
+    localStorage.removeItem(STORAGE_USERINFO_KEY);
+    localStorage.removeItem('__db_gpt_menus_key');
+    window.location.href = '/login';
+  }, []);
 
   const settingsContent = (
     <div className='w-56 py-1'>
       <div className='px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider'>{t('management')}</div>
-      <div
-        onClick={() => {
-          router.push('/construct/app');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/app'),
-          },
-        )}
-      >
-        <AppstoreOutlined className='text-blue-500' />
-        <span>{t('app_management')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/models');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/models'),
-          },
-        )}
-      >
-        <Icon component={ModelSvg} className='text-cyan-500' />
-        <span>{t('model_manage')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/flow');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/flow'),
-          },
-        )}
-      >
-        <ApartmentOutlined className='text-green-500' />
-        <span>{t('awel_workflow')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/prompt');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/prompt'),
-          },
-        )}
-      >
-        <EditOutlined className='text-orange-500' />
-        <span>{t('prompts')}</span>
-      </div>
+      {isAllowed('app_management') && (
+        <div
+          onClick={() => {
+            router.push('/construct/app');
+            setSettingsOpen(false);
+          }}
+          className={cls(
+            'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+            {
+              'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/app'),
+            },
+          )}
+        >
+          <AppstoreOutlined className='text-blue-500' />
+          <span>{t('app_management')}</span>
+        </div>
+      )}
+      {isAllowed('model_manage') && (
+        <div
+          onClick={() => {
+            router.push('/construct/models');
+            setSettingsOpen(false);
+          }}
+          className={cls(
+            'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+            {
+              'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
+                pathname.startsWith('/construct/models'),
+            },
+          )}
+        >
+          <Icon component={ModelSvg} className='text-cyan-500' />
+          <span>{t('model_manage')}</span>
+        </div>
+      )}
+      {isAllowed('awel_workflow') && (
+        <div
+          onClick={() => {
+            router.push('/construct/flow');
+            setSettingsOpen(false);
+          }}
+          className={cls(
+            'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+            {
+              'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/flow'),
+            },
+          )}
+        >
+          <ApartmentOutlined className='text-green-500' />
+          <span>{t('awel_workflow')}</span>
+        </div>
+      )}
+      {isAllowed('prompts') && (
+        <div
+          onClick={() => {
+            router.push('/construct/prompt');
+            setSettingsOpen(false);
+          }}
+          className={cls(
+            'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+            {
+              'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
+                pathname.startsWith('/construct/prompt'),
+            },
+          )}
+        >
+          <EditOutlined className='text-orange-500' />
+          <span>{t('prompts')}</span>
+        </div>
+      )}
       {/* dbgpts社区，暂时不展示*/}
       {/* <div
         onClick={() => {
@@ -254,21 +293,40 @@ function SideBar() {
         <GlobalOutlined className='text-purple-500' />
         <span>{t('dbgpts_community')}</span>
       </div> */}
-      <div
-        onClick={() => {
-          router.push('/models_evaluation');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname === '/models_evaluation',
-          },
-        )}
-      >
-        <LineChartOutlined className='text-red-500' />
-        <span>{t('models_evaluation')}</span>
-      </div>
+      {isAllowed('models_evaluation') && (
+        <div
+          onClick={() => {
+            router.push('/models_evaluation');
+            setSettingsOpen(false);
+          }}
+          className={cls(
+            'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+            {
+              'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname === '/models_evaluation',
+            },
+          )}
+        >
+          <LineChartOutlined className='text-red-500' />
+          <span>{t('models_evaluation')}</span>
+        </div>
+      )}
+      {isAllowed('user_management') && (
+        <div
+          onClick={() => {
+            router.push('/construct/user');
+            setSettingsOpen(false);
+          }}
+          className={cls(
+            'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+            {
+              'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/user'),
+            },
+          )}
+        >
+          <TeamOutlined className='text-indigo-500' />
+          <span>{t('user_management')}</span>
+        </div>
+      )}
     </div>
   );
 
@@ -349,6 +407,11 @@ function SideBar() {
           <Tooltip title={t(isMenuExpand ? 'Close_Sidebar' : 'Show_Sidebar')} placement='right'>
             <div className={smallMenuItemStyle()} onClick={handleToggleMenu}>
               <MenuUnfoldOutlined />
+            </div>
+          </Tooltip>
+          <Tooltip title={t('Logout')} placement='right'>
+            <div className={smallMenuItemStyle()} onClick={handleLogout}>
+              <LogoutOutlined />
             </div>
           </Tooltip>
         </div>
@@ -512,6 +575,16 @@ function SideBar() {
               {isMenuExpand ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
             </div>
           </Popover>
+        </div>
+        {/* Logout button */}
+        <div className='pb-2'>
+          <div
+            className='flex items-center justify-center gap-2 px-4 py-2.5 w-full rounded-xl text-sm text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 cursor-pointer transition-colors'
+            onClick={handleLogout}
+          >
+            <LogoutOutlined />
+            <span>{t('Logout')}</span>
+          </div>
         </div>
       </div>
     </div>

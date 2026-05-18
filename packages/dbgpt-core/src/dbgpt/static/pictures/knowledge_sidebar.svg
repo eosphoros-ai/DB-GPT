@@ -1,0 +1,16 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left page: filled white with rounded outer corner -->
+  <path d="M42 25C42 25 38.5 22 31 22C27.134 22 24 24.134 24 24.134V55C24 55 27.134 53 31 53C38.5 53 42 56 42 56V25Z" fill="white" stroke="#5F6470" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Right page: filled white with rounded outer corner -->
+  <path d="M42 25C42 25 45.5 22 53 22C56.866 22 59 24 59 24V55C59 55 56.866 53 53 53C45.5 53 42 56 42 56V25Z" fill="white" stroke="#5F6470" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Center spine accent -->
+  <line x1="42" y1="25" x2="42" y2="56" stroke="#5F6470" stroke-width="3" stroke-linecap="round"/>
+  <!-- Left page text lines -->
+  <line x1="29" y1="31" x2="38" y2="31" stroke="#5F6470" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="29" y1="38" x2="38" y2="38" stroke="#5F6470" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="29" y1="45" x2="36" y2="45" stroke="#5F6470" stroke-width="2" stroke-linecap="round"/>
+  <!-- Right page text lines -->
+  <line x1="46" y1="31" x2="55" y2="31" stroke="#5F6470" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="46" y1="38" x2="55" y2="38" stroke="#5F6470" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="46" y1="45" x2="53" y2="45" stroke="#5F6470" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Database cylinder body: filled white -->
+  <path d="M22 27C22 23.6863 27.4772 21 34 21C40.5228 21 46 23.6863 46 27V50C46 53.3137 40.5228 56 34 56C27.4772 56 22 53.3137 22 50V27Z" fill="white" stroke="#5F6470" stroke-width="3"/>
+  <!-- Top ellipse cap for 3D cylinder feel -->
+  <ellipse cx="34" cy="27" rx="12" ry="6" fill="white" stroke="#5F6470" stroke-width="3"/>
+  <!-- Mid-line stripe accent (gives depth) -->
+  <path d="M22 36C22 39.3137 27.4772 42 34 42C40.5228 42 46 39.3137 46 36" stroke="#5F6470" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Pipe / connector arm -->
+  <path d="M46 35H52C55.3137 35 58 37.6863 58 41V44" stroke="#5F6470" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Terminal node circle (filled white with stroke) -->
+  <circle cx="58" cy="51" r="5" fill="white" stroke="#5F6470" stroke-width="3"/>
+  <!-- Center dot of terminal node -->
+  <circle cx="58" cy="51" r="1.5" fill="#5F6470"/>
+</svg>
