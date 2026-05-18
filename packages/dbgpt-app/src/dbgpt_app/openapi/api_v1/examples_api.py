@@ -13,6 +13,7 @@ Example files are resolved in the following order:
 import logging
 import os
 import shutil
+from pathlib import PurePosixPath, PureWindowsPath
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends
@@ -59,6 +60,23 @@ EXAMPLE_FILES = {
         "name": "sql_skill.txt",
     },
 }
+
+
+def _validate_example_filename(filename: str) -> str:
+    if "\x00" in filename:
+        raise ValueError("example filename must not contain null bytes")
+
+    posix_path = PurePosixPath(filename)
+    windows_path = PureWindowsPath(filename)
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or len(posix_path.parts) != 1
+        or len(windows_path.parts) != 1
+        or filename in {"", ".", ".."}
+    ):
+        raise ValueError("example filename must be a plain file name")
+    return filename
 
 
 def _resolve_example_source(example: dict) -> Optional[str]:
@@ -126,7 +144,12 @@ async def use_example_file(
         upload_dir = os.path.join(base_dir, "python_uploads", user_id)
         os.makedirs(upload_dir, exist_ok=True)
 
-        target_path = os.path.join(upload_dir, example["name"])
+        try:
+            target_name = _validate_example_filename(example["name"])
+        except ValueError as exc:
+            return Result.failed(msg=str(exc))
+
+        target_path = os.path.join(upload_dir, target_name)
         shutil.copy2(source_path, target_path)
 
         abs_path = os.path.abspath(target_path)
