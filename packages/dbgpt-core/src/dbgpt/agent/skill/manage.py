@@ -334,9 +334,12 @@ class SkillManager(BaseComponent):
         Returns:
             JSON string with execution results.
         """
-        from dbgpt.util.code.server import get_code_server
-
         args = args or {}
+        skill_path = self._get_skill_path(skill_name)
+        if skill_path and self._should_reject_personal_skill_execution(skill_path):
+            return self._personal_skill_execution_denied_result(skill_name)
+
+        from dbgpt.util.code.server import get_code_server
 
         # Get the script
         scripts = self.get_skill_scripts(skill_name)
@@ -541,6 +544,66 @@ class SkillManager(BaseComponent):
         # Fallback: return direct path even if it doesn't exist yet
         return os.path.join(skills_dir, skill_name)
 
+    @staticmethod
+    def _allow_personal_skill_script_execution() -> bool:
+        import os
+
+        return os.getenv(
+            "DBGPT_ALLOW_PERSONAL_SKILL_SCRIPT_EXECUTION", ""
+        ).strip().lower() in {"1", "true", "yes", "on"}
+
+    @staticmethod
+    def _is_personal_skill_path(skill_path: str) -> bool:
+        import os
+        from pathlib import Path
+
+        from dbgpt.configs.model_config import SKILLS_DIR
+
+        user_dir = Path(SKILLS_DIR).expanduser() / "user"
+        candidate = Path(skill_path).expanduser()
+
+        def _is_relative_to(path: Path, parent: Path) -> bool:
+            try:
+                path.relative_to(parent)
+                return True
+            except ValueError:
+                return False
+
+        lexical_path = Path(os.path.abspath(os.path.normpath(str(candidate))))
+        lexical_user_dir = Path(os.path.abspath(os.path.normpath(str(user_dir))))
+        if _is_relative_to(lexical_path, lexical_user_dir):
+            return True
+
+        try:
+            return _is_relative_to(candidate.resolve(), user_dir.resolve())
+        except OSError:
+            return False
+
+    def _should_reject_personal_skill_execution(self, skill_path: str) -> bool:
+        return (
+            self._is_personal_skill_path(skill_path)
+            and not self._allow_personal_skill_script_execution()
+        )
+
+    @staticmethod
+    def _personal_skill_execution_denied_result(skill_name: str) -> str:
+        return json.dumps(
+            {
+                "chunks": [
+                    {
+                        "output_type": "text",
+                        "content": (
+                            "Refusing to execute scripts from personal skill "
+                            f"'{skill_name}'. Set "
+                            "DBGPT_ALLOW_PERSONAL_SKILL_SCRIPT_EXECUTION=true only "
+                            "in trusted deployments to enable this."
+                        ),
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        )
+
     async def get_skill_resource(
         self,
         skill_name: str,
@@ -629,6 +692,8 @@ class SkillManager(BaseComponent):
 
         # Check if it's a script that needs execution
         if resource_path.startswith("scripts/") and ext.lower() in {".py", ".sh"}:
+            if self._should_reject_personal_skill_execution(skill_path):
+                return self._personal_skill_execution_denied_result(skill_name)
             return await self._execute_script_from_path(full_path, args or {})
 
         # Otherwise, read the file content
@@ -892,6 +957,9 @@ __name__ = "__main__"
                 },
                 ensure_ascii=False,
             )
+
+        if self._should_reject_personal_skill_execution(skill_path):
+            return self._personal_skill_execution_denied_result(skill_name)
 
         script_file_name = script_file_name.lstrip("/\\")
         if script_file_name.startswith("scripts/") or script_file_name.startswith(
