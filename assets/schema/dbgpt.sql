@@ -635,3 +635,61 @@ INSERT INTO users (username, password, email, phone)
 VALUES ('user_19', 'password_19', 'user_19@example.com', '12345678909');
 INSERT INTO users (username, password, email, phone)
 VALUES ('user_20', 'password_20', 'user_20@example.com', '12345678900');
+
+-- ============================================================
+-- User Authentication & Authorization Tables (under dbgpt database)
+-- ============================================================
+use dbgpt;
+
+-- User groups table
+CREATE TABLE IF NOT EXISTS `user_groups` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
+  `group_name` varchar(100) NOT NULL COMMENT 'group name',
+  `description` varchar(500) DEFAULT NULL COMMENT 'group description',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'record creation time',
+  `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'record update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_group_name` (`group_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='user groups table';
+
+-- Seed data: predefined groups
+INSERT INTO user_groups (group_name, description) VALUES ('frontend_dev', 'Frontend Development Team');
+INSERT INTO user_groups (group_name, description) VALUES ('backend_dev', 'Backend Development Team');
+INSERT INTO user_groups (group_name, description) VALUES ('operations', 'Operations Team');
+INSERT INTO user_groups (group_name, description) VALUES ('product', 'Product Team');
+INSERT INTO user_groups (group_name, description) VALUES ('customer_service', 'Customer Service Team');
+INSERT INTO user_groups (group_name, description) VALUES ('big_data', 'Big Data Team');
+
+-- Users table
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment user id',
+  `username` varchar(100) NOT NULL COMMENT 'username, unique',
+  `password` varchar(256) NOT NULL COMMENT 'hashed password',
+  `user_group_id` int DEFAULT NULL COMMENT 'FK to user_groups.id',
+  `user_role` varchar(32) NOT NULL DEFAULT 'normal' COMMENT 'super_admin or normal',
+  `phone` varchar(20) DEFAULT NULL COMMENT 'phone number',
+  `email` varchar(100) DEFAULT NULL COMMENT 'email address',
+  `real_name` varchar(100) DEFAULT NULL COMMENT 'display name',
+  `avatar_url` varchar(512) DEFAULT NULL COMMENT 'avatar url',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'record creation time',
+  `gmt_modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'record update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`),
+  KEY `idx_user_group_id` (`user_group_id`),
+  KEY `idx_user_role` (`user_role`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='users table';
+
+-- Seed data: super admin user (password: admin123, SHA-256 hashed)
+INSERT INTO users (username, password, user_role, real_name)
+VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'super_admin', 'Administrator');
+
+-- User group menu permissions table
+CREATE TABLE IF NOT EXISTS `user_group_menus` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
+  `group_id` int NOT NULL COMMENT 'FK to user_groups.id',
+  `menu_key` varchar(100) NOT NULL COMMENT 'menu identifier key',
+  `gmt_created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'record creation time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_group_menu` (`group_id`, `menu_key`),
+  KEY `idx_group_id` (`group_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='user group menu permissions';
