@@ -7,7 +7,7 @@
 
 import { MessagePart, ToolPart } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import { ChatHistoryResponse } from '@/types/chat';
-import { ReActSSEState, createReActSSEState, parseSSELine } from '@/utils/react-sse-parser';
+import { ContextStatus, ReActSSEState, createReActSSEState, parseSSELine } from '@/utils/react-sse-parser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface ReActChatRequest {
@@ -31,6 +31,7 @@ export interface StreamingTurn {
   endTime?: number;
   currentStatus: string;
   thinkingContent?: string;
+  contextStatus?: ContextStatus | null;
 }
 
 export interface UseReActAgentChatOptions {
@@ -43,6 +44,7 @@ export interface UseReActAgentChatOptions {
 export interface UseReActAgentChatReturn {
   streamingTurn: StreamingTurn | null;
   isStreaming: boolean;
+  contextStatus: ContextStatus | null;
   sendMessage: (
     request: ReActChatRequest,
     currentHistory: ChatHistoryResponse,
@@ -56,6 +58,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
 
   const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [contextStatus, setContextStatus] = useState<ContextStatus | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const sseStateRef = useRef<ReActSSEState | null>(null);
@@ -104,6 +107,12 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
     const reasoningParts = parts.filter(p => p.type === 'reasoning');
     const thinkingContent = reasoningParts.length > 0 ? reasoningParts.map(p => (p as any).text).join('\n') : undefined;
 
+    // Get context budget status and promote to independent state
+    const latestContextStatus = sseStateRef.current.getContextStatus();
+    if (latestContextStatus) {
+      setContextStatus(latestContextStatus);
+    }
+
     setStreamingTurn(prev => {
       if (!prev) return null;
       return {
@@ -113,6 +122,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
         isWorking,
         currentStatus,
         thinkingContent,
+        contextStatus: latestContextStatus,
         endTime: sseStateRef.current?.isComplete() ? sseStateRef.current.getEndTime() : undefined,
       };
     });
@@ -131,6 +141,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
       sseStateRef.current = createReActSSEState();
       abortControllerRef.current = new AbortController();
       setIsStreaming(true);
+      setContextStatus(null);
 
       const userMessage =
         typeof request.user_input === 'string' ? request.user_input : JSON.stringify(request.user_input);
@@ -321,6 +332,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
   return {
     streamingTurn,
     isStreaming,
+    contextStatus,
     sendMessage,
     cancel,
   };

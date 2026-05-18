@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+from dbgpt.agent.core.context.budget import DEFAULT_MAX_CONTEXT_TOKENS
 from dbgpt.datasource.parameter import BaseDatasourceParameters
 from dbgpt.model.parameter import (
     ModelsDeployParameters,
@@ -204,6 +205,63 @@ class RagParameters(BaseParameters):
 
 
 @dataclass
+class AgentContextParameters(BaseParameters):
+    """Agent context-window management configuration."""
+
+    __cfg_type__ = "service"
+
+    max_context_tokens: Optional[int] = field(
+        default=DEFAULT_MAX_CONTEXT_TOKENS,
+        metadata={
+            "help": _(
+                "Maximum context-window tokens for agent calls. "
+                "Non-positive values fall back to the default context budget."
+            )
+        },
+    )
+    reserved_tokens: int = field(
+        default=4096,
+        metadata={"help": _("Tokens reserved for model output")},
+    )
+    warning_threshold: float = field(
+        default=0.70,
+        metadata={"help": _("Context usage ratio that triggers light compaction")},
+    )
+    error_threshold: float = field(
+        default=0.90,
+        metadata={"help": _("Context usage ratio that triggers LLM compaction")},
+    )
+    critical_threshold: float = field(
+        default=0.95,
+        metadata={"help": _("Context usage ratio considered critical")},
+    )
+    min_keep_recent_rounds: int = field(
+        default=3,
+        metadata={"help": _("Minimum recent ReAct rounds to keep uncompressed")},
+    )
+    max_observation_age_rounds: int = field(
+        default=5,
+        metadata={"help": _("Observation age before micro-compaction can truncate")},
+    )
+    truncated_observation_max_chars: int = field(
+        default=200,
+        metadata={"help": _("Maximum chars kept for old compacted observations")},
+    )
+    min_keep_tokens: int = field(
+        default=10000,
+        metadata={"help": _("Minimum tokens to keep when dropping old rounds")},
+    )
+    max_compact_failures: int = field(
+        default=3,
+        metadata={"help": _("Consecutive compaction failures before circuit break")},
+    )
+
+    def __post_init__(self):
+        if self.max_context_tokens is None or self.max_context_tokens <= 0:
+            self.max_context_tokens = DEFAULT_MAX_CONTEXT_TOKENS
+
+
+@dataclass
 class ServiceWebParameters(BaseParameters):
     __cfg_type__ = "service"
     host: str = field(default="0.0.0.0", metadata={"help": _("Webserver deploy host")})
@@ -315,6 +373,10 @@ class ServiceWebParameters(BaseParameters):
         metadata={
             "help": _("The max sequence length of the embedding model, default is 512")
         },
+    )
+    agent_context: AgentContextParameters = field(
+        default_factory=AgentContextParameters,
+        metadata={"help": _("Agent context-window management configuration")},
     )
 
 

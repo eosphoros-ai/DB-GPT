@@ -49,6 +49,8 @@ class ActionOutput(BaseModel):
     action_input: Optional[str] = None
     thoughts: Optional[str] = None
     phase: Optional[str] = None
+    action_intention: Optional[str] = None
+    action_reason: Optional[str] = None
     observations: Optional[str] = None
     have_retry: Optional[bool] = True
     ask_user: Optional[bool] = False

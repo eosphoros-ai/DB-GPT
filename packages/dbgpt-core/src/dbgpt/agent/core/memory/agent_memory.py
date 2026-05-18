@@ -31,6 +31,8 @@ class StructuredObservation(TypedDict, total=False):
     question: Optional[str]
     thought: Optional[str]
     phase: Optional[str]
+    action_intention: Optional[str]
+    action_reason: Optional[str]
     action: Optional[str]
     action_input: Optional[str]
     observation: Optional[str]
@@ -47,6 +49,7 @@ class AgentMemoryFragment(MemoryFragment):
         importance: Optional[float] = None,
         last_accessed_time: Optional[datetime] = None,
         is_insight: bool = False,
+        snapshot_path: Optional[str] = None,
     ):
         """Create a memory fragment."""
         if not memory_id:
@@ -58,6 +61,7 @@ class AgentMemoryFragment(MemoryFragment):
         self._importance: Optional[float] = importance
         self._last_accessed_time: Optional[datetime] = last_accessed_time
         self._is_insight = is_insight
+        self.snapshot_path: Optional[str] = snapshot_path
 
     @property
     def id(self) -> int:
@@ -161,6 +165,7 @@ class AgentMemoryFragment(MemoryFragment):
         importance: Optional[float] = None,
         is_insight: bool = False,
         last_accessed_time: Optional[datetime] = None,
+        snapshot_path: Optional[str] = None,
         **kwargs,
     ) -> "AgentMemoryFragment":
         """Build a memory fragment from the given parameters."""
@@ -171,6 +176,7 @@ class AgentMemoryFragment(MemoryFragment):
             importance=importance,
             last_accessed_time=last_accessed_time,
             is_insight=is_insight,
+            snapshot_path=snapshot_path,
         )
 
     def copy(self: "AgentMemoryFragment") -> "AgentMemoryFragment":
@@ -182,6 +188,7 @@ class AgentMemoryFragment(MemoryFragment):
             importance=self.importance,
             last_accessed_time=self.last_accessed_time,
             is_insight=self.is_insight,
+            snapshot_path=self.snapshot_path,
         )
 
 

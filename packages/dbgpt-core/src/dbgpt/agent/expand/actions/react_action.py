@@ -161,6 +161,10 @@ class ReActAction(ToolAction):
             act_out.thoughts = step.thought
         if step.phase:
             act_out.phase = step.phase
+        if step.action_intention:
+            act_out.action_intention = step.action_intention
+        if step.action_reason:
+            act_out.action_reason = step.action_reason
         if not act_out.action_input and step.action_input:
             if isinstance(step.action_input, str):
                 act_out.action_input = step.action_input

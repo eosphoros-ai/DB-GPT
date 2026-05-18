@@ -7,10 +7,10 @@
  */
 
 import { useAsyncEffect } from 'ahooks';
-import { Modal, message } from 'antd';
+import { Modal } from 'antd';
 import { cloneDeep } from 'lodash';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
 import { ChatContext } from '@/app/chat-context';
@@ -22,7 +22,7 @@ import { IChatDialogueMessageSchema } from '@/types/chat';
 import { STORAGE_INIT_MESSAGE_KET, getInitMessage } from '@/utils';
 
 import { parseReActText } from '@/hooks/use-react-agent';
-import useReActAgentChat from '@/hooks/use-react-agent-chat';
+import ContextUsageBar from './ContextUsageBar';
 import OpenCodeSessionTurn, { MessagePart } from './OpenCodeSessionTurn';
 
 interface GroupedTurn {
@@ -50,54 +50,19 @@ const OpenCodeChatCompletion: React.FC = () => {
     modelValue,
     setHistory,
     setReplyLoading,
+    // Context management status from use-chat hook
+    contextStatus,
   } = useContext(ChatContentContext);
 
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
   const [jsonValue, setJsonValue] = useState<string>('');
 
+  // ReAct streaming turn is not used when routing through completions API
+  const streamingTurn: any = null;
+  const isStreaming = false;
+
   // Track if we should use ReAct API for agent scene
   const useReActAPI = scene === 'chat_agent';
-  const orderRef = useRef<number>(1);
-
-  // ReAct Agent Chat hook for streaming
-  const {
-    streamingTurn,
-    isStreaming,
-    sendMessage: sendReActMessage,
-    cancel: cancelReAct,
-  } = useReActAgentChat({
-    baseUrl: '/api/v1/chat/react-agent',
-    onHistoryUpdate: newHistory => {
-      setHistory(newHistory);
-    },
-    onError: error => {
-      message.error(error);
-      setReplyLoading(false);
-    },
-    onComplete: () => {
-      setReplyLoading(false);
-    },
-  });
-
-  // Update order ref when history changes
-  useEffect(() => {
-    if (history && history.length > 0) {
-      const viewList = history.filter(item => item.role === 'view');
-      const humanList = history.filter(item => item.role === 'human');
-      const lastOrder = Math.max(
-        viewList[viewList.length - 1]?.order || 0,
-        humanList[humanList.length - 1]?.order || 0,
-      );
-      orderRef.current = lastOrder + 1;
-    }
-  }, [history]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cancelReAct();
-    };
-  }, [cancelReAct]);
 
   // Group messages into turns
   const groupedTurns = useMemo<GroupedTurn[]>(() => {
@@ -236,6 +201,19 @@ const OpenCodeChatCompletion: React.FC = () => {
 
   return (
     <div className='flex flex-col w-5/6 mx-auto space-y-2 py-4'>
+      {/* Context usage floating bar — persists after streaming ends */}
+      {contextStatus && (
+        <div className='sticky top-0 z-10 flex justify-center py-1'>
+          <ContextUsageBar
+            used={contextStatus.used_tokens}
+            budget={contextStatus.max_tokens}
+            ratio={contextStatus.usage_percent / 100}
+            state={contextStatus.state}
+            compactLayer={contextStatus.layer ?? null}
+          />
+        </div>
+      )}
+
       {groupedTurns.map((turn, index) => renderTurn(turn, index, index === groupedTurns.length - 1 && !streamingTurn))}
 
       {renderStreamingTurn()}
