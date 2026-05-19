@@ -285,6 +285,24 @@ function SideBar() {
     fetchDialogueList();
   }, [fetchDialogueList]);
 
+  // 监听新建任务事件，刷新对话列表
+  useEffect(() => {
+    const handleNewTask = () => {
+      // 延迟一点等 index.tsx 把会话保存到后端
+      setTimeout(() => fetchDialogueList(), 800);
+    };
+    // 监听新对话开始流式响应，立即刷新列表（此时后端已创建会话记录）
+    const handleRefresh = () => {
+      fetchDialogueList();
+    };
+    window.addEventListener('dbgpt_new_task', handleNewTask);
+    window.addEventListener('dbgpt_refresh_dialogues', handleRefresh);
+    return () => {
+      window.removeEventListener('dbgpt_new_task', handleNewTask);
+      window.removeEventListener('dbgpt_refresh_dialogues', handleRefresh);
+    };
+  }, [fetchDialogueList]);
+
   // ============ COLLAPSED SIDEBAR ============
   if (!isMenuExpand) {
     return (
@@ -374,7 +392,7 @@ function SideBar() {
       </div>
 
       {/* New Task Button */}
-      <Link href='/'>
+      <Link href='/' onClick={() => window.dispatchEvent(new CustomEvent('dbgpt_new_task'))}>
         <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
           <PlusOutlined className='text-xs' />
           <span>{t('new_task')}</span>
