@@ -504,6 +504,13 @@ const Playground: NextPage = () => {
   const { model, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
+
+  // Keep loadingRef in sync with loading state
+  const setLoadingWithRef = (val: boolean) => {
+    loadingRef.current = val;
+    setLoading(val);
+  };
 
   // Selection State
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
@@ -692,11 +699,35 @@ const Playground: NextPage = () => {
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
-    } else if (!convId && conversationId) {
-      // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
+    } else if (!convId) {
+      // URL 中没有 id（如点击 new_task / 探索广场），清空当前会话状态
+      // 用 loadingRef 读取最新 loading 值，避免闭包陷阱
+      if (loadingRef.current || messages.length > 0 || conversationId) {
+        setMessages([]);
+        setConversationId(null);
+        setQuery('');
+        setLoadingWithRef(false);
+        setExecutionMap({});
+        setActiveMessageId(null);
+        setActiveViewMsgId(null);
+        setUploadedFilePath(null);
+        setFilePreview(null);
+        setFilePreviewError(null);
+        setArtifacts([]);
+        setRightPanelTab('preview');
+        setStreamingSummary('');
+        setSummaryComplete(false);
+      }
+    }
+  }, [router.query.id]);
+
+  // Listen for "new task" signal from sidebar (works even when already on '/')
+  useEffect(() => {
+    const handleNewTask = () => {
       setMessages([]);
       setConversationId(null);
       setQuery('');
+      setLoadingWithRef(false);
       setExecutionMap({});
       setActiveMessageId(null);
       setActiveViewMsgId(null);
@@ -708,8 +739,10 @@ const Playground: NextPage = () => {
       setStreamingSummary('');
       setSummaryComplete(false);
       setTaskPlan([]);
-    }
-  }, [router.query.id]);
+    };
+    window.addEventListener('dbgpt_new_task', handleNewTask);
+    return () => window.removeEventListener('dbgpt_new_task', handleNewTask);
+  }, []);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1498,7 +1531,7 @@ const Playground: NextPage = () => {
       },
     ]);
 
-    setLoading(true);
+    setLoadingWithRef(true);
     setQuery(''); // Clear input
     setStreamingSummary('');
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
@@ -1550,6 +1583,7 @@ const Playground: NextPage = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
+      let sidebarRefreshed = false; // 只刷新一次侧边栏
 
       const processEvent = (raw: string) => {
         if (!raw.startsWith('data:')) return;
@@ -1597,6 +1631,11 @@ const Playground: NextPage = () => {
           return;
         }
         if (payload.type === 'step.start') {
+          // 收到第一个有效 payload 时，通知侧边栏刷新对话列表
+          if (!sidebarRefreshed) {
+            sidebarRefreshed = true;
+            window.dispatchEvent(new CustomEvent('dbgpt_refresh_dialogues'));
+          }
           const id = payload.id || `${payload.step}`;
           if (terminatedStepIdsRef.current.has(id)) return;
           setExecutionMap(prev => {
@@ -1814,6 +1853,11 @@ const Playground: NextPage = () => {
             });
           }
         } else if (payload.type === 'final') {
+          // 确保侧边栏已刷新（兜底，防止没有 step.start 的情况）
+          if (!sidebarRefreshed) {
+            sidebarRefreshed = true;
+            window.dispatchEvent(new CustomEvent('dbgpt_refresh_dialogues'));
+          }
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
@@ -1921,7 +1965,7 @@ const Playground: NextPage = () => {
             }, 15);
           }
         } else if (payload.type === 'done') {
-          setLoading(false);
+          setLoadingWithRef(false);
         }
       };
 
@@ -1934,9 +1978,9 @@ const Playground: NextPage = () => {
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
-      setLoading(false);
+      setLoadingWithRef(false);
     } catch (err: any) {
-      setLoading(false);
+      setLoadingWithRef(false);
       message.error(err?.message || 'Failed to get response');
       setMessages(prev => {
         const newMessages = [...prev];
@@ -2020,6 +2064,7 @@ const Playground: NextPage = () => {
     setMessages([]);
     setConversationId(null);
     setQuery('');
+    setLoadingWithRef(false);  // 重置 loading 状态
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
