@@ -569,13 +569,19 @@ class SkillManager(BaseComponent):
             except ValueError:
                 return False
 
-        lexical_path = Path(os.path.abspath(os.path.normpath(str(candidate))))
-        lexical_user_dir = Path(os.path.abspath(os.path.normpath(str(user_dir))))
+        def _normalize_for_containment(path: Path) -> Path:
+            return Path(os.path.normcase(os.path.abspath(os.path.normpath(str(path)))))
+
+        lexical_path = _normalize_for_containment(candidate)
+        lexical_user_dir = _normalize_for_containment(user_dir)
         if _is_relative_to(lexical_path, lexical_user_dir):
             return True
 
         try:
-            return _is_relative_to(candidate.resolve(), user_dir.resolve())
+            return _is_relative_to(
+                _normalize_for_containment(candidate.resolve()),
+                _normalize_for_containment(user_dir.resolve()),
+            )
         except OSError:
             return False
 

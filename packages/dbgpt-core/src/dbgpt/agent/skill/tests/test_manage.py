@@ -33,6 +33,19 @@ def _write_marker_script(skill_dir: Path) -> None:
     )
 
 
+def test_personal_skill_path_detection_normalizes_case(tmp_path, monkeypatch):
+    skills_dir = tmp_path / "skills"
+    user_skill_dir = skills_dir / "user" / "uploaded-skill"
+    user_skill_dir.mkdir(parents=True)
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.setattr("os.path.normcase", lambda path: str(path).lower())
+
+    assert SkillManager._is_personal_skill_path(
+        str(skills_dir / "User" / "uploaded-skill")
+    )
+
+
 @pytest.mark.asyncio
 async def test_execute_skill_script_file_rejects_uploaded_personal_skill(
     tmp_path, monkeypatch
