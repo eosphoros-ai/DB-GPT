@@ -571,6 +571,8 @@ const Playground: NextPage = () => {
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
   const preloadedFilePathRef = useRef<string | null>(null);
+  const streamControllerRef = useRef<AbortController | null>(null);
+  const activeRequestIdRef = useRef(0);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -583,9 +585,13 @@ const Playground: NextPage = () => {
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
   const resetConversationState = useCallback(() => {
+    activeRequestIdRef.current += 1;
+    streamControllerRef.current?.abort();
+    streamControllerRef.current = null;
     setMessages([]);
     setConversationId(null);
     setQuery('');
+    setLoading(false);
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
@@ -1481,6 +1487,9 @@ const Playground: NextPage = () => {
     if (!conversationId) {
       setConversationId(currentConvId);
     }
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    const isActiveRequest = () => requestId === activeRequestIdRef.current;
 
     // Calculate current order
     const currentOrder = Math.floor(messages.length / 2) + 1;
@@ -1523,6 +1532,7 @@ const Playground: NextPage = () => {
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    streamControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
       ...prev,
@@ -1562,6 +1572,8 @@ const Playground: NextPage = () => {
         signal: controller.signal,
       });
 
+      if (!isActiveRequest()) return;
+
       if (!response.body) {
         throw new Error('No response body');
       }
@@ -1571,6 +1583,7 @@ const Playground: NextPage = () => {
       let buffer = '';
 
       const processEvent = (raw: string) => {
+        if (!isActiveRequest()) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -1863,6 +1876,10 @@ const Playground: NextPage = () => {
             const summaryText = cleanFinalContent(payload.content);
             const streamInterval = setInterval(() => {
               setStreamingSummary(prev => {
+                if (!isActiveRequest()) {
+                  clearInterval(streamInterval);
+                  return prev;
+                }
                 if (prev.length >= summaryText.length) {
                   clearInterval(streamInterval);
                   setSummaryComplete(true);
@@ -1947,16 +1964,19 @@ const Playground: NextPage = () => {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || !isActiveRequest()) break;
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split('\n\n');
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
+      if (!isActiveRequest()) return;
       setLoading(false);
       dispatchReactAgentDialoguesChanged();
     } catch (err: any) {
+      if (!isActiveRequest()) return;
       setLoading(false);
+      if (err?.name === 'AbortError') return;
       message.error(err?.message || 'Failed to get response');
       setMessages(prev => {
         const newMessages = [...prev];
@@ -1967,6 +1987,10 @@ const Playground: NextPage = () => {
         }
         return newMessages;
       });
+    } finally {
+      if (isActiveRequest()) {
+        streamControllerRef.current = null;
+      }
     }
   };
 
