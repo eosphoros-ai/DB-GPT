@@ -38,6 +38,16 @@ of steps you can take is {{ max_steps }}.
 Do not output an empty string!
 {{ action_space }}
 # RESPONSE FORMAT # 
+IMPORTANT:
+- You must never answer directly outside the ReAct format.
+- Every response must contain exactly one Action and one Action Input.
+- If the task is complete, use exactly:
+Thought: ...
+Phase: 返回最终结果
+Action: terminate
+Action Input: {"result": "final answer"}
+- Do not put the final answer as plain markdown outside Action Input.
+
 For each task input, your response should contain:
 1. One analysis of the task and the current environment, reasoning to determine the \
 next action (prefix "Thought: ").
@@ -232,7 +242,7 @@ class ReActAgent(ConversableAgent):
         if not message_content:
             raise ValueError("The response is empty.")
         try:
-            steps = self.parser.parse(message_content)
+            steps = self.parser.parse_current_step(message_content)
             err_msg = None
             if not steps:
                 err_msg = (
