@@ -16,6 +16,7 @@ import ManusRightPanel, {
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import axios from '@/utils/ctx-axios';
+import { dispatchReactAgentDialoguesChanged, subscribeReactAgentNewTask } from '@/utils/react-agent-events';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
   ArrowUpOutlined,
@@ -63,7 +64,7 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const generateUUID = () => {
@@ -581,6 +582,33 @@ const Playground: NextPage = () => {
   } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
+  const resetConversationState = useCallback(() => {
+    setMessages([]);
+    setConversationId(null);
+    setQuery('');
+    setExecutionMap({});
+    setActiveMessageId(null);
+    setActiveViewMsgId(null);
+    setUploadedFilePath(null);
+    setFilePreview(null);
+    setFilePreviewError(null);
+    setChartPreview(null);
+    setArtifacts([]);
+    setCreatedSkillNames({});
+    setRightPanelTab('preview');
+    setRightPanelView('execution');
+    setRightPanelCollapsed(false);
+    setStreamingSummary('');
+    setSummaryComplete(false);
+    setTaskPlan([]);
+    setContextStatus(null);
+    setSelectedStepId(null);
+    setPreviewArtifact(null);
+    lastArtifactKeyRef.current = '';
+    terminatedStepIdsRef.current.clear();
+    preloadedFilePathRef.current = null;
+  }, []);
+
   // Fetch Data Sources
   const { data: dataSources, loading: _loadingSources } = useRequest(async () => {
     try {
@@ -694,22 +722,13 @@ const Playground: NextPage = () => {
       loadConversation(convId);
     } else if (!convId && conversationId) {
       // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
-      setMessages([]);
-      setConversationId(null);
-      setQuery('');
-      setExecutionMap({});
-      setActiveMessageId(null);
-      setActiveViewMsgId(null);
-      setUploadedFilePath(null);
-      setFilePreview(null);
-      setFilePreviewError(null);
-      setArtifacts([]);
-      setRightPanelTab('preview');
-      setStreamingSummary('');
-      setSummaryComplete(false);
-      setTaskPlan([]);
+      resetConversationState();
     }
-  }, [router.query.id]);
+    // Only react to URL id changes. Adding conversationId would reset a new '/' chat immediately after it starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query.id, resetConversationState]);
+
+  useEffect(() => subscribeReactAgentNewTask(resetConversationState), [resetConversationState]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1935,6 +1954,7 @@ const Playground: NextPage = () => {
         parts.forEach(processEvent);
       }
       setLoading(false);
+      dispatchReactAgentDialoguesChanged();
     } catch (err: any) {
       setLoading(false);
       message.error(err?.message || 'Failed to get response');
@@ -2017,19 +2037,7 @@ const Playground: NextPage = () => {
 
   // Clear chat history
   const handleClearChat = () => {
-    setMessages([]);
-    setConversationId(null);
-    setQuery('');
-    setExecutionMap({});
-    setActiveMessageId(null);
-    setActiveViewMsgId(null);
-    setUploadedFilePath(null);
-    setFilePreview(null);
-    setFilePreviewError(null);
-    setArtifacts([]);
-    setRightPanelTab('preview');
-    setStreamingSummary('');
-    setSummaryComplete(false);
+    resetConversationState();
     router.push('/', undefined, { shallow: true });
   };
 
