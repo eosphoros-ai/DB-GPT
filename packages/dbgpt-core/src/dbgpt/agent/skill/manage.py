@@ -545,11 +545,11 @@ class SkillManager(BaseComponent):
         return os.path.join(skills_dir, skill_name)
 
     @staticmethod
-    def _allow_personal_skill_script_execution() -> bool:
+    def _personal_skill_script_execution_disabled() -> bool:
         import os
 
         return os.getenv(
-            "DBGPT_ALLOW_PERSONAL_SKILL_SCRIPT_EXECUTION", ""
+            "DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", ""
         ).strip().lower() in {"1", "true", "yes", "on"}
 
     @staticmethod
@@ -588,7 +588,7 @@ class SkillManager(BaseComponent):
     def _should_reject_personal_skill_execution(self, skill_path: str) -> bool:
         return (
             self._is_personal_skill_path(skill_path)
-            and not self._allow_personal_skill_script_execution()
+            and self._personal_skill_script_execution_disabled()
         )
 
     @staticmethod
@@ -599,10 +599,10 @@ class SkillManager(BaseComponent):
                     {
                         "output_type": "text",
                         "content": (
-                            "Refusing to execute scripts from personal skill "
-                            f"'{skill_name}'. Set "
-                            "DBGPT_ALLOW_PERSONAL_SKILL_SCRIPT_EXECUTION=true only "
-                            "in trusted deployments to enable this."
+                            "Personal skill script execution is disabled for "
+                            f"'{skill_name}'. Unset "
+                            "DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION or set "
+                            "it to false to enable trusted personal skill scripts."
                         ),
                     }
                 ]

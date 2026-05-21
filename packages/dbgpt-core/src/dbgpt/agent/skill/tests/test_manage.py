@@ -47,7 +47,7 @@ def test_personal_skill_path_detection_normalizes_case(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_execute_skill_script_file_rejects_uploaded_personal_skill(
+async def test_execute_skill_script_file_allows_uploaded_personal_skill_by_default(
     tmp_path, monkeypatch
 ):
     skills_dir = tmp_path / "skills"
@@ -56,6 +56,7 @@ async def test_execute_skill_script_file_rejects_uploaded_personal_skill(
     marker = tmp_path / "marker.txt"
 
     monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.delenv("DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", raising=False)
 
     result = await SkillManager(None).execute_skill_script_file(
         "uploaded-skill",
@@ -64,18 +65,21 @@ async def test_execute_skill_script_file_rejects_uploaded_personal_skill(
     )
 
     result_text = json.dumps(json.loads(result), ensure_ascii=False)
-    assert "personal" in result_text.lower()
-    assert not marker.exists()
+    assert "executed" in result_text
+    assert marker.read_text(encoding="utf-8") == "executed"
 
 
 @pytest.mark.asyncio
-async def test_execute_script_rejects_uploaded_personal_skill(tmp_path, monkeypatch):
+async def test_execute_script_rejects_uploaded_personal_skill_when_disabled(
+    tmp_path, monkeypatch
+):
     skills_dir = tmp_path / "skills"
     skill_dir = skills_dir / "user" / "uploaded-skill"
     _write_marker_script(skill_dir)
     marker = tmp_path / "marker.txt"
 
     monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.setenv("DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", "true")
 
     result = await SkillManager(None).execute_script(
         "uploaded-skill",
@@ -89,7 +93,7 @@ async def test_execute_script_rejects_uploaded_personal_skill(tmp_path, monkeypa
 
 
 @pytest.mark.asyncio
-async def test_get_skill_resource_rejects_uploaded_personal_skill_scripts(
+async def test_get_skill_resource_rejects_uploaded_personal_skill_scripts_when_disabled(
     tmp_path, monkeypatch
 ):
     skills_dir = tmp_path / "skills"
@@ -98,6 +102,7 @@ async def test_get_skill_resource_rejects_uploaded_personal_skill_scripts(
     marker = tmp_path / "marker.txt"
 
     monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.setenv("DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", "true")
 
     result = await SkillManager(None).get_skill_resource(
         "uploaded-skill",
@@ -107,6 +112,29 @@ async def test_get_skill_resource_rejects_uploaded_personal_skill_scripts(
 
     result_text = json.dumps(json.loads(result), ensure_ascii=False)
     assert "personal" in result_text.lower()
+    assert not marker.exists()
+
+
+@pytest.mark.asyncio
+async def test_execute_skill_script_file_rejects_uploaded_personal_skill_when_disabled(
+    tmp_path, monkeypatch
+):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "user" / "uploaded-skill"
+    _write_marker_script(skill_dir)
+    marker = tmp_path / "marker.txt"
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.setenv("DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", "true")
+
+    result = await SkillManager(None).execute_skill_script_file(
+        "uploaded-skill",
+        "touch_marker.py",
+        {"marker": str(marker)},
+    )
+
+    result_text = json.dumps(json.loads(result), ensure_ascii=False)
+    assert "disabled" in result_text.lower()
     assert not marker.exists()
 
 
