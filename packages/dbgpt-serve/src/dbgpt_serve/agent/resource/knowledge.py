@@ -52,17 +52,26 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
     def from_dict(
         cls, data: Any, ignore_extra_fields: bool = True
     ) -> "KnowledgeSpaceLoadResourceParameters":
-        """Create a new instance from a dictionary."""
+        """Create a new instance from dict, legacy value, or scalar space input."""
         if isinstance(data, dict):
             copied_data = data.copy()
         else:
             copied_data = {"space_name": data}
-        copied_data.setdefault("name", "knowledge")
         if "space_name" not in copied_data and "value" in copied_data:
             copied_data["space_name"] = copied_data.pop("value")
         if copied_data.get("space_name") is not None:
             copied_data["space_name"] = str(copied_data["space_name"])
+        if not copied_data.get("name"):
+            copied_data["name"] = cls._default_resource_name(
+                copied_data.get("space_name")
+            )
         return super().from_dict(copied_data, ignore_extra_fields=ignore_extra_fields)
+
+    @staticmethod
+    def _default_resource_name(space_name: Optional[str]) -> str:
+        if not space_name:
+            return "knowledge"
+        return f"knowledge_{space_name}"
 
 
 class KnowledgeSpaceRetrieverResource(RetrieverResource):
