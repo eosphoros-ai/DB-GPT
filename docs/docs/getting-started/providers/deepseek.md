@@ -45,9 +45,11 @@ Edit `configs/dbgpt-proxy-deepseek.toml`:
 ```toml
 [models]
 [[models.llms]]
-name = "deepseek-reasoner"
+name = "deepseek-v4-pro"
 provider = "proxy/deepseek"
 api_key = "your-deepseek-api-key"
+# Disable V4-Pro thinking mode for strict ReAct output parsing.
+thinking_enabled = false
 
 [[models.embeddings]]
 name = "BAAI/bge-large-zh-v1.5"
@@ -60,8 +62,13 @@ provider = "hf"
 
 | Model | Config name | Notes |
 |---|---|---|
+| DeepSeek-V4-Pro | `deepseek-v4-pro` | 1M context, advanced reasoning, coding, and agent tasks |
 | DeepSeek-R1 | `deepseek-reasoner` | Strong reasoning, chain-of-thought |
 | DeepSeek-V3 | `deepseek-chat` | General purpose chat |
+
+For ReAct agents, keep `thinking_enabled = false` with `deepseek-v4-pro`. DeepSeek
+V4-Pro enables thinking mode by default, which can add reasoning blocks before the
+strict `Thought/Action/Action Input` response format.
 
 ## Start the server
 
