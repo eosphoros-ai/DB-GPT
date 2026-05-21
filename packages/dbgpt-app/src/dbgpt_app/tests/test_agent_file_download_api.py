@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
 
-from dbgpt_serve.utils.auth import get_required_user_from_headers, get_user_from_headers
+from dbgpt_serve.utils.auth import get_user_from_headers
 
 
 def _is_under(path: Path, base: Path) -> bool:
@@ -46,25 +46,18 @@ def _download_route(agentic_data_api):
     raise AssertionError("download route not found")
 
 
-def test_agent_file_download_route_requires_required_user_dependency():
+def test_agent_file_download_route_uses_existing_user_dependency():
     from dbgpt_app.openapi.api_v1 import agentic_data_api
 
     route = _download_route(agentic_data_api)
 
     assert any(
-        dependency.call is get_required_user_from_headers
+        dependency.call is get_user_from_headers
         for dependency in route.dependant.dependencies
     )
 
 
-def test_agent_file_download_rejects_missing_user_header():
-    with pytest.raises(HTTPException) as exc_info:
-        get_required_user_from_headers(user_id=None)
-
-    assert exc_info.value.status_code == 401
-
-
-def test_optional_user_header_helper_keeps_default_mock_user():
+def test_agent_file_download_keeps_default_mock_user_compatibility():
     user = get_user_from_headers(user_id=None)
 
     assert user.user_id == "001"

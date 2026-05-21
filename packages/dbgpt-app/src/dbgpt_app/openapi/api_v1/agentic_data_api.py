@@ -28,11 +28,7 @@ from dbgpt_app.openapi.api_view_model import (
     Result,
 )
 from dbgpt_serve.datasource.manages import ConnectorManager
-from dbgpt_serve.utils.auth import (
-    UserRequest,
-    get_required_user_from_headers,
-    get_user_from_headers,
-)
+from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
 router = APIRouter()
 CFG = Config()
@@ -2025,11 +2021,9 @@ print(json.dumps(summary, ensure_ascii=False))
         session_id = f"bash_{uuid.uuid4().hex[:12]}"
         runtime = LocalRuntime()
 
-        from dbgpt.configs.model_config import PILOT_PATH
+        from dbgpt.configs.model_config import ROOT_PATH
 
-        cid = react_state.get("conv_id") or "default"
-        sandbox_work_dir = os.path.join(PILOT_PATH, "tmp", cid)
-        os.makedirs(sandbox_work_dir, exist_ok=True)
+        sandbox_work_dir = ROOT_PATH
 
         config = SessionConfig(
             language="bash",
@@ -3997,7 +3991,7 @@ async def delete_share_link(
 @router.get("/v1/agent/files/download")
 async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
-    user_token: UserRequest = Depends(get_required_user_from_headers),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     """Download a file created by agent tools (shell_interpreter, code_interpreter).
 

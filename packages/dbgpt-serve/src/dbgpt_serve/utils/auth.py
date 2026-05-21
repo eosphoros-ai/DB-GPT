@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from fastapi import Header, HTTPException
+from fastapi import Header
 
 from dbgpt._private.pydantic import BaseModel
 
@@ -36,9 +36,3 @@ def get_user_from_headers(user_id: Optional[str] = Header(None)):
     except Exception as e:
         logging.exception("Authentication failed!")
         raise Exception(f"Authentication failed. {str(e)}")
-
-
-def get_required_user_from_headers(user_id: Optional[str] = Header(None)):
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Missing user_id header")
-    return get_user_from_headers(user_id=user_id)
