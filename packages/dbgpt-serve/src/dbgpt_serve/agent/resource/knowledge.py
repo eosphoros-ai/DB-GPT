@@ -52,7 +52,7 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
     def from_dict(
         cls, data: Any, ignore_extra_fields: bool = True
     ) -> "KnowledgeSpaceLoadResourceParameters":
-        """Create a new instance from dict, legacy value, or scalar space input."""
+        """Create a new instance from mapping, legacy value, or scalar space input."""
         if isinstance(data, dict):
             copied_data = data.copy()
         else:
