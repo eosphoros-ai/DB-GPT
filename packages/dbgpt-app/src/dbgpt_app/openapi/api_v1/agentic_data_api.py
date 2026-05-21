@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -43,6 +43,23 @@ DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
+
+
+def _validate_upload_filename(filename: str) -> str:
+    if "\x00" in filename:
+        raise ValueError("filename must not contain null bytes")
+
+    posix_path = PurePosixPath(filename)
+    windows_path = PureWindowsPath(filename)
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or len(posix_path.parts) != 1
+        or len(windows_path.parts) != 1
+        or filename in {"", ".", ".."}
+    ):
+        raise ValueError("filename must be a plain file name")
+    return filename
 
 
 async def _resolve_model_context_tokens(
@@ -482,7 +499,11 @@ async def skill_upload(
     user_dir = skills_dir / "user"
     user_dir.mkdir(parents=True, exist_ok=True)
 
-    filename = file.filename
+    try:
+        filename = _validate_upload_filename(file.filename)
+    except ValueError as exc:
+        return Result.failed(code="E4002", msg=str(exc))
+
     suffix = Path(filename).suffix.lower()
     stem = Path(filename).stem
 
