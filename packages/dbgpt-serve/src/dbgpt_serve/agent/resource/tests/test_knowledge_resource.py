@@ -6,15 +6,15 @@ from dbgpt_serve.agent.resource.knowledge import KnowledgeSpaceLoadResourceParam
 @pytest.mark.parametrize(
     ("data", "expected_space_name", "expected_name"),
     [
-        (2, "2", "knowledge_2"),
-        ("2", "2", "knowledge_2"),
-        ({"value": 2}, "2", "knowledge_2"),
-        ({"value": "space_name"}, "space_name", "knowledge_space_name"),
-        ({"space_name": "space_name"}, "space_name", "knowledge_space_name"),
+        (2, "2", "knowledge"),
+        ("2", "2", "knowledge"),
+        ({"value": 2}, "2", "knowledge"),
+        ({"value": "space_name"}, "space_name", "knowledge"),
+        ({"space_name": "space_name"}, "space_name", "knowledge"),
         (
             {"name": None, "space_name": "space_name"},
             "space_name",
-            "knowledge_space_name",
+            "knowledge",
         ),
     ],
 )

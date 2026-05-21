@@ -61,17 +61,9 @@ class KnowledgeSpaceLoadResourceParameters(RetrieverResourceParameters):
             copied_data["space_name"] = copied_data.pop("value")
         if copied_data.get("space_name") is not None:
             copied_data["space_name"] = str(copied_data["space_name"])
-        if not copied_data.get("name"):
-            copied_data["name"] = cls._default_resource_name(
-                copied_data.get("space_name")
-            )
+        if copied_data.get("name") is None:
+            copied_data["name"] = "knowledge"
         return super().from_dict(copied_data, ignore_extra_fields=ignore_extra_fields)
-
-    @staticmethod
-    def _default_resource_name(space_name: Optional[str]) -> str:
-        if not space_name:
-            return "knowledge"
-        return f"knowledge_{space_name}"
 
 
 class KnowledgeSpaceRetrieverResource(RetrieverResource):
