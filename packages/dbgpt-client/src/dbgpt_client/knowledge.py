@@ -1,13 +1,21 @@
 """Knowledge API client."""
 
 import json
-from typing import List
+from typing import Any, List
 
 from dbgpt._private.pydantic import model_to_dict, model_to_json
 from dbgpt.core.schema.api import Result
 
 from .client import Client, ClientException
 from .schema import DocumentModel, SpaceModel, SyncModel
+
+
+def _space_model_from_create_response(data: Any, request: SpaceModel) -> SpaceModel:
+    if isinstance(data, dict):
+        return SpaceModel(**data)
+    space = model_to_dict(request)
+    space["id"] = data
+    return SpaceModel(**space)
 
 
 async def create_space(client: Client, space_model: SpaceModel) -> SpaceModel:
@@ -25,7 +33,7 @@ async def create_space(client: Client, space_model: SpaceModel) -> SpaceModel:
         res = await client.post("/knowledge/spaces", model_to_dict(space_model))
         result: Result = res.json()
         if result["success"]:
-            return SpaceModel(**result["data"])
+            return _space_model_from_create_response(result["data"], space_model)
         else:
             raise ClientException(status=result["err_code"], reason=result)
     except Exception as e:
