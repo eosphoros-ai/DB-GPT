@@ -28,7 +28,11 @@ from dbgpt_app.openapi.api_view_model import (
     Result,
 )
 from dbgpt_serve.datasource.manages import ConnectorManager
-from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
+from dbgpt_serve.utils.auth import (
+    UserRequest,
+    get_required_user_from_headers,
+    get_user_from_headers,
+)
 
 router = APIRouter()
 CFG = Config()
@@ -3992,7 +3996,7 @@ async def delete_share_link(
 @router.get("/v1/agent/files/download")
 async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
-    user_token: UserRequest = Depends(get_user_from_headers),
+    user_token: UserRequest = Depends(get_required_user_from_headers),
 ):
     """Download a file created by agent tools (shell_interpreter, code_interpreter).
 
@@ -4002,11 +4006,13 @@ async def download_agent_file(
     from fastapi import HTTPException
     from fastapi.responses import FileResponse
 
-    from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
+    from dbgpt.configs.model_config import PILOT_PATH
 
-    # If path is not absolute, resolve relative to ROOT_PATH (sandbox working dir)
     if not os.path.isabs(file_path):
-        file_path = os.path.join(ROOT_PATH, file_path)
+        raise HTTPException(
+            status_code=400,
+            detail="file_path must be an absolute path",
+        )
 
     # Resolve to absolute path and prevent path traversal
     try:
