@@ -523,7 +523,7 @@ async def chat_prepare(
     await chat.prepare()
 
     # Refresh messages
-    return Result.succ(get_hist_messages(dialogue.conv_uid, user_token.user_id))
+    return Result.succ(get_hist_messages(dialogue.conv_uid, dialogue.user_name))
 
 
 @router.post("/v1/chat/completions")
