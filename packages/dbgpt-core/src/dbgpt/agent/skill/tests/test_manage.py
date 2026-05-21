@@ -70,6 +70,76 @@ async def test_execute_skill_script_file_allows_uploaded_personal_skill_by_defau
 
 
 @pytest.mark.asyncio
+async def test_execute_script_allows_uploaded_personal_skill_by_default(
+    tmp_path, monkeypatch
+):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "user" / "uploaded-skill"
+    _write_marker_script(skill_dir)
+    marker = tmp_path / "marker.txt"
+
+    class FakeCodeResult:
+        output = b"executed"
+        error_message = b""
+
+    class FakeCodeServer:
+        async def exec(self, code, language):
+            marker.write_text("executed", encoding="utf-8")
+            return FakeCodeResult()
+
+    async def fake_get_code_server(system_app):
+        return FakeCodeServer()
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.delenv("DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", raising=False)
+    monkeypatch.setattr("dbgpt.util.code.server.get_code_server", fake_get_code_server)
+
+    result = await SkillManager(None).execute_script(
+        "uploaded-skill",
+        "touch_marker.py",
+        {"marker": str(marker)},
+    )
+
+    result_text = json.dumps(json.loads(result), ensure_ascii=False)
+    assert "executed" in result_text
+    assert marker.read_text(encoding="utf-8") == "executed"
+
+
+@pytest.mark.asyncio
+async def test_get_skill_resource_allows_uploaded_personal_skill_scripts_by_default(
+    tmp_path, monkeypatch
+):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "user" / "uploaded-skill"
+    _write_marker_script(skill_dir)
+    executed = {}
+
+    async def fake_execute_script_from_path(self, script_path, args):
+        executed["script_path"] = script_path
+        executed["args"] = args
+        return json.dumps({"chunks": [{"output_type": "text", "content": "ok"}]})
+
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.delenv("DBGPT_DISABLE_PERSONAL_SKILL_SCRIPT_EXECUTION", raising=False)
+    monkeypatch.setattr(
+        SkillManager,
+        "_execute_script_from_path",
+        fake_execute_script_from_path,
+    )
+
+    result = await SkillManager(None).get_skill_resource(
+        "uploaded-skill",
+        "scripts/touch_marker.py",
+        {"marker": "value"},
+    )
+
+    result_text = json.dumps(json.loads(result), ensure_ascii=False)
+    assert "ok" in result_text
+    assert executed["script_path"].endswith("scripts/touch_marker.py")
+    assert executed["args"] == {"marker": "value"}
+
+
+@pytest.mark.asyncio
 async def test_execute_script_rejects_uploaded_personal_skill_when_disabled(
     tmp_path, monkeypatch
 ):
