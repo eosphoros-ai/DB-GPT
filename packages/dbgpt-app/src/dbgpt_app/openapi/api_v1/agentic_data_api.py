@@ -2025,9 +2025,10 @@ print(json.dumps(summary, ensure_ascii=False))
         session_id = f"bash_{uuid.uuid4().hex[:12]}"
         runtime = LocalRuntime()
 
-        from dbgpt.configs.model_config import ROOT_PATH
+        from dbgpt.configs.model_config import PILOT_PATH
 
-        sandbox_work_dir = ROOT_PATH
+        cid = react_state.get("conv_id") or "default"
+        sandbox_work_dir = os.path.join(PILOT_PATH, "tmp", cid)
         os.makedirs(sandbox_work_dir, exist_ok=True)
 
         config = SessionConfig(
