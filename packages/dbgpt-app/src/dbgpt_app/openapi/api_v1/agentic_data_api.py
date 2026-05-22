@@ -62,6 +62,17 @@ def _validate_upload_filename(filename: str) -> str:
     return filename
 
 
+def _agent_artifact_work_dir(react_state: Dict[str, Any]) -> str:
+    """Return the download-safe workspace for agent-generated artifacts."""
+    from dbgpt.configs import model_config
+
+    raw_conv_id = str((react_state or {}).get("conv_id") or "default")
+    conv_id = re.sub(r"[^A-Za-z0-9_.-]", "_", raw_conv_id).lstrip(".")
+    if not conv_id:
+        conv_id = "default"
+    return os.path.join(model_config.PILOT_PATH, "tmp", str(conv_id))
+
+
 async def _resolve_model_context_tokens(
     llm_client: Any, model_name: Optional[str]
 ) -> Optional[int]:
@@ -1792,7 +1803,7 @@ print(json.dumps(summary, ensure_ascii=False))
         import sys
         import uuid
 
-        from dbgpt.configs.model_config import PILOT_PATH, STATIC_MESSAGE_IMG_PATH
+        from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
 
         if not code or not code.strip():
             return json.dumps(
@@ -1809,8 +1820,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
         # Use persistent work dir under pilot/tmp/{conv_id} so files
         # survive across calls and can be referenced later (e.g. in HTML).
-        cid = react_state.get("conv_id") or "default"
-        work_dir = os.path.join(PILOT_PATH, "tmp", cid)
+        work_dir = _agent_artifact_work_dir(react_state)
         os.makedirs(work_dir, exist_ok=True)
 
         # Collect image files that existed BEFORE this run
@@ -2021,9 +2031,8 @@ print(json.dumps(summary, ensure_ascii=False))
         session_id = f"bash_{uuid.uuid4().hex[:12]}"
         runtime = LocalRuntime()
 
-        from dbgpt.configs.model_config import ROOT_PATH
-
-        sandbox_work_dir = ROOT_PATH
+        sandbox_work_dir = _agent_artifact_work_dir(react_state)
+        os.makedirs(sandbox_work_dir, exist_ok=True)
 
         config = SessionConfig(
             language="bash",
@@ -2129,10 +2138,7 @@ print(json.dumps(summary, ensure_ascii=False))
                     except (json.JSONDecodeError, TypeError):
                         pass
                     # Also scan the output dir for any new .png files
-                    cid = react_state.get("conv_id") or "default"
-                    from dbgpt.configs.model_config import PILOT_PATH
-
-                    out_dir = os.path.join(PILOT_PATH, "tmp", cid)
+                    out_dir = _agent_artifact_work_dir(react_state)
                     if os.path.isdir(out_dir):
                         for fname in os.listdir(out_dir):
                             ext = os.path.splitext(fname)[1].lower()
@@ -2193,11 +2199,8 @@ print(json.dumps(summary, ensure_ascii=False))
         from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
 
         try:
-            from dbgpt.configs.model_config import PILOT_PATH
-
             sm = get_skill_manager(CFG.SYSTEM_APP)
-            cid = react_state.get("conv_id") or "default"
-            out_dir = os.path.join(PILOT_PATH, "tmp", cid)
+            out_dir = _agent_artifact_work_dir(react_state)
             os.makedirs(out_dir, exist_ok=True)
             # Auto-inject the correct file path from react_state into args.
             # The LLM sometimes corrupts the uploaded file path (e.g. changing

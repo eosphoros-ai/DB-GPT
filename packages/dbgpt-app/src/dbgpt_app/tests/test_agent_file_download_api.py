@@ -64,6 +64,36 @@ def test_agent_file_download_keeps_default_mock_user_compatibility():
     assert user.role == "admin"
 
 
+def test_agent_artifact_work_dir_uses_download_safe_pilot_tmp(
+    non_tmp_workspace, monkeypatch
+):
+    from dbgpt.configs import model_config
+    from dbgpt_app.openapi.api_v1 import agentic_data_api
+
+    pilot_path = non_tmp_workspace / "pilot"
+    root_path = non_tmp_workspace / "project"
+    monkeypatch.setattr(model_config, "PILOT_PATH", str(pilot_path))
+    monkeypatch.setattr(model_config, "ROOT_PATH", str(root_path))
+
+    work_dir = Path(agentic_data_api._agent_artifact_work_dir({"conv_id": "conv-1"}))
+
+    assert work_dir == pilot_path / "tmp" / "conv-1"
+    assert not _is_under(work_dir, root_path)
+
+
+def test_agent_artifact_work_dir_sanitizes_conv_id(non_tmp_workspace, monkeypatch):
+    from dbgpt.configs import model_config
+    from dbgpt_app.openapi.api_v1 import agentic_data_api
+
+    pilot_tmp = non_tmp_workspace / "pilot" / "tmp"
+    monkeypatch.setattr(model_config, "PILOT_PATH", str(non_tmp_workspace / "pilot"))
+
+    work_dir = Path(agentic_data_api._agent_artifact_work_dir({"conv_id": "../root"}))
+
+    assert _is_under(work_dir, pilot_tmp)
+    assert work_dir.name != "root"
+
+
 @pytest.mark.asyncio
 async def test_agent_file_download_rejects_project_root_file(
     non_tmp_workspace, monkeypatch
