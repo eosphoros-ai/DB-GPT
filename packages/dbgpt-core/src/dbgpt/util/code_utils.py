@@ -154,6 +154,7 @@ def _cmd(lang):
 
 
 def _resolve_work_dir_filepath(work_dir: str, filename: str) -> str:
+    """Resolve a relative filename while keeping it inside work_dir."""
     work_dir_path = pathlib.Path(work_dir).resolve()
     filename_path = pathlib.Path(filename)
     if filename_path.is_absolute():
@@ -189,7 +190,9 @@ def execute_code(
             stored when `code` is None. If None, a file with a randomly generated name
             will be created. The randomly generated file will be deleted after
             execution. The file name must be a relative path. Relative paths are
-            relative to the working directory.
+            resolved against the working directory and must stay inside it after
+            resolving path components and symlinks. Absolute paths, path traversal,
+            and symlinks that point outside the working directory are rejected.
         work_dir (Optional, str): The working directory for the code execution.
             If None, a default working directory will be used.
             The default working directory is the "extensions" directory under
