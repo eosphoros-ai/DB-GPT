@@ -3,6 +3,7 @@ import React, { memo, useCallback, useMemo, useRef } from 'react';
 import ChatHeader from './ChatHeader';
 import ChatMessageList, { ChatTurn } from './ChatMessageList';
 import ChatWelcome from './ChatWelcome';
+import QuestionDock, { QuestionRequest } from './content/QuestionDock';
 import { SlashCommand } from './input/CommandPopover';
 import { ContentPart } from './input/EnhancedChatInput';
 import StandaloneChatInput, { StandaloneChatInputRef } from './input/StandaloneChatInput';
@@ -26,6 +27,10 @@ export interface ChatPageProps {
   disabled?: boolean;
   inputPlaceholder?: string;
   showSteps?: boolean;
+
+  pendingQuestion?: QuestionRequest | null;
+  onReplyQuestion?: (requestId: string, answers: string[][]) => void;
+  onRejectQuestion?: (requestId: string) => void;
 
   headerExtra?: React.ReactNode;
   welcomeExtra?: React.ReactNode;
@@ -53,6 +58,10 @@ const ChatPage: React.FC<ChatPageProps> = ({
   disabled = false,
   inputPlaceholder,
   showSteps = true,
+
+  pendingQuestion,
+  onReplyQuestion,
+  onRejectQuestion,
 
   headerExtra,
   welcomeExtra,
@@ -117,6 +126,15 @@ const ChatPage: React.FC<ChatPageProps> = ({
         )}
 
         <div className='flex-shrink-0'>
+          {pendingQuestion && onReplyQuestion && onRejectQuestion && (
+            <div className='mx-auto max-w-3xl px-4 pt-2'>
+              <QuestionDock
+                request={pendingQuestion}
+                onReply={onReplyQuestion}
+                onReject={onRejectQuestion}
+              />
+            </div>
+          )}
           <StandaloneChatInput
             ref={inputRef}
             onSubmit={handleSubmit}
