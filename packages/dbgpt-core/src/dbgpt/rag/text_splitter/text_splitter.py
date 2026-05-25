@@ -530,9 +530,10 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                 aggregated_chunks.append(line)
 
         chunks = []
+        fallback_chunk_overlap = min(self._chunk_overlap, self._chunk_size)
         fallback_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self._chunk_size,
-            chunk_overlap=self._chunk_overlap,
+            chunk_overlap=fallback_chunk_overlap,
             length_function=self._length_function,
         )
         for chunk in aggregated_chunks:
