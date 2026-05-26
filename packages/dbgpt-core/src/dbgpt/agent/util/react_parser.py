@@ -93,9 +93,7 @@ class ReActOutputParser:
 
     def _find_prefix_matches(self, text: str, escaped_prefix: str) -> List[re.Match]:
         """Find line-start ReAct prefix matches outside markdown code fences."""
-        pattern = re.compile(
-            self._prefix_line_pattern(escaped_prefix), re.MULTILINE
-        )
+        pattern = re.compile(self._prefix_line_pattern(escaped_prefix), re.MULTILINE)
         fence_spans = self._markdown_fence_spans(text)
         return [
             match
@@ -196,9 +194,7 @@ class ReActOutputParser:
         text = self._normalize_react_text(text).strip()
 
         # Find all line-start instances of the thought prefix outside code fences.
-        thought_matches = self._find_prefix_matches(
-            text, self.thought_prefix_escaped
-        )
+        thought_matches = self._find_prefix_matches(text, self.thought_prefix_escaped)
 
         if not thought_matches:
             return []
@@ -272,12 +268,8 @@ class ReActOutputParser:
             self.action_reason_prefix_escaped
         )
         action_line = self._prefix_line_pattern(self.action_prefix_escaped)
-        action_input_line = self._prefix_line_pattern(
-            self.action_input_prefix_escaped
-        )
-        observation_line = self._prefix_line_pattern(
-            self.observation_prefix_escaped
-        )
+        action_input_line = self._prefix_line_pattern(self.action_input_prefix_escaped)
+        observation_line = self._prefix_line_pattern(self.observation_prefix_escaped)
 
         thought_match = re.search(
             rf"{thought_line}(.*?)(?={phase_line}|{action_intention_line}|"

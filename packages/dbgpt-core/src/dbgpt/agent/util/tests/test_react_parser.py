@@ -55,10 +55,7 @@ Action Input: {"sql": "select distinct major_type from assets"}"""
         assert len(steps) == 1
         assert steps[0].thought == "I need to inspect the database schema."
         assert steps[0].action_intention == "Query the available asset categories."
-        assert (
-            steps[0].action_reason
-            == "The user asked about assets by major type."
-        )
+        assert steps[0].action_reason == "The user asked about assets by major type."
         assert steps[0].action == "query_db"
         assert steps[0].action_input == {
             "sql": "select distinct major_type from assets"
@@ -486,9 +483,7 @@ Action Input: {"result": "网络设备资产共 30 条"}"""
         assert len(all_steps) == 2
         assert len(current_steps) == 1
         assert current_steps[0].action == "query_db"
-        assert current_steps[0].action_input == {
-            "sql": "select count(*) from assets"
-        }
+        assert current_steps[0].action_input == {"sql": "select count(*) from assets"}
 
     def test_react_markers_inside_action_input_code_fence_are_not_steps(self):
         """Do not split Action Input code fences that mention ReAct labels."""
