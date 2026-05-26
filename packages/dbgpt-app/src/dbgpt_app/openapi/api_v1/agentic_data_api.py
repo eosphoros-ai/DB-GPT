@@ -8,7 +8,7 @@ import tempfile
 import uuid
 import zipfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dbgpt.agent.core.memory.gpts import GptsMemory
+    from dbgpt.agent.resource.connector.manager import ConnectorManager
 
 REACT_AGENT_MEMORY_CACHE: Dict[str, "GptsMemory"] = {}
 
@@ -66,6 +67,54 @@ def _extract_auto_data_markers(text: str) -> tuple[str, Dict[str, str]]:
     cleaned = AUTO_DATA_MARKER_PATTERN.sub(_replace, text)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
     return cleaned, extracted
+
+
+def _parse_connector_ids(ext_info: Optional[Dict[str, Any]]) -> List[str]:
+    """Extract connector IDs from ``ext_info``.
+
+    Supports two shapes:
+    - ``ext_info.connector_ids`` — a list of UUID strings (preferred).
+    - ``ext_info.connector_id``  — a single UUID string (legacy back-compat).
+
+    Returns an empty list when no valid IDs are found.
+    """
+    if not ext_info or not isinstance(ext_info, dict):
+        return []
+    raw_ids = ext_info.get("connector_ids")
+    if isinstance(raw_ids, list):
+        return [cid for cid in raw_ids if isinstance(cid, str) and cid]
+    legacy = ext_info.get("connector_id")
+    if isinstance(legacy, str) and legacy:
+        return [legacy]
+    return []
+
+
+def _select_connector_packs(
+    connector_ids: List[str],
+    connector_manager: Optional["ConnectorManager"],
+) -> Tuple[List["MCPToolPack"], List[str]]:
+    """Return tool packs for the requested *connector_ids*.
+
+    Args:
+        connector_ids: IDs the user selected in the frontend.
+        connector_manager: A :class:`ConnectorManager` instance (or ``None``).
+
+    Returns:
+        A tuple of ``(packs, missing_ids)`` where *packs* are the resolved
+        :class:`MCPToolPack` objects and *missing_ids* lists IDs that could
+        not be resolved (e.g. deleted mid-conversation).
+    """
+    packs: List["MCPToolPack"] = []
+    missing_ids: List[str] = []
+    if connector_manager is None or not connector_ids:
+        return packs, missing_ids
+    for cid in connector_ids:
+        pack = connector_manager.get_connector_tools(cid)
+        if pack is None:
+            missing_ids.append(cid)
+            continue
+        packs.append(pack)
+    return packs, missing_ids
 
 
 async def _execute_skill_script_impl(
@@ -855,6 +904,9 @@ async def _react_agent_stream(
             or dialogue.ext_info.get("knowledge_space_id")
         )
         database_name = dialogue.ext_info.get("database_name")
+
+    # Connector selection (Task C): only inject user-selected connectors.
+    connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
 
     def infer_phase(action: str) -> str:
         """根据 action 名称推断所属阶段，返回自由文本描述"""
@@ -2652,7 +2704,7 @@ print(json.dumps(summary, ensure_ascii=False))
     is_skill_mode = pre_matched_skill is not None
     _skill_name = pre_matched_skill.metadata.name if pre_matched_skill else "skill"
 
-    # Inject connector tools (safe: no-op if manager not registered or no active connectors)
+    # Inject connector tools — only the ones the user explicitly selected.
     connector_tool_extras: List[Any] = []
     try:
         from dbgpt.agent.resource.connector.manager import (
@@ -2662,13 +2714,21 @@ print(json.dumps(summary, ensure_ascii=False))
         _connector_manager = CFG.SYSTEM_APP.get_component(
             "connector_manager", _ConnectorManager, default_component=None
         )
-        if _connector_manager is not None:
-            _connector_packs = _connector_manager.get_all_tools()
-            if _connector_packs:
-                connector_tool_extras.extend(_connector_packs)
+        if _connector_manager is not None and connector_ids:
+            connector_tool_extras, _missing = _select_connector_packs(
+                connector_ids, _connector_manager
+            )
+            for _mid in _missing:
+                logger.warning(
+                    "_react_agent_stream: connector_id %s not active, skipping",
+                    _mid,
+                )
+            if connector_tool_extras:
                 logger.info(
-                    "_react_agent_stream: injected %d connector tool pack(s)",
-                    len(_connector_packs),
+                    "_react_agent_stream: injected %d connector tool pack(s) "
+                    "(selected: %d)",
+                    len(connector_tool_extras),
+                    len(connector_ids),
                 )
     except Exception:
         pass  # graceful degradation — connector tools are optional
@@ -2933,14 +2993,20 @@ Action Input: The JSON format of tool parameters
         _cm = CFG.SYSTEM_APP.get_component(
             "connector_manager", _ConnectorManager, default_component=None
         )
-        if _cm is not None:
+        if _cm is not None and connector_ids:
             _active = _cm.list_active()
-            if _active:
+            # Only describe connectors the user explicitly selected.
+            # Iterate connector_ids (not _active) so prompt order matches
+            # user selection order and stays consistent with _select_connector_packs.
+            _active_map = {c["connector_id"]: c for c in _active if isinstance(c, dict)}
+            _selected = [
+                _active_map[cid] for cid in connector_ids if cid in _active_map
+            ]
+            if _selected:
                 _connector_lines = []
-                for _c in _active:
+                for _c in _selected:
                     _tool_names = ", ".join(
-                        t.name
-                        for t in (_c.get("tools", []) if isinstance(_c, dict) else [])
+                        t.get("name", "unknown") for t in _c.get("tools", [])
                     )
                     _connector_lines.append(
                         f"- {_c.get('name', 'unknown')} ({_c.get('connector_type', 'unknown')}): "
