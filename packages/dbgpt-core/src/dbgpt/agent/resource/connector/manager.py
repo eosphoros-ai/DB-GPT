@@ -205,41 +205,87 @@ class ConnectorManager(BaseComponent):
         connector_type: str,
         credentials: Dict[str, Any],
         name: Optional[str] = None,
+        extra_config: Optional[Dict[str, Any]] = None,
+        connector_id: Optional[str] = None,
     ) -> str:
         """Validate, encrypt and activate a new connector instance.
 
+        Two branches are supported:
+
+        * **Built-in catalog connector** — ``connector_type`` must exist in the
+          loaded catalog (e.g. ``"feishu"``, ``"github"``).  Server URI and
+          header mapping are taken from the catalog entry.
+        * **User-defined custom MCP server** — when
+          ``connector_type == "custom_mcp"``, ``extra_config`` must supply
+          ``server_uri`` (the SSE endpoint).  Header mapping is derived from
+          ``extra_config['auth_type']`` (``"none"``, ``"bearer"`` or
+          ``"token"``) and the optional ``extra_config['header_name']``.
+
         Args:
-            connector_type (str): A key that must exist in the loaded catalog
-                (e.g. ``"feishu"``, ``"github"``).
+            connector_type (str): A catalog key, or the literal
+                ``"custom_mcp"`` for user-defined MCP servers.
             credentials (Dict[str, Any]): Raw credential key/value pairs as
                 required by the connector's ``auth.fields`` spec.
             name (Optional[str]): Human-readable label for this connector
                 instance.  Defaults to *connector_type*.
+            extra_config (Optional[Dict[str, Any]]): Required when
+                ``connector_type == "custom_mcp"``.  Must contain
+                ``{'server_uri': str, 'auth_type': str in
+                ('none','bearer','token'), 'header_name': str (optional)}``.
+            connector_id (Optional[str]): Preserve a known UUID (used by
+                rehydration during process startup).  When ``None``, a fresh
+                hex token is generated.
 
         Returns:
-            str: A unique connector_id (hex string) that identifies this live
-            connector instance.
+            str: A unique connector_id (hex string or caller-supplied) that
+            identifies this live connector instance.
 
         Raises:
-            ValueError: When *connector_type* is not found in the catalog.
+            ValueError: When *connector_type* is not found in the catalog and
+                is not ``"custom_mcp"``, or when ``custom_mcp`` is requested
+                without a valid ``server_uri`` in ``extra_config``.
         """
-        entry = self._catalog.get(connector_type)
-        if entry is None:
-            available = [e.type for e in self._catalog.list()]
-            raise ValueError(
-                f"Unknown connector type '{connector_type}'. "
-                f"Available types: {available}"
-            )
-
-        connector_id = secrets.token_hex(16)
+        connector_id = connector_id or secrets.token_hex(16)
 
         salt = self._credential_store.generate_salt()
         self._salts[connector_id] = salt
         str_credentials: Dict[str, str] = {k: str(v) for k, v in credentials.items()}
+
+        if connector_type == "custom_mcp":
+            if not extra_config or "server_uri" not in extra_config:
+                raise ValueError("custom_mcp requires extra_config.server_uri")
+            server_uri = extra_config["server_uri"]
+            auth_type = extra_config.get("auth_type", "none")
+            if auth_type == "bearer":
+                header_mapping = {"token": "Authorization"}
+                # Auto-prefix Bearer if not already
+                token_val = str_credentials.get("token", "")
+                if token_val and not token_val.startswith("Bearer "):
+                    str_credentials["token"] = f"Bearer {token_val}"
+            elif auth_type == "token":
+                header_mapping = {
+                    "token": extra_config.get("header_name", "Authorization")
+                }
+            else:  # auth_type == "none"
+                header_mapping = {}
+            display_name = name or "Custom MCP"
+        else:
+            entry = self._catalog.get(connector_type)
+            if entry is None:
+                available = [e.type for e in self._catalog.list()]
+                raise ValueError(
+                    f"Unknown connector type '{connector_type}'. "
+                    f"Available types: {available} "
+                    f"(or 'custom_mcp' for user-defined MCP servers)"
+                )
+            server_uri = entry.mcp_server.server_uri
+            header_mapping = entry.auth.header_mapping
+            display_name = name or entry.display_name
+
         self._credential_store.encrypt(str_credentials, salt)
 
         headers: Dict[str, str] = {}
-        for field_name, header_name in entry.auth.header_mapping.items():
+        for field_name, header_name in header_mapping.items():
             field_value = str_credentials.get(field_name)
             if field_value is not None:
                 headers[header_name] = field_value
@@ -247,8 +293,7 @@ class ConnectorManager(BaseComponent):
         # Import lazily to avoid circular dependency at module load time
         from dbgpt.agent.resource.tool.pack import MCPToolPack
 
-        server_uri = entry.mcp_server.server_uri
-        pack_name = name or connector_type
+        pack_name = display_name
         pack = MCPToolPack(
             mcp_servers=server_uri,
             default_headers=headers,

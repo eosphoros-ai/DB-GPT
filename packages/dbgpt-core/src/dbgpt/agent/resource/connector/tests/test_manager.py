@@ -287,3 +287,114 @@ def test_remove_connector_clears_connector_types():
 
     assert cid not in manager._connector_types
     assert not manager._has_multiple_instances_of_type("yuque")
+
+
+# ---------------------------------------------------------------------------
+# Task F – custom_mcp branch + connector_id preservation
+# ---------------------------------------------------------------------------
+
+
+def _patch_preload_resource(monkeypatch):
+    """Make MCPToolPack.preload_resource a no-op for tests."""
+    from dbgpt.agent.resource.tool import pack as pack_mod
+
+    async def _noop(self):
+        return None
+
+    monkeypatch.setattr(pack_mod.MCPToolPack, "preload_resource", _noop)
+
+
+def test_create_connector_custom_mcp_bearer(monkeypatch: pytest.MonkeyPatch):
+    """custom_mcp + auth_type=bearer should auto-prefix the token with 'Bearer '."""
+    _patch_preload_resource(monkeypatch)
+    manager = ConnectorManager()
+
+    import asyncio
+
+    cid = asyncio.run(
+        manager.create_connector(
+            connector_type="custom_mcp",
+            credentials={"token": "abc"},
+            extra_config={"server_uri": "http://x", "auth_type": "bearer"},
+            name="My MCP",
+        )
+    )
+
+    pack = manager._active_packs[cid]
+    assert pack._default_headers == {"Authorization": "Bearer abc"}
+    assert manager._connector_types[cid] == "custom_mcp"
+    assert manager._statuses[cid] == ConnectorStatus.active
+
+
+def test_create_connector_custom_mcp_token(monkeypatch: pytest.MonkeyPatch):
+    """custom_mcp + auth_type=token should use the raw token with a custom header name."""
+    _patch_preload_resource(monkeypatch)
+    manager = ConnectorManager()
+
+    import asyncio
+
+    cid = asyncio.run(
+        manager.create_connector(
+            connector_type="custom_mcp",
+            credentials={"token": "secret-value"},
+            extra_config={
+                "server_uri": "http://x",
+                "auth_type": "token",
+                "header_name": "X-Custom",
+            },
+            name="My MCP",
+        )
+    )
+
+    pack = manager._active_packs[cid]
+    assert pack._default_headers == {"X-Custom": "secret-value"}
+
+
+def test_create_connector_custom_mcp_missing_server_uri_raises():
+    manager = ConnectorManager()
+
+    import asyncio
+
+    with pytest.raises(ValueError, match="custom_mcp requires extra_config.server_uri"):
+        asyncio.run(
+            manager.create_connector(
+                connector_type="custom_mcp",
+                credentials={},
+                extra_config={},
+            )
+        )
+
+
+def test_create_connector_preserves_provided_connector_id(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _patch_preload_resource(monkeypatch)
+    manager = ConnectorManager()
+
+    import asyncio
+
+    cid = asyncio.run(
+        manager.create_connector(
+            connector_type="custom_mcp",
+            credentials={},
+            extra_config={"server_uri": "http://x", "auth_type": "none"},
+            connector_id="fixed-id",
+        )
+    )
+
+    assert cid == "fixed-id"
+    assert "fixed-id" in manager._active_packs
+
+
+def test_create_connector_unknown_type_message_mentions_custom_mcp():
+    manager = ConnectorManager()
+
+    import asyncio
+
+    with pytest.raises(ValueError, match="custom_mcp"):
+        asyncio.run(
+            manager.create_connector(
+                connector_type="whatever",
+                credentials={},
+            )
+        )

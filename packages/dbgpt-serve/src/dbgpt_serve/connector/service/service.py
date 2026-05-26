@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from dbgpt.agent.resource.connector.manager import ConnectorManager
 from dbgpt.agent.resource.connector.credential import CredentialStore
+from dbgpt.agent.resource.connector.manager import ConnectorManager
 from dbgpt.component import SystemApp
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util import get_or_create_event_loop
@@ -133,18 +133,28 @@ class ConnectorService(
 
         loop = get_or_create_event_loop()
         with self._dao.session() as session:
-            active_connectors = [
-                {
-                    "connector_id": entity.connector_id,
-                    "connector_type": entity.connector_type,
-                    "display_name": entity.display_name,
-                    "encrypted_credentials": entity.encrypted_credentials,
-                    "encryption_salt": entity.encryption_salt,
-                }
-                for entity in session.query(ConnectorInstanceEntity)
+            active_connectors = []
+            for entity in (
+                session.query(ConnectorInstanceEntity)
                 .filter(ConnectorInstanceEntity.status == "active")
                 .all()
-            ]
+            ):
+                extra_config: Optional[Dict[str, Any]] = None
+                if entity.config_json:
+                    try:
+                        extra_config = json.loads(entity.config_json)
+                    except Exception:
+                        extra_config = None
+                active_connectors.append(
+                    {
+                        "connector_id": entity.connector_id,
+                        "connector_type": entity.connector_type,
+                        "display_name": entity.display_name,
+                        "encrypted_credentials": entity.encrypted_credentials,
+                        "encryption_salt": entity.encryption_salt,
+                        "config": extra_config,
+                    }
+                )
 
         for connector in active_connectors:
             try:
@@ -157,6 +167,8 @@ class ConnectorService(
                         connector_type=connector["connector_type"],
                         credentials=credentials,
                         name=connector["display_name"],
+                        extra_config=connector.get("config"),
+                        connector_id=connector["connector_id"],
                     )
                 )
             except Exception as exc:
@@ -226,6 +238,8 @@ class ConnectorService(
                         connector_type=request.connector_type,
                         credentials=request.credentials,
                         name=request.display_name,
+                        extra_config=request.config,
+                        connector_id=connector_id,
                     )
                 )
 

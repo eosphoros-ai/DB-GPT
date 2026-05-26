@@ -15,26 +15,30 @@ export interface ConnectorInstance {
   created_at?: string;
 }
 
+export interface ConnectorAuthField {
+  name: string;
+  label: string;
+  type: 'text' | 'password' | 'url' | 'select';
+  required: boolean;
+  options?: string[];
+  default?: string;
+}
+
 export interface ConnectorCatalogEntry {
   type: string;
   display_name: string;
   description: string;
   icon?: string;
   category: string;
-  auth: {
-    fields: Array<{
-      name: string;
-      label: string;
-      type: 'text' | 'password' | 'url';
-      required: boolean;
-    }>;
-  };
+  is_custom?: boolean;
+  auth_fields: ConnectorAuthField[];
 }
 
 export interface CreateConnectorRequest {
   connector_type: string;
   display_name: string;
   credentials: Record<string, string>;
+  config?: Record<string, unknown>;
 }
 
 export interface PendingConfirmation {

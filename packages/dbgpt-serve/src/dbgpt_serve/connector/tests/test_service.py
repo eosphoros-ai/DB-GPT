@@ -32,7 +32,9 @@ def service(system_app: SystemApp):
     return instance
 
 
-def test_create_connector_encrypts_credentials_before_persisting(service: ConnectorService):
+def test_create_connector_encrypts_credentials_before_persisting(
+    service: ConnectorService,
+):
     credentials = {"token": "secret-token"}
     response = service.create_connector(
         ConnectorCreateRequest(
@@ -119,11 +121,14 @@ def test_create_connector_activates_external_connector_manager(
         )
     )
 
-    fake_manager.create_connector.assert_awaited_once_with(
-        connector_type="github",
-        credentials={"token": "secret-token"},
-        name="GitHub Ops",
-    )
+    fake_manager.create_connector.assert_awaited_once()
+    call_kwargs = fake_manager.create_connector.call_args.kwargs
+    assert call_kwargs["connector_type"] == "github"
+    assert call_kwargs["credentials"] == {"token": "secret-token"}
+    assert call_kwargs["name"] == "GitHub Ops"
+    assert call_kwargs["extra_config"] is None
+    assert isinstance(call_kwargs["connector_id"], str)
+    assert call_kwargs["connector_id"]
 
 
 def test_after_start_rehydrates_active_connectors_with_decrypted_credentials(
@@ -162,4 +167,6 @@ def test_after_start_rehydrates_active_connectors_with_decrypted_credentials(
         connector_type="github",
         credentials=credentials,
         name="GitHub Ops",
+        extra_config=None,
+        connector_id="connector-1",
     )
