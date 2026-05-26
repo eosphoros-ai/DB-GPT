@@ -14,6 +14,8 @@ import ManusRightPanel, {
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import { ConnectorInstance, AttachedConnector } from '@/new-components/connector/types';
+import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
+import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { useConnectors } from '@/hooks/use-connector-api';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
@@ -581,6 +583,11 @@ const Playground: NextPage = () => {
   const [selectedConnectors, setSelectedConnectors] = useState<ConnectorInstance[]>([]);
   const [connectorSearchQuery, setConnectorSearchQuery] = useState('');
   const { connectors: connectorsList } = useConnectors();
+
+  const isConfirmPollingActive = loading && selectedConnectors.length > 0;
+  const { pendingConfirmation, approve, deny, dismiss } = useConfirmPolling({
+    isActive: isConfirmPollingActive,
+  });
 
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
@@ -3875,6 +3882,12 @@ const Playground: NextPage = () => {
             </Button>
           </div>
         </Modal>
+        <ConfirmDialog
+          confirmation={pendingConfirmation}
+          onApprove={approve}
+          onDeny={deny}
+          onDismiss={dismiss}
+        />
       </div>
     </ConfigProvider>
   );
