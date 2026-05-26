@@ -1,5 +1,11 @@
 export type ConnectorStatus = 'active' | 'error' | 'disconnected';
 
+export type AttachedConnector = {
+  id: string;
+  connector_type: string;
+  display_name: string;
+};
+
 export interface ConnectorInstance {
   id: string;
   connector_type: string;

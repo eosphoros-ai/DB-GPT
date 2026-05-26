@@ -60,6 +60,7 @@ export const ChatZh: Resources['translation'] = {
   use_skill: '使用技能',
   use_knowledge: '使用知识库',
   use_database: '使用数据库',
+  use_connector: '选择连接器',
   execution_steps: '执行步骤',
   db_gpt_computer: 'DB-GPT 的电脑',
   load_skill: '加载技能',

@@ -52,6 +52,7 @@ export const ChatEn = {
   use_skill: 'Use Skill',
   use_knowledge: 'Use Knowledge Base',
   use_database: 'Use Database',
+  use_connector: 'Select Connector',
   execution_steps: 'Execution Steps',
   db_gpt_computer: "DB-GPT's Computer",
   load_skill: 'Load Skill',

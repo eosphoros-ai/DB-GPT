@@ -1,5 +1,6 @@
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import {
+  ApiOutlined,
   AppstoreOutlined,
   BarChartOutlined,
   BookOutlined,
@@ -34,6 +35,7 @@ import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ObservationFormatter from './ObservationFormatter';
+import { AttachedConnector } from '@/new-components/connector/types';
 
 export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
 
@@ -118,6 +120,7 @@ export interface ManusLeftPanelProps {
     db_name: string;
     db_type: string;
   };
+  attachedConnectors?: AttachedConnector[];
   createdSkillName?: string;
   onSkillCardClick?: (skillName: string) => void;
   onSkillDownload?: (skillName: string) => void;
@@ -810,6 +813,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   attachedKnowledge,
   attachedSkill,
   attachedDb,
+  attachedConnectors,
   createdSkillName,
   onSkillCardClick,
   onSkillDownload,
@@ -921,6 +925,21 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                   </div>
                 </div>
               )}
+              {(attachedConnectors ?? []).map(c => (
+                <div key={c.id} className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'>
+                  <div className='w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0'>
+                    <ApiOutlined className='text-violet-500 text-base' />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>
+                      {c.display_name}
+                    </div>
+                    <div className='text-[11px] text-gray-400 dark:text-gray-500'>
+                      {c.connector_type}
+                    </div>
+                  </div>
+                </div>
+              ))}
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed'>
                 {userQuery}
               </div>
