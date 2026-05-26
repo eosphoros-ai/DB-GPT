@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import secrets
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -32,6 +33,20 @@ class ConnectorStatus(str, Enum):
     active = "active"
     error = "error"
     disconnected = "disconnected"
+
+
+def _slugify(text: str) -> str:
+    """Convert *text* to a lowercase ASCII slug.
+
+    Rules: lowercase, replace whitespace and underscores with ``-``,
+    strip characters outside ``[a-z0-9-]``, collapse consecutive dashes.
+    """
+    s = text.lower()
+    s = re.sub(r"[\s_]+", "-", s)
+    s = re.sub(r"[^a-z0-9-]", "", s)
+    s = re.sub(r"-{2,}", "-", s)
+    s = s.strip("-")
+    return s
 
 
 class ConnectorManager(BaseComponent):
@@ -78,6 +93,77 @@ class ConnectorManager(BaseComponent):
         self._statuses: Dict[str, ConnectorStatus] = {}
         self._salts: Dict[str, str] = {}
         self._connector_types: Dict[str, str] = {}
+
+    # ------------------------------------------------------------------
+    # Tool prefix helpers
+    # ------------------------------------------------------------------
+
+    def _has_multiple_instances_of_type(self, connector_type: str) -> bool:
+        """True if at least one other connector of the same type is already active."""
+        return any(t == connector_type for cid, t in self._connector_types.items())
+
+    def compute_tool_prefix(
+        self,
+        connector_type: str,
+        display_name: str,
+        connector_id: str,
+    ) -> str:
+        """Return the prefix to prepend to every tool name in this connector's pack.
+
+        Prefix rules:
+        - Built-in, single instance: ``{connector_type}``
+        - Built-in, multiple instances: ``{connector_type}-{slug(display_name)}``
+        - Custom (type starts with ``custom_``): ``{slug(display_name)}``
+        - Fallback when slug is empty: first 6 chars of *connector_id*
+        """
+        is_custom = connector_type.startswith("custom_")
+        slug = _slugify(display_name)
+
+        if is_custom:
+            return slug if slug else connector_id[:6]
+
+        if self._has_multiple_instances_of_type(connector_type):
+            suffix = slug if slug else connector_id[:6]
+            return f"{connector_type}-{suffix}"
+
+        return connector_type
+
+    def _apply_tool_prefix(
+        self, pack: "MCPToolPack", prefix: str, display_name: str
+    ) -> None:
+        """Rename every tool in *pack* to add the prefix and update tool_server_map."""
+        new_server_map: Dict[str, str] = {}
+        default_server = (
+            pack._mcp_servers
+            if isinstance(pack._mcp_servers, str)
+            else (pack._mcp_servers[0] if pack._mcp_servers else "")
+        )
+        new_resources: Dict[str, Any] = {}
+
+        for tool in list(pack.sub_resources):
+            if not isinstance(tool, BaseTool):
+                continue
+            old_name = tool.name
+            prefixed = f"{prefix}_{old_name}"
+            # Skip if already prefixed (idempotency)
+            if old_name.startswith(f"{prefix}_"):
+                new_server_map[old_name] = pack.tool_server_map.get(
+                    old_name, default_server
+                )
+                new_resources[old_name] = tool
+                continue
+            new_name = prefixed
+            new_server_map[new_name] = pack.tool_server_map.get(
+                old_name, default_server
+            )
+            # Rename tool internals
+            tool._name = new_name
+            if not tool._description.endswith(f"(via {display_name})"):
+                tool._description = f"{tool._description} (via {display_name})"
+            new_resources[new_name] = tool
+
+        pack.tool_server_map = new_server_map
+        pack._resources = new_resources
 
     def init_app(self, system_app: SystemApp) -> None:
         """Bind the manager to *system_app*.
@@ -171,8 +257,11 @@ class ConnectorManager(BaseComponent):
 
         try:
             await pack.preload_resource()
+            prefix = self.compute_tool_prefix(connector_type, pack_name, connector_id)
+            self._apply_tool_prefix(pack, prefix, pack_name)
             self._active_packs[connector_id] = pack
             self._statuses[connector_id] = ConnectorStatus.active
+            self._connector_types[connector_id] = connector_type
             tool_count = sum(
                 1 for tool in pack.sub_resources if isinstance(tool, BaseTool)
             )
@@ -193,7 +282,6 @@ class ConnectorManager(BaseComponent):
                 exc_info=True,
             )
 
-        self._connector_types[connector_id] = connector_type
         return connector_id
 
     async def remove_connector(self, connector_id: str) -> None:
@@ -213,6 +301,7 @@ class ConnectorManager(BaseComponent):
         self._statuses[connector_id] = ConnectorStatus.disconnected
         self._active_packs.pop(connector_id, None)
         self._salts.pop(connector_id, None)
+        self._connector_types.pop(connector_id, None)
         # TODO(T6): cancel APScheduler jobs associated with connector_id
         logger.info("Connector id=%s removed", connector_id)
 

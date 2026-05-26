@@ -171,3 +171,119 @@ def test_get_catalog_after_load_returns_entries(tmp_path):
     assert len(catalog.list()) == 1
     assert catalog.list()[0].type == "test_conn"
     assert catalog.list()[0].display_name == "Test Connector"
+
+
+# ---------------------------------------------------------------------------
+# Task B – tool auto-prefix tests
+# ---------------------------------------------------------------------------
+
+
+def test_compute_tool_prefix_builtin_single():
+    """Built-in type with no prior instances => prefix is just the type."""
+    manager = ConnectorManager()
+    prefix = manager.compute_tool_prefix("yuque", "My Yuque", "abc123")
+    assert prefix == "yuque"
+
+
+def test_compute_tool_prefix_builtin_multiple():
+    """Built-in type with an existing instance => prefix includes slug of display_name."""
+    manager = ConnectorManager()
+    manager._connector_types["other-id"] = "yuque"
+    prefix = manager.compute_tool_prefix("yuque", "Team Yuque", "new-id")
+    assert prefix == "yuque-team-yuque"
+
+
+def test_compute_tool_prefix_custom():
+    """Custom connector type => prefix is slug of display_name only."""
+    manager = ConnectorManager()
+    prefix = manager.compute_tool_prefix("custom_mcp", "My Internal KB", "xyz789")
+    assert prefix == "my-internal-kb"
+
+
+def test_compute_tool_prefix_slug_fallback():
+    """When slug is empty, fall back to first 6 chars of connector_id."""
+    manager = ConnectorManager()
+    prefix = manager.compute_tool_prefix("custom_mcp", "!!!", "abc1234567890")
+    assert prefix == "abc123"
+
+
+def test_apply_tool_prefix_renames_and_updates_map():
+    """_apply_tool_prefix renames tools, updates tool_server_map, and annotates descriptions."""
+    manager = ConnectorManager()
+
+    pack = MCPToolPack(mcp_servers="http://example.com/sse", name="Yuque")
+    pack.add_command(
+        command_label="Create a doc",
+        command_name="create_doc",
+        args={},
+        function=lambda: None,
+    )
+    pack.add_command(
+        command_label="Delete a doc",
+        command_name="delete_doc",
+        args={},
+        function=lambda: None,
+    )
+    pack.tool_server_map = {
+        "create_doc": "http://example.com/sse",
+        "delete_doc": "http://example.com/sse",
+    }
+
+    manager._apply_tool_prefix(pack, "yuque", "Yuque")
+
+    tools = pack.sub_resources
+    assert tools[0].name == "yuque_create_doc"
+    assert tools[1].name == "yuque_delete_doc"
+    assert pack.tool_server_map == {
+        "yuque_create_doc": "http://example.com/sse",
+        "yuque_delete_doc": "http://example.com/sse",
+    }
+    assert tools[0].description.endswith("(via Yuque)")
+    assert tools[1].description.endswith("(via Yuque)")
+
+
+def test_apply_tool_prefix_idempotent():
+    """Calling _apply_tool_prefix twice with the same prefix doesn't double-prefix."""
+    manager = ConnectorManager()
+
+    pack = MCPToolPack(mcp_servers="http://example.com/sse", name="Yuque")
+    pack.add_command(
+        command_label="Create a doc",
+        command_name="create_doc",
+        args={},
+        function=lambda: None,
+    )
+    pack.tool_server_map = {
+        "create_doc": "http://example.com/sse",
+    }
+
+    manager._apply_tool_prefix(pack, "yuque", "Yuque")
+    manager._apply_tool_prefix(pack, "yuque", "Yuque")
+
+    tools = pack.sub_resources
+    assert tools[0].name == "yuque_create_doc"
+    assert pack.tool_server_map == {
+        "yuque_create_doc": "http://example.com/sse",
+    }
+    assert tools[0].description.count("(via Yuque)") == 1
+
+
+def test_remove_connector_clears_connector_types():
+    """After remove_connector, _connector_types should not retain the entry.
+
+    Otherwise compute_tool_prefix would treat re-created connectors as multi-instance.
+    """
+    manager = ConnectorManager()
+    cid = "ghost-id"
+    manager._connector_types[cid] = "yuque"
+    manager._active_packs[cid] = MCPToolPack(
+        mcp_servers="http://example.com/sse", name="Ghost"
+    )
+    manager._statuses[cid] = ConnectorStatus.active
+
+    import asyncio
+
+    asyncio.run(manager.remove_connector(cid))
+
+    assert cid not in manager._connector_types
+    assert not manager._has_multiple_instances_of_type("yuque")
