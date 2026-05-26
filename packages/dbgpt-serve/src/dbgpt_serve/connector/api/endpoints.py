@@ -1,7 +1,7 @@
 """REST API endpoints for connector management."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -16,6 +16,7 @@ from ..service.service import (
     ConnectorService,
     ConnectorUpdateRequest,
 )
+from .schemas import ConnectorTypeOption
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,74 @@ def get_service() -> ConnectorService:
     )
 
 
-@router.get("/types", response_model=Result[List[str]])
-async def list_connector_types() -> Result[List[str]]:
-    return Result.succ(["yuque", "feishu", "notion", "confluence", "github", "gitlab"])
+# Synthetic catalog entry for user-defined custom MCP servers.
+# Kept in sync with CustomMcpForm (Task F) on the frontend.
+# Note: auth_fields here include extra keys (`options`, `default`) beyond the
+# `AuthField` schema in catalog.py — the frontend CustomMcpForm tolerates both shapes.
+_CUSTOM_MCP_OPTION = ConnectorTypeOption(
+    type="custom_mcp",
+    display_name="自定义 MCP Server",
+    description="接入任意 SSE-based MCP Server",
+    category="custom",
+    is_custom=True,
+    auth_fields=[
+        {
+            "name": "server_uri",
+            "label": "SSE Endpoint",
+            "type": "url",
+            "required": True,
+        },
+        {
+            "name": "auth_type",
+            "label": "认证方式",
+            "type": "select",
+            "options": ["none", "bearer", "token"],
+            "required": True,
+        },
+        {
+            "name": "token",
+            "label": "Token",
+            "type": "password",
+            "required": False,
+        },
+        {
+            "name": "header_name",
+            "label": "Token Header 名",
+            "type": "text",
+            "required": False,
+            "default": "Authorization",
+        },
+    ],
+)
+
+
+@router.get("/types", response_model=Result[List[ConnectorTypeOption]])
+async def list_connector_types() -> Result[List[Dict[str, Any]]]:
+    from dbgpt.agent.resource.connector.manager import ConnectorManager as _CM
+
+    if global_system_app is None:
+        raise HTTPException(status_code=503, detail="SystemApp not initialised")
+    manager = global_system_app.get_component(
+        "connector_manager", _CM, default_component=None
+    )
+    if manager is None:
+        raise HTTPException(status_code=503, detail="ConnectorManager not available")
+
+    options: List[ConnectorTypeOption] = []
+    for entry in manager.get_catalog().list():
+        options.append(
+            ConnectorTypeOption(
+                type=entry.type,
+                display_name=entry.display_name,
+                description=entry.description,
+                icon=entry.icon,
+                category=entry.category,
+                is_custom=False,
+                auth_fields=[f.model_dump() for f in entry.auth.fields],
+            )
+        )
+    options.append(_CUSTOM_MCP_OPTION)
+    return Result.succ([o.model_dump() for o in options])
 
 
 @router.post("/", response_model=Result[ConnectorResponse])
@@ -42,7 +108,9 @@ async def create_connector(
 ) -> Result[ConnectorResponse]:
     try:
         return Result.succ(
-            await blocking_func_to_async(global_system_app, service.create_connector, request)
+            await blocking_func_to_async(
+                global_system_app, service.create_connector, request
+            )
         )
     except Exception as e:
         logger.exception("Create connector failed")

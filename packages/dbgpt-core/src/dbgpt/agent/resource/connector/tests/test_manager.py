@@ -4,7 +4,6 @@ import base64
 
 import pytest
 
-from dbgpt.component import SystemApp
 from dbgpt.agent.resource.connector.catalog import (
     AuthConfig,
     AuthField,
@@ -14,6 +13,7 @@ from dbgpt.agent.resource.connector.catalog import (
 from dbgpt.agent.resource.connector.credential import CredentialStore
 from dbgpt.agent.resource.connector.manager import ConnectorManager, ConnectorStatus
 from dbgpt.agent.resource.tool.pack import MCPToolPack
+from dbgpt.component import SystemApp
 
 
 def test_list_active_returns_prompt_ready_connector_summaries():
@@ -83,7 +83,9 @@ def test_list_active_returns_prompt_ready_connector_summaries():
     ]
 
 
-def test_credential_store_uses_stable_encrypt_key_from_env(monkeypatch: pytest.MonkeyPatch):
+def test_credential_store_uses_stable_encrypt_key_from_env(
+    monkeypatch: pytest.MonkeyPatch,
+):
     encrypt_key = base64.urlsafe_b64encode(b"connector-master-key-32-bytes!!").decode()
     monkeypatch.setenv("ENCRYPT_KEY", encrypt_key)
 
@@ -95,7 +97,9 @@ def test_credential_store_uses_stable_encrypt_key_from_env(monkeypatch: pytest.M
     assert store_b.decrypt(encrypted, salt="salt-1") == {"token": "secret-value"}
 
 
-def test_credential_store_prefers_system_app_encrypt_key(monkeypatch: pytest.MonkeyPatch):
+def test_credential_store_prefers_system_app_encrypt_key(
+    monkeypatch: pytest.MonkeyPatch,
+):
     env_key = base64.urlsafe_b64encode(b"env-master-key-32-bytes-value!!!").decode()
     app_key = base64.urlsafe_b64encode(b"app-master-key-32-bytes-value!!!").decode()
     monkeypatch.setenv("ENCRYPT_KEY", env_key)
@@ -106,7 +110,64 @@ def test_credential_store_prefers_system_app_encrypt_key(monkeypatch: pytest.Mon
     store_a = CredentialStore(system_app=system_app)
     encrypted = store_a.encrypt({"token": "secret-value"}, salt="salt-2")
 
-    monkeypatch.setenv("ENCRYPT_KEY", base64.urlsafe_b64encode(b"other-env-key-32-bytes-value!!!").decode())
+    monkeypatch.setenv(
+        "ENCRYPT_KEY",
+        base64.urlsafe_b64encode(b"other-env-key-32-bytes-value!!!").decode(),
+    )
     store_b = CredentialStore(system_app=system_app)
 
     assert store_b.decrypt(encrypted, salt="salt-2") == {"token": "secret-value"}
+
+
+def test_get_catalog_returns_catalog_instance():
+    """get_catalog() should expose the internal ConnectorCatalog."""
+    manager = ConnectorManager()
+
+    catalog = manager.get_catalog()
+
+    assert catalog is manager._catalog
+    assert catalog.list() == []
+
+
+def test_get_catalog_after_load_returns_entries(tmp_path):
+    """get_catalog() should reflect entries loaded via load_catalog()."""
+    import json
+
+    catalog_data = {
+        "connectors": [
+            {
+                "type": "test_conn",
+                "display_name": "Test Connector",
+                "description": "A test connector",
+                "icon": "test",
+                "category": "testing",
+                "mcp_server": {
+                    "server_uri": "http://localhost:9999/sse",
+                    "transport": "sse",
+                },
+                "auth": {
+                    "type": "token",
+                    "fields": [
+                        {
+                            "name": "token",
+                            "label": "Token",
+                            "type": "password",
+                            "required": True,
+                        }
+                    ],
+                    "header_mapping": {"token": "Authorization"},
+                },
+            }
+        ]
+    }
+
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(json.dumps(catalog_data))
+
+    manager = ConnectorManager()
+    manager.load_catalog(str(catalog_path))
+    catalog = manager.get_catalog()
+
+    assert len(catalog.list()) == 1
+    assert catalog.list()[0].type == "test_conn"
+    assert catalog.list()[0].display_name == "Test Connector"

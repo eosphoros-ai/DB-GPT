@@ -7,8 +7,8 @@ import secrets
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.agent.resource.tool.base import BaseTool
+from dbgpt.component import BaseComponent, SystemApp
 
 from .catalog import ConnectorCatalog
 from .confirmation import ConfirmationInterceptor, ConfirmationRegistry
@@ -92,6 +92,14 @@ class ConnectorManager(BaseComponent):
     # ------------------------------------------------------------------
     # Catalog helpers
     # ------------------------------------------------------------------
+
+    def get_catalog(self) -> ConnectorCatalog:
+        """Public accessor for the catalog (used by /types endpoint).
+
+        Returns:
+            ConnectorCatalog: The loaded connector catalog.
+        """
+        return self._catalog
 
     def load_catalog(self, path: str) -> None:
         """Load connector type definitions from a *catalog.json* file.
