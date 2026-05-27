@@ -307,3 +307,19 @@ def register_serve_apps(
             api_keys=global_api_keys,
         ),
     )
+
+    # ################################ Connector Serve Register Begin #################
+    from dbgpt_serve.connector.config import ServeConfig as ConnectorServeConfig
+    from dbgpt_serve.connector.serve import ConnectorServe
+
+    # Register serve connector (external MCP connectors)
+    system_app.register(
+        ConnectorServe,
+        config=get_config(
+            serve_configs,
+            ConnectorServe.name,
+            ConnectorServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ################################ Connector Serve Register End ###################
