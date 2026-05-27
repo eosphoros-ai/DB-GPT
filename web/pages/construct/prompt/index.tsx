@@ -33,7 +33,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
     {
       manual: true,
       onSuccess: async () => {
-        message.success(t('ui_0007d170'));
+        message.success(t('deleted_successfully'));
         await refresh();
       },
     },
@@ -44,7 +44,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
   }
 
   return (
-    <Popconfirm title={t('ui_0947bf86')} onConfirm={async () => await deletePromptRun(record)}>
+    <Popconfirm title={t('are_you_sure_you_want_to_delete')} onConfirm={async () => await deletePromptRun(record)}>
       <Button loading={deleteLoading}>{t('Delete')}</Button>
     </Popconfirm>
   );

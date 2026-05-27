@@ -24,7 +24,7 @@ const DislikeDrawer: React.FC<{
 
   return (
     <Drawer
-      title={i18n.t('ui_e6bf2072')}
+      title={i18n.t('your_feedback_helps_me_improve')}
       placement='bottom'
       open={open}
       onClose={() => setFeedbackOpen(false)}

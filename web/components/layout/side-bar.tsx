@@ -99,7 +99,7 @@ function SideBar() {
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
         setDialogueList(prev => prev.filter(d => d.conv_uid !== convUid));
-        message.success(i18n.t('ui_5cc23262'));
+        message.success(i18n.t('delete'));
       }
     } catch (error) {
       console.error('Failed to delete dialogue', error);
@@ -114,11 +114,14 @@ function SideBar() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return i18n.t('ui_4181f7fe');
-    if (diffMins < 60) return `${diffMins}分钟前`;
-    if (diffHours < 24) return `${diffHours}小时前`;
-    if (diffDays < 7) return `${diffDays}天前`;
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    if (diffMins < 1) return i18n.t('just_now');
+    if (diffMins < 60) return i18n.t('minutes_ago', { count: diffMins });
+    if (diffHours < 24) return i18n.t('hours_ago', { count: diffHours });
+    if (diffDays < 7) return i18n.t('days_ago', { count: diffDays });
+    return date.toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : i18n.language === 'ru' ? 'ru-RU' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
   }, []);
 
   const handleToggleMenu = useCallback(() => {

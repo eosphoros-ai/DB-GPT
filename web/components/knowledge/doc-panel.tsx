@@ -265,7 +265,7 @@ export default function DocPanel(props: IProps) {
     return (
       <div className='w-full h-full'>
         <div className='mb-4'>
-          {/* <div className="mb-1">{t('ui_180867fd')}</div> */}
+          {/* <div className="mb-1">{t('admin_employee_id_leading_zeros_removed')}</div> */}
           <div className='flex w-full justify-end'>
             {/* <Select
               mode="tags"

@@ -94,16 +94,16 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
 
         if (state === 'running') {
           color = 'blue';
-          text = {i18n.t('ui_d679aea3')};
+          text = {i18n.t('running_2')};
         } else if (state === 'complete') {
           color = 'green';
           text = {i18n.t('Completed')};
         } else if (state === 'failed') {
           color = 'red';
-          text = {i18n.t('ui_acd5cb84')};
+          text = {i18n.t('failed')};
         } else if (state === 'pending') {
           color = 'orange';
-          text = {i18n.t('ui_047109de')};
+          text = {i18n.t('pending')};
         }
 
         if (record?.state === 'failed') {

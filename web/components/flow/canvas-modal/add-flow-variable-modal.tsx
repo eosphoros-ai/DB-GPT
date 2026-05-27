@@ -217,7 +217,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                         { required: true, message: 'Missing parameter name' },
                         {
                           pattern: /^[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*$/,
-                          message: t('ui_392f3dfd'),
+                          message: t('name_must_use_letters_numbers_or_underscores_sep'),
                         },
                       ]}
                     >
@@ -227,7 +227,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'label']}
-                      label={t('ui_32c65d8d')}
+                      label={t('title')}
                       style={{ width: 130 }}
                       rules={[{ required: true, message: 'Missing parameter label' }]}
                     >
@@ -253,7 +253,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
-                      label={t('ui_fe7509e0')}
+                      label={t('value')}
                       style={{ width: 320 }}
                       rules={[{ required: true, message: 'Missing parameter value' }]}
                     >

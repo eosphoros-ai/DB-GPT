@@ -339,7 +339,7 @@ export default function DocUploadForm(props: IProps) {
             </p>
           </Dragger>
         </Form.Item>
-        <Form.Item<FieldType> label={t('ui_e20fa153')}>
+        <Form.Item<FieldType> label={t('related_questions')}>
           <Form.List name='questions'>
             {(fields, { add, remove }) => (
               <>

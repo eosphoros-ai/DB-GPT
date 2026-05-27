@@ -117,7 +117,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
 
       // Handle password input box
       if (isPrivacy) {
-        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder={t('ui_e39ffe99')} />;
+        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder={t('enter_password')} />;
       }
 
       // Handle normal text input box

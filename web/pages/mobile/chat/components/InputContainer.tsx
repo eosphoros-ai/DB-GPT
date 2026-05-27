@@ -245,7 +245,7 @@ const InputContainer: React.FC = () => {
           {paramType?.includes('temperature') && <Thermometer />}
         </div>
         <div className='flex items-center justify-between text-lg font-bold'>
-          <Popover content={t('ui_6457723a')} trigger={['hover']}>
+          <Popover content={t('pause_reply')} trigger={['hover']}>
             <PauseCircleOutlined
               className={classnames('p-2 cursor-pointer', {
                 'text-[#0c75fc]': canAbort,
@@ -254,7 +254,7 @@ const InputContainer: React.FC = () => {
               onClick={abort}
             />
           </Popover>
-          <Popover content={t('ui_7f7c7dcf')} trigger={['hover']}>
+          <Popover content={t('try_again_2')} trigger={['hover']}>
             <RedoOutlined
               className={classnames('p-2 cursor-pointer', {
                 'text-gray-400': !history.length || !canNewChat,
@@ -265,7 +265,7 @@ const InputContainer: React.FC = () => {
           {loading ? (
             <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 18 }} spin />} className='p-2' />
           ) : (
-            <Popover content={t('ui_5eef7fe7')} trigger={['hover']}>
+            <Popover content={t('clear_history')} trigger={['hover']}>
               <ClearOutlined
                 className={classnames('p-2 cursor-pointer', {
                   'text-gray-400': !history.length || !canNewChat,
@@ -286,7 +286,7 @@ const InputContainer: React.FC = () => {
         )}
       >
         <Input.TextArea
-          placeholder={t('ui_0e95e7a5')}
+          placeholder={t('ask_me_anything')}
           className='w-full resize-none border-0 p-0 focus:shadow-none'
           value={userInput}
           autoSize={{ minRows: 1 }}

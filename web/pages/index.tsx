@@ -359,7 +359,7 @@ const convertToManusFormat = (
       lower.includes('select_skill')
     )
       return 'skill';
-    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes(t('ui_2bafa281'))) return 'sql';
+    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes(t('sql_query'))) return 'sql';
     if (lower.includes('read') || lower.includes('load')) return 'read';
     if (lower.includes('edit')) return 'edit';
     if (lower.includes('write') || lower.includes('save')) return 'write';
@@ -477,7 +477,7 @@ const EXAMPLE_CARDS = [
     description: i18n.t('example_fin_report_desc'),
     query:
       t('example_fin_report_query'),
-    fileName: i18n.t('ui_8adc0e10'),
+    fileName: i18n.t('sample_annual_report_2019_pdf'),
     fileType: 'application/pdf',
     fileSize: 2621440, // ~2.5 MB
     color: 'from-violet-500/10 to-purple-500/10',
@@ -764,10 +764,10 @@ const Playground: NextPage = () => {
             });
           }
         } else {
-          setFilePreviewError(res.data?.err_msg || t('ui_9d197a15'));
+          setFilePreviewError(res.data?.err_msg || t('file_preview_failed'));
         }
       } catch (err: any) {
-        setFilePreviewError(err?.message || t('ui_9d197a15'));
+        setFilePreviewError(err?.message || t('file_preview_failed'));
       } finally {
         setFilePreviewLoading(false);
       }
@@ -1138,7 +1138,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning(t('ui_80efb78d'));
+            message.warning(t('file_not_available_for_download'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1147,16 +1147,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || t('ui_80efb78d'));
+              message.warning(errData.detail || t('file_not_available_for_download'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning(t('ui_15efc64c'));
+            message.warning(t('file_download_failed'));
           }
         } else {
-          message.warning(t('ui_80efb78d'));
+          message.warning(t('file_not_available_for_download'));
         }
         break;
       }
@@ -1959,7 +1959,7 @@ const Playground: NextPage = () => {
     if (loading) return;
 
     try {
-      message.loading({ content: t('ui_a1c4f19c'), key: 'example-loading', duration: 0 });
+      message.loading({ content: t('loading_example'), key: 'example-loading', duration: 0 });
 
       let filePath: string | null = null;
       let fakeFile: File | null = null;
@@ -1980,7 +1980,7 @@ const Playground: NextPage = () => {
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
-          message.error(t('ui_3ebf662c') + errMsg);
+          message.error(t('failed_to_load_example') + errMsg);
           return;
         }
       }
@@ -2012,7 +2012,7 @@ const Playground: NextPage = () => {
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error(t('ui_3ebf662c') + errMessage);
+      message.error(t('failed_to_load_example') + errMessage);
     }
   };
 
@@ -2226,7 +2226,7 @@ const Playground: NextPage = () => {
       }
     } catch (e) {
       console.error('Failed to load conversation', e);
-      message.error(t('ui_2574fca2'));
+      message.error(t('failed_to_load_chat_history'));
     } finally {
       setHistoryLoading(false);
     }
@@ -2235,7 +2235,7 @@ const Playground: NextPage = () => {
   // Share current conversation — create share link and copy to clipboard
   const handleShare = async () => {
     if (!conversationId) {
-      message.warning(t('ui_78319b94'));
+      message.warning(t('start_a_conversation_before_sharing'));
       return;
     }
     try {
@@ -2244,10 +2244,10 @@ const Playground: NextPage = () => {
       if (!shareUrl) throw new Error('No share URL returned');
       const fullUrl = `${window.location.origin}${shareUrl}`;
       await navigator.clipboard.writeText(fullUrl);
-      message.success(t('ui_1fa20d8f'));
+      message.success(t('share_link_copied_to_clipboard'));
     } catch (e) {
       console.error('Failed to create share link', e);
-      message.error(t('ui_6922a577'));
+      message.error(t('failed_to_create_share_link_please_try_again_lat'));
     }
   };
 
@@ -2643,7 +2643,7 @@ const Playground: NextPage = () => {
                                                       : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                                   }`}
                                                 >
-                                                  {skill.type === 'official' ? t('skills_official_tag') : t('ui_6a0e0419')}
+                                                  {skill.type === 'official' ? t('skills_official_tag') : t('personal')}
                                                 </span>
                                               </div>
                                               <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -2664,14 +2664,14 @@ const Playground: NextPage = () => {
                                         <div className='text-center py-8 text-gray-400'>
                                           <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                           <div className='text-xs'>
-                                            {skillSearchQuery ? t('ui_bca797aa') : t('ui_e809e468')}
+                                            {skillSearchQuery ? t('no_matching_skills_found') : t('no_skills_available')}
                                           </div>
                                         </div>
                                       )}
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {(skillsList || []).length} {{(skillsList || []).length}}{t('ui_3997591f')}</span>
+                                        {(skillsList || []).length} {{(skillsList || []).length}}{t('skills_available')}</span>
                                       <Button
                                         type='link'
                                         size='small'
@@ -2680,7 +2680,7 @@ const Playground: NextPage = () => {
                                           setIsSkillPanelOpen(false);
                                         }}
                                         className='text-[10px] p-0 h-auto'
-                                      >{t('ui_a998b0fb')}</Button>
+                                      >{t('manage_skills')}</Button>
                                     </div>
                                   </div>
                                 }
@@ -3081,7 +3081,7 @@ const Playground: NextPage = () => {
                                                   : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                               }`}
                                             >
-                                              {skill.type === 'official' ? t('skills_official_tag') : t('ui_6a0e0419')}
+                                              {skill.type === 'official' ? t('skills_official_tag') : t('personal')}
                                             </span>
                                           </div>
                                           <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -3102,14 +3102,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {skillSearchQuery ? t('ui_bca797aa') : t('ui_e809e468')}
+                                        {skillSearchQuery ? t('no_matching_skills_found') : t('no_skills_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length} {{(skillsList || []).length}}{t('ui_3997591f')}</span>
+                                    {(skillsList || []).length} {{(skillsList || []).length}}{t('skills_available')}</span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3118,7 +3118,7 @@ const Playground: NextPage = () => {
                                       setIsSkillPanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >{t('ui_a998b0fb')}</Button>
+                                  >{t('manage_skills')}</Button>
                                 </div>
                               </div>
                             }
@@ -3162,7 +3162,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder={t('ui_22ef51f6')}
+                                    placeholder={t('search_database')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={dbSearchQuery}
                                     onChange={e => setDbSearchQuery(e.target.value)}
@@ -3227,14 +3227,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <DatabaseOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {dbSearchQuery ? t('ui_f19a52d9') : t('ui_abc30f46')}
+                                        {dbSearchQuery ? t('no_matching_database_found') : t('no_database_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(dataSources || []).length} {{(dataSources || []).length}}{t('ui_38872adb')}</span>
+                                    {(dataSources || []).length} {{(dataSources || []).length}}{t('databases_available')}</span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3243,7 +3243,7 @@ const Playground: NextPage = () => {
                                       setIsDbPanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >{t('ui_7be22669')}</Button>
+                                  >{t('manage_databases')}</Button>
                                 </div>
                               </div>
                             }
@@ -3287,7 +3287,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder={t('ui_0de4d60f')}
+                                    placeholder={t('search_knowledge_base')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={knowledgeSearchQuery}
                                     onChange={e => setKnowledgeSearchQuery(e.target.value)}
@@ -3347,14 +3347,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <BookOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {knowledgeSearchQuery ? t('ui_4e0dbb38') : t('ui_6359b6d6')}
+                                        {knowledgeSearchQuery ? t('no_matching_knowledge_base') : t('no_knowledge_base_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(knowledgeSpaces || []).length} {{(knowledgeSpaces || []).length}}{t('ui_96cef24e')}</span>
+                                    {(knowledgeSpaces || []).length} {{(knowledgeSpaces || []).length}}{t('knowledge_bases_available')}</span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3363,7 +3363,7 @@ const Playground: NextPage = () => {
                                       setIsKnowledgePanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >{t('ui_aff2be5a')}</Button>
+                                  >{t('manage_knowledge')}</Button>
                                 </div>
                               </div>
                             }

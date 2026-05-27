@@ -167,7 +167,7 @@ export const AutoChart = (props: AutoChartProps) => {
     );
   }
 
-  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={i18n.t('ui_3ab8056b')} />;
+  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={i18n.t('no_suitable_chart_view')} />;
 };
 
 export * from './helpers';

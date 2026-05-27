@@ -90,7 +90,7 @@ export default function AppContent() {
       manual: true,
       onSuccess: data => {
         if (data[2]?.success) {
-          message.success(t('ui_33130f5c'));
+          message.success(t('operation_successful'));
         }
         getListFiltered();
       },
@@ -444,10 +444,10 @@ export default function AppContent() {
           )}
         </div>
       </Spin>
-      <Modal title={t('ui_23bbdd59')} open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
+      <Modal title={t('permission_management')} open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
         <Spin spinning={loading}>
           <div className='py-4'>
-            <div className='mb-1'>{t('ui_180867fd')}</div>
+            <div className='mb-1'>{t('admin_employee_id_leading_zeros_removed')}</div>
             <Select
               mode='tags'
               value={admins}

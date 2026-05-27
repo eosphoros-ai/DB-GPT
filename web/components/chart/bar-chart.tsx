@@ -61,7 +61,7 @@ export default function BarChart({
                   },
                   {
                     field: 'value',
-                    name: t('ui_531aadcd'),
+                    name: t('numeric'),
                     valueFormatter: formatNumber,
                   },
                 ],

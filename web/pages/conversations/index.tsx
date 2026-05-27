@@ -62,7 +62,7 @@ function ConversationsPage() {
       e.preventDefault();
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
-        message.success(t('ui_5cc23262'));
+        message.success(t('delete'));
         const current = totalRef.current;
         if (current) {
           const remaining = current.total_count - 1;
@@ -83,7 +83,7 @@ function ConversationsPage() {
     if (typeof conv.user_input === 'string' && conv.user_input.trim()) {
       return conv.user_input;
     }
-    return t('new_task') || t('ui_1ac07a4b');
+    return t('new_task') || t('new_chat_2');
   };
 
   return (
@@ -94,14 +94,14 @@ function ConversationsPage() {
           <Input
             variant='filled'
             prefix={<SearchOutlined />}
-            placeholder={t('ui_fe57df2b')}
+            placeholder={t('search_conversations')}
             onChange={e => handleSearch(e.target.value)}
             onClear={() => setSearchKeyword('')}
             allowClear
             className='w-[230px] h-[36px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
           />
           <span className='text-sm text-gray-400 whitespace-nowrap'>
-            {totalRef.current ? `共 ${totalRef.current.total_count} 条` : ''}
+            {totalRef.current ? t('pagination_total', { count: totalRef.current.total_count }) : ''}
           </span>
         </div>
       </div>
@@ -110,11 +110,11 @@ function ConversationsPage() {
         <Spin spinning={loading}>
           {!loading && list.length === 0 ? (
             <div className='flex items-center justify-center h-64'>
-              <Empty description={t('no_tasks') || t('ui_44de5c0d')} />
+              <Empty description={t('no_tasks') || t('no_history_yet')} />
             </div>
           ) : !loading && filteredList.length === 0 ? (
             <div className='flex items-center justify-center h-64'>
-              <Empty description={t('ui_1923634a')} />
+              <Empty description={t('no_matching_conversations')} />
             </div>
           ) : (
             <div className='space-y-1'>
@@ -138,7 +138,7 @@ function ConversationsPage() {
                   </div>
 
                   <Popconfirm
-                    title={t('ui_ad3c3af3')}
+                    title={t('delete_this_conversation')}
                     onConfirm={e => handleDelete(e as React.MouseEvent, conv.conv_uid)}
                     onCancel={e => {
                       e?.stopPropagation();
@@ -174,7 +174,7 @@ function ConversationsPage() {
             total={totalRef.current?.total_count || 0}
             pageSize={PAGE_SIZE}
             showSizeChanger={false}
-            showTotal={total => `共 ${total} 条`}
+            showTotal={total => t('pagination_total', { count: total })}
             onChange={page => fetchList(page)}
           />
         </div>

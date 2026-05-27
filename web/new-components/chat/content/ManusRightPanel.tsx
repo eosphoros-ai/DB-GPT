@@ -247,7 +247,7 @@ const getArtifactTypeLabel = (type: string): string => {
     image: i18n.t('artifact_type_image'),
     code: i18n.t('artifact_type_code'),
     markdown: i18n.t('artifact_type_markdown'),
-    summary: i18n.t('ui_ffa2ad37'),
+    summary: i18n.t('analysis_summary'),
   };
   return map[type] || i18n.t('artifact_type_generic');
 };
@@ -258,8 +258,8 @@ const getFileFilterTabs = (): { key: FileFilterTab; label: string }[] => [
   { key: 'all', label: i18n.t('all_models_evaluation') },
   { key: 'document', label: i18n.t('artifact_type_markdown') },
   { key: 'image', label: i18n.t('artifact_type_image') },
-  { key: 'code', label: i18n.t('ui_e6fef350') },
-  { key: 'link', label: i18n.t('ui_bfe68d58') },
+  { key: 'code', label: i18n.t('code_file') },
+  { key: 'link', label: i18n.t('link') },
 ];
 
 const getFileFilterCategory = (artifact: ArtifactItem): FileFilterTab[] => {
@@ -292,17 +292,17 @@ const formatArtifactDate = (timestamp: number): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return i18n.t('ui_800dfdd9');
-  if (diffDays === 1) return i18n.t('ui_2f8d6f15');
+  if (diffDays === 0) return i18n.t('today');
+  if (diffDays === 1) return i18n.t('yesterday');
   if (diffDays < 7) {
     const dayNames = [
-      i18n.t('ui_67b19578'),
-      i18n.t('ui_5ce43821'),
-      i18n.t('ui_34e5216b'),
-      i18n.t('ui_711d996d'),
-      i18n.t('ui_3df6af79'),
-      i18n.t('ui_450ea3af'),
-      i18n.t('ui_1ae72f68'),
+      i18n.t('sunday'),
+      i18n.t('monday'),
+      i18n.t('tuesday'),
+      i18n.t('wednesday'),
+      i18n.t('thursday'),
+      i18n.t('friday'),
+      i18n.t('saturday'),
     ];
     return dayNames[date.getDay()];
   }
@@ -755,7 +755,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <EyeOutlined className='mr-1.5' />
-          {t('ui_e70988e6')}
+          {t('rendered_result')}
           {activeTab === 'preview' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -770,7 +770,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          {t('ui_81cb1f5d')}
+          {t('source_code')}
           {activeTab === 'source' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -842,7 +842,7 @@ const CodeExecutionRenderer: React.FC<{
         <>
           <div className='border-t border-gray-700/50 shrink-0' />
           <div className='relative overflow-auto bg-gray-900 flex-1 min-h-[60px]'>
-            <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>{t('ui_adaf94c0')}</span>
+            <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>{t('result_2')}</span>
             <div className='px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
               {group.results.map(r => String(r.content)).join('')}
             </div>
@@ -973,7 +973,7 @@ const TerminalRenderer: React.FC<{
         <div className='flex items-center gap-2'>
           <StatusBadge status={activeStep.status} />
           {allText && (
-            <Tooltip title={t('ui_2733a243')}>
+            <Tooltip title={t('copy_all')}>
               <button
                 className='flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-700/50'
                 onClick={() => copyToClipboard(allText)}
@@ -1220,9 +1220,9 @@ const SkillCardRenderer: React.FC<{
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      message.success(t('ui_50940ed7'));
+      message.success(t('download_successful'));
     } catch {
-      message.error(t('ui_65e200d3'));
+      message.error(t('download_failed'));
     } finally {
       setDownloading(false);
     }
@@ -1314,7 +1314,7 @@ const SkillCardRenderer: React.FC<{
             <span>{t('view_skill_files')}</span>
             {detailData?.tree?.children && (
               <span className='text-gray-400'>({detailData.tree.children.length} {{detailData?.tree?.children && (
-              <span className='text-gray-400'>({detailData.tree.children.length}}{t('ui_49ae0e5e')}</span>
+              <span className='text-gray-400'>({detailData.tree.children.length}}{t('items')}</span>
             )}
           </div>
           <RightOutlined className='text-[10px] text-gray-400' />
@@ -1503,7 +1503,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         win.focus();
         win.print();
       } else {
-        message.error(t('ui_4a3073e3'));
+        message.error(t('popup_blocked_by_browser_please_allow_and_retry'));
       }
     }
   };
@@ -1875,7 +1875,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             ) : (
               <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
                 <FolderOpenOutlined className='text-3xl mb-4' />
-                <span className='text-sm'>{t('ui_4b78b2cb')}</span>
+                <span className='text-sm'>{t('no_files_yet')}</span>
               </div>
             )}
           </div>
@@ -2143,12 +2143,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                                     READ ONLY
                                   </span>
                                 </div>
-                                <Tooltip title={t('ui_03d1a910')}>
+                                <Tooltip title={t('copy_sql')}>
                                   <button
                                     className='flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
                                     onClick={() => {
                                       navigator.clipboard.writeText(sql);
-                                      message.success(t('ui_c58160df'));
+                                      message.success(t('sql_copied_to_clipboard'));
                                     }}
                                   >
                                     <CopyOutlined className='text-xs' />
@@ -2210,13 +2210,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 {isRunning ? (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <LoadingOutlined className='text-3xl text-blue-500 mb-4' />
-                    <span className='text-sm'>{t('ui_71b56fd8')}</span>
-                    <span className='text-xs text-gray-500 mt-1'>{t('ui_6c9a2f83')}</span>
+                    <span className='text-sm'>{t('running_3')}</span>
+                    <span className='text-xs text-gray-500 mt-1'>{t('please_wait_results_will_appear_shortly')}</span>
                   </div>
                 ) : (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <FileTextOutlined className='text-3xl mb-4' />
-                    <span className='text-sm'>{t('ui_ceae59fd')}</span>
+                    <span className='text-sm'>{t('no_output_yet')}</span>
                   </div>
                 )}
               </>
@@ -2228,8 +2228,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             <div className='w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4'>
               <ConsoleSqlOutlined className='text-3xl text-gray-400' />
             </div>
-            <span className='text-sm font-medium mb-1'>{t('ui_a4e57fb0')}</span>
-            <span className='text-xs text-gray-500'>{t('ui_84beb792')}</span>
+            <span className='text-sm font-medium mb-1'>{t('select_a_step_to_view_details')}</span>
+            <span className='text-xs text-gray-500'>{t('click_a_step_card_on_the_left_to_view_results')}</span>
           </div>
         )}
       </div>
@@ -2240,9 +2240,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           <div className='flex items-center gap-4'>
             <span className='flex items-center gap-1'>
               <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
-              {isRunning ? t('Running') : t('ui_c0d2181d')}
+              {isRunning ? t('Running') : t('completed_2')}
             </span>
-            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} {{visibleOutputs.length > 0 && <span>{visibleOutputs.length}}{t('ui_792c9d0d')}</span>}
+            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} {{visibleOutputs.length > 0 && <span>{visibleOutputs.length}}{t('outputs')}</span>}
           </div>
           {activeStep && <span>Step ID: {activeStep.id}</span>}
         </div>

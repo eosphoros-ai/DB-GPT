@@ -85,7 +85,7 @@ const Resource: React.FC = () => {
       return (
         <div className='flex items-center gap-1'>
           <Spin size='small' indicator={<LoadingOutlined spin />} />
-          <span className='text-xs'>{t('ui_fc09a73e')}</span>
+          <span className='text-xs'>{t('uploading')}</span>
         </div>
       );
     }
@@ -100,7 +100,7 @@ const Resource: React.FC = () => {
     return (
       <div className='flex items-center gap-1'>
         <FolderAddOutlined className='text-base' />
-        <span className='text-xs'>{t('ui_a6fc9e3a')}</span>
+        <span className='text-xs'>{t('upload_file')}</span>
       </div>
     );
   }, [loading, resource]);

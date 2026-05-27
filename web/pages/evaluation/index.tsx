@@ -239,19 +239,19 @@ const Evaluation = () => {
       fixed: 'left',
     },
     {
-      title: t('ui_cc6c35a3'),
+      title: t('encoding'),
       dataIndex: 'code',
       key: 'code',
       width: '20%',
       // render: (text) => <a>{text}</a>,
     },
     {
-      title: t('ui_8a052e07'),
+      title: t('storage_mode'),
       dataIndex: 'storage_type',
       key: 'storage_type',
     },
     {
-      title: t('ui_12b61b01'),
+      title: t('dataset_count'),
       dataIndex: 'datasets_count',
       key: 'datasets_count',
     },
@@ -262,7 +262,7 @@ const Evaluation = () => {
       key: 'gmt_create',
     },
     {
-      title: t('ui_ab5dea29'),
+      title: t('members'),
       dataIndex: 'members',
       key: 'members',
       width: '10%',
@@ -273,7 +273,7 @@ const Evaluation = () => {
       },
     },
     {
-      title: t('ui_a001a226'),
+      title: t('updated_at'),
       dataIndex: 'gmt_modified',
       key: 'gmt_modified',
     },
@@ -283,7 +283,7 @@ const Evaluation = () => {
       render: (_, record) => (
         <Space size='middle'>
           <Popconfirm
-            title={t('ui_30db08b5')}
+            title={t('confirm_delete')}
             onConfirm={async () => {
               const [, , res] = await apiInterceptors(
                 delDataSet({
@@ -291,7 +291,7 @@ const Evaluation = () => {
                 }),
               );
               if (res?.success == true) {
-                message.success(t('ui_0007d170'));
+                message.success(t('deleted_successfully'));
                 getDataSetsRefresh();
               }
             }}
@@ -368,7 +368,7 @@ const Evaluation = () => {
    */
   const evaluationsColumns: TableProps<EvaluationItemType>['columns'] = [
     {
-      title: t('ui_9da412d9'),
+      title: t('dataset_name'),
       dataIndex: 'datasets_name',
       key: 'datasets_name',
       fixed: 'left',
@@ -385,7 +385,7 @@ const Evaluation = () => {
       ),
     },
     {
-      title: t('ui_ac042058'),
+      title: t('evaluation_status'),
       dataIndex: 'state',
       key: 'state',
       render: text => {
@@ -393,7 +393,7 @@ const Evaluation = () => {
       },
     },
     {
-      title: t('ui_fb0e2552'),
+      title: t('evaluation_code'),
       dataIndex: 'evaluate_code',
       key: 'evaluate_code',
     },
@@ -404,7 +404,7 @@ const Evaluation = () => {
     },
 
     {
-      title: t('ui_e88bef86'),
+      title: t('evaluation_metrics_2'),
       dataIndex: 'evaluate_metrics',
       key: 'evaluate_metrics',
     },
@@ -414,7 +414,7 @@ const Evaluation = () => {
       key: 'gmt_create',
     },
     {
-      title: t('ui_a001a226'),
+      title: t('updated_at'),
       dataIndex: 'gmt_modified',
       key: 'gmt_modified',
     },
@@ -423,7 +423,7 @@ const Evaluation = () => {
       title: (
         <span className='w-[50px]'>
           <span className='text-nowrap'>{t('detail')}</span>
-          <Tooltip placement='topLeft' title={t('ui_bea38560')}>
+          <Tooltip placement='topLeft' title={t('view_logs_and_scores')}>
             <InfoCircleOutlined />
           </Tooltip>
         </span>
@@ -437,7 +437,7 @@ const Evaluation = () => {
       ),
     },
     {
-      title: t('ui_3c591e91'),
+      title: t('evaluation_results'),
       key: 'result',
       render: (_, record) => (
         <>
@@ -449,7 +449,7 @@ const Evaluation = () => {
                 evaluate_code: record?.evaluate_code,
               });
             }}
-          >{t('ui_62c725a1')}</Button>
+          >{t('score_details')}</Button>
           <Button
             type='link'
             loading={commonLoading}
@@ -511,7 +511,7 @@ const Evaluation = () => {
       render: (_, record) => (
         <>
           <Popconfirm
-            title={t('ui_30db08b5')}
+            title={t('confirm_delete')}
             onConfirm={async () => {
               const [, , res] = await apiInterceptors(
                 delEvaluation({
@@ -519,7 +519,7 @@ const Evaluation = () => {
                 }),
               );
               if (res?.success == true) {
-                message.success(t('ui_0007d170'));
+                message.success(t('deleted_successfully'));
                 getEvaluationsRefresh();
               }
             }}
@@ -550,11 +550,11 @@ const Evaluation = () => {
             className='backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
             options={[
               {
-                label: t('ui_6d418f20'),
+                label: t('evaluation_data'),
                 value: 'evaluations',
               },
               {
-                label: t('ui_e20804e3'),
+                label: t('dataset'),
                 value: 'dataSet',
               },
             ]}
@@ -572,7 +572,7 @@ const Evaluation = () => {
                     setIsDataSetModalOpen(true);
                     setIsAddDataSet(true);
                   }}
-                >{t('ui_ac0493bf')}</Button>
+                >{t('add_dataset')}</Button>
               </div>
               <Table
                 pagination={{
@@ -596,7 +596,7 @@ const Evaluation = () => {
                   onClick={() => {
                     setIsModalOpen(true);
                   }}
-                >{t('ui_fbde4ef0')}</Button>
+                >{t('start_evaluation_2')}</Button>
               </div>
               <Table
                 pagination={{
@@ -644,7 +644,7 @@ const Evaluation = () => {
             </>
           )}
           <Modal
-            title={t('ui_89119140')}
+            title={t('start_evaluation_2')}
             open={isModalOpen}
             onOk={async () => {
               const values = await form.validateFields();
@@ -656,7 +656,7 @@ const Evaluation = () => {
                   }),
                 );
                 if (res?.success) {
-                  message.success(t('ui_84a76ab4'));
+                  message.success(t('started_successfully'));
                   getEvaluationsRefresh();
                   form.resetFields();
                 }
@@ -677,7 +677,7 @@ const Evaluation = () => {
               labelCol={{ span: 4 }}
               wrapperCol={{ span: 20 }}
             >
-              <Form.Item name='scene_key' label={t('ui_274ba5a9')} rules={[{ required: true }]}>
+              <Form.Item name='scene_key' label={t('scene_type')} rules={[{ required: true }]}>
                 <Select
                   options={[
                     {
@@ -718,7 +718,7 @@ const Evaluation = () => {
                   }}
                 ></Select>
               </Form.Item>
-              <Form.Item name='scene_value' label={t('ui_ea9056f0')} rules={[{ required: true }]}>
+              <Form.Item name='scene_value' label={t('scene_parameters')} rules={[{ required: true }]}>
                 <Select
                   loading={sceneValueOptionLoading}
                   disabled={sceneValueOptionLoading}
@@ -733,15 +733,15 @@ const Evaluation = () => {
                   }}
                 ></Select>
               </Form.Item>
-              <Form.Item name='parallel_num' label={t('ui_5550a5f1')} rules={[{ required: true }]} initialValue={1}>
+              <Form.Item name='parallel_num' label={t('parallel_parameters')} rules={[{ required: true }]} initialValue={1}>
                 <Input></Input>
               </Form.Item>
-              <Form.Item name='datasets' label={t('ui_e20804e3')} rules={[{ required: true }]}>
+              <Form.Item name='datasets' label={t('dataset')} rules={[{ required: true }]}>
                 <Select options={dataSetsOptions}></Select>
               </Form.Item>
               <Form.Item
                 name='evaluate_metrics'
-                label={t('ui_b6c1a442')}
+                label={t('evaluation_metrics_2')}
                 rules={[{ required: useWatch('scene_key', form) === 'app' }]}
               >
                 <Select loading={getMetricsLoading} disabled={getMetricsLoading} options={metricOptions}></Select>
@@ -749,7 +749,7 @@ const Evaluation = () => {
             </Form>
           </Modal>
           <Modal
-            title={isAddDataSet ? t('ui_ac0493bf') : t('ui_986d0c2f')}
+            title={isAddDataSet ? t('add_dataset') : t('edit_dataset')}
             open={isDataSetModalOpen}
             confirmLoading={dataSetModalLoading}
             onOk={() => {
@@ -769,7 +769,7 @@ const Evaluation = () => {
                     uploadDataSetsFile(formData)
                       .then(response => {
                         if (response.data.success) {
-                          message.success(t('ui_a7699ba7'));
+                          message.success(t('uploaded_successfully'));
                           runGetDataSets();
                         } else {
                           message.error(response.data.err_msg);
@@ -791,7 +791,7 @@ const Evaluation = () => {
                     })
                       .then(res => {
                         if (res.data.success) {
-                          message.success(t('ui_a7699ba7'));
+                          message.success(t('uploaded_successfully'));
                           runGetDataSets();
                         } else {
                           message.error(res.data.err_msg);
@@ -846,11 +846,11 @@ const Evaluation = () => {
               <Form.Item name='dataset_name' label={t('Prompt_Info_Name')} rules={[{ required: true }]}>
                 <Input disabled={!isAddDataSet} />
               </Form.Item>
-              <Form.Item name='members' label={t('ui_ab5dea29')}>
+              <Form.Item name='members' label={t('members')}>
                 <Select mode='tags' />
               </Form.Item>
               {isAddDataSet && (
-                <Form.Item name='storage_type' label={t('ui_8d6b49fa')} rules={[{ required: true }]}>
+                <Form.Item name='storage_type' label={t('storage_type')} rules={[{ required: true }]}>
                   <Select options={storageTypeOptions} />
                 </Form.Item>
               )}
@@ -883,7 +883,7 @@ const Evaluation = () => {
             </Form>
           </Modal>
           <Modal
-            title={t('ui_62c725a1')}
+            title={t('score_details')}
             open={isModalVisible}
             onOk={handleModalClose}
             onCancel={handleModalClose}
@@ -898,7 +898,7 @@ const Evaluation = () => {
               minWidth: '750px',
             }}
             footer={[
-              <Button key='back' onClick={handleModalClose}>{t('ui_5f411223')}</Button>,
+              <Button key='back' onClick={handleModalClose}>{t('back')}</Button>,
             ]}
           >
             <Table

@@ -142,7 +142,7 @@ function Default() {
           <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
           {helps && helps.length > 0 && (
             <div>
-              <h2 className='font-medium text-xl my-4'>{i18n.t('ui_73e6636f')}</h2>
+              <h2 className='font-medium text-xl my-4'>{i18n.t('i_can_help_you')}</h2>
               <div className='flex justify-start gap-4'>
                 {helps.map(help => (
                   <span

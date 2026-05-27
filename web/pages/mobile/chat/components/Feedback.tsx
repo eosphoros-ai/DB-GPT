@@ -60,7 +60,7 @@ const Feedback: React.FC<{
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success(i18n.t('ui_0aaa810f'));
+        message.success(i18n.t('feedback_submitted'));
         setFeedbackOpen(false);
       },
     },
@@ -75,7 +75,7 @@ const Feedback: React.FC<{
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success(i18n.t('ui_33130f5c'));
+          message.success(i18n.t('operation_successful'));
         }
       },
     },
@@ -99,7 +99,7 @@ const Feedback: React.FC<{
     {
       manual: true,
       onSuccess: () => {
-        message.success(i18n.t('ui_33130f5c'));
+        message.success(i18n.t('operation_successful'));
       },
     },
   );
@@ -150,7 +150,7 @@ const Feedback: React.FC<{
               await stopTopicRun();
             }}
             className='text-xs'
-          >{i18n.t('ui_212ed895')}</Button>
+          >{i18n.t('end_topic')}</Button>
         )}
       </div>
     </div>

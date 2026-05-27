@@ -35,7 +35,7 @@ export const useEvaluationList = (props: UseEvaluationListProps) => {
     {
       manual: true,
       onError: e => {
-        message.error(e.message || t('ui_1e27e0e4'));
+        message.error(e.message || t('failed_to_load_evaluation_list'));
       },
     },
   );

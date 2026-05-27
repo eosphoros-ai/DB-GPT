@@ -45,11 +45,11 @@ const ReferencesContentView: React.FC<{ references: any }> = ({ references }) =>
       <Divider className='mb-1 mt-0' dashed />
       <div className='flex text-sm gap-2 text-blue-400' onClick={() => setOpen(true)}>
         <LinkOutlined />
-        <span className='text-sm'>{i18n.t('ui_38e5bc1f')}</span>
+        <span className='text-sm'>{i18n.t('view_reply_reference')}</span>
       </div>
       <Drawer
         open={open}
-        title={i18n.t('ui_9acb7b82')}
+        title={i18n.t('reply_reference')}
         placement={isMobile ? 'bottom' : 'right'}
         onClose={() => setOpen(false)}
         destroyOnClose={true}

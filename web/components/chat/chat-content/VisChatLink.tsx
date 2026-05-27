@@ -22,7 +22,7 @@ const VisChatLink: React.FC<VisChatLinkProps> = ({ children, msg }) => {
       type='dashed'
       size='small'
     >
-      {children || i18n.t('ui_81204582')}
+      {children || i18n.t('click_to_analyze_current_anomaly')}
     </Button>
   );
 };

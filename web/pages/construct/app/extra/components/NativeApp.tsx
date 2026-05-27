@@ -106,7 +106,11 @@ const NativeApp: React.FC<{
           label: (
             <div className='flex items-center gap-1'>
               <AppDefaultIcon width={4} height={4} scene={type.chat_scene} />
-              <Tooltip title={`资源类型${type.param_need.find((param: any) => param.type === 'resource')?.value}`}>
+              <Tooltip
+                title={t('resource_type_label', {
+                  type: type.param_need.find((param: any) => param.type === 'resource')?.value ?? '',
+                })}
+              >
                 <span className='text-[#525964] dark:text-[rgba(255,255,255,0.65)]  ml-1'>{type.scene_name}</span>
               </Tooltip>
             </div>

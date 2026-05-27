@@ -29,7 +29,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import i18n from '@/app/i18n';
 
 // ---------------------------------------------------------------------------
 // Types mirroring index.tsx
@@ -276,7 +275,7 @@ function buildSections(steps: ManusExecutionStep[]): ThinkingSection[] {
     sections.push({ id: 'section-skill', title: i18n.t('section_skill_loading'), isCompleted: true, steps: skillSteps });
   if (otherSteps.length > 0)
     sections.push({ id: 'section-execution', title: i18n.t('section_data_execution'), isCompleted: true, steps: otherSteps });
-  if (sections.length === 0) sections.push({ id: 'section-main', title: i18n.t('ui_61ee803d'), isCompleted: true, steps });
+  if (sections.length === 0) sections.push({ id: 'section-main', title: i18n.t('execution_process'), isCompleted: true, steps });
   return sections;
 }
 
@@ -470,6 +469,7 @@ function useReplayEngine(rounds: ReplayRound[], speed: number, autoPlay = false)
 // ---------------------------------------------------------------------------
 
 const SharePage: NextPage = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { token } = router.query as { token?: string };
 
@@ -487,7 +487,7 @@ const SharePage: NextPage = () => {
     fetch(`${apiBase}/api/v1/chat/share/${token}`)
       .then(res => {
         if (!res.ok) {
-          setFetchError(`分享链接无效或已过期 (${res.status})`);
+          setFetchError(t('share_link_invalid_expired', { status: res.status }));
           setLoading(false);
           return null;
         }
@@ -497,7 +497,7 @@ const SharePage: NextPage = () => {
         if (!json) return;
         const rawMessages = json?.data?.messages ?? null;
         if (!Array.isArray(rawMessages)) {
-          setFetchError(t('ui_1cede985'));
+          setFetchError(t('invalid_data_format'));
           setLoading(false);
           return;
         }
@@ -506,10 +506,10 @@ const SharePage: NextPage = () => {
         setLoading(false);
       })
       .catch((err: any) => {
-        setFetchError(err?.message || t('ui_866b795e'));
+        setFetchError(err?.message || t('load_failed'));
         setLoading(false);
       });
-  }, [token]);
+  }, [token, t]);
 
   const rounds = useMemo(() => (messages ? buildReplayRounds(messages) : []), [messages]);
   const { state, playing, play, pause, jumpToRound, restart } = useReplayEngine(
@@ -524,7 +524,6 @@ const SharePage: NextPage = () => {
 
   /** For each round index, compute what's visible */
   const getVisibleRoundData = (ri: number) => {
-  const { t } = useTranslation();
     const round = rounds[ri];
     if (!round) return null;
 
@@ -620,7 +619,7 @@ const SharePage: NextPage = () => {
       <Head>
         <title>
           {firstQuestion
-            ? `${firstQuestion.slice(0, 60)}${firstQuestion.length > 60 ? '…' : ''} · DB-GPT 回放`
+            ? `${firstQuestion.slice(0, 60)}${firstQuestion.length > 60 ? '…' : ''} ${t('share_replay_suffix')}`
             : t('replay_page_title')}
         </title>
       </Head>
@@ -710,12 +709,15 @@ const SharePage: NextPage = () => {
               </div>
             </div>
             <span className='text-xs text-gray-400 whitespace-nowrap tabular-nums'>
-              {completedSteps} / {totalSteps} {{totalSteps}}{t('ui_4a0ff510')}</span>
+              {completedSteps} / {totalSteps} {t('steps')}</span>
             {/* Round selector tabs */}
             {rounds.length > 1 && (
               <div className='flex items-center gap-1'>
                 {rounds.map((round, ri) => (
-                  <Tooltip key={ri} title={round.humanText ? round.humanText.slice(0, 40) : `第 ${ri + 1} 轮`}>
+                  <Tooltip
+                    key={ri}
+                    title={round.humanText ? round.humanText.slice(0, 40) : t('share_round_n', { n: ri + 1 })}
+                  >
                     <button
                       onClick={() => jumpToRound(ri)}
                       className={`w-5 h-5 rounded-full text-[10px] font-bold transition-colors ${
@@ -777,7 +779,7 @@ const SharePage: NextPage = () => {
               <div className='px-4 py-3 text-xs text-gray-400 text-center animate-pulse'>
                 {rounds.length - state.roundIndex - 1} {{rounds.length > 1 && state.roundIndex < rounds.length - 1 && (
               <div className='px-4 py-3 text-xs text-gray-400 text-center animate-pulse'>
-                {rounds.length - state.roundIndex - 1}}{t('ui_0aab9473')}</div>
+                {rounds.length - state.roundIndex - 1}}{t('rounds_pending_replay')}</div>
             )}
             {/* Bottom breathing room */}
             <div className='flex-shrink-0 h-8' />

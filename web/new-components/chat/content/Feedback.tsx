@@ -125,7 +125,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success(t('ui_0aaa810f'));
+        message.success(t('feedback_submitted'));
         setFeedbackOpen(false);
       },
     },
@@ -152,7 +152,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success(t('ui_33130f5c'));
+          message.success(t('operation_successful'));
         }
       },
     },

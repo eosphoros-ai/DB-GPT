@@ -70,7 +70,7 @@ const ResourceContent: React.FC<{
       //     <Upload listType="picture-card">
       //       <button style={{ border: 0, background: 'none' }} type="button">
       //         <PlusOutlined />
-      //         <div style={{ marginTop: 8 }}>{t('ui_d825ba2b')}</div>
+      //         <div style={{ marginTop: 8 }}>{t('upload_icon')}</div>
       //       </button>
       //     </Upload>
       //   </Form.Item>
@@ -89,7 +89,7 @@ const ResourceContent: React.FC<{
       // return (
       //   <Form.Item label="上传文件：" name="value" required valuePropName="fileList">
       //     <Upload>
-      //       <Button icon={<UploadOutlined />}>{t('ui_a6fc9e3a')}</Button>
+      //       <Button icon={<UploadOutlined />}>{t('upload_file')}</Button>
       //     </Upload>
       //   </Form.Item>
       // );

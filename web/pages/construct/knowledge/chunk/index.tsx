@@ -89,7 +89,7 @@ function ChunkList() {
     {
       manual: true,
       onSuccess: async () => {
-        message.success(t('ui_3fdaeadf'));
+        message.success(t('added_successfully'));
         setIsModalOpen(false);
         await fetchChunks();
       },
@@ -157,7 +157,7 @@ function ChunkList() {
                   className="absolute bottom-0 right-0 left-0 flex items-center justify-center cursor-pointer text-[#1890ff] bg-[rgba(255,255,255,0.8)] z-30"
                   onClick={() => setIsExpand(!isExpand)}
                 >
-                  <DoubleRightOutlined rotate={isExpand ? -90 : 90} /> {isExpand ? '收起' : '展开'}
+                  <DoubleRightOutlined rotate={isExpand ? -90 : 90} /> {isExpand ? t('collapse') : t('expand')}
                 </Space> */}
               </Card>
             );

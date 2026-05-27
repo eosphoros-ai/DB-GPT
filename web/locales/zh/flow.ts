@@ -29,8 +29,8 @@ export const FlowZn = {
   minimum_dynamic_fields_warning: '请保留一个以上的动态字段',
 
   // phase2 i18n
-  ui_32c65d8d: '标题',
-  ui_392f3dfd: '名称必须是字母、数字或下划线，并使用下划线分隔多个单词',
-  ui_fe7509e0: '值',
+  title: '标题',
+  name_must_use_letters_numbers_or_underscores_sep: '名称必须是字母、数字或下划线，并使用下划线分隔多个单词',
+  value: '值',
 
 };
