@@ -43,13 +43,13 @@ const Knowledge = () => {
 
   async function getSpaces(params?: any) {
     setLoading(true);
-    const [_, data] = await apiInterceptors(getSpaceList({ ...params }));
+    const [_, data] = await apiInterceptors(getSpaceList({ ...params }), undefined, { silent: true });
     setLoading(false);
     setSpaceList(data);
   }
 
   async function getSpaceConfigs() {
-    const [_, data] = await apiInterceptors(getSpaceConfig());
+    const [_, data] = await apiInterceptors(getSpaceConfig(), undefined, { silent: true });
     if (!data) return null;
     setSpaceConfig(data.storage);
   }

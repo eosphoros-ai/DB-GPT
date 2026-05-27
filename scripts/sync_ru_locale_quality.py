@@ -10,7 +10,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALES = ROOT / "web" / "locales"
-DEPLOY = ROOT.parent.parent / "DBTGPT" / "deploy" / "locales"
+# Prefer sibling DBTGPT deploy repo; fallback to OriginalDBTGPT/DBTGPT layout.
+_deploy_candidates = [
+    ROOT.parent.parent / "DBTGPT" / "deploy" / "locales",
+    Path(r"z:\Projects\DBTGPT\deploy\locales"),
+]
+DEPLOY = next((p for p in _deploy_candidates if p.is_dir()), _deploy_candidates[0])
 CJK = re.compile(r"[\u4e00-\u9fff]")
 PAIR = re.compile(r"^\s+([A-Za-z_][\w]*)\s*:\s*'((?:\\'|[^'])*)'", re.M)
 
@@ -89,13 +94,17 @@ def main() -> int:
             if key in RU_OVERRIDES:
                 updates[key] = RU_OVERRIDES[key]
                 continue
-            needs = CJK.search(ru_v) or "успешно" in ru_v and " " not in ru_v.strip()
+            needs = (
+                CJK.search(ru_v)
+                or ("успешно" in ru_v and " " not in ru_v.strip())
+                or ru_v == en_v
+            )
             if not needs and not key.startswith("ui_"):
                 continue
             new_ru = en_to_ru_value(en_v, zh_v, en_to_ru, zh_ru)
             if new_ru and new_ru != ru_v:
                 updates[key] = new_ru
-            elif needs and not CJK.search(en_v):
+            elif needs and not CJK.search(en_v) and ru_v != en_v:
                 updates[key] = en_v
         if updates:
             write_ts_values(LOCALES / "ru" / f"{mod}.ts", updates)

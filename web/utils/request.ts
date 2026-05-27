@@ -85,8 +85,13 @@ export const sendSpacePostRequest = (url: string, body?: any) => {
     })
     .then(res => res)
     .catch(err => {
-      message.error(err);
-      Promise.reject(err);
+      // Only toast when the API responded; network/CORS failures are handled by callers.
+      if (typeof window !== 'undefined' && err?.response) {
+        const msg =
+          err?.response?.data?.err_msg ?? err?.response?.data?.detail ?? err?.message ?? 'Request failed';
+        message.error(msg);
+      }
+      return Promise.reject(err);
     });
 };
 

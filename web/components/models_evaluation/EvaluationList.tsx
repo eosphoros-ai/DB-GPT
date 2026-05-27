@@ -1,12 +1,10 @@
 import i18n from '@/app/i18n';
 import { EvaluationItem } from '@/types/models_evaluation';
 import { Button, Table, Tag, Tooltip } from 'antd';
-import { t } from 'i18next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect } from 'react';
 import { useEvaluation } from './context/EvaluationContext';
 import styles from './styles.module.css';
-import { useTranslation } from 'react-i18next';
 interface EvaluationListProps {
   filterValue?: string;
   type?: string;
@@ -94,16 +92,16 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
 
         if (state === 'running') {
           color = 'blue';
-          text = {i18n.t('running_2')};
+          text = i18n.t('running_2');
         } else if (state === 'complete') {
           color = 'green';
-          text = {i18n.t('Completed')};
+          text = i18n.t('Completed');
         } else if (state === 'failed') {
           color = 'red';
-          text = {i18n.t('failed')};
+          text = i18n.t('failed');
         } else if (state === 'pending') {
           color = 'orange';
-          text = {i18n.t('pending')};
+          text = i18n.t('pending');
         }
 
         if (record?.state === 'failed') {

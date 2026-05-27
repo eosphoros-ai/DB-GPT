@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
@@ -40,7 +41,6 @@ import { GPTVis } from '@antv/gpt-vis';
 import { Button, Table, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import i18n from '@/app/i18n';
 import { useTranslation } from 'react-i18next';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
 
@@ -827,7 +827,9 @@ const CodeExecutionRenderer: React.FC<{
   const codeContent = (
     <>
       <div className='relative overflow-auto flex-1 min-h-[100px]'>
-        <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>{t('artifact_type_code')}</span>
+        <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
+          {t('artifact_type_code')}
+        </span>
         <CodePreview
           code={group.codes
             .map(c => String(c.content))
@@ -842,7 +844,9 @@ const CodeExecutionRenderer: React.FC<{
         <>
           <div className='border-t border-gray-700/50 shrink-0' />
           <div className='relative overflow-auto bg-gray-900 flex-1 min-h-[60px]'>
-            <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>{t('result_2')}</span>
+            <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
+              {t('result_2')}
+            </span>
             <div className='px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
               {group.results.map(r => String(r.content)).join('')}
             </div>
@@ -1313,8 +1317,10 @@ const SkillCardRenderer: React.FC<{
             <FolderOpenOutlined className='text-amber-500' />
             <span>{t('view_skill_files')}</span>
             {detailData?.tree?.children && (
-              <span className='text-gray-400'>({detailData.tree.children.length} {{detailData?.tree?.children && (
-              <span className='text-gray-400'>({detailData.tree.children.length}}{t('items')}</span>
+              <span className='text-gray-400'>
+                ({detailData.tree.children.length}
+                {t('items')})
+              </span>
             )}
           </div>
           <RightOutlined className='text-[10px] text-gray-400' />
@@ -1768,7 +1774,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       <div
         className={classNames(
           'flex-1 overflow-y-auto flex flex-col min-h-0',
-          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview' ? 'p-0' : 'p-5 space-y-4',
+          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview'
+            ? 'p-0'
+            : 'p-5 space-y-4',
         )}
       >
         {panelView === 'skill-preview' && skillName ? (
@@ -2242,7 +2250,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
               {isRunning ? t('Running') : t('completed_2')}
             </span>
-            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} {{visibleOutputs.length > 0 && <span>{visibleOutputs.length}}{t('outputs')}</span>}
+            {visibleOutputs.length > 0 && (
+              <span>
+                {visibleOutputs.length}
+                {t('outputs')}
+              </span>
+            )}
           </div>
           {activeStep && <span>Step ID: {activeStep.id}</span>}
         </div>

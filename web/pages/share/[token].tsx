@@ -270,12 +270,28 @@ function buildSections(steps: ManusExecutionStep[]): ThinkingSection[] {
 
   const sections: ThinkingSection[] = [];
   if (thinkSteps.length > 0)
-    sections.push({ id: 'section-think', title: i18n.t('section_analysis_planning'), isCompleted: true, steps: thinkSteps });
+    sections.push({
+      id: 'section-think',
+      title: i18n.t('section_analysis_planning'),
+      isCompleted: true,
+      steps: thinkSteps,
+    });
   if (skillSteps.length > 0)
-    sections.push({ id: 'section-skill', title: i18n.t('section_skill_loading'), isCompleted: true, steps: skillSteps });
+    sections.push({
+      id: 'section-skill',
+      title: i18n.t('section_skill_loading'),
+      isCompleted: true,
+      steps: skillSteps,
+    });
   if (otherSteps.length > 0)
-    sections.push({ id: 'section-execution', title: i18n.t('section_data_execution'), isCompleted: true, steps: otherSteps });
-  if (sections.length === 0) sections.push({ id: 'section-main', title: i18n.t('execution_process'), isCompleted: true, steps });
+    sections.push({
+      id: 'section-execution',
+      title: i18n.t('section_data_execution'),
+      isCompleted: true,
+      steps: otherSteps,
+    });
+  if (sections.length === 0)
+    sections.push({ id: 'section-main', title: i18n.t('execution_process'), isCompleted: true, steps });
   return sections;
 }
 
@@ -633,7 +649,9 @@ const SharePage: NextPage = () => {
             {/* Logo / brand */}
             <span className='font-bold text-base text-gray-800 dark:text-white flex-shrink-0'>DB-GPT</span>
             <div className='w-px h-4 bg-gray-200 dark:bg-gray-700 flex-shrink-0' />
-            <span className='text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full flex-shrink-0'>{t('replay_badge')}</span>
+            <span className='text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full flex-shrink-0'>
+              {t('replay_badge')}
+            </span>
             {firstQuestion && (
               <span className='text-sm text-gray-500 dark:text-gray-400 truncate max-w-[400px]' title={firstQuestion}>
                 {firstQuestion}
@@ -665,9 +683,13 @@ const SharePage: NextPage = () => {
 
             {/* Play / Pause */}
             {state.done ? (
-              <Button icon={<ReloadOutlined />} onClick={restart}>{t('replay_restart')}</Button>
+              <Button icon={<ReloadOutlined />} onClick={restart}>
+                {t('replay_restart')}
+              </Button>
             ) : playing ? (
-              <Button icon={<PauseCircleOutlined />} onClick={pause}>{t('replay_pause')}</Button>
+              <Button icon={<PauseCircleOutlined />} onClick={pause}>
+                {t('replay_pause')}
+              </Button>
             ) : (
               <Button type='primary' icon={<PlayCircleOutlined />} onClick={play}>
                 {completedSteps === 0 ? t('replay_start') : t('replay_continue')}
@@ -690,7 +712,9 @@ const SharePage: NextPage = () => {
                 icon={<LinkOutlined />}
                 onClick={handleCopyLink}
                 style={{ color: '#3b82f6', borderColor: '#3b82f6' }}
-              >{t('share_conversation')}</Button>
+              >
+                {t('share_conversation')}
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -709,7 +733,8 @@ const SharePage: NextPage = () => {
               </div>
             </div>
             <span className='text-xs text-gray-400 whitespace-nowrap tabular-nums'>
-              {completedSteps} / {totalSteps} {t('steps')}</span>
+              {completedSteps} / {totalSteps} {t('steps')}
+            </span>
             {/* Round selector tabs */}
             {rounds.length > 1 && (
               <div className='flex items-center gap-1'>
@@ -777,9 +802,9 @@ const SharePage: NextPage = () => {
             {/* Pending placeholder for rounds not yet reached */}
             {rounds.length > 1 && state.roundIndex < rounds.length - 1 && (
               <div className='px-4 py-3 text-xs text-gray-400 text-center animate-pulse'>
-                {rounds.length - state.roundIndex - 1} {{rounds.length > 1 && state.roundIndex < rounds.length - 1 && (
-              <div className='px-4 py-3 text-xs text-gray-400 text-center animate-pulse'>
-                {rounds.length - state.roundIndex - 1}}{t('rounds_pending_replay')}</div>
+                {rounds.length - state.roundIndex - 1}
+                {t('rounds_pending_replay')}
+              </div>
             )}
             {/* Bottom breathing room */}
             <div className='flex-shrink-0 h-8' />

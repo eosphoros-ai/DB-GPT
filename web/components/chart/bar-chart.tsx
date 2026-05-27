@@ -4,8 +4,8 @@ import { Chart } from '@berryv/g2-react';
 import { useContext, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function BarChart({
-  const { t } = useTranslation(); chart }: { key: string; chart: ChartData }) {
+export default function BarChart({ chart }: { key: string; chart: ChartData }) {
+  const { t } = useTranslation();
   const { mode } = useContext(ChatContext);
 
   // Process data to ensure numeric values for proper y-axis ordering

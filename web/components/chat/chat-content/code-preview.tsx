@@ -3,9 +3,9 @@ import { CopyOutlined } from '@ant-design/icons';
 import { Button, message } from 'antd';
 import copy from 'copy-to-clipboard';
 import { CSSProperties, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { coldarkDark, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useTranslation } from 'react-i18next';
 
 interface Props {
   code: string;
@@ -15,8 +15,8 @@ interface Props {
   dark?: { [key: string]: CSSProperties };
 }
 
-export function CodePreview({
-  const { t } = useTranslation(); code, light, dark, language, customStyle }: Props) {
+export function CodePreview({ code, light, dark, language, customStyle }: Props) {
+  const { t } = useTranslation();
   const { mode } = useContext(ChatContext);
 
   return (

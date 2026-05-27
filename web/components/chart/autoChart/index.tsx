@@ -12,7 +12,7 @@ import { defaultAdvicesFilter } from './advisor/utils';
 import { customCharts } from './charts';
 import { processNilData, sortData } from './charts/util';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
-import i18n from '@/app/i18n';
+
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {

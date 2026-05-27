@@ -1,5 +1,5 @@
-import MarkdownContext from '@/new-components/common/MarkdownContext';
 import i18n from '@/app/i18n';
+import MarkdownContext from '@/new-components/common/MarkdownContext';
 import {
   AppstoreOutlined,
   BarChartOutlined,
@@ -502,10 +502,7 @@ const StepCard: React.FC<{
   }, []);
   const isThinkingStep =
     step.status === 'running' &&
-    (step.title === t('thinking') ||
-      step.title === {t('Thinking')} ||
-      step.title === {t('thinking')} ||
-      step.title?.toLowerCase() === 'thinking');
+    (step.title === t('thinking') || step.title === t('Thinking') || step.title?.toLowerCase() === 'thinking');
   if (isThinkingStep) {
     return (
       <div

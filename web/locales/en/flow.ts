@@ -32,5 +32,12 @@ export const FlowEn = {
   title: 'Title',
   name_must_use_letters_numbers_or_underscores_sep: 'Name must use letters, numbers, or underscores, separated by underscores',
   value: 'Value',
-
+  flow_parameter_index_name: 'Parameter {{index}} name',
+  missing_parameter_name: 'Enter parameter name',
+  missing_parameter_label: 'Enter parameter label',
+  missing_parameter_type: 'Select parameter type',
+  missing_parameter_value: 'Enter parameter value',
+  flow_parameter_name_placeholder: 'Parameter name',
+  flow_parameter_label_placeholder: 'Parameter label',
+  flow_parameter_description_placeholder: 'Parameter description',
 };

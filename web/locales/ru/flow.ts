@@ -37,8 +37,16 @@ export const FlowRu: Resources['translation'] = {
   minimum_dynamic_fields_warning: 'Оставьте хотя бы одно динамическое поле',
 
   // phase2 i18n
-  title: 'Title',
-  name_must_use_letters_numbers_or_underscores_sep: 'Имя must use letters, numbers, or underscores, separated by underscores',
-  value: 'Value',
-
+  title: 'Заголовок',
+  name_must_use_letters_numbers_or_underscores_sep:
+    'Имя: только буквы, цифры и подчёркивания (слова разделяйте _)',
+  value: 'Значение',
+  flow_parameter_index_name: 'Имя параметра {{index}}',
+  missing_parameter_name: 'Введите имя параметра',
+  missing_parameter_label: 'Введите метку параметра',
+  missing_parameter_type: 'Выберите тип параметра',
+  missing_parameter_value: 'Введите значение параметра',
+  flow_parameter_name_placeholder: 'Имя параметра',
+  flow_parameter_label_placeholder: 'Метка параметра',
+  flow_parameter_description_placeholder: 'Описание параметра',
 };

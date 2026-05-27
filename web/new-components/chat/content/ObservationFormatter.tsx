@@ -48,21 +48,26 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
   if (!parsed) return null;
 
   const renderContent = () => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     switch (parsed.type) {
       case 'shape':
         return (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
               <span className='text-lg'>📊</span>
-              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>{t('data_observation')}</span>
+              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>
+                {t('data_observation')}
+              </span>
             </div>
             <div className='space-y-1.5 text-sm'>
               {parsed.data.shape && (
                 <div className='flex items-center gap-2'>
                   <span className='text-gray-500 dark:text-gray-400'>•</span>
-                  <span className='text-gray-700 dark:text-gray-300'>{t('data_size')}<span className='font-mono font-medium text-blue-600 dark:text-blue-400 ml-1'>
-                      {parsed.data.shape[0]} 行 × {parsed.data.shape[1]} {{parsed.data.shape[1]}}{t('column')}</span>
+                  <span className='text-gray-700 dark:text-gray-300'>
+                    {t('data_size')}
+                    <span className='font-mono font-medium text-blue-600 dark:text-blue-400 ml-1'>
+                      {parsed.data.shape[0]} × {parsed.data.shape[1]} {t('column')}
+                    </span>
                   </span>
                 </div>
               )}
@@ -120,7 +125,9 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
               <span className='text-lg'>📋</span>
-              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>{t('column_info')}</span>
+              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>
+                {t('column_info')}
+              </span>
             </div>
             <div className='flex flex-wrap gap-1.5'>
               {parsed.data.columns.slice(0, 12).map((col: string, idx: number) => (

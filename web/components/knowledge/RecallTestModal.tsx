@@ -140,7 +140,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
 
           {/* {questions?.length > 0 && (
               <Col span={16}>
-                <Form.Item label="推荐问题" tooltip="点击选择，自动填入">
+                <Form.Item label={i18n.t('recommended_questions')} tooltip={i18n.t('recommended_questions_tooltip')}>
                   <div className="flex flex-wrap gap-2">
                     {questions.map((item, index) => (
                       <Tag

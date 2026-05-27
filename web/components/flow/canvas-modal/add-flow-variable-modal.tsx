@@ -211,17 +211,20 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'name']}
-                      label={`参数 ${index + 1} 名称`}
+                      label={t('flow_parameter_index_name', { index: index + 1 })}
                       style={{ width: 140 }}
                       rules={[
-                        { required: true, message: 'Missing parameter name' },
+                        { required: true, message: t('missing_parameter_name') },
                         {
                           pattern: /^[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*$/,
                           message: t('name_must_use_letters_numbers_or_underscores_sep'),
                         },
                       ]}
                     >
-                      <Input placeholder='Parameter Name' onChange={e => onNameChange(e, index)} />
+                      <Input
+                        placeholder={t('flow_parameter_name_placeholder')}
+                        onChange={e => onNameChange(e, index)}
+                      />
                     </Form.Item>
 
                     <Form.Item
@@ -229,9 +232,9 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                       name={[name, 'label']}
                       label={t('title')}
                       style={{ width: 130 }}
-                      rules={[{ required: true, message: 'Missing parameter label' }]}
+                      rules={[{ required: true, message: t('missing_parameter_label') }]}
                     >
-                      <Input placeholder='Parameter Label' />
+                      <Input placeholder={t('flow_parameter_label_placeholder')} />
                     </Form.Item>
 
                     <Form.Item
@@ -239,9 +242,9 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                       name={[name, 'value_type']}
                       label={t('Type')}
                       style={{ width: 100 }}
-                      rules={[{ required: true, message: 'Missing parameter type' }]}
+                      rules={[{ required: true, message: t('missing_parameter_type') }]}
                     >
-                      <Select placeholder='Select' onChange={value => onValueTypeChange(value, index)}>
+                      <Select placeholder={t('please_choose')} onChange={value => onValueTypeChange(value, index)}>
                         {VALUE_TYPES.map(type => (
                           <Option key={type} value={type}>
                             {type}
@@ -255,13 +258,13 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                       name={[name, 'value']}
                       label={t('value')}
                       style={{ width: 320 }}
-                      rules={[{ required: true, message: 'Missing parameter value' }]}
+                      rules={[{ required: true, message: t('missing_parameter_value') }]}
                     >
                       {renderVariableValue(controlTypes[index], index)}
                     </Form.Item>
 
                     <Form.Item {...restField} name={[name, 'description']} label={t('Template_Description')} style={{ width: 170 }}>
-                      <Input placeholder='Parameter Description' />
+                      <Input placeholder={t('flow_parameter_description_placeholder')} />
                     </Form.Item>
 
                     <MinusCircleOutlined onClick={() => remove(name)} />

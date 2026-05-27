@@ -1,9 +1,9 @@
 import { ChatContext } from '@/app/chat-context';
+import i18n from '@/app/i18n';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
-import i18n from '@/app/i18n';
 import ManusLeftPanel, {
   ExecutionStep as ManusExecutionStep,
   StepType,
@@ -93,17 +93,18 @@ const _formatFileSize = (bytes: number): string => {
 const _getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return t('file_type_spreadsheet');
+    return i18n.t('file_type_spreadsheet');
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return t('file_type_spreadsheet');
+    return i18n.t('file_type_spreadsheet');
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return t('artifact_type_image');
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return t('file_type_word');
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return t('file_type_text');
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image'))
+    return i18n.t('artifact_type_image');
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return i18n.t('file_type_word');
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return i18n.t('file_type_text');
   if (['json'].includes(ext)) return 'JSON';
-  return t('artifact_type_file');
+  return i18n.t('artifact_type_file');
 };
 
 const _getFileIcon = (fileName: string, mimeType?: string) => {
@@ -359,7 +360,12 @@ const convertToManusFormat = (
       lower.includes('select_skill')
     )
       return 'skill';
-    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes(t('sql_query'))) return 'sql';
+    if (
+      lower.includes('sql_query') ||
+      lower.includes('sql query') ||
+      lower.includes((t ?? i18n.t.bind(i18n))('sql_query'))
+    )
+      return 'sql';
     if (lower.includes('read') || lower.includes('load')) return 'read';
     if (lower.includes('edit')) return 'edit';
     if (lower.includes('write') || lower.includes('save')) return 'write';
@@ -448,8 +454,7 @@ const EXAMPLE_CARDS = [
     icon: '📊',
     title: i18n.t('example_walmart_sales_title'),
     description: i18n.t('example_walmart_sales_desc'),
-    query:
-      t('example_walmart_sales_query'),
+    query: i18n.t('example_walmart_sales_query'),
     fileName: 'Walmart_Sales.csv',
     fileType: 'text/csv',
     fileSize: 98304, // ~96 KB
@@ -463,8 +468,7 @@ const EXAMPLE_CARDS = [
     icon: '🗄️',
     title: i18n.t('example_db_profile_report_title'),
     description: i18n.t('example_db_profile_report_desc'),
-    query:
-      t('example_db_profile_report_query'),
+    query: i18n.t('example_db_profile_report_query'),
     dbName: 'Walmart_Sales',
     color: 'from-emerald-500/10 to-teal-500/10',
     borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
@@ -475,8 +479,7 @@ const EXAMPLE_CARDS = [
     icon: '📈',
     title: i18n.t('example_fin_report_title'),
     description: i18n.t('example_fin_report_desc'),
-    query:
-      t('example_fin_report_query'),
+    query: i18n.t('example_fin_report_query'),
     fileName: i18n.t('sample_annual_report_2019_pdf'),
     fileType: 'application/pdf',
     fileSize: 2621440, // ~2.5 MB
@@ -490,8 +493,7 @@ const EXAMPLE_CARDS = [
     icon: '🛠️',
     title: i18n.t('example_create_sql_skill_title'),
     description: i18n.t('example_create_sql_skill_desc'),
-    query:
-      t('example_create_sql_skill_query'),
+    query: i18n.t('example_create_sql_skill_query'),
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -582,40 +584,45 @@ const Playground: NextPage = () => {
   } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
+  // Client-only: empty API_BASE_URL is valid when UI is served from the API host (e.g. :5670).
+  const apiReady = typeof window !== 'undefined';
+
   // Fetch Data Sources
-  const { data: dataSources, loading: _loadingSources } = useRequest(async () => {
-    try {
-      const response: any = await axios.get('/api/v2/serve/datasources');
-      // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
-      const result = response?.success !== undefined ? response : response?.data;
-      if (result?.success) {
-        return (result.data || []).map((item: any) => ({
-          ...item,
-          db_name: item.db_name || item.params?.name || item.params?.database || `${item.type}-${item.id}`,
-          db_type: item.type,
-        })) as DataSource[];
-      }
-      return [];
-    } catch (e) {
-      console.error('Failed to fetch datasources', e);
-      return [];
-    }
-  });
+  const { data: dataSources, loading: _loadingSources } = useRequest(
+    () => {
+      return axios
+        .get('/api/v2/serve/datasources')
+        .then((response: any) => {
+          const result = response?.success !== undefined ? response : response?.data;
+          if (result?.success) {
+            return (result.data || []).map((item: any) => ({
+              ...item,
+              db_name: item.db_name || item.params?.name || item.params?.database || `${item.type}-${item.id}`,
+              db_type: item.type,
+            })) as DataSource[];
+          }
+          return [];
+        })
+        .catch(e => {
+          console.error('Failed to fetch datasources', e);
+          return [];
+        });
+    },
+    { ready: apiReady },
+  );
 
   // Fetch Knowledge Bases
-  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
-    try {
-      const response = await sendSpacePostRequest('/knowledge/space/list', {});
-      // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
-      if (response?.success) {
-        return response.data || [];
-      }
-      return [];
-    } catch (e) {
-      console.error('Failed to fetch knowledge spaces', e);
-      return [];
-    }
-  });
+  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(
+    () => {
+      return sendSpacePostRequest('/knowledge/space/list', {})
+        .then(response => (response?.success ? response.data || [] : []))
+        .catch(e => {
+          console.error('Failed to fetch knowledge spaces', e);
+          return [];
+        });
+    },
+    { ready: apiReady },
+  );
 
   const normalizeText = (value: unknown): string => {
     if (typeof value === 'string') return value;
@@ -654,36 +661,40 @@ const Playground: NextPage = () => {
   };
 
   // Fetch Skills/DBGPTs list
-  const { data: skillsList, loading: _loadingSkills } = useRequest(async () => {
-    try {
-      const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
-      // ctx-axios interceptor returns response.data directly
-      if (response?.success && Array.isArray(response.data)) {
-        return response.data.map((item: any) => ({
-          id: String(item.id || item.name),
-          name: normalizeText(item.name),
-          description: normalizeText(item.description),
-          type: item.type === 'official' ? 'official' : 'personal',
-          icon:
-            item.skill_type === 'data_analysis'
-              ? '📊'
-              : item.skill_type === 'coding'
-                ? '💻'
-                : item.skill_type === 'web_search'
-                  ? '🔍'
-                  : item.skill_type === 'knowledge_qa'
-                    ? '📚'
-                    : item.skill_type === 'chat'
-                      ? '💬'
-                      : '⚡',
-        })) as Skill[];
-      }
-      return [];
-    } catch (e) {
-      console.error('Failed to fetch skills', e);
-      return [];
-    }
-  });
+  const { data: skillsList, loading: _loadingSkills } = useRequest(
+    () => {
+      return axios
+        .get('/api/v1/skills/list')
+        .then(response => {
+          if (response?.success && Array.isArray(response.data)) {
+            return response.data.map((item: any) => ({
+              id: String(item.id || item.name),
+              name: normalizeText(item.name),
+              description: normalizeText(item.description),
+              type: item.type === 'official' ? 'official' : 'personal',
+              icon:
+                item.skill_type === 'data_analysis'
+                  ? '📊'
+                  : item.skill_type === 'coding'
+                    ? '💻'
+                    : item.skill_type === 'web_search'
+                      ? '🔍'
+                      : item.skill_type === 'knowledge_qa'
+                        ? '📚'
+                        : item.skill_type === 'chat'
+                          ? '💬'
+                          : '⚡',
+            })) as Skill[];
+          }
+          return [];
+        })
+        .catch(e => {
+          console.error('Failed to fetch skills', e);
+          return [];
+        });
+    },
+    { ready: apiReady },
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -2664,14 +2675,18 @@ const Playground: NextPage = () => {
                                         <div className='text-center py-8 text-gray-400'>
                                           <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                           <div className='text-xs'>
-                                            {skillSearchQuery ? t('no_matching_skills_found') : t('no_skills_available')}
+                                            {skillSearchQuery
+                                              ? t('no_matching_skills_found')
+                                              : t('no_skills_available')}
                                           </div>
                                         </div>
                                       )}
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {(skillsList || []).length} {{(skillsList || []).length}}{t('skills_available')}</span>
+                                        {(skillsList || []).length}
+                                        {t('skills_available')}
+                                      </span>
                                       <Button
                                         type='link'
                                         size='small'
@@ -2680,7 +2695,9 @@ const Playground: NextPage = () => {
                                           setIsSkillPanelOpen(false);
                                         }}
                                         className='text-[10px] p-0 h-auto'
-                                      >{t('manage_skills')}</Button>
+                                      >
+                                        {t('manage_skills')}
+                                      </Button>
                                     </div>
                                   </div>
                                 }
@@ -3109,7 +3126,9 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length} {{(skillsList || []).length}}{t('skills_available')}</span>
+                                    {(skillsList || []).length}
+                                    {t('skills_available')}
+                                  </span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3118,7 +3137,9 @@ const Playground: NextPage = () => {
                                       setIsSkillPanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >{t('manage_skills')}</Button>
+                                  >
+                                    {t('manage_skills')}
+                                  </Button>
                                 </div>
                               </div>
                             }
@@ -3234,7 +3255,9 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(dataSources || []).length} {{(dataSources || []).length}}{t('databases_available')}</span>
+                                    {(dataSources || []).length}
+                                    {t('databases_available')}
+                                  </span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3243,7 +3266,9 @@ const Playground: NextPage = () => {
                                       setIsDbPanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >{t('manage_databases')}</Button>
+                                  >
+                                    {t('manage_databases')}
+                                  </Button>
                                 </div>
                               </div>
                             }
@@ -3347,14 +3372,18 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <BookOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {knowledgeSearchQuery ? t('no_matching_knowledge_base') : t('no_knowledge_base_available')}
+                                        {knowledgeSearchQuery
+                                          ? t('no_matching_knowledge_base')
+                                          : t('no_knowledge_base_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(knowledgeSpaces || []).length} {{(knowledgeSpaces || []).length}}{t('knowledge_bases_available')}</span>
+                                    {(knowledgeSpaces || []).length}
+                                    {t('knowledge_bases_available')}
+                                  </span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3363,7 +3392,9 @@ const Playground: NextPage = () => {
                                       setIsKnowledgePanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >{t('manage_knowledge')}</Button>
+                                  >
+                                    {t('manage_knowledge')}
+                                  </Button>
                                 </div>
                               </div>
                             }
