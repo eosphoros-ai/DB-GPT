@@ -1,8 +1,10 @@
+import i18n from '@/app/i18n';
 /* eslint-disable */
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { Modal, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type PromptSelectType = {
   promptList: Record<string, any>[];
@@ -38,9 +40,7 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
       />
       {curPrompt && (
         <span className='text-sm text-blue-500 cursor-pointer' onClick={() => setShowPrompt(true)}>
-          <ExclamationCircleOutlined className='mr-1' />
-          查看详情
-        </span>
+          <ExclamationCircleOutlined className='mr-1' />{i18n.t('View_details')}</span>
       )}
       <Modal title='Prompt' open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>
         <MarkDownContext>{curPrompt?.content}</MarkDownContext>

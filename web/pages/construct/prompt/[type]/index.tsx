@@ -309,7 +309,7 @@ const AddOrEditPrompt: React.FC = () => {
       manual: true,
       onSuccess: res => {
         if (res?.data?.success) {
-          setErrorMessage({ msg: '验证通过', status: 'success' });
+          setErrorMessage({ msg: t('ui_d1ca6194'), status: 'success' });
         } else {
           setErrorMessage({ msg: res?.data?.err_msg, status: 'error' });
         }

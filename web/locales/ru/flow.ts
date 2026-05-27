@@ -35,4 +35,10 @@ export const FlowRu: Resources['translation'] = {
   Template_Label: 'Метка',
   Template_Action: 'Действие',
   minimum_dynamic_fields_warning: 'Оставьте хотя бы одно динамическое поле',
+
+  // phase2 i18n
+  ui_32c65d8d: '标题',
+  ui_392f3dfd: '名称必须字母、数字 или 下划线，并使用下划线分隔多单词',
+  ui_fe7509e0: '值',
+
 };

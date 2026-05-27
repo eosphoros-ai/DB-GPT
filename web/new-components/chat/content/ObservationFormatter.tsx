@@ -1,5 +1,6 @@
 import classNames from 'classnames';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface ObservationFormatterProps {
   observation: string;
@@ -47,23 +48,21 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
   if (!parsed) return null;
 
   const renderContent = () => {
+  const { t } = useTranslation();
     switch (parsed.type) {
       case 'shape':
         return (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
               <span className='text-lg'>📊</span>
-              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>数据观察</span>
+              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>{t('ui_6d90a2a6')}</span>
             </div>
             <div className='space-y-1.5 text-sm'>
               {parsed.data.shape && (
                 <div className='flex items-center gap-2'>
                   <span className='text-gray-500 dark:text-gray-400'>•</span>
-                  <span className='text-gray-700 dark:text-gray-300'>
-                    数据规模：
-                    <span className='font-mono font-medium text-blue-600 dark:text-blue-400 ml-1'>
-                      {parsed.data.shape[0]} 行 × {parsed.data.shape[1]} 列
-                    </span>
+                  <span className='text-gray-700 dark:text-gray-300'>{t('ui_5162731a')}<span className='font-mono font-medium text-blue-600 dark:text-blue-400 ml-1'>
+                      {parsed.data.shape[0]} 行 × {parsed.data.shape[1]} {{parsed.data.shape[1]}}{t('ui_cb2f68c9')}</span>
                   </span>
                 </div>
               )}
@@ -71,7 +70,7 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
                 <div className='flex items-start gap-2'>
                   <span className='text-gray-500 dark:text-gray-400 mt-0.5'>•</span>
                   <div className='flex-1'>
-                    <span className='text-gray-700 dark:text-gray-300'>字段列表：</span>
+                    <span className='text-gray-700 dark:text-gray-300'>{t('ui_26fbd5d7')}</span>
                     <div className='flex flex-wrap gap-1.5 mt-1'>
                       {parsed.data.columns.slice(0, 10).map((col: string, idx: number) => (
                         <span
@@ -99,7 +98,7 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
               <span className='text-lg'>🔍</span>
-              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>数据类型</span>
+              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>{t('ui_185f7bf6')}</span>
             </div>
             <div className='grid grid-cols-1 gap-1 text-sm'>
               {Object.entries(parsed.data.dtypes || parsed.data)
@@ -121,7 +120,7 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
               <span className='text-lg'>📋</span>
-              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>列信息</span>
+              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>{t('ui_20aadc3f')}</span>
             </div>
             <div className='flex flex-wrap gap-1.5'>
               {parsed.data.columns.slice(0, 12).map((col: string, idx: number) => (
@@ -147,7 +146,7 @@ const ObservationFormatter: React.FC<ObservationFormatterProps> = ({ observation
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
               <span className='text-lg'>📄</span>
-              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>观察结果</span>
+              <span className='text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase'>{t('ui_0cb08950')}</span>
             </div>
             <pre className='text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto p-2 bg-gray-50 dark:bg-gray-900/50 rounded'>
               {JSON.stringify(parsed.data, null, 2)}

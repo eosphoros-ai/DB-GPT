@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/app/i18n';
 
 interface SettingItem {
   key: string;
@@ -54,13 +55,13 @@ const Sider: React.FC = () => {
     return [
       {
         key: 'theme',
-        name: t('Theme'),
+        name: i18n.t('Theme'),
         icon: mode === 'dark' ? <Icon component={DarkSvg} /> : <Icon component={SunnySvg} />,
         onClick: handleToggleTheme,
       },
       {
         key: 'language',
-        name: t('language'),
+        name: i18n.t('language'),
         icon: <GlobalOutlined />,
         onClick: handleChangeLang,
       },

@@ -265,7 +265,7 @@ export default function DocPanel(props: IProps) {
     return (
       <div className='w-full h-full'>
         <div className='mb-4'>
-          {/* <div className="mb-1">管理员（工号，去前缀0）：</div> */}
+          {/* <div className="mb-1">{t('ui_180867fd')}</div> */}
           <div className='flex w-full justify-end'>
             {/* <Select
               mode="tags"
@@ -510,7 +510,7 @@ export default function DocPanel(props: IProps) {
                   {fields.map(({ key, name }) => (
                     <div key={key} className={cls('flex flex-1 items-center gap-8 mb-6')}>
                       <Form.Item label='' name={[name, 'question']} className='grow'>
-                        <Input placeholder='请输入' />
+                        <Input placeholder={t('Please_Input')} />
                       </Form.Item>
                       <Form.Item>
                         <MinusCircleOutlined

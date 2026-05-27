@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { agentIcon, resourceTypeIcon } from '../../config';
 import DetailsCard from './DetailsCard';
+import i18n from '@/app/i18n';
 
 interface AgentSelectProps {
   agents: IAgent[];
@@ -156,7 +157,7 @@ const AutoPlan: React.FC<{
             label: (
               <div className='flex items-center text-sm'>
                 {resourceTypeIcon['all']}
-                <span className='ml-2 text-[rgba(0,10,26,0.68)] dark:text-[#ffffffD9]'>{t('All')}</span>
+                <span className='ml-2 text-[rgba(0,10,26,0.68)] dark:text-[#ffffffD9]'>{i18n.t('All')}</span>
               </div>
             ),
             value: 'all',
@@ -177,10 +178,10 @@ const AutoPlan: React.FC<{
     <div className={cls(classNames)}>
       <Form form={form} style={{ width: '100%' }} labelCol={{ span: 4 }} wrapperCol={{ span: 20 }}>
         <Form.Item
-          label={`${t('choose')} agent`}
+          label={`${i18n.t('choose')} agent`}
           name='agent_name'
           required
-          rules={[{ required: true, message: t('please_choose') + ' agent' }]}
+          rules={[{ required: true, message: i18n.t('please_choose') + ' agent' }]}
         >
           <AgentSelect
             agents={data?.[0]?.[1] || []}

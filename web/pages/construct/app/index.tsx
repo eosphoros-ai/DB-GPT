@@ -90,7 +90,7 @@ export default function AppContent() {
       manual: true,
       onSuccess: data => {
         if (data[2]?.success) {
-          message.success('操作成功');
+          message.success(t('ui_33130f5c'));
         }
         getListFiltered();
       },
@@ -230,7 +230,7 @@ export default function AppContent() {
     {
       manual: true,
       onSuccess: () => {
-        message.success('更新成功');
+        message.success(t('Update_successfully'));
       },
     },
   );
@@ -265,9 +265,9 @@ export default function AppContent() {
       const dingDingUrl = `dingtalk://dingtalkclient/page/link?url=${encodeURIComponent(mobileUrl)}&pc_slide=true`;
       const result = copy(dingDingUrl);
       if (result) {
-        message.success('复制成功');
+        message.success(t('copy_success'));
       } else {
-        message.error('复制失败');
+        message.error(t('copy_failed_generic'));
       }
       setClickTimeout(null);
     }, 300); // 双击时间间隔
@@ -444,10 +444,10 @@ export default function AppContent() {
           )}
         </div>
       </Spin>
-      <Modal title='权限管理' open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
+      <Modal title={t('ui_23bbdd59')} open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
         <Spin spinning={loading}>
           <div className='py-4'>
-            <div className='mb-1'>管理员（工号，去前缀0）：</div>
+            <div className='mb-1'>{t('ui_180867fd')}</div>
             <Select
               mode='tags'
               value={admins}

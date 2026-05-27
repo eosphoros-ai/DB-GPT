@@ -2,8 +2,10 @@ import { ChatContext } from '@/app/chat-context';
 import { ChartData } from '@/types/chat';
 import { Chart } from '@berryv/g2-react';
 import { useContext, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-export default function BarChart({ chart }: { key: string; chart: ChartData }) {
+export default function BarChart({
+  const { t } = useTranslation(); chart }: { key: string; chart: ChartData }) {
   const { mode } = useContext(ChatContext);
 
   // Process data to ensure numeric values for proper y-axis ordering
@@ -55,11 +57,11 @@ export default function BarChart({ chart }: { key: string; chart: ChartData }) {
                 items: [
                   {
                     field: 'name',
-                    name: '名称',
+                    name: t('Prompt_Info_Name'),
                   },
                   {
                     field: 'value',
-                    name: '数值',
+                    name: t('ui_531aadcd'),
                     valueFormatter: formatNumber,
                   },
                 ],

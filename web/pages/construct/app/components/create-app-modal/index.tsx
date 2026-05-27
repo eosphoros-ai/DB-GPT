@@ -8,6 +8,7 @@ import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './styles.module.css';
+import i18n from '@/app/i18n';
 
 interface WorkModeSelectProps {
   disable: boolean;
@@ -125,14 +126,14 @@ const CreateAppModal: React.FC<{
             const [, res] = await apiInterceptors(getAppList({}));
             const curApp = res?.app_list?.find(item => item.app_code === appInfo?.app_code);
             localStorage.setItem('new_app_info', JSON.stringify({ ...curApp, isEdit: true }));
-            message.success(t('Update_successfully'));
+            message.success(i18n.t('Update_successfully'));
           } else {
-            message.success(t('Create_successfully'));
+            message.success(i18n.t('Create_successfully'));
             localStorage.setItem('new_app_info', JSON.stringify(data));
             router.push(`/construct/app/extra`);
           }
         } else {
-          message.error(type === 'edit' ? t('Update_failure') : t('Create_failure'));
+          message.error(type === 'edit' ? i18n.t('Update_failure') : i18n.t('Create_failure'));
         }
         await refresh?.();
         onCancel();
@@ -160,7 +161,7 @@ const CreateAppModal: React.FC<{
     >
       <Modal
         className={styles['create-app-modal-container']}
-        title={t('create_app')}
+        title={i18n.t('create_app')}
         width={900}
         open={open}
         onOk={async () => {
@@ -188,35 +189,35 @@ const CreateAppModal: React.FC<{
               }}
             >
               <Form.Item
-                label={t('team_modal')}
+                label={i18n.t('team_modal')}
                 name='team_mode'
                 required
-                rules={[{ required: true, message: t('Please_input_the_work_modal') }]}
+                rules={[{ required: true, message: i18n.t('Please_input_the_work_modal') }]}
               >
                 <WorkModeSelect disable={type === 'edit'} options={data || []} />
               </Form.Item>
               <Form.Item
-                label={`${t('app_name')}：`}
+                label={`${i18n.t('app_name')}：`}
                 name='app_name'
                 required
-                rules={[{ required: true, message: t('input_app_name') }]}
+                rules={[{ required: true, message: i18n.t('input_app_name') }]}
               >
-                <Input placeholder={t('input_app_name')} autoComplete='off' className='h-8' />
+                <Input placeholder={i18n.t('input_app_name')} autoComplete='off' className='h-8' />
               </Form.Item>
               <Form.Item
-                label={`${t('Description')}：`}
+                label={`${i18n.t('Description')}：`}
                 name='app_describe'
                 required
                 rules={[
                   {
                     required: true,
-                    message: t('Please_input_the_description'),
+                    message: i18n.t('Please_input_the_description'),
                   },
                 ]}
               >
                 <Input.TextArea
                   autoComplete='off'
-                  placeholder={t('Please_input_the_description')}
+                  placeholder={i18n.t('Please_input_the_description')}
                   autoSize={{ minRows: 2.5 }}
                 />
               </Form.Item>
@@ -224,7 +225,7 @@ const CreateAppModal: React.FC<{
               <Upload listType="picture-card">
                 <button style={{ border: 0, background: 'none' }} type="button">
                   <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>上传图标</div>
+                  <div style={{ marginTop: 8 }}>{i18n.t('ui_d825ba2b')}</div>
                 </button>
               </Upload>
             </Form.Item> */}

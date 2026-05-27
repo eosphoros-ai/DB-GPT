@@ -70,7 +70,7 @@ export const NewEvaluationModal = (props: Props) => {
             parsedHeaders = JSON.parse(values.headers);
           }
         } catch (_error) {
-          throw new Error('Header信息格式不正确,请输入有效的JSON格式');
+          throw new Error(t('ui_9c6513ad'));
         }
 
         try {
@@ -78,7 +78,7 @@ export const NewEvaluationModal = (props: Props) => {
             parsedMapping = JSON.parse(values.response_mapping);
           }
         } catch (_error) {
-          throw new Error('Response Mapping配置格式不正确,请输入有效的JSON格式');
+          throw new Error(t('ui_e133c616'));
         }
 
         // 构造Agent评测参数,使用Agent专有字段
@@ -119,7 +119,7 @@ export const NewEvaluationModal = (props: Props) => {
       const values = await form.validateFields();
       await submitEvaluation(values);
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error(t('ui_a0cfcad5'), error);
     }
   };
 

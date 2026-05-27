@@ -62,7 +62,7 @@ function ConversationsPage() {
       e.preventDefault();
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
-        message.success('已删除');
+        message.success(t('ui_5cc23262'));
         const current = totalRef.current;
         if (current) {
           const remaining = current.total_count - 1;
@@ -83,18 +83,18 @@ function ConversationsPage() {
     if (typeof conv.user_input === 'string' && conv.user_input.trim()) {
       return conv.user_input;
     }
-    return t('new_task') || '新对话';
+    return t('new_task') || t('ui_1ac07a4b');
   };
 
   return (
     <div className='flex flex-col h-full w-full dark:bg-gradient-dark bg-gradient-light'>
       <div className='flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800'>
-        <h1 className='text-xl font-semibold text-gray-800 dark:text-gray-100'>{t('all_tasks') || '所有任务'}</h1>
+        <h1 className='text-xl font-semibold text-gray-800 dark:text-gray-100'>{t('all_tasks') || t('all_tasks')}</h1>
         <div className='flex items-center gap-3'>
           <Input
             variant='filled'
             prefix={<SearchOutlined />}
-            placeholder='搜索对话...'
+            placeholder={t('ui_fe57df2b')}
             onChange={e => handleSearch(e.target.value)}
             onClear={() => setSearchKeyword('')}
             allowClear
@@ -110,11 +110,11 @@ function ConversationsPage() {
         <Spin spinning={loading}>
           {!loading && list.length === 0 ? (
             <div className='flex items-center justify-center h-64'>
-              <Empty description={t('no_tasks') || '暂无历史记录'} />
+              <Empty description={t('no_tasks') || t('ui_44de5c0d')} />
             </div>
           ) : !loading && filteredList.length === 0 ? (
             <div className='flex items-center justify-center h-64'>
-              <Empty description='没有匹配的对话' />
+              <Empty description={t('ui_1923634a')} />
             </div>
           ) : (
             <div className='space-y-1'>
@@ -138,17 +138,17 @@ function ConversationsPage() {
                   </div>
 
                   <Popconfirm
-                    title='确认删除这条对话记录吗？'
+                    title={t('ui_ad3c3af3')}
                     onConfirm={e => handleDelete(e as React.MouseEvent, conv.conv_uid)}
                     onCancel={e => {
                       e?.stopPropagation();
                       e?.preventDefault();
                     }}
-                    okText='删除'
-                    cancelText='取消'
+                    okText={t('Delete_Btn')}
+                    cancelText={t('cancel')}
                     okButtonProps={{ danger: true }}
                   >
-                    <Tooltip title='删除'>
+                    <Tooltip title={t('Delete_Btn')}>
                       <div
                         onClick={e => {
                           e.stopPropagation();

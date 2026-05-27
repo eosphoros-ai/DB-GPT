@@ -1,9 +1,11 @@
+import i18n from '@/app/i18n';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { LinkOutlined } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
 import { Divider, Drawer, Tabs, Typography } from 'antd';
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ReferencesContentView: React.FC<{ references: any }> = ({ references }) => {
   const router = useRouter();
@@ -43,11 +45,11 @@ const ReferencesContentView: React.FC<{ references: any }> = ({ references }) =>
       <Divider className='mb-1 mt-0' dashed />
       <div className='flex text-sm gap-2 text-blue-400' onClick={() => setOpen(true)}>
         <LinkOutlined />
-        <span className='text-sm'>查看回复引用</span>
+        <span className='text-sm'>{i18n.t('ui_38e5bc1f')}</span>
       </div>
       <Drawer
         open={open}
-        title='回复引用'
+        title={i18n.t('ui_9acb7b82')}
         placement={isMobile ? 'bottom' : 'right'}
         onClose={() => setOpen(false)}
         destroyOnClose={true}

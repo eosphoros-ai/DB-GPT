@@ -3,6 +3,7 @@ import ModelSelector from '@/components/chat/header/model-selector';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
+import i18n from '@/app/i18n';
 import ManusLeftPanel, {
   ExecutionStep as ManusExecutionStep,
   StepType,
@@ -92,17 +93,17 @@ const _formatFileSize = (bytes: number): string => {
 const _getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
+    return t('file_type_spreadsheet');
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
+    return t('file_type_spreadsheet');
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return t('artifact_type_image');
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return t('file_type_word');
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return t('file_type_text');
   if (['json'].includes(ext)) return 'JSON';
-  return '文件';
+  return t('artifact_type_file');
 };
 
 const _getFileIcon = (fileName: string, mimeType?: string) => {
@@ -358,7 +359,7 @@ const convertToManusFormat = (
       lower.includes('select_skill')
     )
       return 'skill';
-    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes('sql查询')) return 'sql';
+    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes(t('ui_2bafa281'))) return 'sql';
     if (lower.includes('read') || lower.includes('load')) return 'read';
     if (lower.includes('edit')) return 'edit';
     if (lower.includes('write') || lower.includes('save')) return 'write';
@@ -445,10 +446,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'walmart_sales',
     icon: '📊',
-    title: '沃尔玛销售数据分析',
-    description: '分析沃尔玛销售CSV数据，生成可视化网页报告',
+    title: i18n.t('example_walmart_sales_title'),
+    description: i18n.t('example_walmart_sales_desc'),
     query:
-      '请全面分析这份沃尔玛销售数据，包括各门店销售趋势、假日影响、温度与油价对销售的影响等维度，生成一份精美的交互式网页分析报告。',
+      t('example_walmart_sales_query'),
     fileName: 'Walmart_Sales.csv',
     fileType: 'text/csv',
     fileSize: 98304, // ~96 KB
@@ -460,10 +461,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'db_profile_report',
     icon: '🗄️',
-    title: '数据库画像与分析报告',
-    description: '连接数据库后，生成数据库画像并生成可视化网页报告',
+    title: i18n.t('example_db_profile_report_title'),
+    description: i18n.t('example_db_profile_report_desc'),
     query:
-      '请分析当前连接的数据库，生成数据库画像（包括表结构、字段信息、数据量统计等），并生成一份精美的交互式网页分析报告。',
+      t('example_db_profile_report_query'),
     dbName: 'Walmart_Sales',
     color: 'from-emerald-500/10 to-teal-500/10',
     borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
@@ -472,11 +473,11 @@ const EXAMPLE_CARDS = [
   {
     id: 'fin_report',
     icon: '📈',
-    title: '金融财报深度分析',
-    description: '分析浙江海翔药业年度报告，生成数据可视化报告',
+    title: i18n.t('example_fin_report_title'),
+    description: i18n.t('example_fin_report_desc'),
     query:
-      '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
-    fileName: '2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf',
+      t('example_fin_report_query'),
+    fileName: i18n.t('ui_8adc0e10'),
     fileType: 'application/pdf',
     fileSize: 2621440, // ~2.5 MB
     color: 'from-violet-500/10 to-purple-500/10',
@@ -487,10 +488,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'create_sql_skill',
     icon: '🛠️',
-    title: '创建SQL分析技能',
-    description: '使用skill-creator创建一个实用的SQL数据分析技能',
+    title: i18n.t('example_create_sql_skill_title'),
+    description: i18n.t('example_create_sql_skill_desc'),
     query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
+      t('example_create_sql_skill_query'),
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -763,10 +764,10 @@ const Playground: NextPage = () => {
             });
           }
         } else {
-          setFilePreviewError(res.data?.err_msg || '文件预览失败');
+          setFilePreviewError(res.data?.err_msg || t('ui_9d197a15'));
         }
       } catch (err: any) {
-        setFilePreviewError(err?.message || '文件预览失败');
+        setFilePreviewError(err?.message || t('ui_9d197a15'));
       } finally {
         setFilePreviewLoading(false);
       }
@@ -1137,7 +1138,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning(t('ui_80efb78d'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1146,16 +1147,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || t('ui_80efb78d'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning(t('ui_15efc64c'));
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning(t('ui_80efb78d'));
         }
         break;
       }
@@ -1958,7 +1959,7 @@ const Playground: NextPage = () => {
     if (loading) return;
 
     try {
-      message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
+      message.loading({ content: t('ui_a1c4f19c'), key: 'example-loading', duration: 0 });
 
       let filePath: string | null = null;
       let fakeFile: File | null = null;
@@ -1979,7 +1980,7 @@ const Playground: NextPage = () => {
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
-          message.error('加载示例失败: ' + errMsg);
+          message.error(t('ui_3ebf662c') + errMsg);
           return;
         }
       }
@@ -2011,7 +2012,7 @@ const Playground: NextPage = () => {
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error('加载示例失败: ' + errMessage);
+      message.error(t('ui_3ebf662c') + errMessage);
     }
   };
 
@@ -2225,7 +2226,7 @@ const Playground: NextPage = () => {
       }
     } catch (e) {
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error(t('ui_2574fca2'));
     } finally {
       setHistoryLoading(false);
     }
@@ -2234,7 +2235,7 @@ const Playground: NextPage = () => {
   // Share current conversation — create share link and copy to clipboard
   const handleShare = async () => {
     if (!conversationId) {
-      message.warning('请先开始一段对话再分享');
+      message.warning(t('ui_78319b94'));
       return;
     }
     try {
@@ -2243,10 +2244,10 @@ const Playground: NextPage = () => {
       if (!shareUrl) throw new Error('No share URL returned');
       const fullUrl = `${window.location.origin}${shareUrl}`;
       await navigator.clipboard.writeText(fullUrl);
-      message.success('分享链接已复制到剪贴板！');
+      message.success(t('ui_1fa20d8f'));
     } catch (e) {
       console.error('Failed to create share link', e);
-      message.error('创建分享链接失败，请稍后重试');
+      message.error(t('ui_6922a577'));
     }
   };
 
@@ -2642,7 +2643,7 @@ const Playground: NextPage = () => {
                                                       : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                                   }`}
                                                 >
-                                                  {skill.type === 'official' ? '官方' : '个人'}
+                                                  {skill.type === 'official' ? t('skills_official_tag') : t('ui_6a0e0419')}
                                                 </span>
                                               </div>
                                               <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -2663,15 +2664,14 @@ const Playground: NextPage = () => {
                                         <div className='text-center py-8 text-gray-400'>
                                           <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                           <div className='text-xs'>
-                                            {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
+                                            {skillSearchQuery ? t('ui_bca797aa') : t('ui_e809e468')}
                                           </div>
                                         </div>
                                       )}
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {(skillsList || []).length} 个技能可用
-                                      </span>
+                                        {(skillsList || []).length} {{(skillsList || []).length}}{t('ui_3997591f')}</span>
                                       <Button
                                         type='link'
                                         size='small'
@@ -2680,9 +2680,7 @@ const Playground: NextPage = () => {
                                           setIsSkillPanelOpen(false);
                                         }}
                                         className='text-[10px] p-0 h-auto'
-                                      >
-                                        管理技能 →
-                                      </Button>
+                                      >{t('ui_a998b0fb')}</Button>
                                     </div>
                                   </div>
                                 }
@@ -3083,7 +3081,7 @@ const Playground: NextPage = () => {
                                                   : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                               }`}
                                             >
-                                              {skill.type === 'official' ? '官方' : '个人'}
+                                              {skill.type === 'official' ? t('skills_official_tag') : t('ui_6a0e0419')}
                                             </span>
                                           </div>
                                           <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -3104,15 +3102,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
+                                        {skillSearchQuery ? t('ui_bca797aa') : t('ui_e809e468')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length} 个技能可用
-                                  </span>
+                                    {(skillsList || []).length} {{(skillsList || []).length}}{t('ui_3997591f')}</span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3121,9 +3118,7 @@ const Playground: NextPage = () => {
                                       setIsSkillPanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >
-                                    管理技能 →
-                                  </Button>
+                                  >{t('ui_a998b0fb')}</Button>
                                 </div>
                               </div>
                             }
@@ -3167,7 +3162,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索数据库'
+                                    placeholder={t('ui_22ef51f6')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={dbSearchQuery}
                                     onChange={e => setDbSearchQuery(e.target.value)}
@@ -3232,15 +3227,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <DatabaseOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {dbSearchQuery ? '未找到匹配的数据库' : '暂无可用数据库'}
+                                        {dbSearchQuery ? t('ui_f19a52d9') : t('ui_abc30f46')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(dataSources || []).length} 个数据库可用
-                                  </span>
+                                    {(dataSources || []).length} {{(dataSources || []).length}}{t('ui_38872adb')}</span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3249,9 +3243,7 @@ const Playground: NextPage = () => {
                                       setIsDbPanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >
-                                    管理数据库 →
-                                  </Button>
+                                  >{t('ui_7be22669')}</Button>
                                 </div>
                               </div>
                             }
@@ -3295,7 +3287,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索知识库'
+                                    placeholder={t('ui_0de4d60f')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={knowledgeSearchQuery}
                                     onChange={e => setKnowledgeSearchQuery(e.target.value)}
@@ -3355,15 +3347,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <BookOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {knowledgeSearchQuery ? '未找到匹配的知识库' : '暂无可用知识库'}
+                                        {knowledgeSearchQuery ? t('ui_4e0dbb38') : t('ui_6359b6d6')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(knowledgeSpaces || []).length} 个知识库可用
-                                  </span>
+                                    {(knowledgeSpaces || []).length} {{(knowledgeSpaces || []).length}}{t('ui_96cef24e')}</span>
                                   <Button
                                     type='link'
                                     size='small'
@@ -3372,9 +3363,7 @@ const Playground: NextPage = () => {
                                       setIsKnowledgePanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'
-                                  >
-                                    管理知识库 →
-                                  </Button>
+                                  >{t('ui_aff2be5a')}</Button>
                                 </div>
                               </div>
                             }

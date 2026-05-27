@@ -63,9 +63,7 @@ const DislikeContent: React.FC<{
           onClick={() => {
             setFeedbackOpen(false);
           }}
-        >
-          取消
-        </Button>
+        >{t('cancel')}</Button>
         <Button
           type='primary'
           className='min-w-16 h-8'
@@ -78,9 +76,7 @@ const DislikeContent: React.FC<{
             });
           }}
           loading={loading}
-        >
-          确认
-        </Button>
+        >{t('verify')}</Button>
       </div>
     </div>
   );
@@ -129,7 +125,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success('反馈成功');
+        message.success(t('ui_0aaa810f'));
         setFeedbackOpen(false);
       },
     },
@@ -156,7 +152,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success('操作成功');
+          message.success(t('ui_33130f5c'));
         }
       },
     },

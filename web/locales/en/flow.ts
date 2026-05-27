@@ -27,4 +27,10 @@ export const FlowEn = {
   Template_Label: 'Label',
   Template_Action: 'Action',
   minimum_dynamic_fields_warning: 'Please keep more than one dynamic field',
+
+  // phase2 i18n
+  ui_32c65d8d: 'Title',
+  ui_392f3dfd: 'Name must use letters, numbers, or underscores, separated by underscores',
+  ui_fe7509e0: 'Value',
+
 };

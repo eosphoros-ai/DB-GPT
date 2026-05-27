@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, newDialogue } from '@/client/api';
 import { IApp } from '@/types/app';
@@ -5,10 +6,11 @@ import { Card, Tag, Tooltip, Typography } from 'antd';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const languageMap = {
-  en: '英文',
-  zh: '中文',
+  en: i18n.t('English'),
+  zh: i18n.t('Chinese'),
 };
 
 const AppCard: React.FC<{ data: IApp }> = ({ data }) => {

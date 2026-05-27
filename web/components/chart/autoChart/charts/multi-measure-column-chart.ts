@@ -1,9 +1,11 @@
 import { hasSubset } from '../advisor/utils';
+import { useTranslation } from 'react-i18next';
 
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import { findNominalField, findOrdinalField } from './util';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
+  const { t } = useTranslation();
   try {
     const field4Y = dataProps?.filter(field => hasSubset(field.levelOfMeasurements, ['Interval']));
     const nominalField = findNominalField(dataProps);
@@ -62,7 +64,7 @@ export const multi_measure_column_chart: CustomChart = {
   /* 图表知识 */
   chartKnowledge: ckb as ChartKnowledge,
   /** 图表中文名 */
-  chineseName: '折线图',
+  chineseName: t('line_chart'),
 };
 
 export default multi_measure_column_chart;

@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { apiInterceptors, recallMethodOptions, recallTest, recallTestRecommendQuestion } from '@/client/api';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { ISpace, RecallTestProps } from '@/types/knowledge';
@@ -5,6 +6,7 @@ import { SettingOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Card, Empty, Form, Input, InputNumber, Modal, Popover, Select, Spin, Tag } from 'antd';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type RecallTestModalProps = {
   open: boolean;
@@ -74,7 +76,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
 
   return (
     <Modal
-      title='召回测试'
+      title={i18n.t('Recall_test')}
       width={'60%'}
       open={open}
       footer={false}
@@ -83,14 +85,14 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
       destroyOnClose={true}
     >
       <Card
-        title='召回配置'
+        title={i18n.t('ui_cbd5ff76')}
         size='small'
         className='my-4'
         extra={
           <Popover
             placement='bottomRight'
             trigger='hover'
-            title='向量检索设置'
+            title={i18n.t('ui_873bd818')}
             content={
               <Form
                 form={extraForm}
@@ -98,10 +100,10 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
                   recall_top_k: 1,
                 }}
               >
-                <Form.Item label='Topk' tooltip='基于相似度得分的前 k 个向量' name='recall_top_k'>
-                  <InputNumber placeholder='请输入' className='w-full' />
+                <Form.Item label='Topk' tooltip={i18n.t('the_top_k_vectors')} name='recall_top_k'>
+                  <InputNumber placeholder={i18n.t('Please_Input')} className='w-full' />
                 </Form.Item>
-                <Form.Item label='召回方法' name='recall_retrievers'>
+                <Form.Item label={i18n.t('ui_d527b532')} name='recall_retrievers'>
                   <Select
                     mode='multiple'
                     options={options.map(item => {
@@ -112,8 +114,8 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
                     disabled
                   />
                 </Form.Item>
-                <Form.Item label='score阈值' name='recall_score_threshold'>
-                  <InputNumber placeholder='请输入' className='w-full' step={0.1} />
+                <Form.Item label={i18n.t('ui_c4e66204')} name='recall_score_threshold'>
+                  <InputNumber placeholder={i18n.t('Please_Input')} className='w-full' step={0.1} />
                 </Form.Item>
               </Form>
             }
@@ -124,17 +126,15 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
       >
         <Form form={form} layout='vertical' onFinish={onTest}>
           <Form.Item
-            label='测试问题'
+            label={i18n.t('ui_dd60233d')}
             required={true}
             name='question'
-            rules={[{ required: true, message: '请输入测试问题' }]}
+            rules={[{ required: true, message: i18n.t('ui_2b216e37') }]}
             className='m-0 p-0'
           >
             <div className='flex w-full items-center gap-8'>
-              <Input placeholder='请输入测试问题' autoComplete='off' allowClear className='w-1/2' />
-              <Button type='primary' htmlType='submit'>
-                测试
-              </Button>
+              <Input placeholder={i18n.t('ui_2b216e37')} autoComplete='off' allowClear className='w-1/2' />
+              <Button type='primary' htmlType='submit'>{i18n.t('ui_db06c78d')}</Button>
             </div>
           </Form.Item>
 
@@ -160,7 +160,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
             )} */}
         </Form>
       </Card>
-      <Card title='召回结果' size='small'>
+      <Card title={i18n.t('ui_7ded4c62')} size='small'>
         <Spin spinning={loading}>
           {resultList.length > 0 ? (
             <div

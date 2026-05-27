@@ -18,6 +18,7 @@ import {
 import { InfoCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import type { TableProps } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
   Badge,
   Button,
@@ -76,6 +77,7 @@ interface EvaluationItemType {
   gmt_modified: string;
 }
 const Evaluation = () => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDataSetModalOpen, setIsDataSetModalOpen] = useState(false);
   const [evaluationList, setEvaluationList] = useState<EvaluationItemType[]>([]);
@@ -230,37 +232,37 @@ const Evaluation = () => {
 
   const columns: TableProps<DataSetItemType>['columns'] = [
     {
-      title: '名称',
+      title: t('Prompt_Info_Name'),
       dataIndex: 'name',
       key: 'name',
       width: '10%',
       fixed: 'left',
     },
     {
-      title: '编码',
+      title: t('ui_cc6c35a3'),
       dataIndex: 'code',
       key: 'code',
       width: '20%',
       // render: (text) => <a>{text}</a>,
     },
     {
-      title: '储存方式',
+      title: t('ui_8a052e07'),
       dataIndex: 'storage_type',
       key: 'storage_type',
     },
     {
-      title: '数据集数量',
+      title: t('ui_12b61b01'),
       dataIndex: 'datasets_count',
       key: 'datasets_count',
     },
 
     {
-      title: '创建时间',
+      title: t('create_time'),
       dataIndex: 'gmt_create',
       key: 'gmt_create',
     },
     {
-      title: '成员',
+      title: t('ui_ab5dea29'),
       dataIndex: 'members',
       key: 'members',
       width: '10%',
@@ -271,7 +273,7 @@ const Evaluation = () => {
       },
     },
     {
-      title: '更新时间',
+      title: t('ui_a001a226'),
       dataIndex: 'gmt_modified',
       key: 'gmt_modified',
     },
@@ -281,7 +283,7 @@ const Evaluation = () => {
       render: (_, record) => (
         <Space size='middle'>
           <Popconfirm
-            title='确认删除吗'
+            title={t('ui_30db08b5')}
             onConfirm={async () => {
               const [, , res] = await apiInterceptors(
                 delDataSet({
@@ -289,12 +291,12 @@ const Evaluation = () => {
                 }),
               );
               if (res?.success == true) {
-                message.success('删除成功');
+                message.success(t('ui_0007d170'));
                 getDataSetsRefresh();
               }
             }}
           >
-            <Button type='link'>删除</Button>
+            <Button type='link'>{t('Delete_Btn')}</Button>
           </Popconfirm>
           <Button
             type='link'
@@ -307,9 +309,7 @@ const Evaluation = () => {
                 members: record?.members?.split(','),
               });
             }}
-          >
-            编辑
-          </Button>
+          >{t('Edit')}</Button>
           <Button
             type='link'
             loading={commonLoading}
@@ -359,9 +359,7 @@ const Evaluation = () => {
               }
               setCommonLoading(false);
             }}
-          >
-            下载
-          </Button>
+          >{t('download')}</Button>
         </Space>
       ),
     },
@@ -370,7 +368,7 @@ const Evaluation = () => {
    */
   const evaluationsColumns: TableProps<EvaluationItemType>['columns'] = [
     {
-      title: '数据集名称',
+      title: t('ui_9da412d9'),
       dataIndex: 'datasets_name',
       key: 'datasets_name',
       fixed: 'left',
@@ -387,7 +385,7 @@ const Evaluation = () => {
       ),
     },
     {
-      title: '测评状态',
+      title: t('ui_ac042058'),
       dataIndex: 'state',
       key: 'state',
       render: text => {
@@ -395,28 +393,28 @@ const Evaluation = () => {
       },
     },
     {
-      title: '测评编码',
+      title: t('ui_fb0e2552'),
       dataIndex: 'evaluate_code',
       key: 'evaluate_code',
     },
     {
-      title: '场景',
+      title: t('Prompt_Info_Scene'),
       dataIndex: 'scene_key',
       key: 'scene_key',
     },
 
     {
-      title: '测评指标',
+      title: t('ui_e88bef86'),
       dataIndex: 'evaluate_metrics',
       key: 'evaluate_metrics',
     },
     {
-      title: '创建时间',
+      title: t('create_time'),
       dataIndex: 'gmt_create',
       key: 'gmt_create',
     },
     {
-      title: '更新时间',
+      title: t('ui_a001a226'),
       dataIndex: 'gmt_modified',
       key: 'gmt_modified',
     },
@@ -424,8 +422,8 @@ const Evaluation = () => {
     {
       title: (
         <span className='w-[50px]'>
-          <span className='text-nowrap'>详情</span>
-          <Tooltip placement='topLeft' title='查看日志与评分'>
+          <span className='text-nowrap'>{t('detail')}</span>
+          <Tooltip placement='topLeft' title={t('ui_bea38560')}>
             <InfoCircleOutlined />
           </Tooltip>
         </span>
@@ -439,7 +437,7 @@ const Evaluation = () => {
       ),
     },
     {
-      title: '测评结果',
+      title: t('ui_3c591e91'),
       key: 'result',
       render: (_, record) => (
         <>
@@ -451,9 +449,7 @@ const Evaluation = () => {
                 evaluate_code: record?.evaluate_code,
               });
             }}
-          >
-            评分明细
-          </Button>
+          >{t('ui_62c725a1')}</Button>
           <Button
             type='link'
             loading={commonLoading}
@@ -504,20 +500,18 @@ const Evaluation = () => {
               }
               setCommonLoading(false);
             }}
-          >
-            下载
-          </Button>
+          >{t('download')}</Button>
         </>
       ),
     },
     {
-      title: '操作',
+      title: t('Template_Action'),
       key: 'action',
       width: '25%',
       render: (_, record) => (
         <>
           <Popconfirm
-            title='确认删除吗'
+            title={t('ui_30db08b5')}
             onConfirm={async () => {
               const [, , res] = await apiInterceptors(
                 delEvaluation({
@@ -525,12 +519,12 @@ const Evaluation = () => {
                 }),
               );
               if (res?.success == true) {
-                message.success('删除成功');
+                message.success(t('ui_0007d170'));
                 getEvaluationsRefresh();
               }
             }}
           >
-            <Button type='link'>删除</Button>
+            <Button type='link'>{t('Delete_Btn')}</Button>
           </Popconfirm>
         </>
       ),
@@ -556,11 +550,11 @@ const Evaluation = () => {
             className='backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 border-2 border-white rounded-lg shadow p-1 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
             options={[
               {
-                label: '评测数据',
+                label: t('ui_6d418f20'),
                 value: 'evaluations',
               },
               {
-                label: '数据集',
+                label: t('ui_e20804e3'),
                 value: 'dataSet',
               },
             ]}
@@ -578,9 +572,7 @@ const Evaluation = () => {
                     setIsDataSetModalOpen(true);
                     setIsAddDataSet(true);
                   }}
-                >
-                  添加数据集
-                </Button>
+                >{t('ui_ac0493bf')}</Button>
               </div>
               <Table
                 pagination={{
@@ -604,9 +596,7 @@ const Evaluation = () => {
                   onClick={() => {
                     setIsModalOpen(true);
                   }}
-                >
-                  发起评测
-                </Button>
+                >{t('ui_fbde4ef0')}</Button>
               </div>
               <Table
                 pagination={{
@@ -654,7 +644,7 @@ const Evaluation = () => {
             </>
           )}
           <Modal
-            title='发起测评'
+            title={t('ui_89119140')}
             open={isModalOpen}
             onOk={async () => {
               const values = await form.validateFields();
@@ -666,7 +656,7 @@ const Evaluation = () => {
                   }),
                 );
                 if (res?.success) {
-                  message.success('发起成功');
+                  message.success(t('ui_84a76ab4'));
                   getEvaluationsRefresh();
                   form.resetFields();
                 }
@@ -687,7 +677,7 @@ const Evaluation = () => {
               labelCol={{ span: 4 }}
               wrapperCol={{ span: 20 }}
             >
-              <Form.Item name='scene_key' label='场景类型' rules={[{ required: true }]}>
+              <Form.Item name='scene_key' label={t('ui_274ba5a9')} rules={[{ required: true }]}>
                 <Select
                   options={[
                     {
@@ -728,7 +718,7 @@ const Evaluation = () => {
                   }}
                 ></Select>
               </Form.Item>
-              <Form.Item name='scene_value' label='场景参数' rules={[{ required: true }]}>
+              <Form.Item name='scene_value' label={t('ui_ea9056f0')} rules={[{ required: true }]}>
                 <Select
                   loading={sceneValueOptionLoading}
                   disabled={sceneValueOptionLoading}
@@ -743,15 +733,15 @@ const Evaluation = () => {
                   }}
                 ></Select>
               </Form.Item>
-              <Form.Item name='parallel_num' label='并行参数' rules={[{ required: true }]} initialValue={1}>
+              <Form.Item name='parallel_num' label={t('ui_5550a5f1')} rules={[{ required: true }]} initialValue={1}>
                 <Input></Input>
               </Form.Item>
-              <Form.Item name='datasets' label='数据集' rules={[{ required: true }]}>
+              <Form.Item name='datasets' label={t('ui_e20804e3')} rules={[{ required: true }]}>
                 <Select options={dataSetsOptions}></Select>
               </Form.Item>
               <Form.Item
                 name='evaluate_metrics'
-                label='评测指标'
+                label={t('ui_b6c1a442')}
                 rules={[{ required: useWatch('scene_key', form) === 'app' }]}
               >
                 <Select loading={getMetricsLoading} disabled={getMetricsLoading} options={metricOptions}></Select>
@@ -759,7 +749,7 @@ const Evaluation = () => {
             </Form>
           </Modal>
           <Modal
-            title={isAddDataSet ? '添加数据集' : '编辑数据集'}
+            title={isAddDataSet ? t('ui_ac0493bf') : t('ui_986d0c2f')}
             open={isDataSetModalOpen}
             confirmLoading={dataSetModalLoading}
             onOk={() => {
@@ -779,15 +769,15 @@ const Evaluation = () => {
                     uploadDataSetsFile(formData)
                       .then(response => {
                         if (response.data.success) {
-                          message.success('上传成功');
+                          message.success(t('ui_a7699ba7'));
                           runGetDataSets();
                         } else {
                           message.error(response.data.err_msg);
                         }
                       })
                       .catch(error => {
-                        console.error('上传失败', error);
-                        message.error(error?.response?.data?.err_msg || '上传失败');
+                        console.error(t('skills_upload_failed'), error);
+                        message.error(error?.response?.data?.err_msg || t('skills_upload_failed'));
                       })
                       .finally(() => {
                         setIsDataSetModalOpen(false);
@@ -801,7 +791,7 @@ const Evaluation = () => {
                     })
                       .then(res => {
                         if (res.data.success) {
-                          message.success('上传成功');
+                          message.success(t('ui_a7699ba7'));
                           runGetDataSets();
                         } else {
                           message.error(res.data.err_msg);
@@ -809,7 +799,7 @@ const Evaluation = () => {
                       })
                       .catch(err => {
                         console.log(err);
-                        message.error(err?.response?.data?.err_msg || '上传失败');
+                        message.error(err?.response?.data?.err_msg || t('skills_upload_failed'));
                       })
                       .finally(() => {
                         setIsDataSetModalOpen(false);
@@ -824,7 +814,7 @@ const Evaluation = () => {
                   })
                     .then(res => {
                       if (res.data.success) {
-                        message.success('更新成功');
+                        message.success(t('Update_successfully'));
                         runGetDataSets();
                       } else {
                         message.error(res.data.err_msg);
@@ -832,7 +822,7 @@ const Evaluation = () => {
                     })
                     .catch(err => {
                       console.log(err);
-                      message.error('更新失败');
+                      message.error(t('Update_failure'));
                     })
                     .finally(() => {
                       setIsDataSetModalOpen(false);
@@ -853,14 +843,14 @@ const Evaluation = () => {
               labelCol={{ span: 4 }}
               wrapperCol={{ span: 20 }}
             >
-              <Form.Item name='dataset_name' label='名称' rules={[{ required: true }]}>
+              <Form.Item name='dataset_name' label={t('Prompt_Info_Name')} rules={[{ required: true }]}>
                 <Input disabled={!isAddDataSet} />
               </Form.Item>
-              <Form.Item name='members' label='成员'>
+              <Form.Item name='members' label={t('ui_ab5dea29')}>
                 <Select mode='tags' />
               </Form.Item>
               {isAddDataSet && (
-                <Form.Item name='storage_type' label='储存类型' rules={[{ required: true }]}>
+                <Form.Item name='storage_type' label={t('ui_8d6b49fa')} rules={[{ required: true }]}>
                   <Select options={storageTypeOptions} />
                 </Form.Item>
               )}
@@ -893,7 +883,7 @@ const Evaluation = () => {
             </Form>
           </Modal>
           <Modal
-            title='评分明细'
+            title={t('ui_62c725a1')}
             open={isModalVisible}
             onOk={handleModalClose}
             onCancel={handleModalClose}
@@ -908,9 +898,7 @@ const Evaluation = () => {
               minWidth: '750px',
             }}
             footer={[
-              <Button key='back' onClick={handleModalClose}>
-                返回
-              </Button>,
+              <Button key='back' onClick={handleModalClose}>{t('ui_5f411223')}</Button>,
             ]}
           >
             <Table

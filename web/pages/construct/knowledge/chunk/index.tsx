@@ -89,7 +89,7 @@ function ChunkList() {
     {
       manual: true,
       onSuccess: async () => {
-        message.success('添加成功');
+        message.success(t('ui_3fdaeadf'));
         setIsModalOpen(false);
         await fetchChunks();
       },

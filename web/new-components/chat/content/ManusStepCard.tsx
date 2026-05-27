@@ -15,6 +15,7 @@ import { Spin, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/app/i18n';
 
 export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
 
@@ -95,17 +96,17 @@ const getStatusIndicator = (status: StepStatus) => {
 
 const getTypeLabel = (type: StepCardProps['type'], t: (key: string) => string): string => {
   const labels: Record<StepCardProps['type'], string> = {
-    read: t('step_type_read'),
-    edit: t('step_type_edit'),
-    write: t('step_type_write'),
-    bash: t('step_type_bash'),
-    grep: t('step_type_grep'),
-    glob: t('step_type_glob'),
-    task: t('step_type_task'),
-    skill: t('step_type_skill'),
-    python: t('step_type_python'),
-    html: t('step_type_html'),
-    other: t('step_type_other'),
+    read: i18n.t('step_type_read'),
+    edit: i18n.t('step_type_edit'),
+    write: i18n.t('step_type_write'),
+    bash: i18n.t('step_type_bash'),
+    grep: i18n.t('step_type_grep'),
+    glob: i18n.t('step_type_glob'),
+    task: i18n.t('step_type_task'),
+    skill: i18n.t('step_type_skill'),
+    python: i18n.t('step_type_python'),
+    html: i18n.t('step_type_html'),
+    other: i18n.t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
 };

@@ -1,4 +1,5 @@
 import MarkdownContext from '@/new-components/common/MarkdownContext';
+import i18n from '@/app/i18n';
 import {
   AppstoreOutlined,
   BarChartOutlined,
@@ -165,18 +166,18 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
 
 const getTypeLabel = (type: StepType, t: any): string => {
   const labels: Record<StepType, string> = {
-    read: t('step_type_read'),
-    edit: t('step_type_edit'),
-    write: t('step_type_write'),
-    bash: t('step_type_bash'),
-    grep: t('step_type_grep'),
-    glob: t('step_type_glob'),
-    task: t('step_type_task'),
-    skill: t('load_skill'),
-    sql: t('step_type_sql'),
-    python: t('step_type_python'),
-    html: t('step_type_html'),
-    other: t('step_type_other'),
+    read: i18n.t('step_type_read'),
+    edit: i18n.t('step_type_edit'),
+    write: i18n.t('step_type_write'),
+    bash: i18n.t('step_type_bash'),
+    grep: i18n.t('step_type_grep'),
+    glob: i18n.t('step_type_glob'),
+    task: i18n.t('step_type_task'),
+    skill: i18n.t('load_skill'),
+    sql: i18n.t('step_type_sql'),
+    python: i18n.t('step_type_python'),
+    html: i18n.t('step_type_html'),
+    other: i18n.t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
 };
@@ -264,14 +265,14 @@ const getArtifactIcon = (artifact: ArtifactItem) => {
 
 const getArtifactTypeLabel = (artifact: ArtifactItem, t: any): string => {
   const labels: Record<string, string> = {
-    file: t('artifact_type_file'),
-    html: t('artifact_type_html'),
-    table: t('artifact_type_table'),
-    chart: t('artifact_type_chart'),
-    image: t('artifact_type_image'),
-    code: t('artifact_type_code'),
-    markdown: t('artifact_type_markdown'),
-    summary: t('artifact_type_summary'),
+    file: i18n.t('artifact_type_file'),
+    html: i18n.t('artifact_type_html'),
+    table: i18n.t('artifact_type_table'),
+    chart: i18n.t('artifact_type_chart'),
+    image: i18n.t('artifact_type_image'),
+    code: i18n.t('artifact_type_code'),
+    markdown: i18n.t('artifact_type_markdown'),
+    summary: i18n.t('artifact_type_summary'),
   };
   return labels[artifact.type] || t('artifact_type_generic');
 };
@@ -502,8 +503,8 @@ const StepCard: React.FC<{
   const isThinkingStep =
     step.status === 'running' &&
     (step.title === t('thinking') ||
-      step.title === '思考中' ||
-      step.title === '正在思考中' ||
+      step.title === {t('Thinking')} ||
+      step.title === {t('thinking')} ||
       step.title?.toLowerCase() === 'thinking');
   if (isThinkingStep) {
     return (
