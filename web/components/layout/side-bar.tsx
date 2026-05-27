@@ -5,6 +5,7 @@ import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { nextLanguage } from '@/utils/language';
 import Icon, {
   ApartmentOutlined,
   AppstoreOutlined,
@@ -130,10 +131,11 @@ function SideBar() {
   }, [mode, setMode]);
 
   const handleChangeLang = useCallback(() => {
-    const language = i18n.language === 'en' ? 'zh' : 'en';
+    const language = nextLanguage(i18n.language);
     i18n.changeLanguage(language);
     if (language === 'zh') moment.locale('zh-cn');
-    if (language === 'en') moment.locale('en');
+    else if (language === 'ru') moment.locale('ru');
+    else moment.locale('en');
     localStorage.setItem(STORAGE_LANG_KEY, language);
   }, [i18n]);
 
@@ -274,7 +276,8 @@ function SideBar() {
   useEffect(() => {
     const language = i18n.language;
     if (language === 'zh') moment.locale('zh-cn');
-    if (language === 'en') moment.locale('en');
+    else if (language === 'ru') moment.locale('ru');
+    else moment.locale('en');
   }, [i18n.language]);
 
   useEffect(() => {
