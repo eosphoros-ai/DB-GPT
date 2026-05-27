@@ -1,19 +1,22 @@
-import { useCallback, useEffect, useState } from 'react';
+import axios from '@/utils/ctx-axios';
 import { ConnectorCatalogEntry, ConnectorInstance, CreateConnectorRequest } from '@/new-components/connector/types';
+import { useCallback, useEffect, useState } from 'react';
 
 const API_BASE = '/api/v2/serve/connectors';
 
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`HTTP ${response.status}: ${text}`);
-  }
-  const json = await response.json();
-  return json.data as T;
+// Backend ConnectorResponse uses `connector_id`; frontend code uses `id`.
+// Normalize at the boundary so the rest of the app can stay on `id`.
+type BackendConnector = Omit<ConnectorInstance, 'id'> & { connector_id: string };
+
+function normalizeConnector(raw: BackendConnector): ConnectorInstance {
+  const { connector_id, ...rest } = raw;
+  return { id: connector_id, ...rest } as ConnectorInstance;
+}
+
+function unwrap<T>(payload: any): T {
+  // ctx-axios already unwrapped axios.response → response.data, so payload here
+  // is the API envelope { success, err_code, err_msg, data }.
+  return (payload?.data ?? payload) as T;
 }
 
 export function useConnectorTypes() {
@@ -22,8 +25,9 @@ export function useConnectorTypes() {
 
   useEffect(() => {
     setLoading(true);
-    apiFetch<ConnectorCatalogEntry[]>(`${API_BASE}/types`)
-      .then(data => setTypes(data ?? []))
+    axios
+      .get(`${API_BASE}/types`)
+      .then(res => setTypes(unwrap<ConnectorCatalogEntry[]>(res) ?? []))
       .catch(err => console.error('Failed to fetch connector types:', err))
       .finally(() => setLoading(false));
   }, []);
@@ -38,8 +42,12 @@ export function useConnectors() {
 
   useEffect(() => {
     setLoading(true);
-    apiFetch<ConnectorInstance[]>(API_BASE)
-      .then(data => setConnectors(data ?? []))
+    axios
+      .get(API_BASE)
+      .then(res => {
+        const raw = unwrap<BackendConnector[]>(res) ?? [];
+        setConnectors(raw.map(normalizeConnector));
+      })
       .catch(err => console.error('Failed to fetch connectors:', err))
       .finally(() => setLoading(false));
   }, [version]);
@@ -57,10 +65,8 @@ export function useCreateConnector() {
   const create = useCallback(async (data: CreateConnectorRequest): Promise<ConnectorInstance> => {
     setLoading(true);
     try {
-      return await apiFetch<ConnectorInstance>(API_BASE, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const res = await axios.post(API_BASE, data);
+      return normalizeConnector(unwrap<BackendConnector>(res));
     } catch (err) {
       console.error('Failed to create connector:', err);
       throw err;
@@ -79,10 +85,8 @@ export function useUpdateConnector() {
     async (id: string, data: Partial<CreateConnectorRequest>): Promise<ConnectorInstance> => {
       setLoading(true);
       try {
-        return await apiFetch<ConnectorInstance>(`${API_BASE}/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(data),
-        });
+        const res = await axios.put(`${API_BASE}/${id}`, data);
+        return normalizeConnector(unwrap<BackendConnector>(res));
       } catch (err) {
         console.error('Failed to update connector:', err);
         throw err;
@@ -102,11 +106,7 @@ export function useDeleteConnector() {
   const remove = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
-      }
+      await axios.delete(`${API_BASE}/${id}`);
     } catch (err) {
       console.error('Failed to delete connector:', err);
       throw err;
@@ -124,9 +124,8 @@ export function useTestConnection() {
   const test = useCallback(async (id: string): Promise<{ success: boolean; message: string }> => {
     setLoading(true);
     try {
-      return await apiFetch<{ success: boolean; message: string }>(`${API_BASE}/${id}/test`, {
-        method: 'POST',
-      });
+      const res = await axios.post(`${API_BASE}/${id}/test`);
+      return unwrap<{ success: boolean; message: string }>(res);
     } catch (err) {
       console.error('Failed to test connection:', err);
       throw err;

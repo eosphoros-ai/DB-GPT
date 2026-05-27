@@ -459,6 +459,7 @@ export const CommonEn = {
   app_management: 'App Management',
   awel_workflow: 'AWEL Workflow',
   prompts: 'Prompts',
+  connectors: 'Connectors',
   // Skills page
   skills_page_subtitle: 'Pre-packaged and reusable best practices and tools for your agents',
   skills_search_placeholder: 'Search skills',

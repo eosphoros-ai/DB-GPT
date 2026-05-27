@@ -1,3 +1,4 @@
+import axios from '@/utils/ctx-axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfirmActionRequest, PendingConfirmation } from './types';
 
@@ -23,10 +24,10 @@ export function useConfirmPolling({
 
   const fetchPending = useCallback(async () => {
     try {
-      const res = await fetch('/api/v2/serve/connectors/pending-confirms');
-      if (!res.ok) return;
-      const data: PendingConfirmation[] = await res.json();
-      if (data.length > 0) {
+      const data = (await axios.get('/api/v2/serve/connectors/pending-confirms')) as
+        | PendingConfirmation[]
+        | undefined;
+      if (data && data.length > 0) {
         const first = data[0];
         if (first.confirm_id !== currentConfirmIdRef.current) {
           currentConfirmIdRef.current = first.confirm_id;
@@ -63,11 +64,7 @@ export function useConfirmPolling({
       approved,
     };
     try {
-      await fetch('/api/v2/serve/connectors/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      await axios.post('/api/v2/serve/connectors/confirm', body);
     } catch {}
     currentConfirmIdRef.current = null;
     setPendingConfirmation(null);
