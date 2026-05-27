@@ -132,6 +132,42 @@ async def list_connectors(
         return Result.failed(msg=str(e))
 
 
+class ConfirmRequest(BaseModel):
+    confirm_id: str
+    approved: bool
+
+
+# IMPORTANT: keep these fixed-path routes BEFORE any "/{connector_id}" routes,
+# otherwise FastAPI matches /{connector_id} first and treats "pending-confirms" /
+# "confirm" as a connector_id value.
+@router.get("/pending-confirms")
+async def list_pending_confirms() -> List[dict]:
+    from dbgpt.agent.resource.connector.confirmation import _PENDING_CONFIRMATIONS
+
+    return list(_PENDING_CONFIRMATIONS.values())
+
+
+@router.post("/confirm")
+async def confirm_action(request: ConfirmRequest) -> Dict[str, str]:
+    from dbgpt.agent.resource.connector.manager import ConnectorManager as _CM
+
+    if global_system_app is None:
+        raise HTTPException(status_code=503, detail="SystemApp not initialised")
+    cm = global_system_app.get_component(
+        "connector_manager", _CM, default_component=None
+    )
+    if cm is None:
+        raise HTTPException(status_code=503, detail="ConnectorManager not available")
+    registry = cm.get_confirmation_registry()
+    resolved = registry.resolve(request.confirm_id, request.approved)
+    if not resolved:
+        raise HTTPException(status_code=404, detail="confirm_id not found or expired")
+    from dbgpt.agent.resource.connector.confirmation import _PENDING_CONFIRMATIONS
+
+    _PENDING_CONFIRMATIONS.pop(request.confirm_id, None)
+    return {"status": "ok"}
+
+
 @router.get("/{connector_id}", response_model=Result[ConnectorResponse])
 async def get_connector(
     connector_id: str,
@@ -193,39 +229,6 @@ def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     global global_system_app
     system_app.register(ConnectorService, config=config)
     global_system_app = system_app
-
-
-class ConfirmRequest(BaseModel):
-    confirm_id: str
-    approved: bool
-
-
-@router.get("/pending-confirms")
-async def list_pending_confirms() -> List[dict]:
-    from dbgpt.agent.resource.connector.confirmation import _PENDING_CONFIRMATIONS
-
-    return list(_PENDING_CONFIRMATIONS.values())
-
-
-@router.post("/confirm")
-async def confirm_action(request: ConfirmRequest) -> Dict[str, str]:
-    from dbgpt.agent.resource.connector.manager import ConnectorManager as _CM
-
-    if global_system_app is None:
-        raise HTTPException(status_code=503, detail="SystemApp not initialised")
-    cm = global_system_app.get_component(
-        "connector_manager", _CM, default_component=None
-    )
-    if cm is None:
-        raise HTTPException(status_code=503, detail="ConnectorManager not available")
-    registry = cm.get_confirmation_registry()
-    resolved = registry.resolve(request.confirm_id, request.approved)
-    if not resolved:
-        raise HTTPException(status_code=404, detail="confirm_id not found or expired")
-    from dbgpt.agent.resource.connector.confirmation import _PENDING_CONFIRMATIONS
-
-    _PENDING_CONFIRMATIONS.pop(request.confirm_id, None)
-    return {"status": "ok"}
 
 
 def _get_task_service():

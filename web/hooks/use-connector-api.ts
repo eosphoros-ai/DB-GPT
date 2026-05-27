@@ -3,6 +3,9 @@ import { ConnectorCatalogEntry, ConnectorInstance, CreateConnectorRequest } from
 import { useCallback, useEffect, useState } from 'react';
 
 const API_BASE = '/api/v2/serve/connectors';
+// FastAPI registers GET / and POST / under api_prefix, so list/create require
+// a trailing slash. Single-resource routes (`/{id}`, `/{id}/test`, etc.) do not.
+const API_BASE_LIST = `${API_BASE}/`;
 
 // Backend ConnectorResponse uses `connector_id`; frontend code uses `id`.
 // Normalize at the boundary so the rest of the app can stay on `id`.
@@ -43,7 +46,7 @@ export function useConnectors() {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(API_BASE)
+      .get(API_BASE_LIST)
       .then(res => {
         const raw = unwrap<BackendConnector[]>(res) ?? [];
         setConnectors(raw.map(normalizeConnector));
@@ -65,7 +68,7 @@ export function useCreateConnector() {
   const create = useCallback(async (data: CreateConnectorRequest): Promise<ConnectorInstance> => {
     setLoading(true);
     try {
-      const res = await axios.post(API_BASE, data);
+      const res = await axios.post(API_BASE_LIST, data);
       return normalizeConnector(unwrap<BackendConnector>(res));
     } catch (err) {
       console.error('Failed to create connector:', err);
