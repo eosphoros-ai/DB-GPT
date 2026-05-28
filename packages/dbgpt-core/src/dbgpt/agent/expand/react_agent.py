@@ -245,6 +245,22 @@ class ReActAgent(ConversableAgent):
             steps = self.parser.parse_current_step(message_content)
             err_msg = None
             if not steps:
+                # Fallback: if model gave a direct answer without ReAct format,
+                # treat it as a terminate action so the answer isn't lost.
+                if len(message_content.strip()) > 50:
+                    logger.warning(
+                        "ReAct parse failed, but model provided a substantive "
+                        "response. Treating as direct terminate."
+                    )
+                    from dbgpt.agent.expand.actions.react_action import Terminate
+                    return ActionOutput(
+                        is_exe_success=True,
+                        content=message_content,
+                        have_retry=False,
+                        action=Terminate(),
+                        observations=message_content,
+                        terminate=True,
+                    )
                 err_msg = (
                     "No correct response found. Please check your response, which must"
                     " be in the format indicated in the system prompt."

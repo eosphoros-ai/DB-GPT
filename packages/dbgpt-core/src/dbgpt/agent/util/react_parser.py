@@ -151,6 +151,84 @@ class ReActOutputParser:
 
         text = self._strip_vis_thinking_blocks(text)
         text = self._strip_markdown_code_fence(text)
+
+        # Tolerate models that use "Thought**:" or "**Thought**:" (Markdown bold)
+        text = re.sub(
+            rf"^[ \t]*\**{self.thought_prefix_escaped}\**\s*",
+            f"{self.thought_prefix} ",
+            text,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            rf"^[ \t]*\**{self.action_prefix_escaped}\**\s*",
+            f"{self.action_prefix} ",
+            text,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            rf"^[ \t]*\**{self.action_input_prefix_escaped}\**\s*",
+            f"{self.action_input_prefix} ",
+            text,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            rf"^[ \t]*\**{self.observation_prefix_escaped}\**\s*",
+            f"{self.observation_prefix} ",
+            text,
+            flags=re.MULTILINE,
+        )
+
+        # Tolerate models that omit "Thought:" prefix but still have "Action:" line
+        if text and not re.search(
+            rf"^[ \t]*{self.thought_prefix_escaped}", text, re.MULTILINE
+        ):
+            if re.search(
+                rf"^[ \t]*{self.action_prefix_escaped}", text, re.MULTILINE
+            ):
+                text = f"{self.thought_prefix} (auto-inferred)\n{text}"
+
+        # Tolerate models that output tool calls in JSON format:
+        # {"name": "hotelbe_search_files", "arguments": {"keyword": "..."}}
+        if text and not re.search(
+            rf"^[ \t]*{self.action_prefix_escaped}", text, re.MULTILINE
+        ):
+            json_tool_match = re.search(
+                r'\{[\s\S]*?"name"\s*:\s*"(\w+)"[\s\S]*?"arguments"\s*:\s*\{([\s\S]*?)\}',
+                text,
+            )
+            if json_tool_match:
+                tool_name = json_tool_match.group(1)
+                tool_args = json_tool_match.group(2).strip()
+                thought_match = re.match(
+                    r"([\s\S]*?)(?=\{[\s\S]*?\"name\")", text
+                )
+                thought_text = thought_match.group(1).strip() if thought_match else "(auto-inferred)"
+                text = (
+                    f"{self.thought_prefix} {thought_text}\n"
+                    f"{self.action_prefix} {tool_name}\n"
+                    f"{self.action_input_prefix} {{{tool_args}}}"
+                )
+
+        # Tolerate models that output "Using tool: xxx" or "Calling: xxx" patterns
+        if text and not re.search(
+            rf"^[ \t]*{self.action_prefix_escaped}", text, re.MULTILINE
+        ):
+            alt_call_match = re.search(
+                r"(?:Using|Calling|Execute|Run)\s+(?:tool\s+)?[`\"']?(\w+)[`\"']?\s*"
+                r"(?:with|:|\n)\s*(?:args|params|input)?\s*[:=]?\s*(\{[\s\S]*?\})?",
+                text,
+                re.IGNORECASE,
+            )
+            if alt_call_match:
+                tool_name = alt_call_match.group(1)
+                tool_args = alt_call_match.group(2) or "{}"
+                pre_text = text[: alt_call_match.start()].strip() or "(auto-inferred)"
+                text = (
+                    f"{self.thought_prefix} {pre_text}\n"
+                    f"{self.action_prefix} {tool_name}\n"
+                    f"{self.action_input_prefix} {tool_args}"
+                )
+
         stripped = text.lstrip()
         fence = "`" * 6
         opening = f"{fence}{VisThinking.vis_tag()}"

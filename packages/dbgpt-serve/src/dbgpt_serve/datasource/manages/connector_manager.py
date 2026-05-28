@@ -99,6 +99,9 @@ class ConnectorManager(BaseComponent):
         from dbgpt_ext.datasource.rdbms.conn_starrocks import (  # noqa: F401
             StarRocksConnector,
         )
+        from dbgpt_ext.datasource.rdbms.conn_tdengine import (  # noqa: F401
+            TDengineConnector,
+        )
         from dbgpt_ext.datasource.rdbms.conn_vertica import (  # noqa: F401
             VerticaConnector,
         )

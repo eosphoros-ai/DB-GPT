@@ -1161,6 +1161,19 @@ async def _react_agent_stream(
     except Exception:
         pass  # If no business tools, continue with empty list
 
+    # Step 2.5: Generate business tool descriptions for prompt injection
+    business_tool_descriptions = ""
+    if business_tools:
+        desc_lines = []
+        for bt in business_tools:
+            name = getattr(bt, "name", None) or getattr(bt, "__name__", str(bt))
+            doc = getattr(bt, "__doc__", "") or ""
+            # For @tool decorated functions, extract description from metadata
+            if hasattr(bt, "_description") and bt._description:
+                doc = bt._description
+            desc_lines.append(f"- **{name}**: {doc.strip()}" if doc.strip() else f"- **{name}**")
+        business_tool_descriptions = "\n## Registered Business Tools\nThese tools are always available. Use them FIRST when relevant.\n" + "\n".join(desc_lines)
+
     # Step 3: Load knowledge space resource if specified in ext_info
     knowledge_resources: List[Any] = []
     knowledge_context = ""
@@ -3127,6 +3140,7 @@ Example flow for 3 tasks:
 {file_context}
 {knowledge_context}
 {database_context}
+{business_tool_descriptions}
 ## ReAct Output Format
 Must output for each interaction round:
 Thought: Analyze current task status and think about what to do next
@@ -3266,6 +3280,7 @@ The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
 15. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
 
+{business_tool_descriptions}
 {file_context}
 {knowledge_context}
 {database_context}
@@ -3319,7 +3334,7 @@ Action Input: The JSON format of tool parameters
     )
 
     agent_builder = (
-        ReActAgent(max_retry_count=30)
+        ReActAgent(max_retry_count=15)
         .bind(context)
         .bind(agent_memory)
         .bind(llm_config)

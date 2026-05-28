@@ -1,0 +1,60 @@
+[system]
+language = "${env:DBGPT_LANG:-en}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+# Model Configurations
+[models]
+
+# ── Default: MiniMax-M2.7 (international) ──
+[[models.llms]]
+name = "${env:LLM_MODEL_NAME:-MiniMax-M2.7}"
+provider = "proxy/openai"
+api_base = "https://api.minimax.io/v1"
+api_key = "sk-cp-0_0ttCtA8Cji9XcP1LT4r-5y-3ri9jpfsX-7U2S2VMqNj8CmJ-ZHeI8kEvAgi4-vCAiOig8udwJxS2eU9_BzcJmPUrhooEyWiUt6XfjP_K84uGAGXoj_HRc"
+
+# ── kimi-for-coding (kimi.com coding plan) ──
+[[models.llms]]
+name = "kimi-for-coding"
+provider = "proxy/openai"
+api_base = "https://api.kimi.com/coding/v1"
+api_key = "sk-kimi-nBxlKgUbdIbyUwnaUcL3urlkNQ1Le4fS7rZr6vun5igHIipwqf80nJDK4fvMJHqN"
+
+# ── glm-4.7 (z.ai coding plan) ──
+[[models.llms]]
+name = "glm-4.7"
+provider = "proxy/openai"
+api_base = "https://api.z.ai/api/coding/paas/v4/"
+api_key = "63d4b6a542c7422b97d56a0c98b99d2a.UIWMIEpwYCuL5SY4"
+
+# ── deepseek-v4-flash (fast, cheap) ──
+[[models.llms]]
+name = "deepseek-v4-flash"
+provider = "proxy/openai"
+api_base = "https://api.deepseek.com/v1"
+api_key = "${env:OPENAI_API_KEY}"
+
+# ── deepseek-v4-pro (stronger reasoning) ──
+[[models.llms]]
+name = "deepseek-v4-pro"
+provider = "proxy/openai"
+api_base = "https://api.deepseek.com/v1"
+api_key = "${env:OPENAI_API_KEY}"
+
+# Embedding: Ollama local (nomic-embed-text, 768-dim)
+[[models.embeddings]]
+name = "nomic-embed-text"
+provider = "proxy/ollama"
