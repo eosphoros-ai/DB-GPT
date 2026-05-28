@@ -70,6 +70,24 @@ class ChatExcel(BaseChat):
         self.api_call = ApiCall()
         super().__init__(chat_param=chat_param, system_app=system_app)
 
+    async def _close_excel_reader(self):
+        await blocking_func_to_async(self._executor, self.excel_reader.close)
+
+    async def stream_call(self, text_output: bool = True, incremental: bool = False):
+        try:
+            async for output in super().stream_call(
+                text_output=text_output, incremental=incremental
+            ):
+                yield output
+        finally:
+            await self._close_excel_reader()
+
+    async def nostream_call(self):
+        try:
+            return await super().nostream_call()
+        finally:
+            await self._close_excel_reader()
+
     def _resolve_path(
         self, file_param: Any, conv_uid: str, fs_client: FileStorageClient, bucket: str
     ) -> Union[str, str, str]:

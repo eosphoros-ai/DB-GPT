@@ -5,10 +5,13 @@ import os
 import re
 import shutil
 import tempfile
+import time
 import uuid
 import zipfile
+from collections import OrderedDict
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional
+from threading import RLock
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
@@ -37,7 +40,99 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dbgpt.agent.core.memory.gpts import GptsMemory
 
-REACT_AGENT_MEMORY_CACHE: Dict[str, "GptsMemory"] = {}
+
+class _ReactAgentMemoryCacheEntry:
+    def __init__(self, memory: "GptsMemory", updated_at: float):
+        self.memory = memory
+        self.updated_at = updated_at
+
+
+class _ReactAgentMemoryCache:
+    def __init__(self, max_entries: int, ttl_seconds: int):
+        self._max_entries = max_entries
+        self._ttl_seconds = ttl_seconds
+        self._entries: "OrderedDict[str, _ReactAgentMemoryCacheEntry]" = OrderedDict()
+        self._active_counts: Dict[str, int] = {}
+        self._lock = RLock()
+
+    def acquire(self, conv_id: str) -> None:
+        with self._lock:
+            self._active_counts[conv_id] = self._active_counts.get(conv_id, 0) + 1
+            self._touch_locked(conv_id)
+
+    def release(self, conv_id: str) -> None:
+        with self._lock:
+            active_count = self._active_counts.get(conv_id, 0)
+            if active_count <= 1:
+                self._active_counts.pop(conv_id, None)
+            else:
+                self._active_counts[conv_id] = active_count - 1
+            self._evict_locked(time.monotonic())
+
+    def get_or_create(self, conv_id: str, factory: Callable[[], "GptsMemory"]):
+        now = time.monotonic()
+        with self._lock:
+            self._evict_locked(now)
+            entry = self._entries.get(conv_id)
+            if entry is not None:
+                entry.updated_at = now
+                self._entries.move_to_end(conv_id)
+                return entry.memory
+
+            memory = factory()
+            self._entries[conv_id] = _ReactAgentMemoryCacheEntry(memory, now)
+            self._evict_locked(now)
+            return memory
+
+    def _touch_locked(self, conv_id: str) -> None:
+        entry = self._entries.get(conv_id)
+        if entry is not None:
+            entry.updated_at = time.monotonic()
+            self._entries.move_to_end(conv_id)
+
+    def _evict_locked(self, now: float) -> None:
+        for conv_id, entry in list(self._entries.items()):
+            if self._is_active_locked(conv_id):
+                continue
+            if now - entry.updated_at >= self._ttl_seconds:
+                self._discard_locked(conv_id)
+
+        while len(self._entries) > self._max_entries:
+            evicted = False
+            for conv_id in list(self._entries.keys()):
+                if self._is_active_locked(conv_id):
+                    continue
+                self._discard_locked(conv_id)
+                evicted = True
+                break
+            if not evicted:
+                break
+
+    def _discard_locked(self, conv_id: str) -> None:
+        entry = self._entries.pop(conv_id, None)
+        if entry is None:
+            return
+        try:
+            entry.memory.clear(conv_id)
+        except Exception:
+            logger.debug(
+                "Failed to clear ReAct agent memory for %s", conv_id, exc_info=True
+            )
+        executor = getattr(entry.memory, "_executor", None)
+        if executor is not None:
+            try:
+                executor.shutdown(wait=False, cancel_futures=True)
+            except TypeError:
+                executor.shutdown(wait=False)
+
+    def _is_active_locked(self, conv_id: str) -> bool:
+        return self._active_counts.get(conv_id, 0) > 0
+
+
+REACT_AGENT_MEMORY_CACHE = _ReactAgentMemoryCache(
+    max_entries=int(os.getenv("DBGPT_REACT_AGENT_MEMORY_CACHE_MAX_ENTRIES", "1000")),
+    ttl_seconds=int(os.getenv("DBGPT_REACT_AGENT_MEMORY_CACHE_TTL_SECONDS", "3600")),
+)
 
 DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
@@ -922,8 +1017,9 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
-async def _react_agent_stream(
+async def _react_agent_stream_impl(
     dialogue: ConversationVo,
+    cache_conv_id: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     import asyncio
 
@@ -2693,17 +2789,18 @@ print(json.dumps(summary, ensure_ascii=False))
     else:
         llm_config = LLMConfig(llm_client=llm_client)
 
-    conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    conv_id = cache_conv_id or dialogue.conv_uid or str(uuid.uuid4())
     react_state["conv_id"] = conv_id
-    if conv_id in REACT_AGENT_MEMORY_CACHE:
-        gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
-    else:
+
+    def _create_memory():
         gpt_memory = GptsMemory(
             plans_memory=DefaultGptsPlansMemory(),
             message_memory=MetaDbGptsMessageMemory(),
         )
         gpt_memory.init(conv_id, enable_vis_message=False)
-        REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
+        return gpt_memory
+
+    gpt_memory = REACT_AGENT_MEMORY_CACHE.get_or_create(conv_id, _create_memory)
     agent_memory = AgentMemory(gpts_memory=gpt_memory)
 
     # --- Persist conversation to chat_history for sidebar display ---
@@ -3874,6 +3971,18 @@ Action Input: The JSON format of tool parameters
 
     yield _sse_event({"type": "final", "content": final_content})
     yield _sse_event({"type": "done"})
+
+
+async def _react_agent_stream(
+    dialogue: ConversationVo,
+) -> AsyncGenerator[str, None]:
+    conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    REACT_AGENT_MEMORY_CACHE.acquire(conv_id)
+    try:
+        async for event in _react_agent_stream_impl(dialogue, cache_conv_id=conv_id):
+            yield event
+    finally:
+        REACT_AGENT_MEMORY_CACHE.release(conv_id)
 
 
 # ---------------------------------------------------------------------------
