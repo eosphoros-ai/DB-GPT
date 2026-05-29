@@ -5,6 +5,7 @@ import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { dispatchReactAgentNewTask, subscribeReactAgentDialoguesChanged } from '@/utils/react-agent-events';
 import Icon, {
   ApartmentOutlined,
   AppstoreOutlined,
@@ -103,6 +104,13 @@ function SideBar() {
       console.error('Failed to delete dialogue', error);
     }
   }, []);
+
+  const handleNewTask = useCallback(() => {
+    dispatchReactAgentNewTask();
+    if (pathname !== '/' || router.asPath !== '/') {
+      router.push('/', undefined, { shallow: true });
+    }
+  }, [pathname, router]);
 
   const formatRelativeTime = useCallback((dateStr?: string) => {
     if (!dateStr) return '';
@@ -285,6 +293,20 @@ function SideBar() {
     fetchDialogueList();
   }, [fetchDialogueList]);
 
+  useEffect(() => {
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshDialogues = () => {
+      fetchDialogueList();
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(fetchDialogueList, 800);
+    };
+    const unsubscribe = subscribeReactAgentDialoguesChanged(refreshDialogues);
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      unsubscribe();
+    };
+  }, [fetchDialogueList]);
+
   // ============ COLLAPSED SIDEBAR ============
   if (!isMenuExpand) {
     return (
@@ -374,12 +396,14 @@ function SideBar() {
       </div>
 
       {/* New Task Button */}
-      <Link href='/'>
-        <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
-          <PlusOutlined className='text-xs' />
-          <span>{t('new_task')}</span>
-        </div>
-      </Link>
+      <button
+        type='button'
+        onClick={handleNewTask}
+        className='flex w-full items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer border-0'
+      >
+        <PlusOutlined className='text-xs' />
+        <span>{t('new_task')}</span>
+      </button>
 
       {/* Functions */}
       <div className='flex flex-col gap-1'>

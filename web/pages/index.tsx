@@ -16,6 +16,7 @@ import ManusRightPanel, {
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import axios from '@/utils/ctx-axios';
+import { dispatchReactAgentDialoguesChanged, subscribeReactAgentNewTask } from '@/utils/react-agent-events';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
   ArrowUpOutlined,
@@ -63,7 +64,7 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const generateUUID = () => {
@@ -570,6 +571,8 @@ const Playground: NextPage = () => {
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
   const preloadedFilePathRef = useRef<string | null>(null);
+  const streamControllerRef = useRef<AbortController | null>(null);
+  const activeRequestIdRef = useRef(0);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -580,6 +583,37 @@ const Playground: NextPage = () => {
     layer: string | null;
   } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
+
+  const resetConversationState = useCallback(() => {
+    activeRequestIdRef.current += 1;
+    streamControllerRef.current?.abort();
+    streamControllerRef.current = null;
+    setMessages([]);
+    setConversationId(null);
+    setQuery('');
+    setLoading(false);
+    setExecutionMap({});
+    setActiveMessageId(null);
+    setActiveViewMsgId(null);
+    setUploadedFilePath(null);
+    setFilePreview(null);
+    setFilePreviewError(null);
+    setChartPreview(null);
+    setArtifacts([]);
+    setCreatedSkillNames({});
+    setRightPanelTab('preview');
+    setRightPanelView('execution');
+    setRightPanelCollapsed(false);
+    setStreamingSummary('');
+    setSummaryComplete(false);
+    setTaskPlan([]);
+    setContextStatus(null);
+    setSelectedStepId(null);
+    setPreviewArtifact(null);
+    lastArtifactKeyRef.current = '';
+    terminatedStepIdsRef.current.clear();
+    preloadedFilePathRef.current = null;
+  }, []);
 
   // Fetch Data Sources
   const { data: dataSources, loading: _loadingSources } = useRequest(async () => {
@@ -694,22 +728,13 @@ const Playground: NextPage = () => {
       loadConversation(convId);
     } else if (!convId && conversationId) {
       // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
-      setMessages([]);
-      setConversationId(null);
-      setQuery('');
-      setExecutionMap({});
-      setActiveMessageId(null);
-      setActiveViewMsgId(null);
-      setUploadedFilePath(null);
-      setFilePreview(null);
-      setFilePreviewError(null);
-      setArtifacts([]);
-      setRightPanelTab('preview');
-      setStreamingSummary('');
-      setSummaryComplete(false);
-      setTaskPlan([]);
+      resetConversationState();
     }
-  }, [router.query.id]);
+    // Only react to URL id changes. Adding conversationId would reset a new '/' chat immediately after it starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query.id, resetConversationState]);
+
+  useEffect(() => subscribeReactAgentNewTask(resetConversationState), [resetConversationState]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1462,6 +1487,9 @@ const Playground: NextPage = () => {
     if (!conversationId) {
       setConversationId(currentConvId);
     }
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    const isActiveRequest = () => requestId === activeRequestIdRef.current;
 
     // Calculate current order
     const currentOrder = Math.floor(messages.length / 2) + 1;
@@ -1504,6 +1532,7 @@ const Playground: NextPage = () => {
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    streamControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
       ...prev,
@@ -1543,6 +1572,8 @@ const Playground: NextPage = () => {
         signal: controller.signal,
       });
 
+      if (!isActiveRequest()) return;
+
       if (!response.body) {
         throw new Error('No response body');
       }
@@ -1552,6 +1583,7 @@ const Playground: NextPage = () => {
       let buffer = '';
 
       const processEvent = (raw: string) => {
+        if (!isActiveRequest()) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -1844,6 +1876,10 @@ const Playground: NextPage = () => {
             const summaryText = cleanFinalContent(payload.content);
             const streamInterval = setInterval(() => {
               setStreamingSummary(prev => {
+                if (!isActiveRequest()) {
+                  clearInterval(streamInterval);
+                  return prev;
+                }
                 if (prev.length >= summaryText.length) {
                   clearInterval(streamInterval);
                   setSummaryComplete(true);
@@ -1928,15 +1964,19 @@ const Playground: NextPage = () => {
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || !isActiveRequest()) break;
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split('\n\n');
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
+      if (!isActiveRequest()) return;
       setLoading(false);
+      dispatchReactAgentDialoguesChanged();
     } catch (err: any) {
+      if (!isActiveRequest()) return;
       setLoading(false);
+      if (err?.name === 'AbortError') return;
       message.error(err?.message || 'Failed to get response');
       setMessages(prev => {
         const newMessages = [...prev];
@@ -1947,6 +1987,10 @@ const Playground: NextPage = () => {
         }
         return newMessages;
       });
+    } finally {
+      if (isActiveRequest()) {
+        streamControllerRef.current = null;
+      }
     }
   };
 
@@ -2017,19 +2061,7 @@ const Playground: NextPage = () => {
 
   // Clear chat history
   const handleClearChat = () => {
-    setMessages([]);
-    setConversationId(null);
-    setQuery('');
-    setExecutionMap({});
-    setActiveMessageId(null);
-    setActiveViewMsgId(null);
-    setUploadedFilePath(null);
-    setFilePreview(null);
-    setFilePreviewError(null);
-    setArtifacts([]);
-    setRightPanelTab('preview');
-    setStreamingSummary('');
-    setSummaryComplete(false);
+    resetConversationState();
     router.push('/', undefined, { shallow: true });
   };
 
