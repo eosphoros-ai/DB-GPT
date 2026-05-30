@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 import secrets
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict
 
 from dbgpt.agent.resource.tool.base import BaseTool
 from dbgpt.component import BaseComponent, SystemApp
@@ -19,6 +20,57 @@ if TYPE_CHECKING:
     from dbgpt.agent.resource.tool.pack import MCPToolPack
 
 logger = logging.getLogger(__name__)
+
+# Hard ceiling on initial MCP handshake (tools/list) during create_connector.
+# Without this, a stuck SSE/Streamable-HTTP server keeps the FastAPI handler
+# blocked indefinitely (the create path runs the coroutine via
+# ``loop.run_until_complete`` on a worker thread, so a hang there leaves the
+# user staring at a spinner with no eventual response). 15s is generous for
+# real MCP servers but short enough that misconfigured ones fail fast.
+_CONNECTOR_PRELOAD_TIMEOUT_S = 15.0
+
+
+class ConnectorToolArgSummary(TypedDict):
+    """Per-argument schema for a single connector tool."""
+
+    type: str
+    required: bool
+    description: str
+
+
+class ConnectorToolSummary(TypedDict):
+    """Lightweight, prompt-friendly summary of a single connector tool."""
+
+    name: str
+    """Full routing name (``mcp__{prefix}__{original_name}``) — what LLMs
+    invoke. Includes the DB-GPT-internal namespace prefix added by
+    :meth:`ConnectorManager._apply_tool_prefix`."""
+
+    original_name: str
+    """The tool's name as declared by the MCP server itself (no prefix).
+    This is what users see when inspecting tools — it matches what the MCP
+    server returns from its own ``tools/list``."""
+
+    description: str
+    args: Dict[str, ConnectorToolArgSummary]
+
+
+def _strip_routing_prefix(name: str) -> str:
+    """Strip the ``mcp__{prefix}__`` routing prefix added by
+    :meth:`ConnectorManager._apply_tool_prefix`.
+
+    The prefix format is stable: ``name.split('__', 2)`` reliably yields
+    ``['mcp', '{prefix}', '{original_name}']`` because :func:`_slugify`
+    never produces ``__`` in the ``{prefix}`` segment.
+
+    Falls back to *name* unchanged when the routing prefix is absent
+    (e.g. a non-MCP tool that somehow leaked into a pack).
+    """
+    if name.startswith("mcp__"):
+        parts = name.split("__", 2)
+        if len(parts) == 3:
+            return parts[2]
+    return name
 
 
 class ConnectorStatus(str, Enum):
@@ -93,10 +145,39 @@ class ConnectorManager(BaseComponent):
         self._statuses: Dict[str, ConnectorStatus] = {}
         self._salts: Dict[str, str] = {}
         self._connector_types: Dict[str, str] = {}
+        # Per-connector extra_config snapshot — kept so list_active() can
+        # surface user-provided fields (e.g. custom_mcp's optional
+        # ``description``) that are not stored in the catalog entry or
+        # encrypted credential blob. Keyed by connector_id; cleared in
+        # remove_connector. Holds a shallow copy to insulate the manager
+        # from later mutations by the caller.
+        self._extra_configs: Dict[str, Dict[str, Any]] = {}
 
     # ------------------------------------------------------------------
     # Tool prefix helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def is_custom_connector_type(connector_type: str) -> bool:
+        """Return True iff *connector_type* is a custom (user-defined) MCP type.
+
+        A custom connector type is identified by a non-empty ``custom_`` prefix
+        followed by a non-empty suffix, e.g. ``"custom_mcp"``,
+        ``"custom_arxiv"``. The bare prefix ``"custom_"`` and non-string inputs
+        return False.
+
+        Args:
+            connector_type (str): The connector type identifier.
+
+        Returns:
+            bool: True if *connector_type* is a custom MCP type.
+        """
+        if not isinstance(connector_type, str):
+            return False
+        if not connector_type.startswith("custom_"):
+            return False
+        # Reject bare "custom_" (no suffix).
+        return len(connector_type) > len("custom_")
 
     def _has_multiple_instances_of_type(self, connector_type: str) -> bool:
         """True if at least one other connector of the same type is already active."""
@@ -108,15 +189,24 @@ class ConnectorManager(BaseComponent):
         display_name: str,
         connector_id: str,
     ) -> str:
-        """Return the prefix to prepend to every tool name in this connector's pack.
+        """Return the connector identifier portion (between the two ``__``) of the tool name.
 
-        Prefix rules:
+        Tool name format: ``mcp__{prefix}__{original_tool_name}``.
+
+        Prefix rules (the ``{prefix}`` portion only):
         - Built-in, single instance: ``{connector_type}``
         - Built-in, multiple instances: ``{connector_type}-{slug(display_name)}``
         - Custom (type starts with ``custom_``): ``{slug(display_name)}``
         - Fallback when slug is empty: first 6 chars of *connector_id*
+
+        Note: The full tool name is composed in ``_apply_tool_prefix`` by adding
+        the ``mcp__`` prefix and using ``__`` as separator between prefix and
+        original tool name, e.g.:
+          - ``mcp__github__create_issue``
+          - ``mcp__github-acme__create_issue``
+          - ``mcp__my-arxiv__search_papers``
         """
-        is_custom = connector_type.startswith("custom_")
+        is_custom = self.is_custom_connector_type(connector_type)
         slug = _slugify(display_name)
 
         if is_custom:
@@ -131,7 +221,18 @@ class ConnectorManager(BaseComponent):
     def _apply_tool_prefix(
         self, pack: "MCPToolPack", prefix: str, display_name: str
     ) -> None:
-        """Rename every tool in *pack* to add the prefix and update tool_server_map."""
+        """Rename every tool in *pack* to ``mcp__{prefix}__{original_name}`` and update tool_server_map.
+
+        Format chosen to mirror Claude Code's MCP tool naming convention
+        (``mcp__<server>__<tool>``):
+        - ``mcp__`` prefix makes the tool's MCP origin obvious to the LLM and ops.
+        - Double-underscore separators (``__``) avoid ambiguity when the original
+          tool name itself contains underscores (e.g. ``search_papers``).
+        - Stable parse: ``name.split('__', 2)`` reliably yields
+          ``['mcp', prefix, tool_name]``.
+
+        Idempotent: a tool already named ``mcp__{prefix}__...`` is left as-is.
+        """
         new_server_map: Dict[str, str] = {}
         default_server = (
             pack._mcp_servers
@@ -144,9 +245,9 @@ class ConnectorManager(BaseComponent):
             if not isinstance(tool, BaseTool):
                 continue
             old_name = tool.name
-            prefixed = f"{prefix}_{old_name}"
+            prefixed = f"mcp__{prefix}__{old_name}"
             # Skip if already prefixed (idempotency)
-            if old_name.startswith(f"{prefix}_"):
+            if old_name.startswith(f"mcp__{prefix}__"):
                 new_server_map[old_name] = pack.tool_server_map.get(
                     old_name, default_server
                 )
@@ -213,8 +314,10 @@ class ConnectorManager(BaseComponent):
         Two branches are supported:
 
         * **Built-in catalog connector** — ``connector_type`` must exist in the
-          loaded catalog (e.g. ``"feishu"``, ``"github"``).  Server URI and
-          header mapping are taken from the catalog entry.
+          loaded catalog (e.g. ``"feishu"``, ``"github"``).  Header mapping is
+          taken from the catalog entry.  ``extra_config`` **must** supply
+          ``server_uri`` — catalog entries are templates only and do not
+          provide default server URIs.
         * **User-defined custom MCP server** — when
           ``connector_type == "custom_mcp"``, ``extra_config`` must supply
           ``server_uri`` (the SSE endpoint).  Header mapping is derived from
@@ -228,10 +331,11 @@ class ConnectorManager(BaseComponent):
                 required by the connector's ``auth.fields`` spec.
             name (Optional[str]): Human-readable label for this connector
                 instance.  Defaults to *connector_type*.
-            extra_config (Optional[Dict[str, Any]]): Required when
-                ``connector_type == "custom_mcp"``.  Must contain
-                ``{'server_uri': str, 'auth_type': str in
-                ('none','bearer','token'), 'header_name': str (optional)}``.
+            extra_config (Optional[Dict[str, Any]]): Required for all
+                connector types (built-in catalog types and ``custom_mcp``).
+                Must contain ``server_uri`` (str).  For ``custom_mcp`` also
+                accepts ``auth_type`` / ``header_name``.  Built-in types pull
+                ``header_mapping`` from catalog ``auth.header_mapping``.
             connector_id (Optional[str]): Preserve a known UUID (used by
                 rehydration during process startup).  When ``None``, a fresh
                 hex token is generated.
@@ -244,6 +348,8 @@ class ConnectorManager(BaseComponent):
             ValueError: When *connector_type* is not found in the catalog and
                 is not ``"custom_mcp"``, or when ``custom_mcp`` is requested
                 without a valid ``server_uri`` in ``extra_config``.
+            ValueError: When ``extra_config.server_uri`` is missing (catalog
+                templates do not provide default URIs).
         """
         connector_id = connector_id or secrets.token_hex(16)
 
@@ -269,6 +375,10 @@ class ConnectorManager(BaseComponent):
             else:  # auth_type == "none"
                 header_mapping = {}
             display_name = name or "Custom MCP"
+            # custom_mcp: caller picks transport, default to SSE for
+            # back-compat with existing instances saved before the
+            # streamable_http branch landed.
+            transport = (extra_config or {}).get("transport") or "sse"
         else:
             entry = self._catalog.get(connector_type)
             if entry is None:
@@ -278,9 +388,24 @@ class ConnectorManager(BaseComponent):
                     f"Available types: {available} "
                     f"(or 'custom_mcp' for user-defined MCP servers)"
                 )
-            server_uri = entry.mcp_server.server_uri
+            if not extra_config or not extra_config.get("server_uri"):
+                raise ValueError(
+                    f"Connector type '{connector_type}' requires "
+                    f"extra_config.server_uri "
+                    f"(catalog entries are templates only — server_uri "
+                    f"must be supplied by caller)"
+                )
+            server_uri = extra_config["server_uri"]
             header_mapping = entry.auth.header_mapping
             display_name = name or entry.display_name
+            # Built-in: catalog provides the default transport, but allow
+            # extra_config.transport to override (so a user can adopt a
+            # streamable_http endpoint of a service whose template still says
+            # SSE, without us having to ship a new catalog).
+            catalog_transport = (
+                entry.mcp_server.transport if entry.mcp_server else "sse"
+            )
+            transport = (extra_config or {}).get("transport") or catalog_transport
 
         self._credential_store.encrypt(str_credentials, salt)
 
@@ -298,31 +423,45 @@ class ConnectorManager(BaseComponent):
             mcp_servers=server_uri,
             default_headers=headers,
             name=pack_name,
+            transport=transport,
         )
 
         try:
-            await pack.preload_resource()
+            # Bound the handshake — see _CONNECTOR_PRELOAD_TIMEOUT_S for why.
+            # asyncio.TimeoutError → caught by the broad except below and
+            # surfaced as ConnectorStatus.error, which is the same UX as a
+            # network failure or auth rejection (the user retries from the UI).
+            await asyncio.wait_for(
+                pack.preload_resource(),
+                timeout=_CONNECTOR_PRELOAD_TIMEOUT_S,
+            )
             prefix = self.compute_tool_prefix(connector_type, pack_name, connector_id)
             self._apply_tool_prefix(pack, prefix, pack_name)
             self._active_packs[connector_id] = pack
             self._statuses[connector_id] = ConnectorStatus.active
             self._connector_types[connector_id] = connector_type
-            tool_count = sum(
-                1 for tool in pack.sub_resources if isinstance(tool, BaseTool)
-            )
-            logger.info(
-                "Connector '%s' (id=%s, type=%s) activated with %d tools",
+            # Snapshot the user-supplied extra_config (description, etc.) so
+            # list_active() can surface fields beyond what the catalog or the
+            # encrypted credential store provides. dict() = shallow copy to
+            # decouple from later caller mutations.
+            self._extra_configs[connector_id] = dict(extra_config or {})
+        except asyncio.TimeoutError:
+            self._statuses[connector_id] = ConnectorStatus.error
+            logger.error(
+                "Timeout activating connector '%s' (type=%s, transport=%s) "
+                "after %.1fs — MCP server did not respond to handshake",
                 pack_name,
-                connector_id,
                 connector_type,
-                tool_count,
+                transport,
+                _CONNECTOR_PRELOAD_TIMEOUT_S,
             )
         except Exception as exc:  # noqa: BLE001
             self._statuses[connector_id] = ConnectorStatus.error
             logger.error(
-                "Failed to activate connector '%s' (type=%s): %s",
+                "Failed to activate connector '%s' (type=%s, transport=%s): %s",
                 pack_name,
                 connector_type,
+                transport,
                 exc,
                 exc_info=True,
             )
@@ -347,6 +486,7 @@ class ConnectorManager(BaseComponent):
         self._active_packs.pop(connector_id, None)
         self._salts.pop(connector_id, None)
         self._connector_types.pop(connector_id, None)
+        self._extra_configs.pop(connector_id, None)
         # TODO(T6): cancel APScheduler jobs associated with connector_id
         logger.info("Connector id=%s removed", connector_id)
 
@@ -370,6 +510,64 @@ class ConnectorManager(BaseComponent):
         """
         return list(self._active_packs.values())
 
+    def _tool_summary_for(
+        self, connector_id: str
+    ) -> Optional[List[ConnectorToolSummary]]:
+        """Return the per-tool summary list for one active connector.
+
+        Args:
+            connector_id (str): Connector instance id.
+
+        Returns:
+            Optional[List[ConnectorToolSummary]]: A list of structurally-shaped
+            tool summaries when *connector_id* is in ``_active_packs``;
+            ``None`` otherwise. Shape matches the ``tools`` array entry in
+            :meth:`list_active`.
+        """
+        pack = self._active_packs.get(connector_id)
+        if pack is None:
+            return None
+        # Build per-tool summaries, deduplicating by `original_name`.
+        #
+        # Why dedup is needed: ``MCPToolPack._resources`` can end up holding
+        # the same logical tool under two keys when ``preload_resource()``
+        # runs more than once after ``_apply_tool_prefix`` has already
+        # renamed the original entry — e.g. activate populates
+        # ``_resources["mcp__svc__search_papers"]`` and then a later
+        # ``test_connection`` re-issues ``tools/list`` and adds
+        # ``_resources["search_papers"]`` (raw name, no prefix). Both keys
+        # then surface here. Until the pack itself is made re-entry safe,
+        # we collapse duplicates on the user-visible name, preferring the
+        # entry that already carries the routing prefix (the canonical one
+        # an LLM would actually invoke).
+        by_original: Dict[str, ConnectorToolSummary] = {}
+        for tool in pack.sub_resources:
+            if not isinstance(tool, BaseTool):
+                continue
+            original = _strip_routing_prefix(tool.name)
+            is_prefixed = tool.name != original
+            summary: ConnectorToolSummary = {
+                "name": tool.name,
+                "original_name": original,
+                "description": tool.description,
+                "args": {
+                    k: {
+                        "type": getattr(v, "type", "any"),
+                        "required": getattr(v, "required", False),
+                        "description": getattr(v, "description", ""),
+                    }
+                    for k, v in (getattr(tool, "args", {}) or {}).items()
+                },
+            }
+            existing = by_original.get(original)
+            if existing is None:
+                by_original[original] = summary
+            elif is_prefixed and existing["name"] == existing["original_name"]:
+                # We had the raw-name version; replace with the prefixed one.
+                by_original[original] = summary
+            # else: keep the existing (already prefixed) entry.
+        return list(by_original.values())
+
     def list_active(self) -> List[Dict[str, Any]]:
         """Return prompt-ready summaries for all active connectors.
 
@@ -381,20 +579,19 @@ class ConnectorManager(BaseComponent):
         for connector_id, pack in self._active_packs.items():
             connector_type = self._connector_types.get(connector_id, "unknown")
             entry = self._catalog.get(connector_type)
-            tools = [
-                {
-                    "name": tool.name,
-                    "description": tool.description,
-                }
-                for tool in pack.sub_resources
-                if isinstance(tool, BaseTool)
-            ]
+            tools = self._tool_summary_for(connector_id) or []
+            # Description precedence:
+            #   1. extra_config.description (user-authored, custom_mcp)
+            #   2. catalog entry description (built-in templates)
+            #   3. empty string (falls back to "(no description)" in prompt)
+            user_desc = self._extra_configs.get(connector_id, {}).get("description")
+            description = user_desc or (entry.description if entry else "") or ""
             result.append(
                 {
                     "connector_id": connector_id,
                     "name": pack.name,
                     "connector_type": connector_type,
-                    "description": entry.description if entry else "",
+                    "description": description,
                     "status": self._statuses.get(
                         connector_id, ConnectorStatus.disconnected
                     ).value,

@@ -30,7 +30,9 @@ class ConnectorInstanceEntity(Model):
     )
     encryption_salt = Column(String(256), nullable=True, comment="Encryption salt")
     status = Column(
-        String(32), nullable=True, comment="Status: active/error/disconnected"
+        String(32),
+        nullable=True,
+        comment="Status: active/error/disconnected/needs_reactivation",
     )
     config_json = Column(Text, nullable=True, comment="Optional extra config JSON")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")

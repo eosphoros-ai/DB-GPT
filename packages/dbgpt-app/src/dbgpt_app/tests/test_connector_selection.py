@@ -1,15 +1,15 @@
 """Unit tests for connector selection helpers in agentic_data_api.
 
-Tests ``_parse_connector_ids`` and ``_select_connector_packs`` which are
+Tests ``_parse_connector_ids`` and ``_select_connector_tools`` which are
 extracted helpers that ``_react_agent_stream`` delegates to.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 from dbgpt_app.openapi.api_v1.agentic_data_api import (
     _parse_connector_ids,
-    _select_connector_packs,
+    _select_connector_tools,
 )
 
 # ---------------------------------------------------------------------------
@@ -67,8 +67,24 @@ class TestParseConnectorIds:
 
 
 # ---------------------------------------------------------------------------
-# _select_connector_packs
+# _select_connector_tools
 # ---------------------------------------------------------------------------
+
+
+def _make_mock_tool(name: str) -> MagicMock:
+    """Create a mock BaseTool with the given name."""
+    from dbgpt.agent.resource.tool.base import BaseTool
+
+    tool = MagicMock(spec=BaseTool)
+    tool.name = name
+    return tool
+
+
+def _make_mock_pack(tools: List[MagicMock]) -> MagicMock:
+    """Create a mock MCPToolPack whose sub_resources returns *tools*."""
+    pack = MagicMock()
+    pack.sub_resources = tools
+    return pack
 
 
 def _make_manager(packs: Dict[str, Any]) -> MagicMock:
@@ -78,46 +94,65 @@ def _make_manager(packs: Dict[str, Any]) -> MagicMock:
     return mgr
 
 
-class TestSelectConnectorPacks:
-    """Verify filtered connector pack selection."""
+class TestSelectConnectorTools:
+    """Verify filtered connector tool selection (flattened)."""
 
     def test_empty_ids_returns_empty(self):
-        mgr = _make_manager({"id1": "pack1"})
-        packs, missing = _select_connector_packs([], mgr)
-        assert packs == []
+        mgr = _make_manager({"id1": _make_mock_pack([_make_mock_tool("t1")])})
+        tools, missing = _select_connector_tools([], mgr)
+        assert tools == []
         assert missing == []
 
     def test_none_manager_returns_empty(self):
-        packs, missing = _select_connector_packs(["id1"], None)
-        assert packs == []
+        tools, missing = _select_connector_tools(["id1"], None)
+        assert tools == []
         assert missing == []
 
-    def test_both_active(self):
-        mgr = _make_manager({"id1": "pack1", "id2": "pack2"})
-        packs, missing = _select_connector_packs(["id1", "id2"], mgr)
-        assert packs == ["pack1", "pack2"]
+    def test_both_active_flattened(self):
+        t1 = _make_mock_tool("tool1")
+        t2 = _make_mock_tool("tool2")
+        t3 = _make_mock_tool("tool3")
+        mgr = _make_manager(
+            {
+                "id1": _make_mock_pack([t1, t2]),
+                "id2": _make_mock_pack([t3]),
+            }
+        )
+        tools, missing = _select_connector_tools(["id1", "id2"], mgr)
+        assert tools == [t1, t2, t3]
         assert missing == []
 
     def test_one_missing(self):
-        mgr = _make_manager({"id1": "pack1"})
-        packs, missing = _select_connector_packs(["id1", "missing"], mgr)
-        assert packs == ["pack1"]
+        t1 = _make_mock_tool("tool1")
+        mgr = _make_manager({"id1": _make_mock_pack([t1])})
+        tools, missing = _select_connector_tools(["id1", "missing"], mgr)
+        assert tools == [t1]
         assert missing == ["missing"]
 
     def test_all_missing(self):
         mgr = _make_manager({})
-        packs, missing = _select_connector_packs(["a", "b"], mgr)
-        assert packs == []
+        tools, missing = _select_connector_tools(["a", "b"], mgr)
+        assert tools == []
         assert missing == ["a", "b"]
 
     def test_single_id(self):
-        mgr = _make_manager({"solo": "solo-pack"})
-        packs, missing = _select_connector_packs(["solo"], mgr)
-        assert packs == ["solo-pack"]
+        t1 = _make_mock_tool("solo-tool")
+        mgr = _make_manager({"solo": _make_mock_pack([t1])})
+        tools, missing = _select_connector_tools(["solo"], mgr)
+        assert tools == [t1]
         assert missing == []
 
     def test_preserves_order(self):
-        mgr = _make_manager({"c": "pc", "a": "pa", "b": "pb"})
-        packs, missing = _select_connector_packs(["a", "b", "c"], mgr)
-        assert packs == ["pa", "pb", "pc"]
+        ta = _make_mock_tool("ta")
+        tb = _make_mock_tool("tb")
+        tc = _make_mock_tool("tc")
+        mgr = _make_manager(
+            {
+                "c": _make_mock_pack([tc]),
+                "a": _make_mock_pack([ta]),
+                "b": _make_mock_pack([tb]),
+            }
+        )
+        tools, missing = _select_connector_tools(["a", "b", "c"], mgr)
+        assert tools == [ta, tb, tc]
         assert missing == []

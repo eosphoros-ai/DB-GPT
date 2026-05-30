@@ -89,32 +89,44 @@ def _parse_connector_ids(ext_info: Optional[Dict[str, Any]]) -> List[str]:
     return []
 
 
-def _select_connector_packs(
+def _select_connector_tools(
     connector_ids: List[str],
     connector_manager: Optional["ConnectorManager"],
-) -> Tuple[List["MCPToolPack"], List[str]]:
-    """Return tool packs for the requested *connector_ids*.
+) -> Tuple[List["BaseTool"], List[str]]:
+    """Resolve connector_ids to flat list of BaseTool ready for ToolPack injection.
+
+    Internally each connector is an MCPToolPack containing multiple BaseTool
+    (one per MCP server tool). We flatten here so callers can directly compose
+    them into a parent ToolPack without nesting issues -- nested ResourcePack
+    would otherwise be inserted as a single dict entry under pack.name,
+    making prefixed tool names un-lookup-able from the outer ToolPack.
 
     Args:
         connector_ids: IDs the user selected in the frontend.
         connector_manager: A :class:`ConnectorManager` instance (or ``None``).
 
     Returns:
-        A tuple of ``(packs, missing_ids)`` where *packs* are the resolved
-        :class:`MCPToolPack` objects and *missing_ids* lists IDs that could
-        not be resolved (e.g. deleted mid-conversation).
+        A tuple of ``(tools, missing_ids)`` where *tools* is the flat list
+        of :class:`BaseTool` objects (each one a single MCP tool with its
+        server URL captured in the call closure) and *missing_ids* lists
+        IDs that could not be resolved (e.g. deleted mid-conversation).
     """
-    packs: List["MCPToolPack"] = []
+    from dbgpt.agent.resource.tool.base import BaseTool
+
+    tools: List["BaseTool"] = []
     missing_ids: List[str] = []
     if connector_manager is None or not connector_ids:
-        return packs, missing_ids
+        return tools, missing_ids
     for cid in connector_ids:
         pack = connector_manager.get_connector_tools(cid)
         if pack is None:
             missing_ids.append(cid)
             continue
-        packs.append(pack)
-    return packs, missing_ids
+        # Flatten: extract BaseTool instances from the pack
+        for tool in pack.sub_resources:
+            if isinstance(tool, BaseTool):
+                tools.append(tool)
+    return tools, missing_ids
 
 
 async def _execute_skill_script_impl(
@@ -1472,6 +1484,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
         rm = get_resource_manager(CFG.SYSTEM_APP)
         try:
+            # Primary path: lookup via ResourceManager (lazy-registered business tools)
             tool_resource = rm.build_resource_by_type(
                 ResourceType.Tool.value,
                 AgentResource(type=ResourceType.Tool.value, value=tool_name),
@@ -1482,13 +1495,76 @@ print(json.dumps(summary, ensure_ascii=False))
                 {"chunks": [{"output_type": "text", "content": str(result)}]},
                 ensure_ascii=False,
             )
-        except Exception as e:
+        except Exception as primary_exc:
+            # Fallback: if ResourceManager doesn't have the tool, try
+            # ConnectorManager active packs.  This handles the case where LLM
+            # mistakenly routes an MCP connector tool through execute_tool
+            # instead of calling it directly.
+            try:
+                from dbgpt.agent.resource.connector.manager import (
+                    ConnectorManager as _ConnectorManager,
+                )
+
+                _cm = CFG.SYSTEM_APP.get_component(
+                    "connector_manager",
+                    _ConnectorManager,
+                    default_component=None,
+                )
+                if _cm is not None:
+                    for _cid, _pack in _cm._active_packs.items():
+                        if tool_name in _pack._resources:
+                            result = await _pack.async_execute(
+                                resource_name=tool_name, **args
+                            )
+                            logger.info(
+                                "execute_tool dispatched '%s' via "
+                                "ConnectorManager fallback (connector=%s). "
+                                "Prefer direct Action call for connector "
+                                "tools.",
+                                tool_name,
+                                _cid,
+                            )
+                            return json.dumps(
+                                {
+                                    "chunks": [
+                                        {
+                                            "output_type": "text",
+                                            "content": str(result),
+                                        }
+                                    ]
+                                },
+                                ensure_ascii=False,
+                            )
+            except Exception as fallback_exc:
+                logger.warning(
+                    "execute_tool fallback to ConnectorManager failed for '%s': %s",
+                    tool_name,
+                    fallback_exc,
+                )
+                # When fallback found the tool but execution failed, surface
+                # that error to the LLM (more actionable than the
+                # ResourceManager primary error)
+                return json.dumps(
+                    {
+                        "chunks": [
+                            {
+                                "output_type": "text",
+                                "content": (
+                                    f"Tool execute failed: {fallback_exc} "
+                                    f"(primary lookup error: {primary_exc})"
+                                ),
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+            # Both lookups returned None — primary path's tool-not-found error wins
             return json.dumps(
                 {
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": f"Tool execute failed: {e}",
+                            "content": f"Tool execute failed: {primary_exc}",
                         }
                     ]
                 },
@@ -2715,7 +2791,7 @@ print(json.dumps(summary, ensure_ascii=False))
             "connector_manager", _ConnectorManager, default_component=None
         )
         if _connector_manager is not None and connector_ids:
-            connector_tool_extras, _missing = _select_connector_packs(
+            connector_tool_extras, _missing = _select_connector_tools(
                 connector_ids, _connector_manager
             )
             for _mid in _missing:
@@ -2997,7 +3073,7 @@ Action Input: The JSON format of tool parameters
             _active = _cm.list_active()
             # Only describe connectors the user explicitly selected.
             # Iterate connector_ids (not _active) so prompt order matches
-            # user selection order and stays consistent with _select_connector_packs.
+            # user selection order and stays consistent with _select_connector_tools.
             _active_map = {c["connector_id"]: c for c in _active if isinstance(c, dict)}
             _selected = [
                 _active_map[cid] for cid in connector_ids if cid in _active_map
@@ -3005,19 +3081,59 @@ Action Input: The JSON format of tool parameters
             if _selected:
                 _connector_lines = []
                 for _c in _selected:
-                    _tool_names = ", ".join(
-                        t.get("name", "unknown") for t in _c.get("tools", [])
-                    )
+                    _tool_lines = []
+                    for t in _c.get("tools", []):
+                        _name = t.get("name", "unknown")
+                        _desc = t.get("description", "") or "(no description)"
+                        _args_schema = t.get("args", {}) or {}
+                        # Render args schema as concise Parameters description
+                        if _args_schema:
+                            _param_parts = []
+                            for _arg_name, _arg_meta in _args_schema.items():
+                                if isinstance(_arg_meta, dict):
+                                    _arg_type = _arg_meta.get("type", "any")
+                                    _req = (
+                                        "required"
+                                        if _arg_meta.get("required")
+                                        else "optional"
+                                    )
+                                    _arg_desc = _arg_meta.get("description", "")
+                                    if _arg_desc:
+                                        _trimmed_desc = (
+                                            _arg_desc[:120] + "..."
+                                            if len(_arg_desc) > 120
+                                            else _arg_desc
+                                        )
+                                        _param_parts.append(
+                                            f'"{_arg_name}": <{_arg_type}, {_req}, '
+                                            f"{_trimmed_desc}>"
+                                        )
+                                    else:
+                                        _param_parts.append(
+                                            f'"{_arg_name}": <{_arg_type}, {_req}>'
+                                        )
+                                else:
+                                    _param_parts.append(f'"{_arg_name}": <any>')
+                            _params_str = "{" + ", ".join(_param_parts) + "}"
+                        else:
+                            _params_str = "{}"
+                        _tool_lines.append(
+                            f"  - **{_name}**: {_desc}\n    Parameters: {_params_str}"
+                        )
                     _connector_lines.append(
-                        f"- {_c.get('name', 'unknown')} ({_c.get('connector_type', 'unknown')}): "
-                        f"{_c.get('description', '')}\n"
-                        f"  Available tools: {_tool_names}\n"
-                        f"  Note: Write operations require user confirmation."
+                        f"### {_c.get('name', 'unknown')} "
+                        f"({_c.get('connector_type', 'unknown')})\n"
+                        f"{_c.get('description', '') or '(no description)'}\n\n"
+                        f"Tools (call directly with `Action: <tool_name>`):\n"
+                        + "\n".join(_tool_lines)
+                        + "\n\nNote: Write operations require user confirmation."
                     )
                 _connector_prompt = (
-                    "\n\n## Available External Connectors\n"
-                    "You have access to the following external connectors:\n"
-                    + "\n".join(_connector_lines)
+                    "\n\n## Available MCP Connector Tools\n"
+                    "You have access to the following external MCP connectors. "
+                    "All listed tools are pre-registered — invoke them directly "
+                    "with `Action: <tool_name>`, NOT through `execute_tool`.\n"
+                    + "\n\n".join(_connector_lines)
                 )
                 workflow_prompt += _connector_prompt
     except Exception:

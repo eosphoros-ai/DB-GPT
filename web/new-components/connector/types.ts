@@ -1,4 +1,4 @@
-export type ConnectorStatus = 'active' | 'error' | 'disconnected';
+export type ConnectorStatus = 'active' | 'error' | 'disconnected' | 'needs_reactivation';
 
 export type AttachedConnector = {
   id: string;
@@ -13,6 +13,33 @@ export interface ConnectorInstance {
   status: ConnectorStatus;
   config?: Record<string, unknown>;
   created_at?: string;
+  is_custom?: boolean;
+}
+
+export interface ConnectorToolArgSummary {
+  type: string;
+  required: boolean;
+  description: string;
+}
+
+export interface ConnectorToolArgTruncated {
+  _truncated: true;
+  byte_count: number;
+}
+
+export interface ConnectorToolSummary {
+  /** Full routing name (e.g. ``mcp__arxiv-search__search_papers``) — what LLMs invoke. */
+  name: string;
+  /** Tool name as declared by the MCP server itself (no prefix) — what users see. */
+  original_name?: string;
+  description: string;
+  args: Record<string, ConnectorToolArgSummary | ConnectorToolArgTruncated>;
+}
+
+export interface ConnectorToolsResponse {
+  connector_id: string;
+  state: 'active' | 'inactive' | 'not_mcp';
+  tools: ConnectorToolSummary[];
 }
 
 export interface ConnectorAuthField {

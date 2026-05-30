@@ -14,6 +14,7 @@ from ..service.service import (
     ConnectorCreateRequest,
     ConnectorResponse,
     ConnectorService,
+    ConnectorToolsResponse,
     ConnectorUpdateRequest,
 )
 from .schemas import ConnectorTypeOption
@@ -38,15 +39,35 @@ def get_service() -> ConnectorService:
 _CUSTOM_MCP_OPTION = ConnectorTypeOption(
     type="custom_mcp",
     display_name="自定义 MCP Server",
-    description="接入任意 SSE-based MCP Server",
+    description="接入任意 SSE / Streamable HTTP MCP Server",
     category="custom",
     is_custom=True,
     auth_fields=[
         {
             "name": "server_uri",
-            "label": "SSE Endpoint",
+            "label": "Endpoint URL",
             "type": "url",
             "required": True,
+        },
+        {
+            # Display label intentionally generic — the form switches the
+            # server_uri label/placeholder based on this value.
+            "name": "transport",
+            "label": "传输协议",
+            "type": "select",
+            "options": ["sse", "streamable_http"],
+            "required": True,
+            "default": "sse",
+        },
+        {
+            # Optional free-text description shown in the agent's connector
+            # prompt block. Manager.list_active prefers extra_config.description
+            # over catalog.description, so this is the canonical way for users
+            # to label what a custom_mcp connector exposes.
+            "name": "description",
+            "label": "连接器描述",
+            "type": "text",
+            "required": False,
         },
         {
             "name": "auth_type",
@@ -187,8 +208,22 @@ async def update_connector(
     request: ConnectorUpdateRequest,
     service: ConnectorService = Depends(get_service),
 ) -> Result[ConnectorResponse]:
+    # service.update_connector is a sync method that internally drives the
+    # ConnectorManager via loop.run_until_complete(...). Calling it directly
+    # from this async handler runs that on the live FastAPI event loop and
+    # raises "This event loop is already running" — which the service's
+    # broad except then writes back as status='error'. Mirror the POST route
+    # and dispatch through blocking_func_to_async so the sync work executes
+    # on a worker thread with its own fresh loop.
     try:
-        return Result.succ(service.update_connector(connector_id, request))
+        return Result.succ(
+            await blocking_func_to_async(
+                global_system_app,
+                service.update_connector,
+                connector_id,
+                request,
+            )
+        )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -211,17 +246,32 @@ async def delete_connector(
         return Result.failed(msg=str(e))
 
 
-@router.post("/{connector_id}/test", response_model=Result[bool])
+@router.post("/{connector_id}/test", response_model=Result[Dict[str, Any]])
 async def test_connector(
     connector_id: str,
     service: ConnectorService = Depends(get_service),
-) -> Result[bool]:
+) -> Result[Dict[str, Any]]:
     try:
-        return Result.succ(service.test_connection(connector_id))
+        return Result.succ(await service.test_connection(connector_id))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Test connector failed")
+        return Result.failed(msg=str(e))
+
+
+@router.get("/{connector_id}/tools", response_model=Result[ConnectorToolsResponse])
+async def get_connector_tools(
+    connector_id: str,
+    service: ConnectorService = Depends(get_service),
+) -> Result[ConnectorToolsResponse]:
+    try:
+        return Result.succ(service.list_tools(connector_id))
+    except HTTPException:
+        # Let FastAPI surface 404 directly (matches get_connector behaviour).
+        raise
+    except Exception as e:
+        logger.exception("Get connector tools failed")
         return Result.failed(msg=str(e))
 
 

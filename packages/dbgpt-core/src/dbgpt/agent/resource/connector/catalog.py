@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class McpServerConfig(BaseModel):
-    server_uri: str
-    transport: str
+    server_uri: Optional[str] = None
+    transport: str = "sse"
 
 
 class AuthField(BaseModel):

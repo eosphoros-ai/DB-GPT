@@ -1,5 +1,6 @@
 import { ModelSvg } from '@/components/icons';
 import Icon, {
+  ApiOutlined,
   AppstoreOutlined,
   BuildOutlined,
   ConsoleSqlOutlined,
@@ -66,6 +67,12 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       name: t('Prompt'),
       icon: <MessageOutlined />,
       path: '/prompt',
+    },
+    {
+      key: 'connectors',
+      name: t('connectors'),
+      icon: <ApiOutlined />,
+      path: '/connectors',
     },
     {
       key: 'skills',

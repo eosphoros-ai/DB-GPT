@@ -1,6 +1,5 @@
 from dbgpt.agent.resource.connector.manager import ConnectorManager
 from dbgpt.component import SystemApp
-
 from dbgpt_app.component_configs import _initialize_connector_manager
 
 

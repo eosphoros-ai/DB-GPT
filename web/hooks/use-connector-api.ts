@@ -1,5 +1,10 @@
+import {
+  ConnectorCatalogEntry,
+  ConnectorInstance,
+  ConnectorToolsResponse,
+  CreateConnectorRequest,
+} from '@/new-components/connector/types';
 import axios from '@/utils/ctx-axios';
-import { ConnectorCatalogEntry, ConnectorInstance, CreateConnectorRequest } from '@/new-components/connector/types';
 import { useCallback, useEffect, useState } from 'react';
 
 const API_BASE = '/api/v2/serve/connectors';
@@ -13,7 +18,13 @@ type BackendConnector = Omit<ConnectorInstance, 'id'> & { connector_id: string }
 
 function normalizeConnector(raw: BackendConnector): ConnectorInstance {
   const { connector_id, ...rest } = raw;
-  return { id: connector_id, ...rest } as ConnectorInstance;
+  // `is_custom` flows through `...rest`; we coerce undefined → false so card
+  // logic can rely on a boolean even on older deployments that omit the field.
+  return {
+    id: connector_id,
+    ...rest,
+    is_custom: raw.is_custom ?? false,
+  } as ConnectorInstance;
 }
 
 function unwrap<T>(payload: any): T {
@@ -84,21 +95,18 @@ export function useCreateConnector() {
 export function useUpdateConnector() {
   const [loading, setLoading] = useState(false);
 
-  const update = useCallback(
-    async (id: string, data: Partial<CreateConnectorRequest>): Promise<ConnectorInstance> => {
-      setLoading(true);
-      try {
-        const res = await axios.put(`${API_BASE}/${id}`, data);
-        return normalizeConnector(unwrap<BackendConnector>(res));
-      } catch (err) {
-        console.error('Failed to update connector:', err);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+  const update = useCallback(async (id: string, data: Partial<CreateConnectorRequest>): Promise<ConnectorInstance> => {
+    setLoading(true);
+    try {
+      const res = await axios.put(`${API_BASE}/${id}`, data);
+      return normalizeConnector(unwrap<BackendConnector>(res));
+    } catch (err) {
+      console.error('Failed to update connector:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return { update, loading };
 }
@@ -138,4 +146,34 @@ export function useTestConnection() {
   }, []);
 
   return { test, loading };
+}
+
+/**
+ * Lazy hook that fetches the MCP tools list for a connector instance.
+ * Caller invokes `fetch()` (or `refetch()` — same handle) when the modal opens
+ * or after a retry; we deliberately do NOT auto-fetch on mount because this
+ * endpoint can hit the live MCP server and we only want it on demand.
+ */
+export function useConnectorTools(connectorId?: string) {
+  const [data, setData] = useState<ConnectorToolsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTools = useCallback(async () => {
+    if (!connectorId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${API_BASE}/${connectorId}/tools`);
+      setData(unwrap<ConnectorToolsResponse>(res) ?? null);
+    } catch (err) {
+      console.error('Failed to fetch connector tools:', err);
+      const message = err instanceof Error ? err.message : 'Failed to load tools';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [connectorId]);
+
+  return { data, loading, error, refetch: fetchTools, fetch: fetchTools };
 }

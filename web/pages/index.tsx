@@ -584,7 +584,10 @@ const Playground: NextPage = () => {
   const [connectorSearchQuery, setConnectorSearchQuery] = useState('');
   const { connectors: connectorsList } = useConnectors();
 
-  const isConfirmPollingActive = loading && selectedConnectors.length > 0;
+  // HITL 确认轮询临时关闭：当前不需要写操作前的人工确认能力。
+  // 恢复时把下一行改回 `loading && selectedConnectors.length > 0` 即可，
+  // 后端 _PENDING_CONFIRMATIONS 通道 / ConfirmDialog 组件保持原样未删除。
+  const isConfirmPollingActive = false;
   const { pendingConfirmation, approve, deny, dismiss } = useConfirmPolling({
     isActive: isConfirmPollingActive,
   });
@@ -2721,9 +2724,10 @@ const Playground: NextPage = () => {
                                     {(connectorsList || [])
                                       .filter(
                                         (c: ConnectorInstance) =>
-                                          !connectorSearchQuery ||
-                                          c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
-                                          c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase()),
+                                          c.status === 'active' &&
+                                          (!connectorSearchQuery ||
+                                            c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
+                                            c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase())),
                                       )
                                       .map((c: ConnectorInstance) => (
                                         <div
@@ -2748,14 +2752,8 @@ const Playground: NextPage = () => {
                                               <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
                                                 {c.display_name}
                                               </span>
-                                              <span
-                                                className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                  c.status === 'active'
-                                                    ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                                                }`}
-                                              >
-                                                {c.status === 'active' ? '已激活' : c.status}
+                                              <span className='text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'>
+                                                已激活
                                               </span>
                                             </div>
                                             <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
@@ -2769,9 +2767,10 @@ const Playground: NextPage = () => {
                                       ))}
                                     {(connectorsList || []).filter(
                                       (c: ConnectorInstance) =>
-                                        !connectorSearchQuery ||
-                                        c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
-                                        c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase()),
+                                        c.status === 'active' &&
+                                        (!connectorSearchQuery ||
+                                          c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
+                                          c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase())),
                                     ).length === 0 && (
                                       <div className='text-center py-8 text-gray-400'>
                                         <ApiOutlined className='text-2xl mb-2 opacity-50' />
@@ -2783,7 +2782,7 @@ const Playground: NextPage = () => {
                                   </div>
                                   <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                     <span className='text-[10px] text-gray-400'>
-                                      {(connectorsList || []).length} 个连接器可用
+                                      {(connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active').length} 个连接器可用
                                     </span>
                                     <Button
                                       type='link'
@@ -3294,9 +3293,10 @@ const Playground: NextPage = () => {
                                   {(connectorsList || [])
                                     .filter(
                                       (c: ConnectorInstance) =>
-                                        !connectorSearchQuery ||
-                                        c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
-                                        c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase()),
+                                        c.status === 'active' &&
+                                        (!connectorSearchQuery ||
+                                          c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
+                                          c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase())),
                                     )
                                     .map((c: ConnectorInstance) => (
                                       <div
@@ -3321,14 +3321,8 @@ const Playground: NextPage = () => {
                                             <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
                                               {c.display_name}
                                             </span>
-                                            <span
-                                              className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                c.status === 'active'
-                                                  ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                                                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                                              }`}
-                                            >
-                                              {c.status === 'active' ? '已激活' : c.status}
+                                            <span className='text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'>
+                                              已激活
                                             </span>
                                           </div>
                                           <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
@@ -3342,9 +3336,10 @@ const Playground: NextPage = () => {
                                     ))}
                                   {(connectorsList || []).filter(
                                     (c: ConnectorInstance) =>
-                                      !connectorSearchQuery ||
-                                      c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
-                                      c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase()),
+                                      c.status === 'active' &&
+                                      (!connectorSearchQuery ||
+                                        c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
+                                        c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase())),
                                   ).length === 0 && (
                                     <div className='text-center py-8 text-gray-400'>
                                       <ApiOutlined className='text-2xl mb-2 opacity-50' />
@@ -3356,7 +3351,7 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(connectorsList || []).length} 个连接器可用
+                                    {(connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active').length} 个连接器可用
                                   </span>
                                   <Button
                                     type='link'

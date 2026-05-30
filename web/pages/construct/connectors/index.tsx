@@ -7,13 +7,39 @@ import {
   useUpdateConnector,
 } from '@/hooks/use-connector-api';
 import { ConnectorCard, ConnectorForm } from '@/new-components/connector';
-import { ConnectorInstance, CreateConnectorRequest } from '@/new-components/connector/types';
+import {
+  ConnectorCatalogEntry,
+  ConnectorInstance,
+  ConnectorStatus,
+  CreateConnectorRequest,
+} from '@/new-components/connector/types';
 import ConstructLayout from '@/new-components/layout/Construct';
-import { PlusOutlined } from '@ant-design/icons';
-import { Button, Col, Empty, Row, Spin, Typography, message } from 'antd';
-import { useState } from 'react';
+import { ApiOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Input, Segmented, Spin, message } from 'antd';
+import { useMemo, useState } from 'react';
 
-const { Title } = Typography;
+/* ─────────────────────────────────────────────────────────────────
+   Connector management page — full visual rebuild.
+
+   Design intent:
+   - Single unified card grid (no per-template sub-headers). Templates &
+     instances coexist in one stream; cards carry their own identity
+     (dashed vs solid, brand-tinted icon tile, status chip).
+   - Top: hero header with title + live counters.
+   - Toolbar: search · status filter (Segmented) · 自定义 MCP CTA.
+   - 3-col grid (1 / 2 / 3 responsive) — generous, like Linear/Vercel
+     integration directories.
+   - Empty / loading states are graceful, not jarring.
+   ────────────────────────────────────────────────────────────────── */
+
+type StatusFilter = 'all' | 'active' | 'inactive' | 'attention';
+
+/** A unified item rendered into the grid — either a template or an instance. */
+type GridItem =
+  | { kind: 'template'; template: ConnectorCatalogEntry; instanceCount: number }
+  | { kind: 'instance'; instance: ConnectorInstance; catalogEntry?: ConnectorCatalogEntry };
+
+const STATUS_ATTENTION_SET = new Set<ConnectorStatus>(['error', 'needs_reactivation']);
 
 function Connectors() {
   const { connectors, loading, refresh } = useConnectors();
@@ -25,13 +51,107 @@ function Connectors() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingConnector, setEditingConnector] = useState<ConnectorInstance | undefined>(undefined);
+  const [prefilledType, setPrefilledType] = useState<string | undefined>(undefined);
 
-  const handleAdd = () => {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
+  /* ─── Derived collections ─────────────────────────────────────── */
+
+  // Built-in templates (exclude custom_mcp — it has its own entry point)
+  const builtInTemplates = useMemo(() => catalog.filter(t => t.type !== 'custom_mcp'), [catalog]);
+
+  // Quick lookup of catalog entry by type — used to enrich instance cards
+  const catalogByType = useMemo(() => {
+    const map: Record<string, ConnectorCatalogEntry> = {};
+    for (const e of catalog) map[e.type] = e;
+    return map;
+  }, [catalog]);
+
+  // Group instance counts by connector_type
+  const instanceCountByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const inst of connectors) {
+      map[inst.connector_type] = (map[inst.connector_type] ?? 0) + 1;
+    }
+    return map;
+  }, [connectors]);
+
+  // Build unified grid items: templates first, then ALL instances grouped naturally
+  const gridItems: GridItem[] = useMemo(() => {
+    const tplItems: GridItem[] = builtInTemplates.map(t => ({
+      kind: 'template',
+      template: t,
+      instanceCount: instanceCountByType[t.type] ?? 0,
+    }));
+    const instItems: GridItem[] = connectors.map(inst => ({
+      kind: 'instance',
+      instance: inst,
+      catalogEntry: catalogByType[inst.connector_type],
+    }));
+    return [...tplItems, ...instItems];
+  }, [builtInTemplates, connectors, instanceCountByType, catalogByType]);
+
+  /* ─── Filtering ───────────────────────────────────────────────── */
+
+  const visibleItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
+    return gridItems.filter(item => {
+      // status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'inactive') {
+          if (item.kind !== 'template') return false;
+        } else if (statusFilter === 'active') {
+          if (item.kind !== 'instance' || item.instance.status !== 'active') return false;
+        } else if (statusFilter === 'attention') {
+          if (item.kind !== 'instance' || !STATUS_ATTENTION_SET.has(item.instance.status)) return false;
+        }
+      }
+      // search filter — match display_name + type + description
+      if (!q) return true;
+      if (item.kind === 'template') {
+        return (
+          item.template.display_name.toLowerCase().includes(q) ||
+          item.template.type.toLowerCase().includes(q) ||
+          (item.template.description ?? '').toLowerCase().includes(q)
+        );
+      }
+      return (
+        item.instance.display_name.toLowerCase().includes(q) ||
+        item.instance.connector_type.toLowerCase().includes(q)
+      );
+    });
+  }, [gridItems, search, statusFilter]);
+
+  /* ─── Counters for header badges ──────────────────────────────── */
+  const counters = useMemo(() => {
+    const activeCount = connectors.filter(c => c.status === 'active').length;
+    const attentionCount = connectors.filter(c => STATUS_ATTENTION_SET.has(c.status)).length;
+    return {
+      templates: builtInTemplates.length,
+      instances: connectors.length,
+      active: activeCount,
+      attention: attentionCount,
+    };
+  }, [builtInTemplates.length, connectors]);
+
+  /* ─── Handlers ────────────────────────────────────────────────── */
+
+  const handleAddCustomMcp = () => {
     setEditingConnector(undefined);
+    setPrefilledType('custom_mcp');
+    setFormOpen(true);
+  };
+
+  const handleActivateTemplate = (template: ConnectorCatalogEntry) => {
+    setEditingConnector(undefined);
+    setPrefilledType(template.type);
     setFormOpen(true);
   };
 
   const handleEdit = (connector: ConnectorInstance) => {
+    setPrefilledType(undefined);
     setEditingConnector(connector);
     setFormOpen(true);
   };
@@ -51,6 +171,10 @@ function Connectors() {
       const result = await test(id);
       if (result.success) {
         message.success(result.message || '连接测试成功');
+        // Backend self-heals status from 'error' → 'active' on a successful
+        // probe (see ConnectorService.test_connection). Refetch so the card
+        // reflects the new status without forcing the user to F5.
+        refresh();
       } else {
         message.error(result.message || '连接测试失败');
       }
@@ -70,6 +194,7 @@ function Connectors() {
       }
       setFormOpen(false);
       setEditingConnector(undefined);
+      setPrefilledType(undefined);
       refresh();
     } catch {
       message.error(editingConnector ? '更新失败，请重试' : '创建失败，请重试');
@@ -79,43 +204,132 @@ function Connectors() {
   const handleClose = () => {
     setFormOpen(false);
     setEditingConnector(undefined);
+    setPrefilledType(undefined);
   };
+
+  const hasAnything = builtInTemplates.length > 0 || connectors.length > 0;
+  const showEmptyFilter = hasAnything && visibleItems.length === 0;
+
+  /* ─── Render ──────────────────────────────────────────────────── */
 
   return (
     <ConstructLayout>
-      <div className='relative h-screen w-full p-4 md:p-6 overflow-y-auto'>
-        <div className='flex justify-between items-center mb-6'>
-          <Title level={4} className='!mb-0'>
-            连接器管理
-          </Title>
-          <Button
-            className='border-none text-white bg-button-gradient'
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            loading={creating || updating}
-          >
-            添加连接器
-          </Button>
-        </div>
+      <div className='relative h-screen w-full overflow-y-auto bg-gradient-to-b from-[#f7f8fc] via-white to-[#f7f8fc] dark:from-[#1c2333] dark:via-[#1c2333] dark:to-[#161b29]'>
+        <div className='max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8'>
+          {/* ───────────── HERO HEADER ───────────── */}
+          <div className='mb-7'>
+            <div className='flex items-start justify-between gap-4 flex-wrap mb-2'>
+              <div>
+                <h1 className='text-[26px] leading-tight font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2.5'>
+                  <span className='inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-[0_4px_14px_-4px_rgba(124,58,237,0.5)]'>
+                    <ApiOutlined className='text-lg' />
+                  </span>
+                  连接器管理
+                </h1>
+                <p className='text-sm text-gray-500 dark:text-gray-400 ml-[46px]'>
+                  集成外部服务与工具，激活模板或接入自定义 MCP，扩展 Agent 的执行边界
+                </p>
+              </div>
 
-        <Spin spinning={loading || deleting}>
-          {connectors.length === 0 && !loading ? (
-            <Empty description='暂无连接器，点击"添加连接器"开始配置' className='mt-16' />
-          ) : (
-            <Row gutter={[16, 16]}>
-              {connectors.map(connector => (
-                <Col key={connector.id} xs={24} sm={12} md={8} lg={6}>
-                  <ConnectorCard
-                    connector={connector}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onTest={handleTest}
-                  />
-                </Col>
-              ))}
-            </Row>
-          )}
-        </Spin>
+              {/* CTA — gradient button (matches skills.tsx convention).
+                  Uses ApiOutlined to mirror the sidebar nav entry and the
+                  hero header so the "连接器管理" → "自定义 MCP" visual link
+                  is consistent across all three touchpoints. */}
+              <Button
+                className='border-none text-white bg-button-gradient h-9 px-4 shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] hover:shadow-[0_6px_18px_-4px_rgba(124,58,237,0.6)] transition-shadow'
+                icon={<ApiOutlined />}
+                onClick={handleAddCustomMcp}
+                loading={creating || updating}
+              >
+                添加连接器
+              </Button>
+            </div>
+
+            {/* Counter strip — small ambient stats */}
+            <div className='flex items-center gap-3 ml-[46px] flex-wrap text-[12px]'>
+              <StatPill label='内置模板' value={counters.templates} tone='neutral' />
+              <StatPill label='已激活实例' value={counters.instances} tone='violet' />
+              <StatPill label='运行中' value={counters.active} tone='emerald' dot />
+              {counters.attention > 0 && (
+                <StatPill label='需要关注' value={counters.attention} tone='amber' dot />
+              )}
+            </div>
+          </div>
+
+          {/* ───────────── TOOLBAR ───────────── */}
+          <div className='flex items-center gap-3 mb-6 flex-wrap'>
+            <Input
+              prefix={<SearchOutlined className='text-gray-400' />}
+              placeholder='搜索连接器名称、类型...'
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              allowClear
+              className='w-[280px] h-[36px] backdrop-filter backdrop-blur-lg bg-white bg-opacity-60 border border-gray-200 rounded-lg dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
+            />
+
+            <Segmented
+              value={statusFilter}
+              onChange={v => setStatusFilter(v as StatusFilter)}
+              options={[
+                { label: '全部', value: 'all' },
+                { label: '已激活', value: 'active' },
+                { label: '未激活', value: 'inactive' },
+                {
+                  label: (
+                    <span className='inline-flex items-center gap-1'>
+                      需要关注
+                      {counters.attention > 0 && (
+                        <span className='inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-medium bg-amber-500 text-white'>
+                          {counters.attention}
+                        </span>
+                      )}
+                    </span>
+                  ),
+                  value: 'attention',
+                },
+              ]}
+              className='!bg-white/60 backdrop-blur-md rounded-lg dark:!bg-[#6f7f95]/40'
+            />
+          </div>
+
+          {/* ───────────── GRID / EMPTY STATE ───────────── */}
+          <Spin spinning={loading || catalogLoading || deleting}>
+            {!hasAnything && !loading && !catalogLoading ? (
+              <EmptyState onAddCustom={handleAddCustomMcp} />
+            ) : showEmptyFilter ? (
+              <FilterEmpty
+                onReset={() => {
+                  setSearch('');
+                  setStatusFilter('all');
+                }}
+              />
+            ) : (
+              <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-16'>
+                {visibleItems.map(item =>
+                  item.kind === 'template' ? (
+                    <ConnectorCard
+                      key={`tpl-${item.template.type}`}
+                      kind='template'
+                      template={item.template}
+                      instanceCount={item.instanceCount}
+                      onActivate={handleActivateTemplate}
+                    />
+                  ) : (
+                    <ConnectorCard
+                      key={`inst-${item.instance.id}`}
+                      kind='instance'
+                      connector={item.instance}
+                      catalogEntry={item.catalogEntry}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onTest={handleTest}
+                    />
+                  ),
+                )}
+              </div>
+            )}
+          </Spin>
+        </div>
 
         <ConnectorForm
           open={formOpen}
@@ -124,9 +338,100 @@ function Connectors() {
           catalog={catalog}
           catalogLoading={catalogLoading}
           initialValues={editingConnector}
+          prefilledType={prefilledType}
+          submitting={creating || updating}
         />
       </div>
     </ConstructLayout>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   StatPill — tiny header counter chip
+   ────────────────────────────────────────────────────────────────── */
+
+interface StatPillProps {
+  label: string;
+  value: number;
+  tone: 'neutral' | 'violet' | 'emerald' | 'amber';
+  dot?: boolean;
+}
+
+const STAT_TONE: Record<StatPillProps['tone'], { wrap: string; value: string; dot: string }> = {
+  neutral: {
+    wrap: 'bg-white/70 border-gray-200 text-gray-600 dark:bg-gray-700/40 dark:border-gray-600 dark:text-gray-300',
+    value: 'text-gray-900 dark:text-gray-100',
+    dot: 'bg-gray-400',
+  },
+  violet: {
+    wrap: 'bg-violet-50/80 border-violet-200 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700/40 dark:text-violet-300',
+    value: 'text-violet-800 dark:text-violet-200',
+    dot: 'bg-violet-500',
+  },
+  emerald: {
+    wrap: 'bg-emerald-50/80 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-300',
+    value: 'text-emerald-800 dark:text-emerald-200',
+    dot: 'bg-emerald-500',
+  },
+  amber: {
+    wrap: 'bg-amber-50/80 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700/40 dark:text-amber-300',
+    value: 'text-amber-800 dark:text-amber-200',
+    dot: 'bg-amber-500',
+  },
+};
+
+function StatPill({ label, value, tone, dot }: StatPillProps) {
+  const t = STAT_TONE[tone];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border backdrop-blur-md ${t.wrap}`}
+    >
+      {dot && <span className={`w-1.5 h-1.5 rounded-full ${t.dot} animate-pulse`} />}
+      <span className='opacity-80'>{label}</span>
+      <span className={`font-semibold ${t.value}`}>{value}</span>
+    </span>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   EmptyState — when there's nothing at all (catalog & instances empty)
+   ────────────────────────────────────────────────────────────────── */
+
+function EmptyState({ onAddCustom }: { onAddCustom: () => void }) {
+  return (
+    <div className='flex flex-col items-center justify-center text-center py-24'>
+      <div className='w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900/30 dark:to-indigo-900/30 flex items-center justify-center mb-5'>
+        <ApiOutlined className='text-3xl text-violet-500' />
+      </div>
+      <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1'>暂无可用连接器</h3>
+      <p className='text-sm text-gray-500 dark:text-gray-400 max-w-md mb-5'>
+        服务端未注册任何内置模板。你也可以接入自定义 MCP 服务来开始构建。
+      </p>
+      <Button
+        type='primary'
+        icon={<PlusOutlined />}
+        className='border-none bg-button-gradient'
+        onClick={onAddCustom}
+      >
+        添加连接器
+      </Button>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FilterEmpty — when filters/search yield zero results
+   ────────────────────────────────────────────────────────────────── */
+
+function FilterEmpty({ onReset }: { onReset: () => void }) {
+  return (
+    <div className='flex flex-col items-center justify-center text-center py-20'>
+      <SearchOutlined className='text-3xl text-gray-300 dark:text-gray-600 mb-3' />
+      <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>没有匹配的连接器</p>
+      <Button size='small' onClick={onReset}>
+        清除筛选
+      </Button>
+    </div>
   );
 }
 

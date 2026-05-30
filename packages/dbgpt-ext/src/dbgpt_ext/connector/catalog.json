@@ -1,0 +1,75 @@
+{
+  "connectors": [
+    {
+      "type": "feishu",
+      "display_name": "飞书",
+      "description": "飞书消息、文档、日历集成",
+      "icon": "feishu",
+      "category": "communication",
+      "mcp_server": {"transport": "sse"},
+      "auth": {
+        "type": "token",
+        "fields": [
+          {"name": "app_id", "label": "App ID", "type": "text", "required": true},
+          {"name": "app_secret", "label": "App Secret", "type": "password", "required": true}
+        ],
+        "header_mapping": {"app_id": "X-Lark-App-Id", "app_secret": "X-Lark-App-Secret"}
+      },
+      "confirm_actions": ["feishu_send_message", "feishu_create_doc", "feishu_update_doc"],
+      "read_actions": ["feishu_get_doc", "feishu_list_docs", "feishu_search"]
+    },
+    {
+      "type": "dingtalk",
+      "display_name": "钉钉",
+      "description": "钉钉群消息推送和机器人通知",
+      "icon": "dingtalk",
+      "category": "communication",
+      "mcp_server": {"transport": "sse"},
+      "auth": {
+        "type": "token",
+        "fields": [
+          {"name": "webhook_url", "label": "群机器人 Webhook URL", "type": "text", "required": true},
+          {"name": "secret", "label": "加签密钥", "type": "password", "required": false}
+        ],
+        "header_mapping": {"webhook_url": "X-DingTalk-Webhook", "secret": "X-DingTalk-Secret"}
+      },
+      "confirm_actions": ["dingtalk_send_message", "dingtalk_send_card"],
+      "read_actions": []
+    },
+    {
+      "type": "yuque",
+      "display_name": "语雀",
+      "description": "语雀知识库文档读写",
+      "icon": "yuque",
+      "category": "document",
+      "mcp_server": {"transport": "sse"},
+      "auth": {
+        "type": "token",
+        "fields": [
+          {"name": "token", "label": "Personal Access Token", "type": "password", "required": true},
+          {"name": "default_namespace", "label": "默认知识库", "type": "text", "required": false}
+        ],
+        "header_mapping": {"token": "X-Auth-Token"}
+      },
+      "confirm_actions": ["yuque_create_doc", "yuque_update_doc", "yuque_delete_doc"],
+      "read_actions": ["yuque_get_doc", "yuque_list_docs", "yuque_search"]
+    },
+    {
+      "type": "github",
+      "display_name": "GitHub",
+      "description": "GitHub Issues、PR、仓库管理",
+      "icon": "github",
+      "category": "project",
+      "mcp_server": {"transport": "sse"},
+      "auth": {
+        "type": "token",
+        "fields": [
+          {"name": "github_token", "label": "Personal Access Token", "type": "password", "required": true}
+        ],
+        "header_mapping": {"github_token": "Authorization"}
+      },
+      "confirm_actions": ["github_create_issue", "github_create_pr", "github_comment"],
+      "read_actions": ["github_get_issue", "github_list_issues", "github_get_repo"]
+    }
+  ]
+}
