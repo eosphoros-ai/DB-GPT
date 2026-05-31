@@ -2799,7 +2799,7 @@ const Playground: NextPage = () => {
                                 </div>
                               }
                             >
-                              <Tooltip title={selectedConnectors.length === 0 ? '选择连接器' : selectedConnectors.length === 1 ? `连接器: ${selectedConnectors[0].display_name}` : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`}>
+                              <Tooltip title={selectedConnectors.length === 0 ? '选择MCP' : selectedConnectors.length === 1 ? `连接器: ${selectedConnectors[0].display_name}` : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`}>
                                 <Button
                                   type='text'
                                   shape='circle'
@@ -3368,7 +3368,7 @@ const Playground: NextPage = () => {
                               </div>
                             }
                           >
-                            <Tooltip title={selectedConnectors.length === 0 ? '选择连接器' : selectedConnectors.length === 1 ? `连接器: ${selectedConnectors[0].display_name}` : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`}>
+                            <Tooltip title={selectedConnectors.length === 0 ? '选择MCP' : selectedConnectors.length === 1 ? `连接器: ${selectedConnectors[0].display_name}` : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`}>
                               <Button
                                 type='text'
                                 shape='circle'
