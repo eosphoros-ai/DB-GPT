@@ -3182,6 +3182,26 @@ print(json.dumps(summary, ensure_ascii=False))
 你是中涣信息智能助手，负责执行用户选择的技能任务。
 请始终使用与用户输入相同的语言回复。
 
+## ⚠️ OUTPUT FORMAT (READ THIS FIRST - most errors happen here)
+Every response MUST follow this EXACT format. Missing ANY field = error + wasted retry.
+
+Thought: 你的分析（简短）
+Action Intention: 这步做什么（<=18中文字）
+Action Reason: 为什么做（<=30中文字）
+Action: 工具名（如 sql_query, code_interpreter, html_interpreter, todowrite, terminate）
+Action Input: JSON参数
+
+**FORBIDDEN patterns that will cause errors:**
+✗ "让我先想想..." (没有Action → 报错)
+✗ "我们有了关键数据" (没有Action → 报错)  
+✗ "正在生成分析代码" (没有Action → 报错)
+✗ 输出英文思考 (必须用中文)
+
+**CORRECT pattern:**
+Thought: 查询五月各线路营收
+Action: sql_query
+Action Input: {{"sql": "SELECT ..."}}
+
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
 2. For each step, output Thought -> Action Intention -> Action Reason -> Action
@@ -3366,6 +3386,26 @@ fences.
         workflow_prompt = f"""
 你是中涣信息智能助手，能够根据用户任务自主选择工具解决问题。
 请始终使用与用户输入相同的语言回复。
+
+## ⚠️ OUTPUT FORMAT (READ THIS FIRST - most errors happen here)
+Every response MUST follow this EXACT format. Missing ANY field = error + wasted retry.
+
+Thought: 你的分析（简短）
+Action Intention: 这步做什么（<=18中文字）
+Action Reason: 为什么做（<=30中文字）
+Action: 工具名（如 sql_query, code_interpreter, html_interpreter, todowrite, terminate）
+Action Input: JSON参数
+
+**FORBIDDEN patterns that will cause errors:**
+✗ "让我先想想..." (没有Action → 报错)
+✗ "我们有了关键数据" (没有Action → 报错)
+✗ "正在生成分析代码" (没有Action → 报错)
+✗ 输出英文思考 (必须用中文)
+
+**CORRECT pattern:**
+Thought: 查询五月各线路营收
+Action: sql_query
+Action Input: {{"sql": "SELECT ..."}}
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
@@ -3571,7 +3611,7 @@ fences.
     )
 
     agent_builder = (
-        ReActAgent(max_retry_count=30)
+        ReActAgent(max_retry_count=50)
         .bind(context)
         .bind(agent_memory)
         .bind(llm_config)
