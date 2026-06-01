@@ -27,6 +27,8 @@ COPY dbgpt-src/i18n/locales/ru/ /app/i18n/locales/ru/
 # Sync agent core context + agentic API from fork (newer than base image)
 COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/context/ \
     /app/packages/dbgpt-core/src/dbgpt/agent/core/context/
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/agent.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/core/agent.py
 COPY dbgpt-src/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py \
     /app/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py
 RUN touch /app/packages/dbgpt-app/src/dbgpt_app/static/web/.dbgpt-ru-prebuilt \

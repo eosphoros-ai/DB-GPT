@@ -3050,14 +3050,23 @@ print(json.dumps(summary, ensure_ascii=False))
     storage_conv.save_to_storage()
     storage_conv.start_new_round()
     storage_conv.add_user_message(user_input)
-    context = AgentContext(
-        conv_id=conv_id,
-        gpts_app_code="react_agent",
-        gpts_app_name="ReAct",
-        language=_agent_lang_code(),
-        temperature=dialogue.temperature or 0.2,
-        enable_context_management=True,
-    )
+    try:
+        context = AgentContext(
+            conv_id=conv_id,
+            gpts_app_code="react_agent",
+            gpts_app_name="ReAct",
+            language=_agent_lang_code(),
+            temperature=dialogue.temperature or 0.2,
+            enable_context_management=True,
+        )
+    except TypeError:
+        context = AgentContext(
+            conv_id=conv_id,
+            gpts_app_code="react_agent",
+            gpts_app_name="ReAct",
+            language=_agent_lang_code(),
+            temperature=dialogue.temperature or 0.2,
+        )
 
     # Build file context if file uploaded
     file_context = ""
