@@ -2076,6 +2076,7 @@ print(json.dumps(summary, ensure_ascii=False))
         - Security validation (blocks dangerous patterns like rm -rf /)
         Each call is independent — no state persists between calls.
         """
+        import os
         import uuid
 
         if not code or not code.strip():
@@ -2463,6 +2464,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
         Legacy fallback: `file_path` reads HTML from a file on disk.
         """
+        import os
         import re
 
         from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
