@@ -3319,7 +3319,7 @@ Thought: 查询五月各线路营收排名
 Action Intention: 查询线路营收TOP15
 Action Reason: 为报告提供线路维度对比数据
 Action: sql_query
-Action Input: {"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}
+Action Input: {{"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}}
 
 Example (WRONG - will fail):
 Thought: 我需要查询数据...让我先想想...
@@ -3502,7 +3502,7 @@ Thought: 查询五月各线路营收排名
 Action Intention: 查询线路营收TOP15
 Action Reason: 为报告提供线路维度对比数据
 Action: sql_query
-Action Input: {"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}
+Action Input: {{"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}}
 
 Example (WRONG - will fail):
 Thought: 我需要查询数据...让我先想想...
