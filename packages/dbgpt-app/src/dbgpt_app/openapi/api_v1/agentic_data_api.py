@@ -3183,6 +3183,12 @@ placeholders in the `data` dictionary.
 5. If the task does not require generating a report, directly call terminate to
 return the final result. The Action Input format must be
 {{"result": "final answer"}}.
+6. **[Data Integrity - MANDATORY] All report data MUST come from sql_query
+results. NEVER fabricate, estimate, or hallucinate data.** If a query returns
+empty or insufficient data, explicitly state "暂无数据" for that metric instead
+of filling in made-up numbers. In code_interpreter, only use data returned by
+sql_query — do NOT hardcode sample/dummy data. Clearly label any derived
+metrics (e.g. ratios, growth rates) as "计算值" with the formula used.
 
 {skill_prompt_context}
 {execution_instruction}
@@ -3339,6 +3345,12 @@ HTML report, or interactive report, the final presentation step must call
 writes to .html file -> html_interpreter(file_path=...) renders -> terminate.**
 **For long HTML reports, always use file mode: write HTML to file with code_interpreter,
 then call html_interpreter with file_path parameter.**
+7. **[Data Integrity - MANDATORY] All report data MUST come from sql_query
+results. NEVER fabricate, estimate, or hallucinate data.** If a query returns
+empty or insufficient data, explicitly state "暂无数据" for that metric instead
+of filling in made-up numbers. In code_interpreter, only use data returned by
+sql_query — do NOT hardcode sample/dummy data. Clearly label any derived
+metrics (e.g. ratios, growth rates) as "计算值" with the formula used.
 
 ## Task Management
 For complex tasks that require 3 or more steps, use the `todowrite` tool to create
