@@ -9,13 +9,13 @@ import { STORAGE_INIT_MESSAGE_KET, getInitMessage } from '@/utils';
 import { useAsyncEffect } from 'ahooks';
 import { Modal } from 'antd';
 import { cloneDeep } from 'lodash';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { useContext, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
 const ChatCompletion: React.FC = () => {
-  const searchParams = useSearchParams();
-  const chatId = searchParams?.get('id') ?? '';
+  const searchParams = usePageQuery();
+  const chatId = searchParams.get('id') ?? '';
 
   const { currentDialogInfo, model } = useContext(ChatContext);
   const {

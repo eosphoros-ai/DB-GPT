@@ -4,7 +4,7 @@ import { OnChange } from '@monaco-editor/react';
 import { useRequest } from 'ahooks';
 import { Button, Input, Select, Table, Tooltip, Tree } from 'antd';
 import type { DataNode } from 'antd/es/tree';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import { ChangeEvent, Key, useEffect, useMemo, useState } from 'react';
 import Chart from '../chart';
 import Header from './header';
@@ -161,9 +161,9 @@ function DbEditor() {
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
   const [layout, setLayout] = useState<'TB' | 'LR'>('TB');
 
-  const searchParams = useSearchParams();
-  const id = searchParams?.get('id');
-  const scene = searchParams?.get('scene');
+  const searchParams = usePageQuery();
+  const id = searchParams.get('id');
+  const scene = searchParams.get('scene');
 
   const { data: rounds } = useRequest(
     async () =>

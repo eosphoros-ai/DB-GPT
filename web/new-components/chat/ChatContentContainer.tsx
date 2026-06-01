@@ -2,7 +2,7 @@ import ChatHeader from '@/new-components/chat/header/ChatHeader';
 import { ChatContentContext } from '@/pages/chat';
 import { VerticalAlignBottomOutlined, VerticalAlignTopOutlined } from '@ant-design/icons';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, {
   forwardRef,
   useCallback,
@@ -31,8 +31,8 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
   const animationFrameRef = useRef<number | null>(null);
 
   // Get scene from URL params to determine which completion component to render
-  const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
+  const searchParams = usePageQuery();
+  const scene = searchParams.get('scene') ?? '';
   // Use OpenCode style for all scenes (chat_normal, chat_agent, chat_knowledge, etc.)
   // This provides a consistent modern UI experience
   const useOpenCodeStyle = true;

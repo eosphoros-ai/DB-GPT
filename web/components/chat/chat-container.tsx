@@ -5,7 +5,7 @@ import { ChartData, ChatHistoryResponse } from '@/types/chat';
 import { getInitMessage } from '@/utils';
 import { useAsyncEffect } from 'ahooks';
 import classNames from 'classnames';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import Chart from '../chart';
 import MyEmpty from '../common/MyEmpty';
@@ -84,10 +84,10 @@ const formatToVisThinking = (content: any) => {
 };
 
 const ChatContainer = () => {
-  const searchParams = useSearchParams();
+  const searchParams = usePageQuery();
   const { scene, chatId, model, agent, setModel, history, setHistory } = useContext(ChatContext);
   const { chat } = useChat({});
-  const initMessage = (searchParams && searchParams.get('initMessage')) ?? '';
+  const initMessage = searchParams.get('initMessage') ?? '';
 
   const [loading, setLoading] = useState<boolean>(false);
   const [chartsData, setChartsData] = useState<Array<ChartData>>();

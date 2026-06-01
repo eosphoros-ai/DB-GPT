@@ -8,7 +8,7 @@ import { useAsyncEffect, useRequest } from 'ahooks';
 import type { UploadFile } from 'antd';
 import { Select, Tooltip, Upload } from 'antd';
 import classNames from 'classnames';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { memo, useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -22,9 +22,9 @@ const Resource: React.FC<{
     useContext(ChatContentContext);
 
   const { temperatureValue, maxNewTokensValue } = useContext(ChatContentContext);
-  const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
-  const chatId = searchParams?.get('id') ?? '';
+  const searchParams = usePageQuery();
+  const scene = searchParams.get('scene') ?? '';
+  const chatId = searchParams.get('id') ?? '';
 
   const { t } = useTranslation();
 

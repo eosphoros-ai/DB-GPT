@@ -12,7 +12,7 @@ import { getInitMessage, transformFileUrl } from '@/utils';
 import { useAsyncEffect, useRequest } from 'ahooks';
 import { Flex, Layout, Spin } from 'antd';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 const DbEditor = dynamic(() => import('@/components/chat/db-editor'), {
@@ -91,12 +91,12 @@ const Chat: React.FC = () => {
     app_code: currentDialogInfo.app_code || '',
   });
 
-  const searchParams = useSearchParams();
-  const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';
-  const knowledgeId = searchParams?.get('knowledge_id') ?? '';
-  const dbName = searchParams?.get('db_name') ?? '';
-  const initMsg = searchParams?.get('init_msg') ?? '';
+  const searchParams = usePageQuery();
+  const chatId = searchParams.get('id') ?? '';
+  const scene = searchParams.get('scene') ?? '';
+  const knowledgeId = searchParams.get('knowledge_id') ?? '';
+  const dbName = searchParams.get('db_name') ?? '';
+  const initMsg = searchParams.get('init_msg') ?? '';
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const order = useRef<number>(1);
