@@ -243,14 +243,7 @@ class ReActAgent(ConversableAgent):
             raise ValueError("The response is empty.")
         try:
             steps = self.parser.parse_current_step(message_content)
-            err_msg = None
-            if not steps:
-                err_msg = (
-                    "No correct response found. Please check your response, which must"
-                    " be in the format indicated in the system prompt."
-                )
-            elif len(steps) != 1:
-                err_msg = "Only one action is allowed each time."
+            err_msg = self.parser.validate_current_step(steps)
             if err_msg:
                 return ActionOutput(is_exe_success=False, content=err_msg)
         except Exception as e:

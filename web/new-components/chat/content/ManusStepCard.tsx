@@ -195,7 +195,9 @@ const ManusStepCard: React.FC<StepCardProps> = ({
             {stats.deletions !== undefined && stats.deletions > 0 && (
               <span className='text-red-500 dark:text-red-400'>-{stats.deletions}</span>
             )}
-            {stats.files !== undefined && <span className='text-gray-400'>{t('files_count', { count: stats.files })}</span>}
+            {stats.files !== undefined && (
+              <span className='text-gray-400'>{t('files_count', { count: stats.files })}</span>
+            )}
           </div>
         )}
       </div>

@@ -70,7 +70,7 @@ export const ExportFlowModal: React.FC<Props> = ({
           <Form.Item label={t('Export_File_Type')} name='export_type'>
             <Radio.Group>
               <Radio value='json'>JSON</Radio>
-              <Radio value='dbgpts'>DBGPTS</Radio>
+              <Radio value='dbgpts'>应用包</Radio>
             </Radio.Group>
           </Form.Item>
 

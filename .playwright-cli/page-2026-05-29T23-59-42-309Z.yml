@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - complementary [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - img "logo" [ref=e12]
+            - generic [ref=e13]: 中涣AI数据助理
+          - img "menu-fold" [ref=e15] [cursor=pointer]:
+            - img [ref=e16]
+        - generic [ref=e18] [cursor=pointer]:
+          - img "plus" [ref=e19]:
+            - img [ref=e20]
+          - generic [ref=e23]: 新建对话
+        - generic [ref=e24]: 全部任务
+        - generic [ref=e27] [cursor=pointer]:
+          - img "message" [ref=e28]:
+            - img [ref=e29]
+          - generic [ref=e31]:
+            - generic [ref=e32]: 你是谁
+            - generic [ref=e33]: 6小时前
+          - img "delete" [ref=e34]:
+            - img [ref=e35]
+        - generic [ref=e39]: 中科中涣 · 数据助理
+      - generic [ref=e42]:
+        - generic [ref=e46]:
+          - img "中涣信息" [ref=e48]
+          - generic [ref=e49]: 中涣AI数据助理
+          - generic [ref=e50]: 直接输入问题，开始智能对话
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - textbox "给中涣AI数据助理发送消息" [ref=e54]
+            - generic [ref=e55]:
+              - generic [ref=e56]:
+                - img "llm" [ref=e57]
+                - generic [ref=e58]: 中科中涣 · 数据助理
+                - generic "选择模型" [ref=e59] [cursor=pointer]:
+                  - generic [ref=e60]:
+                    - combobox "选择模型" [ref=e62]
+                    - generic "deepseek-reasoner" [ref=e63]
+                  - img [ref=e64]:
+                    - img [ref=e65]
+              - button "arrow-up" [disabled] [ref=e67]:
+                - generic:
+                  - img "arrow-up":
+                    - img
+          - generic [ref=e68]: 内容由 AI 生成，请结合业务数据核验。
+  - alert [ref=e69]

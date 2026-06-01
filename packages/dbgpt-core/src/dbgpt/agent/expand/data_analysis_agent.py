@@ -66,10 +66,9 @@ class DataAnalysisAgent(ConversableAgent):
 
         try:
             steps = self.parser.parse_current_step(message_content)
-            if not steps or len(steps) != 1:
-                return ActionOutput(
-                    is_exe_success=False, content="Invalid response format."
-                )
+            err_msg = self.parser.validate_current_step(steps)
+            if err_msg:
+                return ActionOutput(is_exe_success=False, content=err_msg)
         except Exception as e:
             logger.warning(f"Parsing error: {e}")
             return ActionOutput(is_exe_success=False, content=str(e))

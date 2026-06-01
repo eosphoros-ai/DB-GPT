@@ -1034,7 +1034,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               />
             ))}
           </div>
-        ) : (
+        ) : !assistantText ? (
           <div className='px-4 py-6 text-gray-400 space-y-2'>
             {isWorking ? (
               <div className='flex items-center gap-2'>
@@ -1048,19 +1048,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               <ThoughtBubble text={stepThoughts[activeStepId || 'initial']} />
             )}
           </div>
-        )}
-
-        {isWorking && sections.length > 0 && (
-          <div className='px-4 py-3 mt-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 space-y-2'>
-            <div className='flex items-center gap-2'>
-              <LoadingOutlined spin className='text-blue-500' />
-              <span className='text-sm text-blue-600 dark:text-blue-400'>{t('db_gpt_thinking')}</span>
-            </div>
-            {stepThoughts?.[activeStepId || 'initial'] && (
-              <ThoughtBubble text={stepThoughts[activeStepId || 'initial']} />
-            )}
-          </div>
-        )}
+        ) : null}
 
         {taskPlan && taskPlan.length > 0 && (
           <div className='mt-3 px-1'>

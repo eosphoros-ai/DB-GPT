@@ -70,7 +70,7 @@ const ChatWelcome: React.FC<ChatWelcomeProps> = ({
         <div className='flex items-center justify-center w-20 h-20 mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg'>
           <Image
             src='/pictures/logo.png'
-            alt='DB-GPT'
+            alt='中涣信息'
             width={48}
             height={48}
             className='object-contain'
@@ -127,7 +127,7 @@ const ChatWelcome: React.FC<ChatWelcomeProps> = ({
 
         <div className='mt-8 flex items-center gap-2 text-xs text-[var(--oc-text-weaker)]'>
           <span>Powered by</span>
-          <span className='font-medium text-[var(--oc-text-weak)]'>DB-GPT</span>
+          <span className='font-medium text-[var(--oc-text-weak)]'>中涣信息</span>
         </div>
       </div>
     </div>

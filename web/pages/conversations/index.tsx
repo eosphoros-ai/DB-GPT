@@ -121,7 +121,7 @@ function ConversationsPage() {
               {filteredList.map(conv => (
                 <div
                   key={conv.conv_uid}
-                  onClick={() => router.push(`/?id=${conv.conv_uid}`)}
+                  onClick={() => router.push(`/legacy/home?id=${conv.conv_uid}`)}
                   className='group flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-colors hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm'
                 >
                   <div className='flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700'>

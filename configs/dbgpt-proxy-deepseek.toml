@@ -26,12 +26,10 @@ persist_path = "pilot/data"
 name = "deepseek-reasoner"
 # name = "deepseek-chat"
 provider = "proxy/deepseek"
-api_key = "your_deepseek_api_key"
+api_key = "sk-67958f9c959849c485a1eb07ccd3b5bb"
 
 [[models.embeddings]]
-name = "BAAI/bge-large-zh-v1.5"
-provider = "hf"
-# If not provided, the model will be downloaded from the Hugging Face model hub
-# uncomment the following line to specify the model path in the local file system
-# path = "the-model-path-in-the-local-file-system"
-path = "models/bge-large-zh-v1.5"
+name = "text-embedding-v4"
+provider = "proxy/tongyi"
+api_url = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings"
+api_key = "sk-ad49aa59be334ff6b4979efc62e44ae5"

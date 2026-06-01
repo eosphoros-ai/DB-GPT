@@ -2105,8 +2105,7 @@ print(json.dumps(summary, ensure_ascii=False))
                         {
                             "output_type": "text",
                             "content": (
-                                "Error: dbgpt-sandbox package is not installed. "
-                                "Please install it with: pip install dbgpt-sandbox"
+                                "Error: sandbox runtime package is not installed."
                             ),
                         },
                     ]
@@ -2824,6 +2823,7 @@ print(json.dumps(summary, ensure_ascii=False))
         gpts_app_name="ReAct",
         language="zh",
         temperature=dialogue.temperature or 0.2,
+        max_new_tokens=dialogue.max_new_tokens or 8192,
         enable_context_management=True,
     )
 
@@ -2958,6 +2958,51 @@ print(json.dumps(summary, ensure_ascii=False))
         ]
         return any(keyword in text for keyword in keywords)
 
+    def _looks_like_raw_sql(text: str) -> bool:
+        """Check if text looks like raw SQL output rather than a summary."""
+        t = text.strip().upper()
+        sql_prefixes = ("SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "WITH")
+        if any(t.startswith(p) for p in sql_prefixes):
+            return True
+        # Heuristic: mostly ASCII with SQL keywords
+        if len(text) > 50 and re.search(
+            r"\b(FROM|WHERE|GROUP BY|ORDER BY|JOIN)\b", t
+        ):
+            return True
+        return False
+
+    def _collect_history_summary(steps: List[Dict[str, Any]]) -> str:
+        """Build a summary from all completed history steps' observations."""
+        parts: List[str] = []
+        for s in steps:
+            if s.get("status") != "done":
+                continue
+            action = s.get("action") or ""
+            outputs = s.get("outputs") or []
+            for out in outputs:
+                content = out.get("content") or ""
+                if not content:
+                    continue
+                # Skip raw SQL, code blocks, and very short outputs
+                if _looks_like_raw_sql(content):
+                    continue
+                if out.get("output_type") == "code":
+                    continue
+                if len(content) < 20:
+                    continue
+                # Use thought/action_intention as label if available
+                label = (
+                    s.get("action_intention")
+                    or s.get("thought")
+                    or action
+                    or "Step"
+                )
+                # Truncate long observations
+                if len(content) > 500:
+                    content = content[:500] + "..."
+                parts.append(f"**{label}**:\n{content}")
+        return "\n\n".join(parts) if parts else ""
+
     def should_advance_todo(
         action_name: Optional[str],
         thought: Optional[str] = None,
@@ -3016,7 +3061,18 @@ print(json.dumps(summary, ensure_ascii=False))
 
         if action_lower == "sql_query":
             sql_calls = sum(1 for item in history if item == "sql_query")
-            if sql_calls < 3:
+
+            # Allow early advance if the agent explicitly indicates transition
+            # to the next step (e.g. "下一步：生成报告")
+            if next_todo and any(
+                marker in thought_lower for marker in transition_markers
+            ):
+                if any(
+                    token and token in thought_lower for token in next_todo.split()
+                ):
+                    return True
+
+            if sql_calls < 1:
                 return False
 
             if next_todo and any(
@@ -3030,6 +3086,8 @@ print(json.dumps(summary, ensure_ascii=False))
                 or "整理" in thought_lower
                 or "汇总" in thought_lower
                 or "报告" in thought_lower
+                or "分析" in thought_lower
+                or "建议" in thought_lower
             ):
                 return True
 
@@ -3045,9 +3103,23 @@ print(json.dumps(summary, ensure_ascii=False))
                     "已完成",
                     "已获取",
                     "整理一下",
+                    "数据已获取",
+                    "查询完成",
+                    "查询完毕",
+                    "数据收集完成",
+                    "可以生成",
+                    "可以开始",
                 ]
                 if any(marker in thought_lower for marker in completion_markers):
                     return True
+
+            # If agent has been stuck on sql_query for too many rounds,
+            # force advance to prevent infinite loop
+            if sql_calls >= 5:
+                logger.warning(
+                    f"sql_query stuck for {sql_calls} rounds, forcing advance"
+                )
+                return True
 
             return False
 
@@ -3105,8 +3177,8 @@ print(json.dumps(summary, ensure_ascii=False))
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
         workflow_prompt = f"""
-You are the DB-GPT intelligent assistant, executing the skill task selected by the user.
-Please always response in the same language as the user's input language.
+你是中涣信息智能助手，负责执行用户选择的技能任务。
+请始终使用与用户输入相同的语言回复。
 
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
@@ -3178,17 +3250,12 @@ are needed, use `&&` or `;` to connect commands.
 automatically handle images and data recording.
 5. **html_interpreter**: Render HTML as an interactive web report. This is the ONLY
 way to display reports on the right panel.
-   **Default usage (recommended)**: {{"html": "<html>your complete HTML code</html>",
-"title": "report title"}}
-   - Generate complete HTML yourself (DOCTYPE, html, head, body, CSS styles,
-content). No length limit.
-   - **Do not** use code_interpreter to write HTML. Directly pass the HTML string
-to this tool.
-   **Template mode (only when skill has templates/)**: {{"template_path":
-"skill-name/templates/template.html", "data": {{"KEY": "value"}}, "title": "title"}}
-   - Only use this if the skill's documentation explicitly provides template paths.
-If template_path returns "Template not found", immediately switch to the default
-`html` parameter usage.
+   **File mode (recommended for reports)**:
+   {{"file_path": "/tmp/report.html", "title": "title"}}
+   - Write HTML to file with code_interpreter first, then pass file_path.
+   **Inline mode**: {{"html": "<html>...</html>", "title": "title"}}
+   **Template mode**:
+   {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}
    {available_images_hint}
 6. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
@@ -3224,6 +3291,14 @@ Example flow for 3 tasks:
 {file_context}
 {knowledge_context}
 {database_context}
+
+## Data Authenticity Guard
+- Report metrics must come from successful `sql_query` or skill observations.
+- If a SQL query fails or returns insufficient data, fix the query or clearly
+  state that the report cannot be completed; never invent KPI values.
+- Before rendering an HTML report, verify that every core metric is traceable to
+  a successful observation in this conversation.
+
 ## ReAct Output Format
 Must output for each interaction round:
 Thought: Analyze current task status and think about what to do next
@@ -3235,6 +3310,9 @@ Action Reason: Why this action is needed now, plain text, MUST be concise and fi
 Do not use ellipsis.
 Action: The selected tool name (must be one of the tools listed above)
 Action Input: The JSON format of tool parameters
+Do not wrap ReAct labels with Markdown. Output `Action:` and `Action Input:`
+exactly as plain line prefixes, not `**Action:**`, headings, bullets, or code
+fences.
 """.strip()
 
         tool_pack = ToolPack(
@@ -3253,9 +3331,8 @@ Action Input: The JSON format of tool parameters
     else:
         # Full prompt with all tools when no skill is pre-selected
         workflow_prompt = f"""
-You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
-to solve problems based on user tasks.
-Please always response in the same language as the user's input language.
+你是中涣信息智能助手，能够根据用户任务自主选择工具解决问题。
+请始终使用与用户输入相同的语言回复。
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
@@ -3272,6 +3349,8 @@ HTML report, or interactive report, the final presentation step must call
 `html_interpreter` to render it. It is forbidden to output HTML using only
 `code_interpreter` and then directly terminate. Correct process: code_interpreter
 writes to .html file -> html_interpreter(file_path=...) renders -> terminate.**
+**For long HTML reports, always use file mode: write HTML to file with code_interpreter,
+then call html_interpreter with file_path parameter.**
 
 ## Task Management
 For complex tasks that require 3 or more steps, use the `todowrite` tool to create
@@ -3322,7 +3401,7 @@ calls in the same step.
 
 ### 4. Special Scenarios
 - For report generation: Same as the principle above, must finally call
-`html_interpreter` to render.
+`html_interpreter` to render. Prefer file mode for long HTML.
 
 ## Available Tools Description
 1. **load_skill**: Load skill content by skill name and file path.
@@ -3350,10 +3429,12 @@ Parameters: {{"sql": "SELECT statement"}}
 12. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
 13. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
-to display reports on the right panel). Default usage:
-{{"html": "<html>complete HTML code</html>", "title": "title"}}. Template mode:
-{{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
-File mode: {{"file_path": "/path/to/report.html"}}
+to display reports on the right panel).
+   File mode (recommended):
+   {{"file_path": "/path/to/report.html", "title": "title"}}
+   Inline mode: {{"html": "<html>...</html>", "title": "title"}}
+   Template mode:
+   {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}
 14. **todowrite**: Create and manage a structured task list. Use for complex tasks
 (3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
@@ -3367,6 +3448,13 @@ Parameters: {{"todos": [{{...}}]}}
 {knowledge_context}
 {database_context}
 
+## Data Authenticity Guard
+- Report metrics must come from successful `sql_query` or tool observations.
+- If a SQL query fails or returns insufficient data, fix the query or clearly
+  state that the report cannot be completed; never invent KPI values.
+- Before rendering an HTML report, verify that every core metric is traceable to
+  a successful observation in this conversation.
+
 ## ReAct Output Format
 Must output for each interaction round:
 Thought: Analyze current task status and think about what to do next
@@ -3378,6 +3466,9 @@ Action Reason: Why this action is needed now, plain text, MUST be concise and fi
 Do not use ellipsis.
 Action: The selected tool name
 Action Input: The JSON format of tool parameters
+Do not wrap ReAct labels with Markdown. Output `Action:` and `Action Input:`
+exactly as plain line prefixes, not `**Action:**`, headings, bullets, or code
+fences.
 """.strip()
 
         tool_pack = ToolPack(
@@ -3580,6 +3671,12 @@ Action Input: The JSON format of tool parameters
                         )
                         round_step_map[round_num] = pending_step_id
                         yield pending_step_event
+                    # Stream thought chunk to frontend for real-time display
+                    yield _sse_event({
+                        "type": "step.thought",
+                        "id": round_step_map[round_num],
+                        "content": clean_chunk,
+                    })
 
         elif event_type == "act":
             # Create step ONLY when action is confirmed
@@ -3906,16 +4003,12 @@ Action Input: The JSON format of tool parameters
 
     if reply.action_report and reply.action_report.terminate:
         raw_content = reply.action_report.content or ""
-        # The terminate ActionOutput.content is the full raw LLM text, e.g.:
-        # "Thought: ...\nAction: terminate\nAction Input: {"result": "..."}"
-        # We need to extract the "result" value from Action Input.
         final_content = raw_content
         try:
             steps = parser.parse(raw_content)
             if steps:
                 action_input = steps[0].action_input
                 if action_input:
-                    # action_input could be a string like '{"result": "..."}'
                     if isinstance(action_input, str):
                         parsed_input = json.loads(action_input)
                     else:
@@ -3924,6 +4017,15 @@ Action Input: The JSON format of tool parameters
                         final_content = parsed_input["result"]
         except Exception:
             pass
+        # Fallback: extract "result" value via regex if parsing failed
+        if final_content == raw_content:
+            m = re.search(
+                r'"result"\s*:\s*"((?:[^"\\]|\\.)*)"',
+                final_content,
+                re.DOTALL,
+            )
+            if m:
+                final_content = m.group(1).replace('\\"', '"').replace('\\n', '\n')
     elif reply.action_report:
         # Loop ended without terminate (max retries or timeout).
         # reply.content is raw LLM output containing ReAct prefixes.
@@ -3948,8 +4050,31 @@ Action Input: The JSON format of tool parameters
             final_content,
             flags=re.MULTILINE,
         ).strip()
+
+        # If final_content looks like raw SQL or is very short, try to
+        # build a richer summary from all completed history steps.
+        if not final_content or _looks_like_raw_sql(final_content):
+            collected = _collect_history_summary(history_steps)
+            if collected:
+                final_content = collected
+
         if not final_content:
-            final_content = "任务执行已达到最大步数限制，请查看上方各步骤的执行结果。"
+            incomplete_hint = ""
+            if _todo_list:
+                pending = [
+                    t["content"]
+                    for t in _todo_list
+                    if t.get("status") in ("pending", "in_progress")
+                ]
+                if pending:
+                    incomplete_hint = (
+                        " 未完成的步骤：" + "、".join(pending) + "。"
+                        "请尝试用更简洁的指令继续完成。"
+                    )
+            final_content = (
+                "任务执行已达到最大步数限制，请查看上方各步骤的执行结果。"
+                + incomplete_hint
+            )
     else:
         final_content = reply.content or ""
 

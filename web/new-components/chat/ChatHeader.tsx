@@ -55,7 +55,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           <div className='flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600'>
             <Image
               src='/pictures/logo.png'
-              alt='DB-GPT'
+              alt='中涣信息'
               width={20}
               height={20}
               className='object-contain'
@@ -66,7 +66,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             />
           </div>
           <div className='flex flex-col'>
-            <span className='text-sm font-semibold text-[var(--oc-text-strong)]'>{title || 'DB-GPT'}</span>
+            <span className='text-sm font-semibold text-[var(--oc-text-strong)]'>{title || '中涣信息'}</span>
             {modelName && <span className='text-xs text-[var(--oc-text-weak)]'>{modelName}</span>}
           </div>
         </div>

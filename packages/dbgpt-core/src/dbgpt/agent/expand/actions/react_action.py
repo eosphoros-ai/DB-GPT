@@ -382,8 +382,48 @@ class ReActAction(ToolAction):
         )
 
         if html_content:
+            html_content = self._repair_truncated_html(html_content)
             return {"html": html_content, "title": title_value}
         return {}
+
+    @staticmethod
+    def _repair_truncated_html(html: str) -> str:
+        """Auto-close HTML tags that were truncated by LLM token limit.
+
+        Detects unclosed tags and appends closing tags in reverse order.
+        Also ensures </body></html> are present if <body>/<html> were opened.
+        """
+        if not html:
+            return html
+
+        # Quick check: if it already looks complete, skip repair
+        lower = html.lower()
+        if "</html>" in lower and "</body>" in lower:
+            return html
+
+        # Track opened tags
+        tag_pattern = re.compile(r"<(\w+)(?:\s[^>]*)?>")
+        close_tag_pattern = re.compile(r"</(\w+)\s*>")
+        self_closing = {"br", "hr", "img", "input", "meta", "link", "area", "base", "col", "embed", "source", "track", "wbr"}
+
+        open_tags = []
+        for m in tag_pattern.finditer(html):
+            tag = m.group(1).lower()
+            if tag not in self_closing:
+                open_tags.append(tag)
+        for m in close_tag_pattern.finditer(html):
+            tag = m.group(1).lower()
+            if tag in open_tags:
+                # Remove the last matching open tag
+                idx = len(open_tags) - 1 - open_tags[::-1].index(tag)
+                open_tags.pop(idx)
+
+        # Append closing tags in reverse order
+        if open_tags:
+            closing = "".join(f"</{t}>" for t in reversed(open_tags))
+            html = html + closing
+
+        return html
 
     async def _do_run(
         self,

@@ -222,7 +222,9 @@ function Flow() {
                 rightTopHover={false}
                 Tags={
                   <div>
-                    <Tag color={flow.source === 'DBGPT-WEB' ? 'green' : 'blue'}>{flow.source}</Tag>
+                    <Tag color={flow.source === 'DBGPT-WEB' ? 'green' : 'blue'}>
+                      {flow.source === 'DBGPT-WEB' ? '中涣信息' : flow.source}
+                    </Tag>
                     {flow.define_type && <Tag color={'purple'}>{flow.define_type}</Tag>}
                     <Tag color={flow.editable ? 'green' : 'gray'}>{flow.editable ? 'Editable' : 'Can not Edit'}</Tag>
                     <Tag color={flow.state === 'load_failed' ? 'red' : flow.state === 'running' ? 'green' : 'blue'}>

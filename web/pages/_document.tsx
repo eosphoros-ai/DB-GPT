@@ -35,12 +35,12 @@ class MyDocument extends Document {
 
   render() {
     return (
-      <Html lang='en'>
+      <Html lang='zh'>
         <Head>
-          <link rel='icon' href='/favicon.ico' />
-          <meta name='description' content='Revolutionizing Database Interactions with Private LLM Technology' />
-          <meta property='og:description' content='eosphoros-ai' />
-          <meta property='og:title' content='DB-GPT' />
+          <link rel='icon' href='/zhongke-zhonghuan-logo.png' />
+          <meta name='description' content='中涣问数 - 智能数据库交互与数据分析平台' />
+          <meta property='og:description' content='中涣问数 - 智能数据库交互与数据分析平台' />
+          <meta property='og:title' content='中涣问数' />
         </Head>
         <body>
           <Main />

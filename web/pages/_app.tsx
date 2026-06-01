@@ -70,9 +70,9 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
     // MOCK User info
     const user = {
-      user_channel: `dbgpt`,
+      user_channel: `zhonghuan`,
       user_no: `001`,
-      nick_name: `dbgpt`,
+      nick_name: `中涣信息`,
     };
     if (user) {
       localStorage.setItem(STORAGE_USERINFO_KEY, JSON.stringify(user));
@@ -93,18 +93,19 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
     if (router.pathname.includes('mobile') || router.pathname.startsWith('/share')) {
       return <>{children}</>;
     }
+    const isStandaloneHome = router.pathname === '/';
     return (
       <div className='flex w-screen h-screen overflow-hidden'>
         <Head>
           <meta name='viewport' content='initial-scale=1.0, width=device-width, maximum-scale=1' />
         </Head>
-        {router.pathname !== '/construct/app/extra' && (
+        {!isStandaloneHome && router.pathname !== '/construct/app/extra' && (
           <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
             <SideBar />
           </div>
         )}
         <div className='flex flex-col flex-1 relative overflow-hidden'>{children}</div>
-        <FloatHelper />
+        {!isStandaloneHome && <FloatHelper />}
       </div>
     );
   };

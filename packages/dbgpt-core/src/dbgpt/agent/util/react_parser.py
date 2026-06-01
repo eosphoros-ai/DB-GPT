@@ -77,7 +77,20 @@ class ReActOutputParser:
 
     def _prefix_line_pattern(self, escaped_prefix: str) -> str:
         """Build a regex for a ReAct prefix at the start of a logical line."""
-        return rf"^[ \t]*{escaped_prefix}\s*"
+        return rf"^[ \t]*(?:\*\*)?{escaped_prefix}(?:\*\*)?\s*"
+
+    @staticmethod
+    def _strip_markdown_emphasis(text: Optional[str]) -> Optional[str]:
+        """Remove common Markdown emphasis left around a parsed value."""
+        if text is None:
+            return None
+        stripped = text.strip()
+        for marker in ("**", "__"):
+            if stripped.startswith(marker) and stripped.endswith(marker):
+                return stripped[len(marker) : -len(marker)].strip()
+            if stripped.endswith(marker):
+                return stripped[: -len(marker)].strip()
+        return stripped
 
     def _markdown_fence_spans(self, text: str) -> List[tuple[int, int]]:
         """Return markdown fenced-code spans so ReAct labels inside are ignored."""
@@ -239,6 +252,35 @@ class ReActOutputParser:
                 return [step]
         return [steps[0]]
 
+    def validate_current_step(self, steps: List[ReActStep]) -> Optional[str]:
+        """Validate that a parsed current step is executable."""
+        if not steps:
+            return (
+                "No correct response found. Please check your response, which must"
+                " be in the format indicated in the system prompt."
+            )
+        if len(steps) != 1:
+            return "Only one action is allowed each time."
+
+        step = steps[0]
+        if not step.action:
+            return (
+                "No action found. Please respond with Thought, Action, and "
+                "Action Input in the required ReAct format."
+            )
+        if step.action_input is None:
+            return (
+                "No action input found. Please provide Action Input as JSON in "
+                "the required ReAct format."
+            )
+        if step.is_terminal and isinstance(step.action_input, dict):
+            if not any(key in step.action_input for key in ("result", "output")):
+                return (
+                    "Terminate action input must include a result field in JSON "
+                    "format."
+                )
+        return None
+
     def _parse_step(self, step_text: str) -> Optional[ReActStep]:
         """
         Parse a single step of the ReAct format.
@@ -335,7 +377,9 @@ class ReActOutputParser:
             re.DOTALL | re.MULTILINE,
         )
         if action_match:
-            action = step_text[action_match.start(1) : action_match.end(1)].strip()
+            action = self._strip_markdown_emphasis(
+                step_text[action_match.start(1) : action_match.end(1)]
+            )
 
             # Check if this is a terminate action
             is_terminal = action.lower() == self.terminate_action.lower()

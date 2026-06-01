@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - complementary [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - img "logo" [ref=e12]
+            - generic [ref=e13]: 中涣AI数据助理
+          - img "menu-fold" [ref=e15] [cursor=pointer]:
+            - img [ref=e16]
+        - generic [ref=e18] [cursor=pointer]:
+          - img "plus" [ref=e19]:
+            - img [ref=e20]
+          - generic [ref=e23]: 新建对话
+        - generic [ref=e24]: 全部任务
+        - generic [ref=e27] [cursor=pointer]:
+          - img "message" [ref=e28]:
+            - img [ref=e29]
+          - generic [ref=e31]:
+            - generic [ref=e32]: 你是谁
+            - generic [ref=e33]: 1分钟前
+          - img "delete" [ref=e34]:
+            - img [ref=e35]
+        - generic [ref=e39]: 中科中涣 · 数据助理
+      - generic [ref=e40]:
+        - generic [ref=e42]: 你是谁
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - generic [ref=e46]:
+              - generic [ref=e47]:
+                - generic [ref=e50]: 你是谁
+                - paragraph [ref=e53]: 我是中涣信息智能助手，能够自主选择工具来解决用户任务。我具备财报分析、数据可视化、浏览器自动化等多种技能，始终以用户输入的语言进行回应。
+              - generic [ref=e56]: "Model: deepseek-reasoner"
+            - generic [ref=e58]:
+              - generic [ref=e59]:
+                - textbox "给中涣AI数据助理发送消息" [ref=e60]
+                - generic [ref=e61]:
+                  - generic "选择模型" [ref=e63] [cursor=pointer]:
+                    - generic [ref=e64]:
+                      - combobox "选择模型" [ref=e66]
+                      - generic [ref=e68]:
+                        - img "llm" [ref=e69]
+                        - generic [ref=e70]: deepseek-reasoner
+                    - generic:
+                      - img:
+                        - img
+                  - button "arrow-up" [disabled] [ref=e71]:
+                    - generic:
+                      - img "arrow-up":
+                        - img
+              - generic [ref=e72]: 内容由 AI 生成，请结合业务数据核验。
+          - button "right" [ref=e73] [cursor=pointer]:
+            - img "right" [ref=e74]:
+              - img [ref=e75]
+          - generic [ref=e78]:
+            - generic [ref=e85]:
+              - img "desktop" [ref=e86]:
+                - img [ref=e87]
+              - generic [ref=e89]: 中涣信息计算机
+            - generic [ref=e90]:
+              - button "desktop 执行步骤" [ref=e91] [cursor=pointer]:
+                - img "desktop" [ref=e92]:
+                  - img [ref=e93]
+                - text: 执行步骤
+              - button "file-text 摘要" [ref=e96] [cursor=pointer]:
+                - img "file-text" [ref=e97]:
+                  - img [ref=e98]
+                - text: 摘要
+            - generic [ref=e101]:
+              - img "console-sql" [ref=e103]:
+                - img [ref=e104]
+              - generic [ref=e108]: 选择一个步骤查看详情
+              - generic [ref=e109]: 点击左侧的步骤卡片以显示执行结果
+            - generic [ref=e113]: 就绪
+  - alert [ref=e115]

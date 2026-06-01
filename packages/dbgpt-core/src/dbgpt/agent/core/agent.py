@@ -203,7 +203,7 @@ class AgentContext:
     language: Optional[str] = None
     max_chat_round: int = 100
     max_retry_round: int = 10
-    max_new_tokens: int = 4096
+    max_new_tokens: int = 8192
     temperature: float = 0.5
     allow_format_str_template: Optional[bool] = False
     verbose: bool = False

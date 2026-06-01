@@ -468,6 +468,41 @@ Action Input: {"operation": "add", "a": 2, "b": 2}
         assert steps[0].thought == "I should calculate 2+2."
         assert steps[0].action == "calculator"
 
+    def test_parsing_with_markdown_bold_react_labels(self):
+        """Parse ReAct labels when a model wraps them in Markdown bold."""
+        parser = ReActOutputParser()
+        text = """**Thought:** I should run Python.
+**Action: code_interpreter**
+**Action Input:** {"code": "print(1 + 1)"}"""
+
+        steps = parser.parse(text)
+
+        assert len(steps) == 1
+        assert steps[0].thought == "I should run Python."
+        assert steps[0].action == "code_interpreter"
+        assert steps[0].action_input == {"code": "print(1 + 1)"}
+
+    def test_current_step_validation_rejects_thought_without_action(self):
+        """A current executable step must include an action."""
+        parser = ReActOutputParser()
+        steps = parser.parse_current_step("Thought: I need to keep thinking.")
+
+        err_msg = parser.validate_current_step(steps)
+
+        assert err_msg is not None
+        assert "No action found" in err_msg
+
+    def test_current_step_validation_rejects_action_without_input(self):
+        """A current executable step must include action input."""
+        parser = ReActOutputParser()
+        text = """Thought: I should query data.
+Action: sql_query"""
+
+        err_msg = parser.validate_current_step(parser.parse_current_step(text))
+
+        assert err_msg is not None
+        assert "No action input found" in err_msg
+
     def test_parse_current_step_uses_first_action_for_multi_round_output(self):
         """Use the first action when a model emits multiple ReAct rounds at once."""
         parser = ReActOutputParser()

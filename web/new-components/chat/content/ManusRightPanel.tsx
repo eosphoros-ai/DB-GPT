@@ -985,7 +985,7 @@ const TerminalRenderer: React.FC<{
         {/* Command line */}
         {command && (
           <div className='whitespace-pre-wrap break-all'>
-            <span className='text-[#3fb950] font-semibold'>dbgpt@sandbox</span>
+            <span className='text-[#3fb950] font-semibold'>zhonghuan@sandbox</span>
             <span className='text-[#8b949e]'>:</span>
             <span className='text-[#58a6ff] font-semibold'>~</span>
             <span className='text-[#8b949e]'>$ </span>
@@ -1002,7 +1002,7 @@ const TerminalRenderer: React.FC<{
         {/* Next prompt line / cursor */}
         {(resultText || errorText || command) && (
           <div className='mt-1'>
-            <span className='text-[#3fb950] font-semibold'>dbgpt@sandbox</span>
+            <span className='text-[#3fb950] font-semibold'>zhonghuan@sandbox</span>
             <span className='text-[#8b949e]'>:</span>
             <span className='text-[#58a6ff] font-semibold'>~</span>
             <span className='text-[#8b949e]'>$ </span>
@@ -1013,7 +1013,7 @@ const TerminalRenderer: React.FC<{
         {/* Empty state while running */}
         {!command && !resultText && !errorText && isRunning && (
           <div>
-            <span className='text-[#3fb950] font-semibold'>dbgpt@sandbox</span>
+            <span className='text-[#3fb950] font-semibold'>zhonghuan@sandbox</span>
             <span className='text-[#8b949e]'>:</span>
             <span className='text-[#58a6ff] font-semibold'>~</span>
             <span className='text-[#8b949e]'>$ </span>
@@ -1474,31 +1474,91 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     onPanelViewChange?.(view);
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
+    // Method 1: Capture already-rendered iframe (html-preview mode, charts already drawn)
     try {
       const iframe = htmlPreviewRef.current;
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
+      if (iframe?.contentDocument?.body) {
+        message.loading('正在生成 PDF...', 0);
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(iframe.contentDocument.body, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+        });
+        const { jsPDF } = await import('jspdf');
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height],
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('report.pdf');
+        message.destroy();
+        message.success('PDF 已下载');
         return;
       }
-    } catch {
-      /* fallback below */
+    } catch (err) {
+      console.warn('iframe capture failed, trying fallback:', err);
+      message.destroy();
     }
+
+    // Method 2: Create temp iframe, wait for charts to render, then capture
+    let htmlStr = '';
     if (previewArtifact) {
-      const htmlStr =
+      htmlStr =
         typeof previewArtifact.content === 'string'
           ? previewArtifact.content
           : previewArtifact.content?.html || previewArtifact.content?.content || String(previewArtifact.content);
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(resolveHtmlImageUrls(htmlStr));
-        win.document.close();
-        win.focus();
-        win.print();
-      } else {
-        message.error('浏览器阻止了弹出窗口，请允许后重试');
+    } else {
+      const htmlOutput = visibleOutputs.find(o => o.output_type === 'html');
+      if (htmlOutput) {
+        htmlStr = typeof htmlOutput.content === 'string'
+          ? htmlOutput.content
+          : htmlOutput.content?.html || htmlOutput.content?.content || String(htmlOutput.content);
       }
+    }
+    if (!htmlStr) {
+      message.warning('没有可导出的 HTML 内容');
+      return;
+    }
+    try {
+      message.loading('正在生成 PDF...', 0);
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1200px;height:800px;border:none;';
+      iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts');
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) throw new Error('Cannot access iframe document');
+      doc.open();
+      doc.write(resolveHtmlImageUrls(htmlStr));
+      doc.close();
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(doc.body, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      });
+      document.body.removeChild(iframe);
+      const { jsPDF } = await import('jspdf');
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height],
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save('report.pdf');
+      message.destroy();
+      message.success('PDF 已下载');
+    } catch (err) {
+      message.destroy();
+      message.error('PDF 导出失败');
+      console.error('PDF export error:', err);
     }
   };
 
@@ -1508,6 +1568,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     }
   }, [controlledPanelView]);
   const visibleOutputs = useMemo(() => outputs.filter(o => o.output_type !== 'thought'), [outputs]);
+
+  const hasHtmlOutput = useMemo(() => visibleOutputs.some(o => o.output_type === 'html'), [visibleOutputs]);
 
   const filteredArtifacts = useMemo(() => {
     if (!artifacts) return [];
@@ -1622,7 +1684,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         </div>
 
         <div className='flex items-center gap-1'>
-          {panelView === 'html-preview' && previewArtifact && (
+          {(panelView === 'html-preview' && previewArtifact || panelView === 'execution' && hasHtmlOutput) && (
             <Tooltip title={t('export_pdf')}>
               <Button
                 type='text'
@@ -1762,7 +1824,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       <div
         className={classNames(
           'flex-1 overflow-y-auto flex flex-col min-h-0',
-          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview' ? 'p-0' : 'p-5 space-y-4',
+          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview'
+            ? 'p-0'
+            : 'p-5 space-y-4',
         )}
       >
         {panelView === 'skill-preview' && skillName ? (

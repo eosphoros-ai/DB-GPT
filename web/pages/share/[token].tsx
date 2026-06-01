@@ -617,8 +617,8 @@ const SharePage: NextPage = () => {
       <Head>
         <title>
           {firstQuestion
-            ? `${firstQuestion.slice(0, 60)}${firstQuestion.length > 60 ? '…' : ''} · DB-GPT 回放`
-            : 'DB-GPT 对话回放'}
+            ? `${firstQuestion.slice(0, 60)}${firstQuestion.length > 60 ? '…' : ''} · 中涣信息回放`
+            : '中涣信息对话回放'}
         </title>
       </Head>
 
@@ -629,7 +629,7 @@ const SharePage: NextPage = () => {
         <div className='flex items-center justify-between px-5 py-2.5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1b1e] flex-shrink-0'>
           <div className='flex items-center gap-3 min-w-0'>
             {/* Logo / brand */}
-            <span className='font-bold text-base text-gray-800 dark:text-white flex-shrink-0'>DB-GPT</span>
+            <span className='font-bold text-base text-gray-800 dark:text-white flex-shrink-0'>中涣信息</span>
             <div className='w-px h-4 bg-gray-200 dark:bg-gray-700 flex-shrink-0' />
             <span className='text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full flex-shrink-0'>
               回放

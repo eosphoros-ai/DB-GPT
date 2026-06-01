@@ -138,14 +138,15 @@ function SideBar() {
   }, [i18n]);
 
   const functions = useMemo(() => {
+    const homePath = pathname.startsWith('/legacy/') ? '/legacy/home' : '/';
     const items: RouteItem[] = [
       {
         key: 'explore',
         name: t('explore'),
-        isActive: pathname === '/',
+        isActive: pathname === '/' || pathname === '/legacy/home',
         iconSrc: '/pictures/explore.png',
         activeIconSrc: '/pictures/explore_active.png',
-        path: '/',
+        path: homePath,
       },
       {
         key: 'skills',
@@ -292,7 +293,7 @@ function SideBar() {
         <div>
           <div className='flex flex-col items-center pb-2'>
             <Link href='/' className='flex justify-center items-center pb-2'>
-              <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={40} height={40} />
+              <Image src='/LOGO_SMALL.png' alt='中涣信息' width={40} height={40} />
             </Link>
             <Tooltip title={t('Show_Sidebar') || '展开侧栏'} placement='right'>
               <div
@@ -361,7 +362,7 @@ function SideBar() {
       {/* LOGO + Collapse Toggle */}
       <div className='flex items-center justify-between p-2 pb-4'>
         <Link href='/' className='flex items-center'>
-          <Image src={logo} alt='DB-GPT' width={140} height={32} />
+          <Image src={logo} alt='中涣信息' width={140} height={32} />
         </Link>
         <Tooltip title={t('Close_Sidebar') || '收起侧栏'}>
           <div
@@ -374,7 +375,7 @@ function SideBar() {
       </div>
 
       {/* New Task Button */}
-      <Link href='/'>
+      <Link href={pathname.startsWith('/legacy/') ? '/legacy/home' : '/'}>
         <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
           <PlusOutlined className='text-xs' />
           <span>{t('new_task')}</span>
@@ -455,7 +456,7 @@ function SideBar() {
             {dialogueList.map(conv => (
               <Link
                 key={conv.conv_uid}
-                href={`/?id=${conv.conv_uid}`}
+                href={`/legacy/home?id=${conv.conv_uid}`}
                 className='flex items-start gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors group hover:bg-[#F1F5F9] dark:hover:bg-theme-dark'
               >
                 <MessageOutlined className='text-gray-400 flex-shrink-0 text-xs mt-1' />
