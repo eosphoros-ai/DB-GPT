@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
-_DEFAULT_MODEL = "MiniMax-M2.7"
+_DEFAULT_MODEL = "MiniMax-M3"
 
 
 @auto_register_resource(
@@ -161,11 +161,22 @@ register_proxy_model_adapter(
     MiniMaxLLMClient,
     supported_models=[
         ModelMetadata(
+            model="MiniMax-M3",
+            context_length=204800,
+            max_output_length=192000,
+            description=(
+                "MiniMax-M3 by MiniMax. Latest flagship model with enhanced "
+                "reasoning, coding and tool use."
+            ),
+            link="https://platform.minimax.io/docs/api-reference/text-openai-api",
+            function_calling=True,
+        ),
+        ModelMetadata(
             model="MiniMax-M2.7",
             context_length=204800,
             max_output_length=192000,
             description=(
-                "MiniMax-M2.7 by MiniMax. Latest flagship model with enhanced "
+                "MiniMax-M2.7 by MiniMax. Previous flagship model with enhanced "
                 "reasoning and coding."
             ),
             link="https://platform.minimax.io/docs/api-reference/text-openai-api",
@@ -178,25 +189,6 @@ register_proxy_model_adapter(
             description=(
                 "MiniMax-M2.7-highspeed by MiniMax. High-speed version of M2.7 "
                 "for low-latency scenarios."
-            ),
-            link="https://platform.minimax.io/docs/api-reference/text-openai-api",
-            function_calling=True,
-        ),
-        ModelMetadata(
-            model="MiniMax-M2.5",
-            context_length=204800,
-            max_output_length=192000,
-            description=("MiniMax-M2.5 by MiniMax. Peak Performance. Ultimate Value."),
-            link="https://platform.minimax.io/docs/api-reference/text-openai-api",
-            function_calling=True,
-        ),
-        ModelMetadata(
-            model="MiniMax-M2.5-highspeed",
-            context_length=204800,
-            max_output_length=192000,
-            description=(
-                "MiniMax-M2.5-highspeed by MiniMax. Same performance, faster and "
-                "more agile."
             ),
             link="https://platform.minimax.io/docs/api-reference/text-openai-api",
             function_calling=True,
