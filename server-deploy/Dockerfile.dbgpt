@@ -24,8 +24,10 @@ RUN rm -rf /app/packages/dbgpt-app/src/dbgpt_app/static/web/_next \
     /app/packages/dbgpt-app/src/dbgpt_app/static/web/.dbgpt-ru-prebuilt
 COPY --from=web-builder /build/web/out/ /app/packages/dbgpt-app/src/dbgpt_app/static/web/
 COPY dbgpt-src/i18n/locales/ru/ /app/i18n/locales/ru/
-# Agent API with RU i18n / ClickHouse hints (not in base image)
+# Sync agent core context + agentic API from fork (newer than base image)
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/context/ \
+    /app/packages/dbgpt-core/src/dbgpt/agent/core/context/
 COPY dbgpt-src/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py \
     /app/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py
 RUN touch /app/packages/dbgpt-app/src/dbgpt_app/static/web/.dbgpt-ru-prebuilt \
-    && echo "UI: ru-i18n from dbgpt-src; agentic_data_api synced"
+    && echo "UI: ru-i18n from dbgpt-src; agent context + agentic_data_api synced"
