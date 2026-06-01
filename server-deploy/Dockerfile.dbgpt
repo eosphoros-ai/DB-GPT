@@ -33,6 +33,10 @@ COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/base_agent.py \
     /app/packages/dbgpt-core/src/dbgpt/agent/core/base_agent.py
 COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py \
     /app/packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/expand/actions/react_action.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/expand/actions/react_action.py
 COPY dbgpt-src/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py \
     /app/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py
 # OpenRouter branch overlay (prepare_dbgpt_src.sh before build)

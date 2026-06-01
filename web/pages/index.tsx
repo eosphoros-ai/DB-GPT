@@ -505,7 +505,7 @@ const EXAMPLE_CARDS = [
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { model, setModel } = useContext(ChatContext);
+  const { model, modelList, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -1421,6 +1421,12 @@ const Playground: NextPage = () => {
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     if ((!inputQuery.trim() && !effectiveFile) || loading) return;
 
+    const effectiveModel = model || (modelList?.length ? modelList[0] : '');
+    if (!effectiveModel) {
+      message.warning(t('choose_model') || 'Select a model first');
+      return;
+    }
+
     let finalQuery = inputQuery;
     const appCode = 'chat_react_agent';
     const chatMode = 'chat_react_agent';
@@ -1551,7 +1557,7 @@ const Playground: NextPage = () => {
         body: JSON.stringify({
           conv_uid: currentConvId,
           chat_mode: chatMode,
-          model_name: model,
+          model_name: effectiveModel,
           user_input: finalQuery,
           temperature: 0.6,
           max_new_tokens: 4000,
