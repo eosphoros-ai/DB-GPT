@@ -16,6 +16,7 @@ export const ChatRu: Resources['translation'] = {
   answer_again: 'Ответить снова',
   feedback_tip: 'Опишите вопрос или уточните ответ',
   thinking: 'Думаю',
+  react_step_detail: 'Мысль / действие / результат',
   stop_replying: 'Остановить',
   erase_memory: 'Очистить память',
   copy_nothing: 'Нечего копировать',

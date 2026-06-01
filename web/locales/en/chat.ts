@@ -148,6 +148,7 @@ export const ChatEn = {
   // phase2 i18n
   Running: 'Running',
   Thinking: 'Thinking',
+  react_step_detail: 'Thought / Action / Observation',
   copy_sql: 'Copy SQL',
   feedback_submitted: 'Feedback submitted',
   result: 'Result',

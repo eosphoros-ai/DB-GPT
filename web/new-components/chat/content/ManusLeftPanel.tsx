@@ -477,6 +477,21 @@ const getTodoStepTitle = (t: (key: string, options?: Record<string, any>) => str
   return t('task_plan_update_title', { done, total });
 };
 
+/** Map legacy zh/en agent SSE labels to current locale (backend may lag behind UI). */
+const localizeAgentStepText = (raw: string | undefined, t: (key: string) => string): string => {
+  const s = (raw || '').trim();
+  if (!s) return '';
+  const map: Record<string, string> = {
+    '思考中': t('thinking'),
+    '正在思考中': t('thinking'),
+    Thinking: t('Thinking'),
+    'Thought/Action/Observation': t('react_step_detail'),
+    'Thought / Action / Observation': t('react_step_detail'),
+    'Мысль / действие / результат': t('react_step_detail'),
+  };
+  return map[s] ?? s;
+};
+
 const getTodoStepBadge = (t: (key: string, options?: Record<string, any>) => string, step: ExecutionStep): string => {
   const todoMeta = step.todoMeta;
   if (!todoMeta) return '';
@@ -493,16 +508,27 @@ const StepCard: React.FC<{
 }> = memo(({ step, isActive, onClick }) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
-  const detailLine = step.description ? step.description.split('\n')[0] : '';
+  const detailLine = localizeAgentStepText(
+    step.description ? step.description.split('\n')[0] : '',
+    t,
+  );
+  const displayTitle = localizeAgentStepText(step.title, t);
   const isTodoStep = detailLine.toLowerCase() === 'todowrite' || step.title.startsWith('TODO::') || !!step.todoMeta;
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
-  const isThinkingStep =
-    step.status === 'running' &&
-    (step.title === t('thinking') || step.title === t('Thinking') || step.title?.toLowerCase() === 'thinking');
+  const thinkingTitles = new Set([
+    t('thinking'),
+    t('Thinking'),
+    'thinking',
+    'Thinking',
+    '思考中',
+    '正在思考中',
+    'Думаю',
+  ]);
+  const isThinkingStep = step.status === 'running' && thinkingTitles.has(step.title || '');
   if (isThinkingStep) {
     return (
       <div
@@ -639,7 +665,7 @@ const StepCard: React.FC<{
         {getTypeLabel(step.type, t)}
       </span>
       <div className='flex flex-col min-w-0 flex-1'>
-        <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{step.title}</span>
+        <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{displayTitle}</span>
         {detailLine && <span className='text-[11px] text-gray-500 dark:text-gray-400 truncate'>{detailLine}</span>}
       </div>
       <div className='flex-shrink-0'>

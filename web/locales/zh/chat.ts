@@ -15,6 +15,7 @@ export const ChatZh: Resources['translation'] = {
   answer_again: '重新回答',
   feedback_tip: '描述一下具体问题或更优的答案',
   thinking: '正在思考中',
+  react_step_detail: '思考 / 动作 / 观察',
   stop_replying: '停止回复',
   erase_memory: '清除记忆',
   copy_success: '复制成功',

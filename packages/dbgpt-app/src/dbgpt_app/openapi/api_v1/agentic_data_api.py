@@ -45,6 +45,56 @@ AUTO_DATA_MARKER_PATTERN = re.compile(
 )
 
 
+def _ui_lang() -> str:
+    """Resolve UI language: env override, then app config (same as other dbgpt-app scenes)."""
+    env = (os.getenv("DBGPT_LANG") or os.getenv("LANGUAGE") or "").strip().lower()
+    if env:
+        return env
+    return (getattr(CFG, "LANGUAGE", None) or "zh").lower()
+
+
+def _agent_thinking_title() -> str:
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return "Думаю"
+    if lang.startswith("en"):
+        return "Thinking"
+    return "思考中"
+
+
+def _agent_react_detail() -> str:
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return "Мысль / действие / результат"
+    if lang.startswith("en"):
+        return "Thought / Action / Observation"
+    return "Thought/Action/Observation"
+
+
+def _html_file_not_found_message(file_path: str) -> str:
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return (
+            f"Файл не найден: {file_path}. "
+            "Передайте готовый HTML в параметре html, например: "
+            '{"html": "<!DOCTYPE html>...", "title": "Отчёт"}. '
+            "Не используйте file_path и не пишите HTML через code_interpreter."
+        )
+    if lang.startswith("zh"):
+        return (
+            f"未找到文件: {file_path}。"
+            "请通过 html 参数直接传入完整 HTML，例如："
+            '{"html": "<!DOCTYPE html>...", "title": "报告"}。'
+            "请勿使用 file_path，也不要用 code_interpreter 写入 HTML 文件。"
+        )
+    return (
+        f"File not found: {file_path}. "
+        "Pass complete HTML via the `html` parameter, e.g. "
+        '{"html": "<!DOCTYPE html>...", "title": "Report"}. '
+        "Do not use file_path or write HTML with code_interpreter."
+    )
+
+
 def _validate_upload_filename(filename: str) -> str:
     if "\x00" in filename:
         raise ValueError("filename must not contain null bytes")
@@ -2500,12 +2550,13 @@ print(json.dumps(summary, ensure_ascii=False))
                 if os.path.isfile(alt):
                     fp = alt
                 else:
+                    msg = _html_file_not_found_message(file_path)
                     return json.dumps(
                         {
                             "chunks": [
                                 {
                                     "output_type": "text",
-                                    "content": f"File not found: {file_path}",
+                                    "content": msg,
                                 }
                             ]
                         },
@@ -3478,8 +3529,8 @@ Action Input: The JSON format of tool parameters
                     pending_thoughts[round_num].append(clean_chunk)
                     if round_num not in round_step_map:
                         pending_step_id, pending_step_event = build_step(
-                            "思考中",
-                            "Thought/Action/Observation",
+                            _agent_thinking_title(),
+                            _agent_react_detail(),
                         )
                         round_step_map[round_num] = pending_step_id
                         yield pending_step_event
@@ -3666,14 +3717,14 @@ Action Input: The JSON format of tool parameters
                         "step": step,
                         "id": react_step_id,
                         "title": action_title,
-                        "detail": "Thought/Action/Observation",
+                        "detail": _agent_react_detail(),
                     }
                 )
                 yield updated_event
             else:
                 react_step_id, react_step_event = build_step(
                     action_title,
-                    "Thought/Action/Observation",
+                    _agent_react_detail(),
                 )
                 round_step_map[round_num] = react_step_id
                 yield react_step_event
@@ -3689,7 +3740,7 @@ Action Input: The JSON format of tool parameters
             current_history_step = {
                 "id": react_step_id,
                 "title": action_title,
-                "detail": "Thought/Action/Observation",
+                "detail": _agent_react_detail(),
                 "thought": display_thought,
                 "action_intention": action_intention,
                 "action_reason": action_reason,
