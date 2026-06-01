@@ -12,7 +12,8 @@ if [ -f .env ]; then
   set +a
 fi
 
-echo "=== 1. Сборка webserver (ru-i18n + исправления API) ==="
+echo "=== 1. Sync dbgpt-src + сборка webserver ==="
+bash "$DEPLOY/scripts/prepare_dbgpt_src.sh"
 docker compose build webserver
 
 echo "=== 2. Пересоздание webserver ==="
@@ -27,9 +28,9 @@ for i in $(seq 1 36); do
   sleep 5
 done
 
-echo "=== 4. Патчи runtime (OpenRouter, fmcg default) ==="
-docker compose exec -T webserver python3 /app/scripts/patch_openrouter_provider.py
+echo "=== 4. Ops patch (fmcg default DB) ==="
 docker compose exec -T webserver python3 /app/scripts/fix_db_default_outer.py || true
+bash "$DEPLOY/scripts/verify_openrouter_deploy.sh" || true
 
 echo "=== 5. Chroma: сброс битых коллекций ==="
 docker compose exec -T webserver bash -c 'rm -rf /app/pilot/data/chroma /app/pilot/data/chroma.sqlite3 2>/dev/null; true'

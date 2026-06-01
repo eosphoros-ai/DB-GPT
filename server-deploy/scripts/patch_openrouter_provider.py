@@ -37,6 +37,9 @@ NEW_FIXED_LINES = """            _eb = payload.setdefault("extra_body", {})
 
 
 def apply_or_fix(text: str) -> tuple[str, str]:
+    if "DBGPT_OPENROUTER_NATIVE" in text:
+        return text, "нативная поддержка в образе"
+
     if OLD_BROKEN_LINE in text:
         return text.replace(OLD_BROKEN_LINE, NEW_FIXED_LINES, 1), "исправлен extra_body"
 

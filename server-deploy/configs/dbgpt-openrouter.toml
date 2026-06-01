@@ -1,0 +1,45 @@
+[system]
+language = "${env:DBGPT_LANG:-ru}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[service.model.worker]
+host = "127.0.0.1"
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+[models]
+[[models.llms]]
+name = "${env:OPENROUTER_MODEL:-deepseek/deepseek-v4-flash}"
+provider = "proxy/openai"
+api_base = "${env:OPENROUTER_API_BASE:-https://openrouter.ai/api/v1}"
+api_key = "${env:OPENROUTER_API_KEY}"
+
+[[models.llms]]
+name = "${env:LMSTUDIO_MODEL:-openai/gpt-oss-20b}"
+provider = "proxy/openai"
+api_base = "${env:LMSTUDIO_API_BASE:-http://127.0.0.1:1238/v1}"
+api_key = "${env:LMSTUDIO_API_KEY:-lm-studio}"
+
+[[models.embeddings]]
+name = "${env:OPENROUTER_EMBED_MODEL:-openai/text-embedding-3-small}"
+provider = "proxy/openai"
+api_url = "${env:OPENROUTER_EMBED_API_URL:-https://openrouter.ai/api/v1/embeddings}"
+api_key = "${env:OPENROUTER_API_KEY}"
+
+[[models.embeddings]]
+name = "${env:LMSTUDIO_EMBED_MODEL:-text-embedding-nomic-embed-text-v1.5}"
+provider = "proxy/openai"
+api_url = "${env:LMSTUDIO_EMBED_API_URL:-http://127.0.0.1:1238/v1/embeddings}"
+api_key = "${env:LMSTUDIO_API_KEY:-lm-studio}"

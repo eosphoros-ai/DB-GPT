@@ -6,6 +6,5 @@ find /app/packages/dbgpt-app/src/dbgpt_app/static/web -type f -name '*.js' \
   | while read -r f; do
       sed -i 's|http://localhost:5670||g' "$f"
     done
-python3 /app/scripts/patch_openrouter_provider.py
-python3 /app/scripts/fix_db_default_outer.py
-exec dbgpt start webserver --config "/app/configs/${DBGPT_CONFIG_FILE:-dbgpt-docker.toml}"
+python3 /app/scripts/fix_db_default_outer.py || true
+exec dbgpt start webserver --config "/app/configs/${DBGPT_CONFIG_FILE:-dbgpt-openrouter.toml}"

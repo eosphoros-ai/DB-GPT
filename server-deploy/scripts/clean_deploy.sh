@@ -27,6 +27,10 @@ for f in scripts/patch_ru_full.py scripts/patch_agentic_ru.py scripts/patch_web_
 done
 rm -rf locales 2>/dev/null || true
 
+echo "=== Sync dbgpt-src (i18n + OpenRouter overlay) ==="
+export SRC="${SRC:-/home/algerd/dbgpt-src}"
+bash scripts/prepare_dbgpt_src.sh
+
 echo "=== Сборка webserver (5–15 мин) ==="
 docker compose build --no-cache webserver
 
@@ -39,8 +43,7 @@ for i in $(seq 1 40); do
   sleep 5
 done
 
-echo "=== Runtime (только OpenRouter + fmcg default) ==="
-docker compose exec -T webserver python3 /app/scripts/patch_openrouter_provider.py
+echo "=== Runtime (только fmcg default DB) ==="
 docker compose exec -T webserver python3 /app/scripts/fix_db_default_outer.py || true
 
 echo "=== Chroma: сброс битых коллекций ==="

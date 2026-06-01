@@ -106,9 +106,6 @@ services:
     volumes:
       - ./configs:/app/configs:ro
       - ./overrides/auto_execute_prompt.py:/app/packages/dbgpt-app/src/dbgpt_app/scene/chat_db/auto_execute/prompt.py:ro
-      - ./scripts/patch_openrouter_provider.py:/app/scripts/patch_openrouter_provider.py:ro
-      - ./scripts/patch_agentic_ru_strings.py:/app/scripts/patch_agentic_ru_strings.py:ro
-      - ./scripts/repair_agentic_api_syntax.py:/app/scripts/repair_agentic_api_syntax.py:ro
       - ./scripts/fix_db_default_outer.py:/app/scripts/fix_db_default_outer.py:ro
       - ./scripts/entrypoint-dbgpt.sh:/app/scripts/entrypoint-dbgpt.sh:ro
       - ./skills/walmart-sales-analyzer:/app/skills/walmart-sales-analyzer:ro
