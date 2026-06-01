@@ -50,9 +50,17 @@ export const apiInterceptors = <T = any, D = any>(
   ignoreCodes?: '*' | (number | string)[],
   options?: ApiInterceptorOptions,
 ) => {
+  if (Array.isArray(promise)) {
+    const data = promise as unknown as T;
+    const body = { success: true, data, err_code: null, err_msg: null } as ResponseType<T>;
+    return Promise.resolve([null, data, body, null] as SuccessTuple<T, D>);
+  }
+
   if (!promise || typeof (promise as Promise<unknown>).then !== 'function') {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[API] Invalid API request — expected Promise from client/api GET/POST');
+    }
     const err = new Error('Invalid API request');
-    console.warn('[API]', err.message);
     return Promise.resolve([err, null, null, null] as FailedTuple<T, D>);
   }
 

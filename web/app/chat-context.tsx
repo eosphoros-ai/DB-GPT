@@ -105,12 +105,9 @@ const ChatContextProvider = ({ children }: { children: React.ReactNode }) => {
     { ready: typeof window !== 'undefined' },
   );
 
-  // 获取管理员列表
+  // 获取管理员列表（stub API — not an HTTP call, skip apiInterceptors)
   const { run: queryAdminListRun } = useRequest(
-    async () => {
-      const [, res] = await apiInterceptors(queryAdminList({ role: 'admin' }));
-      return res ?? [];
-    },
+    async () => queryAdminList({ role: 'admin' }),
     {
       onSuccess: data => {
         setAdminList(data);

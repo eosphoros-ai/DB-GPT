@@ -2545,6 +2545,13 @@ const Playground: NextPage = () => {
                             </div>
                           )}
                           <Input.TextArea
+                            id='dbgpt-agent-query'
+                            name='user_query'
+                            autoComplete='off'
+                            aria-label={
+                              t('ask_data_question') ||
+                              'Ask a question about your database, upload a CSV, or generate a report...'
+                            }
                             value={query}
                             onChange={e => {
                               const newValue = e.target.value;
@@ -2988,6 +2995,13 @@ const Playground: NextPage = () => {
                       )}
 
                       <Input.TextArea
+                        id='dbgpt-agent-query'
+                        name='user_query'
+                        autoComplete='off'
+                        aria-label={
+                          t('ask_data_question') ||
+                          'Ask a question about your database, upload a CSV, or generate a report...'
+                        }
                         value={query}
                         onChange={e => {
                           const newValue = e.target.value;
