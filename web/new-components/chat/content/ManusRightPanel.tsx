@@ -1,4 +1,5 @@
 import i18n from '@/app/i18n';
+import ClientErrorBoundary from '@/components/common/ClientErrorBoundary';
 import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
@@ -43,6 +44,7 @@ import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
+import SafeArtifactImage from './SafeArtifactImage';
 
 /** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
 const resolveImageUrl = (src: string): string => {
@@ -367,7 +369,7 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = mem
   }
 
   return (
-    <>
+    <ClientErrorBoundary>
       {output.output_type === 'code' && (
         <CodePreview
           code={String(content)}
@@ -468,17 +470,20 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = mem
 
       {output.output_type === 'image' && (
         <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'>
-          <img
-            src={resolveImageUrl(
-              typeof content === 'string' ? content : content?.url || content?.src || String(content),
-            )}
-            alt='Generated chart'
+          <SafeArtifactImage
+            artifact={{
+              id: 'step-image',
+              type: 'image',
+              name: 'chart',
+              content,
+              createdAt: Date.now(),
+            }}
             className='w-full h-auto object-contain'
             style={{ maxHeight: 600 }}
           />
         </div>
       )}
-    </>
+    </ClientErrorBoundary>
   );
 });
 
@@ -1615,6 +1620,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   }, [visibleOutputs]);
 
   return (
+    <ClientErrorBoundary>
     <div className='relative flex flex-col h-full bg-[#f8f9fc] dark:bg-[#0d0e11]'>
       {/* Collapse button is rendered by the parent layout to avoid overflow clipping */}
 
@@ -1815,20 +1821,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'image-preview' && previewArtifact ? (
           <div className='w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-6'>
-            <img
-              src={(() => {
-                const content = previewArtifact.content;
-                if (typeof content === 'string') {
-                  return resolveImageUrl(content);
-                }
-                const obj = content as Record<string, any>;
-                if (obj?.file_path) {
-                  const base = process.env.API_BASE_URL || '';
-                  return `${base}/api/v1/agent/files/download?file_path=${encodeURIComponent(obj.file_path)}`;
-                }
-                return resolveImageUrl(obj?.url || obj?.src || String(content));
-              })()}
-              alt={previewArtifact.name || 'Image preview'}
+            <SafeArtifactImage
+              artifact={previewArtifact}
               className='max-w-full max-h-full object-contain rounded-lg shadow-md'
               style={{ maxHeight: 'calc(100vh - 200px)' }}
             />
@@ -2261,6 +2255,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         </div>
       </div>
     </div>
+    </ClientErrorBoundary>
   );
 };
 

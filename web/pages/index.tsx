@@ -700,6 +700,7 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
+    if (!router.isReady) return;
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
@@ -720,7 +721,7 @@ const Playground: NextPage = () => {
       setSummaryComplete(false);
       setTaskPlan([]);
     }
-  }, [router.query.id]);
+  }, [router.isReady, router.query.id, conversationId]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
