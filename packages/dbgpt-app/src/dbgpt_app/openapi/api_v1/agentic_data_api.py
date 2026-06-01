@@ -3709,14 +3709,19 @@ Action Input: The JSON format of tool parameters
     async def _context_status_callback(status: Dict[str, Any]) -> None:
         await stream_queue.put({"type": "context.status", **status})
 
-    agent.init_context_management(
-        config=await _load_context_budget_config(
-            llm_client=llm_client,
+    if hasattr(agent, "init_context_management"):
+        agent.init_context_management(
+            config=await _load_context_budget_config(
+                llm_client=llm_client,
+                model_name=dialogue.model_name,
+            ),
             model_name=dialogue.model_name,
-        ),
-        model_name=dialogue.model_name,
-        on_status_event=_context_status_callback,
-    )
+            on_status_event=_context_status_callback,
+        )
+    else:
+        logger.debug(
+            "ReActAgent.init_context_management unavailable (older dbgpt-core in image)"
+        )
 
     async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
         await stream_queue.put({"type": event_type, **payload})
