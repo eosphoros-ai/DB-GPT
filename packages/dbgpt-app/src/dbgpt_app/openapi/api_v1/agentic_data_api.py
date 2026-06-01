@@ -3293,8 +3293,10 @@ Example flow for 3 tasks:
 - Before rendering an HTML report, verify that every core metric is traceable to
   a successful observation in this conversation.
 
-## ReAct Output Format
-Must output for each interaction round:
+## ReAct Output Format (STRICT - every response MUST follow this format)
+You MUST output ALL of the following fields in order. Missing any field will
+cause an error and waste a retry. Do NOT output natural language after Thought.
+
 Thought: Analyze current task status and think about what to do next
 Action Intention: What this step will do, plain text, MUST be concise and fit in
 <= 18 Chinese chars or <= 8 English words. If too long, rewrite shorter.
@@ -3302,8 +3304,27 @@ Do not use ellipsis.
 Action Reason: Why this action is needed now, plain text, MUST be concise and fit in
 <= 30 Chinese chars or <= 12 English words. If too long, rewrite shorter.
 Do not use ellipsis.
-Action: The selected tool name (must be one of the tools listed above)
-Action Input: The JSON format of tool parameters
+Action: The exact tool name, no backticks, no markdown (e.g. sql_query not `sql_query`)
+Action Input: JSON parameters for the tool
+
+**CRITICAL RULES:**
+- NEVER output just Thought without Action + Action Input. All three are REQUIRED.
+- NEVER continue reasoning in natural language after Thought. Go straight to Action.
+- Action must be a bare tool name: sql_query, code_interpreter, html_interpreter,
+  todowrite, terminate, etc. Do NOT wrap in backticks or quotes.
+- Action Input must be valid JSON.
+
+Example (correct):
+Thought: 查询五月各线路营收排名
+Action Intention: 查询线路营收TOP15
+Action Reason: 为报告提供线路维度对比数据
+Action: sql_query
+Action Input: {"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}
+
+Example (WRONG - will fail):
+Thought: 我需要查询数据...让我先想想...
+(缺少 Action 和 Action Input，系统会报错)
+
 Do not wrap ReAct labels with Markdown. Output `Action:` and `Action Input:`
 exactly as plain line prefixes, not `**Action:**`, headings, bullets, or code
 fences.
@@ -3455,8 +3476,10 @@ Parameters: {{"todos": [{{...}}]}}
 - Before rendering an HTML report, verify that every core metric is traceable to
   a successful observation in this conversation.
 
-## ReAct Output Format
-Must output for each interaction round:
+## ReAct Output Format (STRICT - every response MUST follow this format)
+You MUST output ALL of the following fields in order. Missing any field will
+cause an error and waste a retry. Do NOT output natural language after Thought.
+
 Thought: Analyze current task status and think about what to do next
 Action Intention: What this step will do, plain text, MUST be concise and fit in
 <= 18 Chinese chars or <= 8 English words. If too long, rewrite shorter.
@@ -3464,8 +3487,27 @@ Do not use ellipsis.
 Action Reason: Why this action is needed now, plain text, MUST be concise and fit in
 <= 30 Chinese chars or <= 12 English words. If too long, rewrite shorter.
 Do not use ellipsis.
-Action: The selected tool name
-Action Input: The JSON format of tool parameters
+Action: The exact tool name, no backticks, no markdown (e.g. sql_query not `sql_query`)
+Action Input: JSON parameters for the tool
+
+**CRITICAL RULES:**
+- NEVER output just Thought without Action + Action Input. All three are REQUIRED.
+- NEVER continue reasoning in natural language after Thought. Go straight to Action.
+- Action must be a bare tool name: sql_query, code_interpreter, html_interpreter,
+  todowrite, terminate, load_skill, etc. Do NOT wrap in backticks or quotes.
+- Action Input must be valid JSON.
+
+Example (correct):
+Thought: 查询五月各线路营收排名
+Action Intention: 查询线路营收TOP15
+Action Reason: 为报告提供线路维度对比数据
+Action: sql_query
+Action Input: {"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}
+
+Example (WRONG - will fail):
+Thought: 我需要查询数据...让我先想想...
+(缺少 Action 和 Action Input，系统会报错)
+
 Do not wrap ReAct labels with Markdown. Output `Action:` and `Action Input:`
 exactly as plain line prefixes, not `**Action:**`, headings, bullets, or code
 fences.
