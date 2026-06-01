@@ -2971,6 +2971,20 @@ print(json.dumps(summary, ensure_ascii=False))
             return True
         return False
 
+    def _looks_like_html(text: str) -> bool:
+        """Check if text looks like an HTML document."""
+        t = text.strip()
+        if not t:
+            return False
+        # Check for common HTML indicators
+        if t.startswith("<!DOCTYPE") or t.startswith("<!doctype"):
+            return True
+        if t.startswith("<html") or t.startswith("<HTML"):
+            return True
+        if "<html" in t[:500].lower() and "</html>" in t.lower():
+            return True
+        return False
+
     def _collect_history_summary(steps: List[Dict[str, Any]]) -> str:
         """Build a summary from all completed history steps' observations."""
         parts: List[str] = []
@@ -4076,6 +4090,28 @@ fences.
             )
             if m:
                 final_content = m.group(1).replace('\\"', '"').replace('\\n', '\n')
+
+        # Auto-render: if terminate result contains HTML but html_interpreter
+        # was never called, write to file and render it automatically.
+        if isinstance(final_content, str) and _looks_like_html(final_content):
+            was_html_rendered = any(
+                (s.get("action") or "").strip().lower() == "html_interpreter"
+                for s in history_steps
+            )
+            if not was_html_rendered:
+                try:
+                    import tempfile, os
+                    tmp_path = os.path.join(
+                        tempfile.gettempdir(), "auto_report.html"
+                    )
+                    with open(tmp_path, "w", encoding="utf-8") as f:
+                        f.write(final_content)
+                    render_result = await html_interpreter(
+                        file_path=tmp_path, title="运营报告"
+                    )
+                    final_content = render_result
+                except Exception as e:
+                    logger.warning(f"Auto html_interpreter failed: {e}")
     elif reply.action_report:
         # Loop ended without terminate (max retries or timeout).
         # reply.content is raw LLM output containing ReAct prefixes.
