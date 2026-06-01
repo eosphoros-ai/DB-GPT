@@ -3196,11 +3196,18 @@ Action Input: JSON参数
 ✗ "我们有了关键数据" (没有Action → 报错)  
 ✗ "正在生成分析代码" (没有Action → 报错)
 ✗ 输出英文思考 (必须用中文)
+✗ 一次输出多个Action (如同时输出5个sql_query → 只有第1个会执行)
+✗ 在Action之后继续写自然语言 (Observation由系统返回，不要自己写)
+
+**CRITICAL: ONE action per response. NEVER output multiple Actions.**
+After calling todowrite or sql_query, STOP. Wait for Observation. Do NOT add
+more Actions in the same response.
 
 **CORRECT pattern:**
 Thought: 查询五月各线路营收
 Action: sql_query
 Action Input: {{"sql": "SELECT ..."}}
+(然后等待系统返回Observation，再决定下一步)
 
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
@@ -3401,11 +3408,18 @@ Action Input: JSON参数
 ✗ "我们有了关键数据" (没有Action → 报错)
 ✗ "正在生成分析代码" (没有Action → 报错)
 ✗ 输出英文思考 (必须用中文)
+✗ 一次输出多个Action (如同时输出5个sql_query → 只有第1个会执行)
+✗ 在Action之后继续写自然语言 (Observation由系统返回，不要自己写)
+
+**CRITICAL: ONE action per response. NEVER output multiple Actions.**
+After calling todowrite or sql_query, STOP. Wait for Observation. Do NOT add
+more Actions in the same response.
 
 **CORRECT pattern:**
 Thought: 查询五月各线路营收
 Action: sql_query
 Action Input: {{"sql": "SELECT ..."}}
+(然后等待系统返回Observation，再决定下一步)
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
