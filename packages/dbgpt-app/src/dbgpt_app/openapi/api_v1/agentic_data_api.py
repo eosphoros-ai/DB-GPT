@@ -3247,6 +3247,10 @@ way to display reports on the right panel.
    **File mode (recommended for reports)**:
    {{"file_path": "/tmp/report.html", "title": "title"}}
    - Write HTML to file with code_interpreter first, then pass file_path.
+   - **IMPORTANT**: When writing HTML with code_interpreter, always use `/tmp/` as
+   the directory (e.g. `/tmp/report.html`). Other directories may not exist.
+   If you must use another path, create the directory first with
+   `import os; os.makedirs('/path/to/dir', exist_ok=True)`.
    **Inline mode**: {{"html": "<html>...</html>", "title": "title"}}
    **Template mode**:
    {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}
@@ -3452,7 +3456,11 @@ Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
 13. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
 to display reports on the right panel).
    File mode (recommended):
-   {{"file_path": "/path/to/report.html", "title": "title"}}
+   {{"file_path": "/tmp/report.html", "title": "title"}}
+   - **IMPORTANT**: When writing HTML with code_interpreter, always use `/tmp/` as
+   the directory (e.g. `/tmp/report.html`). Other directories may not exist.
+   If you must use another path, create the directory first with
+   `import os; os.makedirs('/path/to/dir', exist_ok=True)`.
    Inline mode: {{"html": "<html>...</html>", "title": "title"}}
    Template mode:
    {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}
