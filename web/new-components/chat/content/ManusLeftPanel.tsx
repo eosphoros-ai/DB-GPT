@@ -34,6 +34,7 @@ import { Button, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { localizeAgentText } from '@/utils/localize-agent-text';
 import ObservationFormatter from './ObservationFormatter';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 
@@ -477,21 +478,6 @@ const getTodoStepTitle = (t: (key: string, options?: Record<string, any>) => str
   return t('task_plan_update_title', { done, total });
 };
 
-/** Map legacy zh/en agent SSE labels to current locale (backend may lag behind UI). */
-const localizeAgentStepText = (raw: string | undefined, t: (key: string) => string): string => {
-  const s = (raw || '').trim();
-  if (!s) return '';
-  const map: Record<string, string> = {
-    '思考中': t('thinking'),
-    '正在思考中': t('thinking'),
-    Thinking: t('Thinking'),
-    'Thought/Action/Observation': t('react_step_detail'),
-    'Thought / Action / Observation': t('react_step_detail'),
-    'Мысль / действие / результат': t('react_step_detail'),
-  };
-  return map[s] ?? s;
-};
-
 const getTodoStepBadge = (t: (key: string, options?: Record<string, any>) => string, step: ExecutionStep): string => {
   const todoMeta = step.todoMeta;
   if (!todoMeta) return '';
@@ -508,11 +494,8 @@ const StepCard: React.FC<{
 }> = memo(({ step, isActive, onClick }) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
-  const detailLine = localizeAgentStepText(
-    step.description ? step.description.split('\n')[0] : '',
-    t,
-  );
-  const displayTitle = localizeAgentStepText(step.title, t);
+  const detailLine = localizeAgentText(step.description ? step.description.split('\n')[0] : '', t);
+  const displayTitle = localizeAgentText(step.title, t);
   const isTodoStep = detailLine.toLowerCase() === 'todowrite' || step.title.startsWith('TODO::') || !!step.todoMeta;
 
   React.useEffect(() => {
@@ -798,17 +781,22 @@ const ThoughtBubble: React.FC<{ text: string | Record<string, unknown> }> = memo
       return String(text);
     }
   }, [text]);
+  const { t } = useTranslation();
   const [intention, ...reasonLines] = normalized.split('\n');
   const reason = reasonLines.join('\n').trim();
+  const displayIntention = localizeAgentText(intention, t);
+  const displayReason = localizeAgentText(reason, t);
 
   return (
     <div className='flex min-w-0 items-start gap-2 px-1 py-1'>
       <span className='mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300 dark:bg-slate-600' />
       <div className='min-w-0 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400'>
         <p className='m-0 break-words'>
-          <StreamingText text={intention} />
+          <StreamingText text={displayIntention} />
         </p>
-        {reason && <p className='m-0 mt-0.5 break-words text-slate-400 dark:text-slate-500'>{reason}</p>}
+        {displayReason && (
+          <p className='m-0 mt-0.5 break-words text-slate-400 dark:text-slate-500'>{displayReason}</p>
+        )}
       </div>
     </div>
   );

@@ -71,6 +71,142 @@ def _agent_react_detail() -> str:
     return "Thought/Action/Observation"
 
 
+def _agent_lang_code() -> str:
+    """Short language code for AgentContext and prompts."""
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return "ru"
+    if lang.startswith("en"):
+        return "en"
+    return "zh"
+
+
+def _workflow_language_rules() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return """
+## Язык интерфейса (обязательно)
+Интерфейс пользователя — русский. Поля Thought, Phase, Action Intention, Action Reason
+и финальный ответ пишите **только на русском**, даже если инструкции навыка на другом языке.
+Не используйте китайский или английский в этих полях, если пользователь явно не пишет на них.
+Action Intention — не более 12 слов; Action Reason — не более 20 слов.
+Phase — короткая фраза на русском (без JSON и без склеивания с именем инструмента).
+""".strip()
+    if code == "en":
+        return """
+## Language
+Write Thought, Phase, Action Intention, Action Reason, and the final answer in **English**
+unless the user clearly uses another language.
+Action Intention: at most 8 words. Action Reason: at most 12 words.
+""".strip()
+    return """
+## 语言要求
+请使用与用户输入相同的语言书写 Thought、Phase、Action Intention、Action Reason 和最终答案。
+Action Intention 不超过 18 个汉字；Action Reason 不超过 30 个汉字。
+""".strip()
+
+
+def _agent_load_skill_phase() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return "Загрузка навыка"
+    if code == "en":
+        return "Loading skill"
+    return "加载技能"
+
+
+def _agent_action_status_label(action: Optional[str]) -> Optional[str]:
+    action_lower = (action or "").lower()
+    code = _agent_lang_code()
+    labels = {
+        "sql_query": {
+            "ru": "Запрос к базе данных",
+            "en": "Querying database",
+            "zh": "正在查询数据库信息",
+        },
+        "code_interpreter": {
+            "ru": "Генерация кода анализа",
+            "en": "Generating analysis code",
+            "zh": "正在生成分析代码",
+        },
+        "html_interpreter": {
+            "ru": "Формирование HTML-отчёта",
+            "en": "Rendering HTML report",
+            "zh": "正在生成并渲染 HTML 报告",
+        },
+        "todowrite": {
+            "ru": "Обновление плана задач",
+            "en": "Updating task plan",
+            "zh": "正在更新任务计划",
+        },
+        "execute_skill_script": {
+            "ru": "Выполнение скрипта навыка",
+            "en": "Running skill script",
+            "zh": "正在执行分析脚本",
+        },
+        "execute_skill_script_file": {
+            "ru": "Выполнение скрипта навыка",
+            "en": "Running skill script",
+            "zh": "正在执行分析脚本",
+        },
+    }
+    entry = labels.get(action_lower)
+    if entry:
+        return entry.get(code, entry["zh"])
+    return None
+
+
+def _sql_no_database_message() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return "База данных не выбрана. Сначала выберите источник данных в левой панели."
+    if code == "en":
+        return "No database selected. Choose a data source in the left panel first."
+    return "未选择数据库，请先在左侧面板选择一个数据源。"
+
+
+def _sql_forbidden_message(keyword: str) -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return (
+            f"Ограничение безопасности: оператор {keyword} запрещён, "
+            "разрешены только SELECT-запросы."
+        )
+    if code == "en":
+        return (
+            f"Security restriction: {keyword} statements are not allowed; "
+            "only SELECT queries are supported."
+        )
+    return f"安全限制: 不允许执行 {keyword} 语句，仅支持 SELECT 查询。"
+
+
+def _sql_empty_result_message() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return "Запрос не вернул строк."
+    if code == "en":
+        return "Query returned no rows."
+    return "查询返回空结果。"
+
+
+def _sql_failed_message(err: str) -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return f"Ошибка выполнения SQL: {err}"
+    if code == "en":
+        return f"SQL execution failed: {err}"
+    return f"SQL 执行失败: {err}"
+
+
+def _sql_truncation_suffix(shown: int, total: int) -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return f"\n\n(Показаны первые {shown} строк из {total})"
+    if code == "en":
+        return f"\n\n(Showing first {shown} of {total} rows)"
+    return f"\n\n（仅显示前 {shown} 行，共 {total} 行）"
+
+
 def _html_file_not_found_message(file_path: str) -> str:
     lang = _ui_lang()
     if lang.startswith("ru"):
@@ -1178,17 +1314,9 @@ async def _react_agent_stream(
                 lowered = text.lower()
                 break
 
-        action_lower = (action or "").lower()
-        if action_lower == "sql_query":
-            return "正在查询数据库信息"
-        if action_lower == "code_interpreter":
-            return "正在生成分析代码"
-        if action_lower == "html_interpreter":
-            return "正在生成并渲染 HTML 报告"
-        if action_lower == "todowrite":
-            return "正在更新任务计划"
-        if action_lower in {"execute_skill_script", "execute_skill_script_file"}:
-            return "正在执行分析脚本"
+        labeled = _agent_action_status_label(action)
+        if labeled:
+            return labeled
 
         return text
 
@@ -1694,7 +1822,7 @@ print(json.dumps(summary, ensure_ascii=False))
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": "未选择数据库，请先在左侧面板选择一个数据源。",
+                            "content": _sql_no_database_message(),
                         }
                     ]
                 },
@@ -1721,10 +1849,7 @@ print(json.dumps(summary, ensure_ascii=False))
                         "chunks": [
                             {
                                 "output_type": "text",
-                                "content": (
-                                    f"安全限制: 不允许执行 {kw} 语句，"
-                                    f"仅支持 SELECT 查询。"
-                                ),
+                                "content": _sql_forbidden_message(kw),
                             }
                         ]
                     },
@@ -1737,7 +1862,7 @@ print(json.dumps(summary, ensure_ascii=False))
                 return json.dumps(
                     {
                         "chunks": [
-                            {"output_type": "text", "content": "查询返回空结果。"}
+                            {"output_type": "text", "content": _sql_empty_result_message()}
                         ]
                     },
                     ensure_ascii=False,
@@ -1756,7 +1881,7 @@ print(json.dumps(summary, ensure_ascii=False))
                 md_rows.append("| " + " | ".join(str(v) for v in row) + " |")
             table = "\n".join([header, separator] + md_rows)
             if len(rows) > 50:
-                table += f"\n\n（仅显示前 50 行，共 {len(rows)} 行）"
+                table += _sql_truncation_suffix(50, len(rows))
 
             return json.dumps(
                 {"chunks": [{"output_type": "markdown", "content": table}]},
@@ -1768,7 +1893,7 @@ print(json.dumps(summary, ensure_ascii=False))
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": f"SQL 执行失败: {str(e)}",
+                            "content": _sql_failed_message(str(e)),
                         }
                     ]
                 },
@@ -2776,7 +2901,7 @@ print(json.dumps(summary, ensure_ascii=False))
         conv_id=conv_id,
         gpts_app_code="react_agent",
         gpts_app_name="ReAct",
-        language="zh",
+        language=_agent_lang_code(),
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
     )
@@ -2800,13 +2925,41 @@ print(json.dumps(summary, ensure_ascii=False))
             if hasattr(skill_template, "template")
             else str(skill_template)
         )
-        skill_prompt_context = f"""
+        if _agent_lang_code() == "ru":
+            skill_prompt_context = f"""
+## Загруженный навык ({pre_matched_skill.metadata.name})
+Ниже полная инструкция выбранного навыка — выполняйте её строго:
+
+{skill_text}
+"""
+            execution_instruction = f"""
+## Требования к выполнению
+1. Пользователь выбрал навык: {pre_matched_skill.metadata.name}
+2. Строго следуйте шагам из инструкции навыка
+3. Вызывайте инструменты в нужном порядке до завершения задачи
+4. Статусы и пояснения для пользователя — на русском
+"""
+        elif _agent_lang_code() == "en":
+            skill_prompt_context = f"""
+## Loaded skill ({pre_matched_skill.metadata.name})
+Follow the full skill instructions below:
+
+{skill_text}
+"""
+            execution_instruction = f"""
+## Execution requirements
+1. User selected skill: {pre_matched_skill.metadata.name}
+2. Follow the skill workflow strictly
+3. Call tools in the required order until the task is complete
+"""
+        else:
+            skill_prompt_context = f"""
 ## 已加载技能指令（{pre_matched_skill.metadata.name}）
 以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
 
 {skill_text}
 """
-        execution_instruction = f"""
+            execution_instruction = f"""
 ## 执行要求
 1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
 2. 你必须严格按照上述技能指令的步骤执行
@@ -3055,12 +3208,16 @@ print(json.dumps(summary, ensure_ascii=False))
     is_skill_mode = pre_matched_skill is not None
     _skill_name = pre_matched_skill.metadata.name if pre_matched_skill else "skill"
 
+    lang_rules = _workflow_language_rules()
+
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, executing the skill task selected by the user.
 Please always response in the same language as the user's input language.
+
+{lang_rules}
 
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
@@ -3210,6 +3367,8 @@ Action Input: The JSON format of tool parameters
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
 Please always response in the same language as the user's input language.
+
+{lang_rules}
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
@@ -3423,13 +3582,13 @@ Action Input: The JSON format of tool parameters
         skill_step_id, skill_step_event = build_step(
             f"Load Skill: {pre_matched_skill.metadata.name}",
             "Pre-loaded skill from user selection",
-            phase="加载技能",
+            phase=_agent_load_skill_phase(),
         )
         current_history_step = {
             "id": skill_step_id,
             "title": f"Load Skill: {pre_matched_skill.metadata.name}",
             "detail": "Pre-loaded skill from user selection",
-            "phase": "加载技能",
+            "phase": _agent_load_skill_phase(),
             "thought": None,
             "action": None,
             "action_input": None,

@@ -17,6 +17,7 @@ import ManusRightPanel, {
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import axios from '@/utils/ctx-axios';
+import { localizeAgentText } from '@/utils/localize-agent-text';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
   ArrowUpOutlined,
@@ -400,7 +401,7 @@ const convertToManusFormat = (
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
+        title: localizeAgentText(step.title || `Step ${step.step}`, t),
         subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
         description: cleanDetail || undefined,
         phase: (step as any).phase,
@@ -426,7 +427,7 @@ const convertToManusFormat = (
       activeStep = {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
+        title: localizeAgentText(step.title || `Step ${step.step}`, t),
         subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
         status: getStepStatus(step.status),
         detail: cleanDetail,
@@ -1642,9 +1643,9 @@ const Playground: NextPage = () => {
                 idx === existingStepIndex
                   ? {
                       ...step,
-                      title: payload.title,
-                      detail: payload.detail,
-                      phase: payload.phase,
+                      title: localizeAgentText(payload.title, t),
+                      detail: localizeAgentText(payload.detail, t),
+                      phase: payload.phase ? localizeAgentText(payload.phase, t) : step.phase,
                       todoMeta: payload.todo_meta || step.todoMeta,
                       status: 'running' as const,
                     }
@@ -1659,9 +1660,9 @@ const Playground: NextPage = () => {
                 {
                   id,
                   step: payload.step,
-                  title: payload.title,
-                  detail: payload.detail,
-                  phase: payload.phase,
+                  title: localizeAgentText(payload.title, t),
+                  detail: localizeAgentText(payload.detail, t),
+                  phase: payload.phase ? localizeAgentText(payload.phase, t) : undefined,
                   todoMeta: payload.todo_meta,
                   status: 'running' as const,
                   action: payload.action,
@@ -1675,7 +1676,7 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 outputs: { ...current.outputs, [id]: current.outputs[id] || [] },
                 stepThoughts: nextThoughts,
-                // Only auto-focus for existing step updates (e.g., "思考中" -> "sql_query").
+                // Only auto-focus for existing step updates (e.g. thinking -> sql_query).
                 // New placeholder steps wait for step.meta to get real content before stealing focus.
                 activeStepId: existingStepIndex >= 0 ? id : current.activeStepId || id,
               },
@@ -1725,7 +1726,7 @@ const Playground: NextPage = () => {
               }
               return {
                 ...item,
-                title: payload.title || item.title,
+                title: localizeAgentText(payload.title || item.title, t),
                 detail: parts.join('\n') || item.detail,
                 action: payload.action || item.action,
                 actionInput: payload.action_input || item.actionInput,
@@ -1733,11 +1734,12 @@ const Playground: NextPage = () => {
               };
             });
             // Route model-provided action display fields to the subtle status row.
-            const displayThought = payload.action_intention
+            const rawThought = payload.action_intention
               ? payload.action_reason
                 ? `${payload.action_intention}\n${payload.action_reason}`
                 : payload.action_intention
               : payload.thought;
+            const displayThought = rawThought ? localizeAgentText(rawThought, t) : undefined;
             const nextThoughts = displayThought
               ? {
                   ...current.stepThoughts,

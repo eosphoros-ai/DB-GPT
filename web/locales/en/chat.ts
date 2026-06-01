@@ -191,7 +191,19 @@ export const ChatEn = {
   no_output_yet: 'No output yet',
   code_file: 'Code file',
   analysis_summary: 'Analysis summary',
-
+  agent_status_sql_query: 'Querying database',
+  agent_status_code: 'Generating analysis code',
+  agent_status_html: 'Rendering HTML report',
+  agent_status_todo: 'Updating task plan',
+  agent_status_script: 'Running skill script',
+  agent_phrase_error_occurred: 'An error occurred.',
+  agent_phase_final_result: 'Final result',
+  agent_phrase_now_need: 'Now need to',
+  agent_phrase_next: 'Next,',
+  agent_phrase_let_me_try: 'Let me try',
+  agent_phrase_let_me: 'Let me',
+  agent_phrase_i_need: 'I need to',
+  agent_phrase_ok: 'OK,',
 
   // phase2 i18n
   source_code: 'Source code',
