@@ -589,15 +589,15 @@ const Playground: NextPage = () => {
 
   // Fetch Data Sources
   const { data: dataSources, loading: _loadingSources } = useRequest(
-    () => {
-      return axios
+    () =>
+      axios
         .get('/api/v2/serve/datasources')
         .then((response: any) => {
-          const result = response?.success !== undefined ? response : response?.data;
-          if (result?.success) {
-            return (result.data || []).map((item: any) => ({
+          if (response?.success && Array.isArray(response.data)) {
+            return response.data.map((item: any) => ({
               ...item,
-              db_name: item.db_name || item.params?.name || item.params?.database || `${item.type}-${item.id}`,
+              db_name:
+                item.db_name || item.params?.database || item.params?.name || `${item.type}-${item.id}`,
               db_type: item.type,
             })) as DataSource[];
           }
@@ -606,8 +606,7 @@ const Playground: NextPage = () => {
         .catch(e => {
           console.error('Failed to fetch datasources', e);
           return [];
-        });
-    },
+        }),
     { ready: apiReady },
   );
 
@@ -2684,8 +2683,7 @@ const Playground: NextPage = () => {
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {(skillsList || []).length}
-                                        {t('skills_available')}
+                                        {t('skills_available_count', { count: (skillsList || []).length })}
                                       </span>
                                       <Button
                                         type='link'
@@ -3126,8 +3124,7 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length}
-                                    {t('skills_available')}
+                                    {t('skills_available_count', { count: (skillsList || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3255,8 +3252,7 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(dataSources || []).length}
-                                    {t('databases_available')}
+                                    {t('databases_available_count', { count: (dataSources || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3381,8 +3377,9 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(knowledgeSpaces || []).length}
-                                    {t('knowledge_bases_available')}
+                                    {t('knowledge_bases_available_count', {
+                                      count: (knowledgeSpaces || []).length,
+                                    })}
                                   </span>
                                   <Button
                                     type='link'

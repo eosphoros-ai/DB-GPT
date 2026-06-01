@@ -117,7 +117,7 @@ function Skills() {
     setListLoading(true);
     const currentFetch = ++listFetchCountRef.current;
     try {
-      const response = (await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`)) as any;
+      const response = (await axios.get('/api/v1/skills/list')) as any;
       if (currentFetch !== listFetchCountRef.current) return;
       if (response?.success && Array.isArray(response.data)) {
         setSkillsList(response.data as SkillItem[]);
@@ -142,7 +142,7 @@ function Skills() {
   const fetchDetail = useCallback(async (skillName: string, filePath: string) => {
     setDetailLoading(true);
     try {
-      const response = await (axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/detail`, {
+      const response = await (axios.get('/api/v1/skills/detail', {
         params: { skill_name: skillName, file_path: filePath },
       }) as Promise<any>);
       if (response?.success && response.data) {

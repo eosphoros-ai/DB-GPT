@@ -44,7 +44,7 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_LANG_KEY);
-    const language = isAppLanguage(stored ?? '') ? stored : 'zh';
+    const language = isAppLanguage(stored ?? '') ? stored : 'ru';
     i18n.changeLanguage?.(language);
   }, [i18n]);
 
@@ -76,6 +76,7 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const user = {
       user_channel: `dbgpt`,
       user_no: `001`,
+      user_id: `001`,
       nick_name: `dbgpt`,
     };
     if (user) {
