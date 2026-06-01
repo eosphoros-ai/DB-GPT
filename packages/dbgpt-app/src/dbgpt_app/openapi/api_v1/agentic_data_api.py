@@ -1921,6 +1921,8 @@ print(json.dumps(summary, ensure_ascii=False))
         preamble_lines = [
             "import json",
             "import os",
+            "import builtins",
+            "builtins.os = os",
             "import pandas as pd",
             "import numpy as np",
             f'PLOT_DIR = r"{work_dir}"',
