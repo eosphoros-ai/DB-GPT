@@ -741,6 +741,7 @@ const SkillScriptRenderer: React.FC<{
 SkillScriptRenderer.displayName = 'SkillScriptRenderer';
 
 const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutput }> = memo(({ code, html }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
   const htmlContent = html.content;
   const rawHtml =
@@ -827,6 +828,7 @@ HtmlTabbedRenderer.displayName = 'HtmlTabbedRenderer';
 const CodeExecutionRenderer: React.FC<{
   group: { codes: ExecutionOutput[]; results: ExecutionOutput[]; images: ExecutionOutput[] };
 }> = memo(({ group }) => {
+  const { t } = useTranslation();
   const hasImages = group.images.length > 0;
   const [activeTab, setActiveTab] = useState<'chart' | 'code'>(hasImages ? 'chart' : 'code');
 
@@ -950,6 +952,7 @@ const TerminalRenderer: React.FC<{
   activeStep: ActiveStepInfo;
   outputs: ExecutionOutput[];
 }> = memo(({ activeStep, outputs }) => {
+  const { t } = useTranslation();
   const command =
     parseShellCommand(activeStep.detail) ||
     outputs

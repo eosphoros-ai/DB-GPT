@@ -744,12 +744,12 @@ const Playground: NextPage = () => {
             file_key: uploadedFilePath,
           },
         });
-        if (res.data?.success && res.data?.data) {
+        if (res?.success && res?.data) {
           let parsed: any;
           try {
-            parsed = JSON.parse(res.data.data);
+            parsed = JSON.parse(res.data);
           } catch {
-            parsed = res.data.data;
+            parsed = res.data;
           }
           if (Array.isArray(parsed) && parsed.length > 0) {
             const columns = Object.keys(parsed[0] || {});
@@ -777,7 +777,7 @@ const Playground: NextPage = () => {
             });
           }
         } else {
-          setFilePreviewError(res.data?.err_msg || t('file_preview_failed'));
+          setFilePreviewError(res?.err_msg || t('file_preview_failed'));
         }
       } catch (err: any) {
         setFilePreviewError(err?.message || t('file_preview_failed'));
