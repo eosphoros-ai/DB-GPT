@@ -79,6 +79,10 @@ class ReActOutputParser:
         """Build a regex for a ReAct prefix at the start of a logical line."""
         return rf"^[ \t]*(?:\*\*)?{escaped_prefix}(?:\*\*)?\s*"
 
+    def _prefix_anywhere_pattern(self, escaped_prefix: str) -> str:
+        """Build a regex for a ReAct prefix anywhere in text (lenient)."""
+        return rf"(?:\*\*)?{escaped_prefix}(?:\*\*)?\s*"
+
     @staticmethod
     def _strip_markdown_emphasis(text: Optional[str]) -> Optional[str]:
         """Remove common Markdown emphasis left around a parsed value."""
@@ -214,6 +218,26 @@ class ReActOutputParser:
         )
 
         if not thought_matches:
+            # Fallback: try to find Action directly without Thought prefix.
+            # This handles cases where the LLM outputs everything in one
+            # paragraph without line breaks (e.g. "让我查询... Action: sql_query
+            # Action Input: {...}").
+            action_matches = self._find_prefix_matches(
+                text, self.action_prefix_escaped
+            )
+            if not action_matches:
+                # Try lenient match: Action anywhere in text, not just at
+                # line start
+                action_pattern = re.compile(
+                    self._prefix_anywhere_pattern(self.action_prefix_escaped)
+                )
+                action_matches = list(action_pattern.finditer(text))
+            if action_matches:
+                # Found Action without Thought - create a step from the
+                # whole text
+                step = self._parse_step(text)
+                if step:
+                    return [step]
             return []
 
         # Process each thought section
@@ -376,6 +400,19 @@ class ReActOutputParser:
             match_text,
             re.DOTALL | re.MULTILINE,
         )
+        if not action_match:
+            # Fallback: try lenient match for Action anywhere in text
+            action_anywhere = self._prefix_anywhere_pattern(
+                self.action_prefix_escaped
+            )
+            action_input_anywhere = self._prefix_anywhere_pattern(
+                self.action_input_prefix_escaped
+            )
+            action_match = re.search(
+                rf"{action_anywhere}(.*?)(?={action_input_anywhere}|{observation_line}|\Z)",
+                match_text,
+                re.DOTALL,
+            )
         if action_match:
             action = self._strip_markdown_emphasis(
                 step_text[action_match.start(1) : action_match.end(1)]
@@ -390,6 +427,16 @@ class ReActOutputParser:
             match_text,
             re.DOTALL | re.MULTILINE,
         )
+        if not action_input_match:
+            # Fallback: try lenient match for Action Input anywhere
+            action_input_anywhere = self._prefix_anywhere_pattern(
+                self.action_input_prefix_escaped
+            )
+            action_input_match = re.search(
+                rf"{action_input_anywhere}(.*?)(?={observation_line}|{thought_line}|\Z)",
+                match_text,
+                re.DOTALL,
+            )
         if action_input_match:
             action_input_text = step_text[
                 action_input_match.start(1) : action_input_match.end(1)
