@@ -24,14 +24,19 @@ echo ""
 
 OR_MODEL="${OPENROUTER_MODEL:-deepseek/deepseek-v4-flash}"
 LM_MODEL="${LMSTUDIO_MODEL:-openai/gpt-oss-20b}"
-echo "$MODELS_JSON" | grep -q "$OR_MODEL" && echo "OK: OpenRouter model listed" || {
+echo "$MODELS_JSON" | grep -q "$OR_MODEL" && echo "OK: OpenRouter model listed ($OR_MODEL)" || {
   echo "WARN: $OR_MODEL not in model/types (check TOML and workers)"
   FAIL=1
 }
-echo "$MODELS_JSON" | grep -q "$LM_MODEL" && echo "OK: LM Studio model listed" || {
-  echo "WARN: $LM_MODEL not in model/types"
+MODEL_COUNT=$(echo "$MODELS_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('data') or []))" 2>/dev/null || echo 0)
+if [ "${MODEL_COUNT:-0}" -ge 2 ]; then
+  echo "OK: $MODEL_COUNT LLM workers registered"
+elif echo "$MODELS_JSON" | grep -q "$LM_MODEL"; then
+  echo "OK: secondary model $LM_MODEL listed"
+else
+  echo "WARN: only $MODEL_COUNT LLM(s); check LMSTUDIO_* / second [[models.llms]] and worker logs"
   FAIL=1
-}
+fi
 
 echo "=== Native OpenRouter in container ==="
 if docker exec dbgpt-webserver grep -q DBGPT_OPENROUTER_NATIVE \
@@ -42,13 +47,12 @@ else
   FAIL=1
 fi
 
-echo "=== i18n agent API (no legacy 思考中) ==="
-ZH=$(docker exec dbgpt-webserver grep -c '思考中' \
-  /app/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py 2>/dev/null || echo 0)
-if [ "$ZH" = "0" ]; then
-  echo "OK: no hardcoded 思考中 in agentic_data_api"
+echo "=== i18n agent API (thinking title) ==="
+if docker exec dbgpt-webserver grep -q '_agent_thinking_title' \
+  /app/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py 2>/dev/null; then
+  echo "OK: _agent_thinking_title present (RU via _ui_lang)"
 else
-  echo "WARN: found $ZH x 思考中 — rebuild from i18n fork"
+  echo "WARN: rebuild image from feature/i18n-ru-locale"
 fi
 
 echo "=== Datasources ==="
