@@ -50,7 +50,10 @@ def _ui_lang() -> str:
     env = (os.getenv("DBGPT_LANG") or os.getenv("LANGUAGE") or "").strip().lower()
     if env:
         return env
-    return (getattr(CFG, "LANGUAGE", None) or "zh").lower()
+    cfg_lang = (getattr(CFG, "LANGUAGE", None) or "").strip().lower()
+    if cfg_lang:
+        return cfg_lang
+    return "ru"
 
 
 def _agent_thinking_title() -> str:
@@ -191,11 +194,149 @@ def _sql_empty_result_message() -> str:
 
 def _sql_failed_message(err: str) -> str:
     code = _agent_lang_code()
+    detail = err.strip()
+    for prefix in ("SQL 执行失败:", "Ошибка выполнения SQL:", "SQL execution failed:"):
+        if detail.startswith(prefix):
+            detail = detail[len(prefix) :].strip()
     if code == "ru":
-        return f"Ошибка выполнения SQL: {err}"
+        return f"Ошибка выполнения SQL: {detail}"
     if code == "en":
-        return f"SQL execution failed: {err}"
-    return f"SQL 执行失败: {err}"
+        return f"SQL execution failed: {detail}"
+    return f"SQL 执行失败: {detail}"
+
+
+def _connector_db_type(connector: Any) -> str:
+    for attr in ("db_type", "driver", "db_dialect"):
+        val = getattr(connector, attr, None)
+        if val:
+            return str(val).lower()
+    return "unknown"
+
+
+def _build_table_info_for_connector(connector: Any, table_names: List[str]) -> str:
+    """Build schema text; ClickHouse connector returns empty get_table_info()."""
+    try:
+        existing = connector.get_table_info_no_throw()
+    except Exception:
+        existing = ""
+    if existing and str(existing).strip() and not str(existing).startswith("Error"):
+        return str(existing)
+
+    db_type = _connector_db_type(connector)
+    if db_type != "clickhouse" or not table_names:
+        return existing or ", ".join(table_names)
+
+    db_name = ""
+    try:
+        db_name = connector.get_current_db_name() or ""
+    except Exception:
+        pass
+    lines: List[str] = []
+    for table in table_names[:40]:
+        qualified = f"{db_name}.{table}" if db_name else table
+        try:
+            cols = connector.get_columns(table)
+            col_desc = ", ".join(
+                f"{c.get('name', '?')}:{c.get('type', '?')}" for c in cols[:50]
+            )
+            lines.append(f"- {qualified}: {col_desc}")
+        except Exception:
+            lines.append(f"- {qualified}")
+    return "\n".join(lines) if lines else ", ".join(table_names)
+
+
+def _sql_dialect_hints(db_type: str, database_name: str) -> str:
+    code = _agent_lang_code()
+    if db_type == "clickhouse":
+        if code == "ru":
+            return f"""
+- **ClickHouse:** не используйте синтаксис MySQL (`INFORMATION_SCHEMA` с `table_schema`, и т.п.).
+- Список таблиц: `SHOW TABLES FROM {database_name}` или
+  `SELECT name FROM system.tables WHERE database = '{database_name}'`.
+- Колонки: `DESCRIBE TABLE {database_name}.имя_таблицы` или `system.columns`.
+- Только SELECT; имя БД в запросе: `{database_name}`.
+""".strip()
+        if code == "en":
+            return f"""
+- **ClickHouse:** do not use MySQL INFORMATION_SCHEMA patterns (e.g. table_schema).
+- List tables: `SHOW TABLES FROM {database_name}` or system.tables.
+- Columns: `DESCRIBE TABLE {database_name}.table_name`.
+""".strip()
+        return f"""
+- **ClickHouse:** 勿使用 MySQL 的 INFORMATION_SCHEMA.table_schema 语法。
+- 表列表: `SHOW TABLES FROM {database_name}` 或 system.tables。
+"""
+    return ""
+
+
+def _database_context_block(
+    database_name: str,
+    connector: Any,
+    table_names: List[str],
+    table_info: str,
+) -> str:
+    db_type = _connector_db_type(connector)
+    hints = _sql_dialect_hints(db_type, database_name)
+    code = _agent_lang_code()
+    tables_csv = ", ".join(table_names)
+    if code == "ru":
+        header = "## База данных"
+        lines = [
+            f"- Подключение: {database_name}",
+            f"- СУБД: {db_type}",
+            f"- Таблицы: {tables_csv}",
+            f"- Структура:\n{table_info}",
+            "- Запросы через `sql_query`, только SELECT",
+        ]
+        if hints:
+            lines.append(hints)
+        return header + "\n" + "\n".join(lines)
+    if code == "en":
+        header = "## Database"
+        lines = [
+            f"- Connection: {database_name}",
+            f"- Engine: {db_type}",
+            f"- Tables: {tables_csv}",
+            f"- Schema:\n{table_info}",
+            "- Use `sql_query` for read-only SELECT only",
+        ]
+        if hints:
+            lines.append(hints)
+        return header + "\n" + "\n".join(lines)
+    header = "## 数据库信息"
+    lines = [
+        f"- 数据库名: {database_name}",
+        f"- 类型: {db_type}",
+        f"- 可用表: {tables_csv}",
+        f"- 表结构:\n{table_info}",
+        "- 使用 'sql_query' 工具执行 SQL 查询",
+        "- **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**",
+    ]
+    if hints:
+        lines.append(hints)
+    return header + "\n" + "\n".join(lines)
+
+
+def _humanize_sql_error(err: str, db_type: Optional[str] = None) -> str:
+    msg = str(err).strip()
+    lower = msg.lower()
+    code = _agent_lang_code()
+    extra = ""
+    if db_type == "clickhouse" and (
+        "code: 47" in lower or "unknown identifier" in lower
+    ):
+        if code == "ru":
+            extra = (
+                " Подсказка: в ClickHouse код 47 — неизвестный столбец/таблица. "
+                "Часто агент ошибочно использует MySQL INFORMATION_SCHEMA; "
+                "используйте system.tables, system.columns или DESCRIBE TABLE."
+            )
+        elif code == "en":
+            extra = (
+                " Hint: ClickHouse code 47 = unknown identifier; "
+                "avoid MySQL INFORMATION_SCHEMA — use system.tables / DESCRIBE TABLE."
+            )
+    return _sql_failed_message(msg + extra)
 
 
 def _sql_truncation_suffix(shown: int, total: int) -> str:
@@ -1380,23 +1521,30 @@ async def _react_agent_stream(
             local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
             database_connector = local_db_manager.get_connector(database_name)
             table_names = list(database_connector.get_table_names())
-            table_info = database_connector.get_table_info_no_throw()
-            database_context = f"""
-## 数据库信息
-- 数据库名: {database_name}
-- 可用表: {", ".join(table_names)}
-- 表结构:
-{table_info}
-- 使用 'sql_query' 工具执行 SQL 查询
-- **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**
-"""
+            table_info = _build_table_info_for_connector(
+                database_connector, table_names
+            )
+            database_context = _database_context_block(
+                database_name, database_connector, table_names, table_info
+            )
             logger.info(
                 f"Loaded database connector: {database_name} "
                 f"(tables: {', '.join(table_names)})"
             )
         except Exception as e:
             logger.warning(f"Failed to load database connector: {e}", exc_info=e)
-            database_context = f"""
+            if _agent_lang_code() == "ru":
+                database_context = f"""
+## База данных
+- Не удалось подключить «{database_name}»: {str(e)}
+"""
+            elif _agent_lang_code() == "en":
+                database_context = f"""
+## Database
+- Failed to load '{database_name}': {str(e)}
+"""
+            else:
+                database_context = f"""
 ## 数据库
 - 警告: 加载数据库 '{database_name}' 失败。错误: {str(e)}
 """
@@ -1888,12 +2036,17 @@ print(json.dumps(summary, ensure_ascii=False))
                 ensure_ascii=False,
             )
         except Exception as e:
+            db_type = (
+                _connector_db_type(database_connector)
+                if database_connector is not None
+                else None
+            )
             return json.dumps(
                 {
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": _sql_failed_message(str(e)),
+                            "content": _humanize_sql_error(str(e), db_type),
                         }
                     ]
                 },

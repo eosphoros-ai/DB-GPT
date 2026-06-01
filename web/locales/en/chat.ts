@@ -204,6 +204,8 @@ export const ChatEn = {
   agent_phrase_let_me: 'Let me',
   agent_phrase_i_need: 'I need to',
   agent_phrase_ok: 'OK,',
+  agent_sql_failed_prefix: 'SQL execution failed:',
+  agent_sql_empty_result: 'Query returned no rows.',
 
   // phase2 i18n
   source_code: 'Source code',

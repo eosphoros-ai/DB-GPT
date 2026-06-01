@@ -166,6 +166,8 @@ export const ChatRu: Resources['translation'] = {
   agent_phrase_let_me: 'Сейчас',
   agent_phrase_i_need: 'Мне нужно',
   agent_phrase_ok: 'Хорошо,',
+  agent_sql_failed_prefix: 'Ошибка выполнения SQL:',
+  agent_sql_empty_result: 'Запрос не вернул строк.',
 
   // phase2 i18n
   Running: 'Выполняется',

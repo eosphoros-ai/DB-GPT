@@ -19,7 +19,14 @@ const EXACT_LABEL_KEYS: Record<string, string> = {
   看来出现了错误: 'agent_phrase_error_occurred',
   '看来出现了错误。': 'agent_phrase_error_occurred',
   返回最终结果: 'agent_phase_final_result',
+  'SQL 执行失败:': 'agent_sql_failed_prefix',
+  '查询返回空结果。': 'agent_sql_empty_result',
 };
+
+const PREFIX_REPLACEMENTS: Array<{ pattern: RegExp; key: string }> = [
+  { pattern: /^SQL 执行失败:\s*/i, key: 'agent_sql_failed_prefix' },
+  { pattern: /^查询返回空结果[。.]?\s*/i, key: 'agent_sql_empty_result' },
+];
 
 /** Replace frequent Chinese fragments inside streamed thoughts (RU/EN UI only). */
 const PHRASE_REPLACEMENTS: Array<{ pattern: RegExp; key: string }> = [
@@ -55,6 +62,9 @@ export function localizeAgentText(
   if (exactKey) return tr(exactKey);
 
   let out = s;
+  for (const { pattern, key } of PREFIX_REPLACEMENTS) {
+    out = out.replace(pattern, () => `${tr(key)} `);
+  }
   for (const { pattern, key } of PHRASE_REPLACEMENTS) {
     out = out.replace(pattern, () => tr(key));
   }
