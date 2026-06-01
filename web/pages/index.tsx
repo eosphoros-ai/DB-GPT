@@ -716,6 +716,8 @@ const Playground: NextPage = () => {
       setFilePreview(null);
       setFilePreviewError(null);
       setArtifacts([]);
+      setPreviewArtifact(null);
+      setRightPanelView('execution');
       setRightPanelTab('preview');
       setStreamingSummary('');
       setSummaryComplete(false);
@@ -941,6 +943,16 @@ const Playground: NextPage = () => {
     const lastRound = rounds[rounds.length - 1];
     return lastRound?.viewMsg?.id || null;
   }, [activeViewMsgId, rounds]);
+
+  useEffect(() => {
+    if (!previewArtifact) return;
+    if (previewArtifact.messageId && previewArtifact.messageId !== selectedViewMsgId) {
+      setPreviewArtifact(null);
+      if (rightPanelView === 'html-preview' || rightPanelView === 'image-preview') {
+        setRightPanelView('execution');
+      }
+    }
+  }, [selectedViewMsgId, previewArtifact, rightPanelView]);
 
   const parseCsvLine = (line: string) => {
     const result: string[] = [];
@@ -2052,6 +2064,8 @@ const Playground: NextPage = () => {
     setActiveMessageId(null);
     setActiveViewMsgId(null);
     setArtifacts([]);
+    setPreviewArtifact(null);
+    setRightPanelView('execution');
     setStreamingSummary('');
     setSummaryComplete(false);
 
@@ -2212,6 +2226,9 @@ const Playground: NextPage = () => {
   const loadConversation = async (convUid: string) => {
     if (historyLoading) return;
     setHistoryLoading(true);
+    setPreviewArtifact(null);
+    setRightPanelView('execution');
+    setSelectedStepId(null);
     try {
       const res: any = await axios.get(`/api/v1/chat/dialogue/messages/history?con_uid=${convUid}`);
       let msgList: any[] | null = null;
@@ -2855,6 +2872,12 @@ const Playground: NextPage = () => {
                     stepThoughts: _stepThoughts,
                   } = convertToManusFormat(execution, undefined, t);
                   const isRunning = execution?.steps.some(s => s.status === 'running') || false;
+                  const scopedPreviewArtifact =
+                    previewArtifact && previewArtifact.messageId === activeViewMsg?.id ? previewArtifact : null;
+                  const effectivePanelView =
+                    (rightPanelView === 'html-preview' || rightPanelView === 'image-preview') && !scopedPreviewArtifact
+                      ? 'execution'
+                      : rightPanelView;
 
                   return (
                     <ManusRightPanel
@@ -2896,9 +2919,9 @@ const Playground: NextPage = () => {
                           setRightPanelCollapsed(false);
                         }
                       }}
-                      panelView={rightPanelView}
+                      panelView={effectivePanelView}
                       onPanelViewChange={setRightPanelView}
-                      previewArtifact={previewArtifact}
+                      previewArtifact={scopedPreviewArtifact}
                       skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
                       summaryContent={streamingSummary || activeViewMsg?.context || ''}
                       isSummaryStreaming={!_summaryComplete && !!streamingSummary}

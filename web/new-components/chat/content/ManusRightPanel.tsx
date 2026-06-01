@@ -45,6 +45,7 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import { useTranslation } from 'react-i18next';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
 import SafeArtifactImage from './SafeArtifactImage';
+import SafeHtmlPreview, { extractHtmlContent } from './SafeHtmlPreview';
 
 /** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
 const resolveImageUrl = (src: string): string => {
@@ -1487,9 +1488,25 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const htmlPreviewRef = useRef<HTMLIFrameElement>(null);
   const panelView = controlledPanelView ?? internalPanelView;
   const setPanelView = (view: PanelView) => {
+    if (view === 'html-preview' && previewArtifact && !extractHtmlContent(previewArtifact.content).trim()) {
+      view = 'execution';
+    }
+    if (view === 'image-preview' && !previewArtifact) {
+      view = 'execution';
+    }
     setInternalPanelView(view);
     onPanelViewChange?.(view);
   };
+
+  useEffect(() => {
+    if (
+      (panelView === 'html-preview' || panelView === 'image-preview') &&
+      (!previewArtifact ||
+        (panelView === 'html-preview' && !extractHtmlContent(previewArtifact.content).trim()))
+    ) {
+      setPanelView('execution');
+    }
+  }, [panelView, previewArtifact]);
 
   const handleExportPdf = () => {
     try {
@@ -1791,33 +1808,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'html-preview' && previewArtifact ? (
           <div className='w-full h-full flex flex-col'>
-            {(() => {
-              const srcDoc = resolveHtmlImageUrls(
-                typeof previewArtifact.content === 'string'
-                  ? previewArtifact.content
-                  : previewArtifact.content?.html ||
-                      previewArtifact.content?.content ||
-                      String(previewArtifact.content),
-              );
-              console.log(
-                '[HTML Preview] artifact id:',
-                previewArtifact.id,
-                'srcDoc length:',
-                srcDoc?.length,
-                'first 300 chars:',
-                srcDoc?.substring(0, 300),
-              );
-              return (
-                <iframe
-                  key={previewArtifact.id || 'html-preview'}
-                  ref={htmlPreviewRef}
-                  srcDoc={srcDoc}
-                  sandbox='allow-scripts allow-same-origin allow-modals'
-                  className='w-full flex-1 bg-white'
-                  style={{ border: 'none', minHeight: 600 }}
-                />
-              );
-            })()}
+            <SafeHtmlPreview content={previewArtifact.content} artifactId={previewArtifact.id} />
           </div>
         ) : panelView === 'image-preview' && previewArtifact ? (
           <div className='w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-6'>
