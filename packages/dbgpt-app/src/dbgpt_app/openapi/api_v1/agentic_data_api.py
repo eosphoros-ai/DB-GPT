@@ -3061,18 +3061,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
         if action_lower == "sql_query":
             sql_calls = sum(1 for item in history if item == "sql_query")
-
-            # Allow early advance if the agent explicitly indicates transition
-            # to the next step (e.g. "下一步：生成报告")
-            if next_todo and any(
-                marker in thought_lower for marker in transition_markers
-            ):
-                if any(
-                    token and token in thought_lower for token in next_todo.split()
-                ):
-                    return True
-
-            if sql_calls < 1:
+            if sql_calls < 2:
                 return False
 
             if next_todo and any(
@@ -3113,9 +3102,8 @@ print(json.dumps(summary, ensure_ascii=False))
                 if any(marker in thought_lower for marker in completion_markers):
                     return True
 
-            # If agent has been stuck on sql_query for too many rounds,
-            # force advance to prevent infinite loop
-            if sql_calls >= 5:
+            # Safety net: force advance after too many SQL rounds
+            if sql_calls >= 8:
                 logger.warning(
                     f"sql_query stuck for {sql_calls} rounds, forcing advance"
                 )

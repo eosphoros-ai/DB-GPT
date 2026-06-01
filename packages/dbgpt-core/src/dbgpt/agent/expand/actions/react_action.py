@@ -513,4 +513,8 @@ class ReActAction(ToolAction):
         )
         if not act_out.action_input:
             act_out.action_input = action_input_str
+        # After successful html_interpreter, terminate the loop so the
+        # agent does not continue with unnecessary additional work.
+        if name == "html_interpreter" and act_out.is_exe_success:
+            act_out.terminate = True
         return act_out
