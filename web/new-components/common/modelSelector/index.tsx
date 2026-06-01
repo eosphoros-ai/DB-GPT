@@ -34,12 +34,18 @@ const ModelSelector: React.FC = () => {
 
   const [modelList, setModelList] = useState<string[]>([]);
 
-  useRequest(async () => await apiInterceptors(getUsableModels()), {
-    onSuccess: data => {
-      const [, res] = data;
-      setModelList(res || []);
+  useRequest(
+    async () => {
+      const [, res] = await apiInterceptors(getUsableModels(), undefined, { silent: true });
+      return Array.isArray(res) ? res : [];
     },
-  });
+    {
+      ready: typeof window !== 'undefined',
+      onSuccess: list => {
+        setModelList(list || []);
+      },
+    },
+  );
 
   if (modelList.length === 0) {
     return null;

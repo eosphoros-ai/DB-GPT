@@ -96,11 +96,14 @@ const ChatContextProvider = ({ children }: { children: React.ReactNode }) => {
     app_code: '',
   });
 
-  // 获取model
-  const { data: modelList = [] } = useRequest(async () => {
-    const [, res] = await apiInterceptors(getUsableModels());
-    return res ?? [];
-  });
+  // 获取model（client-only: avoid SSR + ahooks "e.then is not a function"）
+  const { data: modelList = [] } = useRequest(
+    async () => {
+      const [, res] = await apiInterceptors(getUsableModels(), undefined, { silent: true });
+      return Array.isArray(res) ? res : [];
+    },
+    { ready: typeof window !== 'undefined' },
+  );
 
   // 获取管理员列表
   const { run: queryAdminListRun } = useRequest(

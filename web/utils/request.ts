@@ -39,7 +39,7 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
     .then(res => res)
     .catch(err => {
       message.error(err);
-      Promise.reject(err);
+      return Promise.reject(err);
     });
 };
 
@@ -60,7 +60,7 @@ export const sendSpaceGetRequest = (url: string, qs?: { [key: string]: any }) =>
     .then(res => res)
     .catch(err => {
       message.error(err);
-      Promise.reject(err);
+      return Promise.reject(err);
     });
 };
 
@@ -74,7 +74,7 @@ export const sendPostRequest = (url: string, body?: any) => {
     .then(res => res)
     .catch(err => {
       message.error(err);
-      Promise.reject(err);
+      return Promise.reject(err);
     });
 };
 
@@ -101,6 +101,6 @@ export const sendSpaceUploadPostRequest = (url: string, body?: any) => {
     .then(res => res)
     .catch(err => {
       message.error(err);
-      Promise.reject(err);
+      return Promise.reject(err);
     });
 };
