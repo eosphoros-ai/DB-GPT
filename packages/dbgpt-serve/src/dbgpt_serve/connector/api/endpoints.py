@@ -57,7 +57,7 @@ _CUSTOM_MCP_OPTION = ConnectorTypeOption(
             "type": "select",
             "options": ["sse", "streamable_http"],
             "required": True,
-            "default": "sse",
+            "default": "streamable_http",
         },
         {
             # Optional free-text description shown in the agent's connector
@@ -106,6 +106,11 @@ async def list_connector_types() -> Result[List[Dict[str, Any]]]:
         raise HTTPException(status_code=503, detail="ConnectorManager not available")
 
     options: List[ConnectorTypeOption] = []
+    # Built-in templates share the unified auth_fields with custom_mcp so the
+    # frontend ConnectorForm renders the same UX everywhere (transport /
+    # auth_type / token / header_name / description). Catalog entries now act
+    # purely as display-only metadata (type / display_name / icon / category)
+    # plus the optional default transport baked into mcp_server.transport.
     for entry in manager.get_catalog().list():
         options.append(
             ConnectorTypeOption(
@@ -115,7 +120,7 @@ async def list_connector_types() -> Result[List[Dict[str, Any]]]:
                 icon=entry.icon,
                 category=entry.category,
                 is_custom=False,
-                auth_fields=[f.model_dump() for f in entry.auth.fields],
+                auth_fields=_CUSTOM_MCP_OPTION.auth_fields,
             )
         )
     options.append(_CUSTOM_MCP_OPTION)
@@ -279,79 +284,3 @@ def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     global global_system_app
     system_app.register(ConnectorService, config=config)
     global_system_app = system_app
-
-
-def _get_task_service():
-    from ..service.scheduled_task_service import ScheduledTaskService
-
-    return ScheduledTaskService()
-
-
-@router.post("/tasks/{task_id}/toggle", response_model=Result[Dict])
-async def toggle_task(task_id: str, body: Dict) -> Result[Dict]:
-    try:
-        svc = _get_task_service()
-        enabled = body.get("enabled", True)
-        return Result.succ(svc.toggle_task(task_id, enabled))
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.exception("Toggle task failed")
-        return Result.failed(msg=str(e))
-
-
-@router.get("/tasks/{task_id}", response_model=Result[Dict])
-async def get_task(task_id: str) -> Result[Dict]:
-    svc = _get_task_service()
-    task = svc.get_task(task_id)
-    if task is None:
-        raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found")
-    return Result.succ(task)
-
-
-@router.put("/tasks/{task_id}", response_model=Result[Dict])
-async def update_task(task_id: str, request: Dict) -> Result[Dict]:
-    try:
-        svc = _get_task_service()
-        return Result.succ(svc.update_task(task_id, request))
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.exception("Update task failed")
-        return Result.failed(msg=str(e))
-
-
-@router.delete("/tasks/{task_id}", response_model=Result[None])
-async def delete_task(task_id: str) -> Result[None]:
-    try:
-        svc = _get_task_service()
-        svc.delete_task(task_id)
-        return Result.succ(None)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.exception("Delete task failed")
-        return Result.failed(msg=str(e))
-
-
-@router.post("/{connector_id}/tasks", response_model=Result[Dict])
-async def create_task(connector_id: str, request: Dict) -> Result[Dict]:
-    try:
-        svc = _get_task_service()
-        request["connector_id"] = connector_id
-        return Result.succ(svc.create_task(request))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.exception("Create task failed")
-        return Result.failed(msg=str(e))
-
-
-@router.get("/{connector_id}/tasks", response_model=Result[List[Dict]])
-async def list_tasks(connector_id: str) -> Result[List[Dict]]:
-    try:
-        svc = _get_task_service()
-        return Result.succ(svc.list_tasks(connector_id=connector_id))
-    except Exception as e:
-        logger.exception("List tasks failed")
-        return Result.failed(msg=str(e))

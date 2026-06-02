@@ -357,28 +357,19 @@ class ConnectorManager(BaseComponent):
         self._salts[connector_id] = salt
         str_credentials: Dict[str, str] = {k: str(v) for k, v in credentials.items()}
 
+        # server_uri is mandatory for ALL connector types — catalog entries are
+        # display-only templates; the user always supplies the endpoint via the
+        # unified ConnectorForm.
+        if not extra_config or not extra_config.get("server_uri"):
+            raise ValueError(
+                f"Connector type '{connector_type}' requires extra_config.server_uri"
+            )
+        server_uri = extra_config["server_uri"]
+
+        # Resolve catalog entry (None for custom_mcp). Unknown built-in types
+        # are rejected; custom_mcp bypasses the catalog entirely.
         if connector_type == "custom_mcp":
-            if not extra_config or "server_uri" not in extra_config:
-                raise ValueError("custom_mcp requires extra_config.server_uri")
-            server_uri = extra_config["server_uri"]
-            auth_type = extra_config.get("auth_type", "none")
-            if auth_type == "bearer":
-                header_mapping = {"token": "Authorization"}
-                # Auto-prefix Bearer if not already
-                token_val = str_credentials.get("token", "")
-                if token_val and not token_val.startswith("Bearer "):
-                    str_credentials["token"] = f"Bearer {token_val}"
-            elif auth_type == "token":
-                header_mapping = {
-                    "token": extra_config.get("header_name", "Authorization")
-                }
-            else:  # auth_type == "none"
-                header_mapping = {}
-            display_name = name or "Custom MCP"
-            # custom_mcp: caller picks transport, default to SSE for
-            # back-compat with existing instances saved before the
-            # streamable_http branch landed.
-            transport = (extra_config or {}).get("transport") or "sse"
+            entry = None
         else:
             entry = self._catalog.get(connector_type)
             if entry is None:
@@ -388,24 +379,35 @@ class ConnectorManager(BaseComponent):
                     f"Available types: {available} "
                     f"(or 'custom_mcp' for user-defined MCP servers)"
                 )
-            if not extra_config or not extra_config.get("server_uri"):
-                raise ValueError(
-                    f"Connector type '{connector_type}' requires "
-                    f"extra_config.server_uri "
-                    f"(catalog entries are templates only — server_uri "
-                    f"must be supplied by caller)"
-                )
-            server_uri = extra_config["server_uri"]
-            header_mapping = entry.auth.header_mapping
+
+        if entry is not None:
             display_name = name or entry.display_name
-            # Built-in: catalog provides the default transport, but allow
-            # extra_config.transport to override (so a user can adopt a
-            # streamable_http endpoint of a service whose template still says
-            # SSE, without us having to ship a new catalog).
             catalog_transport = (
                 entry.mcp_server.transport if entry.mcp_server else "sse"
             )
-            transport = (extra_config or {}).get("transport") or catalog_transport
+        else:
+            display_name = name or "Custom MCP"
+            catalog_transport = "sse"
+        # extra_config.transport always wins, so users can adopt a
+        # streamable_http endpoint of a service whose template still says SSE
+        # (and vice-versa) without us having to ship a new catalog.
+        transport = extra_config.get("transport") or catalog_transport
+
+        # Unified auth_type → header_mapping derivation. Was previously
+        # custom_mcp-only; built-in templates now go through the same path so
+        # users pick the auth scheme that matches their concrete MCP server,
+        # rather than relying on a catalog-baked guess.
+        auth_type = extra_config.get("auth_type", "none")
+        if auth_type == "bearer":
+            header_mapping = {"token": "Authorization"}
+            # Auto-prefix Bearer if not already present.
+            token_val = str_credentials.get("token", "")
+            if token_val and not token_val.startswith("Bearer "):
+                str_credentials["token"] = f"Bearer {token_val}"
+        elif auth_type == "token":
+            header_mapping = {"token": extra_config.get("header_name", "Authorization")}
+        else:  # auth_type == "none"
+            header_mapping = {}
 
         self._credential_store.encrypt(str_credentials, salt)
 
@@ -463,7 +465,6 @@ class ConnectorManager(BaseComponent):
                 connector_type,
                 transport,
                 exc,
-                exc_info=True,
             )
 
         return connector_id

@@ -35,7 +35,12 @@ class ConnectorCatalogEntry(BaseModel):
     icon: str
     category: str
     mcp_server: McpServerConfig
-    auth: AuthConfig
+    # ``auth`` is optional: catalog entries are display-only templates now.
+    # Connection credentials are collected via the unified ConnectorForm UI
+    # (transport / auth_type / token / header_name) and stored per-instance,
+    # not derived from catalog. Kept Optional for forward-compat in case a
+    # future catalog wants to declare custom auth field hints.
+    auth: Optional[AuthConfig] = None
     confirm_actions: List[str] = []
     read_actions: List[str] = []
 

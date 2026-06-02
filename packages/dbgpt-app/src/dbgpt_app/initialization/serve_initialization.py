@@ -323,3 +323,21 @@ def register_serve_apps(
         ),
     )
     # ################################ Connector Serve Register End ###################
+
+    # ######################### Scheduled Task Serve Register Begin ##################
+    from dbgpt_serve.scheduled_task.config import (
+        ServeConfig as ScheduledTaskServeConfig,
+    )
+    from dbgpt_serve.scheduled_task.serve import ScheduledTaskServe
+
+    # Register serve scheduled_task (cron-based chat replay tasks)
+    system_app.register(
+        ScheduledTaskServe,
+        config=get_config(
+            serve_configs,
+            ScheduledTaskServe.name,
+            ScheduledTaskServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ######################### Scheduled Task Serve Register End ####################

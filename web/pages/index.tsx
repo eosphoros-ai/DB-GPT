@@ -1,5 +1,6 @@
 import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
+import { useConnectors } from '@/hooks/use-connector-api';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ManusLeftPanel, {
@@ -13,10 +14,12 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
-import { ConnectorInstance, AttachedConnector } from '@/new-components/connector/types';
-import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
-import { useConnectors } from '@/hooks/use-connector-api';
+import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
+import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
+import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
+import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
+import type { ChatReplayPayload } from '@/types/scheduled-task';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
@@ -58,6 +61,7 @@ import {
   List,
   Modal,
   Popover,
+  Spin,
   Tag,
   Tooltip,
   Upload,
@@ -582,6 +586,7 @@ const Playground: NextPage = () => {
   const [isConnectorPanelOpen, setIsConnectorPanelOpen] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<ConnectorInstance[]>([]);
   const [connectorSearchQuery, setConnectorSearchQuery] = useState('');
+  const [isScheduleOpen, setScheduleOpen] = useState(false);
   const { connectors: connectorsList } = useConnectors();
 
   // HITL 确认轮询临时关闭：当前不需要写操作前的人工确认能力。
@@ -603,6 +608,10 @@ const Playground: NextPage = () => {
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
   const preloadedFilePathRef = useRef<string | null>(null);
+  // Snapshot of the exact payload last sent to the agent, captured at send
+  // time so "保存定时任务" can replay the real execution (file / database /
+  // knowledge / skill / connectors) instead of a drifting UI state.
+  const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
 
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -1512,9 +1521,14 @@ const Playground: NextPage = () => {
         attachedKnowledge: selectedKnowledge ?? undefined,
         attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
         attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
-        attachedConnectors: selectedConnectors.length > 0
-          ? selectedConnectors.map(c => ({ id: c.id, connector_type: c.connector_type, display_name: c.display_name }))
-          : undefined,
+        attachedConnectors:
+          selectedConnectors.length > 0
+            ? selectedConnectors.map(c => ({
+                id: c.id,
+                connector_type: c.connector_type,
+                display_name: c.display_name,
+              }))
+            : undefined,
       },
       {
         id: responseId,
@@ -1544,6 +1558,33 @@ const Playground: NextPage = () => {
     }));
     setActiveMessageId(responseId);
 
+    // Build ext_info once and reuse it for both the live request and the
+    // snapshot captured for "保存定时任务", so a saved task replays the exact
+    // same context (file / database / knowledge / skill / connectors).
+    const extInfo: Record<string, any> = {
+      ...(currentUploadedFilePath ? { file_path: currentUploadedFilePath } : {}),
+      ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
+      ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
+      ...(selectedKnowledge
+        ? { knowledge_space_name: selectedKnowledge.name, knowledge_space_id: selectedKnowledge.id }
+        : {}),
+      ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
+    };
+    const selectParam = appCode === 'chat_react_agent' ? '' : appCode;
+
+    // Snapshot the exact payload being sent (minus the per-run conv_uid, which
+    // each scheduled run regenerates) so buildSnapshot replays this real run.
+    lastSentPayloadRef.current = {
+      version: 1,
+      user_input: finalQuery,
+      chat_mode: chatMode,
+      model_name: model,
+      select_param: selectParam,
+      temperature: 0.6,
+      max_new_tokens: 4000,
+      ext_info: extInfo,
+    };
+
     try {
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
         method: 'POST',
@@ -1557,18 +1598,8 @@ const Playground: NextPage = () => {
           user_input: finalQuery,
           temperature: 0.6,
           max_new_tokens: 4000,
-          select_param: appCode === 'chat_react_agent' ? '' : appCode,
-          ext_info: {
-            ...(currentUploadedFilePath ? { file_path: currentUploadedFilePath } : {}),
-            ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
-            ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
-            ...(selectedKnowledge
-              ? { knowledge_space_name: selectedKnowledge.name, knowledge_space_id: selectedKnowledge.id }
-              : {}),
-            ...(selectedConnectors.length > 0
-              ? { connector_ids: selectedConnectors.map(c => c.id) }
-              : {}),
-          },
+          select_param: selectParam,
+          ext_info: extInfo,
         }),
         signal: controller.signal,
       });
@@ -2221,6 +2252,36 @@ const Playground: NextPage = () => {
     }
   };
 
+  // Build snapshot of current conversation state for scheduled task creation
+  const buildSnapshot = (): ChatReplayPayload => {
+    // Prefer the payload actually sent to the agent this session — it carries
+    // the real execution context (file_path / database / knowledge / skill /
+    // connectors) and is immune to UI state changed after sending.
+    if (lastSentPayloadRef.current) {
+      return lastSentPayloadRef.current;
+    }
+    // Fallback (e.g. conversation restored from history, where no send
+    // happened this session): reconstruct from the first question + current
+    // selections. Keeps the old behavior so this path never regresses.
+    const firstUserMsg = messages.find(m => m.role === 'human');
+    return {
+      version: 1,
+      user_input: firstUserMsg?.context ?? '',
+      chat_mode: 'chat_react_agent',
+      model_name: model,
+      select_param: '',
+      ext_info: {
+        ...(uploadedFilePath ? { file_path: uploadedFilePath } : {}),
+        ...(selectedSkill ? { skill_id: selectedSkill.id, skill_name: selectedSkill.name } : {}),
+        ...(selectedDb ? { database_name: selectedDb.db_name, database_type: selectedDb.db_type } : {}),
+        ...(selectedKnowledge
+          ? { knowledge_space_name: selectedKnowledge.name, knowledge_space_id: selectedKnowledge.id }
+          : {}),
+        ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
+      },
+    };
+  };
+
   const _QuickAction = ({ icon, text, onClick }: { icon: any; text: string; onClick?: () => void }) => (
     <div
       onClick={onClick}
@@ -2288,8 +2349,16 @@ const Playground: NextPage = () => {
             </div>
           </div>
 
+          {/* From Task Banner - shown when navigating from a scheduled task */}
+          {router.query.from_task && <FromTaskBanner taskId={router.query.from_task as string} />}
+
           {/* Chat Messages or Hero Section */}
-          {messages.length > 0 ? (
+          {/* When from_task mode and loading history, show loading spinner instead of Hero */}
+          {router.query.from_task && historyLoading && messages.length === 0 ? (
+            <div className='flex-1 flex items-center justify-center'>
+              <Spin size='large' tip='加载对话历史...' />
+            </div>
+          ) : messages.length > 0 ? (
             <div className={`flex-1 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
                 className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
@@ -2440,398 +2509,424 @@ const Playground: NextPage = () => {
                   })}
                 </div>
 
-                {/* Input Area at Bottom for Chat Mode - Premium Layered Style */}
-                <div className='bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-[#1a1b1e] dark:via-[#1a1b1e]/95 dark:to-[#1a1b1e]/80 p-4 md:p-6'>
-                  <div className='max-w-[720px] mx-auto'>
-                    {/* Context Tags Area */}
-                    <div className='flex flex-wrap gap-2 mb-2'>
-                      {selectedDb && (
-                        <Tag
-                          closable
-                          onClose={() => setSelectedDb(null)}
-                          className='flex items-center gap-1 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-full'
-                        >
-                          {getDbIcon(selectedDb.type)} <span className='font-medium ml-1'>{selectedDb.db_name}</span>
-                        </Tag>
-                      )}
-                      {selectedKnowledge && (
-                        <Tag
-                          closable
-                          onClose={() => setSelectedKnowledge(null)}
-                          className='flex items-center gap-1 bg-orange-50 border-orange-200 text-orange-700 px-3 py-1 rounded-full'
-                        >
-                          <BookOutlined /> <span className='font-medium ml-1'>{selectedKnowledge.name}</span>
-                        </Tag>
-                      )}
-                      {selectedConnectors.length > 0 && (
-                        <>
-                          {selectedConnectors.map(c => (
-                            <Tag
-                              key={c.id}
-                              closable
-                              onClose={() => setSelectedConnectors(prev => prev.filter(s => s.id !== c.id))}
-                              className='flex items-center gap-1 bg-violet-50 border-violet-200 text-violet-700 px-3 py-1 rounded-full'
-                            >
-                              <ApiOutlined /> <span className='font-medium ml-1'>{c.display_name}</span>
-                            </Tag>
-                          ))}
-                        </>
-                      )}
-                      {uploadedFile && (
-                        <Tag
-                          closable
-                          onClose={() => setUploadedFile(null)}
-                          className='flex items-center gap-1 bg-green-50 border-green-200 text-green-700 px-3 py-1 rounded-full'
-                        >
-                          <FileExcelOutlined /> <span className='font-medium ml-1'>{uploadedFile.name}</span>
-                        </Tag>
-                      )}
-                    </div>
+                {/* Input Area at Bottom for Chat Mode - Hidden in read-only task replay mode */}
+                {!router.query.from_task && (
+                  <div className='bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-[#1a1b1e] dark:via-[#1a1b1e]/95 dark:to-[#1a1b1e]/80 p-4 md:p-6'>
+                    <div className='max-w-[720px] mx-auto'>
+                      {/* Context Tags Area */}
+                      <div className='flex flex-wrap gap-2 mb-2'>
+                        {selectedDb && (
+                          <Tag
+                            closable
+                            onClose={() => setSelectedDb(null)}
+                            className='flex items-center gap-1 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-full'
+                          >
+                            {getDbIcon(selectedDb.type)} <span className='font-medium ml-1'>{selectedDb.db_name}</span>
+                          </Tag>
+                        )}
+                        {selectedKnowledge && (
+                          <Tag
+                            closable
+                            onClose={() => setSelectedKnowledge(null)}
+                            className='flex items-center gap-1 bg-orange-50 border-orange-200 text-orange-700 px-3 py-1 rounded-full'
+                          >
+                            <BookOutlined /> <span className='font-medium ml-1'>{selectedKnowledge.name}</span>
+                          </Tag>
+                        )}
+                        {selectedConnectors.length > 0 && (
+                          <>
+                            {selectedConnectors.map(c => (
+                              <Tag
+                                key={c.id}
+                                closable
+                                onClose={() => setSelectedConnectors(prev => prev.filter(s => s.id !== c.id))}
+                                className='flex items-center gap-1 bg-violet-50 border-violet-200 text-violet-700 px-3 py-1 rounded-full'
+                              >
+                                <ApiOutlined /> <span className='font-medium ml-1'>{c.display_name}</span>
+                              </Tag>
+                            ))}
+                          </>
+                        )}
+                        {uploadedFile && (
+                          <Tag
+                            closable
+                            onClose={() => setUploadedFile(null)}
+                            className='flex items-center gap-1 bg-green-50 border-green-200 text-green-700 px-3 py-1 rounded-full'
+                          >
+                            <FileExcelOutlined /> <span className='font-medium ml-1'>{uploadedFile.name}</span>
+                          </Tag>
+                        )}
+                      </div>
 
-                    {/* Outer Frame - Floating Effect */}
-                    <div className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'>
-                      {/* White Inner Box - Clean Glass Card */}
-                      <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-2xl border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-3 px-4'>
-                        <Input.TextArea
-                          value={query}
-                          onChange={e => {
-                            const newValue = e.target.value;
-                            setQuery(newValue);
-                            if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
-                              setIsSkillPanelOpen(true);
+                      {/* Outer Frame - Floating Effect */}
+                      <div className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'>
+                        {/* White Inner Box - Clean Glass Card */}
+                        <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-2xl border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-3 px-4'>
+                          <Input.TextArea
+                            value={query}
+                            onChange={e => {
+                              const newValue = e.target.value;
+                              setQuery(newValue);
+                              if (newValue === '/' && !isSkillPanelOpen && !selectedSkill) {
+                                setIsSkillPanelOpen(true);
+                              }
+                            }}
+                            onPressEnter={e => {
+                              if (!e.shiftKey) {
+                                e.preventDefault();
+                                handleStart();
+                              }
+                            }}
+                            placeholder={
+                              t('ask_data_question') ||
+                              'Ask a question about your database, upload a CSV, or generate a report...'
                             }
-                          }}
-                          onPressEnter={e => {
-                            if (!e.shiftKey) {
-                              e.preventDefault();
-                              handleStart();
-                            }
-                          }}
-                          placeholder={
-                            t('ask_data_question') ||
-                            'Ask a question about your database, upload a CSV, or generate a report...'
-                          }
-                          autoSize={{ minRows: 2, maxRows: 6 }}
-                          className='flex-1 resize-none !border-none !shadow-none !bg-transparent px-0 py-2'
-                          style={{ backgroundColor: 'transparent' }}
-                        />
+                            autoSize={{ minRows: 2, maxRows: 6 }}
+                            className='flex-1 resize-none !border-none !shadow-none !bg-transparent px-0 py-2'
+                            style={{ backgroundColor: 'transparent' }}
+                          />
 
-                        {/* Toolbar Row */}
-                        <div className='flex items-center justify-between mt-1'>
-                          <div className='flex items-center gap-3'>
-                            {/* Add Button */}
-                            <Dropdown
-                              menu={{
-                                items: [
-                                  {
-                                    key: 'upload',
-                                    label: (
-                                      <Upload {...uploadProps}>
-                                        <div className='w-full'>Upload File</div>
-                                      </Upload>
-                                    ),
-                                    icon: <UploadOutlined />,
-                                  },
-                                  {
-                                    key: 'database',
-                                    label: 'Select Data Source',
-                                    icon: <DatabaseOutlined />,
-                                    onClick: () => setIsDbModalOpen(true),
-                                  },
-                                  {
-                                    key: 'knowledge',
-                                    label: 'Select Knowledge Base',
-                                    icon: <BookOutlined />,
-                                    onClick: () => setIsKnowledgeModalOpen(true),
-                                  },
-                                  {
-                                    key: 'connector',
-                                    label: t('use_connector'),
-                                    icon: <ApiOutlined />,
-                                    onClick: () => setIsConnectorPanelOpen(true),
-                                  },
-                                ],
-                              }}
-                              trigger={['click']}
-                            >
-                              <Tooltip title={t('add_context')}>
-                                <Button
-                                  type='text'
-                                  shape='circle'
-                                  size='small'
-                                  icon={<PlusOutlined />}
-                                  className='flex items-center justify-center text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20 transition-all flex-shrink-0'
-                                />
-                              </Tooltip>
-                            </Dropdown>
+                          {/* Toolbar Row */}
+                          <div className='flex items-center justify-between mt-1'>
+                            <div className='flex items-center gap-3'>
+                              {/* Add Button */}
+                              <Dropdown
+                                menu={{
+                                  items: [
+                                    {
+                                      key: 'upload',
+                                      label: (
+                                        <Upload {...uploadProps}>
+                                          <div className='w-full'>Upload File</div>
+                                        </Upload>
+                                      ),
+                                      icon: <UploadOutlined />,
+                                    },
+                                    {
+                                      key: 'database',
+                                      label: 'Select Data Source',
+                                      icon: <DatabaseOutlined />,
+                                      onClick: () => setIsDbModalOpen(true),
+                                    },
+                                    {
+                                      key: 'knowledge',
+                                      label: 'Select Knowledge Base',
+                                      icon: <BookOutlined />,
+                                      onClick: () => setIsKnowledgeModalOpen(true),
+                                    },
+                                    {
+                                      key: 'connector',
+                                      label: t('use_connector'),
+                                      icon: <ApiOutlined />,
+                                      onClick: () => setIsConnectorPanelOpen(true),
+                                    },
+                                  ],
+                                }}
+                                trigger={['click']}
+                              >
+                                <Tooltip title={t('add_context')}>
+                                  <Button
+                                    type='text'
+                                    shape='circle'
+                                    size='small'
+                                    icon={<PlusOutlined />}
+                                    className='flex items-center justify-center text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20 transition-all flex-shrink-0'
+                                  />
+                                </Tooltip>
+                              </Dropdown>
 
-                            {/* Skill Selector Button with Badge */}
-                            <Popover
-                              trigger='click'
-                              placement='topLeft'
-                              open={isSkillPanelOpen}
-                              onOpenChange={setIsSkillPanelOpen}
-                              overlayClassName='manus-skill-menu'
-                              overlayInnerStyle={{ padding: 0, borderRadius: 12 }}
-                              content={
-                                <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
-                                  <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
-                                    <Input
-                                      placeholder={t('search_skill')}
-                                      prefix={<SearchOutlined className='text-gray-400' />}
-                                      value={skillSearchQuery}
-                                      onChange={e => setSkillSearchQuery(e.target.value)}
-                                      className='rounded-lg'
-                                      allowClear
-                                      size='small'
-                                    />
-                                  </div>
-                                  <div className='max-h-[300px] overflow-y-auto'>
-                                    {(skillsList || [])
-                                      .filter(
+                              {/* Skill Selector Button with Badge */}
+                              <Popover
+                                trigger='click'
+                                placement='topLeft'
+                                open={isSkillPanelOpen}
+                                onOpenChange={setIsSkillPanelOpen}
+                                overlayClassName='manus-skill-menu'
+                                overlayInnerStyle={{ padding: 0, borderRadius: 12 }}
+                                content={
+                                  <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
+                                    <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
+                                      <Input
+                                        placeholder={t('search_skill')}
+                                        prefix={<SearchOutlined className='text-gray-400' />}
+                                        value={skillSearchQuery}
+                                        onChange={e => setSkillSearchQuery(e.target.value)}
+                                        className='rounded-lg'
+                                        allowClear
+                                        size='small'
+                                      />
+                                    </div>
+                                    <div className='max-h-[300px] overflow-y-auto'>
+                                      {(skillsList || [])
+                                        .filter(
+                                          skill =>
+                                            !skillSearchQuery ||
+                                            skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) ||
+                                            skill.description.toLowerCase().includes(skillSearchQuery.toLowerCase()),
+                                        )
+                                        .map(skill => (
+                                          <div
+                                            key={skill.id}
+                                            onClick={() => {
+                                              if (selectedSkill?.id === skill.id) {
+                                                setSelectedSkill(null);
+                                                setQuery('');
+                                              } else {
+                                                setSelectedSkill(skill);
+                                                setQuery(`/${skill.name} `);
+                                              }
+                                              setIsSkillPanelOpen(false);
+                                              setSkillSearchQuery('');
+                                            }}
+                                            className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                                              selectedSkill?.id === skill.id ? 'bg-purple-50 dark:bg-purple-900/20' : ''
+                                            }`}
+                                          >
+                                            <div className='flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs'>
+                                              {skill.icon || <ThunderboltOutlined />}
+                                            </div>
+                                            <div className='flex-1 min-w-0'>
+                                              <div className='flex items-center gap-2'>
+                                                <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
+                                                  {skill.name}
+                                                </span>
+                                                <span
+                                                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                                    skill.type === 'official'
+                                                      ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                      : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                                                  }`}
+                                                >
+                                                  {skill.type === 'official' ? '官方' : '个人'}
+                                                </span>
+                                              </div>
+                                              <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
+                                                {skill.description}
+                                              </p>
+                                            </div>
+                                            {selectedSkill?.id === skill.id && (
+                                              <CheckCircleFilled className='text-purple-500 flex-shrink-0 text-sm' />
+                                            )}
+                                          </div>
+                                        ))}
+                                      {(skillsList || []).filter(
                                         skill =>
                                           !skillSearchQuery ||
                                           skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) ||
                                           skill.description.toLowerCase().includes(skillSearchQuery.toLowerCase()),
-                                      )
-                                      .map(skill => (
-                                        <div
-                                          key={skill.id}
-                                          onClick={() => {
-                                            if (selectedSkill?.id === skill.id) {
-                                              setSelectedSkill(null);
-                                              setQuery('');
-                                            } else {
-                                              setSelectedSkill(skill);
-                                              setQuery(`/${skill.name} `);
-                                            }
-                                            setIsSkillPanelOpen(false);
-                                            setSkillSearchQuery('');
-                                          }}
-                                          className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                                            selectedSkill?.id === skill.id ? 'bg-purple-50 dark:bg-purple-900/20' : ''
-                                          }`}
-                                        >
-                                          <div className='flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs'>
-                                            {skill.icon || <ThunderboltOutlined />}
+                                      ).length === 0 && (
+                                        <div className='text-center py-8 text-gray-400'>
+                                          <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
+                                          <div className='text-xs'>
+                                            {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
                                           </div>
-                                          <div className='flex-1 min-w-0'>
-                                            <div className='flex items-center gap-2'>
-                                              <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
-                                                {skill.name}
-                                              </span>
-                                              <span
-                                                className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                                  skill.type === 'official'
-                                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                                                }`}
-                                              >
-                                                {skill.type === 'official' ? '官方' : '个人'}
-                                              </span>
-                                            </div>
-                                            <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
-                                              {skill.description}
-                                            </p>
-                                          </div>
-                                          {selectedSkill?.id === skill.id && (
-                                            <CheckCircleFilled className='text-purple-500 flex-shrink-0 text-sm' />
-                                          )}
                                         </div>
-                                      ))}
-                                    {(skillsList || []).filter(
-                                      skill =>
-                                        !skillSearchQuery ||
-                                        skill.name.toLowerCase().includes(skillSearchQuery.toLowerCase()) ||
-                                        skill.description.toLowerCase().includes(skillSearchQuery.toLowerCase()),
-                                    ).length === 0 && (
-                                      <div className='text-center py-8 text-gray-400'>
-                                        <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
-                                        <div className='text-xs'>
-                                          {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
-                                        </div>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
+                                    <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
+                                      <span className='text-[10px] text-gray-400'>
+                                        {(skillsList || []).length} 个技能可用
+                                      </span>
+                                      <Button
+                                        type='link'
+                                        size='small'
+                                        onClick={() => {
+                                          router.push('/construct/skills');
+                                          setIsSkillPanelOpen(false);
+                                        }}
+                                        className='text-[10px] p-0 h-auto'
+                                      >
+                                        管理技能 →
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
-                                    <span className='text-[10px] text-gray-400'>
-                                      {(skillsList || []).length} 个技能可用
-                                    </span>
-                                    <Button
-                                      type='link'
-                                      size='small'
-                                      onClick={() => {
-                                        router.push('/construct/skills');
-                                        setIsSkillPanelOpen(false);
-                                      }}
-                                      className='text-[10px] p-0 h-auto'
-                                    >
-                                      管理技能 →
-                                    </Button>
-                                  </div>
-                                </div>
-                              }
-                            >
-                              <Tooltip
-                                title={
-                                  selectedSkill ? t('skill_selected', { name: selectedSkill.name }) : t('select_skill')
                                 }
                               >
-                                <Button
-                                  type='text'
-                                  shape='circle'
-                                  size='small'
-                                  className={`relative flex items-center justify-center flex-shrink-0 transition-all ${
+                                <Tooltip
+                                  title={
                                     selectedSkill
-                                      ? 'bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] text-white border border-transparent shadow-[0_2px_4px_rgba(139,92,246,0.3),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-[0.5px] hover:shadow-[0_4px_8px_rgba(139,92,246,0.4),inset_0_1px_0_rgba(255,255,255,0.3)]'
-                                      : 'text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20'
-                                  }`}
+                                      ? t('skill_selected', { name: selectedSkill.name })
+                                      : t('select_skill')
+                                  }
                                 >
-                                  <div className='relative'>
-                                    <ThunderboltOutlined className={selectedSkill ? 'text-white' : ''} />
-                                    {selectedSkill && (
-                                      <span className='absolute -top-1.5 -right-1.5 bg-white text-[#7c3aed] text-[8px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold shadow-sm ring-1 ring-[#7c3aed]/30'>
-                                        1
-                                      </span>
-                                    )}
-                                  </div>
-                                </Button>
-                              </Tooltip>
-                            </Popover>
+                                  <Button
+                                    type='text'
+                                    shape='circle'
+                                    size='small'
+                                    className={`relative flex items-center justify-center flex-shrink-0 transition-all ${
+                                      selectedSkill
+                                        ? 'bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] text-white border border-transparent shadow-[0_2px_4px_rgba(139,92,246,0.3),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-[0.5px] hover:shadow-[0_4px_8px_rgba(139,92,246,0.4),inset_0_1px_0_rgba(255,255,255,0.3)]'
+                                        : 'text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20'
+                                    }`}
+                                  >
+                                    <div className='relative'>
+                                      <ThunderboltOutlined className={selectedSkill ? 'text-white' : ''} />
+                                      {selectedSkill && (
+                                        <span className='absolute -top-1.5 -right-1.5 bg-white text-[#7c3aed] text-[8px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold shadow-sm ring-1 ring-[#7c3aed]/30'>
+                                          1
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Button>
+                                </Tooltip>
+                              </Popover>
 
-                            {/* Connector Selector Button */}
-                            <Popover
-                              trigger='click'
-                              placement='topLeft'
-                              open={isConnectorPanelOpen}
-                              onOpenChange={setIsConnectorPanelOpen}
-                              overlayClassName='manus-skill-menu'
-                              overlayInnerStyle={{ padding: 0, borderRadius: 12 }}
-                              content={
-                                <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
-                                  <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
-                                    <Input
-                                      placeholder='搜索连接器...'
-                                      prefix={<SearchOutlined className='text-gray-400' />}
-                                      value={connectorSearchQuery}
-                                      onChange={e => setConnectorSearchQuery(e.target.value)}
-                                      className='rounded-lg'
-                                      allowClear
-                                      size='small'
-                                    />
-                                  </div>
-                                  <div className='max-h-[300px] overflow-y-auto'>
-                                    {(connectorsList || [])
-                                      .filter(
+                              {/* Connector Selector Button */}
+                              <Popover
+                                trigger='click'
+                                placement='topLeft'
+                                open={isConnectorPanelOpen}
+                                onOpenChange={setIsConnectorPanelOpen}
+                                overlayClassName='manus-skill-menu'
+                                overlayInnerStyle={{ padding: 0, borderRadius: 12 }}
+                                content={
+                                  <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
+                                    <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
+                                      <Input
+                                        placeholder='搜索连接器...'
+                                        prefix={<SearchOutlined className='text-gray-400' />}
+                                        value={connectorSearchQuery}
+                                        onChange={e => setConnectorSearchQuery(e.target.value)}
+                                        className='rounded-lg'
+                                        allowClear
+                                        size='small'
+                                      />
+                                    </div>
+                                    <div className='max-h-[300px] overflow-y-auto'>
+                                      {(connectorsList || [])
+                                        .filter(
+                                          (c: ConnectorInstance) =>
+                                            c.status === 'active' &&
+                                            (!connectorSearchQuery ||
+                                              c.display_name
+                                                .toLowerCase()
+                                                .includes(connectorSearchQuery.toLowerCase()) ||
+                                              c.connector_type
+                                                .toLowerCase()
+                                                .includes(connectorSearchQuery.toLowerCase())),
+                                        )
+                                        .map((c: ConnectorInstance) => (
+                                          <div
+                                            key={c.id}
+                                            onClick={() => {
+                                              setSelectedConnectors(prev =>
+                                                prev.some(s => s.id === c.id)
+                                                  ? prev.filter(s => s.id !== c.id)
+                                                  : [...prev, c],
+                                              );
+                                              setConnectorSearchQuery('');
+                                            }}
+                                            className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                                              selectedConnectors.some(s => s.id === c.id)
+                                                ? 'bg-violet-50 dark:bg-violet-900/20'
+                                                : ''
+                                            }`}
+                                          >
+                                            <div className='flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs'>
+                                              <ApiOutlined />
+                                            </div>
+                                            <div className='flex-1 min-w-0'>
+                                              <div className='flex items-center gap-2'>
+                                                <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
+                                                  {c.display_name}
+                                                </span>
+                                                <span className='text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'>
+                                                  已激活
+                                                </span>
+                                              </div>
+                                              <p
+                                                className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate'
+                                                title={(c.config?.description as string) || c.connector_type}
+                                              >
+                                                {(c.config?.description as string) || c.connector_type}
+                                              </p>
+                                            </div>
+                                            {selectedConnectors.some(s => s.id === c.id) && (
+                                              <CheckCircleFilled className='text-violet-500 flex-shrink-0 text-sm' />
+                                            )}
+                                          </div>
+                                        ))}
+                                      {(connectorsList || []).filter(
                                         (c: ConnectorInstance) =>
                                           c.status === 'active' &&
                                           (!connectorSearchQuery ||
                                             c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
-                                            c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase())),
-                                      )
-                                      .map((c: ConnectorInstance) => (
-                                        <div
-                                          key={c.id}
-                                          onClick={() => {
-                                            setSelectedConnectors(prev =>
-                                              prev.some(s => s.id === c.id)
-                                                ? prev.filter(s => s.id !== c.id)
-                                                : [...prev, c]
-                                            );
-                                            setConnectorSearchQuery('');
-                                          }}
-                                          className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                                            selectedConnectors.some(s => s.id === c.id) ? 'bg-violet-50 dark:bg-violet-900/20' : ''
-                                          }`}
-                                        >
-                                          <div className='flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs'>
-                                            <ApiOutlined />
+                                            c.connector_type
+                                              .toLowerCase()
+                                              .includes(connectorSearchQuery.toLowerCase())),
+                                      ).length === 0 && (
+                                        <div className='text-center py-8 text-gray-400'>
+                                          <ApiOutlined className='text-2xl mb-2 opacity-50' />
+                                          <div className='text-xs'>
+                                            {connectorSearchQuery ? '未找到匹配的连接器' : '暂无可用连接器'}
                                           </div>
-                                          <div className='flex-1 min-w-0'>
-                                            <div className='flex items-center gap-2'>
-                                              <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
-                                                {c.display_name}
-                                              </span>
-                                              <span className='text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'>
-                                                已激活
-                                              </span>
-                                            </div>
-                                            <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
-                                              {c.connector_type}
-                                            </p>
-                                          </div>
-                                          {selectedConnectors.some(s => s.id === c.id) && (
-                                            <CheckCircleFilled className='text-violet-500 flex-shrink-0 text-sm' />
-                                          )}
                                         </div>
-                                      ))}
-                                    {(connectorsList || []).filter(
-                                      (c: ConnectorInstance) =>
-                                        c.status === 'active' &&
-                                        (!connectorSearchQuery ||
-                                          c.display_name.toLowerCase().includes(connectorSearchQuery.toLowerCase()) ||
-                                          c.connector_type.toLowerCase().includes(connectorSearchQuery.toLowerCase())),
-                                    ).length === 0 && (
-                                      <div className='text-center py-8 text-gray-400'>
-                                        <ApiOutlined className='text-2xl mb-2 opacity-50' />
-                                        <div className='text-xs'>
-                                          {connectorSearchQuery ? '未找到匹配的连接器' : '暂无可用连接器'}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
-                                    <span className='text-[10px] text-gray-400'>
-                                      {(connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active').length} 个连接器可用
-                                    </span>
-                                    <Button
-                                      type='link'
-                                      size='small'
-                                      onClick={() => {
-                                        router.push('/construct/connectors');
-                                        setIsConnectorPanelOpen(false);
-                                      }}
-                                      className='text-[10px] p-0 h-auto'
-                                    >
-                                      管理连接器 →
-                                    </Button>
-                                  </div>
-                                </div>
-                              }
-                            >
-                              <Tooltip title={selectedConnectors.length === 0 ? '选择MCP' : selectedConnectors.length === 1 ? `连接器: ${selectedConnectors[0].display_name}` : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`}>
-                                <Button
-                                  type='text'
-                                  shape='circle'
-                                  size='small'
-                                  className={`relative flex items-center justify-center flex-shrink-0 transition-all ${
-                                    selectedConnectors.length > 0
-                                      ? 'bg-gradient-to-br from-[#8b5cf6] to-[#6366f1] text-white border border-transparent shadow-[0_2px_4px_rgba(139,92,246,0.3),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-[0.5px] hover:shadow-[0_4px_8px_rgba(139,92,246,0.4),inset_0_1px_0_rgba(255,255,255,0.3)]'
-                                      : 'text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20'
-                                  }`}
-                                >
-                                  <div className='relative'>
-                                    <ApiOutlined className={selectedConnectors.length > 0 ? 'text-white' : ''} />
-                                    {selectedConnectors.length > 0 && (
-                                      <span className='absolute -top-1.5 -right-1.5 bg-white text-violet-600 text-[8px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold shadow-sm ring-1 ring-violet-500/30'>
-                                        {selectedConnectors.length}
+                                      )}
+                                    </div>
+                                    <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
+                                      <span className='text-[10px] text-gray-400'>
+                                        {
+                                          (connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active')
+                                            .length
+                                        }{' '}
+                                        个连接器可用
                                       </span>
-                                    )}
+                                      <Button
+                                        type='link'
+                                        size='small'
+                                        onClick={() => {
+                                          router.push('/construct/connectors');
+                                          setIsConnectorPanelOpen(false);
+                                        }}
+                                        className='text-[10px] p-0 h-auto'
+                                      >
+                                        管理连接器 →
+                                      </Button>
+                                    </div>
                                   </div>
-                                </Button>
-                              </Tooltip>
-                            </Popover>
+                                }
+                              >
+                                <Tooltip
+                                  title={
+                                    selectedConnectors.length === 0
+                                      ? '选择MCP'
+                                      : selectedConnectors.length === 1
+                                        ? `连接器: ${selectedConnectors[0].display_name}`
+                                        : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`
+                                  }
+                                >
+                                  <Button
+                                    type='text'
+                                    shape='circle'
+                                    size='small'
+                                    className={`relative flex items-center justify-center flex-shrink-0 transition-all ${
+                                      selectedConnectors.length > 0
+                                        ? 'bg-gradient-to-br from-[#8b5cf6] to-[#6366f1] text-white border border-transparent shadow-[0_2px_4px_rgba(139,92,246,0.3),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-[0.5px] hover:shadow-[0_4px_8px_rgba(139,92,246,0.4),inset_0_1px_0_rgba(255,255,255,0.3)]'
+                                        : 'text-gray-500 hover:text-violet-600 bg-gradient-to-b from-white to-gray-50 dark:from-[#2a2b2f] dark:to-[#1e1f24] dark:text-gray-300 border border-gray-200/80 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-[0.5px] hover:shadow-[0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:border-white/20'
+                                    }`}
+                                  >
+                                    <div className='relative'>
+                                      <ApiOutlined className={selectedConnectors.length > 0 ? 'text-white' : ''} />
+                                      {selectedConnectors.length > 0 && (
+                                        <span className='absolute -top-1.5 -right-1.5 bg-white text-violet-600 text-[8px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-bold shadow-sm ring-1 ring-violet-500/30'>
+                                          {selectedConnectors.length}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Button>
+                                </Tooltip>
+                              </Popover>
 
-                            {/* Separator dot */}
-                            <div className='w-px h-4 bg-gray-200 dark:bg-gray-700 mx-0.5' />
+                              {/* Separator dot */}
+                              <div className='w-px h-4 bg-gray-200 dark:bg-gray-700 mx-0.5' />
 
-                            {/* Model Selector with premium styling */}
-                            <div className='model-selector-premium'>
-                              <ModelSelector onChange={val => setModel(val)} />
-                            </div>
-                            <style
-                              dangerouslySetInnerHTML={{
-                                __html: `
+                              {/* Model Selector with premium styling */}
+                              <div className='model-selector-premium'>
+                                <ModelSelector onChange={val => setModel(val)} />
+                              </div>
+                              <style
+                                dangerouslySetInnerHTML={{
+                                  __html: `
                                   .model-selector-premium .ant-select { border-radius: 8px !important; border: none !important; }
                                   .model-selector-premium .ant-select-selector { background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%) !important; border: 1px solid rgba(0,0,0,0.12) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,1) !important; border-radius: 8px !important; transition: all 0.2s ease !important; padding: 0 8px !important; }
                                   .dark .model-selector-premium .ant-select-selector { background: linear-gradient(180deg, #2a2b2f 0%, #1e1f24 100%) !important; border: 1px solid rgba(255,255,255,0.1) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05) !important; }
@@ -2846,63 +2941,64 @@ const Playground: NextPage = () => {
                                   .dark .ant-select-dropdown .ant-select-item-option-selected { background-color: rgba(255,255,255,0.08) !important; color: #e2e8f0 !important; }
                                   .dark .ant-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-selected) { background-color: rgba(255,255,255,0.04) !important; }
                                 `,
+                                }}
+                              />
+                            </div>
+
+                            <div className='flex items-center gap-3'>
+                              {/* Voice Button */}
+                              <Tooltip title={t('voice_input')}>
+                                <Button
+                                  type='text'
+                                  shape='circle'
+                                  icon={<AudioOutlined className='text-gray-500 text-[18px]' />}
+                                  onClick={() => message.info(t('voice_input_coming_soon'))}
+                                  className='flex-shrink-0 h-9 w-9 transition-all duration-200 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800'
+                                />
+                              </Tooltip>
+
+                              {/* Send Button with blue gradient + gloss animation */}
+                              <Button
+                                type='primary'
+                                shape='circle'
+                                icon={<ArrowUpOutlined />}
+                                onClick={() => handleStart()}
+                                disabled={(!query.trim() && !uploadedFile) || loading}
+                                loading={loading}
+                                className={`group/send relative overflow-hidden border-none shadow-lg flex-shrink-0 h-9 w-9 transition-all duration-200 ${
+                                  query.trim() || uploadedFile
+                                    ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
+                                    : 'bg-gray-200 text-gray-400'
+                                }`}
+                                style={
+                                  query.trim() || uploadedFile
+                                    ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
+                                    : undefined
+                                }
+                              >
+                                {(query.trim() || uploadedFile) && (
+                                  <span
+                                    className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
+                                    style={{
+                                      background:
+                                        'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 60%)',
+                                      animation: 'glossSweepChat 1.8s ease-in-out infinite',
+                                    }}
+                                  />
+                                )}
+                              </Button>
+                            </div>
+                            <style
+                              dangerouslySetInnerHTML={{
+                                __html: `@keyframes glossSweepChat { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`,
                               }}
                             />
                           </div>
-
-                          <div className='flex items-center gap-3'>
-                            {/* Voice Button */}
-                            <Tooltip title={t('voice_input')}>
-                              <Button
-                                type='text'
-                                shape='circle'
-                                icon={<AudioOutlined className='text-gray-500 text-[18px]' />}
-                                onClick={() => message.info(t('voice_input_coming_soon'))}
-                                className='flex-shrink-0 h-9 w-9 transition-all duration-200 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800'
-                              />
-                            </Tooltip>
-
-                            {/* Send Button with blue gradient + gloss animation */}
-                            <Button
-                              type='primary'
-                              shape='circle'
-                              icon={<ArrowUpOutlined />}
-                              onClick={() => handleStart()}
-                              disabled={(!query.trim() && !uploadedFile) || loading}
-                              loading={loading}
-                              className={`group/send relative overflow-hidden border-none shadow-lg flex-shrink-0 h-9 w-9 transition-all duration-200 ${
-                                query.trim() || uploadedFile
-                                  ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
-                                  : 'bg-gray-200 text-gray-400'
-                              }`}
-                              style={
-                                query.trim() || uploadedFile
-                                  ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
-                                  : undefined
-                              }
-                            >
-                              {(query.trim() || uploadedFile) && (
-                                <span
-                                  className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
-                                  style={{
-                                    background:
-                                      'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 60%)',
-                                    animation: 'glossSweepChat 1.8s ease-in-out infinite',
-                                  }}
-                                />
-                              )}
-                            </Button>
-                          </div>
-                          <style
-                            dangerouslySetInnerHTML={{
-                              __html: `@keyframes glossSweepChat { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`,
-                            }}
-                          />
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
               {/* Panel toggle handle — placed between panels to avoid overflow clipping */}
               <div className='relative z-20 flex-shrink-0'>
@@ -2943,8 +3039,13 @@ const Playground: NextPage = () => {
                       databaseName={selectedDb?.db_name}
                       isRunning={isRunning}
                       onCollapse={() => setRightPanelCollapsed(true)}
-                      onRerun={() => {}}
+                      onRerun={router.query.from_task ? undefined : () => {}}
                       onShare={!loading && !!conversationId ? handleShare : undefined}
+                      onSchedule={
+                        !loading && !!conversationId && !router.query.from_task
+                          ? () => setScheduleOpen(true)
+                          : undefined
+                      }
                       terminalTitle={t('db_gpt_computer')}
                       artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
                       onArtifactClick={artifact => {
@@ -3305,12 +3406,14 @@ const Playground: NextPage = () => {
                                           setSelectedConnectors(prev =>
                                             prev.some(s => s.id === c.id)
                                               ? prev.filter(s => s.id !== c.id)
-                                              : [...prev, c]
+                                              : [...prev, c],
                                           );
                                           setConnectorSearchQuery('');
                                         }}
                                         className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                                          selectedConnectors.some(s => s.id === c.id) ? 'bg-violet-50 dark:bg-violet-900/20' : ''
+                                          selectedConnectors.some(s => s.id === c.id)
+                                            ? 'bg-violet-50 dark:bg-violet-900/20'
+                                            : ''
                                         }`}
                                       >
                                         <div className='flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs'>
@@ -3325,8 +3428,11 @@ const Playground: NextPage = () => {
                                               已激活
                                             </span>
                                           </div>
-                                          <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
-                                            {c.connector_type}
+                                          <p
+                                            className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate'
+                                            title={(c.config?.description as string) || c.connector_type}
+                                          >
+                                            {(c.config?.description as string) || c.connector_type}
                                           </p>
                                         </div>
                                         {selectedConnectors.some(s => s.id === c.id) && (
@@ -3351,7 +3457,11 @@ const Playground: NextPage = () => {
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active').length} 个连接器可用
+                                    {
+                                      (connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active')
+                                        .length
+                                    }{' '}
+                                    个连接器可用
                                   </span>
                                   <Button
                                     type='link'
@@ -3368,7 +3478,15 @@ const Playground: NextPage = () => {
                               </div>
                             }
                           >
-                            <Tooltip title={selectedConnectors.length === 0 ? '选择MCP' : selectedConnectors.length === 1 ? `连接器: ${selectedConnectors[0].display_name}` : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`}>
+                            <Tooltip
+                              title={
+                                selectedConnectors.length === 0
+                                  ? '选择MCP'
+                                  : selectedConnectors.length === 1
+                                    ? `连接器: ${selectedConnectors[0].display_name}`
+                                    : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`
+                              }
+                            >
                               <Button
                                 type='text'
                                 shape='circle'
@@ -3877,12 +3995,12 @@ const Playground: NextPage = () => {
             </Button>
           </div>
         </Modal>
-        <ConfirmDialog
-          confirmation={pendingConfirmation}
-          onApprove={approve}
-          onDeny={deny}
-          onDismiss={dismiss}
+        <SaveAsScheduledTaskDrawer
+          open={isScheduleOpen}
+          onClose={() => setScheduleOpen(false)}
+          snapshot={buildSnapshot()}
         />
+        <ConfirmDialog confirmation={pendingConfirmation} onApprove={approve} onDeny={deny} onDismiss={dismiss} />
       </div>
     </ConfigProvider>
   );

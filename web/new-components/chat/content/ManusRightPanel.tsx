@@ -32,6 +32,7 @@ import {
   PlusOutlined,
   RightOutlined,
   SearchOutlined,
+  ClockCircleOutlined,
   SyncOutlined,
   TableOutlined,
   UpOutlined,
@@ -84,6 +85,7 @@ export interface ManusRightPanelProps {
   isRunning?: boolean;
   onRerun?: () => void;
   onShare?: () => void;
+  onSchedule?: () => void;
   terminalTitle?: string;
   onCollapse?: () => void;
   isCollapsed?: boolean;
@@ -1450,6 +1452,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   isRunning,
   onRerun,
   onShare,
+  onSchedule,
   terminalTitle,
   onCollapse,
   artifacts,
@@ -1632,6 +1635,20 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 className='text-gray-500 hover:text-blue-500'
               >
                 {t('export_pdf')}
+              </Button>
+            </Tooltip>
+          )}
+
+          {onSchedule && (
+            <Tooltip title='保存为定时任务'>
+              <Button
+                type='text'
+                size='small'
+                icon={<ClockCircleOutlined />}
+                onClick={onSchedule}
+                className='text-gray-500 hover:text-blue-500'
+              >
+                保存为定时任务
               </Button>
             </Tooltip>
           )}

@@ -8,7 +8,6 @@ from .confirmation import (
 )
 from .credential import CredentialStore
 from .manager import ConnectorManager, ConnectorStatus
-from .scheduler import ConnectorScheduler
 from .skill_integration import (
     check_skill_connector_availability,
     resolve_skill_connectors,
@@ -23,7 +22,6 @@ __all__ = [
     "PendingConfirmation",
     "ConnectorManager",
     "ConnectorStatus",
-    "ConnectorScheduler",
     "resolve_skill_connectors",
     "check_skill_connector_availability",
 ]

@@ -23,6 +23,7 @@ dependencies = [
     "snowflake-id",
     "typing_inspect",
     "tomli>=2.2.1",
+    "apscheduler>=3.10,<4",
 ]
 
 [project.urls]

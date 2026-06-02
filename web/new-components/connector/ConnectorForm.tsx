@@ -89,19 +89,25 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
   const watchedFields = Form.useWatch('fields', form) ?? {};
   const selectedCatalog = catalog.find(c => c.type === selectedType);
 
-  const isCustomMcp = selectedType === 'custom_mcp';
   const authType = watchedFields?.auth_type;
-  // Default to 'sse' so built-in connectors (which don't show a transport
-  // selector) and freshly-opened custom_mcp forms both render SSE copy.
-  const transportKey = (watchedFields?.transport as string) || 'sse';
-  const transportMeta = TRANSPORT_META[transportKey] ?? TRANSPORT_META.sse;
+  // Default to 'streamable_http' so a freshly-opened form (before the user
+  // picks a transport) renders Streamable HTTP copy — it's the modern default
+  // most hosted MCP servers ship with. extra_config.transport overrides at submit.
+  const transportKey = (watchedFields?.transport as string) || 'streamable_http';
+  const transportMeta = TRANSPORT_META[transportKey] ?? TRANSPORT_META.streamable_http;
 
-  // Hide the connector-type selector entirely when the user entered the
-  // modal via the dedicated "自定义 MCP" CTA, or is editing a custom_mcp
-  // instance. There is nothing to choose: it's always custom_mcp.
+  // Hide the connector-type selector whenever the user entered the modal
+  // with a fixed type — template activation (prefilledType) or editing an
+  // existing instance (initialValues). The user has nothing meaningful to
+  // re-select; the selector would just be a footgun.
   const hideConnectorType =
-    isCustomMcp &&
-    (prefilledType === 'custom_mcp' || initialValues?.connector_type === 'custom_mcp');
+    prefilledType !== undefined || initialValues !== undefined;
+
+  // A built-in catalog template (github / notion / feishu / ...) — anything
+  // with a catalog entry that is NOT the synthetic custom_mcp option. Used to:
+  //   1. hide the "连接器名称" input (we reuse the catalog display_name), and
+  //   2. seed the description field with the catalog description.
+  const isBuiltinTemplate = selectedCatalog != null && selectedCatalog.is_custom !== true;
 
   const visibleFields: ConnectorAuthField[] = useMemo(() => {
     if (!selectedCatalog) return [];
@@ -110,17 +116,24 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
     const fields = (selectedCatalog.auth_fields ?? []).filter(
       f => f.name !== 'server_uri' && !CUSTOM_RENDERED_FIELDS.has(f.name),
     );
-    if (!isCustomMcp) return fields;
-    // For custom_mcp, hide token/header_name based on auth_type
+    // Hide token / header_name unless the chosen auth_type calls for them.
+    // Applies to ALL connector types now that built-ins share the unified
+    // auth_fields with custom_mcp.
     return fields.filter(field => {
       if (field.name === 'token') return authType === 'bearer' || authType === 'token';
       if (field.name === 'header_name') return authType === 'token';
       return true;
     });
-  }, [selectedCatalog, isCustomMcp, authType]);
+  }, [selectedCatalog, authType]);
 
   useEffect(() => {
     if (!open) return;
+    // Always start from a clean slate. Without this, values from the
+    // previously-opened dialog (e.g. an instance whose config.description was
+    // set) leak into the next one — Form.setFieldsValue is a partial merge,
+    // not a replace, so any key we don't explicitly set carries over from
+    // the prior open.
+    form.resetFields();
     if (initialValues && prefilledType) {
       console.warn(
         'ConnectorForm: initialValues and prefilledType are mutually exclusive; initialValues takes precedence',
@@ -142,10 +155,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
       });
     } else if (prefilledType) {
       // New instance with pre-selected type (from template activate or custom MCP button)
-      form.resetFields();
       form.setFieldsValue({ connector_type: prefilledType });
-    } else {
-      form.resetFields();
     }
   }, [open, initialValues, prefilledType, form]);
 
@@ -160,6 +170,19 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
         next[field.name] = field.default;
         changed = true;
       }
+    }
+    // Seed the description with the catalog blurb for built-in templates
+    // (e.g. "GitHub Issues、PR、仓库管理") so the user gets a sensible default
+    // they can keep or edit. Skip for custom_mcp (no meaningful catalog
+    // description) and when editing (description is re-hydrated from config).
+    if (
+      isBuiltinTemplate &&
+      !initialValues &&
+      selectedCatalog.description &&
+      (next.description === undefined || next.description === '')
+    ) {
+      next.description = selectedCatalog.description;
+      changed = true;
     }
     if (changed) {
       form.setFieldsValue({ fields: next });
@@ -178,16 +201,23 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
       if (field.name === 'server_uri') continue; // already handled above
       const value = all[field.name];
       if (value === undefined || value === '') continue;
-      if (isCustomMcp && CUSTOM_MCP_CONFIG_FIELDS.has(field.name)) {
+      if (CUSTOM_MCP_CONFIG_FIELDS.has(field.name)) {
         config[field.name] = value;
       } else {
         credentials[field.name] = value;
       }
     }
 
+    // For built-in templates the name input is hidden — reuse the catalog
+    // display_name (e.g. "GitHub"). custom_mcp keeps the user-entered name.
+    const resolvedDisplayName =
+      isBuiltinTemplate && selectedCatalog
+        ? selectedCatalog.display_name
+        : values.display_name;
+
     const request: CreateConnectorRequest = {
       connector_type: values.connector_type,
-      display_name: values.display_name,
+      display_name: resolvedDisplayName,
       credentials,
       config,
     };
@@ -227,10 +257,13 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
             className='mb-4'
           />
         )}
+        {/* Connector name — hidden for built-in templates (we reuse the
+            catalog display_name). Only custom_mcp asks the user to name it. */}
         <Form.Item
           name='display_name'
           label='连接器名称'
-          rules={[{ required: true, message: '请输入连接器名称' }]}
+          rules={isBuiltinTemplate ? [] : [{ required: true, message: '请输入连接器名称' }]}
+          hidden={isBuiltinTemplate}
         >
           <Input placeholder='请输入连接器名称' />
         </Form.Item>
@@ -253,29 +286,27 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
           />
         </Form.Item>
 
-        {/* Transport — card-style radio. Selected card gets a brand-blue
-            border + tinted fill so it reads as a primary picker, not a
-            secondary segmented control. */}
-        {isCustomMcp && (
-          <Form.Item
-            name={['fields', 'transport']}
-            label='传输协议'
-            rules={[{ required: true, message: '请选择传输协议' }]}
-            initialValue='sse'
-          >
-            <Radio.Group className='w-full grid grid-cols-2 gap-3'>
-              {transportOptions.map(opt => (
-                <Radio
-                  key={opt.value}
-                  value={opt.value}
-                  className='!flex items-center gap-2 px-4 py-3 !m-0 border border-solid border-gray-200 rounded-lg cursor-pointer transition-colors hover:border-gray-300 [&.ant-radio-wrapper-checked]:border-blue-500 [&.ant-radio-wrapper-checked]:bg-blue-50/40 [&.ant-radio-wrapper-checked]:shadow-sm'
-                >
-                  <span className='text-sm font-medium text-gray-800'>{opt.label}</span>
-                </Radio>
-              ))}
-            </Radio.Group>
-          </Form.Item>
-        )}
+        {/* Transport — card-style radio. Always shown; built-in templates
+            default via catalog mcp_server.transport (resolved server-side at
+            create time), custom_mcp defaults to SSE here on the client. */}
+        <Form.Item
+          name={['fields', 'transport']}
+          label='传输协议'
+          rules={[{ required: true, message: '请选择传输协议' }]}
+          initialValue='streamable_http'
+        >
+          <Radio.Group className='w-full grid grid-cols-2 gap-3'>
+            {transportOptions.map(opt => (
+              <Radio
+                key={opt.value}
+                value={opt.value}
+                className='!flex items-center gap-2 px-4 py-3 !m-0 border border-solid border-gray-200 rounded-lg cursor-pointer transition-colors hover:border-gray-300 [&.ant-radio-wrapper-checked]:border-blue-500 [&.ant-radio-wrapper-checked]:bg-blue-50/40 [&.ant-radio-wrapper-checked]:shadow-sm'
+              >
+                <span className='text-sm font-medium text-gray-800'>{opt.label}</span>
+              </Radio>
+            ))}
+          </Radio.Group>
+        </Form.Item>
 
         {selectedType && (
           <Form.Item
@@ -288,11 +319,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
                 message: 'URL 必须以 http:// 或 https:// 开头',
               },
             ]}
-            extra={
-              isCustomMcp
-                ? transportMeta.hint
-                : '请填写你部署的 MCP Server 实际端点 URL(平台不再提供默认端点)'
-            }
+            extra={transportMeta.hint}
           >
             <Input placeholder={transportMeta.placeholder} />
           </Form.Item>
@@ -335,22 +362,21 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
 
         {/* Optional connector description — surfaced in the agent's MCP tool
             block prompt. Placed last so it doesn't push down the required
-            fields; user-resizable so long descriptions stay editable. */}
-        {isCustomMcp && (
-          <Form.Item
-            name={['fields', 'description']}
-            label='连接器描述（可选）'
-            extra={<span className='text-xs text-gray-400'>在 Agent 工具说明中展示</span>}
-          >
-            <Input.TextArea
-              placeholder='一句话说清这个 MCP 提供什么能力,例如:ArXiv 论文搜索与下载'
-              rows={3}
-              maxLength={500}
-              style={{ resize: 'vertical' }}
-              className='text-sm'
-            />
-          </Form.Item>
-        )}
+            fields; user-resizable so long descriptions stay editable. Shown
+            for all connector types now that built-ins share the unified form. */}
+        <Form.Item
+          name={['fields', 'description']}
+          label='连接器描述（可选）'
+          extra={<span className='text-xs text-gray-400'>在 Agent 工具说明中展示</span>}
+        >
+          <Input.TextArea
+            placeholder='一句话说清这个 MCP 提供什么能力,例如:ArXiv 论文搜索与下载'
+            rows={3}
+            maxLength={500}
+            style={{ resize: 'vertical' }}
+            className='text-sm'
+          />
+        </Form.Item>
 
         <div className='flex justify-end gap-2'>
           <Button onClick={onClose} disabled={submitting}>

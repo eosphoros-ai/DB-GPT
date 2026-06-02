@@ -90,6 +90,10 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }
 
   const renderContent = () => {
+    // Hide sidebar for mobile, share pages, and task replay mode (from_task)
+    const hideSidebar =
+      router.pathname.includes('mobile') || router.pathname.startsWith('/share') || !!router.query.from_task;
+
     if (router.pathname.includes('mobile') || router.pathname.startsWith('/share')) {
       return <>{children}</>;
     }
@@ -98,13 +102,13 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
         <Head>
           <meta name='viewport' content='initial-scale=1.0, width=device-width, maximum-scale=1' />
         </Head>
-        {router.pathname !== '/construct/app/extra' && (
+        {router.pathname !== '/construct/app/extra' && !hideSidebar && (
           <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
             <SideBar />
           </div>
         )}
         <div className='flex flex-col flex-1 relative overflow-hidden'>{children}</div>
-        <FloatHelper />
+        {!hideSidebar && <FloatHelper />}
       </div>
     );
   };

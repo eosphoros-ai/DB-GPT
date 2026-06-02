@@ -77,13 +77,18 @@ function Connectors() {
     return map;
   }, [connectors]);
 
-  // Build unified grid items: templates first, then ALL instances grouped naturally
+  // Build unified grid items: only show templates that have NO active
+  // instance yet (once activated, the template card disappears — users add
+  // additional instances via the top "+ 添加连接器" CTA instead). Instance
+  // cards are always shown.
   const gridItems: GridItem[] = useMemo(() => {
-    const tplItems: GridItem[] = builtInTemplates.map(t => ({
-      kind: 'template',
-      template: t,
-      instanceCount: instanceCountByType[t.type] ?? 0,
-    }));
+    const tplItems: GridItem[] = builtInTemplates
+      .filter(t => (instanceCountByType[t.type] ?? 0) === 0)
+      .map(t => ({
+        kind: 'template',
+        template: t,
+        instanceCount: instanceCountByType[t.type] ?? 0,
+      }));
     const instItems: GridItem[] = connectors.map(inst => ({
       kind: 'instance',
       instance: inst,
@@ -124,23 +129,21 @@ function Connectors() {
     });
   }, [gridItems, search, statusFilter]);
 
-  /* ─── Counters for header badges ──────────────────────────────── */
+  /* ─── Counter — only attention is still surfaced (Segmented badge below) ── */
   const counters = useMemo(() => {
-    const activeCount = connectors.filter(c => c.status === 'active').length;
     const attentionCount = connectors.filter(c => STATUS_ATTENTION_SET.has(c.status)).length;
-    return {
-      templates: builtInTemplates.length,
-      instances: connectors.length,
-      active: activeCount,
-      attention: attentionCount,
-    };
-  }, [builtInTemplates.length, connectors]);
+    return { attention: attentionCount };
+  }, [connectors]);
 
   /* ─── Handlers ────────────────────────────────────────────────── */
 
-  const handleAddCustomMcp = () => {
+  const handleAddConnector = () => {
+    // No prefilledType — the form's connector_type selector becomes visible
+    // so the user can pick any built-in template OR custom_mcp from one entry
+    // point. This is the canonical path for adding additional instances once
+    // a template card has been activated (and hence hidden from the grid).
     setEditingConnector(undefined);
-    setPrefilledType('custom_mcp');
+    setPrefilledType(undefined);
     setFormOpen(true);
   };
 
@@ -238,21 +241,11 @@ function Connectors() {
               <Button
                 className='border-none text-white bg-button-gradient h-9 px-4 shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] hover:shadow-[0_6px_18px_-4px_rgba(124,58,237,0.6)] transition-shadow'
                 icon={<ApiOutlined />}
-                onClick={handleAddCustomMcp}
+                onClick={handleAddConnector}
                 loading={creating || updating}
               >
                 添加连接器
               </Button>
-            </div>
-
-            {/* Counter strip — small ambient stats */}
-            <div className='flex items-center gap-3 ml-[46px] flex-wrap text-[12px]'>
-              <StatPill label='内置模板' value={counters.templates} tone='neutral' />
-              <StatPill label='已激活实例' value={counters.instances} tone='violet' />
-              <StatPill label='运行中' value={counters.active} tone='emerald' dot />
-              {counters.attention > 0 && (
-                <StatPill label='需要关注' value={counters.attention} tone='amber' dot />
-              )}
             </div>
           </div>
 
@@ -295,7 +288,7 @@ function Connectors() {
           {/* ───────────── GRID / EMPTY STATE ───────────── */}
           <Spin spinning={loading || catalogLoading || deleting}>
             {!hasAnything && !loading && !catalogLoading ? (
-              <EmptyState onAddCustom={handleAddCustomMcp} />
+              <EmptyState onAddCustom={handleAddConnector} />
             ) : showEmptyFilter ? (
               <FilterEmpty
                 onReset={() => {
@@ -343,53 +336,6 @@ function Connectors() {
         />
       </div>
     </ConstructLayout>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   StatPill — tiny header counter chip
-   ────────────────────────────────────────────────────────────────── */
-
-interface StatPillProps {
-  label: string;
-  value: number;
-  tone: 'neutral' | 'violet' | 'emerald' | 'amber';
-  dot?: boolean;
-}
-
-const STAT_TONE: Record<StatPillProps['tone'], { wrap: string; value: string; dot: string }> = {
-  neutral: {
-    wrap: 'bg-white/70 border-gray-200 text-gray-600 dark:bg-gray-700/40 dark:border-gray-600 dark:text-gray-300',
-    value: 'text-gray-900 dark:text-gray-100',
-    dot: 'bg-gray-400',
-  },
-  violet: {
-    wrap: 'bg-violet-50/80 border-violet-200 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700/40 dark:text-violet-300',
-    value: 'text-violet-800 dark:text-violet-200',
-    dot: 'bg-violet-500',
-  },
-  emerald: {
-    wrap: 'bg-emerald-50/80 border-emerald-200 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-300',
-    value: 'text-emerald-800 dark:text-emerald-200',
-    dot: 'bg-emerald-500',
-  },
-  amber: {
-    wrap: 'bg-amber-50/80 border-amber-200 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700/40 dark:text-amber-300',
-    value: 'text-amber-800 dark:text-amber-200',
-    dot: 'bg-amber-500',
-  },
-};
-
-function StatPill({ label, value, tone, dot }: StatPillProps) {
-  const t = STAT_TONE[tone];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border backdrop-blur-md ${t.wrap}`}
-    >
-      {dot && <span className={`w-1.5 h-1.5 rounded-full ${t.dot} animate-pulse`} />}
-      <span className='opacity-80'>{label}</span>
-      <span className={`font-semibold ${t.value}`}>{value}</span>
-    </span>
   );
 }
 

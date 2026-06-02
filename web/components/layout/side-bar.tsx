@@ -9,6 +9,7 @@ import Icon, {
   ApartmentOutlined,
   ApiOutlined,
   AppstoreOutlined,
+  ClockCircleOutlined,
   DeleteOutlined,
   EditOutlined,
   GlobalOutlined,
@@ -70,6 +71,7 @@ function SideBar() {
     pathname.startsWith('/construct/prompt') ||
     pathname.startsWith('/construct/dbgpts') ||
     pathname.startsWith('/construct/models') ||
+    pathname.startsWith('/construct/scheduled-tasks') ||
     pathname === '/models_evaluation';
   const { t, i18n } = useTranslation();
   const [logo, setLogo] = useState<string>('/logo_zh_latest.png');
@@ -253,6 +255,21 @@ function SideBar() {
       >
         <ApiOutlined className='text-violet-500' />
         <span>{t('connectors')}</span>
+      </div>
+      <div
+        onClick={() => {
+          router.push('/construct/scheduled-tasks');
+          setSettingsOpen(false);
+        }}
+        className={cls(
+          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+          {
+            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/scheduled-tasks'),
+          },
+        )}
+      >
+        <ClockCircleOutlined className='text-teal-500' />
+        <span>{t('scheduled_tasks')}</span>
       </div>
       <div
         onClick={() => {

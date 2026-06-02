@@ -463,6 +463,7 @@ export const CommonZh: Resources['translation'] = {
   awel_workflow: 'AWEL 工作流',
   prompts: '提示词',
   connectors: '连接器管理',
+  scheduled_tasks: '定时任务',
   // Skills page
   skills_page_subtitle: '为您的智能体提供预封装且可重复的最佳实践与工具',
   skills_search_placeholder: '搜索技能',

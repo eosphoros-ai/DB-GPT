@@ -1,11 +1,11 @@
 import {
   ApiOutlined,
+  BookOutlined,
   CheckCircleFilled,
   DeleteOutlined,
   DingtalkOutlined,
   EditOutlined,
   ExclamationCircleFilled,
-  GithubOutlined,
   PlusOutlined,
   ReadOutlined,
   ScheduleOutlined,
@@ -44,14 +44,19 @@ type ConnectorCardProps = InstanceCardProps | TemplateCardProps;
 /* ------------------------------------------------------------------ */
 
 interface BrandToken {
-  icon: React.ReactNode;
+  /** When set, render the real brand logo on a white tile (highest fidelity).
+   *  Path is relative to /public. Takes precedence over `icon`. */
+  logo?: string;
+  /** Fallback glyph rendered on a gradient tile when no real logo exists. */
+  icon?: React.ReactNode;
   gradient: string; // tailwind gradient classes for the icon tile
   shadow: string; // colored ring on hover
 }
 
 const BRAND_TOKENS: Record<string, BrandToken> = {
   github: {
-    icon: <GithubOutlined />,
+    // Real GitHub mark (simple-icons, CC0). White tile keeps the logo crisp.
+    logo: '/icons/connectors/github.svg',
     gradient: 'from-slate-800 to-slate-950',
     shadow: 'group-hover:ring-slate-300',
   },
@@ -69,6 +74,32 @@ const BRAND_TOKENS: Record<string, BrandToken> = {
     icon: <ReadOutlined />,
     gradient: 'from-emerald-500 to-green-600',
     shadow: 'group-hover:ring-emerald-200',
+  },
+  notion: {
+    // Real Notion mark (simple-icons, CC0).
+    logo: '/icons/connectors/notion.svg',
+    gradient: 'from-gray-700 to-gray-900',
+    shadow: 'group-hover:ring-gray-300',
+  },
+  linear: {
+    // Real Linear mark (simple-icons, CC0).
+    logo: '/icons/connectors/linear.svg',
+    gradient: 'from-indigo-500 to-violet-600',
+    shadow: 'group-hover:ring-indigo-200',
+  },
+  tavily: {
+    // No CC0 brand glyph available — letter tile on a teal/cyan gradient,
+    // distinct from the project/doc tiles.
+    icon: <span className='text-lg font-bold tracking-tight'>T</span>,
+    gradient: 'from-teal-500 to-cyan-600',
+    shadow: 'group-hover:ring-teal-200',
+  },
+  deepwiki: {
+    // No CC0 brand glyph available — book glyph on amber to distinguish from
+    // the emerald yuque doc tile.
+    icon: <BookOutlined />,
+    gradient: 'from-amber-500 to-orange-600',
+    shadow: 'group-hover:ring-amber-200',
   },
   custom_mcp: {
     // ApiOutlined matches the sidebar "连接器管理" entry and the page hero —
@@ -93,6 +124,8 @@ const CATEGORY_LABEL: Record<string, string> = {
   communication: '协作沟通',
   document: '知识文档',
   project: '项目管理',
+  search: '搜索检索',
+  dev: '研发工具',
   custom: '自定义',
 };
 
@@ -159,21 +192,37 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
 
   const displayName = isTemplate ? props.template.display_name : props.connector.display_name;
 
+  // Description precedence:
+  //   1. instance.config.description (user-authored in the form)
+  //   2. catalog entry description — ONLY for built-in types (those are real
+  //      product descriptions like "GitHub Issues / PR / 仓库管理"). For
+  //      custom_mcp this falls through, because the custom_mcp catalog
+  //      "description" is just the template blurb ("接入任意 SSE / Streamable
+  //      HTTP MCP Server") — it's an entry-point label, not an instance fact.
+  //   3. empty (the placeholder min-height keeps the card shape stable).
+  const instanceUserDescription = !isTemplate
+    ? ((props.connector.config?.description as string | undefined) ?? undefined)
+    : undefined;
   const description = isTemplate
     ? props.template.description
-    : (props.catalogEntry?.description ?? `MCP 连接器 · 类型 ${props.connector.connector_type}`);
+    : (
+        instanceUserDescription ||
+        (props.connector.connector_type === 'custom_mcp'
+          ? ''
+          : (props.catalogEntry?.description ?? '')) ||
+        ''
+      );
 
   const category = isTemplate
     ? props.template.category
     : (props.catalogEntry?.category ?? (props.connector.connector_type === 'custom_mcp' ? 'custom' : 'project'));
 
-  // Instance cards backed by an MCP-style connector are clickable -
-  // the whole card surface opens the tools modal. Templates and any
-  // future non-MCP instances stay non-clickable.
-  const isClickableForTools =
-    !isTemplate &&
-    (props.connector.connector_type === 'custom_mcp' ||
-      props.connector.connector_type.startsWith('mcp_'));
+  // All instance cards are clickable — the whole card surface opens the tools
+  // modal. Built-in templates (github / feishu / yuque / dingtalk) now follow
+  // the same unified MCP path as custom_mcp, so there's no longer a reason to
+  // gate click-to-inspect on connector_type. Template cards stay non-clickable
+  // since they have no tools yet.
+  const isClickableForTools = !isTemplate;
 
   return (
     <>
@@ -201,12 +250,22 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
 
         {/* ───────────────── HEADER: icon + title block ───────────────── */}
         <div className='relative flex items-start gap-3.5 mb-3'>
-          {/* Brand icon tile — 48px square, gradient, white glyph */}
-          <div
-            className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${brand.gradient} flex items-center justify-center text-white text-xl shadow-sm ring-2 ring-white/40 ${brand.shadow} transition-shadow`}
-          >
-            {brand.icon}
-          </div>
+          {/* Brand icon tile — 48px square. Real logos sit on a white tile
+              (max fidelity); fallback glyphs sit on a brand-tinted gradient. */}
+          {brand.logo ? (
+            <div
+              className={`flex-shrink-0 w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm ring-1 ring-gray-200/80 ${brand.shadow} transition-shadow dark:bg-white/95`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={brand.logo} alt={`${displayName} logo`} className='w-6 h-6 object-contain' />
+            </div>
+          ) : (
+            <div
+              className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${brand.gradient} flex items-center justify-center text-white text-xl shadow-sm ring-2 ring-white/40 ${brand.shadow} transition-shadow`}
+            >
+              {brand.icon}
+            </div>
+          )}
 
           {/* Title + inline tags */}
           <div className='flex-1 min-w-0'>
