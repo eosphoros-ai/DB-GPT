@@ -595,8 +595,26 @@ const sidebars = {
   sidebarApplication: [
     {
       type: "category",
-      label: "App Guides",
+      label: "MCP Connectors",
       collapsed: false,
+      collapsible: true,
+      items: [
+        { type: "doc", id: "application/mcp_connectors", label: "MCP Connectors" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Scheduled Tasks",
+      collapsed: false,
+      collapsible: true,
+      items: [
+        { type: "doc", id: "application/scheduled_tasks", label: "Scheduled Tasks" },
+      ],
+    },
+    {
+      type: "category",
+      label: "App Guides",
+      collapsed: true,
       collapsible: true,
       items: [
         { type: "doc", id: "application/apps/app_manage", label: "App Manage" },
@@ -611,7 +629,7 @@ const sidebars = {
     {
       type: "category",
       label: "Functional Components",
-      collapsed: false,
+      collapsed: true,
       collapsible: true,
       items: [
         { type: "doc", id: "application/prompts", label: "Prompts" },

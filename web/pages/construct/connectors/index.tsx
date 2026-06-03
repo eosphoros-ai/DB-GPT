@@ -15,8 +15,9 @@ import {
 } from '@/new-components/connector/types';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { ApiOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Input, Segmented, Spin, message } from 'antd';
+import { Button, Input, message, Segmented, Spin } from 'antd';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /* ─────────────────────────────────────────────────────────────────
    Connector management page — full visual rebuild.
@@ -42,6 +43,7 @@ type GridItem =
 const STATUS_ATTENTION_SET = new Set<ConnectorStatus>(['error', 'needs_reactivation']);
 
 function Connectors() {
+  const { t } = useTranslation();
   const { connectors, loading, refresh } = useConnectors();
   const { types: catalog, loading: catalogLoading } = useConnectorTypes();
   const { create, loading: creating } = useCreateConnector();
@@ -123,8 +125,7 @@ function Connectors() {
         );
       }
       return (
-        item.instance.display_name.toLowerCase().includes(q) ||
-        item.instance.connector_type.toLowerCase().includes(q)
+        item.instance.display_name.toLowerCase().includes(q) || item.instance.connector_type.toLowerCase().includes(q)
       );
     });
   }, [gridItems, search, statusFilter]);
@@ -162,10 +163,10 @@ function Connectors() {
   const handleDelete = async (id: string) => {
     try {
       await remove(id);
-      message.success('连接器已删除');
+      message.success(t('connector.msg.deleted'));
       refresh();
     } catch {
-      message.error('删除失败，请重试');
+      message.error(t('connector.msg.deleteFailed'));
     }
   };
 
@@ -173,16 +174,16 @@ function Connectors() {
     try {
       const result = await test(id);
       if (result.success) {
-        message.success(result.message || '连接测试成功');
+        message.success(result.message || t('connector.msg.testSuccess'));
         // Backend self-heals status from 'error' → 'active' on a successful
         // probe (see ConnectorService.test_connection). Refetch so the card
         // reflects the new status without forcing the user to F5.
         refresh();
       } else {
-        message.error(result.message || '连接测试失败');
+        message.error(result.message || t('connector.msg.testFailed'));
       }
     } catch {
-      message.error('连接测试失败，请检查配置');
+      message.error(t('connector.msg.testFailedCheck'));
     }
   };
 
@@ -190,17 +191,17 @@ function Connectors() {
     try {
       if (editingConnector) {
         await update(editingConnector.id, data);
-        message.success('连接器已更新');
+        message.success(t('connector.msg.updated'));
       } else {
         await create(data);
-        message.success('连接器已创建');
+        message.success(t('connector.msg.created'));
       }
       setFormOpen(false);
       setEditingConnector(undefined);
       setPrefilledType(undefined);
       refresh();
     } catch {
-      message.error(editingConnector ? '更新失败，请重试' : '创建失败，请重试');
+      message.error(editingConnector ? t('connector.msg.updateFailed') : t('connector.msg.createFailed'));
     }
   };
 
@@ -227,11 +228,9 @@ function Connectors() {
                   <span className='inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-[0_4px_14px_-4px_rgba(124,58,237,0.5)]'>
                     <ApiOutlined className='text-lg' />
                   </span>
-                  连接器管理
+                  {t('connector.page.title')}
                 </h1>
-                <p className='text-sm text-gray-500 dark:text-gray-400 ml-[46px]'>
-                  集成外部服务与工具，激活模板或接入自定义 MCP，扩展 Agent 的执行边界
-                </p>
+                <p className='text-sm text-gray-500 dark:text-gray-400 ml-[46px]'>{t('connector.page.subtitle')}</p>
               </div>
 
               {/* CTA — gradient button (matches skills.tsx convention).
@@ -244,7 +243,7 @@ function Connectors() {
                 onClick={handleAddConnector}
                 loading={creating || updating}
               >
-                添加连接器
+                {t('connector.page.addBtn')}
               </Button>
             </div>
           </div>
@@ -253,7 +252,7 @@ function Connectors() {
           <div className='flex items-center gap-3 mb-6 flex-wrap'>
             <Input
               prefix={<SearchOutlined className='text-gray-400' />}
-              placeholder='搜索连接器名称、类型...'
+              placeholder={t('connector.page.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               allowClear
@@ -264,13 +263,13 @@ function Connectors() {
               value={statusFilter}
               onChange={v => setStatusFilter(v as StatusFilter)}
               options={[
-                { label: '全部', value: 'all' },
-                { label: '已激活', value: 'active' },
-                { label: '未激活', value: 'inactive' },
+                { label: t('connector.page.filterAll'), value: 'all' },
+                { label: t('connector.page.filterActive'), value: 'active' },
+                { label: t('connector.page.filterInactive'), value: 'inactive' },
                 {
                   label: (
                     <span className='inline-flex items-center gap-1'>
-                      需要关注
+                      {t('connector.page.filterAttention')}
                       {counters.attention > 0 && (
                         <span className='inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-medium bg-amber-500 text-white'>
                           {counters.attention}
@@ -344,22 +343,16 @@ function Connectors() {
    ────────────────────────────────────────────────────────────────── */
 
 function EmptyState({ onAddCustom }: { onAddCustom: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className='flex flex-col items-center justify-center text-center py-24'>
       <div className='w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900/30 dark:to-indigo-900/30 flex items-center justify-center mb-5'>
         <ApiOutlined className='text-3xl text-violet-500' />
       </div>
-      <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1'>暂无可用连接器</h3>
-      <p className='text-sm text-gray-500 dark:text-gray-400 max-w-md mb-5'>
-        服务端未注册任何内置模板。你也可以接入自定义 MCP 服务来开始构建。
-      </p>
-      <Button
-        type='primary'
-        icon={<PlusOutlined />}
-        className='border-none bg-button-gradient'
-        onClick={onAddCustom}
-      >
-        添加连接器
+      <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1'>{t('connector.page.emptyTitle')}</h3>
+      <p className='text-sm text-gray-500 dark:text-gray-400 max-w-md mb-5'>{t('connector.page.emptyDesc')}</p>
+      <Button type='primary' icon={<PlusOutlined />} className='border-none bg-button-gradient' onClick={onAddCustom}>
+        {t('connector.page.addBtn')}
       </Button>
     </div>
   );
@@ -370,12 +363,13 @@ function EmptyState({ onAddCustom }: { onAddCustom: () => void }) {
    ────────────────────────────────────────────────────────────────── */
 
 function FilterEmpty({ onReset }: { onReset: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className='flex flex-col items-center justify-center text-center py-20'>
       <SearchOutlined className='text-3xl text-gray-300 dark:text-gray-600 mb-3' />
-      <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>没有匹配的连接器</p>
+      <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>{t('connector.page.filterEmptyText')}</p>
       <Button size='small' onClick={onReset}>
-        清除筛选
+        {t('connector.page.filterEmptyReset')}
       </Button>
     </div>
   );

@@ -1,5 +1,6 @@
 import { Alert, Button, Form, Input, Modal, Radio, Select } from 'antd';
 import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ConnectorAuthField, ConnectorCatalogEntry, ConnectorInstance, CreateConnectorRequest } from './types';
 
 interface ConnectorFormProps {
@@ -21,13 +22,7 @@ interface ConnectorFormProps {
 // Fields that for custom_mcp belong to `config` (not `credentials`).
 // `transport` + `description` join the trio because they are connection-level /
 // UI-level metadata, not secrets.
-const CUSTOM_MCP_CONFIG_FIELDS = new Set([
-  'server_uri',
-  'auth_type',
-  'header_name',
-  'transport',
-  'description',
-]);
+const CUSTOM_MCP_CONFIG_FIELDS = new Set(['server_uri', 'auth_type', 'header_name', 'transport', 'description']);
 
 // Fields rendered with bespoke widgets at fixed positions in the form, not
 // via the generic visibleFields map. Excluded from that map so they don't
@@ -47,30 +42,33 @@ type FormShape = {
 
 // UI-facing transport metadata. Keep keys aligned with backend
 // `_normalise_transport` accepted values in `mcp_utils.py`.
-const TRANSPORT_META: Record<
-  string,
-  { displayName: string; label: string; placeholder: string; hint: string }
-> = {
+// `hintKey` is an i18n key resolved at render time (the hint text is
+// locale-dependent; displayName/label/placeholder stay literal).
+const TRANSPORT_META: Record<string, { displayName: string; label: string; placeholder: string; hintKey: string }> = {
   sse: {
     displayName: 'SSE',
     label: 'SSE Endpoint URL',
     placeholder: 'http://your-mcp-server/sse',
-    hint: '完整的 MCP Server SSE 端点,例如 http://localhost:3001/sse',
+    hintKey: 'connector.form.sseHint',
   },
   streamable_http: {
     displayName: 'Streamable HTTP',
     label: 'Streamable HTTP Endpoint URL',
     placeholder: 'https://your-mcp-server/mcp',
-    hint: 'MCP Streamable HTTP 端点,例如 https://example.com/api/v1/mcps/.../mcp',
+    hintKey: 'connector.form.streamableHint',
   },
 };
 
 // Auth-type select labels. Backend still accepts the lowercase keys (`bearer`,
 // `none`, `token`) — we only swap what the user sees, not the wire value.
-const AUTH_TYPE_LABELS: Record<string, string> = {
-  none: '无认证',
+// `none` / `token` are locale-dependent so they resolve via i18n at render
+// time (see AUTH_TYPE_LABEL_KEYS); `bearer` is a brand term kept literal.
+const AUTH_TYPE_LABEL_KEYS: Record<string, string> = {
+  none: 'connector.form.authNone',
+  token: 'connector.form.authTokenCustom',
+};
+const AUTH_TYPE_LITERAL: Record<string, string> = {
   bearer: 'Bearer Token',
-  token: '自定义 Header Token',
 };
 
 const ConnectorForm: React.FC<ConnectorFormProps> = ({
@@ -83,6 +81,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
   prefilledType,
   submitting,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm<FormShape>();
 
   const selectedType = Form.useWatch('connector_type', form);
@@ -100,8 +99,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
   // with a fixed type — template activation (prefilledType) or editing an
   // existing instance (initialValues). The user has nothing meaningful to
   // re-select; the selector would just be a footgun.
-  const hideConnectorType =
-    prefilledType !== undefined || initialValues !== undefined;
+  const hideConnectorType = prefilledType !== undefined || initialValues !== undefined;
 
   // A built-in catalog template (github / notion / feishu / ...) — anything
   // with a catalog entry that is NOT the synthetic custom_mcp option. Used to:
@@ -211,9 +209,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
     // For built-in templates the name input is hidden — reuse the catalog
     // display_name (e.g. "GitHub"). custom_mcp keeps the user-entered name.
     const resolvedDisplayName =
-      isBuiltinTemplate && selectedCatalog
-        ? selectedCatalog.display_name
-        : values.display_name;
+      isBuiltinTemplate && selectedCatalog ? selectedCatalog.display_name : values.display_name;
 
     const request: CreateConnectorRequest = {
       connector_type: values.connector_type,
@@ -242,47 +238,45 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
   return (
     <Modal
       open={open}
-      title={initialValues ? '编辑连接器' : '添加连接器'}
+      title={initialValues ? t('connector.form.editTitle') : t('connector.form.addTitle')}
       onCancel={onClose}
       footer={null}
       destroyOnClose
       width={600}
     >
       <Form form={form} layout='vertical' onFinish={handleFinish} className='mt-4'>
-        {initialValues && (
-          <Alert
-            type='info'
-            showIcon
-            message='出于安全原因，凭证（token/密钥等）不会回填。如需修改，请重新输入；留空则保持原值不变。'
-            className='mb-4'
-          />
-        )}
+        {initialValues && <Alert type='info' showIcon message={t('connector.form.credentialAlert')} className='mb-4' />}
         {/* Connector name — hidden for built-in templates (we reuse the
             catalog display_name). Only custom_mcp asks the user to name it. */}
         <Form.Item
           name='display_name'
-          label='连接器名称'
-          rules={isBuiltinTemplate ? [] : [{ required: true, message: '请输入连接器名称' }]}
+          label={t('connector.form.nameLabel')}
+          rules={isBuiltinTemplate ? [] : [{ required: true, message: t('connector.form.nameRequired') }]}
           hidden={isBuiltinTemplate}
         >
-          <Input placeholder='请输入连接器名称' />
+          <Input placeholder={t('connector.form.namePlaceholder')} />
         </Form.Item>
 
         {/* Connector type — hidden when the user is in the dedicated custom_mcp flow */}
         <Form.Item
           name='connector_type'
-          label='连接器类型'
-          rules={[{ required: true, message: '请选择连接器类型' }]}
+          label={t('connector.form.typeLabel')}
+          rules={[{ required: true, message: t('connector.form.typeRequired') }]}
           hidden={hideConnectorType}
         >
           <Select
-            placeholder='请选择连接器类型'
+            placeholder={t('connector.form.typePlaceholder')}
             loading={catalogLoading}
             disabled={!!initialValues}
-            options={catalog.map(entry => ({
-              label: entry.display_name,
-              value: entry.type,
-            }))}
+            options={[...catalog]
+              // Surface the synthetic custom_mcp option (is_custom === true) at
+              // the top of the list; built-in templates keep their backend order
+              // (Array.prototype.sort is stable).
+              .sort((a, b) => Number(b.is_custom === true) - Number(a.is_custom === true))
+              .map(entry => ({
+                label: entry.display_name,
+                value: entry.type,
+              }))}
           />
         </Form.Item>
 
@@ -291,8 +285,8 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
             create time), custom_mcp defaults to SSE here on the client. */}
         <Form.Item
           name={['fields', 'transport']}
-          label='传输协议'
-          rules={[{ required: true, message: '请选择传输协议' }]}
+          label={t('connector.form.transportLabel')}
+          rules={[{ required: true, message: t('connector.form.transportRequired') }]}
           initialValue='streamable_http'
         >
           <Radio.Group className='w-full grid grid-cols-2 gap-3'>
@@ -313,13 +307,13 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
             name='server_uri'
             label={transportMeta.label}
             rules={[
-              { required: true, message: '请输入 MCP Server 的端点 URL' },
+              { required: true, message: t('connector.form.uriRequired') },
               {
                 pattern: /^https?:\/\/.+/i,
-                message: 'URL 必须以 http:// 或 https:// 开头',
+                message: t('connector.form.uriPattern'),
               },
             ]}
-            extra={transportMeta.hint}
+            extra={t(transportMeta.hintKey)}
           >
             <Input placeholder={transportMeta.placeholder} />
           </Form.Item>
@@ -329,19 +323,29 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
           const isEditMode = !!initialValues;
           const isPasswordField = field.type === 'password';
           const fieldRequired = field.required && !(isEditMode && isPasswordField);
-          const placeholder = isEditMode && isPasswordField
-            ? '留空保持原值不变'
-            : `请输入${field.label}`;
+          const placeholder =
+            isEditMode && isPasswordField
+              ? t('connector.form.passwordEditPlaceholder')
+              : t('connector.form.fieldRequired', { label: field.label });
           let control: React.ReactNode;
           if (field.type === 'select') {
             // Auth-type select uses friendlier labels (e.g. "Bearer Token") while
             // keeping the wire value lowercase so the backend dispatch is unchanged.
-            const optionList = (field.options ?? []).map(opt => ({
-              label: field.name === 'auth_type' ? (AUTH_TYPE_LABELS[opt] ?? opt) : opt,
-              value: opt,
-            }));
+            const optionList = (field.options ?? []).map(opt => {
+              // Auth-type select uses friendlier labels: locale-dependent ones
+              // (none / token) resolve via i18n; bearer stays a literal brand term.
+              let optLabel = opt;
+              if (field.name === 'auth_type') {
+                if (AUTH_TYPE_LABEL_KEYS[opt]) optLabel = t(AUTH_TYPE_LABEL_KEYS[opt]);
+                else optLabel = AUTH_TYPE_LITERAL[opt] ?? opt;
+              }
+              return { label: optLabel, value: opt };
+            });
             control = (
-              <Select placeholder={`请选择${field.label}`} options={optionList} />
+              <Select
+                placeholder={t('connector.form.selectPlaceholder', { label: field.label })}
+                options={optionList}
+              />
             );
           } else if (field.type === 'password') {
             control = <Input.Password placeholder={placeholder} />;
@@ -353,7 +357,11 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
               key={field.name}
               name={['fields', field.name]}
               label={field.label}
-              rules={fieldRequired ? [{ required: true, message: `请输入${field.label}` }] : []}
+              rules={
+                fieldRequired
+                  ? [{ required: true, message: t('connector.form.fieldRequired', { label: field.label }) }]
+                  : []
+              }
             >
               {control}
             </Form.Item>
@@ -366,11 +374,11 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
             for all connector types now that built-ins share the unified form. */}
         <Form.Item
           name={['fields', 'description']}
-          label='连接器描述（可选）'
-          extra={<span className='text-xs text-gray-400'>在 Agent 工具说明中展示</span>}
+          label={t('connector.form.descLabel')}
+          extra={<span className='text-xs text-gray-400'>{t('connector.form.descExtra')}</span>}
         >
           <Input.TextArea
-            placeholder='一句话说清这个 MCP 提供什么能力,例如:ArXiv 论文搜索与下载'
+            placeholder={t('connector.form.descPlaceholder')}
             rows={3}
             maxLength={500}
             style={{ resize: 'vertical' }}
@@ -380,10 +388,10 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
 
         <div className='flex justify-end gap-2'>
           <Button onClick={onClose} disabled={submitting}>
-            取消
+            {t('connector.form.cancel')}
           </Button>
           <Button type='primary' htmlType='submit' loading={submitting} disabled={submitting}>
-            {initialValues ? '保存' : '添加'}
+            {initialValues ? t('connector.form.save') : t('connector.form.add')}
           </Button>
         </div>
       </Form>

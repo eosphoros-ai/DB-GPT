@@ -14,6 +14,7 @@ import { Button, Input, Popconfirm, Segmented, Spin, Switch, Tooltip, message } 
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** 格式化 ISO 时间字符串，去掉时区后缀，返回友好格式 */
 function fmtTime(iso?: string | null): string | null {
@@ -26,6 +27,7 @@ type StatusFilter = 'all' | 'enabled' | 'disabled';
 
 function ScheduledTasks() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { listTasks, toggleTask, deleteTask } = useScheduledTask();
   const [tasks, setTasks] = useState<TaskResponse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,11 +43,11 @@ function ScheduledTasks() {
     try {
       setTasks(await listTasks());
     } catch (e: any) {
-      message.error(e?.message ?? '加载任务失败');
+      message.error(e?.message ?? t('scheduled.msg.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [listTasks]);
+  }, [listTasks, t]);
 
   useEffect(() => {
     reload();
@@ -54,20 +56,20 @@ function ScheduledTasks() {
   const onToggle = async (task: TaskResponse, enabled: boolean) => {
     try {
       await toggleTask(task.task_id, enabled);
-      message.success(enabled ? '已启用' : '已暂停');
+      message.success(enabled ? t('scheduled.msg.enabled') : t('scheduled.msg.paused'));
       reload();
     } catch (e: any) {
-      message.error(e?.message ?? '操作失败');
+      message.error(e?.message ?? t('scheduled.msg.opFailed'));
     }
   };
 
   const onDelete = async (task: TaskResponse) => {
     try {
       await deleteTask(task.task_id);
-      message.success('已删除');
+      message.success(t('scheduled.msg.deleted'));
       reload();
     } catch (e: any) {
-      message.error(e?.message ?? '删除失败');
+      message.error(e?.message ?? t('scheduled.msg.deleteFailed'));
     }
   };
 
@@ -118,15 +120,13 @@ function ScheduledTasks() {
                   <span className='inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-[0_4px_14px_-4px_rgba(6,182,212,0.5)]'>
                     <ClockCircleOutlined className='text-lg' />
                   </span>
-                  定时任务
+                  {t('scheduled.page.title')}
                 </h1>
-                <p className='text-sm text-gray-500 dark:text-gray-400 ml-[46px]'>
-                  管理定时执行的对话任务，支持自定义执行频率、启停控制和执行历史追溯
-                </p>
+                <p className='text-sm text-gray-500 dark:text-gray-400 ml-[46px]'>{t('scheduled.page.subtitle')}</p>
               </div>
 
               <Button icon={<ReloadOutlined />} onClick={reload} loading={loading} className='h-9'>
-                刷新
+                {t('scheduled.page.refresh')}
               </Button>
             </div>
           </div>
@@ -135,7 +135,7 @@ function ScheduledTasks() {
           <div className='flex items-center gap-3 mb-6 flex-wrap'>
             <Input
               prefix={<SearchOutlined className='text-gray-400' />}
-              placeholder='搜索任务名称、描述...'
+              placeholder={t('scheduled.page.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               allowClear
@@ -146,11 +146,11 @@ function ScheduledTasks() {
               value={statusFilter}
               onChange={v => setStatusFilter(v as StatusFilter)}
               options={[
-                { label: '全部', value: 'all' },
+                { label: t('scheduled.page.filterAll'), value: 'all' },
                 {
                   label: (
                     <span className='inline-flex items-center gap-1'>
-                      已启用
+                      {t('scheduled.page.filterEnabled')}
                       {counters.enabled > 0 && (
                         <span className='inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-medium bg-emerald-500 text-white'>
                           {counters.enabled}
@@ -163,7 +163,7 @@ function ScheduledTasks() {
                 {
                   label: (
                     <span className='inline-flex items-center gap-1'>
-                      已暂停
+                      {t('scheduled.page.filterDisabled')}
                       {counters.disabled > 0 && (
                         <span className='inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-medium bg-gray-400 text-white'>
                           {counters.disabled}
@@ -185,15 +185,17 @@ function ScheduledTasks() {
                 <div className='w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center mb-5'>
                   <ClockCircleOutlined className='text-3xl text-blue-500' />
                 </div>
-                <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1'>暂无定时任务</h3>
+                <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1'>
+                  {t('scheduled.page.emptyTitle')}
+                </h3>
                 <p className='text-sm text-gray-500 dark:text-gray-400 max-w-md mb-5'>
-                  在对话完成后，点击右侧面板的「保存为定时任务」按钮，即可创建定时执行的对话任务
+                  {t('scheduled.page.emptyDesc')}
                 </p>
               </div>
             ) : showEmptyFilter ? (
               <div className='flex flex-col items-center justify-center text-center py-20'>
                 <SearchOutlined className='text-3xl text-gray-300 dark:text-gray-600 mb-3' />
-                <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>没有匹配的任务</p>
+                <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>{t('scheduled.page.filterEmptyText')}</p>
                 <Button
                   size='small'
                   onClick={() => {
@@ -201,20 +203,20 @@ function ScheduledTasks() {
                     setStatusFilter('all');
                   }}
                 >
-                  清除筛选
+                  {t('scheduled.page.filterEmptyReset')}
                 </Button>
               </div>
             ) : (
               <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 overflow-hidden'>
                 {/* 表头 */}
                 <div className='grid grid-cols-[minmax(200px,1.4fr)_100px_150px_180px_120px_70px_130px] gap-3 px-5 py-3 text-[12px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/60 dark:bg-[#1a1f2e]/60'>
-                  <div>任务名称</div>
-                  <div className='text-center'>状态</div>
-                  <div>Cron 表达式</div>
-                  <div>下次执行</div>
-                  <div>创建人</div>
-                  <div className='text-center'>启用</div>
-                  <div className='text-right'>操作</div>
+                  <div>{t('scheduled.col.name')}</div>
+                  <div className='text-center'>{t('scheduled.col.status')}</div>
+                  <div>{t('scheduled.col.cron')}</div>
+                  <div>{t('scheduled.col.nextRun')}</div>
+                  <div>{t('scheduled.col.creator')}</div>
+                  <div className='text-center'>{t('scheduled.col.enable')}</div>
+                  <div className='text-right'>{t('scheduled.col.actions')}</div>
                 </div>
 
                 {/* 列表行 */}
@@ -232,8 +234,9 @@ function ScheduledTasks() {
                 {/* 底部统计 */}
                 {hasAny && (
                   <div className='px-5 py-3 border-t border-gray-100 dark:border-gray-700/50 text-[13px] text-gray-400 dark:text-gray-500'>
-                    共 {filteredTasks.length} 条
-                    {filteredTasks.length !== tasks.length && ` / 总计 ${tasks.length} 条`}
+                    {filteredTasks.length !== tasks.length
+                      ? t('scheduled.footer.countTotal', { count: filteredTasks.length, total: tasks.length })
+                      : t('scheduled.footer.count', { count: filteredTasks.length })}
                   </div>
                 )}
               </div>
@@ -269,6 +272,7 @@ interface TaskRowProps {
 }
 
 const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onClick }) => {
+  const { t } = useTranslation();
   const enabled = task.enabled;
 
   return (
@@ -288,9 +292,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
       <div className='flex items-center gap-3 min-w-0'>
         <div
           className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-sm ${
-            enabled
-              ? 'bg-gradient-to-br from-blue-500 to-cyan-600'
-              : 'bg-gradient-to-br from-gray-400 to-gray-500'
+            enabled ? 'bg-gradient-to-br from-blue-500 to-cyan-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'
           }`}
         >
           <ClockCircleOutlined className='text-sm' />
@@ -308,12 +310,12 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         {enabled ? (
           <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'>
             <span className='w-1.5 h-1.5 rounded-full bg-emerald-500' />
-            已启用
+            {t('scheduled.status.enabled')}
           </span>
         ) : (
           <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 dark:bg-gray-700/40 dark:text-gray-400'>
             <span className='w-1.5 h-1.5 rounded-full bg-gray-400' />
-            已暂停
+            {t('scheduled.status.disabled')}
           </span>
         )}
       </div>
@@ -349,7 +351,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
 
       {/* 操作 */}
       <div className='flex items-center justify-end gap-1' onClick={e => e.stopPropagation()}>
-        <Tooltip title='编辑'>
+        <Tooltip title={t('scheduled.row.editTooltip')}>
           <Button
             type='text'
             size='small'
@@ -358,7 +360,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
             onClick={e => onEdit(task, e as unknown as React.MouseEvent)}
           />
         </Tooltip>
-        <Tooltip title='执行历史'>
+        <Tooltip title={t('scheduled.row.historyTooltip')}>
           <Button
             type='text'
             size='small'
@@ -368,13 +370,13 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
           />
         </Tooltip>
         <Popconfirm
-          title={`确认删除「${task.task_name}」？`}
+          title={t('scheduled.row.deleteConfirm', { name: task.task_name })}
           onConfirm={() => onDelete(task)}
-          okText='删除'
-          cancelText='取消'
+          okText={t('scheduled.row.deleteOk')}
+          cancelText={t('scheduled.row.cancel')}
           okButtonProps={{ danger: true }}
         >
-          <Tooltip title='删除'>
+          <Tooltip title={t('scheduled.row.deleteTooltip')}>
             <Button
               type='text'
               size='small'

@@ -4,6 +4,7 @@ import { useScheduledTask } from '@/hooks/use-scheduled-task';
 import type { TaskResponse } from '@/types/scheduled-task';
 import { Button, Drawer, Form, Input, Select, Space, message } from 'antd';
 import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import CronInput from './CronInput';
 
 interface EditScheduledTaskDrawerProps {
@@ -16,6 +17,7 @@ interface EditScheduledTaskDrawerProps {
 }
 
 const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open, onClose, task, onSaved }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [cron, setCron] = useState('0 9 * * *');
   const [submitting, setSubmitting] = useState(false);
@@ -59,12 +61,12 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
         patch.model_name = values.model_name || null;
       }
       await updateTask(task.task_id, patch);
-      message.success('定时任务已更新');
+      message.success(t('scheduled.msg.updated'));
       onSaved();
       onClose();
     } catch (e: any) {
       if (e?.errorFields) return;
-      message.error(e?.message ?? '更新失败');
+      message.error(e?.message ?? t('scheduled.msg.updateFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -72,16 +74,16 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
 
   return (
     <Drawer
-      title='编辑定时任务'
+      title={t('scheduled.edit.title')}
       open={open}
       onClose={onClose}
       destroyOnClose
       width={460}
       footer={
         <Space style={{ float: 'right' }}>
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={onClose}>{t('scheduled.save.cancel')}</Button>
           <Button type='primary' loading={submitting} onClick={onSubmit}>
-            保存
+            {t('scheduled.edit.save')}
           </Button>
         </Space>
       }
@@ -95,32 +97,32 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
         }}
       >
         <Form.Item
-          label='任务名称'
+          label={t('scheduled.save.nameLabel')}
           name='task_name'
           rules={[
-            { required: true, message: '请输入任务名称' },
-            { max: 256, message: '任务名称最多 256 个字符' },
+            { required: true, message: t('scheduled.save.nameRequired') },
+            { max: 256, message: t('scheduled.save.nameMax') },
           ]}
         >
-          <Input placeholder='请输入定时任务名称' />
+          <Input placeholder={t('scheduled.save.namePlaceholder')} />
         </Form.Item>
 
-        <Form.Item label='描述（可选）' name='description'>
-          <Input.TextArea rows={2} placeholder='简要描述任务用途' />
+        <Form.Item label={t('scheduled.save.descLabel')} name='description'>
+          <Input.TextArea rows={2} placeholder={t('scheduled.save.descPlaceholder')} />
         </Form.Item>
 
         <Form.Item
-          label='原始问题'
+          label={t('scheduled.edit.rawQuestionLabel')}
           name='user_input'
-          rules={[{ required: true, message: '请输入原始问题' }]}
+          rules={[{ required: true, message: t('scheduled.edit.rawQuestionRequired') }]}
         >
-          <Input.TextArea rows={3} placeholder='定时执行时回放的原始问题' />
+          <Input.TextArea rows={3} placeholder={t('scheduled.edit.rawQuestionPlaceholder')} />
         </Form.Item>
 
-        <Form.Item label='执行模型' name='model_name'>
+        <Form.Item label={t('scheduled.edit.modelLabel')} name='model_name'>
           <Select
             allowClear
-            placeholder='选择执行模型（留空则用默认）'
+            placeholder={t('scheduled.edit.modelPlaceholder')}
             popupMatchSelectWidth={false}
             options={(modelList ?? []).map(item => ({
               value: item,
@@ -134,7 +136,7 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
           />
         </Form.Item>
 
-        <Form.Item label='执行频率' required>
+        <Form.Item label={t('scheduled.save.freqLabel')} required>
           <CronInput value={cron} onChange={setCron} />
         </Form.Item>
       </Form>

@@ -395,6 +395,22 @@
     "message": "使用案例",
     "description": "The label for the doc item Use Cases in sidebar docsSidebar, linking to the doc use_cases"
   },
+  "sidebar.sidebarApplication.category.MCP Connectors": {
+    "message": "MCP 连接器",
+    "description": "The label for category MCP Connectors in sidebar sidebarApplication"
+  },
+  "sidebar.sidebarApplication.doc.MCP Connectors": {
+    "message": "MCP 连接器",
+    "description": "The label for the doc item MCP Connectors in sidebar sidebarApplication, linking to the doc application/mcp_connectors"
+  },
+  "sidebar.sidebarApplication.category.Scheduled Tasks": {
+    "message": "定时任务",
+    "description": "The label for category Scheduled Tasks in sidebar sidebarApplication"
+  },
+  "sidebar.sidebarApplication.doc.Scheduled Tasks": {
+    "message": "定时任务",
+    "description": "The label for the doc item Scheduled Tasks in sidebar sidebarApplication, linking to the doc application/scheduled_tasks"
+  },
   "sidebar.sidebarApplication.category.App Guides": {
     "message": "应用指南",
     "description": "The label for category App Guides in sidebar sidebarApplication"

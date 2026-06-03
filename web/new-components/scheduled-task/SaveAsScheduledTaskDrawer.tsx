@@ -3,6 +3,7 @@ import { useScheduledTask } from '@/hooks/use-scheduled-task';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import { Button, Drawer, Form, Input, Space, Tag, Typography, message } from 'antd';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import CronInput from './CronInput';
 
 const { Title, Text } = Typography;
@@ -34,6 +35,7 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
   snapshot,
   defaultName,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [cron, setCron] = useState('0 9 * * *');
   const [submitting, setSubmitting] = useState(false);
@@ -60,12 +62,12 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
         payload: snapshot,
         creator_name: getCreatorName(),
       });
-      message.success(`已创建定时任务，下次执行 ${resp.next_run_time ?? '即将到来'}`);
+      message.success(t('scheduled.msg.created', { time: resp.next_run_time ?? t('scheduled.msg.createComingSoon') }));
       onClose();
     } catch (e: any) {
       // antd form 校验失败时 reject 带 errorFields，不需要弹 message
       if (e?.errorFields) return;
-      message.error(e?.message ?? '保存失败');
+      message.error(e?.message ?? t('scheduled.msg.saveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -75,16 +77,16 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
 
   return (
     <Drawer
-      title='保存为定时任务'
+      title={t('scheduled.save.title')}
       open={open}
       onClose={onClose}
       destroyOnClose
       width={460}
       footer={
         <Space style={{ float: 'right' }}>
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={onClose}>{t('scheduled.save.cancel')}</Button>
           <Button type='primary' loading={submitting} onClick={onSubmit}>
-            保存并启用
+            {t('scheduled.save.submit')}
           </Button>
         </Space>
       }
@@ -98,38 +100,41 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
         }}
       >
         <Form.Item
-          label='任务名称'
+          label={t('scheduled.save.nameLabel')}
           name='task_name'
           rules={[
-            { required: true, message: '请输入任务名称' },
-            { max: 256, message: '任务名称最多 256 个字符' },
+            { required: true, message: t('scheduled.save.nameRequired') },
+            { max: 256, message: t('scheduled.save.nameMax') },
           ]}
         >
-          <Input placeholder='请输入定时任务名称' />
+          <Input placeholder={t('scheduled.save.namePlaceholder')} />
         </Form.Item>
 
-        <Form.Item label='描述（可选）' name='description'>
-          <Input.TextArea rows={2} placeholder='简要描述任务用途' />
+        <Form.Item label={t('scheduled.save.descLabel')} name='description'>
+          <Input.TextArea rows={2} placeholder={t('scheduled.save.descPlaceholder')} />
         </Form.Item>
 
-        <Form.Item label='执行频率' required>
+        <Form.Item label={t('scheduled.save.freqLabel')} required>
           <CronInput value={cron} onChange={setCron} />
         </Form.Item>
       </Form>
 
       <Title level={5} style={{ marginTop: 16 }}>
-        将复用本次对话的环境（只读）
+        {t('scheduled.save.envTitle')}
       </Title>
       <div className='space-y-1 text-sm text-gray-600 dark:text-gray-300'>
         <div>
-          模型：<Text code>{snapshot.model_name ?? '默认'}</Text>
+          {t('scheduled.save.envModel')}
+          <Text code>{snapshot.model_name ?? t('scheduled.detail.modelDefault')}</Text>
         </div>
         <div>
-          原始问题：<Text>{snapshot.user_input}</Text>
+          {t('scheduled.save.envQuestion')}
+          <Text>{snapshot.user_input}</Text>
         </div>
         {ext.skill_id && (
           <div>
-            技能：<Tag color='blue'>{String(ext.skill_id)}</Tag>
+            {t('scheduled.save.envSkill')}
+            <Tag color='blue'>{String(ext.skill_id)}</Tag>
           </div>
         )}
         {(() => {
@@ -141,7 +146,7 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
           if (ids.length === 0) return null;
           return (
             <div>
-              MCP：
+              {t('scheduled.save.envMcp')}
               {ids.map((id: string) => (
                 <Tag key={id} color='green'>
                   {connectorNameMap.get(id) || id}

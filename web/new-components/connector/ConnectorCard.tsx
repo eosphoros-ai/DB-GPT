@@ -120,46 +120,30 @@ const FALLBACK_BRAND: BrandToken = {
 
 const brandFor = (type: string): BrandToken => BRAND_TOKENS[type] ?? FALLBACK_BRAND;
 
-const CATEGORY_LABEL: Record<string, string> = {
-  communication: '协作沟通',
-  document: '知识文档',
-  project: '项目管理',
-  search: '搜索检索',
-  dev: '研发工具',
-  custom: '自定义',
-};
-
 /* ------------------------------------------------------------------ */
 /* Status chip — high-contrast filled dot + label                      */
 /* ------------------------------------------------------------------ */
 
-const STATUS_META: Record<
-  ConnectorStatus,
-  { label: string; dot: string; text: string; bg: string; icon: React.ReactNode }
-> = {
+const STATUS_META: Record<ConnectorStatus, { dot: string; text: string; bg: string; icon: React.ReactNode }> = {
   active: {
-    label: '已激活',
     dot: 'bg-emerald-500',
     text: 'text-emerald-700 dark:text-emerald-400',
     bg: 'bg-emerald-50 dark:bg-emerald-900/30',
     icon: <CheckCircleFilled className='text-emerald-500' />,
   },
   needs_reactivation: {
-    label: '需要重新激活',
     dot: 'bg-amber-500',
     text: 'text-amber-700 dark:text-amber-400',
     bg: 'bg-amber-50 dark:bg-amber-900/30',
     icon: <WarningFilled className='text-amber-500' />,
   },
   error: {
-    label: '连接错误',
     dot: 'bg-rose-500',
     text: 'text-rose-700 dark:text-rose-400',
     bg: 'bg-rose-50 dark:bg-rose-900/30',
     icon: <ExclamationCircleFilled className='text-rose-500' />,
   },
   disconnected: {
-    label: '未连接',
     dot: 'bg-gray-400',
     text: 'text-gray-600 dark:text-gray-300',
     bg: 'bg-gray-100 dark:bg-gray-800/60',
@@ -205,13 +189,9 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
     : undefined;
   const description = isTemplate
     ? props.template.description
-    : (
-        instanceUserDescription ||
-        (props.connector.connector_type === 'custom_mcp'
-          ? ''
-          : (props.catalogEntry?.description ?? '')) ||
-        ''
-      );
+    : instanceUserDescription ||
+      (props.connector.connector_type === 'custom_mcp' ? '' : (props.catalogEntry?.description ?? '')) ||
+      '';
 
   const category = isTemplate
     ? props.template.category
@@ -277,27 +257,29 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
               </Tooltip>
               {isTemplate ? (
                 <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200 dark:bg-gray-700/60 dark:text-gray-300 dark:border-gray-600'>
-                  模板
+                  {t('connector.card.templateBadge')}
                 </span>
               ) : (
                 <span
                   className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_META[props.connector.status].bg} ${STATUS_META[props.connector.status].text}`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${STATUS_META[props.connector.status].dot}`} />
-                  {STATUS_META[props.connector.status].label}
+                  {t(`connector.status.${props.connector.status}`)}
                 </span>
               )}
             </div>
 
             {/* Metadata row — category · transport · count (compact, like ref image) */}
             <div className='flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 leading-none'>
-              <span>{CATEGORY_LABEL[category] ?? category}</span>
+              <span>{t(`connector.category.${category}`, category)}</span>
               <span className='text-gray-300 dark:text-gray-600'>·</span>
               <span>MCP / SSE</span>
               {isTemplate && (props.instanceCount ?? 0) > 0 && (
                 <>
                   <span className='text-gray-300 dark:text-gray-600'>·</span>
-                  <span className='text-violet-500 font-medium'>已激活 {props.instanceCount}</span>
+                  <span className='text-violet-500 font-medium'>
+                    {t('connector.card.activatedCount', { count: props.instanceCount })}
+                  </span>
                 </>
               )}
               {!isTemplate && props.connector.created_at && (
@@ -347,12 +329,12 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
                 className='border-none bg-button-gradient shadow-sm hover:shadow-md transition-shadow'
                 onClick={() => props.onActivate(props.template)}
               >
-                {(props.instanceCount ?? 0) > 0 ? '再添加一个' : '激活'}
+                {(props.instanceCount ?? 0) > 0 ? t('connector.card.addAnother') : t('connector.card.activate')}
               </Button>
             ) : (
               <>
                 {props.onTest && (
-                  <Tooltip title='测试连接'>
+                  <Tooltip title={t('connector.card.testTooltip')}>
                     <Button
                       type='text'
                       size='small'
@@ -366,7 +348,7 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
                   </Tooltip>
                 )}
                 {props.onSchedule && (
-                  <Tooltip title='定时任务'>
+                  <Tooltip title={t('connector.card.scheduleTooltip')}>
                     <Button
                       type='text'
                       size='small'
@@ -379,7 +361,7 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
                     />
                   </Tooltip>
                 )}
-                <Tooltip title='编辑'>
+                <Tooltip title={t('connector.card.editTooltip')}>
                   <Button
                     type='text'
                     size='small'
@@ -393,14 +375,14 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
                 </Tooltip>
                 <span onClick={e => e.stopPropagation()} role='presentation'>
                   <Popconfirm
-                    title='确认删除'
-                    description='确定要删除该连接器吗？'
+                    title={t('connector.card.deleteConfirmTitle')}
+                    description={t('connector.card.deleteConfirmDesc')}
                     onConfirm={() => props.onDelete(props.connector.id)}
-                    okText='删除'
-                    cancelText='取消'
+                    okText={t('connector.card.deleteOk')}
+                    cancelText={t('connector.card.cancel')}
                     okButtonProps={{ danger: true }}
                   >
-                    <Tooltip title='删除'>
+                    <Tooltip title={t('connector.card.deleteTooltip')}>
                       <Button
                         type='text'
                         size='small'

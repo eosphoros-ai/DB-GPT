@@ -10,6 +10,7 @@ import { Button, Spin, Switch, message } from 'antd';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
@@ -27,6 +28,7 @@ function fmtTime(iso?: string | null): string | null {
 
 function ScheduledTaskDetail() {
   const router = useRouter();
+  const { t } = useTranslation();
   const taskId = router.query.taskId as string | undefined;
   const { getTask, toggleTask } = useScheduledTask();
   const { connectors } = useConnectors();
@@ -48,7 +50,7 @@ function ScheduledTaskDetail() {
     setLoading(true);
     getTask(taskId)
       .then(setTask)
-      .catch((e: any) => message.error(e?.message ?? '加载任务详情失败'))
+      .catch((e: any) => message.error(e?.message ?? t('scheduled.msg.loadDetailFailed')))
       .finally(() => setLoading(false));
   };
 
@@ -60,10 +62,10 @@ function ScheduledTaskDetail() {
     if (!task) return;
     try {
       await toggleTask(task.task_id, enabled);
-      message.success(enabled ? '已启用' : '已暂停');
+      message.success(enabled ? t('scheduled.msg.enabled') : t('scheduled.msg.paused'));
       loadTask();
     } catch (e: any) {
-      message.error(e?.message ?? '操作失败');
+      message.error(e?.message ?? t('scheduled.msg.opFailed'));
     }
   };
 
@@ -89,7 +91,7 @@ function ScheduledTaskDetail() {
             onClick={() => router.push('/construct/scheduled-tasks')}
             className='mb-5'
           >
-            返回列表
+            {t('scheduled.detail.back')}
           </Button>
 
           {/* ── HERO CARD ── */}
@@ -111,12 +113,12 @@ function ScheduledTaskDetail() {
                     {task.enabled ? (
                       <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/40'>
                         <span className='w-1.5 h-1.5 rounded-full bg-emerald-500' />
-                        已启用
+                        {t('scheduled.status.enabled')}
                       </span>
                     ) : (
                       <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200 dark:bg-gray-700/40 dark:text-gray-400 dark:border-gray-600/40'>
                         <span className='w-1.5 h-1.5 rounded-full bg-gray-400' />
-                        已暂停
+                        {t('scheduled.status.disabled')}
                       </span>
                     )}
                   </div>
@@ -128,8 +130,8 @@ function ScheduledTaskDetail() {
                   checked={task.enabled}
                   onChange={onToggle}
                   className='scheduled-switch'
-                  checkedChildren='启用'
-                  unCheckedChildren='暂停'
+                  checkedChildren={t('scheduled.detail.enabledBtn')}
+                  unCheckedChildren={t('scheduled.detail.pausedBtn')}
                 />
                 <Button
                   type='text'
@@ -137,7 +139,7 @@ function ScheduledTaskDetail() {
                   onClick={() => setEditOpen(true)}
                   className='text-gray-500 hover:!text-cyan-600 hover:!bg-cyan-50 dark:hover:!bg-cyan-900/30'
                 >
-                  编辑
+                  {t('scheduled.detail.edit')}
                 </Button>
               </div>
             </div>
@@ -147,28 +149,28 @@ function ScheduledTaskDetail() {
           <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 p-6 mb-5'>
             <h3 className='text-[15px] font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2'>
               <InfoCircleOutlined className='text-gray-400' />
-              基本信息
+              {t('scheduled.detail.basicInfo')}
             </h3>
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4'>
-              <InfoField label='状态'>
+              <InfoField label={t('scheduled.detail.statusLabel')}>
                 {task.enabled ? (
                   <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/40'>
                     <span className='w-1.5 h-1.5 rounded-full bg-emerald-500' />
-                    已启用
+                    {t('scheduled.status.enabled')}
                   </span>
                 ) : (
                   <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200 dark:bg-gray-700/40 dark:text-gray-400 dark:border-gray-600/40'>
                     <span className='w-1.5 h-1.5 rounded-full bg-gray-400' />
-                    已暂停
+                    {t('scheduled.status.disabled')}
                   </span>
                 )}
               </InfoField>
-              <InfoField label='Cron 表达式'>
+              <InfoField label={t('scheduled.detail.cronLabel')}>
                 <code className='mono text-[14px] text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/40 px-2 py-0.5 rounded border border-gray-100 dark:border-gray-600/40'>
                   {task.cron_expression}
                 </code>
               </InfoField>
-              <InfoField label='下次执行'>
+              <InfoField label={t('scheduled.detail.nextRunLabel')}>
                 {fmtTime(task.next_run_time) ? (
                   <span className='text-[14px] text-cyan-600 dark:text-cyan-400 font-medium'>
                     {fmtTime(task.next_run_time)}
@@ -177,14 +179,14 @@ function ScheduledTaskDetail() {
                   <span className='text-[14px] text-gray-400'>-</span>
                 )}
               </InfoField>
-              <InfoField label='创建人'>
+              <InfoField label={t('scheduled.detail.creatorLabel')}>
                 <span className='text-[14px] text-gray-800 dark:text-gray-200'>{task.user_name ?? '-'}</span>
               </InfoField>
-              <InfoField label='创建时间'>
+              <InfoField label={t('scheduled.detail.createdAtLabel')}>
                 <span className='text-[14px] text-gray-800 dark:text-gray-200'>{fmtTime(task.created_at) ?? '-'}</span>
               </InfoField>
               {task.description && (
-                <InfoField label='描述' className='sm:col-span-2 lg:col-span-3'>
+                <InfoField label={t('scheduled.detail.descLabel')} className='sm:col-span-2 lg:col-span-3'>
                   <span className='text-[14px] text-gray-600 dark:text-gray-300'>{task.description}</span>
                 </InfoField>
               )}
@@ -195,37 +197,39 @@ function ScheduledTaskDetail() {
           <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 p-6 mb-5'>
             <h3 className='text-[15px] font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2'>
               <LaptopOutlined className='text-gray-400' />
-              任务环境
-              <span className='text-[11px] text-gray-400 dark:text-gray-500 font-normal ml-1'>只读</span>
+              {t('scheduled.detail.envTitle')}
+              <span className='text-[11px] text-gray-400 dark:text-gray-500 font-normal ml-1'>
+                {t('scheduled.detail.envReadonly')}
+              </span>
             </h3>
             <div className='grid grid-cols-1 gap-y-4'>
-              <InfoField label='原始问题'>
+              <InfoField label={t('scheduled.detail.rawQuestion')}>
                 <div className='text-[14px] text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-[#1a1f2e] rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-700/50'>
                   {task.payload?.user_input ?? '-'}
                 </div>
               </InfoField>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4'>
-                <InfoField label='模型'>
+                <InfoField label={t('scheduled.detail.modelLabel')}>
                   <span className='text-[14px] text-gray-800 dark:text-gray-200'>
-                    {task.payload?.model_name ?? '默认'}
+                    {task.payload?.model_name ?? t('scheduled.detail.modelDefault')}
                   </span>
                 </InfoField>
                 {ext.skill_id && (
-                  <InfoField label='技能'>
+                  <InfoField label={t('scheduled.detail.skillLabel')}>
                     <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/40'>
                       {String(ext.skill_name || ext.skill_id)}
                     </span>
                   </InfoField>
                 )}
                 {ext.database_name && (
-                  <InfoField label='数据库'>
+                  <InfoField label={t('scheduled.detail.databaseLabel')}>
                     <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800/40'>
                       {String(ext.database_name)}
                     </span>
                   </InfoField>
                 )}
                 {ext.file_path && (
-                  <InfoField label='文件'>
+                  <InfoField label={t('scheduled.detail.fileLabel')}>
                     <span
                       title={String(ext.file_path)}
                       className='inline-flex items-center max-w-full truncate px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-50 text-green-600 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/40'
@@ -235,7 +239,7 @@ function ScheduledTaskDetail() {
                   </InfoField>
                 )}
                 {ext.knowledge_space_name && (
-                  <InfoField label='知识库'>
+                  <InfoField label={t('scheduled.detail.knowledgeLabel')}>
                     <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/40'>
                       {String(ext.knowledge_space_name)}
                     </span>
@@ -249,7 +253,7 @@ function ScheduledTaskDetail() {
                   ];
                   if (ids.length === 0) return null;
                   return (
-                    <InfoField label='MCP'>
+                    <InfoField label={t('scheduled.detail.mcpLabel')}>
                       <div className='flex gap-1.5 flex-wrap'>
                         {ids.map((id: string) => (
                           <span
@@ -272,8 +276,10 @@ function ScheduledTaskDetail() {
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-[15px] font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2 m-0'>
                 <ReloadOutlined className='text-gray-400' />
-                执行历史
-                <span className='text-[11px] text-gray-400 dark:text-gray-500 font-normal ml-1'>最近 50 次</span>
+                {t('scheduled.detail.historyTitle')}
+                <span className='text-[11px] text-gray-400 dark:text-gray-500 font-normal ml-1'>
+                  {t('scheduled.detail.historyRecent')}
+                </span>
               </h3>
             </div>
             <TaskRunsTable taskId={task.task_id} />

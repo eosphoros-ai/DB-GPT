@@ -1,6 +1,7 @@
 import { Input, Radio, Select, Space, TimePicker, Typography } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
@@ -11,20 +12,18 @@ interface CronInputProps {
   onChange: (cron: string) => void;
 }
 
+// Weekday options — labelKey is an i18n key resolved at render time; value is
+// the cron day-of-week number (0 = Sunday). Kept as a module constant since
+// the values never change; only the displayed label is locale-dependent.
 const WEEKDAYS = [
-  { value: '1', label: '周一' },
-  { value: '2', label: '周二' },
-  { value: '3', label: '周三' },
-  { value: '4', label: '周四' },
-  { value: '5', label: '周五' },
-  { value: '6', label: '周六' },
-  { value: '0', label: '周日' },
+  { value: '1', labelKey: 'scheduled.cron.mon' },
+  { value: '2', labelKey: 'scheduled.cron.tue' },
+  { value: '3', labelKey: 'scheduled.cron.wed' },
+  { value: '4', labelKey: 'scheduled.cron.thu' },
+  { value: '5', labelKey: 'scheduled.cron.fri' },
+  { value: '6', labelKey: 'scheduled.cron.sat' },
+  { value: '0', labelKey: 'scheduled.cron.sun' },
 ];
-
-const MONTH_DAYS = Array.from({ length: 31 }, (_, i) => ({
-  value: String(i + 1),
-  label: `${i + 1} 号`,
-}));
 
 /** 从 cron 表达式反推 preset 和参数，用于初始化时同步外部 value */
 function parseCron(cron: string): {
@@ -86,6 +85,7 @@ function buildCron(preset: Preset, time: Dayjs, weekday: string, day: number, cu
 }
 
 const CronInput: React.FC<CronInputProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   // 用 lazy initializer 在挂载时即根据 value 解析初始状态。
   // Drawer 的 destroyOnClose 会让本组件每次打开都重新挂载，若内部 state 用固定默认值
   // （daily/09:00）初始化，则当挂载时的 value 恰好等于上次残留值（prevValueRef 比较不触发
@@ -121,29 +121,45 @@ const CronInput: React.FC<CronInputProps> = ({ value, onChange }) => {
   const previewError = useMemo(() => {
     if (preset !== 'custom') return null;
     const parts = custom.trim().split(/\s+/);
-    if (parts.length !== 5) return 'cron 表达式需要 5 段（分 时 日 月 周）';
+    if (parts.length !== 5) return t('scheduled.cron.invalidParts');
     return null;
-  }, [preset, custom]);
+  }, [preset, custom, t]);
+
+  // Locale-aware option lists (labels resolved via i18n; values are cron parts).
+  const weekdayOptions = useMemo(() => WEEKDAYS.map(w => ({ value: w.value, label: t(w.labelKey) })), [t]);
+  const monthDayOptions = useMemo(
+    () =>
+      Array.from({ length: 31 }, (_, i) => ({
+        value: String(i + 1),
+        label: t('scheduled.cron.dayOfMonth', { day: i + 1 }),
+      })),
+    [t],
+  );
 
   const displayCron = preset === 'custom' ? custom : buildCron(preset, time, weekday, day, custom);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <Radio.Group value={preset} onChange={e => setPreset(e.target.value)}>
-        <Radio value='hourly'>每小时</Radio>
-        <Radio value='daily'>每天</Radio>
-        <Radio value='weekly'>每周</Radio>
-        <Radio value='monthly'>每月</Radio>
-        <Radio value='custom'>自定义</Radio>
+        <Radio value='hourly'>{t('scheduled.cron.hourly')}</Radio>
+        <Radio value='daily'>{t('scheduled.cron.daily')}</Radio>
+        <Radio value='weekly'>{t('scheduled.cron.weekly')}</Radio>
+        <Radio value='monthly'>{t('scheduled.cron.monthly')}</Radio>
+        <Radio value='custom'>{t('scheduled.cron.custom')}</Radio>
       </Radio.Group>
 
       {preset !== 'custom' && (
         <Space>
           {preset === 'weekly' && (
-            <Select value={weekday} style={{ width: 100 }} options={WEEKDAYS} onChange={setWeekday} />
+            <Select value={weekday} style={{ width: 100 }} options={weekdayOptions} onChange={setWeekday} />
           )}
           {preset === 'monthly' && (
-            <Select value={String(day)} style={{ width: 100 }} options={MONTH_DAYS} onChange={v => setDay(Number(v))} />
+            <Select
+              value={String(day)}
+              style={{ width: 100 }}
+              options={monthDayOptions}
+              onChange={v => setDay(Number(v))}
+            />
           )}
           {preset === 'hourly' ? (
             <Select
@@ -151,7 +167,7 @@ const CronInput: React.FC<CronInputProps> = ({ value, onChange }) => {
               style={{ width: 120 }}
               options={Array.from({ length: 60 }, (_, i) => ({
                 value: String(i),
-                label: `第 ${i} 分钟`,
+                label: t('scheduled.cron.minuteOfHour', { minute: i }),
               }))}
               onChange={v => setTime(dayjs(`00:${String(v).padStart(2, '0')}`, 'HH:mm'))}
             />
@@ -165,7 +181,7 @@ const CronInput: React.FC<CronInputProps> = ({ value, onChange }) => {
         <Input
           value={custom}
           onChange={e => setCustom(e.target.value)}
-          placeholder='例如：0 9 * * 1-5（工作日 9:00）'
+          placeholder={t('scheduled.cron.customPlaceholder')}
           status={previewError ? 'error' : undefined}
         />
       )}
@@ -173,7 +189,7 @@ const CronInput: React.FC<CronInputProps> = ({ value, onChange }) => {
       {previewError ? (
         <Text type='danger'>{previewError}</Text>
       ) : (
-        <Text type='secondary'>cron 表达式：{displayCron}</Text>
+        <Text type='secondary'>{t('scheduled.cron.preview', { cron: displayCron })}</Text>
       )}
     </div>
   );

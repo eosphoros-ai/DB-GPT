@@ -2697,7 +2697,9 @@ const Playground: NextPage = () => {
                                                       : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                                   }`}
                                                 >
-                                                  {skill.type === 'official' ? '官方' : '个人'}
+                                                  {skill.type === 'official'
+                                                    ? t('picker_skill_official')
+                                                    : t('picker_skill_personal')}
                                                 </span>
                                               </div>
                                               <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -2718,14 +2720,14 @@ const Playground: NextPage = () => {
                                         <div className='text-center py-8 text-gray-400'>
                                           <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                           <div className='text-xs'>
-                                            {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
+                                            {skillSearchQuery ? t('picker_skill_no_match') : t('picker_skill_empty')}
                                           </div>
                                         </div>
                                       )}
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {(skillsList || []).length} 个技能可用
+                                        {t('picker_skill_count', { count: (skillsList || []).length })}
                                       </span>
                                       <Button
                                         type='link'
@@ -2736,7 +2738,7 @@ const Playground: NextPage = () => {
                                         }}
                                         className='text-[10px] p-0 h-auto'
                                       >
-                                        管理技能 →
+                                        {t('picker_manage_skill')}
                                       </Button>
                                     </div>
                                   </div>
@@ -2783,7 +2785,7 @@ const Playground: NextPage = () => {
                                   <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                     <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                       <Input
-                                        placeholder='搜索连接器...'
+                                        placeholder={t('search_connector')}
                                         prefix={<SearchOutlined className='text-gray-400' />}
                                         value={connectorSearchQuery}
                                         onChange={e => setConnectorSearchQuery(e.target.value)}
@@ -2831,7 +2833,7 @@ const Playground: NextPage = () => {
                                                   {c.display_name}
                                                 </span>
                                                 <span className='text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'>
-                                                  已激活
+                                                  {t('picker_connector_active')}
                                                 </span>
                                               </div>
                                               <p
@@ -2858,18 +2860,20 @@ const Playground: NextPage = () => {
                                         <div className='text-center py-8 text-gray-400'>
                                           <ApiOutlined className='text-2xl mb-2 opacity-50' />
                                           <div className='text-xs'>
-                                            {connectorSearchQuery ? '未找到匹配的连接器' : '暂无可用连接器'}
+                                            {connectorSearchQuery
+                                              ? t('picker_connector_no_match')
+                                              : t('picker_connector_empty')}
                                           </div>
                                         </div>
                                       )}
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {
-                                          (connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active')
-                                            .length
-                                        }{' '}
-                                        个连接器可用
+                                        {t('picker_connector_count', {
+                                          count: (connectorsList || []).filter(
+                                            (c: ConnectorInstance) => c.status === 'active',
+                                          ).length,
+                                        })}
                                       </span>
                                       <Button
                                         type='link'
@@ -2880,7 +2884,7 @@ const Playground: NextPage = () => {
                                         }}
                                         className='text-[10px] p-0 h-auto'
                                       >
-                                        管理连接器 →
+                                        {t('picker_manage_connector')}
                                       </Button>
                                     </div>
                                   </div>
@@ -2889,10 +2893,13 @@ const Playground: NextPage = () => {
                                 <Tooltip
                                   title={
                                     selectedConnectors.length === 0
-                                      ? '选择MCP'
+                                      ? t('select_mcp')
                                       : selectedConnectors.length === 1
-                                        ? `连接器: ${selectedConnectors[0].display_name}`
-                                        : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`
+                                        ? t('connector_selected', { name: selectedConnectors[0].display_name })
+                                        : t('connectors_selected', {
+                                            count: selectedConnectors.length,
+                                            names: selectedConnectors.map(c => c.display_name).join('、'),
+                                          })
                                   }
                                 >
                                   <Button
@@ -3297,7 +3304,9 @@ const Playground: NextPage = () => {
                                                   : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                               }`}
                                             >
-                                              {skill.type === 'official' ? '官方' : '个人'}
+                                              {skill.type === 'official'
+                                                ? t('picker_skill_official')
+                                                : t('picker_skill_personal')}
                                             </span>
                                           </div>
                                           <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -3318,14 +3327,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
+                                        {skillSearchQuery ? t('picker_skill_no_match') : t('picker_skill_empty')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length} 个技能可用
+                                    {t('picker_skill_count', { count: (skillsList || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3336,7 +3345,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理技能 →
+                                    {t('picker_manage_skill')}
                                   </Button>
                                 </div>
                               </div>
@@ -3381,7 +3390,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索连接器...'
+                                    placeholder={t('search_connector')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={connectorSearchQuery}
                                     onChange={e => setConnectorSearchQuery(e.target.value)}
@@ -3425,7 +3434,7 @@ const Playground: NextPage = () => {
                                               {c.display_name}
                                             </span>
                                             <span className='text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'>
-                                              已激活
+                                              {t('picker_connector_active')}
                                             </span>
                                           </div>
                                           <p
@@ -3450,18 +3459,20 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <ApiOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {connectorSearchQuery ? '未找到匹配的连接器' : '暂无可用连接器'}
+                                        {connectorSearchQuery
+                                          ? t('picker_connector_no_match')
+                                          : t('picker_connector_empty')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {
-                                      (connectorsList || []).filter((c: ConnectorInstance) => c.status === 'active')
-                                        .length
-                                    }{' '}
-                                    个连接器可用
+                                    {t('picker_connector_count', {
+                                      count: (connectorsList || []).filter(
+                                        (c: ConnectorInstance) => c.status === 'active',
+                                      ).length,
+                                    })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3472,7 +3483,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理连接器 →
+                                    {t('picker_manage_connector')}
                                   </Button>
                                 </div>
                               </div>
@@ -3481,10 +3492,13 @@ const Playground: NextPage = () => {
                             <Tooltip
                               title={
                                 selectedConnectors.length === 0
-                                  ? '选择MCP'
+                                  ? t('select_mcp')
                                   : selectedConnectors.length === 1
-                                    ? `连接器: ${selectedConnectors[0].display_name}`
-                                    : `已选 ${selectedConnectors.length} 个连接器: ${selectedConnectors.map(c => c.display_name).join('、')}`
+                                    ? t('connector_selected', { name: selectedConnectors[0].display_name })
+                                    : t('connectors_selected', {
+                                        count: selectedConnectors.length,
+                                        names: selectedConnectors.map(c => c.display_name).join('、'),
+                                      })
                               }
                             >
                               <Button
@@ -3521,7 +3535,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索数据库'
+                                    placeholder={t('search_database')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={dbSearchQuery}
                                     onChange={e => setDbSearchQuery(e.target.value)}
@@ -3586,14 +3600,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <DatabaseOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {dbSearchQuery ? '未找到匹配的数据库' : '暂无可用数据库'}
+                                        {dbSearchQuery ? t('picker_database_no_match') : t('picker_database_empty')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(dataSources || []).length} 个数据库可用
+                                    {t('picker_database_count', { count: (dataSources || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3604,7 +3618,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理数据库 →
+                                    {t('picker_manage_database')}
                                   </Button>
                                 </div>
                               </div>
@@ -3649,7 +3663,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索知识库'
+                                    placeholder={t('search_knowledge')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={knowledgeSearchQuery}
                                     onChange={e => setKnowledgeSearchQuery(e.target.value)}
@@ -3709,14 +3723,16 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <BookOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {knowledgeSearchQuery ? '未找到匹配的知识库' : '暂无可用知识库'}
+                                        {knowledgeSearchQuery
+                                          ? t('picker_knowledge_no_match')
+                                          : t('picker_knowledge_empty')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(knowledgeSpaces || []).length} 个知识库可用
+                                    {t('picker_knowledge_count', { count: (knowledgeSpaces || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3727,7 +3743,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理知识库 →
+                                    {t('picker_manage_knowledge')}
                                   </Button>
                                 </div>
                               </div>

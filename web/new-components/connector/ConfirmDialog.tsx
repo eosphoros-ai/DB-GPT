@@ -1,5 +1,6 @@
 import { Button, Modal, Progress, Space, Typography } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PendingConfirmation } from './types';
 
 interface ConfirmDialogProps {
@@ -12,6 +13,7 @@ interface ConfirmDialogProps {
 const { Text, Title } = Typography;
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ confirmation, onApprove, onDeny, onDismiss }) => {
+  const { t } = useTranslation();
   const [remaining, setRemaining] = useState<number>(0);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ confirmation, onApprove, 
       footer={null}
       title={
         <Title level={5} style={{ margin: 0 }}>
-          工具执行确认
+          {t('connector.confirm.title')}
         </Title>
       }
       style={{
@@ -62,31 +64,26 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ confirmation, onApprove, 
     >
       <Space direction='vertical' size='small' style={{ width: '100%' }}>
         <div>
-          <Text type='secondary'>工具名称：</Text>
+          <Text type='secondary'>{t('connector.confirm.toolName')}</Text>
           <Text strong>{confirmation.tool_name}</Text>
         </div>
         <div>
-          <Text type='secondary'>参数摘要：</Text>
+          <Text type='secondary'>{t('connector.confirm.argsSummary')}</Text>
           <Text>{confirmation.args_summary}</Text>
         </div>
         <div>
           <Text>{confirmation.message}</Text>
         </div>
-        <Progress
-          percent={percent}
-          showInfo={false}
-          strokeColor={percent > 30 ? '#52c41a' : '#ff4d4f'}
-          size='small'
-        />
+        <Progress percent={percent} showInfo={false} strokeColor={percent > 30 ? '#52c41a' : '#ff4d4f'} size='small' />
         <Text type='secondary' style={{ fontSize: 12 }}>
-          剩余 {remaining} 秒后自动拒绝
+          {t('connector.confirm.autoDeny', { remaining })}
         </Text>
         <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
           <Button danger onClick={onDeny}>
-            拒绝
+            {t('connector.confirm.deny')}
           </Button>
           <Button type='primary' onClick={onApprove} style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}>
-            确认执行
+            {t('connector.confirm.approve')}
           </Button>
         </Space>
       </Space>
