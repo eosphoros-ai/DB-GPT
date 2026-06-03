@@ -1640,7 +1640,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           )}
 
           {onSchedule && (
-            <Tooltip title='保存为定时任务'>
+            <Tooltip title={t('scheduled.save.title')}>
               <Button
                 type='text'
                 size='small'
@@ -1648,7 +1648,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 onClick={onSchedule}
                 className='text-gray-500 hover:text-blue-500'
               >
-                保存为定时任务
+                {t('scheduled.save.title')}
               </Button>
             </Tooltip>
           )}
