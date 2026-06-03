@@ -27,4 +27,17 @@ export const FlowZn = {
   Template_Label: '标签',
   Template_Action: '操作',
   minimum_dynamic_fields_warning: '请保留一个以上的动态字段',
+
+  // phase2 i18n
+  title: '标题',
+  name_must_use_letters_numbers_or_underscores_sep: '名称必须是字母、数字或下划线，并使用下划线分隔多个单词',
+  value: '值',
+  flow_parameter_index_name: '参数 {{index}} 名称',
+  missing_parameter_name: '请输入参数名称',
+  missing_parameter_label: '请输入参数标签',
+  missing_parameter_type: '请选择参数类型',
+  missing_parameter_value: '请输入参数值',
+  flow_parameter_name_placeholder: '参数名称',
+  flow_parameter_label_placeholder: '参数标签',
+  flow_parameter_description_placeholder: '参数描述',
 };

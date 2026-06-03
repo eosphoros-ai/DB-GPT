@@ -4,6 +4,7 @@ import cls from 'classnames';
 import { t } from 'i18next';
 import Image from 'next/image';
 import React from 'react';
+import i18n from '@/app/i18n';
 
 import AppDefaultIcon from '../AppDefaultIcon';
 import './style.css';
@@ -120,7 +121,7 @@ const ChatButton: React.FC<{
   onClick?: () => void;
   Icon?: React.ReactNode | string;
   text?: string;
-}> = ({ onClick, Icon = '/pictures/card_chat.png', text = t('start_chat') }) => {
+}> = ({ onClick, Icon = '/pictures/card_chat.png', text = i18n.t('start_chat') }) => {
   if (typeof Icon === 'string') {
     Icon = <Image src={Icon as string} alt={Icon as string} width={17} height={15} />;
   }

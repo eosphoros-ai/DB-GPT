@@ -10,7 +10,7 @@ import { Modal, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import copy from 'copy-to-clipboard';
 import { cloneDeep } from 'lodash';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -31,10 +31,10 @@ type Props = {
 const Completion = ({ messages, onSubmit, onFormatContent }: Props) => {
   const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agent, docId } = useContext(ChatContext);
   const { t } = useTranslation();
-  const searchParams = useSearchParams();
+  const searchParams = usePageQuery();
 
-  const flowSelectParam = (searchParams && searchParams.get('select_param')) ?? '';
-  const spaceNameOriginal = (searchParams && searchParams.get('spaceNameOriginal')) ?? '';
+  const flowSelectParam = searchParams.get('select_param') ?? '';
+  const spaceNameOriginal = searchParams.get('spaceNameOriginal') ?? '';
 
   const [isLoading, setIsLoading] = useState(false);
   const [jsonModalOpen, setJsonModalOpen] = useState(false);

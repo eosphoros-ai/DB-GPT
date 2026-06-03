@@ -1,4 +1,6 @@
+import i18n from '@/app/i18n';
 import { ModelSvg } from '@/components/icons';
+import { useTranslation } from 'react-i18next';
 import Icon, {
   AppstoreOutlined,
   BuildOutlined,
@@ -18,7 +20,7 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
   const items = [
     {
       key: 'app',
-      name: t('App'),
+      name: i18n.t('App'),
       path: '/app',
       icon: <AppstoreOutlined />,
       // operations: (
@@ -27,55 +29,55 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       //     icon={<PlusOutlined className='text-base' />}
       //     // onClick={handleCreate}
       //   >
-      //     {t('create_app')}
+      //     {i18n.t('create_app')}
       //   </Button>
       // ),
     },
     {
       key: 'flow',
-      name: t('awel_flow'),
+      name: i18n.t('awel_flow'),
       icon: <ForkOutlined />,
       path: '/flow',
     },
     {
       key: 'models',
-      name: t('model_manage'),
+      name: i18n.t('model_manage'),
       path: '/models',
       icon: <Icon component={ModelSvg} />,
     },
     {
       key: 'database',
-      name: t('Database'),
+      name: i18n.t('Database'),
       icon: <ConsoleSqlOutlined />,
       path: '/database',
     },
     {
       key: 'knowledge',
-      name: t('Knowledge_Space'),
+      name: i18n.t('Knowledge_Space'),
       icon: <PartitionOutlined />,
       path: '/knowledge',
     },
     // {
     //   key: 'agent',
-    //   name: t('Plugins'),
+    //   name: i18n.t('Plugins'),
     //   path: '/agent',
     //   icon: <BuildOutlined />,
     // },
     {
       key: 'prompt',
-      name: t('Prompt'),
+      name: i18n.t('Prompt'),
       icon: <MessageOutlined />,
       path: '/prompt',
     },
     {
       key: 'skills',
-      name: t('skills') || '技能',
+      name: i18n.t('skills') || i18n.t('skill_label'),
       path: '/skills',
       icon: <ThunderboltOutlined />,
     },
     {
       key: 'dbgpts',
-      name: t('dbgpts_community'),
+      name: i18n.t('dbgpts_community'),
       path: '/dbgpts',
       icon: <BuildOutlined />,
     },
@@ -125,7 +127,7 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
           //     icon={<PlusOutlined className='text-base' />}
           //     // onClick={handleCreate}
           //   >
-          //     {t('create_app')}
+          //     {i18n.t('create_app')}
           //   </Button>
           // }
         />

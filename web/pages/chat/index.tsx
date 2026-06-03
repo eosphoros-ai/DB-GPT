@@ -12,7 +12,7 @@ import { getInitMessage, transformFileUrl } from '@/utils';
 import { useAsyncEffect, useRequest } from 'ahooks';
 import { Flex, Layout, Spin } from 'antd';
 import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 const DbEditor = dynamic(() => import('@/components/chat/db-editor'), {
@@ -91,12 +91,12 @@ const Chat: React.FC = () => {
     app_code: currentDialogInfo.app_code || '',
   });
 
-  const searchParams = useSearchParams();
-  const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';
-  const knowledgeId = searchParams?.get('knowledge_id') ?? '';
-  const dbName = searchParams?.get('db_name') ?? '';
-  const initMsg = searchParams?.get('init_msg') ?? '';
+  const searchParams = usePageQuery();
+  const chatId = searchParams.get('id') ?? '';
+  const scene = searchParams.get('scene') ?? '';
+  const knowledgeId = searchParams.get('knowledge_id') ?? '';
+  const dbName = searchParams.get('db_name') ?? '';
+  const initMsg = searchParams.get('init_msg') ?? '';
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const order = useRef<number>(1);
@@ -118,17 +118,6 @@ const Chat: React.FC = () => {
   const [resourceValue, setResourceValue] = useState<any>();
   const [knowledgeValue, setKnowledgeValue] = useState<string | null>(null);
   const [modelValue, setModelValue] = useState<string>('');
-
-  // Auto-send init message if present
-  useEffect(() => {
-    if (initMsg && chatId && !history.length && !replyLoading) {
-      // Small delay to ensure everything is loaded
-      const timer = setTimeout(() => {
-        handleChat(initMsg);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [chatId, handleChat, history.length, initMsg, replyLoading]);
 
   useEffect(() => {
     setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.6);
@@ -334,6 +323,16 @@ const Chat: React.FC = () => {
     },
     [chat, chatId, history, modelValue, scene],
   );
+
+  // Auto-send init message if present (must run after handleChat is defined)
+  useEffect(() => {
+    if (initMsg && chatId && !history.length && !replyLoading) {
+      const timer = setTimeout(() => {
+        handleChat(initMsg);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [chatId, handleChat, history.length, initMsg, replyLoading]);
 
   useAsyncEffect(async () => {
     // 如果是默认小助手，不获取历史记录

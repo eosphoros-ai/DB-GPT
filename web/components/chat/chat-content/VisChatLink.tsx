@@ -1,7 +1,9 @@
+import i18n from '@/app/i18n';
 import { ChatContentContext } from '@/pages/chat';
 import { MobileChatContext } from '@/pages/mobile/chat';
 import { Button } from 'antd';
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface VisChatLinkProps {
   children: any;
@@ -20,7 +22,7 @@ const VisChatLink: React.FC<VisChatLinkProps> = ({ children, msg }) => {
       type='dashed'
       size='small'
     >
-      {children || '点击分析当前异常'}
+      {children || i18n.t('click_to_analyze_current_anomaly')}
     </Button>
   );
 };

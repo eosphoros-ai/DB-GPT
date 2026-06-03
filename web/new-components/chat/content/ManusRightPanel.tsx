@@ -1,3 +1,5 @@
+import i18n from '@/app/i18n';
+import ClientErrorBoundary from '@/components/common/ClientErrorBoundary';
 import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
@@ -42,6 +44,8 @@ import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
+import SafeArtifactImage from './SafeArtifactImage';
+import SafeHtmlPreview, { extractHtmlContent } from './SafeHtmlPreview';
 
 /** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
 const resolveImageUrl = (src: string): string => {
@@ -239,26 +243,26 @@ const getArtifactFileBg = (type: string): string => {
 
 const getArtifactTypeLabel = (type: string): string => {
   const map: Record<string, string> = {
-    file: '文件',
-    html: '网页报告',
-    table: '数据表',
-    chart: '图表',
-    image: '图片',
-    code: '代码',
-    markdown: '文档',
-    summary: '分析总结',
+    file: i18n.t('artifact_type_file'),
+    html: i18n.t('artifact_type_html'),
+    table: i18n.t('artifact_type_table'),
+    chart: i18n.t('artifact_type_chart'),
+    image: i18n.t('artifact_type_image'),
+    code: i18n.t('artifact_type_code'),
+    markdown: i18n.t('artifact_type_markdown'),
+    summary: i18n.t('analysis_summary'),
   };
-  return map[type] || '产物';
+  return map[type] || i18n.t('artifact_type_generic');
 };
 
 type FileFilterTab = 'all' | 'document' | 'image' | 'code' | 'link';
 
-const FILE_FILTER_TABS: { key: FileFilterTab; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'document', label: '文档' },
-  { key: 'image', label: '图片' },
-  { key: 'code', label: '代码文件' },
-  { key: 'link', label: '链接' },
+const getFileFilterTabs = (): { key: FileFilterTab; label: string }[] => [
+  { key: 'all', label: i18n.t('all_models_evaluation') },
+  { key: 'document', label: i18n.t('artifact_type_markdown') },
+  { key: 'image', label: i18n.t('artifact_type_image') },
+  { key: 'code', label: i18n.t('code_file') },
+  { key: 'link', label: i18n.t('link') },
 ];
 
 const getFileFilterCategory = (artifact: ArtifactItem): FileFilterTab[] => {
@@ -291,13 +295,21 @@ const formatArtifactDate = (timestamp: number): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return '今天';
-  if (diffDays === 1) return '昨天';
+  if (diffDays === 0) return i18n.t('today');
+  if (diffDays === 1) return i18n.t('yesterday');
   if (diffDays < 7) {
-    const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const dayNames = [
+      i18n.t('sunday'),
+      i18n.t('monday'),
+      i18n.t('tuesday'),
+      i18n.t('wednesday'),
+      i18n.t('thursday'),
+      i18n.t('friday'),
+      i18n.t('saturday'),
+    ];
     return dayNames[date.getDay()];
   }
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return i18n.t('artifact_date_md', { month: date.getMonth() + 1, day: date.getDate() });
 };
 
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
@@ -358,7 +370,7 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = mem
   }
 
   return (
-    <>
+    <ClientErrorBoundary>
       {output.output_type === 'code' && (
         <CodePreview
           code={String(content)}
@@ -459,17 +471,20 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = mem
 
       {output.output_type === 'image' && (
         <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'>
-          <img
-            src={resolveImageUrl(
-              typeof content === 'string' ? content : content?.url || content?.src || String(content),
-            )}
-            alt='Generated chart'
+          <SafeArtifactImage
+            artifact={{
+              id: 'step-image',
+              type: 'image',
+              name: 'chart',
+              content,
+              createdAt: Date.now(),
+            }}
             className='w-full h-auto object-contain'
             style={{ maxHeight: 600 }}
           />
         </div>
       )}
-    </>
+    </ClientErrorBoundary>
   );
 });
 
@@ -726,6 +741,7 @@ const SkillScriptRenderer: React.FC<{
 SkillScriptRenderer.displayName = 'SkillScriptRenderer';
 
 const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutput }> = memo(({ code, html }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
   const htmlContent = html.content;
   const rawHtml =
@@ -746,7 +762,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <EyeOutlined className='mr-1.5' />
-          渲染结果
+          {t('rendered_result')}
           {activeTab === 'preview' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -761,7 +777,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          源代码
+          {t('source_code')}
           {activeTab === 'source' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -812,6 +828,7 @@ HtmlTabbedRenderer.displayName = 'HtmlTabbedRenderer';
 const CodeExecutionRenderer: React.FC<{
   group: { codes: ExecutionOutput[]; results: ExecutionOutput[]; images: ExecutionOutput[] };
 }> = memo(({ group }) => {
+  const { t } = useTranslation();
   const hasImages = group.images.length > 0;
   const [activeTab, setActiveTab] = useState<'chart' | 'code'>(hasImages ? 'chart' : 'code');
 
@@ -819,7 +836,7 @@ const CodeExecutionRenderer: React.FC<{
     <>
       <div className='relative overflow-auto flex-1 min-h-[100px]'>
         <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
-          代码
+          {t('artifact_type_code')}
         </span>
         <CodePreview
           code={group.codes
@@ -836,7 +853,7 @@ const CodeExecutionRenderer: React.FC<{
           <div className='border-t border-gray-700/50 shrink-0' />
           <div className='relative overflow-auto bg-gray-900 flex-1 min-h-[60px]'>
             <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
-              执行结果
+              {t('result_2')}
             </span>
             <div className='px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
               {group.results.map(r => String(r.content)).join('')}
@@ -889,7 +906,7 @@ const CodeExecutionRenderer: React.FC<{
           )}
         >
           <FileImageOutlined className='mr-1.5' />
-          图表
+          {t('artifact_type_chart')}
           {activeTab === 'chart' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -904,7 +921,7 @@ const CodeExecutionRenderer: React.FC<{
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          代码
+          {t('artifact_type_code')}
           {activeTab === 'code' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -935,6 +952,7 @@ const TerminalRenderer: React.FC<{
   activeStep: ActiveStepInfo;
   outputs: ExecutionOutput[];
 }> = memo(({ activeStep, outputs }) => {
+  const { t } = useTranslation();
   const command =
     parseShellCommand(activeStep.detail) ||
     outputs
@@ -968,7 +986,7 @@ const TerminalRenderer: React.FC<{
         <div className='flex items-center gap-2'>
           <StatusBadge status={activeStep.status} />
           {allText && (
-            <Tooltip title='复制全部'>
+            <Tooltip title={t('copy_all')}>
               <button
                 className='flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-700/50'
                 onClick={() => copyToClipboard(allText)}
@@ -1215,9 +1233,9 @@ const SkillCardRenderer: React.FC<{
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      message.success('下载成功');
+      message.success(t('download_successful'));
     } catch {
-      message.error('下载失败');
+      message.error(t('download_failed'));
     } finally {
       setDownloading(false);
     }
@@ -1274,7 +1292,7 @@ const SkillCardRenderer: React.FC<{
               </div>
             </div>
             <div className='flex items-center gap-2 flex-shrink-0 ml-3'>
-              <Tooltip title='下载为 ZIP'>
+              <Tooltip title={t('download_as_zip')}>
                 <button
                   className='flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors'
                   onClick={handleDownload}
@@ -1308,7 +1326,10 @@ const SkillCardRenderer: React.FC<{
             <FolderOpenOutlined className='text-amber-500' />
             <span>{t('view_skill_files')}</span>
             {detailData?.tree?.children && (
-              <span className='text-gray-400'>({detailData.tree.children.length} 项)</span>
+              <span className='text-gray-400'>
+                ({detailData.tree.children.length}
+                {t('items')})
+              </span>
             )}
           </div>
           <RightOutlined className='text-[10px] text-gray-400' />
@@ -1342,7 +1363,7 @@ const SkillCardRenderer: React.FC<{
           </div>
         </div>
         <div className='flex items-center gap-2 flex-shrink-0'>
-          <Tooltip title='下载为 ZIP'>
+          <Tooltip title={t('download_as_zip')}>
             <button
               className='flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors'
               onClick={handleDownload}
@@ -1432,7 +1453,7 @@ const SkillCardRenderer: React.FC<{
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
               <FileTextOutlined className='text-2xl mb-2' />
-              <span className='text-xs'>选择文件查看内容</span>
+              <span className='text-xs'>{t('skills_select_file_tip')}</span>
             </div>
           )}
         </div>
@@ -1470,9 +1491,25 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const htmlPreviewRef = useRef<HTMLIFrameElement>(null);
   const panelView = controlledPanelView ?? internalPanelView;
   const setPanelView = (view: PanelView) => {
+    if (view === 'html-preview' && previewArtifact && !extractHtmlContent(previewArtifact.content).trim()) {
+      view = 'execution';
+    }
+    if (view === 'image-preview' && !previewArtifact) {
+      view = 'execution';
+    }
     setInternalPanelView(view);
     onPanelViewChange?.(view);
   };
+
+  useEffect(() => {
+    if (
+      (panelView === 'html-preview' || panelView === 'image-preview') &&
+      (!previewArtifact ||
+        (panelView === 'html-preview' && !extractHtmlContent(previewArtifact.content).trim()))
+    ) {
+      setPanelView('execution');
+    }
+  }, [panelView, previewArtifact]);
 
   const handleExportPdf = () => {
     try {
@@ -1497,7 +1534,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         win.focus();
         win.print();
       } else {
-        message.error('浏览器阻止了弹出窗口，请允许后重试');
+        message.error(t('popup_blocked_by_browser_please_allow_and_retry'));
       }
     }
   };
@@ -1603,6 +1640,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   }, [visibleOutputs]);
 
   return (
+    <ClientErrorBoundary>
     <div className='relative flex flex-col h-full bg-[#f8f9fc] dark:bg-[#0d0e11]'>
       {/* Collapse button is rendered by the parent layout to avoid overflow clipping */}
 
@@ -1762,7 +1800,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       <div
         className={classNames(
           'flex-1 overflow-y-auto flex flex-col min-h-0',
-          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview' ? 'p-0' : 'p-5 space-y-4',
+          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview'
+            ? 'p-0'
+            : 'p-5 space-y-4',
         )}
       >
         {panelView === 'skill-preview' && skillName ? (
@@ -1771,50 +1811,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'html-preview' && previewArtifact ? (
           <div className='w-full h-full flex flex-col'>
-            {(() => {
-              const srcDoc = resolveHtmlImageUrls(
-                typeof previewArtifact.content === 'string'
-                  ? previewArtifact.content
-                  : previewArtifact.content?.html ||
-                      previewArtifact.content?.content ||
-                      String(previewArtifact.content),
-              );
-              console.log(
-                '[HTML Preview] artifact id:',
-                previewArtifact.id,
-                'srcDoc length:',
-                srcDoc?.length,
-                'first 300 chars:',
-                srcDoc?.substring(0, 300),
-              );
-              return (
-                <iframe
-                  key={previewArtifact.id || 'html-preview'}
-                  ref={htmlPreviewRef}
-                  srcDoc={srcDoc}
-                  sandbox='allow-scripts allow-same-origin allow-modals'
-                  className='w-full flex-1 bg-white'
-                  style={{ border: 'none', minHeight: 600 }}
-                />
-              );
-            })()}
+            <SafeHtmlPreview content={previewArtifact.content} artifactId={previewArtifact.id} />
           </div>
         ) : panelView === 'image-preview' && previewArtifact ? (
           <div className='w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-6'>
-            <img
-              src={(() => {
-                const content = previewArtifact.content;
-                if (typeof content === 'string') {
-                  return resolveImageUrl(content);
-                }
-                const obj = content as Record<string, any>;
-                if (obj?.file_path) {
-                  const base = process.env.API_BASE_URL || '';
-                  return `${base}/api/v1/agent/files/download?file_path=${encodeURIComponent(obj.file_path)}`;
-                }
-                return resolveImageUrl(obj?.url || obj?.src || String(content));
-              })()}
-              alt={previewArtifact.name || 'Image preview'}
+            <SafeArtifactImage
+              artifact={previewArtifact}
               className='max-w-full max-h-full object-contain rounded-lg shadow-md'
               style={{ maxHeight: 'calc(100vh - 200px)' }}
             />
@@ -1829,7 +1831,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         ) : panelView === 'files' ? (
           <div className='space-y-0'>
             <div className='flex items-center gap-1 mb-4 bg-gray-100/80 dark:bg-gray-800/60 rounded-lg p-1'>
-              {FILE_FILTER_TABS.map(tab => {
+              {getFileFilterTabs().map(tab => {
                 const count =
                   tab.key === 'all'
                     ? artifacts?.length || 0
@@ -1869,7 +1871,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             ) : (
               <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
                 <FolderOpenOutlined className='text-3xl mb-4' />
-                <span className='text-sm'>暂无文件</span>
+                <span className='text-sm'>{t('no_files_yet')}</span>
               </div>
             )}
           </div>
@@ -2137,12 +2139,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                                     READ ONLY
                                   </span>
                                 </div>
-                                <Tooltip title='复制SQL'>
+                                <Tooltip title={t('copy_sql')}>
                                   <button
                                     className='flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
                                     onClick={() => {
                                       navigator.clipboard.writeText(sql);
-                                      message.success('SQL已复制到剪贴板');
+                                      message.success(t('sql_copied_to_clipboard'));
                                     }}
                                   >
                                     <CopyOutlined className='text-xs' />
@@ -2204,13 +2206,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 {isRunning ? (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <LoadingOutlined className='text-3xl text-blue-500 mb-4' />
-                    <span className='text-sm'>正在执行...</span>
-                    <span className='text-xs text-gray-500 mt-1'>请稍候，结果即将显示</span>
+                    <span className='text-sm'>{t('running_3')}</span>
+                    <span className='text-xs text-gray-500 mt-1'>{t('please_wait_results_will_appear_shortly')}</span>
                   </div>
                 ) : (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <FileTextOutlined className='text-3xl mb-4' />
-                    <span className='text-sm'>暂无输出结果</span>
+                    <span className='text-sm'>{t('no_output_yet')}</span>
                   </div>
                 )}
               </>
@@ -2222,8 +2224,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             <div className='w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4'>
               <ConsoleSqlOutlined className='text-3xl text-gray-400' />
             </div>
-            <span className='text-sm font-medium mb-1'>选择一个步骤查看详情</span>
-            <span className='text-xs text-gray-500'>点击左侧的步骤卡片以显示执行结果</span>
+            <span className='text-sm font-medium mb-1'>{t('select_a_step_to_view_details')}</span>
+            <span className='text-xs text-gray-500'>{t('click_a_step_card_on_the_left_to_view_results')}</span>
           </div>
         )}
       </div>
@@ -2234,14 +2236,20 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           <div className='flex items-center gap-4'>
             <span className='flex items-center gap-1'>
               <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
-              {isRunning ? '执行中' : '就绪'}
+              {isRunning ? t('Running') : t('completed_2')}
             </span>
-            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} 个输出</span>}
+            {visibleOutputs.length > 0 && (
+              <span>
+                {visibleOutputs.length}
+                {t('outputs')}
+              </span>
+            )}
           </div>
           {activeStep && <span>Step ID: {activeStep.id}</span>}
         </div>
       </div>
     </div>
+    </ClientErrorBoundary>
   );
 };
 

@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppList, recommendApps } from '@/client/api';
 import { getRecommendQuestions } from '@/client/api/chat';
@@ -10,6 +11,7 @@ import { t } from 'i18next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function Default() {
   const { setCurrentDialogInfo } = useContext(ChatContext);
@@ -78,11 +80,11 @@ function Default() {
   const items: SegmentedProps['options'] = [
     {
       value: 'recommend',
-      label: t('recommend_apps'),
+      label: i18n.t('recommend_apps'),
     },
     {
       value: 'used',
-      label: t('used_apps'),
+      label: i18n.t('used_apps'),
     },
   ];
 
@@ -118,7 +120,7 @@ function Default() {
               }}
             />
             <span className='flex items-center text-gray-500 gap-1 dark:text-slate-300'>
-              <span>没有心仪的应用？去</span>
+              <span>{i18n.t('app_in_mind')}</span>
               <span
                 className='flex items-center cursor-pointer'
                 onClick={() => {
@@ -132,15 +134,15 @@ function Default() {
                   width={24}
                   height={24}
                 />
-                <span className='text-default'>探索广场</span>
+                <span className='text-default'>{i18n.t('explore')}</span>
               </span>
-              <span>发现更多</span>
+              <span>{i18n.t('Discover_more')}</span>
             </span>
           </div>
           <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
           {helps && helps.length > 0 && (
             <div>
-              <h2 className='font-medium text-xl my-4'>我可以帮您：</h2>
+              <h2 className='font-medium text-xl my-4'>{i18n.t('i_can_help_you')}</h2>
               <div className='flex justify-start gap-4'>
                 {helps.map(help => (
                   <span

@@ -2,7 +2,7 @@ import { ChatContentContext } from '@/pages/chat';
 import { LoadingOutlined } from '@ant-design/icons';
 import { Button, Input, Spin } from 'antd';
 import classNames from 'classnames';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { forwardRef, useContext, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -35,9 +35,9 @@ const ChatInputPanel: React.ForwardRefRenderFunction<any, { ctrl: AbortControlle
     refreshDialogList,
   } = useContext(ChatContentContext);
 
-  const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
-  const select_param = searchParams?.get('select_param') ?? '';
+  const searchParams = usePageQuery();
+  const scene = searchParams.get('scene') ?? '';
+  const select_param = searchParams.get('select_param') ?? '';
 
   const [userInput, setUserInput] = useState<string>('');
   const [isFocus, setIsFocus] = useState<boolean>(false);

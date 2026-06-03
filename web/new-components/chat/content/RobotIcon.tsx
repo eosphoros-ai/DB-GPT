@@ -1,12 +1,12 @@
 import { RobotOutlined } from '@ant-design/icons';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { memo } from 'react';
 import AppDefaultIcon from '../../common/AppDefaultIcon';
 import ModelIcon from './ModelIcon';
 
 const RobotIcon: React.FC<{ model: string }> = ({ model }) => {
-  const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
+  const searchParams = usePageQuery();
+  const scene = searchParams.get('scene') ?? '';
 
   if (scene === 'chat_agent') {
     return (

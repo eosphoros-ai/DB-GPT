@@ -11,10 +11,11 @@ import { TFunction } from 'i18next';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/app/i18n';
 
 import styles from './styles.module.css';
 
-const LangMap = { zh: '中文', en: 'English' };
+const LangMap = { zh: i18n.t('Chinese'), en: 'English' };
 
 const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record, refresh }) => {
   const userInfo = useUser();
@@ -32,7 +33,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
     {
       manual: true,
       onSuccess: async () => {
-        message.success('删除成功');
+        message.success(t('deleted_successfully'));
         await refresh();
       },
     },
@@ -43,7 +44,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
   }
 
   return (
-    <Popconfirm title='确认删除吗？' onConfirm={async () => await deletePromptRun(record)}>
+    <Popconfirm title={t('are_you_sure_you_want_to_delete')} onConfirm={async () => await deletePromptRun(record)}>
       <Button loading={deleteLoading}>{t('Delete')}</Button>
     </Popconfirm>
   );

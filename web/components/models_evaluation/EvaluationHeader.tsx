@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { NewEvaluationModal } from './NewEvaluationModal';
 import { NavTo } from './components/nav-to';
 import { useEvaluation } from './context/EvaluationContext';
+import i18n from '@/app/i18n';
 
 type Props = {
   activeKey?: TabKey;
@@ -32,7 +33,7 @@ export const EvaluationHeader = (props: Props) => {
           options={[
             {
               value: 'all' as const,
-              label: t('all_models_evaluation'),
+              label: i18n.t('all_models_evaluation'),
             },
           ]}
           onChange={onTabChange}
@@ -42,7 +43,7 @@ export const EvaluationHeader = (props: Props) => {
           variant='filled'
           value={filterValue}
           prefix={<SearchOutlined />}
-          placeholder={t('please_enter_the_keywords')}
+          placeholder={i18n.t('please_enter_the_keywords')}
           onChange={onFilterChange}
           onPressEnter={onFilterChange}
           allowClear
@@ -50,7 +51,7 @@ export const EvaluationHeader = (props: Props) => {
         /> */}
       </div>
       <div>
-        <Tooltip title={t('refresh_list')}>
+        <Tooltip title={i18n.t('refresh_list')}>
           <ReloadOutlined onClick={refresh} className='p-2 cursor-pointer' />
         </Tooltip>
         <NavTo
@@ -59,10 +60,10 @@ export const EvaluationHeader = (props: Props) => {
           type='primary'
           openNewTab={true}
         >
-          {t('evaluation_dataset_info')}
+          {i18n.t('evaluation_dataset_info')}
         </NavTo>
         <Button className='border-none text-white bg-button-gradient h-full' onClick={createEvaluations}>
-          {t('create_evaluation')}
+          {i18n.t('create_evaluation')}
         </Button>
         <NewEvaluationModal open={evaluationVisible} onCancel={() => setEvaluationVisible(false)} onOk={refresh} />
       </div>

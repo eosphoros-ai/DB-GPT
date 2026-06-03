@@ -45,6 +45,333 @@ AUTO_DATA_MARKER_PATTERN = re.compile(
 )
 
 
+def _ui_lang() -> str:
+    """Resolve UI language: env override, then app config (same as other dbgpt-app scenes)."""
+    env = (os.getenv("DBGPT_LANG") or os.getenv("LANGUAGE") or "").strip().lower()
+    if env:
+        return env
+    cfg_lang = (getattr(CFG, "LANGUAGE", None) or "").strip().lower()
+    if cfg_lang:
+        return cfg_lang
+    return "ru"
+
+
+def _agent_thinking_title() -> str:
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return "Думаю"
+    if lang.startswith("en"):
+        return "Thinking"
+    return "思考中"
+
+
+def _agent_react_detail() -> str:
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return "Мысль / действие / результат"
+    if lang.startswith("en"):
+        return "Thought / Action / Observation"
+    return "Thought/Action/Observation"
+
+
+def _agent_lang_code() -> str:
+    """Short language code for AgentContext and prompts."""
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return "ru"
+    if lang.startswith("en"):
+        return "en"
+    return "zh"
+
+
+def _workflow_language_rules() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return """
+## Язык интерфейса (обязательно)
+Интерфейс пользователя — русский. Поля Thought, Phase, Action Intention, Action Reason
+и финальный ответ пишите **только на русском**, даже если инструкции навыка на другом языке.
+Не используйте китайский или английский в этих полях, если пользователь явно не пишет на них.
+Action Intention — не более 12 слов; Action Reason — не более 20 слов.
+Phase — короткая фраза на русском (без JSON и без склеивания с именем инструмента).
+""".strip()
+    if code == "en":
+        return """
+## Language
+Write Thought, Phase, Action Intention, Action Reason, and the final answer in **English**
+unless the user clearly uses another language.
+Action Intention: at most 8 words. Action Reason: at most 12 words.
+""".strip()
+    return """
+## 语言要求
+请使用与用户输入相同的语言书写 Thought、Phase、Action Intention、Action Reason 和最终答案。
+Action Intention 不超过 18 个汉字；Action Reason 不超过 30 个汉字。
+""".strip()
+
+
+def _agent_load_skill_phase() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return "Загрузка навыка"
+    if code == "en":
+        return "Loading skill"
+    return "加载技能"
+
+
+def _agent_action_status_label(action: Optional[str]) -> Optional[str]:
+    action_lower = (action or "").lower()
+    code = _agent_lang_code()
+    labels = {
+        "sql_query": {
+            "ru": "Запрос к базе данных",
+            "en": "Querying database",
+            "zh": "正在查询数据库信息",
+        },
+        "code_interpreter": {
+            "ru": "Генерация кода анализа",
+            "en": "Generating analysis code",
+            "zh": "正在生成分析代码",
+        },
+        "html_interpreter": {
+            "ru": "Формирование HTML-отчёта",
+            "en": "Rendering HTML report",
+            "zh": "正在生成并渲染 HTML 报告",
+        },
+        "todowrite": {
+            "ru": "Обновление плана задач",
+            "en": "Updating task plan",
+            "zh": "正在更新任务计划",
+        },
+        "execute_skill_script": {
+            "ru": "Выполнение скрипта навыка",
+            "en": "Running skill script",
+            "zh": "正在执行分析脚本",
+        },
+        "execute_skill_script_file": {
+            "ru": "Выполнение скрипта навыка",
+            "en": "Running skill script",
+            "zh": "正在执行分析脚本",
+        },
+    }
+    entry = labels.get(action_lower)
+    if entry:
+        return entry.get(code, entry["zh"])
+    return None
+
+
+def _sql_no_database_message() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return "База данных не выбрана. Сначала выберите источник данных в левой панели."
+    if code == "en":
+        return "No database selected. Choose a data source in the left panel first."
+    return "未选择数据库，请先在左侧面板选择一个数据源。"
+
+
+def _sql_forbidden_message(keyword: str) -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return (
+            f"Ограничение безопасности: оператор {keyword} запрещён, "
+            "разрешены только SELECT-запросы."
+        )
+    if code == "en":
+        return (
+            f"Security restriction: {keyword} statements are not allowed; "
+            "only SELECT queries are supported."
+        )
+    return f"安全限制: 不允许执行 {keyword} 语句，仅支持 SELECT 查询。"
+
+
+def _sql_empty_result_message() -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return "Запрос не вернул строк."
+    if code == "en":
+        return "Query returned no rows."
+    return "查询返回空结果。"
+
+
+def _sql_failed_message(err: str) -> str:
+    code = _agent_lang_code()
+    detail = err.strip()
+    for prefix in ("SQL 执行失败:", "Ошибка выполнения SQL:", "SQL execution failed:"):
+        if detail.startswith(prefix):
+            detail = detail[len(prefix) :].strip()
+    if code == "ru":
+        return f"Ошибка выполнения SQL: {detail}"
+    if code == "en":
+        return f"SQL execution failed: {detail}"
+    return f"SQL 执行失败: {detail}"
+
+
+def _connector_db_type(connector: Any) -> str:
+    for attr in ("db_type", "driver", "db_dialect"):
+        val = getattr(connector, attr, None)
+        if val:
+            return str(val).lower()
+    return "unknown"
+
+
+def _build_table_info_for_connector(connector: Any, table_names: List[str]) -> str:
+    """Build schema text; ClickHouse connector returns empty get_table_info()."""
+    try:
+        existing = connector.get_table_info_no_throw()
+    except Exception:
+        existing = ""
+    if existing and str(existing).strip() and not str(existing).startswith("Error"):
+        return str(existing)
+
+    db_type = _connector_db_type(connector)
+    if db_type != "clickhouse" or not table_names:
+        return existing or ", ".join(table_names)
+
+    db_name = ""
+    try:
+        db_name = connector.get_current_db_name() or ""
+    except Exception:
+        pass
+    lines: List[str] = []
+    for table in table_names[:40]:
+        qualified = f"{db_name}.{table}" if db_name else table
+        try:
+            cols = connector.get_columns(table)
+            col_desc = ", ".join(
+                f"{c.get('name', '?')}:{c.get('type', '?')}" for c in cols[:50]
+            )
+            lines.append(f"- {qualified}: {col_desc}")
+        except Exception:
+            lines.append(f"- {qualified}")
+    return "\n".join(lines) if lines else ", ".join(table_names)
+
+
+def _sql_dialect_hints(db_type: str, database_name: str) -> str:
+    code = _agent_lang_code()
+    if db_type == "clickhouse":
+        if code == "ru":
+            return f"""
+- **ClickHouse:** не используйте синтаксис MySQL (`INFORMATION_SCHEMA` с `table_schema`, и т.п.).
+- Список таблиц: `SHOW TABLES FROM {database_name}` или
+  `SELECT name FROM system.tables WHERE database = '{database_name}'`.
+- Колонки: `DESCRIBE TABLE {database_name}.имя_таблицы` или `system.columns`.
+- Только SELECT; имя БД в запросе: `{database_name}`.
+""".strip()
+        if code == "en":
+            return f"""
+- **ClickHouse:** do not use MySQL INFORMATION_SCHEMA patterns (e.g. table_schema).
+- List tables: `SHOW TABLES FROM {database_name}` or system.tables.
+- Columns: `DESCRIBE TABLE {database_name}.table_name`.
+""".strip()
+        return f"""
+- **ClickHouse:** 勿使用 MySQL 的 INFORMATION_SCHEMA.table_schema 语法。
+- 表列表: `SHOW TABLES FROM {database_name}` 或 system.tables。
+"""
+    return ""
+
+
+def _database_context_block(
+    database_name: str,
+    connector: Any,
+    table_names: List[str],
+    table_info: str,
+) -> str:
+    db_type = _connector_db_type(connector)
+    hints = _sql_dialect_hints(db_type, database_name)
+    code = _agent_lang_code()
+    tables_csv = ", ".join(table_names)
+    if code == "ru":
+        header = "## База данных"
+        lines = [
+            f"- Подключение: {database_name}",
+            f"- СУБД: {db_type}",
+            f"- Таблицы: {tables_csv}",
+            f"- Структура:\n{table_info}",
+            "- Запросы через `sql_query`, только SELECT",
+        ]
+        if hints:
+            lines.append(hints)
+        return header + "\n" + "\n".join(lines)
+    if code == "en":
+        header = "## Database"
+        lines = [
+            f"- Connection: {database_name}",
+            f"- Engine: {db_type}",
+            f"- Tables: {tables_csv}",
+            f"- Schema:\n{table_info}",
+            "- Use `sql_query` for read-only SELECT only",
+        ]
+        if hints:
+            lines.append(hints)
+        return header + "\n" + "\n".join(lines)
+    header = "## 数据库信息"
+    lines = [
+        f"- 数据库名: {database_name}",
+        f"- 类型: {db_type}",
+        f"- 可用表: {tables_csv}",
+        f"- 表结构:\n{table_info}",
+        "- 使用 'sql_query' 工具执行 SQL 查询",
+        "- **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**",
+    ]
+    if hints:
+        lines.append(hints)
+    return header + "\n" + "\n".join(lines)
+
+
+def _humanize_sql_error(err: str, db_type: Optional[str] = None) -> str:
+    msg = str(err).strip()
+    lower = msg.lower()
+    code = _agent_lang_code()
+    extra = ""
+    if db_type == "clickhouse" and (
+        "code: 47" in lower or "unknown identifier" in lower
+    ):
+        if code == "ru":
+            extra = (
+                " Подсказка: в ClickHouse код 47 — неизвестный столбец/таблица. "
+                "Часто агент ошибочно использует MySQL INFORMATION_SCHEMA; "
+                "используйте system.tables, system.columns или DESCRIBE TABLE."
+            )
+        elif code == "en":
+            extra = (
+                " Hint: ClickHouse code 47 = unknown identifier; "
+                "avoid MySQL INFORMATION_SCHEMA — use system.tables / DESCRIBE TABLE."
+            )
+    return _sql_failed_message(msg + extra)
+
+
+def _sql_truncation_suffix(shown: int, total: int) -> str:
+    code = _agent_lang_code()
+    if code == "ru":
+        return f"\n\n(Показаны первые {shown} строк из {total})"
+    if code == "en":
+        return f"\n\n(Showing first {shown} of {total} rows)"
+    return f"\n\n（仅显示前 {shown} 行，共 {total} 行）"
+
+
+def _html_file_not_found_message(file_path: str) -> str:
+    lang = _ui_lang()
+    if lang.startswith("ru"):
+        return (
+            f"Файл не найден: {file_path}. "
+            "Передайте готовый HTML в параметре html, например: "
+            '{"html": "<!DOCTYPE html>...", "title": "Отчёт"}. '
+            "Не используйте file_path и не пишите HTML через code_interpreter."
+        )
+    if lang.startswith("zh"):
+        return (
+            f"未找到文件: {file_path}。"
+            "请通过 html 参数直接传入完整 HTML，例如："
+            '{"html": "<!DOCTYPE html>...", "title": "报告"}。'
+            "请勿使用 file_path，也不要用 code_interpreter 写入 HTML 文件。"
+        )
+    return (
+        f"File not found: {file_path}. "
+        "Pass complete HTML via the `html` parameter, e.g. "
+        '{"html": "<!DOCTYPE html>...", "title": "Report"}. '
+        "Do not use file_path or write HTML with code_interpreter."
+    )
+
+
 def _validate_upload_filename(filename: str) -> str:
     if "\x00" in filename:
         raise ValueError("filename must not contain null bytes")
@@ -1128,17 +1455,9 @@ async def _react_agent_stream(
                 lowered = text.lower()
                 break
 
-        action_lower = (action or "").lower()
-        if action_lower == "sql_query":
-            return "正在查询数据库信息"
-        if action_lower == "code_interpreter":
-            return "正在生成分析代码"
-        if action_lower == "html_interpreter":
-            return "正在生成并渲染 HTML 报告"
-        if action_lower == "todowrite":
-            return "正在更新任务计划"
-        if action_lower in {"execute_skill_script", "execute_skill_script_file"}:
-            return "正在执行分析脚本"
+        labeled = _agent_action_status_label(action)
+        if labeled:
+            return labeled
 
         return text
 
@@ -1202,23 +1521,30 @@ async def _react_agent_stream(
             local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
             database_connector = local_db_manager.get_connector(database_name)
             table_names = list(database_connector.get_table_names())
-            table_info = database_connector.get_table_info_no_throw()
-            database_context = f"""
-## 数据库信息
-- 数据库名: {database_name}
-- 可用表: {", ".join(table_names)}
-- 表结构:
-{table_info}
-- 使用 'sql_query' 工具执行 SQL 查询
-- **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**
-"""
+            table_info = _build_table_info_for_connector(
+                database_connector, table_names
+            )
+            database_context = _database_context_block(
+                database_name, database_connector, table_names, table_info
+            )
             logger.info(
                 f"Loaded database connector: {database_name} "
                 f"(tables: {', '.join(table_names)})"
             )
         except Exception as e:
             logger.warning(f"Failed to load database connector: {e}", exc_info=e)
-            database_context = f"""
+            if _agent_lang_code() == "ru":
+                database_context = f"""
+## База данных
+- Не удалось подключить «{database_name}»: {str(e)}
+"""
+            elif _agent_lang_code() == "en":
+                database_context = f"""
+## Database
+- Failed to load '{database_name}': {str(e)}
+"""
+            else:
+                database_context = f"""
 ## 数据库
 - 警告: 加载数据库 '{database_name}' 失败。错误: {str(e)}
 """
@@ -1644,7 +1970,7 @@ print(json.dumps(summary, ensure_ascii=False))
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": "未选择数据库，请先在左侧面板选择一个数据源。",
+                            "content": _sql_no_database_message(),
                         }
                     ]
                 },
@@ -1671,10 +1997,7 @@ print(json.dumps(summary, ensure_ascii=False))
                         "chunks": [
                             {
                                 "output_type": "text",
-                                "content": (
-                                    f"安全限制: 不允许执行 {kw} 语句，"
-                                    f"仅支持 SELECT 查询。"
-                                ),
+                                "content": _sql_forbidden_message(kw),
                             }
                         ]
                     },
@@ -1687,7 +2010,7 @@ print(json.dumps(summary, ensure_ascii=False))
                 return json.dumps(
                     {
                         "chunks": [
-                            {"output_type": "text", "content": "查询返回空结果。"}
+                            {"output_type": "text", "content": _sql_empty_result_message()}
                         ]
                     },
                     ensure_ascii=False,
@@ -1706,19 +2029,24 @@ print(json.dumps(summary, ensure_ascii=False))
                 md_rows.append("| " + " | ".join(str(v) for v in row) + " |")
             table = "\n".join([header, separator] + md_rows)
             if len(rows) > 50:
-                table += f"\n\n（仅显示前 50 行，共 {len(rows)} 行）"
+                table += _sql_truncation_suffix(50, len(rows))
 
             return json.dumps(
                 {"chunks": [{"output_type": "markdown", "content": table}]},
                 ensure_ascii=False,
             )
         except Exception as e:
+            db_type = (
+                _connector_db_type(database_connector)
+                if database_connector is not None
+                else None
+            )
             return json.dumps(
                 {
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": f"SQL 执行失败: {str(e)}",
+                            "content": _humanize_sql_error(str(e), db_type),
                         }
                     ]
                 },
@@ -2500,12 +2828,13 @@ print(json.dumps(summary, ensure_ascii=False))
                 if os.path.isfile(alt):
                     fp = alt
                 else:
+                    msg = _html_file_not_found_message(file_path)
                     return json.dumps(
                         {
                             "chunks": [
                                 {
                                     "output_type": "text",
-                                    "content": f"File not found: {file_path}",
+                                    "content": msg,
                                 }
                             ]
                         },
@@ -2721,14 +3050,23 @@ print(json.dumps(summary, ensure_ascii=False))
     storage_conv.save_to_storage()
     storage_conv.start_new_round()
     storage_conv.add_user_message(user_input)
-    context = AgentContext(
-        conv_id=conv_id,
-        gpts_app_code="react_agent",
-        gpts_app_name="ReAct",
-        language="zh",
-        temperature=dialogue.temperature or 0.2,
-        enable_context_management=True,
-    )
+    try:
+        context = AgentContext(
+            conv_id=conv_id,
+            gpts_app_code="react_agent",
+            gpts_app_name="ReAct",
+            language=_agent_lang_code(),
+            temperature=dialogue.temperature or 0.2,
+            enable_context_management=True,
+        )
+    except TypeError:
+        context = AgentContext(
+            conv_id=conv_id,
+            gpts_app_code="react_agent",
+            gpts_app_name="ReAct",
+            language=_agent_lang_code(),
+            temperature=dialogue.temperature or 0.2,
+        )
 
     # Build file context if file uploaded
     file_context = ""
@@ -2749,13 +3087,41 @@ print(json.dumps(summary, ensure_ascii=False))
             if hasattr(skill_template, "template")
             else str(skill_template)
         )
-        skill_prompt_context = f"""
+        if _agent_lang_code() == "ru":
+            skill_prompt_context = f"""
+## Загруженный навык ({pre_matched_skill.metadata.name})
+Ниже полная инструкция выбранного навыка — выполняйте её строго:
+
+{skill_text}
+"""
+            execution_instruction = f"""
+## Требования к выполнению
+1. Пользователь выбрал навык: {pre_matched_skill.metadata.name}
+2. Строго следуйте шагам из инструкции навыка
+3. Вызывайте инструменты в нужном порядке до завершения задачи
+4. Статусы и пояснения для пользователя — на русском
+"""
+        elif _agent_lang_code() == "en":
+            skill_prompt_context = f"""
+## Loaded skill ({pre_matched_skill.metadata.name})
+Follow the full skill instructions below:
+
+{skill_text}
+"""
+            execution_instruction = f"""
+## Execution requirements
+1. User selected skill: {pre_matched_skill.metadata.name}
+2. Follow the skill workflow strictly
+3. Call tools in the required order until the task is complete
+"""
+        else:
+            skill_prompt_context = f"""
 ## 已加载技能指令（{pre_matched_skill.metadata.name}）
 以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
 
 {skill_text}
 """
-        execution_instruction = f"""
+            execution_instruction = f"""
 ## 执行要求
 1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
 2. 你必须严格按照上述技能指令的步骤执行
@@ -3004,12 +3370,16 @@ print(json.dumps(summary, ensure_ascii=False))
     is_skill_mode = pre_matched_skill is not None
     _skill_name = pre_matched_skill.metadata.name if pre_matched_skill else "skill"
 
+    lang_rules = _workflow_language_rules()
+
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, executing the skill task selected by the user.
 Please always response in the same language as the user's input language.
+
+{lang_rules}
 
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
@@ -3159,6 +3529,8 @@ Action Input: The JSON format of tool parameters
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
 Please always response in the same language as the user's input language.
+
+{lang_rules}
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
@@ -3337,14 +3709,19 @@ Action Input: The JSON format of tool parameters
     async def _context_status_callback(status: Dict[str, Any]) -> None:
         await stream_queue.put({"type": "context.status", **status})
 
-    agent.init_context_management(
-        config=await _load_context_budget_config(
-            llm_client=llm_client,
+    if hasattr(agent, "init_context_management"):
+        agent.init_context_management(
+            config=await _load_context_budget_config(
+                llm_client=llm_client,
+                model_name=dialogue.model_name,
+            ),
             model_name=dialogue.model_name,
-        ),
-        model_name=dialogue.model_name,
-        on_status_event=_context_status_callback,
-    )
+            on_status_event=_context_status_callback,
+        )
+    else:
+        logger.debug(
+            "ReActAgent.init_context_management unavailable (older dbgpt-core in image)"
+        )
 
     async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
         await stream_queue.put({"type": event_type, **payload})
@@ -3372,13 +3749,13 @@ Action Input: The JSON format of tool parameters
         skill_step_id, skill_step_event = build_step(
             f"Load Skill: {pre_matched_skill.metadata.name}",
             "Pre-loaded skill from user selection",
-            phase="加载技能",
+            phase=_agent_load_skill_phase(),
         )
         current_history_step = {
             "id": skill_step_id,
             "title": f"Load Skill: {pre_matched_skill.metadata.name}",
             "detail": "Pre-loaded skill from user selection",
-            "phase": "加载技能",
+            "phase": _agent_load_skill_phase(),
             "thought": None,
             "action": None,
             "action_input": None,
@@ -3478,8 +3855,8 @@ Action Input: The JSON format of tool parameters
                     pending_thoughts[round_num].append(clean_chunk)
                     if round_num not in round_step_map:
                         pending_step_id, pending_step_event = build_step(
-                            "思考中",
-                            "Thought/Action/Observation",
+                            _agent_thinking_title(),
+                            _agent_react_detail(),
                         )
                         round_step_map[round_num] = pending_step_id
                         yield pending_step_event
@@ -3666,14 +4043,14 @@ Action Input: The JSON format of tool parameters
                         "step": step,
                         "id": react_step_id,
                         "title": action_title,
-                        "detail": "Thought/Action/Observation",
+                        "detail": _agent_react_detail(),
                     }
                 )
                 yield updated_event
             else:
                 react_step_id, react_step_event = build_step(
                     action_title,
-                    "Thought/Action/Observation",
+                    _agent_react_detail(),
                 )
                 round_step_map[round_num] = react_step_id
                 yield react_step_event
@@ -3689,7 +4066,7 @@ Action Input: The JSON format of tool parameters
             current_history_step = {
                 "id": react_step_id,
                 "title": action_title,
-                "detail": "Thought/Action/Observation",
+                "detail": _agent_react_detail(),
                 "thought": display_thought,
                 "action_intention": action_intention,
                 "action_reason": action_reason,

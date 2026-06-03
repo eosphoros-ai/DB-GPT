@@ -5,6 +5,7 @@ import { t } from 'i18next';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import PreviewFlow from '../flow/preview-flow';
+import i18n from '@/app/i18n';
 
 interface IProps {
   onFlowsChange: (data: any) => void;
@@ -49,7 +50,7 @@ export default function DagLayout(props: IProps) {
           options={flowsOptions}
         />
         <Link href='/flow/canvas/' className='ml-6'>
-          {t('edit_new_applications')}
+          {i18n.t('edit_new_applications')}
         </Link>
         <div className='text-gray-500 ml-16'>{curFlow?.description}</div>
       </div>

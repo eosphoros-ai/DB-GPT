@@ -6,6 +6,7 @@ import cls from 'classnames';
 import React, { memo, useContext, useMemo, useRef } from 'react';
 import { MobileChatContext } from '../';
 import Feedback from './Feedback';
+import { useTranslation } from 'react-i18next';
 
 type DBGPTView = {
   name: string;
@@ -69,6 +70,7 @@ const ChatDialog: React.FC<{
   }, [context]);
 
   const formatMarkdownVal = (val: string) => {
+  const { t } = useTranslation();
     return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
   };
 
@@ -96,7 +98,7 @@ const ChatDialog: React.FC<{
           {/* 正在思考 */}
           {thinking && !context && (
             <div className='flex items-center gap-2'>
-              <span className='flex text-sm text-[#1c2533] dark:text-white'>思考中</span>
+              <span className='flex text-sm text-[#1c2533] dark:text-white'>{t('Thinking')}</span>
               <div className='flex'>
                 <div className='w-1 h-1 rounded-full mx-1 animate-pulse1'></div>
                 <div className='w-1 h-1 rounded-full mx-1 animate-pulse2'></div>

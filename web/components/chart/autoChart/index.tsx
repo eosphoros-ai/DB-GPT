@@ -12,6 +12,7 @@ import { defaultAdvicesFilter } from './advisor/utils';
 import { customCharts } from './charts';
 import { processNilData, sortData } from './charts/util';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
+
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {
@@ -166,7 +167,7 @@ export const AutoChart = (props: AutoChartProps) => {
     );
   }
 
-  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={'暂无合适的可视化视图'} />;
+  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={i18n.t('no_suitable_chart_view')} />;
 };
 
 export * from './helpers';

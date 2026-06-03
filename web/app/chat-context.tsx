@@ -4,7 +4,7 @@ import { UserInfoResponse } from '@/types/userinfo';
 import { getUserId } from '@/utils';
 import { STORAGE_THEME_KEY } from '@/utils/constants/index';
 import { useRequest } from 'ahooks';
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { createContext, useEffect, useState } from 'react';
 
 type ThemeMode = 'dark' | 'light';
@@ -75,11 +75,11 @@ const ChatContext = createContext<IChatContext>({
   refreshDialogList: () => {},
 });
 
-const ChatContextProvider = ({ children }: { children: React.ReactElement }) => {
-  const searchParams = useSearchParams();
-  const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';
-  const db_param = searchParams?.get('db_param') ?? '';
+const ChatContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  const chatId = router.isReady ? String(router.query.id ?? '') : '';
+  const scene = router.isReady ? String(router.query.scene ?? '') : '';
+  const db_param = router.isReady ? String(router.query.db_param ?? '') : '';
   const [isContract, setIsContract] = useState(false);
   const [model, setModel] = useState<string>('');
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(scene !== 'chat_dashboard');
@@ -96,18 +96,18 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     app_code: '',
   });
 
-  // 获取model
-  const { data: modelList = [] } = useRequest(async () => {
-    const [, res] = await apiInterceptors(getUsableModels());
-    return res ?? [];
-  });
-
-  // 获取管理员列表
-  const { run: queryAdminListRun } = useRequest(
+  // 获取model（client-only: avoid SSR + ahooks "e.then is not a function"）
+  const { data: modelList = [] } = useRequest(
     async () => {
-      const [, res] = await apiInterceptors(queryAdminList({ role: 'admin' }));
-      return res ?? [];
+      const [, res] = await apiInterceptors(getUsableModels(), undefined, { silent: true });
+      return Array.isArray(res) ? res : [];
     },
+    { ready: typeof window !== 'undefined' },
+  );
+
+  // 获取管理员列表（stub API — not an HTTP call, skip apiInterceptors)
+  const { run: queryAdminListRun } = useRequest(
+    async () => queryAdminList({ role: 'admin' }),
     {
       onSuccess: data => {
         setAdminList(data);

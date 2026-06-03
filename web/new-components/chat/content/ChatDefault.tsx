@@ -10,6 +10,7 @@ import { t } from 'i18next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useContext, useEffect, useState } from 'react';
+import i18n from '@/app/i18n';
 
 function ChatDefault() {
   const { setCurrentDialogInfo, model } = useContext(ChatContext);
@@ -78,11 +79,11 @@ function ChatDefault() {
   const items: SegmentedProps['options'] = [
     {
       value: 'recommend',
-      label: t('recommend_apps'),
+      label: i18n.t('recommend_apps'),
     },
     {
       value: 'used',
-      label: t('used_apps'),
+      label: i18n.t('used_apps'),
     },
   ];
 
@@ -118,7 +119,7 @@ function ChatDefault() {
               }}
             />
             <span className='flex items-center text-gray-500 gap-1 dark:text-slate-300'>
-              <span>{t('app_in_mind')}</span>
+              <span>{i18n.t('app_in_mind')}</span>
               <span
                 className='flex items-center cursor-pointer'
                 onClick={() => {
@@ -132,15 +133,15 @@ function ChatDefault() {
                   width={24}
                   height={24}
                 />
-                <span className='text-default'>{t('explore')}</span>
+                <span className='text-default'>{i18n.t('explore')}</span>
               </span>
-              <span>{t('Discover_more')}</span>
+              <span>{i18n.t('Discover_more')}</span>
             </span>
           </div>
           <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} type={activeKey as any} />
           {helps && helps.length > 0 && (
             <div>
-              <h2 className='font-medium text-xl my-4'>{t('help')}</h2>
+              <h2 className='font-medium text-xl my-4'>{i18n.t('help')}</h2>
               <div className='flex justify-start gap-4'>
                 {helps.map(help => (
                   <span

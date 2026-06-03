@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import {
   AppstoreOutlined,
@@ -33,6 +34,7 @@ import { Button, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { localizeAgentText } from '@/utils/localize-agent-text';
 import ObservationFormatter from './ObservationFormatter';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 
@@ -165,18 +167,18 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
 
 const getTypeLabel = (type: StepType, t: any): string => {
   const labels: Record<StepType, string> = {
-    read: t('step_type_read'),
-    edit: t('step_type_edit'),
-    write: t('step_type_write'),
-    bash: t('step_type_bash'),
-    grep: t('step_type_grep'),
-    glob: t('step_type_glob'),
-    task: t('step_type_task'),
-    skill: t('load_skill'),
-    sql: t('step_type_sql'),
-    python: t('step_type_python'),
-    html: t('step_type_html'),
-    other: t('step_type_other'),
+    read: i18n.t('step_type_read'),
+    edit: i18n.t('step_type_edit'),
+    write: i18n.t('step_type_write'),
+    bash: i18n.t('step_type_bash'),
+    grep: i18n.t('step_type_grep'),
+    glob: i18n.t('step_type_glob'),
+    task: i18n.t('step_type_task'),
+    skill: i18n.t('load_skill'),
+    sql: i18n.t('step_type_sql'),
+    python: i18n.t('step_type_python'),
+    html: i18n.t('step_type_html'),
+    other: i18n.t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
 };
@@ -264,14 +266,14 @@ const getArtifactIcon = (artifact: ArtifactItem) => {
 
 const getArtifactTypeLabel = (artifact: ArtifactItem, t: any): string => {
   const labels: Record<string, string> = {
-    file: t('artifact_type_file'),
-    html: t('artifact_type_html'),
-    table: t('artifact_type_table'),
-    chart: t('artifact_type_chart'),
-    image: t('artifact_type_image'),
-    code: t('artifact_type_code'),
-    markdown: t('artifact_type_markdown'),
-    summary: t('artifact_type_summary'),
+    file: i18n.t('artifact_type_file'),
+    html: i18n.t('artifact_type_html'),
+    table: i18n.t('artifact_type_table'),
+    chart: i18n.t('artifact_type_chart'),
+    image: i18n.t('artifact_type_image'),
+    code: i18n.t('artifact_type_code'),
+    markdown: i18n.t('artifact_type_markdown'),
+    summary: i18n.t('artifact_type_summary'),
   };
   return labels[artifact.type] || t('artifact_type_generic');
 };
@@ -492,19 +494,24 @@ const StepCard: React.FC<{
 }> = memo(({ step, isActive, onClick }) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
-  const detailLine = step.description ? step.description.split('\n')[0] : '';
+  const detailLine = localizeAgentText(step.description ? step.description.split('\n')[0] : '', t);
+  const displayTitle = localizeAgentText(step.title, t);
   const isTodoStep = detailLine.toLowerCase() === 'todowrite' || step.title.startsWith('TODO::') || !!step.todoMeta;
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
-  const isThinkingStep =
-    step.status === 'running' &&
-    (step.title === t('thinking') ||
-      step.title === '思考中' ||
-      step.title === '正在思考中' ||
-      step.title?.toLowerCase() === 'thinking');
+  const thinkingTitles = new Set([
+    t('thinking'),
+    t('Thinking'),
+    'thinking',
+    'Thinking',
+    '思考中',
+    '正在思考中',
+    'Думаю',
+  ]);
+  const isThinkingStep = step.status === 'running' && thinkingTitles.has(step.title || '');
   if (isThinkingStep) {
     return (
       <div
@@ -641,7 +648,7 @@ const StepCard: React.FC<{
         {getTypeLabel(step.type, t)}
       </span>
       <div className='flex flex-col min-w-0 flex-1'>
-        <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{step.title}</span>
+        <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{displayTitle}</span>
         {detailLine && <span className='text-[11px] text-gray-500 dark:text-gray-400 truncate'>{detailLine}</span>}
       </div>
       <div className='flex-shrink-0'>
@@ -774,17 +781,22 @@ const ThoughtBubble: React.FC<{ text: string | Record<string, unknown> }> = memo
       return String(text);
     }
   }, [text]);
+  const { t } = useTranslation();
   const [intention, ...reasonLines] = normalized.split('\n');
   const reason = reasonLines.join('\n').trim();
+  const displayIntention = localizeAgentText(intention, t);
+  const displayReason = localizeAgentText(reason, t);
 
   return (
     <div className='flex min-w-0 items-start gap-2 px-1 py-1'>
       <span className='mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300 dark:bg-slate-600' />
       <div className='min-w-0 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400'>
         <p className='m-0 break-words'>
-          <StreamingText text={intention} />
+          <StreamingText text={displayIntention} />
         </p>
-        {reason && <p className='m-0 mt-0.5 break-words text-slate-400 dark:text-slate-500'>{reason}</p>}
+        {displayReason && (
+          <p className='m-0 mt-0.5 break-words text-slate-400 dark:text-slate-500'>{displayReason}</p>
+        )}
       </div>
     </div>
   );

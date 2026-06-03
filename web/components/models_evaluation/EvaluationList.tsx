@@ -1,6 +1,6 @@
+import i18n from '@/app/i18n';
 import { EvaluationItem } from '@/types/models_evaluation';
 import { Button, Table, Tag, Tooltip } from 'antd';
-import { t } from 'i18next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useEffect } from 'react';
 import { useEvaluation } from './context/EvaluationContext';
@@ -26,33 +26,33 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
 
   const columns = [
     {
-      title: t('evaluation_scene'),
+      title: i18n.t('evaluation_scene'),
       dataIndex: 'scene_key',
       key: 'scene_key',
       width: '5%',
     },
     {
-      title: t('task_name'),
+      title: i18n.t('task_name'),
       dataIndex: 'scene_value',
       key: 'scene_value',
       width: '12%',
     },
     {
-      title: t('evaluation_env'),
+      title: i18n.t('evaluation_env'),
       dataIndex: 'evaluation_env',
       key: 'evaluation_env',
       width: '5%',
       render: (evaluation_env: string) => {
         if (evaluation_env === 'DEV') {
-          return <span>{t('evaluation_env_dev')}</span>;
+          return <span>{i18n.t('evaluation_env_dev')}</span>;
         } else if (evaluation_env === 'TEST') {
-          return <span>{t('evaluation_env_test')}</span>;
+          return <span>{i18n.t('evaluation_env_test')}</span>;
         }
         return <span>{evaluation_env}</span>;
       },
     },
     {
-      title: t('evaluation_dataset_name'),
+      title: i18n.t('evaluation_dataset_name'),
       dataIndex: 'datasets_name',
       key: 'datasets_name',
       width: '6%',
@@ -63,26 +63,26 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
       ),
     },
     {
-      title: t('create_time'),
+      title: i18n.t('create_time'),
       dataIndex: 'gmt_create',
       key: 'gmt_create',
       width: '10%',
     },
     {
-      title: t('finish_time'),
+      title: i18n.t('finish_time'),
       dataIndex: 'gmt_modified',
       key: 'gmt_modified',
       width: '10%',
     },
     {
-      title: t('model_name'),
+      title: i18n.t('model_name'),
       dataIndex: 'model_list',
       key: 'model_list',
       width: '10%',
       render: (model_list: string[]) => <span>{model_list.join(',')}</span>,
     },
     {
-      title: t('task_status'),
+      title: i18n.t('task_status'),
       dataIndex: 'state',
       key: 'state',
       width: '5%',
@@ -92,16 +92,16 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
 
         if (state === 'running') {
           color = 'blue';
-          text = '运行中';
+          text = i18n.t('running_2');
         } else if (state === 'complete') {
           color = 'green';
-          text = '已完成';
+          text = i18n.t('Completed');
         } else if (state === 'failed') {
           color = 'red';
-          text = '失败';
+          text = i18n.t('failed');
         } else if (state === 'pending') {
           color = 'orange';
-          text = '待处理';
+          text = i18n.t('pending');
         }
 
         if (record?.state === 'failed') {
@@ -116,19 +116,19 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
       },
     },
     {
-      title: t('round_time'),
+      title: i18n.t('round_time'),
       dataIndex: 'round_time',
       key: 'round_time',
       width: '5%',
     },
     {
-      title: t('operator'),
+      title: i18n.t('operator'),
       width: '6%',
       key: 'action',
       render: (_: any, record: EvaluationItem) => {
         return (
           <Button type='link' disabled={record.state !== 'complete'} onClick={() => goToDetail(record)}>
-            {t('View_details')}
+            {i18n.t('View_details')}
           </Button>
         );
       },

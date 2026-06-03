@@ -6,7 +6,8 @@ import type { MenuProps } from 'antd';
 import { Flex, Layout, Modal, Spin, Tooltip, Typography, message } from 'antd';
 import copy from 'copy-to-clipboard';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
+import { useRouter } from 'next/router';
 import React, { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppDefaultIcon from '../../common/AppDefaultIcon';
@@ -38,9 +39,9 @@ const MenuItem: React.FC<{
 }> = ({ item, refresh, historyLoading }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';
+  const searchParams = usePageQuery();
+  const chatId = searchParams.get('id') ?? '';
+  const scene = searchParams.get('scene') ?? '';
 
   const { setCurrentDialogInfo } = useContext(ChatContext);
 
@@ -94,7 +95,9 @@ const MenuItem: React.FC<{
             app_code: item.app_code,
           }),
         );
-        router.push(item.default ? '/chat' : `?scene=${item.chat_mode}&id=${item.conv_uid}`);
+        router.push(
+          item.default ? '/chat' : `/chat?scene=${encodeURIComponent(item.chat_mode)}&id=${encodeURIComponent(item.conv_uid)}`,
+        );
       }}
     >
       <Tooltip title={item.chat_mode}>
@@ -152,8 +155,8 @@ const ChatSider: React.FC<{
   listLoading: boolean;
   order: React.MutableRefObject<number>;
 }> = ({ dialogueList = [], refresh, historyLoading, listLoading, order }) => {
-  const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
+  const searchParams = usePageQuery();
+  const scene = searchParams.get('scene') ?? '';
   const { t } = useTranslation();
   const { mode } = useContext(ChatContext);
   const [collapsed, setCollapsed] = useState<boolean>(scene === 'chat_dashboard');

@@ -400,17 +400,17 @@ const formatFileSize = (bytes: number): string => {
 const getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
+    return t('file_type_spreadsheet');
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
+    return t('file_type_spreadsheet');
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return t('artifact_type_image');
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return t('file_type_word');
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return t('file_type_text');
   if (['json'].includes(ext)) return 'JSON';
-  return '文件';
+  return t('artifact_type_file');
 };
 
 const FileIconComponent: React.FC<{ fileName: string; mimeType?: string }> = ({ fileName, mimeType }) => {

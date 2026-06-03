@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { apiInterceptors, cancelFeedback, feedbackAdd, getFeedbackReasons, stopTopic } from '@/client/api';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import { CopyOutlined, DislikeOutlined, LikeOutlined } from '@ant-design/icons';
@@ -8,6 +9,7 @@ import copy from 'copy-to-clipboard';
 import React, { useContext, useState } from 'react';
 import { MobileChatContext } from '..';
 import DislikeDrawer from './DislikeDrawer';
+import { useTranslation } from 'react-i18next';
 
 interface Tags {
   reason: string;
@@ -32,12 +34,12 @@ const Feedback: React.FC<{
     const result = copy(chatDialogRef.current?.textContent || pureStr);
     if (result) {
       if (pureStr) {
-        message.success('复制成功');
+        message.success(i18n.t('copy_success'));
       } else {
-        message.warning('内容复制为空');
+        message.warning(i18n.t('copy_nothing'));
       }
     } else {
-      message.error('复制失败');
+      message.error(i18n.t('copy_failed_generic'));
     }
   };
 
@@ -58,7 +60,7 @@ const Feedback: React.FC<{
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success('反馈成功');
+        message.success(i18n.t('feedback_submitted'));
         setFeedbackOpen(false);
       },
     },
@@ -73,7 +75,7 @@ const Feedback: React.FC<{
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success('操作成功');
+          message.success(i18n.t('operation_successful'));
         }
       },
     },
@@ -97,7 +99,7 @@ const Feedback: React.FC<{
     {
       manual: true,
       onSuccess: () => {
-        message.success('操作成功');
+        message.success(i18n.t('operation_successful'));
       },
     },
   );
@@ -148,9 +150,7 @@ const Feedback: React.FC<{
               await stopTopicRun();
             }}
             className='text-xs'
-          >
-            终止话题
-          </Button>
+          >{i18n.t('end_topic')}</Button>
         )}
       </div>
     </div>

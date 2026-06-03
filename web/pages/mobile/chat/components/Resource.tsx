@@ -8,6 +8,7 @@ import { Dropdown, Spin, Upload } from 'antd';
 import React, { useContext, useMemo, useState } from 'react';
 import { MobileChatContext } from '../';
 import OptionIcon from './OptionIcon';
+import { useTranslation } from 'react-i18next';
 
 const Resource: React.FC = () => {
   const { appInfo, resourceList, scene, model, conv_uid, getChatHistoryRun, setResource, resource } =
@@ -84,7 +85,7 @@ const Resource: React.FC = () => {
       return (
         <div className='flex items-center gap-1'>
           <Spin size='small' indicator={<LoadingOutlined spin />} />
-          <span className='text-xs'>上传中</span>
+          <span className='text-xs'>{t('uploading')}</span>
         </div>
       );
     }
@@ -99,12 +100,13 @@ const Resource: React.FC = () => {
     return (
       <div className='flex items-center gap-1'>
         <FolderAddOutlined className='text-base' />
-        <span className='text-xs'>上传文件</span>
+        <span className='text-xs'>{t('upload_file')}</span>
       </div>
     );
   }, [loading, resource]);
 
   const renderContent = () => {
+  const { t } = useTranslation();
     switch (resourceVal) {
       case 'excel_file':
       case 'text_file':

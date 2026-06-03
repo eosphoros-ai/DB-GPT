@@ -2,6 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import { DarkSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { nextLanguage } from '@/utils/language';
 import Icon, { GlobalOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { Layout, Popover } from 'antd';
 import moment from 'moment';
@@ -9,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/app/i18n';
 
 interface SettingItem {
   key: string;
@@ -32,12 +34,13 @@ const Sider: React.FC = () => {
 
   // 切换语言
   const handleChangeLang = useCallback(() => {
-    const language = i18n.language === 'en' ? 'zh' : 'en';
+    const language = nextLanguage(i18n.language);
     i18n.changeLanguage(language);
     if (language === 'zh') {
       moment.locale('zh-cn');
-    }
-    if (language === 'en') {
+    } else if (language === 'ru') {
+      moment.locale('ru');
+    } else {
       moment.locale('en');
     }
     localStorage.setItem(STORAGE_LANG_KEY, language);
@@ -52,13 +55,13 @@ const Sider: React.FC = () => {
     return [
       {
         key: 'theme',
-        name: t('Theme'),
+        name: i18n.t('Theme'),
         icon: mode === 'dark' ? <Icon component={DarkSvg} /> : <Icon component={SunnySvg} />,
         onClick: handleToggleTheme,
       },
       {
         key: 'language',
-        name: t('language'),
+        name: i18n.t('language'),
         icon: <GlobalOutlined />,
         onClick: handleChangeLang,
       },

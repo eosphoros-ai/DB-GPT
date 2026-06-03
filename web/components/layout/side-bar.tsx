@@ -5,6 +5,8 @@ import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { nextLanguage } from '@/utils/language';
+import i18n from '@/app/i18n';
 import Icon, {
   ApartmentOutlined,
   AppstoreOutlined,
@@ -97,7 +99,7 @@ function SideBar() {
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
         setDialogueList(prev => prev.filter(d => d.conv_uid !== convUid));
-        message.success('已删除');
+        message.success(i18n.t('delete'));
       }
     } catch (error) {
       console.error('Failed to delete dialogue', error);
@@ -112,11 +114,14 @@ function SideBar() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return '刚刚';
-    if (diffMins < 60) return `${diffMins}分钟前`;
-    if (diffHours < 24) return `${diffHours}小时前`;
-    if (diffDays < 7) return `${diffDays}天前`;
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    if (diffMins < 1) return i18n.t('just_now');
+    if (diffMins < 60) return i18n.t('minutes_ago', { count: diffMins });
+    if (diffHours < 24) return i18n.t('hours_ago', { count: diffHours });
+    if (diffDays < 7) return i18n.t('days_ago', { count: diffDays });
+    return date.toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : i18n.language === 'ru' ? 'ru-RU' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
   }, []);
 
   const handleToggleMenu = useCallback(() => {
@@ -130,10 +135,11 @@ function SideBar() {
   }, [mode, setMode]);
 
   const handleChangeLang = useCallback(() => {
-    const language = i18n.language === 'en' ? 'zh' : 'en';
+    const language = nextLanguage(i18n.language);
     i18n.changeLanguage(language);
     if (language === 'zh') moment.locale('zh-cn');
-    if (language === 'en') moment.locale('en');
+    else if (language === 'ru') moment.locale('ru');
+    else moment.locale('en');
     localStorage.setItem(STORAGE_LANG_KEY, language);
   }, [i18n]);
 
@@ -141,7 +147,7 @@ function SideBar() {
     const items: RouteItem[] = [
       {
         key: 'explore',
-        name: t('explore'),
+        name: i18n.t('explore'),
         isActive: pathname === '/',
         iconSrc: '/pictures/explore.png',
         activeIconSrc: '/pictures/explore_active.png',
@@ -149,7 +155,7 @@ function SideBar() {
       },
       {
         key: 'skills',
-        name: t('skills'),
+        name: i18n.t('skills'),
         isActive: pathname.startsWith('/construct/skills'),
         iconSrc: '/pictures/skills.svg',
         activeIconSrc: '/pictures/skills_active.svg',
@@ -157,7 +163,7 @@ function SideBar() {
       },
       {
         key: 'datasources',
-        name: t('datasources'),
+        name: i18n.t('datasources'),
         isActive: pathname.startsWith('/construct/database'),
         iconSrc: '/pictures/datasource.svg',
         activeIconSrc: '/pictures/datasource_active.svg',
@@ -165,7 +171,7 @@ function SideBar() {
       },
       {
         key: 'knowledge',
-        name: t('knowledge'),
+        name: i18n.t('knowledge'),
         isActive: pathname.startsWith('/construct/knowledge'),
         iconSrc: '/pictures/knowledge_sidebar.svg',
         activeIconSrc: '/pictures/knowledge_sidebar_active.svg',
@@ -177,7 +183,7 @@ function SideBar() {
 
   const settingsContent = (
     <div className='w-56 py-1'>
-      <div className='px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider'>{t('management')}</div>
+      <div className='px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider'>{i18n.t('management')}</div>
       <div
         onClick={() => {
           router.push('/construct/app');
@@ -191,7 +197,7 @@ function SideBar() {
         )}
       >
         <AppstoreOutlined className='text-blue-500' />
-        <span>{t('app_management')}</span>
+        <span>{i18n.t('app_management')}</span>
       </div>
       <div
         onClick={() => {
@@ -206,7 +212,7 @@ function SideBar() {
         )}
       >
         <Icon component={ModelSvg} className='text-cyan-500' />
-        <span>{t('model_manage')}</span>
+        <span>{i18n.t('model_manage')}</span>
       </div>
       <div
         onClick={() => {
@@ -221,7 +227,7 @@ function SideBar() {
         )}
       >
         <ApartmentOutlined className='text-green-500' />
-        <span>{t('awel_workflow')}</span>
+        <span>{i18n.t('awel_workflow')}</span>
       </div>
       <div
         onClick={() => {
@@ -236,7 +242,7 @@ function SideBar() {
         )}
       >
         <EditOutlined className='text-orange-500' />
-        <span>{t('prompts')}</span>
+        <span>{i18n.t('prompts')}</span>
       </div>
       <div
         onClick={() => {
@@ -251,7 +257,7 @@ function SideBar() {
         )}
       >
         <GlobalOutlined className='text-purple-500' />
-        <span>{t('dbgpts_community')}</span>
+        <span>{i18n.t('dbgpts_community')}</span>
       </div>
       <div
         onClick={() => {
@@ -266,7 +272,7 @@ function SideBar() {
         )}
       >
         <LineChartOutlined className='text-red-500' />
-        <span>{t('models_evaluation')}</span>
+        <span>{i18n.t('models_evaluation')}</span>
       </div>
     </div>
   );
@@ -274,7 +280,8 @@ function SideBar() {
   useEffect(() => {
     const language = i18n.language;
     if (language === 'zh') moment.locale('zh-cn');
-    if (language === 'en') moment.locale('en');
+    else if (language === 'ru') moment.locale('ru');
+    else moment.locale('en');
   }, [i18n.language]);
 
   useEffect(() => {
@@ -294,7 +301,7 @@ function SideBar() {
             <Link href='/' className='flex justify-center items-center pb-2'>
               <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={40} height={40} />
             </Link>
-            <Tooltip title={t('Show_Sidebar') || '展开侧栏'} placement='right'>
+            <Tooltip title={i18n.t('Show_Sidebar') || i18n.t('Expand_Panel')} placement='right'>
               <div
                 onClick={handleToggleMenu}
                 className='flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors'
@@ -330,7 +337,7 @@ function SideBar() {
               arrow={false}
               overlayInnerStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
             >
-              <Tooltip title={t('construct')} placement='right'>
+              <Tooltip title={i18n.t('construct')} placement='right'>
                 <div className={smallMenuItemStyle(isSettingsActive)}>
                   <SidebarPictureIcon
                     src='/pictures/app.png'
@@ -363,7 +370,7 @@ function SideBar() {
         <Link href='/' className='flex items-center'>
           <Image src={logo} alt='DB-GPT' width={140} height={32} />
         </Link>
-        <Tooltip title={t('Close_Sidebar') || '收起侧栏'}>
+        <Tooltip title={i18n.t('Close_Sidebar') || i18n.t('Collapse_Panel')}>
           <div
             onClick={handleToggleMenu}
             className='flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors'
@@ -377,7 +384,7 @@ function SideBar() {
       <Link href='/'>
         <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
           <PlusOutlined className='text-xs' />
-          <span>{t('new_task')}</span>
+          <span>{i18n.t('new_task')}</span>
         </div>
       </Link>
 
@@ -429,7 +436,7 @@ function SideBar() {
                 alt='construct_icon'
               />
             </div>
-            <span className='text-sm'>{t('construct')}</span>
+            <span className='text-sm'>{i18n.t('construct')}</span>
           </div>
         </Popover>
       </div>
@@ -437,9 +444,9 @@ function SideBar() {
       {/* All Tasks Section */}
       <div className='mt-4 mb-2 px-1'>
         <div className='flex items-center justify-between'>
-          <span className='text-xs font-semibold text-gray-400 uppercase tracking-wider'>{t('all_tasks')}</span>
+          <span className='text-xs font-semibold text-gray-400 uppercase tracking-wider'>{i18n.t('all_tasks')}</span>
           <Link href='/conversations' className='inline-flex items-center'>
-            <Tooltip title={t('view_all')}>
+            <Tooltip title={i18n.t('view_all')}>
               <RightOutlined className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors text-xs leading-none' />
             </Tooltip>
           </Link>
@@ -469,7 +476,7 @@ function SideBar() {
                     <div className='text-[11px] text-gray-400 mt-0.5'>{formatRelativeTime(conv.gmt_created)}</div>
                   )}
                 </div>
-                <Tooltip title='删除'>
+                <Tooltip title={i18n.t('Delete_Btn')}>
                   <DeleteOutlined
                     onClick={e => handleDeleteDialogue(e, conv.conv_uid)}
                     className='text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1'
@@ -483,7 +490,7 @@ function SideBar() {
             <div className='text-gray-300 dark:text-gray-600 mb-2'>
               <MessageOutlined style={{ fontSize: 24 }} />
             </div>
-            <p className='text-xs text-gray-400'>{t('no_tasks')}</p>
+            <p className='text-xs text-gray-400'>{i18n.t('no_tasks')}</p>
           </div>
         )}
       </div>
@@ -501,7 +508,7 @@ function SideBar() {
               {mode === 'dark' ? <Icon component={DarkSvg} /> : <Icon component={SunnySvg} />}
             </div>
           </Popover>
-          <Popover content={t('language')}>
+          <Popover content={i18n.t('language')}>
             <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleChangeLang}>
               <GlobalOutlined />
             </div>

@@ -2,6 +2,7 @@ import { ConfigurableParams } from '@/types/common';
 import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
 import { useEffect } from 'react';
 import NestedFormFields from './nested-form-fields';
+import { useTranslation } from 'react-i18next';
 
 interface ParamValues {
   [key: string]: string | number | boolean | Record<string, any>;
@@ -37,6 +38,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
 
   // Transform data structure before form submission
   const normalizeFormValues = (values: any) => {
+  const { t } = useTranslation();
     const normalized = { ...values };
     params?.forEach(param => {
       if (param.nested_fields && normalized[param.param_name]) {
@@ -115,7 +117,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
 
       // Handle password input box
       if (isPrivacy) {
-        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder='请输入密码' />;
+        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder={t('enter_password')} />;
       }
 
       // Handle normal text input box

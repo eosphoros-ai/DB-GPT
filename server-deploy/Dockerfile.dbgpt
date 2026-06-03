@@ -1,0 +1,48 @@
+# DB-GPT UI из исходников (web/locales/ru) + backend i18n .mo из dbgpt-src
+ARG DBGPT_BASE_IMAGE=eosphorosai/dbgpt-openai:latest
+
+FROM ${DBGPT_BASE_IMAGE} AS dbgpt-base
+
+FROM node:20-bookworm AS web-builder
+WORKDIR /build
+COPY dbgpt-src/web ./web
+COPY dbgpt-deploy/scripts/prepare_web_deploy.py dbgpt-deploy/scripts/build_web_static.sh ./scripts/
+
+RUN sed -i 's/\r$//' ./scripts/build_web_static.sh ./scripts/prepare_web_deploy.py \
+    && sh ./scripts/build_web_static.sh /build/web
+
+FROM dbgpt-base AS final
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
+    && ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime \
+    && echo "Europe/Moscow" > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir "clickhouse-connect>=0.7.0" \
+    && python -c "import clickhouse_connect; print('clickhouse_connect OK')"
+
+RUN rm -rf /app/packages/dbgpt-app/src/dbgpt_app/static/web/_next \
+    /app/packages/dbgpt-app/src/dbgpt_app/static/web/.dbgpt-ru-prebuilt
+COPY --from=web-builder /build/web/out/ /app/packages/dbgpt-app/src/dbgpt_app/static/web/
+COPY dbgpt-src/i18n/locales/ru/ /app/i18n/locales/ru/
+# Sync agent core context + agentic API from fork (newer than base image)
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/context/ \
+    /app/packages/dbgpt-core/src/dbgpt/agent/core/context/
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/agent.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/core/agent.py
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/core/base_agent.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/core/base_agent.py
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/agent/expand/actions/react_action.py \
+    /app/packages/dbgpt-core/src/dbgpt/agent/expand/actions/react_action.py
+COPY dbgpt-src/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py \
+    /app/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py
+# OpenRouter branch overlay (prepare_dbgpt_src.sh before build)
+COPY dbgpt-src/packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py \
+    /app/packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py
+RUN touch /app/packages/dbgpt-app/src/dbgpt_app/static/web/.dbgpt-ru-prebuilt \
+    && grep -q DBGPT_OPENROUTER_NATIVE /app/packages/dbgpt-core/src/dbgpt/model/proxy/llms/chatgpt.py \
+    && echo "UI: ru-i18n; agentic_data_api; OpenRouter native in chatgpt.py" \
+    || echo "WARN: run prepare_dbgpt_src.sh before build for OpenRouter"

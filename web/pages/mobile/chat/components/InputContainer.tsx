@@ -13,6 +13,7 @@ import { MobileChatContext } from '../';
 import ModelSelector from './ModelSelector';
 import Resource from './Resource';
 import Thermometer from './Thermometer';
+import { useTranslation } from 'react-i18next';
 
 const tagColors = ['magenta', 'orange', 'geekblue', 'purple', 'cyan', 'green'];
 
@@ -170,6 +171,7 @@ const InputContainer: React.FC = () => {
 
   // 暂停回复
   const abort = () => {
+  const { t } = useTranslation();
     if (!canAbort) {
       return;
     }
@@ -243,7 +245,7 @@ const InputContainer: React.FC = () => {
           {paramType?.includes('temperature') && <Thermometer />}
         </div>
         <div className='flex items-center justify-between text-lg font-bold'>
-          <Popover content='暂停回复' trigger={['hover']}>
+          <Popover content={t('pause_reply')} trigger={['hover']}>
             <PauseCircleOutlined
               className={classnames('p-2 cursor-pointer', {
                 'text-[#0c75fc]': canAbort,
@@ -252,7 +254,7 @@ const InputContainer: React.FC = () => {
               onClick={abort}
             />
           </Popover>
-          <Popover content='再来一次' trigger={['hover']}>
+          <Popover content={t('try_again_2')} trigger={['hover']}>
             <RedoOutlined
               className={classnames('p-2 cursor-pointer', {
                 'text-gray-400': !history.length || !canNewChat,
@@ -263,7 +265,7 @@ const InputContainer: React.FC = () => {
           {loading ? (
             <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 18 }} spin />} className='p-2' />
           ) : (
-            <Popover content='清除历史' trigger={['hover']}>
+            <Popover content={t('clear_history')} trigger={['hover']}>
               <ClearOutlined
                 className={classnames('p-2 cursor-pointer', {
                   'text-gray-400': !history.length || !canNewChat,
@@ -284,7 +286,7 @@ const InputContainer: React.FC = () => {
         )}
       >
         <Input.TextArea
-          placeholder='可以问我任何问题'
+          placeholder={t('ask_me_anything')}
           className='w-full resize-none border-0 p-0 focus:shadow-none'
           value={userInput}
           autoSize={{ minRows: 1 }}

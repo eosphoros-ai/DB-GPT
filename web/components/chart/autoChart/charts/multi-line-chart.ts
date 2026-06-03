@@ -1,6 +1,7 @@
 import type { Datum } from '@antv/ava';
 import { hasSubset } from '../advisor/utils';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
+import i18n from '@/app/i18n';
 import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sortData } from './util';
 
 const MULTI_LINE_CHART = 'multi_line_chart';
@@ -73,7 +74,7 @@ export const multi_line_chart: CustomChart = {
   /* 图表知识 */
   chartKnowledge: ckb as ChartKnowledge,
   /** 图表中文名 */
-  chineseName: '折线图',
+  chineseName: i18n.t('multi_line_chart'),
 };
 
 export default multi_line_chart;

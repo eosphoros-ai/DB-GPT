@@ -1,5 +1,7 @@
+import i18n from '@/app/i18n';
 import { Button, Drawer, Input, Tag } from 'antd';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Tags {
   reason: string;
@@ -22,7 +24,7 @@ const DislikeDrawer: React.FC<{
 
   return (
     <Drawer
-      title='你的反馈助我进步'
+      title={i18n.t('your_feedback_helps_me_improve')}
       placement='bottom'
       open={open}
       onClose={() => setFeedbackOpen(false)}
@@ -53,7 +55,7 @@ const DislikeDrawer: React.FC<{
           })}
         </div>
         <Input.TextArea
-          placeholder='描述一下具体问题或更优的答案'
+          placeholder={i18n.t('feedback_tip')}
           className='h-24 resize-none mb-2'
           value={remark}
           onChange={e => setRemark(e.target.value.trim())}
@@ -64,9 +66,7 @@ const DislikeDrawer: React.FC<{
             onClick={() => {
               setFeedbackOpen(false);
             }}
-          >
-            取消
-          </Button>
+          >{i18n.t('cancel')}</Button>
           <Button
             type='primary'
             className='min-w-16 h-8'
@@ -79,9 +79,7 @@ const DislikeDrawer: React.FC<{
               });
             }}
             loading={loading}
-          >
-            确认
-          </Button>
+          >{i18n.t('verify')}</Button>
         </div>
       </div>
     </Drawer>

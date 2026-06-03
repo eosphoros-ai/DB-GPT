@@ -1,0 +1,169 @@
+# DB-GPT: чистый UI (ru из исходников), старые volumes и подключения, без i18n-патчей.
+services:
+  db:
+    image: mysql/mysql-server:8.0
+    container_name: dbgpt-mysql
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-aa123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dbgpt}
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbgpt-mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-aa123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: dbgpt-clickhouse
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-fmcg}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-dbgpt}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-dbgpt_ch_pass}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - dbgpt-clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/init:/docker-entrypoint-initdb.d:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:8123/ping | grep -q Ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  fmcg-loader:
+    build: ./fmcg-loader
+    container_name: dbgpt-fmcg-loader
+    profiles: ["init-data"]
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "8123"
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-dbgpt}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-dbgpt_ch_pass}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-fmcg}
+      TARGET_BYTES: ${TARGET_BYTES:-2500000000}
+      BATCH_SIZE: ${BATCH_SIZE:-250000}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - dbgptnet
+    restart: "no"
+
+  webserver:
+    build:
+      context: /home/algerd
+      dockerfile: dbgpt-deploy/Dockerfile.dbgpt
+    image: dbgpt-local:latest
+    container_name: dbgpt-webserver
+    command: ["/bin/sh", "/app/scripts/entrypoint-dbgpt.sh"]
+    environment:
+      DBGPT_CONFIG_FILE: ${DBGPT_CONFIG_FILE:-dbgpt-openrouter.toml}
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dbgpt}
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-aa123456}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_BASE: ${OPENROUTER_API_BASE:-https://openrouter.ai/api/v1}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-v4-flash}
+      OPENROUTER_PROVIDER_ORDER: ${OPENROUTER_PROVIDER_ORDER:-alibaba}
+      OPENROUTER_ALLOW_FALLBACKS: ${OPENROUTER_ALLOW_FALLBACKS:-false}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_EMBED_MODEL: ${OPENROUTER_EMBED_MODEL:-openai/text-embedding-3-small}
+      OPENROUTER_EMBED_API_URL: ${OPENROUTER_EMBED_API_URL:-https://openrouter.ai/api/v1/embeddings}
+      LMSTUDIO_API_BASE: ${LMSTUDIO_API_BASE:-http://192.168.88.101:1238/v1}
+      LMSTUDIO_MODEL: ${LMSTUDIO_MODEL:-openai/gpt-oss-20b}
+      LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-lm-studio}
+      LMSTUDIO_EMBED_MODEL: ${LMSTUDIO_EMBED_MODEL:-text-embedding-nomic-embed-text-v1.5}
+      LMSTUDIO_EMBED_API_URL: ${LMSTUDIO_EMBED_API_URL:-http://192.168.88.101:1238/v1/embeddings}
+      LANGUAGE: ${LANGUAGE:-ru}
+      DBGPT_LANG: ${DBGPT_LANG:-ru}
+      DBGPT_DEFAULT_DATABASE: ${DBGPT_DEFAULT_DATABASE:-fmcg}
+      TZ: ${TZ:-Europe/Moscow}
+      LC_ALL: C.UTF-8
+      LC_TIME: ru_RU.UTF-8
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./overrides/auto_execute_prompt.py:/app/packages/dbgpt-app/src/dbgpt_app/scene/chat_db/auto_execute/prompt.py:ro
+      - ./scripts/fix_db_default_outer.py:/app/scripts/fix_db_default_outer.py:ro
+      - ./scripts/entrypoint-dbgpt.sh:/app/scripts/entrypoint-dbgpt.sh:ro
+      - ./skills/walmart-sales-analyzer:/app/skills/walmart-sales-analyzer:ro
+      - ./skills/financial-report-analyzer:/app/skills/financial-report-analyzer:ro
+      - ./skills/csv-data-analysis:/app/skills/csv-data-analysis:ro
+      - ./skills/fmcg-analyst:/app/skills/fmcg-analyst:ro
+      - ./skills/skill-creator:/app/skills/skill-creator:ro
+      - ./skills/agent-browser:/app/skills/agent-browser:ro
+      - dbgpt-pilot-data:/app/pilot/data
+      - dbgpt-pilot-message:/app/pilot/message
+    ports:
+      - "5670:5670"
+    depends_on:
+      db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5670/', timeout=5)\""]
+      interval: 15s
+      timeout: 10s
+      retries: 30
+      start_period: 180s
+
+  register-datasource:
+    image: python:3.11-slim-bookworm
+    container_name: dbgpt-register-ch
+    profiles: ["init-data"]
+    working_dir: /scripts
+    volumes:
+      - ./scripts:/scripts:ro
+    environment:
+      DBGPT_URL: http://webserver:5670
+      CH_HOST: clickhouse
+      CH_PORT: "8123"
+      CH_USER: ${CLICKHOUSE_USER:-dbgpt}
+      CH_PASSWORD: ${CLICKHOUSE_PASSWORD:-dbgpt_ch_pass}
+      CH_DATABASE: ${CLICKHOUSE_DB:-fmcg}
+      DS_NAME: fmcg
+      REGISTER_MODE: ${REGISTER_MODE:-refresh}
+      DBGPT_USER_ID: "001"
+    command: ["python", "-u", "/scripts/register_clickhouse.py"]
+    depends_on:
+      webserver:
+        condition: service_healthy
+    networks:
+      - dbgptnet
+    restart: "no"
+
+volumes:
+  dbgpt-mysql-data:
+  dbgpt-clickhouse-data:
+  dbgpt-pilot-data:
+  dbgpt-pilot-message:
+
+networks:
+  dbgptnet:
+    driver: bridge

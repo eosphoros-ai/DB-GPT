@@ -9,7 +9,7 @@
 import { useAsyncEffect } from 'ahooks';
 import { Modal } from 'antd';
 import { cloneDeep } from 'lodash';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
@@ -32,9 +32,9 @@ interface GroupedTurn {
 }
 
 const OpenCodeChatCompletion: React.FC = () => {
-  const searchParams = useSearchParams();
-  const chatId = searchParams?.get('id') ?? '';
-  const scene = searchParams?.get('scene') ?? '';
+  const searchParams = usePageQuery();
+  const chatId = searchParams.get('id') ?? '';
+  const scene = searchParams.get('scene') ?? '';
 
   const { currentDialogInfo, model } = useContext(ChatContext);
   const {

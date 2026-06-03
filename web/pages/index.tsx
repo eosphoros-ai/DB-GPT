@@ -1,4 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
+import i18n from '@/app/i18n';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
@@ -16,6 +17,7 @@ import ManusRightPanel, {
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import axios from '@/utils/ctx-axios';
+import { localizeAgentText } from '@/utils/localize-agent-text';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
   ArrowUpOutlined,
@@ -92,17 +94,18 @@ const _formatFileSize = (bytes: number): string => {
 const _getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
+    return i18n.t('file_type_spreadsheet');
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
+    return i18n.t('file_type_spreadsheet');
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image'))
+    return i18n.t('artifact_type_image');
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return i18n.t('file_type_word');
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return i18n.t('file_type_text');
   if (['json'].includes(ext)) return 'JSON';
-  return '文件';
+  return i18n.t('artifact_type_file');
 };
 
 const _getFileIcon = (fileName: string, mimeType?: string) => {
@@ -358,7 +361,12 @@ const convertToManusFormat = (
       lower.includes('select_skill')
     )
       return 'skill';
-    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes('sql查询')) return 'sql';
+    if (
+      lower.includes('sql_query') ||
+      lower.includes('sql query') ||
+      lower.includes((t ?? i18n.t.bind(i18n))('sql_query'))
+    )
+      return 'sql';
     if (lower.includes('read') || lower.includes('load')) return 'read';
     if (lower.includes('edit')) return 'edit';
     if (lower.includes('write') || lower.includes('save')) return 'write';
@@ -393,7 +401,7 @@ const convertToManusFormat = (
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
+        title: localizeAgentText(step.title || `Step ${step.step}`, t),
         subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
         description: cleanDetail || undefined,
         phase: (step as any).phase,
@@ -419,7 +427,7 @@ const convertToManusFormat = (
       activeStep = {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
+        title: localizeAgentText(step.title || `Step ${step.step}`, t),
         subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
         status: getStepStatus(step.status),
         detail: cleanDetail,
@@ -445,10 +453,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'walmart_sales',
     icon: '📊',
-    title: '沃尔玛销售数据分析',
-    description: '分析沃尔玛销售CSV数据，生成可视化网页报告',
-    query:
-      '请全面分析这份沃尔玛销售数据，包括各门店销售趋势、假日影响、温度与油价对销售的影响等维度，生成一份精美的交互式网页分析报告。',
+    title: i18n.t('example_walmart_sales_title'),
+    description: i18n.t('example_walmart_sales_desc'),
+    query: i18n.t('example_walmart_sales_query'),
     fileName: 'Walmart_Sales.csv',
     fileType: 'text/csv',
     fileSize: 98304, // ~96 KB
@@ -460,10 +467,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'db_profile_report',
     icon: '🗄️',
-    title: '数据库画像与分析报告',
-    description: '连接数据库后，生成数据库画像并生成可视化网页报告',
-    query:
-      '请分析当前连接的数据库，生成数据库画像（包括表结构、字段信息、数据量统计等），并生成一份精美的交互式网页分析报告。',
+    title: i18n.t('example_db_profile_report_title'),
+    description: i18n.t('example_db_profile_report_desc'),
+    query: i18n.t('example_db_profile_report_query'),
     dbName: 'Walmart_Sales',
     color: 'from-emerald-500/10 to-teal-500/10',
     borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
@@ -472,11 +478,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'fin_report',
     icon: '📈',
-    title: '金融财报深度分析',
-    description: '分析浙江海翔药业年度报告，生成数据可视化报告',
-    query:
-      '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
-    fileName: '2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf',
+    title: i18n.t('example_fin_report_title'),
+    description: i18n.t('example_fin_report_desc'),
+    query: i18n.t('example_fin_report_query'),
+    fileName: i18n.t('sample_annual_report_2019_pdf'),
     fileType: 'application/pdf',
     fileSize: 2621440, // ~2.5 MB
     color: 'from-violet-500/10 to-purple-500/10',
@@ -487,10 +492,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'create_sql_skill',
     icon: '🛠️',
-    title: '创建SQL分析技能',
-    description: '使用skill-creator创建一个实用的SQL数据分析技能',
-    query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
+    title: i18n.t('example_create_sql_skill_title'),
+    description: i18n.t('example_create_sql_skill_desc'),
+    query: i18n.t('example_create_sql_skill_query'),
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -501,7 +505,7 @@ const EXAMPLE_CARDS = [
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { model, setModel } = useContext(ChatContext);
+  const { model, modelList, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -581,40 +585,44 @@ const Playground: NextPage = () => {
   } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
+  // Client-only: empty API_BASE_URL is valid when UI is served from the API host (e.g. :5670).
+  const apiReady = typeof window !== 'undefined';
+
   // Fetch Data Sources
-  const { data: dataSources, loading: _loadingSources } = useRequest(async () => {
-    try {
-      const response: any = await axios.get('/api/v2/serve/datasources');
-      // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
-      const result = response?.success !== undefined ? response : response?.data;
-      if (result?.success) {
-        return (result.data || []).map((item: any) => ({
-          ...item,
-          db_name: item.db_name || item.params?.name || item.params?.database || `${item.type}-${item.id}`,
-          db_type: item.type,
-        })) as DataSource[];
-      }
-      return [];
-    } catch (e) {
-      console.error('Failed to fetch datasources', e);
-      return [];
-    }
-  });
+  const { data: dataSources, loading: _loadingSources } = useRequest(
+    () =>
+      axios
+        .get('/api/v2/serve/datasources')
+        .then((response: any) => {
+          if (response?.success && Array.isArray(response.data)) {
+            return response.data.map((item: any) => ({
+              ...item,
+              db_name:
+                item.db_name || item.params?.database || item.params?.name || `${item.type}-${item.id}`,
+              db_type: item.type,
+            })) as DataSource[];
+          }
+          return [];
+        })
+        .catch(e => {
+          console.error('Failed to fetch datasources', e);
+          return [];
+        }),
+    { ready: apiReady },
+  );
 
   // Fetch Knowledge Bases
-  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
-    try {
-      const response = await sendSpacePostRequest('/knowledge/space/list', {});
-      // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
-      if (response?.success) {
-        return response.data || [];
-      }
-      return [];
-    } catch (e) {
-      console.error('Failed to fetch knowledge spaces', e);
-      return [];
-    }
-  });
+  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(
+    () => {
+      return sendSpacePostRequest('/knowledge/space/list', {})
+        .then(response => (response?.success ? response.data || [] : []))
+        .catch(e => {
+          console.error('Failed to fetch knowledge spaces', e);
+          return [];
+        });
+    },
+    { ready: apiReady },
+  );
 
   const normalizeText = (value: unknown): string => {
     if (typeof value === 'string') return value;
@@ -653,42 +661,47 @@ const Playground: NextPage = () => {
   };
 
   // Fetch Skills/DBGPTs list
-  const { data: skillsList, loading: _loadingSkills } = useRequest(async () => {
-    try {
-      const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
-      // ctx-axios interceptor returns response.data directly
-      if (response?.success && Array.isArray(response.data)) {
-        return response.data.map((item: any) => ({
-          id: String(item.id || item.name),
-          name: normalizeText(item.name),
-          description: normalizeText(item.description),
-          type: item.type === 'official' ? 'official' : 'personal',
-          icon:
-            item.skill_type === 'data_analysis'
-              ? '📊'
-              : item.skill_type === 'coding'
-                ? '💻'
-                : item.skill_type === 'web_search'
-                  ? '🔍'
-                  : item.skill_type === 'knowledge_qa'
-                    ? '📚'
-                    : item.skill_type === 'chat'
-                      ? '💬'
-                      : '⚡',
-        })) as Skill[];
-      }
-      return [];
-    } catch (e) {
-      console.error('Failed to fetch skills', e);
-      return [];
-    }
-  });
+  const { data: skillsList, loading: _loadingSkills } = useRequest(
+    () => {
+      return axios
+        .get('/api/v1/skills/list')
+        .then(response => {
+          if (response?.success && Array.isArray(response.data)) {
+            return response.data.map((item: any) => ({
+              id: String(item.id || item.name),
+              name: normalizeText(item.name),
+              description: normalizeText(item.description),
+              type: item.type === 'official' ? 'official' : 'personal',
+              icon:
+                item.skill_type === 'data_analysis'
+                  ? '📊'
+                  : item.skill_type === 'coding'
+                    ? '💻'
+                    : item.skill_type === 'web_search'
+                      ? '🔍'
+                      : item.skill_type === 'knowledge_qa'
+                        ? '📚'
+                        : item.skill_type === 'chat'
+                          ? '💬'
+                          : '⚡',
+            })) as Skill[];
+          }
+          return [];
+        })
+        .catch(e => {
+          console.error('Failed to fetch skills', e);
+          return [];
+        });
+    },
+    { ready: apiReady },
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
+    if (!router.isReady) return;
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
@@ -704,12 +717,14 @@ const Playground: NextPage = () => {
       setFilePreview(null);
       setFilePreviewError(null);
       setArtifacts([]);
+      setPreviewArtifact(null);
+      setRightPanelView('execution');
       setRightPanelTab('preview');
       setStreamingSummary('');
       setSummaryComplete(false);
       setTaskPlan([]);
     }
-  }, [router.query.id]);
+  }, [router.isReady, router.query.id, conversationId]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -730,12 +745,12 @@ const Playground: NextPage = () => {
             file_key: uploadedFilePath,
           },
         });
-        if (res.data?.success && res.data?.data) {
+        if (res?.success && res?.data) {
           let parsed: any;
           try {
-            parsed = JSON.parse(res.data.data);
+            parsed = JSON.parse(res.data);
           } catch {
-            parsed = res.data.data;
+            parsed = res.data;
           }
           if (Array.isArray(parsed) && parsed.length > 0) {
             const columns = Object.keys(parsed[0] || {});
@@ -763,10 +778,10 @@ const Playground: NextPage = () => {
             });
           }
         } else {
-          setFilePreviewError(res.data?.err_msg || '文件预览失败');
+          setFilePreviewError(res?.err_msg || t('file_preview_failed'));
         }
       } catch (err: any) {
-        setFilePreviewError(err?.message || '文件预览失败');
+        setFilePreviewError(err?.message || t('file_preview_failed'));
       } finally {
         setFilePreviewLoading(false);
       }
@@ -929,6 +944,16 @@ const Playground: NextPage = () => {
     const lastRound = rounds[rounds.length - 1];
     return lastRound?.viewMsg?.id || null;
   }, [activeViewMsgId, rounds]);
+
+  useEffect(() => {
+    if (!previewArtifact) return;
+    if (previewArtifact.messageId && previewArtifact.messageId !== selectedViewMsgId) {
+      setPreviewArtifact(null);
+      if (rightPanelView === 'html-preview' || rightPanelView === 'image-preview') {
+        setRightPanelView('execution');
+      }
+    }
+  }, [selectedViewMsgId, previewArtifact, rightPanelView]);
 
   const parseCsvLine = (line: string) => {
     const result: string[] = [];
@@ -1137,7 +1162,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning(t('file_not_available_for_download'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1146,16 +1171,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || t('file_not_available_for_download'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning(t('file_download_failed'));
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning(t('file_not_available_for_download'));
         }
         break;
       }
@@ -1396,6 +1421,12 @@ const Playground: NextPage = () => {
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     if ((!inputQuery.trim() && !effectiveFile) || loading) return;
 
+    const effectiveModel = model || (modelList?.length ? modelList[0] : '');
+    if (!effectiveModel) {
+      message.warning(t('choose_model') || 'Select a model first');
+      return;
+    }
+
     let finalQuery = inputQuery;
     const appCode = 'chat_react_agent';
     const chatMode = 'chat_react_agent';
@@ -1526,7 +1557,7 @@ const Playground: NextPage = () => {
         body: JSON.stringify({
           conv_uid: currentConvId,
           chat_mode: chatMode,
-          model_name: model,
+          model_name: effectiveModel,
           user_input: finalQuery,
           temperature: 0.6,
           max_new_tokens: 4000,
@@ -1618,9 +1649,9 @@ const Playground: NextPage = () => {
                 idx === existingStepIndex
                   ? {
                       ...step,
-                      title: payload.title,
-                      detail: payload.detail,
-                      phase: payload.phase,
+                      title: localizeAgentText(payload.title, t),
+                      detail: localizeAgentText(payload.detail, t),
+                      phase: payload.phase ? localizeAgentText(payload.phase, t) : step.phase,
                       todoMeta: payload.todo_meta || step.todoMeta,
                       status: 'running' as const,
                     }
@@ -1635,9 +1666,9 @@ const Playground: NextPage = () => {
                 {
                   id,
                   step: payload.step,
-                  title: payload.title,
-                  detail: payload.detail,
-                  phase: payload.phase,
+                  title: localizeAgentText(payload.title, t),
+                  detail: localizeAgentText(payload.detail, t),
+                  phase: payload.phase ? localizeAgentText(payload.phase, t) : undefined,
                   todoMeta: payload.todo_meta,
                   status: 'running' as const,
                   action: payload.action,
@@ -1651,7 +1682,7 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 outputs: { ...current.outputs, [id]: current.outputs[id] || [] },
                 stepThoughts: nextThoughts,
-                // Only auto-focus for existing step updates (e.g., "思考中" -> "sql_query").
+                // Only auto-focus for existing step updates (e.g. thinking -> sql_query).
                 // New placeholder steps wait for step.meta to get real content before stealing focus.
                 activeStepId: existingStepIndex >= 0 ? id : current.activeStepId || id,
               },
@@ -1701,7 +1732,7 @@ const Playground: NextPage = () => {
               }
               return {
                 ...item,
-                title: payload.title || item.title,
+                title: localizeAgentText(payload.title || item.title, t),
                 detail: parts.join('\n') || item.detail,
                 action: payload.action || item.action,
                 actionInput: payload.action_input || item.actionInput,
@@ -1709,11 +1740,12 @@ const Playground: NextPage = () => {
               };
             });
             // Route model-provided action display fields to the subtle status row.
-            const displayThought = payload.action_intention
+            const rawThought = payload.action_intention
               ? payload.action_reason
                 ? `${payload.action_intention}\n${payload.action_reason}`
                 : payload.action_intention
               : payload.thought;
+            const displayThought = rawThought ? localizeAgentText(rawThought, t) : undefined;
             const nextThoughts = displayThought
               ? {
                   ...current.stepThoughts,
@@ -1958,7 +1990,7 @@ const Playground: NextPage = () => {
     if (loading) return;
 
     try {
-      message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
+      message.loading({ content: t('loading_example'), key: 'example-loading', duration: 0 });
 
       let filePath: string | null = null;
       let fakeFile: File | null = null;
@@ -1979,7 +2011,7 @@ const Playground: NextPage = () => {
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
-          message.error('加载示例失败: ' + errMsg);
+          message.error(t('failed_to_load_example') + errMsg);
           return;
         }
       }
@@ -2011,7 +2043,7 @@ const Playground: NextPage = () => {
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error('加载示例失败: ' + errMessage);
+      message.error(t('failed_to_load_example') + errMessage);
     }
   };
 
@@ -2040,6 +2072,8 @@ const Playground: NextPage = () => {
     setActiveMessageId(null);
     setActiveViewMsgId(null);
     setArtifacts([]);
+    setPreviewArtifact(null);
+    setRightPanelView('execution');
     setStreamingSummary('');
     setSummaryComplete(false);
 
@@ -2200,6 +2234,9 @@ const Playground: NextPage = () => {
   const loadConversation = async (convUid: string) => {
     if (historyLoading) return;
     setHistoryLoading(true);
+    setPreviewArtifact(null);
+    setRightPanelView('execution');
+    setSelectedStepId(null);
     try {
       const res: any = await axios.get(`/api/v1/chat/dialogue/messages/history?con_uid=${convUid}`);
       let msgList: any[] | null = null;
@@ -2225,7 +2262,7 @@ const Playground: NextPage = () => {
       }
     } catch (e) {
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error(t('failed_to_load_chat_history'));
     } finally {
       setHistoryLoading(false);
     }
@@ -2234,7 +2271,7 @@ const Playground: NextPage = () => {
   // Share current conversation — create share link and copy to clipboard
   const handleShare = async () => {
     if (!conversationId) {
-      message.warning('请先开始一段对话再分享');
+      message.warning(t('start_a_conversation_before_sharing'));
       return;
     }
     try {
@@ -2243,10 +2280,10 @@ const Playground: NextPage = () => {
       if (!shareUrl) throw new Error('No share URL returned');
       const fullUrl = `${window.location.origin}${shareUrl}`;
       await navigator.clipboard.writeText(fullUrl);
-      message.success('分享链接已复制到剪贴板！');
+      message.success(t('share_link_copied_to_clipboard'));
     } catch (e) {
       console.error('Failed to create share link', e);
-      message.error('创建分享链接失败，请稍后重试');
+      message.error(t('failed_to_create_share_link_please_try_again_lat'));
     }
   };
 
@@ -2514,6 +2551,13 @@ const Playground: NextPage = () => {
                             </div>
                           )}
                           <Input.TextArea
+                            id='dbgpt-agent-query'
+                            name='user_query'
+                            autoComplete='off'
+                            aria-label={
+                              t('ask_data_question') ||
+                              'Ask a question about your database, upload a CSV, or generate a report...'
+                            }
                             value={query}
                             onChange={e => {
                               const newValue = e.target.value;
@@ -2642,7 +2686,7 @@ const Playground: NextPage = () => {
                                                       : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                                   }`}
                                                 >
-                                                  {skill.type === 'official' ? '官方' : '个人'}
+                                                  {skill.type === 'official' ? t('skills_official_tag') : t('personal')}
                                                 </span>
                                               </div>
                                               <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -2663,14 +2707,16 @@ const Playground: NextPage = () => {
                                         <div className='text-center py-8 text-gray-400'>
                                           <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                           <div className='text-xs'>
-                                            {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
+                                            {skillSearchQuery
+                                              ? t('no_matching_skills_found')
+                                              : t('no_skills_available')}
                                           </div>
                                         </div>
                                       )}
                                     </div>
                                     <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                       <span className='text-[10px] text-gray-400'>
-                                        {(skillsList || []).length} 个技能可用
+                                        {t('skills_available_count', { count: (skillsList || []).length })}
                                       </span>
                                       <Button
                                         type='link'
@@ -2681,7 +2727,7 @@ const Playground: NextPage = () => {
                                         }}
                                         className='text-[10px] p-0 h-auto'
                                       >
-                                        管理技能 →
+                                        {t('manage_skills')}
                                       </Button>
                                     </div>
                                   </div>
@@ -2841,6 +2887,12 @@ const Playground: NextPage = () => {
                     stepThoughts: _stepThoughts,
                   } = convertToManusFormat(execution, undefined, t);
                   const isRunning = execution?.steps.some(s => s.status === 'running') || false;
+                  const scopedPreviewArtifact =
+                    previewArtifact && previewArtifact.messageId === activeViewMsg?.id ? previewArtifact : null;
+                  const effectivePanelView =
+                    (rightPanelView === 'html-preview' || rightPanelView === 'image-preview') && !scopedPreviewArtifact
+                      ? 'execution'
+                      : rightPanelView;
 
                   return (
                     <ManusRightPanel
@@ -2882,9 +2934,9 @@ const Playground: NextPage = () => {
                           setRightPanelCollapsed(false);
                         }
                       }}
-                      panelView={rightPanelView}
+                      panelView={effectivePanelView}
                       onPanelViewChange={setRightPanelView}
-                      previewArtifact={previewArtifact}
+                      previewArtifact={scopedPreviewArtifact}
                       skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
                       summaryContent={streamingSummary || activeViewMsg?.context || ''}
                       isSummaryStreaming={!_summaryComplete && !!streamingSummary}
@@ -2949,6 +3001,13 @@ const Playground: NextPage = () => {
                       )}
 
                       <Input.TextArea
+                        id='dbgpt-agent-query'
+                        name='user_query'
+                        autoComplete='off'
+                        aria-label={
+                          t('ask_data_question') ||
+                          'Ask a question about your database, upload a CSV, or generate a report...'
+                        }
                         value={query}
                         onChange={e => {
                           const newValue = e.target.value;
@@ -3083,7 +3142,7 @@ const Playground: NextPage = () => {
                                                   : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                               }`}
                                             >
-                                              {skill.type === 'official' ? '官方' : '个人'}
+                                              {skill.type === 'official' ? t('skills_official_tag') : t('personal')}
                                             </span>
                                           </div>
                                           <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>
@@ -3104,14 +3163,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <ThunderboltOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {skillSearchQuery ? '未找到匹配的技能' : '暂无可用技能'}
+                                        {skillSearchQuery ? t('no_matching_skills_found') : t('no_skills_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(skillsList || []).length} 个技能可用
+                                    {t('skills_available_count', { count: (skillsList || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3122,7 +3181,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理技能 →
+                                    {t('manage_skills')}
                                   </Button>
                                 </div>
                               </div>
@@ -3167,7 +3226,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索数据库'
+                                    placeholder={t('search_database')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={dbSearchQuery}
                                     onChange={e => setDbSearchQuery(e.target.value)}
@@ -3232,14 +3291,14 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <DatabaseOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {dbSearchQuery ? '未找到匹配的数据库' : '暂无可用数据库'}
+                                        {dbSearchQuery ? t('no_matching_database_found') : t('no_database_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(dataSources || []).length} 个数据库可用
+                                    {t('databases_available_count', { count: (dataSources || []).length })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3250,7 +3309,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理数据库 →
+                                    {t('manage_databases')}
                                   </Button>
                                 </div>
                               </div>
@@ -3295,7 +3354,7 @@ const Playground: NextPage = () => {
                               <div className='w-[320px] bg-white dark:bg-[#2c2d31] rounded-xl shadow-xl overflow-hidden'>
                                 <div className='p-3 border-b border-gray-100 dark:border-gray-700'>
                                   <Input
-                                    placeholder='搜索知识库'
+                                    placeholder={t('search_knowledge_base')}
                                     prefix={<SearchOutlined className='text-gray-400' />}
                                     value={knowledgeSearchQuery}
                                     onChange={e => setKnowledgeSearchQuery(e.target.value)}
@@ -3355,14 +3414,18 @@ const Playground: NextPage = () => {
                                     <div className='text-center py-8 text-gray-400'>
                                       <BookOutlined className='text-2xl mb-2 opacity-50' />
                                       <div className='text-xs'>
-                                        {knowledgeSearchQuery ? '未找到匹配的知识库' : '暂无可用知识库'}
+                                        {knowledgeSearchQuery
+                                          ? t('no_matching_knowledge_base')
+                                          : t('no_knowledge_base_available')}
                                       </div>
                                     </div>
                                   )}
                                 </div>
                                 <div className='border-t border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50'>
                                   <span className='text-[10px] text-gray-400'>
-                                    {(knowledgeSpaces || []).length} 个知识库可用
+                                    {t('knowledge_bases_available_count', {
+                                      count: (knowledgeSpaces || []).length,
+                                    })}
                                   </span>
                                   <Button
                                     type='link'
@@ -3373,7 +3436,7 @@ const Playground: NextPage = () => {
                                     }}
                                     className='text-[10px] p-0 h-auto'
                                   >
-                                    管理知识库 →
+                                    {t('manage_knowledge')}
                                   </Button>
                                 </div>
                               </div>

@@ -3,6 +3,7 @@ import { getBenchmarkTaskList } from '@/client/api/models_evaluation';
 import { EvaluationData, getBenchmarkTaskListRequest } from '@/types/models_evaluation';
 import { useRequest } from 'ahooks';
 import { message } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 interface UseEvaluationListProps {
   filterValue?: string;
@@ -10,6 +11,7 @@ interface UseEvaluationListProps {
 }
 
 export const useEvaluationList = (props: UseEvaluationListProps) => {
+  const { t } = useTranslation();
   const { filterValue = '', type = 'all' } = props;
 
   const {
@@ -33,7 +35,7 @@ export const useEvaluationList = (props: UseEvaluationListProps) => {
     {
       manual: true,
       onError: e => {
-        message.error(e.message || '获取评估列表失败');
+        message.error(e.message || t('failed_to_load_evaluation_list'));
       },
     },
   );

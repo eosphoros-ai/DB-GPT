@@ -13,7 +13,7 @@ import { GPTVis } from '@antv/gpt-vis';
 import { message } from 'antd';
 import classNames from 'classnames';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { usePageQuery } from '@/utils/use-page-query';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Feedback from './Feedback';
@@ -89,8 +89,8 @@ const ChatContent: React.FC<{
 }> = ({ content, onLinkClick }) => {
   const { t } = useTranslation();
 
-  const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
+  const searchParams = usePageQuery();
+  const scene = searchParams.get('scene') ?? '';
 
   const { context, model_name, role, thinking } = content;
 
