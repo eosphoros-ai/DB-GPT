@@ -19,16 +19,45 @@ _DBGPT_HOME = Path(os.environ.get("DBGPT_HOME", str(Path.home() / ".dbgpt")))
 _CONFIGS_DIR = _DBGPT_HOME / "configs"
 _ACTIVE_CONFIG = _DBGPT_HOME / "config.toml"
 
+# Profile TOML files embed literal API keys (api_key, embedding_api_key) and so
+# need to be readable only by the owning user. The DB-GPT home directory is
+# restricted to 0o700 and the per-profile TOML files to 0o600. Wrapped in
+# try/except because Windows does not support POSIX modes.
+_SECRET_FILE_MODE = 0o600
+_SECRET_DIR_MODE = 0o700
+
+
+def _write_secret(path: Path, content: str) -> None:
+    """Write ``content`` to ``path``, restricting both the file and its parent
+    directory to owner-only on POSIX.
+
+    Uses ``os.open(... O_CREAT, 0o600)`` so the file is atomically created with
+    restricted permissions instead of being briefly world-readable between
+    ``open("w")`` and a subsequent ``chmod`` (TOCTOU). Also tightens both the
+    file and parent directory after the write to handle the case where they
+    pre-existed at looser permissions (which cannot be fixed by O_CREAT alone).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True, mode=_SECRET_DIR_MODE)
+    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, _SECRET_FILE_MODE)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(content)
+    try:
+        path.chmod(_SECRET_FILE_MODE)
+        path.parent.chmod(_SECRET_DIR_MODE)
+    except (OSError, NotImplementedError):
+        # Windows does not support POSIX modes. Best-effort.
+        pass
+
 
 def dbgpt_home() -> Path:
     """Return ``~/.dbgpt``, creating it if necessary."""
-    _DBGPT_HOME.mkdir(parents=True, exist_ok=True)
+    _DBGPT_HOME.mkdir(parents=True, exist_ok=True, mode=_SECRET_DIR_MODE)
     return _DBGPT_HOME
 
 
 def configs_dir() -> Path:
     """Return ``~/.dbgpt/configs/``, creating it if necessary."""
-    _CONFIGS_DIR.mkdir(parents=True, exist_ok=True)
+    _CONFIGS_DIR.mkdir(parents=True, exist_ok=True, mode=_SECRET_DIR_MODE)
     return _CONFIGS_DIR
 
 
@@ -276,7 +305,11 @@ def write_profile_config(
         embedding_api_key=embedding_api_key,
     )
     path = profile_config_path(profile_name)
-    path.write_text(content, encoding="utf-8")
+    # Profile TOML embeds literal api_key / embedding_api_key; route through
+    # _write_secret so the file is atomically created at 0o600 (no TOCTOU
+    # window where the API key is world-readable between create and chmod)
+    # and the parent directory at 0o700.
+    _write_secret(path, content)
 
     if activate:
         write_active_profile(profile_name)

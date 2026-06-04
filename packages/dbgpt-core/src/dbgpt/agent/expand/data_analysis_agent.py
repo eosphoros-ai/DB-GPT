@@ -65,7 +65,7 @@ class DataAnalysisAgent(ConversableAgent):
             raise ValueError("The response is empty.")
 
         try:
-            steps = self.parser.parse(message_content)
+            steps = self.parser.parse_current_step(message_content)
             if not steps or len(steps) != 1:
                 return ActionOutput(
                     is_exe_success=False, content="Invalid response format."

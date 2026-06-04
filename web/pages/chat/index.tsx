@@ -1,7 +1,7 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList } from '@/client/api';
 import PromptBot from '@/components/common/prompt-bot';
-import useChat from '@/hooks/use-chat';
+import useChat, { ChatContextStatus } from '@/hooks/use-chat';
 import ChatContentContainer from '@/new-components/chat/ChatContentContainer';
 import ChatDefault from '@/new-components/chat/content/ChatDefault';
 import ChatInputPanel from '@/new-components/chat/input/ChatInputPanel';
@@ -50,6 +50,8 @@ interface ChatContentProps {
   refreshHistory: () => void;
   refreshAppInfo: () => void;
   setHistory: React.Dispatch<React.SetStateAction<ChatHistoryResponse>>;
+  // Context management status (available for chat_agent scenes)
+  contextStatus: ChatContextStatus | null;
 }
 export const ChatContentContext = createContext<ChatContentProps>({
   history: [],
@@ -79,12 +81,13 @@ export const ChatContentContext = createContext<ChatContentProps>({
   refreshAppInfo: () => {},
   setHistory: () => {},
   handleChat: () => Promise.resolve(),
+  contextStatus: null,
 });
 
 const Chat: React.FC = () => {
   const { model, currentDialogInfo } = useContext(ChatContext);
   const { isContract, setIsContract, setIsMenuExpand } = useContext(ChatContext);
-  const { chat, ctrl } = useChat({
+  const { chat, ctrl, contextStatus } = useChat({
     app_code: currentDialogInfo.app_code || '',
   });
 
@@ -125,7 +128,7 @@ const Chat: React.FC = () => {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [initMsg, chatId, history.length, replyLoading]);
+  }, [chatId, handleChat, history.length, initMsg, replyLoading]);
 
   useEffect(() => {
     setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.6);
@@ -211,36 +214,31 @@ const Chat: React.FC = () => {
     (content: UserChatContent, data?: Record<string, any>) => {
       return new Promise<void>(resolve => {
         const initMessage = getInitMessage();
-        const ctrl = new AbortController();
         setReplyLoading(true);
         if (history && history.length > 0) {
           const viewList = history?.filter(item => item.role === 'view');
           const humanList = history?.filter(item => item.role === 'human');
           order.current = (viewList[viewList.length - 1]?.order || humanList[humanList.length - 1]?.order) + 1;
         }
-        // Process the content based on its type
+
+        // Process content for display formatting
         let formattedDisplayContent: string = '';
 
         if (typeof content === 'string') {
           formattedDisplayContent = content;
         } else {
-          // Extract content items for display formatting
           const contentItems = content.content || [];
           const textItems = contentItems.filter(item => item.type === 'text');
           const mediaItems = contentItems.filter(item => item.type !== 'text');
 
-          // Format for display in the UI - extract text for main message
           if (textItems.length > 0) {
-            // Use the text content for the main message display
             formattedDisplayContent = textItems.map(item => item.text).join(' ');
           }
 
-          // Format media items for display (using markdown)
           const mediaMarkdown = mediaItems
             .map(item => {
               if (item.type === 'image_url') {
                 const originalUrl = item.image_url?.url || '';
-                // Transform the URL to a service URL that can be displayed
                 const displayUrl = transformFileUrl(originalUrl);
                 const fileName = item.image_url?.fileName || 'image';
                 return `\n![${fileName}](${displayUrl})`;
@@ -254,7 +252,6 @@ const Chat: React.FC = () => {
             })
             .join('\n');
 
-          // Combine text and media markup
           if (mediaMarkdown) {
             formattedDisplayContent = formattedDisplayContent + '\n' + mediaMarkdown;
           }
@@ -280,19 +277,16 @@ const Chat: React.FC = () => {
         ];
         const index = tempHistory.length - 1;
         setHistory([...tempHistory]);
-        // Create data object with all fields
         const apiData: Record<string, any> = {
           chat_mode: scene,
           model_name: modelValue,
           user_input: content,
         };
 
-        // Add other data fields
         if (data) {
           Object.assign(apiData, data);
         }
 
-        // For non-dashboard scenes, try to get prompt_code from ref or localStorage
         if (scene !== 'chat_dashboard') {
           const finalPromptCode = selectedPromptCodeRef.current || localStorage.getItem(`dbgpt_prompt_code_${chatId}`);
           if (finalPromptCode) {
@@ -301,6 +295,7 @@ const Chat: React.FC = () => {
           }
         }
 
+        const ctrl = new AbortController();
         chat({
           data: apiData,
           ctrl,
@@ -337,7 +332,7 @@ const Chat: React.FC = () => {
         });
       });
     },
-    [chatId, history, modelValue, chat, scene],
+    [chat, chatId, history, modelValue, scene],
   );
 
   useAsyncEffect(async () => {
@@ -409,6 +404,7 @@ const Chat: React.FC = () => {
         refreshHistory,
         refreshAppInfo,
         setHistory,
+        contextStatus,
       }}
     >
       <Flex flex={1}>

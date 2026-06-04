@@ -135,6 +135,7 @@ proxy_openai = [
      "httpx[socks]",
 ]
 proxy_anthropic = ["anthropic"]
+proxy_litellm = ["litellm>=1.60,<1.85"]
 
 # For vision-language models
 model_vl = [

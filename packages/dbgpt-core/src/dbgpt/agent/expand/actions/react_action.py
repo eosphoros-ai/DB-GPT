@@ -58,7 +58,7 @@ class Terminate(Action[None], BaseTool):
             parser = kwargs["parser"]
         else:
             parser = ReActOutputParser()
-        steps = parser.parse(ai_message)
+        steps = parser.parse_current_step(ai_message)
         if len(steps) == 0:
             return None
         if len(steps) > 1:
@@ -145,7 +145,7 @@ class ReActAction(ToolAction):
             parser = kwargs["parser"]
         else:
             parser = ReActOutputParser()
-        steps = parser.parse(ai_message)
+        steps = parser.parse_current_step(ai_message)
         if len(steps) == 0:
             raise ValueError("No valid ReAct step found in model output.")
         if len(steps) > 1:
@@ -161,6 +161,10 @@ class ReActAction(ToolAction):
             act_out.thoughts = step.thought
         if step.phase:
             act_out.phase = step.phase
+        if step.action_intention:
+            act_out.action_intention = step.action_intention
+        if step.action_reason:
+            act_out.action_reason = step.action_reason
         if not act_out.action_input and step.action_input:
             if isinstance(step.action_input, str):
                 act_out.action_input = step.action_input

@@ -38,18 +38,30 @@ of steps you can take is {{ max_steps }}.
 Do not output an empty string!
 {{ action_space }}
 # RESPONSE FORMAT # 
+IMPORTANT:
+- You must never answer directly outside the ReAct format.
+- Every response must contain exactly one Action and one Action Input.
+- If the task is complete, use exactly:
+Thought: ...
+Phase: 返回最终结果
+Action: terminate
+Action Input: {"result": "final answer"}
+- Do not put the final answer as plain markdown outside Action Input.
+
 For each task input, your response should contain:
 1. One analysis of the task and the current environment, reasoning to determine the \
 next action (prefix "Thought: ").
-2. A short phrase describing the intent or stage of this step (prefix "Phase: "). \
-For example: "Phase: 分析任务需求", "Phase: 加载数据分析技能", \
-"Phase: 执行数据清洗", "Phase: 生成可视化报告".
-3. One action string in the ACTION SPACE (prefix "Action: "), should be one of \
+2. What this step is trying to do (prefix "Action Intention: "), short and \
+user-facing.
+3. Why this action is needed now (prefix "Action Reason: "), short and \
+user-facing.
+4. One action string in the ACTION SPACE (prefix "Action: "), should be one of \
 [{{ action_space_names }}].
-4. One action input (prefix "Action Input: "), empty if no input is required.
+5. One action input (prefix "Action Input: "), empty if no input is required.
 # EXAMPLE INTERACTION #
 Thought: ...(Your analysis of the task and reasoning for the next action.)
-Phase: ...(A short phrase describing the intent of this step, e.g. "探索数据结构")
+Action Intention: ...(What this step will do, e.g. "探索数据结构")
+Action Reason: ...(Why this action is needed now)
 Action: ...
 Action Input: ...
 Observation: ...(This is output provided by the external environment or Action output, \
@@ -73,6 +85,8 @@ _REACT_WRITE_MEMORY_TEMPLATE = """\
 {% if question %}Question: {{ question }} {% endif %}
 {% if thought %}Thought: {{ thought }} {% endif %}
 {% if phase %}Phase: {{ phase }} {% endif %}
+{% if action_intention %}Action Intention: {{ action_intention }} {% endif %}
+{% if action_reason %}Action Reason: {{ action_reason }} {% endif %}
 {% if action %}Action: {{ action }} {% endif %}
 {% if action_input %}Action Input: {{ action_input }} {% endif %}
 {% if observation %}Observation: {{ observation }} {% endif %}
@@ -110,6 +124,13 @@ class ReActAgent(ConversableAgent):
         super().__init__(**kwargs)
 
         self._init_actions([ReActAction, Terminate])
+
+        # Auto-enable multi-layer context management if configured
+        if (
+            self.agent_context is not None
+            and self.agent_context.enable_context_management
+        ):
+            self.init_context_management()
 
     async def _a_init_reply_message(
         self,
@@ -221,7 +242,7 @@ class ReActAgent(ConversableAgent):
         if not message_content:
             raise ValueError("The response is empty.")
         try:
-            steps = self.parser.parse(message_content)
+            steps = self.parser.parse_current_step(message_content)
             err_msg = None
             if not steps:
                 err_msg = (
@@ -258,20 +279,29 @@ class ReActAgent(ConversableAgent):
         not_json_memories = []
         messages = []
         structured_memories = []
+        # Pair each parsed dict with its originating fragment so we can access
+        # snapshot_path later.
+        fragment_by_mem: dict = {}
         for m in memories:
             if m.raw_observation:
                 try:
                     mem_dict = json.loads(m.raw_observation)
                     if isinstance(mem_dict, dict):
                         structured_memories.append(mem_dict)
+                        fragment_by_mem[id(mem_dict)] = m
                     elif isinstance(mem_dict, list):
-                        structured_memories.extend(mem_dict)
+                        for item in mem_dict:
+                            structured_memories.append(item)
+                            fragment_by_mem[id(item)] = m
                     else:
                         raise ValueError("Invalid memory format.")
                 except Exception:
                     not_json_memories.append(m.raw_observation)
 
         for mem_dict in structured_memories:
+            fragment = fragment_by_mem.get(id(mem_dict))
+            snapshot_path = getattr(fragment, "snapshot_path", None)
+
             question = mem_dict.get("question")
             thought = mem_dict.get("thought")
             phase = mem_dict.get("phase")
@@ -302,10 +332,19 @@ class ReActAgent(ConversableAgent):
             )
 
             if observation:
+                obs_context = (
+                    {"snapshot_path": snapshot_path} if snapshot_path else None
+                )
+                obs_suffix = (
+                    f"\n[Full detail available at: {snapshot_path}]"
+                    if snapshot_path
+                    else ""
+                )
                 messages.append(
                     AgentMessage(
-                        content=f"Observation: {observation}",
+                        content=f"Observation: {observation}{obs_suffix}",
                         role=ModelMessageRoleType.HUMAN,
+                        context=obs_context,
                     )
                 )
 

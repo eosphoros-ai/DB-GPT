@@ -1,0 +1,48 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-en}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+[service.model.worker]
+host = "127.0.0.1"
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+# Model Configurations
+#
+# LiteLLM is used here as an embedded AI gateway (the Python SDK), NOT as a
+# separate proxy server — DB-GPT imports litellm directly and routes every
+# completion through litellm.acompletion(). Specify the model with a provider
+# prefix (e.g. "anthropic/...", "vertex_ai/...", "bedrock/...", "azure/...",
+# "groq/...") and set the matching provider environment variable
+# (ANTHROPIC_API_KEY, OPENAI_API_KEY, AWS_ACCESS_KEY_ID, AZURE_API_KEY, ...).
+# See https://docs.litellm.ai/docs/providers for the full list.
+[models]
+[[models.llms]]
+name = "anthropic/claude-3-5-sonnet-20241022"
+provider = "proxy/litellm"
+# api_key and api_base are usually unnecessary — LiteLLM resolves them per
+# provider from environment variables. Override only when using a custom or
+# OpenAI-compatible endpoint.
+# api_key = "your_anthropic_api_key"
+# api_base = "https://api.anthropic.com"
+
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "hf"
+# If not provided, the model will be downloaded from the Hugging Face model hub
+# uncomment the following line to specify the model path in the local file system
+# path = "the-model-path-in-the-local-file-system"
+path = "models/bge-large-zh-v1.5"

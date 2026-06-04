@@ -18,7 +18,7 @@ git lfs clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 
 Update .env file and set VECTOR_STORE_TYPE.
 
-DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate, OceanBase vector database.
+DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate, Valkey, OceanBase vector database.
 If you want to change vector db, Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma and Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT).
 
 If you want to use OceanBase, please first start a docker container via the following command:

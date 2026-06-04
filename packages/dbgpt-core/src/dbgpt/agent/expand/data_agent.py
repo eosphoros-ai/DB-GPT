@@ -290,7 +290,7 @@ class DataAnalysisPlanningAgent(ConversableAgent):
             raise ValueError("The response is empty.")
 
         try:
-            steps = self.parser.parse(message_content)
+            steps = self.parser.parse_current_step(message_content)
             err_msg = None
             if not steps:
                 err_msg = (

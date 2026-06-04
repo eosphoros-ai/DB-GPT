@@ -212,6 +212,16 @@ class AgentContext:
     # 是否开启VIS协议消息模式，默认开启
     enable_vis_message: bool = True
 
+    # Working directory for this conversation; snapshot files are written here.
+    # If None, falls back to DBGPT_HOME/workspace/op_snapshots.
+    output_dir: Optional[str] = None
+
+    # Multi-layer context management (opt-in)
+    enable_context_management: bool = False
+    max_context_tokens: int = 120000
+    context_warning_threshold: float = 0.70
+    context_error_threshold: float = 0.90
+
     def to_dict(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentContext."""
         return dataclasses.asdict(self)

@@ -138,3 +138,49 @@ async def test_branch_node(
         assert res.current_task_context.current_state == TaskState.SUCCESS
         expect_res = 999 if is_odd else 888
         assert res.current_task_context.task_output.output == expect_res
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "input_node, is_odd",
+    [
+        ({"outputs": [26]}, False),
+        ({"outputs": [3]}, True),
+    ],
+    indirect=["input_node"],
+)
+async def test_branch_node_shared_join_default_can_skip(
+    runner: WorkflowRunner, input_node: InputOperator, is_odd: bool
+):
+    """Regression test for issue #2935.
+
+    A JoinOperator shared by both branches of a BranchOperator must still execute
+    when only one branch is skipped, even when can_skip_in_branch is left at its
+    default value (True).  Previously the skipped branch's downstream traversal
+    would incorrectly mark the shared JoinOperator as skipped.
+    """
+
+    def join_func(o1, o2) -> int:
+        return o1 or o2
+
+    with DAG("test_branch_shared_join") as _dag:
+        odd_node = MapOperator(
+            lambda x: 999, task_id="odd_node2", task_name="odd_node_name2"
+        )
+        even_node = MapOperator(
+            lambda x: 888, task_id="even_node2", task_name="even_node_name2"
+        )
+        # Intentionally omit can_skip_in_branch=False to reproduce the bug scenario.
+        join_node = JoinOperator(join_func)
+        branch_node = BranchOperator(
+            {lambda x: x % 2 == 1: odd_node, lambda x: x % 2 == 0: even_node}
+        )
+        branch_node >> odd_node >> join_node
+        branch_node >> even_node >> join_node
+
+        input_node >> branch_node
+
+        res: DAGContext[int] = await runner.execute_workflow(join_node)
+        assert res.current_task_context.current_state == TaskState.SUCCESS
+        expect_res = 999 if is_odd else 888
+        assert res.current_task_context.task_output.output == expect_res

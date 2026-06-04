@@ -1,7 +1,7 @@
 """MSSQL connector."""
 
 from dataclasses import dataclass, field
-from typing import Iterable, Type
+from typing import Iterable, List, Tuple, Type
 
 from sqlalchemy import text
 
@@ -77,6 +77,67 @@ class MSSQLConnector(RDBMSConnector):
                     table_colums.append(field_info[0])
                 results.append(f"{table_name}({','.join(table_colums)});")
             return results
+
+    def get_fields(self, table_name, db_name=None) -> List[Tuple]:
+        """Get column fields about specified table.
+
+        SQL Server's INFORMATION_SCHEMA does NOT have COLUMN_TYPE or
+        COLUMN_COMMENT (those are MySQL-only). Override the base
+        ``RDBMSConnector.get_fields`` MySQL-shaped query with a SQL Server
+        variant that returns the same 5-tuple shape:
+        ``(column_name, data_type, default, is_nullable, comment)``.
+
+        Column comments come from ``sys.extended_properties`` with name
+        ``MS_Description`` (the standard MS convention).
+
+        ``table_name`` may include a schema prefix like ``dbo.MyTable``;
+        if absent, defaults to ``dbo``. The ``db_name`` argument is ignored
+        because the active connection is already scoped to a database, and
+        upstream callers in editor APIs sometimes pass the catalog name in
+        a position where INFORMATION_SCHEMA expects the schema.
+        """
+        if "." in table_name:
+            schema_name, pure_table_name = table_name.split(".", 1)
+        else:
+            schema_name = "dbo"
+            pure_table_name = table_name
+
+        with self.session_scope() as session:
+            query = """
+            SELECT
+                c.COLUMN_NAME,
+                c.DATA_TYPE,
+                c.COLUMN_DEFAULT,
+                c.IS_NULLABLE,
+                CAST(ep.value AS NVARCHAR(MAX)) AS COLUMN_COMMENT
+            FROM INFORMATION_SCHEMA.COLUMNS c
+            LEFT JOIN sys.extended_properties ep
+                ON ep.major_id = OBJECT_ID(
+                       QUOTENAME(c.TABLE_SCHEMA) + '.' + QUOTENAME(c.TABLE_NAME))
+                AND ep.minor_id = COLUMNPROPERTY(
+                       OBJECT_ID(QUOTENAME(c.TABLE_SCHEMA) + '.'
+                                 + QUOTENAME(c.TABLE_NAME)),
+                       c.COLUMN_NAME, 'ColumnId')
+                AND ep.class = 1
+                AND ep.name = 'MS_Description'
+            WHERE c.TABLE_SCHEMA = :schema
+              AND c.TABLE_NAME   = :table
+            ORDER BY c.ORDINAL_POSITION
+            """
+            cursor = session.execute(
+                text(query), {"schema": schema_name, "table": pure_table_name}
+            )
+            fields = cursor.fetchall()
+            return [
+                (
+                    self._decode_if_bytes(f[0]),
+                    self._decode_if_bytes(f[1]),
+                    self._decode_if_bytes(f[2]) if f[2] is not None else None,
+                    self._decode_if_bytes(f[3]),
+                    self._decode_if_bytes(f[4]) if f[4] is not None else "",
+                )
+                for f in fields
+            ]
 
     def get_users(self):
         with self.session_scope() as session:

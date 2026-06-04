@@ -490,6 +490,12 @@ class MilvusStore(VectorStoreBase):
         """similar_search in vector database."""
         self.col = Collection(self.collection_name)
         schema = self.col.schema
+        # Reset before re-populating from schema. Without this, repeated calls
+        # accumulate every field name once per call, so the
+        # ``output_fields.remove(self.sparse_vector)`` guard in ``_search``
+        # only strips one occurrence and the duplicate trips milvus 2.5+
+        # with "not allowed to retrieve raw data of field sparse_vector".
+        self.fields = []
         for x in schema.fields:
             self.fields.append(x.name)
             if x.auto_id:
@@ -541,6 +547,10 @@ class MilvusStore(VectorStoreBase):
 
         self.col = Collection(self.collection_name)
         schema = self.col.schema
+        # See similar_search above for why the reset is necessary (avoids
+        # accumulating duplicate sparse_vector entries that bypass the
+        # output_fields.remove() guard and trip milvus 2.5+).
+        self.fields = []
         for x in schema.fields:
             self.fields.append(x.name)
             if x.auto_id:
@@ -777,12 +787,23 @@ class MilvusStore(VectorStoreBase):
     ) -> List[Chunk]:
         if self.is_support_full_text_search():
             milvus_filters = self.convert_metadata_filters(filters) if filters else None
+            # Milvus 2.5+ forbids returning sparse-vector raw data in search
+            # results ("not allowed to retrieve raw data of field
+            # sparse_vector"), so we cannot ask for "*". Build an explicit
+            # field list that excludes both vector fields. We only need
+            # content + metadata + pk for chunk construction below; this
+            # mirrors the pattern in similar_search_with_scores' _search().
+            output_fields = [
+                f
+                for f in self.fields
+                if f != self.sparse_vector and f != self.vector_field
+            ]
             results = self._milvus_client.search(
                 collection_name=self.collection_name,
                 data=[text],
                 anns_field=self.sparse_vector,
                 limit=topk,
-                output_fields=["*"],
+                output_fields=output_fields,
                 filter=milvus_filters,
             )
             chunk_results = [

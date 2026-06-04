@@ -339,6 +339,20 @@ class MultiAgents(BaseComponent, ABC):
                 async for chunk in multi_agents.chat_messages(agent_conv_id):
                     if chunk:
                         try:
+                            # Context status events bypass VIS wrapping
+                            if isinstance(chunk, str) and chunk.startswith(
+                                "__CONTEXT_STATUS__"
+                            ):
+                                payload = chunk[len("__CONTEXT_STATUS__") :]
+                                context_status = {"context_status": json.loads(payload)}
+                                resp = (
+                                    "data:"
+                                    f"{json.dumps(context_status, ensure_ascii=False)}"
+                                    "\n\n"
+                                )
+                                yield task, resp, agent_conv_id
+                                continue
+
                             chunk = json.dumps(
                                 {"vis": chunk},
                                 default=serialize,
@@ -597,6 +611,7 @@ class MultiAgents(BaseComponent, ABC):
                 language=gpts_app.language,
                 app_link_start=app_link_start,
                 enable_vis_message=enable_verbose,
+                enable_context_management=True,
             )
 
             prompt_service: PromptService = get_service()
@@ -637,6 +652,30 @@ class MultiAgents(BaseComponent, ABC):
                     .bind(prompt_template)
                     .build(is_retry_chat=is_retry_chat)
                 )
+
+                # Enable context management with a callback that pushes
+                # status events through the GptsMemory queue so the SSE
+                # consumer can forward them to the frontend.
+                async def _ctx_status_cb(
+                    status: Dict[str, Any],
+                    _conv_id: str = conv_uid,
+                ) -> None:
+                    queue = self.memory.queue(_conv_id)
+                    logger.warning(
+                        "[CTX-DEBUG] _ctx_status_cb: conv=%s, queue=%s, status=%s",
+                        _conv_id,
+                        queue is not None,
+                        status,
+                    )
+                    if queue:
+                        # Prefix with __CONTEXT_STATUS__ so the SSE layer
+                        # can distinguish it from normal VIS messages.
+                        await queue.put("__CONTEXT_STATUS__" + json.dumps(status))
+
+                agent.init_context_management(
+                    on_status_event=_ctx_status_cb,
+                )
+
                 employees.append(agent)
 
             team_mode = TeamMode(gpts_app.team_mode)
@@ -731,6 +770,10 @@ class MultiAgents(BaseComponent, ABC):
             if item == "[DONE]":
                 queue.task_done()
                 break
+            elif isinstance(item, str) and item.startswith("__CONTEXT_STATUS__"):
+                # Forward context status as a dedicated SSE event
+                yield item
+                await asyncio.sleep(0.005)
             else:
                 yield item
                 await asyncio.sleep(0.005)

@@ -56,6 +56,7 @@ from dbgpt_serve.rag.api.schemas import (
 # from dbgpt_serve.rag.connector import VectorStoreConnector
 from dbgpt_serve.rag.service.service import Service
 from dbgpt_serve.rag.storage_manager import StorageManager
+from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,10 @@ def get_fs() -> FileStorageClient:
 
 
 @router.post("/knowledge/space/add")
-async def space_add(request: KnowledgeSpaceRequest):
+async def space_add(
+    request: KnowledgeSpaceRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/space/add params: {request}")
     try:
         await blocking_func_to_async(
@@ -127,7 +131,9 @@ def space_delete(request: KnowledgeSpaceRequest):
 
 
 @router.post("/knowledge/retrieve_strategy_list")
-async def retrieve_strategy_list():
+async def retrieve_strategy_list(
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     try:
         res = await blocking_func_to_async(
             get_executor(), knowledge_space_service.get_retrieve_strategy_list
@@ -153,6 +159,7 @@ async def arguments(space_id: str):
 async def recall_test(
     space_name: str,
     request: DocumentRecallTestRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"/knowledge/{space_name}/recall_test params: {request}")
     try:
@@ -204,7 +211,11 @@ def recall_retrievers(
 
 
 @router.post("/knowledge/{space_id}/argument/save")
-async def arguments_save(space_id: str, argument_request: SpaceArgumentRequest):
+async def arguments_save(
+    space_id: str,
+    argument_request: SpaceArgumentRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     print("/knowledge/space/argument/save params:")
     try:
         res = await blocking_func_to_async(
@@ -342,7 +353,11 @@ async def space_config() -> Result[KnowledgeConfigResponse]:
 
 
 @router.post("/knowledge/{space_name}/document/list")
-def document_list(space_name: str, query_request: DocumentQueryRequest):
+def document_list(
+    space_name: str,
+    query_request: DocumentQueryRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(

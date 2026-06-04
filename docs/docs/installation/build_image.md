@@ -182,6 +182,7 @@ Here are some useful extras you can add:
 | Extra Package | Description |
 |--------------|-------------|
 | `storage_milvus` | Vector store integration with Milvus |
+| `storage_valkey` | Vector store integration with Valkey |
 | `storage_elasticsearch` | Vector store integration with Elasticsearch |
 | `datasource_postgres` | Database connector for PostgreSQL |
 | `vllm` | VLLM integration for optimized inference |
