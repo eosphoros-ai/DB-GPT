@@ -71,7 +71,9 @@ class ConnectorTaskExecutor:
                 return TaskExecutionResult(
                     success=False,
                     result_summary="",
-                    error_message=f"Tool '{tool_name}' not found in connector '{connector_id}'",
+                    error_message=(
+                        f"Tool '{tool_name}' not found in connector '{connector_id}'"
+                    ),
                     execution_time_ms=int((time.monotonic() - start) * 1000),
                 )
             result = await asyncio.wait_for(

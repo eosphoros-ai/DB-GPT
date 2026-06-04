@@ -74,11 +74,13 @@ def test_list_active_returns_prompt_ready_connector_summaries():
             "tools": [
                 {
                     "name": "create_issue",
+                    "original_name": "create_issue",
                     "description": "Create a GitHub issue",
                     "args": {},
                 },
                 {
                     "name": "list_issues",
+                    "original_name": "list_issues",
                     "description": "List GitHub issues",
                     "args": {},
                 },
@@ -189,7 +191,7 @@ def test_compute_tool_prefix_builtin_single():
 
 
 def test_compute_tool_prefix_builtin_multiple():
-    """Built-in type with an existing instance => prefix includes slug of display_name."""
+    """Built-in type with existing instance => prefix includes display_name slug."""
     manager = ConnectorManager()
     manager._connector_types["other-id"] = "yuque"
     prefix = manager.compute_tool_prefix("yuque", "Team Yuque", "new-id")
@@ -211,7 +213,7 @@ def test_compute_tool_prefix_slug_fallback():
 
 
 def test_apply_tool_prefix_renames_and_updates_map():
-    """_apply_tool_prefix renames tools, updates tool_server_map, and annotates descriptions."""
+    """_apply_tool_prefix renames tools, updates map, annotates descriptions."""
     manager = ConnectorManager()
 
     pack = MCPToolPack(mcp_servers="http://example.com/sse", name="Yuque")
@@ -326,7 +328,7 @@ def test_create_connector_custom_mcp_bearer(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_create_connector_custom_mcp_token(monkeypatch: pytest.MonkeyPatch):
-    """custom_mcp + auth_type=token should use the raw token with a custom header name."""
+    """custom_mcp + auth_type=token uses the raw token with a custom header."""
     _patch_preload_resource(monkeypatch)
     manager = ConnectorManager()
 
@@ -350,7 +352,7 @@ def test_create_connector_custom_mcp_token(monkeypatch: pytest.MonkeyPatch):
 def test_create_connector_custom_mcp_missing_server_uri_raises():
     manager = ConnectorManager()
 
-    with pytest.raises(ValueError, match="custom_mcp requires extra_config.server_uri"):
+    with pytest.raises(ValueError, match="requires extra_config.server_uri"):
         asyncio.run(
             manager.create_connector(
                 connector_type="custom_mcp",
@@ -387,6 +389,7 @@ def test_create_connector_unknown_type_message_mentions_custom_mcp():
             manager.create_connector(
                 connector_type="whatever",
                 credentials={},
+                extra_config={"server_uri": "http://example.com/sse"},
             )
         )
 
@@ -399,7 +402,7 @@ def test_create_connector_unknown_type_message_mentions_custom_mcp():
 def test_create_connector_builtin_missing_server_uri_raises(
     monkeypatch: pytest.MonkeyPatch, tmp_path
 ):
-    """Built-in catalog types now require extra_config.server_uri (catalog downgrade)."""
+    """Built-in catalog types now require extra_config.server_uri (downgrade)."""
 
     _patch_preload_resource(monkeypatch)
 
@@ -483,8 +486,11 @@ def test_create_connector_builtin_with_server_uri_succeeds(
     cid = asyncio.run(
         manager.create_connector(
             connector_type="github",
-            credentials={"github_token": "ghp_xxx"},
-            extra_config={"server_uri": "http://example.com/sse"},
+            credentials={"token": "ghp_xxx"},
+            extra_config={
+                "server_uri": "http://example.com/sse",
+                "auth_type": "token",
+            },
         )
     )
 

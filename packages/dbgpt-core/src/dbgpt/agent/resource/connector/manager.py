@@ -1,4 +1,4 @@
-"""ConnectorManager — aggregates ConnectorCatalog, CredentialStore and ConfirmationInterceptor."""
+"""ConnectorManager — aggregates ConnectorCatalog, CredentialStore, interceptor."""
 
 from __future__ import annotations
 
@@ -189,7 +189,7 @@ class ConnectorManager(BaseComponent):
         display_name: str,
         connector_id: str,
     ) -> str:
-        """Return the connector identifier portion (between the two ``__``) of the tool name.
+        """Return the connector identifier portion (between the two ``__``).
 
         Tool name format: ``mcp__{prefix}__{original_tool_name}``.
 
@@ -221,8 +221,9 @@ class ConnectorManager(BaseComponent):
     def _apply_tool_prefix(
         self, pack: "MCPToolPack", prefix: str, display_name: str
     ) -> None:
-        """Rename every tool in *pack* to ``mcp__{prefix}__{original_name}`` and update tool_server_map.
+        """Prefix every tool in *pack* and update ``tool_server_map``.
 
+        Renames each tool to ``mcp__{prefix}__{original_name}``.
         Format chosen to mirror Claude Code's MCP tool naming convention
         (``mcp__<server>__<tool>``):
         - ``mcp__`` prefix makes the tool's MCP origin obvious to the LLM and ops.
@@ -492,7 +493,7 @@ class ConnectorManager(BaseComponent):
         logger.info("Connector id=%s removed", connector_id)
 
     def get_connector_tools(self, connector_id: str) -> Optional["MCPToolPack"]:
-        """Return the :class:`~dbgpt.agent.resource.tool.pack.MCPToolPack` for a connector.
+        """Return the :class:`.MCPToolPack` for a connector.
 
         Args:
             connector_id (str): Connector instance id.
@@ -504,7 +505,7 @@ class ConnectorManager(BaseComponent):
         return self._active_packs.get(connector_id)
 
     def get_all_tools(self) -> List["MCPToolPack"]:
-        """Return all active :class:`~dbgpt.agent.resource.tool.pack.MCPToolPack` instances.
+        """Return all active :class:`.MCPToolPack` instances.
 
         Returns:
             List[MCPToolPack]: Snapshot of all currently active packs.

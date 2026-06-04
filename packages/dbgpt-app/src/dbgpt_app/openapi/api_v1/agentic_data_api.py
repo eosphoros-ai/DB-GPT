@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from dbgpt.agent.core.memory.gpts import GptsMemory
     from dbgpt.agent.resource.connector.manager import ConnectorManager
+    from dbgpt.agent.resource.tool.base import BaseTool
 
 REACT_AGENT_MEMORY_CACHE: Dict[str, "GptsMemory"] = {}
 
@@ -229,9 +230,9 @@ def _select_connector_tools(
             missing_ids.append(cid)
             continue
         # Flatten: extract BaseTool instances from the pack
-        for tool in pack.sub_resources:
-            if isinstance(tool, BaseTool):
-                tools.append(tool)
+        for sub_tool in pack.sub_resources:
+            if isinstance(sub_tool, BaseTool):
+                tools.append(sub_tool)
     return tools, missing_ids
 
 

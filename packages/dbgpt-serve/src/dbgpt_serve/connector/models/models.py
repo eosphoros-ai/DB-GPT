@@ -47,8 +47,10 @@ class ConnectorInstanceEntity(Model):
 
     def __repr__(self):
         return (
-            f"ConnectorInstanceEntity(id={self.id}, connector_id='{self.connector_id}', "
-            f"connector_type='{self.connector_type}', display_name='{self.display_name}', "
+            f"ConnectorInstanceEntity(id={self.id}, "
+            f"connector_id='{self.connector_id}', "
+            f"connector_type='{self.connector_type}', "
+            f"display_name='{self.display_name}', "
             f"status='{self.status}', user_name='{self.user_name}')"
         )
 

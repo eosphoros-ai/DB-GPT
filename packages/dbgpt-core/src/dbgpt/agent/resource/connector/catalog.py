@@ -61,7 +61,8 @@ class ConnectorCatalog:
         connectors = raw.get("connectors")
         if not isinstance(connectors, list):
             raise ValueError(
-                f"catalog.json must contain a top-level 'connectors' list, got: {type(connectors)}"
+                "catalog.json must contain a top-level 'connectors' list, "
+                f"got: {type(connectors)}"
             )
 
         self._entries = {}

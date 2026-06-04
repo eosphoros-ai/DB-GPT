@@ -411,7 +411,7 @@ def test_update_connector_reactivation_failure_marks_error(
 async def test_test_connection_returns_success_when_pack_active(
     service: ConnectorService, monkeypatch: pytest.MonkeyPatch
 ):
-    """test_connection should return {success: True, message: ...} when pack exists and preload succeeds."""
+    """test_connection returns success=True when pack exists and preload succeeds."""
     from dbgpt.agent.resource.tool.base import BaseTool
 
     # Create a connector row in DB
@@ -451,7 +451,7 @@ async def test_test_connection_returns_success_when_pack_active(
 async def test_test_connection_returns_failure_when_pack_missing(
     service: ConnectorService, monkeypatch: pytest.MonkeyPatch
 ):
-    """connector_id exists in DB but manager._active_packs has no entry -> success=False."""
+    """connector_id in DB but manager._active_packs has no entry -> success=False."""
     response = service.create_connector(
         ConnectorCreateRequest(
             connector_type="github",
