@@ -35,6 +35,7 @@ import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ObservationFormatter from './ObservationFormatter';
+import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 import { AttachedConnector } from '@/new-components/connector/types';
 
 export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
@@ -62,6 +63,11 @@ export interface ExecutionStep {
   phase?: string;
   status: StepStatus;
   output?: any;
+  todoMeta?: {
+    state?: 'init' | 'progress' | 'done';
+    done?: number;
+    total?: number;
+  };
 }
 
 export interface ThinkingSection {
@@ -124,6 +130,7 @@ export interface ManusLeftPanelProps {
   createdSkillName?: string;
   onSkillCardClick?: (skillName: string) => void;
   onSkillDownload?: (skillName: string) => void;
+  taskPlan?: TaskItem[];
 }
 
 // Get step icon based on type and status
@@ -462,6 +469,25 @@ const StreamingText: React.FC<{ text: string }> = memo(({ text }) => {
 
 StreamingText.displayName = 'StreamingText';
 
+const getTodoStepTitle = (t: (key: string, options?: Record<string, any>) => string, step: ExecutionStep): string => {
+  const todoMeta = step.todoMeta;
+  if (!todoMeta) return step.title;
+  const done = todoMeta.done ?? 0;
+  const total = todoMeta.total ?? 0;
+  if (todoMeta.state === 'init') return t('task_plan_init_title');
+  if (todoMeta.state === 'done') return t('task_plan_done_title', { total });
+  return t('task_plan_update_title', { done, total });
+};
+
+const getTodoStepBadge = (t: (key: string, options?: Record<string, any>) => string, step: ExecutionStep): string => {
+  const todoMeta = step.todoMeta;
+  if (!todoMeta) return '';
+  if ((todoMeta.total ?? 0) > 0) {
+    return `${todoMeta.done ?? 0}/${todoMeta.total}`;
+  }
+  return todoMeta.state === 'init' ? t('task_plan_new_badge') : '';
+};
+
 const StepCard: React.FC<{
   step: ExecutionStep;
   isActive: boolean;
@@ -470,6 +496,7 @@ const StepCard: React.FC<{
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const detailLine = step.description ? step.description.split('\n')[0] : '';
+  const isTodoStep = detailLine.toLowerCase() === 'todowrite' || step.title.startsWith('TODO::') || !!step.todoMeta;
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
@@ -501,6 +528,73 @@ const StepCard: React.FC<{
           <span className='relative inline-flex rounded-full h-2.5 w-2.5 bg-gradient-to-r from-blue-400 to-cyan-400' />
         </span>
         <span className='text-sm text-gray-700 dark:text-gray-300'>{t('thinking')}</span>
+      </div>
+    );
+  }
+  if (isTodoStep) {
+    const progressText = getTodoStepBadge(t, step);
+    const todoTitle = getTodoStepTitle(t, step);
+
+    return (
+      <div
+        onClick={onClick}
+        className={classNames(
+          'group relative cursor-pointer rounded-lg border transition-all duration-200',
+          'bg-gradient-to-r from-slate-50/95 via-white to-white dark:from-[#202127] dark:via-[#1a1b1e] dark:to-[#1a1b1e]',
+          'border-slate-200/80 dark:border-white/10',
+          'px-3 py-2.5',
+          'transform',
+          {
+            'opacity-0 translate-y-1': !isVisible,
+            'opacity-100 translate-y-0': isVisible,
+            'shadow-[0_10px_24px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/80 dark:ring-white/10': isActive,
+            'hover:border-slate-300/90 dark:hover:border-white/20 hover:shadow-[0_8px_20px_rgba(15,23,42,0.06)]':
+              !isActive,
+          },
+        )}
+        style={{ transition: 'opacity 0.2s ease-out, transform 0.2s ease-out' }}
+      >
+        <div className='absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-gradient-to-b from-sky-400 via-indigo-400 to-emerald-400' />
+        <div className='flex items-center gap-3 pl-1'>
+          <div className='flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-sky-50 to-emerald-50 shadow-[0_1px_0_rgba(15,23,42,0.04),0_8px_18px_rgba(14,165,233,0.10)] ring-1 ring-sky-100/80 dark:from-sky-500/10 dark:to-emerald-500/10 dark:ring-sky-400/20'>
+            <div className='flex h-4 w-4 flex-col justify-center gap-[3px]'>
+              <div className='flex items-center gap-1'>
+                <span className='flex h-2.5 w-2.5 items-center justify-center rounded-full bg-sky-500 text-white shadow-sm'>
+                  <CheckOutlined className='text-[7px]' />
+                </span>
+                <span className='h-[2px] w-2.5 rounded-full bg-slate-300 dark:bg-slate-500' />
+              </div>
+              <div className='flex items-center gap-1'>
+                <span className='h-2.5 w-2.5 rounded-full border border-emerald-300 bg-white/80 dark:border-emerald-400/50 dark:bg-white/10' />
+                <span className='h-[2px] w-2 rounded-full bg-slate-200 dark:bg-slate-600' />
+              </div>
+            </div>
+          </div>
+
+          <div className='min-w-0 flex-1'>
+            <div className='mb-0.5 flex items-center gap-2'>
+              <span className='text-[10px] font-semibold tracking-[0.08em] text-slate-400 dark:text-slate-500'>
+                {t('task_plan_label')}
+              </span>
+              {progressText && (
+                <span className='rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-white/5 dark:text-slate-400'>
+                  {progressText}
+                </span>
+              )}
+            </div>
+            <div className='truncate text-sm font-semibold text-slate-900 dark:text-slate-100'>{todoTitle}</div>
+          </div>
+
+          <div className='flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:ring-emerald-500/20'>
+            {step.status === 'running' ? (
+              <LoadingOutlined spin className='text-[11px] text-sky-500' />
+            ) : step.status === 'error' ? (
+              <ExclamationCircleOutlined className='text-[11px] text-red-500' />
+            ) : (
+              <CheckCircleOutlined className='text-[11px] text-emerald-500' />
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -670,7 +764,6 @@ const SkillResourceCard: React.FC<{
 SkillResourceCard.displayName = 'SkillResourceCard';
 
 const ThoughtBubble: React.FC<{ text: string | Record<string, unknown> }> = memo(({ text }) => {
-  const [expanded, setExpanded] = useState(false);
   const normalized = useMemo(() => {
     if (typeof text === 'string') return text;
     if (!text) return '';
@@ -684,19 +777,18 @@ const ThoughtBubble: React.FC<{ text: string | Record<string, unknown> }> = memo
       return String(text);
     }
   }, [text]);
-  const isLong = normalized.length > 60;
-  const display = expanded || !isLong ? normalized : normalized.slice(0, 60) + '...';
+  const [intention, ...reasonLines] = normalized.split('\n');
+  const reason = reasonLines.join('\n').trim();
 
   return (
-    <div
-      className={classNames('flex items-start gap-1.5 py-1 px-1 min-w-0', { 'cursor-pointer': isLong })}
-      onClick={() => isLong && setExpanded(!expanded)}
-    >
-      <span className='text-[10px] text-gray-300 dark:text-gray-600 mt-0.5 flex-shrink-0 select-none'>💭</span>
-      <p className='text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed m-0 min-w-0 break-words italic'>
-        <StreamingText text={display} />
-        {isLong && !expanded && <span className='text-[10px] text-gray-300 dark:text-gray-600 ml-1 not-italic'>▸</span>}
-      </p>
+    <div className='flex min-w-0 items-start gap-2 px-1 py-1'>
+      <span className='mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300 dark:bg-slate-600' />
+      <div className='min-w-0 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400'>
+        <p className='m-0 break-words'>
+          <StreamingText text={intention} />
+        </p>
+        {reason && <p className='m-0 mt-0.5 break-words text-slate-400 dark:text-slate-500'>{reason}</p>}
+      </div>
     </div>
   );
 });
@@ -817,6 +909,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   createdSkillName,
   onSkillCardClick,
   onSkillDownload,
+  taskPlan,
 }) => {
   const { t } = useTranslation();
   const handleStepClick = useCallback(
@@ -985,6 +1078,12 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             {stepThoughts?.[activeStepId || 'initial'] && (
               <ThoughtBubble text={stepThoughts[activeStepId || 'initial']} />
             )}
+          </div>
+        )}
+
+        {taskPlan && taskPlan.length > 0 && (
+          <div className='mt-3 px-1'>
+            <TaskPlanCard tasks={taskPlan} defaultCollapsed={false} />
           </div>
         )}
 

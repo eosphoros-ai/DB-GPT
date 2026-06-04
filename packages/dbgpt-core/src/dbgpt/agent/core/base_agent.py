@@ -25,6 +25,8 @@ from ..util.llm.llm import LLMConfig, LLMStrategyType
 from ..util.llm.llm_client import AIWrapper
 from .action.base import Action, ActionOutput
 from .agent import Agent, AgentContext, AgentMessage, AgentReviewInfo
+from .context import ContextBudgetConfig, ContextManager
+from .context.manager import ContextStatusCallback
 from .memory.agent_memory import AgentMemory
 from .memory.gpts.base import GptsMessage
 from .memory.gpts.gpts_memory import GptsMemory
@@ -53,6 +55,9 @@ class ConversableAgent(Role, Agent):
     # 确认当前Agent是否需要进行参考资源展示
     show_reference: bool = False
 
+    # Multi-layer context management (initialized via enable_context_management())
+    _context_manager: Optional[ContextManager] = None
+
     executor: Executor = Field(
         default_factory=lambda: ThreadPoolExecutor(max_workers=1),
         description="Executor for running tasks",
@@ -62,6 +67,45 @@ class ConversableAgent(Role, Agent):
         """Create a new agent."""
         Role.__init__(self, **kwargs)
         Agent.__init__(self)
+
+    def init_context_management(
+        self,
+        config: Optional[ContextBudgetConfig] = None,
+        model_name: Optional[str] = None,
+        on_status_event: Optional[ContextStatusCallback] = None,
+    ) -> None:
+        """Initialize multi-layer context management.
+
+        Call this after the agent is fully configured (llm_client set, etc.).
+
+        Args:
+            config: Budget configuration. If None, derived from agent_context.
+            model_name: Model name for tokenizer selection.
+            on_status_event: Async callback invoked with context status dicts
+                so the caller (e.g. SSE layer) can push live updates.
+        """
+        if config is None:
+            ctx = self.agent_context
+            if ctx is None:
+                config = ContextBudgetConfig()
+            else:
+                config = ContextBudgetConfig(
+                    max_context_tokens=ctx.max_context_tokens,
+                    warning_threshold=ctx.context_warning_threshold,
+                    error_threshold=ctx.context_error_threshold,
+                )
+        llm_client = self.llm_client
+        object.__setattr__(
+            self,
+            "_context_manager",
+            ContextManager(
+                config=config,
+                model_name=model_name,
+                llm_client=llm_client,
+                on_status_event=on_status_event,
+            ),
+        )
+        logger.info("Context management enabled for agent %s", self.name)
 
     def check_available(self) -> None:
         """Check if the agent is available.
@@ -519,11 +563,37 @@ class ConversableAgent(Role, Agent):
                             },
                         )
 
-                    llm_reply, model_name = await self.thinking(
-                        thinking_messages,
-                        sender,
-                        stream_callback=_llm_stream_callback,
-                    )
+                    try:
+                        llm_reply, model_name = await self.thinking(
+                            thinking_messages,
+                            sender,
+                            stream_callback=_llm_stream_callback,
+                        )
+                    except LLMChatError as e:
+                        # Layer 4: reactive compaction on context_too_long
+                        _ctx_mgr: Optional[ContextManager] = getattr(
+                            self, "_context_manager", None
+                        )
+                        err_str = str(e).lower()
+                        if _ctx_mgr and (
+                            "context_too_long" in err_str
+                            or "context_length_exceeded" in err_str
+                            or "maximum context length" in err_str
+                        ):
+                            logger.warning(
+                                "LLM context overflow detected — applying "
+                                "reactive compaction (Layer 4)"
+                            )
+                            thinking_messages = await _ctx_mgr.reactive_compact(
+                                thinking_messages
+                            )
+                            llm_reply, model_name = await self.thinking(
+                                thinking_messages,
+                                sender,
+                                stream_callback=_llm_stream_callback,
+                            )
+                        else:
+                            raise
                     reply_message.model_name = model_name
                     reply_message.content = llm_reply
                     reply_message.resource_info = resource_info
@@ -1301,6 +1371,15 @@ class ConversableAgent(Role, Agent):
 
         if memory_list:
             agent_messages.extend(memory_list)
+
+        # Multi-layer context management: compress if budget exceeded
+        ctx_mgr: Optional[ContextManager] = getattr(self, "_context_manager", None)
+        if ctx_mgr is not None:
+            agent_messages = await ctx_mgr.manage_context(
+                messages=agent_messages,
+                current_round=current_retry_counter or 0,
+                task_progress=task_progress,
+            )
 
         # Current user input information
         if not user_prompt and (not memory_list or not current_retry_counter):

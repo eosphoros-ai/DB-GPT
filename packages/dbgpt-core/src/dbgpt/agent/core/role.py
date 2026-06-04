@@ -1,6 +1,10 @@
 """Role class for role-based conversation."""
 
+import json
+import logging
+import os
 from abc import ABC
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
@@ -17,6 +21,8 @@ from .memory.agent_memory import (
 )
 from .memory.llm import LLMImportanceScorer, LLMInsightExtractor
 from .profile import Profile, ProfileConfig
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .agent import AgentMessage
@@ -217,11 +223,17 @@ class Role(ABC, BaseModel):
             step = entry.get("step", "?")
             action = entry.get("action", "")
             phase = entry.get("phase", "")
+            action_intention = entry.get("action_intention", "")
             status = entry.get("status", "done")
+            snapshot_file = entry.get("snapshot_file", "")
             icon = "\u2705" if status == "done" else "\u274c"
             line = f"{icon} Step {step}: Action={action}"
+            if action_intention:
+                line += f" | Intention: {action_intention}"
             if phase:
                 line += f" | Phase: {phase}"
+            if snapshot_file:
+                line += f" | ref: {os.path.basename(snapshot_file)}"
             lines.append(line)
         return "\n".join(lines)
 
@@ -293,6 +305,16 @@ class Role(ABC, BaseModel):
         action = action_output.action
         action_input = action_output.action_input
         phase = action_output.phase if hasattr(action_output, "phase") else None
+        action_intention = (
+            action_output.action_intention
+            if hasattr(action_output, "action_intention")
+            else None
+        )
+        action_reason = (
+            action_output.action_reason
+            if hasattr(action_output, "action_reason")
+            else None
+        )
         observation = check_fail_reason or action_output.observations
 
         memory_map = {
@@ -304,6 +326,10 @@ class Role(ABC, BaseModel):
             memory_map["action_input"] = action_input
         if phase:
             memory_map["phase"] = phase
+        if action_intention:
+            memory_map["action_intention"] = action_intention
+        if action_reason:
+            memory_map["action_reason"] = action_reason
 
         if current_retry_counter is not None and current_retry_counter == 0:
             memory_map["question"] = question
@@ -314,17 +340,36 @@ class Role(ABC, BaseModel):
         # so it is never serialised/deserialised and stays in memory for the full
         # lifetime of the agent object.
         # ------------------------------------------------------------------
+        snapshot_path: Optional[str] = None
         if check_pass and action:
             if not hasattr(self, "_task_progress") or self._task_progress is None:
                 object.__setattr__(self, "_task_progress", [])
             progress: List[Dict] = self._task_progress  # type: ignore[assignment]
             step_num = (current_retry_counter or 0) + 1
+            # Estimate observation tokens for budget tracking
+            obs_tokens = len(observation) // 4 if observation else 0
+            # Write full operation detail to a snapshot file so Layer 1/2
+            # compaction never loses precise values (action_input, observation).
+            snapshot_path = self._write_op_snapshot(
+                step=step_num,
+                action=action,
+                action_input=action_input,
+                observation=observation,
+                thought=mem_thoughts,
+                phase=phase,
+                action_intention=action_intention,
+                action_reason=action_reason,
+            )
             progress.append(
                 {
                     "step": step_num,
                     "action": action,
                     "phase": phase or "",
+                    "action_intention": action_intention or "",
+                    "action_reason": action_reason or "",
                     "status": "done",
+                    "observation_tokens": obs_tokens,
+                    "snapshot_file": snapshot_path or "",
                 }
             )
 
@@ -336,6 +381,7 @@ class Role(ABC, BaseModel):
             fragment = fragment_cls(memory_map)
         else:
             fragment = fragment_cls(memory_content)
+        fragment.snapshot_path = snapshot_path
         await self.memory.write(fragment)
 
         action_output.memory_fragments = {
@@ -344,6 +390,70 @@ class Role(ABC, BaseModel):
             "importance": fragment.importance,
         }
         return fragment
+
+    def _write_op_snapshot(
+        self,
+        step: int,
+        action: str,
+        action_input: Optional[str],
+        observation: Optional[str],
+        thought: Optional[str],
+        phase: Optional[str],
+        action_intention: Optional[str] = None,
+        action_reason: Optional[str] = None,
+    ) -> Optional[str]:
+        """Write a full operation snapshot to disk and return the file path.
+
+        The snapshot preserves the complete action_input and observation so that
+        Layer 1 / Layer 2 compaction never loses precise values (file paths,
+        computed results, variable names, etc.).  The agent can later recover the
+        detail by reading this file via a ``read_file`` action.
+
+        Returns the absolute path of the written file, or None if no output_dir
+        is available on the agent context.
+        """
+        # Resolve the base directory from AgentContext.output_dir, falling back
+        # to DBGPT_HOME/workspace/op_snapshots.
+        output_dir: Optional[str] = None
+        ctx = getattr(self, "agent_context", None)
+        if ctx is not None:
+            output_dir = getattr(ctx, "output_dir", None)
+        if not output_dir:
+            home = os.environ.get("DBGPT_HOME", os.path.expanduser("~/.dbgpt"))
+            output_dir = os.path.join(home, "workspace", "op_snapshots")
+
+        conv_id = ""
+        if ctx is not None:
+            conv_id = getattr(ctx, "conv_id", "") or ""
+
+        snapshot_dir = os.path.join(output_dir, conv_id) if conv_id else output_dir
+        try:
+            os.makedirs(snapshot_dir, exist_ok=True)
+            safe_action = "".join(
+                c if c.isalnum() or c in "-_" else "_" for c in action
+            )
+            filename = f"step_{step:03d}_{safe_action}.json"
+            filepath = os.path.join(snapshot_dir, filename)
+            payload = {
+                "step": step,
+                "action": action,
+                "phase": phase or "",
+                "action_intention": action_intention or "",
+                "action_reason": action_reason or "",
+                "thought": thought or "",
+                "action_input": action_input or "",
+                "observation": observation or "",
+                "timestamp": datetime.utcnow().isoformat(),
+                "conv_id": conv_id,
+            }
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+            return filepath
+        except Exception:
+            logger.exception(
+                "Failed to write op snapshot for step %d action %s", step, action
+            )
+            return None
 
     async def recovering_memory(self, action_outputs: List[ActionOutput]) -> None:
         """Recover the memory from the action outputs."""

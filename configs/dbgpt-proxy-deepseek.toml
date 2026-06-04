@@ -23,9 +23,12 @@ persist_path = "pilot/data"
 # Model Configurations
 [models]
 [[models.llms]]
-name = "deepseek-reasoner"
+name = "deepseek-v4-pro"
+# name = "deepseek-reasoner"
 # name = "deepseek-chat"
 provider = "proxy/deepseek"
+# Disable V4-Pro thinking mode so ReAct responses stay parseable.
+thinking_enabled = false
 api_key = "your_deepseek_api_key"
 
 [[models.embeddings]]

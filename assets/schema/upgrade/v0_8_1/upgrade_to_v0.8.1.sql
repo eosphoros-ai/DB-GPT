@@ -1,6 +1,8 @@
 -- From 0.8.0 to 0.8.1, we have the following changes:
 USE dbgpt;
 
+ALTER TABLE gpts_messages MODIFY COLUMN content longtext COMMENT 'Content of the speech';
+
 -- connector_instance, Persist MCP connector instances (encrypted credentials, transport/extra config, lifecycle status)
 CREATE TABLE IF NOT EXISTS `connector_instance` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',

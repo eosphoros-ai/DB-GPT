@@ -2,7 +2,9 @@
 
 import json
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+import threading
+import time
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata
@@ -30,11 +32,31 @@ class ConnectorManager(BaseComponent):
 
     name = ComponentType.CONNECTOR_MANAGER
 
+    # Default TTL for the connector cache below. The expensive part of
+    # building a connector is SQLAlchemy ``MetaData.reflect(bind=engine)``
+    # inside ``RDBMSConnector.__init__``, which on large schemas (e.g. an
+    # MSSQL database with hundreds of tables) takes tens of seconds because
+    # the dialect issues per-table reflection queries. Caching the
+    # constructed connector lets that cost amortise across many chats.
+    _CONNECTOR_CACHE_DEFAULT_TTL = 1800  # 30 minutes
+
     def __init__(self, system_app: SystemApp):
         """Create a new ConnectorManager."""
         self.storage = ConnectConfigDao()
         self.system_app = system_app
         self._db_summary_client: Optional["DBSummaryClient"] = None
+
+        # Per-db_name cache of (created_at_unix_ts, connector_instance).
+        # Lookups are cheap; we serialize them through ``_cache_lock`` to
+        # avoid TOCTOU between get / set / pop.
+        self._connector_cache: Dict[str, Tuple[float, BaseConnector]] = {}
+        self._connector_cache_lock = threading.Lock()
+        # Per-db_name "creation" lock so that when many chats race for a
+        # cold db_name only one of them runs the expensive reflection;
+        # the others wait and reuse the same instance.
+        self._connector_creation_locks: Dict[str, threading.Lock] = {}
+        self._connector_cache_ttl = self._CONNECTOR_CACHE_DEFAULT_TTL
+
         super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp):
@@ -169,10 +191,95 @@ class ConnectorManager(BaseComponent):
         return result
 
     def get_connector(self, db_name: str):
-        """Create a new connection instance.
+        """Get or create a connection instance for ``db_name``.
+
+        Constructed connectors are cached for ``_connector_cache_ttl``
+        seconds (30 min by default). The motivation is that
+        ``RDBMSConnector.__init__`` runs ``MetaData.reflect(bind=engine)``,
+        which for a SQL Server database with ~900 tables takes ~60s because
+        SQLAlchemy's MSSQL dialect reflects columns/PK/FK per table. Without
+        this cache every chat invocation paid that cost; with it, only the
+        first chat after a cold start (or after the TTL expires) is slow.
+
+        Concurrency: a per-``db_name`` creation lock ensures that when
+        several requests race for the same cold entry only one of them
+        runs the slow reflection; the others wait and reuse it.
 
         Args:
             db_name (str): database name
+        """
+        now = time.time()
+        with self._connector_cache_lock:
+            cached = self._connector_cache.get(db_name)
+            if cached and now - cached[0] < self._connector_cache_ttl:
+                return cached[1]
+
+        creation_lock = self._get_connector_creation_lock(db_name)
+        with creation_lock:
+            # Double-checked locking: another thread may have populated
+            # the cache while we were waiting for the creation lock.
+            with self._connector_cache_lock:
+                cached = self._connector_cache.get(db_name)
+                if cached and time.time() - cached[0] < self._connector_cache_ttl:
+                    return cached[1]
+
+            connector = self._build_connector(db_name)
+            with self._connector_cache_lock:
+                self._connector_cache[db_name] = (time.time(), connector)
+            return connector
+
+    def invalidate_connector(self, db_name: str) -> None:
+        """Drop the cached connector (if any) for ``db_name``.
+
+        Call this after editing the datasource config, refreshing the
+        schema, or deleting the datasource. The next ``get_connector``
+        will rebuild from scratch. Best-effort disposal of the underlying
+        SQLAlchemy engine is attempted so connections are released
+        promptly rather than waiting for GC.
+        """
+        with self._connector_cache_lock:
+            cached = self._connector_cache.pop(db_name, None)
+        if cached is not None:
+            _, connector = cached
+            self._dispose_connector(connector)
+
+    def clear_connector_cache(self) -> None:
+        """Drop all cached connectors. Useful for tests / shutdown hooks."""
+        with self._connector_cache_lock:
+            cache = self._connector_cache
+            self._connector_cache = {}
+        for _, connector in cache.values():
+            self._dispose_connector(connector)
+
+    def _get_connector_creation_lock(self, db_name: str) -> threading.Lock:
+        with self._connector_cache_lock:
+            lock = self._connector_creation_locks.get(db_name)
+            if lock is None:
+                lock = threading.Lock()
+                self._connector_creation_locks[db_name] = lock
+            return lock
+
+    @staticmethod
+    def _dispose_connector(connector: BaseConnector) -> None:
+        """Best-effort release of the SQLAlchemy engine, if any."""
+        for attr in ("_engine", "engine"):
+            engine = getattr(connector, attr, None)
+            if engine is not None and hasattr(engine, "dispose"):
+                try:
+                    engine.dispose()
+                except Exception as err:  # pragma: no cover - defensive
+                    logger.debug(
+                        "engine.dispose() failed while evicting connector cache: %s",
+                        err,
+                    )
+                return
+
+    def _build_connector(self, db_name: str):
+        """Construct a fresh connector for ``db_name`` (no cache).
+
+        This is the original body of ``get_connector`` prior to caching;
+        kept as a private helper so the public ``get_connector`` method
+        can stay focused on cache logic.
         """
         db_config = self.storage.get_db_config(db_name)
 

@@ -22,14 +22,41 @@ type ChatParams = {
   onError?: (content: string, error?: Error) => void;
 };
 
+/** Context status pushed by the backend context-management layer. */
+export interface ChatContextStatus {
+  state: 'OK' | 'WARNING' | 'ERROR';
+  used_tokens: number;
+  max_tokens: number;
+  usage_percent: number;
+  layer?: string;
+  message?: string;
+}
+
+/** Map backend TokenState enum values to frontend display states. */
+function mapContextState(raw: string): 'OK' | 'WARNING' | 'ERROR' {
+  switch (raw) {
+    case 'warning':
+      return 'WARNING';
+    case 'error':
+    case 'critical':
+    case 'overflow':
+      return 'ERROR';
+    default:
+      // 'normal' or unknown
+      return 'OK';
+  }
+}
+
 const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props) => {
   const [ctrl, setCtrl] = useState<AbortController>({} as AbortController);
   const lastMessageRef = useRef<string>('');
   const { scene } = useContext(ChatContext);
+  const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null);
   const chat = useCallback(
     async ({ data, chatId, onMessage, onClose, onDone, onError, ctrl }: ChatParams) => {
       ctrl && setCtrl(ctrl);
       lastMessageRef.current = '';
+      setContextStatus(null);
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
         return;
@@ -85,6 +112,33 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
 
             try {
               parsedData = JSON.parse(message);
+
+              // Handle context status events from context management layer
+              // Completions format: {"context_status": {"used": ..., "budget": ..., ...}}
+              // React-agent format: {"type": "context.status", "used": ..., "budget": ..., ...}
+              const cs = parsedData.context_status ?? (parsedData.type === 'context.status' ? parsedData : null);
+              if (cs) {
+                const budget = Number(cs.budget ?? 0);
+                if (!Number.isFinite(budget) || budget <= 0) {
+                  setContextStatus(null);
+                  return;
+                }
+                // Only show banner when Layer 3 (LLM compression) is active
+                if (cs.compact_layer === 'layer3') {
+                  setContextStatus({
+                    state: mapContextState(cs.state || 'normal'),
+                    used_tokens: cs.used ?? 0,
+                    max_tokens: budget,
+                    usage_percent: (cs.ratio ?? 0) * 100,
+                    layer: cs.compact_layer,
+                    message: cs.message,
+                  });
+                } else {
+                  setContextStatus(null);
+                }
+                return; // Don't process as a chat message
+              }
+
               if (scene === 'chat_agent') {
                 if (parsedData.vis) {
                   message = parsedData.vis;
@@ -135,7 +189,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
     [queryAgentURL, app_code, scene],
   );
 
-  return { chat, ctrl };
+  return { chat, ctrl, contextStatus };
 };
 
 export default useChat;

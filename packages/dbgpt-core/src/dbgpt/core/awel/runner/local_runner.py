@@ -217,17 +217,40 @@ def _skip_current_downstream_by_node_name(
 ):
     if not skip_nodes:
         return
+    nodes_to_skip = []
     for child in branch_node.downstream:
         child = cast(BaseOperator, child)
         if child.node_name in skip_nodes or child.node_id in skip_node_ids:
             logger.info(f"Skip node name {child.node_name}, node id {child.node_id}")
+            nodes_to_skip.append(child)
+
+    # Pre-register all direct skip candidates so that shared downstream nodes
+    # (e.g. JoinOperator) can see the full set of skipped parents before deciding
+    # whether they themselves should be skipped.
+    for node in nodes_to_skip:
+        if node.can_skip_in_branch():
+            skip_node_ids.add(node.node_id)
+
+    # Now recurse into each candidate's downstream.
+    for node in nodes_to_skip:
+        for child in node.downstream:
+            child = cast(BaseOperator, child)
             _skip_downstream_by_id(child, skip_node_ids)
 
 
 def _skip_downstream_by_id(node: BaseOperator, skip_node_ids: Set[str]):
     if not node.can_skip_in_branch():
-        # Current node can not skip, so skip its downstream
+        # Current node cannot be skipped, so leave it and its downstream intact.
         return
+    if node.node_id in skip_node_ids:
+        # Already marked for skipping; avoid redundant traversal.
+        return
+    # A node with multiple upstream parents (e.g. JoinOperator) should only be
+    # skipped when ALL of its parents are being skipped.  If any parent is still
+    # active, this node must remain active to consume that parent's output.
+    for parent in node.upstream:
+        if isinstance(parent, BaseOperator) and parent.node_id not in skip_node_ids:
+            return
     skip_node_ids.add(node.node_id)
     for child in node.downstream:
         child = cast(BaseOperator, child)

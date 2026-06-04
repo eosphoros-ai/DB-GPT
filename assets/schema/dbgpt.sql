@@ -255,7 +255,7 @@ CREATE TABLE `gpts_messages` (
   `is_success` int(4)  NULL DEFAULT 0 COMMENT 'agent message is success',
   `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
   `app_name` varchar(255) NOT NULL COMMENT 'Current AI assistant name',
-  `content` text COMMENT 'Content of the speech',
+  `content` longtext COMMENT 'Content of the speech',
   `current_goal` text COMMENT 'The target corresponding to the current message',
   `context` text COMMENT 'Current conversation context',
   `review_info` text COMMENT 'Current conversation review info',
@@ -635,6 +635,7 @@ INSERT INTO users (username, password, email, phone)
 VALUES ('user_19', 'password_19', 'user_19@example.com', '12345678909');
 INSERT INTO users (username, password, email, phone)
 VALUES ('user_20', 'password_20', 'user_20@example.com', '12345678900');
+
 
 -- connector_instance, Persist MCP connector instances (encrypted credentials, transport/extra config, lifecycle status)
 CREATE TABLE IF NOT EXISTS `connector_instance` (

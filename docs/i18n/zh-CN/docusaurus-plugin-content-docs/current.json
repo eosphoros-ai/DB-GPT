@@ -466,5 +466,9 @@
   "sidebar.docsSidebar.doc.Use Custom Skills": {
     "message": "使用自定义技能",
     "description": "The label for the doc item Use Custom Skills in sidebar docsSidebar, linking to the doc dbgpts/how-to-use-custom-skill"
+  },
+  "sidebar.docsSidebar.doc.Context Management": {
+    "message": "上下文管理",
+    "description": "The label for the doc item Context Management in sidebar docsSidebar, linking to the doc agents/modules/context-management"
   }
 }
