@@ -1,6 +1,7 @@
 """ScheduledTaskServe - mount routes, start scheduler, recover jobs on boot."""
 
 import logging
+import os
 from typing import List, Optional, Union
 
 from sqlalchemy import URL
@@ -21,6 +22,35 @@ from .service.chat_replay_runner import run_scheduled_task
 from .service.service import ScheduledTaskService
 
 logger = logging.getLogger(__name__)
+
+# Env var name for the master switch that controls whether scheduled tasks
+# are actually *executed* on this process. See _scheduler_enabled().
+_SCHEDULER_ENABLED_ENV = "DBGPT_CHAT_TASK_SCHEDULER_ENABLED"
+
+# In-memory jobstore sentinel. TaskScheduler treats this exact URL as a signal
+# to use APScheduler's MemoryJobStore (no SQLite file, no apscheduler_jobs
+# table). The business tables (dbgpt_serve_scheduled_task / _run) are the sole
+# source of truth; jobs are rehydrated into memory on boot via
+# _recover_jobs_from_db().
+_IN_MEMORY_JOBSTORE_URL = "sqlite:///:memory:"
+
+
+def _scheduler_enabled() -> bool:
+    """Env-driven master switch for *executing* scheduled tasks.
+
+    Controls rehydrate + triggering only — the REST API is always mounted,
+    so task CRUD keeps working even when this returns False.
+
+    Reads ``DBGPT_CHAT_TASK_SCHEDULER_ENABLED``. Accepts ``1/true/yes/on``
+    (case-insensitive) as enabled. Unset defaults to enabled.
+
+    Returns:
+        bool: True if scheduled-task execution should run on this process.
+    """
+    raw = os.getenv(_SCHEDULER_ENABLED_ENV)
+    if raw is None:
+        return True
+    return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
 class ScheduledTaskServe(BaseServe):
@@ -69,8 +99,13 @@ class ScheduledTaskServe(BaseServe):
 
         # Build scheduler / service.  The runner callable is the
         # module-level run_scheduled_task (not a bound method) so that
-        # APScheduler's SQLAlchemyJobStore can pickle the job state.
-        self._scheduler = TaskScheduler()
+        # APScheduler can pickle the job state if ever needed.
+        #
+        # Use an in-memory jobstore: the business tables are the single source
+        # of truth and jobs are rehydrated on boot (_recover_jobs_from_db),
+        # so there is no need for APScheduler to persist its own job table
+        # (avoids a stray scheduler.db / apscheduler_jobs table in prod DBs).
+        self._scheduler = TaskScheduler(jobstore_url=_IN_MEMORY_JOBSTORE_URL)
         self._service = ScheduledTaskService(
             scheduler=self._scheduler,
             runner_callable=run_scheduled_task,
@@ -95,7 +130,19 @@ class ScheduledTaskServe(BaseServe):
         event loop is already running — the correct context for
         AsyncIOScheduler.start(). The runner auth secret is resolved in
         init_app, so the scheduler always starts here.
+
+        Gated by DBGPT_CHAT_TASK_SCHEDULER_ENABLED: when disabled, the
+        scheduler is neither started nor rehydrated, but the REST API
+        (mounted in init_app) stays fully available.
         """
+        if not _scheduler_enabled():
+            logger.info(
+                "Scheduler execution disabled via %s; REST API stays "
+                "available, no jobs will be rehydrated or triggered.",
+                _SCHEDULER_ENABLED_ENV,
+            )
+            return
+
         if self._scheduler is None:
             logger.warning("Scheduler not initialised; skipping startup.")
             return
