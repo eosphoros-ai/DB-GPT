@@ -180,18 +180,37 @@ class ConnectConfigDao(BaseDao):
                 session = self.get_raw_session()
                 if not db_path:
                     update_statement = text(
-                        f"UPDATE connect_config set db_type='{db_type}', "
-                        f"db_host='{db_host}', db_port={db_port}, db_user='{db_user}', "
-                        f"db_pwd='{db_pwd}', comment='{comment}' where "
-                        f"db_name='{db_name}'"
+                        """
+                        UPDATE connect_config
+                        SET db_type=:db_type, db_host=:db_host, db_port=:db_port,
+                            db_user=:db_user, db_pwd=:db_pwd, comment=:comment
+                        WHERE db_name=:db_name
+                        """
                     )
+                    params = {
+                        "db_name": db_name,
+                        "db_type": db_type,
+                        "db_host": db_host,
+                        "db_port": db_port,
+                        "db_user": db_user,
+                        "db_pwd": db_pwd,
+                        "comment": comment,
+                    }
                 else:
                     update_statement = text(
-                        f"UPDATE connect_config set db_type='{db_type}', "
-                        f"db_path='{db_path}', comment='{comment}' where "
-                        f"db_name='{db_name}'"
+                        """
+                        UPDATE connect_config
+                        SET db_type=:db_type, db_path=:db_path, comment=:comment
+                        WHERE db_name=:db_name
+                        """
                     )
-                session.execute(update_statement)
+                    params = {
+                        "db_name": db_name,
+                        "db_type": db_type,
+                        "db_path": db_path,
+                        "comment": comment,
+                    }
+                session.execute(update_statement, params)
                 session.commit()
                 session.close()
             except Exception as e:
@@ -233,24 +252,40 @@ class ConnectConfigDao(BaseDao):
     def get_db_list(self, db_name: Optional[str] = None, user_id: Optional[str] = None):
         """Get db list."""
         session = self.get_raw_session()
+        conditions = []
+        params = {}
         if db_name and user_id:
-            sql = f"SELECT * FROM connect_config where (user_id='{user_id}' or user_id='' or user_id IS NULL) and db_name='{db_name}'"  # noqa
+            conditions.append(
+                "(user_id=:user_id OR user_id='' OR user_id IS NULL)"
+            )
+            conditions.append("db_name=:db_name")
+            params["user_id"] = user_id
+            params["db_name"] = db_name
         elif user_id:
-            sql = f"SELECT * FROM connect_config where user_id='{user_id}' or user_id='' or user_id IS NULL"  # noqa
+            conditions.append(
+                "(user_id=:user_id OR user_id='' OR user_id IS NULL)"
+            )
+            params["user_id"] = user_id
         elif db_name:
-            sql = f"SELECT * FROM connect_config where  db_name='{db_name}'"  # noqa
-        else:
-            sql = f"SELECT * FROM connect_config"  # noqa
+            conditions.append("db_name=:db_name")
+            params["db_name"] = db_name
 
-        result = session.execute(text(sql))
-        fields = [field[0] for field in result.cursor.description]  # type: ignore
-        data = []
-        for row in result.cursor.fetchall():  # type: ignore
-            row_dict = {}
-            for i, field in enumerate(fields):
-                row_dict[field] = row[i]
-            data.append(row_dict)
-        return data
+        sql = "SELECT * FROM connect_config"
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
+
+        try:
+            result = session.execute(text(sql), params)
+            fields = [field[0] for field in result.cursor.description]  # type: ignore
+            data = []
+            for row in result.cursor.fetchall():  # type: ignore
+                row_dict = {}
+                for i, field in enumerate(fields):
+                    row_dict[field] = row[i]
+                data.append(row_dict)
+            return data
+        finally:
+            session.close()
 
     def delete_db(self, db_name):
         """Delete db connect info."""
