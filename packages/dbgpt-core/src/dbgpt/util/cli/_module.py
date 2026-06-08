@@ -30,14 +30,19 @@ def _scan_awel_flow(modules: Optional[List[str]] = None):
     if not modules:
         modules = ["dbgpt", "dbgpt_client", "dbgpt_ext", "dbgpt_serve", "dbgpt_app"]
     for module in modules:
-        config = ScannerConfig(
-            module_path=module,
-            base_class=object,
-            recursive=True,
-            class_filter=lambda cls: _is_flow_operator(cls) or _is_flow_resource(cls),
-            skip_files=["test_*.py", "*_test.py"],
-        )
-        scanner.scan_and_register(config)
+        try:
+            config = ScannerConfig(
+                module_path=module,
+                base_class=object,
+                recursive=True,
+                class_filter=lambda cls: _is_flow_operator(cls) or _is_flow_resource(cls),
+                skip_files=["test_*.py", "*_test.py"],
+            )
+            scanner.scan_and_register(config)
+        except Exception as e:
+            import logging
+            logging.warning(f"Skipping module '{module}' due to error: {e}")
+            continue
     flow_cls = scanner.get_registered_items()
     compat_metadata = []
     for cls_name, cls in flow_cls.items():
