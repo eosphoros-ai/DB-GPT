@@ -1,4 +1,5 @@
 import logging
+from importlib.resources import as_file, files
 from typing import Optional
 
 from dbgpt.component import SystemApp
@@ -60,6 +61,7 @@ def initialize_components(
     # Initialize prompt templates - MUST be after serve apps registration
     _initialize_prompt_templates()
     _initialize_benchmark_data(system_app)
+    _initialize_connector_manager(system_app)
 
 
 def _initialize_model_cache(system_app: SystemApp, web_config: ServiceWebParameters):
@@ -225,3 +227,23 @@ def _initialize_benchmark_data(system_app: SystemApp):
     )
 
     initialize_benchmark_data(system_app)
+
+
+def _initialize_connector_manager(system_app: SystemApp) -> None:
+    """Initialize external connector manager.
+
+    This registers the External ConnectorManager for MCP-based connectors.
+    Note: This is separate from the SQL datasource ConnectorManager.
+    """
+    try:
+        from dbgpt.agent.resource.connector.manager import (
+            ConnectorManager as _ExtConnectorManager,
+        )
+
+        manager = system_app.register(_ExtConnectorManager)
+        catalog_resource = files("dbgpt_ext.connector").joinpath("catalog.json")
+        with as_file(catalog_resource) as catalog_path:
+            manager.load_catalog(str(catalog_path))
+        logger.info("External ConnectorManager registered successfully")
+    except Exception as e:
+        logger.warning("Failed to register external ConnectorManager: %s", e)

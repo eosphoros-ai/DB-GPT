@@ -16,4 +16,40 @@
 .ant-tabs-ink-bar {
   @apply dark:bg-white;
 }
-/* 你可能需要添加更多的自定义样式，取决于你的需求 */
+
+/* 定时任务页面：让 Tabs 内容区域可滚动，不影响其他页面 */
+.scrollable-tabs.ant-tabs {
+  height: 100%;
+}
+.scrollable-tabs .ant-tabs-content-holder {
+  flex: auto;
+  min-height: 0;
+  overflow: auto !important;
+}
+.scrollable-tabs .ant-tabs-content {
+  height: auto !important;
+}
+.scrollable-tabs .ant-tabs-tabpane {
+  height: auto !important;
+}
+
+/* 定时任务:增强 Switch off(暂停)态在浅色磨砂背景上的对比度。
+   antd5 用 cssinjs 动态注入样式,优先级与本规则相同(0,2,0)时注入顺序靠后会胜出,
+   故用 !important 锁定;并改用实心灰(对齐页面 gray-400),不再依赖低透明度叠加 */
+.scheduled-switch.ant-switch:not(.ant-switch-checked) {
+  background: #9ca3af !important;
+}
+.scheduled-switch.ant-switch:not(.ant-switch-checked):hover:not(.ant-switch-disabled) {
+  background: #6b7280 !important;
+}
+/* 滑块更立体,与灰色轨道拉开层次 */
+.scheduled-switch.ant-switch .ant-switch-handle::before {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+/* 暗色模式:用稍亮的实心灰,避免在暗背景下又糊掉 */
+.dark .scheduled-switch.ant-switch:not(.ant-switch-checked) {
+  background: #6b7280 !important;
+}
+.dark .scheduled-switch.ant-switch:not(.ant-switch-checked):hover:not(.ant-switch-disabled) {
+  background: #9ca3af !important;
+}

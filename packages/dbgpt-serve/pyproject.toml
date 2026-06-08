@@ -11,6 +11,7 @@ requires-python = ">= 3.10"
 
 dependencies = [
     "dbgpt-ext",
+    "apscheduler>=3.10,<4",
 ]
 
 [project.urls]
