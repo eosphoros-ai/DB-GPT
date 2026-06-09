@@ -176,6 +176,43 @@ async def _resolve_model_context_tokens(
     return None
 
 
+def _postgres_sql_dialect_rules(database_name: Optional[str] = None) -> str:
+    """Return PostgreSQL-only SQL rules for the React data assistant prompt."""
+    rules = """
+## PostgreSQL SQL 方言规则
+- 当前数据库固定为 PostgreSQL，只能生成 PostgreSQL 语法。
+- 禁止使用 MySQL/SQLite/SQL Server 语法。
+- 禁止使用反引号 `identifier`，表名和字段名默认不要加引号；确需引用标识符时使用双引号。
+- 字符串和日期常量必须使用单引号，例如 '2026-05-01'。
+- 日期运算使用 PostgreSQL 写法：CURRENT_DATE - INTERVAL '7 days'。
+- 日期格式化使用 TO_CHAR(date_col, 'YYYY-MM-DD')。
+- 空值处理使用 COALESCE(col, 0)，不要使用 IFNULL 或 NVL。
+- 条件聚合优先使用 SUM(CASE WHEN ... THEN ... ELSE ... END)。
+- 字符串聚合使用 STRING_AGG(col::text, ',')，不要使用 GROUP_CONCAT。
+- 分页使用 LIMIT n OFFSET m，不要使用 LIMIT m,n。
+- 类型转换使用 CAST(col AS type) 或 col::type。
+- 查询前必须只使用“表结构”里真实存在的表名和字段名。
+- 所有 SQL 必须是单条 SELECT / WITH ... SELECT，禁止多语句。
+- PostgreSQL 中 ROUND(double precision, integer) 会报错；比例、均值、
+  里程等小数保留必须写成 ROUND((expr)::numeric, n)。
+- UNION/UNION ALL 每个 SELECT 对应列类型必须一致，日期和文本混用时先统一
+  CAST(... AS text) 或统一保持 date 类型。
+"""
+    if (database_name or "").lower() == "bus_info":
+        rules += """
+## bus_info 已验证业务字段规则
+- bigdata_ticket_revenue 使用 revenue_date 作为日期字段，不要使用 target_date。
+- dim_resource_line 不存在 delete_flag，过滤线路时不要自动追加 delete_flag 条件。
+- ads_ope_ontime_assess_d 不存在 zd_cnt；准点统计使用 start_cnt、start_zd_cnt、
+  back_cnt、back_zd_cnt 等表结构中真实字段。
+- ads_ope_summary_line_d 不存在 driver_number；驾驶员维度使用
+  ads_ope_summary_driver_d 或表结构中明确包含驾驶员字段的表。
+- dim_fleet_vehicle 车辆编号优先使用 inner_code，车牌使用 license_plate；
+  不要臆造 vehicle_code。
+"""
+    return rules.strip()
+
+
 async def _load_context_budget_config(
     llm_client: Any = None,
     model_name: Optional[str] = None,
@@ -1321,6 +1358,7 @@ async def _react_agent_stream_impl(
             database_connector = local_db_manager.get_connector(database_name)
             table_names = list(database_connector.get_table_names())
             table_info = database_connector.get_table_info_no_throw()
+            postgres_sql_rules = _postgres_sql_dialect_rules(database_name)
             database_context = f"""
 ## 数据库信息
 - 数据库名: {database_name}
@@ -1329,6 +1367,7 @@ async def _react_agent_stream_impl(
 {table_info}
 - 使用 'sql_query' 工具执行 SQL 查询
 - **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**
+{postgres_sql_rules}
 """
             logger.info(
                 f"Loaded database connector: {database_name} "
@@ -1750,7 +1789,9 @@ print(json.dumps(summary, ensure_ascii=False))
 
     @tool(
         description=(
-            "对用户选择的数据库执行 SQL 查询（仅支持 SELECT）。"
+            "对用户选择的 PostgreSQL 数据库执行 SQL 查询（仅支持单条 SELECT 或 "
+            "WITH ... SELECT）。必须使用 PostgreSQL 方言，并且只能使用表结构中"
+            "真实存在的表名和字段名。"
             '参数: {"sql": "SELECT 语句"}'
         )
     )
