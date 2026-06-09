@@ -382,7 +382,7 @@ class ReActAction(ToolAction):
         )
 
         if html_content:
-            html_content = self._repair_truncated_html(html_content)
+            html_content = ReActAction._repair_truncated_html(html_content)
             return {"html": html_content, "title": title_value}
         return {}
 

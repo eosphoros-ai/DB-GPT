@@ -110,6 +110,18 @@ class TestMultiParam:
         result = ReActAction._fallback_parse_args("html_interpreter", raw, resource)
         assert "<p>Simple report</p>" in result.get("html", "")
 
+    def test_html_fallback_extraction_repairs_truncated_html(self):
+        raw = (
+            '{"html": "<!DOCTYPE html><html><body><div class="card">Hello</div>", '
+            '"title": "Broken Report"}'
+        )
+
+        result = ReActAction._extract_html_interpreter_args(raw)
+
+        assert result["title"] == "Broken Report"
+        assert '<div class="card">Hello</div>' in result["html"]
+        assert result["html"].endswith("</body></html>")
+
 
 class TestEdgeCases:
     def test_unknown_tool_returns_empty(self):

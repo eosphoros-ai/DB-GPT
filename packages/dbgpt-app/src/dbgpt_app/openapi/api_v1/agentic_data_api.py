@@ -189,60 +189,76 @@ async def _load_context_budget_config(
         value = getattr(agent_context, field_name, default)
         return default if value is None else value
 
+    def _positive_int(value: Any) -> Optional[int]:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed > 0 else None
+
+    agent_context = None
     try:
         app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
         web_config = getattr(getattr(app_config, "service", None), "web", None)
         agent_context = getattr(web_config, "agent_context", None)
-        max_context_tokens = _value(
-            agent_context, "max_context_tokens", defaults.max_context_tokens
-        )
-        return ContextBudgetConfig(
-            max_context_tokens=max_context_tokens,
-            warning_threshold=_value(
-                agent_context, "warning_threshold", defaults.warning_threshold
-            ),
-            error_threshold=_value(
-                agent_context, "error_threshold", defaults.error_threshold
-            ),
-            critical_threshold=_value(
-                agent_context, "critical_threshold", defaults.critical_threshold
-            ),
-            reserved_tokens=_value(
-                agent_context, "reserved_tokens", defaults.reserved_tokens
-            ),
-            min_keep_recent_rounds=_value(
-                agent_context,
-                "min_keep_recent_rounds",
-                defaults.min_keep_recent_rounds,
-            ),
-            max_compact_failures=_value(
-                agent_context,
-                "max_compact_failures",
-                defaults.max_compact_failures,
-            ),
-            max_observation_age_rounds=_value(
-                agent_context,
-                "max_observation_age_rounds",
-                defaults.max_observation_age_rounds,
-            ),
-            truncated_observation_max_chars=(
-                _value(
-                    agent_context,
-                    "truncated_observation_max_chars",
-                    defaults.truncated_observation_max_chars,
-                )
-            ),
-            min_keep_tokens=_value(
-                agent_context,
-                "min_keep_tokens",
-                defaults.min_keep_tokens,
-            ),
-        )
     except Exception:
         logger.debug(
             "Failed to load agent context config; using defaults", exc_info=True
         )
-        return defaults
+
+    configured_max_context_tokens = _positive_int(
+        _value(agent_context, "max_context_tokens", None)
+    )
+    if configured_max_context_tokens:
+        max_context_tokens = configured_max_context_tokens
+    else:
+        max_context_tokens = (
+            await _resolve_model_context_tokens(llm_client, model_name)
+            or defaults.max_context_tokens
+        )
+
+    return ContextBudgetConfig(
+        max_context_tokens=max_context_tokens,
+        warning_threshold=_value(
+            agent_context, "warning_threshold", defaults.warning_threshold
+        ),
+        error_threshold=_value(
+            agent_context, "error_threshold", defaults.error_threshold
+        ),
+        critical_threshold=_value(
+            agent_context, "critical_threshold", defaults.critical_threshold
+        ),
+        reserved_tokens=_value(
+            agent_context, "reserved_tokens", defaults.reserved_tokens
+        ),
+        min_keep_recent_rounds=_value(
+            agent_context,
+            "min_keep_recent_rounds",
+            defaults.min_keep_recent_rounds,
+        ),
+        max_compact_failures=_value(
+            agent_context,
+            "max_compact_failures",
+            defaults.max_compact_failures,
+        ),
+        max_observation_age_rounds=_value(
+            agent_context,
+            "max_observation_age_rounds",
+            defaults.max_observation_age_rounds,
+        ),
+        truncated_observation_max_chars=(
+            _value(
+                agent_context,
+                "truncated_observation_max_chars",
+                defaults.truncated_observation_max_chars,
+            )
+        ),
+        min_keep_tokens=_value(
+            agent_context,
+            "min_keep_tokens",
+            defaults.min_keep_tokens,
+        ),
+    )
 
 
 def _extract_auto_data_markers(text: str) -> tuple[str, Dict[str, str]]:
@@ -1036,9 +1052,15 @@ async def _react_agent_stream_impl(
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.agent.util.react_parser import ReActOutputParser
-    from dbgpt.core import StorageConversation
+    from dbgpt.core import (
+        ModelMessage,
+        ModelMessageRoleType,
+        ModelRequest,
+        StorageConversation,
+    )
     from dbgpt.model.cluster.client import DefaultLLMClient
     from dbgpt.util.code.server import get_code_server
+    from dbgpt_app.openapi.api_v1.html_repair import repair_html_if_needed
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
     from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
@@ -2658,11 +2680,84 @@ print(json.dumps(summary, ensure_ascii=False))
                 ensure_ascii=False,
             )
 
+        async def _ai_repair_html(raw_html, validation):
+            if len(raw_html) > 120_000:
+                logger.warning(
+                    "html_interpreter: skip AI HTML repair for large input, "
+                    "html=%d chars",
+                    len(raw_html),
+                )
+                return None
+
+            model_name = dialogue.model_name
+            if not model_name:
+                try:
+                    models = await llm_client.models()
+                    model_name = models[0].model if models else None
+                except Exception as e:
+                    logger.warning("html_interpreter: list models failed: %s", e)
+                    return None
+            if not model_name:
+                return None
+
+            issues = "; ".join(validation.issues[:30]) or "invalid_html"
+            prompt = (
+                "Repair the generated HTML document below so it is a complete, "
+                "valid, renderable HTML document. Preserve the report content, "
+                "visual design, scripts, styles, image paths, and data values. "
+                "Fix missing required tags, malformed closing tags, unclosed "
+                "tags, and unsafe control characters only. Return only the "
+                "complete repaired HTML, with no markdown fences or explanation.\n\n"
+                f"Validation issues: {issues}\n"
+                f"Report title: {title or 'Report'}\n\n"
+                "<ORIGINAL_HTML>\n"
+                f"{raw_html}\n"
+                "</ORIGINAL_HTML>"
+            )
+            try:
+                request = ModelRequest.build_request(
+                    model=model_name,
+                    messages=[
+                        ModelMessage(
+                            role=ModelMessageRoleType.SYSTEM,
+                            content=(
+                                "You repair generated HTML. You must output only "
+                                "one complete HTML document."
+                            ),
+                        ),
+                        ModelMessage(
+                            role=ModelMessageRoleType.HUMAN,
+                            content=prompt,
+                        ),
+                    ],
+                    temperature=0.0,
+                    max_new_tokens=min(dialogue.max_new_tokens or 8192, 8192),
+                )
+                output = await llm_client.generate(request)
+                if output.success and output.has_text:
+                    return output.text
+                logger.warning(
+                    "html_interpreter: AI HTML repair failed, error_code=%s",
+                    output.error_code,
+                )
+            except Exception as e:
+                logger.warning("html_interpreter: AI HTML repair failed: %s", e)
+            return None
+
         # Post-process: fix image URLs that the LLM may have guessed wrong.
         # Files in STATIC_MESSAGE_IMG_PATH are named "{uuid8}_{original}.ext".
         # The LLM might reference "/images/original.ext" (without UUID prefix)
         # or even just "original.ext".  Build a lookup and replace.
         fixed_html = html.strip()
+        # LLMs sometimes persist escaped closing tags like <\/style> or
+        # <\/script>. In iframe srcDoc, browsers do not treat those as real
+        # closing tags, so the report can be swallowed as CSS/JS text.
+        fixed_html = re.sub(
+            r"<\\+\s*/\s*([A-Za-z][A-Za-z0-9:-]*)\s*>",
+            r"</\1>",
+            fixed_html,
+            flags=re.IGNORECASE,
+        )
         try:
             IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
             # Map: lowercase base name (without uuid prefix) -> served path
@@ -2769,6 +2864,12 @@ print(json.dumps(summary, ensure_ascii=False))
                         fixed_html += section
         except Exception:
             pass
+
+        fixed_html = await repair_html_if_needed(
+            fixed_html,
+            title=title,
+            ai_repair=_ai_repair_html,
+        )
 
         chunks: List[Dict[str, Any]] = [
             {"output_type": "html", "content": fixed_html, "title": title},
@@ -2989,6 +3090,170 @@ print(json.dumps(summary, ensure_ascii=False))
             return True
         return False
 
+    def _extract_html_document(text: str) -> Optional[str]:
+        """Extract an HTML document from plain text or fenced markdown."""
+        stripped = text.strip()
+        if _looks_like_html(stripped):
+            return stripped
+
+        for match in re.finditer(
+            r"```(?:html)?\s*(.*?)```",
+            stripped,
+            flags=re.IGNORECASE | re.DOTALL,
+        ):
+            candidate = match.group(1).strip()
+            if _looks_like_html(candidate):
+                return candidate
+
+        match = re.search(
+            r"(?is)(<!doctype\s+html\b.*?</html>|<html\b.*?</html>)",
+            stripped,
+        )
+        if match:
+            return match.group(1).strip()
+        return None
+
+    def _extract_html_from_tool_result(value: Any, depth: int = 0) -> Optional[str]:
+        """Extract real HTML from nested tool-result JSON strings/chunks."""
+        if depth > 4 or value is None:
+            return None
+        if isinstance(value, dict):
+            chunks = value.get("chunks")
+            if isinstance(chunks, list):
+                for item in chunks:
+                    html = _extract_html_from_tool_result(item, depth + 1)
+                    if html:
+                        return html
+            output_type = str(value.get("output_type") or "").lower()
+            if output_type == "html":
+                for key in ("content", "html"):
+                    html = _extract_html_from_tool_result(value.get(key), depth + 1)
+                    if html:
+                        return html
+            for key in ("content", "html", "result"):
+                html = _extract_html_from_tool_result(value.get(key), depth + 1)
+                if html:
+                    return html
+            return None
+        if isinstance(value, list):
+            for item in value:
+                html = _extract_html_from_tool_result(item, depth + 1)
+                if html:
+                    return html
+            return None
+        if not isinstance(value, str):
+            return None
+        text = value.strip()
+        if not text:
+            return None
+        if text[:1] in ("{", "["):
+            try:
+                parsed = json.loads(text)
+            except Exception:
+                pass
+            else:
+                return _extract_html_from_tool_result(parsed, depth + 1)
+        return _extract_html_document(text)
+
+    async def _auto_render_final_html(
+        final_value: Any,
+    ) -> tuple[List[str], Optional[str]]:
+        """Render final HTML into a real html_interpreter step when missing."""
+        auto_html = _extract_html_from_tool_result(final_value)
+        if not auto_html:
+            return [], None
+
+        was_html_rendered = any(
+            (s.get("action") or "").strip().lower() == "html_interpreter"
+            or any(
+                (o.get("output_type") or "").strip().lower() == "html"
+                for o in s.get("outputs", [])
+                if isinstance(o, dict)
+            )
+            for s in history_steps
+        )
+        if was_html_rendered:
+            return [], None
+
+        try:
+            safe_conv_id = re.sub(
+                r"[^A-Za-z0-9_.-]+",
+                "_",
+                cache_conv_id or "default",
+            )[:48]
+            tmp_path = os.path.join(
+                tempfile.gettempdir(),
+                f"auto_report_{safe_conv_id}_{uuid.uuid4().hex[:8]}.html",
+            )
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(auto_html)
+
+            render_result = await html_interpreter(file_path=tmp_path, title="运营报告")
+            render_payload = json.loads(render_result)
+            render_chunks = [
+                item
+                for item in render_payload.get("chunks", [])
+                if isinstance(item, dict)
+            ]
+            if not render_chunks:
+                return [], None
+
+            events: List[str] = []
+            auto_step_id, auto_step_event = build_step(
+                "html_interpreter",
+                "Auto-render final HTML report",
+                phase="生成报告",
+            )
+            events.append(auto_step_event)
+            auto_history_step = {
+                "id": auto_step_id,
+                "title": "html_interpreter",
+                "detail": "Auto-render final HTML report",
+                "phase": "生成报告",
+                "thought": "自动将最终 HTML 渲染为可预览报告",
+                "action_intention": "生成HTML报告",
+                "action_reason": (
+                    "最终回答包含HTML，但没有调用html_interpreter，"
+                    "因此自动补充报告预览步骤"
+                ),
+                "action": "html_interpreter",
+                "action_input": json.dumps(
+                    {"file_path": tmp_path, "title": "运营报告"},
+                    ensure_ascii=False,
+                ),
+                "outputs": [],
+                "status": "running",
+            }
+            events.append(
+                step_meta(
+                    auto_step_id,
+                    auto_history_step["thought"],
+                    "html_interpreter",
+                    auto_history_step["action_input"],
+                    "html_interpreter",
+                    action_intention=auto_history_step["action_intention"],
+                    action_reason=auto_history_step["action_reason"],
+                )
+            )
+            for item in render_chunks:
+                output_type = item.get("output_type", "text")
+                content = item.get("content")
+                title = item.get("title")
+                chunk_content = (
+                    {"content": content, "title": title} if title else content
+                )
+                events.append(step_chunk(auto_step_id, output_type, chunk_content))
+                auto_history_step["outputs"].append(
+                    {"output_type": output_type, "content": chunk_content}
+                )
+            auto_history_step["status"] = "done"
+            history_steps.append(auto_history_step)
+            events.append(step_done(auto_step_id))
+            return events, "HTML运营报告已生成，请在右侧预览或下载。"
+        except Exception as e:
+            logger.warning(f"Auto html_interpreter failed: {e}")
+            return [], None
+
     def _collect_history_summary(steps: List[Dict[str, Any]]) -> str:
         """Build a summary from all completed history steps' observations."""
         parts: List[str] = []
@@ -3000,6 +3265,8 @@ print(json.dumps(summary, ensure_ascii=False))
             for out in outputs:
                 content = out.get("content") or ""
                 if not content:
+                    continue
+                if not isinstance(content, str):
                     continue
                 # Skip raw SQL, code blocks, and very short outputs
                 if _looks_like_raw_sql(content):
@@ -3368,7 +3635,8 @@ Thought: 查询五月各线路营收排名
 Action Intention: 查询线路营收TOP15
 Action Reason: 为报告提供线路维度对比数据
 Action: sql_query
-Action Input: {{"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}}
+Action Input:
+{{"sql": "SELECT line_code FROM bigdata_ticket_revenue LIMIT 15"}}
 
 Example (WRONG - will fail):
 Thought: 我需要查询数据...让我先想想...
@@ -3582,7 +3850,8 @@ Thought: 查询五月各线路营收排名
 Action Intention: 查询线路营收TOP15
 Action Reason: 为报告提供线路维度对比数据
 Action: sql_query
-Action Input: {{"sql": "SELECT line_code, SUM(total_amount) AS revenue FROM bigdata_ticket_revenue WHERE revenue_date >= '2026-05-01' GROUP BY line_code ORDER BY revenue DESC LIMIT 15"}}
+Action Input:
+{{"sql": "SELECT line_code FROM bigdata_ticket_revenue LIMIT 15"}}
 
 Example (WRONG - will fail):
 Thought: 我需要查询数据...让我先想想...
@@ -4149,27 +4418,13 @@ fences.
             if m:
                 final_content = m.group(1).replace('\\"', '"').replace('\\n', '\n')
 
-        # Auto-render: if terminate result contains HTML but html_interpreter
-        # was never called, write to file and render it automatically.
-        if isinstance(final_content, str) and _looks_like_html(final_content):
-            was_html_rendered = any(
-                (s.get("action") or "").strip().lower() == "html_interpreter"
-                for s in history_steps
-            )
-            if not was_html_rendered:
-                try:
-                    import tempfile, os
-                    tmp_path = os.path.join(
-                        tempfile.gettempdir(), "auto_report.html"
-                    )
-                    with open(tmp_path, "w", encoding="utf-8") as f:
-                        f.write(final_content)
-                    render_result = await html_interpreter(
-                        file_path=tmp_path, title="运营报告"
-                    )
-                    final_content = render_result
-                except Exception as e:
-                    logger.warning(f"Auto html_interpreter failed: {e}")
+        auto_events, rendered_final_content = await _auto_render_final_html(
+            final_content
+        )
+        for event in auto_events:
+            yield event
+        if rendered_final_content:
+            final_content = rendered_final_content
     elif reply.action_report:
         # Loop ended without terminate (max retries or timeout).
         # reply.content is raw LLM output containing ReAct prefixes.
@@ -4219,8 +4474,22 @@ fences.
                 "任务执行已达到最大步数限制，请查看上方各步骤的执行结果。"
                 + incomplete_hint
             )
+
+        auto_events, rendered_final_content = await _auto_render_final_html(
+            final_content
+        )
+        for event in auto_events:
+            yield event
+        if rendered_final_content:
+            final_content = rendered_final_content
     else:
         final_content = reply.content or ""
+
+    auto_events, rendered_final_content = await _auto_render_final_html(final_content)
+    for event in auto_events:
+        yield event
+    if rendered_final_content:
+        final_content = rendered_final_content
 
     # Persist AI reply with structured history payload
     history_payload = json.dumps(

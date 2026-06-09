@@ -57,8 +57,10 @@ const resolveImageUrl = (src: string): string => {
 /** Replace `/images/...` references inside HTML content with full backend URLs */
 const resolveHtmlImageUrls = (html: string): string => {
   const base = process.env.API_BASE_URL || '';
-  if (!base || !html) return html;
-  return html.replace(/(src\s*=\s*["'])\/images\//gi, `$1${base}/images/`);
+  if (!html) return html;
+  const normalizedHtml = html.replace(/<\\+\/\s*([a-z][\w:-]*)\s*>/gi, '</$1>');
+  if (!base) return normalizedHtml;
+  return normalizedHtml.replace(/(src\s*=\s*["'])\/images\//gi, `$1${base}/images/`);
 };
 
 export interface ExecutionOutput {
@@ -1228,7 +1230,7 @@ const SkillCardRenderer: React.FC<{
       setIsAdded(true);
       message.success(t('skill_added_success', { skillName }));
     }
-  }, [skillName, isAdded]);
+  }, [skillName, isAdded, t]);
 
   const displayName = detailData?.metadata?.name || detailData?.skill_name || skillName;
   const description = detailData?.metadata?.description || '';
@@ -1451,7 +1453,6 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   onRerun,
   onShare,
   terminalTitle,
-  onCollapse,
   artifacts,
   onArtifactClick,
   panelView: controlledPanelView,
@@ -1515,9 +1516,10 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     } else {
       const htmlOutput = visibleOutputs.find(o => o.output_type === 'html');
       if (htmlOutput) {
-        htmlStr = typeof htmlOutput.content === 'string'
-          ? htmlOutput.content
-          : htmlOutput.content?.html || htmlOutput.content?.content || String(htmlOutput.content);
+        htmlStr =
+          typeof htmlOutput.content === 'string'
+            ? htmlOutput.content
+            : htmlOutput.content?.html || htmlOutput.content?.content || String(htmlOutput.content);
       }
     }
     if (!htmlStr) {
@@ -1684,7 +1686,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         </div>
 
         <div className='flex items-center gap-1'>
-          {(panelView === 'html-preview' && previewArtifact || panelView === 'execution' && hasHtmlOutput) && (
+          {((panelView === 'html-preview' && previewArtifact) || (panelView === 'execution' && hasHtmlOutput)) && (
             <Tooltip title={t('export_pdf')}>
               <Button
                 type='text'
