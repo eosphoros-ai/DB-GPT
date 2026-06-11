@@ -26,6 +26,10 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt_app.openapi.api_v1.report_data_guard import (
+    SqlResult,
+    validate_html_report_data,
+)
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -201,6 +205,10 @@ def _postgres_sql_dialect_rules(database_name: Optional[str] = None) -> str:
     if (database_name or "").lower() == "bus_info":
         rules += """
 ## bus_info 已验证业务字段规则
+- 运营类数据查询（运营/营运/班次/线路/驾驶员/车辆/客流/收入/里程/
+  准点/计划/趟次/日报/明细/统计/报表等）必须优先选用 ads_ 开头的
+  ADS 汇总表；只有 ADS 表缺少所需字段、粒度不满足或确需关联基础属性时，
+  才回退使用 dwd_、dim_、bigdata_ 等明细表或维表，并在回答中说明原因。
 - bigdata_ticket_revenue 使用 revenue_date 作为日期字段，不要使用 target_date。
 - dim_resource_line 不存在 delete_flag，过滤线路时不要自动追加 delete_flag 条件。
 - ads_ope_ontime_assess_d 不存在 zd_cnt；准点统计使用 start_cnt、start_zd_cnt、
@@ -1121,10 +1129,13 @@ async def _react_agent_stream_impl(
         )
         database_name = dialogue.ext_info.get("database_name")
 
+    step_started_at: Dict[str, float] = {}
+
     def build_step(title: str, detail: str, phase: str = None):
         nonlocal step
         step += 1
         step_id = f"step-{step}"
+        step_started_at[step_id] = time.monotonic()
         event_data = {
             "type": "step.start",
             "step": step,
@@ -1149,8 +1160,18 @@ async def _react_agent_stream_impl(
             }
         )
 
+    def step_elapsed_ms(step_id: str) -> Optional[int]:
+        started_at = step_started_at.get(step_id)
+        if started_at is None:
+            return None
+        return max(0, int((time.monotonic() - started_at) * 1000))
+
     def step_done(step_id: str, status: str = "done"):
-        return _sse_event({"type": "step.done", "id": step_id, "status": status})
+        payload = {"type": "step.done", "id": step_id, "status": status}
+        elapsed_ms = step_elapsed_ms(step_id)
+        if elapsed_ms is not None:
+            payload["elapsed_ms"] = elapsed_ms
+        return _sse_event(payload)
 
     def step_meta(
         step_id: str,
@@ -1856,6 +1877,14 @@ print(json.dumps(summary, ensure_ascii=False))
             columns = result[0]
             col_names = [str(c[0]) if isinstance(c, tuple) else str(c) for c in columns]
             rows = result[1:]
+            react_state.setdefault("sql_query_results", []).append(
+                SqlResult(
+                    columns=col_names,
+                    rows=[list(row) for row in rows[:500]],
+                    row_count=len(rows),
+                    sql=sql_stripped,
+                )
+            )
 
             # Build markdown table
             header = "| " + " | ".join(col_names) + " |"
@@ -2912,6 +2941,32 @@ print(json.dumps(summary, ensure_ascii=False))
             ai_repair=_ai_repair_html,
         )
 
+        sql_results = react_state.get("sql_query_results", [])
+        validation = validate_html_report_data(fixed_html, sql_results)
+        if not validation.ok:
+            logger.warning(
+                "html_interpreter: blocked untraceable report data: %s",
+                "; ".join(validation.issues),
+            )
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "报告数据未通过真实性校验，已阻止渲染。"
+                                "以下数值无法追溯到本轮 SQL 查询结果或可计算派生值："
+                                + "、".join(validation.untraceable_values[:20])
+                                + "。请重新基于 sql_query 的结果生成报告；"
+                                "总览 KPI 必须来自汇总 SQL，不能使用示例数据、"
+                                "模板占位数据或 TOP N 明细合计冒充总量。"
+                            ),
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
         chunks: List[Dict[str, Any]] = [
             {"output_type": "html", "content": fixed_html, "title": title},
         ]
@@ -3288,6 +3343,9 @@ print(json.dumps(summary, ensure_ascii=False))
                     {"output_type": output_type, "content": chunk_content}
                 )
             auto_history_step["status"] = "done"
+            elapsed_ms = step_elapsed_ms(auto_step_id)
+            if elapsed_ms is not None:
+                auto_history_step["elapsed_ms"] = elapsed_ms
             history_steps.append(auto_history_step)
             events.append(step_done(auto_step_id))
             return events, "HTML运营报告已生成，请在右侧预览或下载。"
@@ -4024,6 +4082,9 @@ fences.
                     "content": pre_matched_skill.instructions,
                 }
             )
+        elapsed_ms = step_elapsed_ms(skill_step_id)
+        if elapsed_ms is not None:
+            current_history_step["elapsed_ms"] = elapsed_ms
         yield step_done(skill_step_id)
         history_steps.append(current_history_step)
         current_history_step = None
@@ -4237,22 +4298,25 @@ fences.
                     _todo_step_title,
                     todo_meta=todo_meta,
                 )
-                history_steps.append(
-                    {
-                        "id": round_step_map[round_num],
-                        "title": _todo_step_title,
-                        "detail": "todowrite",
-                        "thought": None,
-                        "action_intention": None,
-                        "action_reason": None,
-                        "action": action,
-                        "action_input": None,
-                        "outputs": [],
-                        "status": "done",
-                        "todo_meta": todo_meta,
-                    }
-                )
-                yield step_done(round_step_map[round_num])
+                todo_step_id = round_step_map[round_num]
+                todo_history_step = {
+                    "id": todo_step_id,
+                    "title": _todo_step_title,
+                    "detail": "todowrite",
+                    "thought": None,
+                    "action_intention": None,
+                    "action_reason": None,
+                    "action": action,
+                    "action_input": None,
+                    "outputs": [],
+                    "status": "done",
+                    "todo_meta": todo_meta,
+                }
+                elapsed_ms = step_elapsed_ms(todo_step_id)
+                if elapsed_ms is not None:
+                    todo_history_step["elapsed_ms"] = elapsed_ms
+                history_steps.append(todo_history_step)
+                yield step_done(todo_step_id)
                 continue
 
             # Collect buffered thoughts for history persistence
@@ -4408,6 +4472,9 @@ fences.
             # --- History: finalize step ---
             if current_history_step is not None:
                 current_history_step["status"] = status
+                elapsed_ms = step_elapsed_ms(react_step_id)
+                if elapsed_ms is not None:
+                    current_history_step["elapsed_ms"] = elapsed_ms
                 history_steps.append(current_history_step)
                 current_history_step = None
 

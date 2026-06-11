@@ -2,6 +2,7 @@ import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
+import { copyText } from '@/utils/clipboard';
 import {
   AppstoreOutlined,
   BarChartOutlined,
@@ -78,6 +79,7 @@ export interface ActiveStepInfo {
   detail?: string;
   action?: string;
   actionInput?: any;
+  elapsedMs?: number;
 }
 
 export interface ManusRightPanelProps {
@@ -191,9 +193,9 @@ const StatusBadge: React.FC<{ status: StepStatus }> = ({ status }) => {
 };
 
 // Copy to clipboard helper
-const copyToClipboard = (text: string, successText: string) => {
-  navigator.clipboard.writeText(text);
-  message.success(successText);
+const copyToClipboard = async (text: string, successText = '已复制到剪贴板') => {
+  const success = await copyText(text);
+  message[success ? 'success' : 'error'](success ? successText : '复制失败，请手动选择内容复制');
 };
 
 const getArtifactFileIcon = (artifact: ArtifactItem) => {
@@ -1700,13 +1702,14 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             </Tooltip>
           )}
 
-          {activeStep && onRerun && activeStep.status === 'completed' && (
+          {onRerun && (
             <Tooltip title={t('rerun')}>
               <Button
                 type='text'
                 size='small'
                 icon={<SyncOutlined />}
                 onClick={onRerun}
+                disabled={isRunning}
                 className='text-gray-500 hover:text-blue-500'
               >
                 {t('rerun')}
@@ -2206,10 +2209,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                                 <Tooltip title='复制SQL'>
                                   <button
                                     className='flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(sql);
-                                      message.success('SQL已复制到剪贴板');
-                                    }}
+                                    onClick={() => copyToClipboard(sql, 'SQL已复制到剪贴板')}
                                   >
                                     <CopyOutlined className='text-xs' />
                                     <span>Copy</span>

@@ -1,8 +1,10 @@
 import { ChatContext } from '@/app/chat-context';
 import ModelIcon from '@/new-components/chat/content/ModelIcon';
+import { copyText } from '@/utils/clipboard';
 import axios from '@/utils/ctx-axios';
 import {
   ArrowUpOutlined,
+  CloseOutlined,
   DeleteOutlined,
   LeftOutlined,
   MenuFoldOutlined,
@@ -11,6 +13,7 @@ import {
   PlusOutlined,
   RightOutlined,
   RobotOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { Button, ConfigProvider, Input, Select, Skeleton, Tooltip, message } from 'antd';
 import { NextPage } from 'next';
@@ -59,7 +62,9 @@ const cleanFinalContent = (text: string): string => {
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
   cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
   // Strip ReAct reasoning prefixes
-  cleaned = cleaned.replace(/^(Thought|Action|Action Input|Observation|Phase|Action Intention|Action Reason):\s*/gm, '').trim();
+  cleaned = cleaned
+    .replace(/^(Thought|Action|Action Input|Observation|Phase|Action Intention|Action Reason):\s*/gm, '')
+    .trim();
   // Strip bracket annotations like [Pasted ~ N lines]
   cleaned = cleaned.replace(/\[Pasted\s*~?\s*\d*\s*lines?\]/gi, '').trim();
   // Strip trailing reasoning blocks before terminate
@@ -110,6 +115,7 @@ interface ExecutionStep {
   actionInput?: string;
   phase?: string;
   todoMeta?: any;
+  elapsedMs?: number;
 }
 
 interface ExecutionOutput {
@@ -192,6 +198,7 @@ const convertToManusFormat = (
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
+        elapsedMs: step.elapsedMs,
       };
     });
   const sections: ThinkingSection[] = [
@@ -216,6 +223,7 @@ const convertToManusFormat = (
         detail: cleanDetail,
         action: step.action,
         actionInput: step.actionInput,
+        elapsedMs: step.elapsedMs,
       };
     }
   }
@@ -231,10 +239,7 @@ const convertToManusFormat = (
 
 /* ───────── Artifacts ───────── */
 
-const buildArtifactsFromExecution = (
-  messageId: string,
-  execution: ExecutionState,
-): ArtifactItem[] => {
+const buildArtifactsFromExecution = (messageId: string, execution: ExecutionState): ArtifactItem[] => {
   const artifacts: ArtifactItem[] = [];
   const now = Date.now();
   execution.steps.forEach(step => {
@@ -445,6 +450,7 @@ const ZhonghuanAssistant: NextPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [conversationList, setConversationList] = useState<ConversationItem[]>([]);
   const [listLoading, setListLoading] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
 
   // Agent execution state
   const [executionMap, setExecutionMap] = useState<Record<string, ExecutionState>>({});
@@ -524,6 +530,7 @@ const ZhonghuanAssistant: NextPage = () => {
             action: s.action,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
+            elapsedMs: typeof s.elapsed_ms === 'number' ? s.elapsed_ms : undefined,
           }));
           const outputs: Record<string, ExecutionOutput[]> = {};
           const stepThoughts: Record<string, string> = {};
@@ -579,8 +586,6 @@ const ZhonghuanAssistant: NextPage = () => {
   const loadConversation = useCallback(
     async (convId: string) => {
       setConversationId(convId);
-      setMessages([]);
-      setExecutionMap({});
       setLoading(true);
       router.replace(`/?id=${convId}`, undefined, { shallow: true });
       try {
@@ -629,6 +634,25 @@ const ZhonghuanAssistant: NextPage = () => {
     router.replace('/', undefined, { shallow: true });
   }, [router]);
 
+  const handleShareConversation = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      const response: any = await axios.post('/api/v1/chat/share', { conv_uid: conversationId });
+      const result = response?.success !== undefined ? response : response?.data;
+      const sharePath = result?.data?.share_url || result?.share_url;
+      if (!sharePath) {
+        message.error('创建分享链接失败');
+        return;
+      }
+      const shareUrl =
+        typeof window !== 'undefined' ? new URL(sharePath, window.location.origin).toString() : sharePath;
+      const copied = await copyText(shareUrl);
+      message[copied ? 'success' : 'error'](copied ? '分享链接已复制' : '分享链接创建成功，但复制失败');
+    } catch (_e) {
+      message.error('创建分享链接失败');
+    }
+  }, [conversationId]);
+
   const createConversation = useCallback(async (): Promise<string | null> => {
     try {
       const response: any = await axios.post(`/api/v1/chat/dialogue/new?chat_mode=${CHAT_MODE}`);
@@ -647,8 +671,9 @@ const ZhonghuanAssistant: NextPage = () => {
 
   /* ── send message (react-agent SSE) ── */
 
-  const handleStart = async () => {
-    const userInput = query.trim();
+  const handleStart = async (overrideInput?: string) => {
+    const isResend = typeof overrideInput === 'string';
+    const userInput = (isResend ? overrideInput : query).trim();
     if (!userInput || loading) return;
 
     let currentConvId = conversationId;
@@ -666,7 +691,7 @@ const ZhonghuanAssistant: NextPage = () => {
       { id: humanId, role: 'human', context: userInput, order: currentOrder },
       { id: responseId, role: 'view', context: '', order: currentOrder, thinking: true },
     ]);
-    setQuery('');
+    if (!isResend) setQuery('');
     setLoading(true);
     setStreamingSummary('');
     setSummaryComplete(false);
@@ -871,7 +896,13 @@ const ZhonghuanAssistant: NextPage = () => {
               [responseId]: {
                 ...current,
                 steps: current.steps.map(item =>
-                  item.id === targetId ? { ...item, status: payload.status || 'done' } : item,
+                  item.id === targetId
+                    ? {
+                        ...item,
+                        status: payload.status || 'done',
+                        elapsedMs: typeof payload.elapsed_ms === 'number' ? payload.elapsed_ms : item.elapsedMs,
+                      }
+                    : item,
                 ),
               },
             };
@@ -981,7 +1012,19 @@ const ZhonghuanAssistant: NextPage = () => {
     }
   };
 
-  const displayTitle = (item: ConversationItem) => item.user_input || item.select_param || '新对话';
+  const displayTitle = useCallback((item: ConversationItem) => item.user_input || item.select_param || '新对话', []);
+
+  const filteredConversationList = useMemo(() => {
+    const keyword = historySearch.trim().toLowerCase();
+    if (!keyword) return conversationList;
+    return conversationList.filter(item => {
+      const searchableText = [displayTitle(item), item.conv_uid, item.gmt_created]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return searchableText.includes(keyword);
+    });
+  }, [conversationList, displayTitle, historySearch]);
 
   const renderModelOption = (modelName: string, showModelIcon = true) => (
     <span className='flex min-w-0 items-center gap-2'>
@@ -1074,6 +1117,28 @@ const ZhonghuanAssistant: NextPage = () => {
                   <PlusOutlined className='text-xs' />
                   <span>新建对话</span>
                 </button>
+                <div className='mb-3'>
+                  <div className='flex h-9 items-center gap-2 rounded-xl bg-[#F1F5F9] px-3 text-gray-400 ring-1 ring-transparent transition-colors focus-within:bg-white focus-within:ring-blue-100 dark:bg-theme-dark dark:focus-within:bg-[#1a1b1e] dark:focus-within:ring-blue-900/40'>
+                    <SearchOutlined className='flex-shrink-0 text-xs' />
+                    <input
+                      aria-label='搜索历史对话'
+                      value={historySearch}
+                      onChange={e => setHistorySearch(e.target.value)}
+                      placeholder='搜索历史对话'
+                      className='min-w-0 flex-1 bg-transparent text-xs text-gray-600 outline-none placeholder:text-gray-400 dark:text-gray-200 dark:placeholder:text-gray-500'
+                    />
+                    {historySearch && (
+                      <button
+                        type='button'
+                        aria-label='清空搜索'
+                        onClick={() => setHistorySearch('')}
+                        className='flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+                      >
+                        <CloseOutlined className='text-[10px]' />
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className='mb-2 mt-4 px-1'>
                   <span className='text-xs font-semibold uppercase tracking-wider text-gray-400'>全部任务</span>
                 </div>
@@ -1082,9 +1147,9 @@ const ZhonghuanAssistant: NextPage = () => {
                     <div className='px-2 pt-2'>
                       <Skeleton active title={false} paragraph={{ rows: 4, width: '100%' }} />
                     </div>
-                  ) : conversationList.length > 0 ? (
+                  ) : filteredConversationList.length > 0 ? (
                     <div className='space-y-0.5'>
-                      {conversationList.map(item => (
+                      {filteredConversationList.map(item => (
                         <div
                           key={item.conv_uid}
                           className={`group flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-[#F1F5F9] dark:hover:bg-theme-dark ${conversationId === item.conv_uid ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''}`}
@@ -1098,7 +1163,9 @@ const ZhonghuanAssistant: NextPage = () => {
                                 : '新对话'}
                             </div>
                             {item.gmt_created && (
-                              <div className='mt-0.5 text-[11px] text-gray-400'>{formatRelativeTime(item.gmt_created)}</div>
+                              <div className='mt-0.5 text-[11px] text-gray-400'>
+                                {formatRelativeTime(item.gmt_created)}
+                              </div>
                             )}
                           </div>
                           <Tooltip title='删除'>
@@ -1109,6 +1176,13 @@ const ZhonghuanAssistant: NextPage = () => {
                           </Tooltip>
                         </div>
                       ))}
+                    </div>
+                  ) : conversationList.length > 0 ? (
+                    <div className='px-3 py-8 text-center'>
+                      <div className='mb-2 text-gray-300 dark:text-gray-600'>
+                        <SearchOutlined style={{ fontSize: 24 }} />
+                      </div>
+                      <p className='text-xs text-gray-400'>未找到匹配对话</p>
                     </div>
                   ) : (
                     <div className='px-3 py-8 text-center'>
@@ -1200,8 +1274,8 @@ const ZhonghuanAssistant: NextPage = () => {
                       model={model}
                       modelList={modelList}
                       onModelChange={setModel}
-                        renderModelOption={renderModelOption}
-                      />
+                      renderModelOption={renderModelOption}
+                    />
                   </div>
                 </div>
               </div>
@@ -1225,7 +1299,8 @@ const ZhonghuanAssistant: NextPage = () => {
                       const roundAssistantText = isLastRound
                         ? streamingSummary || round.viewMsg?.context || undefined
                         : round.viewMsg?.context || undefined;
-                      const roundArtifacts = round.viewMsg?.id && execution ? buildArtifactsFromExecution(round.viewMsg.id, execution) : [];
+                      const roundArtifacts =
+                        round.viewMsg?.id && execution ? buildArtifactsFromExecution(round.viewMsg.id, execution) : [];
 
                       return (
                         <ManusLeftPanel
@@ -1261,6 +1336,8 @@ const ZhonghuanAssistant: NextPage = () => {
                           onExpand={() => {
                             if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           }}
+                          onResend={round.humanMsg?.context ? () => handleStart(round.humanMsg!.context) : undefined}
+                          resendDisabled={loading}
                         />
                       );
                     })}
@@ -1315,12 +1392,19 @@ const ZhonghuanAssistant: NextPage = () => {
                     const { activeStep, outputs, stepThoughts: _stepThoughts } = convertToManusFormat(execution, t);
                     const isRunning = execution?.steps.some(s => s.status === 'running') || false;
                     const rightOutputs: ManusExecutionOutput[] = outputs.map(o => ({ ...o, timestamp: Date.now() }));
+                    const activeRound = rounds.find(round => round.viewMsg?.id === selectedViewMsgId);
 
                     return (
                       <ManusRightPanel
                         activeStep={activeStep}
                         outputs={rightOutputs}
                         isRunning={isRunning}
+                        onRerun={
+                          activeRound?.humanMsg?.context && !loading
+                            ? () => handleStart(activeRound.humanMsg!.context)
+                            : undefined
+                        }
+                        onShare={conversationId ? handleShareConversation : undefined}
                         onCollapse={() => setRightPanelCollapsed(true)}
                         terminalTitle='中涣信息计算机'
                         artifacts={artifacts}

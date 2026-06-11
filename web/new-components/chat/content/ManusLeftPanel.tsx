@@ -26,6 +26,7 @@ import {
   LoadingOutlined,
   PlayCircleOutlined,
   PlusOutlined,
+  ReloadOutlined,
   SearchOutlined,
   TableOutlined,
 } from '@ant-design/icons';
@@ -61,6 +62,7 @@ export interface ExecutionStep {
   phase?: string;
   status: StepStatus;
   output?: any;
+  elapsedMs?: number;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -102,6 +104,8 @@ export interface ManusLeftPanelProps {
   onArtifactDownload?: (artifact: ArtifactItem) => void;
   onViewAllFiles?: () => void;
   onShare?: () => void;
+  onResend?: () => void;
+  resendDisabled?: boolean;
   isCollapsed?: boolean;
   onExpand?: () => void;
   attachedFile?: {
@@ -485,6 +489,18 @@ const getTodoStepBadge = (t: (key: string, options?: Record<string, any>) => str
   return todoMeta.state === 'init' ? t('task_plan_new_badge') : '';
 };
 
+const formatElapsedMs = (elapsedMs?: number): string | null => {
+  if (typeof elapsedMs !== 'number' || !Number.isFinite(elapsedMs) || elapsedMs < 0) return null;
+  if (elapsedMs < 1000) return `${elapsedMs}ms`;
+  if (elapsedMs < 60000) {
+    const seconds = elapsedMs / 1000;
+    return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)}s`;
+  }
+  const minutes = Math.floor(elapsedMs / 60000);
+  const seconds = Math.round((elapsedMs % 60000) / 1000);
+  return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+};
+
 const StepCard: React.FC<{
   step: ExecutionStep;
   isActive: boolean;
@@ -494,6 +510,7 @@ const StepCard: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const detailLine = step.description ? step.description.split('\n')[0] : '';
   const isTodoStep = detailLine.toLowerCase() === 'todowrite' || step.title.startsWith('TODO::') || !!step.todoMeta;
+  const elapsedLabel = formatElapsedMs(step.elapsedMs);
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
@@ -582,14 +599,19 @@ const StepCard: React.FC<{
             <div className='truncate text-sm font-semibold text-slate-900 dark:text-slate-100'>{todoTitle}</div>
           </div>
 
-          <div className='flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:ring-emerald-500/20'>
-            {step.status === 'running' ? (
-              <LoadingOutlined spin className='text-[11px] text-sky-500' />
-            ) : step.status === 'error' ? (
-              <ExclamationCircleOutlined className='text-[11px] text-red-500' />
-            ) : (
-              <CheckCircleOutlined className='text-[11px] text-emerald-500' />
+          <div className='flex flex-shrink-0 items-center gap-1.5'>
+            {elapsedLabel && (
+              <span className='text-[10px] tabular-nums text-slate-400 dark:text-slate-500'>{elapsedLabel}</span>
             )}
+            <div className='flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:ring-emerald-500/20'>
+              {step.status === 'running' ? (
+                <LoadingOutlined spin className='text-[11px] text-sky-500' />
+              ) : step.status === 'error' ? (
+                <ExclamationCircleOutlined className='text-[11px] text-red-500' />
+              ) : (
+                <CheckCircleOutlined className='text-[11px] text-emerald-500' />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -644,7 +666,10 @@ const StepCard: React.FC<{
         <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{step.title}</span>
         {detailLine && <span className='text-[11px] text-gray-500 dark:text-gray-400 truncate'>{detailLine}</span>}
       </div>
-      <div className='flex-shrink-0'>
+      <div className='flex flex-shrink-0 items-center gap-1.5'>
+        {elapsedLabel && (
+          <span className='text-[10px] tabular-nums text-gray-400 dark:text-gray-500'>{elapsedLabel}</span>
+        )}
         {step.status === 'pending' && <ClockCircleOutlined className='text-xs text-gray-400' />}
         {step.status === 'running' && <LoadingOutlined spin className='text-xs text-blue-500' />}
         {step.status === 'completed' && <CheckCircleOutlined className='text-xs text-emerald-500' />}
@@ -896,6 +921,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onArtifactDownload,
   onViewAllFiles,
   onShare,
+  onResend,
+  resendDisabled,
   isCollapsed,
   onExpand,
   attachedFile,
@@ -1017,6 +1044,21 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed'>
                 {userQuery}
               </div>
+              {onResend && (
+                <div className='mt-1 flex justify-end pr-1'>
+                  <Tooltip title='重新发送当前问题'>
+                    <button
+                      type='button'
+                      disabled={resendDisabled}
+                      onClick={onResend}
+                      className='inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/5 dark:hover:text-gray-200'
+                    >
+                      <ReloadOutlined className='text-[11px]' />
+                      <span>重新发送</span>
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
             </div>
           </div>
         )}
