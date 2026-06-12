@@ -63,6 +63,8 @@ export interface ExecutionStep {
   status: StepStatus;
   output?: any;
   elapsedMs?: number;
+  thinkingElapsedMs?: number;
+  executionElapsedMs?: number;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -501,6 +503,18 @@ const formatElapsedMs = (elapsedMs?: number): string | null => {
   return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
 };
 
+const formatStepTiming = (step: ExecutionStep): string | null => {
+  const thinkingLabel = formatElapsedMs(step.thinkingElapsedMs);
+  const executionLabel = formatElapsedMs(step.executionElapsedMs);
+  if (thinkingLabel || executionLabel) {
+    return [thinkingLabel ? `思考 ${thinkingLabel}` : null, executionLabel ? `执行 ${executionLabel}` : null]
+      .filter(Boolean)
+      .join(' · ');
+  }
+  const elapsedLabel = formatElapsedMs(step.elapsedMs);
+  return elapsedLabel ? `耗时 ${elapsedLabel}` : null;
+};
+
 const StepCard: React.FC<{
   step: ExecutionStep;
   isActive: boolean;
@@ -510,7 +524,7 @@ const StepCard: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const detailLine = step.description ? step.description.split('\n')[0] : '';
   const isTodoStep = detailLine.toLowerCase() === 'todowrite' || step.title.startsWith('TODO::') || !!step.todoMeta;
-  const elapsedLabel = formatElapsedMs(step.elapsedMs);
+  const timingLabel = formatStepTiming(step);
 
   React.useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
@@ -600,8 +614,10 @@ const StepCard: React.FC<{
           </div>
 
           <div className='flex flex-shrink-0 items-center gap-1.5'>
-            {elapsedLabel && (
-              <span className='text-[10px] tabular-nums text-slate-400 dark:text-slate-500'>{elapsedLabel}</span>
+            {timingLabel && (
+              <span className='max-w-[120px] truncate text-[10px] tabular-nums text-slate-400 dark:text-slate-500'>
+                {timingLabel}
+              </span>
             )}
             <div className='flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:ring-emerald-500/20'>
               {step.status === 'running' ? (
@@ -667,8 +683,10 @@ const StepCard: React.FC<{
         {detailLine && <span className='text-[11px] text-gray-500 dark:text-gray-400 truncate'>{detailLine}</span>}
       </div>
       <div className='flex flex-shrink-0 items-center gap-1.5'>
-        {elapsedLabel && (
-          <span className='text-[10px] tabular-nums text-gray-400 dark:text-gray-500'>{elapsedLabel}</span>
+        {timingLabel && (
+          <span className='max-w-[120px] truncate text-[10px] tabular-nums text-gray-400 dark:text-gray-500'>
+            {timingLabel}
+          </span>
         )}
         {step.status === 'pending' && <ClockCircleOutlined className='text-xs text-gray-400' />}
         {step.status === 'running' && <LoadingOutlined spin className='text-xs text-blue-500' />}

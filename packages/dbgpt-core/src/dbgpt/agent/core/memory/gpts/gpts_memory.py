@@ -157,26 +157,22 @@ class GptsMemory:
         agent_messages = await blocking_func_to_async(
             self._executor, self.message_memory.get_by_agent, conv_id, agent_role
         )
-        new_list = []
-        for i in range(0, len(agent_messages), 2):
-            if i + 1 >= len(agent_messages):
-                break
-            action_report = None
-            if agent_messages[i + 1].action_report:
-                action_report = ActionOutput.from_dict(
-                    json.loads(agent_messages[i + 1].action_report)
+        action_outputs: List[ActionOutput] = []
+        for message in agent_messages:
+            if not message.action_report:
+                continue
+            try:
+                action_output = ActionOutput.from_dict(
+                    json.loads(message.action_report)
                 )
-            new_list.append(
-                {
-                    "question": agent_messages[i].content,
-                    "ai_message": agent_messages[i + 1].content,
-                    "action_output": action_report,
-                    "check_pass": agent_messages[i + 1].is_success,
-                }
-            )
+            except Exception:
+                logger.warning("Failed to parse agent action_report", exc_info=True)
+                continue
+            if not action_output or not action_output.memory_fragments:
+                continue
+            action_outputs.append(action_output)
 
-        # Just use the action_output now
-        return [m["action_output"] for m in new_list if m["action_output"]]
+        return action_outputs
 
     async def _message_group_vis_build(self, message_group, vis_items: list):
         num: int = 0

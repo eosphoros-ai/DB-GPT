@@ -14,6 +14,7 @@ import {
   RightOutlined,
   RobotOutlined,
   SearchOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { Button, ConfigProvider, Input, Select, Skeleton, Tooltip, message } from 'antd';
 import { NextPage } from 'next';
@@ -116,6 +117,8 @@ interface ExecutionStep {
   phase?: string;
   todoMeta?: any;
   elapsedMs?: number;
+  thinkingElapsedMs?: number;
+  executionElapsedMs?: number;
 }
 
 interface ExecutionOutput {
@@ -351,6 +354,7 @@ interface ChatInputBoxProps {
   onSend: () => void;
   loading: boolean;
   canSend: boolean;
+  onStop: () => void;
   isZhInput: boolean;
   setIsZhInput: (v: boolean) => void;
   model: string;
@@ -366,6 +370,7 @@ const ChatInputBox: React.FC<ChatInputBoxProps> = ({
   onSend,
   loading,
   canSend,
+  onStop,
   isZhInput,
   setIsZhInput,
   model,
@@ -419,14 +424,18 @@ const ChatInputBox: React.FC<ChatInputBoxProps> = ({
           </Select>
         </div>
         <Button
-          type='primary'
+          type={loading ? 'default' : 'primary'}
           shape='circle'
           size='large'
-          icon={<ArrowUpOutlined />}
-          loading={loading}
-          disabled={!canSend}
-          onClick={onSend}
-          className='!h-8 !w-8 !min-w-8 !bg-[#111827] !text-white disabled:!bg-gray-200 disabled:!text-gray-400 dark:!bg-white dark:!text-[#111111] dark:disabled:!bg-[#3a3a3a] dark:disabled:!text-gray-500'
+          icon={loading ? <StopOutlined /> : <ArrowUpOutlined />}
+          disabled={!loading && !canSend}
+          onClick={loading ? onStop : onSend}
+          title={loading ? '停止生成' : '发送'}
+          className={
+            loading
+              ? '!h-8 !w-8 !min-w-8 !border-red-200 !bg-red-50 !text-red-600 hover:!border-red-300 hover:!bg-red-100 dark:!border-red-900/60 dark:!bg-red-950/40 dark:!text-red-300'
+              : '!h-8 !w-8 !min-w-8 !bg-[#111827] !text-white disabled:!bg-gray-200 disabled:!text-gray-400 dark:!bg-white dark:!text-[#111111] dark:disabled:!bg-[#3a3a3a] dark:disabled:!text-gray-500'
+          }
         />
       </div>
     </div>
@@ -463,6 +472,8 @@ const ZhonghuanAssistant: NextPage = () => {
   const [streamingSummary, setStreamingSummary] = useState('');
   const [summaryComplete, setSummaryComplete] = useState(false);
   const terminatedStepIdsRef = useRef(new Set<string>());
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const activeResponseIdRef = useRef<string | null>(null);
 
   // Load conversation from URL
   useEffect(() => {
@@ -479,6 +490,25 @@ const ZhonghuanAssistant: NextPage = () => {
 
   const updateAssistantMessage = (messageId: string, updater: (msg: ChatMessage) => ChatMessage) => {
     setMessages(prev => prev.map(item => (item.id === messageId && item.role === 'view' ? updater(item) : item)));
+  };
+
+  const markResponseStopped = (messageId: string) => {
+    updateAssistantMessage(messageId, msg => ({
+      ...msg,
+      context: msg.context || '已停止生成',
+      thinking: false,
+    }));
+    setStreamingSummary(prev => prev || '已停止生成');
+    setSummaryComplete(true);
+  };
+
+  const handleStopGeneration = () => {
+    const controller = abortControllerRef.current;
+    if (!controller) return;
+    controller.abort();
+    abortControllerRef.current = null;
+    if (activeResponseIdRef.current) markResponseStopped(activeResponseIdRef.current);
+    message.info('已停止生成');
   };
 
   /* ── conversation list ── */
@@ -531,6 +561,8 @@ const ZhonghuanAssistant: NextPage = () => {
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
             elapsedMs: typeof s.elapsed_ms === 'number' ? s.elapsed_ms : undefined,
+            thinkingElapsedMs: typeof s.thinking_elapsed_ms === 'number' ? s.thinking_elapsed_ms : undefined,
+            executionElapsedMs: typeof s.execution_elapsed_ms === 'number' ? s.execution_elapsed_ms : undefined,
           }));
           const outputs: Record<string, ExecutionOutput[]> = {};
           const stepThoughts: Record<string, string> = {};
@@ -705,6 +737,8 @@ const ZhonghuanAssistant: NextPage = () => {
     setTaskPlan([]);
 
     const controller = new AbortController();
+    abortControllerRef.current = controller;
+    activeResponseIdRef.current = responseId;
 
     try {
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
@@ -901,6 +935,14 @@ const ZhonghuanAssistant: NextPage = () => {
                         ...item,
                         status: payload.status || 'done',
                         elapsedMs: typeof payload.elapsed_ms === 'number' ? payload.elapsed_ms : item.elapsedMs,
+                        thinkingElapsedMs:
+                          typeof payload.thinking_elapsed_ms === 'number'
+                            ? payload.thinking_elapsed_ms
+                            : item.thinkingElapsedMs,
+                        executionElapsedMs:
+                          typeof payload.execution_elapsed_ms === 'number'
+                            ? payload.execution_elapsed_ms
+                            : item.executionElapsedMs,
                       }
                     : item,
                 ),
@@ -968,7 +1010,6 @@ const ZhonghuanAssistant: NextPage = () => {
             const frameInterval = 15;
             let lastTime = 0;
             let currentLen = 0;
-            let rafId = 0;
             const animate = (time: number) => {
               if (!lastTime) lastTime = time;
               if (time - lastTime >= frameInterval) {
@@ -980,9 +1021,9 @@ const ZhonghuanAssistant: NextPage = () => {
                   return;
                 }
               }
-              rafId = requestAnimationFrame(animate);
+              requestAnimationFrame(animate);
             };
-            rafId = requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
           }
         }
       };
@@ -1003,11 +1044,16 @@ const ZhonghuanAssistant: NextPage = () => {
 
       fetchConversationList();
     } catch (error: any) {
-      if (error.name === 'AbortError') return;
+      if (error.name === 'AbortError') {
+        markResponseStopped(responseId);
+        return;
+      }
       const errorMessage = error?.message || '请求失败，请稍后重试';
       message.error(errorMessage);
       updateAssistantMessage(responseId, msg => ({ ...msg, context: errorMessage, thinking: false }));
     } finally {
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
+      if (activeResponseIdRef.current === responseId) activeResponseIdRef.current = null;
       setLoading(false);
     }
   };
@@ -1267,6 +1313,7 @@ const ZhonghuanAssistant: NextPage = () => {
                       query={query}
                       onQueryChange={setQuery}
                       onSend={handleStart}
+                      onStop={handleStopGeneration}
                       loading={loading}
                       canSend={canSend}
                       isZhInput={isZhInput}
@@ -1351,6 +1398,7 @@ const ZhonghuanAssistant: NextPage = () => {
                         query={query}
                         onQueryChange={setQuery}
                         onSend={handleStart}
+                        onStop={handleStopGeneration}
                         loading={loading}
                         canSend={canSend}
                         isZhInput={isZhInput}

@@ -26,6 +26,10 @@ Each package's import name differs from its directory name:
 - `packages/dbgpt-app/src/dbgpt_app/` → import as `dbgpt_app`
 - `packages/dbgpt-sandbox/src/dbgpt_sandbox/` → import as `dbgpt_sandbox`
 
+### CLI entrypoint
+
+The `dbgpt` CLI is defined in `packages/dbgpt-core/src/dbgpt/cli/cli_scripts.py:main` (registered via `pyproject.toml` `[project.scripts]`). The server start command is `dbgpt start webserver`.
+
 ### Other key directories
 
 - `pilot/` — workspace runtime data: Alembic migration templates (`pilot/meta_data/alembic/`), benchmark data, and example SQLite databases. These are bundled into `dbgpt-app` via `pyproject.toml` `force-include`.
@@ -41,6 +45,10 @@ uv sync --all-packages --extra "base" --extra "proxy_openai" --extra "rag" --ext
 ```
 
 After `uv sync`, activate `source .venv/bin/activate` or prefix commands with `uv run`.
+
+**Python version**: `.python-version` is 3.11; `pyproject.toml` requires `>= 3.10`. The Makefile `setup` target creates a 3.11 tooling venv at `.venv.make/`.
+
+**Pre-commit hooks**: `.pre-commit-config.yaml` runs `make fmt-check` and `make test` on every commit. Install with `uv run pre-commit install`. If a commit fails hooks, fix the issues and re-commit.
 
 ### Makefile commands
 
@@ -89,6 +97,7 @@ Python targets 3.10+ and uses Ruff with 88-character lines, spaces for indentati
 
 - `packages/dbgpt-serve/src/**` is excluded from the main `ruff check --fix` pass and is instead checked separately with `--ignore F811,F841` (unused import / variable warnings tolerated in that package).
 - `examples/notebook/` is excluded from all formatting and linting.
+- `.flake8` and `.isort.cfg` at the repo root are legacy; Ruff is the active formatter/linter.
 
 ## Testing Guidelines
 
@@ -116,3 +125,40 @@ Do not commit secrets, local model keys, or generated private configs. Treat fil
 ## Alembic Migrations
 
 Database schema migrations live in `pilot/meta_data/alembic/`. The `alembic.ini` and `env.py` are bundled into `dbgpt-app` as workspace templates. When modifying models that affect the database schema, generate a new Alembic migration revision.
+
+## Version Management
+
+All package versions are coordinated via `scripts/update_version_all.py`. Run it to bump versions across all `pyproject.toml` files simultaneously.
+
+## Deployment
+
+### Remote server
+- URL: http://172.16.13.149:19010/
+- Health check: http://172.16.13.149:19010/api/health
+- Deploy dir: /opt/ahsz/projrct/githup/db-gpt/
+- Python env: /root/miniconda3/envs/db-gpt
+- Config: /root/.dbgpt/configs/qwen.toml
+- Data dir: /root/.dbgpt (not overwritten on deploy)
+
+### Deploy steps
+```bash
+# 1. Build whl packages locally
+uv build --all-packages
+
+# 2. Upload to remote (only changed packages)
+scp dist/dbgpt_app-*.whl root@172.16.13.149:/opt/ahsz/projrct/githup/db-gpt/dist/
+
+# 3. Install on remote
+ssh root@172.16.13.149 "/root/miniconda3/envs/db-gpt/bin/pip install --no-deps --force-reinstall /opt/ahsz/projrct/githup/db-gpt/dist/dbgpt_app-0.8.0-py3-none-any.whl"
+
+# 4. Restart service
+ssh root@172.16.13.149 "systemctl restart dbgpt"
+
+# 5. Verify
+curl -s http://172.16.13.149:19010/api/health
+```
+
+### Notes
+- Config and runtime data (`/root/.dbgpt/`) are preserved across deploys
+- Only upload packages that changed (usually just `dbgpt-app`)
+- If `systemctl` doesn't work, check with `ps aux | grep dbgpt` for the actual process
