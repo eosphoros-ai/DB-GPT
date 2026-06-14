@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 
 import useReActAgent, { ReActAgentRequest, parseReActText } from '@/hooks/use-react-agent';
 import OpenCodeSessionTurn, { MessagePart } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import MyEmpty from '../common/MyEmpty';
 import CompletionInput from '../common/completion-input';
 import MuiLoading from '../common/loading';
@@ -48,9 +49,12 @@ const OpenCodeAgentChatContainer: React.FC = () => {
 
   const {
     state: agentState,
+    pendingQuestion,
     sendMessage,
     cancel,
     reset: _reset,
+    replyQuestion,
+    rejectQuestion,
   } = useReActAgent({
     baseUrl: '/api/v1/chat/react-agent',
     onPartUpdate: parts => {
@@ -271,9 +275,24 @@ const OpenCodeAgentChatContainer: React.FC = () => {
             'dark:after:from-theme-dark',
           )}
         >
-          <div className='flex flex-wrap w-full py-2 sm:pt-6 sm:pb-10 items-center max-w-4xl mx-auto'>
-            {model && <div className='mr-2 flex'>{renderModelIcon(model)}</div>}
-            <CompletionInput loading={isWorking} onSubmit={handleChat} handleFinish={() => {}} />
+          <div className='max-w-4xl mx-auto'>
+            {pendingQuestion && (
+              <div className='px-4 pt-2'>
+                <QuestionDock
+                  request={{
+                    request_id: pendingQuestion.request_id,
+                    conv_id: pendingQuestion.conv_id,
+                    questions: pendingQuestion.questions,
+                  }}
+                  onReply={replyQuestion}
+                  onReject={rejectQuestion}
+                />
+              </div>
+            )}
+            <div className='flex flex-wrap w-full py-2 sm:pt-6 sm:pb-10 items-center'>
+              {model && <div className='mr-2 flex'>{renderModelIcon(model)}</div>}
+              <CompletionInput loading={isWorking} onSubmit={handleChat} handleFinish={() => {}} />
+            </div>
           </div>
         </div>
       </div>

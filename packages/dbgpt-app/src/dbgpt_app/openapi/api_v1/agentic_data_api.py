@@ -914,14 +914,12 @@ async def _react_agent_stream(
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
     from dbgpt.agent.expand.react_agent import ReActAgent
-    from dbgpt.agent.resource import ToolPack, tool
-    from dbgpt.agent.resource.base import AgentResource, ResourceType
+    from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.agent.util.react_parser import ReActOutputParser
     from dbgpt.core import StorageConversation
     from dbgpt.model.cluster.client import DefaultLLMClient
-    from dbgpt.util.code.server import get_code_server
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
     from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
@@ -1251,13 +1249,10 @@ async def _react_agent_stream(
         make_load_skill,
         make_load_tools,
         make_question,
-        make_select_skill,
         make_shell_interpreter,
         make_sql_query,
         make_todowrite,
     )
-    from dbgpt_app.openapi.api_v1.tools.question_manager import question_manager
-
     # ── Build tool instances via factory functions ──────────────────────────
     # (Inline @tool definitions have been moved to tools/ directory.)
     # Local helper aliases used by the SSE loop are defined below.
@@ -1270,7 +1265,6 @@ async def _react_agent_stream(
 
     # ── Build tool instances from tools/ directory ───────────────────────
     _todo_list: List[Dict[str, str]] = []
-    select_skill_tool = make_select_skill(react_state, registry)
     load_skill_tool = make_load_skill(react_state)
     load_file_tool = make_load_file(react_state)
     execute_analysis_tool = make_execute_analysis(react_state)
@@ -1443,6 +1437,88 @@ async def _react_agent_stream(
                     break
 
         return list(_todo_list) if changed else None
+
+    llm_client = DefaultLLMClient(
+        CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create(),
+        auto_convert_message=True,
+    )
+    if dialogue.model_name:
+        llm_config = LLMConfig(
+            llm_client=llm_client,
+            llm_strategy=LLMStrategyType.Priority,
+            strategy_context=json.dumps([dialogue.model_name]),
+        )
+    else:
+        llm_config = LLMConfig(llm_client=llm_client)
+
+    conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    react_state["conv_id"] = conv_id
+    if conv_id in REACT_AGENT_MEMORY_CACHE:
+        gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
+    else:
+        gpt_memory = GptsMemory(
+            plans_memory=DefaultGptsPlansMemory(),
+            message_memory=MetaDbGptsMessageMemory(),
+        )
+        gpt_memory.init(conv_id, enable_vis_message=False)
+        REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
+    agent_memory = AgentMemory(gpts_memory=gpt_memory)
+
+    conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+    storage_conv = StorageConversation(
+        conv_uid=conv_id,
+        chat_mode=dialogue.chat_mode or "chat_react_agent",
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        summary=dialogue.user_input,
+        app_code=dialogue.app_code,
+        conv_storage=conv_serve.conv_storage,
+        message_storage=conv_serve.message_storage,
+    )
+    storage_conv.save_to_storage()
+    storage_conv.start_new_round()
+    storage_conv.add_user_message(user_input)
+    context = AgentContext(
+        conv_id=conv_id,
+        gpts_app_code="react_agent",
+        gpts_app_name="ReAct",
+        language="zh",
+        temperature=dialogue.temperature or 0.2,
+        enable_context_management=True,
+    )
+
+    file_context = ""
+    if file_path:
+        file_context = f"""
+## User Uploaded File
+- File path: {file_path}
+- Analyze this file if needed for the user's request.
+"""
+
+    skill_prompt_context = ""
+    execution_instruction = ""
+    if pre_matched_skill and react_state.get("skill_prompt"):
+        skill_template = react_state["skill_prompt"]
+        skill_text = (
+            skill_template.template
+            if hasattr(skill_template, "template")
+            else str(skill_template)
+        )
+        skill_prompt_context = f"""
+## 已加载技能指令（{pre_matched_skill.metadata.name}）
+以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
+
+{skill_text}
+"""
+        execution_instruction = f"""
+## 执行要求
+1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
+2. 你必须严格按照上述技能指令的步骤执行
+3. 阅读技能指令，理解每一步需要调用的工具
+4. 按顺序执行工具调用，完成技能目标
+"""
 
     # Build a hint listing all images currently available in
     # STATIC_MESSAGE_IMG_PATH so the LLM can reference them correctly in
@@ -1757,10 +1833,13 @@ Action Input: The JSON format of tool parameters
                 get_skill_resource,
                 execute_skill_script_file_tool,
                 code_interpreter_tool,
+                load_file_tool,
+                execute_analysis_tool,
                 shell_interpreter_tool,
                 html_interpreter_tool,
                 sql_query_tool,
                 todowrite_tool,
+                execute_tool_tool,
                 question_tool,
                 Terminate(),
             ]

@@ -1,9 +1,10 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getAppInfo, getChatHistory, getDialogueList } from '@/client/api';
 import PromptBot from '@/components/common/prompt-bot';
-import useChat, { ChatContextStatus } from '@/hooks/use-chat';
+import useChat, { ChatContextStatus, PendingQuestionEvent } from '@/hooks/use-chat';
 import ChatContentContainer from '@/new-components/chat/ChatContentContainer';
 import ChatDefault from '@/new-components/chat/content/ChatDefault';
+import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import ChatInputPanel from '@/new-components/chat/input/ChatInputPanel';
 import ChatSider from '@/new-components/chat/sider/ChatSider';
 import { IApp } from '@/types/app';
@@ -52,6 +53,10 @@ interface ChatContentProps {
   setHistory: React.Dispatch<React.SetStateAction<ChatHistoryResponse>>;
   // Context management status (available for chat_agent scenes)
   contextStatus: ChatContextStatus | null;
+  // Human-in-the-loop question
+  pendingQuestion: PendingQuestionEvent | null;
+  replyQuestion: (requestId: string, answers: string[][]) => Promise<void>;
+  rejectQuestion: (requestId: string) => Promise<void>;
 }
 export const ChatContentContext = createContext<ChatContentProps>({
   history: [],
@@ -82,12 +87,15 @@ export const ChatContentContext = createContext<ChatContentProps>({
   setHistory: () => {},
   handleChat: () => Promise.resolve(),
   contextStatus: null,
+  pendingQuestion: null,
+  replyQuestion: () => Promise.resolve(),
+  rejectQuestion: () => Promise.resolve(),
 });
 
 const Chat: React.FC = () => {
   const { model, currentDialogInfo } = useContext(ChatContext);
   const { isContract, setIsContract, setIsMenuExpand } = useContext(ChatContext);
-  const { chat, ctrl, contextStatus } = useChat({
+  const { chat, ctrl, contextStatus, pendingQuestion, replyQuestion, rejectQuestion } = useChat({
     app_code: currentDialogInfo.app_code || '',
   });
 
@@ -366,6 +374,19 @@ const Chat: React.FC = () => {
         <Spin spinning={historyLoading} className='w-full h-full m-auto'>
           <Content className='flex flex-col h-screen'>
             <ChatContentContainer ref={scrollRef} className='flex-1' />
+            {pendingQuestion && (
+              <div className='mx-auto w-full max-w-4xl px-4'>
+                <QuestionDock
+                  request={{
+                    request_id: pendingQuestion.request_id,
+                    conv_id: pendingQuestion.conv_id,
+                    questions: pendingQuestion.questions,
+                  }}
+                  onReply={replyQuestion}
+                  onReject={rejectQuestion}
+                />
+              </div>
+            )}
             {/* Pass ref to ChatInputPanel for external control */}
             <ChatInputPanel ref={chatInputRef} ctrl={ctrl} />
           </Content>
@@ -405,6 +426,9 @@ const Chat: React.FC = () => {
         refreshAppInfo,
         setHistory,
         contextStatus,
+        pendingQuestion,
+        replyQuestion,
+        rejectQuestion,
       }}
     >
       <Flex flex={1}>
