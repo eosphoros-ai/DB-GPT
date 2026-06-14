@@ -300,12 +300,14 @@ class ValkeyStore(VectorStoreBase):
                 use_tls=config.use_ssl,
                 request_timeout=config.request_timeout,
                 credentials=ServerCredentials(password=config.password),
+                client_name="dbgpt_vector_store_client",
             )
         else:
             client_config = GlideClientConfiguration(
                 addresses=[node],
                 use_tls=config.use_ssl,
                 request_timeout=config.request_timeout,
+                client_name="dbgpt_vector_store_client",
             )
 
         # GlideClient.create() is async — run it in our dedicated loop

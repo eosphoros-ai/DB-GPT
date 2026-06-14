@@ -1,0 +1,84 @@
+{
+  "connectors": [
+    {
+      "type": "feishu",
+      "display_name": "飞书",
+      "description": "飞书消息、文档、日历集成",
+      "icon": "feishu",
+      "category": "communication",
+      "mcp_server": {"transport": "sse"},
+      "confirm_actions": ["feishu_send_message", "feishu_create_doc", "feishu_update_doc"],
+      "read_actions": ["feishu_get_doc", "feishu_list_docs", "feishu_search"]
+    },
+    {
+      "type": "dingtalk",
+      "display_name": "钉钉",
+      "description": "钉钉群消息推送和机器人通知",
+      "icon": "dingtalk",
+      "category": "communication",
+      "mcp_server": {"transport": "sse"},
+      "confirm_actions": ["dingtalk_send_message", "dingtalk_send_card"],
+      "read_actions": []
+    },
+    {
+      "type": "yuque",
+      "display_name": "语雀",
+      "description": "语雀知识库文档读写",
+      "icon": "yuque",
+      "category": "document",
+      "mcp_server": {"transport": "sse"},
+      "confirm_actions": ["yuque_create_doc", "yuque_update_doc", "yuque_delete_doc"],
+      "read_actions": ["yuque_get_doc", "yuque_list_docs", "yuque_search"]
+    },
+    {
+      "type": "github",
+      "display_name": "GitHub",
+      "description": "GitHub Issues、PR、仓库管理",
+      "icon": "github",
+      "category": "project",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": ["github_create_issue", "github_create_pr", "github_comment"],
+      "read_actions": ["github_get_issue", "github_list_issues", "github_get_repo"]
+    },
+    {
+      "type": "notion",
+      "display_name": "Notion",
+      "description": "Notion 页面/数据库读写,知识库整理",
+      "icon": "notion",
+      "category": "document",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": ["notion_create_page", "notion_update_page", "notion_delete_page", "notion_create_database", "notion_update_database"],
+      "read_actions": ["notion_search", "notion_fetch", "notion_get_page", "notion_get_database"]
+    },
+    {
+      "type": "linear",
+      "display_name": "Linear",
+      "description": "Linear Issue/Project 协作,自动建/改任务",
+      "icon": "linear",
+      "category": "project",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": ["linear_create_issue", "linear_update_issue", "linear_delete_issue", "linear_create_comment", "linear_create_project"],
+      "read_actions": ["linear_list_issues", "linear_get_issue", "linear_search_issues", "linear_list_projects"]
+    },
+    {
+      "type": "tavily",
+      "display_name": "Tavily",
+      "description": "为 LLM 优化的 Web 搜索,返回 Markdown 摘要",
+      "icon": "tavily",
+      "category": "search",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": [],
+      "read_actions": ["tavily_search", "tavily_extract", "tavily_crawl", "tavily_map"]
+    },
+    {
+      "type": "deepwiki",
+      "display_name": "DeepWiki",
+      "description": "任意 GitHub 仓库的 AI 解读与问答",
+      "icon": "deepwiki",
+      "category": "dev",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": [],
+      "read_actions": ["read_wiki_structure", "read_wiki_contents", "ask_question"]
+    }
+  ]
+}

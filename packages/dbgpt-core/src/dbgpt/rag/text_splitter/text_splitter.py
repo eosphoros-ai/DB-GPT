@@ -529,10 +529,23 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                 line["content"] = f'"{subtitles}": ' + line["content"]
                 aggregated_chunks.append(line)
 
-        return [
-            Chunk(content=chunk["content"], metadata=chunk["metadata"])
-            for chunk in aggregated_chunks
-        ]
+        chunks = []
+        fallback_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self._chunk_size,
+            chunk_overlap=self._chunk_overlap,
+            length_function=self._length_function,
+        )
+        for chunk in aggregated_chunks:
+            content = chunk["content"]
+            metadata = chunk["metadata"]
+            if self._length_function(content) <= self._chunk_size:
+                chunks.append(Chunk(content=content, metadata=copy.deepcopy(metadata)))
+                continue
+            for split_content in fallback_splitter.split_text(content):
+                chunks.append(
+                    Chunk(content=split_content, metadata=copy.deepcopy(metadata))
+                )
+        return chunks
 
     def split_text(  # type: ignore
         self,
