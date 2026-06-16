@@ -342,6 +342,70 @@ _BUS_OPERATION_KEYWORDS = (
 )
 
 
+_REPORT_SCOPE_REVISION_KEYWORDS = (
+    "不属于",
+    "不是",
+    "排除",
+    "剔除",
+    "不要统计",
+    "不纳入",
+    "统计口径",
+    "统计范围",
+    "修正",
+)
+
+
+_DATA_REPORT_KEYWORDS = (
+    "报告",
+    "报表",
+    "统计",
+    "汇总",
+    "分析",
+    "运营",
+    "营运",
+    "数据",
+    "指标",
+)
+
+
+def _is_report_scope_revision_question(user_question: Optional[str]) -> bool:
+    """Return whether the user asks to revise a report/statistical scope."""
+    question = (user_question or "").lower()
+    return any(
+        keyword.lower() in question for keyword in _REPORT_SCOPE_REVISION_KEYWORDS
+    )
+
+
+def _requires_data_backed_final_html(user_question: Optional[str]) -> bool:
+    """Return whether final HTML must be backed by current-round data steps."""
+    question = (user_question or "").lower()
+    if _is_report_scope_revision_question(question):
+        return True
+    return any(keyword.lower() in question for keyword in _DATA_REPORT_KEYWORDS)
+
+
+def _history_has_current_data_steps(history_steps: List[Dict[str, Any]]) -> bool:
+    """Return whether current history contains SQL/code data-producing steps."""
+    data_actions = {"sql_query", "code_interpreter"}
+    return any(
+        str(step.get("action") or "").strip().lower() in data_actions
+        for step in history_steps
+    )
+
+
+def _can_auto_render_final_html(
+    user_question: Optional[str],
+    history_steps: List[Dict[str, Any]],
+    sql_report_path: Optional[str],
+) -> bool:
+    """Return whether final HTML can be auto-rendered into html_interpreter."""
+    if sql_report_path:
+        return True
+    if not _requires_data_backed_final_html(user_question):
+        return True
+    return _history_has_current_data_steps(history_steps)
+
+
 _BUS_BASIC_RESOURCE_KEYWORDS = (
     "基础资源",
     "基础信息",
@@ -872,6 +936,7 @@ def _code_selects_saved_sql_results(code: str) -> bool:
         "get_only_sql_result(",
         "find_sql_result_by_columns(",
         "sql_result_rows(",
+        "sql_result_columns(",
     ]
     return any(marker in code for marker in sql_result_markers)
 
@@ -916,6 +981,40 @@ def _available_sql_result_refs(
     return refs
 
 
+def _format_available_columns_hint(
+    sql_results: List[SqlResult] | List[Dict[str, Any]],
+    max_columns: int = 30,
+) -> str:
+    """Return a guard-error suffix that lists each SQL_RESULT's columns."""
+    if not sql_results:
+        return ""
+    refs = _available_sql_result_refs(sql_results)
+    lines: List[str] = []
+    for idx, result in enumerate(sql_results):
+        if isinstance(result, dict):
+            columns = list(result.get("columns") or [])
+        else:
+            columns = list(getattr(result, "columns", []) or [])
+        if not columns:
+            continue
+        safe_cols = [
+            "<敏感>" if _is_sensitive_column_name(col) else str(col)
+            for col in columns
+        ]
+        if len(safe_cols) > max_columns:
+            shown = ", ".join(safe_cols[:max_columns])
+            extra = len(safe_cols) - max_columns
+            lines.append(f"- {refs[idx]}: {shown}, ...还有 {extra} 列")
+        else:
+            lines.append(f"- {refs[idx]}: {', '.join(safe_cols)}")
+    if not lines:
+        return ""
+    return (
+        "\n\n当前可用 SQL 结果及其原始列名（请用作 "
+        "require_value(row, '<列名>')）：\n" + "\n".join(lines)
+    )
+
+
 def _invalid_sql_result_ref_error(
     code: str,
     sql_results: List[SqlResult] | List[Dict[str, Any]],
@@ -952,7 +1051,7 @@ def _invalid_sql_result_ref_error(
 
 def _invalid_helper_import_error(code: str) -> Optional[str]:
     """Return an error if code imports helper modules that do not exist."""
-    blocked_modules = ["utils", "tool_functions"]
+    blocked_modules = ["dbgpt_tools", "utils", "tool_functions"]
     blocked_pattern = (
         r"^\s*(?:from\s+({modules})(?:\.[A-Za-z_][\w.]*)?\s+import\b|"
         r"import\s+({modules})(?:\s|$))"
@@ -976,6 +1075,7 @@ def _unknown_sql_result_helpers(code: str) -> List[str]:
         "get_only_sql_result",
         "find_sql_result_by_columns",
         "sql_result_rows",
+        "sql_result_columns",
         "require_columns",
         "require_value",
         "to_float",
@@ -986,7 +1086,8 @@ def _unknown_sql_result_helpers(code: str) -> List[str]:
     helper_names = set(
         re.findall(
             r"\b(?:get_sql_result|find_sql_result_by_[A-Za-z0-9_]+|"
-            r"get_only_sql_result|sql_result_rows|require_columns|require_value|"
+            r"get_only_sql_result|sql_result_rows|sql_result_columns|"
+            r"require_columns|require_value|"
             r"to_[A-Za-z0-9_]+|save_report_facts|load_report_facts|"
             r"write_sql_report_html)"
             r"\s*\(",
@@ -1030,6 +1131,15 @@ def _report_facts_used_before_definition_or_load(code: str) -> bool:
     return first_initializer is None or first_initializer > first_use
 
 
+def _code_uses_direct_sql_row_column_access(code: str) -> bool:
+    """Return whether code directly indexes SQL row dicts by column name."""
+    direct_row_patterns = [
+        r"\brows\s*\[[^\]]+\]\s*\[\s*['\"][^'\"]+['\"]\s*\]",
+        r"\b(?:row|record|item)\s*\[\s*['\"][^'\"]+['\"]\s*\]",
+    ]
+    return any(re.search(pattern, code) for pattern in direct_row_patterns)
+
+
 def _validate_saved_sql_result_code(
     code: str,
     sql_results: List[SqlResult] | List[Dict[str, Any]],
@@ -1037,6 +1147,8 @@ def _validate_saved_sql_result_code(
     """Reject fragile SQL result access before executing report code."""
     if not sql_results:
         return None
+
+    cols_hint = _format_available_columns_hint(sql_results)
 
     import_error = _invalid_helper_import_error(code)
     if import_error:
@@ -1049,6 +1161,7 @@ def _validate_saved_sql_result_code(
             f"{', '.join(unknown_helpers)}。当前只支持 "
             "get_sql_result('SQL_RESULT_n')、get_only_sql_result()、"
             "find_sql_result_by_columns([...])、sql_result_rows(result)、"
+            "sql_result_columns(result)、"
             "require_columns(result, [...])、require_value(row, column)、"
             "to_float(value)、save_report_facts(report_facts)、"
             "load_report_facts() 和 write_sql_report_html(...)。"
@@ -1057,6 +1170,15 @@ def _validate_saved_sql_result_code(
     ref_error = _invalid_sql_result_ref_error(code, sql_results)
     if ref_error:
         return ref_error
+
+    if len(sql_results) > 1 and re.search(r"\bget_only_sql_result\s*\(", code):
+        available_refs = ", ".join(_available_sql_result_refs(sql_results))
+        return (
+            "当前有多个 SQL_RESULT，不能使用 get_only_sql_result()。请改用 "
+            "get_sql_result('SQL_RESULT_n') 显式选择结果，或使用 "
+            "find_sql_result_by_columns([...]) 按字段定位。当前可用结果: "
+            f"{available_refs}。"
+        )
 
     if "save_report_facts(" in code and not _code_selects_saved_sql_results(code):
         return (
@@ -1084,6 +1206,16 @@ def _validate_saved_sql_result_code(
             "猜测查询结果顺序。单 SQL 结果请使用 get_only_sql_result()，"
             "多 SQL 结果请使用 get_sql_result('SQL_RESULT_n') "
             "或 find_sql_result_by_columns([...]) 定位结果。"
+            + cols_hint
+        )
+
+    if _code_uses_direct_sql_row_column_access(code):
+        return (
+            "SQL 报告生成代码不能用 row['字段名'] 或 rows[0]['字段名'] "
+            "直接读取 SQL 行字段。请先用 require_columns(result, [...]) "
+            "校验结果字段，再用 require_value(row, '原始列名') 读取字段；"
+            "展示用中文名称只能在 HTML 渲染阶段使用，不能作为数据 key。"
+            + cols_hint
         )
 
     silent_zero_patterns = [
@@ -1095,6 +1227,7 @@ def _validate_saved_sql_result_code(
             "SQL 报告生成代码不能默认置 0 或在字段缺失时静默兜底。请先用 "
             "require_columns(...) 校验结果字段，并用 require_value(row, column) "
             "读取字段；字段不存在时必须报错重试。"
+            + cols_hint
         )
 
     if _code_writes_html_report(code) and "write_sql_report_html(" not in code:
@@ -1194,6 +1327,10 @@ def _sql_query_results_access_example() -> str:
     return """result = get_only_sql_result()
 # If multiple SQL results exist, use get_sql_result("SQL_RESULT_n")
 # or find_sql_result_by_columns([...]) to select the intended result.
+# Canonical column names live in result["columns"]; read them via
+# sql_result_columns(result). Do NOT probe list(result.keys()) — those
+# are metadata keys (ref/columns/rows/row_count/sql), not data columns.
+columns = sql_result_columns(result)
 require_columns(result, ["total_value", "total_base"])
 rows = sql_result_rows(result)
 
@@ -1256,6 +1393,10 @@ def find_sql_result_by_columns(required_columns):
 def sql_result_rows(result):
     columns = result.get("columns") or []
     return [dict(zip(columns, row)) for row in result.get("rows", [])]
+
+
+def sql_result_columns(result):
+    return list(result.get("columns") or [])
 
 
 def require_columns(result, required_columns):
@@ -4594,6 +4735,19 @@ print(json.dumps(summary, ensure_ascii=False))
         if was_html_rendered:
             return [], None
 
+        if auto_html and not _can_auto_render_final_html(
+            user_question=user_input,
+            history_steps=history_steps,
+            sql_report_path=sql_report_path,
+        ):
+            return (
+                [],
+                "当前问题涉及数据报表或统计口径修正，但最终 HTML 缺少本轮 "
+                "sql_query/code_interpreter 数据支撑，已阻止自动渲染。请重新"
+                "执行 SQL 查询和 code_interpreter 计算后，再调用 "
+                "html_interpreter(file_path='/tmp/report.html') 渲染。"
+            )
+
         try:
             render_path = sql_report_path
             render_reason = (
@@ -4922,6 +5076,10 @@ Action Input: {{"sql": "SELECT ..."}}
    (date, company, department, line, vehicle, driver, metric scope) unless the
    user explicitly changes them. Do NOT replace a requested historical date
    with `ORDER BY target_date DESC LIMIT ...`.
+   If the user corrects report scope with phrases like "不属于", "不是",
+   "排除", "剔除", "不要统计", or "不纳入", treat it as a statistical
+   scope revision: rerun `sql_query` and `code_interpreter` for the corrected
+   scope, and never directly reuse or edit a previous final HTML report.
 5. **[Mandatory Rule] Report generation MUST follow this exact 3-step workflow:**
    Step 1: Call `sql_query` to get data (results auto-saved as `SQL_RESULT_n`).
    Step 2: Call `code_interpreter` to read saved SQL results with
@@ -5180,6 +5338,10 @@ order, select as needed).
    (date, company, department, line, vehicle, driver, metric scope) unless the
    user explicitly changes them. Do NOT replace a requested historical date
    with `ORDER BY target_date DESC LIMIT ...`.
+   If the user corrects report scope with phrases like "不属于", "不是",
+   "排除", "剔除", "不要统计", or "不纳入", treat it as a statistical
+   scope revision: rerun `sql_query` and `code_interpreter` for the corrected
+   scope, and never directly reuse or edit a previous final HTML report.
 6. When the task is completed, call the terminate tool to return the final result.
 The Action Input format must be {{"result": "final answer"}}.
 7. **[Mandatory Rule] Report generation MUST follow this exact 3-step workflow:**

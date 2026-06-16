@@ -597,6 +597,15 @@ def test_validate_saved_sql_result_code_rejects_missing_helper_imports():
     assert error is not None
     assert "utils" in error
 
+    error = agentic_data_api._validate_saved_sql_result_code(
+        "from dbgpt_tools import get_sql_result\n"
+        "result = get_sql_result('SQL_RESULT_1')\n",
+        sql_results,
+    )
+
+    assert error is not None
+    assert "dbgpt_tools" in error
+
 
 def test_validate_saved_sql_result_code_rejects_unknown_conversion_helper():
     sql_results = [
@@ -665,6 +674,227 @@ total_plan = to_float(require_value(rows[0], "total_plan_trip"))
     )
 
     assert error is None
+
+
+def test_validate_saved_sql_result_code_rejects_get_only_with_multiple_results():
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=["total_plan_trip", "total_real_trip"],
+            rows=[[1499.5, 1480.5]],
+            row_count=1,
+            sql="SELECT total_plan_trip, total_real_trip",
+        ),
+        agentic_data_api.SqlResult(
+            columns=["department_name", "plan_trip", "real_trip"],
+            rows=[["一车队", 100, 98]],
+            row_count=1,
+            sql="SELECT department_name, plan_trip, real_trip",
+        ),
+    ]
+
+    error = agentic_data_api._validate_saved_sql_result_code(
+        """
+result = get_only_sql_result()
+rows = sql_result_rows(result)
+total_plan = to_float(require_value(rows[0], "total_plan_trip"))
+""",
+        sql_results,
+    )
+
+    assert error is not None
+    assert "get_only_sql_result" in error
+    assert "多个 SQL_RESULT" in error
+
+
+def test_validate_saved_sql_result_code_rejects_direct_row_column_access():
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=["department_name", "plan_trip", "real_trip"],
+            rows=[["一车队", 100, 98]],
+            row_count=1,
+            sql="SELECT department_name, plan_trip, real_trip",
+        )
+    ]
+
+    error = agentic_data_api._validate_saved_sql_result_code(
+        """
+result = get_sql_result('SQL_RESULT_1')
+rows = sql_result_rows(result)
+report_facts = {
+    'department_name': rows[0]['部门名称'],
+    'plan_trip': rows[0]['plan_trip'],
+}
+""",
+        sql_results,
+    )
+
+    assert error is not None
+    assert "require_value" in error
+    assert "row['字段名']" in error
+
+
+def test_report_scope_revision_questions_require_data_backed_render():
+    assert agentic_data_api._is_report_scope_revision_question(
+        "车队-东部不属于海通公交"
+    )
+    assert agentic_data_api._is_report_scope_revision_question("排除车队-东部")
+    assert not agentic_data_api._is_report_scope_revision_question("你好")
+
+    assert agentic_data_api._requires_data_backed_final_html(
+        "车队-东部不属于海通公交"
+    )
+    assert agentic_data_api._requires_data_backed_final_html(
+        "生成海通公交5月10日运营报告"
+    )
+    assert not agentic_data_api._requires_data_backed_final_html("写一个欢迎页HTML")
+
+
+def test_auto_final_html_render_requires_current_data_steps_for_scope_revision():
+    history_steps = [
+        {
+            "action": "html_interpreter",
+            "outputs": [{"output_type": "html", "content": "<html></html>"}],
+        }
+    ]
+
+    assert not agentic_data_api._can_auto_render_final_html(
+        user_question="车队-东部不属于海通公交",
+        history_steps=history_steps,
+        sql_report_path="",
+    )
+
+    assert agentic_data_api._can_auto_render_final_html(
+        user_question="车队-东部不属于海通公交",
+        history_steps=[{"action": "sql_query", "outputs": []}],
+        sql_report_path="",
+    )
+    assert agentic_data_api._can_auto_render_final_html(
+        user_question="写一个欢迎页HTML",
+        history_steps=[],
+        sql_report_path="",
+    )
+
+
+def test_format_available_columns_hint_lists_columns_for_each_ref():
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=["total_plan_trip", "total_real_trip"],
+            rows=[[1499.5, 1480.5]],
+            row_count=1,
+            sql="SELECT total_plan_trip, total_real_trip",
+        ),
+        agentic_data_api.SqlResult(
+            columns=["department_name", "plan_trip", "real_trip"],
+            rows=[["一车队", 100, 98]],
+            row_count=1,
+            sql="SELECT department_name, plan_trip, real_trip",
+        ),
+    ]
+
+    hint = agentic_data_api._format_available_columns_hint(sql_results)
+
+    assert "当前可用 SQL 结果及其原始列名" in hint
+    assert "require_value(row, '<列名>')" in hint
+    assert "SQL_RESULT_1: total_plan_trip, total_real_trip" in hint
+    assert (
+        "SQL_RESULT_2: department_name, plan_trip, real_trip" in hint
+    )
+
+
+def test_format_available_columns_hint_accepts_dict_results_and_masks_sensitive():
+    sql_results = [
+        {
+            "ref": "SQL_RESULT_1",
+            "columns": ["driver_name", "mobile_phone", "id_card_no"],
+            "rows": [["张三", "13800000000", "110101"]],
+        }
+    ]
+
+    hint = agentic_data_api._format_available_columns_hint(sql_results)
+
+    assert "SQL_RESULT_1" in hint
+    assert "driver_name" in hint
+    assert "mobile_phone" not in hint
+    assert "id_card_no" not in hint
+    assert hint.count("<敏感>") == 2
+
+
+def test_format_available_columns_hint_truncates_after_max_columns():
+    columns = [f"col_{i}" for i in range(35)]
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=columns,
+            rows=[[0] * 35],
+            row_count=1,
+            sql="SELECT *",
+        )
+    ]
+
+    hint = agentic_data_api._format_available_columns_hint(
+        sql_results, max_columns=30
+    )
+
+    assert "col_0" in hint
+    assert "col_29" in hint
+    assert "col_30" not in hint
+    assert "...还有 5 列" in hint
+
+
+def test_format_available_columns_hint_skips_results_without_columns():
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=[], rows=[], row_count=0, sql="SELECT 1"
+        )
+    ]
+
+    assert agentic_data_api._format_available_columns_hint(sql_results) == ""
+    assert agentic_data_api._format_available_columns_hint([]) == ""
+
+
+def test_validate_saved_sql_result_code_error_includes_columns_hint():
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=["total_plan_trip", "total_real_trip"],
+            rows=[[1499.5, 1480.5]],
+            row_count=1,
+            sql="SELECT total_plan_trip, total_real_trip",
+        )
+    ]
+
+    error = agentic_data_api._validate_saved_sql_result_code(
+        """
+result = get_sql_result('SQL_RESULT_1')
+rows = sql_result_rows(result)
+report_facts = {
+    'plan': rows[0]['total_plan_trip'],
+}
+""",
+        sql_results,
+    )
+
+    assert error is not None
+    assert "当前可用 SQL 结果及其原始列名" in error
+    assert "SQL_RESULT_1: total_plan_trip, total_real_trip" in error
+
+
+def test_sql_query_results_helpers_expose_sql_result_columns():
+    namespace: dict = {
+        "SQL_QUERY_RESULTS": [
+            {
+                "ref": "SQL_RESULT_1",
+                "columns": ["department_name", "plan_trip", "real_trip"],
+                "rows": [["一车队", 282.0, 282.0]],
+            }
+        ]
+    }
+    exec(agentic_data_api._sql_query_results_helper_preamble(), namespace)
+
+    result = namespace["get_only_sql_result"]()
+    columns = namespace["sql_result_columns"](result)
+
+    assert columns == ["department_name", "plan_trip", "real_trip"]
+    assert namespace["sql_result_columns"]({}) == []
+    assert namespace["sql_result_columns"]({"columns": None}) == []
 
 
 def test_validate_saved_sql_result_code_rejects_direct_sql_html_write():
