@@ -94,6 +94,20 @@ Action Input: {"result": "The answer is 4"}"""
 
         assert parser.get_final_output(steps) == "The answer is 4"
 
+    def test_lenient_action_fallback_requires_action_input(self):
+        """Do not treat explanatory text mentioning Action as executable."""
+        parser = ReActOutputParser()
+        text = (
+            "Thought: I should call Action: sql_query after I decide the SQL, "
+            "but I have not produced the required action input yet."
+        )
+
+        steps = parser.parse_current_step(text)
+        err_msg = parser.validate_current_step(steps)
+
+        assert err_msg is not None
+        assert "No action found" in err_msg
+
     def test_multi_step_parsing(self):
         """Test parsing of multiple steps."""
         parser = ReActOutputParser()

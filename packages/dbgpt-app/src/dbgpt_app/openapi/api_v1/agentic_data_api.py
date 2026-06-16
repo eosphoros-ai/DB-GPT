@@ -144,6 +144,68 @@ AUTO_DATA_MARKER_PATTERN = re.compile(
 )
 
 
+def _skill_metadata_name(skill: Any) -> str:
+    metadata = getattr(skill, "metadata", None)
+    return str(
+        getattr(metadata, "name", None)
+        or getattr(skill, "name", None)
+        or ""
+    )
+
+
+def _skill_file_path(skill: Any, skills_dir: str) -> str:
+    metadata = getattr(skill, "metadata", None)
+    file_path = str(getattr(metadata, "file_path", None) or "")
+    if not file_path and hasattr(skill, "_config"):
+        file_path = str(skill._config.get("file_path", "") or "")
+    if not file_path:
+        return ""
+
+    try:
+        return str(
+            Path(file_path)
+            .expanduser()
+            .resolve()
+            .relative_to(Path(skills_dir).expanduser().resolve())
+        )
+    except Exception:
+        return file_path
+
+
+def _resolve_skill_file_path(
+    skill_name: str,
+    file_path: str,
+    all_skills: List[Any],
+    skills_dir: str,
+) -> str:
+    """Resolve a skill path when the model calls load_skill without file_path."""
+    if file_path:
+        return file_path
+
+    normalized_name = (skill_name or "").strip().lower()
+    if not normalized_name:
+        return ""
+
+    for skill in all_skills:
+        if _skill_metadata_name(skill).strip().lower() == normalized_name:
+            return _skill_file_path(skill, skills_dir)
+
+    for skill in all_skills:
+        candidate = _skill_file_path(skill, skills_dir)
+        if not candidate:
+            continue
+        path = Path(candidate)
+        aliases = {
+            path.stem.lower(),
+            path.parent.name.lower(),
+            candidate.strip().lower(),
+        }
+        if normalized_name in aliases:
+            return candidate
+
+    return ""
+
+
 def _validate_upload_filename(filename: str) -> str:
     if "\x00" in filename:
         raise ValueError("filename must not contain null bytes")
@@ -183,6 +245,7 @@ async def _resolve_model_context_tokens(
 def _postgres_sql_dialect_rules(
     database_name: Optional[str] = None,
     ads_only_operation: bool = False,
+    dim_only_basic_resource: bool = False,
 ) -> str:
     """Return PostgreSQL-only SQL rules for the React data assistant prompt."""
     rules = """
@@ -205,7 +268,27 @@ def _postgres_sql_dialect_rules(
 - UNION/UNION ALL 每个 SELECT 对应列类型必须一致，日期和文本混用时先统一
   CAST(... AS text) 或统一保持 date 类型。
 """
-    if (database_name or "").lower() == "bus_info" and ads_only_operation:
+    if (database_name or "").lower() == "bus_info":
+        rules += """
+## bus_info 隐私与安全字段规则
+- 手机号、身份证号、证件号、联系方式、电话、邮箱、住址、家庭地址等隐私或安全字段
+  不得明文输出给用户。
+- 查询这些字段时必须在 SQL 中脱敏展示，例如直接输出 '***'，或仅保留必要尾号：
+  `CONCAT('***', RIGHT(phone, 4)) AS phone`。
+- 最终回答和 HTML 报表也只能展示脱敏后的值；如果本轮 SQL 已返回明文敏感值，
+  回答时必须改写为 `***`，不得复述原文。
+"""
+
+    if (database_name or "").lower() == "bus_info" and dim_only_basic_resource:
+        rules += """
+## bus_info 公司基础资源 DIM 表约束
+- 当前问题已识别为公司基础资源类问题，优先且仅使用 dim_ 开头的维表。
+- 适用范围包括公司/部门/车队/线路/车辆/驾驶员等基础档案、清单、列表、资源信息。
+- 不要使用 ads_ 运营汇总表回答基础资源清单问题；ads_ 用于运营指标统计，不用于基础档案。
+- 如果 dim_ 表缺少所需字段，必须明确说明当前维表不支持该字段，不要回退到 dwd_、
+  ods_、ads_、bigdata_ 等表。
+"""
+    elif (database_name or "").lower() == "bus_info" and ads_only_operation:
         rules += """
 ## bus_info 运营类 ADS 表约束
 - 当前问题已识别为运营类问题，只能使用 ads_ 开头的 ADS 汇总表。
@@ -259,6 +342,108 @@ _BUS_OPERATION_KEYWORDS = (
 )
 
 
+_BUS_BASIC_RESOURCE_KEYWORDS = (
+    "基础资源",
+    "基础信息",
+    "资源清单",
+    "资源列表",
+    "基础档案",
+    "档案",
+    "清单",
+    "列表",
+    "名录",
+    "公司资源",
+    "车辆资源",
+    "车辆档案",
+    "驾驶员档案",
+    "司机档案",
+    "线路清单",
+    "部门清单",
+    "车队清单",
+)
+
+
+_BUS_SCHEMA_INSPECTION_KEYWORDS = (
+    "表字段",
+    "字段名",
+    "字段列表",
+    "字段清单",
+    "字段说明",
+    "表结构",
+    "建表",
+    "schema",
+    "ddl",
+)
+
+
+_BUS_RAW_PERSONNEL_KEYWORDS = (
+    "人员表",
+    "员工表",
+    "人员数据",
+    "员工数据",
+    "人员明细",
+    "员工明细",
+    "人员信息",
+    "员工信息",
+    "dim_hr_employee",
+)
+
+
+_RAW_DETAIL_ACTION_KEYWORDS = (
+    "返回",
+    "查看",
+    "看看",
+    "前",
+    "全部",
+    "明细",
+    "原始",
+    "列表",
+    "清单",
+)
+
+
+def _is_bus_schema_inspection_question(
+    database_name: Optional[str],
+    user_question: Optional[str],
+) -> bool:
+    """Return whether a bus_info question asks to expose schema details."""
+    if (database_name or "").lower() != "bus_info":
+        return False
+    question = (user_question or "").lower()
+    return any(
+        keyword.lower() in question
+        for keyword in _BUS_SCHEMA_INSPECTION_KEYWORDS
+    )
+
+
+def _is_bus_raw_personnel_detail_question(
+    database_name: Optional[str],
+    user_question: Optional[str],
+) -> bool:
+    """Return whether a bus_info question asks for raw personnel detail rows."""
+    if (database_name or "").lower() != "bus_info":
+        return False
+    question = (user_question or "").lower()
+    has_personnel = any(
+        keyword.lower() in question for keyword in _BUS_RAW_PERSONNEL_KEYWORDS
+    )
+    has_raw_action = any(
+        keyword.lower() in question for keyword in _RAW_DETAIL_ACTION_KEYWORDS
+    )
+    return has_personnel and has_raw_action
+
+
+def _is_bus_basic_resource_question(
+    database_name: Optional[str],
+    user_question: Optional[str],
+) -> bool:
+    """Return whether a bus_info question should prefer DIM resource tables."""
+    if (database_name or "").lower() != "bus_info":
+        return False
+    question = (user_question or "").lower()
+    return any(keyword.lower() in question for keyword in _BUS_BASIC_RESOURCE_KEYWORDS)
+
+
 def _is_bus_operation_question(
     database_name: Optional[str],
     user_question: Optional[str],
@@ -298,17 +483,200 @@ def _filter_table_info_by_names(table_info: str, allowed_names: List[str]) -> st
     return "\n\n".join(kept) if kept else table_info
 
 
+_SCHEMA_LEAK_SAFE_MESSAGE = (
+    "已根据可用业务数据完成处理。出于安全要求，底层数据字典和数据库实现细节不展示给客户。"
+)
+
+
+def _get_direct_customer_facing_reply(
+    database_name: Optional[str],
+    user_question: Optional[str],
+) -> Optional[str]:
+    """Return a direct customer-facing answer for requests that must not run tools."""
+    if _is_bus_schema_inspection_question(database_name, user_question):
+        return _SCHEMA_LEAK_SAFE_MESSAGE
+    return None
+
+
+_SENSITIVE_COLUMN_KEYWORDS = (
+    "mobile",
+    "phone",
+    "tel",
+    "id_num",
+    "id_card",
+    "identity",
+    "cert",
+    "urgent",
+    "email",
+    "address",
+    "addr",
+    "ic_no",
+    "physical_no",
+)
+
+
+def _is_sensitive_column_name(column_name: Any) -> bool:
+    """Return whether a SQL column should be masked before display."""
+    normalized = str(column_name or "").strip().lower()
+    return any(keyword in normalized for keyword in _SENSITIVE_COLUMN_KEYWORDS)
+
+
+def _mask_sensitive_value(value: Any) -> Any:
+    """Mask a sensitive SQL value while preserving empty/null values."""
+    if value in (None, ""):
+        return value
+    return "***"
+
+
+def _mask_sensitive_sql_rows(col_names: List[str], rows: List[Any]) -> List[List[Any]]:
+    """Mask sensitive SQL result columns before display and memory storage."""
+    sensitive_indexes = {
+        idx
+        for idx, col_name in enumerate(col_names)
+        if _is_sensitive_column_name(col_name)
+    }
+    masked_rows: List[List[Any]] = []
+    for row in rows:
+        row_values = list(row)
+        masked_rows.append(
+            [
+                _mask_sensitive_value(value) if idx in sensitive_indexes else value
+                for idx, value in enumerate(row_values)
+            ]
+        )
+    return masked_rows
+
+
+def _mask_labeled_sensitive_text(text: str) -> str:
+    """Mask labeled sensitive values in customer-facing free text."""
+    label_pattern = (
+        r"((?:手机号|手机|电话|联系方式|身份证号|身份证|证件号|邮箱|住址|地址|"
+        r"mobile_phone|phone|tel|id_num|id_card|email|address)"
+        r"\s*[:：]\s*)"
+        r"([^，,。\n\r|]+)"
+    )
+    return re.sub(
+        label_pattern,
+        lambda match: match.group(1) + "***",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+
+def _text_contains_schema_details(text: str) -> bool:
+    """Return whether customer-facing text appears to expose DB schema details."""
+    if not isinstance(text, str) or not text.strip():
+        return False
+    schema_patterns = [
+        r"\bCREATE\s+TABLE\b",
+        r"\bALTER\s+TABLE\b",
+        r"\bDROP\s+TABLE\b",
+        r"\b(?:dim|ads|dwd|ods|bigdata)_[A-Za-z0-9_]+\b.*字段",
+        r"字段.*\b(?:dim|ads|dwd|ods|bigdata)_[A-Za-z0-9_]+\b",
+        r"表共有\s*\d+\s*个?字段",
+        r"字段名",
+        r"\b\d+\.\s*[A-Za-z_][\w$]*\s*[:：]\s*字段",
+        r"可用表\s*[:：]",
+        r"表结构\s*[:：]",
+        r"字段清单\s*[:：]",
+        r"字段列表\s*[:：]",
+    ]
+    return any(
+        re.search(pattern, text, flags=re.IGNORECASE)
+        for pattern in schema_patterns
+    )
+
+
+def _sanitize_customer_facing_answer(value: Any) -> Any:
+    """Remove schema details from final customer-facing answers."""
+    if isinstance(value, dict):
+        return {
+            key: _sanitize_customer_facing_answer(item)
+            if key in {"content", "result", "text", "markdown"}
+            or isinstance(item, (dict, list))
+            else item
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitize_customer_facing_answer(item) for item in value]
+    if not isinstance(value, str):
+        return value
+
+    stripped = value.strip()
+    if stripped[:1] in ("{", "["):
+        try:
+            parsed = json.loads(stripped)
+        except Exception:
+            parsed = None
+        if parsed is not None:
+            return json.dumps(
+                _sanitize_customer_facing_answer(parsed),
+                ensure_ascii=False,
+            )
+
+    if _text_contains_schema_details(value):
+        return _SCHEMA_LEAK_SAFE_MESSAGE
+    return _mask_labeled_sensitive_text(value)
+
+
+def _sanitize_customer_facing_action_input(action: Any, action_input: Any) -> Any:
+    """Sanitize customer-facing action payloads without hiding SQL components."""
+    if str(action or "").strip().lower() == "sql_query" and action_input:
+        return _mask_labeled_sensitive_text(action_input)
+    return _sanitize_customer_facing_answer(action_input)
+
+
+def _sanitize_customer_facing_step(step: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove schema and sensitive details from a customer-visible step."""
+    sanitized = dict(step)
+    action = sanitized.get("action")
+    for key in ("thought", "action_intention", "action_reason"):
+        sanitized[key] = _sanitize_customer_facing_answer(sanitized.get(key))
+    sanitized["action_input"] = _sanitize_customer_facing_action_input(
+        action,
+        sanitized.get("action_input"),
+    )
+    outputs = []
+    for item in sanitized.get("outputs") or []:
+        if isinstance(item, dict):
+            cleaned_item = dict(item)
+            cleaned_item["content"] = _sanitize_customer_facing_answer(
+                cleaned_item.get("content")
+            )
+            outputs.append(cleaned_item)
+        else:
+            outputs.append(_sanitize_customer_facing_answer(item))
+    sanitized["outputs"] = outputs
+    return sanitized
+
+
 def _build_database_context(
     database_name: str,
     user_question: Optional[str],
     table_names: List[str],
     table_info: str,
 ) -> str:
-    """Build database prompt context, narrowing bus operation questions to ADS."""
-    ads_only_operation = _is_bus_operation_question(database_name, user_question)
+    """Build database prompt context, narrowing bus questions to intent tables."""
+    dim_only_basic_resource = _is_bus_basic_resource_question(
+        database_name,
+        user_question,
+    )
+    ads_only_operation = (
+        not dim_only_basic_resource
+        and _is_bus_operation_question(database_name, user_question)
+    )
     visible_table_names = table_names
     visible_table_info = table_info
-    if ads_only_operation:
+    if dim_only_basic_resource:
+        visible_table_names = [
+            table_name
+            for table_name in table_names
+            if _normalize_table_name(table_name).startswith("dim_")
+        ]
+        visible_table_info = _filter_table_info_by_names(
+            table_info, visible_table_names
+        )
+    elif ads_only_operation:
         visible_table_names = [
             table_name
             for table_name in table_names
@@ -321,9 +689,14 @@ def _build_database_context(
     postgres_sql_rules = _postgres_sql_dialect_rules(
         database_name,
         ads_only_operation=ads_only_operation,
+        dim_only_basic_resource=dim_only_basic_resource,
     )
     operation_hint = ""
-    if ads_only_operation:
+    if dim_only_basic_resource:
+        operation_hint = (
+            "\n- 当前问题已识别为公司基础资源类问题，本轮只提供 dim_ 开头的维表。"
+        )
+    elif ads_only_operation:
         operation_hint = (
             "\n- 当前问题已识别为运营类问题，本轮只提供 ads_ 开头的 ADS 汇总表。"
         )
@@ -335,6 +708,8 @@ def _build_database_context(
 {visible_table_info}
 - 使用 'sql_query' 工具执行 SQL 查询
 - **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**{operation_hint}
+- **表结构仅供内部生成 SQL 使用，不得向客户展示表结构、字段清单、
+  CREATE TABLE、底层 SQL 或数据库实现细节。**
 {postgres_sql_rules}
 """
 
@@ -396,6 +771,34 @@ def _validate_bus_operation_sql_tables(
     )
 
 
+def _validate_bus_table_policy_sql(
+    database_name: Optional[str],
+    user_question: Optional[str],
+    sql: str,
+) -> Optional[str]:
+    """Reject table families that do not match the bus_info question intent."""
+    if _is_bus_schema_inspection_question(database_name, user_question):
+        return (
+            "底层数据字典和数据库实现细节不展示给客户。请改为按业务问题查询数据，"
+            "不要返回底层清单、建表语句或结构说明。"
+        )
+
+    if _is_bus_basic_resource_question(database_name, user_question):
+        referenced_tables = _extract_referenced_sql_tables(sql)
+        disallowed_tables = sorted(
+            {table for table in referenced_tables if not table.startswith("dim_")}
+        )
+        if disallowed_tables:
+            return (
+                "基础资源类问题只能查询 dim_ 开头的维表。当前 SQL 引用了非 DIM 表: "
+                f"{', '.join(disallowed_tables)}。请改用表结构中提供的 dim_ 表；"
+                "如果 DIM 表不支持该字段，请直接说明无法从当前维表获得。"
+            )
+        return None
+
+    return _validate_bus_operation_sql_tables(database_name, user_question, sql)
+
+
 def _serialize_sql_results_for_code(
     sql_results: List[SqlResult],
 ) -> List[Dict[str, Any]]:
@@ -414,6 +817,36 @@ def _serialize_sql_results_for_code(
     return serialized
 
 
+_SQL_DISPLAY_COLUMN_LABELS = {
+    "id": "编号",
+    "name": "姓名",
+    "sex": "性别",
+    "mobile_phone": "手机号",
+    "phone": "电话",
+    "urgent_phone": "紧急联系电话",
+    "id_num": "身份证号",
+    "id_card": "身份证号",
+    "email": "邮箱",
+    "address": "地址",
+    "home_address": "住址",
+    "pos_name": "职位",
+    "employee_num": "员工编号",
+    "department_name": "部门名称",
+    "company_name": "公司名称",
+    "line_name": "线路名称",
+}
+
+
+def _customer_facing_sql_column_label(col_name: str) -> str:
+    """Map internal SQL result column names to customer-facing labels."""
+    normalized = str(col_name or "").strip().lower()
+    if normalized in _SQL_DISPLAY_COLUMN_LABELS:
+        return _SQL_DISPLAY_COLUMN_LABELS[normalized]
+    if _is_sensitive_column_name(normalized):
+        return "敏感信息"
+    return str(col_name)
+
+
 def _code_uses_saved_sql_results(
     code: str,
     sql_results: List[SqlResult] | List[Dict[str, Any]],
@@ -421,7 +854,180 @@ def _code_uses_saved_sql_results(
     """Return whether code is backed by this round's saved SQL results."""
     if not sql_results:
         return False
-    return "SQL_QUERY_RESULTS" in code or "SQL_RESULTS_PATH" in code
+    return _code_selects_saved_sql_results(code) or any(
+        marker in code
+        for marker in [
+            "save_report_facts(",
+            "load_report_facts(",
+        ]
+    )
+
+
+def _code_selects_saved_sql_results(code: str) -> bool:
+    """Return whether code directly selects this round's saved SQL results."""
+    sql_result_markers = [
+        "SQL_QUERY_RESULTS",
+        "SQL_RESULTS_PATH",
+        "get_sql_result(",
+        "get_only_sql_result(",
+        "find_sql_result_by_columns(",
+        "sql_result_rows(",
+    ]
+    return any(marker in code for marker in sql_result_markers)
+
+
+def _report_facts_sidecar_path(html_path: str) -> str:
+    """Return the sidecar path that stores facts used by a SQL HTML report."""
+    return f"{html_path}.facts.json"
+
+
+def _has_report_facts_sidecar(html_path: str) -> bool:
+    """Return whether a SQL HTML report has a readable facts sidecar."""
+    facts_path = _report_facts_sidecar_path(html_path)
+    try:
+        with open(facts_path, "r", encoding="utf-8") as facts_file:
+            facts = json.load(facts_file)
+    except Exception:
+        return False
+    return isinstance(facts, dict)
+
+
+def _code_writes_html_report(code: str) -> bool:
+    """Return whether code appears to write an HTML report file."""
+    if not re.search(r"""["'][^"'\n\r]+?\.html?["']""", code, re.IGNORECASE):
+        return False
+    return bool(
+        re.search(r"\bopen\s*\(", code)
+        or re.search(r"\.write_text\s*\(", code)
+        or re.search(r"\.write_bytes\s*\(", code)
+    )
+
+
+def _available_sql_result_refs(
+    sql_results: List[SqlResult] | List[Dict[str, Any]],
+) -> List[str]:
+    """Return SQL_RESULT refs available to code_interpreter."""
+    refs: List[str] = []
+    for idx, result in enumerate(sql_results, start=1):
+        ref = ""
+        if isinstance(result, dict):
+            ref = str(result.get("ref") or "")
+        refs.append(ref or f"SQL_RESULT_{idx}")
+    return refs
+
+
+def _invalid_sql_result_ref_error(
+    code: str,
+    sql_results: List[SqlResult] | List[Dict[str, Any]],
+) -> Optional[str]:
+    """Return an error if code references unavailable SQL_RESULT refs."""
+    available_refs = _available_sql_result_refs(sql_results)
+    available_ref_set = set(available_refs)
+    literal_refs = re.findall(
+        r"\bget_sql_result\s*\(\s*['\"](SQL_RESULT_\d+)['\"]\s*\)",
+        code,
+    )
+    missing_refs = sorted({ref for ref in literal_refs if ref not in available_ref_set})
+    if missing_refs:
+        return (
+            "SQL 报告代码引用了不存在的 SQL 结果: "
+            f"{', '.join(missing_refs)}。当前可用结果为: "
+            f"{', '.join(available_refs)}。请使用真实存在的 "
+            "get_sql_result('SQL_RESULT_n')，或用 "
+            "find_sql_result_by_columns([...]) 按字段定位。"
+        )
+
+    dynamic_calls = re.findall(
+        r"\bget_sql_result\s*\(\s*([^'\"\s][^)]*)\)",
+        code,
+    )
+    if dynamic_calls:
+        return (
+            "SQL 报告代码不能使用变量动态选择 get_sql_result(ref)。请显式使用 "
+            "get_sql_result('SQL_RESULT_n') 选择当前可用结果，或用 "
+            "find_sql_result_by_columns([...]) 按字段定位。"
+        )
+    return None
+
+
+def _invalid_helper_import_error(code: str) -> Optional[str]:
+    """Return an error if code imports helper modules that do not exist."""
+    blocked_modules = ["utils", "tool_functions"]
+    blocked_pattern = (
+        r"^\s*(?:from\s+({modules})(?:\.[A-Za-z_][\w.]*)?\s+import\b|"
+        r"import\s+({modules})(?:\s|$))"
+    ).format(modules="|".join(re.escape(module) for module in blocked_modules))
+    matches = re.findall(blocked_pattern, code, flags=re.MULTILINE)
+    modules = sorted({module for match in matches for module in match if module})
+    if not modules:
+        return None
+    return (
+        "SQL 报告代码不能 import 不存在的 helper 模块: "
+        f"{', '.join(modules)}。SQL helper 已自动注入当前执行环境，"
+        "请直接调用 get_sql_result、find_sql_result_by_columns、"
+        "require_columns、require_value、to_float、write_sql_report_html 等函数。"
+    )
+
+
+def _unknown_sql_result_helpers(code: str) -> List[str]:
+    """Return SQL-result helper names that are not provided at runtime."""
+    allowed_helpers = {
+        "get_sql_result",
+        "get_only_sql_result",
+        "find_sql_result_by_columns",
+        "sql_result_rows",
+        "require_columns",
+        "require_value",
+        "to_float",
+        "save_report_facts",
+        "load_report_facts",
+        "write_sql_report_html",
+    }
+    helper_names = set(
+        re.findall(
+            r"\b(?:get_sql_result|find_sql_result_by_[A-Za-z0-9_]+|"
+            r"get_only_sql_result|sql_result_rows|require_columns|require_value|"
+            r"to_[A-Za-z0-9_]+|save_report_facts|load_report_facts|"
+            r"write_sql_report_html)"
+            r"\s*\(",
+            code,
+        )
+    )
+    normalized = {name.strip().rstrip("(").strip() for name in helper_names}
+    return sorted(name for name in normalized if name not in allowed_helpers)
+
+
+def _first_match_position(code: str, patterns: List[str]) -> Optional[int]:
+    """Return the first regex match position across patterns."""
+    positions = [
+        match.start()
+        for pattern in patterns
+        for match in re.finditer(pattern, code, flags=re.DOTALL)
+    ]
+    return min(positions) if positions else None
+
+
+def _report_facts_used_before_definition_or_load(code: str) -> bool:
+    """Return whether report_facts is referenced before being defined/loaded."""
+    first_use = _first_match_position(
+        code,
+        [
+            r"\breport_facts\s*\[",
+            r"\bwrite_sql_report_html\s*\([^)]*\breport_facts\b",
+            r"\bsave_report_facts\s*\(\s*report_facts\s*\)",
+        ],
+    )
+    if first_use is None:
+        return False
+
+    first_initializer = _first_match_position(
+        code,
+        [
+            r"\breport_facts\s*=",
+            r"\bload_report_facts\s*\(",
+        ],
+    )
+    return first_initializer is None or first_initializer > first_use
 
 
 def _validate_saved_sql_result_code(
@@ -432,6 +1038,42 @@ def _validate_saved_sql_result_code(
     if not sql_results:
         return None
 
+    import_error = _invalid_helper_import_error(code)
+    if import_error:
+        return import_error
+
+    unknown_helpers = _unknown_sql_result_helpers(code)
+    if unknown_helpers:
+        return (
+            "SQL 报告代码调用了不存在的 helper: "
+            f"{', '.join(unknown_helpers)}。当前只支持 "
+            "get_sql_result('SQL_RESULT_n')、get_only_sql_result()、"
+            "find_sql_result_by_columns([...])、sql_result_rows(result)、"
+            "require_columns(result, [...])、require_value(row, column)、"
+            "to_float(value)、save_report_facts(report_facts)、"
+            "load_report_facts() 和 write_sql_report_html(...)。"
+        )
+
+    ref_error = _invalid_sql_result_ref_error(code, sql_results)
+    if ref_error:
+        return ref_error
+
+    if "save_report_facts(" in code and not _code_selects_saved_sql_results(code):
+        return (
+            "调用 save_report_facts(report_facts) 前必须在同一段代码中使用 "
+            "get_sql_result('SQL_RESULT_n')、get_only_sql_result() 或 "
+            "find_sql_result_by_columns([...]) 读取本轮 SQL_RESULT，并用 "
+            "require_columns(...) / require_value(...) 计算 report_facts；"
+            "不能空手编造并保存 report_facts。"
+        )
+
+    if _report_facts_used_before_definition_or_load(code):
+        return (
+            "SQL 报告代码使用 report_facts 前必须先在同一段代码中定义 "
+            "report_facts = {...}，或先调用 report_facts = load_report_facts()。"
+            "不能假设上一轮 code_interpreter 的 Python 变量仍然存在。"
+        )
+
     guessed_result_patterns = [
         r"\bSQL_QUERY_RESULTS\s*\[\s*\d+\s*\]",
         r"\bdata\s*\[\s*\d+\s*\]",
@@ -439,7 +1081,8 @@ def _validate_saved_sql_result_code(
     if any(re.search(pattern, code) for pattern in guessed_result_patterns):
         return (
             "SQL 报告生成代码不能用 SQL_QUERY_RESULTS[0] 或 data[0] "
-            "猜测查询结果顺序。请使用 get_sql_result('SQL_RESULT_n') "
+            "猜测查询结果顺序。单 SQL 结果请使用 get_only_sql_result()，"
+            "多 SQL 结果请使用 get_sql_result('SQL_RESULT_n') "
             "或 find_sql_result_by_columns([...]) 定位结果。"
         )
 
@@ -452,6 +1095,15 @@ def _validate_saved_sql_result_code(
             "SQL 报告生成代码不能默认置 0 或在字段缺失时静默兜底。请先用 "
             "require_columns(...) 校验结果字段，并用 require_value(row, column) "
             "读取字段；字段不存在时必须报错重试。"
+        )
+
+    if _code_writes_html_report(code) and "write_sql_report_html(" not in code:
+        return (
+            "SQL 报告生成不能直接 open(...html) 写文件。请先把所有用于报表"
+            "展示和结论的业务事实整理成 report_facts 字典，再调用 "
+            "write_sql_report_html('/tmp/report.html', html, report_facts)。"
+            "HTML 中的业务数字、原因结论、建议必须来自 report_facts；"
+            "本轮 SQL 未查询到的维度只能写“本轮未查询，暂不判断”。"
         )
 
     return None
@@ -528,15 +1180,20 @@ def _updated_sql_backed_report_files(
 
     for html_path in candidate_paths:
         after_signature = _file_signature(html_path)
-        if after_signature and after_signature != signatures_before.get(html_path):
+        if (
+            after_signature
+            and after_signature != signatures_before.get(html_path)
+            and _has_report_facts_sidecar(html_path)
+        ):
             trusted.add(html_path)
     return sorted(trusted)
 
 
 def _sql_query_results_access_example() -> str:
-    """Return the safe code pattern for reading SQL_QUERY_RESULTS rows."""
-    return """data = SQL_QUERY_RESULTS  # auto-injected variable with all SQL results
-result = find_sql_result_by_columns(["total_value", "total_base"])
+    """Return the safe code pattern for reading saved SQL result rows."""
+    return """result = get_only_sql_result()
+# If multiple SQL results exist, use get_sql_result("SQL_RESULT_n")
+# or find_sql_result_by_columns([...]) to select the intended result.
 require_columns(result, ["total_value", "total_base"])
 rows = sql_result_rows(result)
 
@@ -544,9 +1201,25 @@ rows = sql_result_rows(result)
 total_value = sum(to_float(require_value(row, "total_value")) for row in rows)
 total_base = sum(to_float(require_value(row, "total_base")) for row in rows)
 rate = round(total_value / total_base * 100, 2) if total_base else 0
-html = "<div>" + str(total_value) + " " + str(rate) + "%</div>"
-with open("/tmp/report.html", "w", encoding="utf-8") as f:
-    f.write(html)
+report_facts = {
+    "total_value": total_value,
+    "total_base": total_base,
+    "rate": rate,
+    "scope_note": "Only these facts may be used for business conclusions.",
+}
+save_report_facts(report_facts)
+html = (
+    "<div>"
+    + str(report_facts["total_value"])
+    + " "
+    + str(report_facts["rate"])
+    + "%</div>"
+)
+write_sql_report_html("/tmp/report.html", html, report_facts)
+
+# If HTML generation is split into a later code_interpreter call, start that
+# later call with:
+# report_facts = load_report_facts()
 """
 
 
@@ -558,6 +1231,15 @@ def get_sql_result(ref):
         if result.get("ref") == ref:
             return result
     raise KeyError("SQL result ref not found: " + str(ref))
+
+
+def get_only_sql_result():
+    if len(SQL_QUERY_RESULTS) != 1:
+        raise ValueError(
+            "Multiple SQL results are available; use get_sql_result('SQL_RESULT_n') "
+            "or find_sql_result_by_columns([...]) to select the intended result."
+        )
+    return SQL_QUERY_RESULTS[0]
 
 
 def find_sql_result_by_columns(required_columns):
@@ -595,6 +1277,57 @@ def to_float(value, default=0.0):
     if value in (None, ""):
         return default
     return float(value)
+
+
+def _report_facts_path():
+    return os.path.join(PLOT_DIR, "report_facts.json")
+
+
+def save_report_facts(report_facts):
+    if not isinstance(report_facts, dict) or not report_facts:
+        raise ValueError("report_facts must be a non-empty dict")
+    if not SQL_QUERY_RESULTS:
+        raise ValueError("save_report_facts requires saved SQL_QUERY_RESULTS")
+    facts_path = _report_facts_path()
+    payload = {
+        "facts": report_facts,
+        "source_refs": [result.get("ref") for result in SQL_QUERY_RESULTS],
+    }
+    with open(facts_path, "w", encoding="utf-8") as facts_file:
+        json.dump(payload, facts_file, ensure_ascii=False, indent=2, default=str)
+    print("Report facts saved:", facts_path)
+    return facts_path
+
+
+def load_report_facts():
+    facts_path = _report_facts_path()
+    if not os.path.exists(facts_path):
+        raise FileNotFoundError(
+            "report_facts not found; compute facts from SQL_RESULT and call "
+            "save_report_facts(report_facts) first"
+        )
+    with open(facts_path, "r", encoding="utf-8") as facts_file:
+        payload = json.load(facts_file)
+    if isinstance(payload, dict) and isinstance(payload.get("facts"), dict):
+        return payload["facts"]
+    if isinstance(payload, dict):
+        return payload
+    raise ValueError("report_facts file must contain a dict")
+
+
+def write_sql_report_html(file_path, html, report_facts):
+    if not isinstance(report_facts, dict) or not report_facts:
+        raise ValueError("report_facts must be a non-empty dict")
+    if not isinstance(html, str) or not html.strip():
+        raise ValueError("html must be a non-empty string")
+    html_path = os.path.abspath(os.path.expanduser(str(file_path)))
+    with open(html_path, "w", encoding="utf-8") as html_file:
+        html_file.write(html)
+    facts_path = html_path + ".facts.json"
+    with open(facts_path, "w", encoding="utf-8") as facts_file:
+        json.dump(report_facts, facts_file, ensure_ascii=False, indent=2, default=str)
+    print("SQL report written:", html_path)
+    print("SQL report facts written:", facts_path)
 """.strip()
 
 
@@ -604,7 +1337,8 @@ def _format_sql_query_markdown(
     result_ref: str,
 ) -> str:
     """Format a limited SQL preview while naming the saved full result."""
-    header = "| " + " | ".join(col_names) + " |"
+    display_col_names = [_customer_facing_sql_column_label(col) for col in col_names]
+    header = "| " + " | ".join(display_col_names) + " |"
     separator = "| " + " | ".join(["---"] * len(col_names)) + " |"
     md_rows = []
     for row in rows[:50]:
@@ -1551,12 +2285,17 @@ async def _react_agent_stream_impl(
         return _sse_event({"type": "step.output", "step": step, "detail": detail})
 
     def step_chunk(step_id: str, output_type: str, content: Any):
+        safe_content = (
+            content
+            if str(output_type).lower() == "html"
+            else _sanitize_customer_facing_answer(content)
+        )
         return _sse_event(
             {
                 "type": "step.chunk",
                 "id": step_id,
                 "output_type": output_type,
-                "content": content,
+                "content": safe_content,
             }
         )
 
@@ -1611,14 +2350,21 @@ async def _react_agent_stream_impl(
         action_reason: Optional[str] = None,
         todo_meta: Optional[Dict[str, Any]] = None,
     ):
+        safe_thought = _sanitize_customer_facing_answer(thought)
+        safe_action_intention = _sanitize_customer_facing_answer(action_intention)
+        safe_action_reason = _sanitize_customer_facing_answer(action_reason)
+        safe_action_input = _sanitize_customer_facing_action_input(
+            action,
+            action_input,
+        )
         payload = {
             "type": "step.meta",
             "id": step_id,
-            "thought": thought,
-            "action_intention": action_intention,
-            "action_reason": action_reason,
+            "thought": safe_thought,
+            "action_intention": safe_action_intention,
+            "action_reason": safe_action_reason,
             "action": action,
-            "action_input": action_input,
+            "action_input": safe_action_input,
             "title": title,
         }
         if todo_meta:
@@ -1926,7 +2672,7 @@ async def _react_agent_stream_impl(
         "Returns the SKILL.md content of the specified skill. "
         '参数: {"skill_name": "技能名称", "file_path": "技能文件路径"}'
     )
-    def load_skill(skill_name: str, file_path: str) -> str:
+    def load_skill(skill_name: str, file_path: str = "") -> str:
         """Load the skill content (SKILL.md) by skill name and file path.
 
         Args:
@@ -1962,6 +2708,12 @@ async def _react_agent_stream_impl(
         # Update react_state for compatibility with existing logic
         react_state["matched"] = matched
         react_state["skill_prompt"] = matched.get_prompt()
+        resolved_file_path = _resolve_skill_file_path(
+            skill_name=skill_name,
+            file_path=file_path,
+            all_skills=all_skills,
+            skills_dir=skills_dir,
+        )
 
         # Build response content
         chunks = [
@@ -1971,7 +2723,7 @@ async def _react_agent_stream_impl(
             },
             {
                 "output_type": "text",
-                "content": f"File path: {file_path}",
+                "content": f"File path: {resolved_file_path or 'unknown'}",
             },
             {"output_type": "text", "content": "---"},
         ]
@@ -2284,7 +3036,7 @@ print(json.dumps(summary, ensure_ascii=False))
                     ensure_ascii=False,
                 )
 
-        table_policy_error = _validate_bus_operation_sql_tables(
+        table_policy_error = _validate_bus_table_policy_sql(
             database_name=database_name,
             user_question=user_input,
             sql=sql_stripped,
@@ -2317,7 +3069,7 @@ print(json.dumps(summary, ensure_ascii=False))
             # result[0] = column names, result[1:] = data rows
             columns = result[0]
             col_names = [str(c[0]) if isinstance(c, tuple) else str(c) for c in columns]
-            rows = result[1:]
+            rows = _mask_sensitive_sql_rows(col_names, result[1:])
             sql_results = react_state.setdefault("sql_query_results", [])
             result_ref = f"SQL_RESULT_{len(sql_results) + 1}"
             sql_results.append(
@@ -3041,7 +3793,9 @@ print(json.dumps(summary, ensure_ascii=False))
     @tool(
         description="将 HTML 渲染为可交互的网页报告，这是向用户展示网页报告的唯一方式。"
         "【数据报告】如果报告包含 sql_query 查询数据，必须先用 code_interpreter "
-        "读取 SQL_QUERY_RESULTS/SQL_RESULTS_PATH 计算指标并写入 HTML 文件，"
+        "使用 get_only_sql_result()、get_sql_result('SQL_RESULT_n') "
+        "或 find_sql_result_by_columns([...]) 读取已保存 SQL 结果，"
+        "计算指标并写入 HTML 文件，"
         "再调用本工具的文件模式："
         '{"file_path": "/tmp/report.html", "title": "报告标题"}。'
         "【普通 HTML】不包含 SQL 数据的简单页面可以直接传入完整 HTML 字符串："
@@ -3490,12 +4244,16 @@ print(json.dumps(summary, ensure_ascii=False))
                                     + "、".join(validation.untraceable_values[:20])
                                     + "。\n\n"
                                     "请按以下步骤修正：\n"
-                                    "1. 用 code_interpreter 读取 SQL_QUERY_RESULTS"
-                                    "（已自动注入的变量）\n"
-                                    "2. 从 SQL_QUERY_RESULTS 中计算所有指标"
-                                    "（总计、比率等），不要硬编码任何数字\n"
-                                    "3. 用计算出的值生成 HTML 并写入"
-                                    " /tmp/report.html\n"
+                                    "1. 用 code_interpreter 通过 "
+                                    "get_only_sql_result()、"
+                                    "get_sql_result('SQL_RESULT_n') 或 "
+                                    "find_sql_result_by_columns([...]) "
+                                    "读取已保存 SQL 结果\n"
+                                    "2. 从已保存 SQL 结果中计算所有指标"
+                                    "（总计、比率等），不要硬编码任何数字；"
+                                    "把所有报表业务事实放入 report_facts\n"
+                                    "3. 用 report_facts 生成 HTML，并调用 "
+                                    "write_sql_report_html 写入 /tmp/report.html\n"
                                     "4. 调用 "
                                     'html_interpreter(file_path="/tmp/report.html")'
                                     " 渲染\n\n"
@@ -3514,11 +4272,13 @@ print(json.dumps(summary, ensure_ascii=False))
                                     "row, 'total_base')) for row in rows)\n"
                                     "rate = round(total_value / total_base * 100, 2) "
                                     "if total_base else 0\n"
-                                    "html = '<div>' + str(total_value) + ' ' "
-                                    "+ str(rate)"
+                                    "report_facts = {'total_value': total_value, "
+                                    "'total_base': total_base, 'rate': rate}\n"
+                                    "html = '<div>' + str(report_facts['total_value']) "
+                                    "+ ' ' + str(report_facts['rate'])"
                                     " + '%</div>'\n"
-                                    'with open("/tmp/report.html", "w") as f:'
-                                    " f.write(html)\n"
+                                    "write_sql_report_html('/tmp/report.html', "
+                                    "html, report_facts)\n"
                                     "```"
                                 ),
                             }
@@ -3837,7 +4597,7 @@ print(json.dumps(summary, ensure_ascii=False))
         try:
             render_path = sql_report_path
             render_reason = (
-                "code_interpreter 已基于 SQL_QUERY_RESULTS 生成报告文件，"
+                "code_interpreter 已基于已保存 SQL 结果生成报告文件，"
                 "因此自动补充报告预览步骤"
             )
             render_thought = "自动渲染 SQL 查询结果驱动的 HTML 报告"
@@ -4164,12 +4924,16 @@ Action Input: {{"sql": "SELECT ..."}}
    with `ORDER BY target_date DESC LIMIT ...`.
 5. **[Mandatory Rule] Report generation MUST follow this exact 3-step workflow:**
    Step 1: Call `sql_query` to get data (results auto-saved as `SQL_RESULT_n`).
-   Step 2: Call `code_interpreter` to read `SQL_QUERY_RESULTS` (auto-injected),
+   Step 2: Call `code_interpreter` to read saved SQL results with
+           `get_only_sql_result()`, `get_sql_result('SQL_RESULT_n')`, or
+           `find_sql_result_by_columns([...])`,
            compute ALL report metrics (totals, ratios, rates), and write HTML
            to `/tmp/report.html`.
    Step 3: Call `html_interpreter(file_path="/tmp/report.html")` to render.
-   **NEVER generate HTML with hardcoded numbers. EVERY number in the report
-   MUST be computed from `SQL_QUERY_RESULTS` inside `code_interpreter`.**
+   **NEVER generate HTML with hardcoded numbers. EVERY number and business
+   conclusion in the report MUST be computed from saved SQL results inside
+   `code_interpreter`, stored in `report_facts`, and rendered from
+   `report_facts`.**
    Only use `template_path` mode if the skill explicitly provides HTML templates
    in its `templates/` directory and its documentation references them.
 6. If the task does not require generating a report, directly call terminate to
@@ -4179,8 +4943,9 @@ return the final result. The Action Input format must be
    a) Call `sql_query` → results saved as `SQL_RESULT_1`, `SQL_RESULT_2`, etc.
    b) Call `code_interpreter` with this code pattern:
       ```python
-      data = SQL_QUERY_RESULTS  # auto-injected variable with all SQL results
-      result = find_sql_result_by_columns(["total_value", "total_base"])
+      result = get_only_sql_result()
+      # If multiple SQL results exist, use get_sql_result('SQL_RESULT_n')
+      # or find_sql_result_by_columns([...]) to select the intended result.
       require_columns(result, ["total_value", "total_base"])
       rows = sql_result_rows(result)
       # Compute ALL metrics from required SQL columns — do NOT hardcode
@@ -4189,11 +4954,21 @@ return the final result. The Action Input format must be
       total_value = sum(to_float(require_value(row, "total_value")) for row in rows)
       total_base = sum(to_float(require_value(row, "total_base")) for row in rows)
       rate = round(total_value / total_base * 100, 2) if total_base else 0
-      # Generate HTML using ONLY computed values
-      html = '<div>' + str(rate) + '%</div>'
-      with open('/tmp/report.html', 'w', encoding='utf-8') as f:
-          f.write(html)
+      report_facts = {{
+          "total_value": total_value,
+          "total_base": total_base,
+          "rate": rate,
+          "scope_note": "HTML conclusions may only use these facts.",
+      }}
+      save_report_facts(report_facts)
+      # Generate HTML using ONLY report_facts values. If a dimension was not
+      # queried, write "本轮未查询，暂不判断" instead of inventing a conclusion.
+      html = '<div>' + str(report_facts["rate"]) + '%</div>'
+      write_sql_report_html('/tmp/report.html', html, report_facts)
       ```
+      If HTML generation is split into a later `code_interpreter` call, the
+      later call MUST start with `report_facts = load_report_facts()` before
+      using any `report_facts[...]` value.
    c) Call `html_interpreter(file_path="/tmp/report.html")`.
    If a query returns empty data, explicitly state "暂无数据" for that metric.
    NEVER fabricate, estimate, or hallucinate any number.
@@ -4301,7 +5076,8 @@ Example flow for 3 tasks:
 ## Data Authenticity Guard
 - Report metrics must come from successful `sql_query` or skill observations.
 - If `sql_query` returns a saved `SQL_RESULT_n`, use the saved full result via
-  `SQL_QUERY_RESULTS`/`SQL_RESULTS_PATH` for report generation; the markdown
+  helper functions (`get_only_sql_result()`, `get_sql_result('SQL_RESULT_n')`,
+  or `find_sql_result_by_columns([...])`) for report generation; the markdown
   table is only a display preview.
 - If a SQL query fails or returns insufficient data, fix the query or clearly
   state that the report cannot be completed; never invent KPI values.
@@ -4408,18 +5184,23 @@ order, select as needed).
 The Action Input format must be {{"result": "final answer"}}.
 7. **[Mandatory Rule] Report generation MUST follow this exact 3-step workflow:**
    Step 1: Call `sql_query` to get data (results auto-saved as `SQL_RESULT_n`).
-   Step 2: Call `code_interpreter` to read `SQL_QUERY_RESULTS` (auto-injected),
+   Step 2: Call `code_interpreter` to read saved SQL results with
+           `get_only_sql_result()`, `get_sql_result('SQL_RESULT_n')`, or
+           `find_sql_result_by_columns([...])`,
            compute ALL report metrics (totals, ratios, rates), and write HTML
            to `/tmp/report.html`.
    Step 3: Call `html_interpreter(file_path="/tmp/report.html")` to render.
-   **NEVER generate HTML with hardcoded numbers. EVERY number in the report
-   MUST be computed from `SQL_QUERY_RESULTS` inside `code_interpreter`.**
+   **NEVER generate HTML with hardcoded numbers. EVERY number and business
+   conclusion in the report MUST be computed from saved SQL results inside
+   `code_interpreter`, stored in `report_facts`, and rendered from
+   `report_facts`.**
 8. **[Data Integrity - MANDATORY] Report generation workflow:**
    a) Call `sql_query` → results saved as `SQL_RESULT_1`, `SQL_RESULT_2`, etc.
    b) Call `code_interpreter` with this code pattern:
       ```python
-      data = SQL_QUERY_RESULTS  # auto-injected variable with all SQL results
-      result = find_sql_result_by_columns(["total_value", "total_base"])
+      result = get_only_sql_result()
+      # If multiple SQL results exist, use get_sql_result('SQL_RESULT_n')
+      # or find_sql_result_by_columns([...]) to select the intended result.
       require_columns(result, ["total_value", "total_base"])
       rows = sql_result_rows(result)
       # Compute ALL metrics from required SQL columns — do NOT hardcode
@@ -4428,11 +5209,21 @@ The Action Input format must be {{"result": "final answer"}}.
       total_value = sum(to_float(require_value(row, "total_value")) for row in rows)
       total_base = sum(to_float(require_value(row, "total_base")) for row in rows)
       rate = round(total_value / total_base * 100, 2) if total_base else 0
-      # Generate HTML using ONLY computed values
-      html = '<div>' + str(rate) + '%</div>'
-      with open('/tmp/report.html', 'w', encoding='utf-8') as f:
-          f.write(html)
+      report_facts = {{
+          "total_value": total_value,
+          "total_base": total_base,
+          "rate": rate,
+          "scope_note": "HTML conclusions may only use these facts.",
+      }}
+      save_report_facts(report_facts)
+      # Generate HTML using ONLY report_facts values. If a dimension was not
+      # queried, write "本轮未查询，暂不判断" instead of inventing a conclusion.
+      html = '<div>' + str(report_facts["rate"]) + '%</div>'
+      write_sql_report_html('/tmp/report.html', html, report_facts)
       ```
+      If HTML generation is split into a later `code_interpreter` call, the
+      later call MUST start with `report_facts = load_report_facts()` before
+      using any `report_facts[...]` value.
    c) Call `html_interpreter(file_path="/tmp/report.html")`.
    If a query returns empty data, explicitly state "暂无数据" for that metric.
    NEVER fabricate, estimate, or hallucinate any number.
@@ -4540,7 +5331,8 @@ Parameters: {{"todos": [{{...}}]}}
 ## Data Authenticity Guard
 - Report metrics must come from successful `sql_query` or tool observations.
 - If `sql_query` returns a saved `SQL_RESULT_n`, use the saved full result via
-  `SQL_QUERY_RESULTS`/`SQL_RESULTS_PATH` for report generation; the markdown
+  helper functions (`get_only_sql_result()`, `get_sql_result('SQL_RESULT_n')`,
+  or `find_sql_result_by_columns([...])`) for report generation; the markdown
   table is only a display preview.
 - If a SQL query fails or returns insufficient data, fix the query or clearly
   state that the report cannot be completed; never invent KPI values.
@@ -5113,7 +5905,9 @@ fences.
                 "version": 1,
                 "type": "react-agent",
                 "final_content": err_msg,
-                "steps": history_steps,
+                "steps": [
+                    _sanitize_customer_facing_step(step) for step in history_steps
+                ],
                 "task_plan": list(_todo_list),
                 "generated_images": react_state.get("generated_images", []),
             },
@@ -5224,6 +6018,10 @@ fences.
         yield event
     if rendered_final_content:
         final_content = rendered_final_content
+    final_content = _sanitize_customer_facing_answer(final_content)
+    customer_history_steps = [
+        _sanitize_customer_facing_step(step) for step in history_steps
+    ]
 
     # Persist AI reply with structured history payload
     history_payload = json.dumps(
@@ -5231,7 +6029,7 @@ fences.
             "version": 1,
             "type": "react-agent",
             "final_content": final_content,
-            "steps": history_steps,
+            "steps": customer_history_steps,
             "task_plan": list(_todo_list),
             "generated_images": react_state.get("generated_images", []),
         },
@@ -5249,6 +6047,50 @@ async def _react_agent_stream(
     dialogue: ConversationVo,
 ) -> AsyncGenerator[str, None]:
     conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    database_name = None
+    if dialogue.ext_info and isinstance(dialogue.ext_info, dict):
+        database_name = dialogue.ext_info.get("database_name")
+    user_input = dialogue.user_input
+    if not isinstance(user_input, str):
+        user_input = str(user_input or "")
+    direct_reply = _get_direct_customer_facing_reply(database_name, user_input)
+    if direct_reply is not None:
+        from dbgpt.core import StorageConversation
+        from dbgpt_serve.conversation.serve import Serve as ConversationServe
+
+        final_content = _sanitize_customer_facing_answer(direct_reply)
+        conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+        storage_conv = StorageConversation(
+            conv_uid=conv_id,
+            chat_mode=dialogue.chat_mode or "chat_react_agent",
+            user_name=dialogue.user_name,
+            sys_code=dialogue.sys_code,
+            summary=dialogue.user_input,
+            app_code=dialogue.app_code,
+            conv_storage=conv_serve.conv_storage,
+            message_storage=conv_serve.message_storage,
+        )
+        storage_conv.save_to_storage()
+        storage_conv.start_new_round()
+        storage_conv.add_user_message(user_input)
+        history_payload = json.dumps(
+            {
+                "version": 1,
+                "type": "react-agent",
+                "final_content": final_content,
+                "steps": [],
+                "task_plan": [],
+                "generated_images": [],
+            },
+            ensure_ascii=False,
+        )
+        storage_conv.add_view_message(history_payload)
+        storage_conv.end_current_round()
+        storage_conv.save_to_storage()
+        yield _sse_event({"type": "final", "content": final_content})
+        yield _sse_event({"type": "done"})
+        return
+
     REACT_AGENT_MEMORY_CACHE.acquire(conv_id)
     try:
         async for event in _react_agent_stream_impl(dialogue, cache_conv_id=conv_id):

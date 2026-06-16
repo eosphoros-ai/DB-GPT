@@ -52,7 +52,7 @@ const ChatInputPanel: React.ForwardRefRenderFunction<any, { ctrl: AbortControlle
 
   const buildChatParams = () => ({
     app_code: appInfo.app_code || '',
-    ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
+    temperature: temperatureValue,
     ...(paramKey.includes('max_new_tokens') && { max_new_tokens: maxNewTokensValue }),
     select_param,
     ...(paramKey.includes('resource') && {

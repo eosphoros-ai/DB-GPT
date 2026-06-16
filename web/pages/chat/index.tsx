@@ -113,7 +113,7 @@ const Chat: React.FC = () => {
   const [canAbort, setCanAbort] = useState<boolean>(false);
   const [agent, setAgent] = useState<string>('');
   const [appInfo, setAppInfo] = useState<IApp>({} as IApp);
-  const [temperatureValue, setTemperatureValue] = useState();
+  const [temperatureValue, setTemperatureValue] = useState(0.5);
   const [maxNewTokensValue, setMaxNewTokensValue] = useState();
   const [resourceValue, setResourceValue] = useState<any>();
   const [knowledgeValue, setKnowledgeValue] = useState<string | null>(null);
@@ -131,7 +131,7 @@ const Chat: React.FC = () => {
   }, [chatId, handleChat, history.length, initMsg, replyLoading]);
 
   useEffect(() => {
-    setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.6);
+    setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value ?? 0.5);
     setMaxNewTokensValue(appInfo?.param_need?.filter(item => item.type === 'max_new_tokens')[0]?.value || 4000);
     setModelValue(appInfo?.param_need?.filter(item => item.type === 'model')[0]?.value || model);
     setResourceValue(
@@ -280,6 +280,7 @@ const Chat: React.FC = () => {
         const apiData: Record<string, any> = {
           chat_mode: scene,
           model_name: modelValue,
+          temperature: temperatureValue,
           user_input: content,
         };
 
@@ -332,7 +333,7 @@ const Chat: React.FC = () => {
         });
       });
     },
-    [chat, chatId, history, modelValue, scene],
+    [chat, chatId, history, modelValue, scene, temperatureValue],
   );
 
   useAsyncEffect(async () => {

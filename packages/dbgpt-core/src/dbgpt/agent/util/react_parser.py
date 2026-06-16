@@ -83,6 +83,13 @@ class ReActOutputParser:
         """Build a regex for a ReAct prefix anywhere in text (lenient)."""
         return rf"(?:\*\*)?{escaped_prefix}(?:\*\*)?\s*"
 
+    def _has_lenient_action_input_after(self, text: str, pos: int) -> bool:
+        """Return whether a lenient Action match has a following Action Input."""
+        action_input_pattern = re.compile(
+            self._prefix_anywhere_pattern(self.action_input_prefix_escaped)
+        )
+        return action_input_pattern.search(text, pos) is not None
+
     @staticmethod
     def _strip_markdown_emphasis(text: Optional[str]) -> Optional[str]:
         """Remove common Markdown emphasis left around a parsed value."""
@@ -231,7 +238,11 @@ class ReActOutputParser:
                 action_pattern = re.compile(
                     self._prefix_anywhere_pattern(self.action_prefix_escaped)
                 )
-                action_matches = list(action_pattern.finditer(text))
+                action_matches = [
+                    match
+                    for match in action_pattern.finditer(text)
+                    if self._has_lenient_action_input_after(text, match.end())
+                ]
             if action_matches:
                 # Found Action without Thought - create a step from the
                 # whole text
@@ -408,11 +419,16 @@ class ReActOutputParser:
             action_input_anywhere = self._prefix_anywhere_pattern(
                 self.action_input_prefix_escaped
             )
-            action_match = re.search(
+            candidate = re.search(
                 rf"{action_anywhere}(.*?)(?={action_input_anywhere}|{observation_line}|\Z)",
                 match_text,
                 re.DOTALL,
             )
+            if candidate and self._has_lenient_action_input_after(
+                match_text,
+                candidate.end(),
+            ):
+                action_match = candidate
         if action_match:
             action = self._strip_markdown_emphasis(
                 step_text[action_match.start(1) : action_match.end(1)]

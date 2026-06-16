@@ -82,7 +82,7 @@ const ToolsBar: React.FC<{
           const lastHuman = history.filter(i => i.role === 'human')?.slice(-1)?.[0];
           handleChat(lastHuman?.context || '', {
             app_code: appInfo.app_code,
-            ...(paramKey.includes('temperature') && { temperature: temperatureValue }),
+            temperature: temperatureValue,
             ...(paramKey.includes('max_new_tokens') && { max_new_tokens: maxNewTokensValue }),
             ...(paramKey.includes('resource') && {
               select_param:
@@ -133,6 +133,7 @@ const ToolsBar: React.FC<{
     appInfo.app_code,
     paramKey,
     temperatureValue,
+    maxNewTokensValue,
     resourceValue,
     currentDialogue.select_param,
     currentDialogue.conv_uid,

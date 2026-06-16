@@ -248,6 +248,14 @@ class ReActAgent(ConversableAgent):
                 return ActionOutput(is_exe_success=False, content=err_msg)
         except Exception as e:
             logger.warning(f"review error: {e}")
+            return ActionOutput(
+                is_exe_success=False,
+                content=(
+                    "Failed to parse the ReAct response. Please respond with exactly "
+                    "one Thought, one Action, and one Action Input in the required "
+                    f"format. Error: {e}"
+                ),
+            )
 
         action_output = await super().act(
             message=message,

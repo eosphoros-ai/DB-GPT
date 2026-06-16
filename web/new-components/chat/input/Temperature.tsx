@@ -1,35 +1,17 @@
-import { ChatContentContext } from '@/pages/chat';
 import { ControlOutlined } from '@ant-design/icons';
 import { InputNumber, Popover, Slider, Tooltip } from 'antd';
-import React, { memo, useContext, useMemo } from 'react';
+import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Temperature: React.FC<{ temperatureValue: any; setTemperatureValue: any }> = ({
   temperatureValue,
   setTemperatureValue,
 }) => {
-  const { appInfo } = useContext(ChatContentContext);
-
   const { t } = useTranslation();
-
-  // 左边工具栏动态可用key
-  const paramKey: string[] = useMemo(() => {
-    return appInfo.param_need?.map(i => i.type) || [];
-  }, [appInfo.param_need]);
-
-  if (!paramKey.includes('temperature')) {
-    return (
-      <Tooltip title={t('temperature_tip')}>
-        <div className='flex w-8 h-8 items-center justify-center rounded-md hover:bg-[rgb(221,221,221,0.6)] cursor-pointer'>
-          <ControlOutlined className='text-xl cursor-not-allowed opacity-30' />
-        </div>
-      </Tooltip>
-    );
-  }
 
   // temperature变化;
   const onChange = (value: any) => {
-    if (isNaN(value)) {
+    if (value === null || Number.isNaN(Number(value))) {
       return;
     }
     setTemperatureValue(value);
