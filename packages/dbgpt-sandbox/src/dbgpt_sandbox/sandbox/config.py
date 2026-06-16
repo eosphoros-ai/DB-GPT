@@ -36,5 +36,5 @@ MAX_PROCESSES = 10
 
 
 SANDBOX_RUNTIME = os.getenv(
-    "SANDBOX_RUNTIME", "local"
-)  # Optional values: docker, podman, nerdctl, local
+    "SANDBOX_RUNTIME", "auto"
+)  # Optional values: auto, docker, podman, nerdctl, local
