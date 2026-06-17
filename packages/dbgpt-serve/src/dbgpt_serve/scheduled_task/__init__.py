@@ -1,0 +1,1 @@
+"""Scheduled task serve module."""

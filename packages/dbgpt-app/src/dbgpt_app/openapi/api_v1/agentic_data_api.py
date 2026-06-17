@@ -8,7 +8,7 @@ import tempfile
 import uuid
 import zipfile
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
@@ -36,6 +36,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from dbgpt.agent.core.memory.gpts import GptsMemory
+    from dbgpt.agent.resource.connector.manager import ConnectorManager
+    from dbgpt.agent.resource.tool.base import BaseTool
 
 REACT_AGENT_MEMORY_CACHE: Dict[str, "GptsMemory"] = {}
 
@@ -172,6 +174,66 @@ def _extract_auto_data_markers(text: str) -> tuple[str, Dict[str, str]]:
     cleaned = AUTO_DATA_MARKER_PATTERN.sub(_replace, text)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
     return cleaned, extracted
+
+
+def _parse_connector_ids(ext_info: Optional[Dict[str, Any]]) -> List[str]:
+    """Extract connector IDs from ``ext_info``.
+
+    Supports two shapes:
+    - ``ext_info.connector_ids`` — a list of UUID strings (preferred).
+    - ``ext_info.connector_id``  — a single UUID string (legacy back-compat).
+
+    Returns an empty list when no valid IDs are found.
+    """
+    if not ext_info or not isinstance(ext_info, dict):
+        return []
+    raw_ids = ext_info.get("connector_ids")
+    if isinstance(raw_ids, list):
+        return [cid for cid in raw_ids if isinstance(cid, str) and cid]
+    legacy = ext_info.get("connector_id")
+    if isinstance(legacy, str) and legacy:
+        return [legacy]
+    return []
+
+
+def _select_connector_tools(
+    connector_ids: List[str],
+    connector_manager: Optional["ConnectorManager"],
+) -> Tuple[List["BaseTool"], List[str]]:
+    """Resolve connector_ids to flat list of BaseTool ready for ToolPack injection.
+
+    Internally each connector is an MCPToolPack containing multiple BaseTool
+    (one per MCP server tool). We flatten here so callers can directly compose
+    them into a parent ToolPack without nesting issues -- nested ResourcePack
+    would otherwise be inserted as a single dict entry under pack.name,
+    making prefixed tool names un-lookup-able from the outer ToolPack.
+
+    Args:
+        connector_ids: IDs the user selected in the frontend.
+        connector_manager: A :class:`ConnectorManager` instance (or ``None``).
+
+    Returns:
+        A tuple of ``(tools, missing_ids)`` where *tools* is the flat list
+        of :class:`BaseTool` objects (each one a single MCP tool with its
+        server URL captured in the call closure) and *missing_ids* lists
+        IDs that could not be resolved (e.g. deleted mid-conversation).
+    """
+    from dbgpt.agent.resource.tool.base import BaseTool
+
+    tools: List["BaseTool"] = []
+    missing_ids: List[str] = []
+    if connector_manager is None or not connector_ids:
+        return tools, missing_ids
+    for cid in connector_ids:
+        pack = connector_manager.get_connector_tools(cid)
+        if pack is None:
+            missing_ids.append(cid)
+            continue
+        # Flatten: extract BaseTool instances from the pack
+        for sub_tool in pack.sub_resources:
+            if isinstance(sub_tool, BaseTool):
+                tools.append(sub_tool)
+    return tools, missing_ids
 
 
 async def _execute_skill_script_impl(
@@ -966,6 +1028,9 @@ async def _react_agent_stream(
         )
         database_name = dialogue.ext_info.get("database_name")
 
+    # Connector selection (Task C): only inject user-selected connectors.
+    connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
+
     def build_step(title: str, detail: str, phase: str = None):
         nonlocal step
         step += 1
@@ -1540,8 +1605,59 @@ print(json.dumps(summary, ensure_ascii=False))
 
     @tool(description="Execute a tool by name with JSON args.")
     async def execute_tool(tool_name: str, args: dict) -> str:
+        try:
+            from dbgpt.agent.resource.connector.confirmation import (
+                _PENDING_CONFIRMATIONS,
+            )
+            from dbgpt.agent.resource.connector.manager import (
+                ConnectorManager as _ConnectorManager,
+            )
+
+            _cm = CFG.SYSTEM_APP.get_component(
+                "connector_manager", _ConnectorManager, default_component=None
+            )
+            if _cm is not None:
+                _interceptor = _cm.get_confirmation_interceptor()
+                _registry = _cm.get_confirmation_registry()
+                if _interceptor.should_confirm(tool_name, args):
+                    import asyncio as _asyncio
+                    import uuid as _uuid
+
+                    _confirm_id = str(_uuid.uuid4())
+                    _registry.register(_confirm_id)
+                    _PENDING_CONFIRMATIONS[_confirm_id] = {
+                        "confirm_id": _confirm_id,
+                        "tool_name": tool_name,
+                        "args_summary": _interceptor._summarize_args(args),
+                        "message": f"即将执行写操作 {tool_name}，是否确认？",
+                        "timeout": 300,
+                    }
+                    try:
+                        _approved = await _asyncio.wait_for(
+                            _registry.wait_for(_confirm_id), timeout=300
+                        )
+                    except _asyncio.TimeoutError:
+                        _approved = False
+                    finally:
+                        _PENDING_CONFIRMATIONS.pop(_confirm_id, None)
+                    if not _approved:
+                        return json.dumps(
+                            {
+                                "chunks": [
+                                    {
+                                        "output_type": "text",
+                                        "content": "用户拒绝了此操作，工具执行已取消。",
+                                    }
+                                ]
+                            },
+                            ensure_ascii=False,
+                        )
+        except Exception:
+            pass
+
         rm = get_resource_manager(CFG.SYSTEM_APP)
         try:
+            # Primary path: lookup via ResourceManager (lazy-registered business tools)
             tool_resource = rm.build_resource_by_type(
                 ResourceType.Tool.value,
                 AgentResource(type=ResourceType.Tool.value, value=tool_name),
@@ -1552,13 +1668,76 @@ print(json.dumps(summary, ensure_ascii=False))
                 {"chunks": [{"output_type": "text", "content": str(result)}]},
                 ensure_ascii=False,
             )
-        except Exception as e:
+        except Exception as primary_exc:
+            # Fallback: if ResourceManager doesn't have the tool, try
+            # ConnectorManager active packs.  This handles the case where LLM
+            # mistakenly routes an MCP connector tool through execute_tool
+            # instead of calling it directly.
+            try:
+                from dbgpt.agent.resource.connector.manager import (
+                    ConnectorManager as _ConnectorManager,
+                )
+
+                _cm = CFG.SYSTEM_APP.get_component(
+                    "connector_manager",
+                    _ConnectorManager,
+                    default_component=None,
+                )
+                if _cm is not None:
+                    for _cid, _pack in _cm._active_packs.items():
+                        if tool_name in _pack._resources:
+                            result = await _pack.async_execute(
+                                resource_name=tool_name, **args
+                            )
+                            logger.info(
+                                "execute_tool dispatched '%s' via "
+                                "ConnectorManager fallback (connector=%s). "
+                                "Prefer direct Action call for connector "
+                                "tools.",
+                                tool_name,
+                                _cid,
+                            )
+                            return json.dumps(
+                                {
+                                    "chunks": [
+                                        {
+                                            "output_type": "text",
+                                            "content": str(result),
+                                        }
+                                    ]
+                                },
+                                ensure_ascii=False,
+                            )
+            except Exception as fallback_exc:
+                logger.warning(
+                    "execute_tool fallback to ConnectorManager failed for '%s': %s",
+                    tool_name,
+                    fallback_exc,
+                )
+                # When fallback found the tool but execution failed, surface
+                # that error to the LLM (more actionable than the
+                # ResourceManager primary error)
+                return json.dumps(
+                    {
+                        "chunks": [
+                            {
+                                "output_type": "text",
+                                "content": (
+                                    f"Tool execute failed: {fallback_exc} "
+                                    f"(primary lookup error: {primary_exc})"
+                                ),
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+            # Both lookups returned None — primary path's tool-not-found error wins
             return json.dumps(
                 {
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": f"Tool execute failed: {e}",
+                            "content": f"Tool execute failed: {primary_exc}",
                         }
                     ]
                 },
@@ -3004,6 +3183,35 @@ print(json.dumps(summary, ensure_ascii=False))
     is_skill_mode = pre_matched_skill is not None
     _skill_name = pre_matched_skill.metadata.name if pre_matched_skill else "skill"
 
+    # Inject connector tools — only the ones the user explicitly selected.
+    connector_tool_extras: List[Any] = []
+    try:
+        from dbgpt.agent.resource.connector.manager import (
+            ConnectorManager as _ConnectorManager,
+        )
+
+        _connector_manager = CFG.SYSTEM_APP.get_component(
+            "connector_manager", _ConnectorManager, default_component=None
+        )
+        if _connector_manager is not None and connector_ids:
+            connector_tool_extras, _missing = _select_connector_tools(
+                connector_ids, _connector_manager
+            )
+            for _mid in _missing:
+                logger.warning(
+                    "_react_agent_stream: connector_id %s not active, skipping",
+                    _mid,
+                )
+            if connector_tool_extras:
+                logger.info(
+                    "_react_agent_stream: injected %d connector tool pack(s) "
+                    "(selected: %d)",
+                    len(connector_tool_extras),
+                    len(connector_ids),
+                )
+    except Exception:
+        pass  # graceful degradation — connector tools are optional
+
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
@@ -3152,6 +3360,7 @@ Action Input: The JSON format of tool parameters
                 Terminate(),
             ]
             + business_tools
+            + connector_tool_extras
         )
     else:
         # Full prompt with all tools when no skill is pre-selected
@@ -3299,6 +3508,7 @@ Action Input: The JSON format of tool parameters
                 Terminate(),
             ]
             + business_tools
+            + connector_tool_extras
         )
 
     # Debug: print all registered tools
@@ -3310,6 +3520,87 @@ Action Input: The JSON format of tool parameters
     all_resources = [tool_pack]
     if knowledge_resources:
         all_resources.extend(knowledge_resources)
+
+    # --- Connector system prompt injection (T11) ---
+    try:
+        from dbgpt.agent.resource.connector.manager import (
+            ConnectorManager as _ConnectorManager,
+        )
+
+        _cm = CFG.SYSTEM_APP.get_component(
+            "connector_manager", _ConnectorManager, default_component=None
+        )
+        if _cm is not None and connector_ids:
+            _active = _cm.list_active()
+            # Only describe connectors the user explicitly selected.
+            # Iterate connector_ids (not _active) so prompt order matches
+            # user selection order and stays consistent with _select_connector_tools.
+            _active_map = {c["connector_id"]: c for c in _active if isinstance(c, dict)}
+            _selected = [
+                _active_map[cid] for cid in connector_ids if cid in _active_map
+            ]
+            if _selected:
+                _connector_lines = []
+                for _c in _selected:
+                    _tool_lines = []
+                    for t in _c.get("tools", []):
+                        _name = t.get("name", "unknown")
+                        _desc = t.get("description", "") or "(no description)"
+                        _args_schema = t.get("args", {}) or {}
+                        # Render args schema as concise Parameters description
+                        if _args_schema:
+                            _param_parts = []
+                            for _arg_name, _arg_meta in _args_schema.items():
+                                if isinstance(_arg_meta, dict):
+                                    _arg_type = _arg_meta.get("type", "any")
+                                    _req = (
+                                        "required"
+                                        if _arg_meta.get("required")
+                                        else "optional"
+                                    )
+                                    _arg_desc = _arg_meta.get("description", "")
+                                    if _arg_desc:
+                                        _trimmed_desc = (
+                                            _arg_desc[:120] + "..."
+                                            if len(_arg_desc) > 120
+                                            else _arg_desc
+                                        )
+                                        _param_parts.append(
+                                            f'"{_arg_name}": <{_arg_type}, {_req}, '
+                                            f"{_trimmed_desc}>"
+                                        )
+                                    else:
+                                        _param_parts.append(
+                                            f'"{_arg_name}": <{_arg_type}, {_req}>'
+                                        )
+                                else:
+                                    _param_parts.append(f'"{_arg_name}": <any>')
+                            _params_str = "{" + ", ".join(_param_parts) + "}"
+                        else:
+                            _params_str = "{}"
+                        _tool_lines.append(
+                            f"  - **{_name}**: {_desc}\n    Parameters: {_params_str}"
+                        )
+                    _connector_lines.append(
+                        f"### {_c.get('name', 'unknown')} "
+                        f"({_c.get('connector_type', 'unknown')})\n"
+                        f"{_c.get('description', '') or '(no description)'}\n\n"
+                        f"Tools (call directly with `Action: <tool_name>`):\n"
+                        + "\n".join(_tool_lines)
+                        + "\n\nNote: Write operations require user confirmation."
+                    )
+                _connector_prompt = (
+                    "\n\n## Available MCP Connector Tools\n"
+                    "You have access to the following external MCP connectors. "
+                    "All listed tools are pre-registered — invoke them directly "
+                    "with `Action: <tool_name>`, NOT through `execute_tool`.\n"
+                    + "\n\n".join(_connector_lines)
+                )
+                workflow_prompt += _connector_prompt
+    except Exception:
+        pass  # graceful degradation
+    # --- End connector system prompt injection ---
+
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
     workflow_prompt_template = PromptTemplate(

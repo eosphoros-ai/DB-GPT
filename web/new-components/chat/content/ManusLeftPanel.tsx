@@ -1,5 +1,7 @@
 import MarkdownContext from '@/new-components/common/MarkdownContext';
+import { AttachedConnector } from '@/new-components/connector/types';
 import {
+  ApiOutlined,
   AppstoreOutlined,
   BarChartOutlined,
   BookOutlined,
@@ -124,6 +126,7 @@ export interface ManusLeftPanelProps {
     db_name: string;
     db_type: string;
   };
+  attachedConnectors?: AttachedConnector[];
   createdSkillName?: string;
   onSkillCardClick?: (skillName: string) => void;
   onSkillDownload?: (skillName: string) => void;
@@ -350,7 +353,7 @@ const SkillCompactCard: React.FC<{
   onDownload?: () => void;
 }> = memo(({ skillName, onClick, onDownload }) => {
   const { t } = useTranslation();
-  const [downloading, setDownloading] = useState(false);
+  const [downloading, _setDownloading] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   return (
     <div
@@ -529,8 +532,9 @@ const StepCard: React.FC<{
     );
   }
   if (isTodoStep) {
-    const progressText = getTodoStepBadge(t, step);
-    const todoTitle = getTodoStepTitle(t, step);
+    const tFn = t as (key: string, options?: Record<string, any>) => string;
+    const progressText = getTodoStepBadge(tFn, step);
+    const todoTitle = getTodoStepTitle(tFn, step);
 
     return (
       <div
@@ -698,7 +702,6 @@ const SkillResourceCard: React.FC<{
 }> = memo(({ step, isActive, onClick }) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
-  const [contentExpanded, setContentExpanded] = useState(false);
   const parsed = useMemo(() => parseSkillResourceDescription(step.description), [step.description]);
 
   React.useEffect(() => {
@@ -711,7 +714,6 @@ const SkillResourceCard: React.FC<{
   }
 
   const resourceName = parsed.resourcePath.split('/').pop() || parsed.resourcePath;
-  const hasContent = parsed.content.length > 0;
 
   return (
     <div
@@ -800,17 +802,12 @@ const SectionBlock: React.FC<{
   defaultExpanded?: boolean;
   stepThoughts?: Record<string, string>;
 }> = memo(({ section, activeStepId, onStepClick, defaultExpanded = true, stepThoughts }) => {
-  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const completedCount = section.steps.filter(s => s.status === 'completed').length;
   const totalCount = section.steps.length;
   const isAllCompleted = completedCount === totalCount && totalCount > 0;
   const hasRunningStep = section.steps.some(s => s.status === 'running');
-
-  const hasObservations = useMemo(() => {
-    return section.steps.some(step => step.description?.includes('Observation:'));
-  }, [section.steps]);
 
   return (
     <div className='mb-4'>
@@ -895,13 +892,14 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onArtifactClick,
   onArtifactDownload,
   onViewAllFiles,
-  onShare,
+  onShare: _onShare,
   isCollapsed,
   onExpand,
   attachedFile,
   attachedKnowledge,
   attachedSkill,
   attachedDb,
+  attachedConnectors,
   createdSkillName,
   onSkillCardClick,
   onSkillDownload,
@@ -1014,6 +1012,22 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                   </div>
                 </div>
               )}
+              {(attachedConnectors ?? []).map(c => (
+                <div
+                  key={c.id}
+                  className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'
+                >
+                  <div className='w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0'>
+                    <ApiOutlined className='text-violet-500 text-base' />
+                  </div>
+                  <div className='min-w-0 flex-1'>
+                    <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>
+                      {c.display_name}
+                    </div>
+                    <div className='text-[11px] text-gray-400 dark:text-gray-500'>{c.connector_type}</div>
+                  </div>
+                </div>
+              ))}
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed'>
                 {userQuery}
               </div>
