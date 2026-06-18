@@ -959,6 +959,7 @@ const sidebars = {
       collapsed: false,
       items: [
         { type: "doc", id: "changelog/doc" },
+        { type: "doc", id: "changelog/Released_V0.8.1" },
         { type: "doc", id: "changelog/Released_V0.8.0" },
         { type: "doc", id: "changelog/Released_V0.6.0" },
         { type: "doc", id: "changelog/Released_V0.5.0" },
@@ -969,6 +970,7 @@ const sidebars = {
       label: "Upgrade",
       collapsed: false,
       items: [
+        { type: "doc", id: "upgrade/v0.8.1" },
         { type: "doc", id: "upgrade/v0.8.0" },
         { type: "doc", id: "upgrade/v0.6.0" },
         { type: "doc", id: "upgrade/v0.5.1" },
