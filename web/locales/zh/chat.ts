@@ -112,6 +112,8 @@ export const ChatZh: Resources['translation'] = {
   step_type_other: '操作',
   waiting_for_user: '等待用户回答',
   user_confirmation: '需要您的确认',
+  confirm: '确认',
+  or_input_custom: '或输入自定义答案...',
   file_type_spreadsheet: '电子表格',
   file_type_pdf: 'PDF',
   file_type_image: '图片',

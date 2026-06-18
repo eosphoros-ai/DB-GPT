@@ -8,6 +8,7 @@
 
 import { CheckOutlined, CloseOutlined, QuestionCircleFilled } from '@ant-design/icons';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { QuestionInfo } from '@/utils/react-sse-parser';
 
@@ -24,6 +25,7 @@ interface QuestionDockProps {
 }
 
 const QuestionDock: React.FC<QuestionDockProps> = ({ request, onReply, onReject }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<string[][]>(
     () => request.questions.map(() => []),
   );
@@ -97,13 +99,13 @@ const QuestionDock: React.FC<QuestionDockProps> = ({ request, onReply, onReject 
             <QuestionCircleFilled className='text-[12px] text-amber-500' />
           </span>
           <span className='text-sm font-semibold leading-5 tracking-tight'>
-            需要您的确认
+            {t('user_confirmation')}
           </span>
         </div>
         <button
           onClick={handleDismiss}
           className='flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/5 dark:hover:text-slate-300'
-          title='取消'
+          title={t('cancel')}
         >
           <CloseOutlined className='text-[11px]' />
         </button>
@@ -151,7 +153,7 @@ const QuestionDock: React.FC<QuestionDockProps> = ({ request, onReply, onReject 
               <div className='mt-2'>
                 <input
                   type='text'
-                  placeholder='或输入自定义答案...'
+                  placeholder={t('or_input_custom')}
                   value={customInputs[qi]}
                   onChange={(e) => setCustom(qi, e.target.value)}
                   className='w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] leading-4 text-slate-700 placeholder-slate-400 outline-none transition-colors focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:border-sky-500/50'
@@ -168,7 +170,7 @@ const QuestionDock: React.FC<QuestionDockProps> = ({ request, onReply, onReject 
           onClick={handleDismiss}
           className='rounded-lg px-3 py-1.5 text-[13px] text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'
         >
-          取消
+          {t('cancel')}
         </button>
         <button
           onClick={handleSubmit}
@@ -179,7 +181,7 @@ const QuestionDock: React.FC<QuestionDockProps> = ({ request, onReply, onReject 
               : 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600'
           }`}
         >
-          确认
+          {t('confirm')}
         </button>
       </div>
     </div>

@@ -104,6 +104,8 @@ export const ChatEn = {
   step_type_other: 'Action',
   waiting_for_user: 'Waiting for User',
   user_confirmation: 'Needs your confirmation',
+  confirm: 'Confirm',
+  or_input_custom: 'Or enter a custom answer...',
   file_type_spreadsheet: 'Spreadsheet',
   file_type_pdf: 'PDF',
   file_type_image: 'Image',
