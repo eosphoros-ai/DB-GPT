@@ -4,7 +4,6 @@ import { useConnectors } from '@/hooks/use-connector-api';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
-import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import ManusLeftPanel, {
   ExecutionStep as ManusExecutionStep,
   StepType,
@@ -16,6 +15,7 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
