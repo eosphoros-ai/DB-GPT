@@ -25,6 +25,10 @@ def client_init_caller(app: FastAPI, system_app: SystemApp, config: BaseServeCon
     init_endpoints(system_app, config)
 
 
+def _auth_client():
+    return {"app_caller": client_init_caller, "client_api_key": "mock_api_key_123"}
+
+
 async def _create_and_validate(
     client: AsyncClient, sys_code: str, content: str, expect_id: int = 1, **kwargs
 ):
@@ -44,7 +48,7 @@ async def _create_and_validate(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "client", [{"app_caller": client_init_caller}], indirect=["client"]
+    "client", [_auth_client()], indirect=["client"]
 )
 async def test_api_create(client: AsyncClient):
     await _create_and_validate(client, "test", "test")
@@ -52,7 +56,7 @@ async def test_api_create(client: AsyncClient):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "client", [{"app_caller": client_init_caller}], indirect=["client"]
+    "client", [_auth_client()], indirect=["client"]
 )
 async def test_api_update(client: AsyncClient):
     await _create_and_validate(client, "test", "test")
@@ -71,7 +75,7 @@ async def test_api_update(client: AsyncClient):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "client", [{"app_caller": client_init_caller}], indirect=["client"]
+    "client", [_auth_client()], indirect=["client"]
 )
 async def test_api_query(client: AsyncClient):
     for i in range(10):
@@ -93,7 +97,7 @@ async def test_api_query(client: AsyncClient):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "client", [{"app_caller": client_init_caller}], indirect=["client"]
+    "client", [_auth_client()], indirect=["client"]
 )
 async def test_api_query_by_page(client: AsyncClient):
     for i in range(10):
@@ -114,3 +118,24 @@ async def test_api_query_by_page(client: AsyncClient):
     assert page_result.page == 1
     assert page_result.page_size == 5
     assert len(page_result.items) == 5
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "client",
+    [{"app_caller": client_init_caller, "client_api_key": "wrong_key"}],
+    indirect=["client"],
+)
+async def test_api_auth_rejects_invalid_key(client: AsyncClient):
+    response = await client.get("/test_auth")
+    assert response.status_code == 401
+    assert response.json() == {
+        "detail": {
+            "error": {
+                "message": "",
+                "type": "invalid_request_error",
+                "param": None,
+                "code": "invalid_api_key",
+            }
+        }
+    }

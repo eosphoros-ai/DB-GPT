@@ -36,6 +36,36 @@ CHAT_FACTORY = ChatFactory()
 logger = logging.getLogger(__name__)
 
 
+def _strip_sql_comments(sql: str) -> str:
+    result = []
+    index = 0
+    length = len(sql)
+
+    while index < length:
+        if sql.startswith("/*", index):
+            end = sql.find("*/", index + 2)
+            if end == -1:
+                result.append(" ")
+                break
+            result.append(" ")
+            index = end + 2
+            continue
+
+        if sql.startswith("--", index):
+            end = sql.find("\n", index + 2)
+            if end == -1:
+                result.append(" ")
+                break
+            result.append(" ")
+            index = end
+            continue
+
+        result.append(sql[index])
+        index += 1
+
+    return "".join(result)
+
+
 def get_conversation_serve() -> ConversationServe:
     return ConversationServe.get_instance(CFG.SYSTEM_APP)
 
@@ -102,8 +132,7 @@ def sanitize_sql(sql: str, db_type: str = None) -> Tuple[bool, str, dict]:
         Tuple of (is_safe, reason, params)
     """
     # Normalize SQL (remove comments and excess whitespace)
-    sql = re.sub(r"/\*.*?\*/", " ", sql)
-    sql = re.sub(r"--.*?$", " ", sql, flags=re.MULTILINE)
+    sql = _strip_sql_comments(sql)
     sql = re.sub(r"\s+", " ", sql).strip()
 
     # Block multiple statements
@@ -191,7 +220,7 @@ async def editor_sql_run(run_param: dict = Body()):
     # Sanitize and parameterize the SQL query
     is_safe, result, params = sanitize_sql(sql, db_type)
     if not is_safe:
-        logger.warning(f"Blocked dangerous SQL: {sql}")
+        logger.warning("Blocked dangerous SQL with length %s", len(sql))
         return Result.failed(msg=f"Operation not allowed: {result}")
 
     try:
@@ -272,7 +301,7 @@ async def chart_run(run_param: dict = Body()):
     # Sanitize and parameterize the SQL query
     is_safe, result, params = sanitize_sql(sql, db_type)
     if not is_safe:
-        logger.warning(f"Blocked dangerous SQL: {sql}")
+        logger.warning("Blocked dangerous SQL with length %s", len(sql))
         return Result.failed(msg=f"Operation not allowed: {result}")
 
     try:

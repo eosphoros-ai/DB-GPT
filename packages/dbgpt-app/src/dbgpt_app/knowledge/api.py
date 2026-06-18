@@ -97,7 +97,10 @@ async def space_add(
 
 
 @router.post("/knowledge/space/list")
-async def space_list(request: KnowledgeSpaceRequest):
+async def space_list(
+    request: KnowledgeSpaceRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/space/list params: {request}")
     try:
         res = await blocking_func_to_async(
@@ -110,7 +113,10 @@ async def space_list(request: KnowledgeSpaceRequest):
 
 
 @router.post("/knowledge/space/delete")
-def space_delete(request: KnowledgeSpaceRequest):
+def space_delete(
+    request: KnowledgeSpaceRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/space/delete params: {request}")
     try:
         # delete Files in 'pilot/data/
@@ -144,7 +150,10 @@ async def retrieve_strategy_list(
 
 
 @router.post("/knowledge/{space_id}/arguments")
-async def arguments(space_id: str):
+async def arguments(
+    space_id: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/knowledge/{space_id}/arguments params: {space_id}")
     try:
         res = await blocking_func_to_async(
@@ -173,6 +182,7 @@ async def recall_test(
 @router.get("/knowledge/{space_id}/recall_retrievers")
 def recall_retrievers(
     space_id: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"/knowledge/{space_id}/recall_retrievers params:")
     try:
@@ -230,7 +240,11 @@ async def arguments_save(
 
 
 @router.post("/knowledge/{space_name}/document/add")
-async def document_add(space_name: str, request: KnowledgeDocumentRequest):
+async def document_add(
+    space_name: str,
+    request: KnowledgeDocumentRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/document/add params: {space_name}, {request}")
     try:
         res = await blocking_func_to_async(
@@ -250,6 +264,7 @@ def document_edit(
     space_name: str,
     request: KnowledgeDocumentRequest,
     service: Service = Depends(get_rag_service),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"/document/edit params: {space_name}, {request}")
     space = service.get({"name": space_name})
@@ -369,7 +384,11 @@ def document_list(
 
 
 @router.post("/knowledge/{space_name}/graphvis")
-def graph_vis(space_name: str, query_request: GraphVisRequest):
+def graph_vis(
+    space_name: str,
+    query_request: GraphVisRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -382,7 +401,11 @@ def graph_vis(space_name: str, query_request: GraphVisRequest):
 
 
 @router.post("/knowledge/{space_name}/document/delete")
-def document_delete(space_name: str, query_request: DocumentQueryRequest):
+def document_delete(
+    space_name: str,
+    query_request: DocumentQueryRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -399,6 +422,7 @@ async def document_upload(
     doc_type: str = Form(...),
     doc_file: UploadFile = File(...),
     fs: FileStorageClient = Depends(get_fs),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     print(f"/document/upload params: {space_name}")
     try:
@@ -467,6 +491,7 @@ async def document_sync(
     space_name: str,
     request: DocumentSyncRequest,
     service: Service = Depends(get_rag_service),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"Received params: {space_name}, {request}")
     try:
@@ -496,6 +521,7 @@ async def batch_document_sync(
     space_name: str,
     request: List[KnowledgeSyncRequest],
     service: Service = Depends(get_rag_service),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     logger.info(f"Received params: {space_name}, {request}")
     try:
@@ -517,6 +543,7 @@ def chunk_list(
     space_name: str,
     query_request: ChunkQueryRequest,
     service: Service = Depends(get_rag_service),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     print(f"/chunk/list params: {space_name}, {query_request}")
     try:
@@ -545,6 +572,7 @@ def chunk_edit(
     space_name: str,
     edit_request: ChunkEditRequest,
     service: Service = Depends(get_rag_service),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     print(f"/chunk/edit params: {space_name}, {edit_request}")
     try:
@@ -556,7 +584,11 @@ def chunk_edit(
 
 
 @router.post("/knowledge/{vector_name}/query")
-def similarity_query(space_name: str, query_request: KnowledgeQueryRequest):
+def similarity_query(
+    space_name: str,
+    query_request: KnowledgeQueryRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     print(f"Received params: {space_name}, {query_request}")
     storage_manager = StorageManager.get_instance(CFG.SYSTEM_APP)
     vector_store_connector = storage_manager.create_vector_store(index_name=space_name)
@@ -572,7 +604,10 @@ def similarity_query(space_name: str, query_request: KnowledgeQueryRequest):
 
 
 @router.post("/knowledge/document/summary")
-async def document_summary(request: DocumentSummaryRequest):
+async def document_summary(
+    request: DocumentSummaryRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     print(f"/document/summary params: {request}")
     try:
         with root_tracer.start_span(
