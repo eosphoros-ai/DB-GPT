@@ -3,7 +3,6 @@
 import re
 from typing import Dict, Tuple
 
-
 _AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )

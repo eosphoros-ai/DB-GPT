@@ -1,7 +1,7 @@
 """todowrite tool — maintain a session-level structured task list."""
 
 import json
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
 
 from dbgpt.agent.resource.tool.base import tool
 

@@ -79,10 +79,9 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
         import shutil
         import uuid
 
+        from dbgpt._private.config import Config
         from dbgpt.agent.skill.manage import get_skill_manager
         from dbgpt.configs.model_config import PILOT_PATH, STATIC_MESSAGE_IMG_PATH
-        from dbgpt._private.config import Config
-
         from dbgpt_app.openapi.api_v1.tools._helpers import (
             _extract_auto_data_markers,
         )

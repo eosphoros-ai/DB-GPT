@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -1745,6 +1745,7 @@ print(json.dumps(summary, ensure_ascii=False))
                 },
                 ensure_ascii=False,
             )
+
     # ── Import built-in tools from tools/ directory ──
     from dbgpt_app.openapi.api_v1.tools import (
         make_code_interpreter,
