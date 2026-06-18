@@ -19,6 +19,7 @@ Use this tool when you need to ask the user questions during execution. This all
 4. Offer choices to the user about what direction to take.
 
 Usage notes:
+- IMPORTANT: Always write the question text, header, option labels, and descriptions in the SAME language the user is using. If the user writes in English, all content must be in English; if in Chinese, use Chinese, etc.
 - When `custom` is enabled (default), a "Type your own answer" option is added automatically; don't include "Other" or catch-all options
 - Answers are returned as arrays of labels; set `multiple: true` to allow selecting more than one
 - If you recommend a specific option, make that the first option in the list and add "(Recommended)" at the end of the label

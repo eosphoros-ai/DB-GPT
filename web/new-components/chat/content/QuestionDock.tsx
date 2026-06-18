@@ -6,7 +6,7 @@
  * and confirms, or dismisses the question entirely.
  */
 
-import { CheckOutlined, CloseOutlined, QuestionCircleFilled } from '@ant-design/icons';
+import { CheckCircleFilled, CheckSquareFilled, CloseOutlined, QuestionCircleFilled } from '@ant-design/icons';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -128,22 +128,44 @@ const QuestionDock: React.FC<QuestionDockProps> = ({ request, onReply, onReject 
               {q.question}
             </div>
             {/* Options */}
-            <div className='flex flex-wrap gap-2'>
+            <div className='grid gap-2' style={{ gridTemplateColumns: `repeat(${q.options.length <= 3 ? q.options.length : 2}, 1fr)` }}>
               {q.options.map((opt) => {
                 const isSelected = selected[qi].includes(opt.label);
+                const isMultiple = !!q.multiple;
                 return (
                   <button
                     key={opt.label}
-                    onClick={() => toggleOption(qi, opt.label, !!q.multiple)}
-                    className={`rounded-lg border px-3 py-1.5 text-[13px] leading-4 transition-all ${
+                    onClick={() => toggleOption(qi, opt.label, isMultiple)}
+                    className={`group relative flex items-start gap-2.5 rounded-lg border p-3 text-left transition-all ${
                       isSelected
-                        ? 'border-sky-400 bg-sky-50 font-medium text-sky-700 dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-300'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-white/20 dark:hover:bg-white/8'
+                        ? 'border-sky-400 bg-sky-50/80 shadow-sm shadow-sky-100 dark:border-sky-500/50 dark:bg-sky-500/10 dark:shadow-none'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/8'
                     }`}
-                    title={opt.description}
                   >
-                    {isSelected && <CheckOutlined className='mr-1 text-[10px]' />}
-                    {opt.label}
+                    <span className={`mt-0.5 flex-shrink-0 text-[14px] ${
+                      isSelected
+                        ? 'text-sky-500 dark:text-sky-400'
+                        : 'text-slate-300 dark:text-slate-600'
+                    }`}>
+                      {isMultiple
+                        ? <CheckSquareFilled />
+                        : <CheckCircleFilled />
+                      }
+                    </span>
+                    <span className='flex flex-col gap-0.5 overflow-hidden'>
+                      <span className={`text-[13px] font-medium leading-5 ${
+                        isSelected
+                          ? 'text-sky-700 dark:text-sky-300'
+                          : 'text-slate-700 dark:text-slate-200'
+                      }`}>
+                        {opt.label}
+                      </span>
+                      {opt.description && (
+                        <span className='text-[12px] leading-4 text-slate-400 dark:text-slate-500'>
+                          {opt.description}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 );
               })}
