@@ -71,7 +71,7 @@ function ConstructLayout({ children, className }: { children: React.ReactNode; c
     },
     {
       key: 'skills',
-      name: t('skills') || '技能',
+      name: t('skills') || 'Skills',
       path: '/skills',
       icon: <ThunderboltOutlined />,
     },

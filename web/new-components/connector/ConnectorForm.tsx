@@ -103,7 +103,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
 
   // A built-in catalog template (github / notion / feishu / ...) — anything
   // with a catalog entry that is NOT the synthetic custom_mcp option. Used to:
-  //   1. hide the "连接器名称" input (we reuse the catalog display_name), and
+  //   1. hide the "Connector Name" input (we reuse the catalog display_name), and
   //   2. seed the description field with the catalog description.
   const isBuiltinTemplate = selectedCatalog != null && selectedCatalog.is_custom !== true;
 
@@ -170,7 +170,7 @@ const ConnectorForm: React.FC<ConnectorFormProps> = ({
       }
     }
     // Seed the description with the catalog blurb for built-in templates
-    // (e.g. "GitHub Issues、PR、仓库管理") so the user gets a sensible default
+    // (e.g. "GitHub Issues, PR, repo management") so the user gets a sensible default
     // they can keep or edit. Skip for custom_mcp (no meaningful catalog
     // description) and when editing (description is re-hydrated from config).
     if (

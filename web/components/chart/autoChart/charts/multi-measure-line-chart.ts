@@ -6,7 +6,7 @@ import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sor
 const MULTI_MEASURE_LINE_CHART = 'multi_measure_line_chart';
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
-    // 优先确认 x 轴，如果没有枚举类型字段，取第一个字段为 x 轴
+    // Prefer nominal/ordinal for x-axis; fall back to the first field
     const field4Nominal = findNominalField(dataProps) ?? findOrdinalField(dataProps) ?? dataProps[0];
 
     const field4Y = dataProps?.filter(
@@ -62,14 +62,14 @@ const ckb: ChartKnowledge = {
   toSpec: getChartSpec,
 };
 
-/* 订制一个图表需要的所有参数 */
+/* All parameters needed to define a custom chart */
 export const multi_measure_line_chart: CustomChart = {
-  /* 图表唯一 Id */
+  /* Unique chart id */
   chartType: 'multi_measure_line_chart',
-  /* 图表知识 */
+  /* Chart knowledge base entry */
   chartKnowledge: ckb as ChartKnowledge,
-  /** 图表中文名 */
-  chineseName: '折线图',
+  /** Chart display name */
+  chineseName: 'Line chart',
 };
 
 export default multi_measure_line_chart;

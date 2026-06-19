@@ -25,7 +25,7 @@ const WEEKDAYS = [
   { value: '0', labelKey: 'scheduled.cron.sun' },
 ];
 
-/** 从 cron 表达式反推 preset 和参数，用于初始化时同步外部 value */
+/** Infer preset and params from a cron expression for external value initialization */
 function parseCron(cron: string): {
   preset: Preset;
   time: Dayjs;
@@ -68,7 +68,7 @@ function parseCron(cron: string): {
   return { preset: 'custom', ...defaults };
 }
 
-/** 组装 cron 表达式 */
+/** Build a cron expression */
 function buildCron(preset: Preset, time: Dayjs, weekday: string, day: number, custom: string): string {
   switch (preset) {
     case 'hourly':
@@ -86,18 +86,19 @@ function buildCron(preset: Preset, time: Dayjs, weekday: string, day: number, cu
 
 const CronInput: React.FC<CronInputProps> = ({ value, onChange }) => {
   const { t } = useTranslation();
-  // 用 lazy initializer 在挂载时即根据 value 解析初始状态。
-  // Drawer 的 destroyOnClose 会让本组件每次打开都重新挂载，若内部 state 用固定默认值
-  // （daily/09:00）初始化，则当挂载时的 value 恰好等于上次残留值（prevValueRef 比较不触发
-  // parse）时，下方 buildCron effect 会用默认值倒灌、把正确的 cron 覆盖成「每天 9 点」。
-  // 挂载即与 value 对齐可从根本上避免该倒灌。
+  // Use a lazy initializer to parse initial state from value on mount.
+  // Drawer's destroyOnClose remounts this component on each open; if internal state
+  // were initialized with fixed defaults (daily/09:00), and the mounted value equals
+  // the previous leftover value (prevValueRef comparison skips parse), the buildCron
+  // effect below would backfill defaults and overwrite the correct cron with "daily at 9:00".
+  // Aligning with value on mount prevents that backfill.
   const [preset, setPreset] = useState<Preset>(() => parseCron(value || '0 9 * * *').preset);
   const [time, setTime] = useState<Dayjs>(() => parseCron(value || '0 9 * * *').time);
   const [weekday, setWeekday] = useState(() => parseCron(value || '0 9 * * *').weekday);
   const [day, setDay] = useState(() => parseCron(value || '0 9 * * *').day);
   const [custom, setCustom] = useState(value || '0 9 * * *');
 
-  // 当外部 value 变化时（如切换编辑不同任务），同步内部状态
+  // Sync internal state when external value changes (e.g. editing a different task)
   const prevValueRef = React.useRef(value);
   useEffect(() => {
     if (value !== prevValueRef.current) {

@@ -5,7 +5,7 @@ import ChatDialog from './ChatDialog';
 const Content: React.FC = () => {
   const { history } = useContext(MobileChatContext);
 
-  // 过滤出需要展示的消息
+  // Filter messages to display
   const showMessages = useMemo(() => {
     return history.filter(item => ['view', 'human'].includes(item.role));
   }, [history]);

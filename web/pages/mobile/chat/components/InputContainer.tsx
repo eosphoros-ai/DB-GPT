@@ -17,7 +17,7 @@ import Thermometer from './Thermometer';
 const tagColors = ['magenta', 'orange', 'geekblue', 'purple', 'cyan', 'green'];
 
 const InputContainer: React.FC = () => {
-  // 从url上获取基本参数
+  // Read basic params from the URL
   const searchParams = useSearchParams();
   const ques = searchParams?.get('ques') ?? '';
   const {
@@ -39,12 +39,12 @@ const InputContainer: React.FC = () => {
     setCarAbort,
     setUserInput,
   } = useContext(MobileChatContext);
-  // 输入框聚焦
+  // Input focus state
   const [isFocus, setIsFocus] = useState<boolean>(false);
-  // 是否中文输入
+  // Whether IME composition is active
   const [isZhInput, setIsZhInput] = useState<boolean>(false);
 
-  // 处理会话
+  // Handle chat
   const handleChat = async (content?: string) => {
     setUserInput('');
     ctrl.current = new AbortController();
@@ -138,7 +138,7 @@ const InputContainer: React.FC = () => {
     }
   };
 
-  // 会话提问
+  // Submit question
   const onSubmit = async () => {
     if (!userInput.trim() || !canNewChat) {
       return;
@@ -153,7 +153,7 @@ const InputContainer: React.FC = () => {
     });
   }, [history, scrollViewRef]);
 
-  // 功能类型
+  // Param types
   const paramType = useMemo(() => {
     if (!appInfo) {
       return [];
@@ -162,13 +162,13 @@ const InputContainer: React.FC = () => {
     return param_need?.map(item => item.type);
   }, [appInfo]);
 
-  // 是否展示推荐问题
+  // Whether to show suggested questions
   const showRecommendQuestion = useMemo(() => {
-    // 只在没有对话的时候展示
+    // Show only when there is no conversation yet
     return history.length === 0 && appInfo && !!appInfo?.recommend_questions?.length;
   }, [history, appInfo]);
 
-  // 暂停回复
+  // Pause reply
   const abort = () => {
     if (!canAbort) {
       return;
@@ -180,7 +180,7 @@ const InputContainer: React.FC = () => {
     }, 100);
   };
 
-  // 再来一次
+  // Try again
   const redo = () => {
     if (!canNewChat || history.length === 0) {
       return;
@@ -196,7 +196,7 @@ const InputContainer: React.FC = () => {
     },
   });
 
-  // 清除历史会话
+  // Clear conversation history
   const clearHistory = () => {
     if (!canNewChat) {
       return;
@@ -204,7 +204,7 @@ const InputContainer: React.FC = () => {
     clearHistoryRun();
   };
 
-  // 如果url携带ques问题，则直接提问
+  // If the URL includes a ques param, submit it directly
   useEffect(() => {
     if (ques && model && conv_uid && appInfo) {
       handleChat(ques);
@@ -214,7 +214,7 @@ const InputContainer: React.FC = () => {
 
   return (
     <div className='flex flex-col'>
-      {/* 推荐问题 */}
+      {/* Suggested questions */}
       {showRecommendQuestion && (
         <ul>
           {appInfo?.recommend_questions?.map((item, index) => (
@@ -232,18 +232,18 @@ const InputContainer: React.FC = () => {
           ))}
         </ul>
       )}
-      {/* 功能区域 */}
+      {/* Toolbar */}
       <div className='flex items-center justify-between gap-1'>
         <div className='flex gap-2 mb-1 w-full overflow-x-auto'>
-          {/* 模型选择 */}
+          {/* Model selector */}
           {paramType?.includes('model') && <ModelSelector />}
-          {/* 额外资源 */}
+          {/* Extra resources */}
           {paramType?.includes('resource') && <Resource />}
-          {/* 温度调控 */}
+          {/* Temperature control */}
           {paramType?.includes('temperature') && <Thermometer />}
         </div>
         <div className='flex items-center justify-between text-lg font-bold'>
-          <Popover content='暂停回复' trigger={['hover']}>
+          <Popover content='Pause reply' trigger={['hover']}>
             <PauseCircleOutlined
               className={classnames('p-2 cursor-pointer', {
                 'text-[#0c75fc]': canAbort,
@@ -252,7 +252,7 @@ const InputContainer: React.FC = () => {
               onClick={abort}
             />
           </Popover>
-          <Popover content='再来一次' trigger={['hover']}>
+          <Popover content='Try again' trigger={['hover']}>
             <RedoOutlined
               className={classnames('p-2 cursor-pointer', {
                 'text-gray-400': !history.length || !canNewChat,
@@ -263,7 +263,7 @@ const InputContainer: React.FC = () => {
           {loading ? (
             <Spin spinning={loading} indicator={<LoadingOutlined style={{ fontSize: 18 }} spin />} className='p-2' />
           ) : (
-            <Popover content='清除历史' trigger={['hover']}>
+            <Popover content='Clear history' trigger={['hover']}>
               <ClearOutlined
                 className={classnames('p-2 cursor-pointer', {
                   'text-gray-400': !history.length || !canNewChat,
@@ -274,7 +274,7 @@ const InputContainer: React.FC = () => {
           )}
         </div>
       </div>
-      {/* 输入框 */}
+      {/* Input */}
       <div
         className={classnames(
           'flex py-2 px-3 items-center justify-between bg-white dark:bg-[#242733] dark:border-[#6f7f95] rounded-xl border',
@@ -284,7 +284,7 @@ const InputContainer: React.FC = () => {
         )}
       >
         <Input.TextArea
-          placeholder='可以问我任何问题'
+          placeholder='Ask me anything'
           className='w-full resize-none border-0 p-0 focus:shadow-none'
           value={userInput}
           autoSize={{ minRows: 1 }}

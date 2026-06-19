@@ -4,7 +4,7 @@
   color: white;
 }
 
-/* 推荐问题 */
+/* Recommended questions */
 .recommend-questions-container :global .ant-form-item {
   margin: 0;
 }

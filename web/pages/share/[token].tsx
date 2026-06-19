@@ -1,8 +1,8 @@
 /**
- * /share/[token] — 对话回放页面
+ * /share/[token] — Conversation replay page
  *
- * 从后端获取共享对话数据，逐步动画展示每一轮的思考→行动→输出过程。
- * 无需登录，只读，不可继续对话。
+ * Fetches shared conversation data from the backend and animates each round
+ * through think → act → output. No login required; read-only; cannot continue chatting.
  */
 
 import ManusLeftPanel, {
@@ -160,7 +160,7 @@ function buildArtifacts(
     });
   });
 
-  // Also scan final_content for file references (e.g. "已保存到 xxx.xlsx")
+  // Also scan final_content for file references (e.g. "saved to xxx.xlsx")
   const fileRefRegex = /[\w\u4e00-\u9fa5_-]+\.(xlsx?|csv|pdf|png|jpg|jpeg|gif|html?|txt|zip|json)/gi;
   const matches = finalContent.matchAll(fileRefRegex);
   for (const m of matches) {
@@ -269,12 +269,17 @@ function buildSections(steps: ManusExecutionStep[]): ThinkingSection[] {
 
   const sections: ThinkingSection[] = [];
   if (thinkSteps.length > 0)
-    sections.push({ id: 'section-think', title: '分析与规划', isCompleted: true, steps: thinkSteps });
+    sections.push({ id: 'section-think', title: 'Analysis & Planning', isCompleted: true, steps: thinkSteps });
   if (skillSteps.length > 0)
-    sections.push({ id: 'section-skill', title: '技能加载', isCompleted: true, steps: skillSteps });
+    sections.push({ id: 'section-skill', title: 'Skill Loading', isCompleted: true, steps: skillSteps });
   if (otherSteps.length > 0)
-    sections.push({ id: 'section-execution', title: '数据处理与执行', isCompleted: true, steps: otherSteps });
-  if (sections.length === 0) sections.push({ id: 'section-main', title: '执行过程', isCompleted: true, steps });
+    sections.push({
+      id: 'section-execution',
+      title: 'Data Processing & Execution',
+      isCompleted: true,
+      steps: otherSteps,
+    });
+  if (sections.length === 0) sections.push({ id: 'section-main', title: 'Execution', isCompleted: true, steps });
   return sections;
 }
 
@@ -485,7 +490,7 @@ const SharePage: NextPage = () => {
     fetch(`${apiBase}/api/v1/chat/share/${token}`)
       .then(res => {
         if (!res.ok) {
-          setFetchError(`分享链接无效或已过期 (${res.status})`);
+          setFetchError(`Share link is invalid or expired (${res.status})`);
           setLoading(false);
           return null;
         }
@@ -495,7 +500,7 @@ const SharePage: NextPage = () => {
         if (!json) return;
         const rawMessages = json?.data?.messages ?? null;
         if (!Array.isArray(rawMessages)) {
-          setFetchError('数据格式错误');
+          setFetchError('Invalid data format');
           setLoading(false);
           return;
         }
@@ -504,7 +509,7 @@ const SharePage: NextPage = () => {
         setLoading(false);
       })
       .catch((err: any) => {
-        setFetchError(err?.message || '加载失败');
+        setFetchError(err?.message || 'Failed to load');
         setLoading(false);
       });
   }, [token]);
@@ -580,9 +585,9 @@ const SharePage: NextPage = () => {
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      message.success('链接已复制');
+      message.success('Link copied');
     } catch {
-      message.error('复制失败');
+      message.error('Copy failed');
     }
   };
 
@@ -595,7 +600,7 @@ const SharePage: NextPage = () => {
       <div className='flex items-center justify-center h-screen bg-white dark:bg-[#111217]'>
         <div className='text-center space-y-3'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto' />
-          <p className='text-gray-400'>加载中...</p>
+          <p className='text-gray-400'>Loading...</p>
         </div>
       </div>
     );
@@ -605,8 +610,8 @@ const SharePage: NextPage = () => {
     return (
       <div className='flex items-center justify-center h-screen bg-white dark:bg-[#111217]'>
         <div className='text-center space-y-3'>
-          <p className='text-2xl font-semibold text-gray-700 dark:text-gray-200'>分享链接无效或已过期</p>
-          <p className='text-gray-400'>{fetchError || '没有可回放的对话内容'}</p>
+          <p className='text-2xl font-semibold text-gray-700 dark:text-gray-200'>Share link is invalid or expired</p>
+          <p className='text-gray-400'>{fetchError || 'No conversation content to replay'}</p>
         </div>
       </div>
     );
@@ -617,8 +622,8 @@ const SharePage: NextPage = () => {
       <Head>
         <title>
           {firstQuestion
-            ? `${firstQuestion.slice(0, 60)}${firstQuestion.length > 60 ? '…' : ''} · DB-GPT 回放`
-            : 'DB-GPT 对话回放'}
+            ? `${firstQuestion.slice(0, 60)}${firstQuestion.length > 60 ? '…' : ''} · DB-GPT Replay`
+            : 'DB-GPT Conversation Replay'}
         </title>
       </Head>
 
@@ -632,7 +637,7 @@ const SharePage: NextPage = () => {
             <span className='font-bold text-base text-gray-800 dark:text-white flex-shrink-0'>DB-GPT</span>
             <div className='w-px h-4 bg-gray-200 dark:bg-gray-700 flex-shrink-0' />
             <span className='text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full flex-shrink-0'>
-              回放
+              Replay
             </span>
             {firstQuestion && (
               <span className='text-sm text-gray-500 dark:text-gray-400 truncate max-w-[400px]' title={firstQuestion}>
@@ -666,21 +671,21 @@ const SharePage: NextPage = () => {
             {/* Play / Pause */}
             {state.done ? (
               <Button icon={<ReloadOutlined />} onClick={restart}>
-                重新回放
+                Replay again
               </Button>
             ) : playing ? (
               <Button icon={<PauseCircleOutlined />} onClick={pause}>
-                暂停
+                Pause
               </Button>
             ) : (
               <Button type='primary' icon={<PlayCircleOutlined />} onClick={play}>
-                {completedSteps === 0 ? '开始回放' : '继续'}
+                {completedSteps === 0 ? 'Start replay' : 'Resume'}
               </Button>
             )}
 
             {/* Skip to end */}
             {!state.done && (
-              <Tooltip title='跳到最后一步'>
+              <Tooltip title='Jump to last step'>
                 <Button icon={<StepForwardOutlined />} onClick={() => jumpToRound(rounds.length - 1)} />
               </Tooltip>
             )}
@@ -689,13 +694,13 @@ const SharePage: NextPage = () => {
             <div className='w-px h-5 bg-gray-200 dark:bg-gray-700' />
 
             {/* Copy share link — blue to match the UI theme */}
-            <Tooltip title='复制分享链接，任何人可通过此链接回放对话'>
+            <Tooltip title='Copy share link; anyone can replay this conversation via the link'>
               <Button
                 icon={<LinkOutlined />}
                 onClick={handleCopyLink}
                 style={{ color: '#3b82f6', borderColor: '#3b82f6' }}
               >
-                分享
+                Share
               </Button>
             </Tooltip>
           </div>
@@ -715,13 +720,13 @@ const SharePage: NextPage = () => {
               </div>
             </div>
             <span className='text-xs text-gray-400 whitespace-nowrap tabular-nums'>
-              {completedSteps} / {totalSteps} 步
+              {completedSteps} / {totalSteps} steps
             </span>
             {/* Round selector tabs */}
             {rounds.length > 1 && (
               <div className='flex items-center gap-1'>
                 {rounds.map((round, ri) => (
-                  <Tooltip key={ri} title={round.humanText ? round.humanText.slice(0, 40) : `第 ${ri + 1} 轮`}>
+                  <Tooltip key={ri} title={round.humanText ? round.humanText.slice(0, 40) : `Round ${ri + 1}`}>
                     <button
                       onClick={() => jumpToRound(ri)}
                       className={`w-5 h-5 rounded-full text-[10px] font-bold transition-colors ${
@@ -781,7 +786,7 @@ const SharePage: NextPage = () => {
             {/* Pending placeholder for rounds not yet reached */}
             {rounds.length > 1 && state.roundIndex < rounds.length - 1 && (
               <div className='px-4 py-3 text-xs text-gray-400 text-center animate-pulse'>
-                {rounds.length - state.roundIndex - 1} 轮待回放...
+                {rounds.length - state.roundIndex - 1} round(s) pending replay...
               </div>
             )}
             {/* Bottom breathing room */}

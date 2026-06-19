@@ -25,28 +25,28 @@ export const promptResponseVerify = (props: PromptResponseVerifyProps) => {
 };
 
 /**
- * 创建prompt
+ * Create prompt
  */
 export const addPrompt = (data: OperatePromptParams) => {
   return POST<OperatePromptParams, []>('/prompt/add', data);
 };
 
 /**
- * 编辑prompt
+ * Update prompt
  */
 export const updatePrompt = (data: OperatePromptParams) => {
   return POST<OperatePromptParams, []>('/prompt/update', data);
 };
 
 /**
- * 删除prompt
+ * Delete prompt
  */
 export const deletePrompt = (data: OperatePromptParams) => {
   return POST<OperatePromptParams, null>('/prompt/delete', data);
 };
 
 /**
- * prompt列表
+ * Prompt list
  */
 export const getPromptList = (data: Record<string, any>) => {
   return POST<Record<string, any>, PromptListResponse>(
@@ -56,14 +56,14 @@ export const getPromptList = (data: Record<string, any>) => {
 };
 
 /**
- * LLM测试
+ * LLM test
  */
 export const llmTest = (data: DebugParams) => {
   return POST<DebugParams, Record<string, any>>('/prompt/template/debug', data);
 };
 
 /**
- * llm输出验证
+ * LLM output verification
  */
 export const llmOutVerify = (data: LlmOutVerifyParams) => {
   return POST<LlmOutVerifyParams, Record<string, any>>('/prompt/response/verify', data);

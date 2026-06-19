@@ -17,7 +17,7 @@ import AutoPlan from './components/auto-plan';
 import styles from './styles.module.css';
 
 const ExtraAppInfo: React.FC = () => {
-  // 获取当前应用信息
+  // Fetch current app info
   const curApp = JSON.parse(localStorage.getItem('new_app_info') || '{}');
   const { t } = useTranslation();
   const { message } = App.useApp();
@@ -29,10 +29,10 @@ const ExtraAppInfo: React.FC = () => {
   const appParams = useRef<CreateAppParams>({});
   const initialParams = useRef<CreateAppParams>({});
 
-  // 初始化参数，保留原有资源
+  // Initialize params, preserve existing resources
   useEffect(() => {
     try {
-      // 深度克隆当前应用数据到初始参数和当前参数
+      // Deep clone current app data to initial and current params
       initialParams.current = {
         app_code: curApp?.app_code,
         app_describe: curApp?.app_describe,
@@ -45,7 +45,7 @@ const ExtraAppInfo: React.FC = () => {
         recommend_questions: _.cloneDeep(curApp?.recommend_questions || []),
       };
 
-      // 复制一份给当前操作的参数
+      // Copy for current operation params
       appParams.current = _.cloneDeep(initialParams.current);
 
       setDataReady(true);
@@ -54,7 +54,7 @@ const ExtraAppInfo: React.FC = () => {
     }
   }, [curApp, message, t]);
 
-  // 更新应用
+  // Update app
   const { run: update, loading: createLoading } = useRequest(
     async (params: CreateAppParams) => {
       try {
@@ -90,15 +90,15 @@ const ExtraAppInfo: React.FC = () => {
     },
   );
 
-  // 更新子组件改变的数据到appParams
+  // Update appParams from child component changes
   const updateComponentData = (key: keyof CreateAppParams, value: any) => {
     if (!appParams.current) return;
 
     try {
-      // 使用深拷贝避免引用问题
+      // Use deep copy to avoid reference issues
       appParams.current[key] = _.cloneDeep(value);
     } catch (_) {
-      // 错误处理
+      // Error handling
     }
   };
 
@@ -114,17 +114,17 @@ const ExtraAppInfo: React.FC = () => {
     }
 
     try {
-      // 确保必要的字段存在
+      // Ensure required fields exist
       const finalParams: CreateAppParams = {};
 
-      // 添加基本信息
+      // Add basic info
       finalParams.app_code = curApp?.app_code;
       finalParams.app_name = curApp?.app_name;
       finalParams.app_describe = curApp?.app_describe;
       finalParams.team_mode = curApp?.team_mode;
       finalParams.language = curApp?.language;
 
-      // 根据模式添加相应数据
+      // Add data based on mode
       if (['single_agent', 'auto_plan'].includes(curApp?.team_mode)) {
         finalParams.details = appParams.current.details || initialParams.current.details;
       }
@@ -185,7 +185,7 @@ const ExtraAppInfo: React.FC = () => {
             </Button>
           </header>
           <div className='flex flex-1 flex-col py-12 max-h-full overflow-y-auto'>
-            {/* auto_plan模式 */}
+            {/* auto_plan mode */}
             {['single_agent', 'auto_plan'].includes(curApp?.team_mode) && (
               <AutoPlan
                 classNames='w-3/4 mx-auto'
@@ -199,7 +199,7 @@ const ExtraAppInfo: React.FC = () => {
                 teamMode={curApp?.team_mode}
               />
             )}
-            {/* awel_layout模式 */}
+            {/* awel_layout mode */}
             {curApp?.team_mode === 'awel_layout' && (
               <AwelLayout
                 initValue={curApp?.team_context}
@@ -212,7 +212,7 @@ const ExtraAppInfo: React.FC = () => {
                 classNames='px-6'
               />
             )}
-            {/* native_app模式 */}
+            {/* native_app mode */}
             {curApp?.team_mode === 'native_app' && (
               <NativeApp
                 initValue={{
@@ -229,7 +229,7 @@ const ExtraAppInfo: React.FC = () => {
                 }}
               />
             )}
-            {/* single_agent模式 */}
+            {/* single_agent mode */}
             {/* {curApp?.team_mode === '' && <></>} */}
             <RecommendQuestions
               updateData={data => {

@@ -26,22 +26,22 @@ const Feedback: React.FC<{
   const [status, setStatus] = useState<'like' | 'unlike' | 'none'>(content?.feedback?.feedback_type);
   const [list, setList] = useState<Tags[]>([]);
 
-  // 复制回答
+  // Copy reply
   const onCopyContext = async (context: any) => {
     const pureStr = context?.replace(/\trelations:.*/g, '');
     const result = copy(chatDialogRef.current?.textContent || pureStr);
     if (result) {
       if (pureStr) {
-        message.success('复制成功');
+        message.success('Copied successfully');
       } else {
-        message.warning('内容复制为空');
+        message.warning('Nothing to copy');
       }
     } else {
-      message.error('复制失败');
+      message.error('Copy failed');
     }
   };
 
-  // 点赞 or 踩
+  // Like or dislike
   const { run: feedback, loading } = useRequest(
     async (params: { feedback_type: string; reason_types?: string[]; remark?: string }) =>
       await apiInterceptors(
@@ -58,13 +58,13 @@ const Feedback: React.FC<{
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success('反馈成功');
+        message.success('Feedback submitted');
         setFeedbackOpen(false);
       },
     },
   );
 
-  // 取消反馈
+  // Cancel feedback
   const { run: cancel } = useRequest(
     async () => await apiInterceptors(cancelFeedback({ conv_uid: conv_uid, message_id: content?.order + '' })),
     {
@@ -73,13 +73,13 @@ const Feedback: React.FC<{
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success('操作成功');
+          message.success('Done');
         }
       },
     },
   );
 
-  // 反馈原因类型
+  // Feedback reason types
   const { run: getReasonList } = useRequest(async () => await apiInterceptors(getFeedbackReasons()), {
     manual: true,
     onSuccess: data => {
@@ -91,13 +91,13 @@ const Feedback: React.FC<{
     },
   });
 
-  // 终止话题
+  // End topic
   const { run: stopTopicRun, loading: stopTopicLoading } = useRequest(
     async () => await apiInterceptors(stopTopic({ conv_id: conv_uid, round_index: 0 })),
     {
       manual: true,
       onSuccess: () => {
-        message.success('操作成功');
+        message.success('Done');
       },
     },
   );
@@ -149,7 +149,7 @@ const Feedback: React.FC<{
             }}
             className='text-xs'
           >
-            终止话题
+            End topic
           </Button>
         )}
       </div>

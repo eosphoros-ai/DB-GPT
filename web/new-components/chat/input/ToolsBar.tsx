@@ -50,7 +50,7 @@ const ToolsBar: React.FC<{
   const [loading, setLoading] = useState<boolean>(false);
   const [clsLoading, setClsLoading] = useState<boolean>(false);
 
-  // 左边工具栏动态可用key
+  // Dynamic available keys for left toolbar
   const paramKey: string[] = useMemo(() => {
     return appInfo.param_need?.map(i => i.type) || [];
   }, [appInfo.param_need]);

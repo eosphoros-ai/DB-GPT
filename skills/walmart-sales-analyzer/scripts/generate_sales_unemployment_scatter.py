@@ -10,9 +10,9 @@ def generate_sales_unemployment_scatter(data_path, output_dir):
     
     plt.figure(figsize=(10, 6))
     sns.regplot(data=df, x='Unemployment', y='Weekly_Sales', scatter_kws={'alpha':0.3}, line_kws={'color':'red'})
-    plt.title('销售额与失业率的关系 (散点图 + 回归线)')
-    plt.xlabel('失业率 (%)')
-    plt.ylabel('周销售额')
+    plt.title('Weekly Sales vs. Unemployment (Scatter + Regression)')
+    plt.xlabel('Unemployment (%)')
+    plt.ylabel('Weekly Sales')
     plt.tight_layout()
     
     output_path = os.path.join(output_dir, 'sales_vs_unemployment_scatter.png')

@@ -16,7 +16,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** 格式化 ISO 时间字符串，去掉时区后缀，返回友好格式 */
+/** Format an ISO timestamp, strip timezone suffix, return a friendly string */
 function fmtTime(iso?: string | null): string | null {
   if (!iso) return null;
   const d = dayjs(iso);
@@ -34,7 +34,7 @@ function ScheduledTasks() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
-  // 编辑抽屉状态
+  // Edit drawer state
   const [editOpen, setEditOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskResponse | null>(null);
 
@@ -83,7 +83,7 @@ function ScheduledTasks() {
     reload();
   };
 
-  /* ─── 筛选 ─── */
+  /* ─── Filters ─── */
   const counters = useMemo(() => {
     const enabled = tasks.filter(t => t.enabled).length;
     return { enabled, disabled: tasks.length - enabled };
@@ -92,10 +92,10 @@ function ScheduledTasks() {
   const filteredTasks = useMemo(() => {
     const q = search.trim().toLowerCase();
     return tasks.filter(t => {
-      // 状态筛选
+      // Status filter
       if (statusFilter === 'enabled' && !t.enabled) return false;
       if (statusFilter === 'disabled' && t.enabled) return false;
-      // 搜索筛选
+      // Search filter
       if (!q) return true;
       return (
         t.task_name.toLowerCase().includes(q) ||
@@ -208,7 +208,7 @@ function ScheduledTasks() {
               </div>
             ) : (
               <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 overflow-hidden'>
-                {/* 表头 */}
+                {/* Header */}
                 <div className='grid grid-cols-[minmax(200px,1.4fr)_100px_150px_180px_120px_70px_130px] gap-3 px-5 py-3 text-[12px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/60 dark:bg-[#1a1f2e]/60'>
                   <div>{t('scheduled.col.name')}</div>
                   <div className='text-center'>{t('scheduled.col.status')}</div>
@@ -219,7 +219,7 @@ function ScheduledTasks() {
                   <div className='text-right'>{t('scheduled.col.actions')}</div>
                 </div>
 
-                {/* 列表行 */}
+                {/* List rows */}
                 {filteredTasks.map(task => (
                   <TaskRow
                     key={task.task_id}
@@ -231,7 +231,7 @@ function ScheduledTasks() {
                   />
                 ))}
 
-                {/* 底部统计 */}
+                {/* Footer count */}
                 {hasAny && (
                   <div className='px-5 py-3 border-t border-gray-100 dark:border-gray-700/50 text-[13px] text-gray-400 dark:text-gray-500'>
                     {filteredTasks.length !== tasks.length
@@ -244,7 +244,7 @@ function ScheduledTasks() {
           </Spin>
         </div>
 
-        {/* ───────────── 编辑抽屉 ───────────── */}
+        {/* ───────────── Edit drawer ───────────── */}
         <EditScheduledTaskDrawer
           open={editOpen}
           onClose={() => {
@@ -260,7 +260,7 @@ function ScheduledTasks() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   TaskRow — 单行任务列表项
+   TaskRow — single task list row
    ────────────────────────────────────────────────────────────────── */
 
 interface TaskRowProps {
@@ -288,7 +288,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         }
       }}
     >
-      {/* 任务名称 + 描述 */}
+      {/* Task name + description */}
       <div className='flex items-center gap-3 min-w-0'>
         <div
           className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-sm ${
@@ -305,7 +305,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         </div>
       </div>
 
-      {/* 状态 */}
+      {/* Status */}
       <div className='text-center'>
         {enabled ? (
           <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'>
@@ -320,14 +320,14 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         )}
       </div>
 
-      {/* Cron 表达式 */}
+      {/* Cron expression */}
       <div>
         <code className='text-[13px] text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/40 px-2 py-0.5 rounded font-mono'>
           {task.cron_expression}
         </code>
       </div>
 
-      {/* 下次执行 */}
+      {/* Next run */}
       <div className='text-[13px]'>
         {fmtTime(task.next_run_time) ? (
           <span className='text-cyan-600 dark:text-cyan-400 font-medium'>{fmtTime(task.next_run_time)}</span>
@@ -336,10 +336,10 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         )}
       </div>
 
-      {/* 创建人 */}
+      {/* Creator */}
       <div className='text-[13px] text-gray-500 dark:text-gray-400 truncate'>{task.user_name ?? '-'}</div>
 
-      {/* 启用开关 */}
+      {/* Enable switch */}
       <div className='flex justify-center' onClick={e => e.stopPropagation()}>
         <Switch
           checked={task.enabled}
@@ -349,7 +349,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         />
       </div>
 
-      {/* 操作 */}
+      {/* Actions */}
       <div className='flex items-center justify-end gap-1' onClick={e => e.stopPropagation()}>
         <Tooltip title={t('scheduled.row.editTooltip')}>
           <Button

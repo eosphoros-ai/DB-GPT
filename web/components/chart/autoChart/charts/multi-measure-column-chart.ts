@@ -55,14 +55,14 @@ const ckb: ChartKnowledge = {
   toSpec: getChartSpec,
 };
 
-/* 订制一个图表需要的所有参数 */
+/* All parameters needed to define a custom chart */
 export const multi_measure_column_chart: CustomChart = {
-  /* 图表唯一 Id */
+  /* Unique chart id */
   chartType: 'multi_measure_column_chart',
-  /* 图表知识 */
+  /* Chart knowledge base entry */
   chartKnowledge: ckb as ChartKnowledge,
-  /** 图表中文名 */
-  chineseName: '折线图',
+  /** Chart display name */
+  chineseName: 'Line chart',
 };
 
 export default multi_measure_column_chart;

@@ -61,7 +61,7 @@ function GPTCard({
     return icon;
   }, [icon]);
 
-  // TODO: 算子资源标签
+  // TODO: Operator resource tags
   const tagNode = useMemo(() => {
     if (!tags || !tags.length) return null;
     return (

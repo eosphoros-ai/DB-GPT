@@ -10,28 +10,28 @@ import type {
 const BASE = '/api/v2/serve/scheduled-tasks';
 
 /**
- * ctx-axios 的 response interceptor 已经把 axios response 解包为
- * response.data（即 API envelope {success, err_code, err_msg, data}）。
- * 这里再取 .data 得到业务数据。
+ * The ctx-axios response interceptor already unwraps the axios response to
+ * response.data (the API envelope {success, err_code, err_msg, data}).
+ * This helper takes .data again to get the business payload.
  */
 function unwrap<T>(payload: any): T {
   return (payload?.data ?? payload) as T;
 }
 
 /**
- * 定时任务 API hooks。
+ * Scheduled task API hooks.
  *
- * 封装 8 个 REST 端点，返回 Promise 以便调用方自行处理 loading/error。
- * 所有函数均为稳定引用（useCallback + 空依赖）。
+ * Wraps 8 REST endpoints and returns Promises so callers handle loading/error.
+ * All functions are stable references (useCallback with empty deps).
  */
 export function useScheduledTask() {
-  /** POST /api/v2/serve/scheduled-tasks/ — 创建定时任务 */
+  /** POST /api/v2/serve/scheduled-tasks/ — create scheduled task */
   const createTask = useCallback(async (body: CreateTaskRequest): Promise<TaskResponse> => {
     const res = await axios.post(`${BASE}/`, body);
     return unwrap<TaskResponse>(res);
   }, []);
 
-  /** GET /api/v2/serve/scheduled-tasks/?enabled_only=false — 任务列表 */
+  /** GET /api/v2/serve/scheduled-tasks/?enabled_only=false — task list */
   const listTasks = useCallback(async (enabledOnly = false): Promise<TaskResponse[]> => {
     const res = await axios.get(`${BASE}/`, {
       params: { enabled_only: enabledOnly },
@@ -39,13 +39,13 @@ export function useScheduledTask() {
     return unwrap<TaskResponse[]>(res) ?? [];
   }, []);
 
-  /** GET /api/v2/serve/scheduled-tasks/{task_id} — 任务详情 */
+  /** GET /api/v2/serve/scheduled-tasks/{task_id} — task detail */
   const getTask = useCallback(async (taskId: string): Promise<TaskResponse> => {
     const res = await axios.get(`${BASE}/${taskId}`);
     return unwrap<TaskResponse>(res);
   }, []);
 
-  /** PUT /api/v2/serve/scheduled-tasks/{task_id} — 更新任务 */
+  /** PUT /api/v2/serve/scheduled-tasks/{task_id} — update task */
   const updateTask = useCallback(
     async (taskId: string, body: UpdateTaskRequest): Promise<TaskResponse> => {
       const res = await axios.put(`${BASE}/${taskId}`, body);
@@ -54,7 +54,7 @@ export function useScheduledTask() {
     [],
   );
 
-  /** POST /api/v2/serve/scheduled-tasks/{task_id}/toggle — 启停任务 */
+  /** POST /api/v2/serve/scheduled-tasks/{task_id}/toggle — enable/disable task */
   const toggleTask = useCallback(
     async (taskId: string, enabled: boolean): Promise<TaskResponse> => {
       const res = await axios.post(`${BASE}/${taskId}/toggle`, { enabled });
@@ -63,12 +63,12 @@ export function useScheduledTask() {
     [],
   );
 
-  /** DELETE /api/v2/serve/scheduled-tasks/{task_id} — 删除任务 */
+  /** DELETE /api/v2/serve/scheduled-tasks/{task_id} — delete task */
   const deleteTask = useCallback(async (taskId: string): Promise<void> => {
     await axios.delete(`${BASE}/${taskId}`);
   }, []);
 
-  /** GET /api/v2/serve/scheduled-tasks/{task_id}/runs?limit=&offset= — 执行历史列表 */
+  /** GET /api/v2/serve/scheduled-tasks/{task_id}/runs?limit=&offset= — run history list */
   const listRuns = useCallback(
     async (taskId: string, limit = 50, offset = 0): Promise<RunResponse[]> => {
       const res = await axios.get(`${BASE}/${taskId}/runs`, {
@@ -79,7 +79,7 @@ export function useScheduledTask() {
     [],
   );
 
-  /** GET /api/v2/serve/scheduled-tasks/{task_id}/runs/{run_id} — 单次执行详情 */
+  /** GET /api/v2/serve/scheduled-tasks/{task_id}/runs/{run_id} — single run detail */
   const getRun = useCallback(
     async (taskId: string, runId: string): Promise<RunResponse> => {
       const res = await axios.get(`${BASE}/${taskId}/runs/${runId}`);

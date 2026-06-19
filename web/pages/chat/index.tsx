@@ -23,29 +23,29 @@ const ChatContainer = dynamic(() => import('@/components/chat/chat-container'), 
 const { Content } = Layout;
 
 interface ChatContentProps {
-  history: ChatHistoryResponse; // 会话记录列表
-  replyLoading: boolean; // 对话回复loading
-  scrollRef: React.RefObject<HTMLDivElement>; // 会话内容可滚动dom
-  canAbort: boolean; // 是否能中断回复
+  history: ChatHistoryResponse; // Conversation history list
+  replyLoading: boolean; // Reply loading state
+  scrollRef: React.RefObject<HTMLDivElement>; // Scrollable conversation content DOM
+  canAbort: boolean; // Whether reply can be aborted
   chartsData: ChartData[];
   agent: string;
-  currentDialogue: IChatDialogueSchema; // 当前选择的会话
+  currentDialogue: IChatDialogueSchema; // Currently selected conversation
   appInfo: IApp;
   temperatureValue: any;
   maxNewTokensValue: any;
   resourceValue: any;
-  knowledgeValue: string | null; // 选中的知识库
+  knowledgeValue: string | null; // Selected knowledge base
   modelValue: string;
   setModelValue: React.Dispatch<React.SetStateAction<string>>;
   setTemperatureValue: React.Dispatch<React.SetStateAction<any>>;
   setMaxNewTokensValue: React.Dispatch<React.SetStateAction<any>>;
   setResourceValue: React.Dispatch<React.SetStateAction<any>>;
-  setKnowledgeValue: React.Dispatch<React.SetStateAction<string | null>>; // 设置选中的知识库
+  setKnowledgeValue: React.Dispatch<React.SetStateAction<string | null>>; // Set selected knowledge base
   setAppInfo: React.Dispatch<React.SetStateAction<IApp>>;
   setAgent: React.Dispatch<React.SetStateAction<string>>;
   setCanAbort: React.Dispatch<React.SetStateAction<boolean>>;
   setReplyLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  handleChat: (content: UserChatContent, data?: Record<string, any>) => Promise<void>; // 处理会话请求逻辑函数
+  handleChat: (content: UserChatContent, data?: Record<string, any>) => Promise<void>; // Handle chat request logic
   refreshDialogList: () => void;
   refreshHistory: () => void;
   refreshAppInfo: () => void;
@@ -140,20 +140,20 @@ const Chat: React.FC = () => {
   }, [appInfo, dbName, knowledgeId, model]);
 
   useEffect(() => {
-    // 仅初始化执行，防止dashboard页面无法切换状态
+    // Run only on init to prevent dashboard page state switch issues
     setIsMenuExpand(scene !== 'chat_dashboard');
-    // 路由变了要取消Editor模式，再进来是默认的Preview模式
+    // Cancel Editor mode on route change; default to Preview on re-entry
     if (chatId && scene) {
       setIsContract(false);
     }
   }, [chatId, scene, setIsContract, setIsMenuExpand]);
 
-  // 是否是默认小助手
+  // Whether default assistant
   const isChatDefault = useMemo(() => {
     return !chatId && !scene;
   }, [chatId, scene]);
 
-  // 获取会话列表
+  // Fetch conversation list
   const {
     data: dialogueList = [],
     refresh: refreshDialogList,
@@ -162,7 +162,7 @@ const Chat: React.FC = () => {
     return await apiInterceptors(getDialogueList());
   });
 
-  // 获取应用详情
+  // Fetch app details
   const { run: queryAppInfo, refresh: refreshAppInfo } = useRequest(
     async () =>
       await apiInterceptors(
@@ -179,7 +179,7 @@ const Chat: React.FC = () => {
     },
   );
 
-  // 列表当前活跃对话
+  // Currently active conversation in list
   const currentDialogue = useMemo(() => {
     const [, list] = dialogueList;
     return list?.find(item => item.conv_uid === chatId) || ({} as IChatDialogueSchema);
@@ -192,7 +192,7 @@ const Chat: React.FC = () => {
     }
   }, [chatId, currentDialogInfo, isChatDefault, queryAppInfo, scene]);
 
-  // 获取会话历史记录
+  // Fetch conversation history
   const {
     run: getHistory,
     loading: historyLoading,
@@ -209,7 +209,7 @@ const Chat: React.FC = () => {
     },
   });
 
-  // 会话提问
+  // Send chat message
   const handleChat = useCallback(
     (content: UserChatContent, data?: Record<string, any>) => {
       return new Promise<void>(resolve => {
@@ -336,7 +336,7 @@ const Chat: React.FC = () => {
   );
 
   useAsyncEffect(async () => {
-    // 如果是默认小助手，不获取历史记录
+    // Skip history fetch for default assistant
     if (isChatDefault) {
       return;
     }

@@ -36,7 +36,7 @@ function Default() {
         ...params,
       }),
     );
-  // 获取应用列表
+  // Fetch app list
   const {
     run: getAppListFn,
     loading,
@@ -86,7 +86,7 @@ function Default() {
     },
   ];
 
-  // 获取推荐问题
+  // Fetch recommended questions
   const { data: helps } = useRequest(async () => {
     const [, res] = await apiInterceptors(getRecommendQuestions());
     return res ?? [];
@@ -118,7 +118,7 @@ function Default() {
               }}
             />
             <span className='flex items-center text-gray-500 gap-1 dark:text-slate-300'>
-              <span>没有心仪的应用？去</span>
+              <span>Don&apos;t see the app you want? Go to</span>
               <span
                 className='flex items-center cursor-pointer'
                 onClick={() => {
@@ -132,15 +132,15 @@ function Default() {
                   width={24}
                   height={24}
                 />
-                <span className='text-default'>探索广场</span>
+                <span className='text-default'>Explore Plaza</span>
               </span>
-              <span>发现更多</span>
+              <span>to discover more</span>
             </span>
           </div>
           <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
           {helps && helps.length > 0 && (
             <div>
-              <h2 className='font-medium text-xl my-4'>我可以帮您：</h2>
+              <h2 className='font-medium text-xl my-4'>I can help you with:</h2>
               <div className='flex justify-start gap-4'>
                 {helps.map(help => (
                   <span

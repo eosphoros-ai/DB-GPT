@@ -10,9 +10,9 @@ import CronInput from './CronInput';
 interface EditScheduledTaskDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** 要编辑的任务 */
+  /** Task to edit */
   task: TaskResponse | null;
-  /** 保存成功回调（用于刷新列表） */
+  /** Callback after a successful save (e.g. refresh the list) */
   onSaved: () => void;
 }
 
@@ -24,7 +24,7 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
   const { updateTask } = useScheduledTask();
   const { modelList } = useContext(ChatContext);
 
-  // 当 task 变化时同步表单和 cron
+  // Sync form and cron when task changes
   useEffect(() => {
     if (task) {
       form.setFieldsValue({

@@ -27,7 +27,7 @@ import { useTranslation } from 'react-i18next';
      instances coexist in one stream; cards carry their own identity
      (dashed vs solid, brand-tinted icon tile, status chip).
    - Top: hero header with title + live counters.
-   - Toolbar: search · status filter (Segmented) · 自定义 MCP CTA.
+   - Toolbar: search · status filter (Segmented) · custom MCP CTA.
    - 3-col grid (1 / 2 / 3 responsive) — generous, like Linear/Vercel
      integration directories.
    - Empty / loading states are graceful, not jarring.
@@ -81,7 +81,7 @@ function Connectors() {
 
   // Build unified grid items: only show templates that have NO active
   // instance yet (once activated, the template card disappears — users add
-  // additional instances via the top "+ 添加连接器" CTA instead). Instance
+  // additional instances via the top "+ Add Connector" CTA instead). Instance
   // cards are always shown.
   const gridItems: GridItem[] = useMemo(() => {
     const tplItems: GridItem[] = builtInTemplates
@@ -235,7 +235,7 @@ function Connectors() {
 
               {/* CTA — gradient button (matches skills.tsx convention).
                   Uses ApiOutlined to mirror the sidebar nav entry and the
-                  hero header so the "连接器管理" → "自定义 MCP" visual link
+                  hero header so the "Connector Management" → "Custom MCP" visual link
                   is consistent across all three touchpoints. */}
               <Button
                 className='border-none text-white bg-button-gradient h-9 px-4 shadow-[0_4px_14px_-4px_rgba(124,58,237,0.45)] hover:shadow-[0_6px_18px_-4px_rgba(124,58,237,0.6)] transition-shadow'

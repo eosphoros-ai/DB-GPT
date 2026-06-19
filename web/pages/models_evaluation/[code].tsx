@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './styles.module.css';
 
-// 定义数据类型
+// Define data types
 interface BenchmarkSummary {
   roundId: number;
   llmCode: string;
@@ -27,7 +27,7 @@ interface BenchmarkResultData {
   summaries: BenchmarkSummary[];
 }
 
-// 图表数据类型
+// Chart data type
 interface ChartData {
   name: string;
   label: string;
@@ -137,14 +137,14 @@ const EvaluationDetailContent = () => {
     );
   }
 
-  // 计算总计
+  // Calculate totals
   const totalRight = resultData.summaries.reduce((sum, item) => sum + item.right, 0);
   const totalWrong = resultData.summaries.reduce((sum, item) => sum + item.wrong, 0);
   const totalFailed = resultData.summaries.reduce((sum, item) => sum + item.failed, 0);
   const totalException = resultData.summaries.reduce((sum, item) => sum + item.exception, 0);
   const totalQuestions = totalRight + totalWrong + totalFailed + totalException;
 
-  // 准备图表数据
+  // Prepare chart data
   const chartData: ChartData[] = resultData.summaries
     .map(item => [
       { name: t('executable_rate'), label: item.llmCode, value: item.execRate },

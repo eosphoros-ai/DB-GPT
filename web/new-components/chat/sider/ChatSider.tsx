@@ -28,7 +28,7 @@ const zeroWidthTriggerDefaultStyle: React.CSSProperties = {
 };
 
 /**
- * 会话项
+ * Conversation item
  */
 const MenuItem: React.FC<{
   item: any;
@@ -44,7 +44,7 @@ const MenuItem: React.FC<{
 
   const { setCurrentDialogInfo } = useContext(ChatContext);
 
-  // 当前活跃会话
+  // Currently active conversation
   const active = useMemo(() => {
     if (item.default) {
       return item.default && !chatId && !scene;
@@ -53,7 +53,7 @@ const MenuItem: React.FC<{
     }
   }, [chatId, scene, item]);
 
-  // 删除会话
+  // Delete conversation
   const handleDelChat = () => {
     Modal.confirm({
       title: t('delete_chat'),
@@ -158,7 +158,7 @@ const ChatSider: React.FC<{
   const { mode } = useContext(ChatContext);
   const [collapsed, setCollapsed] = useState<boolean>(scene === 'chat_dashboard');
 
-  // 展开或收起列表按钮样式
+  // Expand/collapse list button styles
   const triggerStyle: React.CSSProperties = useMemo(() => {
     if (collapsed) {
       return {
@@ -174,7 +174,7 @@ const ChatSider: React.FC<{
     };
   }, [collapsed]);
 
-  // 会话列表配置项
+  // Conversation list config items
   const items: MenuProps['items'] = useMemo(() => {
     const list = dialogueList[1] || [];
     if (list?.length > 0) {

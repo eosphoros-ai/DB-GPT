@@ -39,13 +39,13 @@ export default function AppContent() {
   const [curApp] = useState<IApp>();
   const [adminOpen, setAdminOpen] = useState<boolean>(false);
   const [admins, setAdmins] = useState<string[]>([]);
-  // 分页信息
+  // Pagination info
   const totalRef = useRef<{
     current_page: number;
     total_count: number;
     total_page: number;
   }>();
-  // 区分是单击还是双击
+  // Distinguish single click vs double click
   const [clickTimeout, setClickTimeout] = useState(null);
 
   const { message } = App.useApp();
@@ -77,7 +77,7 @@ export default function AppContent() {
     setActiveKey(activeKey as TabKey);
   };
 
-  // 发布或取消发布应用
+  // Publish or unpublish app
   const { run: operate } = useRequest(
     async (app: IApp) => {
       if (app.published === 'true') {
@@ -90,7 +90,7 @@ export default function AppContent() {
       manual: true,
       onSuccess: data => {
         if (data[2]?.success) {
-          message.success('操作成功');
+          message.success('Operation successful');
         }
         getListFiltered();
       },
@@ -151,7 +151,7 @@ export default function AppContent() {
     zh: t('Chinese'),
   };
   const handleChat = async (app: IApp) => {
-    // 原生应用跳转
+    // Native app navigation
     if (app.team_mode === 'native_app') {
       const { chat_scene = '' } = app.team_context;
       const [, res] = await apiInterceptors(newDialogue({ chat_mode: chat_scene }));
@@ -170,7 +170,7 @@ export default function AppContent() {
         router.push(`/chat?scene=${chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
       }
     } else {
-      // 自定义应用
+      // Custom app
       const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
       if (res) {
         setCurrentDialogInfo?.({
@@ -209,7 +209,7 @@ export default function AppContent() {
     setFilterValue(v);
   };
 
-  // 获取应用权限列表
+  // Fetch app permission list
   const { run: getAdmins, loading } = useRequest(
     async (appCode: string) => {
       const [, res] = await apiInterceptors(getAppAdmins(appCode));
@@ -224,13 +224,13 @@ export default function AppContent() {
     },
   );
 
-  // 更新应用权限
+  // Update app permissions
   const { run: updateAdmins, loading: adminLoading } = useRequest(
     async (params: { app_code: string; admins: string[] }) => await apiInterceptors(updateAppAdmins(params)),
     {
       manual: true,
       onSuccess: () => {
-        message.success('更新成功');
+        message.success('Updated successfully');
       },
     },
   );
@@ -254,7 +254,7 @@ export default function AppContent() {
     getListFiltered();
   }, [getListFiltered]);
 
-  // 单击复制分享钉钉链接
+  // Single click to copy DingTalk share link
   const shareDingding = (item: IApp) => {
     if (clickTimeout) {
       clearTimeout(clickTimeout);
@@ -265,16 +265,16 @@ export default function AppContent() {
       const dingDingUrl = `dingtalk://dingtalkclient/page/link?url=${encodeURIComponent(mobileUrl)}&pc_slide=true`;
       const result = copy(dingDingUrl);
       if (result) {
-        message.success('复制成功');
+        message.success('Copied successfully');
       } else {
-        message.error('复制失败');
+        message.error('Copy failed');
       }
       setClickTimeout(null);
-    }, 300); // 双击时间间隔
+    }, 300); // Double-click interval
     setClickTimeout(timeoutId as any);
   };
 
-  // 双击直接打开钉钉
+  // Double click to open DingTalk directly
   const openDingding = (item: IApp) => {
     if (clickTimeout) {
       clearTimeout(clickTimeout);
@@ -444,10 +444,10 @@ export default function AppContent() {
           )}
         </div>
       </Spin>
-      <Modal title='权限管理' open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
+      <Modal title='Permission Management' open={adminOpen} onCancel={() => setAdminOpen(false)} footer={null}>
         <Spin spinning={loading}>
           <div className='py-4'>
-            <div className='mb-1'>管理员（工号，去前缀0）：</div>
+            <div className='mb-1'>Admins (employee ID, strip leading zeros):</div>
             <Select
               mode='tags'
               value={admins}

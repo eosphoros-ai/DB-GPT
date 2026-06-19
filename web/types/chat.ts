@@ -167,9 +167,9 @@ export interface UploadResponse {
 }
 
 export interface RecommendQuestionParams {
-  valid?: string; // 是否仅选择生效的应用，true/false
-  app_code?: string; // 所属应用
-  chat_mode?: string; // 类型（chat_knwoledge, chat_excel...）
+  valid?: string; // Whether to only select active apps, true/false
+  app_code?: string; // Owning app
+  chat_mode?: string; // Type (chat_knowledge, chat_excel, ...)
   is_hot_question?: string;
 }
 
@@ -188,10 +188,10 @@ export interface FeedbackReasonsResponse {
 
 export interface FeedbackAddParams {
   conv_uid: string;
-  message_id: string; // 消息id, 对应order
-  feedback_type: string; // 反馈类型，like, unlike
-  reason_types?: string[]; // 原因类型
-  remark?: string; // 备注信息
+  message_id: string; // Message id, corresponds to order
+  feedback_type: string; // Feedback type: like, unlike
+  reason_types?: string[]; // Reason types
+  remark?: string; // Remark
 }
 
 export interface CancelFeedbackAddParams {

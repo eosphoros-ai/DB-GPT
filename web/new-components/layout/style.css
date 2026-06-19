@@ -1,5 +1,5 @@
-/* 在全局 CSS 文件中 */
-/* 选择 Ant Design Tabs 组件的 tab 栏 */
+/* Global CSS overrides */
+/* Ant Design Tabs nav bar */
 .ant-tabs-nav {
   @apply bg-[#edf8fb] backdrop-filter backdrop-blur-lg dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60 h-14 px-6;
 }
@@ -9,7 +9,7 @@
 .ant-tabs-tab {
   @apply dark:text-slate-400;
 }
-/* 选择被激活的 Ant Design Tabs 组件的 tab */
+/* Active Ant Design Tabs tab */
 .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   @apply dark:text-white;
 }
@@ -17,7 +17,7 @@
   @apply dark:bg-white;
 }
 
-/* 定时任务页面：让 Tabs 内容区域可滚动，不影响其他页面 */
+/* Scheduled tasks page: make Tabs content scrollable without affecting other pages */
 .scrollable-tabs.ant-tabs {
   height: 100%;
 }
@@ -33,20 +33,20 @@
   height: auto !important;
 }
 
-/* 定时任务:增强 Switch off(暂停)态在浅色磨砂背景上的对比度。
-   antd5 用 cssinjs 动态注入样式,优先级与本规则相同(0,2,0)时注入顺序靠后会胜出,
-   故用 !important 锁定;并改用实心灰(对齐页面 gray-400),不再依赖低透明度叠加 */
+/* Scheduled tasks: improve Switch off (paused) contrast on light frosted backgrounds.
+   antd5 injects styles via css-in-js; when specificity matches (0,2,0), injection order wins,
+   so use !important and solid gray (aligned with page gray-400) instead of low-opacity overlay */
 .scheduled-switch.ant-switch:not(.ant-switch-checked) {
   background: #9ca3af !important;
 }
 .scheduled-switch.ant-switch:not(.ant-switch-checked):hover:not(.ant-switch-disabled) {
   background: #6b7280 !important;
 }
-/* 滑块更立体,与灰色轨道拉开层次 */
+/* More prominent handle to contrast with gray track */
 .scheduled-switch.ant-switch .ant-switch-handle::before {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
-/* 暗色模式:用稍亮的实心灰,避免在暗背景下又糊掉 */
+/* Dark mode: slightly brighter solid gray for visibility */
 .dark .scheduled-switch.ant-switch:not(.ant-switch-checked) {
   background: #6b7280 !important;
 }

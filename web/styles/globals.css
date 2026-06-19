@@ -57,7 +57,7 @@ body {
   width: 6px;
 }
 
-/* 自定义滚动条样式 */
+/* Custom scrollbar styles */
 ::-webkit-scrollbar {
   display: none;
 }

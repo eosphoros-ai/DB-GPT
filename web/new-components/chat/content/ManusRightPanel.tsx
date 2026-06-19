@@ -241,26 +241,26 @@ const getArtifactFileBg = (type: string): string => {
 
 const getArtifactTypeLabel = (type: string): string => {
   const map: Record<string, string> = {
-    file: '文件',
-    html: '网页报告',
-    table: '数据表',
-    chart: '图表',
-    image: '图片',
-    code: '代码',
-    markdown: '文档',
-    summary: '分析总结',
+    file: 'File',
+    html: 'Web Report',
+    table: 'Data Table',
+    chart: 'Chart',
+    image: 'Image',
+    code: 'Code',
+    markdown: 'Document',
+    summary: 'Analysis Summary',
   };
-  return map[type] || '产物';
+  return map[type] || 'Artifact';
 };
 
 type FileFilterTab = 'all' | 'document' | 'image' | 'code' | 'link';
 
 const FILE_FILTER_TABS: { key: FileFilterTab; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'document', label: '文档' },
-  { key: 'image', label: '图片' },
-  { key: 'code', label: '代码文件' },
-  { key: 'link', label: '链接' },
+  { key: 'all', label: 'All' },
+  { key: 'document', label: 'Documents' },
+  { key: 'image', label: 'Images' },
+  { key: 'code', label: 'Code Files' },
+  { key: 'link', label: 'Links' },
 ];
 
 const getFileFilterCategory = (artifact: ArtifactItem): FileFilterTab[] => {
@@ -293,13 +293,13 @@ const formatArtifactDate = (timestamp: number): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return '今天';
-  if (diffDays === 1) return '昨天';
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) {
-    const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return dayNames[date.getDay()];
   }
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return `${date.toLocaleString('en-US', { month: 'short' })} ${date.getDate()}`;
 };
 
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
@@ -657,7 +657,7 @@ const SkillScriptRenderer: React.FC<{
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-gray-500'>
               <CodeOutlined className='text-2xl mb-2' />
-              <span className='text-xs'>\u52A0\u8F7D\u811A\u672C\u4E2D...</span>
+              <span className='text-xs'>Loading script...</span>
             </div>
           )}
         </div>
@@ -717,7 +717,7 @@ const SkillScriptRenderer: React.FC<{
           !htmlReportMatch && (
             <div className='flex flex-col items-center justify-center py-8 text-gray-400'>
               <FileSearchOutlined className='text-2xl mb-2' />
-              <span className='text-xs'>\u7B49\u5F85\u6267\u884C\u7ED3\u679C...</span>
+              <span className='text-xs'>Waiting for execution results...</span>
             </div>
           )}
       </div>
@@ -748,7 +748,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <EyeOutlined className='mr-1.5' />
-          渲染结果
+          Rendered Output
           {activeTab === 'preview' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -763,7 +763,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          源代码
+          Source Code
           {activeTab === 'source' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -821,7 +821,7 @@ const CodeExecutionRenderer: React.FC<{
     <>
       <div className='relative overflow-auto flex-1 min-h-[100px]'>
         <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
-          代码
+          Code
         </span>
         <CodePreview
           code={group.codes
@@ -838,7 +838,7 @@ const CodeExecutionRenderer: React.FC<{
           <div className='border-t border-gray-700/50 shrink-0' />
           <div className='relative overflow-auto bg-gray-900 flex-1 min-h-[60px]'>
             <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
-              执行结果
+              Execution Result
             </span>
             <div className='px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
               {group.results.map(r => String(r.content)).join('')}
@@ -891,7 +891,7 @@ const CodeExecutionRenderer: React.FC<{
           )}
         >
           <FileImageOutlined className='mr-1.5' />
-          图表
+          Chart
           {activeTab === 'chart' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -906,7 +906,7 @@ const CodeExecutionRenderer: React.FC<{
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          代码
+          Code
           {activeTab === 'code' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -970,7 +970,7 @@ const TerminalRenderer: React.FC<{
         <div className='flex items-center gap-2'>
           <StatusBadge status={activeStep.status} />
           {allText && (
-            <Tooltip title='复制全部'>
+            <Tooltip title='Copy all'>
               <button
                 className='flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-700/50'
                 onClick={() => copyToClipboard(allText)}
@@ -1217,9 +1217,9 @@ const SkillCardRenderer: React.FC<{
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      message.success('下载成功');
+      message.success('Download successful');
     } catch {
-      message.error('下载失败');
+      message.error('Download failed');
     } finally {
       setDownloading(false);
     }
@@ -1276,7 +1276,7 @@ const SkillCardRenderer: React.FC<{
               </div>
             </div>
             <div className='flex items-center gap-2 flex-shrink-0 ml-3'>
-              <Tooltip title='下载为 ZIP'>
+              <Tooltip title='Download as ZIP'>
                 <button
                   className='flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors'
                   onClick={handleDownload}
@@ -1310,7 +1310,7 @@ const SkillCardRenderer: React.FC<{
             <FolderOpenOutlined className='text-amber-500' />
             <span>{t('view_skill_files')}</span>
             {detailData?.tree?.children && (
-              <span className='text-gray-400'>({detailData.tree.children.length} 项)</span>
+              <span className='text-gray-400'>({detailData.tree.children.length} items)</span>
             )}
           </div>
           <RightOutlined className='text-[10px] text-gray-400' />
@@ -1344,7 +1344,7 @@ const SkillCardRenderer: React.FC<{
           </div>
         </div>
         <div className='flex items-center gap-2 flex-shrink-0'>
-          <Tooltip title='下载为 ZIP'>
+          <Tooltip title='Download as ZIP'>
             <button
               className='flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors'
               onClick={handleDownload}
@@ -1434,7 +1434,7 @@ const SkillCardRenderer: React.FC<{
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
               <FileTextOutlined className='text-2xl mb-2' />
-              <span className='text-xs'>选择文件查看内容</span>
+              <span className='text-xs'>Select a file to view its contents</span>
             </div>
           )}
         </div>
@@ -1500,7 +1500,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         win.focus();
         win.print();
       } else {
-        message.error('浏览器阻止了弹出窗口，请允许后重试');
+        message.error('The browser blocked the popup. Please allow popups and try again.');
       }
     }
   };
@@ -1531,7 +1531,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   }, [filteredArtifacts]);
 
   // Group consecutive code+text pairs into notebook-cell units,
-  // and code+html pairs into tabbed views (渲染结果 / 源代码)
+  // and code+html pairs into tabbed views (Rendered Output / Source Code)
   const outputGroups = useMemo(() => {
     const groups: Array<
       | { type: 'code-execution'; codes: ExecutionOutput[]; results: ExecutionOutput[]; images: ExecutionOutput[] }
@@ -1886,7 +1886,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             ) : (
               <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
                 <FolderOpenOutlined className='text-3xl mb-4' />
-                <span className='text-sm'>暂无文件</span>
+                <span className='text-sm'>No files yet</span>
               </div>
             )}
           </div>
@@ -2154,12 +2154,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                                     READ ONLY
                                   </span>
                                 </div>
-                                <Tooltip title='复制SQL'>
+                                <Tooltip title='Copy SQL'>
                                   <button
                                     className='flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
                                     onClick={() => {
                                       navigator.clipboard.writeText(sql);
-                                      message.success('SQL已复制到剪贴板');
+                                      message.success('SQL copied to clipboard');
                                     }}
                                   >
                                     <CopyOutlined className='text-xs' />
@@ -2221,13 +2221,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 {isRunning ? (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <LoadingOutlined className='text-3xl text-blue-500 mb-4' />
-                    <span className='text-sm'>正在执行...</span>
-                    <span className='text-xs text-gray-500 mt-1'>请稍候，结果即将显示</span>
+                    <span className='text-sm'>Running...</span>
+                    <span className='text-xs text-gray-500 mt-1'>Please wait, results will appear shortly</span>
                   </div>
                 ) : (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <FileTextOutlined className='text-3xl mb-4' />
-                    <span className='text-sm'>暂无输出结果</span>
+                    <span className='text-sm'>No output yet</span>
                   </div>
                 )}
               </>
@@ -2239,8 +2239,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             <div className='w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4'>
               <ConsoleSqlOutlined className='text-3xl text-gray-400' />
             </div>
-            <span className='text-sm font-medium mb-1'>选择一个步骤查看详情</span>
-            <span className='text-xs text-gray-500'>点击左侧的步骤卡片以显示执行结果</span>
+            <span className='text-sm font-medium mb-1'>Select a step to view details</span>
+            <span className='text-xs text-gray-500'>Click a step card on the left to show execution results</span>
           </div>
         )}
       </div>
@@ -2251,9 +2251,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           <div className='flex items-center gap-4'>
             <span className='flex items-center gap-1'>
               <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
-              {isRunning ? '执行中' : '就绪'}
+              {isRunning ? 'Running' : 'Ready'}
             </span>
-            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} 个输出</span>}
+            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} outputs</span>}
           </div>
           {activeStep && <span>Step ID: {activeStep.id}</span>}
         </div>

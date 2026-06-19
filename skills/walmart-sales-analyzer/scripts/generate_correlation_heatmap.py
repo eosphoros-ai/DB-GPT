@@ -11,7 +11,7 @@ def generate_correlation_heatmap(data_path, output_dir):
     plt.figure(figsize=(10, 8))
     corr = df.corr(numeric_only=True)
     sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title('Walmart 销售数据相关性热力图')
+    plt.title('Walmart Sales Data Correlation Heatmap')
     plt.tight_layout()
     
     output_path = os.path.join(output_dir, 'correlation_heatmap.png')

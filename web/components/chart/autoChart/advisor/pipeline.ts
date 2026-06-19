@@ -13,7 +13,7 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
 
   const customCKB: ChartKnowledgeBase = {};
   charts?.forEach(chart => {
-    /** 若用户自定义的图表 id 与内置图表 id 相同，内置图表将被覆盖 */
+    /** If a custom chart id matches a built-in chart id, the built-in chart is overridden */
     if (!chart.chartKnowledge.toSpec) {
       chart.chartKnowledge.toSpec = (_: any, dataProps: any) => {
         return { dataProps } as Specification;
@@ -30,7 +30,7 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
     customCKB[chart.chartType] = chart.chartKnowledge;
   });
 
-  // 步骤一：如果有 exclude 项，先从给到的 CKB 中剔除部分选定的图表类型
+  // Step 1: If exclude is set, remove those chart types from the CKB
   if (CKBCfg?.exclude) {
     CKBCfg.exclude.forEach((chartType: string) => {
       if (Object.keys(customCKB).includes(chartType)) {
@@ -38,7 +38,7 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
       }
     });
   }
-  // 步骤二：如果有 include 项，则从当前（剔除后的）CKB中，只保留 include 中的图表类型。
+  // Step 2: If include is set, keep only those chart types in the (filtered) CKB
   if (CKBCfg?.include) {
     const include = CKBCfg.include;
     Object.keys(customCKB).forEach((chartType: string) => {
@@ -64,7 +64,7 @@ export const customizeAdvisor = (props: CustomAdvisorConfig): Advisor => {
   return myAdvisor;
 };
 
-/** 主推荐流程 */
+/** Main recommendation pipeline */
 export const getVisAdvices = (props: {
   data: Datum[];
   myChartAdvisor: Advisor;
@@ -72,8 +72,8 @@ export const getVisAdvices = (props: {
 }): Advice[] => {
   const { data, dataMetaMap, myChartAdvisor } = props;
   /**
-   * 若输入中有信息能够获取列的类型（ Interval, Nominal, Time ）,则将这个 信息传给 Advisor
-   * 主要是读取 levelOfMeasureMents 这个字段，即 dataMetaMap[item].levelOfMeasurements
+   * If column types (Interval, Nominal, Time) are available in the input, pass them to Advisor.
+   * Reads levelOfMeasurements from dataMetaMap[item].levelOfMeasurements.
    */
   const customDataProps = dataMetaMap
     ? Object.keys(dataMetaMap).map(item => {
@@ -81,9 +81,9 @@ export const getVisAdvices = (props: {
       })
     : null;
 
-  // 可根据需要选择是否使用全部 fields 进行推荐
+  // Optionally use all fields for recommendations
   const useAllFields = false;
-  // 挑选出维值不只有一个的字段
+  // Select fields with more than one distinct dimension value
   const allFieldsInfo = new DataFrame(data).info();
   const selectedFields =
     size(allFieldsInfo) > 2
@@ -98,7 +98,7 @@ export const getVisAdvices = (props: {
   const allAdvices = myChartAdvisor?.adviseWithLog({
     data,
     dataProps: customDataProps as AdviseParams['dataProps'],
-    // 不传 fields 参数，内部默认使用全部 fields，否则使用业务选择的字段
+    // Omit fields to use all fields by default; otherwise use the selected business fields
     fields: useAllFields ? undefined : selectedFields?.map(field => field.name),
   });
   return allAdvices?.advices ?? [];

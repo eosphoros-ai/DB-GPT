@@ -13,7 +13,7 @@ const ModelSwitcher: React.FC = () => {
 
   const { t } = useTranslation();
 
-  // 左边工具栏动态可用key
+  // Dynamic available keys for left toolbar
   const paramKey: string[] = useMemo(() => {
     return appInfo.param_need?.map(i => i.type) || [];
   }, [appInfo.param_need]);

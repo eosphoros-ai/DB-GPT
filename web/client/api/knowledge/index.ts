@@ -2,7 +2,7 @@ import { AddYuqueProps, RecallTestChunk, RecallTestProps, SearchDocumentParams }
 import { GET, POST } from '../index';
 
 /**
- * 知识库编辑搜索
+ * Knowledge base document search
  */
 export const searchDocumentList = (spaceName: string, data: SearchDocumentParams) => {
   return POST<SearchDocumentParams, { data: string[]; total: number; page: number }>(
@@ -12,14 +12,14 @@ export const searchDocumentList = (spaceName: string, data: SearchDocumentParams
 };
 
 /**
- * 上传语雀文档
+ * Upload Yuque document
  */
 export const addYuque = (data: AddYuqueProps) => {
   return POST<AddYuqueProps, null>(`/knowledge/${data.space_name}/document/yuque/add`, data);
 };
 
 /**
- * 编辑知识库切片
+ * Edit knowledge base chunk
  */
 export const editChunk = (
   knowledgeName: string,
@@ -31,31 +31,31 @@ export const editChunk = (
   );
 };
 /**
- * 召回测试推荐问题
+ * Recall test recommended questions
  */
 export const recallTestRecommendQuestion = (id: string) => {
   return GET<{ id: string }, string[]>(`/knowledge/${id}/recommend_questions`);
 };
 
 /**
- * 召回方法选项
+ * Recall method options
  */
 export const recallMethodOptions = (id: string) => {
   return GET<{ id: string }, string[]>(`/knowledge/${id}/recall_retrievers`);
 };
 /**
- * 召回测试
+ * Recall test
  */
 export const recallTest = (data: RecallTestProps, id: string) => {
   return POST<RecallTestProps, RecallTestChunk[]>(`/knowledge/${id}/recall_test`, data);
 };
 
-// chunk模糊搜索
+// Fuzzy search chunks
 export const searchChunk = (data: { document_id: string; content: string }, name: string) => {
   return POST<{ document_id: string; content: string }, string[]>(`/knowledge/${name}/chunk/list`, data);
 };
 
-// chunk添加问题
+// Add questions to chunk
 export const chunkAddQuestion = (data: { chunk_id: string; questions: string[] }) => {
   return POST<{ chunk_id: string; questions: string[] }, string[]>(`/knowledge/questions/chunk/edit`, data);
 };

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>{{COMPANY_NAME}} {{YEAR}} 年度财报分析报告</title>
+<title>{{COMPANY_NAME}} {{YEAR}} Annual Financial Report Analysis</title>
 <style>
   body {
-    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     max-width: 1200px;
     margin: 0 auto;
     padding: 32px 24px;
@@ -123,50 +123,50 @@
 <body>
 
 <!-- ============================================================
-  使用说明（Agent 必读）：
-  1. 将所有 {{占位符}} 替换为真实数据
-  2. 严禁删除任何章节（1-4），严禁修改表格列数
-  3. 核心财务摘要表格必须保留 4 列：指标 / 本期数值 / 同比增长 / 行业平均(参考)
-  4. 如果某项数据缺失，填写 "N/A" 而非删除该行或该列
-  5. 可以在各 section-card 中增加子段落、图表等补充内容，但不得删减已有结构
-  6. 同比增长为正时加 class="highlight-positive"，为负时加 class="highlight-negative"
+  Usage notes (Agent must read):
+  1. Replace all {{placeholders}} with real data
+  2. Do not delete any section (1-4) or change the number of table columns
+  3. Core financial summary table must keep 4 columns: Metric / Current Period / YoY Change / Industry Avg (Reference)
+  4. If data is missing, fill "N/A" rather than deleting the row or column
+  5. You may add subsections or charts inside section-card blocks, but do not remove existing structure
+  6. Add class="highlight-positive" for positive YoY change, class="highlight-negative" for negative
 ============================================================ -->
 
-<h1>{{COMPANY_NAME}} {{YEAR}} 年度财报分析报告</h1>
-<p class="subtitle">报告生成时间：{{DATE}} | 数据来源：公司年度报告</p>
+<h1>{{COMPANY_NAME}} {{YEAR}} Annual Financial Report Analysis</h1>
+<p class="subtitle">Report generated: {{DATE}} | Data source: Company annual report</p>
 
-<!-- ==================== 第1章 核心财务摘要 ==================== -->
-<h2>1. 核心财务摘要</h2>
+<!-- ==================== Section 1: Core Financial Summary ==================== -->
+<h2>1. Core Financial Summary</h2>
 <table>
   <thead>
     <tr>
-      <th>指标</th>
-      <th>本期数值</th>
-      <th>同比增长</th>
-      <th>行业平均 (参考)</th>
+      <th>Metric</th>
+      <th>Current Period</th>
+      <th>YoY Change</th>
+      <th>Industry Avg (Reference)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>营业收入</td>
+      <td>Revenue</td>
       <td>{{REVENUE}}</td>
       <td class="{{REVENUE_GROWTH_CLASS}}">{{REVENUE_GROWTH}}</td>
       <td>{{REVENUE_INDUSTRY_AVG}}</td>
     </tr>
     <tr>
-      <td>归母净利润</td>
+      <td>Net Profit Attributable to Parent</td>
       <td>{{NET_PROFIT}}</td>
       <td class="{{NET_PROFIT_GROWTH_CLASS}}">{{NET_PROFIT_GROWTH}}</td>
       <td>{{NET_PROFIT_INDUSTRY_AVG}}</td>
     </tr>
     <tr>
-      <td>扣非净利润</td>
+      <td>Net Profit Excl. Non-Recurring Items</td>
       <td>{{NON_RECURRING_NET_PROFIT}}</td>
       <td class="{{NON_RECURRING_GROWTH_CLASS}}">{{NON_RECURRING_GROWTH}}</td>
       <td>{{NON_RECURRING_INDUSTRY_AVG}}</td>
     </tr>
     <tr>
-      <td>毛利率</td>
+      <td>Gross Margin</td>
       <td>{{GROSS_MARGIN}}</td>
       <td class="{{GROSS_MARGIN_CHANGE_CLASS}}">{{GROSS_MARGIN_CHANGE}}</td>
       <td>{{GROSS_MARGIN_INDUSTRY_AVG}}</td>
@@ -182,60 +182,60 @@
 
 
 <div class="chart-container">
-  <img src="{{CHART_FINANCIAL_OVERVIEW}}" alt="核心财务指标对比">
-  <p class="chart-caption">图1 核心财务指标对比（单位：亿元）</p>
+  <img src="{{CHART_FINANCIAL_OVERVIEW}}" alt="Key financial metrics comparison">
+  <p class="chart-caption">Figure 1: Key financial metrics comparison (unit: 100M CNY)</p>
 </div>
-<!-- ==================== 第2章 财务状况深度分析 ==================== -->
-<h2>2. 财务状况深度分析</h2>
+<!-- ==================== Section 2: In-Depth Financial Analysis ==================== -->
+<h2>2. In-Depth Financial Analysis</h2>
 
-<h3>2.1 盈利能力分析</h3>
+<h3>2.1 Profitability Analysis</h3>
 <div class="section-card">
-  <!-- 在此处详细描述盈利能力的变动原因，结合毛利率、净利率和费用率进行分析 -->
+  <!-- Describe drivers of profitability changes here, combining gross margin, net margin, and expense ratios -->
   <p>{{PROFITABILITY_ANALYSIS}}</p>
 </div>
 
-<h3>2.2 偿债与风险分析</h3>
+<h3>2.2 Solvency and Risk Analysis</h3>
 <div class="section-card">
-  <!-- 分析资产负债率、流动比率、速动比率等，评估财务安全性 -->
+  <!-- Analyze debt-to-asset ratio, current ratio, quick ratio, etc., to assess financial safety -->
   <p>{{SOLVENCY_ANALYSIS}}</p>
   <div class="chart-container">
-    <img src="{{CHART_PROFITABILITY}}" alt="盈利能力指标">
-    <p class="chart-caption">图2 盈利能力指标分析（%）</p>
+    <img src="{{CHART_PROFITABILITY}}" alt="Profitability metrics">
+    <p class="chart-caption">Figure 2: Profitability metrics analysis (%)</p>
 </div>
 
-<h3>2.3 营运效率分析</h3>
+<h3>2.3 Operating Efficiency Analysis</h3>
 <div class="section-card">
-  <!-- 分析应收账款周转率、存货周转率、总资产周转率等，评估公司管理效率 -->
+  <!-- Analyze receivables turnover, inventory turnover, total asset turnover, etc., to assess management efficiency -->
   <p>{{EFFICIENCY_ANALYSIS}}</p>
 </div>
 
-<!-- ==================== 第3章 现金流与利润质量 ==================== -->
-<h2>3. 现金流与利润质量</h2>
+<!-- ==================== Section 3: Cash Flow and Earnings Quality ==================== -->
+<h2>3. Cash Flow and Earnings Quality</h2>
 <div class="section-card">
   <div class="chart-container">
-    <img src="{{CHART_ASSET_STRUCTURE}}" alt="资产结构分布">
-    <p class="chart-caption">图3 资产结构分布</p>
+    <img src="{{CHART_ASSET_STRUCTURE}}" alt="Asset structure breakdown">
+    <p class="chart-caption">Figure 3: Asset structure breakdown</p>
   </div>
-  <!-- 对比净利润与经营现金流，评估盈利的真实性；分析投资和筹资现金流结构 -->
+  <!-- Compare net profit with operating cash flow to assess earnings quality; analyze investing and financing cash flows -->
   <p>{{CASHFLOW_ANALYSIS}}</p>
 </div>
 
-<!-- ==================== 第4章 结论与建议 ==================== -->
-<h2>4. 结论与建议</h2>
+<!-- ==================== Section 4: Conclusions and Recommendations ==================== -->
+<h2>4. Conclusions and Recommendations</h2>
 <div class="conclusion-box">
-  <p><strong>优势：</strong></p>
+  <p><strong>Strengths:</strong></p>
   <ul>
-    <!-- 列出 2-4 条核心优势，每条用 <li> -->
+    <!-- List 2-4 core strengths, each as <li> -->
     {{ADVANTAGES_LIST}}
   </ul>
 
-  <p><strong>风险：</strong></p>
+  <p><strong>Risks:</strong></p>
   <ul>
-    <!-- 列出 2-4 条主要风险，每条用 <li> -->
+    <!-- List 2-4 key risks, each as <li> -->
     {{RISKS_LIST}}
   </ul>
 
-  <p><strong>综合评价：</strong></p>
+  <p><strong>Overall Assessment:</strong></p>
   <p>{{OVERALL_ASSESSMENT}}</p>
 </div>
 

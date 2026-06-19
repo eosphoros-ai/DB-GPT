@@ -61,7 +61,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
             label={t('recall_score')}
             name={['embedding', 'recall_score']}
           >
-            <Input className='mb-5  h-12' placeholder='请输入' />
+            <Input className='mb-5  h-12' placeholder='Please enter' />
           </Form.Item>
         </Col>
         <Col span={12}>

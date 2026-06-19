@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walmart 销售数据深度分析报告</title>
+    <title>Walmart Sales Data In-Depth Analysis Report</title>
     <style>
         :root {
             --primary-color: #0071ce;
@@ -14,7 +14,7 @@
             --accent-color: #e7f3ff;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "Noto Sans CJK SC";
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.8;
             color: var(--text-color);
             background-color: var(--bg-color);
@@ -114,98 +114,98 @@
 <body>
     <header>
         <div class="container">
-            <h1>Walmart 销售数据深度分析报告</h1>
-            <p>基于宏观经济指标与门店业绩的关联性研究</p>
+            <h1>Walmart Sales Data In-Depth Analysis Report</h1>
+            <p>A study linking macroeconomic indicators with store performance</p>
         </div>
     </header>
 
     <div class="container">
         <!-- Executive Summary -->
         <section class="section">
-            <h2>执行摘要</h2>
-            <p>本报告旨在通过对 Walmart 历史销售数据的多维度分析，揭示<strong>失业率、CPI、油价</strong>等宏观经济因素对零售业绩的影响。通过数据可视化，我们识别了销售波动的核心驱动力，并为未来的库存管理和市场策略提供参考。</p>
+            <h2>Executive Summary</h2>
+            <p>This report uses multi-dimensional analysis of Walmart historical sales data to examine how macroeconomic factors such as <strong>unemployment, CPI, and fuel prices</strong> affect retail performance. Through data visualization, we identify the core drivers of sales volatility and provide guidance for future inventory management and market strategy.</p>
         </section>
 
         <!-- 1. Correlation Analysis -->
         <section class="section">
-            <h2>1. 多维度相关性分析</h2>
+            <h2>1. Multi-Dimensional Correlation Analysis</h2>
             <div class="chart-container">
-                <img src="correlation_heatmap.png" alt="相关性热力图">
+                <img src="correlation_heatmap.png" alt="Correlation heatmap">
             </div>
             <div class="analysis-box">
-                <h3><span class="tag">数据解读</span> 变量间的内在联系</h3>
+                <h3><span class="tag">Data Interpretation</span> Relationships Among Variables</h3>
                 <ul class="insight-list">
-                    <li><strong>销售额与失业率</strong>：呈现微弱的负相关（约 -0.11），表明失业率上升对整体销售有抑制作用，但并非主导因素。</li>
-                    <li><strong>销售额与节假日</strong>：正相关性显著，验证了零售业强烈的季节性特征。</li>
-                    <li><strong>CPI 与失业率</strong>：通常呈现负相关，反映了通货膨胀与就业市场之间的宏观经济博弈。</li>
+                    <li><strong>Sales vs. unemployment</strong>: Shows a weak negative correlation (about -0.11), suggesting rising unemployment dampens overall sales but is not the dominant factor.</li>
+                    <li><strong>Sales vs. holidays</strong>: Strong positive correlation, confirming the retail industry's pronounced seasonality.</li>
+                    <li><strong>CPI vs. unemployment</strong>: Typically negatively correlated, reflecting the macroeconomic interplay between inflation and the labor market.</li>
                 </ul>
             </div>
         </section>
 
         <!-- 2. Sales vs Unemployment -->
         <section class="section">
-            <h2>2. 销售额与失业率的回归探索</h2>
+            <h2>2. Regression Analysis: Sales vs. Unemployment</h2>
             <div class="chart-container">
-                <img src="sales_vs_unemployment_scatter.png" alt="销售额与失业率散点图">
+                <img src="sales_vs_unemployment_scatter.png" alt="Sales vs. unemployment scatter plot">
             </div>
             <div class="analysis-box">
-                <h3><span class="tag">深度洞察</span> 经济压力下的消费韧性</h3>
-                <p>散点图结合回归线清晰地展示了随着失业率百分比的增加，周销售额的中位数呈现缓慢下降趋势。然而，数据点的离散程度较高，这表明：</p>
+                <h3><span class="tag">Key Insight</span> Consumer Resilience Under Economic Pressure</h3>
+                <p>The scatter plot with regression line shows that as unemployment rises, median weekly sales decline gradually. However, the data points are widely dispersed, which suggests:</p>
                 <ul class="insight-list">
-                    <li><strong>消费刚性</strong>：作为大型零售商，Walmart 销售的许多商品属于生活必需品，受经济波动影响相对较小。</li>
-                    <li><strong>异常值分析</strong>：在失业率较高的区域，仍有部分门店保持极高销售额，这可能与当地缺乏竞争对手或门店规模较大有关。</li>
+                    <li><strong>Spending stickiness</strong>: As a major retailer, many Walmart products are necessities and are relatively less sensitive to economic swings.</li>
+                    <li><strong>Outlier analysis</strong>: Some stores maintain very high sales even in high-unemployment areas, possibly due to limited local competition or larger store formats.</li>
                 </ul>
             </div>
         </section>
 
         <!-- 3. Time Series Trends -->
         <section class="section">
-            <h2>3. 动态趋势追踪：销售额 vs 失业率</h2>
+            <h2>3. Trend Tracking: Sales vs. Unemployment</h2>
             <div class="chart-container">
-                <img src="time_series_trend.png" alt="时间序列趋势图">
+                <img src="time_series_trend.png" alt="Time series trend chart">
             </div>
             <div class="analysis-box">
-                <h3><span class="tag">趋势研判</span> 季节性力量 vs 宏观趋势</h3>
-                <p>通过对比特定门店（Store 1, 4, 20）的长期走势，我们可以观察到：</p>
+                <h3><span class="tag">Trend Assessment</span> Seasonality vs. Macro Trends</h3>
+                <p>Comparing long-term trends for selected stores (Store 1, 4, 20), we observe:</p>
                 <ul class="insight-list">
-                    <li><strong>周期性主导</strong>：每年的 Q4 季度（11-12月）销售额均会出现爆发式增长，这种季节性力量远超失业率的微小波动。</li>
-                    <li><strong>滞后效应</strong>：失业率的变动通常是缓慢且具有趋势性的，而销售额对短期促销和节假日反应更为敏锐。</li>
-                    <li><strong>门店一致性</strong>：尽管不同门店的销售基数不同，但其波动节奏高度一致，说明全国性的促销活动和节假日是核心驱动力。</li>
+                    <li><strong>Seasonality dominates</strong>: Sales surge every Q4 (November–December), and this seasonal effect far outweighs small unemployment fluctuations.</li>
+                    <li><strong>Lag effects</strong>: Unemployment changes are usually slow and trend-like, while sales respond more quickly to short-term promotions and holidays.</li>
+                    <li><strong>Store consistency</strong>: Although sales bases differ across stores, their fluctuation patterns are highly aligned, indicating nationwide promotions and holidays are core drivers.</li>
                 </ul>
             </div>
         </section>
 
         <!-- 4. Store Comparison -->
         <section class="section">
-            <h2>4. 门店表现横向对比</h2>
+            <h2>4. Cross-Store Performance Comparison</h2>
             <div class="chart-container">
-                <img src="store_avg_comparison.png" alt="门店平均值对比图">
+                <img src="store_avg_comparison.png" alt="Store average comparison chart">
             </div>
             <div class="analysis-box">
-                <h3><span class="tag">策略建议</span> 区域化运营策略</h3>
-                <p>各门店平均销售额与平均失业率的分布图揭示了显著的地域差异：</p>
+                <h3><span class="tag">Strategic Recommendation</span> Regional Operating Strategy</h3>
+                <p>The distribution of average weekly sales and average unemployment by store reveals significant regional differences:</p>
                 <ul class="insight-list">
-                    <li><strong>高潜力区域</strong>：识别那些处于低失业率且高销售额的门店，作为旗舰店进行重点资源投入。</li>
-                    <li><strong>风险预警</strong>：对于处于高失业率区域且销售额持续低迷的门店，需考虑优化商品结构，增加高性价比（Value-for-money）产品的占比。</li>
+                    <li><strong>High-potential regions</strong>: Identify stores with low unemployment and high sales for flagship investment and resource allocation.</li>
+                    <li><strong>Risk alerts</strong>: For stores in high-unemployment areas with persistently weak sales, consider optimizing product mix and increasing value-for-money offerings.</li>
                 </ul>
             </div>
         </section>
 
         <!-- Conclusion -->
         <section class="section">
-            <h2>最终结论与建议</h2>
-            <p>综合以上分析，我们建议：</p>
+            <h2>Final Conclusions and Recommendations</h2>
+            <p>Based on the analysis above, we recommend:</p>
             <ol class="insight-list">
-                <li><strong>强化季节性备货</strong>：鉴于节假日对销售的决定性影响，应提前 3-6 个月完成 Q4 供应链优化。</li>
-                <li><strong>动态定价策略</strong>：在失业率上升较快的区域，适度增加促销频率，以维持客流量。</li>
-                <li><strong>关注 CPI 波动</strong>：虽然失业率影响有限，但 CPI 的变动直接关系到采购成本和利润空间，需密切监控。</li>
+                <li><strong>Strengthen seasonal inventory planning</strong>: Given holidays' decisive impact on sales, complete Q4 supply chain optimization 3–6 months in advance.</li>
+                <li><strong>Dynamic pricing strategy</strong>: In regions where unemployment is rising quickly, increase promotion frequency moderately to sustain foot traffic.</li>
+                <li><strong>Monitor CPI movements</strong>: Although unemployment has limited impact, CPI changes directly affect procurement costs and margins and should be tracked closely.</li>
             </ol>
         </section>
     </div>
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 Walmart Sales Analysis Tool | 深度数据驱动决策</p>
+            <p>&copy; 2026 Walmart Sales Analysis Tool | Data-driven decision making</p>
             <p>Generated by DB-GPT AI Professional Suite</p>
         </div>
     </footer>

@@ -6,7 +6,7 @@ import { MobileChatContext } from '../';
 const Thermometer: React.FC = () => {
   const { temperature, setTemperature } = useContext(MobileChatContext);
 
-  // temperature变化;
+  // Handle temperature change
   const onChange = (value: any) => {
     if (isNaN(value)) {
       return;

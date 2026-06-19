@@ -19,7 +19,7 @@ export const renderUpload = (params: Props) => {
   const { data, formValuesChange } = params;
   const [fileList, setFileList] = useState<UploadFile[]>([]);
 
-  // 获取上传文件元数据
+  // Fetch uploaded file metadata
   useEffect(() => {
     if (data.value) {
       let uris: string[] = [];

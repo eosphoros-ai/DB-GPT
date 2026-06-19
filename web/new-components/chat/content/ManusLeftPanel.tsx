@@ -505,8 +505,8 @@ const StepCard: React.FC<{
   const isThinkingStep =
     step.status === 'running' &&
     (step.title === t('thinking') ||
-      step.title === '思考中' ||
-      step.title === '正在思考中' ||
+      step.title === '\u601d\u8003\u4e2d' ||
+      step.title === '\u6b63\u5728\u601d\u8003\u4e2d' ||
       step.title?.toLowerCase() === 'thinking');
   if (isThinkingStep) {
     return (

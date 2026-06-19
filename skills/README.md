@@ -1,46 +1,46 @@
-# SKILL 机制 - DB-GPT Agent 技能加载系统
+# SKILL Mechanism - DB-GPT Agent Skill Loading System
 
-## 概述
+## Overview
 
-SKILL 机制是 DB-GPT Agent 框架的高级特性，允许 Agent 加载和管理预定义的技能包，实现 Agent 能力的模块化和可复用性。
+The SKILL mechanism is an advanced feature of the DB-GPT Agent framework. It allows agents to load and manage predefined skill packages, enabling modular and reusable agent capabilities.
 
-## 核心文件
+## Core Files
 
 ```
 packages/dbgpt-core/src/dbgpt/agent/skill/
-├── __init__.py           # 模块入口，导出主要类
-├── base.py              # Skill 基础类定义
-├── parameters.py        # Skill 参数类
-├── manage.py           # Skill 管理器
-└── loader.py           # Skill 加载器和构建器
+├── __init__.py           # Module entry point, exports main classes
+├── base.py              # Skill base class definitions
+├── parameters.py        # Skill parameter classes
+├── manage.py           # Skill manager
+└── loader.py           # Skill loader and builder
 ```
 
-## 主要特性
+## Key Features
 
-### 1. Skill 定义
+### 1. Skill Definition
 
-Skill 包含以下组件：
-- **Metadata**：技能元信息（名称、描述、版本、类型、标签）
-- **Prompt Template**：系统提示词模板
-- **Required Tools**：所需的工具列表
-- **Required Knowledge**：所需的知识库列表
-- **Actions**：可执行的动作
-- **Config**：特定配置参数
+A skill includes the following components:
+- **Metadata**: Skill metadata (name, description, version, type, tags)
+- **Prompt Template**: System prompt template
+- **Required Tools**: List of required tools
+- **Required Knowledge**: List of required knowledge bases
+- **Actions**: Executable actions
+- **Config**: Skill-specific configuration parameters
 
-### 2. Skill 类型
+### 2. Skill Types
 
-| 类型 | 说明 |
-|------|------|
-| `Coding` | 编程技能 |
-| `DataAnalysis` | 数据分析技能 |
-| `WebSearch` | 网络搜索技能 |
-| `KnowledgeQA` | 知识问答技能 |
-| `Chat` | 对话技能 |
-| `Custom` | 自定义技能 |
+| Type | Description |
+|------|-------------|
+| `Coding` | Programming skills |
+| `DataAnalysis` | Data analysis skills |
+| `WebSearch` | Web search skills |
+| `KnowledgeQA` | Knowledge Q&A skills |
+| `Chat` | Conversation skills |
+| `Custom` | Custom skills |
 
-## 快速开始
+## Quick Start
 
-### 1. 创建 Skill
+### 1. Create a Skill
 
 ```python
 from dbgpt.agent.skill import SkillBuilder, SkillType
@@ -59,7 +59,7 @@ skill = (
 )
 ```
 
-### 2. 注册 Skill
+### 2. Register a Skill
 
 ```python
 from dbgpt.agent.skill import get_skill_manager, initialize_skill
@@ -75,7 +75,7 @@ skill_manager.register_skill(
 )
 ```
 
-### 3. 创建 Skill-based Agent
+### 3. Create a Skill-based Agent
 
 ```python
 from dbgpt.agent import ConversableAgent
@@ -92,50 +92,50 @@ class SkillBasedAgent(ConversableAgent):
         return self._skill
 ```
 
-### 4. 使用 Agent
+### 4. Use the Agent
 
 ```python
 agent = SkillBasedAgent(skill=skill)
 await agent.bind(context).bind(llm_config).bind(memory).build()
 ```
 
-## API 参考
+## API Reference
 
 ### SkillBuilder
 
-| 方法 | 参数 | 说明 |
+| Method | Parameters | Description |
 |------|------|------|
-| `with_version(version)` | version: str | 设置版本 |
-| `with_author(author)` | author: str | 设置作者 |
-| `with_skill_type(type)` | type: SkillType | 设置技能类型 |
-| `with_tags(tags)` | tags: List[str] | 设置标签 |
-| `with_prompt_template(template)` | template: str | 设置提示词模板 |
-| `with_required_tool(name)` | name: str | 添加必需工具 |
-| `with_required_knowledge(name)` | name: str | 添加必需知识库 |
-| `with_action(action)` | action: Any | 添加动作 |
-| `with_config(config)` | config: Dict | 设置配置 |
-| `build()` | - | 构建 Skill |
+| `with_version(version)` | version: str | Set version |
+| `with_author(author)` | author: str | Set author |
+| `with_skill_type(type)` | type: SkillType | Set skill type |
+| `with_tags(tags)` | tags: List[str] | Set tags |
+| `with_prompt_template(template)` | template: str | Set prompt template |
+| `with_required_tool(name)` | name: str | Add required tool |
+| `with_required_knowledge(name)` | name: str | Add required knowledge base |
+| `with_action(action)` | action: Any | Add action |
+| `with_config(config)` | config: Dict | Set configuration |
+| `build()` | - | Build skill |
 
 ### SkillManager
 
-| 方法 | 参数 | 返回值 | 说明 |
+| Method | Parameters | Return Value | Description |
 |------|------|--------|------|
-| `register_skill()` | skill_cls, skill_instance, name, metadata | None | 注册技能 |
-| `get_skill()` | name, skill_type, version | SkillBase | 获取技能 |
-| `get_skills_by_type()` | skill_type | List[SkillBase] | 按类型获取技能 |
-| `list_skills()` | - | List[Dict] | 列出所有技能 |
+| `register_skill()` | skill_cls, skill_instance, name, metadata | None | Register skill |
+| `get_skill()` | name, skill_type, version | SkillBase | Get skill |
+| `get_skills_by_type()` | skill_type | List[SkillBase] | Get skills by type |
+| `list_skills()` | - | List[Dict] | List all skills |
 
 ### SkillLoader
 
-| 方法 | 参数 | 返回值 | 说明 |
+| Method | Parameters | Return Value | Description |
 |------|------|--------|------|
-| `load_skill_from_file()` | file_path | Optional[SkillBase] | 从文件加载技能 |
-| `load_skill_from_module()` | module_path | Optional[SkillBase] | 从模块加载技能 |
-| `load_skills_from_directory()` | directory, recursive | List[SkillBase] | 从目录加载所有技能 |
+| `load_skill_from_file()` | file_path | Optional[SkillBase] | Load skill from file |
+| `load_skill_from_module()` | module_path | Optional[SkillBase] | Load skill from module |
+| `load_skills_from_directory()` | directory, recursive | List[SkillBase] | Load all skills from directory |
 
-## 文件格式
+## File Formats
 
-### JSON 格式
+### JSON Format
 
 ```json
 {
@@ -154,7 +154,7 @@ await agent.bind(context).bind(llm_config).bind(memory).build()
 }
 ```
 
-### Python 格式
+### Python Format
 
 ```python
 from dbgpt.agent.skill import Skill, SkillMetadata, SkillType
@@ -175,30 +175,30 @@ class CustomSkill(Skill):
         )
 ```
 
-## 示例
+## Examples
 
-### 完整示例
+### Complete Example
 
-查看 `examples/agents/skill_agent_example.py` 获取完整的使用示例。
+See `examples/agents/skill_agent_example.py` for a full usage example.
 
-### 技能文件
+### Skill Files
 
-- `skills/web_search_skill.json` - 网络搜索技能示例
-- `skills/data_analysis_skill.json` - 数据分析技能示例
+- `skills/web_search_skill.json` - Web search skill example
+- `skills/data_analysis_skill.json` - Data analysis skill example
 
-### 实现指南
+### Implementation Guides
 
-- `skills/skill_implementation_guide.py` - 详细的实现指南
-- `skills/INTEGRATION_GUIDE.md` - 集成到现有 Agent 的指南
+- `skills/skill_implementation_guide.py` - Detailed implementation guide
+- `skills/INTEGRATION_GUIDE.md` - Guide for integrating skills into existing agents
 
-## 集成步骤
+## Integration Steps
 
-1. **导入 SKILL 模块**
+1. **Import the SKILL module**
    ```python
    from dbgpt.agent.skill import Skill, SkillBuilder, get_skill_manager
    ```
 
-2. **修改 Agent 类**
+2. **Modify the Agent class**
    ```python
    class MyAgent(ConversableAgent):
        def __init__(self, skill: Optional[Skill] = None, **kwargs):
@@ -208,23 +208,23 @@ class CustomSkill(Skill):
                self._apply_skill_to_profile()
    ```
 
-3. **初始化 Skill Manager**
+3. **Initialize the Skill Manager**
    ```python
    from dbgpt.component import SystemApp
    system_app = SystemApp()
    initialize_skill(system_app)
    ```
 
-4. **注册并使用 Skill**
+4. **Register and use the skill**
    ```python
    skill_manager = get_skill_manager(system_app)
    skill_manager.register_skill(skill_instance=skill)
    agent = MyAgent(skill=skill)
    ```
 
-## 高级用法
+## Advanced Usage
 
-### 动态 Skill 切换
+### Dynamic Skill Switching
 
 ```python
 class DynamicSkillAgent(ConversableAgent):
@@ -233,7 +233,7 @@ class DynamicSkillAgent(ConversableAgent):
         self._apply_skill_to_profile()
 ```
 
-### 多 Skill 组合
+### Multi-Skill Composition
 
 ```python
 class CompositeSkillAgent(ConversableAgent):
@@ -248,40 +248,40 @@ class CompositeSkillAgent(ConversableAgent):
         return list(set(all_tools))
 ```
 
-## 最佳实践
+## Best Practices
 
-1. **模块化设计**：每个 Skill 专注于单一领域
-2. **版本管理**：使用语义化版本号（如 1.0.0）
-3. **依赖声明**：清晰声明所需的工具和知识库
-4. **文档完善**：为 Skill 编写详细的文档
-5. **测试覆盖**：为每个 Skill 编写单元测试
+1. **Modular design**: Each skill should focus on a single domain
+2. **Version management**: Use semantic versioning (e.g., 1.0.0)
+3. **Dependency declaration**: Clearly declare required tools and knowledge bases
+4. **Documentation**: Write detailed documentation for each skill
+5. **Test coverage**: Write unit tests for each skill
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
+### Common Issues
 
-**Q: Skill 加载失败？**
-A: 检查文件路径、JSON 格式是否正确
+**Q: Skill failed to load?**
+A: Check the file path and verify the JSON format is correct
 
-**Q: 找不到必需的工具？**
-A: 确保在绑定 Agent 时提供了所有必需的工具
+**Q: Required tool not found?**
+A: Ensure all required tools are provided when binding the agent
 
-**Q: 提示词模板不生效？**
-A: 确保在 `_apply_skill_to_profile` 中正确设置了 `bind_prompt`
+**Q: Prompt template not taking effect?**
+A: Ensure `bind_prompt` is set correctly in `_apply_skill_to_profile`
 
-## 贡献指南
+## Contributing
 
-欢迎贡献新的 Skill！请遵循以下步骤：
+Contributions of new skills are welcome! Please follow these steps:
 
-1. Fork 项目
-2. 创建新的 Skill 文件
-3. 编写测试
-4. 提交 Pull Request
+1. Fork the project
+2. Create a new skill file
+3. Write tests
+4. Submit a Pull Request
 
-## 许可证
+## License
 
 MIT License
 
-## 联系方式
+## Contact
 
-如有问题或建议，请提交 Issue 或 Pull Request。
+For questions or suggestions, please open an Issue or Pull Request.

@@ -24,7 +24,7 @@ const RecommendQuestions: React.FC<{
   const [form] = Form.useForm<FormRecommendQuestion>();
   const recommendQuestions = Form.useWatch('recommend_questions', form);
 
-  // 将数据实时返回给消费组件
+  // Return data to consumer component in real time
   useEffect(() => {
     updateData(recommendQuestions?.filter(question => !!question.question));
   }, [recommendQuestions, updateData]);

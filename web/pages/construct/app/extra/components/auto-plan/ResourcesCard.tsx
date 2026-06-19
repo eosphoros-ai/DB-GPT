@@ -42,7 +42,7 @@ const ResourcesCard: React.FC<{
   const [activeKey, setActiveKey] = useState<string>(resourcesTabs?.[0]?.uid || '');
   const [hoverKey, setHoverKey] = useState<string>('');
 
-  // 删除资源
+  // Delete resource
   const remove = (e: any, item: any) => {
     e?.stopPropagation();
     const findActiveIndex = resources.current?.findIndex(i => i.uid === activeKey);
@@ -58,7 +58,7 @@ const ResourcesCard: React.FC<{
     setActiveKey(filteredResources?.[findActiveIndex]?.uid || '');
   };
 
-  // 添加资源
+  // Add resource
   const addSource = () => {
     const uid = uuid();
     resources.current = concat(
@@ -102,7 +102,7 @@ const ResourcesCard: React.FC<{
     setFilterResourcesTabs([...resourcesTabs]);
   }, [resourcesTabs]);
 
-  // 资源切换图标同步切换
+  // Sync icon when resource type changes
   useEffect(() => {
     setResourcesTabs(
       resourcesTabs.map(item => {

@@ -102,7 +102,7 @@ const BRAND_TOKENS: Record<string, BrandToken> = {
     shadow: 'group-hover:ring-amber-200',
   },
   custom_mcp: {
-    // ApiOutlined matches the sidebar "连接器管理" entry and the page hero —
+    // ApiOutlined matches the sidebar "Connector Management" entry and the page hero —
     // the visual recognition is consistent across nav → header → card. The
     // violet/fuchsia gradient keeps custom_mcp distinguishable from built-in
     // brand tiles (which carry brand-specific colours).
@@ -179,9 +179,9 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
   // Description precedence:
   //   1. instance.config.description (user-authored in the form)
   //   2. catalog entry description — ONLY for built-in types (those are real
-  //      product descriptions like "GitHub Issues / PR / 仓库管理"). For
+  //      product descriptions like "GitHub Issues / PR / repo management"). For
   //      custom_mcp this falls through, because the custom_mcp catalog
-  //      "description" is just the template blurb ("接入任意 SSE / Streamable
+  //      "description" is just the template blurb ("Connect any SSE / Streamable
   //      HTTP MCP Server") — it's an entry-point label, not an instance fact.
   //   3. empty (the placeholder min-height keeps the card shape stable).
   const instanceUserDescription = !isTemplate

@@ -61,7 +61,7 @@ const BlurredCard: React.FC<{
               )}
             </div>
             <div className='flex-1'>
-              {/** 先简单判断下 */}
+              {/** Simple check for now */}
               {name.length > 6 ? (
                 <Tooltip title={name}>
                   <span

@@ -31,7 +31,7 @@ const Resource: React.FC<{
   // dataBase
   const [dbs, setDbs] = useState<IDB[]>([]);
 
-  // 左边工具栏动态可用key
+  // Dynamic available keys for left toolbar
   const paramKey: string[] = useMemo(() => {
     return appInfo.param_need?.map(i => i.type) || [];
   }, [appInfo.param_need]);
@@ -50,7 +50,7 @@ const Resource: React.FC<{
 
   const resource = useMemo(() => appInfo.param_need?.find(i => i.type === 'resource'), [appInfo.param_need]);
 
-  // 获取db
+  // Fetch database
   const { run, loading } = useRequest(async () => await apiInterceptors(postChatModeParamsList(scene as string)), {
     manual: true,
     onSuccess: data => {
@@ -87,7 +87,7 @@ const Resource: React.FC<{
     [dbs],
   );
 
-  // 上传
+  // Upload
   const onUpload = useCallback(async () => {
     const formData = new FormData();
     formData.append('doc_files', fileList?.[0] as any);

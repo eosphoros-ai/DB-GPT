@@ -18,7 +18,7 @@ interface AgentSelectProps {
   onChange?: (value: any) => void;
   teamMode?: string;
 }
-// 自定义agent选择
+// Custom agent selector
 const AgentSelect: React.FC<AgentSelectProps> = ({
   value,
   onChange,
@@ -79,12 +79,12 @@ const AutoPlan: React.FC<{
   const { t, i18n } = useTranslation();
   const [form] = Form.useForm();
   const agentName = Form.useWatch('agent_name', form);
-  // 选中的agent
+  // Selected agent
   const [selectedTab, setSelectedTab] = useState<string>('');
   const details = useRef<IDetail[]>([]);
   const language = i18n.language === 'en';
 
-  // 获取agents, strategy, sourceType;
+  // Fetch agents, strategy, sourceType;
   const { data, loading } = useRequest(async () => {
     const res = await Promise.all([
       apiInterceptors(getAgents()),
@@ -109,7 +109,7 @@ const AutoPlan: React.FC<{
     return res ?? [];
   });
 
-  // 获取prompt提示语列表
+  // Fetch prompt template list
   const { data: promptData } = useRequest(async () => {
     const [, res] = await apiInterceptors(
       getPromptList({
@@ -120,7 +120,7 @@ const AutoPlan: React.FC<{
     return res ?? { items: [] };
   });
 
-  // 模型策略options
+  // Model strategy options
   const modelStrategyOptions: any[] = useMemo(() => {
     const [, strategy] = data?.[1] || [];
     if (strategy?.length) {
@@ -134,7 +134,7 @@ const AutoPlan: React.FC<{
     return [];
   }, [data]);
 
-  // 资源类型options
+  // Resource type options
   const resourceTypeOptions: Record<string, any>[] = useMemo(() => {
     const [, sourceType] = data?.[2] || [];
     if (sourceType?.length) {
@@ -168,7 +168,7 @@ const AutoPlan: React.FC<{
     return [];
   }, [data]);
 
-  // 实时返回数据给消费组件
+  // Return data to consumer component in real time
   useEffect(() => {
     updateData([loading, details.current.filter(detail => agentName?.includes(detail.agent_name))]);
   }, [loading, agentName, updateData]);

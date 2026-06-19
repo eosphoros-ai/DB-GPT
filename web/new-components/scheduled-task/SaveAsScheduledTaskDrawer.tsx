@@ -8,7 +8,7 @@ import CronInput from './CronInput';
 
 const { Title, Text } = Typography;
 
-/** 读取当前登录用户的显示名称(nick_name),用于创建人展示。 */
+/** Read the logged-in user's display name (nick_name) for creator display. */
 function getCreatorName(): string | undefined {
   try {
     const raw = localStorage.getItem('__db_gpt_uinfo_key');
@@ -23,9 +23,9 @@ function getCreatorName(): string | undefined {
 interface SaveAsScheduledTaskDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** 当前对话快照，由主页 buildSnapshot 构造 */
+  /** Current conversation snapshot, built by the home page buildSnapshot */
   snapshot: ChatReplayPayload;
-  /** 默认任务名称，不传则截取 user_input 前 30 字符 */
+  /** Default task name; falls back to the first 30 chars of user_input */
   defaultName?: string;
 }
 
@@ -42,7 +42,7 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
   const { createTask } = useScheduledTask();
   const { connectors } = useConnectors();
 
-  /** connector id → display_name 映射 */
+  /** connector id → display_name map */
   const connectorNameMap = useMemo(() => {
     const m = new Map<string, string>();
     for (const c of connectors) {
@@ -65,7 +65,7 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
       message.success(t('scheduled.msg.created', { time: resp.next_run_time ?? t('scheduled.msg.createComingSoon') }));
       onClose();
     } catch (e: any) {
-      // antd form 校验失败时 reject 带 errorFields，不需要弹 message
+      // antd form validation rejects with errorFields; no need to show a message
       if (e?.errorFields) return;
       message.error(e?.message ?? t('scheduled.msg.saveFailed'));
     } finally {
@@ -138,7 +138,7 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
           </div>
         )}
         {(() => {
-          // 合并 connector_ids 和 mcp_ids，统一显示为 MCP
+          // Merge connector_ids and mcp_ids and display them together as MCP
           const ids: string[] = [
             ...(Array.isArray(ext.connector_ids) ? ext.connector_ids : []),
             ...(Array.isArray(ext.mcp_ids) ? ext.mcp_ids : []),

@@ -214,7 +214,7 @@ const ToolPartDisplay: React.FC<ToolPartDisplayProps> = ({ part, defaultOpen = f
   const isReActOutput = useMemo(() => {
     if (!part.state.output) return false;
     const output = part.state.output;
-    return /(?:Thought|Action|Observation|思考|动作|观察)\s*[:：]/i.test(output);
+    return /(?:Thought|Action|Observation|\u601d\u8003|\u52a8\u4f5c|\u89c2\u5bdf)\s*[:：]/i.test(output);
   }, [part.state.output]);
 
   // Extract round number from title if present (e.g., "Delegate Task ReAct Round 1")
@@ -400,17 +400,17 @@ const formatFileSize = (bytes: number): string => {
 const getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
+    return 'Spreadsheet';
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
+    return 'Spreadsheet';
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return 'Image';
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word Document';
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return 'Text File';
   if (['json'].includes(ext)) return 'JSON';
-  return '文件';
+  return 'File';
 };
 
 const FileIconComponent: React.FC<{ fileName: string; mimeType?: string }> = ({ fileName, mimeType }) => {

@@ -21,7 +21,7 @@ const ChatHeader: React.FC<{ isScrollToTop: boolean }> = ({ isScrollToTop }) => 
     return appInfo?.team_context?.chat_scene || 'chat_agent';
   }, [appInfo]);
 
-  // 应用收藏状态
+  // App favorite status
   const isCollected = useMemo(() => {
     return appInfo?.is_collected === 'true';
   }, [appInfo]);
@@ -54,7 +54,7 @@ const ChatHeader: React.FC<{ isScrollToTop: boolean }> = ({ isScrollToTop }) => 
     message[success ? 'success' : 'error'](success ? t('copy_success') : t('copy_failed'));
   };
 
-  // 正常header
+  // Normal header
   const headerContent = () => {
     return (
       <header className='flex items-center justify-between w-5/6 h-full px-6  bg-[#ffffff99] border dark:bg-[rgba(255,255,255,0.1)] dark:border-[rgba(255,255,255,0.1)] rounded-2xl mx-auto transition-all duration-400 ease-in-out relative'>
@@ -108,7 +108,7 @@ const ChatHeader: React.FC<{ isScrollToTop: boolean }> = ({ isScrollToTop }) => 
         </div>
         {!!appInfo?.recommend_questions?.length && (
           <div className='absolute  bottom-[-40px] left-0'>
-            <span className='text-sm text-[#525964] dark:text-[rgba(255,255,255,0.65)] leading-6'>或许你想问：</span>
+            <span className='text-sm text-[#525964] dark:text-[rgba(255,255,255,0.65)] leading-6'>You might want to ask:</span>
             {appInfo.recommend_questions.map((item, index) => (
               <Tag
                 key={item.id}
@@ -141,7 +141,7 @@ const ChatHeader: React.FC<{ isScrollToTop: boolean }> = ({ isScrollToTop }) => 
       </header>
     );
   };
-  // 吸顶header
+  // Sticky header
   const topHeaderContent = () => {
     return (
       <header className='flex items-center justify-between w-full h-14 bg-[#ffffffb7] dark:bg-[rgba(41,63,89,0.4)]  px-8 transition-all duration-500 ease-in-out'>

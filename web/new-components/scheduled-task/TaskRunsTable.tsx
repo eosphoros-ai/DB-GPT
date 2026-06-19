@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
 import type { RunResponse, ScheduledRunStatus } from '@/types/scheduled-task';
 
-/** 格式化 ISO 时间字符串，去掉时区后缀，返回友好格式 */
+/** Format an ISO timestamp, strip timezone suffix, return a friendly string */
 function fmtTime(iso?: string | null): string | null {
   if (!iso) return null;
   const d = dayjs(iso);
@@ -19,8 +19,8 @@ interface TaskRunsTableProps {
   taskId: string;
 }
 
-/** 状态 → 样式映射(填充圆点芯片,与 ConnectorCard 风格统一)。
- *  label 文案由渲染期 t(`scheduled.runs.status*`) 解析,故此处只保留样式。 */
+/** Status → style mapping (filled dot chip, aligned with ConnectorCard).
+ *  Labels are resolved at render time via t(`scheduled.runs.status*`), so only styles live here. */
 const STATUS_META: Record<ScheduledRunStatus, { dot: string; text: string; bg: string }> = {
   running: {
     dot: 'bg-blue-500',
@@ -44,7 +44,7 @@ const STATUS_META: Record<ScheduledRunStatus, { dot: string; text: string; bg: s
   },
 };
 
-/** 执行状态 → i18n key 映射 */
+/** Run status → i18n key mapping */
 const STATUS_LABEL_KEY: Record<ScheduledRunStatus, string> = {
   running: 'scheduled.runs.statusRunning',
   success: 'scheduled.runs.statusSuccess',
@@ -111,7 +111,7 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
       </div>
 
       <div className='overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700/50'>
-        {/* 表头 */}
+        {/* Header */}
         <div className='grid grid-cols-[80px_160px_70px_1fr_70px] gap-2 px-4 py-2.5 text-[12px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/60 dark:bg-[#1a1f2e]/60 border-b border-gray-100 dark:border-gray-700/50'>
           <div>{t('scheduled.runs.colStatus')}</div>
           <div>{t('scheduled.runs.colStartTime')}</div>
@@ -120,7 +120,7 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
           <div className='text-right'>{t('scheduled.runs.colActions')}</div>
         </div>
 
-        {/* 行 */}
+        {/* Rows */}
         {runs.map(run => {
           const meta = STATUS_META[run.status];
           const isFailed = run.status === 'failed' || run.status === 'timeout';
@@ -137,7 +137,7 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
               key={run.run_id}
               className='grid grid-cols-[80px_160px_70px_1fr_70px] gap-2 px-4 py-3 items-center border-b border-gray-50 dark:border-gray-700/30 last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors text-[13px]'
             >
-              {/* 状态 */}
+              {/* Status */}
               <div>
                 <span
                   className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${meta.bg} ${meta.text}`}
@@ -147,13 +147,13 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
                 </span>
               </div>
 
-              {/* 开始时间 */}
+              {/* Start time */}
               <div className='text-gray-600 dark:text-gray-400 truncate'>{fmtTime(run.started_at) ?? '-'}</div>
 
-              {/* 耗时 */}
+              {/* Duration */}
               <div className='text-gray-600 dark:text-gray-400'>{duration}</div>
 
-              {/* 结果摘要 */}
+              {/* Result summary */}
               <div className='truncate'>
                 {summaryText ? (
                   <Tooltip title={isFailed ? run.error_message : run.result_summary}>
@@ -166,7 +166,7 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
                 )}
               </div>
 
-              {/* 操作 */}
+              {/* Actions */}
               <div className='text-right'>
                 <Button
                   type='link'

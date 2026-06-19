@@ -9,7 +9,7 @@ warnings.filterwarnings("ignore")
 
 
 def log(*args, **kwargs):
-    """将日志输出到 stderr，避免污染 stdout 的 JSON 输出"""
+    """Send logs to stderr to avoid polluting JSON stdout output."""
     print(*args, file=sys.stderr, **kwargs)
 
 
@@ -22,20 +22,20 @@ def safe_div(numerator, denominator):
 def classify_skewness(value):
     abs_val = abs(value)
     if abs_val >= 1:
-        return "明显偏态"
+        return "Strongly skewed"
     if abs_val >= 0.5:
-        return "中度偏态"
-    return "近似对称"
+        return "Moderately skewed"
+    return "Approximately symmetric"
 
 
 def classify_cv(value):
     if value >= 100:
-        return "极高波动"
+        return "Very high volatility"
     if value >= 50:
-        return "高波动"
+        return "High volatility"
     if value >= 20:
-        return "中等波动"
-    return "低波动"
+        return "Moderate volatility"
+    return "Low volatility"
 
 
 def select_primary_metric(df, numeric_cols):
@@ -55,19 +55,8 @@ def select_primary_metric(df, numeric_cols):
         "metric",
         "total",
         "count",
-        "分数",
-        "得分",
-        "金额",
-        "销售",
-        "收入",
-        "利润",
-        "价格",
-        "指标",
-        "总量",
-        "数量",
-        "评分",
     ]
-    skip_keywords = ["rank", "ranking", "id", "index_id", "序号", "排名", "编号"]
+    skip_keywords = ["rank", "ranking", "id", "index_id"]
 
     candidates = []
     for col in numeric_cols:
@@ -100,12 +89,13 @@ def select_label_col(df):
 
 def analyze_csv(file_path):
     """
-    分析CSV文件，提取用于 ECharts 渲染的数据结构和用于 LLM 分析的统计摘要。
-    输出包含: overview, data_quality, distributions, correlations, categories,
-    time_series, scatter, stats_table, box_plots, outliers, top_bottom
+    Analyze a CSV file and extract data structures for ECharts rendering
+    and statistical summaries for LLM analysis.
+    Output includes: overview, data_quality, distributions, correlations,
+    categories, time_series, scatter, stats_table, box_plots, outliers, top_bottom
     """
     try:
-        log(f"正在读取文件: {file_path}")
+        log(f"Reading file: {file_path}")
         ext = os.path.splitext(file_path)[1].lower()
         if ext in (".xls", ".xlsx"):
             df = pd.read_excel(file_path)
@@ -115,7 +105,7 @@ def analyze_csv(file_path):
             df = pd.read_csv(file_path)
 
         # ==========================================
-        # 1. 基础概览数据
+        # 1. Basic overview data
         # ==========================================
         total_cells = int(df.shape[0] * df.shape[1])
         missing_cells = int(df.isnull().sum().sum())
@@ -134,7 +124,7 @@ def analyze_csv(file_path):
         }
 
         # ==========================================
-        # 1b. 数据质量分析 (每列缺失率 + 数据类型)
+        # 1b. Data quality analysis (missing rate + dtypes per column)
         # ==========================================
         data_quality = {
             "columns": [],
@@ -171,7 +161,7 @@ def analyze_csv(file_path):
         )
 
         # ==========================================
-        # 2. 数值列分析 (直方图分布 & 相关性)
+        # 2. Numeric column analysis (histogram distributions & correlations)
         # ==========================================
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         primary_metric = select_primary_metric(df, numeric_cols)
@@ -182,11 +172,11 @@ def analyze_csv(file_path):
         correlation_highlights = {"positive": [], "negative": []}
 
         if numeric_cols:
-            # 取最多前 8 个数值列画分布图
+            # Use up to the first 8 numeric columns for distribution charts
             for col in numeric_cols[:8]:
                 s = df[col].dropna()
                 if len(s) > 0:
-                    # 使用 numpy 计算直方图 (10个 bin)
+                    # Compute histogram with numpy (10 bins)
                     hist, bin_edges = np.histogram(s, bins=10)
                     bins = [
                         f"{bin_edges[i]:.1f}~{bin_edges[i + 1]:.1f}"
@@ -223,7 +213,7 @@ def analyze_csv(file_path):
                         "kurtosis": round(kurt_val, 3),
                     }
 
-            # 相关性矩阵 (取全部数值列)
+            # Correlation matrix (all numeric columns)
             if len(numeric_cols) > 1:
                 corr_df = df[numeric_cols].corr(method="pearson").fillna(0).round(2)  # type: ignore[call-overload]
                 corr_pairs = []
@@ -239,7 +229,7 @@ def analyze_csv(file_path):
                 )[:3]
 
         # ==========================================
-        # 3. 分类列分析 (饼图/柱状图 + 熵/集中度)
+        # 3. Categorical column analysis (pie/bar charts + entropy/concentration)
         # ==========================================
         categorical_cols = df.select_dtypes(
             include=["object", "category"]
@@ -250,7 +240,7 @@ def analyze_csv(file_path):
         segment_comparison = {}
 
         if categorical_cols:
-            # 取最多前 6 个分类列
+            # Use up to the first 6 categorical columns
             for col in categorical_cols[:6]:
                 if df[col].nunique() <= 50:
                     val_counts = df[col].value_counts().head(10)
@@ -329,10 +319,10 @@ def analyze_csv(file_path):
                     }
 
         # ==========================================
-        # 4. 时间序列分析 (支持多个数值列)
+        # 4. Time series analysis (supports multiple numeric columns)
         # ==========================================
         time_series = {"name": "", "dates": [], "values": []}
-        time_series_multi = []  # 额外的时序列数据
+        time_series_multi = []  # Additional time series data
         time_series_diagnostics = {}
 
         if numeric_cols:
@@ -351,7 +341,7 @@ def analyze_csv(file_path):
                 df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce")
                 df_ts = df_ts.dropna(subset=[date_col])
 
-                # 主时序：第一个数值列
+                # Primary time series: first numeric column
                 num_col = primary_metric or numeric_cols[0]
                 df_ts_main = df_ts.dropna(subset=[num_col]).copy()
                 if not df_ts_main.empty:
@@ -407,9 +397,9 @@ def analyze_csv(file_path):
                                 ),
                             }
                     except Exception as e:
-                        log(f"时间序列处理失败: {e}")
+                        log(f"Time series processing failed: {e}")
 
-                # 额外时序列（最多再加2个）
+                # Additional time series (up to 2 more)
                 for extra_col in numeric_cols[1:3]:
                     df_ts_extra = df_ts.dropna(subset=[extra_col]).copy()
                     if not df_ts_extra.empty:
@@ -440,7 +430,7 @@ def analyze_csv(file_path):
                             pass
 
         # ==========================================
-        # 5. 散点图数据 (前两个数值列)
+        # 5. Scatter plot data (first two numeric columns)
         # ==========================================
         scatter = {}
         if len(numeric_cols) >= 2:
@@ -464,7 +454,7 @@ def analyze_csv(file_path):
             else:
                 col_x, col_y = numeric_cols[0], numeric_cols[1]
             df_scatter = df[[col_x, col_y]].dropna()
-            # 限制最多 500 个点，避免数据过大
+            # Limit to 500 points to avoid oversized payloads
             if len(df_scatter) > 500:
                 df_scatter = df_scatter.sample(500, random_state=42)
             scatter = {
@@ -475,7 +465,7 @@ def analyze_csv(file_path):
             }
 
         # ==========================================
-        # 5b. 箱线图数据 (Box Plot) — 前 8 个数值列
+        # 5b. Box plot data — first 8 numeric columns
         # ==========================================
         box_plots = {}
         if numeric_cols:
@@ -505,7 +495,7 @@ def analyze_csv(file_path):
                     }
 
         # ==========================================
-        # 5c. 异常值检测汇总 (IQR method)
+        # 5c. Outlier detection summary (IQR method)
         # ==========================================
         outliers = {}
         if numeric_cols:
@@ -528,7 +518,7 @@ def analyze_csv(file_path):
                     }
 
         # ==========================================
-        # 5d. Top/Bottom 排名 (数值列的 Top5 / Bottom5)
+        # 5d. Top/Bottom rankings (Top5 / Bottom5 for numeric columns)
         # ==========================================
         top_bottom = {}
         ranking_signal = {}
@@ -567,7 +557,7 @@ def analyze_csv(file_path):
                     }
 
         # ==========================================
-        # 6b. 主指标异动概览与归因结构
+        # 6b. Primary metric anomaly overview and attribution structure
         # ==========================================
         anomaly_overview = {}
         driver_analysis = {"metric": "", "items": []}
@@ -661,24 +651,24 @@ def analyze_csv(file_path):
                 driver_analysis = {"metric": primary_metric, "items": driver_items[:8]}
 
         # ==========================================
-        # 6. 统计汇总表格 (含新增 P5/P95/CV 列)
+        # 6. Statistical summary table (includes P5/P95/CV columns)
         # ==========================================
         stats_table = {"headers": [], "rows": []}
         if numeric_summary:
             stats_table["headers"] = [
-                "变量",
-                "最小值",
+                "Variable",
+                "Min",
                 "P5",
                 "Q25",
-                "中位数",
-                "均值",
+                "Median",
+                "Mean",
                 "Q75",
                 "P95",
-                "最大值",
-                "标准差",
+                "Max",
+                "Std Dev",
                 "CV%",
-                "偏度",
-                "峰度",
+                "Skewness",
+                "Kurtosis",
             ]
             for col, s in numeric_summary.items():
                 stats_table["rows"].append(
@@ -700,7 +690,7 @@ def analyze_csv(file_path):
                 )
 
         # ==========================================
-        # 构建给 ECharts 渲染的完整 JSON 数据结构
+        # Build complete JSON data structure for ECharts rendering
         # ==========================================
         chart_data = {
             "overview": overview,
@@ -729,20 +719,20 @@ def analyze_csv(file_path):
         chart_data_json_str = json.dumps(chart_data, ensure_ascii=False)
 
         # ==========================================
-        # 构建给 LLM 深度分析阅读的文本摘要
+        # Build text summary for LLM deep analysis
         # ==========================================
         summary_lines = [
             "==================================================",
-            "【数据概览】",
-            f"- 数据集尺寸: {overview['rows']} 行 × {overview['cols']} 列",
-            f"- 缺失值情况: 共有 {overview['missing_cells']} 个单元格缺失，整体数据完整率 {100 - overview['missing_pct']}%",
-            f"- 重复行: {overview['duplicate_rows']} 行",
-            f"- 内存占用: {overview['memory_kb']} KB",
-            f"- 数值型列 ({len(numeric_cols)}): {', '.join(numeric_cols[:10])}",
-            f"- 分类型列 ({len(categorical_cols)}): {', '.join(categorical_cols[:10])}",
-            f"- 数据类型分布: {dtype_counts}",
+            "[Data Overview]",
+            f"- Dataset size: {overview['rows']} rows x {overview['cols']} columns",
+            f"- Missing values: {overview['missing_cells']} cells missing, overall completeness {100 - overview['missing_pct']}%",
+            f"- Duplicate rows: {overview['duplicate_rows']} rows",
+            f"- Memory usage: {overview['memory_kb']} KB",
+            f"- Numeric columns ({len(numeric_cols)}): {', '.join(numeric_cols[:10])}",
+            f"- Categorical columns ({len(categorical_cols)}): {', '.join(categorical_cols[:10])}",
+            f"- Data type distribution: {dtype_counts}",
             "",
-            "【质量关注点】",
+            "[Quality Focus Areas]",
         ]
         quality_focus = [
             (col, rate, miss_count)
@@ -751,14 +741,14 @@ def analyze_csv(file_path):
         ]
         if quality_focus:
             for col, rate, miss_count in quality_focus:
-                summary_lines.append(f"- {col}: 缺失 {miss_count} 个，占比 {rate}%")
+                summary_lines.append(f"- {col}: {miss_count} missing, {rate}% of values")
         else:
-            summary_lines.append("- 所有字段均无缺失，数据完整性较高")
+            summary_lines.append("- All fields are complete; data integrity is high")
 
         summary_lines.extend(
             [
                 "",
-                "【数值型特征统计 (Top 8)】",
+                "[Numeric Feature Statistics (Top 8)]",
             ]
         )
         for col, s in numeric_summary.items():
@@ -775,30 +765,30 @@ def analyze_csv(file_path):
                 numeric_summary.items(), key=lambda x: x[1]["cv"], reverse=True
             )[:3]
             summary_lines.append("")
-            summary_lines.append("【波动性与偏态重点】")
+            summary_lines.append("[Volatility and Skewness Highlights]")
             for col, s in volatile_cols:
                 summary_lines.append(
-                    f"- {col}: 波动等级={classify_cv(s['cv'])}, CV={s['cv']}%, 偏态={classify_skewness(s['skewness'])}"
+                    f"- {col}: volatility={classify_cv(s['cv'])}, CV={s['cv']}%, skewness={classify_skewness(s['skewness'])}"
                 )
 
-        # 异常值摘要
+        # Outlier summary
         if outliers:
             summary_lines.append("")
-            summary_lines.append("【异常值检测 (IQR 方法)】")
+            summary_lines.append("[Outlier Detection (IQR Method)]")
             for col, info in outliers.items():
                 if info["count"] > 0:
                     summary_lines.append(
-                        f"- {col}: {info['count']} 个异常值 ({info['pct']}%), "
-                        f"正常范围 [{info['lower_bound']}, {info['upper_bound']}]"
+                        f"- {col}: {info['count']} outliers ({info['pct']}%), "
+                        f"normal range [{info['lower_bound']}, {info['upper_bound']}]"
                     )
             if not any(info["count"] > 0 for info in outliers.values()):
-                summary_lines.append("- 未检测到显著异常值")
+                summary_lines.append("- No significant outliers detected")
 
-        # Top/Bottom 排名
+        # Top/Bottom rankings
         if top_bottom:
             summary_lines.append("")
             summary_lines.append(
-                f"【Top 5 / Bottom 5 排名 (按 {top_bottom['rank_col']})】"
+                f"[Top 5 / Bottom 5 Rankings (by {top_bottom['rank_col']})]"
             )
             summary_lines.append(
                 f"  Top 5: {list(zip(top_bottom['top5']['labels'], top_bottom['top5']['values']))}"
@@ -808,110 +798,110 @@ def analyze_csv(file_path):
             )
             if ranking_signal:
                 summary_lines.append(
-                    f"  排名断层: Top5均值={ranking_signal['top_avg']}, Bottom5均值={ranking_signal['bottom_avg']}, 差值={ranking_signal['gap']}"
+                    f"  Ranking gap: Top5 mean={ranking_signal['top_avg']}, Bottom5 mean={ranking_signal['bottom_avg']}, difference={ranking_signal['gap']}"
                 )
 
         if anomaly_overview:
             summary_lines.append("")
-            summary_lines.append("【数据异动概述】")
+            summary_lines.append("[Data Anomaly Overview]")
             summary_lines.append(
-                f"- 核心分析指标: {anomaly_overview['metric']}，均值={anomaly_overview['mean']}，中位数={anomaly_overview['median']}，P10={anomaly_overview['q10']}，P90={anomaly_overview['q90']}"
+                f"- Primary metric: {anomaly_overview['metric']}, mean={anomaly_overview['mean']}, median={anomaly_overview['median']}, P10={anomaly_overview['q10']}, P90={anomaly_overview['q90']}"
             )
             summary_lines.append(
-                f"- 高位组({anomaly_overview['top_group_size']}个样本)均值={anomaly_overview['top_group_mean']}，低位组({anomaly_overview['bottom_group_size']}个样本)均值={anomaly_overview['bottom_group_mean']}，差值={anomaly_overview['gap']}"
+                f"- High group ({anomaly_overview['top_group_size']} samples) mean={anomaly_overview['top_group_mean']}, low group ({anomaly_overview['bottom_group_size']} samples) mean={anomaly_overview['bottom_group_mean']}, gap={anomaly_overview['gap']}"
             )
             summary_lines.append(
-                f"- 主指标异常值数量={anomaly_overview['outlier_count']}，占比={anomaly_overview['outlier_pct']}%，分位带样本分布={list(zip(anomaly_overview['band_labels'], anomaly_overview['band_values']))}"
+                f"- Primary metric outliers={anomaly_overview['outlier_count']}, share={anomaly_overview['outlier_pct']}%, percentile band distribution={list(zip(anomaly_overview['band_labels'], anomaly_overview['band_values']))}"
             )
 
         if driver_analysis.get("items"):
             summary_lines.append("")
-            summary_lines.append("【归因分析线索】")
+            summary_lines.append("[Attribution Analysis Clues]")
             for item in driver_analysis["items"][:5]:
                 summary_lines.append(
-                    f"- {item['name']}: 综合驱动分={item['score']}，与 {driver_analysis['metric']} 的相关系数={item['corr']}，高位组均值={item['top_mean']}，低位组均值={item['bottom_mean']}，组间差异强度={item['gap_ratio']}"
+                    f"- {item['name']}: driver score={item['score']}, correlation with {driver_analysis['metric']}={item['corr']}, high group mean={item['top_mean']}, low group mean={item['bottom_mean']}, inter-group gap ratio={item['gap_ratio']}"
                 )
 
         summary_lines.append("")
-        summary_lines.append("【分类型特征摘要 (Top 6)】")
+        summary_lines.append("[Categorical Feature Summary (Top 6)]")
         for col, stats in cat_summary.items():
             summary_lines.append(
-                f"- {col}: 唯一值={stats['n_unique']}, 最常见={stats['top1']} "
-                f"(出现{stats['top1_count']}次, 占比{stats['top1_share']}%), 熵={stats['entropy']}, "
-                f"Top3集中度={stats['top3_share']}%"
+                f"- {col}: unique values={stats['n_unique']}, most common={stats['top1']} "
+                f"(count={stats['top1_count']}, share={stats['top1_share']}%), entropy={stats['entropy']}, "
+                f"Top3 concentration={stats['top3_share']}%"
             )
 
         if segment_breakdown:
             summary_lines.append("")
-            summary_lines.append("【分类维度切片表现】")
+            summary_lines.append("[Categorical Dimension Slice Performance]")
             for segment in segment_breakdown:
                 leaders = segment["leaders"][:3]
                 leader_text = "; ".join(
                     [
-                        f"{item['name']}(样本{item['count']}, 均值{item['mean']}, 总量{item['sum']})"
+                        f"{item['name']}(samples={item['count']}, mean={item['mean']}, total={item['sum']})"
                         for item in leaders
                     ]
                 )
                 summary_lines.append(
-                    f"- 维度 {segment['dimension']} 对指标 {segment['metric']} 的高贡献分组: {leader_text}"
+                    f"- Dimension {segment['dimension']} high-contribution groups for metric {segment['metric']}: {leader_text}"
                 )
 
         summary_lines.append("")
-        summary_lines.append("【核心相关性】")
+        summary_lines.append("[Key Correlations]")
         if correlations["data"]:
             strong_corrs = []
             for item in correlations["data"]:
                 i, j, val = item
                 if i < j and abs(val) >= 0.5:
                     strong_corrs.append(
-                        f"{numeric_cols[i]} 与 {numeric_cols[j]} (相关系数: {val})"
+                        f"{numeric_cols[i]} and {numeric_cols[j]} (correlation: {val})"
                     )
             if strong_corrs:
                 summary_lines.extend([f"- {c}" for c in strong_corrs])
             else:
-                summary_lines.append("- 没有发现强相关的数值变量组合（|r| >= 0.5）。")
+                summary_lines.append("- No strongly correlated numeric variable pairs found (|r| >= 0.5).")
             if correlation_highlights["positive"]:
-                summary_lines.append("- 最高正相关组合:")
+                summary_lines.append("- Highest positive correlations:")
                 for c1, c2, val in correlation_highlights["positive"]:
                     summary_lines.append(f"  * {c1} vs {c2}: {val}")
             if correlation_highlights["negative"]:
-                summary_lines.append("- 最低相关组合:")
+                summary_lines.append("- Lowest correlations:")
                 for c1, c2, val in correlation_highlights["negative"]:
                     summary_lines.append(f"  * {c1} vs {c2}: {val}")
 
         if scatter:
             summary_lines.append("")
             summary_lines.append(
-                f"【散点图】已生成 {scatter['x_name']} vs {scatter['y_name']} 的散点图数据"
+                f"[Scatter Plot] Generated scatter data for {scatter['x_name']} vs {scatter['y_name']}"
             )
 
-        # 时间序列摘要
+        # Time series summary
         if time_series["dates"]:
             summary_lines.append("")
             summary_lines.append(
-                f"【时间序列】检测到时间列，已按月/日聚合 {time_series['name']} 趋势"
+                f"[Time Series] Detected time column; aggregated {time_series['name']} trend by month/day"
             )
             if time_series_diagnostics:
                 summary_lines.append(
-                    f"- 时间字段={time_series_diagnostics['date_col']}, 观测点={time_series_diagnostics['points']}, "
-                    f"起点={time_series_diagnostics['start']}, 终点={time_series_diagnostics['end']}, "
-                    f"整体变化={time_series_diagnostics['change_pct']}%, 斜率={time_series_diagnostics['slope']}, "
-                    f"波动率={time_series_diagnostics['volatility_pct']}%"
+                    f"- Time field={time_series_diagnostics['date_col']}, observations={time_series_diagnostics['points']}, "
+                    f"start={time_series_diagnostics['start']}, end={time_series_diagnostics['end']}, "
+                    f"overall change={time_series_diagnostics['change_pct']}%, slope={time_series_diagnostics['slope']}, "
+                    f"volatility={time_series_diagnostics['volatility_pct']}%"
                 )
                 summary_lines.append(
-                    f"- 峰值出现在 {time_series_diagnostics['peak_date']} ({time_series_diagnostics['peak_value']}), "
-                    f"谷值出现在 {time_series_diagnostics['trough_date']} ({time_series_diagnostics['trough_value']})"
+                    f"- Peak at {time_series_diagnostics['peak_date']} ({time_series_diagnostics['peak_value']}), "
+                    f"trough at {time_series_diagnostics['trough_date']} ({time_series_diagnostics['trough_value']})"
                 )
             if time_series_multi:
                 extra_names = [ts_m["name"] for ts_m in time_series_multi]
-                summary_lines.append(f"  额外趋势列: {', '.join(extra_names)}")
+                summary_lines.append(f"  Additional trend columns: {', '.join(extra_names)}")
 
         summary_lines.append("==================================================")
         summary_lines.append(
-            "请作为数据分析专家，基于以上【统计摘要】为用户撰写深度的数据分析见解（Insights）。每个模块尽量覆盖现象、可能原因、业务影响、行动建议四层内容，避免只重复统计值。"
+            "As a data analysis expert, write deep data insights based on the statistical summary above. Each module should cover observation, possible causes, business impact, and action recommendations, and avoid merely repeating statistical values."
         )
         summary_lines.append(
-            "注意：marker 中包裹的 CHART_DATA_JSON 会由后端自动注入模板，你无需手动传递。"
+            "Note: CHART_DATA_JSON wrapped in markers is injected automatically by the backend; you do not need to pass it manually."
         )
         summary_lines.append("###CHART_DATA_JSON_START###")
         summary_lines.append(chart_data_json_str)
@@ -919,7 +909,7 @@ def analyze_csv(file_path):
 
         final_text = "\n".join(summary_lines)
 
-        # 输出标准 chunks
+        # Output standard chunks
         print(
             json.dumps(
                 {"chunks": [{"output_type": "text", "content": final_text}]},
@@ -930,7 +920,7 @@ def analyze_csv(file_path):
     except Exception as e:
         import traceback
 
-        err_msg = f"分析过程中出现错误: {str(e)}\n{traceback.format_exc()}"
+        err_msg = f"Error during analysis: {str(e)}\n{traceback.format_exc()}"
         print(
             json.dumps(
                 {"chunks": [{"output_type": "text", "content": err_msg}]},
@@ -945,7 +935,7 @@ def main():
             "chunks": [
                 {
                     "output_type": "text",
-                    "content": '使用方法: python csv_analyzer.py \'{"input_file": "data.csv"}\'',
+                    "content": 'Usage: python csv_analyzer.py \'{"input_file": "data.csv"}\'',
                 }
             ]
         }
@@ -962,7 +952,7 @@ def main():
 
     if not csv_file or not os.path.exists(csv_file):
         result = {
-            "chunks": [{"output_type": "text", "content": f"文件不存在: {csv_file}"}]
+            "chunks": [{"output_type": "text", "content": f"File not found: {csv_file}"}]
         }
         print(json.dumps(result, ensure_ascii=False))
         sys.exit(1)
@@ -974,8 +964,8 @@ def main():
                 {
                     "output_type": "text",
                     "content": (
-                        f"不支持的文件格式: {csv_file}，"
-                        f"支持的格式: {', '.join(SUPPORTED_EXTENSIONS)}"
+                        f"Unsupported file format: {csv_file}. "
+                        f"Supported formats: {', '.join(SUPPORTED_EXTENSIONS)}"
                     ),
                 }
             ]

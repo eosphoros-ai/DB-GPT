@@ -14,14 +14,14 @@ def generate_time_series_trend(data_path, output_dir, selected_stores=[1, 4, 20]
 
     for i, store in enumerate(selected_stores):
         store_data = df[df["Store"] == store].sort_values("Date")
-        ax1.plot(store_data["Date"], store_data["Weekly_Sales"], label=f"门店 {store} 销售额", color=colors[i], alpha=0.7)
+        ax1.plot(store_data["Date"], store_data["Weekly_Sales"], label=f"Store {store} Sales", color=colors[i], alpha=0.7)
         if i == 0:  # Just plot unemployment for one store as it's often regional/similar
-            ax2.plot(store_data["Date"], store_data["Unemployment"], label="失业率", color="red", linestyle="--", linewidth=2)
+            ax2.plot(store_data["Date"], store_data["Unemployment"], label="Unemployment", color="red", linestyle="--", linewidth=2)
 
-    ax1.set_xlabel("日期")
-    ax1.set_ylabel("周销售额", color="blue")
-    ax2.set_ylabel("失业率 (%)", color="red")
-    plt.title("特定门店销售额与失业率随时间的变化趋势")
+    ax1.set_xlabel("Date")
+    ax1.set_ylabel("Weekly Sales", color="blue")
+    ax2.set_ylabel("Unemployment (%)", color="red")
+    plt.title("Weekly Sales and Unemployment Over Time for Selected Stores")
     ax1.legend(loc="upper left")
     ax2.legend(loc="upper right")
     plt.tight_layout()

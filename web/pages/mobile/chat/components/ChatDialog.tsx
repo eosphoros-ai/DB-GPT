@@ -14,14 +14,14 @@ type DBGPTView = {
   err_msg?: string;
 };
 
-// 对话气泡
+// Chat bubble
 const ChatDialog: React.FC<{
   message: IChatDialogueMessageSchema;
   index: number;
 }> = ({ message, index }) => {
   const { scene } = useContext(MobileChatContext);
   const { context, model_name, role, thinking } = message;
-  // GPT回复
+  // Assistant reply
   const isRobot = useMemo(() => role === 'view', [role]);
 
   const chatDialogRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ const ChatDialog: React.FC<{
       })}
       ref={chatDialogRef}
     >
-      {/* 用户提问 */}
+      {/* User question */}
       {!isRobot && <div className='flex bg-[#0C75FC]  text-white p-3 rounded-xl rounded-br-none'>{context}</div>}
       {isRobot && (
         <div className='flex max-w-full flex-col flex-wrap bg-white dark:bg-[rgba(255,255,255,0.16)] p-3 rounded-xl rounded-bl-none'>
@@ -93,10 +93,10 @@ const ChatDialog: React.FC<{
           {typeof context === 'string' && scene !== 'chat_agent' && (
             <MarkdownContext>{formatMarkdownVal(value)}</MarkdownContext>
           )}
-          {/* 正在思考 */}
+          {/* Thinking */}
           {thinking && !context && (
             <div className='flex items-center gap-2'>
-              <span className='flex text-sm text-[#1c2533] dark:text-white'>思考中</span>
+              <span className='flex text-sm text-[#1c2533] dark:text-white'>Thinking</span>
               <div className='flex'>
                 <div className='w-1 h-1 rounded-full mx-1 animate-pulse1'></div>
                 <div className='w-1 h-1 rounded-full mx-1 animate-pulse2'></div>
@@ -110,7 +110,7 @@ const ChatDialog: React.FC<{
               'opacity-100 flex items-center justify-between gap-6 w-auto h-auto': !thinking,
             })}
           >
-            {/* 用户反馈 */}
+            {/* User feedback */}
             <Feedback content={message} index={index} chatDialogRef={chatDialogRef} />
             {scene !== 'chat_agent' && (
               <div className='flex gap-1 items-center'>

@@ -33,33 +33,15 @@ CHART_DPI = 150
 
 
 # ---------------------------------------------------------------------------
-# Font setup for Chinese characters
+# Font setup
 # ---------------------------------------------------------------------------
-def setup_chinese_font():
-    """Configure matplotlib to render Chinese characters correctly.
-
-    Tries a priority-ordered list of CJK fonts commonly available on
-    macOS, Linux, and Windows.  Falls back to DejaVu Sans.
-    """
+def setup_font():
+    """Configure matplotlib fonts for readable chart labels."""
     candidates = [
-        # macOS
-        "Heiti TC",
-        "Hiragino Sans GB",
-        "PingFang SC",
-        "PingFang HK",
-        "STHeiti",
-        "Songti SC",
-        "Arial Unicode MS",
-        # Linux
-        "Noto Sans CJK SC",
-        "Noto Sans SC",
-        "WenQuanYi Micro Hei",
-        "WenQuanYi Zen Hei",
-        "Droid Sans Fallback",
-        # Windows
-        "Microsoft YaHei",
-        "SimHei",
-        "SimSun",
+        "DejaVu Sans",
+        "Arial",
+        "Helvetica",
+        "Segoe UI",
     ]
 
     available = {f.name for f in fm.fontManager.ttflist}
@@ -77,7 +59,7 @@ def setup_chinese_font():
 # Helpers
 # ---------------------------------------------------------------------------
 def format_yi(value):
-    """Convert a raw number to 亿元 scale."""
+    """Convert a raw number to 100M CNY scale."""
     return value / 1e8
 
 
@@ -92,11 +74,18 @@ def safe_float(value, default=0.0):
 
 
 # ---------------------------------------------------------------------------
-# Chart 1 – 核心财务指标对比 (financial_overview.png)
+# Chart 1 – Key financial metrics comparison (financial_overview.png)
 # ---------------------------------------------------------------------------
 def chart_financial_overview(data, output_dir):
-    """Grouped bar chart of key financial metrics (in 亿元)."""
-    labels = ["营业收入", "营业成本", "净利润", "总资产", "总负债", "所有者权益"]
+    """Grouped bar chart of key financial metrics (in 100M CNY)."""
+    labels = [
+        "Revenue",
+        "Cost of Sales",
+        "Net Profit",
+        "Total Assets",
+        "Total Liabilities",
+        "Shareholders' Equity",
+    ]
     keys = [
         "revenue",
         "cost_of_sales",
@@ -133,17 +122,17 @@ def chart_financial_overview(data, output_dir):
         x_curr = [x + bar_width / 2 for x in x_positions]
         x_prev = [x - bar_width / 2 for x in x_positions]
 
-        year = data.get("year", "本期")
+        year = data.get("year", "Current")
         try:
             prev_year = str(int(year) - 1)
         except (ValueError, TypeError):
-            prev_year = "上期"
+            prev_year = "Prior"
 
         bars_prev = ax.bar(
             x_prev,
             prev_values,
             width=bar_width,
-            label=f"{prev_year}年",
+            label=f"{prev_year}",
             color=COLOR_LIGHT_BLUE,
             edgecolor="white",
             linewidth=0.5,
@@ -152,7 +141,7 @@ def chart_financial_overview(data, output_dir):
             x_curr,
             current_values,
             width=bar_width,
-            label=f"{year}年",
+            label=f"{year}",
             color=COLOR_NAVY,
             edgecolor="white",
             linewidth=0.5,
@@ -217,12 +206,14 @@ def chart_financial_overview(data, output_dir):
 
     ax.set_xticks(x_positions)
     ax.set_xticklabels(labels, fontsize=10)
-    ax.set_ylabel("金额（亿元）", fontsize=11)
+    ax.set_ylabel("Amount (100M CNY)", fontsize=11)
 
     company = data.get("company_name", "")
     year_str = data.get("year", "")
     ax.set_title(
-        f"{company} {year_str}年 核心财务指标对比", fontsize=14, fontweight="bold"
+        f"{company} {year_str} Key Financial Metrics Comparison",
+        fontsize=14,
+        fontweight="bold",
     )
 
     ax.grid(axis="y", linestyle="--", alpha=0.4, color="#cccccc")
@@ -238,7 +229,7 @@ def chart_financial_overview(data, output_dir):
 
 
 # ---------------------------------------------------------------------------
-# Chart 2 – 盈利能力指标 (profitability.png)
+# Chart 2 – Profitability metrics (profitability.png)
 # ---------------------------------------------------------------------------
 def chart_profitability(data, output_dir):
     """Bar chart of profitability / efficiency ratios (%)."""
@@ -273,7 +264,13 @@ def chart_profitability(data, output_dir):
         # Cap at 200% for display readability
         cash_ratio = min(cash_ratio, 200.0)
 
-    labels = ["毛利率", "净利率", "ROE", "资产负债率", "净现比"]
+    labels = [
+        "Gross Margin",
+        "Net Margin",
+        "ROE",
+        "Debt-to-Asset Ratio",
+        "Cash Conversion Ratio",
+    ]
     values = [gross_margin, net_margin, roe, debt_ratio, cash_ratio]
     colors = [COLOR_NAVY, COLOR_LIGHT_BLUE, COLOR_GREEN, COLOR_ACCENT, COLOR_PURPLE]
 
@@ -295,11 +292,15 @@ def chart_profitability(data, output_dir):
             color=COLOR_DARK,
         )
 
-    ax.set_xlabel("百分比 (%)", fontsize=11)
+    ax.set_xlabel("Percentage (%)", fontsize=11)
 
     company = data.get("company_name", "")
     year_str = data.get("year", "")
-    ax.set_title(f"{company} {year_str}年 盈利能力指标", fontsize=14, fontweight="bold")
+    ax.set_title(
+        f"{company} {year_str} Profitability Metrics",
+        fontsize=14,
+        fontweight="bold",
+    )
 
     ax.grid(axis="x", linestyle="--", alpha=0.4, color="#cccccc")
     ax.set_axisbelow(True)
@@ -318,7 +319,7 @@ def chart_profitability(data, output_dir):
 
 
 # ---------------------------------------------------------------------------
-# Chart 3 – 资产结构分布 (asset_structure.png)
+# Chart 3 – Asset structure breakdown (asset_structure.png)
 # ---------------------------------------------------------------------------
 def chart_asset_structure(data, output_dir):
     """Donut chart showing liabilities vs equity composition."""
@@ -334,8 +335,8 @@ def chart_asset_structure(data, output_dir):
     equity_yi = format_yi(equity)
 
     labels = [
-        f"负债\n{liab_yi:.1f}亿元",
-        f"所有者权益\n{equity_yi:.1f}亿元",
+        f"Liabilities\n{liab_yi:.1f} 100M CNY",
+        f"Shareholders' Equity\n{equity_yi:.1f} 100M CNY",
     ]
     sizes = [total_liabilities, equity]
     colors = [COLOR_ACCENT, COLOR_NAVY]
@@ -370,7 +371,7 @@ def chart_asset_structure(data, output_dir):
     ax.text(
         0,
         0.05,
-        "总资产",
+        "Total Assets",
         ha="center",
         va="center",
         fontsize=13,
@@ -379,7 +380,7 @@ def chart_asset_structure(data, output_dir):
     ax.text(
         0,
         -0.1,
-        f"{total_yi:.1f}亿元",
+        f"{total_yi:.1f} 100M CNY",
         ha="center",
         va="center",
         fontsize=16,
@@ -390,7 +391,7 @@ def chart_asset_structure(data, output_dir):
     company = data.get("company_name", "")
     year_str = data.get("year", "")
     ax.set_title(
-        f"{company} {year_str}年 资产结构分布",
+        f"{company} {year_str} Asset Structure Breakdown",
         fontsize=14,
         fontweight="bold",
         pad=20,
@@ -409,7 +410,7 @@ def chart_asset_structure(data, output_dir):
 # ---------------------------------------------------------------------------
 def generate_charts(data, output_dir):
     """Generate all 3 charts and return a manifest dict."""
-    setup_chinese_font()
+    setup_font()
 
     paths = {
         "financial_overview": chart_financial_overview(data, output_dir),

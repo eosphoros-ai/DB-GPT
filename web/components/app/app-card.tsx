@@ -70,7 +70,7 @@ export default function AppCard(props: IProps) {
   const handleChat = async () => {
     const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
     if (res) {
-      // 原生应用跳转
+      // Native app navigation
       if (app.team_mode === 'native_app') {
         const { chat_scene = '' } = app.team_context;
         router.push(`/chat?scene=${chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
@@ -81,7 +81,7 @@ export default function AppCard(props: IProps) {
     }
   };
 
-  // 发布或取消发布应用
+  // Publish or unpublish app
   const { run: operate } = useRequest(
     async () => {
       if (app.published === 'true') {

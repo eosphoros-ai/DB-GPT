@@ -174,7 +174,7 @@ const ChatContent: React.FC<{
       {/* icon */}
       <div className='flex flex-shrink-0 items-start'>{isRobot ? <RobotIcon model={model_name} /> : <UserIcon />}</div>
       <div className={`flex ${scene === 'chat_agent' && !thinking ? 'flex-1' : ''} overflow-hidden`}>
-        {/* 用户提问 */}
+        {/* User question */}
         {!isRobot && (
           <div className='flex flex-1 relative group'>
             <div
@@ -228,7 +228,7 @@ const ChatContent: React.FC<{
             )}
           </div>
         )}
-        {/* ai回答 */}
+        {/* AI answer */}
         {isRobot && (
           <div className='flex flex-1 flex-col w-full'>
             <div className='bg-white dark:bg-[rgba(255,255,255,0.16)] p-4 rounded-2xl rounded-tl-none mb-2'>
@@ -259,7 +259,7 @@ const ChatContent: React.FC<{
                   </GPTVis>
                 </div>
               )}
-              {/* 正在思考 */}
+              {/* Thinking */}
               {thinking && !context && (
                 <div className='flex items-center gap-2'>
                   <span className='flex text-sm text-[#1c2533] dark:text-white'>{t('thinking')}</span>
@@ -271,7 +271,7 @@ const ChatContent: React.FC<{
                 </div>
               )}
             </div>
-            {/* 用户反馈 */}
+            {/* User feedback */}
             <Feedback content={content} />
           </div>
         )}

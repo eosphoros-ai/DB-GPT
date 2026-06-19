@@ -108,7 +108,7 @@ const SvgPreview = ({ code, language = 'svg' }) => {
     // Create an a tag
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'image.svg'; // 文件名
+    a.download = 'image.svg'; // File name
 
     // Add to body and trigger click
     document.body.appendChild(a);

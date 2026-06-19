@@ -59,7 +59,7 @@ const Playground: NextPage = () => {
         ...params,
       }),
     );
-  // 获取应用列表
+  // Fetch app list
   const { run: getAppListFn, loading } = useRequest(
     async (app_name = '', page_no = '1', page_size = '12') => {
       switch (activeKey) {
@@ -152,19 +152,19 @@ const Playground: NextPage = () => {
   const columnCount = 3;
 
   function isRowLoaded({ index }: Index) {
-    return !!apps.app_list[index]; // 检查给定的索引是否已经加载
+    return !!apps.app_list[index]; // Check if the given index is already loaded
   }
 
   function loadMoreRows({ startIndex, stopIndex }: IndexRange) {
     const pageSize = 12;
-    const currentPage = Math.ceil(startIndex / pageSize) + 1; // 计算当前页数
+    const currentPage = Math.ceil(startIndex / pageSize) + 1; // Calculate current page
     console.log(startIndex, stopIndex, currentPage);
-    // 这里应该是一个从服务器获取更多数据的异步操作
-    // 例如，你可能会调用 API 并返回一个 Promise
+    // This should be an async operation to fetch more data from the server
+    // For example, call an API and return a Promise
     return getAppListFn('', currentPage.toString());
   }
   const cellRenderer: GridCellRenderer = ({ columnIndex, key, rowIndex, style }) => {
-    // 计算数组中的索引
+    // Calculate index in array
     const index = rowIndex * columnCount + columnIndex;
     if (!isRowLoaded({ index })) return null;
     const item = apps.app_list[index];
@@ -196,7 +196,7 @@ const Playground: NextPage = () => {
             )
           }
           onClick={async () => {
-            // 原生应用跳转
+            // Native app navigation
 
             if (item.team_mode === 'native_app') {
               const { chat_scene = '' } = item.team_context;
@@ -216,7 +216,7 @@ const Playground: NextPage = () => {
                 router.push(`/chat?scene=${chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
               }
             } else {
-              // 自定义应用
+              // Custom app
               const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
               if (res) {
                 setCurrentDialogInfo?.({
@@ -348,7 +348,7 @@ const Playground: NextPage = () => {
               <InfiniteLoader
                 isRowLoaded={isRowLoaded}
                 loadMoreRows={loadMoreRows}
-                rowCount={apps.total_count} // 数据的总行数，如果未知则可以设置为一个较大的数字
+                rowCount={apps.total_count} // Total row count; use a large number if unknown
               >
                 {({ onRowsRendered, registerChild }) => (
                   <AutoSizer>
@@ -367,7 +367,7 @@ const Playground: NextPage = () => {
                         columnWidth={width / columnCount}
                         columnCount={columnCount}
                         height={height}
-                        rowHeight={200 /* 你的行高 */}
+                        rowHeight={200 /* your row height */}
                         rowCount={apps.total_count}
                         width={width}
                       />

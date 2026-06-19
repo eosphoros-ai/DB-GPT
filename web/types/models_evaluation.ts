@@ -1,6 +1,6 @@
 export type TabKey = 'all';
 
-// 评估列表项接口
+// Evaluation list item interface
 export interface BenchmarkConfig {
   file_parse_type: string;
   format_type: string;
@@ -29,7 +29,7 @@ export interface EvaluationItem {
   datasets: null;
   evaluate_metrics: null;
   context: {
-    benchmark_config: string; // JSON字符串
+    benchmark_config: string; // JSON string
   };
   user_name: null;
   user_id: null;
@@ -67,16 +67,16 @@ export interface getBenchmarkTaskListRequest {
   sys_code?: string;
 }
 
-// 新的创建评测任务请求类型
+// Create evaluation task request type
 export type createBenchmarkTaskRequest = {
   scene_value: string;
   benchmark_type: string;
-  evaluation_env?: string; // 评测环境: 'dev' | 'test'
-  // LLM 评测相关字段 (可选)
+  evaluation_env?: string; // Evaluation environment: 'dev' | 'test'
+  // LLM evaluation fields (optional)
   model_list?: string[];
   temperature?: number;
   max_tokens?: number;
-  // Agent 评测相关字段 (可选)
+  // Agent evaluation fields (optional)
   api_url?: string;
   headers?: Record<string, any>;
   parse_strategy?: string;

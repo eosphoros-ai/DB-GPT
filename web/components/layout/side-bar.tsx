@@ -4,7 +4,7 @@ import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
-import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
   ApiOutlined,
@@ -23,7 +23,6 @@ import Icon, {
 import { Popover, Skeleton, Tooltip, message } from 'antd';
 import cls from 'classnames';
 import moment from 'moment';
-import 'moment/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -73,7 +72,7 @@ function SideBar() {
     pathname.startsWith('/construct/models') ||
     pathname.startsWith('/construct/scheduled-tasks') ||
     pathname === '/models_evaluation';
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [logo, setLogo] = useState<string>('/logo_zh_latest.png');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dialogueList, setDialogueList] = useState<IChatDialogueSchema[]>([]);
@@ -100,7 +99,7 @@ function SideBar() {
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
         setDialogueList(prev => prev.filter(d => d.conv_uid !== convUid));
-        message.success('已删除');
+        message.success('Deleted');
       }
     } catch (error) {
       console.error('Failed to delete dialogue', error);
@@ -115,11 +114,11 @@ function SideBar() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return '刚刚';
-    if (diffMins < 60) return `${diffMins}分钟前`;
-    if (diffHours < 24) return `${diffHours}小时前`;
-    if (diffDays < 7) return `${diffDays}天前`;
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }, []);
 
   const handleToggleMenu = useCallback(() => {
@@ -131,14 +130,6 @@ function SideBar() {
     setMode(theme);
     localStorage.setItem(STORAGE_THEME_KEY, theme);
   }, [mode, setMode]);
-
-  const handleChangeLang = useCallback(() => {
-    const language = i18n.language === 'en' ? 'zh' : 'en';
-    i18n.changeLanguage(language);
-    if (language === 'zh') moment.locale('zh-cn');
-    if (language === 'en') moment.locale('en');
-    localStorage.setItem(STORAGE_LANG_KEY, language);
-  }, [i18n]);
 
   const functions = useMemo(() => {
     const items: RouteItem[] = [
@@ -307,10 +298,8 @@ function SideBar() {
   );
 
   useEffect(() => {
-    const language = i18n.language;
-    if (language === 'zh') moment.locale('zh-cn');
-    if (language === 'en') moment.locale('en');
-  }, [i18n.language]);
+    moment.locale('en');
+  }, []);
 
   useEffect(() => {
     setLogo(mode === 'dark' ? '/logo_s_latest.png' : '/logo_zh_latest.png');
@@ -329,7 +318,7 @@ function SideBar() {
             <Link href='/' className='flex justify-center items-center pb-2'>
               <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={40} height={40} />
             </Link>
-            <Tooltip title={t('Show_Sidebar') || '展开侧栏'} placement='right'>
+            <Tooltip title={t('Show_Sidebar')} placement='right'>
               <div
                 onClick={handleToggleMenu}
                 className='flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors'
@@ -398,7 +387,7 @@ function SideBar() {
         <Link href='/' className='flex items-center'>
           <Image src={logo} alt='DB-GPT' width={140} height={32} />
         </Link>
-        <Tooltip title={t('Close_Sidebar') || '收起侧栏'}>
+        <Tooltip title={t('Close_Sidebar')}>
           <div
             onClick={handleToggleMenu}
             className='flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors'
@@ -504,7 +493,7 @@ function SideBar() {
                     <div className='text-[11px] text-gray-400 mt-0.5'>{formatRelativeTime(conv.gmt_created)}</div>
                   )}
                 </div>
-                <Tooltip title='删除'>
+                <Tooltip title={t('Delete')}>
                   <DeleteOutlined
                     onClick={e => handleDeleteDialogue(e, conv.conv_uid)}
                     className='text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1'
@@ -534,11 +523,6 @@ function SideBar() {
           <Popover content={mode === 'dark' ? 'Light' : 'Dark'}>
             <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleToggleTheme}>
               {mode === 'dark' ? <Icon component={DarkSvg} /> : <Icon component={SunnySvg} />}
-            </div>
-          </Popover>
-          <Popover content={t('language')}>
-            <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleChangeLang}>
-              <GlobalOutlined />
             </div>
           </Popover>
           <Popover content={t(isMenuExpand ? 'Close_Sidebar' : 'Show_Sidebar')}>

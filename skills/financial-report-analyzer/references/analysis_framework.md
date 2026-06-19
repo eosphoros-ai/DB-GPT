@@ -1,23 +1,23 @@
-# 财报分析标准框架
+# Standard Financial Report Analysis Framework
 
-在进行财报分析时，应遵循以下逻辑步骤以确保分析的全面性和深度。
+When analyzing financial reports, follow these logical steps to ensure comprehensive and in-depth coverage.
 
-## 1. 概览与业绩摘要
-- 提取年度营业收入、净利润及其同比增长率。
-- 关注非经常性损益对利润的影响。
+## 1. Overview and Performance Summary
+- Extract annual revenue, net profit, and their year-over-year growth rates.
+- Assess the impact of non-recurring items on profit.
 
-## 2. 盈利质量分析
-- **毛利率趋势**：对比近三年毛利率，分析是成本下降还是售价提升。
-- **费用控制**：观察销售费用、管理费用、研发费用的增速是否超过营收增速。
+## 2. Earnings Quality Analysis
+- **Gross margin trend**: Compare gross margin over the past three years; determine whether improvement comes from lower costs or higher prices.
+- **Expense control**: Check whether sales, administrative, and R&D expense growth exceeds revenue growth.
 
-## 3. 资产负债表健康度
-- **资产结构**：关注货币资金、应收账款、存货、固定资产的占比。
-- **负债风险**：检查有息负债规模及偿债压力。
+## 3. Balance Sheet Health
+- **Asset structure**: Review the share of cash, receivables, inventory, and fixed assets.
+- **Debt risk**: Examine interest-bearing debt levels and repayment pressure.
 
-## 4. 现金流验证
-- 经营活动现金流是否持续为正。
-- 资本开支（投资活动现金流）是否与公司扩张战略匹配。
+## 4. Cash Flow Validation
+- Whether operating cash flow remains consistently positive.
+- Whether capital expenditure (investing cash flow) aligns with the company's expansion strategy.
 
-## 5. 业务与行业地位
-- 主营业务的行业竞争力。
-- 研发投入及其转化效果。
+## 5. Business and Industry Position
+- Competitive strength of core businesses within the industry.
+- R&D investment and its conversion into results.

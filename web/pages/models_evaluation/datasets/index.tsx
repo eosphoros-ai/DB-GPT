@@ -12,7 +12,7 @@ import styles from '../styles.module.css';
 
 const { Title, Text } = Typography;
 
-// 定义数据类型
+// Define data types
 interface Dataset {
   dataset_id: string;
   name: string;
@@ -41,7 +41,7 @@ interface TableData {
 }
 
 type CustomTreeDataNode = TreeDataNode & {
-  parent?: string; // 指向父节点
+  parent?: string; // Pointer to parent node
 };
 
 const DatasetsForEvaluation = () => {
@@ -54,10 +54,10 @@ const DatasetsForEvaluation = () => {
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const { t } = useTranslation();
-  // 构造树结构数据
+  // Build tree structure data
   const [treeData, setTreeData] = useState<CustomTreeDataNode[]>([]);
 
-  // 获取数据集列表
+  // Fetch dataset list
   useEffect(() => {
     async function init() {
       const result: Dataset[] = await fetchDatasets();
@@ -95,7 +95,7 @@ const DatasetsForEvaluation = () => {
     }
   };
 
-  // 获取数据集下的表列表
+  // Fetch table list under dataset
   const fetchTables = async (datasetId: string): Promise<TableInfo[]> => {
     try {
       setLoading(prev => ({ ...prev, tables: true }));
@@ -150,7 +150,7 @@ const DatasetsForEvaluation = () => {
         tables.map(item => ({
           title: item.name,
           key: item.name,
-          parent: key, // 保留父节点的指针
+          parent: key, // Keep pointer to parent node
           isLeaf: true,
         })),
       ),
@@ -163,7 +163,7 @@ const DatasetsForEvaluation = () => {
     setSelectedTable(selectedKeys[0] as string);
   };
 
-  // 获取表数据
+  // Fetch table data
   const fetchTableData = async (datasetId: string, tableName: string) => {
     try {
       setLoading(prev => ({ ...prev, tableData: true }));
@@ -191,7 +191,7 @@ const DatasetsForEvaluation = () => {
     }
   }, [selectedDataset, selectedTable]);
 
-  // 生成表格列定义
+  // Generate table column definitions
   const generateColumns = () => {
     if (!tableData || tableData.rows.length === 0) return [];
 
@@ -216,7 +216,7 @@ const DatasetsForEvaluation = () => {
         className={`w-full h-full flex-1 flex flex-col ${styles['page-card']}`}
       >
         <div className='flex h-full'>
-          {/* 左侧数据集列表 */}
+          {/* Left dataset list */}
           <div className='w-1/4 pr-4 border-r flex flex-col'>
             <Title level={5} className='mb-4'>
               {t('dataset_list')}
@@ -226,7 +226,7 @@ const DatasetsForEvaluation = () => {
             </div>
           </div>
 
-          {/* 右侧表数据 */}
+          {/* Right table data */}
           <div className='w-3/4 pl-4 flex flex-col'>
             <div className='flex justify-between items-center mb-4'>
               <Title level={5} className='mb-0'>

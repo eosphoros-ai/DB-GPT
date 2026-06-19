@@ -13,7 +13,7 @@ const Libro: React.FC = () => {
 
   useEffect(() => {
     console.log(window.location);
-    // 监听语言切换事件
+    // Listen for language switch events
     const handleLanguageChange = (lng: string) => {
       iframeRef.current?.contentWindow?.postMessage(
         `lang:${lng}`,
@@ -21,10 +21,10 @@ const Libro: React.FC = () => {
       );
     };
 
-    // 注册监听器
+    // Register listener
     i18n.on('languageChanged', handleLanguageChange);
 
-    // 清理监听器
+    // Clean up listener
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };

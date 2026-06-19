@@ -214,14 +214,14 @@ Follow these steps in order, skipping only if there is a clear reason why they a
 
 ### Step 1: Understanding the Skill with Concrete Examples
 
-**Default: Skip this step and proceed to Step 2** when the user's request already specifies a clear skill topic (e.g., "创建一个Excel分析技能", "Create a PDF processing skill", "生成一个数据可视化技能"). In such cases, you already have enough context to plan the skill — infer reasonable usage patterns yourself and move forward immediately.
+**Default: Skip this step and proceed to Step 2** when the user's request already specifies a clear skill topic (e.g., "Create an Excel analysis skill", "Create a PDF processing skill", "Build a data visualization skill"). In such cases, you already have enough context to plan the skill — infer reasonable usage patterns yourself and move forward immediately.
 
-**Only pause to ask questions** when the request is genuinely ambiguous and you cannot proceed without clarification — for example, "帮我创建一个技能" with no topic specified, or a domain so specialized that guessing usage patterns would likely be wrong.
+**Only pause to ask questions** when the request is genuinely ambiguous and you cannot proceed without clarification — for example, "Help me create a skill" with no topic specified, or a domain so specialized that guessing usage patterns would likely be wrong.
 
 When clarification IS needed, ask at most 1-2 focused questions in a single message, then proceed regardless of the detail level of the user's response. Do NOT enter a multi-turn Q&A loop. Examples of focused questions:
 
-- "这个技能主要处理什么类型的数据/文件？"
-- "能给一个典型的使用场景吗？"
+- "What types of data or files will this skill primarily handle?"
+- "Can you share a typical usage scenario?"
 
 Conclude this step as quickly as possible. The goal is to start building, not to achieve perfect understanding upfront — iteration (Step 6) exists for refinement.
 

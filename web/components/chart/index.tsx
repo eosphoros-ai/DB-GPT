@@ -14,7 +14,7 @@ function Chart({ chartsData }: Props) {
   const chartRows = useMemo(() => {
     if (chartsData) {
       const res = [];
-      // 若是有类型为 IndicatorValue 的，提出去，独占一行
+      // If any chart has type IndicatorValue, extract it to its own row
       const chartCalc = chartsData?.filter(item => item.chart_type === 'IndicatorValue');
       if (chartCalc.length > 0) {
         res.push({
@@ -25,7 +25,7 @@ function Chart({ chartsData }: Props) {
       const otherCharts = chartsData?.filter(item => item.chart_type !== 'IndicatorValue');
       const otherLength = otherCharts.length;
       let curIndex = 0;
-      // charts 数量 3～8个，暂定每行排序
+      // For 3–8 charts, lay out rows using the predefined per-row counts
       const chartLengthMap = [[0], [1], [2], [1, 2], [1, 3], [2, 1, 2], [2, 1, 3], [3, 1, 3], [3, 2, 3]];
       chartLengthMap[otherLength].forEach(item => {
         if (item > 0) {

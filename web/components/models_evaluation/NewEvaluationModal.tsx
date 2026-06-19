@@ -24,7 +24,7 @@ export const NewEvaluationModal = (props: Props) => {
   const [evaluationType, setEvaluationType] = useState<'LLM' | 'AGENT'>('LLM');
   const [parseStrategy, setParseStrategy] = useState<'DIRECT' | 'JSON_PATH'>('JSON_PATH');
 
-  // 获取模型列表
+  // Fetch model list
   const { loading: modelLoading } = useRequest(
     async () => {
       const [_, data] = await apiInterceptors(getUsableModels());
@@ -44,10 +44,10 @@ export const NewEvaluationModal = (props: Props) => {
     },
   );
 
-  // 创建评测任务
+  // Create evaluation task
   const { loading: submitLoading, run: submitEvaluation } = useRequest(
     async (values: any) => {
-      // 构造评测任务参数
+      // Build evaluation task parameters
       if (values.evaluation_type === 'LLM') {
         const params: createBenchmarkTaskRequest = {
           scene_value: values.scene_value,
@@ -64,13 +64,13 @@ export const NewEvaluationModal = (props: Props) => {
         let parsedHeaders = {};
         let parsedMapping = {};
 
-        // 解析JSON字符串,提供错误处理
+        // Parse JSON strings with error handling
         try {
           if (values.headers) {
             parsedHeaders = JSON.parse(values.headers);
           }
         } catch (_error) {
-          throw new Error('Header信息格式不正确,请输入有效的JSON格式');
+          throw new Error('Invalid header format. Please enter valid JSON.');
         }
 
         try {
@@ -78,10 +78,10 @@ export const NewEvaluationModal = (props: Props) => {
             parsedMapping = JSON.parse(values.response_mapping);
           }
         } catch (_error) {
-          throw new Error('Response Mapping配置格式不正确,请输入有效的JSON格式');
+          throw new Error('Invalid Response Mapping format. Please enter valid JSON.');
         }
 
-        // 构造Agent评测参数,使用Agent专有字段
+        // Build Agent evaluation parameters using Agent-specific fields
         const agentParams: createBenchmarkTaskRequest = {
           scene_value: values.scene_value,
           benchmark_type: values.evaluation_type,
@@ -103,9 +103,9 @@ export const NewEvaluationModal = (props: Props) => {
       onSuccess: () => {
         message.success(t('create_evaluation_success'));
         form.resetFields();
-        setEvaluationType('LLM'); // 重置评测类型
-        setParseStrategy('JSON_PATH'); // 重置解析策略
-        onOk?.(); // 触发外部的onOk回调，用于刷新列表
+        setEvaluationType('LLM'); // Reset evaluation type
+        setParseStrategy('JSON_PATH'); // Reset parse strategy
+        onOk?.(); // Trigger external onOk callback to refresh list
         onCancel();
       },
       onError: (error: any) => {
@@ -119,7 +119,7 @@ export const NewEvaluationModal = (props: Props) => {
       const values = await form.validateFields();
       await submitEvaluation(values);
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error('Form validation failed:', error);
     }
   };
 
@@ -192,7 +192,7 @@ export const NewEvaluationModal = (props: Props) => {
           </Radio.Group>
         </Form.Item>
 
-        {/* 模型评测相关输入框 */}
+        {/* LLM evaluation input fields */}
         {evaluationType === 'LLM' && (
           <>
             <Form.Item
@@ -246,7 +246,7 @@ export const NewEvaluationModal = (props: Props) => {
           </>
         )}
 
-        {/* Agent评测相关输入框 */}
+        {/* Agent evaluation input fields */}
         {evaluationType === 'AGENT' && (
           <>
             <Form.Item

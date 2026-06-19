@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -371,24 +371,24 @@
                 </div>
                 <div class="summary-grid" id="hero-summary-grid">
                     <div class="summary-card">
-                        <div class="label">数据规模</div>
+                        <div class="label">Data Scale</div>
                         <div class="value" id="hero-rows">--</div>
-                        <div class="desc">样本量与字段规模</div>
+                        <div class="desc">Sample size & field count</div>
                     </div>
                     <div class="summary-card">
-                        <div class="label">完整度</div>
+                        <div class="label">Completeness</div>
                         <div class="value" id="hero-completeness">--</div>
-                        <div class="desc">缺失与重复情况</div>
+                        <div class="desc">Missing & duplicate status</div>
                     </div>
                     <div class="summary-card">
-                        <div class="label">核心指标</div>
+                        <div class="label">Key Metric</div>
                         <div class="value" id="hero-metric">--</div>
-                        <div class="desc">自动识别的主分析指标</div>
+                        <div class="desc">Auto-detected primary metric</div>
                     </div>
                     <div class="summary-card">
-                        <div class="label">异动差距</div>
+                        <div class="label">Anomaly Gap</div>
                         <div class="value" id="hero-gap">--</div>
-                        <div class="desc">高低分组差异概览</div>
+                        <div class="desc">High/low group difference overview</div>
                     </div>
                 </div>
             </div>
@@ -399,8 +399,8 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#1d4ed8;">01</div>
                     <div>
-                        <div class="section-title">报告摘要</div>
-                        <div class="section-desc">快速概览数据规模、重点发现和关键判断</div>
+                        <div class="section-title">Executive Summary</div>
+                        <div class="section-desc">Quick overview of data scale, key findings, and critical insights</div>
                     </div>
                 </div>
             </div>
@@ -415,18 +415,18 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#0f766e;">02</div>
                     <div>
-                        <div class="section-title">数据概览与质量检查</div>
-                        <div class="section-desc">检查数据结构、字段类型、缺失情况与整体质量</div>
+                        <div class="section-title">Data Overview & Quality Check</div>
+                        <div class="section-desc">Inspect data structure, field types, missing values, and overall quality</div>
                     </div>
                 </div>
             </div>
             <div class="board grid-2">
                 <div class="panel">
-                    <div class="panel-title">字段缺失率分布</div>
+                    <div class="panel-title">Field Missing Rate Distribution</div>
                     <div class="chart-box" id="missing-rate-chart" style="height: 320px;"></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-title">字段类型结构</div>
+                    <div class="panel-title">Field Type Structure</div>
                     <div class="chart-box" id="dtype-chart" style="height: 320px;"></div>
                 </div>
             </div>
@@ -437,8 +437,8 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#2563eb;">03</div>
                     <div>
-                        <div class="section-title">数值指标分布特征</div>
-                        <div class="section-desc">观察核心数值列的分布形态、离散程度和偏态特征</div>
+                        <div class="section-title">Numerical Distribution Features</div>
+                        <div class="section-desc">Observe distribution shape, dispersion, and skewness of key numeric columns</div>
                     </div>
                 </div>
             </div>
@@ -456,14 +456,14 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#d97706;">04</div>
                     <div>
-                        <div class="section-title">特征分析与结构分析</div>
-                        <div class="section-desc">从分类结构、排名对比和统计画像理解数据特征</div>
+                        <div class="section-title">Feature & Structural Analysis</div>
+                        <div class="section-desc">Understand data characteristics via categorical structure, rankings, and statistical profiles</div>
                     </div>
                 </div>
             </div>
             <div class="board grid-2">
                 <div class="panel">
-                    <div class="panel-title">分类维度结构</div>
+                    <div class="panel-title">Categorical Dimension Structure</div>
                     <div id="categorical-charts" class="grid-2"></div>
                     <div class="insight-box">
                         <div class="insight-label">Categorical Insights</div>
@@ -471,7 +471,7 @@
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panel-title">Top / Bottom 排名特征</div>
+                    <div class="panel-title">Top / Bottom Ranking Features</div>
                     <div class="grid-2">
                         <div class="chart-box" id="top5-chart" style="height: 300px;"></div>
                         <div class="chart-box" id="bottom5-chart" style="height: 300px;"></div>
@@ -486,15 +486,15 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#be123c;">05</div>
                     <div>
-                        <div class="section-title">关系分析与异常识别</div>
-                        <div class="section-desc">关注变量联动、异常点分布以及结构性关系特征</div>
+                        <div class="section-title">Relationship Analysis & Anomaly Detection</div>
+                        <div class="section-desc">Focus on variable interactions, outlier distribution, and structural relationships</div>
                     </div>
                 </div>
             </div>
             <div class="board">
                 <div class="grid-2">
                     <div class="panel">
-                        <div class="panel-title">相关性与散点关系</div>
+                        <div class="panel-title">Correlation & Scatter Relationships</div>
                         <div class="grid-2">
                             <div class="chart-box" id="correlation-chart" style="height: 420px;"></div>
                             <div class="chart-box" id="scatter-chart" style="height: 420px;"></div>
@@ -505,7 +505,7 @@
                         </div>
                     </div>
                     <div class="panel" id="boxplot-section">
-                        <div class="panel-title">异常值与箱线分布</div>
+                        <div class="panel-title">Outliers & Box Plot Distribution</div>
                         <div id="outlier-summary" style="margin-bottom: 12px;"></div>
                         <div class="chart-box" id="boxplot-chart" style="height: 420px;"></div>
                     </div>
@@ -518,19 +518,19 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#6d28d9;">06</div>
                     <div>
-                        <div class="section-title">数据异动概述</div>
-                        <div class="section-desc">围绕核心指标概括波动、分层差距、异常比例和主要异动特征</div>
+                        <div class="section-title">Data Anomaly Overview</div>
+                        <div class="section-desc">Summarize fluctuations, stratification gaps, anomaly ratios, and key anomaly features around the primary metric</div>
                     </div>
                 </div>
             </div>
             <div class="board grid-2">
                 <div class="panel">
-                    <div class="panel-title">异动概览指标</div>
+                    <div class="panel-title">Anomaly Overview Metrics</div>
                     <div class="metric-row" id="anomaly-metrics"></div>
                     <div class="chart-box" id="anomaly-band-chart" style="height: 300px; margin-top: 12px;"></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-title">时间/序列视角（如适用）</div>
+                    <div class="panel-title">Time / Sequence Perspective (if applicable)</div>
                     <div class="chart-box" id="time-series-chart" style="height: 300px;"></div>
                     <div class="insight-box">
                         <div class="insight-label">Time Series / Anomaly Insights</div>
@@ -545,18 +545,18 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#0ea5e9;">07</div>
                     <div>
-                        <div class="section-title">归因分析模块</div>
-                        <div class="section-desc">在基础分析之上，补充关键驱动维度、组间差异和可能原因线索</div>
+                        <div class="section-title">Attribution Analysis Module</div>
+                        <div class="section-desc">Beyond foundational analysis, supplement with key drivers, inter-group differences, and possible causal clues</div>
                     </div>
                 </div>
             </div>
             <div class="board grid-2">
                 <div class="panel">
-                    <div class="panel-title">主要驱动维度排序</div>
+                    <div class="panel-title">Key Driver Dimension Ranking</div>
                     <div class="chart-box" id="driver-chart" style="height: 360px;"></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-title">归因线索摘要</div>
+                    <div class="panel-title">Attribution Clue Summary</div>
                     <div class="signal-list" id="driver-signal-list"></div>
                 </div>
             </div>
@@ -567,18 +567,18 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#047857;">08</div>
                     <div>
-                        <div class="section-title">分析结果与统计明细</div>
-                        <div class="section-desc">通过统计表和全局画像沉淀分析结果，作为原因推测的证据基础</div>
+                        <div class="section-title">Analysis Results & Statistical Details</div>
+                        <div class="section-desc">Consolidate analysis via statistical tables and global profiles as evidence for root cause inference</div>
                     </div>
                 </div>
             </div>
             <div class="board grid-2" id="stats-layout">
                 <div class="panel">
-                    <div class="panel-title">特征轮廓雷达</div>
+                    <div class="panel-title">Feature Profile Radar</div>
                     <div class="chart-box" id="radar-chart" style="height: 340px;"></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-title">统计摘要表</div>
+                    <div class="panel-title">Statistical Summary Table</div>
                     <div id="stats-table-container" style="overflow-x:auto;"></div>
                 </div>
             </div>
@@ -589,8 +589,8 @@
                 <div class="section-title-wrap">
                     <div class="section-no" style="background:#1e40af;">09</div>
                     <div>
-                        <div class="section-title">原因推测、总结与建议</div>
-                        <div class="section-desc">对前述现象进行收束，区分证据与推测，并给出行动建议</div>
+                        <div class="section-title">Root Cause Inference, Conclusions & Recommendations</div>
+                        <div class="section-desc">Converge prior findings, distinguish evidence from inference, and provide action recommendations</div>
                     </div>
                 </div>
             </div>
@@ -670,165 +670,12 @@
         }
 
         window.onload = function () {
-            /* ── i18n: translate hardcoded titles/labels based on LANG ── */
-            var langMeta = document.getElementById("report-lang");
-            var lang = (langMeta && langMeta.dataset.lang) ? langMeta.dataset.lang.toLowerCase() : "zh";
-            if (lang !== "zh" && lang !== "en") lang = "zh";
-            document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
-
-            var I18N = {
-                /* ── hero summary cards ── */
-                "数据规模":        "Data Scale",
-                "样本量与字段规模":  "Sample size & field count",
-                "完整度":          "Completeness",
-                "缺失与重复情况":   "Missing & duplicate status",
-                "核心指标":        "Key Metric",
-                "自动识别的主分析指标": "Auto-detected primary metric",
-                "异动差距":        "Anomaly Gap",
-                "高低分组差异概览":  "High/low group difference overview",
-                /* ── section titles ── */
-                "报告摘要":              "Executive Summary",
-                "快速概览数据规模、重点发现和关键判断": "Quick overview of data scale, key findings, and critical insights",
-                "数据概览与质量检查":      "Data Overview & Quality Check",
-                "检查数据结构、字段类型、缺失情况与整体质量": "Inspect data structure, field types, missing values, and overall quality",
-                "数值指标分布特征":        "Numerical Distribution Features",
-                "观察核心数值列的分布形态、离散程度和偏态特征": "Observe distribution shape, dispersion, and skewness of key numeric columns",
-                "特征分析与结构分析":      "Feature & Structural Analysis",
-                "从分类结构、排名对比和统计画像理解数据特征": "Understand data characteristics via categorical structure, rankings, and statistical profiles",
-                "关系分析与异常识别":      "Relationship Analysis & Anomaly Detection",
-                "关注变量联动、异常点分布以及结构性关系特征": "Focus on variable interactions, outlier distribution, and structural relationships",
-                "数据异动概述":           "Data Anomaly Overview",
-                "围绕核心指标概括波动、分层差距、异常比例和主要异动特征": "Summarize fluctuations, stratification gaps, anomaly ratios, and key anomaly features around the primary metric",
-                "归因分析模块":           "Attribution Analysis Module",
-                "在基础分析之上，补充关键驱动维度、组间差异和可能原因线索": "Beyond foundational analysis, supplement with key drivers, inter-group differences, and possible causal clues",
-                "分析结果与统计明细":      "Analysis Results & Statistical Details",
-                "通过统计表和全局画像沉淀分析结果，作为原因推测的证据基础": "Consolidate analysis via statistical tables and global profiles as evidence for root cause inference",
-                "原因推测、总结与建议":    "Root Cause Inference, Conclusions & Recommendations",
-                "对前述现象进行收束，区分证据与推测，并给出行动建议": "Converge prior findings, distinguish evidence from inference, and provide action recommendations",
-                /* ── panel titles ── */
-                "字段缺失率分布":    "Field Missing Rate Distribution",
-                "字段类型结构":     "Field Type Structure",
-                "分类维度结构":     "Categorical Dimension Structure",
-                "Top / Bottom 排名特征": "Top / Bottom Ranking Features",
-                "相关性与散点关系":  "Correlation & Scatter Relationships",
-                "异常值与箱线分布":  "Outliers & Box Plot Distribution",
-                "异动概览指标":     "Anomaly Overview Metrics",
-                "时间/序列视角（如适用）": "Time / Sequence Perspective (if applicable)",
-                "主要驱动维度排序":  "Key Driver Dimension Ranking",
-                "归因线索摘要":     "Attribution Clue Summary",
-                "特征轮廓雷达":     "Feature Profile Radar",
-                "统计摘要表":       "Statistical Summary Table",
-                /* ── chart titles (rendered in JS) ── */
-                "字段缺失率":       "Field Missing Rate",
-                "字段类型分布":     "Field Type Distribution",
-                "相关性热力图":     "Correlation Heatmap",
-                "箱线图对比":       "Box Plot Comparison",
-                "全局特征轮廓":     "Global Feature Profile",
-                /* ── overview metric labels ── */
-                "样本行数":   "Sample Rows",
-                "字段数量":   "Field Count",
-                "完整率":     "Completeness",
-                "重复记录":   "Duplicate Records",
-                "内存占用":   "Memory Usage",
-                "主分析指标":  "Primary Metric",
-                "总记录数":   "Total records",
-                "总列数":     "Total columns",
-                "缺失越低越好": "Lower missing is better",
-                "重复行检查":  "Duplicate row check",
-                "数据量级":   "Data magnitude",
-                "后续异动分析基准": "Baseline for anomaly analysis",
-                /* ── anomaly metric labels ── */
-                "自动识别":        "Auto-detected",
-                "均值 / 中位数":   "Mean / Median",
-                "中心位置":        "Central tendency",
-                "P10 / P90":      "P10 / P90",
-                "分位带":          "Percentile band",
-                "高低组差距":       "High/Low Group Gap",
-                "高位组均值 - 低位组均值": "High group mean − Low group mean",
-                "异常值占比":       "Outlier Ratio",
-                "主指标异常比例":    "Primary metric anomaly ratio",
-                "组别规模":         "Group Size",
-                "高位组 / 低位组":   "High group / Low group",
-                /* ── misc JS strings ── */
-                "行":    " rows",
-                "当前数据未识别到可用时间列，已保留文字分析位用于说明分层特征与异动概况。": "No usable time column detected. Text analysis is retained for stratification features and anomaly overview.",
-                "峰值频次": "Peak Frequency",
-                "缺失率":  "Missing rate",
-                /* ── driver analysis ── */
-                "驱动分":       "Driver score",
-                "相关系数":     "Correlation",
-                "组间差异强度":  "Inter-group gap ratio",
-                "高位组均值":    "High group mean",
-                "低位组均值":    "Low group mean",
-                "的驱动线索排序": " driver clue ranking",
-                /* ── segment comparison ── */
-                "分组均值对比":  "Group mean comparison",
-                /* ── footer ── */
-                "Powered by AI Data Analysis Engine · Professional interactive report for CSV exploration": "Powered by AI Data Analysis Engine · Professional interactive report for CSV exploration"
-            };
-
-            function t(zh) {
-                if (lang === "zh") return zh;
-                return I18N[zh] !== undefined ? I18N[zh] : zh;
-            }
-
-            /* Translate static DOM text nodes */
-            if (lang === "en") {
-                /* summary cards */
-                var summaryCards = document.querySelectorAll("#hero-summary-grid .summary-card");
-                var cardTexts = [
-                    ["数据规模", "样本量与字段规模"],
-                    ["完整度", "缺失与重复情况"],
-                    ["核心指标", "自动识别的主分析指标"],
-                    ["异动差距", "高低分组差异概览"]
-                ];
-                summaryCards.forEach(function (card, idx) {
-                    if (cardTexts[idx]) {
-                        var labelEl = card.querySelector(".label");
-                        var descEl = card.querySelector(".desc");
-                        if (labelEl) labelEl.textContent = t(cardTexts[idx][0]);
-                        if (descEl) descEl.textContent = t(cardTexts[idx][1]);
-                    }
-                });
-
-                /* section titles + descriptions */
-                var sections = document.querySelectorAll(".section-title-wrap");
-                var sectionTexts = [
-                    ["报告摘要", "快速概览数据规模、重点发现和关键判断"],
-                    ["数据概览与质量检查", "检查数据结构、字段类型、缺失情况与整体质量"],
-                    ["数值指标分布特征", "观察核心数值列的分布形态、离散程度和偏态特征"],
-                    ["特征分析与结构分析", "从分类结构、排名对比和统计画像理解数据特征"],
-                    ["关系分析与异常识别", "关注变量联动、异常点分布以及结构性关系特征"],
-                    ["数据异动概述", "围绕核心指标概括波动、分层差距、异常比例和主要异动特征"],
-                    ["归因分析模块", "在基础分析之上，补充关键驱动维度、组间差异和可能原因线索"],
-                    ["分析结果与统计明细", "通过统计表和全局画像沉淀分析结果，作为原因推测的证据基础"],
-                    ["原因推测、总结与建议", "对前述现象进行收束，区分证据与推测，并给出行动建议"]
-                ];
-                sections.forEach(function (wrap, idx) {
-                    if (sectionTexts[idx]) {
-                        var titleEl = wrap.querySelector(".section-title");
-                        var descEl = wrap.querySelector(".section-desc");
-                        if (titleEl) titleEl.textContent = t(sectionTexts[idx][0]);
-                        if (descEl) descEl.textContent = t(sectionTexts[idx][1]);
-                    }
-                });
-
-                /* panel titles */
-                document.querySelectorAll(".panel-title").forEach(function (el) {
-                    var zh = el.textContent.trim();
-                    if (I18N[zh]) el.textContent = I18N[zh];
-                });
-
-                /* footer */
-                var footer = document.querySelector(".footer");
-                if (footer) footer.textContent = "Powered by AI Data Analysis Engine · Professional interactive report for CSV exploration";
-            }
-            /* ── end i18n ── */
+            document.documentElement.lang = "en";
 
             var overview = C.overview || {};
             var anomaly = C.anomaly_overview || {};
             var primaryMetric = C.primary_metric || anomaly.metric || "--";
-            setText("hero-rows", overview.rows != null ? overview.rows.toLocaleString() + t("行") : "--");
+            setText("hero-rows", overview.rows != null ? overview.rows.toLocaleString() + " rows" : "--");
             setText("hero-completeness", overview.missing_pct != null ? (100 - overview.missing_pct).toFixed(1) + "%" : "--");
             setText("hero-metric", primaryMetric || "--");
             setText("hero-gap", anomaly.gap != null ? formatNum(anomaly.gap) : "--");
@@ -837,12 +684,12 @@
                 var metricWrap = byId("overview-metrics");
                 if (metricWrap) {
                     var cards = [
-                        { label: t("样本行数"), value: overview.rows != null ? overview.rows.toLocaleString() : "--", hint: t("总记录数") },
-                        { label: t("字段数量"), value: overview.cols != null ? overview.cols : "--", hint: t("总列数") },
-                        { label: t("完整率"), value: overview.missing_pct != null ? (100 - overview.missing_pct).toFixed(1) + "%" : "--", hint: t("缺失越低越好") },
-                        { label: t("重复记录"), value: overview.duplicate_rows != null ? overview.duplicate_rows : "--", hint: t("重复行检查") },
-                        { label: t("内存占用"), value: overview.memory_kb != null ? overview.memory_kb + " KB" : "--", hint: t("数据量级") },
-                        { label: t("主分析指标"), value: primaryMetric || "--", hint: t("后续异动分析基准") }
+                        { label: "Sample Rows", value: overview.rows != null ? overview.rows.toLocaleString() : "--", hint: "Total records" },
+                        { label: "Field Count", value: overview.cols != null ? overview.cols : "--", hint: "Total columns" },
+                        { label: "Completeness", value: overview.missing_pct != null ? (100 - overview.missing_pct).toFixed(1) + "%" : "--", hint: "Lower missing is better" },
+                        { label: "Duplicate Records", value: overview.duplicate_rows != null ? overview.duplicate_rows : "--", hint: "Duplicate row check" },
+                        { label: "Memory Usage", value: overview.memory_kb != null ? overview.memory_kb + " KB" : "--", hint: "Data magnitude" },
+                        { label: "Primary Metric", value: primaryMetric || "--", hint: "Baseline for anomaly analysis" }
                     ];
                     metricWrap.innerHTML = cards.map(function (item) {
                         return '<div class="metric-item"><div class="label">' + item.label + '</div><div class="value">' + item.value + '</div><div class="hint">' + item.hint + '</div></div>';
@@ -857,8 +704,8 @@
                     var cols = dq.columns.slice(0, 20);
                     var rates = dq.missing_rates.slice(0, 20);
                     missingChart.setOption({
-                        title: { text: t("字段缺失率"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
-                        tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" }, formatter: function (p) { return p[0].name + '<br/>' + t("缺失率") + ' <b>' + p[0].value + '%</b>'; } }, TT),
+                        title: { text: "Field Missing Rate", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" }, formatter: function (p) { return p[0].name + '<br/>Missing rate <b>' + p[0].value + '%</b>'; } }, TT),
                         grid: { left: "4%", right: "8%", bottom: "6%", top: "16%", containLabel: true },
                         xAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%", color: "#64748b" }, splitLine: { lineStyle: { color: "#e2e8f0", type: "dashed" } } },
                         yAxis: { type: "category", data: cols.slice().reverse(), axisLabel: { color: "#334155", width: 120, overflow: "truncate" } },
@@ -870,7 +717,7 @@
                     var dtypeData = [];
                     Object.keys(dq.dtype_summary).forEach(function (key) { dtypeData.push({ name: key, value: dq.dtype_summary[key] }); });
                     dtypeChart.setOption({
-                        title: { text: t("字段类型分布"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: "Field Type Distribution", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "item", formatter: "{b}: {c} ({d}%)" }, TT),
                         legend: { bottom: 8, textStyle: { color: "#64748b", fontSize: 11 } },
                         color: ["#2563eb", "#7c3aed", "#d97706", "#059669"],
@@ -938,7 +785,7 @@
                 var topChart = initChart("top5-chart");
                 if (topChart) {
                     topChart.setOption({
-                        title: { text: (lang === "en" ? "Top 5 (by " + tb.rank_col + ")" : "Top 5（按 " + tb.rank_col + "）"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: "Top 5 (by " + tb.rank_col + ")", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" } }, TT),
                         grid: { left: "4%", right: "14%", bottom: "5%", top: "15%", containLabel: true },
                         xAxis: { type: "value", axisLabel: { color: "#64748b" }, splitLine: { lineStyle: { color: "#e2e8f0", type: "dashed" } } },
@@ -949,7 +796,7 @@
                 var bottomChart = initChart("bottom5-chart");
                 if (bottomChart) {
                     bottomChart.setOption({
-                        title: { text: (lang === "en" ? "Bottom 5 (by " + tb.rank_col + ")" : "Bottom 5（按 " + tb.rank_col + "）"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: "Bottom 5 (by " + tb.rank_col + ")", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" } }, TT),
                         grid: { left: "4%", right: "14%", bottom: "5%", top: "15%", containLabel: true },
                         xAxis: { type: "value", axisLabel: { color: "#64748b" }, splitLine: { lineStyle: { color: "#e2e8f0", type: "dashed" } } },
@@ -964,7 +811,7 @@
                 var segmentChart = initChart("segment-comparison-chart");
                 if (segmentChart) {
                     segmentChart.setOption({
-                        title: { text: seg.dimension + (lang === "en" ? " group mean comparison (" + seg.metric + ")" : " 分组均值对比（" + seg.metric + "）"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: seg.dimension + " group mean comparison (" + seg.metric + ")", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" } }, TT),
                         grid: { left: "4%", right: "6%", bottom: "15%", top: "18%", containLabel: true },
                         xAxis: { type: "category", data: seg.labels, axisLabel: { rotate: 25, color: "#64748b" } },
@@ -982,7 +829,7 @@
                 var corrChart = initChart("correlation-chart");
                 if (corrChart) {
                     corrChart.setOption({
-                        title: { text: t("相关性热力图"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: "Correlation Heatmap", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ position: "top", formatter: function (p) { return corr.cols[p.data[0]] + ' / ' + corr.cols[p.data[1]] + '<br/>r = <b>' + p.data[2] + '</b>'; } }, TT),
                         grid: { height: "60%", top: "10%", bottom: "22%", left: "18%", right: "5%" },
                         xAxis: { type: "category", data: corr.cols, splitArea: { show: true }, axisLabel: { rotate: 35, color: "#64748b", fontSize: 9 } },
@@ -1032,7 +879,7 @@
                         (bp.outliers || []).forEach(function (value) { outlierPoints.push([idx, value]); });
                     });
                     boxChart.setOption({
-                        title: { text: t("箱线图对比"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: "Box Plot Comparison", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "item" }, TT),
                         grid: { left: "10%", right: "5%", bottom: "12%", top: "16%" },
                         xAxis: { type: "category", data: bpKeys.slice(0, 8), axisLabel: { rotate: 25, color: "#64748b" } },
@@ -1049,12 +896,12 @@
                 var anomalyWrap = byId("anomaly-metrics");
                 if (anomalyWrap) {
                     var anomalyCards = [
-                        { label: t("核心指标"), value: anomaly.metric, hint: t("自动识别") },
-                        { label: t("均值 / 中位数"), value: formatNum(anomaly.mean) + ' / ' + formatNum(anomaly.median), hint: t("中心位置") },
-                        { label: t("P10 / P90"), value: formatNum(anomaly.q10) + ' / ' + formatNum(anomaly.q90), hint: t("分位带") },
-                        { label: t("高低组差距"), value: formatNum(anomaly.gap), hint: t("高位组均值 - 低位组均值") },
-                        { label: t("异常值占比"), value: formatNum(anomaly.outlier_pct) + '%', hint: t("主指标异常比例") },
-                        { label: t("组别规模"), value: formatNum(anomaly.top_group_size) + ' / ' + formatNum(anomaly.bottom_group_size), hint: t("高位组 / 低位组") }
+                        { label: "Key Metric", value: anomaly.metric, hint: "Auto-detected" },
+                        { label: "Mean / Median", value: formatNum(anomaly.mean) + ' / ' + formatNum(anomaly.median), hint: "Central tendency" },
+                        { label: "P10 / P90", value: formatNum(anomaly.q10) + ' / ' + formatNum(anomaly.q90), hint: "Percentile band" },
+                        { label: "High/Low Group Gap", value: formatNum(anomaly.gap), hint: "High group mean - Low group mean" },
+                        { label: "Outlier Ratio", value: formatNum(anomaly.outlier_pct) + '%', hint: "Primary metric anomaly ratio" },
+                        { label: "Group Size", value: formatNum(anomaly.top_group_size) + ' / ' + formatNum(anomaly.bottom_group_size), hint: "High group / Low group" }
                     ];
                     anomalyWrap.innerHTML = anomalyCards.map(function (item) {
                         return '<div class="metric-item"><div class="label">' + item.label + '</div><div class="value">' + item.value + '</div><div class="hint">' + item.hint + '</div></div>';
@@ -1063,7 +910,7 @@
                 var anomalyChart = initChart("anomaly-band-chart");
                 if (anomalyChart) {
                     anomalyChart.setOption({
-                        title: { text: anomaly.metric + (lang === "en" ? " percentile band distribution" : " 分位带样本分布"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: anomaly.metric + " percentile band distribution", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" } }, TT),
                         grid: { left: "5%", right: "5%", bottom: "12%", top: "16%", containLabel: true },
                         xAxis: { type: "category", data: anomaly.band_labels || [], axisLabel: { color: "#64748b" } },
@@ -1080,7 +927,7 @@
                 var tsChart = initChart("time-series-chart");
                 if (tsChart) {
                     tsChart.setOption({
-                        title: { text: (timeSeries.name || (lang === "en" ? "Metric" : "指标")) + (lang === "en" ? " Trend" : " 趋势线"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: (timeSeries.name || "Metric") + " Trend", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({ trigger: "axis" }, TT),
                         grid: { left: "4%", right: "5%", bottom: "14%", top: "16%", containLabel: true },
                         xAxis: { type: "category", data: timeSeries.dates, boundaryGap: false, axisLabel: { rotate: 28, color: "#64748b", fontSize: 9 } },
@@ -1091,7 +938,7 @@
             } else {
                 var tsEl = byId("time-series-chart");
                 if (tsEl) {
-                    tsEl.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:13px;">' + t("当前数据未识别到可用时间列，已保留文字分析位用于说明分层特征与异动概况。") + '</div>';
+                    tsEl.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:13px;">No usable time column detected. Text analysis is retained for stratification features and anomaly overview.</div>';
                 }
             }
 
@@ -1101,8 +948,8 @@
                 if (driverChart) {
                     var items = driver.items.slice(0, 8);
                     driverChart.setOption({
-                        title: { text: (driver.metric || t('核心指标')) + t('的驱动线索排序'), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
-                        tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" }, formatter: function (p) { var item = items[p[0].dataIndex]; return item.name + '<br/>' + t('驱动分') + ' <b>' + item.score + '</b><br/>' + t('相关系数') + ' ' + item.corr + '<br/>' + t('组间差异强度') + ' ' + item.gap_ratio; } }, TT),
+                        title: { text: (driver.metric || "Key Metric") + " driver clue ranking", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        tooltip: Object.assign({ trigger: "axis", axisPointer: { type: "shadow" }, formatter: function (p) { var item = items[p[0].dataIndex]; return item.name + '<br/>Driver score <b>' + item.score + '</b><br/>Correlation ' + item.corr + '<br/>Inter-group gap ratio ' + item.gap_ratio; } }, TT),
                         grid: { left: "6%", right: "10%", bottom: "6%", top: "14%", containLabel: true },
                         xAxis: { type: "value", max: 100, axisLabel: { color: "#64748b" }, splitLine: { lineStyle: { color: "#e2e8f0", type: "dashed" } } },
                         yAxis: { type: "category", data: items.map(function (item) { return item.name; }).reverse(), axisLabel: { color: "#334155", width: 120, overflow: "truncate" } },
@@ -1112,7 +959,7 @@
                 var signalList = byId("driver-signal-list");
                 if (signalList) {
                     signalList.innerHTML = driver.items.slice(0, 5).map(function (item) {
-                        return '<div class="signal-item"><div><div class="name">' + item.name + '</div><div class="meta">' + t('相关系数') + ' ' + item.corr + ' · ' + t('高位组均值') + ' ' + formatNum(item.top_mean) + ' · ' + t('低位组均值') + ' ' + formatNum(item.bottom_mean) + ' · ' + t('组间差异强度') + ' ' + formatNum(item.gap_ratio) + '</div></div><div class="badge">' + item.score + '</div></div>';
+                        return '<div class="signal-item"><div><div class="name">' + item.name + '</div><div class="meta">Correlation ' + item.corr + ' · High group mean ' + formatNum(item.top_mean) + ' · Low group mean ' + formatNum(item.bottom_mean) + ' · Inter-group gap ratio ' + formatNum(item.gap_ratio) + '</div></div><div class="badge">' + item.score + '</div></div>';
                     }).join("");
                 }
             } else {
@@ -1135,10 +982,10 @@
                 if (indicators.length >= 3) {
                     radarOk = true;
                     radarChart.setOption({
-                        title: { text: t("全局特征轮廓"), left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
+                        title: { text: "Global Feature Profile", left: "center", top: 6, textStyle: { fontSize: 12, fontWeight: 700, color: "#334155" } },
                         tooltip: Object.assign({}, TT),
                         radar: { indicator: indicators, axisName: { color: "#64748b", fontSize: 9 }, splitArea: { areaStyle: { color: ["#fff", "#f8fafc", "#eef2ff"] } }, splitLine: { lineStyle: { color: "#dbeafe" } } },
-                        series: [{ type: "radar", data: [{ value: values, name: t("峰值频次"), areaStyle: { color: "rgba(37,99,235,0.12)" }, lineStyle: { color: "#2563eb", width: 2 }, itemStyle: { color: "#2563eb" } }] }]
+                        series: [{ type: "radar", data: [{ value: values, name: "Peak Frequency", areaStyle: { color: "rgba(37,99,235,0.12)" }, lineStyle: { color: "#2563eb", width: 2 }, itemStyle: { color: "#2563eb" } }] }]
                     });
                 }
             }

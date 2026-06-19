@@ -17,7 +17,7 @@ export const removeIndexFromNodeId = (id: string) => {
   return id.replace(indexPattern, '');
 };
 
-// 驼峰转下划线，接口协议字段命名规范
+// Convert camelCase to snake_case per API field naming convention
 export const mapHumpToUnderline = (flowData: IFlowData) => {
   /**
    * sourceHandle -> source_handle,

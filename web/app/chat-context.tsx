@@ -31,7 +31,7 @@ interface IChatContext {
   setHistory: (val: ChatHistoryResponse) => void;
   docId?: number;
   setDocId: (docId: number) => void;
-  // 当前对话信息
+  // Current dialogue info
   currentDialogInfo: {
     chat_scene: string;
     app_code: string;
@@ -88,7 +88,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [docId, setDocId] = useState<number>();
   const [mode, setMode] = useState<ThemeMode>('light');
-  // 管理员列表
+  // Admin list
   const [adminList, setAdminList] = useState<UserInfoResponse[]>([]);
 
   const [currentDialogInfo, setCurrentDialogInfo] = useState({
@@ -96,13 +96,13 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     app_code: '',
   });
 
-  // 获取model
+  // Fetch model list
   const { data: modelList = [] } = useRequest(async () => {
     const [, res] = await apiInterceptors(getUsableModels());
     return res ?? [];
   });
 
-  // 获取管理员列表
+  // Fetch admin list
   const { run: queryAdminListRun } = useRequest(
     async () => {
       const [, res] = await apiInterceptors(queryAdminList({ role: 'admin' }));

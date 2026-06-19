@@ -64,7 +64,7 @@ const DislikeContent: React.FC<{
             setFeedbackOpen(false);
           }}
         >
-          取消
+          Cancel
         </Button>
         <Button
           type='primary'
@@ -79,7 +79,7 @@ const DislikeContent: React.FC<{
           }}
           loading={loading}
         >
-          确认
+          Confirm
         </Button>
       </div>
     </div>
@@ -97,7 +97,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
   const [status, setStatus] = useState<'like' | 'unlike' | 'none'>(content?.feedback?.feedback_type);
   const [list, setList] = useState<Tags[]>();
 
-  // 复制回答
+  // Copy answer
   const onCopyContext = async (context: any) => {
     const pureStr = context?.replace(/\trelations:.*/g, '');
     const result = copy(pureStr);
@@ -112,7 +112,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
     }
   };
 
-  // 点赞/踩
+  // Like / dislike
   const { run: feedback, loading } = useRequest(
     async (params: { feedback_type: string; reason_types?: string[]; remark?: string }) =>
       await apiInterceptors(
@@ -129,13 +129,13 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success('反馈成功');
+        message.success('Feedback submitted');
         setFeedbackOpen(false);
       },
     },
   );
 
-  // 反馈原因类型
+  // Feedback reason types
   const { run: getReasonList } = useRequest(async () => await apiInterceptors(getFeedbackReasons()), {
     manual: true,
     onSuccess: data => {
@@ -147,7 +147,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
     },
   });
 
-  // 取消反馈
+  // Cancel feedback
   const { run: cancel } = useRequest(
     async () => await apiInterceptors(cancelFeedback({ conv_uid: chatId, message_id: content?.order + '' })),
     {
@@ -156,7 +156,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success('操作成功');
+          message.success('Operation successful');
         }
       },
     },

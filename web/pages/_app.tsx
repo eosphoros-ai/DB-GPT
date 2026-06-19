@@ -4,7 +4,6 @@ import FloatHelper from '@/new-components/layout/FloatHelper';
 import { STORAGE_LANG_KEY, STORAGE_USERINFO_KEY, STORAGE_USERINFO_VALID_TIME_KEY } from '@/utils/constants/index';
 import { App, ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import enUS from 'antd/locale/en_US';
-import zhCN from 'antd/locale/zh_CN';
 import classNames from 'classnames';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
@@ -41,7 +40,7 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
   }, [mode]);
 
   useEffect(() => {
-    i18n.changeLanguage?.(window.localStorage.getItem(STORAGE_LANG_KEY) || 'zh');
+    i18n.changeLanguage?.(window.localStorage.getItem(STORAGE_LANG_KEY) || 'en');
   }, [i18n]);
 
   return (
@@ -54,15 +53,14 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { isMenuExpand, mode } = useContext(ChatContext);
-  const { i18n } = useTranslation();
   const [isLogin, setIsLogin] = useState(false);
 
   const router = useRouter();
 
-  // 登录检测
+  // Auth check
   const handleAuth = async () => {
     setIsLogin(false);
-    // 如果已有登录信息，直接展示首页
+    // If login info exists, show home page directly
     // if (localStorage.getItem(STORAGE_USERINFO_KEY)) {
     //   setIsLogin(true);
     //   return;
@@ -115,7 +113,7 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <ConfigProvider
-      locale={i18n.language === 'en' ? enUS : zhCN}
+      locale={enUS}
       theme={{
         token: {
           colorPrimary: '#0C75FC',

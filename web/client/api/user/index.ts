@@ -5,7 +5,7 @@ interface Props {
 }
 
 /**
- * 查询管理员列表
+ * Query admin list
  */
 export const queryAdminList = (_data: Props) => {
   return [];

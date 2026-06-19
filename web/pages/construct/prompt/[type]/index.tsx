@@ -68,12 +68,12 @@ interface TopFormProps {
   prompt_code: string;
 }
 
-// 自定义温度选项
+// Custom temperature option
 const TemperatureItem: React.FC<{
   value?: any;
   onChange?: (value: any) => void;
 }> = ({ value, onChange }) => {
-  // temperature变化;
+  // temperature change;
   const onTemperatureChange = (value: any) => {
     if (isNaN(value)) {
       return;
@@ -101,23 +101,23 @@ const AddOrEditPrompt: React.FC = () => {
 
   const userInfo = useUser();
 
-  // prompt内容
+  // Prompt content
   const [value, setValue] = useState<string>('');
-  // 输入参数
+  // Input parameters
   const [variables, setVariables] = useState<string[]>([]);
-  // 输出结构
+  // Output structure
   const [responseTemplate, setResponseTemplate] = useState<any>({});
-  // LLM输出
+  // LLM output
   const [history, setHistory] = useState<Record<string, any>[]>([]);
   const [llmLoading, setLlmLoading] = useState<boolean>(false);
 
-  // prompt基本信息
+  // Prompt basic info
   const [topForm] = Form.useForm<TopFormProps>();
-  // 输入参数
+  // Input parameters
   const [midForm] = Form.useForm();
-  // 模型，温度，语言
+  // Model, temperature, language
   const [bottomForm] = Form.useForm<BottomFormProps>();
-  // 验证错误信息
+  // Validation error message
   const [errorMessage, setErrorMessage] = useState<Record<string, any>>();
 
   const promptType = Form.useWatch('prompt_type', topForm);
@@ -136,12 +136,12 @@ const AddOrEditPrompt: React.FC = () => {
     });
   }, [modelList]);
 
-  // md编辑器变化
+  // Markdown editor change
   const onChange = useCallback((props: any) => {
     setValue(props.text);
   }, []);
 
-  // 获取target选项
+  // Fetch target options
   const {
     data,
     run: getTargets,
@@ -150,7 +150,7 @@ const AddOrEditPrompt: React.FC = () => {
     manual: true,
   });
 
-  // 获取template
+  // Fetch template
   const { run: getTemplate } = useRequest(
     async (target: string) =>
       await promptTemplateLoad({
@@ -213,7 +213,7 @@ const AddOrEditPrompt: React.FC = () => {
     });
   };
 
-  // llm测试
+  // LLM test
   const onLLMTest = async () => {
     if (llmLoading) {
       return;
@@ -297,7 +297,7 @@ const AddOrEditPrompt: React.FC = () => {
     });
   };
 
-  // 输出验证
+  // Output validation
   const { run, loading: verifyLoading } = useRequest(
     async () =>
       await llmOutVerify({
@@ -309,7 +309,7 @@ const AddOrEditPrompt: React.FC = () => {
       manual: true,
       onSuccess: res => {
         if (res?.data?.success) {
-          setErrorMessage({ msg: '验证通过', status: 'success' });
+          setErrorMessage({ msg: 'Validation passed', status: 'success' });
         } else {
           setErrorMessage({ msg: res?.data?.err_msg, status: 'error' });
         }
@@ -317,7 +317,7 @@ const AddOrEditPrompt: React.FC = () => {
     },
   );
 
-  // 设置默认模型
+  // Set default model
   useEffect(() => {
     if (model) {
       bottomForm.setFieldsValue({
@@ -326,7 +326,7 @@ const AddOrEditPrompt: React.FC = () => {
     }
   }, [bottomForm, model]);
 
-  // 类型改变获取相应的场景
+  // Fetch scenes when type changes
   useEffect(() => {
     if (promptType) {
       getTargets(promptType);
@@ -343,13 +343,13 @@ const AddOrEditPrompt: React.FC = () => {
     });
   }, [data]);
 
-  // 编辑进入填充内容
+  // Pre-fill content when editing
   useEffect(() => {
     if (type === 'edit') {
       const editData = JSON.parse(localStorage.getItem('edit_prompt_data') || '{}');
       setVariables(JSON.parse(editData.input_variables ?? '[]'));
       setValue(editData?.content);
-      // 设置响应模板
+      // Set response template
       try {
         const responseSchema = editData.response_schema ? JSON.parse(editData.response_schema) : {};
         setResponseTemplate(responseSchema);
@@ -391,7 +391,7 @@ const AddOrEditPrompt: React.FC = () => {
         </Space>
       </header>
       <section className='flex h-full p-4 gap-4'>
-        {/* 编辑展示区 */}
+        {/* Edit display area */}
         <div className='flex flex-col flex-1 h-full overflow-y-auto pb-8 '>
           <MarkdownEditor
             value={value}
@@ -399,7 +399,7 @@ const AddOrEditPrompt: React.FC = () => {
             renderHTML={text => mdParser.render(text)}
             view={{ html: false, md: true, menu: true }}
           />
-          {/* llm 输出区域 */}
+          {/* LLM output area */}
           {history.length > 0 && (
             <Card
               title={
@@ -416,7 +416,7 @@ const AddOrEditPrompt: React.FC = () => {
             </Card>
           )}
         </div>
-        {/* 功能区 */}
+        {/* Toolbar area */}
         <div className='flex flex-col w-2/5 pb-8 overflow-y-auto'>
           <Card className='mb-4'>
             <Form form={topForm}>
@@ -546,7 +546,7 @@ export default AddOrEditPrompt;
 
 export async function getStaticProps({ params }: { params: { type: string } }) {
   const { type } = params;
-  // 根据动态路由参数 scene 获取所需的数据
+  // Fetch data based on dynamic route param scene
 
   return {
     props: {
@@ -556,7 +556,7 @@ export async function getStaticProps({ params }: { params: { type: string } }) {
 }
 
 export async function getStaticPaths() {
-  // 返回可能的动态路由参数为空，表示所有的页面都将在访问时生成
+  // Return empty dynamic route params so all pages generate on visit
   return {
     paths: [{ params: { type: 'add' } }, { params: { type: 'edit' } }],
     fallback: 'blocking',

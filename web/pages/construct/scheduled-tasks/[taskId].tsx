@@ -19,7 +19,7 @@ import EditScheduledTaskDrawer from '@/new-components/scheduled-task/EditSchedul
 import TaskRunsTable from '@/new-components/scheduled-task/TaskRunsTable';
 import type { TaskResponse } from '@/types/scheduled-task';
 
-/** 格式化 ISO 时间字符串，去掉时区后缀，返回友好格式 */
+/** Format an ISO timestamp, strip timezone suffix, return a friendly string */
 function fmtTime(iso?: string | null): string | null {
   if (!iso) return null;
   const d = dayjs(iso);
@@ -36,7 +36,7 @@ function ScheduledTaskDetail() {
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
-  /** connector id → display_name 映射 */
+  /** connector id → display_name map */
   const connectorNameMap = useMemo(() => {
     const m = new Map<string, string>();
     for (const c of connectors) {
@@ -85,7 +85,7 @@ function ScheduledTaskDetail() {
     <ConstructLayout className='scrollable-tabs'>
       <div className='relative w-full bg-gradient-to-b from-[#f7f8fc] via-white to-[#f7f8fc] dark:from-[#1c2333] dark:via-[#1c2333] dark:to-[#161b29]'>
         <div className='max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8'>
-          {/* ── 返回 ── */}
+          {/* ── Back ── */}
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => router.push('/construct/scheduled-tasks')}
@@ -145,7 +145,7 @@ function ScheduledTaskDetail() {
             </div>
           </div>
 
-          {/* ── 基本信息 ── */}
+          {/* ── Basic info ── */}
           <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 p-6 mb-5'>
             <h3 className='text-[15px] font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2'>
               <InfoCircleOutlined className='text-gray-400' />
@@ -193,7 +193,7 @@ function ScheduledTaskDetail() {
             </div>
           </div>
 
-          {/* ── 任务环境(只读) ── */}
+          {/* ── Task environment (read-only) ── */}
           <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 p-6 mb-5'>
             <h3 className='text-[15px] font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2'>
               <LaptopOutlined className='text-gray-400' />
@@ -246,7 +246,7 @@ function ScheduledTaskDetail() {
                   </InfoField>
                 )}
                 {(() => {
-                  // 合并 connector_ids 和 mcp_ids，统一显示为 MCP
+                  // Merge connector_ids and mcp_ids and display them together as MCP
                   const ids: string[] = [
                     ...(Array.isArray(ext.connector_ids) ? ext.connector_ids : []),
                     ...(Array.isArray(ext.mcp_ids) ? ext.mcp_ids : []),
@@ -271,7 +271,7 @@ function ScheduledTaskDetail() {
             </div>
           </div>
 
-          {/* ── 执行历史 ── */}
+          {/* ── Run history ── */}
           <div className='rounded-2xl border border-white/80 bg-white/80 backdrop-blur-lg shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)] dark:border-[#3a4456] dark:bg-[#2b303d]/70 p-6 mb-8'>
             <div className='flex items-center justify-between mb-4'>
               <h3 className='text-[15px] font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2 m-0'>
@@ -286,14 +286,14 @@ function ScheduledTaskDetail() {
           </div>
         </div>
 
-        {/* ── 编辑抽屉 ── */}
+        {/* ── Edit drawer ── */}
         <EditScheduledTaskDrawer open={editOpen} onClose={() => setEditOpen(false)} task={task} onSaved={loadTask} />
       </div>
     </ConstructLayout>
   );
 }
 
-/* ── 信息字段组件 ── */
+/* ── Info field component ── */
 interface InfoFieldProps {
   label: string;
   className?: string;

@@ -101,17 +101,17 @@ const _formatFileSize = (bytes: number): string => {
 const _getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
+    return 'Spreadsheet';
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
+    return 'Spreadsheet';
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return 'Image';
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word Document';
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return 'Text File';
   if (['json'].includes(ext)) return 'JSON';
-  return '文件';
+  return 'File';
 };
 
 const _getFileIcon = (fileName: string, mimeType?: string) => {
@@ -368,7 +368,7 @@ const convertToManusFormat = (
       lower.includes('select_skill')
     )
       return 'skill';
-    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes('sql查询')) return 'sql';
+    if (lower.includes('sql_query') || lower.includes('sql query') || lower.includes('sql\u67e5\u8be2')) return 'sql';
     if (lower.includes('read') || lower.includes('load')) return 'read';
     if (lower.includes('edit')) return 'edit';
     if (lower.includes('write') || lower.includes('save')) return 'write';
@@ -455,10 +455,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'walmart_sales',
     icon: '📊',
-    title: '沃尔玛销售数据分析',
-    description: '分析沃尔玛销售CSV数据，生成可视化网页报告',
+    title: 'Walmart Sales Data Analysis',
+    description: 'Analyze Walmart sales CSV data and generate a visual web report',
     query:
-      '请全面分析这份沃尔玛销售数据，包括各门店销售趋势、假日影响、温度与油价对销售的影响等维度，生成一份精美的交互式网页分析报告。',
+      'Please comprehensively analyze this Walmart sales data, including store sales trends, holiday impact, and the effects of temperature and fuel prices. Generate a polished interactive web analysis report.',
     fileName: 'Walmart_Sales.csv',
     fileType: 'text/csv',
     fileSize: 98304, // ~96 KB
@@ -470,10 +470,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'db_profile_report',
     icon: '🗄️',
-    title: '数据库画像与分析报告',
-    description: '连接数据库后，生成数据库画像并生成可视化网页报告',
+    title: 'Database Profile & Analysis Report',
+    description: 'Connect to a database, build a database profile, and generate a visual web report',
     query:
-      '请分析当前连接的数据库，生成数据库画像（包括表结构、字段信息、数据量统计等），并生成一份精美的交互式网页分析报告。',
+      'Please analyze the currently connected database, generate a database profile (including table structure, field metadata, row counts, and related statistics), and produce a polished interactive web analysis report.',
     dbName: 'Walmart_Sales',
     color: 'from-emerald-500/10 to-teal-500/10',
     borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
@@ -482,11 +482,12 @@ const EXAMPLE_CARDS = [
   {
     id: 'fin_report',
     icon: '📈',
-    title: '金融财报深度分析',
-    description: '分析浙江海翔药业年度报告，生成数据可视化报告',
+    title: 'In-Depth Financial Report Analysis',
+    description: 'Analyze an annual financial report and generate a data visualization report',
     query:
-      '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
-    fileName: '2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf',
+      'Please perform an in-depth analysis of this 2019 annual report, including revenue and profit trends, balance sheet structure, cash flow analysis, and key financial metrics. Generate a professional interactive web analysis report.',
+    fileName:
+      '2020-01-23__\u6d59\u6c5f\u6d77\u7fd4\u836f\u4e1a\u80a1\u4efd\u6709\u9650\u516c\u53f8__002099__\u6d77\u7fd4\u836f\u4e1a__2019\u5e74__\u5e74\u5ea6\u62a5\u544a.pdf',
     fileType: 'application/pdf',
     fileSize: 2621440, // ~2.5 MB
     color: 'from-violet-500/10 to-purple-500/10',
@@ -497,10 +498,10 @@ const EXAMPLE_CARDS = [
   {
     id: 'create_sql_skill',
     icon: '🛠️',
-    title: '创建SQL分析技能',
-    description: '使用skill-creator创建一个实用的SQL数据分析技能',
+    title: 'Create SQL Analysis Skill',
+    description: 'Use skill-creator to build a practical SQL data analysis skill',
     query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
+      'Please use skill-creator to help me create a practical SQL data analysis skill with core capabilities for connecting to databases, running SQL queries, and building data visualizations.',
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -575,9 +576,9 @@ const Playground: NextPage = () => {
   const [isScheduleOpen, setScheduleOpen] = useState(false);
   const { connectors: connectorsList } = useConnectors();
 
-  // HITL 确认轮询临时关闭：当前不需要写操作前的人工确认能力。
-  // 恢复时把下一行改回 `loading && selectedConnectors.length > 0` 即可，
-  // 后端 _PENDING_CONFIRMATIONS 通道 / ConfirmDialog 组件保持原样未删除。
+  // HITL confirmation polling is temporarily disabled: write operations no longer require pre-approval.
+  // To restore it, change the next line back to `loading && selectedConnectors.length > 0`.
+  // The backend _PENDING_CONFIRMATIONS channel and ConfirmDialog component remain unchanged.
   const isConfirmPollingActive = false;
   const { pendingConfirmation, approve, deny, dismiss } = useConfirmPolling({
     isActive: isConfirmPollingActive,
@@ -595,7 +596,7 @@ const Playground: NextPage = () => {
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
   const preloadedFilePathRef = useRef<string | null>(null);
   // Snapshot of the exact payload last sent to the agent, captured at send
-  // time so "保存定时任务" can replay the real execution (file / database /
+  // time so "Save scheduled task" can replay the real execution (file / database /
   // knowledge / skill / connectors) instead of a drifting UI state.
   const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
 
@@ -721,7 +722,7 @@ const Playground: NextPage = () => {
     if (convId && convId !== conversationId) {
       loadConversation(convId);
     } else if (!convId && conversationId) {
-      // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
+      // Clear session state when the URL id disappears (e.g. after clicking new_task / Explore)
       setMessages([]);
       setConversationId(null);
       setQuery('');
@@ -791,10 +792,10 @@ const Playground: NextPage = () => {
             });
           }
         } else {
-          setFilePreviewError(res.data?.err_msg || '文件预览失败');
+          setFilePreviewError(res.data?.err_msg || 'File preview failed');
         }
       } catch (err: any) {
-        setFilePreviewError(err?.message || '文件预览失败');
+        setFilePreviewError(err?.message || 'File preview failed');
       } finally {
         setFilePreviewLoading(false);
       }
@@ -1165,7 +1166,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning('File is not available for download');
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1174,16 +1175,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || 'File is not available for download');
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning('File download failed');
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning('File is not available for download');
         }
         break;
       }
@@ -1554,7 +1555,7 @@ const Playground: NextPage = () => {
     setActiveMessageId(responseId);
 
     // Build ext_info once and reuse it for both the live request and the
-    // snapshot captured for "保存定时任务", so a saved task replays the exact
+    // snapshot captured for "Save scheduled task", so a saved task replays the exact
     // same context (file / database / knowledge / skill / connectors).
     const extInfo: Record<string, any> = {
       ...(currentUploadedFilePath ? { file_path: currentUploadedFilePath } : {}),
@@ -1707,7 +1708,7 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 outputs: { ...current.outputs, [id]: current.outputs[id] || [] },
                 stepThoughts: nextThoughts,
-                // Only auto-focus for existing step updates (e.g., "思考中" -> "sql_query").
+                // Only auto-focus for existing step updates (e.g., "Thinking" -> "sql_query").
                 // New placeholder steps wait for step.meta to get real content before stealing focus.
                 activeStepId: existingStepIndex >= 0 ? id : current.activeStepId || id,
               },
@@ -2014,7 +2015,7 @@ const Playground: NextPage = () => {
     if (loading) return;
 
     try {
-      message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
+      message.loading({ content: 'Loading example...', key: 'example-loading', duration: 0 });
 
       let filePath: string | null = null;
       let fakeFile: File | null = null;
@@ -2035,7 +2036,7 @@ const Playground: NextPage = () => {
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
-          message.error('加载示例失败: ' + errMsg);
+          message.error('Failed to load example: ' + errMsg);
           return;
         }
       }
@@ -2067,7 +2068,7 @@ const Playground: NextPage = () => {
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error('加载示例失败: ' + errMessage);
+      message.error('Failed to load example: ' + errMessage);
     }
   };
 
@@ -2281,7 +2282,7 @@ const Playground: NextPage = () => {
       }
     } catch (e) {
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error('Failed to load conversation history');
     } finally {
       setHistoryLoading(false);
     }
@@ -2290,7 +2291,7 @@ const Playground: NextPage = () => {
   // Share current conversation — create share link and copy to clipboard
   const handleShare = async () => {
     if (!conversationId) {
-      message.warning('请先开始一段对话再分享');
+      message.warning('Start a conversation before sharing');
       return;
     }
     try {
@@ -2299,10 +2300,10 @@ const Playground: NextPage = () => {
       if (!shareUrl) throw new Error('No share URL returned');
       const fullUrl = `${window.location.origin}${shareUrl}`;
       await navigator.clipboard.writeText(fullUrl);
-      message.success('分享链接已复制到剪贴板！');
+      message.success('Share link copied to clipboard!');
     } catch (e) {
       console.error('Failed to create share link', e);
-      message.error('创建分享链接失败，请稍后重试');
+      message.error('Failed to create share link. Please try again later.');
     }
   };
 
@@ -2410,7 +2411,7 @@ const Playground: NextPage = () => {
           {/* When from_task mode and loading history, show loading spinner instead of Hero */}
           {router.query.from_task && historyLoading && messages.length === 0 ? (
             <div className='flex-1 flex items-center justify-center'>
-              <Spin size='large' tip='加载对话历史...' />
+              <Spin size='large' tip='Loading conversation history...' />
             </div>
           ) : messages.length > 0 ? (
             <div className={`flex-1 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>

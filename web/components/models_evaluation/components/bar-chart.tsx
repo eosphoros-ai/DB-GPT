@@ -19,10 +19,10 @@ interface InnerDataItem {
 }
 
 export const BarChart: React.FC<BarChartProps> = ({ data }) => {
-  // 转换数据格式以适应Ant Design Charts
+  // Transform data format for Ant Design Charts
   const chartData = data.map(item => ({
     ...item,
-    // value: item.value * 100 // 转换为百分比
+    // value: item.value * 100 // convert to percentage
   }));
 
   const config = {

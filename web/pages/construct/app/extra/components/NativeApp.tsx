@@ -43,7 +43,7 @@ const NativeApp: React.FC<{
 
   const { team_context, param_need } = initValue || {};
 
-  // 获取应用类型&模型
+  // Fetch app types & models
   const { data, loading } = useRequest(async () => {
     const res = await Promise.all([
       apiInterceptors(getNativeAppScenes()),
@@ -59,7 +59,7 @@ const NativeApp: React.FC<{
     return [types, models] ?? [];
   });
 
-  // 获取prompt提示语列表
+  // Fetch prompt template list
   const { data: promptData } = useRequest(async () => {
     const [, res] = await apiInterceptors(
       getPromptList({
@@ -70,7 +70,7 @@ const NativeApp: React.FC<{
     return res ?? { items: [] };
   });
 
-  // 获取资源类型参数列表
+  // Fetch resource type param list
   const {
     data: options,
     loading: paramsLoading,
@@ -96,7 +96,7 @@ const NativeApp: React.FC<{
     { manual: true },
   );
 
-  // 应用类型选项
+  // App type options
   const appTypeOptions = useMemo(() => {
     const types = data?.[0]?.[1];
     return (
@@ -106,7 +106,7 @@ const NativeApp: React.FC<{
           label: (
             <div className='flex items-center gap-1'>
               <AppDefaultIcon width={4} height={4} scene={type.chat_scene} />
-              <Tooltip title={`资源类型${type.param_need.find((param: any) => param.type === 'resource')?.value}`}>
+              <Tooltip title={`Resource type ${type.param_need.find((param: any) => param.type === 'resource')?.value}`}>
                 <span className='text-[#525964] dark:text-[rgba(255,255,255,0.65)]  ml-1'>{type.scene_name}</span>
               </Tooltip>
             </div>
@@ -117,7 +117,7 @@ const NativeApp: React.FC<{
     );
   }, [data]);
 
-  // 将数据实时返回给消费组件
+  // Return data to consumer component in real time
   useEffect(() => {
     const rawVal = form.getFieldsValue();
     updateData([

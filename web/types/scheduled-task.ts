@@ -1,12 +1,12 @@
 /**
- * 定时任务相关类型定义
- * 镜像后端 pydantic schema:
+ * Scheduled task type definitions
+ * Mirrors backend pydantic schema:
  *   packages/dbgpt-serve/src/dbgpt_serve/scheduled_task/api/schemas.py
  *
- * API 响应包装请复用 web/client/api/index.ts 中的 ResponseType<T>
+ * Reuse ResponseType<T> from web/client/api/index.ts for API response wrapping
  */
 
-/** 冻结的对话快照,定时执行时用于回放对话。 */
+/** Frozen conversation snapshot used to replay a chat on scheduled execution. */
 export type ChatReplayPayload = {
   version?: number;
   user_input: string;
@@ -18,36 +18,36 @@ export type ChatReplayPayload = {
   ext_info?: Record<string, any> | null;
 };
 
-/** 创建定时任务请求。 */
+/** Create scheduled task request. */
 export type CreateTaskRequest = {
   task_name: string;
   description?: string | null;
   cron_expression: string;
   payload: ChatReplayPayload;
-  /** 创建人显示名称(优先于鉴权 user_id) */
+  /** Creator display name (preferred over auth user_id) */
   creator_name?: string | null;
 };
 
-/** 更新定时任务请求(部分字段可选)。 */
+/** Update scheduled task request (partial fields optional). */
 export type UpdateTaskRequest = {
   task_name?: string | null;
   description?: string | null;
   cron_expression?: string | null;
-  /** 原始问题（payload.user_input，编辑时可改） */
+  /** Original question (payload.user_input; editable) */
   user_input?: string | null;
-  /** 执行模型（payload.model_name，编辑时可改） */
+  /** Execution model (payload.model_name; editable) */
   model_name?: string | null;
 };
 
-/** 启用/暂停任务请求。 */
+/** Enable/pause task request. */
 export type ToggleTaskRequest = {
   enabled: boolean;
 };
 
-/** 执行状态枚举。 */
+/** Run status enum. */
 export type ScheduledRunStatus = 'running' | 'success' | 'failed' | 'timeout';
 
-/** 定时任务响应。 */
+/** Scheduled task response. */
 export type TaskResponse = {
   task_id: string;
   task_name: string;
@@ -63,7 +63,7 @@ export type TaskResponse = {
   next_run_time?: string | null;
 };
 
-/** 单次执行历史响应。 */
+/** Single run history response. */
 export type RunResponse = {
   run_id: string;
   task_id: string;

@@ -211,13 +211,14 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'name']}
-                      label={`参数 ${index + 1} 名称`}
+                      label={`Parameter ${index + 1} Name`}
                       style={{ width: 140 }}
                       rules={[
                         { required: true, message: 'Missing parameter name' },
                         {
                           pattern: /^[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*$/,
-                          message: '名称必须是字母、数字或下划线，并使用下划线分隔多个单词',
+                          message:
+                            'Name must contain only letters, numbers, or underscores, with underscores separating words',
                         },
                       ]}
                     >
@@ -227,7 +228,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'label']}
-                      label='标题'
+                      label='Title'
                       style={{ width: 130 }}
                       rules={[{ required: true, message: 'Missing parameter label' }]}
                     >
@@ -237,7 +238,7 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'value_type']}
-                      label='类型'
+                      label='Type'
                       style={{ width: 100 }}
                       rules={[{ required: true, message: 'Missing parameter type' }]}
                     >
@@ -253,14 +254,14 @@ export const AddFlowVariableModal: React.FC<Props> = ({ flowInfo, setFlowInfo })
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
-                      label='值'
+                      label='Value'
                       style={{ width: 320 }}
                       rules={[{ required: true, message: 'Missing parameter value' }]}
                     >
                       {renderVariableValue(controlTypes[index], index)}
                     </Form.Item>
 
-                    <Form.Item {...restField} name={[name, 'description']} label='描述' style={{ width: 170 }}>
+                    <Form.Item {...restField} name={[name, 'description']} label='Description' style={{ width: 170 }}>
                       <Input placeholder='Parameter Description' />
                     </Form.Item>
 

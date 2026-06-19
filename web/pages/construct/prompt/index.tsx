@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import styles from './styles.module.css';
 
-const LangMap = { zh: '中文', en: 'English' };
+const LangMap = { zh: 'Chinese', en: 'English' };
 
 const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record, refresh }) => {
   const userInfo = useUser();
@@ -22,7 +22,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
 
   const { message } = App.useApp();
 
-  // 删除prompt
+  // Delete prompt
   const { run: deletePromptRun, loading: deleteLoading } = useRequest(
     async record => {
       await deletePrompt({
@@ -32,7 +32,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
     {
       manual: true,
       onSuccess: async () => {
-        message.success('删除成功');
+        message.success('Deleted successfully');
         await refresh();
       },
     },
@@ -43,7 +43,7 @@ const DeleteBtn: React.FC<{ record: IPrompt; refresh: () => void }> = ({ record,
   }
 
   return (
-    <Popconfirm title='确认删除吗？' onConfirm={async () => await deletePromptRun(record)}>
+    <Popconfirm title='Confirm delete?' onConfirm={async () => await deletePromptRun(record)}>
       <Button loading={deleteLoading}>{t('Delete')}</Button>
     </Popconfirm>
   );

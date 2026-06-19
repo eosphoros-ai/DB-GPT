@@ -23,12 +23,12 @@ const ResourceContent: React.FC<{
   const isDynamic = Form.useWatch('is_dynamic', form);
   const value = Form.useWatch('value', form);
   const { t } = useTranslation();
-  // 资源类型选项
+  // Resource type options
   const options = useMemo(() => {
     return resourceTypeOptions?.filter(item => item.value !== 'all') || [];
   }, [resourceTypeOptions]);
 
-  // 获取非动态情况下，知识库、数据库、插件、编排工作流参数列表
+  // Fetch param list for knowledge base, database, plugin, workflow when not dynamic
   const { run, data, loading } = useRequest(
     async type => {
       const [, res] = await apiInterceptors(getResource({ type }));
@@ -48,7 +48,7 @@ const ResourceContent: React.FC<{
     }
   }, [run, type]);
 
-  // 动态参数value选项
+  // Dynamic parameter value options
   const dynamicOptions = useMemo(() => {
     return (
       data?.map(item => {
@@ -61,16 +61,16 @@ const ResourceContent: React.FC<{
     );
   }, [data]);
 
-  // 参数根据选择的资源类型动态变化
+  // Params change dynamically based on selected resource type
   const renderParameter = () => {
     if (type === 'image_file') {
       return null;
       // return (
-      //   <Form.Item label="上传图片：" name="value" valuePropName="fileList" required>
+      //   <Form.Item label="Upload Image:" name="value" valuePropName="fileList" required>
       //     <Upload listType="picture-card">
       //       <button style={{ border: 0, background: 'none' }} type="button">
       //         <PlusOutlined />
-      //         <div style={{ marginTop: 8 }}>上传图标</div>
+      //         <div style={{ marginTop: 8 }}>Upload Icon</div>
       //       </button>
       //     </Upload>
       //   </Form.Item>
@@ -79,7 +79,7 @@ const ResourceContent: React.FC<{
     if (type === 'internet') {
       return null;
       // return (
-      //   <Form.Item label={returnLabel('互联网', 'xxx')} name="value">
+      //   <Form.Item label={returnLabel('Internet', 'xxx')} name="value">
       //     <Switch style={{ background: value ? '#1677ff' : '#ccc' }} />
       //   </Form.Item>
       // );
@@ -87,9 +87,9 @@ const ResourceContent: React.FC<{
     if (['text_file', 'excel_file'].includes(type)) {
       return null;
       // return (
-      //   <Form.Item label="上传文件：" name="value" required valuePropName="fileList">
+      //   <Form.Item label="Upload File:" name="value" required valuePropName="fileList">
       //     <Upload>
-      //       <Button icon={<UploadOutlined />}>上传文件</Button>
+      //       <Button icon={<UploadOutlined />}>Upload File</Button>
       //     </Upload>
       //   </Form.Item>
       // );
@@ -109,7 +109,7 @@ const ResourceContent: React.FC<{
 
   useEffect(() => {
     const rawVal = form.getFieldsValue();
-    // 如果动态为true，这里手动清除一下动态参数value
+    // If dynamic is true, manually clear dynamic param value here
     const value = rawVal?.is_dynamic ? '' : rawVal?.value;
     updateData({ uid, ...rawVal, value });
   }, [uid, isDynamic, form, updateData, value, type]);
@@ -136,7 +136,7 @@ const ResourceContent: React.FC<{
         <Form.Item label={t('resource_dynamic')} name='is_dynamic'>
           <Switch style={{ background: isDynamic ? '#1677ff' : '#ccc' }} />
         </Form.Item>
-        {/* 如果选择了动态参数这里就不需要参数了 */}
+        {/* No param needed here when dynamic param is selected */}
         {!isDynamic && <> {renderParameter()}</>}
       </Form>
     </div>

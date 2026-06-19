@@ -32,13 +32,13 @@ export function parseReActContent(content: string): ReActSection[] {
   const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   const sectionPatterns = [
-    { type: 'thought' as const, pattern: /(?:^|\n)(?:Thought|思考|💭)\s*[:：]\s*/gi },
-    { type: 'action' as const, pattern: /(?:^|\n)(?:Action|动作|⚡)\s*[:：]\s*/gi },
+    { type: 'thought' as const, pattern: /(?:^|\n)(?:Thought|\u601d\u8003|💭)\s*[:：]\s*/gi },
+    { type: 'action' as const, pattern: /(?:^|\n)(?:Action|\u52a8\u4f5c|⚡)\s*[:：]\s*/gi },
     {
       type: 'action_input' as const,
-      pattern: /(?:^|\n)(?:Action Input|Action_Input|ActionInput|动作输入|输入)\s*[:：]\s*/gi,
+      pattern: /(?:^|\n)(?:Action Input|Action_Input|ActionInput|\u52a8\u4f5c\u8f93\u5165|\u8f93\u5165)\s*[:：]\s*/gi,
     },
-    { type: 'observation' as const, pattern: /(?:^|\n)(?:Observation|观察|观察结果|👁)\s*[:：]\s*/gi },
+    { type: 'observation' as const, pattern: /(?:^|\n)(?:Observation|\u89c2\u5bdf|\u89c2\u5bdf\u7ed3\u679c|👁)\s*[:：]\s*/gi },
   ];
 
   const matches: { type: ReActSection['type']; index: number; length: number }[] = [];

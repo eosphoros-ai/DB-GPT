@@ -7,7 +7,7 @@ const getChartCanvas = (chart: G2Chart) => {
   return canvasNode;
 };
 
-/** 获得 g2 Chart 实例的 dataURL */
+/** Get the dataURL from a g2 Chart instance */
 function toDataURL(chart: G2Chart) {
   const canvasDom = getChartCanvas(chart);
   if (canvasDom) {
@@ -17,9 +17,9 @@ function toDataURL(chart: G2Chart) {
 }
 
 /**
- * 图表图片导出
- * @param chart chart 实例
- * @param name 图片名称
+ * Export chart as an image
+ * @param chart chart instance
+ * @param name image file name
  */
 export function downloadImage(chart: G2Chart, name: string = 'Chart') {
   const link = document.createElement('a');

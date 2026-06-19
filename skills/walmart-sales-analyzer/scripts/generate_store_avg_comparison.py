@@ -11,9 +11,9 @@ def generate_store_avg_comparison(data_path, output_dir):
     store_agg = df.groupby("Store").agg({"Weekly_Sales": "mean", "Unemployment": "mean"}).reset_index()
     plt.figure(figsize=(10, 6))
     sns.scatterplot(data=store_agg, x="Unemployment", y="Weekly_Sales", hue="Store", palette="viridis", s=100)
-    plt.title("各门店平均销售额与平均失业率的关系")
-    plt.xlabel("平均失业率 (%)")
-    plt.ylabel("平均周销售额")
+    plt.title("Average Weekly Sales vs. Average Unemployment by Store")
+    plt.xlabel("Average Unemployment (%)")
+    plt.ylabel("Average Weekly Sales")
     plt.tight_layout()
     
     output_path = os.path.join(output_dir, "store_avg_comparison.png")

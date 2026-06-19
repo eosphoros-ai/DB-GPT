@@ -33,7 +33,7 @@ export const useEvaluationList = (props: UseEvaluationListProps) => {
     {
       manual: true,
       onError: e => {
-        message.error(e.message || '获取评估列表失败');
+        message.error(e.message || 'Failed to fetch evaluation list');
       },
     },
   );

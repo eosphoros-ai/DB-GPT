@@ -28,7 +28,7 @@ const TabContent: React.FC<{ apps: IApp[]; loading: boolean; refresh: () => void
   const router = useRouter();
 
   const toChat = async (data: IApp) => {
-    // 原生应用跳转
+    // Native app navigation
     if (data.team_mode === 'native_app') {
       const { chat_scene = '' } = data.team_context;
       const [, res] = await apiInterceptors(newDialogue({ chat_mode: chat_scene }));
@@ -47,7 +47,7 @@ const TabContent: React.FC<{ apps: IApp[]; loading: boolean; refresh: () => void
         router.push(`/chat?scene=${chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
       }
     } else {
-      // 自定义应用
+      // Custom app
       const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
       if (res) {
         setCurrentDialogInfo?.({
@@ -118,7 +118,7 @@ const TabContent: React.FC<{ apps: IApp[]; loading: boolean; refresh: () => void
                     <span>{item.owner_name}</span>
                   </div>
                 )}
-                {/* 最近使用不展示热度值 */}
+                {/* Do not show hot value for recently used */}
                 {type !== 'used' && (
                   <div className='flex items-start gap-1'>
                     <IconFont type='icon-hot' className='text-lg' />

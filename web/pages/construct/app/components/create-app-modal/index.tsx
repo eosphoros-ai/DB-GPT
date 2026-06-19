@@ -16,7 +16,7 @@ interface WorkModeSelectProps {
   onChange?: (value: TeamMode) => void;
 }
 
-// 自定义team_mode选择
+// Custom team_mode selector
 const WorkModeSelect: React.FC<WorkModeSelectProps> = ({ disable = false, options = [], value, onChange }) => {
   const [selected, setSelected] = useState<TeamMode>(value || ({} as TeamMode));
   const { i18n } = useTranslation();
@@ -90,13 +90,13 @@ const CreateAppModal: React.FC<{
   const router = useRouter();
   const language = i18n.language === 'en';
 
-  // 获取工作模式列表
+  // Fetch work mode list
   const { data, loading } = useRequest(async () => {
     const [_, res] = await apiInterceptors(getTeamMode());
     return res ?? [];
   });
 
-  // 创建应用
+  // Create app
   const { run: createApp, loading: createLoading } = useRequest(
     async (params: CreateAppParams) => {
       if (type === 'edit') {
@@ -220,11 +220,11 @@ const CreateAppModal: React.FC<{
                   autoSize={{ minRows: 2.5 }}
                 />
               </Form.Item>
-              {/* <Form.Item label="应用图标：" name="app_icon" valuePropName="fileList">
+              {/* <Form.Item label="App Icon:" name="app_icon" valuePropName="fileList">
               <Upload listType="picture-card">
                 <button style={{ border: 0, background: 'none' }} type="button">
                   <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>上传图标</div>
+                  <div style={{ marginTop: 8 }}>Upload Icon</div>
                 </button>
               </Upload>
             </Form.Item> */}

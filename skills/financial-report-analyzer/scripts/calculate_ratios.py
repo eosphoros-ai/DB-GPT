@@ -4,9 +4,9 @@ from datetime import datetime
 
 
 def format_amount(value):
-    """Auto-scale a numeric amount to 亿元, 万元, or 元.
+    """Auto-scale a numeric amount to 100M CNY, 10K CNY, or CNY.
 
-    Returns a formatted string like "105.00亿元", "1050.50万元", or "3500.00元".
+    Returns a formatted string like "105.00 100M CNY", "1050.50 10K CNY", or "3500.00 CNY".
     Returns "N/A" when *value* is ``None`` or not a valid number.
     """
     if value is None:
@@ -18,10 +18,10 @@ def format_amount(value):
 
     abs_val = abs(value)
     if abs_val >= 1e8:
-        return f"{value / 1e8:.2f}亿元"
+        return f"{value / 1e8:.2f} 100M CNY"
     if abs_val >= 1e4:
-        return f"{value / 1e4:.2f}万元"
-    return f"{value:.2f}元"
+        return f"{value / 1e4:.2f} 10K CNY"
+    return f"{value:.2f} CNY"
 
 
 def format_growth(current, previous):
@@ -136,9 +136,9 @@ def calculate_template_data(data):
     result = {}
 
     # --- Basic info ---
-    result["COMPANY_NAME"] = data.get("company_name") or "未知公司"
+    result["COMPANY_NAME"] = data.get("company_name") or "Unknown Company"
     result["YEAR"] = str(data.get("report_year") or data.get("year") or "N/A")
-    result["DATE"] = data.get("report_date") or datetime.now().strftime("%Y年%m月%d日")
+    result["DATE"] = data.get("report_date") or datetime.now().strftime("%Y-%m-%d")
 
     # --- Revenue ---
     result["REVENUE"] = format_amount(revenue)

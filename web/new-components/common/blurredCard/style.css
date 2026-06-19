@@ -4,11 +4,11 @@
 .hover-underline-gradient::after {
   content: '';
   display: block;
-  width: 0; /* 在 hover 之前宽度为 0 */
+  width: 0; /* width is 0 before hover */
   height: 80%;
-  background-image: linear-gradient(to right, theme('colors.gradientL'), theme('colors.gradientR')); /* 渐变背景 */
-  border-radius: 10px; /* 设置为 full rounded corners */
-  transition: width 0.3s ease-in-out; /* 过渡效果 */
+  background-image: linear-gradient(to right, theme('colors.gradientL'), theme('colors.gradientR')); /* gradient background */
+  border-radius: 10px; /* full rounded corners */
+  transition: width 0.3s ease-in-out; /* transition effect */
   position: absolute;
   bottom: -10px;
   z-index: -1;
@@ -17,5 +17,5 @@
 }
 
 .hover-underline-gradient:hover::after {
-  width: 90%; /* hover 时宽度为元素的 100% */
+  width: 90%; /* expand to 90% width on hover */
 }

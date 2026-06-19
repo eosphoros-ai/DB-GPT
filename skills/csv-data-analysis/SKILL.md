@@ -1,6 +1,6 @@
 ---
 name: csv-data-analysis
-description: This skill should be used when users need to analyze CSV or Excel files, understand data patterns, generate statistical summaries, or create data visualizations. Trigger keywords include "analyze CSV", "analyze Excel", "data analysis", "CSV analysis", "Excel analysis", "data statistics", "generate charts", "data visualization", "分析CSV", "分析Excel", "数据分析", "CSV分析", "Excel分析", "数据统计", "生成图表", "数据可视化".
+description: This skill should be used when users need to analyze CSV or Excel files, understand data patterns, generate statistical summaries, or create data visualizations. Trigger keywords include "analyze CSV", "analyze Excel", "data analysis", "CSV analysis", "Excel analysis", "data statistics", "generate charts", "data visualization".
 ---
 
 # Intelligent Deep Data Analysis Tool
@@ -43,9 +43,9 @@ Read the "Statistical Summary" obtained in Step 1, and reason about the business
 
 3. **`*_INSIGHTS`, `EXEC_SUMMARY`, and `CONCLUSIONS`** must use HTML formatting (e.g., `<p>`, `<ul>`, `<li>`, `<strong>`, `<ol>`) to ensure proper layout. These are deep business insights you write based on the statistical summary.
 
-4. **The output language must match the user's input language.** You must also pass the `LANG` placeholder (`"en"` or `"zh"`) so that the template's hardcoded section titles, labels, and footer text are displayed in the matching language. Detect language from the user's query: if the user writes in English, set `LANG` to `"en"`; if the user writes in Chinese, set `LANG` to `"zh"`. Default to `"zh"` when uncertain.
+4. **The output language must match the user's input language.** Pass the `LANG` placeholder (`"en"`) so that the template's section titles, labels, and footer text are displayed in English.
 
-5. **Pass exactly 9 placeholders — no more, no less.** Auto-injected marker fields like `CHART_DATA_JSON` are handled by the backend and should not be passed by you. The template already hardcodes all section titles (Distribution Analysis, Correlation Analysis, etc.), insight box titles ("Insights"), and footer text — you do not need to pass these (the template will automatically translate them based on the `LANG` placeholder).
+5. **Pass exactly 9 placeholders — no more, no less.** Auto-injected marker fields like `CHART_DATA_JSON` are handled by the backend and should not be passed by you. The template already hardcodes all section titles (Distribution Analysis, Correlation Analysis, etc.), insight box titles ("Insights"), and footer text — you do not need to pass these.
 
 6. **Insight content must be substantive.** Each insight module should cover 4 layers of information: `observation`, `possible causes`, `business impact`, and `action recommendations`. Do not merely restate statistical values or write only a few vague conclusions.
 
@@ -82,7 +82,7 @@ The placeholders you need to fill in the template are as follows:
 
 | Placeholder | Type | Required | Description |
 |---|---|---|---|
-| `LANG` | Text | Yes | Report language: `"en"` for English, `"zh"` for Chinese. Determines all section titles, labels, and footer text language. Detect from user's input language; default `"zh"` |
+| `LANG` | Text | Yes | Report language: set to `"en"` for English section titles, labels, and footer text |
 | `REPORT_TITLE` | Text | Yes | Report title, e.g., "Sales Dataset Deep Analysis Report" |
 | `REPORT_SUBTITLE` | Text | Yes | Report subtitle, e.g., "Multi-dimensional Data Feature & Business Insight Mining" |
 | `EXEC_SUMMARY` | HTML | Yes | Executive summary: overview of data scale, key findings, and conclusion preview |
@@ -92,7 +92,7 @@ The placeholders you need to fill in the template are as follows:
 | `TIME_SERIES_INSIGHTS` | HTML | Yes | Supplementary interpretation for the data anomaly overview section: discuss trends if time columns exist; discuss stratification differences and anomaly patterns if no time columns |
 | `CONCLUSIONS` | HTML | Yes | Root cause inference, conclusions & recommendations body; must distinguish between "data evidence" and "reasonable speculation" |
 
-> **Note:** `csv_analyzer.py` includes `###CHART_DATA_JSON_START###...###CHART_DATA_JSON_END###` marker data blocks in its output. The backend automatically extracts and injects these into the template — they should not be passed in `data`. All section titles in the template (e.g., "Distribution Analysis", "Correlation Analysis", "Conclusions & Recommendations"), insight box titles ("Insights"), and footer text are hardcoded in the HTML and are automatically translated based on the `LANG` placeholder — they do not need to be passed via placeholders.
+> **Note:** `csv_analyzer.py` includes `###CHART_DATA_JSON_START###...###CHART_DATA_JSON_END###` marker data blocks in its output. The backend automatically extracts and injects these into the template — they should not be passed in `data`. All section titles in the template (e.g., "Distribution Analysis", "Correlation Analysis", "Conclusions & Recommendations"), insight box titles ("Insights"), and footer text are hardcoded in English in the HTML — they do not need to be passed via placeholders.
 
 ## Why Choose This Tool?
 

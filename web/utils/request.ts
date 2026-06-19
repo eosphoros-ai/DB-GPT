@@ -8,7 +8,7 @@ const DEFAULT_HEADERS = {
   'User-Id': getUserId(),
 };
 
-// body 字段 trim
+// Trim body fields
 const sanitizeBody = (obj: Record<string, any>): string => {
   // simple shallow copy to avoid changing original obj
   if (!isPlainObject(obj)) return JSON.stringify(obj);

@@ -1,30 +1,30 @@
-# [公司名称] [年份] 年度财报分析报告
+# [Company Name] [Year] Annual Financial Report Analysis
 
-## 1. 核心财务摘要
+## 1. Core Financial Summary
 
-| 指标 | 本期数值 | 同比增长 | 行业平均 (参考) |
+| Metric | Current Period | YoY Change | Industry Avg (Reference) |
 | :--- | :--- | :--- | :--- |
-| 营业收入 | | | |
-| 归母净利润 | | | |
-| 扣非净利润 | | | |
-| 毛利率 | | | |
+| Revenue | | | |
+| Net Profit Attributable to Parent | | | |
+| Net Profit Excl. Non-Recurring Items | | | |
+| Gross Margin | | | |
 | ROE | | | |
 
-## 2. 财务状况深度分析
+## 2. In-Depth Financial Analysis
 
-### 2.1 盈利能力分析
-[在此处详细描述盈利能力的变动原因，结合毛利率和费用率进行分析]
+### 2.1 Profitability Analysis
+[Describe drivers of profitability changes here, combining gross margin and expense ratios]
 
-### 2.2 偿债与风险分析
-[分析资产负债率、流动比率等，评估财务安全性]
+### 2.2 Solvency and Risk Analysis
+[Analyze debt-to-asset ratio, current ratio, etc., to assess financial safety]
 
-### 2.3 营运效率分析
-[分析周转率指标，评估公司管理效率]
+### 2.3 Operating Efficiency Analysis
+[Analyze turnover ratios to assess management efficiency]
 
-## 3. 现金流与利润质量
-[对比净利润与经营现金流，评估盈利的真实性]
+## 3. Cash Flow and Earnings Quality
+[Compare net profit with operating cash flow to assess earnings quality]
 
-## 4. 结论与建议
-- **优势**：
-- **风险**：
-- **综合评价**：
+## 4. Conclusions and Recommendations
+- **Strengths**:
+- **Risks**:
+- **Overall Assessment**:

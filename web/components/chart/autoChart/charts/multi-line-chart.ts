@@ -7,7 +7,7 @@ const MULTI_LINE_CHART = 'multi_line_chart';
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   const ordinalField = findOrdinalField(dataProps);
   const nominalField = findNominalField(dataProps);
-  // 放宽折线图的 x 轴条件，优先选择 time， ordinal, nominal 类型，没有的话使用第一个字段作兜底
+  // Relax x-axis rules for line charts: prefer time, ordinal, nominal; fall back to first field
   const field4X = ordinalField ?? nominalField ?? dataProps[0];
   const remainFields = dataProps.filter(field => field.name !== field4X?.name);
 
@@ -66,14 +66,14 @@ const ckb: ChartKnowledge = {
   toSpec: getChartSpec,
 };
 
-/* 订制一个图表需要的所有参数 */
+/* All parameters needed to define a custom chart */
 export const multi_line_chart: CustomChart = {
-  /* 图表唯一 Id */
+  /* Unique chart id */
   chartType: 'multi_line_chart',
-  /* 图表知识 */
+  /* Chart knowledge base entry */
   chartKnowledge: ckb as ChartKnowledge,
-  /** 图表中文名 */
-  chineseName: '折线图',
+  /** Chart display name */
+  chineseName: 'Line chart',
 };
 
 export default multi_line_chart;
