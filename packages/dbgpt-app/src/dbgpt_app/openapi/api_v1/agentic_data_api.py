@@ -2515,13 +2515,15 @@ print(json.dumps(summary, ensure_ascii=False))
         description="Render HTML as an interactive web report — the only way to present HTML reports to the user. "
         "[Default] Pass a complete HTML string: "
         '{"html": "<html>...</html>", "title": "Report title"}. '
-        "You must generate the full HTML yourself "
-        "(including <!DOCTYPE html>, <html>, <head>, <body>, etc.) "
-        "and pass it via the html parameter. "
-        "HTML can be arbitrarily long with no length limit; do not split it into chunks. "
-        "[Do not] use code_interpreter to write HTML and print it, "
-        "or write HTML to a file and read it back — pass HTML to this tool directly. "
-        "[Skill mode — optional when using a skill] template mode: "
+        "You must generate the full HTML yourself (including <!DOCTYPE html>, <html>, <head>, <body>, styles, etc.). "
+        "CRITICAL CSS STYLE GUIDELINES FOR DYNAMIC HTML:"
+        "1. Style & Theme: Use a modern, ultra-minimalist, flat-bordered 'Slate & Indigo' design (Tailwind UI or Stripe style). Base background: #f8fafc, base text: #1e293b, accent: #4f46e5."
+        "2. Containers: ABSOLUTELY FORBID heavy background gradients or neon/bright blocks (e.g., no violet/blue full-color gradient cards). Avoid heavy box-shadows. Use flat #ffffff cards with clean thin borders (1px solid #e2e8f0)."
+        "3. Nested Margins & Paddings: Prevent stacked spacing. Use compact paddings on inner/nested items (12px or 16px max). Keep margins small to maximize content space."
+        "4. Border-Radius: Avoid bubbly roundings. Outer panels/cards: 8px max. Inner cards, metric boxes, badges, or tags: 4px or 6px max."
+        "5. Table Layout: Table headers (thead th) must be light slate (#f8fafc) with dark gray text (#475569) and a thin bottom border (1px solid #e2e8f0). No solid dark blue headers. Row borders must be ultra-thin (1px solid #f1f5f9)."
+        "6. Typography: Use system-ui sans-serif fonts, and keep headings elegant and compact."
+        "[Skill mode] template mode: "
         '{"template_path": "skill-name/templates/template.html", '
         '"data": {"KEY": "value"}, "title": "Title"}. '
         'Or file mode: {"file_path": "/path/to/report.html"}'
@@ -3286,14 +3288,14 @@ system commands, such as ls, cat, etc.).
 are needed, use `&&` or `;` to connect commands.
    - **Note: Do not use this tool to execute skill scripts**, as it will not
 automatically handle images and data recording.
-5. **html_interpreter**: Render HTML as an interactive web report. This is the ONLY
-way to display reports on the right panel.
-   **Default usage (recommended)**: {{"html": "<html>your complete HTML code</html>",
-"title": "report title"}}
-   - Generate complete HTML yourself (DOCTYPE, html, head, body, CSS styles,
-content). No length limit.
-   - **Do not** use code_interpreter to write HTML. Directly pass the HTML string
-to this tool.
+5. **html_interpreter**: Render HTML as an interactive web report (ONLY way to display reports on the right panel).
+   **Default usage (recommended)**: {{"html": "<html>your complete HTML code</html>", "title": "report title"}}
+   - CSS Guidelines: Use flat-bordered Slate & Indigo design style. Base background #f8fafc, base text #1e293b, accent #4f46e5.
+   - Forbid heavy colorful/neon/violet background gradients or shadows. Use flat white #ffffff cards with 1px solid #e2e8f0 borders.
+   - Keep padding inside nested elements small (12px or 16px max) to maximize space.
+   - Border-radius: Outer containers max 8px; inner cards/metric boxes/badges max 4px or 6px.
+   - Table headers (thead th) must be light slate #f8fafc with slate text #475569 and thin bottom border (no solid dark blue headers).
+   - Keep the generated HTML as a single complete string with DOCTYPE, html, head, body, CSS, and content.
    **Template mode (only when skill has templates/)**: {{"template_path":
 "skill-name/templates/template.html", "data": {{"KEY": "value"}}, "title": "title"}}
    - Only use this if the skill's documentation explicitly provides template paths.
@@ -3460,11 +3462,15 @@ Parameters: {{"sql": "SELECT statement"}}
 11. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
 12. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
-13. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
-to display reports on the right panel). Default usage:
-{{"html": "<html>complete HTML code</html>", "title": "title"}}. Template mode:
-{{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
-File mode: {{"file_path": "/path/to/report.html"}}
+13. **html_interpreter**: Render HTML as an interactive web report (the ONLY way to display reports on the right panel).
+    - Default usage: {{"html": "<html>your complete HTML code</html>", "title": "title"}}.
+    - Style guidelines: Use flat-bordered Slate & Indigo design style. Background #f8fafc, text #1e293b, accent #4f46e5.
+    - Absolutely forbid heavy color gradients/neon background blocks/shadows. Use flat #ffffff cards with 1px solid #e2e8f0 borders.
+    - Limit inner padding inside cards/nested items to 12px or 16px max.
+    - Border-radius: max 8px for outer panels, max 4px or 6px for inner/nested boxes.
+    - Table headers (thead th) must be light gray #f8fafc with slate text #475569 and thin bottom border (no solid dark blue headers).
+    - Template mode: {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
+    - File mode: {{"file_path": "/path/to/report.html"}}
 14. **todowrite**: Create and manage a structured task list. Use for complex tasks
 (3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",

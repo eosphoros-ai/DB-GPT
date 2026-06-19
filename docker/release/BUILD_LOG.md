@@ -32,7 +32,7 @@ Images: `golliaph/dbgpt-openai` (linux/amd64 only)
 
 - **Git:** `main` @ `256ca5fa`
 - **Platform:** linux/amd64
-- **Tags:** `golliaph/dbgpt-openai:latest`, `golliaph/dbgpt-openai:amd64` (legacy tag)
+- **Tags:** `golliaph/dbgpt-openai:latest`, `golliaph/dbgpt-openai:0.8.1-b3`
 - **Digest:** `sha256:77540eca6219fab0f056d7aec96e8b983ee5693618cb9bf65507561bc99838b5`
 - **Pushed:** yes
 - **Changes:**
@@ -42,3 +42,14 @@ Images: `golliaph/dbgpt-openai` (linux/amd64 only)
 ---
 
 <!-- New entries below are appended by scripts/build_docker_release.sh -->
+
+## 0.8.1-b4 — 2026-06-19T10:59:16Z
+
+- **Git:** `style/modernize-html-reports` @ [`a5dfd8e8`](https://github.com/golliaph/dbgpt/commit/a5dfd8e8)
+- **Platform:** linux/amd64
+- **Tags:** `golliaph/dbgpt-openai:latest`, `golliaph/dbgpt-openai:0.8.1-b4`
+- **Digest:** `golliaph/dbgpt-openai@sha256:16031f4b8c8c582eda4589d580d71ce539319e7dea0f9a91ce7b717db3d1378c`
+- **Frontend rebuild:** no
+- **Pushed:** no
+- **Changes:**
+  - Modern Slate & Indigo style for HTML reports and templates

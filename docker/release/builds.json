@@ -11,7 +11,9 @@
       "notes": "Remove Chinese locale; translate frontend and skills to English-only",
       "frontend_rebuild": false,
       "pushed": false,
-      "tags": ["golliaph/dbgpt-openai:latest"],
+      "tags": [
+        "golliaph/dbgpt-openai:latest"
+      ],
       "manual": true
     },
     {
@@ -23,7 +25,9 @@
       "notes": "Rebuild static web assets with English-only UI",
       "frontend_rebuild": true,
       "pushed": false,
-      "tags": ["golliaph/dbgpt-openai:latest"],
+      "tags": [
+        "golliaph/dbgpt-openai:latest"
+      ],
       "manual": true
     },
     {
@@ -37,9 +41,23 @@
       "pushed": true,
       "tags": [
         "golliaph/dbgpt-openai:latest",
-        "golliaph/dbgpt-openai:amd64"
+        "golliaph/dbgpt-openai:0.8.1-b3"
       ],
       "manual": true
+    },
+    {
+      "version": "0.8.1-b4",
+      "built_at": "2026-06-19T10:59:16Z",
+      "git_sha": "a5dfd8e8",
+      "git_branch": "style/modernize-html-reports",
+      "digest": "golliaph/dbgpt-openai@sha256:16031f4b8c8c582eda4589d580d71ce539319e7dea0f9a91ce7b717db3d1378c",
+      "notes": "Modern Slate & Indigo style for HTML reports and templates",
+      "frontend_rebuild": false,
+      "pushed": false,
+      "tags": [
+        "golliaph/dbgpt-openai:latest",
+        "golliaph/dbgpt-openai:0.8.1-b4"
+      ]
     }
   ]
 }

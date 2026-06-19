@@ -5,104 +5,116 @@
 <title>{{COMPANY_NAME}} {{YEAR}} Annual Financial Report Analysis</title>
 <style>
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     max-width: 1200px;
     margin: 0 auto;
     padding: 32px 24px;
-    color: #1a1a2e;
-    background: #f8f9fc;
-    line-height: 1.7;
+    color: #1e293b;
+    background: #f8fafc;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
   h1 {
     text-align: center;
-    font-size: 26px;
-    color: #16213e;
-    border-bottom: 3px solid #0f3460;
-    padding-bottom: 12px;
+    font-size: 24px;
+    color: #0f172a;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 16px;
     margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
   .subtitle {
     text-align: center;
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 32px;
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 28px;
   }
   h2 {
-    font-size: 20px;
-    color: #0f3460;
-    margin-top: 36px;
-    margin-bottom: 16px;
-    padding-left: 12px;
-    border-left: 4px solid #e94560;
+    font-size: 16px;
+    color: #0f172a;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    padding-left: 10px;
+    border-left: 3px solid #4f46e5;
+    font-weight: 700;
   }
   h3 {
-    font-size: 17px;
-    color: #16213e;
-    margin-top: 24px;
-    margin-bottom: 12px;
+    font-size: 14px;
+    color: #334155;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: 700;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 16px 0 24px 0;
+    margin: 16px 0 20px 0;
     background: #fff;
-    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
   thead th {
-    background: #0f3460;
-    color: #fff;
+    background: #f8fafc;
+    color: #475569;
     font-weight: 600;
-    padding: 12px 16px;
+    padding: 10px 14px;
     text-align: left;
-    font-size: 14px;
+    font-size: 13px;
+    border-bottom: 1px solid #e2e8f0;
   }
   tbody td {
-    padding: 10px 16px;
-    border-bottom: 1px solid #eef0f5;
-    font-size: 14px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    color: #334155;
   }
   tbody tr:hover {
-    background: #f0f4ff;
+    background: #f8fafc;
   }
   .section-card {
     background: #fff;
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin: 16px 0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 12px 0;
   }
-  .highlight-positive { color: #27ae60; font-weight: 600; }
-  .highlight-negative { color: #e74c3c; font-weight: 600; }
+  .highlight-positive { color: #16a34a; font-weight: 600; }
+  .highlight-negative { color: #dc2626; font-weight: 600; }
   .conclusion-box {
-    background: linear-gradient(135deg, #f8f9fc 0%, #eef1f8 100%);
-    border-radius: 10px;
-    padding: 24px;
-    margin-top: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-top: 16px;
   }
-  .conclusion-box strong { color: #0f3460; }
+  .conclusion-box strong { color: #0f172a; }
   .tag-advantage {
     display: inline-block;
-    background: #d4edda;
-    color: #155724;
-    padding: 2px 10px;
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    padding: 1px 6px;
     border-radius: 4px;
-    font-size: 13px;
-    margin-right: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 4px;
   }
   .tag-risk {
     display: inline-block;
-    background: #f8d7da;
-    color: #721c24;
-    padding: 2px 10px;
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    padding: 1px 6px;
     border-radius: 4px;
-    font-size: 13px;
-    margin-right: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 4px;
   }
-  p { margin: 8px 0; font-size: 15px; }
-  ul { padding-left: 20px; }
-  li { margin: 4px 0; font-size: 14px; }
+  p { margin: 6px 0; font-size: 14px; color: #334155; }
+  ul { padding-left: 18px; }
+  li { margin: 4px 0; font-size: 13px; color: #334155; }
   .chart-container {
     text-align: center;
     margin: 20px 0;
@@ -110,13 +122,13 @@
   .chart-container img {
     max-width: 100%;
     height: auto;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
   }
   .chart-container .chart-caption {
-    font-size: 13px;
-    color: #888;
-    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
   }
 </style>
 </head>
