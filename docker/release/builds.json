@@ -1,0 +1,45 @@
+{
+  "image": "golliaph/dbgpt-openai",
+  "platform": "linux/amd64",
+  "builds": [
+    {
+      "version": "0.8.1-b1",
+      "built_at": "2026-06-19T00:00:00Z",
+      "git_sha": "abd04909",
+      "git_branch": "main",
+      "digest": null,
+      "notes": "Remove Chinese locale; translate frontend and skills to English-only",
+      "frontend_rebuild": false,
+      "pushed": false,
+      "tags": ["golliaph/dbgpt-openai:latest"],
+      "manual": true
+    },
+    {
+      "version": "0.8.1-b2",
+      "built_at": "2026-06-19T00:00:00Z",
+      "git_sha": "e41d2548",
+      "git_branch": "main",
+      "digest": null,
+      "notes": "Rebuild static web assets with English-only UI",
+      "frontend_rebuild": true,
+      "pushed": false,
+      "tags": ["golliaph/dbgpt-openai:latest"],
+      "manual": true
+    },
+    {
+      "version": "0.8.1-b3",
+      "built_at": "2026-06-19T09:30:00Z",
+      "git_sha": "256ca5fa",
+      "git_branch": "main",
+      "digest": "sha256:77540eca6219fab0f056d7aec96e8b983ee5693618cb9bf65507561bc99838b5",
+      "notes": "Translate agentic_data_api to English; amd64 build and Docker Hub push",
+      "frontend_rebuild": true,
+      "pushed": true,
+      "tags": [
+        "golliaph/dbgpt-openai:latest",
+        "golliaph/dbgpt-openai:amd64"
+      ],
+      "manual": true
+    }
+  ]
+}
