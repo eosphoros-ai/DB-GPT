@@ -10,10 +10,10 @@ host = "0.0.0.0"
 port = 5670
 
 [service.web.agent_context]
-# Agent context-window budget. Set max_context_tokens to 0 to auto-detect from
-# the selected model's metadata. The effective budget shown in the UI is
+# Agent context-window budget. Non-positive values fall back to the default
+# budget. The effective budget shown in the UI is
 # max_context_tokens - reserved_tokens.
-max_context_tokens = 0
+max_context_tokens = 120000
 reserved_tokens = 4096
 warning_threshold = 0.70
 error_threshold = 0.90
