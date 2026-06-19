@@ -48,9 +48,8 @@ def make_sql_query(react_state: Dict[str, Any], database_connector: Optional[Any
                         "chunks": [
                             {
                                 "output_type": "text",
-                                "content": (
-                                    f"安全限制: 不允许执行 {kw} 语句，仅支持 SELECT 查询。"
-                                ),
+                                "content": f"安全限制: 不允许执行 {kw} 语句，"
+                                "仅支持 SELECT 查询。",
                             }
                         ]
                     },

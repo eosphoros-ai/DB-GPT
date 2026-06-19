@@ -1,4 +1,4 @@
-"""QuestionManager — session-level pending question state with asyncio.Event blocking."""
+"""QuestionManager — pending question state with asyncio.Event."""
 
 import asyncio
 import logging

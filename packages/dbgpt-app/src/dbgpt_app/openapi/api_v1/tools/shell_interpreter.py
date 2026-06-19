@@ -127,7 +127,8 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
                                 ):
                                     ext = os.path.splitext(abs_path)[1].lower()
                                     if ext in IMAGE_EXTS:
-                                        unique_name = f"{uuid.uuid4().hex[:8]}_{os.path.basename(abs_path)}"
+                                        basename = os.path.basename(abs_path)
+                                        unique_name = f"{uuid.uuid4().hex[:8]}_{basename}"
                                         dest = os.path.join(
                                             STATIC_MESSAGE_IMG_PATH, unique_name
                                         )
