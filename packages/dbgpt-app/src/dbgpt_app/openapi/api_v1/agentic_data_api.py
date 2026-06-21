@@ -26,6 +26,7 @@ from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
+    resolve_dialogue_user_name,
 )
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
@@ -4381,7 +4382,9 @@ async def chat_react_agent(
         dialogue.select_param,
         dialogue.model_name,
     )
-    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    dialogue.user_name = resolve_dialogue_user_name(
+        dialogue.user_name, user_token.user_id if user_token else None
+    )
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
