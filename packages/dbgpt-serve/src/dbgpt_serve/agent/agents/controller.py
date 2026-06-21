@@ -160,6 +160,36 @@ class MultiAgents(BaseComponent, ABC):
 
         return agent_memory
 
+    def _cleanup_failed_conversation(self, conv_id: str):
+        """Clean up failed conversation and related data.
+
+        This method removes all messages and plans associated with a failed conversation,
+        then deletes the conversation record itself.
+
+        Args:
+            conv_id: The conversation ID to clean up
+        """
+        try:
+            # Delete messages associated with this conversation
+            self.gpts_messages_dao.delete_chat_message(conv_id)
+            logger.info(f"Deleted messages for failed conversation: {conv_id}")
+        except Exception as e:
+            logger.warning(f"Failed to delete messages for {conv_id}: {e}")
+
+        try:
+            # Delete plans associated with this conversation
+            self.memory.plans_memory.remove_by_conv_id(conv_id)
+            logger.info(f"Deleted plans for failed conversation: {conv_id}")
+        except Exception as e:
+            logger.warning(f"Failed to delete plans for {conv_id}: {e}")
+
+        try:
+            # Delete the conversation record
+            self.gpts_conversations.delete_chat_message(conv_id)
+            logger.info(f"Deleted failed conversation record: {conv_id}")
+        except Exception as e:
+            logger.warning(f"Failed to delete conversation record {conv_id}: {e}")
+
     async def agent_chat_v2(
         self,
         conv_id: str,
@@ -184,19 +214,18 @@ class MultiAgents(BaseComponent, ABC):
             f"gpts_conversations count:{conv_id}, "
             f"{len(gpts_conversations) if gpts_conversations else 0}"
         )
-        gpt_chat_order = (
-            "1" if not gpts_conversations else str(len(gpts_conversations) + 1)
-        )
-        agent_conv_id = conv_id + "_" + gpt_chat_order
         message_round = 0
         history_message_count = 0
         is_retry_chat = False
         last_speaker_name = None
         history_messages = None
+        agent_conv_id = None
+
         # 检查最后一个对话记录是否完成，如果是等待状态，则要继续进行当前对话
         if gpts_conversations and len(gpts_conversations) > 0:
             last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
             logger.info(f"last conversation status:{last_gpts_conversation.__dict__}")
+            # 如果最后一条记录是WAITING状态，则重试当前对话
             if last_gpts_conversation.state == Status.WAITING.value:
                 is_retry_chat = True
                 agent_conv_id = last_gpts_conversation.conv_id
@@ -228,6 +257,32 @@ class MultiAgents(BaseComponent, ABC):
             gpt_app: GptsApp = self.gpts_app.app_detail(gpts_name)
             if not gpt_app:
                 raise ValueError(f"Not found app {gpts_name}!")
+
+            # 如果最后一条记录是RUNNING或FAILED状态，说明上次对话异常中断，
+            # 需要清理残留数据后再创建新对话
+            if gpts_conversations and len(gpts_conversations) > 0:
+                last_gpts_conversation: GptsConversationsEntity = gpts_conversations[-1]
+                if last_gpts_conversation.state in [
+                    Status.RUNNING.value,
+                    Status.FAILED.value,
+                ]:
+                    logger.warning(
+                        f"Last conversation {last_gpts_conversation.conv_id} is in "
+                        f"{last_gpts_conversation.state} state, cleaning up before "
+                        "starting new conversation"
+                    )
+                    # 清理失败的对话记录及相关数据
+                    self._cleanup_failed_conversation(last_gpts_conversation.conv_id)
+                    # 重新获取对话列表
+                    gpts_conversations = self.gpts_conversations.get_like_conv_id_asc(
+                        conv_id
+                    )
+
+            # 生成新的对话ID
+            gpt_chat_order = (
+                "1" if not gpts_conversations else str(len(gpts_conversations) + 1)
+            )
+            agent_conv_id = conv_id + "_" + gpt_chat_order
 
             ## When creating a new gpts conversation record, determine whether to
             # include the history of previous topics according to the application
