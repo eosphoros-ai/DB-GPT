@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.aimlapi import AimlapiLLMClient
+    from dbgpt.model.proxy.llms.atlascloud import AtlasCloudLLMClient
     from dbgpt.model.proxy.llms.burncloud import BurnCloudLLMClient
     from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
     from dbgpt.model.proxy.llms.claude import ClaudeLLMClient
@@ -31,6 +32,7 @@ def __lazy_import(name):
         "ClaudeLLMClient": "dbgpt.model.proxy.llms.claude",
         "GeminiLLMClient": "dbgpt.model.proxy.llms.gemini",
         "AimlapiLLMClient": "dbgpt.model.proxy.llms.aimlapi",
+        "AtlasCloudLLMClient": "dbgpt.model.proxy.llms.atlascloud",
         "SiliconFlowLLMClient": "dbgpt.model.proxy.llms.siliconflow",
         "SparkLLMClient": "dbgpt.model.proxy.llms.spark",
         "TongyiLLMClient": "dbgpt.model.proxy.llms.tongyi",
@@ -67,6 +69,7 @@ __all__ = [
     "ZhipuLLMClient",
     "WenxinLLMClient",
     "AimlapiLLMClient",
+    "AtlasCloudLLMClient",
     "SiliconFlowLLMClient",
     "SparkLLMClient",
     "YiLLMClient",
