@@ -18,7 +18,7 @@ import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Knowledge = () => {
-  const { setCurrentDialogInfo } = useContext(ChatContext);
+  const { setCurrentDialogInfo, model } = useContext(ChatContext);
   const [spaceList, setSpaceList] = useState<Array<ISpace> | null>([]);
   const [isAddShow, setIsAddShow] = useState<boolean>(false);
   const [isPanelShow, setIsPanelShow] = useState<boolean>(false);
@@ -63,6 +63,7 @@ const Knowledge = () => {
     const [_, data] = await apiInterceptors(
       newDialogue({
         chat_mode: 'chat_knowledge',
+        model,
       }),
     );
     // 知识库对话都默认私有知识库应用下
