@@ -96,6 +96,17 @@ logger = logging.getLogger(__name__)
             optional=True,
             default="vector",
         ),
+        Parameter.build_from(
+            _("Database Name"),
+            "db_name",
+            str,
+            description=_(
+                "The database name of milvus store, if not set, will use the "
+                "default database name."
+            ),
+            optional=True,
+            default="default",
+        ),
     ],
     description=_("Milvus vector config."),
 )
@@ -170,6 +181,15 @@ class MilvusVectorConfig(VectorStoreConfig):
             "help": _("The secure of milvus store, if not set, will use the default ")
         },
     )
+    db_name: str = field(
+        default="default",
+        metadata={
+            "help": _(
+                "The database name of milvus store, if not set, will use the "
+                "default database name."
+            )
+        },
+    )
 
     def create_store(self, **kwargs) -> "MilvusStore":
         """Create Milvus Store."""
@@ -227,7 +247,7 @@ class MilvusStore(VectorStoreBase):
         self.uri = milvus_vector_config.get("uri") or os.getenv(
             "MILVUS_URL", "localhost"
         )
-        self.port = milvus_vector_config.get("post") or os.getenv(
+        self.port = milvus_vector_config.get("port") or os.getenv(
             "MILVUS_PORT", "19530"
         )
         self.username = milvus_vector_config.get("user", "") or os.getenv(
@@ -237,6 +257,9 @@ class MilvusStore(VectorStoreBase):
             "MILVUS_PASSWORD"
         )
         self.secure = milvus_vector_config.get("secure") or os.getenv("MILVUS_SECURE")
+        self.db_name = milvus_vector_config.get("db_name") or os.getenv(
+            "MILVUS_DB_NAME", "default"
+        )
 
         self.collection_name = name
         if string_utils.contains_chinese(self.collection_name):
@@ -280,18 +303,23 @@ class MilvusStore(VectorStoreBase):
         self.metadata_field = milvus_vector_config.get("metadata_field") or "metadata"
         self.props_field = milvus_vector_config.get("props_field") or "props_field"
 
-        if (self.username is None) != (self.password is None):
-            raise ValueError(
+        if bool(self.username) != bool(self.password):
+            logger.warning(
                 "Both username and password must be set to use authentication for "
-                "Milvus"
+                "Milvus. One of them is missing — connecting without authentication."
             )
+            self.username = None
+            self.password = None
         if self.username:
             connect_kwargs["user"] = self.username
             connect_kwargs["password"] = self.password
 
         url = f"http://{self.uri}:{self.port}"
         self._milvus_client = MilvusClient(
-            uri=url, user=self.username, db_name="default"
+            uri=url,
+            user=self.username,
+            password=self.password,
+            db_name=self.db_name,
         )
         self.col = self.create_collection(collection_name=self.collection_name)
 
@@ -326,6 +354,9 @@ class MilvusStore(VectorStoreBase):
                 host=self.uri or "127.0.0.1",
                 port=self.port or "19530",
                 alias="default",
+                user=self.username or "",
+                password=self.password or "",
+                db_name=self.db_name,
                 # secure=self.secure,
             )
         embeddings = self.embedding.embed_query(collection_name)
