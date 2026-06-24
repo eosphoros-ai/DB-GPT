@@ -10,7 +10,7 @@ from concurrent.futures import Executor, ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast, final
 
-from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
 
 from dbgpt._private.pydantic import ConfigDict, Field
 from dbgpt.core import LLMClient, ModelMessageRoleType, PromptTemplate
@@ -1255,7 +1255,13 @@ class ConversableAgent(Role, Agent):
             if self.bind_prompt.template_format == "f-string":
                 system_prompt = self.bind_prompt.format(**prompt_param)
             elif self.bind_prompt.template_format == "jinja2":
-                system_prompt = Template(self.bind_prompt.template).render(prompt_param)
+                # Render in a sandbox: bind_prompt.template may contain
+                # user-controlled content (e.g. a selected skill's instructions),
+                # so a plain jinja2.Template would allow SSTI -> RCE.
+                _env = SandboxedEnvironment()
+                system_prompt = _env.from_string(self.bind_prompt.template).render(
+                    prompt_param
+                )
             else:
                 logger.warning("Bind prompt template not exsit or  format not support!")
         if not system_prompt:
