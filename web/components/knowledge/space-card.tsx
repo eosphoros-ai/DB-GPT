@@ -1,9 +1,11 @@
 import { apiInterceptors, delSpace, newDialogue } from '@/client/api';
+import { ChatContext } from '@/app/chat-context';
 import { ISpace } from '@/types/knowledge';
 import { ClockCircleOutlined, DeleteFilled, MessageFilled, UserOutlined, WarningOutlined } from '@ant-design/icons';
 import { Badge, ConfigProvider, Modal, Popover } from 'antd';
 import moment from 'moment';
 import { useRouter } from 'next/router';
+import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import GptCard from '../common/gpt-card';
 import DocPanel from './doc-panel';
@@ -20,6 +22,7 @@ export default function SpaceCard(props: IProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { space, getSpaces } = props;
+  const { model } = useContext(ChatContext);
 
   const showDeleteConfirm = () => {
     confirm({
@@ -44,6 +47,7 @@ export default function SpaceCard(props: IProps) {
     const [_, data] = await apiInterceptors(
       newDialogue({
         chat_mode: 'chat_knowledge',
+        model,
       }),
     );
     if (data?.conv_uid) {
