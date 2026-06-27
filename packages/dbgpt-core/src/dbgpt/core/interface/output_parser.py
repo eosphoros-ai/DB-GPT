@@ -214,7 +214,10 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
         """
         cleaned_output = model_out_text.rstrip()
         if "```json" in cleaned_output:
-            _, cleaned_output = cleaned_output.split("```json")
+            # Split only on the first fence: a response may contain more than
+            # one ```json block, and an unbounded split would raise
+            # "too many values to unpack".
+            _, cleaned_output = cleaned_output.split("```json", 1)
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
