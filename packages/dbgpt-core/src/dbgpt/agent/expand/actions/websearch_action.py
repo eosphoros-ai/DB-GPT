@@ -64,7 +64,7 @@ def clean_text(text):
     cleaned = re.sub(r"\n+", "\n\n", cleaned).strip()
     cleaned = re.sub(r" +", " ", cleaned)
     cleaned = re.sub(
-        r'[^\u4e00-\u9fa5a-zA-Z0-9\s,.，。；;！!？?：:""' "（）()【】[\]{}、/\\-]",
+        r'[^\u4e00-\u9fa5a-zA-Z0-9\s,.，。；;！!？?：:""' "（）()【】[\\]{}、/\\-]",
         "",
         cleaned,
     )

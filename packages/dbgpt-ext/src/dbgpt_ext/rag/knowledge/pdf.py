@@ -304,7 +304,7 @@ class PDFProcessor:
         for line in range(len(lines)):
             each_line = lines[line]
             check_re = (
-                "(?:。|；|单位：人民币元|金额单位：人民币元|单位：万元|币种：人民币|\d|"
+                "(?:。|；|单位：人民币元|金额单位：人民币元|单位：万元|币种：人民币|\\d|"
                 "报告(?:全文)?(?:（修订版）|（修订稿）|（更正后）)?)$"
             )
             if top == "" and buttom == "":
@@ -473,7 +473,7 @@ class PDFProcessor:
                 self.allrow += 1
 
         first_re = "[^计](?:报告(?:全文)?(?:（修订版）|（修订稿）|（更正后）)?)$"
-        end_re = "^(?:\d|\\|\/|第|共|页|-|_| ){1,}"
+        end_re = "^(?:\\d|\\|\\/|第|共|页|-|_| ){1,}"
         if self.last_num == 0:
             try:
                 first_text = str(self.all_text[1]["inside"])
