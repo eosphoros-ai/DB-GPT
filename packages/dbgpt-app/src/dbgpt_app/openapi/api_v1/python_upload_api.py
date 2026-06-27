@@ -13,6 +13,28 @@ CFG = Config()
 logger = logging.getLogger(__name__)
 
 
+def _resolve_upload_dir(base_dir: str, user_id: str) -> str:
+    """Resolve the per-user upload directory under ``python_uploads``.
+
+    ``user_id`` originates from an untrusted request header, so it must be
+    treated as a single, opaque directory name. Rejecting anything that is not
+    a single non-".."/non-absolute path segment (and verifying containment)
+    prevents path traversal such as ``user_id: ../../../tmp`` from escaping the
+    uploads root and writing files to arbitrary locations on the server.
+    """
+    uploads_root = (Path(base_dir) / "python_uploads").resolve()
+    user_path = Path(user_id)
+    if user_path.is_absolute() or len(user_path.parts) != 1 or user_id in (".", ".."):
+        raise ValueError("user_id must be a single safe path segment")
+
+    upload_dir = (uploads_root / user_path).resolve()
+    try:
+        upload_dir.relative_to(uploads_root)
+    except ValueError as exc:
+        raise ValueError("user_id must stay inside the uploads directory") from exc
+    return str(upload_dir)
+
+
 def _resolve_upload_path(upload_dir: str, filename: str) -> str:
     upload_dir_path = Path(upload_dir).resolve()
     filename_path = Path(filename)
@@ -51,7 +73,10 @@ async def python_file_upload(
         ):
             base_dir = CFG.SYSTEM_APP.work_dir
 
-        upload_dir = os.path.join(base_dir, "python_uploads", user_id)
+        try:
+            upload_dir = _resolve_upload_dir(base_dir, user_id)
+        except ValueError:
+            return Result.failed(msg="Invalid user identifier")
         os.makedirs(upload_dir, exist_ok=True)
 
         file_path = _resolve_upload_path(upload_dir, file.filename)
