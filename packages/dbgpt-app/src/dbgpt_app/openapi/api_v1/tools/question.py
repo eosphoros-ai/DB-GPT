@@ -1,4 +1,4 @@
-"""question tool — human-in-the-loop: ask the user questions and block until answered."""
+"""question tool — ask user questions and block until answered."""
 
 import asyncio
 import json
@@ -12,18 +12,28 @@ from .question_manager import question_manager
 logger = logging.getLogger(__name__)
 
 _DESCRIPTION = """\
-Use this tool when you need to ask the user questions during execution. This allows you to:
+Use this tool when you need to ask the user questions during \
+execution. This allows you to:
 1. Gather user preferences or requirements
 2. Clarify ambiguous instructions
 3. Get decisions on implementation choices as you work
 4. Offer choices to the user about what direction to take.
 
 Usage notes:
-- IMPORTANT: Always write the question text, header, option labels, and descriptions in the SAME language the user is using. If the user writes in English, all content must be in English; if in Chinese, use Chinese, etc.
-- When `custom` is enabled (default), a "Type your own answer" option is added automatically; don't include "Other" or catch-all options
-- Answers are returned as arrays of labels; set `multiple: true` to allow selecting more than one
-- If you recommend a specific option, make that the first option in the list and add "(Recommended)" at the end of the label
-Parameter: {"questions": [{"question": "...", "header": "...", "options": [{"label": "...", "description": "..."}], "multiple": false}]}
+- IMPORTANT: Always write the question text, header, option \
+labels, and descriptions in the SAME language the user is using. \
+If the user writes in English, all content must be in English; \
+if in Chinese, use Chinese, etc.
+- When `custom` is enabled (default), a "Type your own answer" \
+option is added automatically; don't include "Other" or \
+catch-all options
+- Answers are returned as arrays of labels; set `multiple: true` \
+to allow selecting more than one
+- If you recommend a specific option, make that the first option \
+in the list and add "(Recommended)" at the end of the label
+Parameter: {"questions": [{"question": "...", "header": "...", \
+"options": [{"label": "...", "description": "..."}], \
+"multiple": false}]}
 """
 
 
@@ -92,7 +102,10 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": "Question timed out after 300 seconds. Proceeding without user answer.",
+                            "content": (
+                                "Question timed out after 300 seconds."
+                                " Proceeding without user answer."
+                            ),
                         }
                     ]
                 },
@@ -108,7 +121,10 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": "The user dismissed the question. Proceeding without answer.",
+                            "content": (
+                                "The user dismissed the question."
+                                " Proceeding without answer."
+                            ),
                         }
                     ]
                 },
@@ -117,11 +133,21 @@ def make_question(react_state: Dict[str, Any], stream_callback: Callable):
 
         # 5. Format answers for the LLM
         answers = pq.answers or []
-        formatted = ", ".join(
-            f'"{q.get("question", "")}"="{", ".join(answers[i]) if i < len(answers) and answers[i] else "Unanswered"}"'
-            for i, q in enumerate(parsed_questions)
+        parts = []
+        for i, q in enumerate(parsed_questions):
+            q_text = q.get("question", "")
+            a_text = (
+                ", ".join(answers[i])
+                if i < len(answers) and answers[i]
+                else "Unanswered"
+            )
+            parts.append(f'"{q_text}"="{a_text}"')
+        formatted = ", ".join(parts)
+        output = (
+            f"User has answered your questions: {formatted}."
+            " You can now continue with the user's answers"
+            " in mind."
         )
-        output = f"User has answered your questions: {formatted}. You can now continue with the user's answers in mind."
         return json.dumps(
             {"chunks": [{"output_type": "text", "content": output}]},
             ensure_ascii=False,

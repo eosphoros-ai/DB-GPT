@@ -22,7 +22,8 @@ def make_html_interpreter(react_state: Dict[str, Any], skills_dir: str):
             "（包含 <!DOCTYPE html>、<html>、<head>、<body> 等），"
             "然后传给 html 参数即可。"
             "HTML 可以很长，没有长度限制，不需要分段传入。"
-            "【技能模式 - 仅在使用技能时可选】如果正在使用技能（skill），可以用模板模式："
+            "【技能模式 - 仅在使用技能时可选】"
+            "如果正在使用技能（skill），可以用模板模式："
             '{"template_path": "技能名/templates/模板.html", '
             '"data": {"KEY": "值"}, "title": "标题"}。'
             '也可以用文件模式：{"file_path": "/path/to/report.html"}'
@@ -66,7 +67,8 @@ def make_html_interpreter(react_state: Dict[str, Any], skills_dir: str):
                                 "output_type": "text",
                                 "content": (
                                     f"Template not found: {tp}. "
-                                    "Please retry using the `html` parameter directly — "
+                                    "Please retry using the `html` parameter "
+                                    "directly — "
                                     "generate complete HTML yourself and pass it via "
                                     '{"html": "<html>...</html>", "title": "title"}.'
                                 ),
@@ -243,7 +245,8 @@ def make_html_interpreter(react_state: Dict[str, Any], skills_dir: str):
                 if missing:
                     imgs_html = "".join(
                         f'<div style="margin:16px 0">'
-                        f'<img src="{url}" style="max-width:100%;height:auto;border-radius:8px">'
+                        f'<img src="{url}" '
+                        f'style="max-width:100%;height:auto;border-radius:8px">'
                         f"</div>"
                         for url in missing
                     )
