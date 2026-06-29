@@ -7,7 +7,13 @@
 
 import { MessagePart, ToolPart } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import { ChatHistoryResponse } from '@/types/chat';
-import { ContextStatus, ReActSSEState, createReActSSEState, parseSSELine } from '@/utils/react-sse-parser';
+import {
+  ContextStatus,
+  ReActSSEState,
+  SSEQuestionAskedEvent,
+  createReActSSEState,
+  parseSSELine,
+} from '@/utils/react-sse-parser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface ReActChatRequest {
@@ -45,12 +51,15 @@ export interface UseReActAgentChatReturn {
   streamingTurn: StreamingTurn | null;
   isStreaming: boolean;
   contextStatus: ContextStatus | null;
+  pendingQuestion: SSEQuestionAskedEvent | null;
   sendMessage: (
     request: ReActChatRequest,
     currentHistory: ChatHistoryResponse,
     order: number,
   ) => Promise<ChatHistoryResponse>;
   cancel: () => void;
+  replyQuestion: (requestId: string, answers: string[][]) => Promise<void>;
+  rejectQuestion: (requestId: string) => Promise<void>;
 }
 
 export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseReActAgentChatReturn {
@@ -59,6 +68,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
   const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [contextStatus, setContextStatus] = useState<ContextStatus | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<SSEQuestionAskedEvent | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const sseStateRef = useRef<ReActSSEState | null>(null);
@@ -112,6 +122,10 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
     if (latestContextStatus) {
       setContextStatus(latestContextStatus);
     }
+
+    // Update pending question state
+    const latestQuestion = sseStateRef.current.getPendingQuestion();
+    setPendingQuestion(latestQuestion);
 
     setStreamingTurn(prev => {
       if (!prev) return null;
@@ -329,12 +343,41 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
     [baseUrl, cancel, processSSELine, onHistoryUpdate, onError, onComplete],
   );
 
+  const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
+    try {
+      const res = await fetch(`/api/v1/chat/question/${requestId}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPendingQuestion(null);
+    } catch (e) {
+      console.error('replyQuestion failed:', e);
+    }
+  }, []);
+
+  const rejectQuestion = useCallback(async (requestId: string) => {
+    try {
+      const res = await fetch(`/api/v1/chat/question/${requestId}/reject`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPendingQuestion(null);
+    } catch (e) {
+      console.error('rejectQuestion failed:', e);
+    }
+  }, []);
+
   return {
     streamingTurn,
     isStreaming,
     contextStatus,
+    pendingQuestion,
     sendMessage,
     cancel,
+    replyQuestion,
+    rejectQuestion,
   };
 }
 
