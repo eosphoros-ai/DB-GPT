@@ -136,6 +136,160 @@ def _format_json_str(jstr):
     return "".join(result)
 
 
+def _strip_json_code_fence(text: str) -> str:
+    """Strip a leading/trailing Markdown code fence from a JSON string.
+
+    LLMs frequently wrap JSON payloads in fenced code blocks such as
+    ``` ```json ... ``` ```. This helper removes a single surrounding fence
+    (optionally tagged with a language such as ``json``) so the inner payload
+    can be parsed. If no fence is detected the text is returned unchanged.
+    """
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return text
+    # Drop the opening fence line (``` or ```json etc.)
+    lines = stripped.split("\n")
+    lines = lines[1:]
+    # Drop the closing fence line if present.
+    if lines and lines[-1].strip().startswith("```"):
+        lines = lines[:-1]
+    return "\n".join(lines)
+
+
+def _strip_json_comments(text: str) -> str:
+    """Remove ``//`` and ``/* */`` comments that live outside of strings.
+
+    Comments are not valid JSON but are commonly emitted by language models.
+    Characters inside double-quoted strings (respecting escapes) are preserved.
+    """
+    result = []
+    inside_string = False
+    escape = False
+    i = 0
+    n = len(text)
+    while i < n:
+        char = text[i]
+        if inside_string:
+            result.append(char)
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                inside_string = False
+            i += 1
+            continue
+        # Not inside a string.
+        if char == '"':
+            inside_string = True
+            result.append(char)
+            i += 1
+            continue
+        if char == "/" and i + 1 < n and text[i + 1] == "/":
+            # Line comment: skip until end of line.
+            i += 2
+            while i < n and text[i] != "\n":
+                i += 1
+            continue
+        if char == "/" and i + 1 < n and text[i + 1] == "*":
+            # Block comment: skip until closing */.
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+            continue
+        result.append(char)
+        i += 1
+    return "".join(result)
+
+
+def _remove_trailing_commas(text: str) -> str:
+    """Remove trailing commas before ``}`` or ``]`` that live outside strings.
+
+    Example: ``{"a": 1,}`` becomes ``{"a": 1}``. Commas inside double-quoted
+    strings (respecting escapes) are preserved.
+    """
+    result = []
+    inside_string = False
+    escape = False
+    for char in text:
+        if inside_string:
+            result.append(char)
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                inside_string = False
+            continue
+        if char == '"':
+            inside_string = True
+            result.append(char)
+            continue
+        if char in "}]":
+            # Walk back over any whitespace, dropping a trailing comma.
+            j = len(result) - 1
+            while j >= 0 and result[j] in " \t\r\n":
+                j -= 1
+            if j >= 0 and result[j] == ",":
+                del result[j]
+        result.append(char)
+    return "".join(result)
+
+
+def repair_json(text: str) -> str:
+    """Best-effort repair of common JSON defects in LLM output.
+
+    Applies, in order:
+
+    1. Strips a surrounding Markdown code fence (e.g. ```` ```json ... ``` ````).
+    2. Removes ``//`` line comments and ``/* */`` block comments.
+    3. Removes trailing commas before ``}`` or ``]``.
+
+    All transformations preserve the contents of double-quoted strings. The
+    result is a string that is more likely to parse with ``json.loads`` but is
+    not guaranteed to be valid JSON.
+
+    Args:
+        text (str): The raw text to repair.
+
+    Returns:
+        str: The repaired text.
+    """
+    if not text:
+        return text
+    repaired = _strip_json_code_fence(text)
+    repaired = _strip_json_comments(repaired)
+    repaired = _remove_trailing_commas(repaired)
+    return repaired.strip()
+
+
+def loads_robust(text: str, **kwargs):
+    """Parse JSON, falling back to a repaired version on failure.
+
+    First attempts a strict ``json.loads``. If that raises
+    ``json.JSONDecodeError``, the text is run through :func:`repair_json`
+    (stripping code fences, comments and trailing commas) and parsed again.
+    This is convenient for tolerating the small defects commonly present in
+    language-model JSON output without giving up strictness on well-formed
+    input.
+
+    Args:
+        text (str): The JSON text to parse.
+        **kwargs: Extra keyword arguments forwarded to ``json.loads``.
+
+    Returns:
+        The parsed Python object.
+
+    Raises:
+        json.JSONDecodeError: If the text cannot be parsed even after repair.
+    """
+    try:
+        return json.loads(text, **kwargs)
+    except json.JSONDecodeError:
+        return json.loads(repair_json(text), **kwargs)
+
+
 def compare_json_properties(json1, json2):
     """
     Check whether the attributes of two json are consistent
