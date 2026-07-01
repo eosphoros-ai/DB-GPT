@@ -144,6 +144,16 @@ class ModelAPIServerParameters(BaseServerParameters):
     ignore_stop_exceeds_error: Optional[bool] = field(
         default=False, metadata={"help": _("Ignore exceeds stop words error")}
     )
+    cors_allowed_origins: str = field(
+        default="*",
+        metadata={
+            "help": _(
+                "Comma-separated allowed CORS origins for the standalone model "
+                "API server. Default '*' allows all. Set explicit origins "
+                "(e.g. http://localhost:3000) to restrict."
+            )
+        },
+    )
 
 
 @dataclass

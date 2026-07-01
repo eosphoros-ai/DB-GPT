@@ -1,6 +1,6 @@
 import { sendSpacePostRequest } from '@/utils/request';
 import { useRequest } from 'ahooks';
-import { ConfigProvider, FloatButton, Form, List, Popover, Select, Tooltip, message } from 'antd';
+import { ConfigProvider, FloatButton, Form, List, Popover, Select, Tooltip } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -73,9 +73,6 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit, chat_scene }) => {
     },
     {
       refreshDeps: [current, chat_scene],
-      onError: err => {
-        message.error(err?.message);
-      },
       manual: true,
     },
   );
