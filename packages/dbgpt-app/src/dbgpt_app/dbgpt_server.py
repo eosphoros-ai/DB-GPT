@@ -15,7 +15,7 @@ from dbgpt.configs.model_config import (
     LOGDIR,
     STATIC_MESSAGE_IMG_PATH,
 )
-from dbgpt.util.fastapi import create_app, replace_router
+from dbgpt.util.fastapi import build_cors_config, create_app, replace_router
 from dbgpt.util.i18n_utils import _, set_default_language
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
@@ -263,10 +263,7 @@ def run_uvicorn(param: ServiceWebParameters):
     # https://github.com/encode/starlette/issues/617
     cors_app = CORSMiddleware(
         app=app,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["*"],
+        **build_cors_config(param.cors_allowed_origins),
     )
     log_level = "info"
     if param.log:
