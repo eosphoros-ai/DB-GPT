@@ -99,6 +99,8 @@ export interface ManusLeftPanelProps {
   assistantText?: string;
   modelName?: string;
   stepThoughts?: Record<string, string>;
+  /** Optional slot rendered above the execution sections (sub-agent card). */
+  subAgentSlot?: React.ReactNode;
   artifacts?: ArtifactItem[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
   onArtifactDownload?: (artifact: ArtifactItem) => void;
@@ -888,6 +890,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   assistantText,
   modelName,
   stepThoughts,
+  subAgentSlot,
   artifacts,
   onArtifactClick,
   onArtifactDownload,
@@ -1075,6 +1078,11 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             )}
           </div>
         )}
+
+        {/* Parallel sub-agent activity — rendered after the thinking timeline,
+            but ABOVE the task-plan list so the plan card stays at the bottom
+            (its original position). */}
+        {subAgentSlot}
 
         {taskPlan && taskPlan.length > 0 && (
           <div className='mt-3 px-1'>

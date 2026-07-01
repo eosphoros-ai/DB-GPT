@@ -255,6 +255,16 @@ class AgentContextParameters(BaseParameters):
         default=3,
         metadata={"help": _("Consecutive compaction failures before circuit break")},
     )
+    max_parallel_subagents: int = field(
+        default=3,
+        metadata={
+            "help": _(
+                "Max concurrent sub-agents per dispatch_parallel_tasks call. "
+                "Higher values fan out more sub-tasks at once but multiply "
+                "token cost; aligned with deer-flow's default of 3."
+            )
+        },
+    )
 
     def __post_init__(self):
         if self.max_context_tokens is None or self.max_context_tokens <= 0:

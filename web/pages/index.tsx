@@ -1,6 +1,7 @@
 import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
+import { parseSubAgentEvent } from '@/hooks/use-subagent-stream';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -15,6 +16,7 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import SubAgentSection from '@/new-components/chat/content/SubAgentSection';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
@@ -22,6 +24,7 @@ import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling'
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
+import type { SubAgentState } from '@/types/subagent';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
@@ -538,6 +541,8 @@ const Playground: NextPage = () => {
         activeStepId: string | null;
         collapsed: boolean;
         stepThoughts: Record<string, string>;
+        subAgents?: Record<string, SubAgentState>;
+        subAgentArtifacts?: number;
       }
     >
   >({});
@@ -590,6 +595,9 @@ const Playground: NextPage = () => {
 
   // Active round tracking: which view message is currently selected for the right panel
   const [activeViewMsgId, setActiveViewMsgId] = useState<string | null>(null);
+  // Devin-style: which sub-agent's process to show in the right panel (clicked
+  // in the left SubAgentSection). null = show the main agent's execution.
+  const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
@@ -1639,6 +1647,51 @@ const Playground: NextPage = () => {
           });
           return;
         }
+        if (
+          payload.type === 'agent.start' ||
+          payload.type === 'agent.step' ||
+          payload.type === 'agent.done' ||
+          payload.type === 'subagent.artifacts'
+        ) {
+          // Parallel sub-agent events -> grouped card state. Parsing is a
+          // pure function in use-subagent-stream; the apply (setState) stays
+          // here because processEvent closes over setExecutionMap (review I3).
+          const partial = parseSubAgentEvent(payload);
+          if (!partial) return;
+          setExecutionMap(prev => {
+            const current = prev[responseId] || {
+              steps: [],
+              outputs: {},
+              activeStepId: null,
+              collapsed: false,
+              stepThoughts: {},
+            };
+            const subAgents: Record<string, SubAgentState> = { ...(current.subAgents || {}) };
+            if (partial.upsert) {
+              const existing = subAgents[partial.upsert.agentId];
+              // agent.done only carries status — merge onto the existing row
+              // so name / goal / lane / steps from earlier events are preserved.
+              subAgents[partial.upsert.agentId] = existing
+                ? { ...existing, status: partial.upsert.status }
+                : partial.upsert;
+            }
+            if (partial.stepUpdate) {
+              const { agentId, step } = partial.stepUpdate;
+              const existing = subAgents[agentId];
+              if (existing) {
+                subAgents[agentId] = {
+                  ...existing,
+                  steps: [...existing.steps, step],
+                  currentAction: step.label,
+                };
+              }
+            }
+            const subAgentArtifacts =
+              partial.totalArtifacts != null ? partial.totalArtifacts : current.subAgentArtifacts;
+            return { ...prev, [responseId]: { ...current, subAgents, subAgentArtifacts } };
+          });
+          return;
+        }
         if (payload.type === 'plan.update') {
           if (Array.isArray(payload.tasks)) {
             const nextTasks = payload.tasks as TaskItem[];
@@ -2443,11 +2496,29 @@ const Playground: NextPage = () => {
                       <ManusLeftPanel
                         key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
                         sections={sections}
+                        subAgentSlot={
+                          execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                            <SubAgentSection
+                              subAgents={execution.subAgents}
+                              artifactCount={execution.subAgentArtifacts}
+                              activeSubAgentId={isSelected ? activeSubAgentId : null}
+                              onSubAgentClick={agentId => {
+                                if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                setActiveSubAgentId(agentId);
+                                setRightPanelView('execution');
+                                setRightPanelCollapsed(false);
+                              }}
+                            />
+                          ) : undefined
+                        }
                         activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
                         onStepClick={(stepId, _sectionId) => {
                           if (round.viewMsg?.id) {
                             setActiveViewMsgId(round.viewMsg.id);
                             setSelectedStepId(stepId);
+                            // Clicking a main-agent step exits the sub-agent
+                            // process view, so the right panel shows this step.
+                            setActiveSubAgentId(null);
                             setRightPanelCollapsed(false);
                             setExecutionMap(prev => ({
                               ...prev,
@@ -3103,12 +3174,74 @@ const Playground: NextPage = () => {
                   // Respect user's manual step selection for the right panel
                   const execution =
                     rawExecution && selectedStepId ? { ...rawExecution, activeStepId: selectedStepId } : rawExecution;
-                  const {
-                    activeStep,
-                    outputs,
-                    stepThoughts: _stepThoughts,
-                  } = convertToManusFormat(execution, undefined, t);
-                  const isRunning = execution?.steps.some(s => s.status === 'running') || false;
+                  const _converted = convertToManusFormat(execution, undefined, t);
+                  let activeStep = _converted.activeStep;
+                  let outputs = _converted.outputs;
+                  let isRunning = execution?.steps.some(s => s.status === 'running') || false;
+
+                  // Devin-style sub-agent process view: when a sub-agent is
+                  // selected, override activeStep/outputs with that sub-agent's
+                  // step list (reusing the execution view's rendering).
+                  const activeSub = activeSubAgentId ? execution?.subAgents?.[activeSubAgentId] : undefined;
+                  if (activeSub) {
+                    activeStep = {
+                      id: `subagent-${activeSub.agentId}`,
+                      type: 'task',
+                      title: activeSub.name,
+                      status:
+                        activeSub.status === 'done'
+                          ? 'completed'
+                          : activeSub.status === 'running'
+                            ? 'running'
+                            : 'error',
+                    };
+                    // Build the right-panel outputs from each step's
+                    // backend-parsed chunks (markdown tables / code / json),
+                    // prefixed by a per-step heading. The backend already
+                    // unwrapped the {"chunks":[...]} tool result, so the
+                    // renderer shows real tables — never a raw JSON string.
+                    const expandSubOutputs: ManusExecutionOutput[] = [];
+                    // A sub-agent's LLM may call html_interpreter more than once
+                    // (each render is a ReAct step), which would otherwise stack
+                    // several "generated report" cards — the last render is the
+                    // most complete. Collapse to ONE: only the LAST step that
+                    // contains an html chunk renders its html; earlier report
+                    // steps show a one-line "历史版本" note instead (kept for
+                    // traceability, not deleted). Immune to how many times the
+                    // model re-rendered.
+                    const stepHasHtml = (st: (typeof activeSub.steps)[number]) =>
+                      (st.chunks || []).some(c => c.output_type === 'html');
+                    let lastHtmlStepIdx = -1;
+                    activeSub.steps.forEach((st, i) => {
+                      if (stepHasHtml(st)) lastHtmlStepIdx = i;
+                    });
+                    activeSub.steps.forEach((s, idx) => {
+                      expandSubOutputs.push({
+                        output_type: 'markdown' as any,
+                        content: `### ${idx + 1}. ${s.label}${s.intention ? ` — ${s.intention}` : ''}`,
+                        timestamp: Date.now(),
+                      });
+                      const isSupersededReport = stepHasHtml(s) && idx !== lastHtmlStepIdx;
+                      (s.chunks || []).forEach(c => {
+                        if (c.output_type === 'html' && isSupersededReport) {
+                          // Collapse an earlier (superseded) report render to a note.
+                          expandSubOutputs.push({
+                            output_type: 'markdown' as any,
+                            content: `> 📄 已生成报告(此为历史版本，已被下方最终报告取代)`,
+                            timestamp: Date.now(),
+                          });
+                          return;
+                        }
+                        expandSubOutputs.push({
+                          output_type: c.output_type as any,
+                          content: c.content,
+                          timestamp: Date.now(),
+                        });
+                      });
+                    });
+                    outputs = expandSubOutputs;
+                    isRunning = activeSub.status === 'running';
+                  }
 
                   return (
                     <ManusRightPanel

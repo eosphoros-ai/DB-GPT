@@ -7,6 +7,7 @@ import {
   BarChartOutlined,
   CheckCircleFilled,
   CheckOutlined,
+  ClockCircleOutlined,
   CloseCircleFilled,
   CodeOutlined,
   ConsoleSqlOutlined,
@@ -32,7 +33,6 @@ import {
   PlusOutlined,
   RightOutlined,
   SearchOutlined,
-  ClockCircleOutlined,
   SyncOutlined,
   TableOutlined,
   UpOutlined,
@@ -351,6 +351,157 @@ const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> =
 
 FileListItem.displayName = 'FileListItem';
 
+// Repair markdown tables that an agent step squished onto a single line
+// (e.g. `| a | b | | --- | --- | | 1 | 2 |### next`). Only rewrites a line
+// that ALONE contains a `|---|` separator cell PLUS extra data cells — i.e.
+// a whole table collapsed into one line. A normal multi-line table (separator
+// on its own line) never matches, so this is a no-op for well-formed markdown.
+function fixSquishedTables(text: string): string {
+  if (!text || text.indexOf('|') === -1) return text;
+  let t = text;
+  // A. table row stuck to a following heading:  ...|### 2.  ->  ...|\n\n### 2.
+  // Use [ \t] (not \s) so an already-correct newline before the heading is kept.
+  t = t.replace(/\|[ \t]*(#{1,6}[ \t])/g, '|\n\n$1');
+  // B. heading stuck to a following header row:  ### 2. 标题| col |  -> own line.
+  // Only when heading and `|` are on the SAME physical line — [ \t] (not \s)
+  // avoids swallowing the blank line above a well-formed `### 标题\n\n| ... |`.
+  t = t.replace(/(^|\n)([ \t]*#{1,6}[^\n|]*?)[ \t]*\|/g, '$1$2\n|');
+  // C. per-line: split a single-line-collapsed table back into rows
+  return t
+    .split('\n')
+    .map(line => {
+      const s = line.trim();
+      if (!s.startsWith('|')) return line;
+      if (!/\|\s*:?-{3,}:?\s*\|/.test(s)) return line; // must contain a separator cell
+      const cells = s
+        .split('|')
+        .slice(1, -1)
+        .map(c => c.trim());
+      const isSep = (c: string) => /^:?-{3,}:?$/.test(c);
+      const firstSep = cells.findIndex(isSep);
+      if (firstSep < 0) return line;
+      let sepEnd = firstSep;
+      while (sepEnd < cells.length && isSep(cells[sepEnd])) sepEnd++;
+      const n = sepEnd - firstSep;
+      if (n < 1) return line;
+      const hasDataBefore = firstSep > 0;
+      const hasDataAfter = sepEnd < cells.length;
+      // A genuine single-line-squished table has the header BEFORE and data
+      // rows AFTER the separator cells, all on one line. Requiring BOTH avoids
+      // touching a well-formed multi-line table whose own pure-separator row
+      // (before-only) or a data row like `| --- | c |` (which is not both-sided
+      // in a multi-line table) would otherwise be misread.
+      if (!(hasDataBefore && hasDataAfter)) return line;
+      let header = cells.slice(0, firstSep);
+      if (header.length && header[header.length - 1] === '') header.pop();
+      if (!header.length) header = Array(n).fill('');
+      // If header width != separator count the parse is unreliable — leave the
+      // line untouched rather than risk scrambling a real table.
+      if (header.length !== n) return line;
+      const rest = cells.slice(sepEnd);
+      if (rest.length && rest[0] === '') rest.shift();
+      const rows: string[][] = [];
+      let j = 0;
+      while (j < rest.length) {
+        rows.push(rest.slice(j, j + n));
+        j += n;
+        if (j < rest.length && rest[j] === '') j++; // skip a single boundary blank
+      }
+      const wrap = (a: string[]) => '| ' + a.join(' | ') + ' |';
+      const out = [wrap(header), wrap(Array(n).fill('---'))];
+      rows.forEach(r => out.push(wrap(r)));
+      return out.join('\n');
+    })
+    .join('\n');
+}
+
+// Auto-resizing iframe for HTML reports. Unlike a one-shot `onLoad` measure,
+// this keeps a ResizeObserver on the iframe document body so the height tracks
+// async content (charts / fonts / images that lay out after load). Falls back
+// to a polling re-measure for the first second to catch late layout shifts.
+const AutoHeightIframe: React.FC<{
+  srcDoc: string;
+  title?: string;
+  minHeight?: number;
+  maxHeight?: number;
+}> = memo(({ srcDoc, title, minHeight = 500, maxHeight = 6000 }) => {
+  const ref = useRef<HTMLIFrameElement>(null);
+
+  // Neutralize viewport-relative full-height layouts. Reports authored with
+  // `html,body{height:100vh}` / `height:100%` / a `min-height:100vh` hero pin
+  // their height to the iframe's own viewport, so scrollHeight collapses to the
+  // initial iframe height (a fixed point ResizeObserver can never grow out of —
+  // the "only a purple gradient, cut off" symptom). Forcing auto height lets the
+  // real content drive scrollHeight so measurement works.
+  const patchedSrcDoc = useMemo(() => {
+    const resetCss =
+      '<style>html,body{height:auto!important;min-height:0!important;' + 'overflow:visible!important;}</style>';
+    if (!srcDoc) return srcDoc;
+    if (/<\/head>/i.test(srcDoc)) return srcDoc.replace(/<\/head>/i, resetCss + '</head>');
+    if (/<body[^>]*>/i.test(srcDoc)) return srcDoc.replace(/(<body[^>]*>)/i, '$1' + resetCss);
+    return resetCss + srcDoc;
+  }, [srcDoc]);
+
+  const measure = useCallback(() => {
+    const iframe = ref.current;
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (doc?.body) {
+        const h = Math.max(doc.body.scrollHeight, doc.documentElement?.scrollHeight || 0, minHeight);
+        iframe.style.height = `${Math.min(h, maxHeight)}px`;
+      }
+    } catch {
+      // Cross-origin — keep current height
+    }
+  }, [minHeight, maxHeight]);
+
+  const handleLoad = useCallback(() => {
+    const iframe = ref.current;
+    // Tear down any observer/timers from a previous load before re-arming, so
+    // a re-fired onLoad (srcDoc change) does not leak observers/timers.
+    (iframe as any)?.__cleanup?.();
+    measure();
+    let observer: ResizeObserver | null = null;
+    try {
+      const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+      if (doc?.body && typeof ResizeObserver !== 'undefined') {
+        observer = new ResizeObserver(() => measure());
+        observer.observe(doc.body);
+      }
+    } catch {
+      // ignore
+    }
+    // Catch late layout (charts/fonts) that may not trigger ResizeObserver.
+    const timers = [120, 400, 1000].map(ms => setTimeout(measure, ms));
+    (iframe as any).__cleanup = () => {
+      observer?.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, [measure]);
+
+  useEffect(() => {
+    return () => {
+      const iframe = ref.current as any;
+      iframe?.__cleanup?.();
+    };
+  }, []);
+
+  return (
+    <iframe
+      ref={ref}
+      title={title || 'html-report'}
+      srcDoc={patchedSrcDoc}
+      sandbox='allow-scripts allow-same-origin'
+      className='w-full bg-white'
+      style={{ border: 'none', minHeight }}
+      onLoad={handleLoad}
+    />
+  );
+});
+
+AutoHeightIframe.displayName = 'AutoHeightIframe';
+
 // Output Renderer Component
 const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = memo(({ output, index: _index }) => {
   const content = output.content;
@@ -384,7 +535,7 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = mem
       {output.output_type === 'markdown' && (
         <div className='prose prose-sm dark:prose-invert max-w-none'>
           <GPTVis components={markdownComponents} {...markdownPlugins}>
-            {preprocessLaTeX(String(content))}
+            {preprocessLaTeX(fixSquishedTables(String(content)))}
           </GPTVis>
         </div>
       )}
@@ -435,26 +586,11 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = mem
               <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>{content.title}</span>
             </div>
           )}
-          <iframe
+          <AutoHeightIframe
             srcDoc={resolveHtmlImageUrls(
               typeof content === 'string' ? content : content?.html || content?.content || String(content),
             )}
-            sandbox='allow-scripts allow-same-origin'
-            className='w-full bg-white'
-            style={{ border: 'none', minHeight: 500 }}
-            onLoad={e => {
-              // Auto-resize iframe to content height
-              try {
-                const iframe = e.target as HTMLIFrameElement;
-                const doc = iframe.contentDocument || iframe.contentWindow?.document;
-                if (doc?.body) {
-                  const height = Math.max(doc.body.scrollHeight, 500);
-                  iframe.style.height = `${Math.min(height, 1200)}px`;
-                }
-              } catch {
-                // Cross-origin restriction — keep default height
-              }
-            }}
+            title={content?.title}
           />
         </div>
       )}
@@ -778,24 +914,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
               <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>{htmlContent.title}</span>
             </div>
           )}
-          <iframe
-            srcDoc={htmlString}
-            sandbox='allow-scripts allow-same-origin'
-            className='w-full bg-white'
-            style={{ border: 'none', minHeight: 500 }}
-            onLoad={e => {
-              try {
-                const iframe = e.target as HTMLIFrameElement;
-                const doc = iframe.contentDocument || iframe.contentWindow?.document;
-                if (doc?.body) {
-                  const height = Math.max(doc.body.scrollHeight, 500);
-                  iframe.style.height = `${Math.min(height, 1200)}px`;
-                }
-              } catch {
-                // Cross-origin restriction
-              }
-            }}
-          />
+          <AutoHeightIframe srcDoc={htmlString} title={htmlContent?.title} />
         </div>
       ) : (
         <CodePreview
@@ -1578,7 +1697,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           mds.push(String(visibleOutputs[i].content));
           i += 1;
         }
-        groups.push({ type: 'single', output: { ...firstMd, content: mds.join('') } });
+        groups.push({ type: 'single', output: { ...firstMd, content: mds.join('\n\n') } });
       } else if (visibleOutputs[i].output_type === 'text') {
         const texts: string[] = [String(visibleOutputs[i].content)];
         const firstText = visibleOutputs[i];
@@ -1587,7 +1706,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           texts.push(String(visibleOutputs[i].content));
           i += 1;
         }
-        groups.push({ type: 'single', output: { ...firstText, content: texts.join('') } });
+        groups.push({ type: 'single', output: { ...firstText, content: texts.join('\n\n') } });
       } else if (visibleOutputs[i].output_type === 'error') {
         const errs: string[] = [String(visibleOutputs[i].content)];
         const firstErr = visibleOutputs[i];
@@ -1779,7 +1898,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       <div
         className={classNames(
           'flex-1 overflow-y-auto flex flex-col min-h-0',
-          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview' ? 'p-0' : 'p-5 space-y-4',
+          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview'
+            ? 'p-0'
+            : 'p-5 space-y-4',
         )}
       >
         {panelView === 'skill-preview' && skillName ? (
@@ -1838,7 +1959,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'summary' && summaryContent ? (
           <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-            <MarkDownContext>{summaryContent}</MarkDownContext>
+            <MarkDownContext>{fixSquishedTables(summaryContent)}</MarkDownContext>
             {isSummaryStreaming && (
               <span className='inline-block w-1.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-text-bottom' />
             )}
