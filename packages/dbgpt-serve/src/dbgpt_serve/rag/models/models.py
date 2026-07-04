@@ -14,6 +14,7 @@ class KnowledgeSpaceEntity(Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     vector_type = Column(String(100))
+    index_methods = Column(String(500))  # JSON string of index methods
     domain_type = Column(String(100))
     desc = Column(String(100))
     owner = Column(String(100))
@@ -33,10 +34,17 @@ class KnowledgeSpaceEntity(Model):
 class KnowledgeSpaceDao(BaseDao):
     def create_knowledge_space(self, space: KnowledgeSpaceRequest):
         """Create knowledge space"""
+        import json
+
         session = self.get_raw_session()
+        # Convert index_methods list to JSON string
+        index_methods_json = None
+        if space.index_methods:
+            index_methods_json = json.dumps(space.index_methods)
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=space.vector_type,
+            index_methods=index_methods_json,
             domain_type=space.domain_type,
             desc=space.desc,
             owner=space.owner,

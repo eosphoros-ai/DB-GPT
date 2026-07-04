@@ -4,6 +4,7 @@ from .code_interpreter import make_code_interpreter
 from .execute_analysis import make_execute_analysis
 from .execute_tool import make_execute_tool
 from .html_interpreter import make_html_interpreter
+from .kb_tools import make_kb_tools
 from .knowledge_retrieve import make_knowledge_retrieve
 from .load_file import make_load_file
 from .load_tools import make_load_tools
@@ -19,6 +20,7 @@ __all__ = [
     "make_execute_analysis",
     "make_execute_tool",
     "make_html_interpreter",
+    "make_kb_tools",
     "make_knowledge_retrieve",
     "make_load_file",
     "make_load_tools",

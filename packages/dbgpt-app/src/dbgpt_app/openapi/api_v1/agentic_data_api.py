@@ -1008,6 +1008,30 @@ async def _react_agent_stream(
     # Connector selection (Task C): only inject user-selected connectors.
     connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
 
+    def _has_code_graph(knowledge_space_id: str) -> bool:
+        """Check if the knowledge space has a built code graph index.
+
+        Used to conditionally expose codegraph tools (kb_codegraph_*) to the
+        agent. Returns True only when the graph meta record exists and has a
+        non-zero vertex count.
+        """
+        if not knowledge_space_id:
+            return False
+        try:
+            from dbgpt_serve.rag.models.code_graph_db import CodeGraphMetaDao
+            from dbgpt_serve.rag.tools.kb_file_tools import _resolve_space_name
+
+            space_name = _resolve_space_name(knowledge_space_id)
+            meta = CodeGraphMetaDao().get_by_knowledge_id(space_name)
+            return bool(meta and (meta.vertex_count or 0) > 0)
+        except Exception as e:
+            logger.warning(
+                f"Failed to check code graph status for {knowledge_space_id}: {e}"
+            )
+            return False
+
+    code_graph_available = _has_code_graph(knowledge_space) if knowledge_space else False
+
     def build_step(title: str, detail: str, phase: str = None):
         nonlocal step
         step += 1
@@ -1219,11 +1243,25 @@ async def _react_agent_stream(
                 system_app=CFG.SYSTEM_APP,
             )
             knowledge_resources.append(knowledge_resource)
+            codegraph_tools_desc = (
+                """
+  - kb_codegraph_explore: Query code structure (classes, call chains, inheritance)
+  - kb_codegraph_call_chain: Trace who calls / is called by a function
+  - kb_codegraph_class_hierarchy: Trace class inheritance and implementations
+"""
+                if code_graph_available
+                else ""
+            )
             knowledge_context = f"""
 ## Knowledge Base
 - Knowledge space: {knowledge_resource.retriever_name or knowledge_space}
 - Description: {knowledge_resource.retriever_desc or "Knowledge retrieval available"}
-- You can use the 'knowledge_retrieve' tool to search this knowledge base.
+- Available tools:
+  - kb_ls: List files and directories in the knowledge base
+  - kb_glob: Search files by name or glob pattern
+  - kb_grep: Search file contents by keyword (prefer for exact matches)
+  - kb_cat: Read the content of a specific file
+  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}
 """
             logger.info(
                 f"Loaded knowledge space resource: {knowledge_space} "
@@ -1754,6 +1792,7 @@ print(json.dumps(summary, ensure_ascii=False))
         make_execute_tool,
         make_html_interpreter,
         make_knowledge_retrieve,
+        make_kb_tools,
         make_load_file,
         make_load_skill,
         make_load_tools,
@@ -1779,7 +1818,25 @@ print(json.dumps(summary, ensure_ascii=False))
     execute_analysis_tool = make_execute_analysis(react_state)
     load_tools_tool = make_load_tools(react_state)
     execute_tool_tool = make_execute_tool(react_state)
-    knowledge_retrieve_tool = make_knowledge_retrieve(react_state, knowledge_resources)
+    # Knowledge tools: use kb_tools (kb_ls, kb_glob, kb_grep, kb_cat, semantic_search)
+    # when a knowledge space is connected, otherwise fall back to knowledge_retrieve
+    if knowledge_space:
+        kb_tool_list = make_kb_tools(knowledge_space)
+        # Filter out codegraph tools when the space has no built code graph,
+        # so the agent never sees tools it cannot use successfully.
+        # @tool decorator wraps the function; the tool name lives on `._tool.name`
+        # (and `.__name__` via functools.wraps).
+        if not code_graph_available:
+            kb_tool_list = [
+                t
+                for t in kb_tool_list
+                if not getattr(getattr(t, "_tool", t), "name", "").startswith(
+                    "kb_codegraph"
+                )
+            ]
+    else:
+        # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
+        kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
     sql_query_tool = make_sql_query(react_state, database_connector)
     code_interpreter_tool = make_code_interpreter(react_state)
     shell_interpreter_tool = make_shell_interpreter(react_state)
@@ -2229,6 +2286,19 @@ Action Input: The JSON format of tool parameters
         )
     else:
         # Full prompt with all tools when no skill is pre-selected
+        codegraph_section = (
+            "13.1. **kb_codegraph_explore**: Query the code knowledge graph for "
+            "structural info (classes, call chains, inheritance).\n"
+            "Parameters: {\"query\": \"class/function name or 'who calls X'\"}\n"
+            "13.2. **kb_codegraph_call_chain**: Trace callers/callees of a function.\n"
+            "Parameters: {\"function_name\": \"function name\", \"depth\": 2, "
+            "\"direction\": \"callers or callees\"}\n"
+            "13.3. **kb_codegraph_class_hierarchy**: Trace class inheritance and "
+            "implementations.\n"
+            "Parameters: {\"class_name\": \"class or interface name\"}\n"
+            if code_graph_available
+            else ""
+        )
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
@@ -2319,14 +2389,22 @@ Parameters: {{"code": "python code string"}}
 7. **load_file**: Load uploaded file info. Parameters: none.
 8. **execute_analysis**: Execute quick analysis on uploaded Excel/CSV file.
 Parameters: none.
-9. **knowledge_retrieve**: Retrieve relevant info from knowledge base.
-Parameters: {{"query": "search query"}}
-10. **sql_query**: Execute a read-only SQL query against the selected database.
+9. **kb_ls**: List files and directories in the knowledge base.
+Parameters: {{"path": "directory path (optional)"}}
+10. **kb_glob**: Search files by name or glob pattern in the knowledge base.
+Parameters: {{"pattern": "file name keyword or glob pattern"}}
+11. **kb_grep**: Search file contents by keyword in the knowledge base. Prefer for exact matches.
+Parameters: {{"query": "search keyword", "path": "directory filter (optional)", "file_pattern": "file pattern like *.py (optional)"}}
+12. **kb_cat**: Read the content of a specific file in the knowledge base.
+Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
+13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
+Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
+{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
-11. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
-12. **execute_tool**: Execute a tool by name with JSON args.
+15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
+16. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
-13. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
+17. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
 to display reports on the right panel). Default usage:
 {{"html": "<html>complete HTML code</html>", "title": "title"}}. Template mode:
 {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
@@ -2367,7 +2445,9 @@ Action Input: The JSON format of tool parameters
             [
                 load_skill_tool,
                 load_tools_tool,
-                knowledge_retrieve_tool,
+            ]
+            + kb_tool_list
+            + [
                 execute_skill_script,
                 get_skill_resource,
                 execute_skill_script_file_tool,

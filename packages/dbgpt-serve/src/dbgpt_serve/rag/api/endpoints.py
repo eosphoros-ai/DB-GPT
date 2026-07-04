@@ -19,6 +19,7 @@ from dbgpt_serve.rag.api.schemas import (
     DocumentServeRequest,
     DocumentServeResponse,
     KnowledgeRetrieveRequest,
+    KnowledgeSpaceStatsResponse,
     KnowledgeSyncRequest,
     SpaceServeRequest,
     SpaceServeResponse,
@@ -379,6 +380,103 @@ async def delete_document(
         global_system_app, service.delete_document, document_id
     )
     return Result.succ(res)
+
+
+@router.get(
+    "/{space_id}/stats",
+    response_model=Result[KnowledgeSpaceStatsResponse],
+)
+async def get_space_stats(
+    space_id: str,
+) -> Result[KnowledgeSpaceStatsResponse]:
+    """Get aggregate statistics for a knowledge space.
+
+    Returns document count, chunk count, sync progress (for GitRepo spaces),
+    and graph statistics (vertex/edge/community counts).
+    """
+    import json
+    import logging
+
+    from sqlalchemy import func
+
+    from ..models.code_graph_db import CodeGraphMetaDao
+    from ..models.document_db import KnowledgeDocumentDao, KnowledgeDocumentEntity
+    from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+
+    logger = logging.getLogger(__name__)
+
+    # Resolve space by ID or name
+    space_dao = KnowledgeSpaceDao()
+    if str(space_id).isdigit():
+        spaces = space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=int(space_id)))
+    else:
+        spaces = space_dao.get_knowledge_space(KnowledgeSpaceEntity(name=space_id))
+
+    if not spaces:
+        raise HTTPException(status_code=404, detail=f"Space '{space_id}' not found")
+
+    space = spaces[0]
+
+    # Document and chunk stats
+    doc_dao = KnowledgeDocumentDao()
+    session = doc_dao.get_raw_session()
+    try:
+        result = session.query(
+            func.count(KnowledgeDocumentEntity.id),
+            func.coalesce(func.sum(KnowledgeDocumentEntity.chunk_size), 0),
+        ).filter(KnowledgeDocumentEntity.space == space.name).first()
+        doc_count = result[0] if result else 0
+        chunk_count = int(result[1] or 0) if result else 0
+    finally:
+        session.close()
+
+    # Graph stats
+    meta_dao = CodeGraphMetaDao()
+    graph_meta = meta_dao.get_by_knowledge_id(space.name)
+
+    # Sync status (for GitRepo spaces)
+    sync_info: dict = {}
+    if space.domain_type == "GitRepo":
+        try:
+            from ..service.git_repo_sync_service import GitRepoSyncService
+
+            service = get_service()
+            sync_service = GitRepoSyncService(service)
+            sync_info = sync_service.get_index_status(knowledge_id=space.name)
+        except Exception:
+            logger.warning(f"Failed to get sync status for space '{space.name}'")
+
+    # Parse index_methods
+    index_methods = None
+    if space.index_methods:
+        try:
+            index_methods = json.loads(space.index_methods)
+        except (json.JSONDecodeError, TypeError):
+            index_methods = None
+
+    return Result.succ(
+        KnowledgeSpaceStatsResponse(
+            name=space.name,
+            domain_type=space.domain_type,
+            vector_type=space.vector_type,
+            index_methods=index_methods,
+            desc=space.desc,
+            document_count=doc_count,
+            chunk_count=chunk_count,
+            sync_status=sync_info.get("status"),
+            sync_total_files=sync_info.get("total_files"),
+            sync_finished=sync_info.get("finished"),
+            sync_running=sync_info.get("running"),
+            sync_failed=sync_info.get("failed"),
+            sync_todo=sync_info.get("todo"),
+            repo_url=sync_info.get("repo_url"),
+            branch=sync_info.get("branch"),
+            graph_vertex_count=graph_meta.vertex_count if graph_meta else None,
+            graph_edge_count=graph_meta.edge_count if graph_meta else None,
+            graph_community_count=graph_meta.community_count if graph_meta else None,
+            graph_build_status=graph_meta.build_status if graph_meta else None,
+        )
+    )
 
 
 def init_endpoints(system_app: SystemApp, config: ServeConfig) -> None:

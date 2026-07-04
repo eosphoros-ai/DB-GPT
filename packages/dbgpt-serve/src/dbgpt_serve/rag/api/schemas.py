@@ -215,3 +215,124 @@ class KnowledgeConfigResponse(BaseModel):
     """Knowledge config response"""
 
     storage: List[KnowledgeStorageType] = Field(..., description="The storage types")
+
+
+class GitRepoSyncRequest(BaseModel):
+    """Request for syncing a git repository into a knowledge space."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    repo_url: str = Field(..., description="Git repository URL")
+    branch: str = Field("main", description="Branch to clone")
+    exclude_dirs: List[str] = Field(
+        default_factory=list, description="Directories to exclude from indexing"
+    )
+    exclude_extensions: List[str] = Field(
+        default_factory=list, description="File extensions to exclude"
+    )
+    include_dirs: List[str] = Field(
+        default_factory=list, description="Only include these top-level directories"
+    )
+    build_graph: bool = Field(
+        False, description="Whether to build code knowledge graph"
+    )
+    chunk_strategy: str = Field(
+        "CHUNK_BY_MARKDOWN_HEADER", description="Chunk strategy for splitting"
+    )
+
+
+class GitRepoSyncStatusResponse(BaseModel):
+    """Response for git repo sync status."""
+
+    status: str = Field(..., description="Overall status: RUNNING/FINISHED/FAILED/PENDING")
+    total_files: int = Field(0, description="Total number of files")
+    finished: int = Field(0, description="Number of finished files")
+    running: int = Field(0, description="Number of running files")
+    failed: int = Field(0, description="Number of failed files")
+    todo: int = Field(0, description="Number of todo files")
+    last_sync_commit: Optional[str] = Field(None, description="Last synced commit SHA")
+    last_sync_time: Optional[str] = Field(None, description="Last sync time")
+    last_sync_mode: Optional[str] = Field(None, description="Last sync mode: full/incremental")
+    repo_url: Optional[str] = Field(None, description="Git repository URL")
+    branch: Optional[str] = Field(None, description="Git branch")
+    sync_started_at: Optional[str] = Field(None, description="Time when current sync started")
+    sync_error: Optional[str] = Field(None, description="Error message if sync failed")
+
+
+class GitRepoIncrementalSyncRequest(BaseModel):
+    """Request for incremental sync of a git repository."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    repo_url: str = Field(..., description="Git repository URL")
+    branch: str = Field("main", description="Branch to sync")
+    last_commit: Optional[str] = Field(
+        None, description="Last synced commit SHA (auto-detected if not provided)"
+    )
+
+
+class KbSearchRequest(BaseModel):
+    """Request for knowledge base search tools."""
+
+    knowledge_id: str = Field("", description="Knowledge space ID (optional, uses path param)")
+    query: str = Field("", description="Search query or pattern")
+    path: str = Field("", description="Directory or file path filter")
+    file_pattern: str = Field("", description="File pattern filter (e.g., '*.py')")
+    start_line: int = Field(1, description="Start line number for kb_cat")
+    end_line: int = Field(0, description="End line number for kb_cat (0 = to end)")
+    offset: int = Field(0, description="Pagination offset")
+    limit: int = Field(20, description="Maximum number of results")
+    top_k: int = Field(5, description="Number of results for semantic search")
+    score_threshold: float = Field(0.0, description="Minimum score for semantic search")
+
+
+class KnowledgeSpaceStatsResponse(BaseModel):
+    """Aggregate statistics for a knowledge space."""
+
+    # Space info
+    name: str = Field(..., description="Space name")
+    domain_type: Optional[str] = Field(None, description="Domain type (Normal, GitRepo, etc.)")
+    vector_type: Optional[str] = Field(None, description="Vector type")
+    index_methods: Optional[List[str]] = Field(None, description="Index methods")
+    desc: Optional[str] = Field(None, description="Description")
+
+    # Document stats
+    document_count: int = Field(0, description="Total number of documents")
+    chunk_count: int = Field(0, description="Total number of chunks (sum of chunk_size)")
+
+    # Sync progress (for GitRepo spaces)
+    sync_status: Optional[str] = Field(None, description="Sync status: RUNNING/FINISHED/FAILED/PENDING")
+    sync_total_files: Optional[int] = Field(None, description="Total files in sync")
+    sync_finished: Optional[int] = Field(None, description="Finished files")
+    sync_running: Optional[int] = Field(None, description="Running files")
+    sync_failed: Optional[int] = Field(None, description="Failed files")
+    sync_todo: Optional[int] = Field(None, description="Todo files")
+    repo_url: Optional[str] = Field(None, description="Git repo URL")
+    branch: Optional[str] = Field(None, description="Git branch")
+
+    # Graph stats
+    graph_vertex_count: Optional[int] = Field(None, description="Number of graph vertices/nodes")
+    graph_edge_count: Optional[int] = Field(None, description="Number of graph edges")
+    graph_community_count: Optional[int] = Field(None, description="Number of graph communities")
+    graph_build_status: Optional[str] = Field(None, description="Graph build status")
+
+
+class KbFileEntry(BaseModel):
+    """A file or directory entry in a knowledge base."""
+
+    name: str = Field(..., description="File or directory name")
+    path: str = Field(..., description="Full path")
+    is_dir: bool = Field(..., description="Whether this is a directory")
+    file_type: Optional[str] = Field(None, description="File type/extension")
+    language: Optional[str] = Field(None, description="Programming language")
+    doc_id: Optional[int] = Field(None, description="Document ID if it's a file")
+    child_count: Optional[int] = Field(None, description="Number of children if directory")
+
+
+class KbLsJsonResponse(BaseModel):
+    """Structured directory listing response."""
+
+    path: str = Field("", description="Current directory path")
+    entries: List[KbFileEntry] = Field(default_factory=list, description="Entries in this directory")
+    total_files: int = Field(0, description="Total files in directory")
+    total_dirs: int = Field(0, description="Total subdirectories")
