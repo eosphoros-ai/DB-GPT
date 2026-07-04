@@ -1,15 +1,15 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delSpace, getSpaceConfig, getSpaceList, newDialogue } from '@/client/api';
-import DocPanel from '@/components/knowledge/doc-panel';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
+import GitRepoSyncForm from '@/components/knowledge/git-repo-sync-form';
 import Segmentation from '@/components/knowledge/segmentation';
 import SpaceForm from '@/components/knowledge/space-form';
 import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { File, ISpace, IStorage, StepChangeParams } from '@/types/knowledge';
 import { PlusOutlined, ReadOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
-import { Button, Input, Modal, Spin, Steps, Tag } from 'antd';
+import { Button, Input, Modal, Spin, Tag } from 'antd';
 import classNames from 'classnames';
 import { debounce } from 'lodash';
 import moment from 'moment';
@@ -21,24 +21,15 @@ const Knowledge = () => {
   const { setCurrentDialogInfo } = useContext(ChatContext);
   const [spaceList, setSpaceList] = useState<Array<ISpace> | null>([]);
   const [isAddShow, setIsAddShow] = useState<boolean>(false);
-  const [isPanelShow, setIsPanelShow] = useState<boolean>(false);
-  const [currentSpace, setCurrentSpace] = useState<ISpace>();
 
   const [activeStep, setActiveStep] = useState<number>(0);
   const [spaceName, setSpaceName] = useState<string>('');
   const [files, setFiles] = useState<Array<File>>([]);
   const [docType, setDocType] = useState<string>('');
-  const [addStatus, setAddStatus] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [spaceConfig, setSpaceConfig] = useState<IStorage | null>(null);
 
   const { t } = useTranslation();
-  const addKnowledgeSteps = [
-    { title: t('Knowledge_Space_Config') },
-    { title: t('Choose_a_Datasource_type') },
-    { title: t('Upload') },
-    { title: t('Segmentation') },
-  ];
   const router = useRouter();
 
   async function getSpaces(params?: any) {
@@ -87,7 +78,6 @@ const Knowledge = () => {
       getSpaces();
       setSpaceName('');
       setDocType('');
-      setAddStatus('finish');
       localStorage.removeItem('cur_space_id');
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
@@ -100,12 +90,6 @@ const Knowledge = () => {
     docType && setDocType(docType);
   };
 
-  function onAddDoc(spaceName: string) {
-    setSpaceName(spaceName);
-    setActiveStep(1);
-    setIsAddShow(true);
-    setAddStatus('start');
-  }
   const showDeleteConfirm = (space: ISpace) => {
     Modal.confirm({
       title: t('Tips'),
@@ -167,9 +151,7 @@ const Knowledge = () => {
             {spaceList?.map((space: ISpace) => (
               <BlurredCard
                 onClick={() => {
-                  setCurrentSpace(space);
-                  setIsPanelShow(true);
-                  localStorage.setItem('cur_space_id', JSON.stringify(space.id));
+                  router.push(`/construct/knowledge/detail?spaceName=${space.name}`);
                 }}
                 description={space.desc}
                 name={space.name}
@@ -212,8 +194,24 @@ const Knowledge = () => {
                       <span className='flex items-center gap-1'>{space.domain_type || 'Normal'}</span>
                     </Tag>
                     {space.vector_type ? (
-                      <Tag>
+                      <Tag color='blue'>
                         <span className='flex items-center gap-1'>{space.vector_type}</span>
+                      </Tag>
+                    ) : null}
+                    {space.index_methods && space.index_methods.length > 0 ? (
+                      <Tag color='purple'>
+                        <span className='flex items-center gap-1'>
+                          {space.index_methods
+                            .map(m => {
+                              const map: Record<string, string> = {
+                                VectorStore: '向量',
+                                FullText: '结构',
+                                KnowledgeGraph: '图谱',
+                              };
+                              return map[m] || m;
+                            })
+                            .join('+')}
+                        </span>
                       </Tag>
                     ) : null}
                   </div>
@@ -238,16 +236,6 @@ const Knowledge = () => {
           </div>
         </div>
         <Modal
-          className='h-5/6 overflow-hidden'
-          open={isPanelShow}
-          width={'70%'}
-          onCancel={() => setIsPanelShow(false)}
-          footer={null}
-          destroyOnClose={true}
-        >
-          <DocPanel space={currentSpace!} onAddDoc={onAddDoc} onDeleteDoc={getSpaces} addStatus={addStatus} />
-        </Modal>
-        <Modal
           title={t('New_knowledge_base')}
           centered
           open={isAddShow}
@@ -262,15 +250,35 @@ const Knowledge = () => {
           }}
           footer={null}
         >
-          <Steps current={activeStep} items={addKnowledgeSteps} />
-          {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} spaceConfig={spaceConfig} />}
+          {activeStep === 0 && (
+            <SpaceForm
+              handleStepChange={handleStepChange}
+              spaceConfig={spaceConfig}
+              onSuccess={() => {
+                setIsAddShow(false);
+                getSpaces();
+                setActiveStep(0);
+              }}
+            />
+          )}
           {activeStep === 1 && <DocTypeForm handleStepChange={handleStepChange} />}
-          <DocUploadForm
-            className={classNames({ hidden: activeStep !== 2 })}
-            spaceName={spaceName}
-            docType={docType}
-            handleStepChange={handleStepChange}
-          />
+          {activeStep === 2 && docType === 'GIT_REPO' ? (
+            <GitRepoSyncForm
+              spaceName={spaceName}
+              onSuccess={() => {
+                setIsAddShow(false);
+                getSpaces();
+                setActiveStep(0);
+              }}
+            />
+          ) : (
+            <DocUploadForm
+              className={classNames({ hidden: activeStep !== 2 })}
+              spaceName={spaceName}
+              docType={docType}
+              handleStepChange={handleStepChange}
+            />
+          )}
           {activeStep === 3 && (
             <Segmentation
               spaceName={spaceName}

@@ -54,6 +54,7 @@ export type StepType =
   | 'html'
   | 'sql'
   | 'question'
+  | 'kb'
   | 'other';
 
 export interface ExecutionStep {
@@ -165,6 +166,8 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
       return <QuestionCircleOutlined className={classNames(iconClass, 'text-amber-500')} />;
     case 'sql':
       return <ConsoleSqlOutlined className={classNames(iconClass, 'text-emerald-600')} />;
+    case 'kb':
+      return <FolderOpenOutlined className={classNames(iconClass, 'text-teal-500')} />;
     default:
       return <FileTextOutlined className={classNames(iconClass, 'text-gray-500')} />;
   }
@@ -184,6 +187,7 @@ const getTypeLabel = (type: StepType, t: any): string => {
     python: t('step_type_python'),
     html: t('step_type_html'),
     question: t('step_type_question') || 'Ask User',
+    kb: t('step_type_kb') || 'Knowledge',
     other: t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
@@ -204,6 +208,7 @@ const getIconBgClass = (type: StepType): string => {
     skill: 'bg-indigo-50 dark:bg-indigo-900/30',
     sql: 'bg-emerald-50 dark:bg-emerald-900/30',
     question: 'bg-amber-50 dark:bg-amber-900/30',
+    kb: 'bg-teal-50 dark:bg-teal-900/30',
     other: 'bg-gray-50 dark:bg-gray-800',
   };
   return bgClasses[type] || 'bg-gray-50 dark:bg-gray-800';
@@ -498,7 +503,8 @@ const StepCard: React.FC<{
   step: ExecutionStep;
   isActive: boolean;
   onClick: () => void;
-}> = memo(({ step, isActive, onClick }) => {
+  thought?: string;
+}> = memo(({ step, isActive, onClick, thought }) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const detailLine = step.description ? step.description.split('\n')[0] : '';
@@ -706,7 +712,24 @@ const StepCard: React.FC<{
       </span>
       <div className='flex flex-col min-w-0 flex-1'>
         <span className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{step.title}</span>
-        {detailLine && <span className='text-[11px] text-gray-500 dark:text-gray-400 truncate'>{detailLine}</span>}
+        {thought &&
+          (() => {
+            const [intention, ...reasonLines] = (typeof thought === 'string' ? thought : '').split('\n');
+            const reason = reasonLines.join('\n').trim();
+            return (
+              <div className='mt-0.5'>
+                <span className='text-[12px] leading-4 text-slate-600 dark:text-slate-300'>
+                  {step.status === 'running' ? <StreamingText text={intention} /> : intention}
+                </span>
+                {reason && (
+                  <span className='block text-[11px] leading-4 text-slate-400 dark:text-slate-500'>{reason}</span>
+                )}
+              </div>
+            );
+          })()}
+        {!thought && step.subtitle && (
+          <span className='text-[11px] text-gray-500 dark:text-gray-400 truncate'>{step.subtitle}</span>
+        )}
       </div>
       <div className='flex-shrink-0'>
         {step.status === 'pending' && <ClockCircleOutlined className='text-xs text-gray-400' />}
@@ -917,7 +940,6 @@ const SectionBlock: React.FC<{
 
           {section.steps.map(step => (
             <React.Fragment key={step.id}>
-              {stepThoughts?.[step.id] && <ThoughtBubble text={stepThoughts[step.id]} />}
               {step.description?.includes('Action: get_skill_resource') ? (
                 <SkillResourceCard
                   step={step}
@@ -925,7 +947,12 @@ const SectionBlock: React.FC<{
                   onClick={() => onStepClick(step.id)}
                 />
               ) : (
-                <StepCard step={step} isActive={step.id === activeStepId} onClick={() => onStepClick(step.id)} />
+                <StepCard
+                  step={step}
+                  isActive={step.id === activeStepId}
+                  onClick={() => onStepClick(step.id)}
+                  thought={stepThoughts?.[step.id]}
+                />
               )}
               {step.description?.includes('Observation:') && <ObservationFormatter observation={step.description} />}
             </React.Fragment>

@@ -128,11 +128,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
         <div className='flex-shrink-0'>
           {pendingQuestion && onReplyQuestion && onRejectQuestion && (
             <div className='mx-auto max-w-3xl px-4 pt-2'>
-              <QuestionDock
-                request={pendingQuestion}
-                onReply={onReplyQuestion}
-                onReject={onRejectQuestion}
-              />
+              <QuestionDock request={pendingQuestion} onReply={onReplyQuestion} onReject={onRejectQuestion} />
             </div>
           )}
           <StandaloneChatInput
