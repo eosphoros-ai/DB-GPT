@@ -3,6 +3,7 @@ import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/componen
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import {
+  ApartmentOutlined,
   AppstoreOutlined,
   BarChartOutlined,
   CheckCircleFilled,
@@ -135,6 +136,8 @@ const getStepTypeIcon = (type: StepType) => {
       return <ConsoleSqlOutlined className='text-emerald-600' />;
     case 'kb':
       return <FolderOpenOutlined className='text-teal-500' />;
+    case 'code_graph':
+      return <ApartmentOutlined className='text-violet-500' />;
     default:
       return <FileTextOutlined className='text-gray-500' />;
   }
@@ -356,7 +359,7 @@ FileListItem.displayName = 'FileListItem';
 // ── kb tool output rendering ────────────────────────────────────────────────
 // kb_ls/kb_cat/kb_grep/kb_glob return plain-text observations; render them with
 // structured viewers (file list / code viewer) instead of the raw terminal style.
-const KB_TOOLS = new Set(['kb_ls', 'kb_cat', 'kb_grep', 'kb_glob', 'semantic_search']);
+const KB_TOOLS = new Set(['kb_ls', 'kb_cat', 'kb_grep', 'kb_glob', 'semantic_search', 'kb_codegraph_explore', 'kb_codegraph_call_chain', 'kb_codegraph_class_hierarchy']);
 
 // Friendly labels and icons for each kb tool action (used in the right-panel header card)
 const KB_ACTION_LABELS: Record<string, string> = {
@@ -365,6 +368,9 @@ const KB_ACTION_LABELS: Record<string, string> = {
   kb_grep: 'Search Content',
   kb_cat: 'Read File',
   semantic_search: 'Semantic Search',
+  kb_codegraph_explore: 'Code Graph Explore',
+  kb_codegraph_call_chain: 'Call Chain',
+  kb_codegraph_class_hierarchy: 'Class Hierarchy',
 };
 const KB_ACTION_ICONS: Record<string, React.ReactNode> = {
   kb_ls: <FolderOpenOutlined className='text-teal-500' />,
@@ -372,6 +378,9 @@ const KB_ACTION_ICONS: Record<string, React.ReactNode> = {
   kb_grep: <SearchOutlined className='text-teal-500' />,
   kb_cat: <FileTextOutlined className='text-teal-500' />,
   semantic_search: <CodeOutlined className='text-teal-500' />,
+  kb_codegraph_explore: <ApartmentOutlined className='text-violet-500' />,
+  kb_codegraph_call_chain: <ApartmentOutlined className='text-violet-500' />,
+  kb_codegraph_class_hierarchy: <ApartmentOutlined className='text-violet-500' />,
 };
 
 const KB_FILE_LINE_RE = /^(\S.*?)(?:\t(\S+))?$/;
@@ -561,10 +570,77 @@ function renderKbGrep(text: string, t: any): React.ReactNode {
   );
 }
 
+/** Render code graph tool output (kb_codegraph_explore / call_chain / class_hierarchy) */
+function renderKbCodeGraphOutput(action: string, text: string, t: any): React.ReactNode {
+  const actionLabel = KB_ACTION_LABELS[action] || 'Code Graph';
+  const actionIcon = KB_ACTION_ICONS[action] || <ApartmentOutlined className='text-violet-500' />;
+
+  // Try to parse structured JSON output; fall back to plain text
+  let entries: { name: string; detail?: string; type?: string }[] = [];
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      entries = parsed.map((item: any) => ({
+        name: item.name || item.function_name || item.class_name || item.entity || String(item),
+        detail: item.detail || item.description || item.signature || item.docstring || '',
+        type: item.type || item.kind || item.relationship || '',
+      }));
+    } else if (parsed.results && Array.isArray(parsed.results)) {
+      entries = parsed.results.map((item: any) => ({
+        name: item.name || item.function_name || item.class_name || item.entity || String(item),
+        detail: item.detail || item.description || item.signature || item.docstring || '',
+        type: item.type || item.kind || item.relationship || '',
+      }));
+    }
+  } catch {
+    // Not JSON — split by lines
+    entries = text.split('\n').filter(l => l.trim()).map(line => ({ name: line.trim() }));
+  }
+
+  return (
+    <div className='rounded-lg border border-violet-200 dark:border-violet-800 overflow-hidden bg-white dark:bg-[#1a1d2e]'>
+      <div className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border-b border-violet-200 dark:border-violet-800'>
+        {React.cloneElement(actionIcon as React.ReactElement, { style: { fontSize: 14 } })}
+        <span className='text-xs font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wider'>
+          {actionLabel}
+        </span>
+        {entries.length > 0 && (
+          <span className='ml-auto text-[11px] text-gray-400'>{entries.length} results</span>
+        )}
+      </div>
+      <div className='font-mono text-[13px] leading-relaxed max-h-[400px] overflow-auto'>
+        {entries.length > 0 ? entries.map((entry, i) => (
+          <div
+            key={i}
+            className='flex items-start gap-2 py-1.5 px-3 hover:bg-violet-50/60 dark:hover:bg-violet-900/15 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0'
+          >
+            <ApartmentOutlined style={{ color: '#8B5CF6', fontSize: 12, marginTop: 3, flexShrink: 0 }} />
+            <div className='min-w-0 flex-1'>
+              <div className='text-gray-800 dark:text-gray-200 font-medium truncate'>{entry.name}</div>
+              {entry.type && (
+                <span className='inline-block text-[11px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 ml-1'>{entry.type}</span>
+              )}
+              {entry.detail && (
+                <div className='text-gray-500 dark:text-gray-400 text-[12px] mt-0.5 truncate'>{entry.detail}</div>
+              )}
+            </div>
+          </div>
+        )) : (
+          <div className='px-3 py-2 text-gray-500 dark:text-gray-400 text-sm'>{text}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function renderKbToolOutput(action: string, text: string, t: any): React.ReactNode | null {
   if (action === 'kb_ls' || action === 'kb_glob') return renderKbFileList(text, t);
   if (action === 'kb_cat') return renderKbCat(text, t);
   if (action === 'kb_grep') return renderKbGrep(text, t);
+  // Code graph tools: render as structured markdown-like output
+  if (action === 'kb_codegraph_explore' || action === 'kb_codegraph_call_chain' || action === 'kb_codegraph_class_hierarchy') {
+    return renderKbCodeGraphOutput(action, text, t);
+  }
   return null;
 }
 // ── end kb tool output rendering ────────────────────────────────────────────
@@ -2154,13 +2230,11 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                     <div
                       className={classNames('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', {
                         'bg-emerald-50 dark:bg-emerald-900/30': activeStep.type === 'read' || activeStep.type === 'sql',
-                        'bg-amber-50 dark:bg-amber-900/30': activeStep.type === 'edit' || activeStep.type === 'write',
-                        'bg-purple-50 dark:bg-purple-900/30': activeStep.type === 'bash',
+                        'bg-amber-50 dark:bg-amber-900/30': activeStep.type === 'edit' || activeStep.type === 'write' || activeStep.type === 'question',
                         'bg-cyan-50 dark:bg-cyan-900/30': activeStep.type === 'grep' || activeStep.type === 'glob',
-                        'bg-blue-50 dark:bg-blue-900/30': activeStep.type === 'python',
-                        'bg-orange-50 dark:bg-orange-900/30': activeStep.type === 'html',
                         'bg-indigo-50 dark:bg-indigo-900/30': activeStep.type === 'task' || activeStep.type === 'skill',
                         'bg-teal-50 dark:bg-teal-900/30': activeStep.type === 'kb',
+                        'bg-violet-50 dark:bg-violet-900/30': activeStep.type === 'code_graph',
                         'bg-gray-50 dark:bg-gray-800': activeStep.type === 'other',
                       })}
                     >

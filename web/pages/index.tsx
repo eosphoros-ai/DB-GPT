@@ -368,6 +368,12 @@ const convertToManusFormat = (
       actionLower === 'semantic_search'
     )
       return 'kb';
+    if (
+      actionLower === 'kb_codegraph_explore' ||
+      actionLower === 'kb_codegraph_call_chain' ||
+      actionLower === 'kb_codegraph_class_hierarchy'
+    )
+      return 'code_graph';
 
     const lower = (title || '').toLowerCase();
     if (

@@ -2,6 +2,7 @@ import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
 import {
   ApiOutlined,
+  ApartmentOutlined,
   AppstoreOutlined,
   BarChartOutlined,
   BookOutlined,
@@ -55,6 +56,7 @@ export type StepType =
   | 'sql'
   | 'question'
   | 'kb'
+  | 'code_graph'
   | 'other';
 
 export interface ExecutionStep {
@@ -168,6 +170,8 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
       return <ConsoleSqlOutlined className={classNames(iconClass, 'text-emerald-600')} />;
     case 'kb':
       return <FolderOpenOutlined className={classNames(iconClass, 'text-teal-500')} />;
+    case 'code_graph':
+      return <ApartmentOutlined className={classNames(iconClass, 'text-violet-500')} />;
     default:
       return <FileTextOutlined className={classNames(iconClass, 'text-gray-500')} />;
   }
@@ -188,6 +192,7 @@ const getTypeLabel = (type: StepType, t: any): string => {
     html: t('step_type_html'),
     question: t('step_type_question') || 'Ask User',
     kb: t('step_type_kb') || 'Knowledge',
+    code_graph: t('step_type_code_graph') || 'Code Graph',
     other: t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
@@ -209,6 +214,7 @@ const getIconBgClass = (type: StepType): string => {
     sql: 'bg-emerald-50 dark:bg-emerald-900/30',
     question: 'bg-amber-50 dark:bg-amber-900/30',
     kb: 'bg-teal-50 dark:bg-teal-900/30',
+    code_graph: 'bg-violet-50 dark:bg-violet-900/30',
     other: 'bg-gray-50 dark:bg-gray-800',
   };
   return bgClasses[type] || 'bg-gray-50 dark:bg-gray-800';
