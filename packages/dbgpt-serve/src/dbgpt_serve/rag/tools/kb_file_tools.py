@@ -298,7 +298,15 @@ async def kb_grep(
         lines.append(f"\n{file_info.get('file_path', doc_id)}:")
         for line_no, content in doc_matches[doc_id][:10]:
             lines.append(f"  {line_no}: {content}")
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    # Cap total output size; larger results are persisted by ToolResultStorage.
+    MAX_KB_GREP_CHARS = 15_000
+    if len(result) > MAX_KB_GREP_CHARS:
+        result = (
+            result[:MAX_KB_GREP_CHARS]
+            + f"\n\n... [Output truncated at {MAX_KB_GREP_CHARS} chars]"
+        )
+    return result
 
 
 @tool("kb_cat", description="Read file content from a knowledge space by path.")
@@ -342,4 +350,13 @@ async def kb_cat(
     if len(lines) > 502:
         lines = lines[:502]
         lines.append(f"  ... (truncated, use start_line={start_idx + 501} to continue)")
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    # Cap total output size; larger results are persisted by ToolResultStorage.
+    MAX_KB_CAT_CHARS = 20_000
+    if len(result) > MAX_KB_CAT_CHARS:
+        result = (
+            result[:MAX_KB_CAT_CHARS]
+            + f"\n\n... [Output truncated at {MAX_KB_CAT_CHARS} chars. "
+            f"Use start_line/end_line to read specific sections]"
+        )
+    return result

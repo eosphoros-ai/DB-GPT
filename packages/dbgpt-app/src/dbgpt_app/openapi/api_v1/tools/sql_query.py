@@ -81,6 +81,17 @@ def make_sql_query(react_state: Dict[str, Any], database_connector: Optional[Any
             if len(rows) > 50:
                 table += f"\n\n（仅显示前 50 行，共 {len(rows)} 行）"
 
+            # Cap total output size so a single wide query can't blow out the
+            # LLM context window. The full result remains available via the
+            # ToolResultStorage persistence layer if it exceeds the threshold.
+            MAX_SQL_OUTPUT_CHARS = 20_000
+            if len(table) > MAX_SQL_OUTPUT_CHARS:
+                table = (
+                    table[:MAX_SQL_OUTPUT_CHARS]
+                    + f"\n\n... [Output truncated at {MAX_SQL_OUTPUT_CHARS} chars. "
+                    f"Total rows: {len(rows)}]"
+                )
+
             return json.dumps(
                 {"chunks": [{"output_type": "markdown", "content": table}]},
                 ensure_ascii=False,

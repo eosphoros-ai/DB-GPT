@@ -1797,6 +1797,7 @@ print(json.dumps(summary, ensure_ascii=False))
         make_load_skill,
         make_load_tools,
         make_question,
+        make_read_file,
         make_shell_interpreter,
         make_sql_query,
         make_todowrite,
@@ -1843,6 +1844,9 @@ print(json.dumps(summary, ensure_ascii=False))
     html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
     todowrite_tool = make_todowrite(_todo_list, stream_callback)
     question_tool = make_question(react_state, stream_callback)
+    # read_file lets the agent read back persisted tool results / snapshots
+    # from disk when a <persisted-output> block references a file path.
+    read_file_tool = make_read_file(react_state)
     # Keep local aliases for backward compatibility (SSE loop references these names)
     execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
 
@@ -2457,6 +2461,7 @@ Action Input: The JSON format of tool parameters
                 shell_interpreter_tool,
                 html_interpreter_tool,
                 sql_query_tool,
+                read_file_tool,
                 todowrite_tool,
                 execute_tool_tool,
                 question_tool,

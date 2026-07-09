@@ -105,7 +105,43 @@ class ConversableAgent(Role, Agent):
                 on_status_event=on_status_event,
             ),
         )
+        # Initialize ToolResultStorage for Layer 2 (per-result persistence).
+        # Storage dir: {output_dir}/persisted_results/{conv_id}/, sibling of
+        # op_snapshots/. Falls back to DBGPT_HOME/workspace/persisted_results/.
+        self._init_tool_result_storage(config)
         logger.info("Context management enabled for agent %s", self.name)
+
+    def _init_tool_result_storage(self, config: ContextBudgetConfig) -> None:
+        """Initialize the ToolResultStorage bound to this agent's conversation.
+
+        Resolves the storage directory from ``AgentContext.output_dir`` (or
+        ``DBGPT_HOME/workspace``) and binds it to the current async context
+        via ``set_current_storage`` so the standalone ``run_tool`` function
+        can pick it up without a signature change.
+        """
+        import os
+
+        from .context.storage import ToolResultStorage
+
+        ctx = self.agent_context
+        output_dir: Optional[str] = None
+        conv_id = ""
+        if ctx is not None:
+            output_dir = getattr(ctx, "output_dir", None)
+            conv_id = getattr(ctx, "conv_id", "") or ""
+        if not output_dir:
+            home = os.environ.get("DBGPT_HOME", os.path.expanduser("~/.dbgpt"))
+            output_dir = os.path.join(home, "workspace")
+        storage_dir = os.path.join(output_dir, "persisted_results")
+        if conv_id:
+            storage_dir = os.path.join(storage_dir, conv_id)
+        storage = ToolResultStorage(
+            storage_dir=storage_dir,
+            default_threshold=config.tool_result_threshold,
+            preview_size=config.preview_size,
+            tool_overrides=config.tool_overrides,
+        )
+        object.__setattr__(self, "_result_storage", storage)
 
     def check_available(self) -> None:
         """Check if the agent is available.
@@ -802,41 +838,56 @@ class ConversableAgent(Role, Agent):
         **kwargs,
     ) -> ActionOutput:
         """Perform actions."""
-        last_out: Optional[ActionOutput] = None
-        for i, action in enumerate(self.actions):
-            if not message:
-                raise ValueError("The message content is empty!")
+        # Bind this agent's ToolResultStorage to the current async context so
+        # the standalone run_tool() can access it for oversized-result
+        # persistence. The token is reset to its previous value after act().
+        from .context.storage import get_current_storage, set_current_storage
 
-            with root_tracer.start_span(
-                "agent.act.run",
-                metadata={
-                    "message": message,
-                    "sender": sender.name if sender else None,
-                    "recipient": self.name,
-                    "reviewer": reviewer.name if reviewer else None,
-                    "rely_action_out": last_out.to_dict() if last_out else None,
-                    "conv_uid": self.not_null_agent_context.conv_id,
-                    "action_index": i,
-                    "total_action": len(self.actions),
-                },
-            ) as span:
-                ai_message = message.content if message.content else ""
-                real_action = action.parse_action(
-                    ai_message, default_action=action, **kwargs
-                )
-                if real_action is None:
-                    continue
+        prev_storage = get_current_storage()
+        bound_storage = getattr(self, "_result_storage", None)
+        if bound_storage is not None:
+            set_current_storage(bound_storage)
+        try:
+            last_out: Optional[ActionOutput] = None
+            for i, action in enumerate(self.actions):
+                if not message:
+                    raise ValueError("The message content is empty!")
 
-                last_out = await real_action.run(
-                    ai_message=message.content if message.content else "",
-                    resource=None,
-                    rely_action_out=last_out,
-                    **kwargs,
-                )
-                span.metadata["action_out"] = last_out.to_dict() if last_out else None
-        if not last_out:
-            raise ValueError("Action should return value！")
-        return last_out
+                with root_tracer.start_span(
+                    "agent.act.run",
+                    metadata={
+                        "message": message,
+                        "sender": sender.name if sender else None,
+                        "recipient": self.name,
+                        "reviewer": reviewer.name if reviewer else None,
+                        "rely_action_out": last_out.to_dict() if last_out else None,
+                        "conv_uid": self.not_null_agent_context.conv_id,
+                        "action_index": i,
+                        "total_action": len(self.actions),
+                    },
+                ) as span:
+                    ai_message = message.content if message.content else ""
+                    real_action = action.parse_action(
+                        ai_message, default_action=action, **kwargs
+                    )
+                    if real_action is None:
+                        continue
+
+                    last_out = await real_action.run(
+                        ai_message=message.content if message.content else "",
+                        resource=None,
+                        rely_action_out=last_out,
+                        **kwargs,
+                    )
+                    span.metadata["action_out"] = (
+                        last_out.to_dict() if last_out else None
+                    )
+            if not last_out:
+                raise ValueError("Action should return value！")
+            return last_out
+        finally:
+            # Restore the previous storage binding (supports nested agent calls).
+            set_current_storage(prev_storage)
 
     async def correctness_check(
         self, message: AgentMessage

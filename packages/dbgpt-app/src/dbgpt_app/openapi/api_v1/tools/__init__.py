@@ -9,6 +9,7 @@ from .knowledge_retrieve import make_knowledge_retrieve
 from .load_file import make_load_file
 from .load_tools import make_load_tools
 from .question import make_question
+from .read_file import make_read_file
 from .select_skill import make_select_skill
 from .shell_interpreter import make_shell_interpreter
 from .skill_tools import make_execute_skill_script_file, make_load_skill
@@ -25,6 +26,7 @@ __all__ = [
     "make_load_file",
     "make_load_tools",
     "make_question",
+    "make_read_file",
     "make_select_skill",
     "make_shell_interpreter",
     "make_execute_skill_script_file",

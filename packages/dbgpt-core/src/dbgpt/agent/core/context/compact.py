@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, List, Optional
 from dbgpt.core import ModelMessageRoleType
 
 from .budget import ContextBudgetTracker
+from .storage import PERSISTED_OUTPUT_TAG
 
 if TYPE_CHECKING:
     from dbgpt.agent.core.agent import AgentMessage
@@ -110,6 +111,11 @@ class ObservationMicroCompact:
                 msg = messages[msg_idx]
                 if _is_observation_message(msg):
                     content = msg.content or ""
+                    # Already-persisted results are size-bounded by the
+                    # <persisted-output> preview block — skip them so we
+                    # don't destroy the file-path reference the model needs.
+                    if PERSISTED_OUTPUT_TAG in content:
+                        continue
                     if len(content) > max_chars + 30:
                         snapshot_path = None
                         ctx = getattr(msg, "context", None)
@@ -213,6 +219,7 @@ class FullContextCompression:
         messages: List["AgentMessage"],
         llm_client: "AIWrapper",
         tracker: ContextBudgetTracker,
+        model_name: Optional[str] = None,
     ) -> List["AgentMessage"]:
         from dbgpt.agent.core.agent import AgentMessage
 
@@ -251,13 +258,31 @@ class FullContextCompression:
 
         prompt = _SUMMARY_PROMPT.format(conversation_text=conversation_text)
 
+        # Use the tracker's model_name (set at ContextManager init) so the
+        # summarization call hits the same model the agent is configured with.
+        llm_model = model_name or tracker.model_name
+        if not llm_model:
+            logger.warning(
+                "Layer 3 (FullContextCompression): no model_name available, "
+                "skipping LLM summarization"
+            )
+            return messages
+
         try:
-            summary_text = await llm_client.generate_llm_text(
-                prompt, max_new_tokens=2000
+            summary_text = await llm_client.generate_text(
+                prompt,
+                llm_model=llm_model,
+                max_new_tokens=2000,
             )
         except Exception:
             logger.exception("Layer 3 (FullContextCompression): LLM summary failed")
             raise
+
+        if not summary_text or not summary_text.strip():
+            logger.warning(
+                "Layer 3 (FullContextCompression): empty summary, skipping"
+            )
+            return messages
 
         summary_msg = AgentMessage(
             content=f"[Context Summary of {len(old_msgs)} earlier messages]\n\n"
