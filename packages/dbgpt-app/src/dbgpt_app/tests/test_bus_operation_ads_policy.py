@@ -606,6 +606,15 @@ def test_validate_saved_sql_result_code_rejects_missing_helper_imports():
     assert error is not None
     assert "dbgpt_tools" in error
 
+    error = agentic_data_api._validate_saved_sql_result_code(
+        "from sql_result_helpers import get_sql_result\n"
+        "result = get_sql_result('SQL_RESULT_1')\n",
+        sql_results,
+    )
+
+    assert error is not None
+    assert "sql_result_helpers" in error
+
 
 def test_validate_saved_sql_result_code_rejects_unknown_conversion_helper():
     sql_results = [
@@ -629,6 +638,30 @@ dept_cnt = to_int(require_value(rows[0], "dept_cnt"))
     assert error is not None
     assert "to_int" in error
     assert "to_float" in error
+
+
+def test_validate_saved_sql_result_code_rejects_legacy_save_helper():
+    sql_results = [
+        agentic_data_api.SqlResult(
+            columns=["line_name", "not_disp_rate"],
+            rows=[["32", 9.52]],
+            row_count=1,
+            sql="SELECT line_name, not_disp_rate",
+        )
+    ]
+
+    error = agentic_data_api._validate_saved_sql_result_code(
+        """
+result = get_sql_result('SQL_RESULT_1')
+rows = sql_result_rows(result)
+_save(tag='report_facts', data={'top_lines': rows})
+""",
+        sql_results,
+    )
+
+    assert error is not None
+    assert "_save" in error
+    assert "save_report_facts" in error
 
 
 def test_validate_saved_sql_result_code_allows_helper_based_access():
@@ -773,6 +806,31 @@ def test_auto_final_html_render_requires_current_data_steps_for_scope_revision()
         history_steps=[],
         sql_report_path="",
     )
+
+
+def test_classify_html_render_chunks_rejects_text_only_validation_failure():
+    chunks = [
+        {
+            "output_type": "text",
+            "content": "报告数据未通过真实性校验，已阻止渲染。",
+        }
+    ]
+
+    success, final_content = agentic_data_api._classify_html_render_chunks(chunks)
+
+    assert not success
+    assert final_content == "报告数据未通过真实性校验，已阻止渲染。"
+
+
+def test_classify_html_render_chunks_accepts_html_output():
+    chunks = [
+        {"output_type": "html", "content": "<html><body>ok</body></html>"}
+    ]
+
+    success, final_content = agentic_data_api._classify_html_render_chunks(chunks)
+
+    assert success
+    assert final_content == "HTML运营报告已生成，请在右侧预览或下载。"
 
 
 def test_format_available_columns_hint_lists_columns_for_each_ref():

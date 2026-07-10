@@ -406,6 +406,25 @@ def _can_auto_render_final_html(
     return _history_has_current_data_steps(history_steps)
 
 
+def _classify_html_render_chunks(
+    chunks: List[Dict[str, Any]],
+) -> tuple[bool, Optional[str]]:
+    """Classify html_interpreter chunks and return customer-facing content."""
+    has_html = any(
+        str(item.get("output_type") or "").strip().lower() == "html"
+        for item in chunks
+    )
+    if has_html:
+        return True, "HTML运营报告已生成，请在右侧预览或下载。"
+
+    text_outputs = [
+        str(item.get("content") or "").strip()
+        for item in chunks
+        if str(item.get("content") or "").strip()
+    ]
+    return False, "\n".join(text_outputs) or None
+
+
 _BUS_BASIC_RESOURCE_KEYWORDS = (
     "基础资源",
     "基础信息",
@@ -1051,7 +1070,12 @@ def _invalid_sql_result_ref_error(
 
 def _invalid_helper_import_error(code: str) -> Optional[str]:
     """Return an error if code imports helper modules that do not exist."""
-    blocked_modules = ["dbgpt_tools", "utils", "tool_functions"]
+    blocked_modules = [
+        "dbgpt_tools",
+        "sql_result_helpers",
+        "tool_functions",
+        "utils",
+    ]
     blocked_pattern = (
         r"^\s*(?:from\s+({modules})(?:\.[A-Za-z_][\w.]*)?\s+import\b|"
         r"import\s+({modules})(?:\s|$))"
@@ -1089,7 +1113,7 @@ def _unknown_sql_result_helpers(code: str) -> List[str]:
             r"get_only_sql_result|sql_result_rows|sql_result_columns|"
             r"require_columns|require_value|"
             r"to_[A-Za-z0-9_]+|save_report_facts|load_report_facts|"
-            r"write_sql_report_html)"
+            r"write_sql_report_html|_save)"
             r"\s*\(",
             code,
         )
@@ -4785,6 +4809,9 @@ print(json.dumps(summary, ensure_ascii=False))
             ]
             if not render_chunks:
                 return [], None
+            render_succeeded, render_final_content = _classify_html_render_chunks(
+                render_chunks
+            )
 
             events: List[str] = []
             auto_step_id, auto_step_event = build_step(
@@ -4831,11 +4858,13 @@ print(json.dumps(summary, ensure_ascii=False))
                 auto_history_step["outputs"].append(
                     {"output_type": output_type, "content": chunk_content}
                 )
-            auto_history_step["status"] = "done"
+            auto_history_step["status"] = (
+                "done" if render_succeeded else "failed"
+            )
             apply_step_timing(auto_step_id, auto_history_step)
             history_steps.append(auto_history_step)
-            events.append(step_done(auto_step_id))
-            return events, "HTML运营报告已生成，请在右侧预览或下载。"
+            events.append(step_done(auto_step_id, auto_history_step["status"]))
+            return events, render_final_content
         except Exception as e:
             logger.warning(f"Auto html_interpreter failed: {e}")
             return [], None
