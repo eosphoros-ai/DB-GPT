@@ -1,8 +1,18 @@
 import os
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
-from dbgpt.core import ModelMetadata
+from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.core.awel.flow import (
     TAGS_ORDER_HIGH,
     ResourceCategory,
@@ -57,6 +67,16 @@ class DeepSeekDeployModelParameters(OpenAICompatibleDeployModelParameters):
         },
     )
 
+    thinking_enabled: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "Whether to enable DeepSeek thinking mode. If None, thinking is "
+                "disabled for deepseek-v4-pro to keep ReAct output parseable."
+            ),
+        },
+    )
+
 
 async def deepseek_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
@@ -88,6 +108,7 @@ class DeepseekLLMClient(OpenAILLMClient):
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
+        thinking_enabled: Optional[bool] = None,
         **kwargs,
     ):
         api_base = (
@@ -96,7 +117,9 @@ class DeepseekLLMClient(OpenAILLMClient):
         api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
         model = model or _DEFAULT_MODEL
         if not context_length:
-            if "deepseek-chat" in model:
+            if "deepseek-v4" in model:
+                context_length = 1024 * 1024
+            elif "deepseek-chat" in model:
                 context_length = 1024 * 32
             elif "deepseek-coder" in model:
                 context_length = 1024 * 16
@@ -109,6 +132,7 @@ class DeepseekLLMClient(OpenAILLMClient):
                 "Deepseek API key is required, please set 'DEEPSEEK_API_KEY' in "
                 "environment variable or pass it to the client."
             )
+        self._thinking_enabled = thinking_enabled
         super().__init__(
             api_key=api_key,
             api_base=api_base,
@@ -123,6 +147,69 @@ class DeepseekLLMClient(OpenAILLMClient):
             openai_kwargs=openai_kwargs,
             **kwargs,
         )
+
+    @classmethod
+    def new_client(
+        cls,
+        model_params: DeepSeekDeployModelParameters,
+        default_executor=None,
+    ) -> "DeepseekLLMClient":
+        """Create a new client with the model parameters."""
+        return cls(
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
+            proxy=model_params.http_proxy,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
+            thinking_enabled=model_params.thinking_enabled,
+        )
+
+    def _build_request(self, request, stream: Optional[bool] = False) -> Dict[str, Any]:
+        payload = super()._build_request(request, stream)
+        model = payload.get("model") or self.default_model
+        extra_body = payload.get("extra_body") or {}
+        if "thinking" not in extra_body and self._should_set_thinking(model):
+            thinking_enabled = self._thinking_enabled is True
+            extra_body["thinking"] = {
+                "type": "enabled" if thinking_enabled else "disabled"
+            }
+            payload["extra_body"] = extra_body
+        return payload
+
+    def _should_set_thinking(self, model: str) -> bool:
+        return self._thinking_enabled is not None or model == "deepseek-v4-pro"
+
+    def _is_thinking_disabled(self, payload: Dict[str, Any]) -> bool:
+        thinking = (payload.get("extra_body") or {}).get("thinking") or {}
+        return thinking.get("type") == "disabled"
+
+    def _drop_thinking_if_disabled(
+        self, output: ModelOutput, payload: Dict[str, Any]
+    ) -> ModelOutput:
+        if not self._is_thinking_disabled(payload) or not output.has_thinking:
+            return output
+        text = output.text if output.has_text else ""
+        return ModelOutput.build(
+            text=text,
+            usage=output.usage,
+            finish_reason=output.finish_reason,
+            metrics=output.metrics,
+        )
+
+    async def generate_v1(
+        self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
+    ) -> ModelOutput:
+        output = await super().generate_v1(messages, payload)
+        return self._drop_thinking_if_disabled(output, payload)
+
+    async def generate_stream_v1(
+        self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
+    ) -> AsyncIterator[ModelOutput]:
+        async for output in super().generate_stream_v1(messages, payload):
+            yield self._drop_thinking_if_disabled(output, payload)
 
     def check_sdk_version(self, version: str) -> None:
         if not version >= "1.0":
@@ -154,6 +241,14 @@ class DeepseekLLMClient(OpenAILLMClient):
 register_proxy_model_adapter(
     DeepseekLLMClient,
     supported_models=[
+        ModelMetadata(
+            model="deepseek-v4-pro",
+            context_length=1024 * 1024,
+            max_output_length=384 * 1024,
+            description="DeepSeek-V4-Pro by DeepSeek",
+            link="https://api-docs.deepseek.com/news/news260424",
+            function_calling=True,
+        ),
         ModelMetadata(
             model="deepseek-chat",
             context_length=64 * 1024,

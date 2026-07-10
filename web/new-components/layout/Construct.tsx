@@ -1,7 +1,9 @@
 import { ModelSvg } from '@/components/icons';
 import Icon, {
+  ApiOutlined,
   AppstoreOutlined,
   BuildOutlined,
+  ClockCircleOutlined,
   ConsoleSqlOutlined,
   ForkOutlined,
   MessageOutlined,
@@ -14,7 +16,7 @@ import { useRouter } from 'next/router';
 import React from 'react';
 import './style.css';
 
-function ConstructLayout({ children }: { children: React.ReactNode }) {
+function ConstructLayout({ children, className }: { children: React.ReactNode; className?: string }) {
   const items = [
     {
       key: 'app',
@@ -74,6 +76,18 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
       icon: <ThunderboltOutlined />,
     },
     {
+      key: 'connectors',
+      name: t('connectors'),
+      icon: <ApiOutlined />,
+      path: '/connectors',
+    },
+    {
+      key: 'scheduled-tasks',
+      name: t('scheduled_tasks'),
+      icon: <ClockCircleOutlined />,
+      path: '/scheduled-tasks',
+    },
+    {
       key: 'dbgpts',
       name: t('dbgpts_community'),
       path: '/dbgpts',
@@ -100,6 +114,7 @@ function ConstructLayout({ children }: { children: React.ReactNode }) {
         }}
       >
         <Tabs
+          className={className}
           // tabBarStyle={{
           //   background: '#edf8fb',
           //   border: 'none',

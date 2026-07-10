@@ -45,9 +45,11 @@ uv sync --all-packages \
 ```toml
 [models]
 [[models.llms]]
-name = "deepseek-reasoner"
+name = "deepseek-v4-pro"
 provider = "proxy/deepseek"
 api_key = "your-deepseek-api-key"
+# 为严格的 ReAct 输出解析关闭 V4-Pro 思考模式。
+thinking_enabled = false
 
 [[models.embeddings]]
 name = "BAAI/bge-large-zh-v1.5"
@@ -60,8 +62,13 @@ provider = "hf"
 
 | 模型 | 配置名 | 说明 |
 |---|---|---|
+| DeepSeek-V4-Pro | `deepseek-v4-pro` | 1M 上下文，适合高级推理、代码与 Agent 任务 |
 | DeepSeek-R1 | `deepseek-reasoner` | 推理能力强，适合复杂思考任务 |
 | DeepSeek-V3 | `deepseek-chat` | 通用聊天与问答 |
+
+ReAct Agent 使用 `deepseek-v4-pro` 时建议保留 `thinking_enabled = false`。
+DeepSeek V4-Pro 默认开启思考模式，可能在严格的
+`Thought/Action/Action Input` 输出格式前产生推理块，导致解析失败。
 
 ## 启动服务
 

@@ -4,7 +4,7 @@
 根据本机环境优先级自动选择 Docker/Podman/Nerdctl/Local 运行时。
 """
 
-from ..config import SANDBOX_RUNTIME
+from ..config import SANDBOX_ALLOW_LOCAL_RUNTIME, SANDBOX_RUNTIME
 from .docker_runtime import DockerRuntime
 from .local_runtime import LocalRuntime
 from .nerdctl_runtime import NerdctlRuntime
@@ -14,6 +14,16 @@ from .utils import EnvironmentDetector
 
 class RuntimeFactory:
     """自动选择最佳沙箱运行时"""
+
+    @staticmethod
+    def _local_runtime() -> LocalRuntime:
+        if not SANDBOX_ALLOW_LOCAL_RUNTIME:
+            raise RuntimeError(
+                "LocalRuntime executes code on the host. Set "
+                "SANDBOX_RUNTIME=local and SANDBOX_ALLOW_LOCAL_RUNTIME=true "
+                "to opt in explicitly."
+            )
+        return LocalRuntime()
 
     @staticmethod
     def create(runtime_preference: str = None):
@@ -42,7 +52,7 @@ class RuntimeFactory:
             ):
                 return NerdctlRuntime()
             if runtime_preference == "local":
-                return LocalRuntime()
+                return RuntimeFactory._local_runtime()
             raise RuntimeError(f"指定的运行时不可用: {runtime_preference}")
 
         if EnvironmentDetector.is_docker_sdk_available():
@@ -59,4 +69,10 @@ class RuntimeFactory:
             return PodmanRuntime()
         if EnvironmentDetector.is_nerdctl_available():
             return NerdctlRuntime()
-        return LocalRuntime()
+        if SANDBOX_ALLOW_LOCAL_RUNTIME:
+            return LocalRuntime()
+        raise RuntimeError(
+            "No container sandbox runtime is available. Install Docker, Podman, "
+            "or Nerdctl, or explicitly opt into host-local execution with "
+            "SANDBOX_RUNTIME=local and SANDBOX_ALLOW_LOCAL_RUNTIME=true."
+        )

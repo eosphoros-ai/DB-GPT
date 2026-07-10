@@ -8,6 +8,7 @@ import {
   BarChartOutlined,
   CheckCircleFilled,
   CheckOutlined,
+  ClockCircleOutlined,
   CloseCircleFilled,
   CodeOutlined,
   ConsoleSqlOutlined,
@@ -88,6 +89,7 @@ export interface ManusRightPanelProps {
   isRunning?: boolean;
   onRerun?: () => void;
   onShare?: () => void;
+  onSchedule?: () => void;
   terminalTitle?: string;
   onCollapse?: () => void;
   isCollapsed?: boolean;
@@ -1454,6 +1456,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   isRunning,
   onRerun,
   onShare,
+  onSchedule,
   terminalTitle,
   artifacts,
   onArtifactClick,
@@ -1702,7 +1705,21 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             </Tooltip>
           )}
 
-          {onRerun && (
+          {onSchedule && (
+            <Tooltip title={t('scheduled.save.title')}>
+              <Button
+                type='text'
+                size='small'
+                icon={<ClockCircleOutlined />}
+                onClick={onSchedule}
+                className='text-gray-500 hover:text-blue-500'
+              >
+                {t('scheduled.save.title')}
+              </Button>
+            </Tooltip>
+          )}
+
+          {activeStep && onRerun && activeStep.status === 'completed' && (
             <Tooltip title={t('rerun')}>
               <Button
                 type='text'

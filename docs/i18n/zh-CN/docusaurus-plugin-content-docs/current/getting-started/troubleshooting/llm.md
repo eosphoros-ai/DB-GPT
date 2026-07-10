@@ -44,7 +44,7 @@ export OPENAI_API_KEY="sk-your-actual-key"
 | Provider | 示例名称 |
 |---|---|
 | OpenAI | `chatgpt_proxyllm`, `gpt-4o` |
-| DeepSeek | `deepseek-chat`, `deepseek-reasoner` |
+| DeepSeek | `deepseek-v4-pro`, `deepseek-chat`, `deepseek-reasoner` |
 | Ollama | `qwen2.5:latest`（需先拉取） |
 | HuggingFace | `THUDM/glm-4-9b-chat-hf` |
 

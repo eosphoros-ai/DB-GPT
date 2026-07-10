@@ -13,18 +13,18 @@ from dbgpt.model.proxy.llms.minimax import (
 class TestMiniMaxDefaults:
     """Test MiniMax default model configuration."""
 
-    def test_default_model_is_m27(self):
-        assert _DEFAULT_MODEL == "MiniMax-M2.7"
+    def test_default_model_is_m3(self):
+        assert _DEFAULT_MODEL == "MiniMax-M3"
 
     @patch.dict(os.environ, {"MINIMAX_API_KEY": "test-key"})
     def test_client_default_model(self):
         client = MiniMaxLLMClient()
-        assert client.default_model == "MiniMax-M2.7"
+        assert client.default_model == "MiniMax-M3"
 
     @patch.dict(os.environ, {"MINIMAX_API_KEY": "test-key"})
     def test_client_custom_model(self):
-        client = MiniMaxLLMClient(model="MiniMax-M2.5")
-        assert client.default_model == "MiniMax-M2.5"
+        client = MiniMaxLLMClient(model="MiniMax-M2.7")
+        assert client.default_model == "MiniMax-M2.7"
 
     def test_deploy_params_provider(self):
         assert MiniMaxDeployModelParameters.provider == "proxy/minimax"
@@ -33,8 +33,14 @@ class TestMiniMaxDefaults:
 class TestMiniMaxModelList:
     """Test MiniMax model registration."""
 
-    def test_model_list_contains_m27(self):
+    def test_model_list_contains_m3(self):
         # Import triggers registration
+        from dbgpt.model.adapter.base import get_model_adapter
+
+        adapter = get_model_adapter("proxy/minimax", "MiniMax-M3")
+        assert adapter is not None
+
+    def test_model_list_contains_m27(self):
         from dbgpt.model.adapter.base import get_model_adapter
 
         adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.7")
@@ -44,18 +50,6 @@ class TestMiniMaxModelList:
         from dbgpt.model.adapter.base import get_model_adapter
 
         adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.7-highspeed")
-        assert adapter is not None
-
-    def test_model_list_contains_m25(self):
-        from dbgpt.model.adapter.base import get_model_adapter
-
-        adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.5")
-        assert adapter is not None
-
-    def test_model_list_contains_m25_highspeed(self):
-        from dbgpt.model.adapter.base import get_model_adapter
-
-        adapter = get_model_adapter("proxy/minimax", "MiniMax-M2.5-highspeed")
         assert adapter is not None
 
 
@@ -68,7 +62,7 @@ class TestMiniMaxTemperatureClamping:
 
         client = MiniMaxLLMClient()
         request = ModelRequest(
-            model="MiniMax-M2.7",
+            model="MiniMax-M3",
             messages=[ModelMessage(role="user", content="hi")],
             temperature=0.5,
         )
@@ -81,7 +75,7 @@ class TestMiniMaxTemperatureClamping:
 
         client = MiniMaxLLMClient()
         request = ModelRequest(
-            model="MiniMax-M2.7",
+            model="MiniMax-M3",
             messages=[ModelMessage(role="user", content="hi")],
             temperature=2.0,
         )

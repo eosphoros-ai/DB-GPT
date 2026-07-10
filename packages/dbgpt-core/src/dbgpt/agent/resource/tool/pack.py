@@ -9,7 +9,7 @@ from mcp import ClientSession
 
 from dbgpt.util.json_utils import parse_or_raise_error
 
-from ...util.mcp_utils import sse_client
+from ...util.mcp_utils import mcp_transport_client
 from ..base import EXECUTE_ARGS_TYPE, PARSE_EXECUTE_ARGS_FUNCTION, ResourceType, T
 from ..pack import Resource, ResourcePack
 from .base import DB_GPT_TOOL_IDENTIFIER, BaseTool, FunctionTool, ToolFunc
@@ -356,6 +356,7 @@ class MCPToolPack(ToolPack):
         default_ssl_verify: Union[ssl.SSLContext, str, bool] = True,
         default_ssl_cafile: Optional[str] = None,
         overwrite_same_tool: bool = True,
+        transport: str = "sse",
         **kwargs,
     ):
         """Create an Auto-GPT plugin tool pack."""
@@ -373,6 +374,12 @@ class MCPToolPack(ToolPack):
         self._ssl_verify_map = ssl_verify or {}
         self.server_ssl_verify_map = {}
         self._overwrite_same_tool = overwrite_same_tool
+        # Single transport for all servers in ``mcp_servers``. Matches the
+        # ConnectorManager invariant (one connector instance == one transport)
+        # and the catalog data model (``mcp_server.transport`` is a single
+        # string per entry). Recognised values: ``"sse"`` (default),
+        # ``"streamable_http"`` (alias ``"streamableHttp"``).
+        self._transport = transport or "sse"
 
     def switch_mcp_input_schema(self, input_schema: dict):
         args = {}
@@ -420,8 +427,11 @@ class MCPToolPack(ToolPack):
             )
             self.server_ssl_verify_map[server] = server_ssl_verify
 
-            async with sse_client(
-                url=server, headers=server_headers, verify=server_ssl_verify
+            async with mcp_transport_client(
+                url=server,
+                transport=self._transport,
+                headers=server_headers,
+                verify=server_ssl_verify,
             ) as (read, write):
                 async with ClientSession(read, write) as session:
                     # Initialize the connection
@@ -440,8 +450,9 @@ class MCPToolPack(ToolPack):
                                 ssl_verify_to_use = self.server_ssl_verify_map.get(
                                     server, True
                                 )
-                                async with sse_client(
+                                async with mcp_transport_client(
                                     url=server,
+                                    transport=self._transport,
                                     headers=headers_to_use,
                                     verify=ssl_verify_to_use,
                                 ) as (read, write):

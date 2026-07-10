@@ -4179,6 +4179,18 @@ wheels = [
 ]
 
 [[package]]
+name = "apscheduler"
+version = "3.11.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzlocal" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/07/12/3e4389e5920b4c1763390c6d371162f3784f86f85cd6d6c1bfe68eef14e2/apscheduler-3.11.2.tar.gz", hash = "sha256:2a9966b052ec805f020c8c4c3ae6e6a06e24b1bf19f2e11d91d8cca0473eef41", size = 108683, upload-time = "2025-12-22T00:39:34.884Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/64/2e54428beba8d9992aa478bb8f6de9e4ecaa5f8f513bcfd567ed7fb0262d/apscheduler-3.11.2-py3-none-any.whl", hash = "sha256:ce005177f741409db4e4dd40a7431b76feb856b9dd69d57e0da49d6715bfd26d", size = 64439, upload-time = "2025-12-22T00:39:33.303Z" },
+]
+
+[[package]]
 name = "argon2-cffi"
 version = "23.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -5485,10 +5497,11 @@ wheels = [
 
 [[package]]
 name = "dbgpt"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-core" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "apscheduler" },
     { name = "cachetools" },
     { name = "chardet" },
     { name = "importlib-resources" },
@@ -5626,6 +5639,7 @@ requires-dist = [
     { name = "aiohttp", specifier = "==3.8.4" },
     { name = "alembic", marker = "extra == 'framework'", specifier = "==1.12.0" },
     { name = "anthropic", marker = "extra == 'proxy-anthropic'" },
+    { name = "apscheduler", specifier = ">=3.10,<4" },
     { name = "auto-gpt-plugin-template", marker = "extra == 'agent'", specifier = ">=0.0.3" },
     { name = "auto-gpt-plugin-template", marker = "extra == 'framework'" },
     { name = "blobfile", marker = "extra == 'hf-kimi'" },
@@ -5658,7 +5672,7 @@ requires-dist = [
     { name = "lyric-js-worker", marker = "extra == 'code'", specifier = ">=0.1.7" },
     { name = "lyric-py", marker = "extra == 'code'", specifier = ">=0.1.7" },
     { name = "lyric-py-worker", marker = "extra == 'code'", specifier = ">=0.1.7" },
-    { name = "mcp", marker = "extra == 'agent'", specifier = ">=1.4.1" },
+    { name = "mcp", marker = "extra == 'agent'", specifier = ">=1.8.0" },
     { name = "msgpack", marker = "extra == 'code'" },
     { name = "msgpack", marker = "extra == 'simple-framework'" },
     { name = "numpy", marker = "extra == 'agent'", specifier = ">=1.21.0,<2.0.0" },
@@ -5712,7 +5726,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-auto"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
 
 [package.optional-dependencies]
@@ -5831,7 +5845,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-flash-attn"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
 
 [package.dev-dependencies]
@@ -5861,7 +5875,7 @@ main = [{ name = "flash-attn", specifier = ">=2.5.8" }]
 
 [[package]]
 name = "dbgpt-app"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-app" }
 dependencies = [
     { name = "aiofiles" },
@@ -5918,7 +5932,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-client"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-client" }
 dependencies = [
     { name = "cloudpickle" },
@@ -5944,7 +5958,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-ext"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-ext" }
 dependencies = [
     { name = "dbgpt" },
@@ -6076,7 +6090,7 @@ dev = [{ name = "pytest", specifier = ">=8.3.4" }]
 
 [[package]]
 name = "dbgpt-mono"
-version = "0.8.0"
+version = "0.8.1"
 source = { virtual = "." }
 
 [package.dev-dependencies]
@@ -6121,7 +6135,7 @@ dev = [
 
 [[package]]
 name = "dbgpt-sandbox"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-sandbox" }
 dependencies = [
     { name = "colorama" },
@@ -6166,9 +6180,10 @@ dev = []
 
 [[package]]
 name = "dbgpt-serve"
-version = "0.8.0"
+version = "0.8.1"
 source = { editable = "packages/dbgpt-serve" }
 dependencies = [
+    { name = "apscheduler" },
     { name = "dbgpt-ext" },
 ]
 
@@ -6182,6 +6197,7 @@ libro = [
 
 [package.metadata]
 requires-dist = [
+    { name = "apscheduler", specifier = ">=3.10,<4" },
     { name = "dbgpt-ext", editable = "packages/dbgpt-ext" },
     { name = "libro", marker = "extra == 'libro'", specifier = ">=0.1.25" },
     { name = "poetry", marker = "extra == 'dbgpts'" },
@@ -12637,21 +12653,27 @@ wheels = [
 
 [[package]]
 name = "mcp"
-version = "1.6.0"
+version = "1.27.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "httpx" },
     { name = "httpx-sse" },
+    { name = "jsonschema" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyjwt", extra = ["crypto"] },
+    { name = "python-multipart" },
+    { name = "pywin32", marker = "sys_platform == 'win32' or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cpu') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda121' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-5-dbgpt-hf-glm4' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-glm4-1vl' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen-omni') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen3')" },
     { name = "sse-starlette" },
     { name = "starlette" },
-    { name = "uvicorn" },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
+    { name = "uvicorn", marker = "sys_platform != 'emscripten' or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cpu') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda121' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-5-dbgpt-hf-glm4' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-glm4-1vl' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen-omni') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen3')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/d2/f587cb965a56e992634bebc8611c5b579af912b74e04eb9164bd49527d21/mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723", size = 200031, upload-time = "2025-03-27T16:46:32.336Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/3c/347cf965d313f5d41764e7d46bea6ffe7d9ef13b983cc429b0340962a082/mcp-1.27.2.tar.gz", hash = "sha256:8e02db104096d1c25b28e64bde29a5c32b31bc241710213e12fd4d84985bdfef", size = 621116, upload-time = "2026-05-29T17:16:04.039Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/30/20a7f33b0b884a9d14dd3aa94ff1ac9da1479fe2ad66dd9e2736075d2506/mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0", size = 76077, upload-time = "2025-03-27T16:46:29.919Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/11/252c6f971dc4f16af1d98a1c469d8ba523aab00d1bb76b4d3bc1ff32eacc/mcp-1.27.2-py3-none-any.whl", hash = "sha256:d6ff5160c6ca65d93013626efb3fc249de683c30b2d8570755ceddd490344de5", size = 220498, upload-time = "2026-05-29T17:16:02.442Z" },
 ]
 
 [[package]]
@@ -15494,6 +15516,23 @@ dependencies = [
     { name = "python-dateutil" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f6/ec/5c658b3a4d99a6d9145030cc8e003c3f7efc668d866e88544812ab0af310/PyHive-0.7.0.tar.gz", hash = "sha256:585beff9578a61b99aed47140fec97e26323e8c685a5b5d0c8550a8ebf8a24e0", size = 46479, upload-time = "2023-08-17T23:29:25.26Z" }
+
+[[package]]
+name = "pyjwt"
+version = "2.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cpu') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda121' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-5-dbgpt-hf-glm4' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-glm4-1vl' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen-omni') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen3')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3b/81/58d0ac84e1ef3a3843791d6954d94c0b33d526c75eeb1efbce9d0a4c4077/pyjwt-2.13.0.tar.gz", hash = "sha256:41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423", size = 107515, upload-time = "2026-05-21T19:54:36.618Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/5e/ecf12fdb62546d64385c158514e9b2b671f7832108ef2ecd2020ce0af2d1/pyjwt-2.13.0-py3-none-any.whl", hash = "sha256:66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728", size = 31274, upload-time = "2026-05-21T19:54:35.362Z" },
+]
+
+[package.optional-dependencies]
+crypto = [
+    { name = "cryptography" },
+]
 
 [[package]]
 name = "pymilvus"
@@ -26119,14 +26158,14 @@ wheels = [
 
 [[package]]
 name = "typing-inspection"
-version = "0.4.0"
+version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/82/5c/e6082df02e215b846b4b8c0b887a64d7d08ffaba30605502639d44c06b82/typing_inspection-0.4.0.tar.gz", hash = "sha256:9765c87de36671694a67904bf2c96e395be9c6439bb6c87b5142569dcdd65122", size = 76222, upload-time = "2025-02-25T17:27:59.638Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/e3/70399cb7dd41c10ac53367ae42139cf4b1ca5f36bb3dc6c9d33acdb43655/typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464", size = 75949, upload-time = "2025-10-01T02:14:41.687Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/08/aa4fdfb71f7de5176385bd9e90852eaf6b5d622735020ad600f2bab54385/typing_inspection-0.4.0-py3-none-any.whl", hash = "sha256:50e72559fcd2a6367a19f7a7e610e6afcb9fac940c650290eed893d61386832f", size = 14125, upload-time = "2025-02-25T17:27:57.754Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/9b/47798a6c91d8bdb567fe2698fe81e0c6b7cb7ef4d13da4114b41d239f65d/typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7", size = 14611, upload-time = "2025-10-01T02:14:40.154Z" },
 ]
 
 [[package]]
@@ -26136,6 +26175,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/95/32/1a225d6164441be760d75c2c42e2780dc0873fe382da3e98a2e1e48361e5/tzdata-2025.2.tar.gz", hash = "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9", size = 196380, upload-time = "2025-03-23T13:54:43.652Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/23/c7abc0ca0a1526a0774eca151daeb8de62ec457e77262b66b359c3c7679e/tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8", size = 347839, upload-time = "2025-03-23T13:54:41.845Z" },
+]
+
+[[package]]
+name = "tzlocal"
+version = "5.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cpu') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-auto' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda118') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cpu' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda121') or (extra == 'extra-14-dbgpt-acc-auto-cuda118' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-14-dbgpt-acc-auto-cuda121' and extra == 'extra-14-dbgpt-acc-auto-cuda124') or (extra == 'extra-5-dbgpt-hf-glm4' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-glm4-1vl' and extra == 'extra-5-dbgpt-hf-kimi') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen-omni') or (extra == 'extra-5-dbgpt-hf-kimi' and extra == 'extra-5-dbgpt-hf-qwen3')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/2e/c14812d3d4d9cd1773c6be938f89e5735a1f11a9f184ac3639b93cef35d5/tzlocal-5.3.1.tar.gz", hash = "sha256:cceffc7edecefea1f595541dbd6e990cb1ea3d19bf01b2809f362a03dd7921fd", size = 30761, upload-time = "2025-03-05T21:17:41.549Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c2/14/e2a54fabd4f08cd7af1c07030603c3356b74da07f7cc056e600436edfa17/tzlocal-5.3.1-py3-none-any.whl", hash = "sha256:eb1a66c3ef5847adf7a834f1be0800581b683b5608e74f86ecbcef8ab91bb85d", size = 18026, upload-time = "2025-03-05T21:17:39.857Z" },
 ]
 
 [[package]]

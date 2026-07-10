@@ -90,22 +90,29 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }
 
   const renderContent = () => {
+    // Hide sidebar for mobile, share pages, and task replay mode (from_task)
+    const isStandaloneHome = router.pathname === '/';
+    const hideSidebar =
+      isStandaloneHome ||
+      router.pathname.includes('mobile') ||
+      router.pathname.startsWith('/share') ||
+      !!router.query.from_task;
+
     if (router.pathname.includes('mobile') || router.pathname.startsWith('/share')) {
       return <>{children}</>;
     }
-    const isStandaloneHome = router.pathname === '/';
     return (
       <div className='flex w-screen h-screen overflow-hidden'>
         <Head>
           <meta name='viewport' content='initial-scale=1.0, width=device-width, maximum-scale=1' />
         </Head>
-        {!isStandaloneHome && router.pathname !== '/construct/app/extra' && (
+        {router.pathname !== '/construct/app/extra' && !hideSidebar && (
           <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
             <SideBar />
           </div>
         )}
         <div className='flex flex-col flex-1 relative overflow-hidden'>{children}</div>
-        {!isStandaloneHome && <FloatHelper />}
+        {!hideSidebar && <FloatHelper />}
       </div>
     );
   };

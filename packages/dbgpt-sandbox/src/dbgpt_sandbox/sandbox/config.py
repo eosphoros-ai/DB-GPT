@@ -35,6 +35,14 @@ MAX_DEPENDENCY_INSTALL_SIZE = 200 * 1024 * 1024  # 200MB
 MAX_PROCESSES = 10
 
 
-SANDBOX_RUNTIME = os.getenv(
-    "SANDBOX_RUNTIME", "local"
-)  # Optional values: docker, podman, nerdctl, local
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+# Optional values: docker, podman, nerdctl, local. When unset, RuntimeFactory
+# auto-detects container runtimes and fails closed if none are available.
+SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME")
+SANDBOX_ALLOW_LOCAL_RUNTIME = _env_flag("SANDBOX_ALLOW_LOCAL_RUNTIME")
