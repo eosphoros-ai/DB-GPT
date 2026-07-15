@@ -127,17 +127,6 @@ const Chat: React.FC = () => {
   const [knowledgeValue, setKnowledgeValue] = useState<string | null>(null);
   const [modelValue, setModelValue] = useState<string>('');
 
-  // Auto-send init message if present
-  useEffect(() => {
-    if (initMsg && chatId && !history.length && !replyLoading) {
-      // Small delay to ensure everything is loaded
-      const timer = setTimeout(() => {
-        handleChat(initMsg);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [chatId, handleChat, history.length, initMsg, replyLoading]);
-
   useEffect(() => {
     setTemperatureValue(appInfo?.param_need?.filter(item => item.type === 'temperature')[0]?.value || 0.6);
     setMaxNewTokensValue(appInfo?.param_need?.filter(item => item.type === 'max_new_tokens')[0]?.value || 4000);
@@ -342,6 +331,17 @@ const Chat: React.FC = () => {
     },
     [chat, chatId, history, modelValue, scene],
   );
+
+  // Auto-send init message if present
+  useEffect(() => {
+    if (initMsg && chatId && !history.length && !replyLoading) {
+      // Small delay to ensure everything is loaded
+      const timer = setTimeout(() => {
+        handleChat(initMsg);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [chatId, handleChat, history.length, initMsg, replyLoading]);
 
   useAsyncEffect(async () => {
     // 如果是默认小助手，不获取历史记录

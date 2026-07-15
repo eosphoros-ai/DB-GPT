@@ -107,6 +107,15 @@ function getToolTitle(tool: string): string {
     question: 'Ask Question',
     apply_patch: 'Apply Patch',
     skill: 'Load Skill',
+    // Knowledge base tools
+    kb_ls: 'List Files',
+    kb_glob: 'Find Files',
+    kb_grep: 'Search Content',
+    kb_cat: 'Read File',
+    semantic_search: 'Semantic Search',
+    kb_codegraph_explore: 'Explore Code Graph',
+    kb_codegraph_call_chain: 'Trace Call Chain',
+    kb_codegraph_class_hierarchy: 'Trace Class Hierarchy',
   };
   return titleMap[tool] || tool;
 }
@@ -131,6 +140,21 @@ function getToolSubtitle(tool: string, input?: Record<string, unknown>): string 
       return input.url as string | undefined;
     case 'list':
       return input.path ? getFilename(input.path as string) : undefined;
+    // Knowledge base tools — show the most relevant query parameter
+    case 'kb_ls':
+      return (input.path as string | undefined) ?? undefined;
+    case 'kb_glob':
+      return (input.query as string | undefined) ?? (input.pattern as string | undefined);
+    case 'kb_grep':
+      return (input.query as string | undefined) ?? (input.pattern as string | undefined);
+    case 'kb_cat':
+      return (input.path as string | undefined) ?? undefined;
+    case 'semantic_search':
+      return (input.query as string | undefined) ?? undefined;
+    case 'kb_codegraph_explore':
+    case 'kb_codegraph_call_chain':
+    case 'kb_codegraph_class_hierarchy':
+      return (input.query as string | undefined) ?? undefined;
     default:
       // Try common input keys
       return (input.value || input.name || input.query) as string | undefined;

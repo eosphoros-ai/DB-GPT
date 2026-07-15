@@ -808,4 +808,11 @@ export const CommonEn = {
   Graph_Edges: 'Edges',
   Communities: 'Communities',
   Files: 'Files',
+  Chunks_View: 'Chunks',
+  Source_View: 'Source',
+  Tool_Output: 'Tool Output',
+  Advanced_Settings: 'Advanced Settings',
+  References: 'References',
+  stop: 'Stop',
+  chat_error: 'Sorry, an error occurred. Please try again.',
 } as const;

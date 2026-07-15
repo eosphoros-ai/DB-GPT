@@ -1,5 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delSpace, getSpaceConfig, getSpaceList, newDialogue } from '@/client/api';
+import { apiInterceptors, delSpace, getKnowledgeSpaceStats, getSpaceConfig, getSpaceList, newDialogue } from '@/client/api';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import GitRepoSyncForm from '@/components/knowledge/git-repo-sync-form';
@@ -8,7 +8,14 @@ import SpaceForm from '@/components/knowledge/space-form';
 import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { File, ISpace, IStorage, StepChangeParams } from '@/types/knowledge';
-import { PlusOutlined, ReadOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
+import {
+  NodeIndexOutlined,
+  PlusOutlined,
+  ReadOutlined,
+  SearchOutlined,
+  ShareAltOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { Button, Input, Modal, Spin, Tag } from 'antd';
 import classNames from 'classnames';
 import { debounce } from 'lodash';
@@ -28,6 +35,7 @@ const Knowledge = () => {
   const [docType, setDocType] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [spaceConfig, setSpaceConfig] = useState<IStorage | null>(null);
+  const [spaceStats, setSpaceStats] = useState<Record<string, { vertexCount: number | null; edgeCount: number | null }>>({});
 
   const { t } = useTranslation();
   const router = useRouter();
@@ -37,6 +45,23 @@ const Knowledge = () => {
     const [_, data] = await apiInterceptors(getSpaceList({ ...params }));
     setLoading(false);
     setSpaceList(data);
+    // Fetch stats for each space (graph info)
+    if (data) {
+      for (const space of data) {
+        try {
+          const [, stats] = await apiInterceptors(getKnowledgeSpaceStats(space.id));
+          if (stats) {
+            setSpaceStats(prev => ({
+              ...prev,
+              [space.name]: {
+                vertexCount: stats.graph_vertex_count ?? null,
+                edgeCount: stats.graph_edge_count ?? null,
+              },
+            }));
+          }
+        } catch { /* ignore individual stat failures */ }
+      }
+    }
   }
 
   async function getSpaceConfigs() {
@@ -163,7 +188,7 @@ const Knowledge = () => {
                       ? '/models/knowledge-graph.png'
                       : space.vector_type === 'FullText'
                         ? '/models/knowledge-full-text.jpg'
-                        : '/models/knowledge-default.jpg'
+                        : '/icons/kb_icon.png'
                 }
                 RightTop={
                   <InnerDropdown
@@ -183,7 +208,7 @@ const Knowledge = () => {
                 }
                 rightTopHover={false}
                 Tags={
-                  <div className='flex item-center'>
+                  <div className='flex item-center flex-wrap gap-1'>
                     <Tag>
                       <span className='flex items-center gap-1'>
                         <ReadOutlined className='mt-[1px]' />
@@ -214,6 +239,23 @@ const Knowledge = () => {
                         </span>
                       </Tag>
                     ) : null}
+                    {/* Graph stats */}
+                    {spaceStats[space.name]?.vertexCount != null && (
+                      <Tag color='violet-inverse' className='border-violet-300 text-violet-600'>
+                        <span className='flex items-center gap-0.5 text-[11px]'>
+                          <NodeIndexOutlined />
+                          {spaceStats[space.name].vertexCount}
+                        </span>
+                      </Tag>
+                    )}
+                    {spaceStats[space.name]?.edgeCount != null && (
+                      <Tag color='violet-inverse' className='border-violet-300 text-violet-600'>
+                        <span className='flex items-center gap-0.5 text-[11px]'>
+                          <ShareAltOutlined />
+                          {spaceStats[space.name].edgeCount}
+                        </span>
+                      </Tag>
+                    )}
                   </div>
                 }
                 LeftBottom={
@@ -223,14 +265,7 @@ const Knowledge = () => {
                     {space?.gmt_modified && <span>{moment(space?.gmt_modified).fromNow() + ' ' + t('update')}</span>}
                   </div>
                 }
-                RightBottom={
-                  <ChatButton
-                    text={t('start_chat')}
-                    onClick={() => {
-                      handleChat(space);
-                    }}
-                  />
-                }
+                RightBottom={null}
               />
             ))}
           </div>

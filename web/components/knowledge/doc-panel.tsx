@@ -40,6 +40,8 @@ interface IProps {
   addStatus?: string;
   onAddDoc: (spaceName: string) => void;
   onDeleteDoc: () => void;
+  hideRecallTest?: boolean;
+  hideSearchTools?: boolean;
 }
 
 const { confirm } = Modal;
@@ -74,7 +76,7 @@ const SyncContent: React.FC<{ name: string; id: number }> = ({ name, id }) => {
 
 export default function DocPanel(props: IProps) {
   const [form] = Form.useForm();
-  const { space, addStatus } = props;
+  const { space, addStatus, hideRecallTest, hideSearchTools } = props;
   const { t } = useTranslation();
   const router = useRouter();
   const page_size = 18;
@@ -456,12 +458,16 @@ export default function DocPanel(props: IProps) {
             {t('View_Graph')}
           </Button>
         )}
-        <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
-          {t('Recall_test')}
-        </Button>
-        <Button icon={<SearchOutlined />} onClick={() => setSearchToolsOpen(true)}>
-          {t('Search_Tools')}
-        </Button>
+        {!hideRecallTest && (
+          <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
+            {t('Recall_test')}
+          </Button>
+        )}
+        {!hideSearchTools && (
+          <Button icon={<SearchOutlined />} onClick={() => setSearchToolsOpen(true)}>
+            {t('Search_Tools')}
+          </Button>
+        )}
       </Space>
       <Divider />
       <Spin spinning={isLoading}>{renderDocumentCard()}</Spin>

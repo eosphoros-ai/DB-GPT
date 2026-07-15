@@ -807,4 +807,11 @@ export const CommonZh: Resources['translation'] = {
   Graph_Edges: '图边',
   Communities: '社区',
   Files: '文件',
+  Chunks_View: '切片',
+  Source_View: '源文件',
+  Tool_Output: '工具输出',
+  Advanced_Settings: '高级设置',
+  References: '引用文件',
+  stop: '停止',
+  chat_error: '抱歉，发生了错误，请重试。',
 } as const;

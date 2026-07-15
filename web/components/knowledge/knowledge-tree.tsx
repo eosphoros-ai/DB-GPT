@@ -11,6 +11,7 @@ interface IProps {
   currentSpace?: ISpace | null;
   onSelectDocument: (doc: IDocument | null) => void;
   onSelectSpace: (space: ISpace) => void;
+  onSelectFile?: (file: KbFileEntry | null) => void;
 }
 
 type TreeNodeData = DataNode & {
@@ -26,7 +27,7 @@ type TreeNodeData = DataNode & {
  * Directories are lazy-loaded when expanded.
  * First level is auto-expanded on load.
  */
-export default function KnowledgeTree({ currentSpaceName, onSelectDocument }: IProps) {
+export default function KnowledgeTree({ currentSpaceName, onSelectDocument, onSelectFile }: IProps) {
   const { t } = useTranslation();
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [loadedKeys, setLoadedKeys] = useState<Set<string>>(new Set());
@@ -174,6 +175,7 @@ export default function KnowledgeTree({ currentSpaceName, onSelectDocument }: IP
           vector_ids: '',
         });
       }
+      onSelectFile?.(null);
       return;
     }
 
@@ -194,6 +196,9 @@ export default function KnowledgeTree({ currentSpaceName, onSelectDocument }: IP
         status: '',
         vector_ids: '',
       });
+      onSelectFile?.(node.fileData || null);
+    } else {
+      onSelectFile?.(null);
     }
   };
 

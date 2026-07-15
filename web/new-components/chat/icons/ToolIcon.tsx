@@ -174,6 +174,15 @@ export function getToolIconName(tool: string): IconName {
     case 'kb_codegraph_call_chain':
     case 'kb_codegraph_class_hierarchy':
       return 'knowledge-graph';
+    case 'kb_ls':
+      return 'bullet-list';
+    case 'kb_glob':
+    case 'kb_grep':
+      return 'magnifying-glass-menu';
+    case 'kb_cat':
+      return 'glasses';
+    case 'semantic_search':
+      return 'brain';
     default:
       return 'mcp';
   }
@@ -199,6 +208,11 @@ export const STATUS_TEXT_MAP: Record<string, string> = {
   kb_codegraph_explore: 'Exploring code graph...',
   kb_codegraph_call_chain: 'Tracing call chain...',
   kb_codegraph_class_hierarchy: 'Tracing class hierarchy...',
+  kb_ls: 'Listing files...',
+  kb_glob: 'Finding files...',
+  kb_grep: 'Searching content...',
+  kb_cat: 'Reading file...',
+  semantic_search: 'Searching semantically...',
 };
 
 export function getStatusText(tool: string): string {

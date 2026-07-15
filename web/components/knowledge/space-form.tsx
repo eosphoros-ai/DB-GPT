@@ -1,7 +1,7 @@
 import { addSpace, apiInterceptors, getChunkStrategies, syncGitRepo } from '@/client/api';
 import { IChunkStrategyResponse, IStorage, StepChangeParams } from '@/types/knowledge';
 import { FileTextOutlined, LinkOutlined, ReadOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Divider, Form, Input, Select, Spin, Switch, Upload, message } from 'antd';
+import { Button, Checkbox, Collapse, Divider, Form, Input, Select, Spin, Switch, Upload, message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -598,26 +598,45 @@ export default function SpaceForm(props: IProps) {
 
         <Divider />
 
-        {/* ── Section 3: Chunk Strategy ── */}
-        <div className='mb-2 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Segmentation')}</div>
-        <div className='grid grid-cols-3 gap-4'>
-          <Form.Item<FieldType> label={t('chunk_strategy')} name='chunk_strategy'>
-            <Select className='h-12'>
-              <Select.Option value='Automatic'>Automatic</Select.Option>
-              {strategies.map(s => (
-                <Select.Option key={s.strategy} value={s.strategy}>
-                  {s.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item<FieldType> label={t('chunk_size')} name='chunk_size'>
-            <Input className='h-12' placeholder='512' type='number' />
-          </Form.Item>
-          <Form.Item<FieldType> label={t('chunk_overlap')} name='chunk_overlap'>
-            <Input className='h-12' placeholder='50' type='number' />
-          </Form.Item>
-        </div>
+        {/* ── Section 3: Advanced Settings (collapsed by default) ── */}
+        <Collapse
+          ghost
+          size='small'
+          expandIconPosition='end'
+          items={[
+            {
+              key: 'advanced',
+              label: (
+                <span className='text-sm font-semibold text-gray-500 dark:text-gray-400'>
+                  {t('Advanced_Settings') || 'Advanced Settings'}
+                </span>
+              ),
+              children: (
+                <div>
+                  <div className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{t('Segmentation')}</div>
+                  <div className='grid grid-cols-3 gap-4'>
+                    <Form.Item<FieldType> label={t('chunk_strategy')} name='chunk_strategy'>
+                      <Select className='h-12'>
+                        <Select.Option value='Automatic'>Automatic</Select.Option>
+                        {strategies.map(s => (
+                          <Select.Option key={s.strategy} value={s.strategy}>
+                            {s.name}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                    <Form.Item<FieldType> label={t('chunk_size')} name='chunk_size'>
+                      <Input className='h-12' placeholder='512' type='number' />
+                    </Form.Item>
+                    <Form.Item<FieldType> label={t('chunk_overlap')} name='chunk_overlap'>
+                      <Input className='h-12' placeholder='50' type='number' />
+                    </Form.Item>
+                  </div>
+                </div>
+              ),
+            },
+          ]}
+        />
 
         <Form.Item>
           <div className='flex justify-end gap-3'>
