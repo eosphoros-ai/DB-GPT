@@ -74,7 +74,9 @@ class DBGPTFileSystem(AbstractFileSystem):
                 raise ValueError(f"Failed to parse URI {path}: {str(e)}")
 
         # Handle local files
-        if FileStorageURI.is_local_file(path):
+        if FileStorageURI.is_local_file(path) and (
+            path.startswith("file://") or os.path.isabs(path)
+        ):
             # Treat as a local file reference
             file_name = os.path.basename(path)
             return "local", self.bucket, file_name
