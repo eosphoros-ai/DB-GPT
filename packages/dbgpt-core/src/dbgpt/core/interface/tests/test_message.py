@@ -458,6 +458,20 @@ def test_to_openai_messages(
     ]
 
 
+def test_to_common_messages_view_dropped_unknown_raises(human_model_message):
+    # VIEW messages are display-only and have no common/LLM-message equivalent, so
+    # they are intentionally skipped rather than converted.
+    view_message = ModelMessage(role=ModelMessageRoleType.VIEW, content="rendered")
+    assert ModelMessage.to_common_messages([human_model_message, view_message]) == [
+        {"role": "user", "content": human_model_message.content}
+    ]
+
+    # A genuinely unsupported role must raise ValueError (as the docstring promises)
+    # instead of being silently dropped.
+    with pytest.raises(ValueError, match="Unsupported message role"):
+        ModelMessage.to_common_messages([ModelMessage(role="tool", content="oops")])
+
+
 def test_to_openai_messages_convert_to_compatible_format(
     human_model_message, ai_model_message, system_model_message
 ):

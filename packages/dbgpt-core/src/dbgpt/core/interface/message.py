@@ -463,8 +463,12 @@ class ModelMessage(BaseModel):
                         type_mapping=type_mapping,
                     )
                 )
-            else:
+            elif message.role == ModelMessageRoleType.VIEW:
+                # VIEW messages are display-only and have no common/LLM-message
+                # equivalent, so they are intentionally skipped.
                 pass
+            else:
+                raise ValueError(f"Unsupported message role: {message.role}")
         if convert_to_compatible_format:
             # Move the last user's information to the end
             last_user_input_index = None
