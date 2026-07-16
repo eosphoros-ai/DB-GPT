@@ -117,6 +117,7 @@ const DS_CARDS: DataSourceCardDef[] = [
     color: '#13C2C2',
     bgLight: '#E6FFFB',
     bgDark: '#112123',
+    disabled: true,
   },
   {
     key: 'NOTION',
