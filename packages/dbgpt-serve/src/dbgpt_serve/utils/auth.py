@@ -16,6 +16,7 @@ from dbgpt_serve.auth.service.service import (
 )
 
 _bearer_scheme = HTTPBearer(auto_error=False)
+_SAFE_HTTP_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 
 class UserRequest(BaseModel):
@@ -55,7 +56,10 @@ async def get_current_user(
     service: Service = Depends(get_auth_service),
 ) -> UserRequest:
     """Authenticate from a bearer token or the secure session cookie."""
-    token = auth.credentials if auth and auth.scheme.lower() == "bearer" else None
+    bearer_token = (
+        auth.credentials if auth and auth.scheme.lower() == "bearer" else None
+    )
+    token = bearer_token
     if not token:
         token = request.cookies.get("dbgpt_session")
     if not token:
@@ -70,6 +74,17 @@ async def get_current_user(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Authentication service unavailable",
         ) from exc
+
+    if request.method.upper() not in _SAFE_HTTP_METHODS and not bearer_token:
+        csrf_cookie = request.cookies.get("dbgpt_csrf", "")
+        csrf_header = request.headers.get("x-csrf-token", "")
+        if csrf_cookie != csrf_header or not service.validate_csrf_token(
+            token, csrf_header
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CSRF validation failed",
+            )
 
     return UserRequest(
         user_id=user.user_id,

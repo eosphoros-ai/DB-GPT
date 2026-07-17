@@ -86,13 +86,28 @@ def test_login_cookie_me_and_logout(client):
     assert "httponly" in set_cookie
     assert "secure" in set_cookie
     assert "samesite=lax" in set_cookie
+    csrf_token = client.cookies["dbgpt_csrf"]
+    csrf_cookie_header = next(
+        header
+        for header in login_response.headers.get_list("set-cookie")
+        if header.startswith("dbgpt_csrf=")
+    ).lower()
+    assert "secure" in csrf_cookie_header
+    assert "samesite=lax" in csrf_cookie_header
+    assert "httponly" not in csrf_cookie_header
 
     me_response = client.get("/api/v1/admin/auth/me")
     assert me_response.status_code == 200
     assert me_response.json()["data"]["role"] == "query_user"
     assert me_response.headers["cache-control"] == "no-store"
 
-    logout_response = client.post("/api/v1/admin/auth/logout")
+    csrf_failure = client.post("/api/v1/admin/auth/logout")
+    assert csrf_failure.status_code == 403
+
+    logout_response = client.post(
+        "/api/v1/admin/auth/logout",
+        headers={"X-CSRF-Token": csrf_token},
+    )
     assert logout_response.status_code == 200
     assert logout_response.headers["cache-control"] == "no-store"
     assert client.get("/api/v1/admin/auth/me").status_code == 401
@@ -136,6 +151,12 @@ def test_bearer_token_authentication(client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
+
+    logout_response = client.post(
+        "/api/v1/admin/auth/logout",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert logout_response.status_code == 200
 
 
 def test_legacy_dependency_name_remains_overridable():

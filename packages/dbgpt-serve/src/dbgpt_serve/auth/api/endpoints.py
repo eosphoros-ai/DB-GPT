@@ -54,6 +54,15 @@ async def login(
         httponly=True,
         samesite="lax",
     )
+    response.set_cookie(
+        key="dbgpt_csrf",
+        value=service.csrf_token(token),
+        max_age=service.config.jwt_absolute_expire_minutes * 60,
+        path="/",
+        secure=service.config.cookie_secure,
+        httponly=False,
+        samesite="lax",
+    )
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     return Result.succ(LoginResponse(access_token=token, user=user))
@@ -76,6 +85,13 @@ async def logout(
         path="/",
         secure=service.config.cookie_secure,
         httponly=True,
+        samesite="lax",
+    )
+    response.delete_cookie(
+        key="dbgpt_csrf",
+        path="/",
+        secure=service.config.cookie_secure,
+        httponly=False,
         samesite="lax",
     )
     response.headers["Cache-Control"] = "no-store"

@@ -1,5 +1,7 @@
 """Core authentication service."""
 
+import hashlib
+import hmac
 import logging
 import secrets
 import uuid
@@ -253,6 +255,21 @@ class Service(BaseService[UserEntity, object, UserResponse]):
             user_response = UserResponse.from_entity(user)
 
         return user_response, session_id
+
+    def csrf_token(self, token: str) -> str:
+        """Derive a CSRF token without exposing the session cookie value."""
+        self._require_jwt_secret()
+        return hmac.new(
+            self._config.jwt_secret.encode("utf-8"),
+            token.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+    def validate_csrf_token(self, token: str, candidate: str) -> bool:
+        """Compare a submitted CSRF token using constant-time equality."""
+        if not candidate:
+            return False
+        return hmac.compare_digest(self.csrf_token(token), candidate)
 
     def logout(self, user_id: str, session_id: str) -> None:
         """Idempotently revoke the current authenticated session."""
