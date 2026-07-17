@@ -1,7 +1,7 @@
 """Pydantic schemas for authentication endpoints."""
 
 import json
-from datetime import datetime
+from datetime import date, datetime
 from typing import Generic, Literal, Optional, TypeVar
 
 from pydantic import SecretStr, model_validator
@@ -296,6 +296,152 @@ class AssignResourceAccountRequest(BaseModel):
     @classmethod
     def normalize_reason(cls, value: str) -> str:
         return _trim_required(value, "reason")
+
+
+class TokenUsageCreate(BaseModel):
+    """One physical model call to meter exactly once."""
+
+    call_id: str = Field(min_length=1, max_length=128)
+    request_id: str = Field(min_length=1, max_length=128)
+    session_id: Optional[str] = Field(default=None, max_length=128)
+    user_id: str = Field(min_length=1, max_length=128)
+    role_snapshot: RoleName
+    account_set_id: Optional[str] = Field(default=None, max_length=128)
+    account_set_snapshot: Optional[str] = Field(default=None, max_length=255)
+    entry_resource_type: Optional[ResourceTypeName] = None
+    entry_resource_id: Optional[str] = Field(default=None, max_length=128)
+    agent_id: Optional[str] = Field(default=None, max_length=128)
+    model: str = Field(min_length=1, max_length=255)
+    input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
+    metering_source: Literal["provider", "estimated", "unknown"]
+    duration_ms: Optional[int] = Field(default=None, ge=0)
+    status: Literal["success", "failed"]
+    error_type: Optional[str] = Field(default=None, max_length=64)
+    gmt_created: datetime
+
+    @model_validator(mode="after")
+    def validate_token_total(self):
+        if self.metering_source != "unknown" and self.total_tokens != (
+            self.input_tokens + self.output_tokens
+        ):
+            raise ValueError("total_tokens must equal input_tokens + output_tokens")
+        return self
+
+
+class TokenUsageQueryRequest(BaseModel):
+    """Supported filters for usage details and daily aggregates."""
+
+    user_id: Optional[str] = Field(default=None, max_length=128)
+    account_set_id: Optional[str] = Field(default=None, max_length=128)
+    model: Optional[str] = Field(default=None, max_length=255)
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    role: Optional[RoleName] = None
+
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            raise ValueError("date_from must not be after date_to")
+        return self
+
+
+class TokenUsageResponse(BaseModel):
+    """Stored model-call usage detail."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    call_id: str
+    request_id: str
+    session_id: Optional[str] = None
+    user_id: str
+    role_snapshot: RoleName
+    account_set_id: Optional[str] = None
+    account_set_snapshot: Optional[str] = None
+    entry_resource_type: Optional[ResourceTypeName] = None
+    entry_resource_id: Optional[str] = None
+    agent_id: Optional[str] = None
+    model: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    metering_source: str
+    duration_ms: Optional[int] = None
+    status: str
+    error_type: Optional[str] = None
+    gmt_created: datetime
+
+
+class TokenDailyResponse(BaseModel):
+    """Asia/Shanghai natural-day aggregate."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    stat_date: str
+    user_id: str
+    role_snapshot: RoleName
+    account_set_id: str
+    model: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    call_count: int
+
+
+class TokenUsageSummaryResponse(BaseModel):
+    """Usage totals for one reporting day and the caller's data scope."""
+
+    stat_date: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    call_count: int
+
+
+class AuditEventCreate(BaseModel):
+    """Sanitized append-only audit event payload."""
+
+    event_id: Optional[str] = Field(default=None, max_length=128)
+    event_time: datetime
+    operator_user_id: Optional[str] = Field(default=None, max_length=128)
+    operator_role_snapshot: Optional[RoleName] = None
+    target_account_set_id: Optional[str] = Field(default=None, max_length=128)
+    target_type: str = Field(min_length=1, max_length=64)
+    target_id: Optional[str] = Field(default=None, max_length=128)
+    action: str = Field(min_length=1, max_length=64)
+    result: Literal["success", "failed", "denied"]
+    source_ip: Optional[str] = Field(default=None, max_length=64)
+    user_agent: Optional[str] = Field(default=None, max_length=512)
+    request_id: Optional[str] = Field(default=None, max_length=128)
+    before_snapshot: Optional[str] = None
+    after_snapshot: Optional[str] = None
+    deny_reason: Optional[str] = Field(default=None, max_length=512)
+
+
+class AuditQueryRequest(BaseModel):
+    """Indexed audit filters plus an event-time range."""
+
+    target_type: Optional[str] = Field(default=None, max_length=64)
+    action: Optional[str] = Field(default=None, max_length=64)
+    operator_user_id: Optional[str] = Field(default=None, max_length=128)
+    result: Optional[Literal["success", "failed", "denied"]] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            raise ValueError("date_from must not be after date_to")
+        return self
+
+
+class AuditEventResponse(AuditEventCreate):
+    """Persisted audit event returned to a system administrator."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    event_id: str
 
 
 class ImportCandidateResponse(BaseModel):

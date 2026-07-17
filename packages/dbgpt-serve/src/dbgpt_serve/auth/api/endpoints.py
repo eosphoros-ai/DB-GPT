@@ -1,5 +1,6 @@
 """Authentication endpoints for the administration API."""
 
+from datetime import date, datetime
 from typing import Callable, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -12,6 +13,8 @@ from dbgpt_serve.auth.api.schemas import (
     AccountSetResponse,
     AccountSetUpdateRequest,
     AssignResourceAccountRequest,
+    AuditEventResponse,
+    AuditQueryRequest,
     ConfirmImpactRequest,
     ConfirmRevokeRequest,
     ImportBatchRequest,
@@ -28,6 +31,10 @@ from dbgpt_serve.auth.api.schemas import (
     RoleName,
     RoleResponse,
     SetPasswordRequest,
+    TokenDailyResponse,
+    TokenUsageQueryRequest,
+    TokenUsageResponse,
+    TokenUsageSummaryResponse,
     UserAccountGrantRequest,
     UserAccountGrantResponse,
     UserCreateRequest,
@@ -38,6 +45,7 @@ from dbgpt_serve.auth.api.schemas import (
     UserUpdateRequest,
 )
 from dbgpt_serve.auth.constants import ROLE_PERMISSIONS
+from dbgpt_serve.auth.service.audit_service import AuditService, get_audit_service
 from dbgpt_serve.auth.service.errors import (
     ImpactConfirmationRequiredError,
     ImportSourceError,
@@ -52,6 +60,7 @@ from dbgpt_serve.auth.service.service import (
     Service,
     get_auth_service,
 )
+from dbgpt_serve.auth.service.token_service import TokenService, get_token_service
 from dbgpt_serve.utils.auth import UserRequest, get_current_user, require_permission
 
 
@@ -720,3 +729,100 @@ async def get_import_batch(
 ) -> Result[ImportBatchResponse]:
     result = await _run_management(service.get_import_batch, batch_id, operator)
     return Result.succ(result)
+
+
+@router.get("/token-usage/summary", response_model=Result[TokenUsageSummaryResponse])
+async def token_usage_summary(
+    stat_date: Optional[date] = None,
+    operator: UserRequest = Depends(require_permission("USAGE_READ")),
+    service: TokenService = Depends(get_token_service),
+) -> Result[TokenUsageSummaryResponse]:
+    result = await _run_management(
+        service.summary, stat_date or service.reporting_date(), operator
+    )
+    return Result.succ(result)
+
+
+@router.get("/token-usage/detail", response_model=Result[Page[TokenUsageResponse]])
+async def token_usage_detail(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    user_id: Optional[str] = Query(default=None, max_length=128),
+    account_set_id: Optional[str] = Query(default=None, max_length=128),
+    model: Optional[str] = Query(default=None, max_length=255),
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    role: Optional[RoleName] = None,
+    operator: UserRequest = Depends(require_permission("USAGE_READ")),
+    service: TokenService = Depends(get_token_service),
+) -> Result[Page[TokenUsageResponse]]:
+    filters = TokenUsageQueryRequest(
+        user_id=user_id,
+        account_set_id=account_set_id,
+        model=model,
+        date_from=date_from,
+        date_to=date_to,
+        role=role,
+    )
+    result = await _run_management(
+        service.query_usage, filters, operator, page, page_size
+    )
+    return Result.succ(result)
+
+
+@router.get("/token-usage/daily", response_model=Result[list[TokenDailyResponse]])
+async def token_usage_daily(
+    user_id: Optional[str] = Query(default=None, max_length=128),
+    account_set_id: Optional[str] = Query(default=None, max_length=128),
+    model: Optional[str] = Query(default=None, max_length=255),
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    role: Optional[RoleName] = None,
+    operator: UserRequest = Depends(require_permission("USAGE_READ")),
+    service: TokenService = Depends(get_token_service),
+) -> Result[list[TokenDailyResponse]]:
+    filters = TokenUsageQueryRequest(
+        user_id=user_id,
+        account_set_id=account_set_id,
+        model=model,
+        date_from=date_from,
+        date_to=date_to,
+        role=role,
+    )
+    result = await _run_management(service.query_daily, filters, operator)
+    return Result.succ(result)
+
+
+@router.get("/audit", response_model=Result[Page[AuditEventResponse]])
+async def query_audit_events(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    target_type: Optional[str] = Query(default=None, max_length=64),
+    action: Optional[str] = Query(default=None, max_length=64),
+    operator_user_id: Optional[str] = Query(default=None, max_length=128),
+    result: Optional[str] = Query(default=None, pattern="^(success|failed|denied)$"),
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    operator: UserRequest = Depends(require_permission("AUDIT_READ")),
+    service: AuditService = Depends(get_audit_service),
+) -> Result[Page[AuditEventResponse]]:
+    filters = AuditQueryRequest(
+        target_type=target_type,
+        action=action,
+        operator_user_id=operator_user_id,
+        result=result,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    events = await _run_management(service.query, filters, page, page_size, operator)
+    return Result.succ(events)
+
+
+@router.get("/audit/{event_id}", response_model=Result[AuditEventResponse])
+async def get_audit_event(
+    event_id: str,
+    operator: UserRequest = Depends(require_permission("AUDIT_READ")),
+    service: AuditService = Depends(get_audit_service),
+) -> Result[AuditEventResponse]:
+    event = await _run_management(service.get, event_id, operator)
+    return Result.succ(event)
