@@ -69,17 +69,31 @@ async def async_mock_parse_db_summary() -> str:
 _SEPARATOR = "--table-field-separator--"
 
 
-def _table_chunk(table_name: str, separated: bool) -> Chunk:
-    """Build a stored table chunk in the serialized summary format."""
+def _table_part(table_name: str) -> str:
+    return (
+        f"table_name: {table_name}\r\n"
+        f"table_comment: comment of {table_name}\r\n"
+        f"index_keys: pk\r\n"
+    )
+
+
+def _not_separated_chunk(table_name: str) -> Chunk:
+    """A table whose fields fit in one chunk: stored with its fields inline."""
     return Chunk(
-        content=(
-            f"table_name: {table_name}\r\n"
-            f"table_comment: comment of {table_name}\r\n"
-            f"index_keys: pk\r\n"
-            f"{_SEPARATOR}\r\n"
-            f"id int"
-        ),
-        metadata={"db_summary_version": "v1", "separated": separated},
+        content=f"{_table_part(table_name)}{_SEPARATOR}\r\nid int",
+        metadata={"db_summary_version": "v1", "separated": 0, "part": "table"},
+    )
+
+
+def _separated_chunk(table_name: str) -> Chunk:
+    """A table whose fields were split out into their own chunks.
+
+    RDBTextSplitter stores only the table part here (content.split(separator)[0]),
+    so this chunk carries no separator — _retrieve_field appends the fields back.
+    """
+    return Chunk(
+        content=_table_part(table_name),
+        metadata={"db_summary_version": "v1", "separated": 1, "part": "table"},
     )
 
 
@@ -94,14 +108,24 @@ def test_similarity_search_deserializes_table_chunks(
     deserialized or leaked in the stored format depending on what else the
     search happened to return.
     """
-    chunks = [_table_chunk("users", separated=False)]
+    chunks = [_not_separated_chunk("users")]
     if with_separated:
-        chunks.append(_table_chunk("orders", separated=True))
+        chunks.append(_separated_chunk("orders"))
     mock_table_vector_store_connector.similar_search_with_scores.return_value = chunks
-    dbstruct_retriever._retrieve_field = lambda chunk, query: chunk
 
     results = dbstruct_retriever._similarity_search("query")
 
-    users_chunk = next(c for c in results if "users" in c.content)
-    assert users_chunk.content.startswith("CREATE TABLE `users`")
-    assert "table_name: users" not in users_chunk.content
+    assert len(results) == len(chunks)
+    contents = [c.content for c in results]
+
+    users_chunk = contents[0]
+    assert users_chunk.startswith("CREATE TABLE `users`")
+    assert "table_name: users" not in users_chunk
+
+    if with_separated:
+        # The separated table goes through _retrieve_field, which fetches its
+        # fields from the field store and deserializes them back together.
+        orders_chunk = contents[1]
+        assert orders_chunk.startswith("CREATE TABLE `orders`")
+        assert "Field summary" in orders_chunk
+        assert _SEPARATOR not in orders_chunk
