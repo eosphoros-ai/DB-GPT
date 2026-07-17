@@ -470,9 +470,9 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
         is_poetry = _is_poetry_project(install_path)
 
         # Build the package
-        build_success = _build_package(install_path, is_poetry)
+        build_success, build_error = _build_package(install_path, is_poetry)
         if not build_success:
-            raise ValueError("Failed to build the package")
+            raise ValueError(f"Failed to build the package: {build_error}")
 
         wheel_files = list(install_path.glob("dist/*.whl"))
         if not wheel_files:
@@ -485,9 +485,11 @@ def inner_copy_and_install(repo: str, name: str, package_path: Path):
             f"Installing dbgpts '{name}' wheel file {_print_path(wheel_file)}..."
         )
 
-        install_success = _install_wheel(str(wheel_file))
+        install_success, install_error = _install_wheel(str(wheel_file))
         if not install_success:
-            raise ValueError(f"Failed to install wheel file: {wheel_file}")
+            raise ValueError(
+                f"Failed to install wheel file: {wheel_file}: {install_error}"
+            )
 
         _write_install_metadata(name, repo, install_path)
         logger.info(f"Installed dbgpts at {_print_path(install_path)}.")
