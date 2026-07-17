@@ -24,6 +24,7 @@ from dbgpt_serve.auth.models.models import (
     UserDao,
     UserEntity,
 )
+from dbgpt_serve.auth.service.authorization import AuthorizationMixin
 from dbgpt_serve.auth.service.importer import LszyzdImporter
 from dbgpt_serve.auth.service.management import ManagementMixin
 from dbgpt_serve.core import BaseService
@@ -48,7 +49,11 @@ class AuthConfigurationError(RuntimeError):
     """Raised when authentication cannot operate securely."""
 
 
-class Service(ManagementMixin, BaseService[UserEntity, object, UserResponse]):
+class Service(
+    AuthorizationMixin,
+    ManagementMixin,
+    BaseService[UserEntity, object, UserResponse],
+):
     """Password authentication and revocable session management."""
 
     name = SERVE_SERVICE_COMPONENT_NAME

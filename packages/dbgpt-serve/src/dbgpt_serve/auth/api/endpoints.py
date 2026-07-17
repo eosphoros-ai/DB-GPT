@@ -11,21 +11,33 @@ from dbgpt_serve.auth.api.schemas import (
     AccountSetImpactResponse,
     AccountSetResponse,
     AccountSetUpdateRequest,
+    AssignResourceAccountRequest,
     ConfirmImpactRequest,
+    ConfirmRevokeRequest,
     ImportBatchRequest,
     ImportBatchResponse,
     ImportCandidateResponse,
     LoginRequest,
     LoginResponse,
     Page,
+    ResourceImpactResponse,
+    ResourceResponse,
+    ResourceTypeName,
+    RevokeImpactResponse,
+    RevokeRequest,
     RoleName,
     RoleResponse,
     SetPasswordRequest,
+    UserAccountGrantRequest,
+    UserAccountGrantResponse,
     UserCreateRequest,
     UserListRequest,
+    UserResourceGrantRequest,
+    UserResourceGrantResponse,
     UserResponse,
     UserUpdateRequest,
 )
+from dbgpt_serve.auth.constants import ROLE_PERMISSIONS
 from dbgpt_serve.auth.service.errors import (
     ImpactConfirmationRequiredError,
     ImportSourceError,
@@ -48,6 +60,20 @@ def _prevent_admin_response_caching(response: Response) -> None:
 
 
 router = APIRouter(dependencies=[Depends(_prevent_admin_response_caching)])
+
+
+async def _require_resource_manager(
+    user: UserRequest = Depends(get_current_user),
+) -> UserRequest:
+    permissions = ROLE_PERMISSIONS.get(user.role or "", set())
+    if not permissions.intersection(
+        {"DATASOURCE_MANAGE", "KNOWLEDGE_BASE_MANAGE", "AGENT_MANAGE"}
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied",
+        )
+    return user
 
 
 async def _run_management(method: Callable, *args):
@@ -416,6 +442,235 @@ async def deactivate_account_set(
         False,
         operator,
         request,
+    )
+    return Result.succ(result)
+
+
+@router.get(
+    "/users/{user_id}/account-grants",
+    response_model=Result[Page[UserAccountGrantResponse]],
+)
+async def list_user_account_grants(
+    user_id: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    is_active: Optional[bool] = None,
+    operator: UserRequest = Depends(require_permission("USER_ACCOUNT_SET_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[UserAccountGrantResponse]]:
+    result = await _run_management(
+        service.list_user_account_grants,
+        user_id,
+        page,
+        page_size,
+        operator,
+        is_active,
+    )
+    return Result.succ(result)
+
+
+@router.post(
+    "/users/{user_id}/account-grants",
+    response_model=Result[UserAccountGrantResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def grant_user_account(
+    user_id: str,
+    request: UserAccountGrantRequest,
+    operator: UserRequest = Depends(require_permission("USER_ACCOUNT_SET_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserAccountGrantResponse]:
+    result = await _run_management(
+        service.grant_user_account,
+        user_id,
+        request.account_set_id,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.get(
+    "/users/{user_id}/account-grants/{grant_id}/impact",
+    response_model=Result[RevokeImpactResponse],
+)
+async def get_user_account_revoke_impact(
+    user_id: str,
+    grant_id: str,
+    operator: UserRequest = Depends(require_permission("USER_ACCOUNT_SET_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[RevokeImpactResponse]:
+    result = await _run_management(
+        service.get_user_account_revoke_impact,
+        user_id,
+        grant_id,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.delete(
+    "/users/{user_id}/account-grants/{grant_id}",
+    response_model=Result[RevokeImpactResponse],
+)
+async def revoke_user_account(
+    user_id: str,
+    grant_id: str,
+    request: ConfirmRevokeRequest,
+    operator: UserRequest = Depends(require_permission("USER_ACCOUNT_SET_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[RevokeImpactResponse]:
+    result = await _run_management(
+        service.revoke_user_account,
+        user_id,
+        grant_id,
+        request,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.get(
+    "/users/{user_id}/resource-grants",
+    response_model=Result[Page[UserResourceGrantResponse]],
+)
+async def list_user_resource_grants(
+    user_id: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    resource_type: Optional[ResourceTypeName] = None,
+    is_active: Optional[bool] = None,
+    operator: UserRequest = Depends(require_permission("USER_RESOURCE_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[UserResourceGrantResponse]]:
+    result = await _run_management(
+        service.list_user_resource_grants,
+        user_id,
+        page,
+        page_size,
+        operator,
+        resource_type,
+        is_active,
+    )
+    return Result.succ(result)
+
+
+@router.get(
+    "/users/{user_id}/resource-grants/available",
+    response_model=Result[list[ResourceResponse]],
+)
+async def list_available_user_resources(
+    user_id: str,
+    operator: UserRequest = Depends(require_permission("USER_RESOURCE_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[list[ResourceResponse]]:
+    result = await _run_management(
+        service.list_available_user_resources, user_id, operator
+    )
+    return Result.succ(result)
+
+
+@router.post(
+    "/users/{user_id}/resource-grants",
+    response_model=Result[UserResourceGrantResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def grant_user_resource(
+    user_id: str,
+    request: UserResourceGrantRequest,
+    operator: UserRequest = Depends(require_permission("USER_RESOURCE_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResourceGrantResponse]:
+    result = await _run_management(
+        service.grant_user_resource,
+        user_id,
+        request.resource_type,
+        request.resource_id,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.delete(
+    "/users/{user_id}/resource-grants/{grant_id}",
+    response_model=Result[UserResourceGrantResponse],
+)
+async def revoke_user_resource(
+    user_id: str,
+    grant_id: str,
+    request: RevokeRequest,
+    operator: UserRequest = Depends(require_permission("USER_RESOURCE_GRANT")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResourceGrantResponse]:
+    result = await _run_management(
+        service.revoke_user_resource,
+        user_id,
+        grant_id,
+        request,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.get("/resources", response_model=Result[Page[ResourceResponse]])
+async def list_managed_resources(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    resource_type: Optional[ResourceTypeName] = None,
+    account_set_id: Optional[str] = Query(default=None, max_length=128),
+    unassigned: bool = False,
+    operator: UserRequest = Depends(_require_resource_manager),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[ResourceResponse]]:
+    result = await _run_management(
+        service.list_managed_resources,
+        page,
+        page_size,
+        operator,
+        resource_type,
+        account_set_id,
+        unassigned,
+    )
+    return Result.succ(result)
+
+
+@router.get(
+    "/resources/{resource_type}/{resource_id}/impact",
+    response_model=Result[ResourceImpactResponse],
+)
+async def get_resource_impact(
+    resource_type: ResourceTypeName,
+    resource_id: str,
+    new_account_set_id: str = Query(min_length=1, max_length=128),
+    operator: UserRequest = Depends(_require_resource_manager),
+    service: Service = Depends(get_auth_service),
+) -> Result[ResourceImpactResponse]:
+    result = await _run_management(
+        service.get_resource_impact,
+        resource_type,
+        resource_id,
+        new_account_set_id,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.patch(
+    "/resources/{resource_type}/{resource_id}/account-set",
+    response_model=Result[ResourceResponse],
+)
+async def assign_resource_account(
+    resource_type: ResourceTypeName,
+    resource_id: str,
+    request: AssignResourceAccountRequest,
+    operator: UserRequest = Depends(_require_resource_manager),
+    service: Service = Depends(get_auth_service),
+) -> Result[ResourceResponse]:
+    result = await _run_management(
+        service.assign_resource_account,
+        resource_type,
+        resource_id,
+        request,
+        operator,
     )
     return Result.succ(result)
 

@@ -12,6 +12,7 @@ from dbgpt_serve.auth.models.models import UserEntity
 T = TypeVar("T")
 RoleName = Literal["system_admin", "operations_admin", "query_user"]
 CreatableRoleName = Literal["operations_admin", "query_user"]
+ResourceTypeName = Literal["DATASOURCE", "KNOWLEDGE_BASE", "AGENT"]
 
 
 def _trim_required(value: str, field_name: str) -> str:
@@ -185,6 +186,116 @@ class RoleResponse(BaseModel):
     role: RoleName
     permissions: list[str]
     user_count: int
+
+
+class UserAccountGrantRequest(BaseModel):
+    """Grant one active account set to a non-system administrator."""
+
+    account_set_id: str = Field(min_length=1, max_length=128)
+
+
+class UserAccountGrantResponse(BaseModel):
+    """Persisted user account-set grant."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    grant_id: str
+    user_id: str
+    account_set_id: str
+    is_active: bool
+    granted_by: str
+    revoked_by: Optional[str] = None
+    revoked_at: Optional[datetime] = None
+    revoke_reason: Optional[str] = None
+    gmt_created: datetime
+
+
+class UserResourceGrantRequest(BaseModel):
+    """Grant one concrete protected resource to a query user."""
+
+    resource_type: ResourceTypeName
+    resource_id: str = Field(min_length=1, max_length=128)
+
+
+class UserResourceGrantResponse(BaseModel):
+    """Persisted query-user resource grant."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    grant_id: str
+    user_id: str
+    resource_type: ResourceTypeName
+    resource_id: str
+    account_set_id: str
+    is_active: bool
+    granted_by: str
+    revoked_by: Optional[str] = None
+    revoked_at: Optional[datetime] = None
+    revoke_reason: Optional[str] = None
+    gmt_created: datetime
+
+
+class RevokeRequest(BaseModel):
+    """Reason required for an auditable grant revocation."""
+
+    reason: str = Field(min_length=1, max_length=512)
+
+    @field_validator("reason")
+    @classmethod
+    def normalize_reason(cls, value: str) -> str:
+        return _trim_required(value, "reason")
+
+
+class ConfirmRevokeRequest(RevokeRequest):
+    """Current-impact confirmation for account-set grant revocation."""
+
+    confirm_impact: bool = False
+    impact_token: str = Field(min_length=64, max_length=64)
+
+
+class RevokeImpactResponse(BaseModel):
+    """Resource grants affected by revoking a user's account-set scope."""
+
+    grant_id: str
+    affected_resource_grants: int
+    affected_grants_detail: list[dict]
+    impact_token: str
+
+
+class ResourceResponse(BaseModel):
+    """Common administration view over all protected resource types."""
+
+    resource_type: ResourceTypeName
+    resource_id: str
+    name: str
+    account_set_id: Optional[str] = None
+
+
+class ResourceImpactResponse(BaseModel):
+    """Current grant impact of changing a resource's account-set owner."""
+
+    resource_type: ResourceTypeName
+    resource_id: str
+    current_account_set_id: Optional[str] = None
+    new_account_set_id: str
+    affected_resource_grants: int
+    affected_agent_grants: int
+    affected_grants_detail: list[dict]
+    impact_token: str
+
+
+class AssignResourceAccountRequest(BaseModel):
+    """Confirmed high-risk account-set assignment for a resource."""
+
+    account_set_id: str = Field(min_length=1, max_length=128)
+    reason: str = Field(min_length=1, max_length=512)
+    confirm_impact: bool = False
+    impact_token: str = Field(min_length=64, max_length=64)
+
+    @field_validator("reason")
+    @classmethod
+    def normalize_reason(cls, value: str) -> str:
+        return _trim_required(value, "reason")
 
 
 class ImportCandidateResponse(BaseModel):
