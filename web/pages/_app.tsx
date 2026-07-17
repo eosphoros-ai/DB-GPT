@@ -130,6 +130,17 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  if (router.pathname.startsWith('/admin')) {
+    return (
+      <ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#0C75FC', borderRadius: 4 } }}>
+        <App>
+          <Component {...pageProps} />
+        </App>
+      </ConfigProvider>
+    );
+  }
+
   return (
     <ChatContextProvider>
       <CssWrapper>
