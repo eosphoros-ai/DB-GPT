@@ -23,6 +23,11 @@ def initialize_components(
     )
     from dbgpt_app.initialization.scheduler import DefaultScheduler
     from dbgpt_app.initialization.serve_initialization import register_serve_apps
+    from dbgpt_serve.auth.config import (
+        SERVE_CONFIG_KEY_PREFIX as AUTH_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt_serve.auth.config import ServeConfig as AuthServeConfig
+    from dbgpt_serve.auth.service.service import Service as AuthService
     from dbgpt_serve.datasource.manages.connector_manager import ConnectorManager
 
     web_config = param.service.web
@@ -37,6 +42,10 @@ def initialize_components(
     system_app.register_instance(controller)
     system_app.register(ConnectorManager)
     system_app.register(StorageManager)
+    auth_config = AuthServeConfig.from_app_config(
+        system_app.config, AUTH_CONFIG_KEY_PREFIX
+    )
+    system_app.register(AuthService, config=auth_config)
 
     from dbgpt_serve.agent.hub.controller import module_plugin
 

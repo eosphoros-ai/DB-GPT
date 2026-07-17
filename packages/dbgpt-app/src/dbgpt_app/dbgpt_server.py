@@ -27,6 +27,7 @@ from dbgpt.util.utils import (
 )
 from dbgpt_app.base import (
     _create_model_start_listener,
+    _init_default_admin,
     _migration_db_storage,
     server_init,
 )
@@ -68,6 +69,7 @@ def mount_routers(app: FastAPI):
     from dbgpt_app.openapi.api_v2 import router as api_v2
     from dbgpt_serve.agent.app.controller import router as gpts_v1
     from dbgpt_serve.agent.app.endpoints import router as app_v2
+    from dbgpt_serve.auth.api.endpoints import router as auth_admin_router
 
     app.include_router(api_v1, prefix="/api", tags=["Chat"])
     app.include_router(api_v2, prefix="/api", tags=["ChatV2"])
@@ -80,6 +82,7 @@ def mount_routers(app: FastAPI):
     app.include_router(agentic_data_api, prefix="/api", tags=["AgenticData"])
 
     app.include_router(knowledge_router, tags=["Knowledge"])
+    app.include_router(auth_admin_router, prefix="/api/v1/admin", tags=["Admin"])
 
     from dbgpt_serve.agent.app.recommend_question.controller import (
         router as recommend_question_v1,
@@ -167,6 +170,7 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
     _migration_db_storage(
         param.service.web.database, web_config.disable_alembic_upgrade
     )
+    _init_default_admin(system_app)
 
     # After init, when the database is ready
     system_app.after_init()

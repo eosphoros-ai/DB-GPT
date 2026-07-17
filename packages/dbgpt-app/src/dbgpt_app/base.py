@@ -163,6 +163,15 @@ def _migration_db_storage(
             logger.warning(warn_msg)
 
 
+def _init_default_admin(system_app: SystemApp) -> None:
+    """Create the configured first system administrator when required."""
+    from dbgpt_serve.auth.config import SERVE_SERVICE_COMPONENT_NAME
+    from dbgpt_serve.auth.service.service import Service as AuthService
+
+    service = system_app.get_component(SERVE_SERVICE_COMPONENT_NAME, AuthService)
+    service.ensure_initial_admin()
+
+
 def _initialize_db(
     db_url: str,
     db_type: str,
