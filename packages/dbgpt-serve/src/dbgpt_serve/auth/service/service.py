@@ -8,8 +8,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
@@ -63,11 +63,8 @@ class Service(BaseService[UserEntity, object, UserResponse]):
         self._validate_config()
         self._dao = user_dao or UserDao()
         self._session_dao = session_dao or SessionDao()
-        self._password_context = CryptContext(
-            schemes=["bcrypt"], bcrypt__rounds=12, deprecated="auto"
-        )
         self._dummy_password = secrets.token_urlsafe(32)
-        self._dummy_password_hash = self._password_context.hash(self._dummy_password)
+        self._dummy_password_hash = self.hash_password(self._dummy_password)
 
     @property
     def dao(self) -> BaseDao:
@@ -83,7 +80,21 @@ class Service(BaseService[UserEntity, object, UserResponse]):
             raise ValueError("Password must not be empty")
         if len(password.encode("utf-8")) > 72:
             raise ValueError("Password must not exceed 72 bytes")
-        return self._password_context.hash(password)
+        return bcrypt.hashpw(
+            password.encode("utf-8"), bcrypt.gensalt(rounds=12)
+        ).decode("ascii")
+
+    @staticmethod
+    def verify_password(password: str, password_hash: str) -> bool:
+        """Verify a supported plaintext password against a bcrypt hash."""
+        if not password or len(password.encode("utf-8")) > 72:
+            return False
+        try:
+            return bcrypt.checkpw(
+                password.encode("utf-8"), password_hash.encode("ascii")
+            )
+        except (TypeError, ValueError, UnicodeError):
+            return False
 
     def login(
         self, login_name: str, password: str, ip: str, user_agent: str
@@ -116,12 +127,7 @@ class Service(BaseService[UserEntity, object, UserResponse]):
             candidate_password = (
                 password if password_is_supported else self._dummy_password
             )
-            try:
-                password_matches = self._password_context.verify(
-                    candidate_password, candidate_hash
-                )
-            except (TypeError, ValueError):
-                password_matches = False
+            password_matches = self.verify_password(candidate_password, candidate_hash)
             password_matches = password_matches and password_is_supported
 
             is_locked = bool(user and user.locked_until and user.locked_until > now)

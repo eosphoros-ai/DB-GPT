@@ -180,7 +180,7 @@ def test_initial_admin_is_created_once(service):
     with db.session(commit=False) as session:
         user = session.query(UserEntity).one()
         assert user.password_hash != "initial-password"
-        assert service._password_context.verify("initial-password", user.password_hash)
+        assert service.verify_password("initial-password", user.password_hash)
 
 
 def test_initial_admin_rejects_invalid_bootstrap_credentials(service):
