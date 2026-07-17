@@ -1,5 +1,6 @@
 """Authentication dependencies shared by DB-GPT HTTP endpoints."""
 
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -28,6 +29,9 @@ class UserRequest(BaseModel):
     role: Optional[str] = "normal"
     is_active: bool = True
     session_id: Optional[str] = Field(default=None, exclude=True)
+    source_ip: Optional[str] = Field(default=None, exclude=True)
+    user_agent: Optional[str] = Field(default=None, exclude=True)
+    request_id: Optional[str] = Field(default=None, exclude=True)
     gmt_created: Optional[datetime] = None
     disabled_at: Optional[datetime] = None
 
@@ -86,6 +90,9 @@ async def get_current_user(
                 detail="CSRF validation failed",
             )
 
+    raw_request_id = getattr(request.state, "request_id", None)
+    request_id = str(raw_request_id).strip()[:128] if raw_request_id else ""
+
     return UserRequest(
         user_id=user.user_id,
         login_name=user.login_name,
@@ -93,6 +100,9 @@ async def get_current_user(
         role=user.role,
         is_active=user.is_active,
         session_id=session_id,
+        source_ip=(request.client.host if request.client else "")[:64] or None,
+        user_agent=request.headers.get("user-agent", "")[:512] or None,
+        request_id=request_id or str(uuid.uuid4()),
         gmt_created=user.gmt_created,
         disabled_at=user.disabled_at,
         user_no=user.user_id,

@@ -24,6 +24,8 @@ from dbgpt_serve.auth.models.models import (
     UserDao,
     UserEntity,
 )
+from dbgpt_serve.auth.service.importer import LszyzdImporter
+from dbgpt_serve.auth.service.management import ManagementMixin
 from dbgpt_serve.core import BaseService
 
 logger = logging.getLogger(__name__)
@@ -46,7 +48,7 @@ class AuthConfigurationError(RuntimeError):
     """Raised when authentication cannot operate securely."""
 
 
-class Service(BaseService[UserEntity, object, UserResponse]):
+class Service(ManagementMixin, BaseService[UserEntity, object, UserResponse]):
     """Password authentication and revocable session management."""
 
     name = SERVE_SERVICE_COMPONENT_NAME
@@ -57,12 +59,14 @@ class Service(BaseService[UserEntity, object, UserResponse]):
         config: ServeConfig,
         user_dao: Optional[UserDao] = None,
         session_dao: Optional[SessionDao] = None,
+        importer: Optional[LszyzdImporter] = None,
     ) -> None:
         super().__init__(system_app)
         self._config = config
         self._validate_config()
         self._dao = user_dao or UserDao()
         self._session_dao = session_dao or SessionDao()
+        self._importer = importer
         self._dummy_password = secrets.token_urlsafe(32)
         self._dummy_password_hash = self.hash_password(self._dummy_password)
 

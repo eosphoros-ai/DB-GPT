@@ -1,19 +1,83 @@
 """Authentication endpoints for the administration API."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from typing import Callable, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from starlette.concurrency import run_in_threadpool
 
 from dbgpt.core.schema.api import Result
-from dbgpt_serve.auth.api.schemas import LoginRequest, LoginResponse, UserResponse
+from dbgpt_serve.auth.api.schemas import (
+    AccountSetCreateRequest,
+    AccountSetImpactResponse,
+    AccountSetResponse,
+    AccountSetUpdateRequest,
+    ConfirmImpactRequest,
+    ImportBatchRequest,
+    ImportBatchResponse,
+    ImportCandidateResponse,
+    LoginRequest,
+    LoginResponse,
+    Page,
+    RoleName,
+    RoleResponse,
+    SetPasswordRequest,
+    UserCreateRequest,
+    UserListRequest,
+    UserResponse,
+    UserUpdateRequest,
+)
+from dbgpt_serve.auth.service.errors import (
+    ImpactConfirmationRequiredError,
+    ImportSourceError,
+    ManagementConflictError,
+    ManagementError,
+    ManagementNotFoundError,
+    ManagementValidationError,
+)
 from dbgpt_serve.auth.service.service import (
     AuthConfigurationError,
     AuthenticationError,
     Service,
     get_auth_service,
 )
-from dbgpt_serve.utils.auth import UserRequest, get_current_user
+from dbgpt_serve.utils.auth import UserRequest, get_current_user, require_permission
 
-router = APIRouter()
+
+def _prevent_admin_response_caching(response: Response) -> None:
+    response.headers["Cache-Control"] = "no-store"
+
+
+router = APIRouter(dependencies=[Depends(_prevent_admin_response_caching)])
+
+
+async def _run_management(method: Callable, *args):
+    try:
+        return await run_in_threadpool(method, *args)
+    except ManagementNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
+    except (ImpactConfirmationRequiredError, ManagementConflictError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
+    except ManagementValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
+    except ImportSourceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
+    except ManagementError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
 
 
 @router.post("/auth/login", response_model=Result[LoginResponse])
@@ -126,3 +190,278 @@ async def current_user(
             disabled_at=user.disabled_at,
         )
     )
+
+
+@router.get("/users", response_model=Result[Page[UserResponse]])
+async def list_users(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    login_name_like: Optional[str] = Query(default=None, max_length=128),
+    display_name_like: Optional[str] = Query(default=None, max_length=255),
+    role: Optional[RoleName] = None,
+    is_active: Optional[bool] = None,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[UserResponse]]:
+    filters = UserListRequest(
+        login_name_like=login_name_like,
+        display_name_like=display_name_like,
+        role=role,
+        is_active=is_active,
+    )
+    result = await _run_management(
+        service.list_users, filters, page, page_size, operator
+    )
+    return Result.succ(result)
+
+
+@router.post(
+    "/users", response_model=Result[UserResponse], status_code=status.HTTP_201_CREATED
+)
+async def create_user(
+    request: UserCreateRequest,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResponse]:
+    result = await _run_management(service.create_user, request, operator)
+    return Result.succ(result)
+
+
+@router.get("/users/{user_id}", response_model=Result[UserResponse])
+async def get_user(
+    user_id: str,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResponse]:
+    result = await _run_management(service.get_managed_user, user_id, operator)
+    return Result.succ(result)
+
+
+@router.patch("/users/{user_id}", response_model=Result[UserResponse])
+async def update_user(
+    user_id: str,
+    request: UserUpdateRequest,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResponse]:
+    result = await _run_management(service.update_user, user_id, request, operator)
+    return Result.succ(result)
+
+
+@router.post("/users/{user_id}/activate", response_model=Result[UserResponse])
+async def activate_user(
+    user_id: str,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResponse]:
+    result = await _run_management(service.toggle_user_active, user_id, True, operator)
+    return Result.succ(result)
+
+
+@router.post("/users/{user_id}/deactivate", response_model=Result[UserResponse])
+async def deactivate_user(
+    user_id: str,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[UserResponse]:
+    result = await _run_management(service.toggle_user_active, user_id, False, operator)
+    return Result.succ(result)
+
+
+@router.post("/users/{user_id}/set-password", response_model=Result[None])
+async def set_user_password(
+    user_id: str,
+    request: SetPasswordRequest,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[None]:
+    await _run_management(
+        service.set_password,
+        user_id,
+        request.new_password.get_secret_value(),
+        operator,
+    )
+    return Result.succ(None)
+
+
+@router.get("/roles", response_model=Result[list[RoleResponse]])
+async def list_roles(
+    operator: UserRequest = Depends(require_permission("ROLE_READ")),
+    service: Service = Depends(get_auth_service),
+) -> Result[list[RoleResponse]]:
+    result = await _run_management(service.list_roles, operator)
+    return Result.succ(result)
+
+
+@router.get("/roles/{role}/users", response_model=Result[Page[UserResponse]])
+async def list_role_users(
+    role: RoleName,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    operator: UserRequest = Depends(require_permission("ROLE_READ")),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[UserResponse]]:
+    result = await _run_management(
+        service.list_users,
+        UserListRequest(role=role),
+        page,
+        page_size,
+        operator,
+    )
+    return Result.succ(result)
+
+
+@router.get("/account-sets", response_model=Result[Page[AccountSetResponse]])
+async def list_account_sets(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    name_like: Optional[str] = Query(default=None, max_length=255),
+    is_active: Optional[bool] = None,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[AccountSetResponse]]:
+    result = await _run_management(
+        service.list_account_sets,
+        page,
+        page_size,
+        operator,
+        name_like,
+        is_active,
+    )
+    return Result.succ(result)
+
+
+@router.post(
+    "/account-sets",
+    response_model=Result[AccountSetResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_account_set(
+    request: AccountSetCreateRequest,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[AccountSetResponse]:
+    result = await _run_management(service.create_account_set, request, operator)
+    return Result.succ(result)
+
+
+@router.get("/account-sets/{account_set_id}", response_model=Result[AccountSetResponse])
+async def get_account_set(
+    account_set_id: str,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[AccountSetResponse]:
+    result = await _run_management(service.get_account_set, account_set_id, operator)
+    return Result.succ(result)
+
+
+@router.patch(
+    "/account-sets/{account_set_id}", response_model=Result[AccountSetResponse]
+)
+async def update_account_set(
+    account_set_id: str,
+    request: AccountSetUpdateRequest,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[AccountSetResponse]:
+    result = await _run_management(
+        service.update_account_set, account_set_id, request, operator
+    )
+    return Result.succ(result)
+
+
+@router.get(
+    "/account-sets/{account_set_id}/impact",
+    response_model=Result[AccountSetImpactResponse],
+)
+async def get_account_set_impact(
+    account_set_id: str,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[AccountSetImpactResponse]:
+    result = await _run_management(
+        service.get_account_set_impact, account_set_id, operator
+    )
+    return Result.succ(result)
+
+
+@router.post(
+    "/account-sets/{account_set_id}/activate",
+    response_model=Result[AccountSetResponse],
+)
+async def activate_account_set(
+    account_set_id: str,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[AccountSetResponse]:
+    result = await _run_management(
+        service.toggle_account_set_active, account_set_id, True, operator, None
+    )
+    return Result.succ(result)
+
+
+@router.post(
+    "/account-sets/{account_set_id}/deactivate",
+    response_model=Result[AccountSetResponse],
+)
+async def deactivate_account_set(
+    account_set_id: str,
+    request: ConfirmImpactRequest,
+    operator: UserRequest = Depends(require_permission("ACCOUNT_SET_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[AccountSetResponse]:
+    result = await _run_management(
+        service.toggle_account_set_active,
+        account_set_id,
+        False,
+        operator,
+        request,
+    )
+    return Result.succ(result)
+
+
+@router.get("/import/candidates", response_model=Result[list[ImportCandidateResponse]])
+async def preview_import_candidates(
+    limit: int = Query(default=100, ge=1, le=100),
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[list[ImportCandidateResponse]]:
+    result = await _run_management(service.preview_import_candidates, operator, limit)
+    return Result.succ(result)
+
+
+@router.post(
+    "/import/batch",
+    response_model=Result[ImportBatchResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_import_batch(
+    request: ImportBatchRequest,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[ImportBatchResponse]:
+    result = await _run_management(service.create_from_import, request, operator)
+    return Result.succ(result)
+
+
+@router.get("/import/batches", response_model=Result[Page[ImportBatchResponse]])
+async def list_import_batches(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[Page[ImportBatchResponse]]:
+    result = await _run_management(
+        service.list_import_batches, page, page_size, operator
+    )
+    return Result.succ(result)
+
+
+@router.get("/import/batches/{batch_id}", response_model=Result[ImportBatchResponse])
+async def get_import_batch(
+    batch_id: str,
+    operator: UserRequest = Depends(require_permission("USER_MANAGE")),
+    service: Service = Depends(get_auth_service),
+) -> Result[ImportBatchResponse]:
+    result = await _run_management(service.get_import_batch, batch_id, operator)
+    return Result.succ(result)

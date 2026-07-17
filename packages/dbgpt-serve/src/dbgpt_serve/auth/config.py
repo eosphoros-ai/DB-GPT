@@ -21,6 +21,8 @@ class ServeConfig(BaseServeConfig):
     jwt_absolute_expire_minutes: int = field(default=1440)
     login_fail_lock_threshold: int = field(default=5)
     login_fail_lock_minutes: int = field(default=30)
+    lszyzd_datasource: str = field(default="LSZYZD")
+    lszyzd_table: str = field(default="LSZYZD")
     initial_admin_login: str = field(default="admin")
     initial_admin_password: str = field(
         default="", repr=False, metadata={"tags": "privacy"}
