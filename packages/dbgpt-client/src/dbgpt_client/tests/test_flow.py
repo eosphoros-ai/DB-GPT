@@ -56,3 +56,4 @@ async def test_create_flow_posts_instead_of_get():
     assert created.name == "test_flow"
     assert client.requests[0][0] == "post"
     assert client.requests[0][1] == "/awel/flows"
+    assert client.requests[0][2] == request.to_dict()

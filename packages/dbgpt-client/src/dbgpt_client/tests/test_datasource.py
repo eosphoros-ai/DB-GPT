@@ -1,5 +1,6 @@
 import pytest
 
+from dbgpt._private.pydantic import model_to_dict
 from dbgpt_client.datasource import create_datasource
 from dbgpt_client.schema import DatasourceModel
 
@@ -67,3 +68,4 @@ async def test_create_datasource_posts_instead_of_get():
     assert created.db_name == "test_db"
     assert client.requests[0][0] == "post"
     assert client.requests[0][1] == "/datasources"
+    assert client.requests[0][2] == model_to_dict(request)
