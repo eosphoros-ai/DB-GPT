@@ -71,7 +71,7 @@ export function ConfirmModal({
           </Button>
         </Space>
       }
-      destroyOnClose
+      destroyOnHidden
       maskClosable={!submitting}
     >
       <Space className='w-full' direction='vertical' size={16}>
