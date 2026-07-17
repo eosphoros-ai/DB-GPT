@@ -44,6 +44,7 @@ class ConnectConfigEntity(Model):
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     user_id = Column(String(128), index=True, nullable=True, comment="User id")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
+    account_set_id = Column(String(128), nullable=True, comment="Owning account set ID")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
     ext_config = Column(
@@ -52,6 +53,7 @@ class ConnectConfigEntity(Model):
     __table_args__ = (
         UniqueConstraint("db_name", name="uk_db"),
         Index("idx_q_db_type", "db_type"),
+        Index("idx_connect_account_set", "account_set_id"),
     )
 
 

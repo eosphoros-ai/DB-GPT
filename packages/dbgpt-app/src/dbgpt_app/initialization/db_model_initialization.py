@@ -10,8 +10,20 @@ from dbgpt_app.share.models import ShareLinkEntity
 from dbgpt_serve.agent.app.recommend_question.recommend_question import (
     RecommendQuestionEntity,
 )
+from dbgpt_serve.agent.db.gpts_app import GptsAppEntity
 from dbgpt_serve.agent.hub.db.my_plugin_db import MyPluginEntity
 from dbgpt_serve.agent.hub.db.plugin_hub_db import PluginHubEntity
+from dbgpt_serve.auth.models.models import (
+    AccountSetEntity,
+    AuditEventEntity,
+    ImportBatchEntity,
+    SessionEntity,
+    TokenDailyEntity,
+    TokenUsageEntity,
+    UserAccountGrantEntity,
+    UserEntity,
+    UserResourceGrantEntity,
+)
 from dbgpt_serve.datasource.manages.connect_config_db import ConnectConfigEntity
 from dbgpt_serve.evaluate.db.benchmark_db import BenchmarkSummaryEntity
 from dbgpt_serve.file.models.models import ServeEntity as FileServeEntity
@@ -24,6 +36,15 @@ from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
 
 _MODELS = [
     PluginHubEntity,
+    UserEntity,
+    AccountSetEntity,
+    UserAccountGrantEntity,
+    UserResourceGrantEntity,
+    ImportBatchEntity,
+    TokenUsageEntity,
+    TokenDailyEntity,
+    AuditEventEntity,
+    SessionEntity,
     FileServeEntity,
     MyPluginEntity,
     PromptManageEntity,
@@ -37,6 +58,7 @@ _MODELS = [
     ModelInstanceEntity,
     FlowServeEntity,
     RecommendQuestionEntity,
+    GptsAppEntity,
     FlowVariableEntity,
     BenchmarkSummaryEntity,
     ShareLinkEntity,

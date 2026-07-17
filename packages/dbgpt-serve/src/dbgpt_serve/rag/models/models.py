@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text
 
 from dbgpt._private.pydantic import model_to_dict
 from dbgpt.storage.metadata import BaseDao, Model
@@ -18,8 +18,11 @@ class KnowledgeSpaceEntity(Model):
     desc = Column(String(100))
     owner = Column(String(100))
     context = Column(Text)
+    account_set_id = Column(String(128), nullable=True, comment="Owning account set ID")
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
+
+    __table_args__ = (Index("idx_ks_account_set", "account_set_id"),)
 
     def __repr__(self):
         return (

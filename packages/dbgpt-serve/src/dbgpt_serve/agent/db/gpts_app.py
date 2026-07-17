@@ -314,6 +314,7 @@ class GptsAppEntity(Model):
 
     user_code = Column(String(255), nullable=True, comment="user code")
     sys_code = Column(String(255), nullable=True, comment="system app code")
+    account_set_id = Column(String(128), nullable=True, comment="Owning account set ID")
     published = Column(String(64), nullable=True, comment="published")
 
     param_need = Column(
@@ -331,7 +332,10 @@ class GptsAppEntity(Model):
     )
     admins = Column(Text, nullable=True, comment="administrators")
 
-    __table_args__ = (UniqueConstraint("app_name", name="uk_gpts_app"),)
+    __table_args__ = (
+        UniqueConstraint("app_name", name="uk_gpts_app"),
+        Index("idx_app_account_set", "account_set_id"),
+    )
 
 
 class GptsAppDetailEntity(Model):
