@@ -10,6 +10,7 @@ class DatasourceServeRequest(BaseModel):
 
     """vector_type: vector type"""
     id: Optional[int] = Field(None, description="The datasource id")
+    account_set_id: Optional[str] = Field(None, description="Owning account set ID")
     db_type: str = Field(..., description="Database type, e.g. sqlite, mysql, etc.")
     db_name: str = Field(..., description="Database name.")
     db_path: Optional[str] = Field("", description="File path for file-based database.")
@@ -32,6 +33,7 @@ class DatasourceServeResponse(BaseModel):
 
     """vector_type: vector type"""
     id: int = Field(None, description="The datasource id")
+    account_set_id: Optional[str] = Field(None, description="Owning account set ID")
     db_type: str = Field(..., description="Database type, e.g. sqlite, mysql, etc.")
     db_name: str = Field(..., description="Database name.")
     db_path: Optional[str] = Field("", description="File path for file-based database.")
@@ -76,6 +78,7 @@ class DatasourceCreateRequest(BaseModel):
         None, description="Optional description of the datasource."
     )
     id: Optional[int] = Field(None, description="The datasource id")
+    account_set_id: Optional[str] = Field(None, description="Owning account set ID")
 
     class Config:
         json_schema_extra = {

@@ -206,7 +206,7 @@ def agent_dependencies(session, agent_id: str) -> list[ResourceRecord]:
                 f"Agent {agent_id} contains invalid dependency metadata"
             )
         for item in items:
-            dependency = _resolve_dependency(session, agent_id, item)
+            dependency = resolve_agent_dependency(session, agent_id, item)
             if dependency is not None:
                 dependencies[(dependency.resource_type, dependency.resource_id)] = (
                     dependency
@@ -233,7 +233,9 @@ def dependent_agent_ids(session, dependency_type: str, dependency_id: str) -> se
     return matches
 
 
-def _resolve_dependency(session, agent_id: str, item: Any) -> Optional[ResourceRecord]:
+def resolve_agent_dependency(
+    session, agent_id: str, item: Any
+) -> Optional[ResourceRecord]:
     if not isinstance(item, dict):
         raise ResourceLookupError(
             f"Agent {agent_id} contains invalid dependency metadata"
@@ -254,7 +256,7 @@ def _resolve_dependency(session, agent_id: str, item: Any) -> Optional[ResourceR
         raise ResourceLookupError(
             f"Agent {agent_id} has an unresolved {resource_type} dependency"
         )
-    dependency = _get_resource_by_id_or_name(session, resource_type, lookup_value)
+    dependency = get_resource_by_id_or_name(session, resource_type, lookup_value)
     if dependency is None:
         raise ResourceLookupError(
             f"Agent {agent_id} references a missing {resource_type} dependency"
@@ -280,7 +282,7 @@ def _dependency_lookup_value(resource_type: str, value: Any) -> Optional[str]:
     return None
 
 
-def _get_resource_by_id_or_name(
+def get_resource_by_id_or_name(
     session, resource_type: str, lookup_value: str
 ) -> Optional[ResourceRecord]:
     definition = resource_definition(resource_type)

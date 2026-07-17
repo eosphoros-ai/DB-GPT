@@ -14,6 +14,7 @@ from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from dbgpt.component import SystemApp
 from dbgpt.util import PaginationResult
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
+from dbgpt_serve.auth.service.access import AccessService, get_access_service
 from dbgpt_serve.core import Result, blocking_func_to_async
 from dbgpt_serve.rag.api.schemas import (
     DocumentServeRequest,
@@ -25,6 +26,7 @@ from dbgpt_serve.rag.api.schemas import (
 )
 from dbgpt_serve.rag.config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from dbgpt_serve.rag.service.service import Service
+from dbgpt_serve.utils.auth import UserRequest, require_permission
 
 router = APIRouter()
 
@@ -112,6 +114,8 @@ async def test_auth():
 async def create(
     request: SpaceServeRequest,
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Create a new Space entity
 
@@ -121,12 +125,20 @@ async def create(
     Returns:
         ServerResponse: The response
     """
+    if not request.account_set_id:
+        raise HTTPException(status_code=422, detail="account_set_id is required")
+    access.require_account_access(
+        operator, request.account_set_id, "KNOWLEDGE_BASE_MANAGE"
+    )
     return Result.succ(service.create_space(request))
 
 
-@router.put("/spaces", dependencies=[Depends(check_api_key)])
+@router.put("/spaces")
 async def update(
-    request: SpaceServeRequest, service: Service = Depends(get_service)
+    request: SpaceServeRequest,
+    service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Update a Space entity
 
@@ -136,16 +148,29 @@ async def update(
     Returns:
         ServerResponse: The response
     """
+    if request.id is None:
+        raise HTTPException(status_code=422, detail="id is required")
+    resource = access.require_resource_access(
+        operator, "KNOWLEDGE_BASE", str(request.id), manage=True
+    )
+    if request.account_set_id not in (None, resource.account_set_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Use the resource account-set impact and assignment APIs",
+        )
+    request.account_set_id = resource.account_set_id
     return Result.succ(service.update_space(request))
 
 
 @router.delete(
     "/spaces/{space_id}",
     response_model=Result[None],
-    dependencies=[Depends(check_api_key)],
 )
 async def delete(
-    space_id: str, service: Service = Depends(get_service)
+    space_id: str,
+    service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result[None]:
     """Delete a Space entity
 
@@ -155,6 +180,7 @@ async def delete(
     Returns:
         ServerResponse: The response
     """
+    access.require_resource_access(operator, "KNOWLEDGE_BASE", space_id, manage=True)
     # TODO: Delete the files in the space
     res = await blocking_func_to_async(global_system_app, service.delete, space_id)
     return Result.succ(res)
@@ -164,9 +190,11 @@ async def delete(
     "/spaces/{space_id}",
     response_model=Result[List],
 )
-async def query(
+async def query_space(
     space_id: str,
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_USE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result[List[SpaceServeResponse]]:
     """Query Space entities
 
@@ -176,6 +204,7 @@ async def query(
     Returns:
         List[ServeResponse]: The response
     """
+    access.require_resource_access(operator, "KNOWLEDGE_BASE", space_id)
     request = {"id": space_id}
     return Result.succ(service.get(request))
 
@@ -184,10 +213,12 @@ async def query(
     "/spaces",
     response_model=Result[PaginationResult[SpaceServeResponse]],
 )
-async def query_page(
+async def query_space_page(
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_USE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result[PaginationResult[SpaceServeResponse]]:
     """Query Space entities
 
@@ -198,7 +229,13 @@ async def query_page(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get_list_by_page({}, page, page_size))
+    result = service.get_list_by_page({}, page, page_size)
+    allowed_ids = access.allowed_resource_ids(operator, "KNOWLEDGE_BASE")
+    if allowed_ids is not None:
+        result.items = [item for item in result.items if str(item.id) in allowed_ids]
+        result.total_count = len(result.items)
+        result.total_pages = 1 if result.items else 0
+    return Result.succ(result)
 
 
 @router.post("/spaces/{space_id}/retrieve")
@@ -206,6 +243,8 @@ async def space_retrieve(
     space_id: int,
     request: KnowledgeRetrieveRequest,
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_USE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Create a new Document entity
 
@@ -216,6 +255,7 @@ async def space_retrieve(
     Returns:
         ServerResponse: The response
     """
+    access.require_resource_access(operator, "KNOWLEDGE_BASE", str(space_id))
     request.space_id = space_id
     space_request = {
         "id": space_id,
@@ -234,6 +274,8 @@ async def create_document(
     content: Optional[str] = Form(None),
     doc_file: Union[UploadFile, str] = Form(None),
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Create a new Document entity
 
@@ -243,6 +285,7 @@ async def create_document(
     Returns:
         ServerResponse: The response
     """
+    access.require_resource_access(operator, "KNOWLEDGE_BASE", space_id, manage=True)
     request = DocumentServeRequest(
         doc_name=doc_name,
         doc_type=doc_type,
@@ -260,9 +303,11 @@ async def create_document(
     "/documents/{document_id}",
     response_model=Result[List],
 )
-async def query(
+async def query_document(
     document_id: int,
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_USE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result[List[SpaceServeResponse]]:
     """Query Space entities
 
@@ -272,6 +317,7 @@ async def query(
     Returns:
         List[ServeResponse]: The response
     """
+    access.require_document_access(operator, str(document_id))
     request = {"id": document_id}
     return Result.succ(service.get_document(request))
 
@@ -280,10 +326,12 @@ async def query(
     "/documents",
     response_model=Result[PaginationResult[SpaceServeResponse]],
 )
-async def query_page(
+async def query_document_page(
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_USE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result[PaginationResult[DocumentServeResponse]]:
     """Query Space entities
 
@@ -294,7 +342,13 @@ async def query_page(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get_document_list_page({}, page, page_size))
+    result = service.get_document_list_page({}, page, page_size)
+    allowed_names = access.allowed_resource_names(operator, "KNOWLEDGE_BASE")
+    if allowed_names is not None:
+        result.items = [item for item in result.items if item.space in allowed_names]
+        result.total_count = len(result.items)
+        result.total_pages = 1 if result.items else 0
+    return Result.succ(result)
 
 
 @router.post("/documents/chunks/add")
@@ -303,13 +357,21 @@ async def add_documents_chunks(
     space_id: int = Form(...),
     content: List[str] = Form(None),
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """ """
+    access.require_resource_access(
+        operator, "KNOWLEDGE_BASE", str(space_id), manage=True
+    )
 
 
-@router.post("/documents/sync", dependencies=[Depends(check_api_key)])
+@router.post("/documents/sync")
 async def sync_documents(
-    requests: List[KnowledgeSyncRequest], service: Service = Depends(get_service)
+    requests: List[KnowledgeSyncRequest],
+    service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Create a new Document entity
 
@@ -319,13 +381,26 @@ async def sync_documents(
     Returns:
         ServerResponse: The response
     """
+    for request in requests:
+        if request.doc_id is not None:
+            access.require_document_access(operator, str(request.doc_id), manage=True)
+        elif request.space_id:
+            access.require_resource_access(
+                operator, "KNOWLEDGE_BASE", str(request.space_id), manage=True
+            )
+        else:
+            raise HTTPException(
+                status_code=422, detail="doc_id or space_id is required"
+            )
     return Result.succ(service.sync_document(requests))
 
 
 @router.post("/documents/batch_sync")
-async def sync_documents(
+async def batch_sync_documents(
     requests: List[KnowledgeSyncRequest],
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Create a new Document entity
 
@@ -335,6 +410,17 @@ async def sync_documents(
     Returns:
         ServerResponse: The response
     """
+    for request in requests:
+        if request.doc_id is not None:
+            access.require_document_access(operator, str(request.doc_id), manage=True)
+        elif request.space_id:
+            access.require_resource_access(
+                operator, "KNOWLEDGE_BASE", str(request.space_id), manage=True
+            )
+        else:
+            raise HTTPException(
+                status_code=422, detail="doc_id or space_id is required"
+            )
     return Result.succ(service.sync_document(requests))
 
 
@@ -343,6 +429,8 @@ async def sync_document(
     document_id: int,
     request: KnowledgeSyncRequest,
     service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result:
     """Create a new Document entity
 
@@ -352,6 +440,7 @@ async def sync_document(
     Returns:
         ServerResponse: The response
     """
+    access.require_document_access(operator, str(document_id), manage=True)
     request.doc_id = document_id
     if request.chunk_parameters is None:
         request.chunk_parameters = ChunkParameters(chunk_strategy="Automatic")
@@ -360,11 +449,13 @@ async def sync_document(
 
 @router.delete(
     "/documents/{document_id}",
-    dependencies=[Depends(check_api_key)],
     response_model=Result[None],
 )
 async def delete_document(
-    document_id: str, service: Service = Depends(get_service)
+    document_id: str,
+    service: Service = Depends(get_service),
+    operator: UserRequest = Depends(require_permission("KNOWLEDGE_BASE_MANAGE")),
+    access: AccessService = Depends(get_access_service),
 ) -> Result[None]:
     """Delete a Space entity
 
@@ -374,6 +465,7 @@ async def delete_document(
     Returns:
         ServerResponse: The response
     """
+    access.require_document_access(operator, document_id, manage=True)
     # TODO: Delete the files of the document
     res = await blocking_func_to_async(
         global_system_app, service.delete_document, document_id

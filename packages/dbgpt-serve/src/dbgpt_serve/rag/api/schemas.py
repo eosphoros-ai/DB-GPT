@@ -13,6 +13,7 @@ class SpaceServeRequest(BaseModel):
 
     """vector_type: vector type"""
     id: Optional[int] = Field(None, description="The space id")
+    account_set_id: Optional[str] = Field(None, description="Owning account set ID")
     name: str = Field(None, description="The space name")
     """vector_type: vector type"""
     vector_type: str = Field(None, description="The vector type")
@@ -148,6 +149,7 @@ class SpaceServeResponse(BaseModel):
 
     """vector_type: vector type"""
     id: Optional[int] = Field(None, description="The space id")
+    account_set_id: Optional[str] = Field(None, description="Owning account set ID")
     name: Optional[str] = Field(None, description="The space name")
     """vector_type: vector type"""
     vector_type: Optional[str] = Field(None, description="The vector type")

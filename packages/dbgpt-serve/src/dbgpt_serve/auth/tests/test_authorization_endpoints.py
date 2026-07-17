@@ -30,28 +30,28 @@ def setup_database():
     with db.engine.begin() as connection:
         connection.execute(
             text(
-                "CREATE TABLE connect_config ("
+                "CREATE TABLE IF NOT EXISTS connect_config ("
                 "id INTEGER PRIMARY KEY, db_name VARCHAR(255), "
                 "account_set_id VARCHAR(128))"
             )
         )
         connection.execute(
             text(
-                "CREATE TABLE knowledge_space ("
+                "CREATE TABLE IF NOT EXISTS knowledge_space ("
                 "id INTEGER PRIMARY KEY, name VARCHAR(255), "
                 "account_set_id VARCHAR(128))"
             )
         )
         connection.execute(
             text(
-                "CREATE TABLE gpts_app ("
+                "CREATE TABLE IF NOT EXISTS gpts_app ("
                 "id INTEGER PRIMARY KEY, app_code VARCHAR(255), "
                 "app_name VARCHAR(255), account_set_id VARCHAR(128))"
             )
         )
         connection.execute(
             text(
-                "CREATE TABLE gpts_app_detail ("
+                "CREATE TABLE IF NOT EXISTS gpts_app_detail ("
                 "id INTEGER PRIMARY KEY, app_code VARCHAR(255), resources TEXT)"
             )
         )

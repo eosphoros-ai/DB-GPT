@@ -126,6 +126,7 @@ class Service(
         else:
             persisted_state = model_to_dict(request)
             desc = request.comment
+        persisted_state["account_set_id"] = request.account_set_id
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
@@ -175,11 +176,6 @@ class Service(
         Returns:
             DatasourceQueryResponse: The response
         """
-        str_db_type = (
-            request.type
-            if isinstance(request, DatasourceCreateRequest)
-            else request.db_type
-        )
         desc = ""
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
@@ -190,6 +186,7 @@ class Service(
         else:
             persisted_state = model_to_dict(request)
             desc = request.comment
+        persisted_state["account_set_id"] = request.account_set_id
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
@@ -272,6 +269,7 @@ class Service(
             params=param_dict,
             description=res.comment,
             id=res.id,
+            account_set_id=res.account_set_id,
             db_name=res.db_name,
             gmt_created=res.gmt_created,
             gmt_modified=res.gmt_modified,

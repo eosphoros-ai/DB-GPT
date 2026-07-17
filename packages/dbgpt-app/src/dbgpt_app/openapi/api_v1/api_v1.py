@@ -47,6 +47,7 @@ from dbgpt_app.openapi.api_view_model import (
 )
 from dbgpt_app.scene import BaseChat, ChatFactory, ChatParam, ChatScene
 from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
+from dbgpt_serve.auth.service.access import AccessService, get_access_service
 from dbgpt_serve.core import blocking_func_to_async
 from dbgpt_serve.datasource.manages.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt_serve.datasource.service.db_summary_client import DBSummaryClient
@@ -509,10 +510,17 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 async def chat_prepare(
     dialogue: ConversationVo = Body(),
     user_token: UserRequest = Depends(get_user_from_headers),
+    access: AccessService = Depends(get_access_service),
 ):
     logger.info(json.dumps(dialogue.__dict__))
     # dialogue.model_name = CFG.LLM_MODEL
     dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    access.require_chat_access(
+        user_token,
+        dialogue.chat_mode,
+        dialogue.select_param,
+        dialogue.app_code,
+    )
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
     chat: BaseChat = await get_chat_instance(dialogue)
@@ -528,6 +536,7 @@ async def chat_completions(
     dialogue: ConversationVo = Body(),
     flow_service: FlowService = Depends(get_chat_flow),
     user_token: UserRequest = Depends(get_user_from_headers),
+    access: AccessService = Depends(get_access_service),
 ):
     logger.info(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},"
@@ -543,6 +552,12 @@ async def chat_completions(
             # Switch to chat_knowledge mode with selected space
             dialogue.chat_mode = ChatScene.ChatKnowledge.value()
             dialogue.select_param = knowledge_space
+    access.require_chat_access(
+        user_token,
+        dialogue.chat_mode,
+        dialogue.select_param,
+        dialogue.app_code,
+    )
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",

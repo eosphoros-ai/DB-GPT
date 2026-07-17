@@ -39,6 +39,7 @@ class KnowledgeSpaceDao(BaseDao):
         session = self.get_raw_session()
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
+            account_set_id=space.account_set_id,
             vector_type=space.vector_type,
             domain_type=space.domain_type,
             desc=space.desc,
@@ -165,6 +166,7 @@ class KnowledgeSpaceDao(BaseDao):
         """
         return SpaceServeRequest(
             id=entity.id,
+            account_set_id=entity.account_set_id,
             name=entity.name,
             vector_type=entity.vector_type,
             desc=entity.desc,
@@ -183,6 +185,7 @@ class KnowledgeSpaceDao(BaseDao):
         """
         return SpaceServeResponse(
             id=entity.id,
+            account_set_id=entity.account_set_id,
             name=entity.name,
             vector_type=entity.vector_type,
             desc=entity.desc,

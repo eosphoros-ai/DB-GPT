@@ -2,10 +2,9 @@ import json
 import re
 import time
 import uuid
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 from fastapi import APIRouter, Body, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import JSONResponse, StreamingResponse
 
 from dbgpt._private.pydantic import model_to_dict, model_to_json
@@ -33,45 +32,20 @@ from dbgpt_app.openapi.api_v1.api_v1 import (
 from dbgpt_app.scene import BaseChat, ChatParam, ChatScene
 from dbgpt_client.schema import ChatCompletionRequestBody, ChatMode
 from dbgpt_serve.agent.agents.controller import multi_agents
+from dbgpt_serve.auth.service.access import AccessService, get_access_service
 from dbgpt_serve.flow.api.endpoints import get_service
+from dbgpt_serve.utils.auth import UserRequest, get_current_user
 
 router = APIRouter()
 api_settings = APISettings()
-get_bearer_token = HTTPBearer(auto_error=False)
 
 
-async def check_api_key(
-    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
-    service=Depends(get_service),
-) -> Optional[str]:
-    """Check the api key
-    Args:
-        auth (Optional[HTTPAuthorizationCredentials]): The bearer token.
-        service (Service): The flow service.
-    """
-    if service.config.api_keys:
-        api_keys = [key.strip() for key in service.config.api_keys.split(",")]
-        if auth is None or (token := auth.credentials) not in api_keys:
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "error": {
-                        "message": "",
-                        "type": "invalid_request_error",
-                        "param": None,
-                        "code": "invalid_api_key",
-                    }
-                },
-            )
-        return token
-    else:
-        return None
-
-
-@router.post("/v2/chat/completions", dependencies=[Depends(check_api_key)])
+@router.post("/v2/chat/completions")
 async def chat_completions(
     request: ChatCompletionRequestBody = Body(),
     service=Depends(get_service),
+    user: UserRequest = Depends(get_current_user),
+    access: AccessService = Depends(get_access_service),
 ):
     """Chat V2 completions
     Args:
@@ -80,6 +54,12 @@ async def chat_completions(
     Raises:
         HTTPException: If the request is invalid.
     """
+    access.require_chat_access(
+        user,
+        request.chat_mode,
+        request.chat_param,
+        getattr(request, "app_code", None),
+    )
     logger.info(
         f"chat_completions:{request.chat_mode},{request.chat_param},{request.model}"
     )

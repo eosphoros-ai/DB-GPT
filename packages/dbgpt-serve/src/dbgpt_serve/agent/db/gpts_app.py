@@ -112,6 +112,7 @@ class GptsApp(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     app_code: Optional[str] = None
+    account_set_id: Optional[str] = None
     app_name: Optional[str] = None
     app_describe: Optional[str] = None
     team_mode: Optional[str] = None
@@ -155,6 +156,7 @@ class GptsApp(BaseModel):
     def from_dict(cls, d: Dict[str, Any]):
         return cls(
             app_code=d.get("app_code", None),
+            account_set_id=d.get("account_set_id", None),
             app_name=d["app_name"],
             language=d["language"],
             app_describe=d["app_describe"],
@@ -691,6 +693,7 @@ class GptsAppDao(BaseDao):
     ):
         return {
             "app_code": app_info.app_code,
+            "account_set_id": app_info.account_set_id,
             "app_name": app_info.app_name,
             "language": app_info.language,
             "app_describe": app_info.app_describe,
@@ -850,6 +853,7 @@ class GptsAppDao(BaseDao):
         with self.session() as session:
             app_entity = GptsAppEntity(
                 app_code=gpts_app.app_code if gpts_app.app_code else str(uuid.uuid1()),
+                account_set_id=gpts_app.account_set_id,
                 app_name=gpts_app.app_name,
                 app_describe=gpts_app.app_describe,
                 team_mode=gpts_app.team_mode,
@@ -925,6 +929,7 @@ class GptsAppDao(BaseDao):
             app_entity = app_qry.one()
 
             app_entity.app_name = gpts_app.app_name
+            app_entity.account_set_id = gpts_app.account_set_id
             app_entity.app_describe = gpts_app.app_describe
             app_entity.language = gpts_app.language
             app_entity.team_mode = gpts_app.team_mode
