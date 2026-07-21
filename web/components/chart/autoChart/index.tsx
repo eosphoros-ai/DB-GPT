@@ -166,7 +166,7 @@ export const AutoChart = (props: AutoChartProps) => {
     );
   }
 
-  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={'暂无合适的可视化视图'} />;
+  return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={i18n.t('noSuitableVisualization')} />;
 };
 
 export * from './helpers';

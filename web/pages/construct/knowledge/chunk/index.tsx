@@ -89,7 +89,7 @@ function ChunkList() {
     {
       manual: true,
       onSuccess: async () => {
-        message.success('添加成功');
+        message.success(t('add_success'));
         setIsModalOpen(false);
         await fetchChunks();
       },

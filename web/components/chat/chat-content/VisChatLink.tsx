@@ -2,6 +2,7 @@ import { ChatContentContext } from '@/pages/chat';
 import { MobileChatContext } from '@/pages/mobile/chat';
 import { Button } from 'antd';
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface VisChatLinkProps {
   children: any;
@@ -10,6 +11,7 @@ interface VisChatLinkProps {
 const VisChatLink: React.FC<VisChatLinkProps> = ({ children, msg }) => {
   const { handleChat: webHandleChat } = useContext(ChatContentContext);
   const { handleChat: mobileHandleChat } = useContext(MobileChatContext);
+  const { t } = useTranslation();
   return (
     <Button
       className='ml-1 inline text-xs'
@@ -20,7 +22,7 @@ const VisChatLink: React.FC<VisChatLinkProps> = ({ children, msg }) => {
       type='dashed'
       size='small'
     >
-      {children || '点击分析当前异常'}
+      {children || t('clickToAnalyzeException')}
     </Button>
   );
 };

@@ -62,7 +62,7 @@ function ConversationsPage() {
       e.preventDefault();
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
-        message.success('已删除');
+        message.success(t('deleted'));
         const current = totalRef.current;
         if (current) {
           const remaining = current.total_count - 1;
@@ -94,14 +94,14 @@ function ConversationsPage() {
           <Input
             variant='filled'
             prefix={<SearchOutlined />}
-            placeholder='搜索对话...'
+            placeholder={t('search_conversations')}
             onChange={e => handleSearch(e.target.value)}
             onClear={() => setSearchKeyword('')}
             allowClear
             className='w-[230px] h-[36px] border-1 border-white backdrop-filter backdrop-blur-lg bg-white bg-opacity-30 dark:border-[#6f7f95] dark:bg-[#6f7f95] dark:bg-opacity-60'
           />
           <span className='text-sm text-gray-400 whitespace-nowrap'>
-            {totalRef.current ? `共 ${totalRef.current.total_count} 条` : ''}
+            {totalRef.current ? t('total_items', { count: totalRef.current.total_count }) : ''}
           </span>
         </div>
       </div>
@@ -114,7 +114,7 @@ function ConversationsPage() {
             </div>
           ) : !loading && filteredList.length === 0 ? (
             <div className='flex items-center justify-center h-64'>
-              <Empty description='没有匹配的对话' />
+              <Empty description={t('no_matching_conversations')} />
             </div>
           ) : (
             <div className='space-y-1'>
@@ -138,17 +138,17 @@ function ConversationsPage() {
                   </div>
 
                   <Popconfirm
-                    title='确认删除这条对话记录吗？'
+                    title={t('confirm_delete_conversation')}
                     onConfirm={e => handleDelete(e as React.MouseEvent, conv.conv_uid)}
                     onCancel={e => {
                       e?.stopPropagation();
                       e?.preventDefault();
                     }}
-                    okText='删除'
-                    cancelText='取消'
+                    okText={t('delete')}
+                    cancelText={t('cancel')}
                     okButtonProps={{ danger: true }}
                   >
-                    <Tooltip title='删除'>
+                    <Tooltip title={t('delete')}>
                       <div
                         onClick={e => {
                           e.stopPropagation();
@@ -174,7 +174,7 @@ function ConversationsPage() {
             total={totalRef.current?.total_count || 0}
             pageSize={PAGE_SIZE}
             showSizeChanger={false}
-            showTotal={total => `共 ${total} 条`}
+            showTotal={total => t('total_items', { count: total })}
             onChange={page => fetchList(page)}
           />
         </div>

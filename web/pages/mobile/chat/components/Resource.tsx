@@ -6,12 +6,14 @@ import { useRequest } from 'ahooks';
 import type { MenuProps } from 'antd';
 import { Dropdown, Spin, Upload } from 'antd';
 import React, { useContext, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MobileChatContext } from '../';
 import OptionIcon from './OptionIcon';
 
 const Resource: React.FC = () => {
   const { appInfo, resourceList, scene, model, conv_uid, getChatHistoryRun, setResource, resource } =
     useContext(MobileChatContext);
+  const { t } = useTranslation();
 
   const { temperatureValue, maxNewTokensValue } = useContext(ChatContentContext);
   const [selectedVal, setSelectedVal] = useState<any>(null);
@@ -84,7 +86,7 @@ const Resource: React.FC = () => {
       return (
         <div className='flex items-center gap-1'>
           <Spin size='small' indicator={<LoadingOutlined spin />} />
-          <span className='text-xs'>上传中</span>
+          <span className='text-xs'>{t('uploading')}</span>
         </div>
       );
     }
@@ -99,7 +101,7 @@ const Resource: React.FC = () => {
     return (
       <div className='flex items-center gap-1'>
         <FolderAddOutlined className='text-base' />
-        <span className='text-xs'>上传文件</span>
+        <span className='text-xs'>{t('upload_file')}</span>
       </div>
     );
   }, [loading, resource]);

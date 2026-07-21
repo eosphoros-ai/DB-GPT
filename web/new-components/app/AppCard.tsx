@@ -5,15 +5,16 @@ import { Card, Tag, Tooltip, Typography } from 'antd';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import React, { useContext } from 'react';
-
-const languageMap = {
-  en: '英文',
-  zh: '中文',
-};
+import { useTranslation } from 'react-i18next';
 
 const AppCard: React.FC<{ data: IApp }> = ({ data }) => {
+  const { t } = useTranslation();
   const { setAgent: setAgentToChat, model } = useContext(ChatContext);
   const router = useRouter();
+  const languageMap: Record<string, string> = {
+    en: t('languageEn'),
+    zh: t('languageZh'),
+  };
   return (
     <Card
       className='flex h-full flex-col bg-white rounded-lg dark:bg-[#232734] dark:text-white'

@@ -201,8 +201,8 @@ const AddNodesSider: React.FC = () => {
           </p>
 
           <Switch
-            checkedChildren='高阶'
-            unCheckedChildren='全部'
+            checkedChildren={t('higher_order')}
+            unCheckedChildren={t('all')}
             onClick={onModeChange}
             className={classnames('w-20', { 'bg-zinc-400': isAllNodesVisible })}
             defaultChecked

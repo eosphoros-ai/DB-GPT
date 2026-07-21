@@ -100,7 +100,7 @@ function SideBar() {
       const [err] = await apiInterceptors(delDialogue(convUid));
       if (!err) {
         setDialogueList(prev => prev.filter(d => d.conv_uid !== convUid));
-        message.success('已删除');
+        message.success(t('deleted'));
       }
     } catch (error) {
       console.error('Failed to delete dialogue', error);
@@ -115,10 +115,10 @@ function SideBar() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 1) return '刚刚';
-    if (diffMins < 60) return `${diffMins}分钟前`;
-    if (diffHours < 24) return `${diffHours}小时前`;
-    if (diffDays < 7) return `${diffDays}天前`;
+    if (diffMins < 1) return t('justNow');
+    if (diffMins < 60) return t('minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('daysAgo', { count: diffDays });
     return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
   }, []);
 
@@ -504,7 +504,7 @@ function SideBar() {
                     <div className='text-[11px] text-gray-400 mt-0.5'>{formatRelativeTime(conv.gmt_created)}</div>
                   )}
                 </div>
-                <Tooltip title='删除'>
+                <Tooltip title={t('delete')}>
                   <DeleteOutlined
                     onClick={e => handleDeleteDialogue(e, conv.conv_uid)}
                     className='text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1'

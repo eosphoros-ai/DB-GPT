@@ -64,7 +64,7 @@ const DislikeContent: React.FC<{
             setFeedbackOpen(false);
           }}
         >
-          取消
+          {t('cancel')}
         </Button>
         <Button
           type='primary'
@@ -79,7 +79,7 @@ const DislikeContent: React.FC<{
           }}
           loading={loading}
         >
-          确认
+          {t('confirm')}
         </Button>
       </div>
     </div>
@@ -129,7 +129,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success('反馈成功');
+        message.success(t('feedbackSuccess'));
         setFeedbackOpen(false);
       },
     },
@@ -156,7 +156,7 @@ const Feedback: React.FC<{ content: Record<string, any> }> = ({ content }) => {
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success('操作成功');
+          message.success(t('operationSuccess'));
         }
       },
     },

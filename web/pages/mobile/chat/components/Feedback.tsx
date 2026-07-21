@@ -6,6 +6,7 @@ import { App, Button, Divider } from 'antd';
 import classNames from 'classnames';
 import copy from 'copy-to-clipboard';
 import React, { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MobileChatContext } from '..';
 import DislikeDrawer from './DislikeDrawer';
 
@@ -21,6 +22,7 @@ const Feedback: React.FC<{
 }> = ({ content, index, chatDialogRef }) => {
   const { conv_uid, history, scene } = useContext(MobileChatContext);
   const { message } = App.useApp();
+  const { t } = useTranslation();
 
   const [feedbackOpen, setFeedbackOpen] = useState<boolean>(false);
   const [status, setStatus] = useState<'like' | 'unlike' | 'none'>(content?.feedback?.feedback_type);
@@ -32,12 +34,12 @@ const Feedback: React.FC<{
     const result = copy(chatDialogRef.current?.textContent || pureStr);
     if (result) {
       if (pureStr) {
-        message.success('复制成功');
+        message.success(t('copy_success'));
       } else {
-        message.warning('内容复制为空');
+        message.warning(t('copy_content_empty'));
       }
     } else {
-      message.error('复制失败');
+      message.error(t('copy_failed'));
     }
   };
 
@@ -58,7 +60,7 @@ const Feedback: React.FC<{
       onSuccess: data => {
         const [, res] = data;
         setStatus(res?.feedback_type);
-        message.success('反馈成功');
+        message.success(t('feedback_success'));
         setFeedbackOpen(false);
       },
     },
@@ -73,7 +75,7 @@ const Feedback: React.FC<{
         const [, res] = data;
         if (res) {
           setStatus('none');
-          message.success('操作成功');
+          message.success(t('operation_success'));
         }
       },
     },
@@ -97,7 +99,7 @@ const Feedback: React.FC<{
     {
       manual: true,
       onSuccess: () => {
-        message.success('操作成功');
+        message.success(t('operation_success'));
       },
     },
   );
@@ -149,7 +151,7 @@ const Feedback: React.FC<{
             }}
             className='text-xs'
           >
-            终止话题
+            {t('stop_topic')}
           </Button>
         )}
       </div>

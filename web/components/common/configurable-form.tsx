@@ -1,6 +1,7 @@
 import { ConfigurableParams } from '@/types/common';
 import { Checkbox, Form, FormInstance, Input, InputNumber, Select } from 'antd';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import NestedFormFields from './nested-form-fields';
 
 interface ParamValues {
@@ -14,6 +15,7 @@ const isComplexValidValues = (values: any[]): boolean => {
 };
 
 function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> | null; form: FormInstance<any> }) {
+  const { t } = useTranslation();
   // Initialize the default value of the form
   useEffect(() => {
     if (params) {
@@ -115,7 +117,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
 
       // Handle password input box
       if (isPrivacy) {
-        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder='请输入密码' />;
+        return <Input.Password disabled={isFixed} autoComplete='new-password' placeholder={t('please_enter_password')} />;
       }
 
       // Handle normal text input box

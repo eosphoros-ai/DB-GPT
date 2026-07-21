@@ -3,6 +3,7 @@ import { CopyOutlined } from '@ant-design/icons';
 import { Button, message } from 'antd';
 import copy from 'copy-to-clipboard';
 import { CSSProperties, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { coldarkDark, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -16,6 +17,7 @@ interface Props {
 
 export function CodePreview({ code, light, dark, language, customStyle }: Props) {
   const { mode } = useContext(ChatContext);
+  const { t } = useTranslation();
 
   return (
     <div className='relative'>
@@ -25,7 +27,7 @@ export function CodePreview({ code, light, dark, language, customStyle }: Props)
         icon={<CopyOutlined />}
         onClick={() => {
           const success = copy(code);
-          message[success ? 'success' : 'error'](success ? '复制成功' : '复制失败');
+          message[success ? 'success' : 'error'](success ? t('copySuccess') : t('copyFailed'));
         }}
       />
       <SyntaxHighlighter

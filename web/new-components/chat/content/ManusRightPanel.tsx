@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
@@ -241,26 +242,26 @@ const getArtifactFileBg = (type: string): string => {
 
 const getArtifactTypeLabel = (type: string): string => {
   const map: Record<string, string> = {
-    file: '文件',
-    html: '网页报告',
-    table: '数据表',
-    chart: '图表',
-    image: '图片',
-    code: '代码',
-    markdown: '文档',
-    summary: '分析总结',
+    file: i18n.t('artifactTypeFile'),
+    html: i18n.t('artifactTypeWebReport'),
+    table: i18n.t('artifactTypeDataTable'),
+    chart: i18n.t('artifactTypeChart'),
+    image: i18n.t('artifactTypeImage'),
+    code: i18n.t('artifactTypeCode'),
+    markdown: i18n.t('artifactTypeDocument'),
+    summary: i18n.t('artifactTypeAnalysisSummary'),
   };
-  return map[type] || '产物';
+  return map[type] || i18n.t('artifactTypeArtifact');
 };
 
 type FileFilterTab = 'all' | 'document' | 'image' | 'code' | 'link';
 
 const FILE_FILTER_TABS: { key: FileFilterTab; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'document', label: '文档' },
-  { key: 'image', label: '图片' },
-  { key: 'code', label: '代码文件' },
-  { key: 'link', label: '链接' },
+  { key: 'all', label: i18n.t('fileFilterAll') },
+  { key: 'document', label: i18n.t('fileFilterDocument') },
+  { key: 'image', label: i18n.t('fileFilterImage') },
+  { key: 'code', label: i18n.t('fileFilterCodeFile') },
+  { key: 'link', label: i18n.t('fileFilterLink') },
 ];
 
 const getFileFilterCategory = (artifact: ArtifactItem): FileFilterTab[] => {
@@ -293,13 +294,21 @@ const formatArtifactDate = (timestamp: number): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return '今天';
-  if (diffDays === 1) return '昨天';
+  if (diffDays === 0) return i18n.t('dateToday');
+  if (diffDays === 1) return i18n.t('dateYesterday');
   if (diffDays < 7) {
-    const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const dayNames = [
+      i18n.t('weekdaySunday'),
+      i18n.t('weekdayMonday'),
+      i18n.t('weekdayTuesday'),
+      i18n.t('weekdayWednesday'),
+      i18n.t('weekdayThursday'),
+      i18n.t('weekdayFriday'),
+      i18n.t('weekdaySaturday'),
+    ];
     return dayNames[date.getDay()];
   }
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return i18n.t('dateMonthDay', { month: date.getMonth() + 1, day: date.getDate() });
 };
 
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
@@ -728,6 +737,7 @@ const SkillScriptRenderer: React.FC<{
 SkillScriptRenderer.displayName = 'SkillScriptRenderer';
 
 const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutput }> = memo(({ code, html }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
   const htmlContent = html.content;
   const rawHtml =
@@ -748,7 +758,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <EyeOutlined className='mr-1.5' />
-          渲染结果
+          {t('renderResult')}
           {activeTab === 'preview' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -763,7 +773,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          源代码
+          {t('sourceCode')}
           {activeTab === 'source' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -814,6 +824,7 @@ HtmlTabbedRenderer.displayName = 'HtmlTabbedRenderer';
 const CodeExecutionRenderer: React.FC<{
   group: { codes: ExecutionOutput[]; results: ExecutionOutput[]; images: ExecutionOutput[] };
 }> = memo(({ group }) => {
+  const { t } = useTranslation();
   const hasImages = group.images.length > 0;
   const [activeTab, setActiveTab] = useState<'chart' | 'code'>(hasImages ? 'chart' : 'code');
 
@@ -821,7 +832,7 @@ const CodeExecutionRenderer: React.FC<{
     <>
       <div className='relative overflow-auto flex-1 min-h-[100px]'>
         <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
-          代码
+          {t('code')}
         </span>
         <CodePreview
           code={group.codes
@@ -838,7 +849,7 @@ const CodeExecutionRenderer: React.FC<{
           <div className='border-t border-gray-700/50 shrink-0' />
           <div className='relative overflow-auto bg-gray-900 flex-1 min-h-[60px]'>
             <span className='sticky top-0 right-0 float-right z-10 text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded mr-2 mt-2'>
-              执行结果
+              {t('executionResult')}
             </span>
             <div className='px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
               {group.results.map(r => String(r.content)).join('')}
@@ -891,7 +902,7 @@ const CodeExecutionRenderer: React.FC<{
           )}
         >
           <FileImageOutlined className='mr-1.5' />
-          图表
+          {t('chart')}
           {activeTab === 'chart' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -906,7 +917,7 @@ const CodeExecutionRenderer: React.FC<{
           )}
         >
           <CodeOutlined className='mr-1.5' />
-          代码
+          {t('code')}
           {activeTab === 'code' && (
             <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
           )}
@@ -937,6 +948,7 @@ const TerminalRenderer: React.FC<{
   activeStep: ActiveStepInfo;
   outputs: ExecutionOutput[];
 }> = memo(({ activeStep, outputs }) => {
+  const { t } = useTranslation();
   const command =
     parseShellCommand(activeStep.detail) ||
     outputs
@@ -970,7 +982,7 @@ const TerminalRenderer: React.FC<{
         <div className='flex items-center gap-2'>
           <StatusBadge status={activeStep.status} />
           {allText && (
-            <Tooltip title='复制全部'>
+            <Tooltip title={t('copyAll')}>
               <button
                 className='flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-700/50'
                 onClick={() => copyToClipboard(allText)}
@@ -1217,9 +1229,9 @@ const SkillCardRenderer: React.FC<{
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      message.success('下载成功');
+      message.success(t('downloadSuccess'));
     } catch {
-      message.error('下载失败');
+      message.error(t('downloadFailed'));
     } finally {
       setDownloading(false);
     }
@@ -1276,7 +1288,7 @@ const SkillCardRenderer: React.FC<{
               </div>
             </div>
             <div className='flex items-center gap-2 flex-shrink-0 ml-3'>
-              <Tooltip title='下载为 ZIP'>
+              <Tooltip title={t('downloadAsZip')}>
                 <button
                   className='flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors'
                   onClick={handleDownload}
@@ -1310,7 +1322,7 @@ const SkillCardRenderer: React.FC<{
             <FolderOpenOutlined className='text-amber-500' />
             <span>{t('view_skill_files')}</span>
             {detailData?.tree?.children && (
-              <span className='text-gray-400'>({detailData.tree.children.length} 项)</span>
+              <span className='text-gray-400'>{t('itemCount', { count: detailData.tree.children.length })}</span>
             )}
           </div>
           <RightOutlined className='text-[10px] text-gray-400' />
@@ -1344,7 +1356,7 @@ const SkillCardRenderer: React.FC<{
           </div>
         </div>
         <div className='flex items-center gap-2 flex-shrink-0'>
-          <Tooltip title='下载为 ZIP'>
+          <Tooltip title={t('downloadAsZip')}>
             <button
               className='flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors'
               onClick={handleDownload}
@@ -1434,7 +1446,7 @@ const SkillCardRenderer: React.FC<{
           ) : (
             <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
               <FileTextOutlined className='text-2xl mb-2' />
-              <span className='text-xs'>选择文件查看内容</span>
+              <span className='text-xs'>{t('selectFileToViewContent')}</span>
             </div>
           )}
         </div>
@@ -1500,7 +1512,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         win.focus();
         win.print();
       } else {
-        message.error('浏览器阻止了弹出窗口，请允许后重试');
+        message.error(t('popupBlockedRetry'));
       }
     }
   };
@@ -1886,7 +1898,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             ) : (
               <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
                 <FolderOpenOutlined className='text-3xl mb-4' />
-                <span className='text-sm'>暂无文件</span>
+                <span className='text-sm'>{t('noFiles')}</span>
               </div>
             )}
           </div>
@@ -2154,12 +2166,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                                     READ ONLY
                                   </span>
                                 </div>
-                                <Tooltip title='复制SQL'>
+                                <Tooltip title={t('copySql')}>
                                   <button
                                     className='flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700'
                                     onClick={() => {
                                       navigator.clipboard.writeText(sql);
-                                      message.success('SQL已复制到剪贴板');
+                                      message.success(t('sqlCopiedToClipboard'));
                                     }}
                                   >
                                     <CopyOutlined className='text-xs' />
@@ -2221,13 +2233,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                 {isRunning ? (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <LoadingOutlined className='text-3xl text-blue-500 mb-4' />
-                    <span className='text-sm'>正在执行...</span>
-                    <span className='text-xs text-gray-500 mt-1'>请稍候，结果即将显示</span>
+                    <span className='text-sm'>{t('executing')}</span>
+                    <span className='text-xs text-gray-500 mt-1'>{t('pleaseWaitResultsComing')}</span>
                   </div>
                 ) : (
                   <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
                     <FileTextOutlined className='text-3xl mb-4' />
-                    <span className='text-sm'>暂无输出结果</span>
+                    <span className='text-sm'>{t('noOutputResults')}</span>
                   </div>
                 )}
               </>
@@ -2239,8 +2251,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             <div className='w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4'>
               <ConsoleSqlOutlined className='text-3xl text-gray-400' />
             </div>
-            <span className='text-sm font-medium mb-1'>选择一个步骤查看详情</span>
-            <span className='text-xs text-gray-500'>点击左侧的步骤卡片以显示执行结果</span>
+            <span className='text-sm font-medium mb-1'>{t('selectStepToViewDetails')}</span>
+            <span className='text-xs text-gray-500'>{t('clickStepCardToShowResults')}</span>
           </div>
         )}
       </div>
@@ -2251,9 +2263,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           <div className='flex items-center gap-4'>
             <span className='flex items-center gap-1'>
               <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
-              {isRunning ? '执行中' : '就绪'}
+              {isRunning ? t('running') : t('ready')}
             </span>
-            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} 个输出</span>}
+            {visibleOutputs.length > 0 && <span>{t('outputCount', { count: visibleOutputs.length })}</span>}
           </div>
           {activeStep && <span>Step ID: {activeStep.id}</span>}
         </div>

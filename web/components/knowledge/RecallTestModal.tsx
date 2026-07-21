@@ -5,6 +5,7 @@ import { SettingOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Card, Empty, Form, Input, InputNumber, Modal, Popover, Select, Spin, Tag } from 'antd';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type RecallTestModalProps = {
   open: boolean;
@@ -15,6 +16,7 @@ type RecallTestModalProps = {
 // const tagColors = ['magenta', 'orange', 'geekblue', 'purple', 'cyan', 'green'];
 
 const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [extraForm] = Form.useForm();
 
@@ -74,7 +76,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
 
   return (
     <Modal
-      title='召回测试'
+      title={t('recall_test')}
       width={'60%'}
       open={open}
       footer={false}
@@ -83,14 +85,14 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
       destroyOnClose={true}
     >
       <Card
-        title='召回配置'
+        title={t('recall_config')}
         size='small'
         className='my-4'
         extra={
           <Popover
             placement='bottomRight'
             trigger='hover'
-            title='向量检索设置'
+            title={t('vector_retrieval_settings')}
             content={
               <Form
                 form={extraForm}
@@ -98,10 +100,10 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
                   recall_top_k: 1,
                 }}
               >
-                <Form.Item label='Topk' tooltip='基于相似度得分的前 k 个向量' name='recall_top_k'>
-                  <InputNumber placeholder='请输入' className='w-full' />
+                <Form.Item label='Topk' tooltip={t('topk_tooltip')} name='recall_top_k'>
+                  <InputNumber placeholder={t('please_enter')} className='w-full' />
                 </Form.Item>
-                <Form.Item label='召回方法' name='recall_retrievers'>
+                <Form.Item label={t('recall_method')} name='recall_retrievers'>
                   <Select
                     mode='multiple'
                     options={options.map(item => {
@@ -112,8 +114,8 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
                     disabled
                   />
                 </Form.Item>
-                <Form.Item label='score阈值' name='recall_score_threshold'>
-                  <InputNumber placeholder='请输入' className='w-full' step={0.1} />
+                <Form.Item label={t('score_threshold')} name='recall_score_threshold'>
+                  <InputNumber placeholder={t('please_enter')} className='w-full' step={0.1} />
                 </Form.Item>
               </Form>
             }
@@ -124,16 +126,16 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
       >
         <Form form={form} layout='vertical' onFinish={onTest}>
           <Form.Item
-            label='测试问题'
+            label={t('test_question')}
             required={true}
             name='question'
-            rules={[{ required: true, message: '请输入测试问题' }]}
+            rules={[{ required: true, message: t('please_enter_test_question') }]}
             className='m-0 p-0'
           >
             <div className='flex w-full items-center gap-8'>
-              <Input placeholder='请输入测试问题' autoComplete='off' allowClear className='w-1/2' />
+              <Input placeholder={t('please_enter_test_question')} autoComplete='off' allowClear className='w-1/2' />
               <Button type='primary' htmlType='submit'>
-                测试
+                {t('test')}
               </Button>
             </div>
           </Form.Item>
@@ -160,7 +162,7 @@ const RecallTestModal: React.FC<RecallTestModalProps> = ({ open, setOpen, space 
             )} */}
         </Form>
       </Card>
-      <Card title='召回结果' size='small'>
+      <Card title={t('recall_result')} size='small'>
         <Spin spinning={loading}>
           {resultList.length > 0 ? (
             <div

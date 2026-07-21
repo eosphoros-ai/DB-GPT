@@ -3,6 +3,7 @@ import MarkDownContext from '@/new-components/common/MarkdownContext';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { Modal, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type PromptSelectType = {
   promptList: Record<string, any>[];
@@ -10,6 +11,7 @@ type PromptSelectType = {
   onChange?: (value: string) => void;
 };
 const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList }) => {
+  const { t } = useTranslation();
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
   const [curPrompt, setCurPrompt] = useState<Record<string, any>>();
 
@@ -39,7 +41,7 @@ const PromptSelect: React.FC<PromptSelectType> = ({ value, onChange, promptList 
       {curPrompt && (
         <span className='text-sm text-blue-500 cursor-pointer' onClick={() => setShowPrompt(true)}>
           <ExclamationCircleOutlined className='mr-1' />
-          查看详情
+          {t('view_details')}
         </span>
       )}
       <Modal title='Prompt' open={showPrompt} footer={false} width={'60%'} onCancel={() => setShowPrompt(false)}>

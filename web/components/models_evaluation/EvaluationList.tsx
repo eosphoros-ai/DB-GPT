@@ -92,16 +92,16 @@ export const EvaluationList: React.FC<EvaluationListProps> = () => {
 
         if (state === 'running') {
           color = 'blue';
-          text = '运行中';
+          text = t('status_running');
         } else if (state === 'complete') {
           color = 'green';
-          text = '已完成';
+          text = t('status_completed');
         } else if (state === 'failed') {
           color = 'red';
-          text = '失败';
+          text = t('status_failed');
         } else if (state === 'pending') {
           color = 'orange';
-          text = '待处理';
+          text = t('status_pending');
         }
 
         if (record?.state === 'failed') {

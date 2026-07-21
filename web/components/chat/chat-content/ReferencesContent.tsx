@@ -4,9 +4,11 @@ import type { TabsProps } from 'antd';
 import { Divider, Drawer, Tabs, Typography } from 'antd';
 import { useRouter } from 'next/router';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ReferencesContentView: React.FC<{ references: any }> = ({ references }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const [open, setOpen] = useState<boolean>(false);
 
   // 是否移动端页面
@@ -43,11 +45,11 @@ const ReferencesContentView: React.FC<{ references: any }> = ({ references }) =>
       <Divider className='mb-1 mt-0' dashed />
       <div className='flex text-sm gap-2 text-blue-400' onClick={() => setOpen(true)}>
         <LinkOutlined />
-        <span className='text-sm'>查看回复引用</span>
+        <span className='text-sm'>{t('viewReplyReferences')}</span>
       </div>
       <Drawer
         open={open}
-        title='回复引用'
+        title={t('replyReferences')}
         placement={isMobile ? 'bottom' : 'right'}
         onClose={() => setOpen(false)}
         destroyOnClose={true}

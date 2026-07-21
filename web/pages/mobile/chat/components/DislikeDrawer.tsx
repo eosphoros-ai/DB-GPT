@@ -1,5 +1,6 @@
 import { Button, Drawer, Input, Tag } from 'antd';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Tags {
   reason: string;
@@ -17,12 +18,13 @@ const DislikeDrawer: React.FC<{
   }) => void;
   loading: boolean;
 }> = ({ open, setFeedbackOpen, list, feedback, loading }) => {
+  const { t } = useTranslation();
   const [selectedTags, setSelectedTags] = useState<Tags[]>([]);
   const [remark, setRemark] = useState<string>('');
 
   return (
     <Drawer
-      title='你的反馈助我进步'
+      title={t('feedback_helps_improve')}
       placement='bottom'
       open={open}
       onClose={() => setFeedbackOpen(false)}
@@ -53,7 +55,7 @@ const DislikeDrawer: React.FC<{
           })}
         </div>
         <Input.TextArea
-          placeholder='描述一下具体问题或更优的答案'
+          placeholder={t('describe_issue_or_better_answer')}
           className='h-24 resize-none mb-2'
           value={remark}
           onChange={e => setRemark(e.target.value.trim())}
@@ -65,7 +67,7 @@ const DislikeDrawer: React.FC<{
               setFeedbackOpen(false);
             }}
           >
-            取消
+            {t('cancel')}
           </Button>
           <Button
             type='primary'
@@ -80,7 +82,7 @@ const DislikeDrawer: React.FC<{
             }}
             loading={loading}
           >
-            确认
+            {t('confirm')}
           </Button>
         </div>
       </div>

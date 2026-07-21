@@ -70,7 +70,7 @@ export const NewEvaluationModal = (props: Props) => {
             parsedHeaders = JSON.parse(values.headers);
           }
         } catch (_error) {
-          throw new Error('Header信息格式不正确,请输入有效的JSON格式');
+          throw new Error(t('header_invalid_json_format'));
         }
 
         try {
@@ -78,7 +78,7 @@ export const NewEvaluationModal = (props: Props) => {
             parsedMapping = JSON.parse(values.response_mapping);
           }
         } catch (_error) {
-          throw new Error('Response Mapping配置格式不正确,请输入有效的JSON格式');
+          throw new Error(t('response_mapping_invalid_json_format'));
         }
 
         // 构造Agent评测参数,使用Agent专有字段

@@ -1,4 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
+import i18n from '@/app/i18n';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
@@ -102,17 +103,17 @@ const _formatFileSize = (bytes: number): string => {
 const _getFileTypeLabel = (fileName: string, mimeType?: string): string => {
   const ext = fileName.toLowerCase().split('.').pop() || '';
   if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
+    return i18n.t('file_type_spreadsheet');
   }
   if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
+    return i18n.t('file_type_spreadsheet');
   }
   if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return i18n.t('file_type_image');
+  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return i18n.t('file_type_word');
+  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return i18n.t('file_type_text');
   if (['json'].includes(ext)) return 'JSON';
-  return '文件';
+  return i18n.t('file_type_file');
 };
 
 const _getFileIcon = (fileName: string, mimeType?: string) => {
@@ -458,10 +459,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'walmart_sales',
     icon: '📊',
-    title: '沃尔玛销售数据分析',
-    description: '分析沃尔玛销售CSV数据，生成可视化网页报告',
-    query:
-      '请全面分析这份沃尔玛销售数据，包括各门店销售趋势、假日影响、温度与油价对销售的影响等维度，生成一份精美的交互式网页分析报告。',
+    title: i18n.t('example_walmart_sales_title'),
+    description: i18n.t('example_walmart_sales_desc'),
+    query: i18n.t('example_walmart_sales_query'),
     fileName: 'Walmart_Sales.csv',
     fileType: 'text/csv',
     fileSize: 98304, // ~96 KB
@@ -473,10 +473,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'db_profile_report',
     icon: '🗄️',
-    title: '数据库画像与分析报告',
-    description: '连接数据库后，生成数据库画像并生成可视化网页报告',
-    query:
-      '请分析当前连接的数据库，生成数据库画像（包括表结构、字段信息、数据量统计等），并生成一份精美的交互式网页分析报告。',
+    title: i18n.t('example_db_profile_report_title'),
+    description: i18n.t('example_db_profile_report_desc'),
+    query: i18n.t('example_db_profile_report_query'),
     dbName: 'Walmart_Sales',
     color: 'from-emerald-500/10 to-teal-500/10',
     borderColor: 'border-emerald-200/60 dark:border-emerald-800/40',
@@ -485,10 +484,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'fin_report',
     icon: '📈',
-    title: '金融财报深度分析',
-    description: '分析浙江海翔药业年度报告，生成数据可视化报告',
-    query:
-      '请深度分析这份浙江海翔药业2019年年度报告，包括营收利润趋势、资产负债结构、现金流分析、关键财务指标等，生成一份专业的交互式网页分析报告。',
+    title: i18n.t('example_fin_report_title'),
+    description: i18n.t('example_fin_report_desc'),
+    query: i18n.t('example_fin_report_query'),
     fileName: '2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf',
     fileType: 'application/pdf',
     fileSize: 2621440, // ~2.5 MB
@@ -500,10 +498,9 @@ const EXAMPLE_CARDS = [
   {
     id: 'create_sql_skill',
     icon: '🛠️',
-    title: '创建SQL分析技能',
-    description: '使用skill-creator创建一个实用的SQL数据分析技能',
-    query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
+    title: i18n.t('example_create_sql_skill_title'),
+    description: i18n.t('example_create_sql_skill_desc'),
+    query: i18n.t('example_create_sql_skill_query'),
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -826,10 +823,10 @@ const Playground: NextPage = () => {
             });
           }
         } else {
-          setFilePreviewError(res.data?.err_msg || '文件预览失败');
+          setFilePreviewError(res.data?.err_msg || t('file_preview_failed'));
         }
       } catch (err: any) {
-        setFilePreviewError(err?.message || '文件预览失败');
+        setFilePreviewError(err?.message || t('file_preview_failed'));
       } finally {
         setFilePreviewLoading(false);
       }
@@ -1200,7 +1197,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning(t('file_not_downloadable'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1209,16 +1206,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || t('file_not_downloadable'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning(t('file_download_failed'));
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning(t('file_not_downloadable'));
         }
         break;
       }
@@ -2057,7 +2054,7 @@ const Playground: NextPage = () => {
     if (loading) return;
 
     try {
-      message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
+      message.loading({ content: t('loading_example'), key: 'example-loading', duration: 0 });
 
       let filePath: string | null = null;
       let fakeFile: File | null = null;
@@ -2078,7 +2075,7 @@ const Playground: NextPage = () => {
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
-          message.error('加载示例失败: ' + errMsg);
+          message.error(t('load_example_failed', { error: errMsg }));
           return;
         }
       }
@@ -2110,7 +2107,7 @@ const Playground: NextPage = () => {
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      message.error('加载示例失败: ' + errMessage);
+      message.error(t('load_example_failed', { error: errMessage }));
     }
   };
 
@@ -2324,7 +2321,7 @@ const Playground: NextPage = () => {
       }
     } catch (e) {
       console.error('Failed to load conversation', e);
-      message.error('加载历史对话失败');
+      message.error(t('load_history_failed'));
     } finally {
       setHistoryLoading(false);
     }
@@ -2333,7 +2330,7 @@ const Playground: NextPage = () => {
   // Share current conversation — create share link and copy to clipboard
   const handleShare = async () => {
     if (!conversationId) {
-      message.warning('请先开始一段对话再分享');
+      message.warning(t('start_conversation_before_share'));
       return;
     }
     try {
@@ -2342,10 +2339,10 @@ const Playground: NextPage = () => {
       if (!shareUrl) throw new Error('No share URL returned');
       const fullUrl = `${window.location.origin}${shareUrl}`;
       await navigator.clipboard.writeText(fullUrl);
-      message.success('分享链接已复制到剪贴板！');
+      message.success(t('share_link_copied_clipboard'));
     } catch (e) {
       console.error('Failed to create share link', e);
-      message.error('创建分享链接失败，请稍后重试');
+      message.error(t('create_share_link_failed'));
     }
   };
 
@@ -2453,7 +2450,7 @@ const Playground: NextPage = () => {
           {/* When from_task mode and loading history, show loading spinner instead of Hero */}
           {router.query.from_task && historyLoading && messages.length === 0 ? (
             <div className='flex-1 flex items-center justify-center'>
-              <Spin size='large' tip='加载对话历史...' />
+              <Spin size='large' tip={t('loading_conversation_history')} />
             </div>
           ) : messages.length > 0 ? (
             <div className={`flex-1 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>

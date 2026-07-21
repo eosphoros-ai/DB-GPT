@@ -4,6 +4,7 @@ import { IChatDialogueMessageSchema } from '@/types/chat';
 import { Divider } from 'antd';
 import cls from 'classnames';
 import React, { memo, useContext, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MobileChatContext } from '../';
 import Feedback from './Feedback';
 
@@ -20,6 +21,7 @@ const ChatDialog: React.FC<{
   index: number;
 }> = ({ message, index }) => {
   const { scene } = useContext(MobileChatContext);
+  const { t } = useTranslation();
   const { context, model_name, role, thinking } = message;
   // GPT回复
   const isRobot = useMemo(() => role === 'view', [role]);
@@ -96,7 +98,7 @@ const ChatDialog: React.FC<{
           {/* 正在思考 */}
           {thinking && !context && (
             <div className='flex items-center gap-2'>
-              <span className='flex text-sm text-[#1c2533] dark:text-white'>思考中</span>
+              <span className='flex text-sm text-[#1c2533] dark:text-white'>{t('thinking')}</span>
               <div className='flex'>
                 <div className='w-1 h-1 rounded-full mx-1 animate-pulse1'></div>
                 <div className='w-1 h-1 rounded-full mx-1 animate-pulse2'></div>
