@@ -5,10 +5,12 @@ import {
   getKnowledgeSpaceStats,
   getSpaceList,
   kbCat,
+  syncBatchDocument,
+  uploadDocument,
 } from '@/client/api';
 import CatResultViewer from '@/components/knowledge/cat-result-viewer';
-import EmbeddedChat from '@/components/knowledge/embedded-chat';
 import DocPanel from '@/components/knowledge/doc-panel';
+import EmbeddedChat from '@/components/knowledge/embedded-chat';
 import KnowledgeTree from '@/components/knowledge/knowledge-tree';
 import { IDocument, ISpace, KbFileEntry, KnowledgeSpaceStats } from '@/types/knowledge';
 import {
@@ -23,7 +25,22 @@ import {
   ShareAltOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import { Button, Card, Col, Empty, Progress, Row, Space, Spin, Statistic, Tabs, Tag } from 'antd';
+import {
+  Button,
+  Card,
+  Col,
+  Empty,
+  Modal,
+  Progress,
+  Row,
+  Space,
+  Spin,
+  Statistic,
+  Tabs,
+  Tag,
+  Upload,
+  message,
+} from 'antd';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -65,6 +82,12 @@ export default function KnowledgeDetailPage() {
   const [fileContent, setFileContent] = useState<string>('');
   const [fileContentLoading, setFileContentLoading] = useState(false);
 
+  // Add document modal state
+  const [addDocOpen, setAddDocOpen] = useState(false);
+  const [addDocLoading, setAddDocLoading] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<any[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   useEffect(() => {
     if (!spaceName) return;
     (async () => {
@@ -104,12 +127,12 @@ export default function KnowledgeDetailPage() {
       try {
         const html = await getCodeGraphVisualizeHtml(spaceName);
         if (!html || html.includes('No code graph found')) {
-          setGraphError('No code graph found. Please build the code graph first.');
+          setGraphError(t('code_graph_not_found_desc'));
         } else {
           setGraphHtml(html);
         }
-      } catch (err: any) {
-        setGraphError(err?.message || t('No_Results') || 'Failed to load code graph');
+      } catch {
+        setGraphError(t('code_graph_not_found_desc'));
       }
       setGraphLoading(false);
     })();
@@ -324,11 +347,7 @@ export default function KnowledgeDetailPage() {
                 </div>
                 <div className='flex-1 overflow-auto p-3'>
                   <Spin spinning={fileContentLoading}>
-                    {fileContent ? (
-                      <CatResultViewer content={fileContent} />
-                    ) : (
-                      <Empty description={t('No_Results')} />
-                    )}
+                    {fileContent ? <CatResultViewer content={fileContent} /> : <Empty description={t('No_Results')} />}
                   </Spin>
                 </div>
               </div>
@@ -419,17 +438,73 @@ export default function KnowledgeDetailPage() {
     // No doc selected — show DocPanel
     if (currentSpace) {
       return (
-        <DocPanel
-          space={currentSpace}
-          hideRecallTest
-          hideSearchTools
-          onAddDoc={(_name: string) => {
-            // Could navigate to add doc flow
-          }}
-          onDeleteDoc={() => {
-            // Refresh handled internally
-          }}
-        />
+        <>
+          <DocPanel
+            space={currentSpace}
+            hideRecallTest
+            hideSearchTools
+            refreshKey={refreshKey}
+            onAddDoc={() => {
+              setUploadFiles([]);
+              setAddDocOpen(true);
+            }}
+            onDeleteDoc={() => {
+              setRefreshKey(k => k + 1);
+            }}
+          />
+          <AddDocumentModal
+            open={addDocOpen}
+            loading={addDocLoading}
+            files={uploadFiles}
+            onFilesChange={setUploadFiles}
+            onCancel={() => setAddDocOpen(false)}
+            onSubmit={async () => {
+              if (uploadFiles.length === 0) {
+                message.error(t('Please_select_file'));
+                return;
+              }
+              setAddDocLoading(true);
+              // 1. Upload each file and collect doc_ids
+              const uploaded: Array<{ name: string; doc_id: number }> = [];
+              let failed = 0;
+              for (const file of uploadFiles) {
+                const formData = new FormData();
+                formData.append('doc_name', file.name);
+                formData.append('doc_file', file);
+                formData.append('doc_type', 'DOCUMENT');
+                const [err, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
+                if (err || !docId) {
+                  failed += 1;
+                } else {
+                  uploaded.push({ name: file.name, doc_id: docId });
+                }
+              }
+
+              // 2. Auto-sync all successfully uploaded documents
+              if (uploaded.length > 0) {
+                const syncParams = uploaded.map(f => ({
+                  doc_id: f.doc_id,
+                  name: f.name,
+                  chunk_parameters: { chunk_strategy: 'Automatic' },
+                }));
+                const [syncErr] = await apiInterceptors(syncBatchDocument(spaceName, syncParams));
+                if (syncErr) {
+                  message.warning(t('upload_sync_partial_failed'));
+                }
+              }
+
+              setAddDocLoading(false);
+              if (failed > 0) {
+                message.error(t('upload_failed') + ` (${failed}/${uploadFiles.length})`);
+              } else {
+                message.success(t('upload_sync_completed'));
+              }
+              setAddDocOpen(false);
+              setUploadFiles([]);
+              setRefreshKey(k => k + 1);
+            }}
+          />
+        </>
       );
     }
 
@@ -452,9 +527,10 @@ export default function KnowledgeDetailPage() {
     }
     if (graphError) {
       return (
-        <div className='flex flex-col items-center justify-center h-full text-gray-400 gap-3'>
+        <div className='flex flex-col items-center justify-center h-full text-gray-400 gap-3 p-6 text-center'>
           <CodeOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
-          <p className='text-sm'>{graphError}</p>
+          <p className='text-base font-medium text-gray-500 dark:text-gray-300'>{t('code_graph_not_found')}</p>
+          <p className='text-sm max-w-md'>{graphError}</p>
         </div>
       );
     }
@@ -572,5 +648,62 @@ export default function KnowledgeDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Modal for uploading additional documents to an existing knowledge space.
+ *  Uploads files and auto-syncs them (chunk + embed) in one action. */
+function AddDocumentModal({
+  open,
+  loading,
+  files,
+  onFilesChange,
+  onCancel,
+  onSubmit,
+}: {
+  open: boolean;
+  loading: boolean;
+  files: any[];
+  onFilesChange: (files: any[]) => void;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
+  const { t } = useTranslation();
+  const { Dragger } = Upload;
+
+  return (
+    <Modal
+      title={t('add_document_title')}
+      open={open}
+      onCancel={onCancel}
+      centered
+      width={600}
+      destroyOnClose
+      footer={[
+        <Button key='cancel' onClick={onCancel}>
+          {t('cancel')}
+        </Button>,
+        <Button key='submit' type='primary' loading={loading} onClick={onSubmit}>
+          {t('upload_and_sync')}
+        </Button>,
+      ]}
+    >
+      <Dragger
+        multiple
+        fileList={files}
+        beforeUpload={file => {
+          onFilesChange([...files, file]);
+          return false;
+        }}
+        onRemove={file => {
+          onFilesChange(files.filter(f => f.uid !== file.uid));
+        }}
+        accept='.pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip,.csv'
+      >
+        <p className='ant-upload-text text-sm text-gray-500 dark:text-gray-400'>{t('click_or_drag_to_upload')}</p>
+        <p className='ant-upload-hint text-xs text-gray-400'>PDF, PPT, Excel, Word, Text, Markdown, CSV</p>
+      </Dragger>
+      <p className='mt-3 text-xs text-gray-400'>{t('doc_auto_sync_hint')}</p>
+    </Modal>
   );
 }

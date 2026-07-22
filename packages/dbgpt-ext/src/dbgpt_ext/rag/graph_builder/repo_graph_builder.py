@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 from typing import Any, Dict, List, Optional, Set
 
 from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
@@ -136,13 +137,75 @@ class RepoGraphBuilder:
         graph.append_edge(
             Edge(sid=repo_id, tid=file_id, name="contains", type="contains")
         )
-        if language in _AST_LANGUAGES:
+        if language == "markdown":
+            # Markdown files: extract heading hierarchy (H1 -> H2 -> H3)
+            self._extract_markdown_nodes(graph, file_path, content, file_id)
+        elif language in _AST_LANGUAGES:
             try:
                 self._extract_ast_nodes(graph, file_path, content, language, file_id)
             except Exception:
                 self._extract_regex_nodes(graph, file_path, content, language, file_id)
         else:
             self._extract_regex_nodes(graph, file_path, content, language, file_id)
+
+    def _extract_markdown_nodes(
+        self, graph: MemoryGraph, file_path: str, content: str, file_id: str
+    ):
+        """Extract markdown heading hierarchy into graph vertices/edges.
+
+        Builds a parent-child structure following the heading levels:
+        file -> contains -> H1 -> contains -> H2 -> contains -> H3
+
+        Uses a stack-based approach (same as MarkdownHeaderTextSplitter) to
+        track the current parent heading at each level. Headings inside code
+        blocks (``` ... ```) are ignored.
+        """
+        heading_pattern = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+        # Stack of (level, heading_id) for the current heading ancestry
+        header_stack: List[tuple] = []
+        in_code_block = False
+
+        for line in content.split("\n"):
+            stripped = line.strip()
+            # Track fenced code blocks to avoid parsing # inside them
+            if stripped.startswith("```"):
+                in_code_block = not in_code_block
+                continue
+            if in_code_block:
+                continue
+
+            match = heading_pattern.match(stripped)
+            if not match:
+                continue
+
+            level = len(match.group(1))
+            title = match.group(2).strip()
+            if not title:
+                continue
+
+            # Pop headers of same or deeper level (they can't be parents)
+            while header_stack and header_stack[-1][0] >= level:
+                header_stack.pop()
+
+            # Parent is the top of stack (or the file vertex if stack empty)
+            parent_id = header_stack[-1][1] if header_stack else file_id
+
+            heading_id = _make_id("heading", f"{file_path}:{level}:{title}")
+            graph.upsert_vertex(
+                Vertex(
+                    vid=heading_id,
+                    name=title,
+                    type="heading",
+                    level=level,
+                    heading_text=title,
+                    file_path=file_path,
+                )
+            )
+            graph.append_edge(
+                Edge(sid=parent_id, tid=heading_id, name="contains", type="contains")
+            )
+
+            header_stack.append((level, heading_id))
 
     def _extract_ast_nodes(self, graph, file_path, content, language, file_id):
         try:

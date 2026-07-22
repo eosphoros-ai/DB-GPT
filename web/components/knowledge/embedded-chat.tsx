@@ -4,8 +4,8 @@ import OpenCodeSessionTurn, { MessagePart, ToolPart } from '@/new-components/cha
 import {
   ClearOutlined,
   CopyOutlined,
-  FileTextOutlined,
   FileSearchOutlined,
+  FileTextOutlined,
   LoadingOutlined,
   NodeIndexOutlined,
   PauseCircleOutlined,
@@ -68,7 +68,8 @@ function extractReferences(parts: MessagePart[]): FileReference[] {
 
     if (action === 'kb_cat' && path) {
       refs.push({
-        id: tp.id, path,
+        id: tp.id,
+        path,
         name: path.split('/').pop() || path,
         content: output,
         status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
@@ -76,7 +77,8 @@ function extractReferences(parts: MessagePart[]): FileReference[] {
       });
     } else if (action === 'kb_grep' && path) {
       refs.push({
-        id: tp.id, path,
+        id: tp.id,
+        path,
         name: path.split('/').pop() || path,
         content: output,
         status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
@@ -138,9 +140,18 @@ function getFileIcon(fileName: string): React.ReactNode {
 function getFileLang(fileName: string): string {
   const ext = fileName.split('.').pop()?.toLowerCase();
   const langMap: Record<string, string> = {
-    md: 'markdown', py: 'python', js: 'javascript', ts: 'typescript',
-    sql: 'sql', json: 'json', yaml: 'yaml', yml: 'yaml',
-    txt: 'text', csv: 'csv', html: 'html', css: 'css',
+    md: 'markdown',
+    py: 'python',
+    js: 'javascript',
+    ts: 'typescript',
+    sql: 'sql',
+    json: 'json',
+    yaml: 'yaml',
+    yml: 'yaml',
+    txt: 'text',
+    csv: 'csv',
+    html: 'html',
+    css: 'css',
   };
   return langMap[ext || ''] || ext || '';
 }
@@ -167,7 +178,8 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
 
   // Graph stats for the selected knowledge space
   const [graphStats, setGraphStats] = useState<{ vertexCount: number | null; edgeCount: number | null }>({
-    vertexCount: null, edgeCount: null,
+    vertexCount: null,
+    edgeCount: null,
   });
 
   const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(null);
@@ -193,15 +205,18 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
       const endTime = Date.now();
       const savedRefs = extractReferences(prev.parts);
       turnIdCounter += 1;
-      setHistory(h => [...h, {
-        id: `turn-${turnIdCounter}`,
-        userMessage: prev.userMessage,
-        assistantMessage: prev.finalContent || buildReActContext(prev.parts),
-        parts: prev.parts,
-        references: savedRefs,
-        startTime: prev.startTime,
-        endTime,
-      }]);
+      setHistory(h => [
+        ...h,
+        {
+          id: `turn-${turnIdCounter}`,
+          userMessage: prev.userMessage,
+          assistantMessage: prev.finalContent || buildReActContext(prev.parts),
+          parts: prev.parts,
+          references: savedRefs,
+          startTime: prev.startTime,
+          endTime,
+        },
+      ]);
       return { ...prev, isWorking: false, endTime };
     });
   };
@@ -209,8 +224,12 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
     setStreamingTurn(prev => (prev ? { ...prev, isWorking: false } : null));
   };
 
-  const { state: agentState, sendMessage, cancel } = useReActAgent({
-    baseUrl: `${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`,
+  const {
+    state: agentState,
+    sendMessage,
+    cancel,
+  } = useReActAgent({
+    baseUrl: `${process.env.API_BASE_URL ?? ''}/api/v1/chat/knowledge-agent`,
     onPartUpdate: (parts: MessagePart[]) => onPartUpdateRef.current(parts),
     onFinalContent: (content: string) => onFinalContentRef.current(content),
     onComplete: () => onCompleteRef.current(),
@@ -222,7 +241,10 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
       const [, dialogueData] = await apiInterceptors(newDialogue({ chat_mode: 'chat_react_agent' }));
       if (dialogueData?.conv_uid) setConvUid(dialogueData.conv_uid);
       const [, models] = await apiInterceptors(getUsableModels());
-      if (models?.length) { setModelList(models); setModelValue(models[0]); }
+      if (models?.length) {
+        setModelList(models);
+        setModelValue(models[0]);
+      }
       const [, spaces] = await apiInterceptors(getSpaceList());
       if (spaces) setKnowledgeSpaces(spaces);
       setInitLoading(false);
@@ -290,7 +312,10 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
       model_name: modelValue,
       temperature: 0.6,
       select_param: '',
-      ext_info: { knowledge_space_name: knowledgeValue, ...(selectedSpaceId !== undefined && { knowledge_space_id: selectedSpaceId }) },
+      ext_info: {
+        knowledge_space_name: knowledgeValue,
+        ...(selectedSpaceId !== undefined && { knowledge_space_id: selectedSpaceId }),
+      },
     });
   }, [userInput, convUid, agentState.isWorking, sendMessage, modelValue, knowledgeValue, knowledgeSpaces]);
 
@@ -301,13 +326,29 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
     setHistory(prev => prev.slice(0, -1));
     setUserInput(lastTurn.userMessage);
   }, [history, agentState.isWorking]);
-  const handleClear = useCallback(() => { setHistory([]); setSelectedRefId(null); }, []);
+  const handleClear = useCallback(() => {
+    setHistory([]);
+    setSelectedRefId(null);
+  }, []);
 
-  const knowledgeOptions = useMemo(() => knowledgeSpaces.map(s => ({ label: s.name, value: s.name })), [knowledgeSpaces]);
+  const knowledgeOptions = useMemo(
+    () => knowledgeSpaces.map(s => ({ label: s.name, value: s.name })),
+    [knowledgeSpaces],
+  );
   const isWorking = streamingTurn?.isWorking || agentState.isWorking;
 
-  if (initLoading) return <div className='flex items-center justify-center h-full'><Spin size='large' /></div>;
-  if (!convUid) return <div className='flex items-center justify-center h-full'><Empty description={t('No_Results')} /></div>;
+  if (initLoading)
+    return (
+      <div className='flex items-center justify-center h-full'>
+        <Spin size='large' />
+      </div>
+    );
+  if (!convUid)
+    return (
+      <div className='flex items-center justify-center h-full'>
+        <Empty description={t('No_Results')} />
+      </div>
+    );
 
   return (
     <div className='h-full flex bg-white dark:bg-[#232734]'>
@@ -323,17 +364,31 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
             ) : (
               <>
                 {history.map(turn => (
-                  <OpenCodeSessionTurn key={turn.id} userMessage={turn.userMessage}
-                    assistantMessage={turn.assistantMessage} parts={turn.parts}
-                    isWorking={false} showSteps={turn.parts.length > 0}
-                    defaultStepsExpanded={false} modelName={modelValue} className='w-full' />
+                  <OpenCodeSessionTurn
+                    key={turn.id}
+                    userMessage={turn.userMessage}
+                    assistantMessage={turn.assistantMessage}
+                    parts={turn.parts}
+                    isWorking={false}
+                    showSteps={turn.parts.length > 0}
+                    defaultStepsExpanded={false}
+                    modelName={modelValue}
+                    className='w-full'
+                  />
                 ))}
                 {streamingTurn && streamingTurn.isWorking && (
-                  <OpenCodeSessionTurn userMessage={streamingTurn.userMessage}
-                    assistantMessage={streamingTurn.finalContent} parts={streamingTurn.parts}
-                    isWorking={streamingTurn.isWorking} startTime={streamingTurn.startTime}
-                    endTime={streamingTurn.endTime} showSteps={true}
-                    defaultStepsExpanded={true} modelName={modelValue} className='w-full' />
+                  <OpenCodeSessionTurn
+                    userMessage={streamingTurn.userMessage}
+                    assistantMessage={streamingTurn.finalContent}
+                    parts={streamingTurn.parts}
+                    isWorking={streamingTurn.isWorking}
+                    startTime={streamingTurn.startTime}
+                    endTime={streamingTurn.endTime}
+                    showSteps={true}
+                    defaultStepsExpanded={true}
+                    modelName={modelValue}
+                    className='w-full'
+                  />
                 )}
               </>
             )}
@@ -346,34 +401,76 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
             <div className='flex flex-col bg-white dark:bg-[rgba(255,255,255,0.16)] px-5 py-4 pt-2 rounded-xl border dark:border-[rgba(255,255,255,0.6)] relative'>
               <div className='flex items-center justify-between mb-2'>
                 <div className='flex gap-3 text-lg items-center'>
-                  <Select value={modelValue} placeholder={t('choose_model')} className='h-8 rounded-3xl' size='small'
-                    onChange={val => setModelValue(val)} popupMatchSelectWidth={300}
-                    options={modelList.map(m => ({ label: m, value: m }))} />
-                  <Select value={knowledgeValue} onChange={val => setKnowledgeValue(val)}
-                    placeholder={<span className='flex items-center gap-1'><Image src='/icons/kb_icon.png' alt='KB' width={14} height={14} />{t('knowledge')}</span>}
-                    className='w-40 h-8' size='small' options={knowledgeOptions} />
+                  <Select
+                    value={modelValue}
+                    placeholder={t('choose_model')}
+                    className='h-8 rounded-3xl'
+                    size='small'
+                    onChange={val => setModelValue(val)}
+                    popupMatchSelectWidth={300}
+                    options={modelList.map(m => ({ label: m, value: m }))}
+                  />
+                  <Select
+                    value={knowledgeValue}
+                    onChange={val => setKnowledgeValue(val)}
+                    placeholder={
+                      <span className='flex items-center gap-1'>
+                        <Image src='/icons/kb_icon.png' alt='KB' width={14} height={14} />
+                        {t('knowledge')}
+                      </span>
+                    }
+                    className='w-40 h-8'
+                    size='small'
+                    options={knowledgeOptions}
+                  />
                 </div>
                 <div className='flex gap-1'>
-                  <Tooltip title={t('stop_replying')}><div
-                    className={`flex w-8 h-8 items-center justify-center rounded-md text-lg ${isWorking ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
-                    onClick={isWorking ? handleStop : undefined}><PauseCircleOutlined className={isWorking ? 'text-[#0c75fc]' : ''} /></div></Tooltip>
-                  <Tooltip title={t('answer_again')}><div
-                    className={`flex w-8 h-8 items-center justify-center rounded-md text-lg ${!isWorking && history.length > 0 ? 'cursor-pointer hover:bg-[rgb(221,221,221,0.6)]' : 'opacity-30 cursor-not-allowed'}`}
-                    onClick={!isWorking && history.length > 0 ? handleRetry : undefined}><RedoOutlined /></div></Tooltip>
-                  <Tooltip title={t('erase_memory')}><div
-                    className={`flex w-8 h-8 items-center justify-center rounded-md text-lg ${history.length > 0 ? 'cursor-pointer hover:bg-[rgb(221,221,221,0.6)]' : 'opacity-30 cursor-not-allowed'}`}
-                    onClick={history.length > 0 ? handleClear : undefined}><ClearOutlined /></div></Tooltip>
+                  <Tooltip title={t('stop_replying')}>
+                    <div
+                      className={`flex w-8 h-8 items-center justify-center rounded-md text-lg ${isWorking ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
+                      onClick={isWorking ? handleStop : undefined}
+                    >
+                      <PauseCircleOutlined className={isWorking ? 'text-[#0c75fc]' : ''} />
+                    </div>
+                  </Tooltip>
+                  <Tooltip title={t('answer_again')}>
+                    <div
+                      className={`flex w-8 h-8 items-center justify-center rounded-md text-lg ${!isWorking && history.length > 0 ? 'cursor-pointer hover:bg-[rgb(221,221,221,0.6)]' : 'opacity-30 cursor-not-allowed'}`}
+                      onClick={!isWorking && history.length > 0 ? handleRetry : undefined}
+                    >
+                      <RedoOutlined />
+                    </div>
+                  </Tooltip>
+                  <Tooltip title={t('erase_memory')}>
+                    <div
+                      className={`flex w-8 h-8 items-center justify-center rounded-md text-lg ${history.length > 0 ? 'cursor-pointer hover:bg-[rgb(221,221,221,0.6)]' : 'opacity-30 cursor-not-allowed'}`}
+                      onClick={history.length > 0 ? handleClear : undefined}
+                    >
+                      <ClearOutlined />
+                    </div>
+                  </Tooltip>
                 </div>
               </div>
-              <Input.TextArea placeholder={t('input_tips')}
+              <Input.TextArea
+                placeholder={t('input_tips')}
                 className='w-full h-20 resize-none border-0 p-0 focus:shadow-none dark:bg-transparent'
                 value={userInput}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isZhInput) { e.preventDefault(); if (userInput.trim() && !isWorking) handleSend(); } }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey && !isZhInput) {
+                    e.preventDefault();
+                    if (userInput.trim() && !isWorking) handleSend();
+                  }
+                }}
                 onChange={e => setUserInput(e.target.value)}
-                onCompositionStart={() => setIsZhInput(true)} onCompositionEnd={() => setIsZhInput(false)} />
-              <Button type='primary'
+                onCompositionStart={() => setIsZhInput(true)}
+                onCompositionEnd={() => setIsZhInput(false)}
+              />
+              <Button
+                type='primary'
                 className='flex items-center justify-center w-14 h-8 rounded-lg text-sm absolute right-8 bottom-5 bg-button-gradient border-0'
-                disabled={!userInput.trim() && !isWorking} onClick={isWorking ? handleStop : handleSend}>
+                disabled={!userInput.trim() && !isWorking}
+                onClick={isWorking ? handleStop : handleSend}
+              >
                 {isWorking ? <Spin spinning indicator={<LoadingOutlined className='text-white' />} /> : t('sent')}
               </Button>
             </div>
@@ -388,9 +485,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
           <div className='flex items-center justify-between px-3 py-2.5 border-b dark:border-gray-700 bg-white dark:bg-[#232734]'>
             <div className='flex items-center gap-2 min-w-0'>
               <Image src='/icons/kb_icon.png' alt='KB' width={16} height={16} className='flex-shrink-0' />
-              <span className='text-xs font-semibold text-gray-700 dark:text-gray-200 truncate'>
-                {knowledgeValue}
-              </span>
+              <span className='text-xs font-semibold text-gray-700 dark:text-gray-200 truncate'>{knowledgeValue}</span>
               <span className='text-[11px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium flex-shrink-0'>
                 {references.length}
               </span>
@@ -408,8 +503,13 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                 </span>
               )}
             </div>
-            <Button type='text' size='small' icon={<RightOutlined />}
-              onClick={() => setRightPanelCollapsed(true)} className='text-gray-400 hover:text-gray-600' />
+            <Button
+              type='text'
+              size='small'
+              icon={<RightOutlined />}
+              onClick={() => setRightPanelCollapsed(true)}
+              className='text-gray-400 hover:text-gray-600'
+            />
           </div>
 
           {/* Reference file list */}
@@ -439,9 +539,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                         getFileIcon(ref.name)
                       )}
                       <div className='min-w-0 flex-1'>
-                        <div className='text-xs font-medium text-gray-800 dark:text-gray-200 truncate'>
-                          {ref.name}
-                        </div>
+                        <div className='text-xs font-medium text-gray-800 dark:text-gray-200 truncate'>{ref.name}</div>
                         {isFile && (
                           <div className='text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5 font-mono'>
                             {ref.path}
@@ -468,11 +566,13 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                       <div className='flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b dark:border-gray-700/50'>
                         <span className='text-[10px] text-gray-400 font-mono truncate flex-1'>{ref.path}</span>
                         <Tooltip title={t('Copy_Btn') || 'Copy'}>
-                          <button onClick={() => {
-                            navigator.clipboard?.writeText(ref.content || '');
-                            message.success(t('copy_to_clipboard_success'));
-                          }}
-                          className='text-gray-400 hover:text-teal-500 transition-colors ml-2'>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(ref.content || '');
+                              message.success(t('copy_to_clipboard_success'));
+                            }}
+                            className='text-gray-400 hover:text-teal-500 transition-colors ml-2'
+                          >
                             <CopyOutlined style={{ fontSize: 11 }} />
                           </button>
                         </Tooltip>
@@ -493,9 +593,13 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
 
       {references.length > 0 && rightPanelCollapsed && (
         <div className='border-l dark:border-gray-700 bg-gray-50 dark:bg-[#1e2130] flex items-center'>
-          <Button type='text' size='small' icon={<RightOutlined style={{ transform: 'rotate(180deg)' }} />}
+          <Button
+            type='text'
+            size='small'
+            icon={<RightOutlined style={{ transform: 'rotate(180deg)' }} />}
             onClick={() => setRightPanelCollapsed(false)}
-            className='text-gray-400 hover:text-gray-600 h-full px-1' />
+            className='text-gray-400 hover:text-gray-600 h-full px-1'
+          />
         </div>
       )}
     </div>

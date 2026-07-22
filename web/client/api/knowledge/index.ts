@@ -187,3 +187,17 @@ export const kbLsJson = (
     data ?? {},
   );
 };
+
+// ============ 知识图谱构建 API (v2) ============
+
+export interface KnowledgeGraphBuildResult {
+  vertices: number;
+  edges: number;
+  files_processed: number;
+  status: string;
+}
+
+/** 构建知识空间的结构图谱（代码结构 / Markdown 标题层级） */
+export const buildKnowledgeGraph = (spaceId: string | number) => {
+  return POST<null, KnowledgeGraphBuildResult>(`${KB_V2_PREFIX}/${spaceId}/build-graph`);
+};

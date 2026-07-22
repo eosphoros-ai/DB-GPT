@@ -965,7 +965,16 @@ def _sse_event(payload: Dict[str, Any]) -> str:
 
 async def _react_agent_stream(
     dialogue: ConversationVo,
+    tool_mode: str = "full",
 ) -> AsyncGenerator[str, None]:
+    """Core ReAct agent streaming logic.
+
+    Args:
+        dialogue: Conversation parameters (user input, model, ext_info, etc.).
+        tool_mode: "full" (default) — all tools (skills, shell, sql, html, code, kb...).
+                   "knowledge" — only knowledge base tools + todowrite + terminate,
+                   optimized for pure knowledge-chat scenarios.
+    """
     import asyncio
 
     from dbgpt.agent import AgentContext, AgentMemory, AgentMessage
@@ -2273,21 +2282,30 @@ Action: The selected tool name (must be one of the tools listed above)
 Action Input: The JSON format of tool parameters
 """.strip()
 
-        tool_pack = ToolPack(
-            [
-                execute_skill_script,
-                get_skill_resource,
-                execute_skill_script_file_tool,
-                shell_interpreter_tool,
-                html_interpreter_tool,
-                sql_query_tool,
-                todowrite_tool,
-                question_tool,
-                Terminate(),
-            ]
-            + business_tools
-            + connector_tool_extras
-        )
+        if tool_mode == "knowledge":
+            # Knowledge-chat mode: only kb tools + todowrite + terminate.
+            # No skill/shell/sql/html/code tools to keep the agent focused.
+            tool_pack = ToolPack(
+                [todowrite_tool, question_tool, Terminate()]
+                + business_tools
+                + connector_tool_extras
+            )
+        else:
+            tool_pack = ToolPack(
+                [
+                    execute_skill_script,
+                    get_skill_resource,
+                    execute_skill_script_file_tool,
+                    shell_interpreter_tool,
+                    html_interpreter_tool,
+                    sql_query_tool,
+                    todowrite_tool,
+                    question_tool,
+                    Terminate(),
+                ]
+                + business_tools
+                + connector_tool_extras
+            )
     else:
         # Full prompt with all tools when no skill is pre-selected
         codegraph_section = (
@@ -2445,28 +2463,40 @@ Action: The selected tool name
 Action Input: The JSON format of tool parameters
 """.strip()
 
-        tool_pack = ToolPack(
-            [
-                load_skill_tool,
-                load_tools_tool,
-            ]
-            + kb_tool_list
-            + [
-                execute_skill_script,
-                get_skill_resource,
-                execute_skill_script_file_tool,
-                code_interpreter_tool,
-                load_file_tool,
-                execute_analysis_tool,
-                shell_interpreter_tool,
-                html_interpreter_tool,
-                sql_query_tool,
-                read_file_tool,
-                todowrite_tool,
-                execute_tool_tool,
-                question_tool,
-                Terminate(),
-            ]
+        if tool_mode == "knowledge":
+            # Knowledge-chat mode (no pre-selected skill): only kb
+            # tools + todowrite + terminate.  kb_tool_list already
+            # contains kb_semantic_search, kb_ls, kb_glob, kb_grep,
+            # kb_cat and optionally codegraph tools.
+            tool_pack = ToolPack(
+                kb_tool_list
+                + [todowrite_tool, question_tool, Terminate()]
+                + business_tools
+                + connector_tool_extras
+            )
+        else:
+            tool_pack = ToolPack(
+                [
+                    load_skill_tool,
+                    load_tools_tool,
+                ]
+                + kb_tool_list
+                + [
+                    execute_skill_script,
+                    get_skill_resource,
+                    execute_skill_script_file_tool,
+                    code_interpreter_tool,
+                    load_file_tool,
+                    execute_analysis_tool,
+                    shell_interpreter_tool,
+                    html_interpreter_tool,
+                    sql_query_tool,
+                    read_file_tool,
+                    todowrite_tool,
+                    execute_tool_tool,
+                    question_tool,
+                    Terminate(),
+                ]
             + business_tools
             + connector_tool_extras
         )
@@ -2615,6 +2645,8 @@ Action Input: The JSON format of tool parameters
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
+    # Collect chunks from knowledge tool observations for citation
+    _cited_chunks: List[Dict[str, Any]] = []
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -2990,7 +3022,7 @@ Action Input: The JSON format of tool parameters
                 else:
                     for chunk in chunk_text(str(observation_text), max_len=600):
                         yield step_chunk(react_step_id, "text", chunk)
-                # --- History: collect outputs from observation ---
+                # --- History & citation: collect from observation ---
                 if current_history_step is not None:
                     parsed_obs = None
                     if isinstance(observation_text, str):
@@ -3003,19 +3035,22 @@ Action Input: The JSON format of tool parameters
                     ):
                         for item in parsed_obs["chunks"]:
                             if isinstance(item, dict):
-                                current_history_step["outputs"].append(
-                                    {
-                                        "output_type": item.get("output_type", "text"),
-                                        "content": item.get("content"),
-                                    }
-                                )
+                                content = (item.get("content") or "").strip()
+                                current_history_step["outputs"].append({
+                                    "output_type": item.get("output_type", "text"),
+                                    "content": content,
+                                })
+                                clean = _strip_html_tags(content)
+                                if len(clean) >= 10:
+                                    _cited_chunks.append({"content": clean})
                     elif isinstance(observation_text, str) and observation_text:
-                        current_history_step["outputs"].append(
-                            {
-                                "output_type": "text",
-                                "content": observation_text,
-                            }
-                        )
+                        current_history_step["outputs"].append({
+                            "output_type": "text",
+                            "content": observation_text,
+                        })
+                        clean = _strip_html_tags(observation_text)
+                        if len(clean) >= 10:
+                            _cited_chunks.append({"content": clean})
 
             # Mark step as done and track as last completed
             status = "done" if action_output.get("is_exe_success", True) else "failed"
@@ -3108,6 +3143,23 @@ Action Input: The JSON format of tool parameters
     else:
         final_content = reply.content or ""
 
+    # Auto-annotate citations in the final answer: match collected chunks
+    # against the answer text and insert [n] markers for traceability.
+    if _cited_chunks:
+        # Deduplicate by content while preserving order
+        seen = set()
+        unique_chunks = []
+        for c in _cited_chunks:
+            key = c.get("content", "")
+            if key not in seen:
+                seen.add(key)
+                unique_chunks.append(c)
+        _cited_chunks[:] = unique_chunks
+        final_content = _auto_annotate_citations(final_content, _cited_chunks)
+
+    # Build references XML for frontend citation panel
+    references_xml = _build_references_xml(_cited_chunks)
+
     # Persist AI reply with structured history payload
     history_payload = json.dumps(
         {
@@ -3124,8 +3176,95 @@ Action Input: The JSON format of tool parameters
     storage_conv.end_current_round()
     storage_conv.save_to_storage()
 
-    yield _sse_event({"type": "final", "content": final_content})
+    # Emit final content with references appended so the frontend can render
+    # inline citations and the citation drawer panel.
+    final_with_refs = final_content + references_xml
+    yield _sse_event({"type": "final", "content": final_with_refs})
     yield _sse_event({"type": "done"})
+
+
+# ---------------------------------------------------------------------------
+# Citation helpers for react-agent knowledge chat
+# ---------------------------------------------------------------------------
+
+def _strip_html_tags(text: str) -> str:
+    """Remove HTML/XML tags and unescape HTML entities from a string."""
+    import html
+    text = html.unescape(text or "")
+    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _auto_annotate_citations(text: str, chunks: list) -> str:
+    """Insert [n] citation markers into the answer text by matching collected
+    knowledge tool observation chunks against the final answer.
+
+    Uses longest-common-substring matching (>= 10 chars) to find where each
+    chunk appears in the answer and inserts a [n] marker after it.
+    """
+    if not chunks or not text:
+        return text
+
+    # Sort by content length descending so longer (more specific) chunks
+    # are matched first.
+    indexed = sorted(
+        enumerate(chunks, start=1),
+        key=lambda x: len(x[1].get("content", "")),
+        reverse=True,
+    )
+
+    for idx, chunk_info in indexed:
+        content = (chunk_info.get("content") or "").strip()
+        if len(content) < 8:
+            continue
+        # Find longest common substring
+        match = _longest_common_substring(text, content, min_len=8, max_len=80)
+        if not match:
+            continue
+        marker = f"[{idx}]"
+        if marker not in text:
+            # Replace ALL occurrences — a single source chunk often
+            # supports multiple sentences in the answer.
+            text = text.replace(match, match + marker)
+    return text
+
+
+def _longest_common_substring(
+    text: str, chunk: str, min_len: int = 8, max_len: int = 80
+) -> str:
+    """Find the longest substring of `chunk` that appears in `text`."""
+    chunk = chunk.strip()
+    for length in range(min(max_len, len(chunk)), min_len - 1, -1):
+        for start in range(len(chunk) - length + 1):
+            sub = chunk[start : start + length]
+            if sub in text:
+                return sub
+    return ""
+
+
+def _build_references_xml(chunks: list) -> str:
+    """Build a <references> XML tag with collected chunks for the frontend
+    citation panel and inline citation hover popovers.
+
+    Uses single-quoted attribute (no HTML entity escaping) so the frontend
+    regex /<references[^>]*references='([^']*)'/ can extract and JSON.parse.
+    """
+    if not chunks:
+        return ""
+    refs = []
+    for idx, chunk_info in enumerate(chunks, start=1):
+        content = (chunk_info.get("content") or "").strip()
+        if len(content) < 10:
+            continue
+        refs.append({"index": idx, "id": idx, "content": content, "recall_score": None})
+    if not refs:
+        return ""
+    # Build with json.dumps then wrap in single quotes so the frontend can
+    # extract via regex and JSON.parse without unescaping HTML entities.
+    payload_obj = [{"name": "Knowledge Base", "chunks": refs}]
+    payload = json.dumps(payload_obj, ensure_ascii=False)
+    return '\n\n<references title="References" references=\'' + payload + "'></references>"
 
 
 # ---------------------------------------------------------------------------
@@ -3351,12 +3490,53 @@ async def chat_react_agent(
     }
     try:
         return StreamingResponse(
-            _react_agent_stream(dialogue),
+            _react_agent_stream(dialogue, tool_mode="full"),
             headers=headers,
             media_type="text/event-stream",
         )
     except Exception as e:
         logger.exception("React Agent Exception!%s", dialogue, exc_info=e)
+
+        async def error_text(err_msg):
+            yield f"data:{err_msg}\n\n"
+
+        return StreamingResponse(
+            error_text(str(e)),
+            headers=headers,
+            media_type="text/plain",
+        )
+
+
+@router.post("/v1/chat/knowledge-agent")
+async def chat_knowledge_agent(
+    dialogue: ConversationVo = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Knowledge-base chat agent — only kb tools + todowrite + terminate.
+
+    Optimized for pure knowledge-chat scenarios (no skill/shell/sql/html tools).
+    """
+    logger.info(
+        "chat_knowledge_agent:%s,%s,%s",
+        dialogue.chat_mode,
+        dialogue.select_param,
+        dialogue.model_name,
+    )
+    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    headers = {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Transfer-Encoding": "chunked",
+    }
+    try:
+        return StreamingResponse(
+            _react_agent_stream(dialogue, tool_mode="knowledge"),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+    except Exception as e:
+        logger.exception("Knowledge Agent Exception!%s", dialogue, exc_info=e)
 
         async def error_text(err_msg):
             yield f"data:{err_msg}\n\n"

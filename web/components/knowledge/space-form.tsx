@@ -1,4 +1,12 @@
-import { addSpace, apiInterceptors, getChunkStrategies, syncGitRepo } from '@/client/api';
+import { I18nKeys } from '@/app/i18n';
+import {
+  addSpace,
+  apiInterceptors,
+  getChunkStrategies,
+  syncBatchDocument,
+  syncGitRepo,
+  uploadDocument,
+} from '@/client/api';
 import { IChunkStrategyResponse, IStorage, StepChangeParams } from '@/types/knowledge';
 import { FileTextOutlined, LinkOutlined, ReadOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Collapse, Divider, Form, Input, Select, Spin, Switch, Upload, message } from 'antd';
@@ -12,7 +20,6 @@ type FieldType = {
   owner: string;
   description: string;
   storage: string;
-  domain: string;
   // Index methods - multi-select
   index_methods?: string[];
   // Data source config
@@ -36,24 +43,17 @@ type FieldType = {
   chunk_overlap?: number;
 };
 
-// Index method options
-const INDEX_METHODS = [
-  { value: 'VectorStore', label: '向量索引', labelEn: 'Vector Index', desc: '语义搜索', descEn: 'Semantic search' },
-  {
-    value: 'FullText',
-    label: '结构索引',
-    labelEn: 'Structural Index',
-    desc: '结构化检索',
-    descEn: 'Structured retrieval',
-  },
-  {
-    value: 'KnowledgeGraph',
-    label: '图索引',
-    labelEn: 'Graph Index',
-    desc: '知识图谱',
-    descEn: 'Knowledge graph',
-    onlyCode: true,
-  },
+// Index method options — labels/descs are i18n keys resolved at render time
+interface IndexMethodDef {
+  value: string;
+  labelKey: string;
+  descKey: string;
+  onlyCode?: boolean;
+}
+const INDEX_METHODS: IndexMethodDef[] = [
+  { value: 'VectorStore', labelKey: 'index_vector_store', descKey: 'index_vector_store_desc' },
+  { value: 'FullText', labelKey: 'index_full_text', descKey: 'index_full_text_desc' },
+  { value: 'KnowledgeGraph', labelKey: 'index_knowledge_graph', descKey: 'index_knowledge_graph_desc', onlyCode: true },
 ];
 
 type IProps = {
@@ -143,7 +143,7 @@ const DS_CARDS: DataSourceCardDef[] = [
  * Unified Create Knowledge Space Form.
  *
  * Consolidates all configuration into one window:
- * - Basic info (name, storage, domain, description)
+ * - Basic info (name, storage, description)
  * - Data source selection (card grid): Document / Git Repo / URL / Text / Yuque
  * - Data source specific config (Git: repo url, branch, codegraph; Document: upload)
  * - Chunk strategy (front-loaded)
@@ -154,21 +154,18 @@ export default function SpaceForm(props: IProps) {
   const { t } = useTranslation();
   const { handleStepChange, spaceConfig, onSuccess } = props;
   const [spinning, setSpinning] = useState<boolean>(false);
-  const [storage, setStorage] = useState<string>();
   const [dataSourceType, setDataSourceType] = useState<DataSourceType>('DOCUMENT');
   const [strategies, setStrategies] = useState<Array<IChunkStrategyResponse>>([]);
   const [files, setFiles] = useState<any[]>([]);
 
   const [form] = Form.useForm();
+  // Reactive watch of index_methods so the build_graph switch shows/hides live
+  const indexMethods = Form.useWatch('index_methods', form) as string[] | undefined;
+  const hasKnowledgeGraph = !!indexMethods?.includes('KnowledgeGraph');
 
   useEffect(() => {
     form.setFieldValue('storage', spaceConfig?.[0].name);
-    setStorage(spaceConfig?.[0].name);
   }, [spaceConfig]);
-
-  const handleStorageChange = (data: string) => {
-    setStorage(data);
-  };
 
   useEffect(() => {
     (async () => {
@@ -193,8 +190,11 @@ export default function SpaceForm(props: IProps) {
       if (!currentIndexMethods.includes('KnowledgeGraph')) {
         form.setFieldValue('index_methods', ['VectorStore', 'FullText', 'KnowledgeGraph']);
       }
+    } else if (dataSourceType === 'DOCUMENT') {
+      // Document: KnowledgeGraph is available (for .md heading hierarchy)
+      // Keep current selection; do not force-remove KnowledgeGraph
     } else {
-      // Non-Git repo: remove KnowledgeGraph
+      // Other types: remove KnowledgeGraph
       const filtered = currentIndexMethods.filter((m: string) => m !== 'KnowledgeGraph');
       form.setFieldValue('index_methods', filtered.length > 0 ? filtered : ['VectorStore', 'FullText']);
     }
@@ -213,13 +213,15 @@ export default function SpaceForm(props: IProps) {
   );
 
   const handleFinish = async (fieldsValue: FieldType) => {
-    const { spaceName, owner, description, storage, domain, dataSourceType: dst, index_methods } = fieldsValue;
+    const { spaceName, owner, description, storage, dataSourceType: dst, index_methods } = fieldsValue;
     setSpinning(true);
 
     // 1. Create knowledge space
     // Use first selected index method as primary vector_type
     const primaryIndex = index_methods?.[0] || storage;
-    const domain_type = dst === 'GIT_REPO' ? 'GitRepo' : domain || 'Normal';
+    // domain_type defaults to 'Normal' (standard ETL pipeline);
+    // GitRepo uses a dedicated domain index pipeline.
+    const domain_type = dst === 'GIT_REPO' ? 'GitRepo' : 'Normal';
     const [err, _data, res] = await apiInterceptors(
       addSpace({
         name: spaceName,
@@ -278,7 +280,68 @@ export default function SpaceForm(props: IProps) {
       return;
     }
 
-    // 3. For other types, forward to upload step
+    // 3. For Document type, upload files and trigger sync immediately
+    if (dst === 'DOCUMENT') {
+      if (files.length === 0) {
+        setSpinning(false);
+        message.error(t('Please_select_file'));
+        return;
+      }
+
+      // Upload each file
+      const uploadedFiles: Array<{ name: string; doc_id: number }> = [];
+      let uploadFailed = false;
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('doc_name', file.name);
+        formData.append('doc_file', file);
+        formData.append('doc_type', 'DOCUMENT');
+        const [uploadErr, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
+        if (uploadErr || !docId) {
+          uploadFailed = true;
+          message.error(t('upload_failed') + ': ' + file.name);
+          break;
+        }
+        uploadedFiles.push({ name: file.name, doc_id: docId });
+      }
+
+      if (uploadFailed) {
+        setSpinning(false);
+        // Still mark as success so user can see the space was created
+        onSuccess?.();
+        handleStepChange({ label: 'finish' });
+        return;
+      }
+
+      // Trigger batch sync for all uploaded documents
+      const chunkStrategy = fieldsValue.chunk_strategy || 'Automatic';
+      const syncParams = uploadedFiles.map(f => ({
+        doc_id: f.doc_id,
+        name: f.name,
+        chunk_parameters: {
+          chunk_strategy: chunkStrategy,
+          ...(fieldsValue.chunk_size ? { chunk_size: fieldsValue.chunk_size } : {}),
+          ...(fieldsValue.chunk_overlap ? { chunk_overlap: fieldsValue.chunk_overlap } : {}),
+        },
+      }));
+
+      const [syncErr] = await apiInterceptors(syncBatchDocument(spaceName, syncParams));
+      setSpinning(false);
+
+      if (syncErr) {
+        // Space created + files uploaded successfully, but sync failed/incomplete.
+        // Don't block — user can re-sync from the detail page.
+        message.warning(t('upload_sync_partial_failed'));
+      } else {
+        message.success(t('upload_sync_completed'));
+      }
+
+      onSuccess?.();
+      handleStepChange({ label: 'finish' });
+      return;
+    }
+
+    // 4. For other types (URL, TEXT, YUQUEURL), forward to upload step
     setSpinning(false);
     handleStepChange({
       label: 'forward',
@@ -329,50 +392,36 @@ export default function SpaceForm(props: IProps) {
         >
           <Input className='h-12' placeholder={t('Please_input_the_name')} />
         </Form.Item>
-        <div className='grid grid-cols-2 gap-4'>
-          <Form.Item<FieldType> label={t('Storage')} name='storage' rules={[{ required: true }]}>
-            <Select className='h-12' placeholder={t('Please_select_the_storage')} onChange={handleStorageChange}>
-              {spaceConfig?.map((item: any) => (
-                <Select.Option key={item.name} value={item.name}>
-                  {item.desc}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item<FieldType> label={t('Domain')} name='domain'>
-            <Select className='h-12' placeholder={t('Please_select_the_domain_type')} allowClear>
-              {spaceConfig
-                ?.find((item: any) => item.name === storage)
-                ?.domain_types.map((item: any) => (
-                  <Select.Option key={item.name} value={item.name}>
-                    {item.desc}
-                  </Select.Option>
-                ))}
-            </Select>
-          </Form.Item>
-        </div>
+        <Form.Item<FieldType> label={t('Storage')} name='storage' rules={[{ required: true }]}>
+          <Select className='h-12' placeholder={t('Please_select_the_storage')}>
+            {spaceConfig?.map((item: any) => (
+              <Select.Option key={item.name} value={item.name}>
+                {item.desc}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
         <Form.Item<FieldType> label={t('Description')} name='description' rules={[{ required: true }]}>
           <Input className='h-12' placeholder={t('Please_input_the_description')} />
         </Form.Item>
 
         {/* ── Section 1b: Index Methods ── */}
-        <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>
-          {t('Index_Method') || '索引方式'}
-        </div>
+        <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Index_Method')}</div>
         <Form.Item<FieldType> name='index_methods' initialValue={['VectorStore', 'FullText', 'KnowledgeGraph']}>
           <Checkbox.Group
             className='grid grid-cols-3 gap-3 w-full'
             onChange={(values: string[]) => {
-              // If Git Repo, ensure KnowledgeGraph is available
-              // If not Git Repo, remove KnowledgeGraph from selection
-              if (dataSourceType !== 'GIT_REPO') {
+              // KnowledgeGraph is only available for GIT_REPO and DOCUMENT types.
+              // For other types, remove it from the selection.
+              if (dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT') {
                 const filtered = values.filter(v => v !== 'KnowledgeGraph');
                 form.setFieldValue('index_methods', filtered);
               }
             }}
           >
             {INDEX_METHODS.map(method => {
-              const isCodeOnly = method.onlyCode && dataSourceType !== 'GIT_REPO';
+              // KnowledgeGraph is available for GIT_REPO (code) and DOCUMENT (markdown headings)
+              const isCodeOnly = method.onlyCode && dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT';
               const isDisabled = isCodeOnly;
               return (
                 <Checkbox
@@ -385,13 +434,13 @@ export default function SpaceForm(props: IProps) {
                   `}
                 >
                   <div className='flex flex-col'>
-                    <span className='text-sm font-medium'>
-                      {t('language') === 'en' ? method.labelEn : method.label}
-                    </span>
-                    <span className='text-xs text-gray-400'>
-                      {t('language') === 'en' ? method.descEn : method.desc}
-                    </span>
-                    {method.onlyCode && <span className='text-[10px] text-orange-500'>仅代码</span>}
+                    <span className='text-sm font-medium'>{t(method.labelKey as I18nKeys)}</span>
+                    <span className='text-xs text-gray-400'>{t(method.descKey as I18nKeys)}</span>
+                    {method.onlyCode && !isDisabled && (
+                      <span className='text-[10px] text-orange-500'>
+                        {dataSourceType === 'DOCUMENT' ? t('markdown_only') : t('code_only')}
+                      </span>
+                    )}
                   </div>
                 </Checkbox>
               );
@@ -550,6 +599,11 @@ export default function SpaceForm(props: IProps) {
                 <p className='ant-upload-hint text-xs text-gray-400'>PDF, PPT, Excel, Word, Text, Markdown, CSV</p>
               </Dragger>
             </Form.Item>
+            {hasKnowledgeGraph && (
+              <div className='mt-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'>
+                <div className='text-xs text-blue-700 dark:text-blue-300'>{t('build_heading_graph_help')}</div>
+              </div>
+            )}
           </div>
         )}
 
@@ -650,7 +704,7 @@ export default function SpaceForm(props: IProps) {
               {t('cancel')}
             </Button>
             <Button type='primary' htmlType='submit' loading={spinning}>
-              {isGitRepo ? t('create_and_sync') : t('Next')}
+              {isGitRepo ? t('create_and_sync') : isDocument ? t('create_and_upload') : t('Next')}
             </Button>
           </div>
         </Form.Item>

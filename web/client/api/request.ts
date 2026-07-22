@@ -222,14 +222,18 @@ export const getGraphVis = (spaceName: string, data: { limit: number }) => {
 };
 
 export const getCodeGraphVisualizeHtml = (spaceName: string) => {
-  // This endpoint returns raw HTML, not JSON - use axios directly
+  // This endpoint returns raw HTML, not JSON - use fetch directly.
+  // Note: we return the text even for 404 (no graph built yet) so the caller
+  // can surface the friendly "No code graph found" message from the backend
+  // instead of a raw HTTP error.
   return fetch(`/api/v1/knowledge/${encodeURIComponent(spaceName)}/codegraph/visualize`, {
     method: 'GET',
   }).then(async response => {
-    if (!response.ok) {
+    const text = await response.text();
+    if (!response.ok && !text) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    return response.text();
+    return text;
   });
 };
 

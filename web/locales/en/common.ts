@@ -785,8 +785,36 @@ export const CommonEn = {
   No_Results: 'No results',
   // ── Create Knowledge Unified Form ──
   create_and_sync: 'Create & Sync',
+  create_and_upload: 'Create & Upload',
   create_failed: 'Create failed',
+  upload_failed: 'Upload failed',
+  upload_sync_failed: 'Upload succeeded but sync failed',
+  upload_sync_completed: 'Created and synced successfully',
   click_or_drag_to_upload: 'Click or drag file to upload',
+  // ── Knowledge Graph Index ──
+  code_only: 'Code only',
+  markdown_only: 'Markdown only',
+  Build_Heading_Graph: 'Build Heading Graph',
+  build_heading_graph_help:
+    'With graph index selected, Markdown files (.md) will have their heading hierarchy (H1→H2→H3) automatically built into a structural graph during sync.',
+  code_graph_not_found: 'No graph data yet',
+  code_graph_not_found_desc:
+    'No structural graph has been built for this knowledge base. Upload Markdown files with graph index enabled; the heading hierarchy graph will be built automatically after sync.',
+  // ── Add Document / Datasource ──
+  add_document_title: 'Add Document',
+  git_repo_already_imported: 'Git repository already imported, cannot add more',
+  upload_sync_partial_failed:
+    'Knowledge base created and files uploaded, but sync incomplete. You can re-sync in the detail page.',
+  doc_uploaded_need_sync: 'Documents uploaded. Click "Sync" in the list to finish indexing.',
+  upload_and_sync: 'Upload & Sync',
+  doc_auto_sync_hint: 'Files will be automatically synced and indexed after upload.',
+  // ── Index Methods ──
+  index_vector_store: 'Vector Index',
+  index_vector_store_desc: 'Semantic search',
+  index_full_text: 'Structural Index',
+  index_full_text_desc: 'Structured retrieval',
+  index_knowledge_graph: 'Graph Index',
+  index_knowledge_graph_desc: 'Knowledge graph',
   chunk_strategy: 'Chunk Strategy',
   chunk_size: 'Chunk Size',
   chunk_overlap: 'Chunk Overlap',

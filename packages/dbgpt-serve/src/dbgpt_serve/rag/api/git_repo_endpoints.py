@@ -117,6 +117,35 @@ async def get_git_sync_status(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/{space_id}/build-graph")
+async def build_knowledge_graph(space_id: str) -> Result:
+    """Build a structural graph from the indexed documents of a knowledge space.
+
+    Works for both GIT_REPO spaces (code structure graph) and DOCUMENT spaces
+    (markdown heading hierarchy graph). Reconstructs file contents from the
+    stored chunks and builds the graph via RepoGraphBuilder.
+
+    Returns:
+        Dict with vertex/edge counts and status, or an error message if no
+        documents were found to build a graph from.
+    """
+    try:
+        from ..service.codegraph_build_service import (
+            build_code_graph_from_knowledge_space,
+        )
+
+        result = await build_code_graph_from_knowledge_space(space_id)
+        if result:
+            return Result.succ(result)
+        return Result.fail(
+            "No documents found to build a graph from. "
+            "Index some documents first."
+        )
+    except Exception as e:
+        logging.exception(f"Failed to build knowledge graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 def init_git_repo_endpoints(system_app: SystemApp, config: ServeConfig) -> None:
     """Initialize the git repo endpoints."""
     global global_system_app

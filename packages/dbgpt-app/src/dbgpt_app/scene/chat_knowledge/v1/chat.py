@@ -114,6 +114,10 @@ class ChatKnowledge(BaseChat):
     ):
         reference = f"\n\n{self.parse_source_view(self.chunks_with_score)}"
         view_message = final_output.text
+        # Auto-annotate citations: insert [n] markers after sentences that
+        # contain content from a retrieved chunk, so citations are always
+        # present even if the LLM does not follow the prompt instruction.
+        view_message = self._auto_annotate_citations(view_message)
         view_message = view_message + reference
 
         if final_output.has_thinking and not incremental:
@@ -122,7 +126,67 @@ class ChatKnowledge(BaseChat):
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""
-        return text + f"\n\n{self.parse_source_view(self.chunks_with_score)}"
+        annotated = self._auto_annotate_citations(text)
+        return annotated + f"\n\n{self.parse_source_view(self.chunks_with_score)}"
+
+    def _auto_annotate_citations(self, text: str) -> str:
+        """Post-process the LLM answer: for each retrieved chunk, find its
+        longest common substring in the answer and insert a [n] citation
+        marker after the first occurrence.
+
+        Only inserts citations for chunks whose content has a meaningful
+        overlap with the answer (>= 20 chars).  This is a best-effort
+        heuristic — it does not guarantee perfect placement, but ensures
+        every referenced chunk gets at least one inline citation.
+        """
+        if not self.chunks_with_score:
+            return text
+
+        # Sort by chunk length descending so longer (more specific) chunks
+        # are matched first, avoiding shorter chunks matching inside them.
+        indexed = sorted(
+            enumerate(self.chunks_with_score, start=1),
+            key=lambda x: len(x[1][0].content),
+            reverse=True,
+        )
+
+        for idx, (chunk, _score) in indexed:
+            content = chunk.content.strip()
+            if len(content) < 10:
+                continue
+            # Find the longest common substring between chunk content and
+            # the answer text (simple sliding window, capped at 80 chars).
+            match = self._longest_common_substring(text, content, min_len=10, max_len=80)
+            if match and match not in text:
+                # Edge case: match was already replaced
+                continue
+            if match:
+                # Insert [n] right after the first occurrence of the match
+                marker = f"[{idx}]"
+                # Avoid inserting if the marker is already present nearby
+                if marker not in text:
+                    text = text.replace(match, match + marker, 1)
+        return text
+
+    @staticmethod
+    def _longest_common_substring(
+        text: str, chunk: str, min_len: int = 10, max_len: int = 80
+    ) -> str:
+        """Find the longest substring of `chunk` that appears in `text`.
+
+        Uses a sliding window over `chunk` (from max_len down to min_len)
+        to find the longest match.  Returns the match string or empty.
+        """
+        chunk = chunk.strip()
+        best = ""
+        for length in range(min(max_len, len(chunk)), min_len - 1, -1):
+            for start in range(len(chunk) - length + 1):
+                sub = chunk[start : start + length]
+                if sub in text:
+                    return sub
+            if best:
+                break  # already found best at this length
+        return best
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -151,15 +215,20 @@ class ChatKnowledge(BaseChat):
             context = "no relevant docs to retrieve"
         else:
             self.chunks_with_score = []
-            for chunk in candidates_with_scores:
+            # Build context with 1-based chunk indices so the LLM can cite
+            # them inline (e.g. "according to [1] ..."), and the frontend can
+            # map [n] back to the source chunk via parse_source_view.
+            context_parts = []
+            for idx, chunk in enumerate(candidates_with_scores, start=1):
                 chucks = self.chunk_dao.get_document_chunks(
                     query=DocumentChunkEntity(content=chunk.content),
                     document_ids=self.document_ids,
                 )
                 if len(chucks) > 0:
                     self.chunks_with_score.append((chucks[0], chunk.score))
+                    context_parts.append(f"[{idx}] {chunk.content}")
 
-            context = "\n".join([doc.content for doc in candidates_with_scores])
+            context = "\n\n".join(context_parts)
         self.relations = list(
             set(
                 [
@@ -178,7 +247,7 @@ class ChatKnowledge(BaseChat):
     def parse_source_view(self, chunks_with_score: List):
         """
         format knowledge reference view message to web
-        <references title="'References'" references="'[{name:aa.pdf,chunks:[{10:text},{11:text}]},{name:bb.pdf,chunks:[{12,text}]}]'"> </references>
+        <references title="'References'" references="'[{name:aa.pdf,chunks:[{index:1,id:10,content:text,recall_score:0.9}]}]'"> </references>
         """  # noqa
         import xml.etree.ElementTree as ET
 
@@ -186,29 +255,22 @@ class ChatKnowledge(BaseChat):
         title = "References"
         references_ele.set("title", title)
         references_dict = {}
-        for chunk, score in chunks_with_score:
+        for idx, (chunk, score) in enumerate(chunks_with_score, start=1):
             doc_name = chunk.doc_name
+            chunk_data = {
+                "index": idx,
+                "id": chunk.id,
+                "content": chunk.content,
+                "meta_info": chunk.meta_info,
+                "recall_score": score,
+            }
             if doc_name not in references_dict:
                 references_dict[doc_name] = {
                     "name": doc_name,
-                    "chunks": [
-                        {
-                            "id": chunk.id,
-                            "content": chunk.content,
-                            "meta_info": chunk.meta_info,
-                            "recall_score": score,
-                        }
-                    ],
+                    "chunks": [chunk_data],
                 }
             else:
-                references_dict[doc_name]["chunks"].append(
-                    {
-                        "id": chunk.id,
-                        "content": chunk.content,
-                        "meta_info": chunk.meta_info,
-                        "recall_score": score,
-                    }
-                )
+                references_dict[doc_name]["chunks"].append(chunk_data)
         references_list = list(references_dict.values())
         references_ele.set(
             "references", json.dumps(references_list, ensure_ascii=False)

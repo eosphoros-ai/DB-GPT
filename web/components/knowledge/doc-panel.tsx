@@ -42,6 +42,7 @@ interface IProps {
   onDeleteDoc: () => void;
   hideRecallTest?: boolean;
   hideSearchTools?: boolean;
+  refreshKey?: number;
 }
 
 const { confirm } = Modal;
@@ -76,7 +77,7 @@ const SyncContent: React.FC<{ name: string; id: number }> = ({ name, id }) => {
 
 export default function DocPanel(props: IProps) {
   const [form] = Form.useForm();
-  const { space, addStatus, hideRecallTest, hideSearchTools } = props;
+  const { space, addStatus, hideRecallTest, hideSearchTools, refreshKey } = props;
   const { t } = useTranslation();
   const router = useRouter();
   const page_size = 18;
@@ -100,6 +101,9 @@ export default function DocPanel(props: IProps) {
   const hasMore = useMemo(() => {
     return documents?.length < total;
   }, [documents, total]);
+
+  // GitRepo spaces map 1:1 to a repository; once imported, disallow adding more.
+  const isGitRepoImported = space.domain_type === 'GitRepo' && documents.length > 0;
 
   const showDeleteConfirm = (row: any) => {
     confirm({
@@ -201,6 +205,13 @@ export default function DocPanel(props: IProps) {
     // getAdmins();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refresh document list when refreshKey changes (e.g. after adding a doc)
+  useEffect(() => {
+    if (refreshKey === undefined) return;
+    fetchDocuments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   useEffect(() => {
     if (addStatus === 'finish') {
@@ -436,15 +447,18 @@ export default function DocPanel(props: IProps) {
   return (
     <div className='px-4'>
       <Space>
-        <Button
-          size='middle'
-          type='primary'
-          className='flex items-center'
-          icon={<PlusOutlined />}
-          onClick={handleAddDocument}
-        >
-          {t('Add_Datasource')}
-        </Button>
+        <Tooltip title={isGitRepoImported ? t('git_repo_already_imported') : ''}>
+          <Button
+            size='middle'
+            type='primary'
+            className='flex items-center'
+            icon={<PlusOutlined />}
+            onClick={handleAddDocument}
+            disabled={isGitRepoImported}
+          >
+            {t('Add_Datasource')}
+          </Button>
+        </Tooltip>
         <Button size='middle' className='flex items-center mx-2' icon={<ToolFilled />} onClick={handleArguments}>
           Arguments
         </Button>
