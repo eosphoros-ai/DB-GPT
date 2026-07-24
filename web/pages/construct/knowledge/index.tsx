@@ -1,11 +1,18 @@
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delSpace, getKnowledgeSpaceStats, getSpaceConfig, getSpaceList, newDialogue } from '@/client/api';
+import {
+  apiInterceptors,
+  delSpace,
+  getKnowledgeSpaceStats,
+  getSpaceConfig,
+  getSpaceList,
+  newDialogue,
+} from '@/client/api';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import GitRepoSyncForm from '@/components/knowledge/git-repo-sync-form';
 import Segmentation from '@/components/knowledge/segmentation';
 import SpaceForm from '@/components/knowledge/space-form';
-import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import BlurredCard, { InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { File, ISpace, IStorage, StepChangeParams } from '@/types/knowledge';
 import {
@@ -35,7 +42,9 @@ const Knowledge = () => {
   const [docType, setDocType] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [spaceConfig, setSpaceConfig] = useState<IStorage | null>(null);
-  const [spaceStats, setSpaceStats] = useState<Record<string, { vertexCount: number | null; edgeCount: number | null }>>({});
+  const [spaceStats, setSpaceStats] = useState<
+    Record<string, { vertexCount: number | null; edgeCount: number | null }>
+  >({});
 
   const { t } = useTranslation();
   const router = useRouter();
@@ -59,7 +68,9 @@ const Knowledge = () => {
               },
             }));
           }
-        } catch { /* ignore individual stat failures */ }
+        } catch {
+          /* ignore individual stat failures */
+        }
       }
     }
   }
@@ -229,9 +240,9 @@ const Knowledge = () => {
                           {space.index_methods
                             .map(m => {
                               const map: Record<string, string> = {
-                                VectorStore: '向量',
-                                FullText: '结构',
-                                KnowledgeGraph: '图谱',
+                                VectorStore: t('index_vector_store'),
+                                FullText: t('index_full_text'),
+                                KnowledgeGraph: t('index_knowledge_graph'),
                               };
                               return map[m] || m;
                             })
