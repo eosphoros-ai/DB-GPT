@@ -509,3 +509,9 @@ MATCH (n) WHERE n.id = 'DB-GPT' RETURN n LIMIT 10
 This implies that in scenarios where questions can be expressed by a single graph query, the text2gql search approach can retrieve more accurate information with lower cost.
 
 In conclusion, enabling text2gql search in GraphRAG significantly increase the accuracy and lower the cost when questions are concise and clear.
+
+## See also
+
+- [Knowledge Base Indexing Principles](/docs/design/kb_index_principles) — how a document becomes searchable (structural / knowledge-graph incl. code graph / vector / keyword indexes)
+- [Agentic RAG Conversation Principles](/docs/design/agentic_rag_principles) — how a question becomes a cited answer via the agentic retrieval loop
+- [RAG module reference](/docs/modules/rag)

@@ -373,27 +373,6 @@ const sidebars = {
       collapsible: true,
       items: [
         { type: "doc", id: "modules/rag", label: "RAG Overview" },
-        {
-          type: "category",
-          label: "RAG Integrations",
-          collapsed: true,
-          items: [
-            { type: "doc", id: "installation/integrations/graph_rag_install" },
-            { type: "doc", id: "installation/integrations/oceanbase_rag_install" },
-            { type: "doc", id: "installation/integrations/bm25_rag_install" },
-            { type: "doc", id: "installation/integrations/milvus_rag_install" },
-          ],
-        },
-        {
-          type: "category",
-          label: "Cookbook",
-          collapsed: true,
-          items: [
-            { type: "doc", id: "cookbook/rag/graph_rag_app_develop" },
-            { type: "doc", id: "cookbook/rag/keyword_rag_app_develop" },
-            { type: "doc", id: "awel/cookbook/first_rag_with_awel" },
-          ],
-        },
       ],
     },
 
@@ -740,31 +719,18 @@ const sidebars = {
   ],
 
   sidebarKnowledge: [
+    {
+      type: "category",
+      label: "Principles",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
+        { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
+      ],
+    },
     { type: "doc", id: "modules/rag", label: "RAG Overview" },
     { type: "doc", id: "application/graph_rag", label: "GraphRAG" },
-    {
-      type: "category",
-      label: "RAG Integrations",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "installation/integrations/graph_rag_install" },
-        { type: "doc", id: "installation/integrations/oceanbase_rag_install" },
-        { type: "doc", id: "installation/integrations/bm25_rag_install" },
-        { type: "doc", id: "installation/integrations/milvus_rag_install" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Cookbook",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "cookbook/rag/graph_rag_app_develop" },
-        { type: "doc", id: "cookbook/rag/keyword_rag_app_develop" },
-        { type: "doc", id: "awel/cookbook/first_rag_with_awel" },
-      ],
-    },
   ],
 
   sidebarTools: [
