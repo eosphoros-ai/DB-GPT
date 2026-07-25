@@ -392,7 +392,7 @@ export default function SpaceForm(props: IProps) {
         >
           <Input className='h-12' placeholder={t('Please_input_the_name')} />
         </Form.Item>
-        <Form.Item<FieldType> label={t('Storage')} name='storage' rules={[{ required: true }]}>
+        <Form.Item<FieldType> className='hidden' label={t('Storage')} name='storage'>
           <Select className='h-12' placeholder={t('Please_select_the_storage')}>
             {spaceConfig?.map((item: any) => (
               <Select.Option key={item.name} value={item.name}>
