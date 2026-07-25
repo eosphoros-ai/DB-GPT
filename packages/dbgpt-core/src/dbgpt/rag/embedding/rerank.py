@@ -643,7 +643,7 @@ class TeiRerankEmbeddings(OpenAPIRerankEmbeddings):
         Returns:
             List[float]: The rank scores of the candidates.
         """
-        if not isinstance(response, list) and len(response) == 0:
+        if not isinstance(response, list) or len(response) == 0:
             raise RuntimeError("Results should be a not empty list")
 
         # Sort by index, 0 in the first element

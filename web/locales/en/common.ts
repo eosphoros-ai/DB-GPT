@@ -843,4 +843,9 @@ export const CommonEn = {
   References: 'References',
   stop: 'Stop',
   chat_error: 'Sorry, an error occurred. Please try again.',
+  // ── request.ts error tips ──
+  'request.error.network':
+    'Cannot connect to DB-GPT service: network unreachable (possibly CORS restriction or service not running). Please check cors_allowed_origins config and whether the service is up.',
+  'request.error.timeout': 'Request timed out, please try again later.',
+  'request.error.default': 'Request failed (HTTP {{status}}).',
 } as const;

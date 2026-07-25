@@ -215,8 +215,11 @@ class DBSchemaRetriever(BaseRetriever):
         separated_chunks = [
             chunk for chunk in table_chunks if chunk.metadata.get("separated")
         ]
+        not_sep_chunks = [
+            self._deserialize_table_chunk(chunk) for chunk in not_sep_chunks
+        ]
         if not separated_chunks:
-            return [self._deserialize_table_chunk(chunk) for chunk in not_sep_chunks]
+            return not_sep_chunks
 
         # Create tasks list
         # The fields of table is too large, and it has to be separated into chunks,

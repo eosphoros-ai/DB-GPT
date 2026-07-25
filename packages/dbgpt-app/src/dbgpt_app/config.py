@@ -8,6 +8,7 @@ from dbgpt.model.parameter import (
     ModelServiceConfig,
 )
 from dbgpt.storage.cache.manager import ModelCacheParameters
+from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.util.configure import HookConfig
 from dbgpt.util.i18n_utils import _
 from dbgpt.util.parameter_utils import BaseParameters
@@ -55,7 +56,7 @@ class SystemParameters:
 class StorageConfig(BaseParameters):
     __cfg_type__ = "app"
 
-    vector: Optional[ChromaVectorConfig] = field(
+    vector: Optional[VectorStoreConfig] = field(
         default_factory=lambda: ChromaVectorConfig(),
         metadata={
             "help": _("default vector type"),
@@ -377,6 +378,17 @@ class ServiceWebParameters(BaseParameters):
     agent_context: AgentContextParameters = field(
         default_factory=AgentContextParameters,
         metadata={"help": _("Agent context-window management configuration")},
+    )
+    cors_allowed_origins: str = field(
+        default="*",
+        metadata={
+            "help": _(
+                "Comma-separated allowed CORS origins. Default '*' allows all "
+                "(any website can read API responses cross-origin). Set to "
+                "explicit origins to restrict, e.g. "
+                "http://localhost:3000,https://your-app.com."
+            )
+        },
     )
 
 

@@ -19,7 +19,7 @@ async def create_datasource(
         datasource (DatasourceModel): The datasource model.
     """
     try:
-        res = await client.get("/datasources", model_to_dict(datasource))
+        res = await client.post("/datasources", model_to_dict(datasource))
         result: Result = res.json()
         if result["success"]:
             return DatasourceModel(**result["data"])

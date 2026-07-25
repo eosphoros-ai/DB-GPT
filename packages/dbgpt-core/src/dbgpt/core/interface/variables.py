@@ -424,6 +424,8 @@ class VariablesProvider(BaseComponent, ABC):
         elif var.value_type == "float":
             return float(var.value)
         elif var.value_type == "bool":
+            if isinstance(var.value, bool):
+                return var.value
             if var.value.lower() in ["true", "1"]:
                 return True
             elif var.value.lower() in ["false", "0"]:
