@@ -60,8 +60,8 @@ logger = logging.getLogger(__name__)
 # Context var holding the active ToolResultStorage for the current agent run.
 # Set by ConversableAgent.act() / ReActAgent before tool execution so that
 # the standalone run_tool() function can access it without a signature change.
-_current_storage: "contextvars.ContextVar[Optional[ToolResultStorage]]" = contextvars.ContextVar(
-    "dbgpt_tool_result_storage", default=None
+_current_storage: "contextvars.ContextVar[Optional[ToolResultStorage]]" = (
+    contextvars.ContextVar("dbgpt_tool_result_storage", default=None)
 )
 
 
@@ -76,6 +76,7 @@ def set_current_storage(storage: Optional["ToolResultStorage"]) -> None:
 def get_current_storage() -> Optional["ToolResultStorage"]:
     """Return the ToolResultStorage bound to the current async context, if any."""
     return _current_storage.get()
+
 
 PERSISTED_OUTPUT_TAG = "<persisted-output>"
 PERSISTED_OUTPUT_CLOSING_TAG = "</persisted-output>"
@@ -230,7 +231,9 @@ def _build_persisted_message(
         size_str = f"{size_kb:.1f} KB"
 
     msg = f"{PERSISTED_OUTPUT_TAG}\n"
-    msg += f"This tool result was too large ({original_size:,} characters, {size_str}).\n"
+    msg += (
+        f"This tool result was too large ({original_size:,} characters, {size_str}).\n"
+    )
     msg += f"Full output saved to: {file_path}\n"
     msg += "Use the read_file tool with this file path to access specific sections.\n\n"
     msg += f"Preview (first {len(preview)} chars):\n"

@@ -82,7 +82,9 @@ class GitRepoSyncService:
             repo_url=repo_url,
             branch=branch,
             extra_skip_dirs=set(exclude_dirs) if exclude_dirs else None,
-            extra_skip_extensions=set(exclude_extensions) if exclude_extensions else None,
+            extra_skip_extensions=set(exclude_extensions)
+            if exclude_extensions
+            else None,
             include_dirs=set(include_dirs) if include_dirs else None,
             metadata=metadata or {"knowledge_id": knowledge_id},
         )
@@ -225,9 +227,7 @@ class GitRepoSyncService:
 
             from dbgpt_ext.rag import ChunkParameters
 
-            chunk_parameter = ChunkParameters(
-                chunk_strategy="CHUNK_BY_MARKDOWN_HEADER"
-            )
+            chunk_parameter = ChunkParameters(chunk_strategy="CHUNK_BY_MARKDOWN_HEADER")
 
             stats = {
                 "total_files": len(documents),
@@ -279,7 +279,9 @@ class GitRepoSyncService:
                     )
                     single_knowledge._load = lambda d=doc: [d]
 
-                    chunks = await domain_index.extract(single_knowledge, chunk_parameter)
+                    chunks = await domain_index.extract(
+                        single_knowledge, chunk_parameter
+                    )
                     chunks = await domain_index.transform(chunks)
                     await domain_index.load(
                         chunks,
@@ -332,9 +334,7 @@ class GitRepoSyncService:
                             gmt_created=datetime.now(),
                             gmt_modified=datetime.now(),
                         )
-                        self.service._document_dao.create_knowledge_document(
-                            failed_doc
-                        )
+                        self.service._document_dao.create_knowledge_document(failed_doc)
                     except Exception:
                         pass
 
@@ -482,9 +482,7 @@ class GitRepoSyncService:
             try:
                 diff_result = git_knowledge.load_incremental(last_commit)
             except Exception as e:
-                logger.error(
-                    f"Incremental sync failed, falling back to full sync: {e}"
-                )
+                logger.error(f"Incremental sync failed, falling back to full sync: {e}")
                 # Reset status before full sync
                 self._set_sync_status(space, "FINISHED")
                 return await self._async_sync_repo(
@@ -533,9 +531,7 @@ class GitRepoSyncService:
             domain_index = DomainKnowledgeIndexFactory.create(domain_type_norm)
             from dbgpt_ext.rag import ChunkParameters
 
-            chunk_parameter = ChunkParameters(
-                chunk_strategy="CHUNK_BY_MARKDOWN_HEADER"
-            )
+            chunk_parameter = ChunkParameters(chunk_strategy="CHUNK_BY_MARKDOWN_HEADER")
             indexed_count = 0
 
             for doc in added + modified:
@@ -570,7 +566,9 @@ class GitRepoSyncService:
                     )
                     single_knowledge._load = lambda d=doc: [d]
 
-                    chunks = await domain_index.extract(single_knowledge, chunk_parameter)
+                    chunks = await domain_index.extract(
+                        single_knowledge, chunk_parameter
+                    )
                     chunks = await domain_index.transform(chunks)
                     await domain_index.load(
                         chunks,
@@ -606,7 +604,9 @@ class GitRepoSyncService:
                         f"Failed to index document {doc.metadata.get('file_path', '')}: {e}"
                     )
 
-            self._update_space_context(space, repo_url, branch, head_commit, "incremental")
+            self._update_space_context(
+                space, repo_url, branch, head_commit, "incremental"
+            )
 
             # Mark sync as finished
             self._set_sync_status(space, "FINISHED")

@@ -279,9 +279,7 @@ class FullContextCompression:
             raise
 
         if not summary_text or not summary_text.strip():
-            logger.warning(
-                "Layer 3 (FullContextCompression): empty summary, skipping"
-            )
+            logger.warning("Layer 3 (FullContextCompression): empty summary, skipping")
             return messages
 
         summary_msg = AgentMessage(

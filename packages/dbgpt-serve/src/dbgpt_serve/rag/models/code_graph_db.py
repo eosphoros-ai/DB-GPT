@@ -6,10 +6,9 @@ Three tables:
   - code_graph_meta: Per-knowledge-space graph metadata (counts, build info)
 """
 
-import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
@@ -403,9 +402,7 @@ class CodeGraphMetaEntity(Model):
 class CodeGraphMetaDao(BaseDao):
     """DAO for code_graph_meta table."""
 
-    def get_by_knowledge_id(
-        self, knowledge_id: str
-    ) -> Optional[CodeGraphMetaEntity]:
+    def get_by_knowledge_id(self, knowledge_id: str) -> Optional[CodeGraphMetaEntity]:
         """Get meta for a knowledge space."""
         session = self.get_raw_session()
         try:

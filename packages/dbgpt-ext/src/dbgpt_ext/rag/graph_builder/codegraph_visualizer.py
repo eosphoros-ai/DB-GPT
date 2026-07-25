@@ -14,7 +14,7 @@ import html
 import json
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 from dbgpt.storage.graph_store.graph import MemoryGraph
 
@@ -46,8 +46,16 @@ EDGE_TYPE_COLORS = {
 
 # Community colors
 COMMUNITY_COLORS = [
-    "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F",
-    "#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC",
+    "#4E79A7",
+    "#F28E2B",
+    "#E15759",
+    "#76B7B2",
+    "#59A14F",
+    "#EDC948",
+    "#B07AA1",
+    "#FF9DA7",
+    "#9C755F",
+    "#BAB0AC",
 ]
 
 DEFAULT_NODE_COLOR = "#888888"
@@ -57,6 +65,7 @@ DEFAULT_EDGE_COLOR = "#555555"
 # ---------------------------------------------------------------------------
 # Degree computation
 # ---------------------------------------------------------------------------
+
 
 def _compute_degrees(graph: MemoryGraph) -> Dict[str, int]:
     """Compute degree (in + out) for each vertex."""
@@ -71,7 +80,10 @@ def _compute_degrees(graph: MemoryGraph) -> Dict[str, int]:
 # Community detection wrapper
 # ---------------------------------------------------------------------------
 
-def _detect_communities(graph: MemoryGraph) -> Tuple[Dict[str, List[str]], Dict[str, str]]:
+
+def _detect_communities(
+    graph: MemoryGraph,
+) -> Tuple[Dict[str, List[str]], Dict[str, str]]:
     """Run community detection and return (communities, summaries).
 
     Returns:
@@ -81,13 +93,19 @@ def _detect_communities(graph: MemoryGraph) -> Tuple[Dict[str, List[str]], Dict[
     try:
         from dbgpt_ext.rag.graph_builder.community_detector import CodeCommunityDetector
 
-        logger.info(f"[codegraph] Starting community detection for graph with {graph.vertex_count} vertices")
+        logger.info(
+            f"[codegraph] Starting community detection for graph with {graph.vertex_count} vertices"
+        )
         detector = CodeCommunityDetector(graph)
         communities = detector.detect()
         if communities:
-            logger.info(f"[codegraph] Community detection found {len(communities)} communities")
+            logger.info(
+                f"[codegraph] Community detection found {len(communities)} communities"
+            )
         else:
-            logger.warning("[codegraph] Community detection returned no communities (networkx may be missing)")
+            logger.warning(
+                "[codegraph] Community detection returned no communities (networkx may be missing)"
+            )
         summaries = detector.get_community_summary(communities)
         return communities, summaries
     except ImportError as e:
@@ -99,11 +117,12 @@ def _detect_communities(graph: MemoryGraph) -> Tuple[Dict[str, List[str]], Dict[
 # Node / edge conversion to vis-network format
 # ---------------------------------------------------------------------------
 
+
 def _truncate_label(name: str, max_len: int = 30) -> str:
     """Truncate long labels for readability."""
     if len(name) <= max_len:
         return name
-    return name[:max_len - 3] + "..."
+    return name[: max_len - 3] + "..."
 
 
 def _build_vis_nodes(
@@ -155,7 +174,11 @@ def _build_vis_nodes(
             color = NODE_TYPE_COLORS.get(node_type, DEFAULT_NODE_COLOR)
 
         community_id = vid_to_community.get(v.vid, "")
-        community_name = summaries.get(community_id, "").split("--")[0].strip() if community_id else ""
+        community_name = (
+            summaries.get(community_id, "").split("--")[0].strip()
+            if community_id
+            else ""
+        )
 
         node = {
             "id": v.vid,
@@ -181,11 +204,13 @@ def _build_vis_nodes(
     # Legend
     legend = []
     for ntype, count in sorted(type_counts.items(), key=lambda x: -x[1]):
-        legend.append({
-            "type": ntype,
-            "color": NODE_TYPE_COLORS.get(ntype, DEFAULT_NODE_COLOR),
-            "count": count,
-        })
+        legend.append(
+            {
+                "type": ntype,
+                "color": NODE_TYPE_COLORS.get(ntype, DEFAULT_NODE_COLOR),
+                "count": count,
+            }
+        )
 
     return nodes, legend
 
@@ -195,7 +220,9 @@ def _build_vis_edges(graph: MemoryGraph) -> list:
     edges = []
     for e in graph.edges():
         confidence = e.get_prop("confidence") or ""
-        edge_color = EDGE_TYPE_COLORS.get(e.name, EDGE_TYPE_COLORS.get(e.get_prop("type"), DEFAULT_EDGE_COLOR))
+        edge_color = EDGE_TYPE_COLORS.get(
+            e.name, EDGE_TYPE_COLORS.get(e.get_prop("type"), DEFAULT_EDGE_COLOR)
+        )
 
         edge = {
             "from": e.sid,
@@ -218,6 +245,7 @@ def _build_vis_edges(graph: MemoryGraph) -> list:
 # ---------------------------------------------------------------------------
 # Large graph aggregation
 # ---------------------------------------------------------------------------
+
 
 def _aggregate_to_communities(
     graph: MemoryGraph,
@@ -247,23 +275,25 @@ def _aggregate_to_communities(
         color = COMMUNITY_COLORS[cid_int % len(COMMUNITY_COLORS)]
         label = summaries.get(cid, cid).split("--")[0].strip()
 
-        meta_nodes.append({
-            "id": cid,
-            "label": _truncate_label(label, 40),
-            "color": {
-                "background": color,
-                "border": color,
-                "highlight": {"background": "#ffffff", "border": color},
-            },
-            "size": round(size, 1),
-            "font": {"size": 12, "color": "#ffffff"},
-            "title": html.escape(summaries.get(cid, cid)),
-            "community": cid,
-            "community_name": label,
-            "source_file": "",
-            "node_type": "community",
-            "degree": mc,
-        })
+        meta_nodes.append(
+            {
+                "id": cid,
+                "label": _truncate_label(label, 40),
+                "color": {
+                    "background": color,
+                    "border": color,
+                    "highlight": {"background": "#ffffff", "border": color},
+                },
+                "size": round(size, 1),
+                "font": {"size": 12, "color": "#ffffff"},
+                "title": html.escape(summaries.get(cid, cid)),
+                "community": cid,
+                "community_name": label,
+                "source_file": "",
+                "node_type": "community",
+                "degree": mc,
+            }
+        )
 
     # Meta-edges: count cross-community edges
     cross_edges: Dict[Tuple[str, str], int] = defaultdict(int)
@@ -275,16 +305,18 @@ def _aggregate_to_communities(
 
     meta_edges = []
     for (src, tgt), count in cross_edges.items():
-        meta_edges.append({
-            "from": src,
-            "to": tgt,
-            "label": f"{count} cross-community edges",
-            "title": f"{count} cross-community edges [AGGREGATED]",
-            "dashes": True,
-            "width": 1,
-            "color": {"opacity": 0.35},
-            "confidence": "AGGREGATED",
-        })
+        meta_edges.append(
+            {
+                "from": src,
+                "to": tgt,
+                "label": f"{count} cross-community edges",
+                "title": f"{count} cross-community edges [AGGREGATED]",
+                "dashes": True,
+                "width": 1,
+                "color": {"opacity": 0.35},
+                "confidence": "AGGREGATED",
+            }
+        )
 
     return meta_nodes, meta_edges
 
@@ -292,6 +324,7 @@ def _aggregate_to_communities(
 # ---------------------------------------------------------------------------
 # HTML template
 # ---------------------------------------------------------------------------
+
 
 def _html_styles() -> str:
     return """
@@ -480,10 +513,14 @@ def codegraph_to_html(graph: MemoryGraph, knowledge_id: str = "") -> str:
     use_aggregation = graph.vertex_count > AGGREGATION_THRESHOLD
 
     if use_aggregation:
-        logger.info(f"[codegraph] Aggregating {graph.vertex_count} nodes into communities")
+        logger.info(
+            f"[codegraph] Aggregating {graph.vertex_count} nodes into communities"
+        )
         nodes, edges = _aggregate_to_communities(graph, communities, summaries)
     else:
-        nodes, legend = _build_vis_nodes(graph, degree, communities, summaries, use_community_color=False)
+        nodes, legend = _build_vis_nodes(
+            graph, degree, communities, summaries, use_community_color=False
+        )
         edges = _build_vis_edges(graph)
 
     # Build page
@@ -505,7 +542,7 @@ def codegraph_to_html(graph: MemoryGraph, knowledge_id: str = "") -> str:
       <div id="search-results"></div>
     </div>
     <div id="stats">
-      <div class="stat-row"><span id="node-count">0</span> nodes · <span id="edge-count">0</span> edges {'(aggregated)' if use_aggregation else ''}</div>
+      <div class="stat-row"><span id="node-count">0</span> nodes · <span id="edge-count">0</span> edges {"(aggregated)" if use_aggregation else ""}</div>
       <div class="stat-row" id="type-stats"></div>
     </div>
     <div id="legend">

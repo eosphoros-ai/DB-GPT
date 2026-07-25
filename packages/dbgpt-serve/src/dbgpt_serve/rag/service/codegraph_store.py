@@ -18,13 +18,13 @@ from typing import Dict, List, Optional, Tuple
 from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 
 from ..models.code_graph_db import (
+    _VERTEX_PROPS_COLUMNS,
     CodeGraphEdgeDao,
     CodeGraphEdgeEntity,
     CodeGraphMetaDao,
     CodeGraphMetaEntity,
     CodeGraphVertexDao,
     CodeGraphVertexEntity,
-    _VERTEX_PROPS_COLUMNS,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,9 +94,7 @@ class CodeGraphStore:
         # 5. Bulk insert edges
         edge_dao = CodeGraphEdgeDao()
         inserted_edges = edge_dao.batch_insert(knowledge_id, edge_rows)
-        logger.info(
-            f"Saved {inserted_edges} edges for knowledge_id={knowledge_id}"
-        )
+        logger.info(f"Saved {inserted_edges} edges for knowledge_id={knowledge_id}")
 
         # 6. Upsert meta
         meta = CodeGraphMetaEntity(
@@ -294,9 +292,7 @@ class CodeGraphStore:
         edge_dao.delete_by_knowledge_id(knowledge_id)
         meta_dao.delete_by_knowledge_id(knowledge_id)
 
-    def _vertices_to_rows(
-        self, knowledge_id: str, graph: MemoryGraph
-    ) -> List[Dict]:
+    def _vertices_to_rows(self, knowledge_id: str, graph: MemoryGraph) -> List[Dict]:
         """Convert MemoryGraph vertices to DB row dicts.
 
         DB-GPT's RepoGraphBuilder stores props like:
@@ -356,8 +352,7 @@ class CodeGraphStore:
                     {
                         k: v
                         for k, v in props.items()
-                        if k not in self._EDGE_PROP_COLUMNS
-                        and k not in ("type",)
+                        if k not in self._EDGE_PROP_COLUMNS and k not in ("type",)
                     }
                 ),
             }

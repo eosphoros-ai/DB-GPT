@@ -421,10 +421,14 @@ async def get_space_stats(
     doc_dao = KnowledgeDocumentDao()
     session = doc_dao.get_raw_session()
     try:
-        result = session.query(
-            func.count(KnowledgeDocumentEntity.id),
-            func.coalesce(func.sum(KnowledgeDocumentEntity.chunk_size), 0),
-        ).filter(KnowledgeDocumentEntity.space == space.name).first()
+        result = (
+            session.query(
+                func.count(KnowledgeDocumentEntity.id),
+                func.coalesce(func.sum(KnowledgeDocumentEntity.chunk_size), 0),
+            )
+            .filter(KnowledgeDocumentEntity.space == space.name)
+            .first()
+        )
         doc_count = result[0] if result else 0
         chunk_count = int(result[1] or 0) if result else 0
     finally:

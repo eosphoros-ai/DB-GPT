@@ -4,7 +4,7 @@ These wrap the generic kb_ls, kb_glob, kb_grep, kb_cat, and kb_semantic_search
 tools so that `knowledge_id` is pre-bound and the LLM does not need to provide it.
 """
 
-from typing import Any, Dict, List
+from typing import List
 
 from dbgpt.agent.resource.tool.base import tool
 

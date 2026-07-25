@@ -396,8 +396,8 @@ async def codegraph_visualize(space_name: str):
         error_detail = f"<p>详情: {load_error}</p>" if load_error else ""
         return HTMLResponse(
             content="<html><body><h2>No code graph found</h2>"
-                    "<p>请先构建代码图谱：创建知识库时启用代码图谱索引</p>"
-                    f"{error_detail}</body></html>",
+            "<p>请先构建代码图谱：创建知识库时启用代码图谱索引</p>"
+            f"{error_detail}</body></html>",
             status_code=404,
         )
 

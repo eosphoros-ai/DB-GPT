@@ -156,7 +156,9 @@ class ChatKnowledge(BaseChat):
                 continue
             # Find the longest common substring between chunk content and
             # the answer text (simple sliding window, capped at 80 chars).
-            match = self._longest_common_substring(text, content, min_len=10, max_len=80)
+            match = self._longest_common_substring(
+                text, content, min_len=10, max_len=80
+            )
             if match and match not in text:
                 # Edge case: match was already replaced
                 continue

@@ -134,15 +134,11 @@ async def build_code_graph_from_knowledge_space(knowledge_id: str) -> Optional[D
         from dbgpt_ext.rag.graph_builder.repo_graph_builder import RepoGraphBuilder
 
         builder = RepoGraphBuilder()
-        graph = await builder.build_from_files(
-            files=files_list, repo_name=space_name
-        )
+        graph = await builder.build_from_files(files=files_list, repo_name=space_name)
         if graph and graph.vertex_count > 0:
             # Persist using the resolved space name as the key, so that the
             # visualize endpoint (which queries by space name) can find it.
-            _save_graph(
-                space_name, graph, build_source="chunk_reconstruction"
-            )
+            _save_graph(space_name, graph, build_source="chunk_reconstruction")
             return {
                 "vertices": graph.vertex_count,
                 "edges": graph.edge_count,

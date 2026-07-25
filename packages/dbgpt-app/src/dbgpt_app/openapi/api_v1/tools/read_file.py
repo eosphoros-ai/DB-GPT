@@ -142,8 +142,7 @@ def make_read_file(react_state: Dict[str, Any]):
 
         if end < total_lines:
             result_lines.append(
-                f"  ... ({total_lines - end} more lines, "
-                f"use offset={end} to continue)"
+                f"  ... ({total_lines - end} more lines, use offset={end} to continue)"
             )
 
         content = "\n".join(result_lines)

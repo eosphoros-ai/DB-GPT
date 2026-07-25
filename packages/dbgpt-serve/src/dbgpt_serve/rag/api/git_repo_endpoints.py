@@ -138,8 +138,7 @@ async def build_knowledge_graph(space_id: str) -> Result:
         if result:
             return Result.succ(result)
         return Result.fail(
-            "No documents found to build a graph from. "
-            "Index some documents first."
+            "No documents found to build a graph from. Index some documents first."
         )
     except Exception as e:
         logging.exception(f"Failed to build knowledge graph: {e}")

@@ -244,7 +244,9 @@ class GitRepoSyncRequest(BaseModel):
 class GitRepoSyncStatusResponse(BaseModel):
     """Response for git repo sync status."""
 
-    status: str = Field(..., description="Overall status: RUNNING/FINISHED/FAILED/PENDING")
+    status: str = Field(
+        ..., description="Overall status: RUNNING/FINISHED/FAILED/PENDING"
+    )
     total_files: int = Field(0, description="Total number of files")
     finished: int = Field(0, description="Number of finished files")
     running: int = Field(0, description="Number of running files")
@@ -252,10 +254,14 @@ class GitRepoSyncStatusResponse(BaseModel):
     todo: int = Field(0, description="Number of todo files")
     last_sync_commit: Optional[str] = Field(None, description="Last synced commit SHA")
     last_sync_time: Optional[str] = Field(None, description="Last sync time")
-    last_sync_mode: Optional[str] = Field(None, description="Last sync mode: full/incremental")
+    last_sync_mode: Optional[str] = Field(
+        None, description="Last sync mode: full/incremental"
+    )
     repo_url: Optional[str] = Field(None, description="Git repository URL")
     branch: Optional[str] = Field(None, description="Git branch")
-    sync_started_at: Optional[str] = Field(None, description="Time when current sync started")
+    sync_started_at: Optional[str] = Field(
+        None, description="Time when current sync started"
+    )
     sync_error: Optional[str] = Field(None, description="Error message if sync failed")
 
 
@@ -274,7 +280,9 @@ class GitRepoIncrementalSyncRequest(BaseModel):
 class KbSearchRequest(BaseModel):
     """Request for knowledge base search tools."""
 
-    knowledge_id: str = Field("", description="Knowledge space ID (optional, uses path param)")
+    knowledge_id: str = Field(
+        "", description="Knowledge space ID (optional, uses path param)"
+    )
     query: str = Field("", description="Search query or pattern")
     path: str = Field("", description="Directory or file path filter")
     file_pattern: str = Field("", description="File pattern filter (e.g., '*.py')")
@@ -291,17 +299,23 @@ class KnowledgeSpaceStatsResponse(BaseModel):
 
     # Space info
     name: str = Field(..., description="Space name")
-    domain_type: Optional[str] = Field(None, description="Domain type (Normal, GitRepo, etc.)")
+    domain_type: Optional[str] = Field(
+        None, description="Domain type (Normal, GitRepo, etc.)"
+    )
     vector_type: Optional[str] = Field(None, description="Vector type")
     index_methods: Optional[List[str]] = Field(None, description="Index methods")
     desc: Optional[str] = Field(None, description="Description")
 
     # Document stats
     document_count: int = Field(0, description="Total number of documents")
-    chunk_count: int = Field(0, description="Total number of chunks (sum of chunk_size)")
+    chunk_count: int = Field(
+        0, description="Total number of chunks (sum of chunk_size)"
+    )
 
     # Sync progress (for GitRepo spaces)
-    sync_status: Optional[str] = Field(None, description="Sync status: RUNNING/FINISHED/FAILED/PENDING")
+    sync_status: Optional[str] = Field(
+        None, description="Sync status: RUNNING/FINISHED/FAILED/PENDING"
+    )
     sync_total_files: Optional[int] = Field(None, description="Total files in sync")
     sync_finished: Optional[int] = Field(None, description="Finished files")
     sync_running: Optional[int] = Field(None, description="Running files")
@@ -311,9 +325,13 @@ class KnowledgeSpaceStatsResponse(BaseModel):
     branch: Optional[str] = Field(None, description="Git branch")
 
     # Graph stats
-    graph_vertex_count: Optional[int] = Field(None, description="Number of graph vertices/nodes")
+    graph_vertex_count: Optional[int] = Field(
+        None, description="Number of graph vertices/nodes"
+    )
     graph_edge_count: Optional[int] = Field(None, description="Number of graph edges")
-    graph_community_count: Optional[int] = Field(None, description="Number of graph communities")
+    graph_community_count: Optional[int] = Field(
+        None, description="Number of graph communities"
+    )
     graph_build_status: Optional[str] = Field(None, description="Graph build status")
 
 
@@ -326,13 +344,17 @@ class KbFileEntry(BaseModel):
     file_type: Optional[str] = Field(None, description="File type/extension")
     language: Optional[str] = Field(None, description="Programming language")
     doc_id: Optional[int] = Field(None, description="Document ID if it's a file")
-    child_count: Optional[int] = Field(None, description="Number of children if directory")
+    child_count: Optional[int] = Field(
+        None, description="Number of children if directory"
+    )
 
 
 class KbLsJsonResponse(BaseModel):
     """Structured directory listing response."""
 
     path: str = Field("", description="Current directory path")
-    entries: List[KbFileEntry] = Field(default_factory=list, description="Entries in this directory")
+    entries: List[KbFileEntry] = Field(
+        default_factory=list, description="Entries in this directory"
+    )
     total_files: int = Field(0, description="Total files in directory")
     total_dirs: int = Field(0, description="Total subdirectories")

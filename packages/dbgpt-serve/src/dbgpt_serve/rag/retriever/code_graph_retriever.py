@@ -552,9 +552,7 @@ class CodeGraphRetriever(BaseRetriever):
             for cls in by_type[CodeNodeType.CLASS.value]:
                 source = cls.get_prop("source_file") or cls.get_prop("file_path") or ""
                 location = (
-                    cls.get_prop("source_location")
-                    or cls.get_prop("start_line")
-                    or ""
+                    cls.get_prop("source_location") or cls.get_prop("start_line") or ""
                 )
                 lines.append(f"- **{cls.name}** ({source} {location})")
 
@@ -566,7 +564,11 @@ class CodeGraphRetriever(BaseRetriever):
                         and subgraph.has_vertex(edge.tid)
                     ):
                         method = subgraph.get_vertex(edge.tid)
-                        mtype = method.get_prop("node_type") or method.get_prop("type") or ""
+                        mtype = (
+                            method.get_prop("node_type")
+                            or method.get_prop("type")
+                            or ""
+                        )
                         if mtype in (
                             CodeNodeType.METHOD.value,
                             CodeNodeType.FUNCTION.value,
@@ -588,7 +590,9 @@ class CodeGraphRetriever(BaseRetriever):
         if CodeNodeType.FUNCTION.value in by_type:
             lines.append("## Functions")
             for func in by_type[CodeNodeType.FUNCTION.value]:
-                source = func.get_prop("source_file") or func.get_prop("file_path") or ""
+                source = (
+                    func.get_prop("source_file") or func.get_prop("file_path") or ""
+                )
                 location = (
                     func.get_prop("source_location")
                     or func.get_prop("start_line")
@@ -611,13 +615,17 @@ class CodeGraphRetriever(BaseRetriever):
                         shown_methods.add(edge.tid)
 
             orphan_methods = [
-                m for m in by_type[CodeNodeType.METHOD.value] if m.vid not in shown_methods
+                m
+                for m in by_type[CodeNodeType.METHOD.value]
+                if m.vid not in shown_methods
             ]
             if orphan_methods:
                 lines.append("## Methods")
                 for method in orphan_methods:
                     source = (
-                        method.get_prop("source_file") or method.get_prop("file_path") or ""
+                        method.get_prop("source_file")
+                        or method.get_prop("file_path")
+                        or ""
                     )
                     location = (
                         method.get_prop("source_location")

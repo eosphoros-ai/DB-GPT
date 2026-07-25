@@ -8,10 +8,10 @@ from dbgpt.storage.metadata import DatabaseManager
 from dbgpt_serve.core import BaseServe
 
 from .api.endpoints import init_endpoints, router
-from .api.git_repo_endpoints import router as git_repo_router
 from .api.git_repo_endpoints import init_git_repo_endpoints
-from .api.search_endpoints import router as search_router
+from .api.git_repo_endpoints import router as git_repo_router
 from .api.search_endpoints import init_search_endpoints
+from .api.search_endpoints import router as search_router
 from .config import (
     SERVE_APP_NAME,
     SERVE_APP_NAME_HUMP,
@@ -74,12 +74,12 @@ class Serve(BaseServe):
         """
         # import your own module here to ensure the module is loaded before the
         # application starts
-        from .models.models import KnowledgeSpaceEntity as _  # noqa: F401
         from .models.code_graph_db import (  # noqa: F401
-            CodeGraphVertexEntity,
             CodeGraphEdgeEntity,
             CodeGraphMetaEntity,
+            CodeGraphVertexEntity,
         )
+        from .models.models import KnowledgeSpaceEntity as _  # noqa: F401
 
     def before_start(self):
         """Called before the start of the application."""

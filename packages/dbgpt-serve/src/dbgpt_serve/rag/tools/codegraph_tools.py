@@ -29,9 +29,7 @@ _graph_cache: dict = {}
 
 def _get_graph_cache_dir(knowledge_id: str) -> str:
     """Get the graph cache directory for a knowledge space."""
-    return os.path.join(
-        os.path.expanduser("~"), ".dbgpt", "graph_cache", knowledge_id
-    )
+    return os.path.join(os.path.expanduser("~"), ".dbgpt", "graph_cache", knowledge_id)
 
 
 def _load_graph(knowledge_id: str) -> Tuple[Optional[MemoryGraph], Optional[str]]:
@@ -66,8 +64,7 @@ def _load_graph(knowledge_id: str) -> Tuple[Optional[MemoryGraph], Optional[str]
             )
         else:
             logger.info(
-                f"[codegraph] DB returned None for {knowledge_id}, "
-                f"falling back to file"
+                f"[codegraph] DB returned None for {knowledge_id}, falling back to file"
             )
     except Exception as e:
         logger.warning(
@@ -84,9 +81,9 @@ def _load_graph(knowledge_id: str) -> Tuple[Optional[MemoryGraph], Optional[str]
         db_info = ""
         try:
             from ..models.code_graph_db import (
-                CodeGraphVertexDao,
                 CodeGraphEdgeDao,
                 CodeGraphMetaDao,
+                CodeGraphVertexDao,
             )
 
             v_count = CodeGraphVertexDao().count_by_knowledge_id(knowledge_id)
@@ -158,9 +155,7 @@ def _save_graph(
             f"{result['vertex_count']} vertices, {result['edge_count']} edges"
         )
     except Exception as e:
-        logger.warning(
-            f"Failed to save code graph to DB for {knowledge_id}: {e}"
-        )
+        logger.warning(f"Failed to save code graph to DB for {knowledge_id}: {e}")
 
     # 2. Save to JSON file (backup)
     graph_dir = _get_graph_cache_dir(knowledge_id)

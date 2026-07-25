@@ -1039,7 +1039,9 @@ async def _react_agent_stream(
             )
             return False
 
-    code_graph_available = _has_code_graph(knowledge_space) if knowledge_space else False
+    code_graph_available = (
+        _has_code_graph(knowledge_space) if knowledge_space else False
+    )
 
     def build_step(title: str, detail: str, phase: str = None):
         nonlocal step
@@ -1800,8 +1802,8 @@ print(json.dumps(summary, ensure_ascii=False))
         make_execute_skill_script_file,
         make_execute_tool,
         make_html_interpreter,
-        make_knowledge_retrieve,
         make_kb_tools,
+        make_knowledge_retrieve,
         make_load_file,
         make_load_skill,
         make_load_tools,
@@ -2311,13 +2313,13 @@ Action Input: The JSON format of tool parameters
         codegraph_section = (
             "13.1. **kb_codegraph_explore**: Query the code knowledge graph for "
             "structural info (classes, call chains, inheritance).\n"
-            "Parameters: {\"query\": \"class/function name or 'who calls X'\"}\n"
+            'Parameters: {"query": "class/function name or \'who calls X\'"}\n'
             "13.2. **kb_codegraph_call_chain**: Trace callers/callees of a function.\n"
-            "Parameters: {\"function_name\": \"function name\", \"depth\": 2, "
-            "\"direction\": \"callers or callees\"}\n"
+            'Parameters: {"function_name": "function name", "depth": 2, '
+            '"direction": "callers or callees"}\n'
             "13.3. **kb_codegraph_class_hierarchy**: Trace class inheritance and "
             "implementations.\n"
-            "Parameters: {\"class_name\": \"class or interface name\"}\n"
+            'Parameters: {"class_name": "class or interface name"}\n'
             if code_graph_available
             else ""
         )
@@ -2497,9 +2499,9 @@ Action Input: The JSON format of tool parameters
                     question_tool,
                     Terminate(),
                 ]
-            + business_tools
-            + connector_tool_extras
-        )
+                + business_tools
+                + connector_tool_extras
+            )
 
     # Debug: print all registered tools
     logger.info(f"ToolPack resources: {list(tool_pack._resources.keys())}")
@@ -3036,18 +3038,22 @@ Action Input: The JSON format of tool parameters
                         for item in parsed_obs["chunks"]:
                             if isinstance(item, dict):
                                 content = (item.get("content") or "").strip()
-                                current_history_step["outputs"].append({
-                                    "output_type": item.get("output_type", "text"),
-                                    "content": content,
-                                })
+                                current_history_step["outputs"].append(
+                                    {
+                                        "output_type": item.get("output_type", "text"),
+                                        "content": content,
+                                    }
+                                )
                                 clean = _strip_html_tags(content)
                                 if len(clean) >= 10:
                                     _cited_chunks.append({"content": clean})
                     elif isinstance(observation_text, str) and observation_text:
-                        current_history_step["outputs"].append({
-                            "output_type": "text",
-                            "content": observation_text,
-                        })
+                        current_history_step["outputs"].append(
+                            {
+                                "output_type": "text",
+                                "content": observation_text,
+                            }
+                        )
                         clean = _strip_html_tags(observation_text)
                         if len(clean) >= 10:
                             _cited_chunks.append({"content": clean})
@@ -3187,9 +3193,11 @@ Action Input: The JSON format of tool parameters
 # Citation helpers for react-agent knowledge chat
 # ---------------------------------------------------------------------------
 
+
 def _strip_html_tags(text: str) -> str:
     """Remove HTML/XML tags and unescape HTML entities from a string."""
     import html
+
     text = html.unescape(text or "")
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"\s+", " ", text)
@@ -3264,7 +3272,9 @@ def _build_references_xml(chunks: list) -> str:
     # extract via regex and JSON.parse without unescaping HTML entities.
     payload_obj = [{"name": "Knowledge Base", "chunks": refs}]
     payload = json.dumps(payload_obj, ensure_ascii=False)
-    return '\n\n<references title="References" references=\'' + payload + "'></references>"
+    return (
+        '\n\n<references title="References" references=\'' + payload + "'></references>"
+    )
 
 
 # ---------------------------------------------------------------------------

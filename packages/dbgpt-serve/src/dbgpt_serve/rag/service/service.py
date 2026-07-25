@@ -609,9 +609,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                         max_threads = self.config.max_threads
 
                         # ETL pipeline: extract → transform → load
-                        chunks = await domain_index.extract(
-                            knowledge, chunk_parameters
-                        )
+                        chunks = await domain_index.extract(knowledge, chunk_parameters)
                         chunks = await domain_index.transform(chunks)
                         chunks = await domain_index.load(
                             chunks,
@@ -733,9 +731,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 build_code_graph_from_knowledge_space,
             )
 
-            result = await build_code_graph_from_knowledge_space(
-                space_entity.name
-            )
+            result = await build_code_graph_from_knowledge_space(space_entity.name)
             if result:
                 logger.info(
                     f"Built heading graph for {doc.doc_name}: "
@@ -743,9 +739,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     f"{result.get('edges', 0)} edges"
                 )
         except Exception as e:
-            logger.warning(
-                f"Failed to build heading graph for {doc.doc_name}: {e}"
-            )
+            logger.warning(f"Failed to build heading graph for {doc.doc_name}: {e}")
 
     def get_space_context(self, space_id):
         """get space contect

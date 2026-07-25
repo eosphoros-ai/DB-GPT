@@ -8,13 +8,12 @@ and query functionality. Full cross-file resolution and incremental
 caching can be added incrementally.
 """
 
-import hashlib
 import json
 import logging
 import os
 from typing import Any, Dict, List, Optional, Set
 
-from dbgpt.storage.graph_store.graph import Direction, Edge, MemoryGraph, Vertex
+from dbgpt.storage.graph_store.graph import Edge, MemoryGraph, Vertex
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +54,14 @@ class RepoGraphBuilder:
     Usage::
 
         builder = RepoGraphBuilder()
-        graph = await builder.build_from_repo("/path/to/repo", "https://github.com/org/repo")
+        graph = await builder.build_from_repo(
+            "/path/to/repo", "https://github.com/org/repo"
+        )
 
         # Build from in-memory files
         graph = await builder.build_from_files(
             files=[{"path": "src/main.py", "content": "..."}],
-            repo_url="https://github.com/org/repo"
+            repo_url="https://github.com/org/repo",
         )
     """
 
@@ -169,7 +170,9 @@ class RepoGraphBuilder:
         """Scan a repository directory and return file dicts."""
         files = []
         for root, dirs, filenames in os.walk(repo_dir):
-            dirs[:] = [d for d in dirs if d not in self._skip_dirs and not d.startswith(".")]
+            dirs[:] = [
+                d for d in dirs if d not in self._skip_dirs and not d.startswith(".")
+            ]
             for filename in sorted(filenames):
                 if filename.startswith("."):
                     continue
@@ -382,22 +385,26 @@ class RepoGraphBuilder:
         """Serialize MemoryGraph to a dictionary."""
         vertices = []
         for v in graph.vertices():
-            vertices.append({
-                "vid": v.vid,
-                "name": v.name,
-                "label": v.label,
-                "props": dict(v.props),
-            })
+            vertices.append(
+                {
+                    "vid": v.vid,
+                    "name": v.name,
+                    "label": v.label,
+                    "props": dict(v.props),
+                }
+            )
 
         edges = []
         for e in graph.edges():
-            edges.append({
-                "sid": e.sid,
-                "tid": e.tid,
-                "name": e.name,
-                "label": e.label,
-                "props": dict(e.props),
-            })
+            edges.append(
+                {
+                    "sid": e.sid,
+                    "tid": e.tid,
+                    "name": e.name,
+                    "label": e.label,
+                    "props": dict(e.props),
+                }
+            )
 
         return {"vertices": vertices, "edges": edges}
 
