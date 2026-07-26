@@ -2,6 +2,7 @@ import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
+import type { SubAgentState, SubAgentStep } from '@/types/subagent';
 import {
   AppstoreOutlined,
   BarChartOutlined,
@@ -35,6 +36,7 @@ import {
   SearchOutlined,
   SyncOutlined,
   TableOutlined,
+  UnorderedListOutlined,
   UpOutlined,
 } from '@ant-design/icons';
 import { GPTVis } from '@antv/gpt-vis';
@@ -42,7 +44,10 @@ import { Button, Table, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Collapsible } from '../tools/Collapsible';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
+import ParallelTasksPanel from './ParallelTasksPanel';
+import SubAgentStatusBadge from './SubAgentStatusBadge';
 
 /** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
 const resolveImageUrl = (src: string): string => {
@@ -68,6 +73,87 @@ export interface ExecutionOutput {
   timestamp?: number;
 }
 
+type ExecutionOutputGroup =
+  | { type: 'code-execution'; codes: ExecutionOutput[]; results: ExecutionOutput[]; images: ExecutionOutput[] }
+  | { type: 'html-tabbed'; code?: ExecutionOutput; html: ExecutionOutput }
+  | { type: 'single'; output: ExecutionOutput };
+
+/**
+ * Group outputs for one semantic step only.
+ *
+ * Keeping this pure lets the main execution view and the sub-agent timeline
+ * share the same code/result rendering without merging adjacent sub-agent
+ * steps into one visual block.
+ */
+const groupExecutionOutputs = (outputs: ExecutionOutput[]): ExecutionOutputGroup[] => {
+  const groups: ExecutionOutputGroup[] = [];
+  let i = 0;
+  while (i < outputs.length) {
+    if (outputs[i].output_type === 'code') {
+      const codes: ExecutionOutput[] = [outputs[i]];
+      i += 1;
+      while (i < outputs.length && outputs[i].output_type === 'code') {
+        codes.push(outputs[i]);
+        i += 1;
+      }
+      if (i < outputs.length && outputs[i].output_type === 'html') {
+        groups.push({
+          type: 'html-tabbed',
+          code: { ...codes[0], content: codes.map(c => String(c.content)).join('\n') },
+          html: outputs[i],
+        });
+        i += 1;
+      } else {
+        const results: ExecutionOutput[] = [];
+        while (i < outputs.length && outputs[i].output_type === 'text') {
+          results.push(outputs[i]);
+          i += 1;
+        }
+        const images: ExecutionOutput[] = [];
+        while (i < outputs.length && outputs[i].output_type === 'image') {
+          images.push(outputs[i]);
+          i += 1;
+        }
+        groups.push({ type: 'code-execution', codes, results, images });
+      }
+    } else if (outputs[i].output_type === 'html') {
+      groups.push({ type: 'html-tabbed', html: outputs[i] });
+      i += 1;
+    } else if (outputs[i].output_type === 'markdown') {
+      const markdownParts: string[] = [String(outputs[i].content)];
+      const firstMarkdown = outputs[i];
+      i += 1;
+      while (i < outputs.length && outputs[i].output_type === 'markdown') {
+        markdownParts.push(String(outputs[i].content));
+        i += 1;
+      }
+      groups.push({ type: 'single', output: { ...firstMarkdown, content: markdownParts.join('\n\n') } });
+    } else if (outputs[i].output_type === 'text') {
+      const textParts: string[] = [String(outputs[i].content)];
+      const firstText = outputs[i];
+      i += 1;
+      while (i < outputs.length && outputs[i].output_type === 'text') {
+        textParts.push(String(outputs[i].content));
+        i += 1;
+      }
+      groups.push({ type: 'single', output: { ...firstText, content: textParts.join('\n\n') } });
+    } else if (outputs[i].output_type === 'error') {
+      const errorParts: string[] = [String(outputs[i].content)];
+      const firstError = outputs[i];
+      i += 1;
+      while (i < outputs.length && outputs[i].output_type === 'error') {
+        errorParts.push(String(outputs[i].content));
+        i += 1;
+      }
+      groups.push({ type: 'single', output: { ...firstError, content: errorParts.join('') } });
+    } else {
+      groups.push({ type: 'single', output: outputs[i] });
+      i += 1;
+    }
+  }
+  return groups;
+};
+
 export interface ActiveStepInfo {
   id: string;
   type: StepType;
@@ -87,7 +173,6 @@ export interface ManusRightPanelProps {
   onShare?: () => void;
   onSchedule?: () => void;
   terminalTitle?: string;
-  onCollapse?: () => void;
   isCollapsed?: boolean;
   artifacts?: ArtifactItem[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
@@ -107,6 +192,18 @@ export interface ManusRightPanelProps {
   summaryContent?: string;
   /** Whether the summary is currently streaming */
   isSummaryStreaming?: boolean;
+  /** Structured rows for the active dispatch_parallel_tasks step. */
+  subAgents?: Record<string, SubAgentState>;
+  /** Drill into one structured sub-agent from the parallel overview. */
+  onSubAgentClick?: (agentId: string) => void;
+  /**
+   * When set, the right panel is showing a sub-agent's process view (not the
+   * main agent's). Renders a "返回主 Agent" breadcrumb so the user can exit
+   * the sub-agent view without clicking a main-agent step on the left.
+   */
+  subAgentContext?: SubAgentState | null;
+  /** Exit the sub-agent process view (return to the main agent timeline). */
+  onExitSubAgentView?: () => void;
 }
 
 export type PanelView = 'execution' | 'files' | 'html-preview' | 'image-preview' | 'skill-preview' | 'summary';
@@ -1038,6 +1135,322 @@ const CodeExecutionRenderer: React.FC<{
 
 CodeExecutionRenderer.displayName = 'CodeExecutionRenderer';
 
+const formatSubAgentDuration = (elapsedMs?: number): string | null => {
+  if (elapsedMs == null || elapsedMs < 0) return null;
+  if (elapsedMs < 1000) return `${elapsedMs} ms`;
+  const seconds = elapsedMs / 1000;
+  if (seconds < 60) return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)} s`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${Math.round(seconds % 60)}s`;
+};
+
+const compactSubAgentIntention = (intention?: string): string =>
+  (intention || '')
+    .replace(/^Thought:\s*/i, '')
+    .split(/\n(?:Action|Action Input|Observation):/i)[0]
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 240);
+
+const getSubAgentDisplayName = (agent: SubAgentState): string => {
+  const genericName = /^(?:子任务|subtask)\s*\d+$/i.test(agent.name.trim());
+  return genericName && agent.goal ? agent.goal : agent.name;
+};
+
+const SubAgentHtmlOutputCard: React.FC<{
+  content: any;
+  onOpen?: () => void;
+}> = ({ content, onOpen }) => {
+  const { t } = useTranslation();
+  const title = typeof content === 'object' && content?.title ? String(content.title) : 'Report.html';
+
+  return (
+    <div className='flex items-center justify-between gap-4 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 dark:border-blue-500/20 dark:bg-blue-500/[0.08]'>
+      <div className='flex min-w-0 items-center gap-3'>
+        <span className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm ring-1 ring-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/20'>
+          <DesktopOutlined aria-hidden />
+        </span>
+        <div className='min-w-0'>
+          <div className='truncate text-sm font-medium text-slate-800 dark:text-slate-100'>{title}</div>
+          <div className='mt-0.5 text-xs text-slate-500 dark:text-slate-400'>{t('subagent_report_ready')}</div>
+        </div>
+      </div>
+      {onOpen && (
+        <button
+          type='button'
+          onClick={onOpen}
+          className='inline-flex min-h-[34px] flex-shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-medium text-blue-600 shadow-sm ring-1 ring-blue-100 transition-colors hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:bg-white/[0.06] dark:text-blue-400 dark:ring-blue-500/20 dark:hover:bg-blue-500/10'
+        >
+          <EyeOutlined aria-hidden />
+          {t('subagent_open_report')}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const SubAgentSqlPreview: React.FC<{ sql: string }> = ({ sql }) => {
+  const { t } = useTranslation();
+  const compactSql = sql.replace(/\s+/g, ' ').trim();
+
+  return (
+    <Collapsible
+      defaultOpen={false}
+      className='overflow-hidden rounded-lg border border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/[0.025]'
+    >
+      <Collapsible.Trigger className='group'>
+        <div className='flex min-h-[42px] items-center gap-2.5 px-3 py-2'>
+          <span className='flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20'>
+            <ConsoleSqlOutlined aria-hidden />
+          </span>
+          <span className='flex-shrink-0 text-xs font-medium text-slate-600 dark:text-slate-300'>
+            {t('subagent_executed_sql')}
+          </span>
+          <code className='min-w-0 flex-1 truncate text-[11px] text-slate-400 dark:text-slate-500'>{compactSql}</code>
+          <Collapsible.Arrow className='flex-shrink-0' />
+        </div>
+      </Collapsible.Trigger>
+      <Collapsible.Content>
+        <div className='border-t border-slate-200 dark:border-white/10'>
+          <CodePreview
+            code={sql}
+            language='sql'
+            customStyle={{ background: '#0f172a', margin: 0, borderRadius: 0 }}
+            codeStyle={{ background: 'transparent' }}
+          />
+        </div>
+      </Collapsible.Content>
+    </Collapsible>
+  );
+};
+
+const SubAgentStepCard: React.FC<{
+  step: SubAgentStep;
+  index: number;
+  autoOpen: boolean;
+  isLast: boolean;
+  onHtmlOpen?: (content: any, title: string, outputIndex: number) => void;
+}> = ({ step, index, autoOpen, isLast, onHtmlOpen }) => {
+  const { t } = useTranslation();
+  const intention = compactSubAgentIntention(step.intention);
+  const outputs = (step.chunks || [])
+    .filter(chunk => chunk.output_type !== 'thought')
+    .map<ExecutionOutput>(chunk => ({
+      output_type: chunk.output_type as ExecutionOutput['output_type'],
+      content: chunk.content,
+    }));
+  const groups = groupExecutionOutputs(outputs);
+  const hasError = outputs.some(output => output.output_type === 'error');
+  const [open, setOpen] = useState(autoOpen || hasError);
+  const [manuallyChanged, setManuallyChanged] = useState(false);
+
+  useEffect(() => {
+    if (!manuallyChanged) setOpen(autoOpen || hasError);
+  }, [autoOpen, hasError, manuallyChanged]);
+
+  return (
+    <li className='relative pl-8' data-testid={`subagent-step-${index + 1}`}>
+      {!isLast && <span className='absolute bottom-[-12px] left-[11px] top-7 w-px bg-slate-200 dark:bg-white/10' />}
+      <span
+        className={classNames(
+          'absolute left-[5px] top-[22px] z-10 flex h-[13px] w-[13px] items-center justify-center rounded-full ring-4 ring-[#f8f9fc] dark:ring-[#0d0e11]',
+          hasError ? 'bg-red-500' : autoOpen ? 'bg-blue-500' : 'bg-emerald-500',
+        )}
+      >
+        <CheckOutlined aria-hidden className='text-[7px] text-white' />
+      </span>
+
+      <Collapsible
+        open={open}
+        onOpenChange={next => {
+          setOpen(next);
+          setManuallyChanged(true);
+        }}
+        className={classNames(
+          'overflow-hidden rounded-xl border bg-white shadow-sm transition-colors dark:bg-[#17181d]',
+          hasError
+            ? 'border-red-200 dark:border-red-500/30'
+            : open
+              ? 'border-blue-200 shadow-md shadow-blue-950/[0.04] dark:border-blue-500/30'
+              : 'border-slate-200/80 dark:border-white/10',
+        )}
+      >
+        <Collapsible.Trigger className='group'>
+          <div className='flex min-h-[70px] items-start gap-3 px-4 py-3.5 transition-colors group-hover:bg-slate-50/70 dark:group-hover:bg-white/[0.025]'>
+            <span className='mt-0.5 flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-500 dark:bg-white/[0.06] dark:text-slate-400'>
+              {index + 1}
+            </span>
+            <div className='min-w-0 flex-1'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <h3 className='m-0 text-sm font-semibold leading-5 text-slate-800 dark:text-slate-100'>{step.label}</h3>
+                <span className='max-w-full truncate rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500 dark:bg-white/[0.06] dark:text-slate-400'>
+                  {step.action}
+                </span>
+              </div>
+              {intention && (
+                <p className='mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400'>{intention}</p>
+              )}
+            </div>
+            <div className='flex flex-shrink-0 items-center gap-2 pt-0.5'>
+              {outputs.length > 0 && (
+                <span className='text-[11px] text-slate-400 dark:text-slate-500'>
+                  {t('subagent_output_count', { count: outputs.length })}
+                </span>
+              )}
+              <Collapsible.Arrow />
+            </div>
+          </div>
+        </Collapsible.Trigger>
+
+        <Collapsible.Content>
+          <div className='border-t border-blue-100 bg-blue-50/35 px-5 py-5 dark:border-blue-500/20 dark:bg-blue-500/[0.04]'>
+            <div className='space-y-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#111217]'>
+              {step.sql && <SubAgentSqlPreview sql={step.sql} />}
+              {step.sql && groups.length > 0 && (
+                <div className='flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400'>
+                  <TableOutlined aria-hidden className='text-blue-500' />
+                  {t('subagent_query_result')}
+                </div>
+              )}
+              {groups.length > 0 ? (
+                groups.map((group, groupIndex) => {
+                  if (group.type === 'code-execution') {
+                    return <CodeExecutionRenderer key={`code-${groupIndex}`} group={group} />;
+                  }
+                  if (group.type === 'html-tabbed') {
+                    const htmlContent = group.html.content;
+                    const title =
+                      typeof htmlContent === 'object' && htmlContent?.title ? String(htmlContent.title) : 'Report.html';
+                    return (
+                      <SubAgentHtmlOutputCard
+                        key={`html-${groupIndex}`}
+                        content={htmlContent}
+                        onOpen={onHtmlOpen ? () => onHtmlOpen(htmlContent, title, groupIndex) : undefined}
+                      />
+                    );
+                  }
+                  return <OutputRenderer key={`output-${groupIndex}`} output={group.output} index={groupIndex} />;
+                })
+              ) : (
+                <div className='rounded-lg bg-slate-50 px-3 py-2.5 text-xs text-slate-400 ring-1 ring-slate-100 dark:bg-white/[0.03] dark:ring-white/10'>
+                  {t('subagent_no_output')}
+                </div>
+              )}
+            </div>
+          </div>
+        </Collapsible.Content>
+      </Collapsible>
+    </li>
+  );
+};
+
+const SubAgentProcessView: React.FC<{
+  agent: SubAgentState;
+  onArtifactClick?: (artifact: ArtifactItem) => void;
+}> = ({ agent, onArtifactClick }) => {
+  const { t } = useTranslation();
+  const hasResult = Boolean(agent.result?.trim());
+  const [section, setSection] = useState<'activity' | 'result'>(
+    agent.status === 'done' && hasResult ? 'result' : 'activity',
+  );
+
+  const openHtmlReport = useCallback(
+    (content: any, title: string, stepIndex: number, outputIndex: number) => {
+      onArtifactClick?.({
+        id: `subagent-${agent.agentId}-${stepIndex}-${outputIndex}`,
+        type: 'html',
+        name: title,
+        content,
+        createdAt: Date.now(),
+      });
+    },
+    [agent.agentId, onArtifactClick],
+  );
+
+  return (
+    <div className='flex min-h-0 flex-1 flex-col overflow-hidden' data-testid='subagent-detail-view'>
+      <div
+        role='tablist'
+        aria-label={t('subagent_detail_sections')}
+        className='flex flex-shrink-0 items-center gap-1 border-b border-slate-200 bg-white px-5 py-2 dark:border-white/10 dark:bg-[#111217]'
+      >
+        <button
+          type='button'
+          role='tab'
+          aria-selected={section === 'activity'}
+          onClick={() => setSection('activity')}
+          className={classNames(
+            'inline-flex min-h-[34px] items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40',
+            section === 'activity'
+              ? 'bg-slate-100 text-slate-900 dark:bg-white/[0.08] dark:text-slate-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/[0.04] dark:hover:text-slate-200',
+          )}
+        >
+          <UnorderedListOutlined aria-hidden />
+          {t('subagent_activity')}
+          <span className='text-[10px] text-slate-400'>{agent.steps.length}</span>
+        </button>
+        {hasResult && (
+          <button
+            type='button'
+            role='tab'
+            aria-selected={section === 'result'}
+            onClick={() => setSection('result')}
+            className={classNames(
+              'inline-flex min-h-[34px] items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40',
+              section === 'result'
+                ? 'bg-slate-100 text-slate-900 dark:bg-white/[0.08] dark:text-slate-100'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/[0.04] dark:hover:text-slate-200',
+            )}
+          >
+            <FileTextOutlined aria-hidden />
+            {t('parallel_tasks_result_summary')}
+          </button>
+        )}
+      </div>
+
+      <div
+        className='min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f8f9fc] px-5 py-5 dark:bg-[#0d0e11]'
+        data-testid='subagent-detail-scroll'
+      >
+        {section === 'result' && hasResult ? (
+          <section className='mx-auto max-w-4xl rounded-xl border border-slate-200/80 bg-white px-5 py-5 shadow-sm dark:border-white/10 dark:bg-[#17181d]'>
+            <div className='mb-4 flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100'>
+              <CheckCircleFilled aria-hidden className='text-emerald-500' />
+              {t('parallel_tasks_result_summary')}
+            </div>
+            <div className='prose prose-sm max-w-none dark:prose-invert'>
+              <MarkDownContext>{agent.result || ''}</MarkDownContext>
+            </div>
+          </section>
+        ) : agent.steps.length > 0 ? (
+          <ol className='mx-auto max-w-4xl space-y-3'>
+            {agent.steps.map((step, index) => (
+              <SubAgentStepCard
+                key={`${agent.agentId}-${index}-${step.action}`}
+                step={step}
+                index={index}
+                autoOpen={false}
+                isLast={index === agent.steps.length - 1}
+                onHtmlOpen={(content, title, outputIndex) => openHtmlReport(content, title, index, outputIndex)}
+              />
+            ))}
+          </ol>
+        ) : (
+          <div className='flex h-full min-h-[240px] flex-col items-center justify-center text-slate-400'>
+            {agent.status === 'running' ? (
+              <LoadingOutlined aria-hidden spin className='mb-3 text-2xl text-blue-500' />
+            ) : (
+              <UnorderedListOutlined aria-hidden className='mb-3 text-2xl text-slate-300 dark:text-slate-600' />
+            )}
+            <span className='text-sm'>{t('subagent_waiting_steps')}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /** Parse shell command from step detail (Action Input JSON) */
 const parseShellCommand = (detail?: string): string => {
   if (!detail) return '';
@@ -1573,7 +1986,6 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   onShare,
   onSchedule,
   terminalTitle,
-  onCollapse,
   artifacts,
   onArtifactClick,
   panelView: controlledPanelView,
@@ -1584,6 +1996,10 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   skillName,
   summaryContent,
   isSummaryStreaming,
+  subAgents,
+  onSubAgentClick,
+  subAgentContext,
+  onExitSubAgentView,
 }) => {
   const { t } = useTranslation();
   const [inputCollapsed, setInputCollapsed] = useState(false);
@@ -1649,87 +2065,19 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     return groups;
   }, [filteredArtifacts]);
 
-  // Group consecutive code+text pairs into notebook-cell units,
-  // and code+html pairs into tabbed views (渲染结果 / 源代码)
-  const outputGroups = useMemo(() => {
-    const groups: Array<
-      | { type: 'code-execution'; codes: ExecutionOutput[]; results: ExecutionOutput[]; images: ExecutionOutput[] }
-      | { type: 'html-tabbed'; code?: ExecutionOutput; html: ExecutionOutput }
-      | { type: 'single'; output: ExecutionOutput }
-    > = [];
-    let i = 0;
-    while (i < visibleOutputs.length) {
-      if (visibleOutputs[i].output_type === 'code') {
-        const codes: ExecutionOutput[] = [visibleOutputs[i]];
-        i += 1;
-        while (i < visibleOutputs.length && visibleOutputs[i].output_type === 'code') {
-          codes.push(visibleOutputs[i]);
-          i += 1;
-        }
-        if (i < visibleOutputs.length && visibleOutputs[i].output_type === 'html') {
-          groups.push({
-            type: 'html-tabbed',
-            code: { ...codes[0], content: codes.map(c => String(c.content)).join('\n') },
-            html: visibleOutputs[i],
-          });
-          i += 1;
-        } else {
-          const results: ExecutionOutput[] = [];
-          while (i < visibleOutputs.length && visibleOutputs[i].output_type === 'text') {
-            results.push(visibleOutputs[i]);
-            i += 1;
-          }
-          const images: ExecutionOutput[] = [];
-          while (i < visibleOutputs.length && visibleOutputs[i].output_type === 'image') {
-            images.push(visibleOutputs[i]);
-            i += 1;
-          }
-          groups.push({ type: 'code-execution', codes, results, images });
-        }
-      } else if (visibleOutputs[i].output_type === 'html') {
-        groups.push({ type: 'html-tabbed', html: visibleOutputs[i] });
-        i += 1;
-      } else if (visibleOutputs[i].output_type === 'markdown') {
-        const mds: string[] = [String(visibleOutputs[i].content)];
-        const firstMd = visibleOutputs[i];
-        i += 1;
-        while (i < visibleOutputs.length && visibleOutputs[i].output_type === 'markdown') {
-          mds.push(String(visibleOutputs[i].content));
-          i += 1;
-        }
-        groups.push({ type: 'single', output: { ...firstMd, content: mds.join('\n\n') } });
-      } else if (visibleOutputs[i].output_type === 'text') {
-        const texts: string[] = [String(visibleOutputs[i].content)];
-        const firstText = visibleOutputs[i];
-        i += 1;
-        while (i < visibleOutputs.length && visibleOutputs[i].output_type === 'text') {
-          texts.push(String(visibleOutputs[i].content));
-          i += 1;
-        }
-        groups.push({ type: 'single', output: { ...firstText, content: texts.join('\n\n') } });
-      } else if (visibleOutputs[i].output_type === 'error') {
-        const errs: string[] = [String(visibleOutputs[i].content)];
-        const firstErr = visibleOutputs[i];
-        i += 1;
-        while (i < visibleOutputs.length && visibleOutputs[i].output_type === 'error') {
-          errs.push(String(visibleOutputs[i].content));
-          i += 1;
-        }
-        groups.push({ type: 'single', output: { ...firstErr, content: errs.join('') } });
-      } else {
-        groups.push({ type: 'single', output: visibleOutputs[i] });
-        i += 1;
-      }
-    }
-    return groups;
-  }, [visibleOutputs]);
+  // Keep grouping inside one semantic step. Sub-agent details call the same
+  // helper per timeline item so adjacent steps never get merged together.
+  const outputGroups = useMemo(() => groupExecutionOutputs(visibleOutputs), [visibleOutputs]);
+  const subAgentDisplayName = subAgentContext ? getSubAgentDisplayName(subAgentContext) : '';
+  const subAgentDuration = formatSubAgentDuration(subAgentContext?.elapsedMs);
+  const isSubAgentExecution = panelView === 'execution' && Boolean(subAgentContext);
 
   return (
-    <div className='relative flex flex-col h-full bg-[#f8f9fc] dark:bg-[#0d0e11]'>
+    <div className='relative flex h-full min-h-0 flex-col overflow-hidden bg-[#f8f9fc] dark:bg-[#0d0e11]'>
       {/* Collapse button is rendered by the parent layout to avoid overflow clipping */}
 
       {/* Terminal Header */}
-      <div className='flex items-center justify-between px-5 py-3 bg-white dark:bg-[#111217] border-b border-gray-200 dark:border-gray-800'>
+      <div className='flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-[#111217]'>
         <div className='flex items-center gap-3'>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded-full bg-red-500' />
@@ -1802,9 +2150,71 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         </div>
       </div>
 
+      {/* Sub-agent breadcrumb — only when the right panel is showing a
+          sub-agent's process view. Gives an explicit way back to the main
+          agent timeline without clicking a left-side main step. */}
+      {subAgentContext && onExitSubAgentView && (
+        <div
+          className='flex-shrink-0 border-b border-slate-200 bg-white px-5 py-3.5 dark:border-white/10 dark:bg-[#111217]'
+          data-testid='subagent-detail-header'
+        >
+          <div className='flex items-start justify-between gap-4'>
+            <div className='flex min-w-0 items-center gap-2'>
+              <button
+                type='button'
+                onClick={onExitSubAgentView}
+                className='flex min-h-[32px] flex-shrink-0 items-center gap-1 rounded-md px-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
+              >
+                <LeftOutlined aria-hidden className='text-[10px]' />
+                {t('subagent_return_main')}
+              </button>
+              <span className='text-slate-300 dark:text-slate-700'>/</span>
+              {subAgentDisplayName !== subAgentContext.name && (
+                <span className='truncate rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-white/[0.06] dark:text-slate-400'>
+                  {subAgentContext.name}
+                </span>
+              )}
+            </div>
+            <SubAgentStatusBadge status={subAgentContext.status} showLabel />
+          </div>
+          <h2 className='mt-2 line-clamp-2 text-base font-semibold leading-6 text-slate-900 dark:text-slate-100'>
+            {subAgentDisplayName}
+          </h2>
+          {subAgentContext.goal && subAgentDisplayName !== subAgentContext.goal && (
+            <p className='mt-1 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400'>
+              {subAgentContext.goal}
+            </p>
+          )}
+          <div className='mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400 dark:text-slate-500'>
+            <span className='inline-flex items-center gap-1.5'>
+              <UnorderedListOutlined aria-hidden />
+              {t('subagent_verified_steps', { count: subAgentContext.steps.length })}
+            </span>
+            {subAgentDuration && (
+              <span className='inline-flex items-center gap-1.5'>
+                <ClockCircleOutlined aria-hidden />
+                {t('parallel_tasks_elapsed', { time: subAgentDuration })}
+              </span>
+            )}
+            {subAgentContext.artifactCount > 0 && (
+              <span className='inline-flex items-center gap-1.5'>
+                <FileImageOutlined aria-hidden />
+                {t('parallel_tasks_artifacts', { count: subAgentContext.artifactCount })}
+              </span>
+            )}
+          </div>
+          {subAgentContext.status === 'running' && subAgentContext.currentAction && (
+            <div className='mt-2.5 inline-flex max-w-full items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs text-blue-700 dark:bg-blue-500/10 dark:text-blue-300'>
+              <LoadingOutlined aria-hidden spin className='flex-shrink-0' />
+              <span className='truncate'>{subAgentContext.currentAction}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* View Toggle Tabs */}
       {((artifacts && artifacts.length > 0) || previewArtifact || skillName || !!summaryContent) && (
-        <div className='flex items-center gap-0 px-5 bg-white dark:bg-[#111217] border-b border-gray-200 dark:border-gray-800'>
+        <div className='flex flex-shrink-0 items-center gap-0 border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
           <button
             onClick={() => setPanelView('execution')}
             className={classNames(
@@ -1897,11 +2307,16 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       {/* Content Area */}
       <div
         className={classNames(
-          'flex-1 overflow-y-auto flex flex-col min-h-0',
-          panelView === 'html-preview' || panelView === 'image-preview' || panelView === 'skill-preview'
+          'flex min-h-0 flex-1 flex-col',
+          isSubAgentExecution ? 'overflow-hidden' : 'overflow-y-auto',
+          isSubAgentExecution ||
+            panelView === 'html-preview' ||
+            panelView === 'image-preview' ||
+            panelView === 'skill-preview'
             ? 'p-0'
             : 'p-5 space-y-4',
         )}
+        data-testid='right-panel-content'
       >
         {panelView === 'skill-preview' && skillName ? (
           <div className='w-full h-full flex flex-col p-5 overflow-auto'>
@@ -2011,6 +2426,19 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               </div>
             )}
           </div>
+        ) : isSubAgentExecution && subAgentContext ? (
+          <SubAgentProcessView
+            key={subAgentContext.agentId}
+            agent={subAgentContext}
+            onArtifactClick={onArtifactClick}
+          />
+        ) : activeStep?.action === 'dispatch_parallel_tasks' ? (
+          <ParallelTasksPanel
+            status={activeStep.status}
+            subAgents={subAgents}
+            outputs={visibleOutputs}
+            onSubAgentClick={onSubAgentClick}
+          />
         ) : activeStep?.type === 'bash' ? (
           <TerminalRenderer activeStep={activeStep} outputs={visibleOutputs} />
         ) : activeStep ? (
@@ -2315,7 +2743,10 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               !activeStep?.detail?.includes('Action: execute_skill_script_file') && (
                 <>
                   <div className='border-t border-gray-100 dark:border-gray-800 shrink-0' />
-                  <div className='flex-1 min-h-0 p-4 flex flex-col space-y-3 overflow-y-auto'>
+                  <div
+                    className='min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4'
+                    data-testid='execution-output-scroll'
+                  >
                     {outputGroups.map((group, gIdx) => {
                       // For skill-type steps, skip the "Skill: name — description" text output (shown in YAML card above)
                       if (activeStep?.type === 'skill' && group.type === 'single') {
@@ -2367,16 +2798,24 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       </div>
 
       {/* Footer Status Bar */}
-      <div className='px-5 py-2 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111217]'>
+      <div className='flex-shrink-0 border-t border-gray-200 bg-white px-5 py-2 dark:border-gray-800 dark:bg-[#111217]'>
         <div className='flex items-center justify-between text-[10px] text-gray-400'>
           <div className='flex items-center gap-4'>
             <span className='flex items-center gap-1'>
               <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
               {isRunning ? '执行中' : '就绪'}
             </span>
-            {visibleOutputs.length > 0 && <span>{visibleOutputs.length} 个输出</span>}
+            {subAgentContext ? (
+              <span>{t('subagent_verified_steps', { count: subAgentContext.steps.length })}</span>
+            ) : (
+              visibleOutputs.length > 0 && <span>{visibleOutputs.length} 个输出</span>
+            )}
           </div>
-          {activeStep && <span>Step ID: {activeStep.id}</span>}
+          {subAgentContext ? (
+            <span>Agent ID: {subAgentContext.agentId}</span>
+          ) : (
+            activeStep && <span>Step ID: {activeStep.id}</span>
+          )}
         </div>
       </div>
     </div>

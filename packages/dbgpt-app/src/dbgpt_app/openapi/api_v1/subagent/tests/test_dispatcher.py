@@ -162,13 +162,55 @@ async def test_build_sub_react_agent_isolation(monkeypatch):
         "goal b", 1, parent_conv_id="parent123", llm_client=fake_client
     )
 
-    assert cid_a == "parent123__sub_0"
-    assert cid_b == "parent123__sub_1"
+    # batch_id defaults to 0 when not passed (back-compat path).
+    assert cid_a == "parent123__d0_sub_0"
+    assert cid_b == "parent123__d0_sub_1"
     assert state_a is not state_b
-    assert state_a["conv_id"] == "parent123__sub_0"
+    assert state_a["conv_id"] == "parent123__d0_sub_0"
 
     # Tool pack must contain Terminate, exclude dispatch/todowrite.
     tool_names = set(agent_a.tool_pack._resources.keys())
     assert "dispatch_parallel_tasks" not in tool_names
     assert "todowrite" not in tool_names
     assert any("terminate" in n.lower() for n in tool_names)
+
+
+@pytest.mark.asyncio
+async def test_build_sub_react_agent_batch_id_isolates_conv_id(monkeypatch):
+    """Different batch_id => different sub_conv_id for the same sub_index.
+
+    This is the core fix for the "second dispatch overwrites first dispatch's
+    sub_0" bug: batch 2's sub_0 must NOT reuse batch 1's sub_0 working dir.
+    """
+    import dbgpt.agent.expand.react_agent as react_mod
+
+    class _FakeBuilt:
+        def __init__(self, tool_pack):
+            self.tool_pack = tool_pack
+
+    class _FakeReActAgent:
+        def __init__(self, *a, **k):
+            self._tool_pack = None
+
+        def bind(self, obj):
+            from dbgpt.agent.resource import ToolPack
+
+            if isinstance(obj, ToolPack):
+                self._tool_pack = obj
+            return self
+
+        async def build(self):
+            return _FakeBuilt(self._tool_pack)
+
+    monkeypatch.setattr(react_mod, "ReActAgent", _FakeReActAgent)
+
+    fake_client = _make_fake_llm_client()
+    _, cid_batch1_sub0, _ = await build_sub_react_agent(
+        "g", 0, parent_conv_id="p", llm_client=fake_client, batch_id=1
+    )
+    _, cid_batch2_sub0, _ = await build_sub_react_agent(
+        "g", 0, parent_conv_id="p", llm_client=fake_client, batch_id=2
+    )
+    assert cid_batch1_sub0 == "p__d1_sub_0"
+    assert cid_batch2_sub0 == "p__d2_sub_0"
+    assert cid_batch1_sub0 != cid_batch2_sub0

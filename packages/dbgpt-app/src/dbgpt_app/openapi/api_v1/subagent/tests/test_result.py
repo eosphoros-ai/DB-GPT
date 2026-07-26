@@ -28,6 +28,23 @@ def test_extract_falls_back_to_content():
     assert out["result"] == "just content"
 
 
+def test_extract_unwraps_terminate_output_without_react_protocol():
+    raw = r"""``````vis-thinking
+I should summarize the work before returning it.
+``````
+Thought: The analysis is complete.
+Action: terminate
+Action Input: {"output": "## Final result\n\nUSA and UK both have 5 users."}"""
+    reply = _Reply(content="fallback", action_report=_Report(raw))
+
+    out = extract_subagent_result(reply, {}, "T", "done")
+
+    assert out["result"] == "## Final result\n\nUSA and UK both have 5 users."
+    assert "Thought:" not in out["result"]
+    assert "Action Input:" not in out["result"]
+    assert "vis-thinking" not in out["result"]
+
+
 def test_extract_handles_none_reply():
     out = extract_subagent_result(None, {}, "T", "timeout")
     assert out["result"] == ""

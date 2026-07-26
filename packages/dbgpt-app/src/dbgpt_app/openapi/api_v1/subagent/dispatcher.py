@@ -26,15 +26,17 @@ import asyncio
 import json
 import logging
 import re
+import time
 from typing import Any, Dict, List, Optional
 
 from dbgpt.agent.expand.actions.react_action import Terminate
 from dbgpt.agent.resource import ToolPack, tool
 from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
+from dbgpt.agent.util.react_parser import ReActOutputParser
 from dbgpt.core import PromptTemplate
 
 from .react_tools import make_react_tools
-from .result import extract_subagent_result
+from .result import attach_agent_attribution, extract_subagent_result
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,10 @@ _SUBAGENT_OBS_MAX_CHARS = 2000
 # larger guard (still bounded so a runaway document can't flood the SSE stream).
 _SUBAGENT_HTML_MAX_CHARS = 200_000
 
+# The overview card needs a useful final summary, not the full report payload.
+# Full structured outputs still travel through agent.step / the dispatch result.
+_SUBAGENT_RESULT_SUMMARY_MAX_CHARS = 8_000
+
 # Matches the tool-result wrapper {"chunks": [...]} that DB-GPT tools return.
 _CHUNKS_WRAPPER_RE = re.compile(r'\{\s*"chunks"\s*:\s*\[.*?\]\s*\}', re.DOTALL)
 
@@ -65,9 +71,13 @@ def _parse_observation_chunks(obs: Any) -> List[Dict[str, Any]]:
     (sometimes with plain text between them). We extract every wrapper, unwrap
     its inner chunks, and keep any in-between text — returning a flat list of
     ``{"output_type","content"}`` ready for the frontend renderer (markdown
-    tables / code / json), so the raw JSON string is NEVER shown verbatim.
+    tables / code / json / images), so the raw JSON string is NEVER shown
+    verbatim.
 
-    Image-byte chunks are dropped here — artifacts flow via subagent.artifacts.
+    Image chunks are KEPT here (their ``content`` is a short ``/images/...``
+    URL, not bytes) so the right-panel process view can inline-render them
+    exactly like the main agent's ``OutputRenderer`` does. The same images
+    also flow via ``subagent.artifacts`` for the files tab / preview / download.
     """
     if obs is None:
         return []
@@ -96,9 +106,6 @@ def _parse_observation_chunks(obs: Any) -> List[Dict[str, Any]]:
             if not isinstance(c, dict):
                 continue
             ot = c.get("output_type") or "text"
-            # Skip image bytes — they go through subagent.artifacts instead.
-            if ot == "image":
-                continue
             content = c.get("content")
             if content is None:
                 continue
@@ -111,6 +118,42 @@ def _parse_observation_chunks(obs: Any) -> List[Dict[str, Any]]:
     if not matched_any and not out:
         out.append({"output_type": "text", "content": text})
     return out
+
+
+def _extract_sql_action_input(action_input: Any) -> Optional[str]:
+    """Return the SQL query from a confirmed sql_query call.
+
+    Only the SQL string is exposed to the frontend. Other tool arguments stay
+    private so the sub-agent progress event cannot leak paths, HTML, or
+    connector credentials.
+    """
+    parsed = action_input
+    if isinstance(parsed, str):
+        try:
+            parsed = json.loads(parsed)
+        except (TypeError, ValueError):
+            return None
+    if not isinstance(parsed, dict):
+        return None
+    sql = parsed.get("sql")
+    if not isinstance(sql, str):
+        return None
+    return sql.strip().rstrip(";").strip() or None
+
+
+def _extract_sql_from_llm_reply(llm_reply: Any) -> Optional[str]:
+    """Recover a confirmed SQL input when ActionOutput omits action_input."""
+    if not isinstance(llm_reply, str) or not llm_reply.strip():
+        return None
+    try:
+        steps = ReActOutputParser().parse(llm_reply)
+    except Exception:
+        logger.debug("Unable to parse sub-agent ReAct reply for SQL recovery.")
+        return None
+    for step in reversed(steps):
+        if (step.action or "").lower() == "sql_query":
+            return _extract_sql_action_input(step.action_input)
+    return None
 
 
 # Tool names a sub-agent is allowed to use. Taken from the factory's 8 tools
@@ -263,6 +306,7 @@ async def build_sub_react_agent(
     knowledge_resources: Any = None,
     readonly_connector_tools: Optional[List[Any]] = None,
     extra_context: Optional[str] = None,
+    batch_id: int = 0,
 ):
     """Construct an isolated child ReActAgent for one sub-task.
 
@@ -276,6 +320,10 @@ async def build_sub_react_agent(
         knowledge_resources: Shared read-only knowledge resources (or None).
         readonly_connector_tools: Pre-filtered read-only MCP tools (or None).
         extra_context: Optional shared background spliced into the prompt.
+        batch_id: Dispatch-batch sequence number. Folded into ``sub_conv_id``
+            so repeated dispatch calls in the same conversation do NOT reuse
+            the same working directory / agent_id (which would overwrite the
+            previous batch's sub-agent row and cross-contaminate artifacts).
 
     Returns:
         ``(sub_agent, sub_conv_id, sub_state)``.
@@ -287,7 +335,10 @@ async def build_sub_react_agent(
 
     # (1) Independent conv_id — the workspace-isolation anchor. Drives the
     # subprocess cwd pilot/tmp/{conv_id} inside code_interpreter / shell.
-    sub_conv_id = f"{parent_conv_id}__sub_{sub_index}"
+    # The ``d{batch_id}`` segment makes each dispatch batch's sub-agents get
+    # their OWN directory, so batch 2's sub_0 cannot read/overwrite batch 1's
+    # sub_0 artifacts (a real cross-batch data-leak before this).
+    sub_conv_id = f"{parent_conv_id}__d{batch_id}_sub_{sub_index}"
 
     # (2) Independent react_state — artifact bookkeeping isolation. A fresh
     # dict means generated_images / image_url_map etc. never cross-write.
@@ -352,44 +403,84 @@ async def build_sub_react_agent(
 # prompt text does NOT bloat agentic_data_api.py; the main link imports and
 # splices it into the full-tool system prompt (plan stage 4 / spec §4.6).
 DISPATCH_PROMPT_SECTION = """\
-## 任务拆分与并行执行（todowrite + dispatch_parallel_tasks）
+## Task Decomposition and Parallel Execution (todowrite + dispatch_parallel_tasks)
 
-这是两层、有先后顺序的流程，必须严格遵守：
+[Run a parallel-eligibility check at the start of every round]
+Before selecting the first tool, evaluate the user's task by meaning and
+structure. Parallel dispatch is required when all of the following are true:
+1. The task can be split into at least 2 clearly scoped subtasks, each capable
+   of producing a useful result on its own.
+2. The subtasks have no ordering dependency; none must wait for another result.
+3. Each subtask needs its own query, research, analysis, or content production
+   and is substantial enough to benefit from an isolated context.
+4. Each subtask can be expressed as a self-contained goal with the required
+   database, table, knowledge base, or connector information.
 
-【第一层：拆分】先用 `todowrite` 把复杂任务拆成一个结构化的任务清单。
-todowrite 是任务拆分的【唯一入口】——任何多步骤任务都必须先经它拆分成清单。
+When all conditions are satisfied, you MUST execute
+`todowrite -> dispatch_parallel_tasks`, even if the overall task has fewer than
+3 steps. Do not avoid parallel execution merely because there are only 2
+independent subtasks.
 
-【第二层：执行】拆分完成后，对清单里【多个相互独立、无先后依赖】的任务，
-用 `dispatch_parallel_tasks` 把它们并行交给子 Agent 执行（每个子 Agent 负责
-清单中的某一个任务）。子 Agent 是【拆分之后执行单个任务的能力】，不是拆分工具。
+Natural-language structures such as "separately", "respectively",
+"simultaneously", "in parallel", or requests covering multiple objects
+(regions, topics, data sources, or reports) are strong candidate signals.
+Do not rely on keyword matching alone; always apply the independence criteria
+above. Proactively use parallel execution when the task qualifies, even if the
+user does not explicitly ask for sub-agents.
 
-⛔【强制流程，违反即错】：
-- 严禁跳过 todowrite 直接调用 dispatch_parallel_tasks。必须先有 todowrite 清单，
-  dispatch 派发的每个子任务都应对应清单里的某一项。
-- 并行子任务全部返回后，必须立刻用 `todowrite` 把这些项标记为 completed，
-  保持进度看板与真实状态一致（dispatch 不会自动推进 todo 清单）。
-- 有依赖的任务不要并行：先做前置项（可本循环内做或单独 dispatch），拿到结果后
-  再把结果通过 context 传给后置项，分多轮处理。
+This is a mandatory two-stage workflow and the order must be preserved:
 
-✅ 适合用 dispatch 并行执行的清单项：
-- 分别调研多个独立数据源 / 多个 MCP connector，彼此不共享中间结果；
-- 对多个独立对象（如 3 个不同报表 / 3 个不同主题）各自产出一段分析；
-- 清单中彼此没有数据依赖、可同时开始的若干项。
+[Stage 1: Decompose] Use `todowrite` to turn the task into a structured todo
+list. `todowrite` is the only entry point for decomposition; every multi-step
+task must be decomposed there first.
 
-❌ 不要用 dispatch 的场景（改用 code_interpreter / sql_query 在本循环内处理）：
-- 对【同一份数据】的多角度切片（如同一张表的趋势/分布/对比）——它们共享
-  同一份已加载数据与口径，拆给独立子 Agent 反而重复查库、口径不一致、token 翻倍；
-- 清单项之间有依赖（B 需要 A 的结果）；
-- 简单的单步任务（这种任务本就不该进 todowrite，直接做）。
+[Stage 2: Execute] After decomposition, use `dispatch_parallel_tasks` to assign
+multiple independent todo items with no ordering dependency to sub-agents in
+parallel. Each sub-agent executes exactly one decomposed item. Sub-agents are
+an execution mechanism after decomposition, not a decomposition tool.
 
-使用规范：
-- 每个子任务的 goal 必须【自包含】：子 Agent 看不到当前对话历史，所有必要信息
-  都要写进 goal 或 context。
-- 【资源约定】子 Agent 会继承数据库 / 知识库 / 只读 MCP 工具，但默认不知道用
-  哪个——你必须在每个子任务的 goal/context 里写明该用哪个数据库（及关注的表）、
-  哪个知识库、哪个 MCP connector。子 Agent 只读，需要写操作时应交由你执行。
-- 单次最多 N 个子任务（超出会被截断并提示，请分多轮）。
-- 子 Agent 不能再调用 dispatch_parallel_tasks（禁止递归）。
+[Mandatory rules]
+- Never skip `todowrite` and call `dispatch_parallel_tasks` directly. A todo
+  list must exist first, and every dispatched subtask must correspond to an
+  item in that list.
+- Keep exactly one todo item marked as `in_progress`. This is a progress-board
+  constraint only; other eligible independent `pending` items may still be
+  included in the same dispatch batch.
+- As soon as all parallel subtasks return, call `todowrite` again and mark
+  those items as `completed`. The dispatch tool does not update todo state.
+- Do not parallelize dependent tasks. Complete the prerequisite first, then
+  pass its result through `context` to the dependent item in a later round.
+
+[Good candidates for parallel dispatch]
+- Research multiple independent data sources or MCP connectors that do not
+  share intermediate results.
+- Produce separate analyses for multiple independent objects, such as three
+  reports or three unrelated topics.
+- Run multiple independent read-only queries or analyses against the same
+  database or table. For example, analyze the `users` table's country
+  distribution and registration-year distribution separately when neither
+  analysis needs the other's intermediate result.
+- Execute any set of todo items that have no data dependency and can all start
+  immediately.
+
+[Do not use parallel dispatch]
+- Steps share intermediate results, cleaning state, or must reuse the same
+  computed metric definition.
+- Todo items are dependent, such as cleaning before forecasting or when B
+  requires A's result.
+- The task is a simple, single-step operation; execute it directly without
+  creating a todo list.
+
+[Usage rules]
+- Every subtask goal must be self-contained. A sub-agent cannot see the current
+  conversation history, so put all required information in `goal` or `context`.
+- Sub-agents inherit database, knowledge-base, and read-only MCP tools, but do
+  not know which resource to use by default. Name the required database and
+  relevant tables, knowledge base, or MCP connector in every goal/context.
+  Sub-agents are read-only; the lead agent must perform write operations.
+- Dispatch at most N subtasks per call. Excess tasks are truncated and reported;
+  dispatch additional batches when necessary.
+- A sub-agent must never call `dispatch_parallel_tasks` recursively.
 """
 
 
@@ -430,16 +521,25 @@ def make_dispatch_tool(
         connector_tool_extras, connector_manager
     )
 
+    # Per-lead-agent dispatch counter. Each ``dispatch_parallel_tasks`` call
+    # bumps it and folds the value into every sub-agent's ``agent_id`` /
+    # ``sub_conv_id``. Without this, batch 2's ``sub_0`` would reuse batch 1's
+    # ``sub_0`` working directory (cross-batch artifact leak) and the frontend
+    # ``subAgents[agent_id]`` map would overwrite the earlier row.
+    _dispatch_counter = 0
+
     @tool(
         description=(
             "把多个【相互独立、无依赖】的子任务并行交给子 Agent 执行，返回各自"
-            "结果。仅在子任务彼此无依赖、且各自信息量大到值得独立上下文时使用；"
-            "对同一份数据的多角度切片，请直接用 code_interpreter/sql_query。"
+            "结果。任务包含至少 2 个可独立交付、可同时开始、且各自值得独立上下文"
+            "的目标时使用。同一数据库或同一张表上的独立只读分析也可以并行；只有"
+            "共享中间结果、计算状态或存在前后依赖时才应串行。"
             f"单次最多 {max_parallel} 个子任务，超出请分批多轮调用。"
             '参数: {"tasks": [{"goal": "...", "context": "...", "title": "..."}]}'
         )
     )
     async def dispatch_parallel_tasks(tasks: list) -> str:
+        nonlocal _dispatch_counter
         if not isinstance(tasks, list) or not tasks:
             return json.dumps(
                 {
@@ -457,7 +557,14 @@ def make_dispatch_tool(
         accepted = tasks[:max_parallel]
         dropped = len(tasks) - len(accepted)
 
+        # Stable, unique batch id for this dispatch call. Folded into every
+        # sub-agent's id / conv_id so repeated dispatches never collide.
+        _dispatch_counter += 1
+        batch_id = _dispatch_counter
+
         async def run_one(idx: int, t: dict) -> dict:
+            started_at = time.monotonic()
+            agent_id = f"sub_d{batch_id}_{idx}"
             title = (
                 t.get("title") if isinstance(t, dict) else None
             ) or f"子任务{idx + 1}"
@@ -466,10 +573,11 @@ def make_dispatch_tool(
             await emit_event(
                 {
                     "type": "agent.start",
-                    "agent_id": f"sub_{idx}",
+                    "agent_id": agent_id,
                     "agent_name": title,
                     "goal": goal,
                     "lane": idx,
+                    "batch_id": batch_id,
                 }
             )
             try:
@@ -483,6 +591,7 @@ def make_dispatch_tool(
                     knowledge_resources=knowledge_resources,
                     readonly_connector_tools=readonly_connector_tools,
                     extra_context=extra,
+                    batch_id=batch_id,
                 )
                 from dbgpt.agent import AgentMessage
 
@@ -493,9 +602,17 @@ def make_dispatch_tool(
                 # channel — they never enter the main loop's round_step_map
                 # (which keys steps by round_num and would collide across
                 # parallel sub-agents).
+                pending_sql_by_round: Dict[int, str] = {}
+
                 async def _sub_stream_callback(
-                    event_type: str, payload: dict, _idx: int = idx
+                    event_type: str, payload: dict, _aid: str = agent_id
                 ) -> None:
+                    round_num = int(payload.get("round") or 0)
+                    if event_type == "thinking":
+                        sql = _extract_sql_from_llm_reply(payload.get("llm_reply"))
+                        if sql:
+                            pending_sql_by_round[round_num] = sql
+                        return
                     if event_type != "act":
                         return
                     ao = payload.get("action_output") or {}
@@ -508,9 +625,10 @@ def make_dispatch_tool(
                     # for the right-panel process view (Devin-style). The tool
                     # result is a {"chunks":[...]} wrapper (or several concat'd);
                     # we unwrap so the frontend renders markdown tables / code /
-                    # json properly instead of showing the raw JSON string.
-                    # Image bytes are dropped — artifacts flow via the separate
-                    # subagent.artifacts channel.
+                    # json / images properly instead of showing the raw JSON
+                    # string. Images are kept inline (same as the main agent's
+                    # OutputRenderer) AND also flow via subagent.artifacts for
+                    # the files tab / preview / download.
                     raw_obs = ao.get("observations") or ao.get("content") or ""
                     chunks = _parse_observation_chunks(raw_obs)
                     # Per-chunk truncation keeps SSE light without cutting a
@@ -518,26 +636,35 @@ def make_dispatch_tool(
                     # the small text cap — truncating an HTML document yields an
                     # unclosed, broken ``srcDoc`` that the iframe cannot render
                     # ("report cut off"). They get a much larger guard instead.
+                    # Image chunks are tiny (just a /images/... URL), so no cap.
                     for c in chunks:
                         content = c.get("content")
                         if not isinstance(content, str):
                             continue
                         if c.get("output_type") == "html":
                             limit = _SUBAGENT_HTML_MAX_CHARS
+                        elif c.get("output_type") == "image":
+                            continue
                         else:
                             limit = _SUBAGENT_OBS_MAX_CHARS
                         if len(content) > limit:
                             c["content"] = content[:limit] + "…（已截断）"
-                    await emit_event(
-                        {
-                            "type": "agent.step",
-                            "agent_id": f"sub_{_idx}",
-                            "action": action,
-                            "intention": ao.get("action_intention"),
-                            "chunks": chunks,
-                            "round": payload.get("round"),
-                        }
-                    )
+                    step_event = {
+                        "type": "agent.step",
+                        "agent_id": _aid,
+                        "batch_id": batch_id,
+                        "action": action,
+                        "intention": ao.get("action_intention"),
+                        "chunks": chunks,
+                        "round": payload.get("round"),
+                    }
+                    if action.lower() == "sql_query":
+                        sql = _extract_sql_action_input(
+                            ao.get("action_input")
+                        ) or pending_sql_by_round.pop(round_num, None)
+                        if sql:
+                            step_event["sql"] = sql
+                    await emit_event(step_event)
 
                 reply = await asyncio.wait_for(
                     agent.generate_reply(
@@ -563,11 +690,25 @@ def make_dispatch_tool(
                     "result": f"执行失败: {e}",
                     "artifacts": [],
                 }
+            # Stamp the source agent on every artifact so the frontend can
+            # count/label per sub-agent (aggregate-card row + files-tab tag).
+            attach_agent_attribution(r.get("artifacts", []), agent_id, title)
+            r["agent_id"] = agent_id
+            r["agent_name"] = title
+            result_summary = str(r.get("result") or "")
+            if len(result_summary) > _SUBAGENT_RESULT_SUMMARY_MAX_CHARS:
+                result_summary = (
+                    result_summary[:_SUBAGENT_RESULT_SUMMARY_MAX_CHARS]
+                    + "\n\n…（完整结果请查看子任务详情）"
+                )
             await emit_event(
                 {
                     "type": "agent.done",
-                    "agent_id": f"sub_{idx}",
+                    "agent_id": agent_id,
+                    "batch_id": batch_id,
                     "status": r["status"],
+                    "result": result_summary,
+                    "elapsed_ms": int((time.monotonic() - started_at) * 1000),
                 }
             )
             return r
@@ -575,6 +716,8 @@ def make_dispatch_tool(
         results = await asyncio.gather(*[run_one(i, t) for i, t in enumerate(accepted)])
 
         # Artifacts go to the frontend out-of-band — NOT into the lead context.
+        # Each item already carries its source agent_id / agent_name (stamped
+        # above), so the frontend can do per-row counting and "by <agent>" labels.
         all_artifacts = [a for r in results for a in r.get("artifacts", [])]
         if all_artifacts:
             await emit_event({"type": "subagent.artifacts", "items": all_artifacts})

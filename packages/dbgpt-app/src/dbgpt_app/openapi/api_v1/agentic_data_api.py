@@ -1763,8 +1763,9 @@ print(json.dumps(summary, ensure_ascii=False))
     @tool(
         description=(
             "Create and manage a structured task list for the current session. "
-            "Use this tool to plan complex tasks (3+ steps), track progress, "
-            "and show the user what you are doing. "
+            "Use this tool to plan complex tasks (3+ steps) or tasks containing "
+            "2 or more mutually independent subtasks, track progress, and show "
+            "the user what you are doing. "
             "Pass the FULL todo list every time (not incremental). "
             "Each todo has: content (brief description), "
             "status (pending | in_progress | completed | cancelled), "
@@ -2242,11 +2243,16 @@ a structured task plan BEFORE starting work. This helps users track your progres
 - Mark exactly ONE task as `in_progress` at a time.
 - Mark tasks `completed` immediately after finishing each one.
 - Do NOT use todowrite for simple single-step tasks.
+- Parallel exception: when the task contains 2 or more mutually independent
+  subtasks eligible for `dispatch_parallel_tasks`, use `todowrite` even when
+  the overall task has fewer than 3 steps.
 - After splitting tasks with todowrite, if several items are mutually
   INDEPENDENT (no ordering dependency), execute them in parallel by delegating
   to sub-agents via `dispatch_parallel_tasks` (one sub-agent per item) — see
   the "任务拆分与并行执行" section. todowrite is the ONLY way to split tasks;
   dispatch_parallel_tasks only EXECUTES already-split items, it never splits.
+- The "exactly one in_progress" rule controls the visible todo state; it does
+  not prevent dispatching other independent pending items in the same batch.
 
 CRITICAL: You MUST call `todowrite` to update the task list at EVERY transition:
 1. BEFORE starting a task: mark it `in_progress` (call todowrite)
@@ -2322,13 +2328,18 @@ to display reports on the right panel). Default usage:
 {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
 File mode: {{"file_path": "/path/to/report.html"}}
 14. **todowrite**: Create and manage a structured task list. Use for complex tasks
-(3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
+(3+ steps), or tasks with 2 or more mutually independent subtasks, to plan and
+track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
 "priority": "high|medium|low"}}. Only ONE task in_progress at a time.
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
 The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
-15. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
+15. **dispatch_parallel_tasks**: Execute 2 or more mutually independent todo
+items concurrently with isolated sub-agents. Each task needs a self-contained
+goal and may include shared context and a display title.
+Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
+16. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
 
 {file_context}
 {knowledge_context}

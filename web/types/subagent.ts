@@ -22,6 +22,8 @@ export interface SubAgentStep {
   label: string;
   /** Optional one-line intention from the model. */
   intention?: string;
+  /** Sanitized SQL executed by a confirmed sql_query action. */
+  sql?: string;
   /** Structured output chunks (already parsed by the backend) for the
    * right-panel process view — markdown tables / code / json render properly. */
   chunks?: SubAgentOutputChunk[];
@@ -38,10 +40,16 @@ export interface SubAgentState {
   status: SubAgentStatus;
   /** Parallel lane index (ordering). */
   lane: number;
+  /** One-based dispatch batch number within the lead-agent run. */
+  batchId: number;
   /** Number of artifacts (images/html) this sub-agent produced. */
   artifactCount: number;
   /** Human-readable current action while running, e.g. "正在查询数据库". */
   currentAction?: string;
+  /** Clean final answer extracted from the terminate action (never raw CoT). */
+  result?: string;
+  /** Wall-clock execution time reported by the backend. */
+  elapsedMs?: number;
   /** Confirmed tool actions so far (drill-down list). */
   steps: SubAgentStep[];
 }
@@ -53,9 +61,23 @@ export interface SubAgentPartial {
   /** When set (agent.step), append a step to this sub-agent + set currentAction. */
   stepUpdate?: { agentId: string; step: SubAgentStep };
   /**
-   * When set (subagent.artifacts), the total number of artifacts produced
-   * across the batch. The backend event carries a flat item list without
-   * per-agent attribution, so the card shows an aggregate count only.
+   * When set (subagent.artifacts), the per-agent items produced this batch.
+   * Each item carries its source ``agent_id`` / ``agent_name`` (stamped by the
+   * backend) so the frontend can count per row and label "by <agent>" in the
+   * files tab. ``totalArtifacts`` is kept as a fallback aggregate count.
    */
+  artifactItems?: SubAgentArtifactItem[];
   totalArtifacts?: number;
+}
+
+/** One artifact produced by a sub-agent, as carried by subagent.artifacts. */
+export interface SubAgentArtifactItem {
+  type: string; // 'image' | 'html' | 'file' | ...
+  url?: string;
+  content?: string;
+  title?: string;
+  /** Source sub-agent id, e.g. "sub_d1_0". */
+  agent_id: string;
+  /** Source sub-agent display name (the sub-task title). */
+  agent_name: string;
 }

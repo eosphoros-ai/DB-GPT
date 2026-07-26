@@ -1,7 +1,7 @@
 import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
-import { parseSubAgentEvent } from '@/hooks/use-subagent-stream';
+import { buildSubAgentArtifacts, parseSubAgentEvent } from '@/hooks/use-subagent-stream';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -25,6 +25,7 @@ import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
+import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
@@ -186,7 +187,7 @@ interface ExecutionStep {
   detail: string;
   status: 'running' | 'done' | 'failed';
   action?: string;
-  actionInput?: string;
+  actionInput?: any;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -244,6 +245,8 @@ interface Artifact {
   mimeType?: string;
   size?: number;
   filePath?: string;
+  /** Which sub-agent produced this artifact (for sub-agent produced files). */
+  sourceAgent?: string;
   // Chart-specific metadata
   chartType?: ChartType;
   chartConfig?: Partial<ChartConfig>;
@@ -411,6 +414,8 @@ const convertToManusFormat = (
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
+        action: step.action,
+        actionInput: step.actionInput,
       };
     });
 
@@ -451,7 +456,14 @@ const convertToManusFormat = (
       }))
     : [];
 
-  return { sections, activeStep, outputs, stepThoughts: execution?.stepThoughts || {} };
+  const stepThoughts = { ...(execution.stepThoughts || {}) };
+  execution.steps.forEach(step => {
+    if (step.action === 'dispatch_parallel_tasks') {
+      delete stepThoughts[step.id];
+    }
+  });
+
+  return { sections, activeStep, outputs, stepThoughts };
 };
 
 const EXAMPLE_CARDS = [
@@ -597,7 +609,13 @@ const Playground: NextPage = () => {
   const [activeViewMsgId, setActiveViewMsgId] = useState<string | null>(null);
   // Devin-style: which sub-agent's process to show in the right panel (clicked
   // in the left SubAgentSection). null = show the main agent's execution.
-  const [activeSubAgentId, setActiveSubAgentId] = useState<string | null>(null);
+  // Carries messageId so switching rounds cannot leak another round's sub-agent
+  // of the same id into the view (sub_d1_0 from round A must not show round B's
+  // sub_d1_0).
+  const [activeSubAgent, setActiveSubAgent] = useState<{
+    messageId: string;
+    agentId: string;
+  } | null>(null);
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
@@ -1238,6 +1256,7 @@ const Playground: NextPage = () => {
     execution: {
       steps: ExecutionStep[];
       outputs: Record<string, ExecutionOutput[]>;
+      subAgents?: Record<string, SubAgentState>;
     },
     summaryText?: string,
     filePath?: string | null,
@@ -1369,6 +1388,50 @@ const Playground: NextPage = () => {
           });
         }
       });
+    }
+
+    // Sub-agent artifacts: when restoring from history, the live
+    // ``subagent.artifacts`` SSE event is not replayed, so scan each
+    // sub-agent's step ``chunks`` for image/html (same shape the backend
+    // forwards in agent.step) and materialize them as Artifacts tagged with
+    // their source agent. Mirrors the live path in processEvent.
+    const subAgents = (execution as { subAgents?: Record<string, SubAgentState> }).subAgents;
+    if (subAgents) {
+      for (const agent of Object.values(subAgents)) {
+        (agent.steps || []).forEach((step, sIdx) => {
+          (step.chunks || []).forEach((chunk, cIdx) => {
+            const ot = chunk.output_type;
+            const content = chunk.content;
+            if (ot === 'image' && typeof content === 'string') {
+              const imgName = content.split('/').pop() || `image_${sIdx}_${cIdx}.png`;
+              finalArtifacts.push({
+                id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
+                type: 'image',
+                name: imgName.replace(/^[a-f0-9]{8}_/, ''),
+                content,
+                createdAt: now,
+                messageId,
+                stepId: agent.agentId,
+                sourceAgent: agent.name,
+                downloadable: true,
+              });
+            } else if (ot === 'html' && typeof content === 'string') {
+              const htmlTitle = (chunk as { title?: string }).title || agent.name;
+              finalArtifacts.push({
+                id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
+                type: 'html',
+                name: `${htmlTitle}.html`,
+                content,
+                createdAt: now,
+                messageId,
+                stepId: agent.agentId,
+                sourceAgent: agent.name,
+                downloadable: true,
+              });
+            }
+          });
+        });
+      }
     }
 
     if (summaryText) {
@@ -1658,6 +1721,20 @@ const Playground: NextPage = () => {
           // here because processEvent closes over setExecutionMap (review I3).
           const partial = parseSubAgentEvent(payload);
           if (!partial) return;
+          // Artifacts flow into the GLOBAL artifacts list (files tab / preview /
+          // download) — a separate state from executionMap, so it gets its own
+          // setter. Dedup by id so a replayed event cannot stack duplicates.
+          if (partial.artifactItems && partial.artifactItems.length > 0) {
+            const newArts = buildSubAgentArtifacts(partial.artifactItems, responseId);
+            setArtifacts(prev => {
+              const ids = new Set(prev.map(a => a.id));
+              const merged = [...prev];
+              for (const a of newArts) {
+                if (!ids.has(a.id)) merged.push(a);
+              }
+              return merged;
+            });
+          }
           setExecutionMap(prev => {
             const current = prev[responseId] || {
               steps: [],
@@ -1669,10 +1746,15 @@ const Playground: NextPage = () => {
             const subAgents: Record<string, SubAgentState> = { ...(current.subAgents || {}) };
             if (partial.upsert) {
               const existing = subAgents[partial.upsert.agentId];
-              // agent.done only carries status — merge onto the existing row
-              // so name / goal / lane / steps from earlier events are preserved.
+              // agent.done carries status + final summary/timing. Merge those
+              // onto the existing row while preserving start/step metadata.
               subAgents[partial.upsert.agentId] = existing
-                ? { ...existing, status: partial.upsert.status }
+                ? {
+                    ...existing,
+                    status: partial.upsert.status,
+                    result: partial.upsert.result ?? existing.result,
+                    elapsedMs: partial.upsert.elapsedMs ?? existing.elapsedMs,
+                  }
                 : partial.upsert;
             }
             if (partial.stepUpdate) {
@@ -1686,8 +1768,26 @@ const Playground: NextPage = () => {
                 };
               }
             }
-            const subAgentArtifacts =
-              partial.totalArtifacts != null ? partial.totalArtifacts : current.subAgentArtifacts;
+            // Per-agent artifact count: each item already carries its source
+            // agent_id, so accumulate per row for the aggregate-card badge.
+            if (partial.artifactItems && partial.artifactItems.length > 0) {
+              const countByAgent: Record<string, number> = {};
+              for (const it of partial.artifactItems) {
+                countByAgent[it.agent_id] = (countByAgent[it.agent_id] || 0) + 1;
+              }
+              for (const [aid, n] of Object.entries(countByAgent)) {
+                const existing = subAgents[aid];
+                if (existing) {
+                  subAgents[aid] = {
+                    ...existing,
+                    artifactCount: (existing.artifactCount || 0) + n,
+                  };
+                }
+              }
+            }
+            // Aggregate header count = sum of per-row counts (always
+            // consistent, immune to event replay / ordering quirks).
+            const subAgentArtifacts = Object.values(subAgents).reduce((sum, a) => sum + (a.artifactCount || 0), 0);
             return { ...prev, [responseId]: { ...current, subAgents, subAgentArtifacts } };
           });
           return;
@@ -1818,11 +1918,11 @@ const Playground: NextPage = () => {
               };
             });
             // Route model-provided action display fields to the subtle status row.
-            const displayThought = payload.action_intention
-              ? payload.action_reason
-                ? `${payload.action_intention}\n${payload.action_reason}`
-                : payload.action_intention
-              : payload.thought;
+            const displayThought = buildActionDisplayText({
+              actionIntention: payload.action_intention,
+              actionReason: payload.action_reason,
+              thought: payload.thought,
+            });
             const nextThoughts = displayThought
               ? {
                   ...current.stepThoughts,
@@ -1889,39 +1989,10 @@ const Playground: NextPage = () => {
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
         } else if (payload.type === 'step.thought') {
-          const content = payload.content || '';
-          let normalizedThought = '';
-          if (typeof content === 'string') {
-            normalizedThought = content;
-          } else if (content && typeof content === 'object') {
-            const todoValue = (content as Record<string, unknown>).TODO;
-            if (typeof todoValue === 'string') {
-              normalizedThought = todoValue;
-            } else {
-              try {
-                normalizedThought = JSON.stringify(content);
-              } catch {
-                normalizedThought = String(content);
-              }
-            }
-          }
-          if (normalizedThought) {
-            setExecutionMap(prev => {
-              const current = prev[responseId];
-              if (!current) return prev;
-              const targetId = payload.id || current.activeStepId || 'initial';
-              return {
-                ...prev,
-                [responseId]: {
-                  ...current,
-                  stepThoughts: {
-                    ...current.stepThoughts,
-                    [targetId]: (current.stepThoughts?.[targetId] || '') + normalizedThought,
-                  },
-                },
-              };
-            });
-          }
+          // Raw model reasoning is intentionally not rendered in the user-facing
+          // timeline. Display copy must come from step.meta action_intention or
+          // action_reason, which are constrained to concise, readable text.
+          return;
         } else if (payload.type === 'final') {
           setExecutionMap(prev => {
             const current = prev[responseId];
@@ -2206,26 +2277,13 @@ const Playground: NextPage = () => {
                 }
               }
             }
-            const historyThought = s.action_intention
-              ? s.action_reason
-                ? `${s.action_intention}\n${s.action_reason}`
-                : s.action_intention
-              : s.thought;
+            const historyThought = buildActionDisplayText({
+              actionIntention: s.action_intention,
+              actionReason: s.action_reason,
+              thought: s.thought,
+            });
             if (historyThought) {
-              if (typeof historyThought === 'string') {
-                stepThoughts[stepId] = historyThought;
-              } else if (typeof historyThought === 'object') {
-                const todoValue = (historyThought as Record<string, unknown>).TODO;
-                if (typeof todoValue === 'string') {
-                  stepThoughts[stepId] = todoValue;
-                } else {
-                  try {
-                    stepThoughts[stepId] = JSON.stringify(historyThought);
-                  } catch {
-                    stepThoughts[stepId] = String(historyThought);
-                  }
-                }
-              }
+              stepThoughts[stepId] = historyThought;
             }
           });
 
@@ -2431,7 +2489,7 @@ const Playground: NextPage = () => {
     >
       <div className='flex h-full w-full bg-[#f7f7f9] dark:bg-[#0f1012] text-[#1a1b1e] dark:text-gray-200 font-sans overflow-hidden'>
         {/* Main Content */}
-        <div className='flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-[#111217]'>
+        <div className='flex-1 min-h-0 flex flex-col relative overflow-hidden bg-white dark:bg-[#111217]'>
           {/* Top Header */}
           <div className='h-16 flex-shrink-0 flex items-center justify-between px-8 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-[#111217]/80 backdrop-blur z-20'>
             <div className='flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md'>
@@ -2466,9 +2524,9 @@ const Playground: NextPage = () => {
               <Spin size='large' tip='加载对话历史...' />
             </div>
           ) : messages.length > 0 ? (
-            <div className={`flex-1 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
+            <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
                   {rounds.map((round, roundIndex) => {
@@ -2501,10 +2559,16 @@ const Playground: NextPage = () => {
                             <SubAgentSection
                               subAgents={execution.subAgents}
                               artifactCount={execution.subAgentArtifacts}
-                              activeSubAgentId={isSelected ? activeSubAgentId : null}
+                              activeSubAgentId={
+                                isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                  ? activeSubAgent.agentId
+                                  : null
+                              }
                               onSubAgentClick={agentId => {
-                                if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                                setActiveSubAgentId(agentId);
+                                if (round.viewMsg?.id) {
+                                  setActiveViewMsgId(round.viewMsg.id);
+                                  setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                }
                                 setRightPanelView('execution');
                                 setRightPanelCollapsed(false);
                               }}
@@ -2518,7 +2582,8 @@ const Playground: NextPage = () => {
                             setSelectedStepId(stepId);
                             // Clicking a main-agent step exits the sub-agent
                             // process view, so the right panel shows this step.
-                            setActiveSubAgentId(null);
+                            setActiveSubAgent(null);
+                            setRightPanelView('execution');
                             setRightPanelCollapsed(false);
                             setExecutionMap(prev => ({
                               ...prev,
@@ -3166,7 +3231,7 @@ const Playground: NextPage = () => {
                 </Tooltip>
               </div>
               <div
-                className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
+                className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
                 {(() => {
                   const activeViewMsg = messages.find(m => m.id === selectedViewMsgId && m.role === 'view');
@@ -3182,7 +3247,29 @@ const Playground: NextPage = () => {
                   // Devin-style sub-agent process view: when a sub-agent is
                   // selected, override activeStep/outputs with that sub-agent's
                   // step list (reusing the execution view's rendering).
-                  const activeSub = activeSubAgentId ? execution?.subAgents?.[activeSubAgentId] : undefined;
+                  // Guard on messageId so a stale selection from another round
+                  // cannot leak a same-id sub-agent into this round's view.
+                  const activeSub =
+                    activeSubAgent && activeSubAgent.messageId === activeViewMsg?.id
+                      ? execution?.subAgents?.[activeSubAgent.agentId]
+                      : undefined;
+                  const activeDispatchStepId =
+                    _converted.activeStep?.action === 'dispatch_parallel_tasks' ? _converted.activeStep.id : null;
+                  const dispatchSteps =
+                    execution?.steps.filter(step => step.action === 'dispatch_parallel_tasks') || [];
+                  const dispatchStepIndex = activeDispatchStepId
+                    ? dispatchSteps.findIndex(step => step.id === activeDispatchStepId)
+                    : -1;
+                  const activeDispatchBatchId = dispatchStepIndex >= 0 ? dispatchStepIndex + 1 : null;
+                  const parallelSubAgents = activeDispatchBatchId
+                    ? Object.fromEntries(
+                        Object.entries(execution?.subAgents || {}).filter(
+                          ([, agent]) =>
+                            agent.batchId === activeDispatchBatchId ||
+                            (agent.batchId === 0 && activeDispatchBatchId === 1),
+                        ),
+                      )
+                    : undefined;
                   if (activeSub) {
                     activeStep = {
                       id: `subagent-${activeSub.agentId}`,
@@ -3195,51 +3282,10 @@ const Playground: NextPage = () => {
                             ? 'running'
                             : 'error',
                     };
-                    // Build the right-panel outputs from each step's
-                    // backend-parsed chunks (markdown tables / code / json),
-                    // prefixed by a per-step heading. The backend already
-                    // unwrapped the {"chunks":[...]} tool result, so the
-                    // renderer shows real tables — never a raw JSON string.
-                    const expandSubOutputs: ManusExecutionOutput[] = [];
-                    // A sub-agent's LLM may call html_interpreter more than once
-                    // (each render is a ReAct step), which would otherwise stack
-                    // several "generated report" cards — the last render is the
-                    // most complete. Collapse to ONE: only the LAST step that
-                    // contains an html chunk renders its html; earlier report
-                    // steps show a one-line "历史版本" note instead (kept for
-                    // traceability, not deleted). Immune to how many times the
-                    // model re-rendered.
-                    const stepHasHtml = (st: (typeof activeSub.steps)[number]) =>
-                      (st.chunks || []).some(c => c.output_type === 'html');
-                    let lastHtmlStepIdx = -1;
-                    activeSub.steps.forEach((st, i) => {
-                      if (stepHasHtml(st)) lastHtmlStepIdx = i;
-                    });
-                    activeSub.steps.forEach((s, idx) => {
-                      expandSubOutputs.push({
-                        output_type: 'markdown' as any,
-                        content: `### ${idx + 1}. ${s.label}${s.intention ? ` — ${s.intention}` : ''}`,
-                        timestamp: Date.now(),
-                      });
-                      const isSupersededReport = stepHasHtml(s) && idx !== lastHtmlStepIdx;
-                      (s.chunks || []).forEach(c => {
-                        if (c.output_type === 'html' && isSupersededReport) {
-                          // Collapse an earlier (superseded) report render to a note.
-                          expandSubOutputs.push({
-                            output_type: 'markdown' as any,
-                            content: `> 📄 已生成报告(此为历史版本，已被下方最终报告取代)`,
-                            timestamp: Date.now(),
-                          });
-                          return;
-                        }
-                        expandSubOutputs.push({
-                          output_type: c.output_type as any,
-                          content: c.content,
-                          timestamp: Date.now(),
-                        });
-                      });
-                    });
-                    outputs = expandSubOutputs;
+                    // The sub-agent detail view consumes the structured steps
+                    // directly. Keeping the main dispatch output here would
+                    // duplicate titles/results and flatten step boundaries.
+                    outputs = [];
                     isRunning = activeSub.status === 'running';
                   }
 
@@ -3250,7 +3296,6 @@ const Playground: NextPage = () => {
                       databaseType={selectedDb?.db_type}
                       databaseName={selectedDb?.db_name}
                       isRunning={isRunning}
-                      onCollapse={() => setRightPanelCollapsed(true)}
                       onRerun={router.query.from_task ? undefined : () => {}}
                       onShare={!loading && !!conversationId ? handleShare : undefined}
                       onSchedule={
@@ -3294,6 +3339,14 @@ const Playground: NextPage = () => {
                       skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
                       summaryContent={streamingSummary || activeViewMsg?.context || ''}
                       isSummaryStreaming={!_summaryComplete && !!streamingSummary}
+                      subAgents={parallelSubAgents}
+                      onSubAgentClick={agentId => {
+                        if (!activeViewMsg?.id) return;
+                        setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
+                        setRightPanelView('execution');
+                      }}
+                      subAgentContext={activeSub || null}
+                      onExitSubAgentView={() => setActiveSubAgent(null)}
                     />
                   );
                 })()}

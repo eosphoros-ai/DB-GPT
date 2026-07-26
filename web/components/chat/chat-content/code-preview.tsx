@@ -10,11 +10,12 @@ interface Props {
   code: string;
   language: string;
   customStyle?: CSSProperties;
+  codeStyle?: CSSProperties;
   light?: { [key: string]: CSSProperties };
   dark?: { [key: string]: CSSProperties };
 }
 
-export function CodePreview({ code, light, dark, language, customStyle }: Props) {
+export function CodePreview({ code, light, dark, language, customStyle, codeStyle }: Props) {
   const { mode } = useContext(ChatContext);
 
   return (
@@ -30,6 +31,7 @@ export function CodePreview({ code, light, dark, language, customStyle }: Props)
       />
       <SyntaxHighlighter
         customStyle={{ ...customStyle, maxHeight: '400px', overflow: 'auto' }}
+        codeTagProps={codeStyle ? { style: codeStyle } : undefined}
         language={language}
         style={mode === 'dark' ? (dark ?? coldarkDark) : (light ?? oneDark)}
       >

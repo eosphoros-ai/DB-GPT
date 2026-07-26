@@ -11,15 +11,18 @@ import {
   CaretDownOutlined,
   CaretRightOutlined,
   CheckCircleFilled,
-  ClockCircleOutlined,
   CloseCircleFilled,
+  FileImageOutlined,
   LoadingOutlined,
   RightOutlined,
 } from '@ant-design/icons';
+import { Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import type { SubAgentState, SubAgentStatus } from '@/types/subagent';
+import type { SubAgentState } from '@/types/subagent';
+import SubAgentStatusBadge from './SubAgentStatusBadge';
 
 export interface SubAgentSectionProps {
   subAgents: Record<string, SubAgentState>;
@@ -30,54 +33,38 @@ export interface SubAgentSectionProps {
   activeSubAgentId?: string | null;
 }
 
-// Status badge: small icon reused from the antd set ManusLeftPanel already uses.
-const StatusBadge: React.FC<{ status: SubAgentStatus }> = ({ status }) => {
-  switch (status) {
-    case 'done':
-      return <CheckCircleFilled className='text-sm text-emerald-500' />;
-    case 'failed':
-      return <CloseCircleFilled className='text-sm text-red-500' />;
-    case 'timeout':
-      return <ClockCircleOutlined className='text-sm text-amber-500' />;
-    default:
-      return <LoadingOutlined spin className='text-sm text-blue-500' />;
-  }
-};
-
-const STATUS_TEXT: Record<SubAgentStatus, string> = {
-  running: '执行中',
-  done: '完成',
-  timeout: '超时',
-  failed: '失败',
-};
-
 const SubAgentRow: React.FC<{
   agent: SubAgentState;
   active?: boolean;
   onClick?: (agentId: string) => void;
 }> = ({ agent, active, onClick }) => {
+  const { t } = useTranslation();
   const hasSteps = agent.steps.length > 0;
   const isRunning = agent.status === 'running';
 
   // The line under the name: while running show the live action; when finished
   // show a short status summary.
   const subline = isRunning
-    ? agent.currentAction || '正在思考'
-    : `${STATUS_TEXT[agent.status]}${agent.steps.length ? ` · ${agent.steps.length} 步` : ''}`;
+    ? agent.currentAction || t('parallel_tasks_preparing')
+    : `${t(`subagent_status_${agent.status}`)}${agent.steps.length ? ` · ${t('parallel_tasks_steps', { count: agent.steps.length })}` : ''}`;
 
   // Whole row is clickable -> open this sub-agent's full process in the right
   // panel (Devin-style left-select-right-view).
   return (
-    <div
-      className={classNames('rounded-lg border px-3 py-2 flex items-center gap-2 cursor-pointer transition-colors', {
-        'border-blue-300 dark:border-blue-600 bg-blue-50/60 dark:bg-blue-900/20': active,
-        'border-gray-100 dark:border-gray-700/60 bg-white/60 dark:bg-gray-800/40 hover:bg-gray-50 dark:hover:bg-gray-800/70':
-          !active,
-      })}
+    <button
+      type='button'
+      className={classNames(
+        'w-full rounded-lg border px-3 py-2 flex items-center gap-2 text-left cursor-pointer transition-colors',
+        {
+          'border-blue-300 dark:border-blue-600 bg-blue-50/60 dark:bg-blue-900/20': active,
+          'border-gray-100 dark:border-gray-700/60 bg-white/60 dark:bg-gray-800/40 hover:bg-gray-50 dark:hover:bg-gray-800/70':
+            !active,
+        },
+      )}
       onClick={() => onClick?.(agent.agentId)}
-      title='点击查看该子任务的执行过程'
+      title={t('parallel_tasks_view_details')}
     >
-      <StatusBadge status={agent.status} />
+      <SubAgentStatusBadge status={agent.status} />
       <div className='flex-1 min-w-0'>
         <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate' title={agent.goal || agent.name}>
           {agent.name}
@@ -91,8 +78,16 @@ const SubAgentRow: React.FC<{
           {subline}
         </div>
       </div>
+      {agent.artifactCount > 0 && (
+        <Tooltip title={`${agent.artifactCount} 个产物`}>
+          <span className='text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5 shrink-0'>
+            <FileImageOutlined className='text-[11px]' />
+            {agent.artifactCount}
+          </span>
+        </Tooltip>
+      )}
       {hasSteps && <RightOutlined className='text-xs text-gray-400' />}
-    </div>
+    </button>
   );
 };
 

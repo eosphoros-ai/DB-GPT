@@ -6,12 +6,24 @@
 // many setters as a closure, so the hook cannot own the state, only the
 // parsing).
 
-import type { SubAgentPartial, SubAgentState, SubAgentStatus, SubAgentStep } from '@/types/subagent';
+import type {
+  SubAgentArtifactItem,
+  SubAgentPartial,
+  SubAgentState,
+  SubAgentStatus,
+  SubAgentStep,
+} from '@/types/subagent';
 
 const VALID_STATUS: SubAgentStatus[] = ['running', 'done', 'timeout', 'failed'];
 
 function coerceStatus(raw: unknown, fallback: SubAgentStatus): SubAgentStatus {
   return VALID_STATUS.includes(raw as SubAgentStatus) ? (raw as SubAgentStatus) : fallback;
+}
+
+function coerceBatchId(payload: any): number {
+  if (Number.isFinite(payload?.batch_id)) return Number(payload.batch_id);
+  const match = String(payload?.agent_id || '').match(/^sub_d(\d+)_/);
+  return match ? Number(match[1]) : 0;
 }
 
 // Map a raw tool name to a human-readable action label (zh). Falls back to the
@@ -29,6 +41,58 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function actionLabel(action: string): string {
   return ACTION_LABELS[action] || action;
+}
+
+/**
+ * Shape of a sub-agent artifact as the frontend stores it. Structurally
+ * compatible with the ``Artifact`` interface in ``pages/index.tsx`` — kept
+ * local here so the hook does not import from a page module (which would be
+ * a layering violation and a circular import risk). ``type`` is narrowed to
+ * the literal union (not ``string``) so records assign cleanly to ``Artifact``
+ * whose ``type`` is itself a literal union.
+ */
+export interface SubAgentArtifactRecord {
+  id: string;
+  type: 'image' | 'html' | 'file';
+  name: string;
+  content: any;
+  createdAt: number;
+  messageId: string;
+  stepId: string;
+  sourceAgent: string;
+  downloadable: boolean;
+}
+
+/**
+ * Convert ``subagent.artifacts`` items (as emitted by the backend) into
+ * artifact records the global ``artifacts`` state can merge. Each record
+ * carries its source sub-agent so the files tab can label "by <agent>".
+ *
+ * Dedup is left to the caller (the caller knows the existing artifact ids);
+ * this function only shapes the data.
+ */
+export function buildSubAgentArtifacts(
+  items: SubAgentArtifactItem[],
+  messageId: string,
+  now: number = Date.now(),
+): SubAgentArtifactRecord[] {
+  return items.map((item, idx) => {
+    const url = item.url || (typeof item.content === 'string' ? item.content : '') || '';
+    const fallbackName = url.split('/').pop() || `subagent-artifact-${idx}`;
+    const name = item.title || fallbackName;
+    const type = item.type === 'image' ? 'image' : item.type === 'html' ? 'html' : 'file';
+    return {
+      id: `${messageId}-subagent-${item.agent_id}-${idx}`,
+      type,
+      name,
+      content: url,
+      createdAt: now,
+      messageId,
+      stepId: item.agent_id,
+      sourceAgent: item.agent_name,
+      downloadable: true,
+    };
+  });
 }
 
 /**
@@ -54,6 +118,7 @@ export function parseSubAgentEvent(payload: any): SubAgentPartial | null {
         goal: payload.goal ? String(payload.goal) : undefined,
         status: 'running',
         lane: Number.isFinite(payload.lane) ? Number(payload.lane) : 0,
+        batchId: coerceBatchId(payload),
         artifactCount: 0,
         steps: [],
       };
@@ -65,6 +130,7 @@ export function parseSubAgentEvent(payload: any): SubAgentPartial | null {
         action: String(payload.action),
         label: actionLabel(String(payload.action)),
         intention: payload.intention ? String(payload.intention) : undefined,
+        sql: typeof payload.sql === 'string' && payload.sql.trim() ? payload.sql.trim() : undefined,
         // Backend already parsed the tool result into structured chunks.
         chunks: Array.isArray(payload.chunks) ? payload.chunks : undefined,
       };
@@ -79,14 +145,29 @@ export function parseSubAgentEvent(payload: any): SubAgentPartial | null {
         name: String(payload.agent_id),
         status: coerceStatus(payload.status, 'done'),
         lane: 0,
+        batchId: coerceBatchId(payload),
         artifactCount: 0,
+        result: typeof payload.result === 'string' ? payload.result : undefined,
+        elapsedMs: Number.isFinite(payload.elapsed_ms) ? Number(payload.elapsed_ms) : undefined,
         steps: [],
       };
       return { upsert };
     }
     case 'subagent.artifacts': {
-      const items = Array.isArray(payload.items) ? payload.items : [];
-      return { totalArtifacts: items.length };
+      const rawItems = Array.isArray(payload.items) ? payload.items : [];
+      // Keep only items with a usable agent_id; skip malformed ones rather
+      // than crashing the whole event apply.
+      const items: SubAgentArtifactItem[] = rawItems
+        .filter((it: any) => it && typeof it.agent_id === 'string')
+        .map((it: any) => ({
+          type: String(it.type || 'file'),
+          url: it.url,
+          content: it.content,
+          title: it.title,
+          agent_id: it.agent_id,
+          agent_name: String(it.agent_name || it.agent_id),
+        }));
+      return { artifactItems: items, totalArtifacts: items.length };
     }
     default:
       return null;
