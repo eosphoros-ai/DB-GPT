@@ -9,8 +9,6 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable, List, Optional
 
-from pymilvus.milvus_client import IndexParams, MilvusClient
-
 from dbgpt.core import Chunk, Embeddings
 from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.storage.vector_store.base import (
@@ -289,6 +287,14 @@ class MilvusStore(VectorStoreBase):
             connect_kwargs["user"] = self.username
             connect_kwargs["password"] = self.password
 
+        try:
+            from pymilvus.milvus_client import MilvusClient
+        except ImportError:
+            raise ValueError(
+                "Could not import pymilvus python package. "
+                "Please install it with `pip install pymilvus`."
+            )
+
         url = f"http://{self.uri}:{self.port}"
         self._milvus_client = MilvusClient(
             uri=url, user=self.username, db_name="default"
@@ -374,6 +380,8 @@ class MilvusStore(VectorStoreBase):
             )
             schema.add_function(bm25_fn)
         # Create the collection
+        from pymilvus.milvus_client import IndexParams
+
         collection = Collection(collection_name, schema)
         self.col = collection
         index_params = IndexParams()

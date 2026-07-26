@@ -997,7 +997,7 @@ class StreamedBytesIO(io.BytesIO):
             bytes: The read data
         """
         left_off_at = self._bytes.tell()
-        if size is None:
+        if size is None or size < 0:
             self._load_all()
         else:
             goal_position = left_off_at + size
@@ -1006,20 +1006,22 @@ class StreamedBytesIO(io.BytesIO):
         self._bytes.seek(left_off_at)
         return self._bytes.read(size)
 
-    def seek(self, position: int, whence: int = io.SEEK_SET):
+    def seek(self, position: int, whence: int = io.SEEK_SET) -> int:
         """Seek to a position in the stream.
 
         Args:
             position (int): The position
             whence (int, optional): The reference point. Defaults to io.SEEK
 
+        Returns:
+            int: The new absolute position.
+
         Raises:
             ValueError: If the reference point is invalid
         """
         if whence == io.SEEK_END:
             self._load_all()
-        else:
-            self._bytes.seek(position, whence)
+        return self._bytes.seek(position, whence)
 
     def __enter__(self):
         """Enter the context manager."""

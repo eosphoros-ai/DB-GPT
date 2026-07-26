@@ -6,6 +6,18 @@ import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event
 import { message } from 'antd';
 import { useCallback, useContext, useRef, useState } from 'react';
 
+export interface PendingQuestionEvent {
+  request_id: string;
+  conv_id: string;
+  questions: Array<{
+    question: string;
+    header: string;
+    options: Array<{ label: string; description: string }>;
+    multiple?: boolean;
+    custom?: boolean;
+  }>;
+}
+
 type Props = {
   queryAgentURL?: string;
   app_code?: string;
@@ -52,6 +64,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
   const lastMessageRef = useRef<string>('');
   const { scene } = useContext(ChatContext);
   const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<PendingQuestionEvent | null>(null);
   const chat = useCallback(
     async ({ data, chatId, onMessage, onClose, onDone, onError, ctrl }: ChatParams) => {
       ctrl && setCtrl(ctrl);
@@ -139,6 +152,16 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
                 return; // Don't process as a chat message
               }
 
+              // Handle human-in-the-loop question events
+              if (parsedData.type === 'question.asked') {
+                setPendingQuestion(parsedData);
+                return;
+              }
+              if (parsedData.type === 'question.replied' || parsedData.type === 'question.rejected') {
+                setPendingQuestion(null);
+                return;
+              }
+
               if (scene === 'chat_agent') {
                 if (parsedData.vis) {
                   message = parsedData.vis;
@@ -189,7 +212,34 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
     [queryAgentURL, app_code, scene],
   );
 
-  return { chat, ctrl, contextStatus };
+  const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
+    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [HEADER_USER_ID_KEY]: getUserId() ?? '',
+      },
+      body: JSON.stringify({ answers }),
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
+
+  const rejectQuestion = useCallback(async (requestId: string) => {
+    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [HEADER_USER_ID_KEY]: getUserId() ?? '',
+      },
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
+
+  return { chat, ctrl, contextStatus, pendingQuestion, replyQuestion, rejectQuestion };
 };
 
 export default useChat;

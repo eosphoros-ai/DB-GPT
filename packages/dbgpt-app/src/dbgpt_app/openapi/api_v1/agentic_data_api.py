@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -36,7 +36,6 @@ from .subagent.history import (
     fail_running_subagent_history,
     update_subagent_history,
 )
-from .subagent.react_tools import make_react_tools
 
 router = APIRouter()
 CFG = Config()
@@ -53,23 +52,6 @@ DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
-
-
-def _validate_upload_filename(filename: str) -> str:
-    if "\x00" in filename:
-        raise ValueError("filename must not contain null bytes")
-
-    posix_path = PurePosixPath(filename)
-    windows_path = PureWindowsPath(filename)
-    if (
-        posix_path.is_absolute()
-        or windows_path.is_absolute()
-        or len(posix_path.parts) != 1
-        or len(windows_path.parts) != 1
-        or filename in {"", ".", ".."}
-    ):
-        raise ValueError("filename must be a plain file name")
-    return filename
 
 
 async def _resolve_model_context_tokens(
@@ -569,11 +551,7 @@ async def skill_upload(
     user_dir = skills_dir / "user"
     user_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        filename = _validate_upload_filename(file.filename)
-    except ValueError as exc:
-        return Result.failed(code="E4002", msg=str(exc))
-
+    filename = file.filename
     suffix = Path(filename).suffix.lower()
     stem = Path(filename).stem
 
@@ -1005,14 +983,12 @@ async def _react_agent_stream(
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
     from dbgpt.agent.expand.react_agent import ReActAgent
-    from dbgpt.agent.resource import ToolPack, tool
-    from dbgpt.agent.resource.base import AgentResource, ResourceType
+    from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.agent.util.react_parser import ReActOutputParser
     from dbgpt.core import StorageConversation
     from dbgpt.model.cluster.client import DefaultLLMClient
-    from dbgpt.util.code.server import get_code_server
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
     from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
@@ -1318,27 +1294,6 @@ async def _react_agent_stream(
             react_state["skill_prompt"] = pre_matched_skill.get_prompt()
             logger.info(f"Pre-selected skill from ext_info: {skill_name}")
 
-    # Build the react_state-bound tools via the factory. The factory rebuilds
-    # these 8 tools capturing the given react_state — this is the isolation
-    # anchor reused for sub-agents. Unpack into same-named locals so the
-    # ToolPack named lists below need no change. (todowrite stays in this
-    # closure; module-level execute_skill_script/get_skill_resource and the
-    # dead-code tools select_skill/load_file/execute_analysis/execute_tool
-    # are unaffected.)
-    _factory_tools = make_react_tools(
-        react_state,
-        database_connector=database_connector,
-        knowledge_resources=knowledge_resources,
-    )
-    load_skill = _factory_tools["load_skill"]
-    load_tools = _factory_tools["load_tools"]
-    knowledge_retrieve = _factory_tools["knowledge_retrieve"]
-    sql_query = _factory_tools["sql_query"]
-    code_interpreter = _factory_tools["code_interpreter"]
-    shell_interpreter = _factory_tools["shell_interpreter"]
-    execute_skill_script_file = _factory_tools["execute_skill_script_file"]
-    html_interpreter = _factory_tools["html_interpreter"]
-
     # Build skills_context based on whether skill is pre-selected
     if pre_matched_skill:
         # User specified a skill: show only the selected skill
@@ -1414,6 +1369,74 @@ async def _react_agent_stream(
             ensure_ascii=False,
         )
 
+    @tool(
+        description="Load skill content by skill name and file path. "
+        "Returns the SKILL.md content of the specified skill. "
+        '参数: {"skill_name": "技能名称", "file_path": "技能文件路径"}'
+    )
+    def load_skill(skill_name: str, file_path: str) -> str:
+        """Load the skill content (SKILL.md) by skill name and file path.
+
+        Args:
+            skill_name: The name of the skill to load.
+            file_path: The file path of the skill.
+        """
+        from dbgpt.agent.claude_skill import get_registry
+
+        # Try to get skill from registry
+        registry = get_registry()
+        matched = registry.get_skill(skill_name)
+
+        # If not found, try case-insensitive match
+        if not matched:
+            for s in registry.list_skills():
+                if s.name.lower() == skill_name.lower():
+                    matched = registry.get_skill(s.name)
+                    break
+
+        if not matched:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": f"Skill '{skill_name}' not found",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
+        # Update react_state for compatibility with existing logic
+        react_state["matched"] = matched
+        react_state["skill_prompt"] = matched.get_prompt()
+
+        # Build response content
+        chunks = [
+            {
+                "output_type": "text",
+                "content": f"Skill: {matched.metadata.name}",
+            },
+            {
+                "output_type": "text",
+                "content": f"File path: {file_path}",
+            },
+            {"output_type": "text", "content": "---"},
+        ]
+
+        # Add skill content/prompt
+        if matched.instructions:
+            chunks.append({"output_type": "markdown", "content": matched.instructions})
+        elif matched.prompt_template:
+            prompt_text = (
+                matched.prompt_template.template
+                if hasattr(matched.prompt_template, "template")
+                else str(matched.prompt_template)
+            )
+            chunks.append({"output_type": "markdown", "content": prompt_text})
+
+        return json.dumps({"chunks": chunks}, ensure_ascii=False)
+
     @tool(description="Load uploaded file info if provided.")
     def load_file() -> str:
         if not react_state.get("file_path"):
@@ -1436,6 +1459,8 @@ async def _react_agent_stream(
 
     @tool(description="Execute quick analysis on uploaded Excel/CSV file.")
     async def execute_analysis() -> str:
+        from dbgpt.util.code.server import get_code_server
+
         matched = react_state.get("matched")
         if not react_state.get("file_path"):
             return json.dumps(
@@ -1525,8 +1550,51 @@ print(json.dumps(summary, ensure_ascii=False))
                 chunks.append({"output_type": "text", "content": output_text})
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
+    @tool(description="Resolve required tools for the selected skill.")
+    def load_tools() -> str:
+        from dbgpt.agent.resource.base import AgentResource, ResourceType
+
+        matched = react_state.get("matched")
+        rm = get_resource_manager(CFG.SYSTEM_APP)
+        required_tools = matched.metadata.required_tools if matched else []
+        if not required_tools:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": "No required tools specified",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+        loaded = []
+        failed = []
+        for tool_name in required_tools:
+            try:
+                rm.build_resource_by_type(
+                    ResourceType.Tool.value,
+                    AgentResource(type=ResourceType.Tool.value, value=tool_name),
+                )
+                loaded.append(tool_name)
+            except Exception as e:
+                failed.append(f"{tool_name} ({e})")
+        chunks = []
+        if loaded:
+            chunks.append(
+                {"output_type": "text", "content": f"Loaded: {', '.join(loaded)}"}
+            )
+        if failed:
+            chunks.append(
+                {"output_type": "text", "content": f"Failed: {', '.join(failed)}"}
+            )
+        return json.dumps({"chunks": chunks}, ensure_ascii=False)
+
     @tool(description="Execute a tool by name with JSON args.")
     async def execute_tool(tool_name: str, args: dict) -> str:
+        from dbgpt.agent.resource.base import AgentResource, ResourceType
+
         try:
             from dbgpt.agent.resource.connector.confirmation import (
                 _PENDING_CONFIRMATIONS,
@@ -1666,169 +1734,70 @@ print(json.dumps(summary, ensure_ascii=False))
                 ensure_ascii=False,
             )
 
-    llm_client = DefaultLLMClient(
-        CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create(),
-        auto_convert_message=True,
-    )
-    # If user specified a model_name, use Priority strategy to ensure the
-    # agent uses the requested model instead of picking the first available one.
-    if dialogue.model_name:
-        llm_config = LLMConfig(
-            llm_client=llm_client,
-            llm_strategy=LLMStrategyType.Priority,
-            strategy_context=json.dumps([dialogue.model_name]),
-        )
-    else:
-        llm_config = LLMConfig(llm_client=llm_client)
-
-    conv_id = dialogue.conv_uid or str(uuid.uuid4())
-    react_state["conv_id"] = conv_id
-    if conv_id in REACT_AGENT_MEMORY_CACHE:
-        gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
-    else:
-        gpt_memory = GptsMemory(
-            plans_memory=DefaultGptsPlansMemory(),
-            message_memory=MetaDbGptsMessageMemory(),
-        )
-        gpt_memory.init(conv_id, enable_vis_message=False)
-        REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
-    agent_memory = AgentMemory(gpts_memory=gpt_memory)
-
-    # --- Persist conversation to chat_history for sidebar display ---
-    conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
-    storage_conv = StorageConversation(
-        conv_uid=conv_id,
-        chat_mode=dialogue.chat_mode or "chat_react_agent",
-        user_name=dialogue.user_name,
-        sys_code=dialogue.sys_code,
-        summary=dialogue.user_input,
-        app_code=dialogue.app_code,
-        conv_storage=conv_serve.conv_storage,
-        message_storage=conv_serve.message_storage,
-    )
-    storage_conv.save_to_storage()
-    storage_conv.start_new_round()
-    storage_conv.add_user_message(user_input)
-    context = AgentContext(
-        conv_id=conv_id,
-        gpts_app_code="react_agent",
-        gpts_app_name="ReAct",
-        language="zh",
-        temperature=dialogue.temperature or 0.2,
-        enable_context_management=True,
-    )
-
-    # Build file context if file uploaded
-    file_context = ""
-    if file_path:
-        file_context = f"""
-## User Uploaded File
-- File path: {file_path}
-- Analyze this file if needed for the user's request.
-"""
-
-    # Build skill context for system prompt when skill is pre-selected
-    skill_prompt_context = ""
-    execution_instruction = ""
-    if pre_matched_skill and react_state.get("skill_prompt"):
-        skill_template = react_state["skill_prompt"]
-        skill_text = (
-            skill_template.template
-            if hasattr(skill_template, "template")
-            else str(skill_template)
-        )
-        skill_prompt_context = f"""
-## 已加载技能指令（{pre_matched_skill.metadata.name}）
-以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
-
-{skill_text}
-"""
-        execution_instruction = f"""
-## 执行要求
-1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
-2. 你必须严格按照上述技能指令的步骤执行
-3. 阅读技能指令，理解每一步需要调用的工具
-4. 按顺序执行工具调用，完成技能目标
-"""
-
-    # ── TodoWrite tool ──────────────────────────────────────────────────
-    # A session-level task list that the agent maintains.  The full list is
-    # replaced on every call (same semantics as OpenCode's todowrite).
-    # The tool pushes a ``plan.update`` SSE event so the frontend can
-    # render a live task-plan card.
-    _todo_list: List[Dict[str, str]] = []
-    # Holds the single step-card id reused across ALL todowrite calls, so that
-    # multiple todowrite invocations (e.g. create plan -> mark done after a
-    # parallel dispatch) update ONE plan card instead of creating duplicates
-    # (TODO::init + TODO::done). Single-element list = mutable closure cell.
-    _todo_step_holder: List[str] = []
-
     @tool(
-        description=(
-            "Create and manage a structured task list for the current session. "
-            "Use this tool to plan complex tasks (3+ steps) or tasks containing "
-            "2 or more mutually independent subtasks, track progress, and show "
-            "the user what you are doing. "
-            "Pass the FULL todo list every time (not incremental). "
-            "Each todo has: content (brief description), "
-            "status (pending | in_progress | completed | cancelled), "
-            "priority (high | medium | low). "
-            "Rules: only ONE task in_progress at a time; mark tasks completed "
-            "immediately after finishing; do NOT use for single trivial tasks."
-            '\nParameter: {"todos": [{"content": "...", "status": "...", '
-            '"priority": "..."}]}'
-        )
+        description="Retrieve relevant information from the knowledge base. "
+        "Use this tool when the user question involves content that may be "
+        'in the knowledge base. Parameters: {{"query": "search query"}}'
     )
-    def todowrite(todos: str) -> str:
-        """Update the session todo list (full replacement)."""
-        import json as _json
-
-        parsed: List[Dict[str, str]] = []
-        try:
-            raw = _json.loads(todos) if isinstance(todos, str) else todos
-            items = raw if isinstance(raw, list) else raw.get("todos", raw)
-            if isinstance(items, list):
-                for item in items:
-                    parsed.append(
-                        {
-                            "content": str(item.get("content", "")),
-                            "status": str(item.get("status", "pending")),
-                            "priority": str(item.get("priority", "medium")),
-                        }
-                    )
-        except Exception:
-            return _json.dumps(
+    async def knowledge_retrieve(query: str) -> str:
+        if not knowledge_resources:
+            return json.dumps(
                 {
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": "Error: invalid todos JSON",
+                            "content": "No knowledge base available",
                         }
                     ]
                 },
                 ensure_ascii=False,
             )
 
-        _todo_list.clear()
-        _todo_list.extend(parsed)
+    # ── Import built-in tools from tools/ directory ──
+    from dbgpt_app.openapi.api_v1.tools import (
+        make_code_interpreter,
+        make_execute_analysis,
+        make_execute_skill_script_file,
+        make_execute_tool,
+        make_html_interpreter,
+        make_knowledge_retrieve,
+        make_load_file,
+        make_load_skill,
+        make_load_tools,
+        make_question,
+        make_shell_interpreter,
+        make_sql_query,
+        make_todowrite,
+    )
+    # ── Build tool instances via factory functions ──────────────────────────
+    # (Inline @tool definitions have been moved to tools/ directory.)
+    # Local helper aliases used by the SSE loop are defined below.
 
-        total = len(parsed)
-        done = sum(1 for t in parsed if t["status"] == "completed")
-        return _json.dumps(
-            {
-                "chunks": [
-                    {
-                        "output_type": "text",
-                        "content": f"Todo list updated: {done}/{total} completed",
-                    }
-                ],
-                # Attach the todo list so SSE handler can forward it
-                "__todos__": parsed,
-            },
-            ensure_ascii=False,
-        )
+    # ── Stream queue (created early so question tool can use it) ────────
+    stream_queue: asyncio.Queue = asyncio.Queue()
+
+    async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
+        await stream_queue.put({"type": event_type, **payload})
+
+    # ── Build tool instances from tools/ directory ───────────────────────
+    _todo_list: List[Dict[str, str]] = []
+    # Reuse one visible plan card across all todowrite updates in this round.
+    # The mutable single-item list acts as a closure cell.
+    _todo_step_holder: List[str] = []
+    load_skill_tool = make_load_skill(react_state)
+    load_file_tool = make_load_file(react_state)
+    execute_analysis_tool = make_execute_analysis(react_state)
+    load_tools_tool = make_load_tools(react_state)
+    execute_tool_tool = make_execute_tool(react_state)
+    knowledge_retrieve_tool = make_knowledge_retrieve(react_state, knowledge_resources)
+    sql_query_tool = make_sql_query(react_state, database_connector)
+    code_interpreter_tool = make_code_interpreter(react_state)
+    shell_interpreter_tool = make_shell_interpreter(react_state)
+    html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
+    todowrite_tool = make_todowrite(_todo_list, stream_callback)
+    question_tool = make_question(react_state, stream_callback)
+    # Keep local aliases for backward compatibility (SSE loop references these names)
+    execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
 
     _todo_action_history: Dict[int, List[str]] = {}
 
@@ -1988,6 +1957,88 @@ print(json.dumps(summary, ensure_ascii=False))
 
         return list(_todo_list) if changed else None
 
+    llm_client = DefaultLLMClient(
+        CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create(),
+        auto_convert_message=True,
+    )
+    if dialogue.model_name:
+        llm_config = LLMConfig(
+            llm_client=llm_client,
+            llm_strategy=LLMStrategyType.Priority,
+            strategy_context=json.dumps([dialogue.model_name]),
+        )
+    else:
+        llm_config = LLMConfig(llm_client=llm_client)
+
+    conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    react_state["conv_id"] = conv_id
+    if conv_id in REACT_AGENT_MEMORY_CACHE:
+        gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
+    else:
+        gpt_memory = GptsMemory(
+            plans_memory=DefaultGptsPlansMemory(),
+            message_memory=MetaDbGptsMessageMemory(),
+        )
+        gpt_memory.init(conv_id, enable_vis_message=False)
+        REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
+    agent_memory = AgentMemory(gpts_memory=gpt_memory)
+
+    conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+    storage_conv = StorageConversation(
+        conv_uid=conv_id,
+        chat_mode=dialogue.chat_mode or "chat_react_agent",
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        summary=dialogue.user_input,
+        app_code=dialogue.app_code,
+        conv_storage=conv_serve.conv_storage,
+        message_storage=conv_serve.message_storage,
+    )
+    storage_conv.save_to_storage()
+    storage_conv.start_new_round()
+    storage_conv.add_user_message(user_input)
+    context = AgentContext(
+        conv_id=conv_id,
+        gpts_app_code="react_agent",
+        gpts_app_name="ReAct",
+        language="zh",
+        temperature=dialogue.temperature or 0.2,
+        enable_context_management=True,
+    )
+
+    file_context = ""
+    if file_path:
+        file_context = f"""
+## User Uploaded File
+- File path: {file_path}
+- Analyze this file if needed for the user's request.
+"""
+
+    skill_prompt_context = ""
+    execution_instruction = ""
+    if pre_matched_skill and react_state.get("skill_prompt"):
+        skill_template = react_state["skill_prompt"]
+        skill_text = (
+            skill_template.template
+            if hasattr(skill_template, "template")
+            else str(skill_template)
+        )
+        skill_prompt_context = f"""
+## 已加载技能指令（{pre_matched_skill.metadata.name}）
+以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
+
+{skill_text}
+"""
+        execution_instruction = f"""
+## 执行要求
+1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
+2. 你必须严格按照上述技能指令的步骤执行
+3. 阅读技能指令，理解每一步需要调用的工具
+4. 按顺序执行工具调用，完成技能目标
+"""
+
     # Build a hint listing all images currently available in
     # STATIC_MESSAGE_IMG_PATH so the LLM can reference them correctly in
     # html_interpreter.
@@ -2030,12 +2081,9 @@ print(json.dumps(summary, ensure_ascii=False))
     except Exception:
         pass  # graceful degradation — connector tools are optional
 
-    # ── Parallel sub-agent dispatch (full-tool branch only) ──────────────
-    # Create the SSE stream queue early so the dispatch tool can emit
-    # agent.* lifecycle events through it. The tool is only registered on the
-    # full-tool branch below (skill mode stays lean — spec §4.6).
-    # Max concurrent sub-agents per dispatch call — from agent_context TOML
-    # (same path as _load_context_budget_config), defaulting to 3.
+    # Parallel sub-agent dispatch is exposed only in the full-tool branch
+    # below. It shares the main stream queue so child lifecycle events and
+    # question events use the same ordered SSE channel.
     _max_parallel_subagents = 3
     try:
         _app_cfg = CFG.SYSTEM_APP.config.configs.get("app_config")
@@ -2046,7 +2094,6 @@ print(json.dumps(summary, ensure_ascii=False))
             _max_parallel_subagents = _cfg_val
     except Exception:
         logger.debug("Failed to read max_parallel_subagents; using default 3")
-    stream_queue: asyncio.Queue = asyncio.Queue()
 
     async def _emit_subagent_event(payload: Dict[str, Any]) -> None:
         await stream_queue.put(payload)
@@ -2054,11 +2101,6 @@ print(json.dumps(summary, ensure_ascii=False))
     dispatch_parallel_tasks = make_dispatch_tool(
         parent_conv_id=conv_id,
         llm_client=llm_client,
-        # Sub-agents must use the SAME model the user selected for the main
-        # agent. Passing model_name makes build_sub_react_agent lock to it via
-        # the Priority strategy; None would fall back to LLMStrategy.Default,
-        # which picks available_llms[0] (an arbitrary model in multi-model
-        # deployments) — NOT the main agent's model.
         sub_model_name=dialogue.model_name,
         database_connector=database_connector,
         knowledge_resources=knowledge_resources,
@@ -2166,7 +2208,13 @@ Parameters: {{"sql": "SELECT statement"}}
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
 The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
-8. **terminate**: Return the final answer when the task is completed. Action Input
+8. **question**: Ask the user a question and wait for their response. Use this tool
+   when you need user input, clarification, or a decision to proceed. The tool blocks
+   until the user answers.
+   Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
+   {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
+   multiple selections. The tool returns the user's selected answers.
+9. **terminate**: Return the final answer when the task is completed. Action Input
 must be {{"result": "your final answer content"}}.
 
 ## Task Management
@@ -2208,11 +2256,12 @@ Action Input: The JSON format of tool parameters
             [
                 execute_skill_script,
                 get_skill_resource,
-                execute_skill_script_file,
-                shell_interpreter,
-                html_interpreter,
-                sql_query,
-                todowrite,
+                execute_skill_script_file_tool,
+                shell_interpreter_tool,
+                html_interpreter_tool,
+                sql_query_tool,
+                todowrite_tool,
+                question_tool,
                 Terminate(),
             ]
             + business_tools
@@ -2251,11 +2300,10 @@ a structured task plan BEFORE starting work. This helps users track your progres
 - Parallel exception: when the task contains 2 or more mutually independent
   subtasks eligible for `dispatch_parallel_tasks`, use `todowrite` even when
   the overall task has fewer than 3 steps.
-- After splitting tasks with todowrite, if several items are mutually
-  INDEPENDENT (no ordering dependency), execute them in parallel by delegating
-  to sub-agents via `dispatch_parallel_tasks` (one sub-agent per item) — see
-  the "任务拆分与并行执行" section. todowrite is the ONLY way to split tasks;
-  dispatch_parallel_tasks only EXECUTES already-split items, it never splits.
+- After splitting tasks with `todowrite`, delegate independent items with no
+  ordering dependency to `dispatch_parallel_tasks` (one sub-agent per item).
+  `todowrite` decomposes and tracks work; `dispatch_parallel_tasks` only executes
+  already-split items.
 - The "exactly one in_progress" rule controls the visible todo state; it does
   not prevent dispatching other independent pending items in the same batch.
 
@@ -2333,8 +2381,7 @@ to display reports on the right panel). Default usage:
 {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
 File mode: {{"file_path": "/path/to/report.html"}}
 14. **todowrite**: Create and manage a structured task list. Use for complex tasks
-(3+ steps), or tasks with 2 or more mutually independent subtasks, to plan and
-track progress. Pass the FULL list every time. Each item:
+(3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
 "priority": "high|medium|low"}}. Only ONE task in_progress at a time.
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
@@ -2344,7 +2391,13 @@ Parameters: {{"todos": [{{...}}]}}
 items concurrently with isolated sub-agents. Each task needs a self-contained
 goal and may include shared context and a display title.
 Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
-16. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
+16. **question**: Ask the user a question and wait for their response. Use this tool
+   when you need user input, clarification, or a decision to proceed. The tool blocks
+   until the user answers.
+   Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
+   {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
+   multiple selections. The tool returns the user's selected answers.
+17. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
 
 {file_context}
 {knowledge_context}
@@ -2363,24 +2416,26 @@ Action: The selected tool name
 Action Input: The JSON format of tool parameters
 """.strip()
 
-        # Append the parallel-delegation rubric (module constant, kept out of
-        # this file) so the lead agent knows when to fan out sub-agents.
         workflow_prompt = workflow_prompt + "\n\n" + DISPATCH_PROMPT_SECTION
 
         tool_pack = ToolPack(
             [
-                load_skill,
-                load_tools,
-                knowledge_retrieve,
+                load_skill_tool,
+                load_tools_tool,
+                knowledge_retrieve_tool,
                 execute_skill_script,
                 get_skill_resource,
-                execute_skill_script_file,
-                code_interpreter,
-                shell_interpreter,
-                html_interpreter,
-                sql_query,
-                todowrite,
+                execute_skill_script_file_tool,
+                code_interpreter_tool,
+                load_file_tool,
+                execute_analysis_tool,
+                shell_interpreter_tool,
+                html_interpreter_tool,
+                sql_query_tool,
+                todowrite_tool,
+                execute_tool_tool,
                 dispatch_parallel_tasks,
+                question_tool,
                 Terminate(),
             ]
             + business_tools
@@ -2498,6 +2553,8 @@ Action Input: The JSON format of tool parameters
 
     parser = ReActOutputParser()
     received = AgentMessage(content=user_input)
+    # stream_queue and stream_callback were created earlier (before ToolPack)
+    # so that the question tool can use them.
 
     # Wire up context-management status events into the SSE stream.
     async def _context_status_callback(status: Dict[str, Any]) -> None:
@@ -2511,9 +2568,6 @@ Action Input: The JSON format of tool parameters
         model_name=dialogue.model_name,
         on_status_event=_context_status_callback,
     )
-
-    async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
-        await stream_queue.put({"type": event_type, **payload})
 
     async def run_agent():
         return await agent.generate_reply(
@@ -2587,18 +2641,17 @@ Action Input: The JSON format of tool parameters
         if event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
+        elif event_type in ("question.asked", "question.replied", "question.rejected"):
+            # Forward human-in-the-loop question events to frontend as-is.
+            yield _sse_event(event)
         elif event_type in (
             "agent.start",
             "agent.done",
             "agent.step",
             "subagent.artifacts",
         ):
-            # Parallel sub-agent lifecycle + per-step progress + artifact
-            # events — forward as-is. agent.step carries each sub-agent's
-            # CONFIRMED tool action (tagged with agent_id), surfaced by the
-            # frontend as a live "current action" line + drill-down list. These
-            # ride their own channel and never touch the main round_step_map,
-            # so parallel sub-agents cannot collide on round numbers.
+            # Sub-agent progress uses a separate event channel so parallel
+            # child rounds cannot collide with the lead agent's round map.
             update_subagent_history(subagent_history, event)
             yield _sse_event(event)
         elif event_type == "thinking":
@@ -2750,16 +2803,14 @@ Action Input: The JSON format of tool parameters
                     else f"TODO::{todo_state}"
                 )
 
-                # Emit or update the step card for this round
+                # Emit or update the session-level task-plan card.
                 # NOTE: Do NOT set phase — let it fall into the default
                 # "Execution Steps" group so todowrite cards appear inline
                 # alongside other action steps in chronological order.
                 #
-                # Reuse ONE plan card across ALL todowrite calls (keyed by
-                # _todo_step_holder, not round_num): the lead agent calls
-                # todowrite multiple times (create plan, then mark done after a
-                # parallel dispatch), and each call must UPDATE the same card
-                # rather than spawn a duplicate (TODO::init + TODO::done).
+                # The lead agent calls todowrite repeatedly (create plan,
+                # update progress, complete plan). All calls must update the
+                # same card instead of creating TODO::init/progress/done cards.
                 if _todo_step_holder:
                     todo_step_id = _todo_step_holder[0]
                 else:
@@ -2768,8 +2819,6 @@ Action Input: The JSON format of tool parameters
                         "todowrite",
                     )
                     _todo_step_holder.append(todo_step_id)
-                # Keep round_step_map pointing at the shared id so the
-                # step_meta / history_steps writes below resolve correctly.
                 round_step_map[round_num] = todo_step_id
                 yield _sse_event(
                     {
@@ -3297,3 +3346,41 @@ async def chat_react_agent(
             headers=headers,
             media_type="text/plain",
         )
+
+
+# ── Human-in-the-Loop Question API ──────────────────────────────────────────
+
+
+class _QuestionReplyBody(_BaseModel):
+    answers: List[List[str]]
+
+
+@router.post("/v1/chat/question/{request_id}/reply", response_model=Result)
+async def question_reply(
+    request_id: str,
+    body: _QuestionReplyBody,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """User submits answers to a pending question, unblocking the agent tool."""
+    from dbgpt_app.openapi.api_v1.tools.question_manager import question_manager
+
+    try:
+        question_manager.reply(request_id, body.answers)
+        return Result.succ({"success": True, "request_id": request_id})
+    except KeyError as e:
+        return Result.failed(msg=str(e))
+
+
+@router.post("/v1/chat/question/{request_id}/reject", response_model=Result)
+async def question_reject(
+    request_id: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """User dismisses a pending question, unblocking the agent tool with rejection."""
+    from dbgpt_app.openapi.api_v1.tools.question_manager import question_manager
+
+    try:
+        question_manager.reject(request_id)
+        return Result.succ({"success": True, "request_id": request_id})
+    except KeyError as e:
+        return Result.failed(msg=str(e))

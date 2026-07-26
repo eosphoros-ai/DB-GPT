@@ -7,6 +7,7 @@ from dbgpt_app.openapi.api_v1.subagent.dispatcher import (
     DISPATCH_PROMPT_SECTION,
     make_dispatch_tool,
 )
+from dbgpt_app.openapi.api_v1.tools.todowrite import make_todowrite
 
 
 def test_dispatch_prompt_recognizes_two_independent_readonly_tasks():
@@ -58,14 +59,11 @@ def test_full_agent_prompt_exposes_dispatch_and_two_task_todo_exception():
         1
     ].split("{file_context}", maxsplit=1)[0]
     assert tools_section.count("15. **dispatch_parallel_tasks**") == 1
-    assert "16. **terminate**" in full_prompt
+    assert "16. **question**" in full_prompt
+    assert "17. **terminate**" in full_prompt
 
 
 def test_todowrite_tool_description_allows_two_parallel_candidates():
-    api_v1_dir = Path(__file__).resolve().parents[2]
-    source = (api_v1_dir / "agentic_data_api.py").read_text(encoding="utf-8")
-    todo_tool = source.split("# ── TodoWrite tool", maxsplit=1)[1].split(
-        "def todowrite", maxsplit=1
-    )[0]
+    todo_tool = make_todowrite([], lambda *_args: None)
 
-    assert "2 or more mutually independent subtasks" in todo_tool
+    assert "2 or more mutually independent subtasks" in todo_tool._tool.description

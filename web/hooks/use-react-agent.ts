@@ -6,7 +6,7 @@
  */
 
 import { MessagePart, ReasoningPart, ToolPart } from '@/new-components/chat/content/OpenCodeSessionTurn';
-import { ReActSSEState, createReActSSEState, parseSSELine } from '@/utils/react-sse-parser';
+import { ReActSSEState, SSEQuestionAskedEvent, createReActSSEState, parseSSELine } from '@/utils/react-sse-parser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface ReActAgentRequest {
@@ -39,9 +39,12 @@ export interface UseReActAgentOptions {
 
 export interface UseReActAgentReturn {
   state: ReActAgentState;
+  pendingQuestion: SSEQuestionAskedEvent | null;
   sendMessage: (request: ReActAgentRequest) => Promise<void>;
   cancel: () => void;
   reset: () => void;
+  replyQuestion: (requestId: string, answers: string[][]) => Promise<void>;
+  rejectQuestion: (requestId: string) => Promise<void>;
 }
 
 const initialState: ReActAgentState = {
@@ -58,6 +61,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
   const { baseUrl = '/api/v1/chat/react-agent', onPartUpdate, onFinalContent, onError, onComplete } = options;
 
   const [state, setState] = useState<ReActAgentState>(initialState);
+  const [pendingQuestion, setPendingQuestion] = useState<SSEQuestionAskedEvent | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const sseStateRef = useRef<ReActSSEState | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
@@ -99,6 +103,10 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
       if (!event) return;
 
       sseStateRef.current.processEvent(event);
+
+      // Update pending question state
+      const latestQuestion = sseStateRef.current.getPendingQuestion();
+      setPendingQuestion(latestQuestion);
 
       // Update React state
       const parts = sseStateRef.current.toMessageParts();
@@ -234,11 +242,35 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
     [baseUrl, cancel, processSSELine, onError],
   );
 
+  const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
+    const res = await fetch(`/api/v1/chat/question/${requestId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers }),
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
+
+  const rejectQuestion = useCallback(async (requestId: string) => {
+    const res = await fetch(`/api/v1/chat/question/${requestId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
+
   return {
     state,
+    pendingQuestion,
     sendMessage,
     cancel,
     reset,
+    replyQuestion,
+    rejectQuestion,
   };
 }
 
