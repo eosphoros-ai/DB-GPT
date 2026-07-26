@@ -66,12 +66,47 @@ export interface SSEContextStatusEvent {
   compact_layer?: string | null;
 }
 
+// ── Human-in-the-loop: question events ──────────────────────────────────────
+
+export interface QuestionOption {
+  label: string;
+  description: string;
+}
+
+export interface QuestionInfo {
+  question: string;
+  header: string;
+  options: QuestionOption[];
+  multiple?: boolean;
+  custom?: boolean;
+}
+
+export interface SSEQuestionAskedEvent {
+  type: 'question.asked';
+  request_id: string;
+  conv_id: string;
+  questions: QuestionInfo[];
+}
+
+export interface SSEQuestionRepliedEvent {
+  type: 'question.replied';
+  request_id: string;
+}
+
+export interface SSEQuestionRejectedEvent {
+  type: 'question.rejected';
+  request_id: string;
+}
+
 export type SSEEvent =
   | SSEStepStartEvent
   | SSEStepChunkEvent
   | SSEStepMetaEvent
   | SSEStepDoneEvent
   | SSEContextStatusEvent
+  | SSEQuestionAskedEvent
+  | SSEQuestionRepliedEvent
+  | SSEQuestionRejectedEvent
   | SSEFinalEvent
   | SSEDoneEvent;
 
@@ -108,6 +143,7 @@ export class ReActSSEState {
   private startTime: number;
   private endTime?: number;
   private _contextStatus: ContextStatus | null = null;
+  private _pendingQuestion: SSEQuestionAskedEvent | null = null;
 
   constructor() {
     this.startTime = Date.now();
@@ -133,6 +169,13 @@ export class ReActSSEState {
       case 'context.status':
         this.handleContextStatus(event);
         break;
+      case 'question.asked':
+        this._pendingQuestion = event;
+        break;
+      case 'question.replied':
+      case 'question.rejected':
+        this._pendingQuestion = null;
+        break;
       case 'final':
         this.handleFinal(event);
         break;
@@ -140,6 +183,13 @@ export class ReActSSEState {
         this.handleDone();
         break;
     }
+  }
+
+  /**
+   * Get the current pending question (null if none)
+   */
+  getPendingQuestion(): SSEQuestionAskedEvent | null {
+    return this._pendingQuestion;
   }
 
   private handleStepStart(event: SSEStepStartEvent): void {

@@ -379,6 +379,17 @@ class ServiceWebParameters(BaseParameters):
         default_factory=AgentContextParameters,
         metadata={"help": _("Agent context-window management configuration")},
     )
+    cors_allowed_origins: str = field(
+        default="*",
+        metadata={
+            "help": _(
+                "Comma-separated allowed CORS origins. Default '*' allows all "
+                "(any website can read API responses cross-origin). Set to "
+                "explicit origins to restrict, e.g. "
+                "http://localhost:3000,https://your-app.com."
+            )
+        },
+    )
 
 
 @dataclass

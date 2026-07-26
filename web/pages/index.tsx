@@ -15,6 +15,7 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import QuestionDock from '@/new-components/chat/content/QuestionDock';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
@@ -72,7 +73,7 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const generateUUID = () => {
@@ -358,6 +359,7 @@ const convertToManusFormat = (
       return 'skill';
     if (actionLower === 'shell_interpreter') return 'bash';
     if (actionLower === 'sql_query') return 'sql';
+    if (actionLower === 'question') return 'question';
 
     const lower = (title || '').toLowerCase();
     if (
@@ -378,6 +380,7 @@ const convertToManusFormat = (
     if (lower.includes('glob') || lower.includes('find')) return 'glob';
     if (lower.includes('html')) return 'html';
     if (lower.includes('python') || lower.includes('code')) return 'python';
+    if (lower.includes('question')) return 'question';
     if (lower.includes('skill')) return 'skill';
     if (lower.includes('task')) return 'task';
     return 'other';
@@ -607,7 +610,39 @@ const Playground: NextPage = () => {
     usage_percent: number;
     layer: string | null;
   } | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<{
+    request_id: string;
+    conv_id: string;
+    questions: Array<{
+      question: string;
+      header: string;
+      options: Array<{ label: string; description: string }>;
+      multiple?: boolean;
+      custom?: boolean;
+    }>;
+  } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
+
+  const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
+    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers }),
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
+
+  const rejectQuestion = useCallback(async (requestId: string) => {
+    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
 
   // Fetch Data Sources
   const { data: dataSources, loading: _loadingSources } = useRequest(async () => {
@@ -1639,6 +1674,14 @@ const Playground: NextPage = () => {
           });
           return;
         }
+        if (payload.type === 'question.asked') {
+          setPendingQuestion(payload);
+          return;
+        }
+        if (payload.type === 'question.replied' || payload.type === 'question.rejected') {
+          setPendingQuestion(null);
+          return;
+        }
         if (payload.type === 'plan.update') {
           if (Array.isArray(payload.tasks)) {
             const nextTasks = payload.tasks as TaskItem[];
@@ -2612,6 +2655,21 @@ const Playground: NextPage = () => {
                           </Tag>
                         )}
                       </div>
+
+                      {/* Human-in-the-loop Question Dock */}
+                      {pendingQuestion && (
+                        <div className='mb-3 w-full'>
+                          <QuestionDock
+                            request={{
+                              request_id: pendingQuestion.request_id,
+                              conv_id: pendingQuestion.conv_id,
+                              questions: pendingQuestion.questions,
+                            }}
+                            onReply={replyQuestion}
+                            onReject={rejectQuestion}
+                          />
+                        </div>
+                      )}
 
                       {/* Outer Frame - Floating Effect */}
                       <div className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'>

@@ -8,6 +8,8 @@ encrypt_key = "your_secret_key"
 [service.web]
 host = "0.0.0.0"
 port = 5670
+# CORS allowed origins: '*' allows all; set comma-separated origins to restrict.
+cors_allowed_origins = "${env:DBGPT_CORS_ALLOWED_ORIGINS:-*}"
 
 [service.web.database]
 type = "sqlite"

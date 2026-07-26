@@ -128,3 +128,38 @@ def replace_router(app: FastAPI, router: Optional[APIRouter] = None):
     app.router = router
     app.setup()
     return app
+
+
+def build_cors_config(allow_origins: Optional[str]) -> Dict[str, Any]:
+    """Build CORS middleware kwargs from a comma-separated origins string.
+
+    Shared by the webserver (``dbgpt-app``) and the model apiserver
+    (``dbgpt-core``) so both honor the same ``cors_allowed_origins`` setting
+    without coupling to each other's parameter classes.
+
+    Args:
+        allow_origins (Optional[str]): Comma-separated allowed origins. ``"*"``
+            (or empty/None) allows all origins. Otherwise a literal origin list,
+            e.g. ``"http://localhost:3000,https://your-app.com"``.
+
+    Returns:
+        Dict[str, Any]: Keyword arguments for ``CORSMiddleware`` (without
+        ``app``; the caller supplies ``app``).
+
+    Notes:
+        - ``"*"`` is returned with ``allow_credentials=False`` because W3C
+          CORS forbids ``Access-Control-Allow-Origin: *`` together with
+          ``Access-Control-Allow-Credentials: true``. The previous hardcoded
+          ``["*"]`` + ``allow_credentials=True`` was an invalid combination.
+        - An explicit origin list is returned with ``allow_credentials=True``
+          so cookie/credential-bearing cross-origin requests keep working.
+    """
+    raw = (allow_origins or "*").strip()
+    origins = [o.strip() for o in raw.split(",") if o.strip()]
+    allow_all = not origins or "*" in origins
+    return {
+        "allow_origins": ["*"] if allow_all else origins,
+        "allow_credentials": not allow_all,
+        "allow_methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        "allow_headers": ["*"],
+    }

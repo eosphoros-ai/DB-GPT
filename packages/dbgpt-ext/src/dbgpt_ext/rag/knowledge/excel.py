@@ -175,6 +175,7 @@ class ExcelKnowledge(Knowledge):
                 )
             else:
                 data_rows = unmerged_data
+                df_start_row_index = 0
                 logging.info(
                     f"Sheet '{sheet_name}': No clear header row found. "
                     f"All rows considered data."
@@ -261,7 +262,7 @@ class ExcelKnowledge(Knowledge):
                 )
                 docs.append(doc)
 
-            return docs
+        return docs
 
     @classmethod
     def support_chunk_strategy(cls) -> List[ChunkStrategy]:

@@ -65,6 +65,28 @@ def test_storage_variables_provider():
     assert loaded_variable_value == value
 
 
+def test_storage_variables_provider_bool_value():
+    storage = InMemoryStorage()
+    encryption = SimpleEncryption()
+    provider = StorageVariablesProvider(storage, encryption)
+
+    for i, value in enumerate([True, False]):
+        full_key = f"${{key{i}:name@global}}"
+        id = VariablesIdentifier.from_str_identifier(full_key)
+        provider.save(StorageVariables.from_identifier(id, value, "bool", "test_label"))
+        assert provider.get(full_key) is value
+
+    for i, (str_value, expected) in enumerate(
+        [("true", True), ("1", True), ("false", False), ("0", False)]
+    ):
+        full_key = f"${{str_key{i}:name@global}}"
+        id = VariablesIdentifier.from_str_identifier(full_key)
+        provider.save(
+            StorageVariables.from_identifier(id, str_value, "bool", "test_label")
+        )
+        assert provider.get(full_key) is expected
+
+
 def test_variables_identifier():
     full_key = "${key:name@global:scope_key#sys_code%user_name}"
     identifier = VariablesIdentifier.from_str_identifier(full_key)

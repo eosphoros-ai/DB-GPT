@@ -28,6 +28,7 @@ import {
   LoadingOutlined,
   PlayCircleOutlined,
   PlusOutlined,
+  QuestionCircleOutlined,
   SearchOutlined,
   TableOutlined,
 } from '@ant-design/icons';
@@ -52,6 +53,7 @@ export type StepType =
   | 'python'
   | 'html'
   | 'sql'
+  | 'question'
   | 'other';
 
 export interface ExecutionStep {
@@ -159,6 +161,8 @@ const getStepIcon = (type: StepType, status: StepStatus) => {
     case 'task':
     case 'skill':
       return <PlayCircleOutlined className={classNames(iconClass, 'text-indigo-500')} />;
+    case 'question':
+      return <QuestionCircleOutlined className={classNames(iconClass, 'text-amber-500')} />;
     case 'sql':
       return <ConsoleSqlOutlined className={classNames(iconClass, 'text-emerald-600')} />;
     default:
@@ -179,6 +183,7 @@ const getTypeLabel = (type: StepType, t: any): string => {
     sql: t('step_type_sql'),
     python: t('step_type_python'),
     html: t('step_type_html'),
+    question: t('step_type_question') || 'Ask User',
     other: t('step_type_other'),
   };
   return labels[type] || t('step_type_other');
@@ -198,6 +203,7 @@ const getIconBgClass = (type: StepType): string => {
     task: 'bg-indigo-50 dark:bg-indigo-900/30',
     skill: 'bg-indigo-50 dark:bg-indigo-900/30',
     sql: 'bg-emerald-50 dark:bg-emerald-900/30',
+    question: 'bg-amber-50 dark:bg-amber-900/30',
     other: 'bg-gray-50 dark:bg-gray-800',
   };
   return bgClasses[type] || 'bg-gray-50 dark:bg-gray-800';
@@ -531,6 +537,60 @@ const StepCard: React.FC<{
       </div>
     );
   }
+  const isQuestionStep = step.type === 'question' || step.title === 'question';
+  if (isQuestionStep) {
+    const isWaiting = step.status === 'running';
+    return (
+      <div
+        onClick={onClick}
+        className={classNames(
+          'group relative cursor-pointer rounded-lg border transition-all duration-200',
+          'px-3 py-2.5',
+          'transform',
+          {
+            'opacity-0 translate-y-1': !isVisible,
+            'opacity-100 translate-y-0': isVisible,
+            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]':
+              true,
+            'border-amber-300/80 dark:border-amber-500/30 shadow-[0_4px_16px_rgba(245,158,11,0.12)] ring-1 ring-amber-200/50 dark:ring-amber-500/20':
+              isActive || isWaiting,
+            'border-amber-200/60 dark:border-amber-600/20 hover:border-amber-300 hover:shadow-[0_4px_12px_rgba(245,158,11,0.08)]':
+              !isActive && !isWaiting,
+          },
+        )}
+        style={{ transition: 'opacity 0.2s ease-out, transform 0.2s ease-out' }}
+      >
+        {isWaiting && (
+          <div className='absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-gradient-to-b from-amber-400 to-orange-400 animate-pulse' />
+        )}
+        <div className='flex items-center gap-3'>
+          <div className='flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 shadow-sm ring-1 ring-amber-200/80 dark:from-amber-500/15 dark:to-orange-500/15 dark:ring-amber-400/30'>
+            <QuestionCircleOutlined className='text-[13px] text-amber-600 dark:text-amber-400' />
+          </div>
+          <div className='flex flex-col min-w-0 flex-1'>
+            <span className='text-[10px] font-semibold uppercase tracking-wider text-amber-600/80 dark:text-amber-400/80'>
+              {isWaiting ? t('waiting_for_user') || 'Waiting for User' : t('step_type_question') || 'Ask User'}
+            </span>
+            <span className='text-sm font-medium text-slate-800 dark:text-slate-200 truncate'>
+              {step.title === 'question' ? t('user_confirmation') || '需要您的确认' : step.title}
+            </span>
+          </div>
+          <div className='flex-shrink-0'>
+            {isWaiting ? (
+              <span className='relative flex h-3 w-3'>
+                <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60' />
+                <span className='relative inline-flex rounded-full h-3 w-3 bg-amber-500' />
+              </span>
+            ) : step.status === 'completed' ? (
+              <CheckCircleOutlined className='text-xs text-emerald-500' />
+            ) : step.status === 'error' ? (
+              <ExclamationCircleOutlined className='text-xs text-red-500' />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (isTodoStep) {
     const tFn = t as (key: string, options?: Record<string, any>) => string;
     const progressText = getTodoStepBadge(tFn, step);
@@ -637,7 +697,7 @@ const StepCard: React.FC<{
           'text-purple-600 dark:text-purple-400': step.type === 'bash',
           'text-cyan-600 dark:text-cyan-400': step.type === 'grep' || step.type === 'glob',
           'text-blue-600 dark:text-blue-400': step.type === 'python',
-          'text-orange-600 dark:text-orange-400': step.type === 'html',
+          'text-orange-600 dark:text-orange-400': step.type === 'html' || step.type === 'question',
           'text-indigo-600 dark:text-indigo-400': step.type === 'task' || step.type === 'skill',
           'text-gray-500': step.type === 'other',
         })}
