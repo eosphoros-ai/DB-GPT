@@ -31,6 +31,11 @@ from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
+from .subagent.history import (
+    build_subagent_history_snapshot,
+    fail_running_subagent_history,
+    update_subagent_history,
+)
 from .subagent.react_tools import make_react_tools
 
 router = APIRouter()
@@ -2527,6 +2532,7 @@ Action Input: The JSON format of tool parameters
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
+    subagent_history: Dict[str, Dict[str, Any]] = {}
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -2593,6 +2599,7 @@ Action Input: The JSON format of tool parameters
             # frontend as a live "current action" line + drill-down list. These
             # ride their own channel and never touch the main round_step_map,
             # so parallel sub-agents cannot collide on round numbers.
+            update_subagent_history(subagent_history, event)
             yield _sse_event(event)
         elif event_type == "thinking":
             # Parse thinking content but don't create step yet
@@ -2962,6 +2969,7 @@ Action Input: The JSON format of tool parameters
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        fail_running_subagent_history(subagent_history)
         error_payload = json.dumps(
             {
                 "version": 1,
@@ -2970,6 +2978,7 @@ Action Input: The JSON format of tool parameters
                 "steps": history_steps,
                 "task_plan": list(_todo_list),
                 "generated_images": react_state.get("generated_images", []),
+                "sub_agents": build_subagent_history_snapshot(subagent_history),
             },
             ensure_ascii=False,
         )
@@ -3038,6 +3047,7 @@ Action Input: The JSON format of tool parameters
             "steps": history_steps,
             "task_plan": list(_todo_list),
             "generated_images": react_state.get("generated_images", []),
+            "sub_agents": build_subagent_history_snapshot(subagent_history),
         },
         ensure_ascii=False,
     )

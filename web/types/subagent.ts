@@ -12,6 +12,13 @@ export type SubAgentStatus = 'running' | 'done' | 'timeout' | 'failed';
 export interface SubAgentOutputChunk {
   output_type: string;
   content: any;
+  title?: string;
+}
+
+export interface SubAgentArtifactRef {
+  type: string;
+  url: string;
+  title?: string;
 }
 
 /** A single confirmed tool action inside a sub-agent (drill-down row). */
@@ -44,6 +51,8 @@ export interface SubAgentState {
   batchId: number;
   /** Number of artifacts (images/html) this sub-agent produced. */
   artifactCount: number;
+  /** Bounded artifact path references persisted for history restoration. */
+  artifacts?: SubAgentArtifactRef[];
   /** Human-readable current action while running, e.g. "正在查询数据库". */
   currentAction?: string;
   /** Clean final answer extracted from the terminate action (never raw CoT). */

@@ -328,7 +328,7 @@ const ParallelTasksPanel: React.FC<ParallelTasksPanelProps> = ({
   const { t } = useTranslation();
   const legacyTasks = useMemo(() => parseLegacyTasks(outputs), [outputs]);
   const tasks = useMemo<DisplayTask[]>(() => {
-    const structured = Object.values(subAgents || {}).sort((a, b) => a.lane - b.lane);
+    const structured = Object.values(subAgents || {}).sort((a, b) => a.batchId - b.batchId || a.lane - b.lane);
     if (structured.length === 0) return legacyTasks;
     const legacyResultByTitle = new Map(legacyTasks.map(task => [task.name, task.result]));
     return structured.map(task => ({

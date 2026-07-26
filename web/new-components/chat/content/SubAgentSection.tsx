@@ -98,7 +98,7 @@ const SubAgentSection: React.FC<SubAgentSectionProps> = ({
   activeSubAgentId,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const rows = Object.values(subAgents).sort((a, b) => a.lane - b.lane);
+  const rows = Object.values(subAgents).sort((a, b) => a.batchId - b.batchId || a.lane - b.lane);
   if (rows.length === 0) return null;
 
   const doneCount = rows.filter(r => r.status !== 'running').length;

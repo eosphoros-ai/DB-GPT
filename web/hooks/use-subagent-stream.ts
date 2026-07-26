@@ -43,6 +43,107 @@ export function actionLabel(action: string): string {
   return ACTION_LABELS[action] || action;
 }
 
+function optionalString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
+/**
+ * Restore the bounded structured sub-agent snapshot persisted with a history
+ * view message. Older messages do not have this field and intentionally
+ * return an empty map so the existing result-summary fallback keeps working.
+ */
+export function restoreSubAgentStates(raw: unknown): Record<string, SubAgentState> {
+  const items = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === 'object' && Array.isArray((raw as { items?: unknown }).items)
+      ? ((raw as { items: unknown[] }).items ?? [])
+      : [];
+  const restored: Record<string, SubAgentState> = {};
+
+  for (const value of items) {
+    if (!value || typeof value !== 'object') continue;
+    const item = value as Record<string, any>;
+    const agentId = optionalString(item.agent_id ?? item.agentId);
+    if (!agentId) continue;
+
+    const rawSteps = Array.isArray(item.steps) ? item.steps : [];
+    const steps: SubAgentStep[] = [];
+    for (const rawStep of rawSteps) {
+      if (!rawStep || typeof rawStep !== 'object') continue;
+      const stepValue = rawStep as Record<string, any>;
+      const action = optionalString(stepValue.action);
+      if (!action) continue;
+
+      const step: SubAgentStep = {
+        action,
+        label: optionalString(stepValue.label) || actionLabel(action),
+      };
+      const intention = optionalString(stepValue.intention);
+      const sql = optionalString(stepValue.sql);
+      if (intention) step.intention = intention;
+      if (sql) step.sql = sql;
+      if (Array.isArray(stepValue.chunks)) {
+        const chunks = stepValue.chunks
+          .filter(
+            (chunk: unknown) =>
+              Boolean(chunk) && typeof chunk === 'object' && Object.prototype.hasOwnProperty.call(chunk, 'content'),
+          )
+          .map((chunk: any) => {
+            const restoredChunk = {
+              output_type: String(chunk.output_type || 'text'),
+              content: chunk.content,
+              ...(optionalString(chunk.title) ? { title: optionalString(chunk.title) } : {}),
+            };
+            return restoredChunk;
+          });
+        if (chunks.length > 0) step.chunks = chunks;
+      }
+      steps.push(step);
+    }
+
+    const lane = Number(item.lane);
+    const batchId = Number(item.batch_id ?? item.batchId);
+    const artifactCount = Number(item.artifact_count ?? item.artifactCount);
+    const elapsedMs = Number(item.elapsed_ms ?? item.elapsedMs);
+    const status = coerceStatus(item.status, 'done');
+    const artifacts = (Array.isArray(item.artifacts) ? item.artifacts : [])
+      .filter(
+        (artifact: unknown) =>
+          Boolean(artifact) &&
+          typeof artifact === 'object' &&
+          Boolean(optionalString((artifact as Record<string, unknown>).url)),
+      )
+      .map((artifact: Record<string, unknown>) => ({
+        type: optionalString(artifact.type) || 'file',
+        url: optionalString(artifact.url)!,
+        ...(optionalString(artifact.title) ? { title: optionalString(artifact.title) } : {}),
+      }));
+    const state: SubAgentState = {
+      agentId,
+      name: optionalString(item.name ?? item.agent_name ?? item.agentName) || agentId,
+      status,
+      lane: Number.isFinite(lane) ? lane : 0,
+      batchId: Number.isFinite(batchId) ? batchId : coerceBatchId({ agent_id: agentId }),
+      artifactCount: Number.isFinite(artifactCount) ? Math.max(0, artifactCount) : 0,
+      ...(artifacts.length > 0 ? { artifacts } : {}),
+      steps,
+    };
+    const goal = optionalString(item.goal);
+    const result = optionalString(item.result);
+    if (goal) state.goal = goal;
+    if (result) state.result = result;
+    if (Number.isFinite(elapsedMs)) state.elapsedMs = Math.max(0, elapsedMs);
+    if (status === 'running' && steps.length > 0) {
+      state.currentAction = steps[steps.length - 1].label;
+    }
+    restored[agentId] = state;
+  }
+
+  return restored;
+}
+
 /**
  * Shape of a sub-agent artifact as the frontend stores it. Structurally
  * compatible with the ``Artifact`` interface in ``pages/index.tsx`` — kept

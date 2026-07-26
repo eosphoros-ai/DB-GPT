@@ -1,7 +1,7 @@
 import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
-import { buildSubAgentArtifacts, parseSubAgentEvent } from '@/hooks/use-subagent-stream';
+import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -1398,11 +1398,30 @@ const Playground: NextPage = () => {
     const subAgents = (execution as { subAgents?: Record<string, SubAgentState> }).subAgents;
     if (subAgents) {
       for (const agent of Object.values(subAgents)) {
+        const persistedArtifactUrls = new Set((agent.artifacts || []).map(artifact => artifact.url));
+        (agent.artifacts || []).forEach((artifact, artifactIndex) => {
+          const artifactType = artifact.type === 'image' ? 'image' : artifact.type === 'html' ? 'html' : 'file';
+          const fallbackName = artifact.url.split('/').pop() || `subagent-artifact-${artifactIndex}`;
+          const name = artifact.title || fallbackName;
+          finalArtifacts.push({
+            id: `${messageId}-subagent-ref-${agent.agentId}-${artifactIndex}`,
+            type: artifactType,
+            name: artifactType === 'html' && !name.endsWith('.html') ? `${name}.html` : name,
+            content: artifactType === 'file' ? { name, file_path: artifact.url } : artifact.url,
+            createdAt: now,
+            messageId,
+            stepId: agent.agentId,
+            sourceAgent: agent.name,
+            downloadable: true,
+            ...(artifactType === 'file' ? { filePath: artifact.url } : {}),
+          });
+        });
         (agent.steps || []).forEach((step, sIdx) => {
           (step.chunks || []).forEach((chunk, cIdx) => {
             const ot = chunk.output_type;
             const content = chunk.content;
             if (ot === 'image' && typeof content === 'string') {
+              if (persistedArtifactUrls.has(content)) return;
               const imgName = content.split('/').pop() || `image_${sIdx}_${cIdx}.png`;
               finalArtifacts.push({
                 id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
@@ -1416,6 +1435,7 @@ const Playground: NextPage = () => {
                 downloadable: true,
               });
             } else if (ot === 'html' && typeof content === 'string') {
+              if (persistedArtifactUrls.has(content)) return;
               const htmlTitle = (chunk as { title?: string }).title || agent.name;
               finalArtifacts.push({
                 id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
@@ -2219,6 +2239,7 @@ const Playground: NextPage = () => {
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
+    setActiveSubAgent(null);
     setArtifacts([]);
     setStreamingSummary('');
     setSummaryComplete(false);
@@ -2254,6 +2275,7 @@ const Playground: NextPage = () => {
 
           const outputs: Record<string, ExecutionOutput[]> = {};
           const stepThoughts: Record<string, string> = {};
+          const subAgents = restoreSubAgentStates(payload.sub_agents ?? payload.subAgents);
 
           (payload.steps || []).forEach((s: any, idx: number) => {
             const stepId = s.id || `history-step-${idx}`;
@@ -2293,11 +2315,25 @@ const Playground: NextPage = () => {
             activeStepId: steps.length > 0 ? steps[steps.length - 1].id : null,
             collapsed: false,
             stepThoughts,
+            ...(Object.keys(subAgents).length > 0
+              ? {
+                  subAgents,
+                  subAgentArtifacts: Object.values(subAgents).reduce(
+                    (sum, agent) => sum + (agent.artifactCount || 0),
+                    0,
+                  ),
+                }
+              : {}),
           };
 
           const finalContent = cleanFinalContent(payload.final_content || '');
 
-          const restoredArtifacts = buildArtifactsFromExecution(viewId, { steps, outputs }, finalContent, null);
+          const restoredArtifacts = buildArtifactsFromExecution(
+            viewId,
+            { steps, outputs, subAgents },
+            finalContent,
+            null,
+          );
           allArtifacts.push(...restoredArtifacts);
 
           // Detect skill creation from restored execution
