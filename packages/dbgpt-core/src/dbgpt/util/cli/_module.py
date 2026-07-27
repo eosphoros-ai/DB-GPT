@@ -12,11 +12,16 @@ from dbgpt.util.module_utils import ModelScanner, ScannerConfig
 
 
 def _is_flow_operator(cls):
-    return (
-        issubclass(cls, BaseOperator)
-        and hasattr(cls, "metadata")
-        and isinstance(cls.metadata, ViewMetadata)
-    )
+    try:
+        metadata = getattr(cls, "metadata", None)
+        if metadata is None:
+            return False
+        # For class-level properties or descriptors, get the actual metadata object
+        if callable(metadata):
+            metadata = metadata()
+        return issubclass(cls, BaseOperator) and isinstance(metadata, ViewMetadata)
+    except Exception:
+        return False
 
 
 def _is_flow_resource(cls):
