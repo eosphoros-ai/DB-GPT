@@ -2552,7 +2552,6 @@ const Playground: NextPage = () => {
     showUploadList: false,
     beforeUpload: (file: any) => {
       setUploadedFile(file);
-      parseLocalFilePreview(file as File);
       message.success(`${file.name} attached successfully`);
       return false; // Prevent auto upload, we just want to select it
     },
