@@ -126,7 +126,7 @@
   },
   "resolutions": {
     "d3-color": "2",
-    "d3-array": "3",
+    "d3-array": "2",
     "d3-shape": "2",
     "d3-path": "2",
     "d3-dsv": "2",

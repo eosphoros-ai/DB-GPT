@@ -5201,11 +5201,11 @@ d3-array@^2:
     internmap "^1.0.0"
 
 d3-array@^3.2.4, "d3-array@2.5.0 - 3":
-  version "3.2.4"
-  resolved "https://registry.npmmirror.com/d3-array/-/d3-array-3.2.4.tgz"
-  integrity sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg==
+  version "2.12.1"
+  resolved "https://registry.npmmirror.com/d3-array/-/d3-array-2.12.1.tgz"
+  integrity sha512-B0ErZK/66mHtEsR1TkPEEkwdy+WDesimkM5gpZr5Dsg54BiTA5RXtYW5qTLIAcekaS9xfZrzBLF/OAkB3Qn1YQ==
   dependencies:
-    internmap "1 - 2"
+    internmap "^1.0.0"
 
 d3-array@1:
   version "1.2.4"
