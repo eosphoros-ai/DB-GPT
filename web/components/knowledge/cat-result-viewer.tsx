@@ -61,9 +61,7 @@ const CatResultViewer: React.FC<CatResultViewerProps> = ({ content }) => {
       {filePath && (
         <div className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/70 border-b border-gray-200 dark:border-gray-700'>
           <ReadOutlined style={{ color: '#13C2C2', fontSize: 14 }} />
-          <span className='text-sm font-mono font-medium text-gray-700 dark:text-gray-200 truncate'>
-            {filePath}
-          </span>
+          <span className='text-sm font-mono font-medium text-gray-700 dark:text-gray-200 truncate'>{filePath}</span>
           {fileLang && (
             <span className='text-[11px] px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 font-mono border border-teal-100 dark:border-teal-800/50'>
               {fileLang}
@@ -123,9 +121,7 @@ const CatResultViewer: React.FC<CatResultViewerProps> = ({ content }) => {
               className={`flex ${rowBg} hover:bg-teal-50/60 dark:hover:bg-teal-900/15 transition-colors group`}
             >
               <span className='w-14 flex-shrink-0 border-r border-gray-100 dark:border-gray-700/40 group-hover:bg-teal-50/50 dark:group-hover:bg-teal-900/20' />
-              <span className='text-gray-800 dark:text-gray-200 whitespace-pre pl-3 flex-1 min-w-0'>
-                {line || ' '}
-              </span>
+              <span className='text-gray-800 dark:text-gray-200 whitespace-pre pl-3 flex-1 min-w-0'>{line || ' '}</span>
             </div>
           );
         })}

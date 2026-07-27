@@ -250,7 +250,9 @@ export default function SearchToolsPanel(props: IProps) {
                   }}
                 >
                   <FolderOpenOutlined style={{ color: '#1677FF', fontSize: 14 }} />
-                  <span className='text-blue-600 dark:text-blue-400 font-medium group-hover:underline'>{entry.name}/</span>
+                  <span className='text-blue-600 dark:text-blue-400 font-medium group-hover:underline'>
+                    {entry.name}/
+                  </span>
                   {entry.child_count != null && (
                     <span className='text-gray-400 text-xs ml-auto'>{entry.child_count} items</span>
                   )}
