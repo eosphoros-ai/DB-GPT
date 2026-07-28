@@ -32,9 +32,24 @@ def make_knowledge_retrieve(react_state: Dict[str, Any], knowledge_resources: Li
         try:
             chunks = await resource.retrieve(query)
             if chunks:
-                content = "\n".join(
-                    [f"[{i + 1}] {chunk.content}" for i, chunk in enumerate(chunks[:5])]
-                )
+                # Cap per-chunk and total size so a few large chunks can't
+                # overflow the LLM context window. Larger outputs are
+                # persisted to disk by the ToolResultStorage layer.
+                MAX_CHUNK_CHARS = 4000
+                MAX_TOTAL_CHARS = 20_000
+                content_parts = []
+                total_chars = 0
+                for i, chunk in enumerate(chunks[:5]):
+                    chunk_content = (chunk.content or "")[:MAX_CHUNK_CHARS]
+                    if total_chars + len(chunk_content) > MAX_TOTAL_CHARS:
+                        content_parts.append(
+                            f"[{i + 1}] ... [truncated: total output cap "
+                            f"{MAX_TOTAL_CHARS} chars reached]"
+                        )
+                        break
+                    content_parts.append(f"[{i + 1}] {chunk_content}")
+                    total_chars += len(chunk_content)
+                content = "\n".join(content_parts)
                 return json.dumps(
                     {
                         "chunks": [

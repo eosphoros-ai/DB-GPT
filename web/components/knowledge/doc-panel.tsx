@@ -24,7 +24,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
-import { Button, Card, Divider, Dropdown, Empty, Form, Input, Modal, Space, Spin, Tag, Tooltip, message } from 'antd';
+import { Button, Divider, Dropdown, Empty, Form, Input, Modal, Space, Spin, Tag, Tooltip, message } from 'antd';
 import cls from 'classnames';
 import moment from 'moment';
 import { useRouter } from 'next/router';
@@ -33,12 +33,16 @@ import { useTranslation } from 'react-i18next';
 import RecallTestModal from './RecallTestModal';
 import ArgumentsModal from './arguments-modal';
 import DocIcon from './doc-icon';
+import SearchToolsPanel from './search-tools-panel';
 
 interface IProps {
   space: ISpace;
   addStatus?: string;
   onAddDoc: (spaceName: string) => void;
   onDeleteDoc: () => void;
+  hideRecallTest?: boolean;
+  hideSearchTools?: boolean;
+  refreshKey?: number;
 }
 
 const { confirm } = Modal;
@@ -73,7 +77,7 @@ const SyncContent: React.FC<{ name: string; id: number }> = ({ name, id }) => {
 
 export default function DocPanel(props: IProps) {
   const [form] = Form.useForm();
-  const { space, addStatus } = props;
+  const { space, addStatus, hideRecallTest, hideSearchTools, refreshKey } = props;
   const { t } = useTranslation();
   const router = useRouter();
   const page_size = 18;
@@ -89,11 +93,17 @@ export default function DocPanel(props: IProps) {
   // 召回测试弹窗
   const [recallTestOpen, setRecallTestOpen] = useState<boolean>(false);
 
+  // 搜索工具面板
+  const [searchToolsOpen, setSearchToolsOpen] = useState<boolean>(false);
+
   const currentPageRef = useRef(1);
 
   const hasMore = useMemo(() => {
     return documents?.length < total;
   }, [documents, total]);
+
+  // GitRepo spaces map 1:1 to a repository; once imported, disallow adding more.
+  const isGitRepoImported = space.domain_type === 'GitRepo' && documents.length > 0;
 
   const showDeleteConfirm = (row: any) => {
     confirm({
@@ -196,6 +206,13 @@ export default function DocPanel(props: IProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh document list when refreshKey changes (e.g. after adding a doc)
+  useEffect(() => {
+    if (refreshKey === undefined) return;
+    fetchDocuments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
   useEffect(() => {
     if (addStatus === 'finish') {
       fetchDocuments();
@@ -264,158 +281,151 @@ export default function DocPanel(props: IProps) {
   const renderDocumentCard = () => {
     return (
       <div className='w-full h-full'>
-        <div className='mb-4'>
-          {/* <div className="mb-1">管理员（工号，去前缀0）：</div> */}
-          <div className='flex w-full justify-end'>
-            {/* <Select
-              mode="tags"
-              value={admins}
-              style={{ width: '50%' }}
-              onChange={handleChange}
-              tokenSeparators={[',']}
-              options={admins.map((item: string) => ({ label: item, value: item }))}
-            /> */}
-            <Button
-              type='primary'
-              onClick={async () => {
-                await refresh();
-              }}
-              loading={isLoading}
-            >
-              {t('Refresh_status')}
-            </Button>
-          </div>
+        <div className='mb-4 flex items-center justify-between'>
+          <Input
+            className='w-64'
+            prefix={<SearchOutlined />}
+            placeholder={t('please_enter_the_keywords')}
+            onChange={async e => {
+              await search(space.id, e.target.value);
+            }}
+            allowClear
+          />
+          <Button
+            type='primary'
+            onClick={async () => {
+              await refresh();
+            }}
+            loading={isLoading}
+          >
+            {t('Refresh_status')}
+          </Button>
         </div>
-        <div className='flex flex-col h-full p-3 border rounded-md'>
-          {documents?.length > 0 ? (
-            <>
-              <div className='flex flex-1 justify-between items-center'>
-                <Input
-                  className='w-1/3'
-                  prefix={<SearchOutlined />}
-                  placeholder={t('please_enter_the_keywords')}
-                  onChange={async e => {
-                    await search(space.id, e.target.value);
-                  }}
-                  allowClear
-                />
-              </div>
-              <Spin spinning={searchLoading}>
-                <>
-                  {searchDocuments.length > 0 ? (
-                    <div className='h-96 mt-3 grid grid-cols-3 gap-x-6 gap-y-5 overflow-y-auto'>
-                      {searchDocuments.map((document: IDocument) => {
-                        return (
-                          <Card
-                            key={document.id}
-                            className=' dark:bg-[#484848] relative  shrink-0 grow-0 cursor-pointer rounded-[10px] border border-gray-200 border-solid w-full max-h-64'
-                            title={
-                              <Tooltip title={document.doc_name}>
-                                <div className='truncate '>
-                                  <DocIcon type={document.doc_type} />
-                                  <span>{document.doc_name}</span>
-                                </div>
-                              </Tooltip>
-                            }
-                            extra={
-                              <Dropdown
-                                menu={{
-                                  items: [
-                                    {
-                                      key: 'publish',
-                                      label: (
-                                        <Space
-                                          onClick={() => {
-                                            router.push(
-                                              `/construct/knowledge/chunk/?spaceName=${space.name}&id=${document.id}`,
-                                            );
-                                          }}
-                                        >
-                                          <EyeOutlined />
-                                          <span>{t('detail')}</span>
-                                        </Space>
-                                      ),
-                                    },
-                                    {
-                                      key: `${t('Sync')}`,
-                                      label: <SyncContent name={space.name} id={document.id} />,
-                                    },
-                                    {
-                                      key: 'edit',
-                                      label: (
-                                        <Space
-                                          onClick={() => {
-                                            setEditOpen(true);
-                                            setCurDoc(document);
-                                          }}
-                                        >
-                                          <EditOutlined />
-                                          <span>{t('Edit')}</span>
-                                        </Space>
-                                      ),
-                                    },
-                                    {
-                                      key: 'del',
-                                      label: (
-                                        <Space
-                                          onClick={() => {
-                                            showDeleteConfirm(document);
-                                          }}
-                                        >
-                                          <DeleteOutlined />
-                                          <span>{t('Delete')}</span>
-                                        </Space>
-                                      ),
-                                    },
-                                  ],
-                                }}
-                                getPopupContainer={node => node.parentNode as HTMLElement}
-                                placement='bottomRight'
-                                autoAdjustOverflow={false}
-                                className='rounded-md'
-                              >
-                                <EllipsisOutlined className='p-2' />
-                              </Dropdown>
-                            }
-                          >
-                            <p className='mt-2 font-semibold '>{t('Size')}:</p>
-                            <p>{document.chunk_size} chunks</p>
-                            <p className='mt-2 font-semibold '>{t('Last_Sync')}:</p>
-                            <p>{moment(document.last_sync).format('YYYY-MM-DD HH:MM:SS')}</p>
-                            <p className='mt-2 mb-2'>{renderResultTag(document.status, document.result)}</p>
-                          </Card>
-                        );
-                      })}
+        {documents?.length > 0 ? (
+          <Spin spinning={searchLoading}>
+            {searchDocuments.length > 0 ? (
+              <div className='border rounded-lg overflow-hidden'>
+                {/* Table header */}
+                <div className='grid grid-cols-12 gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                  <div className='col-span-5'>{t('Document_name')}</div>
+                  <div className='col-span-2'>{t('Size')}</div>
+                  <div className='col-span-2'>{t('Status')}</div>
+                  <div className='col-span-2'>{t('Last_Sync')}</div>
+                  <div className='col-span-1 text-right'>{t('scheduled.col.actions')}</div>
+                </div>
+                {/* Table rows */}
+                <div className='max-h-[420px] overflow-y-auto'>
+                  {searchDocuments.map((document: IDocument) => (
+                    <div
+                      key={document.id}
+                      className='grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors items-center cursor-pointer'
+                      onClick={() => {
+                        router.push(`/construct/knowledge/chunk/?spaceName=${space.name}&id=${document.id}`);
+                      }}
+                    >
+                      {/* Name */}
+                      <div className='col-span-5 flex items-center gap-2 min-w-0'>
+                        <DocIcon type={document.doc_type} />
+                        <Tooltip title={document.doc_name}>
+                          <span className='truncate text-sm text-gray-800 dark:text-gray-200'>{document.doc_name}</span>
+                        </Tooltip>
+                      </div>
+                      {/* Chunks */}
+                      <div className='col-span-2 text-sm text-gray-600 dark:text-gray-400'>
+                        {document.chunk_size} chunks
+                      </div>
+                      {/* Status */}
+                      <div className='col-span-2'>{renderResultTag(document.status, document.result)}</div>
+                      {/* Last Sync */}
+                      <div className='col-span-2 text-sm text-gray-500 dark:text-gray-400'>
+                        {document.last_sync ? moment(document.last_sync).format('YYYY-MM-DD HH:mm') : '-'}
+                      </div>
+                      {/* Actions */}
+                      <div className='col-span-1 flex justify-end' onClick={e => e.stopPropagation()}>
+                        <Dropdown
+                          menu={{
+                            items: [
+                              {
+                                key: 'detail',
+                                label: (
+                                  <Space>
+                                    <EyeOutlined />
+                                    <span>{t('detail')}</span>
+                                  </Space>
+                                ),
+                                onClick: () => {
+                                  router.push(`/construct/knowledge/chunk/?spaceName=${space.name}&id=${document.id}`);
+                                },
+                              },
+                              {
+                                key: 'sync',
+                                label: <SyncContent name={space.name} id={document.id} />,
+                              },
+                              {
+                                key: 'edit',
+                                label: (
+                                  <Space>
+                                    <EditOutlined />
+                                    <span>{t('Edit')}</span>
+                                  </Space>
+                                ),
+                                onClick: () => {
+                                  setEditOpen(true);
+                                  setCurDoc(document);
+                                },
+                              },
+                              {
+                                key: 'delete',
+                                danger: true,
+                                label: (
+                                  <Space>
+                                    <DeleteOutlined />
+                                    <span>{t('Delete')}</span>
+                                  </Space>
+                                ),
+                                onClick: () => {
+                                  showDeleteConfirm(document);
+                                },
+                              },
+                            ],
+                          }}
+                          getPopupContainer={node => node.parentNode as HTMLElement}
+                          placement='bottomRight'
+                          autoAdjustOverflow={false}
+                        >
+                          <Button type='text' size='small' icon={<EllipsisOutlined />} />
+                        </Dropdown>
+                      </div>
                     </div>
-                  ) : (
-                    <Empty
-                      className='flex flex-1 w-full py-10 flex-col items-center justify-center'
-                      image={Empty.PRESENTED_IMAGE_DEFAULT}
-                    />
-                  )}
-                </>
+                  ))}
+                </div>
                 {hasMore && (
-                  <Divider>
-                    <span className='cursor-pointer' onClick={loadMoreDocuments}>
+                  <div className='py-2 text-center border-t'>
+                    <span className='text-sm text-primary cursor-pointer hover:underline' onClick={loadMoreDocuments}>
                       {t('Load_more')}
                     </span>
-                  </Divider>
+                  </div>
                 )}
-              </Spin>
-            </>
-          ) : (
-            <Empty image={Empty.PRESENTED_IMAGE_DEFAULT}>
-              <Button
-                type='primary'
-                className='flex items-center mx-auto'
-                icon={<PlusOutlined />}
-                onClick={handleAddDocument}
-              >
-                Create Now
-              </Button>
-            </Empty>
-          )}
-        </div>
+              </div>
+            ) : (
+              <Empty
+                className='flex flex-1 w-full py-10 flex-col items-center justify-center'
+                image={Empty.PRESENTED_IMAGE_DEFAULT}
+              />
+            )}
+          </Spin>
+        ) : (
+          <Empty image={Empty.PRESENTED_IMAGE_DEFAULT}>
+            <Button
+              type='primary'
+              className='flex items-center mx-auto'
+              icon={<PlusOutlined />}
+              onClick={handleAddDocument}
+            >
+              Create Now
+            </Button>
+          </Empty>
+        )}
       </div>
     );
   };
@@ -437,15 +447,18 @@ export default function DocPanel(props: IProps) {
   return (
     <div className='px-4'>
       <Space>
-        <Button
-          size='middle'
-          type='primary'
-          className='flex items-center'
-          icon={<PlusOutlined />}
-          onClick={handleAddDocument}
-        >
-          {t('Add_Datasource')}
-        </Button>
+        <Tooltip title={isGitRepoImported ? t('git_repo_already_imported') : ''}>
+          <Button
+            size='middle'
+            type='primary'
+            className='flex items-center'
+            icon={<PlusOutlined />}
+            onClick={handleAddDocument}
+            disabled={isGitRepoImported}
+          >
+            {t('Add_Datasource')}
+          </Button>
+        </Tooltip>
         <Button size='middle' className='flex items-center mx-2' icon={<ToolFilled />} onClick={handleArguments}>
           Arguments
         </Button>
@@ -459,9 +472,16 @@ export default function DocPanel(props: IProps) {
             {t('View_Graph')}
           </Button>
         )}
-        <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
-          {t('Recall_test')}
-        </Button>
+        {!hideRecallTest && (
+          <Button icon={<ExperimentOutlined />} onClick={() => setRecallTestOpen(true)}>
+            {t('Recall_test')}
+          </Button>
+        )}
+        {!hideSearchTools && (
+          <Button icon={<SearchOutlined />} onClick={() => setSearchToolsOpen(true)}>
+            {t('Search_Tools')}
+          </Button>
+        )}
       </Space>
       <Divider />
       <Spin spinning={isLoading}>{renderDocumentCard()}</Spin>
@@ -541,6 +561,17 @@ export default function DocPanel(props: IProps) {
       </Modal>
       {/* 召回测试弹窗 */}
       <RecallTestModal open={recallTestOpen} setOpen={setRecallTestOpen} space={space} />
+      {/* 搜索工具面板 */}
+      <Modal
+        title={t('Search_Tools')}
+        open={searchToolsOpen}
+        onCancel={() => setSearchToolsOpen(false)}
+        footer={null}
+        width={'80%'}
+        destroyOnClose={true}
+      >
+        <SearchToolsPanel space={space} />
+      </Modal>
     </div>
   );
 }

@@ -23,8 +23,16 @@ def make_execute_tool(react_state: Dict[str, Any]):
             )
             tool_pack = ToolPack([tool_resource])
             result = await tool_pack.async_execute(resource_name=tool_name, **args)
+            result_str = str(result)
+            # Cap output size; larger results are persisted by ToolResultStorage.
+            MAX_EXECUTE_TOOL_OUTPUT = 20_000
+            if len(result_str) > MAX_EXECUTE_TOOL_OUTPUT:
+                result_str = (
+                    result_str[:MAX_EXECUTE_TOOL_OUTPUT]
+                    + f"\n\n... [truncated at {MAX_EXECUTE_TOOL_OUTPUT} chars]"
+                )
             return json.dumps(
-                {"chunks": [{"output_type": "text", "content": str(result)}]},
+                {"chunks": [{"output_type": "text", "content": result_str}]},
                 ensure_ascii=False,
             )
         except Exception as e:

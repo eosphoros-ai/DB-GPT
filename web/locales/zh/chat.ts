@@ -109,6 +109,7 @@ export const ChatZh: Resources['translation'] = {
   step_type_html: 'HTML',
   step_type_sql: 'SQL查询',
   step_type_question: '用户确认',
+  step_type_kb: '知识库',
   step_type_other: '操作',
   waiting_for_user: '等待用户回答',
   user_confirmation: '需要您的确认',

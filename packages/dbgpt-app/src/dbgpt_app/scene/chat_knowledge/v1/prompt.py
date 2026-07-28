@@ -26,7 +26,9 @@ _DEFAULT_TEMPLATE_ZH = """ 基于以下给出的已知信息, 准守规范约束
      2.如果无法从提供的内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题" \
      禁止胡乱编造.
      3.回答的时候最好按照1.2.3.点进行总结, 并以markdown格式显示.
-            已知内容: 
+     4.回答时在引用已知信息的句子末尾标注引用编号, 格式为上标 [1] [2], \
+编号对应已知内容中片段前的编号, 便于溯源. 若一条信息综合多个片段可标注多个如[1][3].
+            已知内容:
             {context}
             问题:
             {question},请使用和用户相同的语言进行回答.
@@ -44,7 +46,11 @@ constraints:
     to answer this question," and avoid making up answers.
     3.When responding, it is best to summarize the points in the order of 1, 2, 3, And \
     displayed in markdown format.
-            known information: 
+    4.When citing known information, append the reference index as a superscript \
+like [1] [2] at the end of the sentence, where the number corresponds to the \
+index prefixed before each fragment in the known information, for traceability. \
+Multiple fragments can be cited as [1][3].
+            known information:
             {context}
             question:
             {question},when answering, use the same language as the "user".

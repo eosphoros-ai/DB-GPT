@@ -68,6 +68,7 @@ await agent.bind(agent_context).build()
 ```python
 from dbgpt.agent.middleware.base import AgentMiddleware
 
+
 class LoggingMiddleware(AgentMiddleware):
     """Custom middleware for logging."""
 
@@ -78,6 +79,7 @@ class LoggingMiddleware(AgentMiddleware):
     async def after_generate_reply(self, agent, context, reply_message, **kwargs):
         """Called after generating a reply."""
         print(f"After generate reply: {reply_message.content}")
+
 
 agent = MiddlewareAgent(profile=profile)
 agent.register_middleware(LoggingMiddleware())
@@ -178,6 +180,7 @@ To add middleware support to existing `ConversableAgent`:
 ```python
 from dbgpt.agent.core.base_agent import ConversableAgent
 from dbgpt.agent.middleware.base import MiddlewareManager
+
 
 class MyAgent(ConversableAgent):
     def __init__(self, **kwargs):

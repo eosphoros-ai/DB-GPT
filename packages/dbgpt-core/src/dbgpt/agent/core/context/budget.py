@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
@@ -52,8 +52,13 @@ class ContextBudgetConfig:
         min_keep_recent_rounds: int = 3,
         max_compact_failures: int = 3,
         max_observation_age_rounds: int = 5,
-        truncated_observation_max_chars: int = 200,
+        truncated_observation_max_chars: int = 500,
         min_keep_tokens: int = 10000,
+        # Tool result persistence (Layer 2/3) configuration.
+        tool_result_threshold: int = 100_000,
+        turn_result_budget: int = 200_000,
+        preview_size: int = 1500,
+        tool_overrides: Optional[Dict[str, int]] = None,
     ):
         # `max_context_tokens <= 0` means "auto-detect from model metadata".
         # If the caller could not resolve metadata, keep the context window usable
@@ -72,6 +77,11 @@ class ContextBudgetConfig:
         self.max_observation_age_rounds = max_observation_age_rounds
         self.truncated_observation_max_chars = truncated_observation_max_chars
         self.min_keep_tokens = min_keep_tokens
+        # Tool result persistence config (Layer 2: per-result, Layer 3: per-turn).
+        self.tool_result_threshold = tool_result_threshold
+        self.turn_result_budget = turn_result_budget
+        self.preview_size = preview_size
+        self.tool_overrides: Dict[str, int] = tool_overrides or {}
 
     @property
     def effective_budget(self) -> int:

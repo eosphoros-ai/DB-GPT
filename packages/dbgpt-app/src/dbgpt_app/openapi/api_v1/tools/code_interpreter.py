@@ -155,7 +155,12 @@ def make_code_interpreter(react_state: Dict[str, Any]):
         ]
         if output_text.strip():
             clean_output = output_text.strip()
-            max_out_len = 2000
+            # Raised from 2000 to 50_000: data-analysis tasks frequently need
+            # more than 2000 chars of output (e.g. DataFrame summaries). Larger
+            # outputs are persisted to disk by the ToolResultStorage layer
+            # rather than truncated here, so the agent can read_file to recover
+            # the full content.
+            max_out_len = 50_000
             if len(clean_output) > max_out_len:
                 truncation_notice = (
                     f"\n\n... [Output truncated, length: {len(clean_output)} chars."

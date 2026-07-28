@@ -39,6 +39,8 @@ class KnowledgeType(Enum):
     DOCUMENT = "DOCUMENT"
     URL = "URL"
     TEXT = "TEXT"
+    YUQUEURL = "YUQUEURL"
+    GIT_REPO = "GIT_REPO"
 
     @property
     def type(self):

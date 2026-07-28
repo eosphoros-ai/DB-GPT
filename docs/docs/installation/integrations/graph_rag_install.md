@@ -69,3 +69,9 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 
 
 
+
+## See also
+
+- [Knowledge Base Indexing Principles](/docs/design/kb_index_principles) — how a document becomes searchable (structural / knowledge-graph incl. code graph / vector / keyword indexes)
+- [Agentic RAG Conversation Principles](/docs/design/agentic_rag_principles) — how a question becomes a cited answer via the agentic retrieval loop
+- [RAG module reference](/docs/modules/rag)
