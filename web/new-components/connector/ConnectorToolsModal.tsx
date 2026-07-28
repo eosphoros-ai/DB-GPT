@@ -41,12 +41,7 @@ const TypeChip: React.FC<{ type?: string }> = ({ type }) => (
 );
 
 const StatusDot: React.FC<{ state?: 'active' | 'inactive' | 'not_mcp' }> = ({ state }) => {
-  const cls =
-    state === 'active'
-      ? 'bg-emerald-500'
-      : state === 'inactive'
-        ? 'bg-amber-500'
-        : 'bg-gray-400';
+  const cls = state === 'active' ? 'bg-emerald-500' : state === 'inactive' ? 'bg-amber-500' : 'bg-gray-400';
   return <span className={`inline-block w-1.5 h-1.5 rounded-full ${cls}`} />;
 };
 
@@ -142,10 +137,7 @@ const ConnectorToolsModal: React.FC<ConnectorToolsModalProps> = ({ open, instanc
       className='connector-tools-modal'
       maskClosable
     >
-      <div
-        className='flex flex-col overflow-hidden rounded-lg bg-white'
-        style={{ height: 'min(720px, 80vh)' }}
-      >
+      <div className='flex flex-col overflow-hidden rounded-lg bg-white' style={{ height: 'min(720px, 80vh)' }}>
         {/* ---------------- Header ---------------- */}
         <header className='flex items-center gap-3 px-6 py-3.5 border-b border-gray-100 bg-gradient-to-br from-white/95 to-violet-50/60'>
           <div className='flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-white text-base shadow-sm ring-2 ring-white/40'>
@@ -309,10 +301,7 @@ const ConnectorToolsModal: React.FC<ConnectorToolsModalProps> = ({ open, instanc
 /* Sub-components                                                        */
 /* -------------------------------------------------------------------- */
 
-const ToolDetail: React.FC<{ tool: ConnectorToolSummary; onCopy: (name: string) => void }> = ({
-  tool,
-  onCopy,
-}) => {
+const ToolDetail: React.FC<{ tool: ConnectorToolSummary; onCopy: (name: string) => void }> = ({ tool, onCopy }) => {
   const { t } = useTranslation();
   const argEntries = Object.entries(tool.args ?? {});
 
@@ -346,13 +335,8 @@ const ToolDetail: React.FC<{ tool: ConnectorToolSummary; onCopy: (name: string) 
           </button>
         </Tooltip>
       </div>
-
-      <p className='text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap mb-6'>
-        {tool.description || '—'}
-      </p>
-
+      <p className='text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap mb-6'>{tool.description || '—'}</p>
       <div className='h-px bg-gray-100 mb-5' />
-
       <div className='flex items-center gap-2 mb-3'>
         <h4 className='text-[13px] font-semibold text-gray-800 m-0'>{t('connector.tools.inputSchema')}</h4>
         {hasParams && (
@@ -362,16 +346,13 @@ const ToolDetail: React.FC<{ tool: ConnectorToolSummary; onCopy: (name: string) 
           </>
         )}
       </div>
-
       {wholeTruncated || truncatedEntry ? (
         <Alert
           type='info'
           showIcon
           message={t('connector.tools.argsTruncated', {
             byteCount:
-              (tool.args as unknown as ConnectorToolArgTruncated)?.byte_count ??
-              truncatedEntry?.byte_count ??
-              0,
+              (tool.args as unknown as ConnectorToolArgTruncated)?.byte_count ?? truncatedEntry?.byte_count ?? 0,
           })}
         />
       ) : !hasParams ? (
@@ -411,7 +392,6 @@ const ToolDetail: React.FC<{ tool: ConnectorToolSummary; onCopy: (name: string) 
           </table>
         </div>
       )}
-
       <div className='h-12' /> {/* Bottom breathing room */}
     </div>
   );
@@ -459,10 +439,7 @@ const ErrorState: React.FC<{ error: string; onRetry: () => void }> = ({ error, o
         message={t('connector.tools.errorTitle')}
         description={error}
         action={
-          <button
-            onClick={onRetry}
-            className='text-violet-600 hover:text-violet-700 text-[12px] font-medium px-2 py-1'
-          >
+          <button onClick={onRetry} className='text-violet-600 hover:text-violet-700 text-[12px] font-medium px-2 py-1'>
             {t('connector.tools.errorRetry')}
           </button>
         }

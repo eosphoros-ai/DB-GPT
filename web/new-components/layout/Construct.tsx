@@ -2,11 +2,9 @@ import { ModelSvg } from '@/components/icons';
 import Icon, {
   ApiOutlined,
   AppstoreOutlined,
-  BuildOutlined,
   ClockCircleOutlined,
   ConsoleSqlOutlined,
   ForkOutlined,
-  MessageOutlined,
   PartitionOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
@@ -64,12 +62,6 @@ function ConstructLayout({ children, className }: { children: React.ReactNode; c
     //   icon: <BuildOutlined />,
     // },
     {
-      key: 'prompt',
-      name: t('Prompt'),
-      icon: <MessageOutlined />,
-      path: '/prompt',
-    },
-    {
       key: 'skills',
       name: t('skills') || '技能',
       path: '/skills',
@@ -87,12 +79,18 @@ function ConstructLayout({ children, className }: { children: React.ReactNode; c
       icon: <ClockCircleOutlined />,
       path: '/scheduled-tasks',
     },
-    {
-      key: 'dbgpts',
-      name: t('dbgpts_community'),
-      path: '/dbgpts',
-      icon: <BuildOutlined />,
-    },
+    // {
+    //   key: 'prompt',
+    //   name: t('Prompt'),
+    //   icon: <MessageOutlined />,
+    //   path: '/prompt',
+    // },
+    // {
+    //   key: 'dbgpts',
+    //   name: t('dbgpts_community'),
+    //   path: '/dbgpts',
+    //   icon: <BuildOutlined />,
+    // },
   ];
   const router = useRouter();
   const activeKey = router.pathname.split('/')[2];

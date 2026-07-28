@@ -101,6 +101,7 @@ export const ChatEn = {
   step_type_html: 'HTML',
   step_type_sql: 'SQL Query',
   step_type_question: 'Ask User',
+  step_type_kb: 'Knowledge',
   step_type_other: 'Action',
   waiting_for_user: 'Waiting for User',
   user_confirmation: 'Needs your confirmation',

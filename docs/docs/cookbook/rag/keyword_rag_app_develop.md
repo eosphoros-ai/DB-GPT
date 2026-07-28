@@ -130,3 +130,9 @@ Start chat to knowledge based on Keyword RAG.
 <p align="left">
   <img src={'/img/chat_knowledge/keyword_rag/keyword_search_chat.jpg'} width="1000px"/>
 </p>
+
+## See also
+
+- [Knowledge Base Indexing Principles](/docs/design/kb_index_principles) — how a document becomes searchable (structural / knowledge-graph incl. code graph / vector / keyword indexes)
+- [Agentic RAG Conversation Principles](/docs/design/agentic_rag_principles) — how a question becomes a cited answer via the agentic retrieval loop
+- [RAG module reference](/docs/modules/rag)

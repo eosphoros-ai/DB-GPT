@@ -509,3 +509,9 @@ MATCH (n) WHERE n.id = 'DB-GPT' RETURN n LIMIT 10
 This implies that in scenarios where questions can be expressed by a single graph query, the text2gql search approach can retrieve more accurate information with lower cost.
 
 In conclusion, enabling text2gql search in GraphRAG significantly increase the accuracy and lower the cost when questions are concise and clear.
+
+## 参见
+
+- [知识库索引原理](/docs/design/kb_index_principles)——一篇文档如何变得可被检索（结构 / 知识图谱含代码图谱 / 向量 / 关键词索引）
+- [Agentic RAG 对话原理](/docs/design/agentic_rag_principles)——一个问题如何通过 agentic 检索循环变成带引用的回答
+- [RAG 模块参考](/docs/modules/rag)
