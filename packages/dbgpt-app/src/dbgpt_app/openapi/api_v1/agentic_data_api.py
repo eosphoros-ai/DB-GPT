@@ -30,6 +30,13 @@ from dbgpt_app.openapi.api_view_model import (
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
+from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
+from .subagent.history import (
+    build_subagent_history_snapshot,
+    fail_running_subagent_history,
+    update_subagent_history,
+)
+
 router = APIRouter()
 CFG = Config()
 logger = logging.getLogger(__name__)
@@ -1825,6 +1832,9 @@ print(json.dumps(summary, ensure_ascii=False))
 
     # ── Build tool instances from tools/ directory ───────────────────────
     _todo_list: List[Dict[str, str]] = []
+    # Reuse one visible plan card across all todowrite updates in this round.
+    # The mutable single-item list acts as a closure cell.
+    _todo_step_holder: List[str] = []
     load_skill_tool = make_load_skill(react_state)
     load_file_tool = make_load_file(react_state)
     execute_analysis_tool = make_execute_analysis(react_state)
@@ -2115,6 +2125,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
     # Inject connector tools — only the ones the user explicitly selected.
     connector_tool_extras: List[Any] = []
+    _connector_manager = None
     try:
         from dbgpt.agent.resource.connector.manager import (
             ConnectorManager as _ConnectorManager,
@@ -2141,6 +2152,35 @@ print(json.dumps(summary, ensure_ascii=False))
                 )
     except Exception:
         pass  # graceful degradation — connector tools are optional
+
+    # Parallel sub-agent dispatch is exposed only in the full-tool branch
+    # below. It shares the main stream queue so child lifecycle events and
+    # question events use the same ordered SSE channel.
+    _max_parallel_subagents = 3
+    try:
+        _app_cfg = CFG.SYSTEM_APP.config.configs.get("app_config")
+        _web_cfg = getattr(getattr(_app_cfg, "service", None), "web", None)
+        _agent_ctx = getattr(_web_cfg, "agent_context", None)
+        _cfg_val = getattr(_agent_ctx, "max_parallel_subagents", None)
+        if isinstance(_cfg_val, int) and _cfg_val > 0:
+            _max_parallel_subagents = _cfg_val
+    except Exception:
+        logger.debug("Failed to read max_parallel_subagents; using default 3")
+
+    async def _emit_subagent_event(payload: Dict[str, Any]) -> None:
+        await stream_queue.put(payload)
+
+    dispatch_parallel_tasks = make_dispatch_tool(
+        parent_conv_id=conv_id,
+        llm_client=llm_client,
+        sub_model_name=dialogue.model_name,
+        database_connector=database_connector,
+        knowledge_resources=knowledge_resources,
+        connector_tool_extras=connector_tool_extras,
+        connector_manager=_connector_manager,
+        emit_event=_emit_subagent_event,
+        max_parallel=_max_parallel_subagents,
+    )
 
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
@@ -2351,6 +2391,15 @@ a structured task plan BEFORE starting work. This helps users track your progres
 - Mark exactly ONE task as `in_progress` at a time.
 - Mark tasks `completed` immediately after finishing each one.
 - Do NOT use todowrite for simple single-step tasks.
+- Parallel exception: when the task contains 2 or more mutually independent
+  subtasks eligible for `dispatch_parallel_tasks`, use `todowrite` even when
+  the overall task has fewer than 3 steps.
+- After splitting tasks with `todowrite`, delegate independent items with no
+  ordering dependency to `dispatch_parallel_tasks` (one sub-agent per item).
+  `todowrite` decomposes and tracks work; `dispatch_parallel_tasks` only executes
+  already-split items.
+- The "exactly one in_progress" rule controls the visible todo state; it does
+  not prevent dispatching other independent pending items in the same batch.
 
 CRITICAL: You MUST call `todowrite` to update the task list at EVERY transition:
 1. BEFORE starting a task: mark it `in_progress` (call todowrite)
@@ -2440,13 +2489,17 @@ File mode: {{"file_path": "/path/to/report.html"}}
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
 The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
-15. **question**: Ask the user a question and wait for their response. Use this tool
+15. **dispatch_parallel_tasks**: Execute 2 or more mutually independent todo
+items concurrently with isolated sub-agents. Each task needs a self-contained
+goal and may include shared context and a display title.
+Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
+16. **question**: Ask the user a question and wait for their response. Use this tool
    when you need user input, clarification, or a decision to proceed. The tool blocks
    until the user answers.
    Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
    {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
    multiple selections. The tool returns the user's selected answers.
-16. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
+17. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
 
 {file_context}
 {knowledge_context}
@@ -2464,6 +2517,8 @@ Do not use ellipsis.
 Action: The selected tool name
 Action Input: The JSON format of tool parameters
 """.strip()
+
+        workflow_prompt = workflow_prompt + "\n\n" + DISPATCH_PROMPT_SECTION
 
         if tool_mode == "knowledge":
             # Knowledge-chat mode (no pre-selected skill): only kb
@@ -2496,6 +2551,7 @@ Action Input: The JSON format of tool parameters
                     read_file_tool,
                     todowrite_tool,
                     execute_tool_tool,
+                    dispatch_parallel_tasks,
                     question_tool,
                     Terminate(),
                 ]
@@ -2647,6 +2703,7 @@ Action Input: The JSON format of tool parameters
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
+    subagent_history: Dict[str, Dict[str, Any]] = {}
     # Collect chunks from knowledge tool observations for citation
     _cited_chunks: List[Dict[str, Any]] = []
 
@@ -2705,6 +2762,16 @@ Action Input: The JSON format of tool parameters
             yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
             # Forward human-in-the-loop question events to frontend as-is.
+            yield _sse_event(event)
+        elif event_type in (
+            "agent.start",
+            "agent.done",
+            "agent.step",
+            "subagent.artifacts",
+        ):
+            # Sub-agent progress uses a separate event channel so parallel
+            # child rounds cannot collide with the lead agent's round map.
+            update_subagent_history(subagent_history, event)
             yield _sse_event(event)
         elif event_type == "thinking":
             # Parse thinking content but don't create step yet
@@ -2855,38 +2922,33 @@ Action Input: The JSON format of tool parameters
                     else f"TODO::{todo_state}"
                 )
 
-                # Emit or update the step card for this round
+                # Emit or update the session-level task-plan card.
                 # NOTE: Do NOT set phase — let it fall into the default
                 # "Execution Steps" group so todowrite cards appear inline
                 # alongside other action steps in chronological order.
-                if round_num in round_step_map:
-                    todo_step_id = round_step_map[round_num]
-                    yield _sse_event(
-                        {
-                            "type": "step.start",
-                            "step": step,
-                            "id": todo_step_id,
-                            "title": _todo_step_title,
-                            "detail": "todowrite",
-                            "todo_meta": todo_meta,
-                        }
-                    )
+                #
+                # The lead agent calls todowrite repeatedly (create plan,
+                # update progress, complete plan). All calls must update the
+                # same card instead of creating TODO::init/progress/done cards.
+                if _todo_step_holder:
+                    todo_step_id = _todo_step_holder[0]
                 else:
-                    todo_step_id, todo_step_event = build_step(
+                    todo_step_id, _ = build_step(
                         _todo_step_title,
                         "todowrite",
                     )
-                    round_step_map[round_num] = todo_step_id
-                    yield _sse_event(
-                        {
-                            "type": "step.start",
-                            "step": step,
-                            "id": todo_step_id,
-                            "title": _todo_step_title,
-                            "detail": "todowrite",
-                            "todo_meta": todo_meta,
-                        }
-                    )
+                    _todo_step_holder.append(todo_step_id)
+                round_step_map[round_num] = todo_step_id
+                yield _sse_event(
+                    {
+                        "type": "step.start",
+                        "step": step,
+                        "id": todo_step_id,
+                        "title": _todo_step_title,
+                        "detail": "todowrite",
+                        "todo_meta": todo_meta,
+                    }
+                )
 
                 yield _sse_event({"type": "plan.update", "tasks": todos_payload})
                 yield step_meta(
@@ -3082,6 +3144,7 @@ Action Input: The JSON format of tool parameters
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        fail_running_subagent_history(subagent_history)
         error_payload = json.dumps(
             {
                 "version": 1,
@@ -3090,6 +3153,7 @@ Action Input: The JSON format of tool parameters
                 "steps": history_steps,
                 "task_plan": list(_todo_list),
                 "generated_images": react_state.get("generated_images", []),
+                "sub_agents": build_subagent_history_snapshot(subagent_history),
             },
             ensure_ascii=False,
         )
@@ -3175,6 +3239,7 @@ Action Input: The JSON format of tool parameters
             "steps": history_steps,
             "task_plan": list(_todo_list),
             "generated_images": react_state.get("generated_images", []),
+            "sub_agents": build_subagent_history_snapshot(subagent_history),
         },
         ensure_ascii=False,
     )

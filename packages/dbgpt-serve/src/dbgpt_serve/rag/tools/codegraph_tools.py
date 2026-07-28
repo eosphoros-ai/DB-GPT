@@ -28,8 +28,19 @@ _graph_cache: dict = {}
 
 
 def _get_graph_cache_dir(knowledge_id: str) -> str:
-    """Get the graph cache directory for a knowledge space."""
-    return os.path.join(os.path.expanduser("~"), ".dbgpt", "graph_cache", knowledge_id)
+    """Get the graph cache directory for a knowledge space.
+
+    Security: knowledge_id can be user-controlled (chat ext_info / URL path
+    param) and is joined into a filesystem path, so it MUST NOT contain path
+    separators or ``.``/``..`` segments — otherwise an attacker can traverse
+    out of ``~/.dbgpt/graph_cache/``. We REJECT such input rather than
+    transforming it, so legitimate space names (including Chinese / spaces /
+    hyphens) keep their exact on-disk key and existing graphs stay readable.
+    """
+    kid = str(knowledge_id)
+    if not kid or "/" in kid or "\\" in kid or kid in (".", ".."):
+        raise ValueError(f"Invalid knowledge_id for graph cache dir: {kid!r}")
+    return os.path.join(os.path.expanduser("~"), ".dbgpt", "graph_cache", kid)
 
 
 def _load_graph(knowledge_id: str) -> Tuple[Optional[MemoryGraph], Optional[str]]:

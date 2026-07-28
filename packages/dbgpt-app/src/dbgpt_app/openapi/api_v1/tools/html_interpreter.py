@@ -16,12 +16,19 @@ def make_html_interpreter(react_state: Dict[str, Any], skills_dir: str):
     @tool(
         description=(
             "将 HTML 渲染为可交互的网页报告，这是向用户展示网页报告的唯一方式。"
+            "【一次性】一次调用即可把【完整】报告渲染出来；同一份报告【禁止】"
+            "重复调用本工具，渲染成功后若目标已达成请直接 terminate。"
             "【默认用法】直接传入完整的 HTML 字符串："
             '{"html": "<html>...</html>", "title": "报告标题"}。'
             "你需要自己生成完整的 HTML 代码"
             "（包含 <!DOCTYPE html>、<html>、<head>、<body> 等），"
             "然后传给 html 参数即可。"
-            "HTML 可以很长，没有长度限制，不需要分段传入。"
+            "HTML 可以很长，没有长度限制，不需要分段传入；"
+            "若报告含多部分内容，请合并进【同一份】HTML 一次性渲染，"
+            "不要分多次生成多份报告。"
+            "【禁止】不要用 code_interpreter 写 HTML 再 print，"
+            "不要用 code_interpreter 把 HTML 写入文件再读取，"
+            "直接把 HTML 传给本工具即可。"
             "【技能模式 - 仅在使用技能时可选】"
             "如果正在使用技能（skill），可以用模板模式："
             '{"template_path": "技能名/templates/模板.html", '
@@ -268,6 +275,14 @@ def make_html_interpreter(react_state: Dict[str, Any], skills_dir: str):
             pass
 
         chunks: List[Dict[str, Any]] = [
+            {
+                "output_type": "text",
+                "content": (
+                    "✅ HTML 报告已成功渲染并展示给用户。报告任务已完成，"
+                    "请勿重复调用 html_interpreter 生成报告。"
+                    "若全部目标已达成，请直接调用 terminate 结束。"
+                ),
+            },
             {"output_type": "html", "content": fixed_html, "title": title},
         ]
         return json.dumps({"chunks": chunks}, ensure_ascii=False)

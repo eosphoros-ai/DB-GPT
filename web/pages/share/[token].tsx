@@ -16,6 +16,7 @@ import ManusRightPanel, {
   ExecutionOutput as ManusExecutionOutput,
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
+import { buildActionDisplayText } from '@/utils/action-display';
 import {
   LinkOutlined,
   PauseCircleOutlined,
@@ -38,6 +39,8 @@ interface RawStep {
   title?: string;
   detail?: string;
   thought?: string;
+  action_intention?: string;
+  action_reason?: string;
   action?: string;
   action_input?: any;
   outputs?: Array<{ output_type: string; content: any }>;
@@ -233,7 +236,12 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
           s.outputs.forEach(o => stepOutputs.push({ output_type: o.output_type as any, content: o.content }));
         }
         outputs[stepId] = stepOutputs;
-        if (s.thought) stepThoughts[stepId] = s.thought;
+        const displayThought = buildActionDisplayText({
+          actionIntention: s.action_intention,
+          actionReason: s.action_reason,
+          thought: s.thought,
+        });
+        if (displayThought) stepThoughts[stepId] = displayThought;
       });
 
       const artifacts = buildArtifacts(`round-${rounds.length}`, steps, outputs, payload.final_content || '');

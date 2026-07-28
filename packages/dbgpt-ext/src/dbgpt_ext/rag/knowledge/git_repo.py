@@ -132,7 +132,20 @@ class GitRepoKnowledge(Knowledge):
                      If False, clone full history (needed for git diff).
         """
         self._clone_dir = tempfile.mkdtemp(prefix="git_repo_knowledge_")
-        cmd = ["git", "clone", "--branch", self._branch]
+        # Disable git transports that spawn an arbitrary shell command
+        # (ext::, and its cousins). Even though subprocess uses a list argv
+        # (no shell=True), git itself executes `ext::<cmd>` via `sh -c`, which
+        # is a pre-auth RCE when repo_url is user-controlled. See
+        # git-remote-ext(1). file:// is intentionally left enabled so local
+        # repo import keeps working.
+        cmd = [
+            "git",
+            "-c",
+            "protocol.ext.allow=never",
+            "clone",
+            "--branch",
+            self._branch,
+        ]
         if shallow:
             cmd.extend(["--depth", "1"])
         cmd.extend([self._repo_url, self._clone_dir])
