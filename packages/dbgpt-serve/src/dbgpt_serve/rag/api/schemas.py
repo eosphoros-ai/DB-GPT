@@ -1,11 +1,62 @@
+import re
 from typing import List, Optional, Union
+from urllib.parse import urlparse
 
 from fastapi import File, UploadFile
 
-from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
+from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, field_validator
 from dbgpt_ext.rag.chunk_manager import ChunkParameters
 
 from ..config import SERVE_APP_NAME_HUMP
+
+# Allowed git URL schemes. ``ext::`` (and similar command-execution
+# transports) MUST be rejected to prevent git from spawning an arbitrary shell
+# command via its external-transport helper — see git-remote-ext(1). This is an
+# RCE vector independent of how the parent process invokes ``git clone``.
+_ALLOWED_GIT_SCHEMES = frozenset({"http", "https", "ssh", "git", "file"})
+# SCP-style git URLs ("git@host:path" or bare "host:path") have no "://" so
+# urlparse can't see a scheme — match them explicitly so private repos that use
+# this shorthand keep working. ``ext::`` is NOT matched here: any "::" before a
+# "://" is rejected up-front by the colon_colon guard above, so by the time we
+# reach this regex a "::" payload is already gone. The regex only needs the
+# single-colon "host:path" form.
+_GIT_SCP_PATTERN = re.compile(r"^(?:[A-Za-z0-9._+-]+@)?[A-Za-z0-9._+-]+:[^/\s][^\s]*$")
+
+
+def _validate_git_repo_url(url: str) -> str:
+    """Validate a git repository URL, rejecting command-execution transports.
+
+    Only http/https/ssh/git/file schemes and SCP-style ``git@host:path`` URLs
+    are accepted. ``ext::`` / ``fd::`` / ``transport::`` and any other git
+    transport that can spawn a shell are rejected before reaching ``git clone``.
+    """
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("repo_url must be a non-empty string")
+    url = url.strip()
+    # Block anything with a ``::`` *before* the first ``://`` — that's the
+    # signature of an ext-like transport prefix (e.g. ``ext::sh -c ...``).
+    scheme_sep = url.find("://")
+    colon_colon = url.find("::")
+    if colon_colon != -1 and (scheme_sep == -1 or colon_colon < scheme_sep):
+        raise ValueError(
+            f"Unsupported git transport in repo_url: '{url}'. "
+            "Only http/https/ssh/git/file and git@host:path URLs are allowed."
+        )
+    parsed = urlparse(url)
+    scheme = (parsed.scheme or "").lower()
+    if scheme in _ALLOWED_GIT_SCHEMES:
+        return url
+    # No "://" means it's not a scheme://authority URL — urlparse then greedily
+    # treats the leading "word:" as a scheme (e.g. "host:path"). Recognise the
+    # SCP-style "[user@]host:path" form explicitly so such shorthands keep
+    # working. Single-colon only ("ext::" was already rejected by the guard
+    # above because it contains "::").
+    if scheme_sep == -1 and _GIT_SCP_PATTERN.match(url):
+        return url
+    raise ValueError(
+        f"Unsupported git repo_url scheme: '{scheme or 'none'}'. "
+        "Allowed: http, https, ssh, git, file, git@host:path."
+    )
 
 
 class SpaceServeRequest(BaseModel):
@@ -240,6 +291,12 @@ class GitRepoSyncRequest(BaseModel):
         "CHUNK_BY_MARKDOWN_HEADER", description="Chunk strategy for splitting"
     )
 
+    @field_validator("repo_url")
+    @classmethod
+    def _validate_repo_url(cls, v: str) -> str:
+        """Reject git transports that can spawn a shell (e.g. ext::) — RCE guard."""
+        return _validate_git_repo_url(v)
+
 
 class GitRepoSyncStatusResponse(BaseModel):
     """Response for git repo sync status."""
@@ -275,6 +332,12 @@ class GitRepoIncrementalSyncRequest(BaseModel):
     last_commit: Optional[str] = Field(
         None, description="Last synced commit SHA (auto-detected if not provided)"
     )
+
+    @field_validator("repo_url")
+    @classmethod
+    def _validate_repo_url(cls, v: str) -> str:
+        """Reject git transports that can spawn a shell (e.g. ext::) — RCE guard."""
+        return _validate_git_repo_url(v)
 
 
 class KbSearchRequest(BaseModel):

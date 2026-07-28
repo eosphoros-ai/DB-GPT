@@ -7,7 +7,7 @@ and checking sync status.
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from dbgpt.component import SystemApp
 from dbgpt_serve.core import Result
@@ -19,6 +19,7 @@ from ..api.schemas import (
 )
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
+from .endpoints import check_api_key
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ def get_git_sync_service():
     return GitRepoSyncService(service)
 
 
-@router.post("/{space_id}/git/sync")
+@router.post("/{space_id}/git/sync", dependencies=[Depends(check_api_key)])
 async def sync_git_repo(
     space_id: str,
     request: GitRepoSyncRequest,
@@ -71,7 +72,7 @@ async def sync_git_repo(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{space_id}/git/incremental-sync")
+@router.post("/{space_id}/git/incremental-sync", dependencies=[Depends(check_api_key)])
 async def incremental_sync_git_repo(
     space_id: str,
     request: GitRepoIncrementalSyncRequest,
@@ -117,7 +118,7 @@ async def get_git_sync_status(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{space_id}/build-graph")
+@router.post("/{space_id}/build-graph", dependencies=[Depends(check_api_key)])
 async def build_knowledge_graph(space_id: str) -> Result:
     """Build a structural graph from the indexed documents of a knowledge space.
 
