@@ -622,7 +622,8 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                         vector_ids = [chunk.chunk_id for chunk in chunk_docs]
                     except Exception as domain_err:
                         logger.warning(
-                            f"DomainKnowledgeIndex failed for domain_type={domain_type}, "
+                            f"DomainKnowledgeIndex failed for "
+                            f"domain_type={domain_type}, "
                             f"falling back to EmbeddingAssembler: {domain_err}"
                         )
                         # Fallback to default EmbeddingAssembler

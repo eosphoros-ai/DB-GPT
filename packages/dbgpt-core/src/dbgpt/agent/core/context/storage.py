@@ -260,7 +260,7 @@ class ToolResultStorage:
             tool_call_id="sql_query_abc123",
         )
         if path:
-            # Content was persisted; *replacement* contains the <persisted-output> block.
+            # Content was persisted; *replacement* has the <persisted-output> block.
             action_output.content = replacement
             action_output.persisted_path = path
     """
@@ -309,7 +309,7 @@ class ToolResultStorage:
         tool_call_id: str,
         threshold: Optional[int] = None,
     ) -> Tuple[str, Optional[str]]:
-        """Layer 2: persist oversized result into the storage dir, return preview + path.
+        """Layer 2: persist oversized result into the storage dir, return preview.
 
         Writes the full content to ``{storage_dir}/{safe_filename}.txt`` and
         returns a ``<persisted-output>`` replacement block. Falls back to inline

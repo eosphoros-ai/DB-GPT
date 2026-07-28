@@ -39,7 +39,10 @@ def _format_chunk_results(chunks, query, knowledge_id):
 
 @tool(
     "kb_semantic_search",
-    description="Semantic search in knowledge base. Use only when kb_grep returns insufficient results.",
+    description=(
+        "Semantic search in knowledge base. Use only when kb_grep returns "
+        "insufficient results."
+    ),
 )
 async def kb_semantic_search(
     knowledge_id: Annotated[str, "Knowledge space ID"],

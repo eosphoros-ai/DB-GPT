@@ -227,7 +227,8 @@ async def kb_glob(
     total = len(matches)
     paged = sorted(matches, key=lambda x: x["file_path"])[offset : offset + limit]
     lines = [
-        f"Matching '{pattern}': {total} files (showing {offset + 1}-{offset + len(paged)}):"
+        f"Matching '{pattern}': {total} files "
+        f"(showing {offset + 1}-{offset + len(paged)}):"
     ]
     for f in paged:
         lines.append(f"  {f['file_path']}\t{f['language'] or f['file_type'] or ''}")

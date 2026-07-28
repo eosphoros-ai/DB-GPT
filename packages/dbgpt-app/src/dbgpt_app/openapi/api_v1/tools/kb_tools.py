@@ -36,7 +36,8 @@ def make_kb_glob(knowledge_id: str):
         "kb_glob",
         description=(
             "Search files by name or glob pattern in the knowledge base. "
-            "Use this to find files matching a pattern, e.g. '*.py', '*test*', 'src/**/*.ts'. "
+            "Use this to find files matching a pattern, e.g. '*.py', "
+            "'*test*', 'src/**/*.ts'. "
             'Parameters: {{"pattern": "file name keyword or glob pattern"}}'
         ),
     )
@@ -57,7 +58,8 @@ def make_kb_grep(knowledge_id: str):
             "Search file contents by keyword in the knowledge base. "
             "Use this to find code or text containing a specific keyword or phrase. "
             "Prefer this over semantic search for exact matches. "
-            'Parameters: {{"query": "search keyword", "path": "directory filter (optional)", '
+            'Parameters: {{"query": "search keyword", '
+            '"path": "directory filter (optional)", '
             '"file_pattern": "file pattern like *.py (optional)"}}'
         ),
     )
@@ -115,7 +117,8 @@ def make_kb_semantic_search(knowledge_id: str):
         "semantic_search",
         description=(
             "Semantic search in the knowledge base. "
-            "Use this when you need to find information by meaning rather than exact keywords. "
+            "Use this when you need to find information by meaning rather "
+            "than exact keywords. "
             "Prefer kb_grep for exact keyword matches; use semantic_search when "
             "kb_grep returns empty or insufficient results. "
             'Parameters: {{"query": "search query in natural language", '

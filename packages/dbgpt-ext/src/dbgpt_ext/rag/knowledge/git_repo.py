@@ -24,7 +24,9 @@ from dbgpt.rag.knowledge.base import (
 logger = logging.getLogger(__name__)
 
 # All scannable extensions: .md + all code file extensions
-from dbgpt_ext.rag.knowledge.code_file import EXTENSION_LANGUAGE_MAP
+from dbgpt_ext.rag.knowledge.code_file import (  # noqa: E402
+    EXTENSION_LANGUAGE_MAP,
+)
 
 SCAN_EXTENSIONS = {".md"} | set(EXTENSION_LANGUAGE_MAP.keys())
 

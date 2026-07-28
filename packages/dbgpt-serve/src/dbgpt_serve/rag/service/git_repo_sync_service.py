@@ -167,7 +167,9 @@ class GitRepoSyncService:
         logger.info(f"Sync started in background for {repo_url} branch={branch}")
         return {
             "status": "RUNNING",
-            "message": "Sync started. Poll GET /{space_id}/git/sync-status for progress.",
+            "message": (
+                "Sync started. Poll GET /{space_id}/git/sync-status for progress."
+            ),
         }
 
     async def _async_sync_repo(
@@ -317,7 +319,8 @@ class GitRepoSyncService:
                     stats["indexed"] += 1
                 except Exception as e:
                     logger.error(
-                        f"Failed to index document {doc.metadata.get('file_path', '')}: {e}"
+                        f"Failed to index document "
+                        f"{doc.metadata.get('file_path', '')}: {e}"
                     )
                     stats["failed"] += 1
                     # Fix: update document status to FAILED
@@ -459,7 +462,10 @@ class GitRepoSyncService:
         )
         return {
             "status": "RUNNING",
-            "message": "Incremental sync started. Poll GET /{space_id}/git/sync-status for progress.",
+            "message": (
+                "Incremental sync started. Poll GET /{space_id}/git/sync-status "
+                "for progress."
+            ),
         }
 
     async def _async_incremental_sync(
@@ -601,7 +607,8 @@ class GitRepoSyncService:
                     indexed_count += 1
                 except Exception as e:
                     logger.error(
-                        f"Failed to index document {doc.metadata.get('file_path', '')}: {e}"
+                        f"Failed to index document "
+                        f"{doc.metadata.get('file_path', '')}: {e}"
                     )
 
             self._update_space_context(
