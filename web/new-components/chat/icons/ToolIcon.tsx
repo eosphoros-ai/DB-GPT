@@ -96,6 +96,9 @@ const icons: Record<string, string> = {
 
   // Server
   server: `<rect x="3.35547" y="1.92969" width="13.2857" height="16.1429" stroke="currentColor"/><rect x="3.35547" y="11.9297" width="13.2857" height="6.14286" stroke="currentColor"/><rect x="12.8555" y="14.2852" width="1.42857" height="1.42857" fill="currentColor"/><rect x="10" y="14.2852" width="1.42857" height="1.42857" fill="currentColor"/>`,
+
+  // Knowledge graph / code graph (network nodes with connections)
+  'knowledge-graph': `<circle cx="10" cy="4.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="4.5" cy="15" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="15.5" cy="15" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="17" cy="7" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="3" cy="7" r="1.5" stroke="currentColor" stroke-width="1.2"/><line x1="8.3" y1="5.7" x2="5.5" y2="6.3" stroke="currentColor" stroke-width="1.2"/><line x1="11.5" y1="5.9" x2="16" y2="7" stroke="currentColor" stroke-width="1.2"/><line x1="8.5" y1="6" x2="5.5" y2="13.5" stroke="currentColor" stroke-width="1.2"/><line x1="11.5" y1="6" x2="14.5" y2="13.5" stroke="currentColor" stroke-width="1.2"/><line x1="6.2" y1="15" x2="13.8" y2="15" stroke="currentColor" stroke-width="1.2"/>`,
 };
 
 export type IconName = keyof typeof icons;
@@ -167,6 +170,19 @@ export function getToolIconName(tool: string): IconName {
       return 'bubble-5';
     case 'skill':
       return 'brain';
+    case 'kb_codegraph_explore':
+    case 'kb_codegraph_call_chain':
+    case 'kb_codegraph_class_hierarchy':
+      return 'knowledge-graph';
+    case 'kb_ls':
+      return 'bullet-list';
+    case 'kb_glob':
+    case 'kb_grep':
+      return 'magnifying-glass-menu';
+    case 'kb_cat':
+      return 'glasses';
+    case 'semantic_search':
+      return 'brain';
     default:
       return 'mcp';
   }
@@ -189,6 +205,14 @@ export const STATUS_TEXT_MAP: Record<string, string> = {
   reasoning: 'Thinking...',
   text: 'Gathering thoughts...',
   skill: 'Loading skill...',
+  kb_codegraph_explore: 'Exploring code graph...',
+  kb_codegraph_call_chain: 'Tracing call chain...',
+  kb_codegraph_class_hierarchy: 'Tracing class hierarchy...',
+  kb_ls: 'Listing files...',
+  kb_glob: 'Finding files...',
+  kb_grep: 'Searching content...',
+  kb_cat: 'Reading file...',
+  semantic_search: 'Searching semantically...',
 };
 
 export function getStatusText(tool: string): string {

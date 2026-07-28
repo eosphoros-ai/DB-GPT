@@ -308,6 +308,7 @@ class ReActAgent(ConversableAgent):
             action = mem_dict.get("action")
             action_input = mem_dict.get("action_input")
             observation = mem_dict.get("observation")
+            persisted_path = mem_dict.get("persisted_path")
             if question:
                 messages.append(
                     AgentMessage(
@@ -332,19 +333,25 @@ class ReActAgent(ConversableAgent):
             )
 
             if observation:
-                obs_context = (
-                    {"snapshot_path": snapshot_path} if snapshot_path else None
-                )
-                obs_suffix = (
-                    f"\n[Full detail available at: {snapshot_path}]"
-                    if snapshot_path
-                    else ""
-                )
+                # If the observation is a <persisted-output> preview block it
+                # already carries the file path, so we don't append the
+                # snapshot suffix. We still record snapshot_path / persisted_path
+                # in the message context so Layer 1 compaction can recognize
+                # size-bounded observations and skip them.
+                is_persisted = "<persisted-output>" in observation
+                obs_context: dict = {}
+                if snapshot_path:
+                    obs_context["snapshot_path"] = snapshot_path
+                if persisted_path:
+                    obs_context["persisted_path"] = persisted_path
+                obs_suffix = ""
+                if not is_persisted and snapshot_path:
+                    obs_suffix = f"\n[Full detail available at: {snapshot_path}]"
                 messages.append(
                     AgentMessage(
                         content=f"Observation: {observation}{obs_suffix}",
                         role=ModelMessageRoleType.HUMAN,
-                        context=obs_context,
+                        context=obs_context if obs_context else None,
                     )
                 )
 

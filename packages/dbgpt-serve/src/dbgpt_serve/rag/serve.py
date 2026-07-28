@@ -8,6 +8,10 @@ from dbgpt.storage.metadata import DatabaseManager
 from dbgpt_serve.core import BaseServe
 
 from .api.endpoints import init_endpoints, router
+from .api.git_repo_endpoints import init_git_repo_endpoints
+from .api.git_repo_endpoints import router as git_repo_router
+from .api.search_endpoints import init_search_endpoints
+from .api.search_endpoints import router as search_router
 from .config import (
     SERVE_APP_NAME,
     SERVE_APP_NAME_HUMP,
@@ -47,10 +51,19 @@ class Serve(BaseServe):
         self._system_app.app.include_router(
             router, prefix=self._api_prefix, tags=self._api_tags
         )
+        # Register git repo and search tool endpoints
+        self._system_app.app.include_router(
+            git_repo_router, prefix=self._api_prefix, tags=self._api_tags
+        )
+        self._system_app.app.include_router(
+            search_router, prefix=self._api_prefix, tags=self._api_tags
+        )
         self._config = self._config or ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
         init_endpoints(self._system_app, self._config)
+        init_git_repo_endpoints(self._system_app, self._config)
+        init_search_endpoints(self._system_app, self._config)
         self._app_has_initiated = True
 
     def on_init(self):
@@ -61,6 +74,11 @@ class Serve(BaseServe):
         """
         # import your own module here to ensure the module is loaded before the
         # application starts
+        from .models.code_graph_db import (  # noqa: F401
+            CodeGraphEdgeEntity,
+            CodeGraphMetaEntity,
+            CodeGraphVertexEntity,
+        )
         from .models.models import KnowledgeSpaceEntity as _  # noqa: F401
 
     def before_start(self):

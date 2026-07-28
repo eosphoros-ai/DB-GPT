@@ -154,6 +154,14 @@ class KnowledgeService:
             res.id = space.id
             res.name = space.name
             res.vector_type = space.vector_type
+            # Parse index_methods from JSON string
+            if space.index_methods:
+                try:
+                    import json
+
+                    res.index_methods = json.loads(space.index_methods)
+                except Exception:
+                    res.index_methods = []
             res.domain_type = space.domain_type
             res.desc = space.desc
             res.owner = space.owner

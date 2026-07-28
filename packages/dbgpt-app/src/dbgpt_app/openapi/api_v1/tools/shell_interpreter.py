@@ -89,6 +89,16 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
             except Exception:
                 pass
 
+        # Cap shell output size so a verbose command (e.g. `find /`, huge log
+        # dumps) can't overflow the LLM context window. Larger outputs are
+        # persisted to disk by the ToolResultStorage layer.
+        MAX_SHELL_OUTPUT_CHARS = 50_000
+        if len(output_text) > MAX_SHELL_OUTPUT_CHARS:
+            output_text = (
+                output_text[:MAX_SHELL_OUTPUT_CHARS]
+                + f"\n\n... [Output truncated at {MAX_SHELL_OUTPUT_CHARS} chars]"
+            )
+
         chunks: List[Dict[str, Any]] = [
             {"output_type": "code", "content": code.strip()},
         ]

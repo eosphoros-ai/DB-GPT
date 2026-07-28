@@ -5,7 +5,7 @@ import { GPTVis } from '@antv/gpt-vis';
 import { Spin, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import Image from 'next/image';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToolIcon, getStatusText, getToolIconName } from '../icons/ToolIcon';
 import { BasicTool } from '../tools/BasicTool';
@@ -107,6 +107,15 @@ function getToolTitle(tool: string): string {
     question: 'Ask Question',
     apply_patch: 'Apply Patch',
     skill: 'Load Skill',
+    // Knowledge base tools
+    kb_ls: 'List Files',
+    kb_glob: 'Find Files',
+    kb_grep: 'Search Content',
+    kb_cat: 'Read File',
+    semantic_search: 'Semantic Search',
+    kb_codegraph_explore: 'Explore Code Graph',
+    kb_codegraph_call_chain: 'Trace Call Chain',
+    kb_codegraph_class_hierarchy: 'Trace Class Hierarchy',
   };
   return titleMap[tool] || tool;
 }
@@ -131,6 +140,21 @@ function getToolSubtitle(tool: string, input?: Record<string, unknown>): string 
       return input.url as string | undefined;
     case 'list':
       return input.path ? getFilename(input.path as string) : undefined;
+    // Knowledge base tools — show the most relevant query parameter
+    case 'kb_ls':
+      return (input.path as string | undefined) ?? undefined;
+    case 'kb_glob':
+      return (input.query as string | undefined) ?? (input.pattern as string | undefined);
+    case 'kb_grep':
+      return (input.query as string | undefined) ?? (input.pattern as string | undefined);
+    case 'kb_cat':
+      return (input.path as string | undefined) ?? undefined;
+    case 'semantic_search':
+      return (input.query as string | undefined) ?? undefined;
+    case 'kb_codegraph_explore':
+    case 'kb_codegraph_call_chain':
+    case 'kb_codegraph_class_hierarchy':
+      return (input.query as string | undefined) ?? undefined;
     default:
       // Try common input keys
       return (input.value || input.name || input.query) as string | undefined;
@@ -471,6 +495,126 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   const { t } = useTranslation();
   const [stepsExpanded, setStepsExpanded] = useState(defaultStepsExpanded);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const msgRef = useRef<HTMLDivElement>(null);
+
+  // Parse <references> tag from assistantMessage to get citation data
+  const parsedRefs = useMemo(() => {
+    if (!assistantMessage) return null;
+    try {
+      const m = assistantMessage.match(/<references[^>]*references='([^']*?)'/);
+      if (m) {
+        const refs = JSON.parse(m[1]);
+        return Array.isArray(refs) ? refs : refs?.knowledge || null;
+      }
+    } catch {
+      // references tag not present or malformed — no citations
+    }
+    return null;
+  }, [assistantMessage]);
+
+  // Post-render: replace plain [n] text with styled <sup> badges and attach hover tooltips
+  useEffect(() => {
+    if (!msgRef.current || !assistantMessage) return;
+    const container = msgRef.current;
+
+    // Defer to next tick so GPTVis has finished rendering the markdown.
+    const timer = setTimeout(() => {
+      // 1. Collect all text nodes containing [n] markers (collect first to
+      //    avoid invalidating the TreeWalker during mutation).
+      const targets: Text[] = [];
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toLowerCase();
+          if (['sup', 'code', 'pre', 'a', 'references', 'script'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          return /\[\d{1,2}\]/.test(node.textContent || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        },
+      });
+      let n: Text | null;
+      while ((n = walker.nextNode() as Text | null)) targets.push(n);
+
+      // 2. Replace [n] in each collected text node with a styled <sup> badge
+      targets.forEach(textNode => {
+        const raw = textNode.textContent || '';
+        if (!/\[\d{1,2}\]/.test(raw)) return;
+        const fragment = document.createDocumentFragment();
+        let lastIdx = 0;
+        raw.replace(/\[(\d{1,2})\]/g, (match, idx, offset) => {
+          if (offset > lastIdx) {
+            fragment.appendChild(document.createTextNode(raw.slice(lastIdx, offset)));
+          }
+          const badge = document.createElement('sup');
+          badge.className = 'cite-badge';
+          badge.setAttribute('data-cite-idx', idx);
+          badge.style.cssText =
+            'color:#fff;background:#1677ff;border-radius:3px;padding:0 3px;margin:0 1px;' +
+            'font-size:10px;font-weight:600;cursor:pointer;line-height:1.4';
+          badge.textContent = idx;
+          fragment.appendChild(badge);
+          lastIdx = offset + match.length;
+          return '';
+        });
+        if (lastIdx < raw.length) {
+          fragment.appendChild(document.createTextNode(raw.slice(lastIdx)));
+        }
+        textNode.parentNode?.replaceChild(fragment, textNode);
+      });
+
+      // 3. Attach hover tooltips to the badges
+      const docList: any[] = Array.isArray(parsedRefs) ? parsedRefs : [];
+      const show = (e: Event) => {
+        const el = e.target as HTMLElement;
+        const idx = parseInt(el.getAttribute('data-cite-idx') || '0', 10);
+        let chunk: any = null;
+        let doc: any = null;
+        for (const d of docList) {
+          chunk = (d.chunks || []).find((c: any) => c.index === idx);
+          if (chunk) {
+            doc = d;
+            break;
+          }
+        }
+        if (!chunk) return;
+        const existing = document.querySelector('.cite-tooltip');
+        if (existing) existing.remove();
+        const tip = document.createElement('div');
+        tip.className = 'cite-tooltip';
+        tip.style.cssText =
+          'position:fixed;z-index:9999;max-width:400px;max-height:220px;overflow-y:auto;' +
+          'background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;' +
+          'box-shadow:0 4px 16px rgba(0,0,0,0.12);font-size:12px;line-height:1.5';
+        const docName = decodeURIComponent(doc?.name || 'Knowledge Base');
+        const score = chunk.recall_score != null ? ` · 召回 ${Number(chunk.recall_score).toFixed(2)}` : '';
+        const plain = (chunk.content || '').replace(/<[^>]+>/g, '').trim();
+        tip.innerHTML =
+          `<div style="font-weight:600;color:#333;margin-bottom:4px;font-size:11px">` +
+          `📄 ${docName}<span style="color:#9ca3af;font-weight:400">${score}</span></div>` +
+          `<div style="color:#555;white-space:pre-wrap;word-break:break-word">` +
+          `${plain.slice(0, 600)}${plain.length > 600 ? '...' : ''}</div>`;
+        const rect = el.getBoundingClientRect();
+        tip.style.left = `${Math.min(rect.left, window.innerWidth - 420)}px`;
+        tip.style.top = `${rect.bottom + 4}px`;
+        document.body.appendChild(tip);
+        tip.addEventListener('mouseleave', () => tip.remove());
+        el.addEventListener('mouseleave', () => setTimeout(() => tip.remove(), 200), { once: true });
+      };
+
+      const badges = container.querySelectorAll<HTMLElement>('.cite-badge');
+      badges.forEach(b => b.addEventListener('mouseenter', show));
+      // Store cleanup on container for the next run.
+      (container as any).__citeCleanup?.();
+      (container as any).__citeCleanup = () => {
+        badges.forEach(b => b.removeEventListener('mouseenter', show));
+        document.querySelectorAll('.cite-tooltip').forEach(t => t.remove());
+      };
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      (container as any).__citeCleanup?.();
+    };
+  }, [parsedRefs, assistantMessage]);
 
   useEffect(() => {
     if (!isWorking || !startTime) return;
@@ -643,9 +787,15 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
                     data-slot='assistant-response'
                     className='group relative bg-white dark:bg-[rgba(255,255,255,0.08)] p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-800'
                   >
-                    <div className='prose prose-sm dark:prose-invert max-w-none'>
+                    <div ref={msgRef} className='prose prose-sm dark:prose-invert max-w-none'>
                       <GPTVis components={markdownComponents as any} {...(markdownPlugins as any)}>
-                        {preprocessLaTeX(formatMarkdownVal(assistantMessage))}
+                        {preprocessLaTeX(
+                          formatMarkdownVal(
+                            assistantMessage
+                              .replace(/<references[^>]*>[\s\S]*?<\/references>/g, '')
+                              .replace(/<references[^>]*\/>/g, ''),
+                          ),
+                        )}
                       </GPTVis>
                     </div>
                     {endTime && (

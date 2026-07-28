@@ -14,8 +14,17 @@ const ReferencesContentView: React.FC<{ references: any }> = ({ references }) =>
     return router.pathname.includes('/mobile');
   }, [router]);
 
+  // Normalize: backend sends an array [{name, chunks}], but older code may
+  // wrap it as {knowledge: [...]}. Accept both.
+  const docList: any[] = useMemo(() => {
+    if (!references) return [];
+    if (Array.isArray(references)) return references;
+    if (references.knowledge) return references.knowledge;
+    return [];
+  }, [references]);
+
   const items: TabsProps['items'] = useMemo(() => {
-    return references?.knowledge?.map((reference: any) => {
+    return docList.map((reference: any) => {
       return {
         label: (
           <div style={{ maxWidth: '120px' }}>
@@ -30,13 +39,25 @@ const ReferencesContentView: React.FC<{ references: any }> = ({ references }) =>
         ),
         key: reference.name,
         children: (
-          <div className='h-full overflow-y-auto'>
-            {reference?.chunks?.map((chunk: any) => <MarkDownContext key={chunk.id}>{chunk.content}</MarkDownContext>)}
+          <div className='h-full overflow-y-auto space-y-3'>
+            {reference?.chunks?.map((chunk: any) => (
+              <div key={chunk.id} className='border-b border-gray-100 dark:border-gray-700 pb-3 last:border-0'>
+                <div className='flex items-center gap-2 mb-1'>
+                  {chunk.index != null && (
+                    <span className='text-[10px] font-medium text-white bg-blue-500 rounded px-1'>{chunk.index}</span>
+                  )}
+                  {chunk.recall_score != null && (
+                    <span className='text-[10px] text-gray-400'>召回 {Number(chunk.recall_score).toFixed(2)}</span>
+                  )}
+                </div>
+                <MarkDownContext key={chunk.id}>{chunk.content}</MarkDownContext>
+              </div>
+            ))}
           </div>
         ),
       };
     });
-  }, [references]);
+  }, [docList]);
 
   return (
     <div>

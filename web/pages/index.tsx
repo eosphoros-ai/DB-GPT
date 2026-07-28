@@ -366,6 +366,20 @@ const convertToManusFormat = (
     if (actionLower === 'shell_interpreter') return 'bash';
     if (actionLower === 'sql_query') return 'sql';
     if (actionLower === 'question') return 'question';
+    if (
+      actionLower === 'kb_ls' ||
+      actionLower === 'kb_glob' ||
+      actionLower === 'kb_grep' ||
+      actionLower === 'kb_cat' ||
+      actionLower === 'semantic_search'
+    )
+      return 'kb';
+    if (
+      actionLower === 'kb_codegraph_explore' ||
+      actionLower === 'kb_codegraph_call_chain' ||
+      actionLower === 'kb_codegraph_class_hierarchy'
+    )
+      return 'code_graph';
 
     const lower = (title || '').toLowerCase();
     if (
@@ -409,11 +423,14 @@ const convertToManusFormat = (
     })
     .map(step => {
       const cleanDetail = step.detail?.replace(/^Thought:.*\n?/gm, '').trim();
+      // Build a user-friendly subtitle: strip "Action: " prefix from the first line
+      const firstLine = cleanDetail?.split('\n')[0] || '';
+      const friendlySubtitle = firstLine.replace(/^Action:\s*/i, '').slice(0, 80);
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
         title: step.title || `Step ${step.step}`,
-        subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
+        subtitle: friendlySubtitle || undefined,
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
@@ -693,7 +710,7 @@ const Playground: NextPage = () => {
   // Fetch Knowledge Bases
   const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
     try {
-      const response = await sendSpacePostRequest('/knowledge/space/list', {});
+      const response = await sendSpacePostRequest('/api/v1/knowledge/space/list', {});
       // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
       if (response?.success) {
         return response.data || [];
@@ -4089,7 +4106,7 @@ const Playground: NextPage = () => {
                                     type='link'
                                     size='small'
                                     onClick={() => {
-                                      router.push('/knowledge');
+                                      router.push('/construct/knowledge');
                                       setIsKnowledgePanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'

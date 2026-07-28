@@ -8,6 +8,7 @@ from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
 from ...core.action.base import Action, ActionOutput
+from ...core.context.storage import get_current_storage
 from ...core.schema import Status
 from ...resource.base import AgentResource, Resource, ResourceType
 from ...resource.tool.pack import ToolPack
@@ -198,12 +199,37 @@ async def run_tool(
             err_msg = f"Tool [{name}] execute failed! {str(e)}"
             tool_result = err_msg
 
+        result_str = str(tool_result)
+
+        # Layer 2: persist oversized tool results to disk and replace the
+        # in-context content with a <persisted-output> preview + file path.
+        # The full content is retained in `observations` for DB persistence.
+        persisted_path: Optional[str] = None
+        in_context_content = result_str
+        storage = get_current_storage()
+        if storage is not None and response_success:
+            try:
+                replacement, persisted_path = storage.maybe_persist(
+                    content=result_str,
+                    tool_name=name,
+                    tool_call_id=f"{name}_{id(tool_result):x}",
+                )
+                if persisted_path:
+                    in_context_content = replacement
+            except Exception:
+                logger.exception(
+                    "Tool result persistence failed for %s; using full content",
+                    name,
+                )
+                persisted_path = None
+                in_context_content = result_str
+
         plugin_param = {
             "name": name,
             "args": args,
             "status": status,
             "logo": None,
-            "result": str(tool_result),
+            "result": in_context_content,
             "err_msg": err_msg,
         }
         if render_protocol:
@@ -215,10 +241,11 @@ async def run_tool(
 
         return ActionOutput(
             is_exe_success=response_success,
-            content=str(tool_result),
+            content=in_context_content,
             view=view,
-            observations=str(tool_result),
+            observations=result_str,
             terminate=is_terminal,
+            persisted_path=persisted_path,
         )
     except Exception as e:
         logger.exception("Tool Action Run Failed！")

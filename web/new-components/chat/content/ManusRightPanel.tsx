@@ -4,6 +4,7 @@ import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
 import {
+  ApartmentOutlined,
   AppstoreOutlined,
   BarChartOutlined,
   CheckCircleFilled,
@@ -230,6 +231,10 @@ const getStepTypeIcon = (type: StepType) => {
       return <PlayCircleOutlined className='text-indigo-500' />;
     case 'sql':
       return <ConsoleSqlOutlined className='text-emerald-600' />;
+    case 'kb':
+      return <FolderOpenOutlined className='text-teal-500' />;
+    case 'code_graph':
+      return <ApartmentOutlined className='text-violet-500' />;
     default:
       return <FileTextOutlined className='text-gray-500' />;
   }
@@ -599,114 +604,445 @@ const AutoHeightIframe: React.FC<{
 
 AutoHeightIframe.displayName = 'AutoHeightIframe';
 
-// Output Renderer Component
-const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number }> = memo(({ output, index: _index }) => {
-  const content = output.content;
+// ── kb tool output rendering ────────────────────────────────────────────────
+// kb_ls/kb_cat/kb_grep/kb_glob return plain-text observations; render them with
+// structured viewers (file list / code viewer) instead of the raw terminal style.
+const KB_TOOLS = new Set([
+  'kb_ls',
+  'kb_cat',
+  'kb_grep',
+  'kb_glob',
+  'semantic_search',
+  'kb_codegraph_explore',
+  'kb_codegraph_call_chain',
+  'kb_codegraph_class_hierarchy',
+]);
 
-  if (output.output_type === 'thought') {
-    return null; // Don't render thoughts
+// Friendly labels and icons for each kb tool action (used in the right-panel header card)
+const KB_ACTION_LABELS: Record<string, string> = {
+  kb_ls: 'List Files',
+  kb_glob: 'Search by Name',
+  kb_grep: 'Search Content',
+  kb_cat: 'Read File',
+  semantic_search: 'Semantic Search',
+  kb_codegraph_explore: 'Code Graph Explore',
+  kb_codegraph_call_chain: 'Call Chain',
+  kb_codegraph_class_hierarchy: 'Class Hierarchy',
+};
+const KB_ACTION_ICONS: Record<string, React.ReactNode> = {
+  kb_ls: <FolderOpenOutlined className='text-teal-500' />,
+  kb_glob: <FileSearchOutlined className='text-teal-500' />,
+  kb_grep: <SearchOutlined className='text-teal-500' />,
+  kb_cat: <FileTextOutlined className='text-teal-500' />,
+  semantic_search: <CodeOutlined className='text-teal-500' />,
+  kb_codegraph_explore: <ApartmentOutlined className='text-violet-500' />,
+  kb_codegraph_call_chain: <ApartmentOutlined className='text-violet-500' />,
+  kb_codegraph_class_hierarchy: <ApartmentOutlined className='text-violet-500' />,
+};
+
+const KB_FILE_LINE_RE = /^(\S.*?)(?:\t(\S+))?$/;
+
+/** Render kb_ls / kb_glob output as a file listing. Returns null if not parseable. */
+function renderKbFileList(text: string, t: any): React.ReactNode {
+  const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('Directory:') && !l.startsWith('Matching'));
+  if (lines.length === 0) return null;
+  const entries = lines
+    .map(line => {
+      const m = line.match(KB_FILE_LINE_RE);
+      if (!m) return null;
+      const name = m[1]?.replace(/\/$/, '') || '';
+      const isDir = line.trim().endsWith('/');
+      return { name, isDir, lang: m[2] || '' };
+    })
+    .filter(Boolean) as { name: string; isDir: boolean; lang: string }[];
+  if (entries.length === 0) return null;
+
+  const sorted = [...entries].sort((a, b) => {
+    if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div className='rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-[#1a1d2e]'>
+      <div className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/70 border-b border-gray-200 dark:border-gray-700'>
+        <FolderOpenOutlined style={{ color: '#1677FF', fontSize: 14 }} />
+        <span className='text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider'>
+          {t('kb_ls') || 'Files'}
+        </span>
+        <span className='ml-auto text-[11px] text-gray-400'>{entries.length} entries</span>
+      </div>
+      <div className='font-mono text-[13px] leading-relaxed max-h-[400px] overflow-auto'>
+        {sorted.map((e, i) => (
+          <div
+            key={i}
+            className='flex items-center gap-2 py-1 px-3 hover:bg-blue-50/60 dark:hover:bg-blue-900/15 transition-colors'
+          >
+            {e.isDir ? (
+              <FolderOpenOutlined style={{ color: '#1677FF', fontSize: 13 }} />
+            ) : (
+              <FileTextOutlined style={{ color: '#13C2C2', fontSize: 13 }} />
+            )}
+            <span
+              className={e.isDir ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-800 dark:text-gray-200'}
+            >
+              {e.name}
+              {e.isDir ? '/' : ''}
+            </span>
+            {e.lang && (
+              <span className='ml-auto text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'>
+                {e.lang}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Render kb_cat output as a code viewer with line numbers. Returns null if not parseable. */
+function renderKbCat(text: string, t: any): React.ReactNode {
+  const lines = text.split('\n');
+  // Header: "path/to/file.py (python, 150 lines)"
+  const headerMatch = lines[0]?.match(/^(.+?)\s*\((\w*)?,?\s*(\d+)\s*lines?\)/);
+  if (!headerMatch) return null;
+  const filePath = headerMatch[1].trim();
+  const fileLang = headerMatch[2] || '';
+  const fileLines = parseInt(headerMatch[3], 10);
+
+  const truncationIdx = lines.findIndex(l => l.includes('truncated, use start_line='));
+  const codeLines = truncationIdx >= 0 ? lines.slice(1, truncationIdx) : lines.slice(1);
+  if (codeLines.length === 0) return null;
+
+  return (
+    <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm'>
+      <div className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/70 border-b border-gray-200 dark:border-gray-700'>
+        <FileTextOutlined style={{ color: '#13C2C2', fontSize: 14 }} />
+        <span className='text-sm font-mono font-medium text-gray-700 dark:text-gray-200 truncate'>{filePath}</span>
+        {fileLang && (
+          <span className='text-[11px] px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 font-mono border border-teal-100 dark:border-teal-800/50'>
+            {fileLang}
+          </span>
+        )}
+        <span className='ml-auto flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500'>
+          <span className='flex items-center gap-1'>
+            <CodeOutlined style={{ fontSize: 11 }} />
+            {fileLines} lines
+          </span>
+          <Tooltip title={t('Copy_Btn') || 'Copy'}>
+            <button
+              onClick={() => {
+                const codeText = codeLines
+                  .map(l => {
+                    const m = l.match(/^\s*(\d+)\s*[|:]\s?(.*)/);
+                    return m ? m[2] : l;
+                  })
+                  .join('\n');
+                navigator.clipboard?.writeText(codeText);
+                message.success(t('copy_to_clipboard_success'));
+              }}
+              className='text-gray-400 hover:text-teal-500 dark:hover:text-teal-400 transition-colors'
+            >
+              <CopyOutlined style={{ fontSize: 13 }} />
+            </button>
+          </Tooltip>
+        </span>
+      </div>
+      <div className='font-mono text-[13px] leading-[1.65] overflow-x-auto bg-white dark:bg-[#1a1d2e] max-h-[500px] overflow-auto'>
+        {codeLines.map((line, i) => {
+          const m = line.match(/^\s*(\d+)\s*[|:]\s?(.*)/);
+          const isEven = i % 2 === 1;
+          const rowBg = isEven ? 'bg-gray-50/40 dark:bg-white/[0.015]' : 'bg-white dark:bg-transparent';
+          if (m) {
+            return (
+              <div
+                key={i}
+                className={`flex ${rowBg} hover:bg-teal-50/60 dark:hover:bg-teal-900/15 transition-colors group`}
+              >
+                <span className='w-14 text-right pr-3 text-gray-300 dark:text-gray-600 select-none flex-shrink-0 border-r border-gray-100 dark:border-gray-700/40 group-hover:text-teal-500 dark:group-hover:text-teal-400 group-hover:bg-teal-50/50 dark:group-hover:bg-teal-900/20'>
+                  {m[1]}
+                </span>
+                <span className='text-gray-800 dark:text-gray-200 whitespace-pre pl-3 flex-1 min-w-0'>
+                  {m[2] || ' '}
+                </span>
+              </div>
+            );
+          }
+          return (
+            <div
+              key={i}
+              className={`flex ${rowBg} hover:bg-teal-50/60 dark:hover:bg-teal-900/15 transition-colors group`}
+            >
+              <span className='w-14 flex-shrink-0 border-r border-gray-100 dark:border-gray-700/40 group-hover:bg-teal-50/50 dark:group-hover:bg-teal-900/20' />
+              <span className='text-gray-800 dark:text-gray-200 whitespace-pre pl-3 flex-1 min-w-0'>{line || ' '}</span>
+            </div>
+          );
+        })}
+      </div>
+      {truncationIdx >= 0 && (
+        <div className='px-3 py-2 bg-amber-50/60 dark:bg-amber-900/10 border-t border-amber-100 dark:border-amber-800/40 text-xs text-amber-600 dark:text-amber-400 italic'>
+          {lines[truncationIdx]?.trim()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Render kb_grep output with file path headers and line numbers. Returns null if not parseable. */
+function renderKbGrep(text: string, t: any): React.ReactNode {
+  const lines = text.split('\n').filter(Boolean);
+  if (lines.length === 0) return null;
+  // Requires at least one matched-line pattern to treat as grep output
+  const hasMatch = lines.some(l => /^\s*\d+\s*[|:]\s?/.test(l));
+  if (!hasMatch) return null;
+
+  return (
+    <div className='rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-[#1a1d2e]'>
+      <div className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 border-b border-amber-100 dark:border-amber-800/40'>
+        <SearchOutlined style={{ color: '#FA8C16', fontSize: 14 }} />
+        <span className='text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider'>
+          {t('kb_grep') || 'Grep'}
+        </span>
+      </div>
+      <div className='font-mono text-[13px] leading-relaxed max-h-[500px] overflow-auto'>
+        {lines.map((line, i) => {
+          // File path header (ends with ':')
+          if (line.trim().endsWith(':') && !/^\s*\d+\s*[|:]/.test(line)) {
+            const fp = line.trim().replace(/:$/, '');
+            return (
+              <div
+                key={i}
+                className='flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold px-3 py-1.5 border-b border-gray-100 dark:border-gray-800 text-[12px] bg-gray-50/50 dark:bg-white/[0.02]'
+              >
+                <FileTextOutlined style={{ fontSize: 12 }} />
+                {fp}
+              </div>
+            );
+          }
+          const m = line.match(/^\s*(\d+)\s*[|:]\s?(.*)/);
+          if (m) {
+            return (
+              <div key={i} className='flex hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition-colors'>
+                <span className='w-12 text-right pr-2 text-amber-500 dark:text-amber-400 select-none flex-shrink-0 text-[12px] border-r border-gray-100 dark:border-gray-700/40'>
+                  {m[1]}
+                </span>
+                <span className='text-gray-800 dark:text-gray-200 whitespace-pre pl-3 flex-1 min-w-0'>{m[2]}</span>
+              </div>
+            );
+          }
+          return (
+            <div key={i} className='text-gray-700 dark:text-gray-300 whitespace-pre px-3 py-0.5'>
+              {line}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Render code graph tool output (kb_codegraph_explore / call_chain / class_hierarchy) */
+function renderKbCodeGraphOutput(action: string, text: string, _t: any): React.ReactNode {
+  const actionLabel = KB_ACTION_LABELS[action] || 'Code Graph';
+  const actionIcon = KB_ACTION_ICONS[action] || <ApartmentOutlined className='text-violet-500' />;
+
+  // Try to parse structured JSON output; fall back to plain text
+  let entries: { name: string; detail?: string; type?: string }[] = [];
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      entries = parsed.map((item: any) => ({
+        name: item.name || item.function_name || item.class_name || item.entity || String(item),
+        detail: item.detail || item.description || item.signature || item.docstring || '',
+        type: item.type || item.kind || item.relationship || '',
+      }));
+    } else if (parsed.results && Array.isArray(parsed.results)) {
+      entries = parsed.results.map((item: any) => ({
+        name: item.name || item.function_name || item.class_name || item.entity || String(item),
+        detail: item.detail || item.description || item.signature || item.docstring || '',
+        type: item.type || item.kind || item.relationship || '',
+      }));
+    }
+  } catch {
+    // Not JSON — split by lines
+    entries = text
+      .split('\n')
+      .filter(l => l.trim())
+      .map(line => ({ name: line.trim() }));
   }
 
   return (
-    <>
-      {output.output_type === 'code' && (
-        <CodePreview
-          code={String(content)}
-          language='python'
-          customStyle={{ background: '#0f172a', margin: 0, borderRadius: 8 }}
-        />
-      )}
-
-      {output.output_type === 'error' && (
-        <div className='rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400 font-mono whitespace-pre overflow-x-auto'>
-          {String(content)}
-        </div>
-      )}
-
-      {output.output_type === 'text' && (
-        <div className='rounded-lg bg-gray-900 px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
-          {String(content)}
-        </div>
-      )}
-
-      {output.output_type === 'markdown' && (
-        <div className='prose prose-sm dark:prose-invert max-w-none'>
-          <GPTVis components={markdownComponents} {...markdownPlugins}>
-            {preprocessLaTeX(fixSquishedTables(String(content)))}
-          </GPTVis>
-        </div>
-      )}
-
-      {output.output_type === 'table' && (
-        <Table
-          size='small'
-          pagination={{ pageSize: 10, showSizeChanger: true }}
-          columns={(content?.columns || []).map((col: string | { title: string; dataIndex: string }) =>
-            typeof col === 'string' ? { title: col, dataIndex: col, key: col, ellipsis: true } : col,
-          )}
-          dataSource={content?.rows || []}
-          rowKey={(row, idx) => String(row?.id ?? idx)}
-          scroll={{ x: 'max-content' }}
-          className='border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden'
-        />
-      )}
-
-      {output.output_type === 'chart' && (
-        <div className='h-72'>
-          <AdvancedChart
-            config={createChartConfig(content?.data || [], {
-              chartType: content?.chartType || 'line',
-              xField: content?.xField || 'x',
-              yField: content?.yField || 'y',
-              seriesField: content?.seriesField,
-              title: content?.title,
-              smooth: true,
-              height: 280,
-            })}
-          />
-        </div>
-      )}
-
-      {output.output_type === 'json' && (
-        <CodePreview
-          code={typeof content === 'string' ? content : JSON.stringify(content, null, 2)}
-          language='json'
-          customStyle={{ background: '#0f172a', margin: 0, borderRadius: 8 }}
-        />
-      )}
-
-      {output.output_type === 'html' && (
-        <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700'>
-          {content?.title && (
-            <div className='px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2'>
-              <FileTextOutlined className='text-blue-500 text-xs' />
-              <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>{content.title}</span>
+    <div className='rounded-lg border border-violet-200 dark:border-violet-800 overflow-hidden bg-white dark:bg-[#1a1d2e]'>
+      <div className='flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border-b border-violet-200 dark:border-violet-800'>
+        {React.cloneElement(actionIcon as React.ReactElement, { style: { fontSize: 14 } })}
+        <span className='text-xs font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wider'>
+          {actionLabel}
+        </span>
+        {entries.length > 0 && <span className='ml-auto text-[11px] text-gray-400'>{entries.length} results</span>}
+      </div>
+      <div className='font-mono text-[13px] leading-relaxed max-h-[400px] overflow-auto'>
+        {entries.length > 0 ? (
+          entries.map((entry, i) => (
+            <div
+              key={i}
+              className='flex items-start gap-2 py-1.5 px-3 hover:bg-violet-50/60 dark:hover:bg-violet-900/15 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0'
+            >
+              <ApartmentOutlined style={{ color: '#8B5CF6', fontSize: 12, marginTop: 3, flexShrink: 0 }} />
+              <div className='min-w-0 flex-1'>
+                <div className='text-gray-800 dark:text-gray-200 font-medium truncate'>{entry.name}</div>
+                {entry.type && (
+                  <span className='inline-block text-[11px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 ml-1'>
+                    {entry.type}
+                  </span>
+                )}
+                {entry.detail && (
+                  <div className='text-gray-500 dark:text-gray-400 text-[12px] mt-0.5 truncate'>{entry.detail}</div>
+                )}
+              </div>
             </div>
-          )}
-          <AutoHeightIframe
-            srcDoc={resolveHtmlImageUrls(
-              typeof content === 'string' ? content : content?.html || content?.content || String(content),
-            )}
-            title={content?.title}
-          />
-        </div>
-      )}
-
-      {output.output_type === 'image' && (
-        <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'>
-          <img
-            src={resolveImageUrl(
-              typeof content === 'string' ? content : content?.url || content?.src || String(content),
-            )}
-            alt='Generated chart'
-            className='w-full h-auto object-contain'
-            style={{ maxHeight: 600 }}
-          />
-        </div>
-      )}
-    </>
+          ))
+        ) : (
+          <div className='px-3 py-2 text-gray-500 dark:text-gray-400 text-sm'>{text}</div>
+        )}
+      </div>
+    </div>
   );
-});
+}
+
+function renderKbToolOutput(action: string, text: string, t: any): React.ReactNode | null {
+  if (action === 'kb_ls' || action === 'kb_glob') return renderKbFileList(text, t);
+  if (action === 'kb_cat') return renderKbCat(text, t);
+  if (action === 'kb_grep') return renderKbGrep(text, t);
+  // Code graph tools: render as structured markdown-like output
+  if (
+    action === 'kb_codegraph_explore' ||
+    action === 'kb_codegraph_call_chain' ||
+    action === 'kb_codegraph_class_hierarchy'
+  ) {
+    return renderKbCodeGraphOutput(action, text, t);
+  }
+  return null;
+}
+// ── end kb tool output rendering ────────────────────────────────────────────
+
+// Output Renderer Component
+const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number; action?: string }> = memo(
+  ({ output, index: _index, action }) => {
+    const { t } = useTranslation();
+    const content = output.content;
+
+    if (output.output_type === 'thought') {
+      return null; // Don't render thoughts
+    }
+
+    // kb tools return plain text — render with a structured viewer when possible
+    if (output.output_type === 'text' && action && KB_TOOLS.has(action)) {
+      const text = typeof content === 'string' ? content : String(content ?? '');
+      const rendered = renderKbToolOutput(action, text, t);
+      if (rendered) return rendered;
+    }
+
+    return (
+      <>
+        {output.output_type === 'code' && (
+          <CodePreview
+            code={String(content)}
+            language='python'
+            customStyle={{ background: '#0f172a', margin: 0, borderRadius: 8 }}
+          />
+        )}
+
+        {output.output_type === 'error' && (
+          <div className='rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-600 dark:text-red-400 font-mono whitespace-pre overflow-x-auto'>
+            {String(content)}
+          </div>
+        )}
+
+        {output.output_type === 'text' && (
+          <div className='rounded-lg bg-gray-900 px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
+            {String(content)}
+          </div>
+        )}
+
+        {output.output_type === 'markdown' && (
+          <div className='prose prose-sm dark:prose-invert max-w-none'>
+            <GPTVis components={markdownComponents} {...markdownPlugins}>
+              {preprocessLaTeX(fixSquishedTables(String(content)))}
+            </GPTVis>
+          </div>
+        )}
+
+        {output.output_type === 'table' && (
+          <Table
+            size='small'
+            pagination={{ pageSize: 10, showSizeChanger: true }}
+            columns={(content?.columns || []).map((col: string | { title: string; dataIndex: string }) =>
+              typeof col === 'string' ? { title: col, dataIndex: col, key: col, ellipsis: true } : col,
+            )}
+            dataSource={content?.rows || []}
+            rowKey={(row, idx) => String(row?.id ?? idx)}
+            scroll={{ x: 'max-content' }}
+            className='border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden'
+          />
+        )}
+
+        {output.output_type === 'chart' && (
+          <div className='h-72'>
+            <AdvancedChart
+              config={createChartConfig(content?.data || [], {
+                chartType: content?.chartType || 'line',
+                xField: content?.xField || 'x',
+                yField: content?.yField || 'y',
+                seriesField: content?.seriesField,
+                title: content?.title,
+                smooth: true,
+                height: 280,
+              })}
+            />
+          </div>
+        )}
+
+        {output.output_type === 'json' && (
+          <CodePreview
+            code={typeof content === 'string' ? content : JSON.stringify(content, null, 2)}
+            language='json'
+            customStyle={{ background: '#0f172a', margin: 0, borderRadius: 8 }}
+          />
+        )}
+
+        {output.output_type === 'html' && (
+          <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700'>
+            {content?.title && (
+              <div className='px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2'>
+                <FileTextOutlined className='text-blue-500 text-xs' />
+                <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>{content.title}</span>
+              </div>
+            )}
+            <AutoHeightIframe
+              srcDoc={resolveHtmlImageUrls(
+                typeof content === 'string' ? content : content?.html || content?.content || String(content),
+              )}
+              title={content?.title}
+            />
+          </div>
+        )}
+
+        {output.output_type === 'image' && (
+          <div className='rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'>
+            <img
+              src={resolveImageUrl(
+                typeof content === 'string' ? content : content?.url || content?.src || String(content),
+              )}
+              alt='Generated chart'
+              className='w-full h-auto object-contain'
+              style={{ maxHeight: 600 }}
+            />
+          </div>
+        )}
+      </>
+    );
+  },
+);
 
 OutputRenderer.displayName = 'OutputRenderer';
 
@@ -2474,12 +2810,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                     <div
                       className={classNames('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', {
                         'bg-emerald-50 dark:bg-emerald-900/30': activeStep.type === 'read' || activeStep.type === 'sql',
-                        'bg-amber-50 dark:bg-amber-900/30': activeStep.type === 'edit' || activeStep.type === 'write',
-                        'bg-purple-50 dark:bg-purple-900/30': activeStep.type === 'bash',
+                        'bg-amber-50 dark:bg-amber-900/30':
+                          activeStep.type === 'edit' || activeStep.type === 'write' || activeStep.type === 'question',
                         'bg-cyan-50 dark:bg-cyan-900/30': activeStep.type === 'grep' || activeStep.type === 'glob',
-                        'bg-blue-50 dark:bg-blue-900/30': activeStep.type === 'python',
-                        'bg-orange-50 dark:bg-orange-900/30': activeStep.type === 'html',
                         'bg-indigo-50 dark:bg-indigo-900/30': activeStep.type === 'task' || activeStep.type === 'skill',
+                        'bg-teal-50 dark:bg-teal-900/30': activeStep.type === 'kb',
+                        'bg-violet-50 dark:bg-violet-900/30': activeStep.type === 'code_graph',
                         'bg-gray-50 dark:bg-gray-800': activeStep.type === 'other',
                       })}
                     >
@@ -2727,6 +3063,54 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                               </div>
                             </div>
                           );
+                        })()) ||
+                      (activeStep.type === 'kb' &&
+                        activeStep.action &&
+                        KB_TOOLS.has(activeStep.action) &&
+                        (() => {
+                          const kbLabel = KB_ACTION_LABELS[activeStep.action!] || activeStep.action;
+                          const kbIcon = KB_ACTION_ICONS[activeStep.action!] || (
+                            <FolderOpenOutlined className='text-teal-500' />
+                          );
+                          // Parse action input params
+                          let params: Record<string, any> = {};
+                          if (activeStep.actionInput) {
+                            try {
+                              params =
+                                typeof activeStep.actionInput === 'string'
+                                  ? JSON.parse(activeStep.actionInput)
+                                  : activeStep.actionInput;
+                            } catch {
+                              params = {};
+                            }
+                          }
+                          const paramEntries = Object.entries(params).filter(([, v]) => v !== '' && v != null);
+                          return (
+                            <div className='rounded-xl border border-teal-200 dark:border-teal-800/40 overflow-hidden bg-white dark:bg-[#1a1b1e]'>
+                              <div className='flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/10 border-b border-teal-100 dark:border-teal-800/40'>
+                                <div className='flex-shrink-0 w-7 h-7 rounded-md bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center'>
+                                  {kbIcon}
+                                </div>
+                                <span className='text-sm font-semibold text-teal-700 dark:text-teal-400'>
+                                  {kbLabel}
+                                </span>
+                              </div>
+                              {paramEntries.length > 0 && (
+                                <div className='px-4 py-3 space-y-1.5'>
+                                  {paramEntries.map(([k, v]) => (
+                                    <div key={k} className='flex items-start gap-2 text-sm'>
+                                      <span className='text-[11px] font-mono text-gray-400 dark:text-gray-500 mt-0.5 min-w-[80px] flex-shrink-0'>
+                                        {k}:
+                                      </span>
+                                      <span className='font-mono text-gray-800 dark:text-gray-200 break-all'>
+                                        {typeof v === 'string' ? v : JSON.stringify(v)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
                         })()) || (
                         <div className='text-xs text-gray-500 dark:text-gray-400 font-mono whitespace-pre-wrap bg-gray-50 dark:bg-[#161719] rounded-lg px-3 py-2'>
                           {activeStep.detail}
@@ -2759,7 +3143,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                       ) : group.type === 'html-tabbed' ? (
                         <HtmlTabbedRenderer key={`html-tabbed-${gIdx}`} code={group.code} html={group.html} />
                       ) : (
-                        <OutputRenderer key={`output-${gIdx}`} output={group.output} index={gIdx} />
+                        <OutputRenderer
+                          key={`output-${gIdx}`}
+                          output={group.output}
+                          index={gIdx}
+                          action={activeStep?.action}
+                        />
                       );
                     })}
                   </div>

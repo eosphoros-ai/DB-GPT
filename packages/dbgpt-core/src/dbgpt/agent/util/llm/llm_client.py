@@ -164,6 +164,50 @@ class AIWrapper:
             else:
                 return None
 
+    async def generate_text(
+        self,
+        prompt: str,
+        llm_model: Optional[str] = None,
+        max_new_tokens: int = 2000,
+        temperature: float = 0.3,
+        conv_id: Optional[str] = None,
+    ) -> str:
+        """Generate text from a single prompt.
+
+        A thin convenience wrapper around :meth:`create` for simple text
+        generation use cases such as context summarization (Layer 3
+        compaction) where a full message list is unnecessary.
+
+        Args:
+            prompt: The user prompt to send to the model.
+            llm_model: Model name. Required — ``AIWrapper`` does not hold a
+                default model, so the caller (e.g. ``ContextManager``) must
+                pass the agent's model name.
+            max_new_tokens: Max tokens to generate.
+            temperature: Sampling temperature.
+            conv_id: Conversation id for tracing.
+
+        Returns:
+            The generated text. On failure returns an empty string (the
+            caller is expected to handle the empty-result case).
+        """
+        if not llm_model:
+            raise ValueError("llm_model is required for generate_text()")
+        messages = [{"role": "user", "content": prompt}]
+        try:
+            response = await self.create(
+                messages=messages,
+                llm_model=llm_model,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                stream_out=False,
+                conv_id=conv_id,
+            )
+        except LLMChatError:
+            logger.exception("generate_text: LLM call failed")
+            return ""
+        return response or ""
+
     def _get_span_metadata(self, payload: Dict) -> Dict:
         metadata = {k: v for k, v in payload.items()}
 

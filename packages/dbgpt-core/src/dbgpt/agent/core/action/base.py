@@ -63,6 +63,12 @@ class ActionOutput(BaseModel):
     # Memory fragments of current conversation, we can recover the conversation at any
     # time.
     memory_fragments: Optional[Dict[str, Any]] = None
+    # File path on disk where the full tool result was persisted when it
+    # exceeded the tool-result size threshold. When set, ``content`` holds a
+    # ``<persisted-output>`` preview block and the full output lives at this
+    # path (read back via the ``read_file`` tool). ``observations`` retains the
+    # full content for database persistence.
+    persisted_path: Optional[str] = None
 
     @model_validator(mode="before")
     @classmethod

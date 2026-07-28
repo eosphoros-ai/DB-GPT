@@ -79,7 +79,7 @@ def mount_routers(app: FastAPI):
     app.include_router(examples_router, prefix="/api", tags=["Examples"])
     app.include_router(agentic_data_api, prefix="/api", tags=["AgenticData"])
 
-    app.include_router(knowledge_router, tags=["Knowledge"])
+    app.include_router(knowledge_router, prefix="/api/v1", tags=["Knowledge"])
 
     from dbgpt_serve.agent.app.recommend_question.controller import (
         router as recommend_question_v1,

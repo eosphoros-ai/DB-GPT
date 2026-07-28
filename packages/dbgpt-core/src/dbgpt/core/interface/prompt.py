@@ -33,7 +33,6 @@ def _jinja2_formatter(template: str, **kwargs: Any) -> str:
         )
 
     env = SandboxedEnvironment()
-
     return env.from_string(template).render(**kwargs)
 
 

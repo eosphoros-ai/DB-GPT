@@ -526,8 +526,9 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             logger.info(f"Downloaded file to {local_file_path}")
             knowledge_content = local_file_path
         knowledge = None
+        domain_type = (space.domain_type or "normal").lower()
         if not space.domain_type or (
-            space.domain_type.lower() == BusinessFieldType.NORMAL.value.lower()
+            domain_type == BusinessFieldType.NORMAL.value.lower()
         ):
             knowledge = KnowledgeFactory.create(
                 datasource=knowledge_content,
@@ -576,7 +577,13 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 metadata={"doc": doc.doc_name},
             ):
                 from dbgpt.core.awel import BaseOperator
+                from dbgpt_serve.rag.domain.factory import DomainKnowledgeIndexFactory
 
+                domain_type = (space.domain_type or "normal").lower()
+                chunk_docs = None
+                vector_ids = None
+
+                # Check if there's a custom AWEL DAG for this domain type
                 dags = self.dag_manager.get_dags_by_tag(
                     TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE, space.domain_type
                 )
@@ -591,6 +598,49 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     )
                     doc.chunk_size = len(chunk_docs)
                     vector_ids = [chunk.chunk_id for chunk in chunk_docs]
+                elif domain_type != "normal" and knowledge is not None:
+                    # Use DomainKnowledgeIndex for non-normal domain types
+                    try:
+                        domain_index = DomainKnowledgeIndexFactory.create(domain_type)
+                        logger.info(
+                            f"Using DomainKnowledgeIndex for domain_type={domain_type}"
+                        )
+                        max_chunks_once_load = self.config.max_chunks_once_load
+                        max_threads = self.config.max_threads
+
+                        # ETL pipeline: extract → transform → load
+                        chunks = await domain_index.extract(knowledge, chunk_parameters)
+                        chunks = await domain_index.transform(chunks)
+                        chunks = await domain_index.load(
+                            chunks,
+                            vector_store=storage_connector,
+                            max_chunks_once_load=max_chunks_once_load,
+                            max_threads=max_threads,
+                        )
+                        chunk_docs = chunks
+                        doc.chunk_size = len(chunk_docs)
+                        vector_ids = [chunk.chunk_id for chunk in chunk_docs]
+                    except Exception as domain_err:
+                        logger.warning(
+                            f"DomainKnowledgeIndex failed for "
+                            f"domain_type={domain_type}, "
+                            f"falling back to EmbeddingAssembler: {domain_err}"
+                        )
+                        # Fallback to default EmbeddingAssembler
+                        max_chunks_once_load = self.config.max_chunks_once_load
+                        max_threads = self.config.max_threads
+                        assembler = await EmbeddingAssembler.aload_from_knowledge(
+                            knowledge=knowledge,
+                            index_store=storage_connector,
+                            chunk_parameters=chunk_parameters,
+                        )
+                        chunk_docs = assembler.get_chunks()
+                        doc.chunk_size = len(chunk_docs)
+                        vector_ids = await assembler.apersist(
+                            max_chunks_once_load=max_chunks_once_load,
+                            max_threads=max_threads,
+                            file_id=doc.id,
+                        )
                 else:
                     max_chunks_once_load = self.config.max_chunks_once_load
                     max_threads = self.config.max_threads
@@ -627,6 +677,10 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 for chunk_doc in chunk_docs
             ]
             self._chunk_dao.create_documents_chunks(chunk_entities)
+            # Build markdown heading graph if the space has KnowledgeGraph index
+            # method and the document is a markdown file. This runs after chunks
+            # are persisted so the graph builder can reconstruct file content.
+            await self._maybe_build_heading_graph(space, doc)
         except Exception as e:
             import traceback
 
@@ -636,6 +690,57 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             logger.error(f"document embedding, failed:{doc.doc_name}, {str(e)}")
             logger.error(f"Full traceback:\n{error_traceback}")
         return self._document_dao.update_knowledge_document(doc)
+
+    async def _maybe_build_heading_graph(self, space, doc) -> None:
+        """Build a markdown heading graph for the document if applicable.
+
+        Triggered automatically when:
+        - The knowledge space has "KnowledgeGraph" in its index_methods
+        - The document is a markdown file (.md / .markdown)
+
+        The graph is built by reconstructing the file content from its chunks
+        and extracting the heading hierarchy (H1 -> H2 -> H3). The result is
+        merged with any existing graph and persisted via the codegraph store.
+        Failures are logged but do not affect the document sync status.
+        """
+        try:
+            # 1. Resolve the space entity to read index_methods
+            space_entities = self._dao.get_knowledge_space(
+                KnowledgeSpaceEntity(name=space.name)
+            )
+            if not space_entities:
+                return
+            space_entity = space_entities[0]
+
+            # 2. Parse index_methods
+            index_methods = []
+            if space_entity.index_methods:
+                try:
+                    index_methods = json.loads(space_entity.index_methods)
+                except (json.JSONDecodeError, TypeError):
+                    index_methods = []
+            if "KnowledgeGraph" not in index_methods:
+                return
+
+            # 3. Check if the document is a markdown file
+            doc_name = (doc.doc_name or "").lower()
+            if not (doc_name.endswith(".md") or doc_name.endswith(".markdown")):
+                return
+
+            # 4. Build the heading graph from the document's chunks
+            from ..service.codegraph_build_service import (
+                build_code_graph_from_knowledge_space,
+            )
+
+            result = await build_code_graph_from_knowledge_space(space_entity.name)
+            if result:
+                logger.info(
+                    f"Built heading graph for {doc.doc_name}: "
+                    f"{result.get('vertices', 0)} vertices, "
+                    f"{result.get('edges', 0)} edges"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to build heading graph for {doc.doc_name}: {e}")
 
     def get_space_context(self, space_id):
         """get space contect

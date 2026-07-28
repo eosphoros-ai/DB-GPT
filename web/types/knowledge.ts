@@ -8,6 +8,7 @@ export interface ISpace {
   name: string;
   owner: string;
   vector_type: string;
+  index_methods?: string[];
   domain_type: string;
 }
 export type AddKnowledgeParams = {
@@ -16,6 +17,7 @@ export type AddKnowledgeParams = {
   owner: string;
   desc: string;
   domain_type: string;
+  index_methods?: string[];
 };
 
 export type BaseDocumentParams = {
@@ -208,3 +210,42 @@ export type IStorage = Array<{
   desc: string;
   domain_types: Array<{ name: string; desc: string }>;
 }>;
+
+export type KbFileEntry = {
+  name: string;
+  path: string;
+  is_dir: boolean;
+  file_type?: string;
+  language?: string;
+  doc_id?: number;
+  child_count?: number;
+};
+
+export type KbLsJsonResponse = {
+  path: string;
+  entries: KbFileEntry[];
+  total_files: number;
+  total_dirs: number;
+};
+
+export type KnowledgeSpaceStats = {
+  name: string;
+  domain_type: string | null;
+  vector_type: string | null;
+  index_methods: string[] | null;
+  desc: string | null;
+  document_count: number;
+  chunk_count: number;
+  sync_status: string | null;
+  sync_total_files: number | null;
+  sync_finished: number | null;
+  sync_running: number | null;
+  sync_failed: number | null;
+  sync_todo: number | null;
+  repo_url: string | null;
+  branch: string | null;
+  graph_vertex_count: number | null;
+  graph_edge_count: number | null;
+  graph_community_count: number | null;
+  graph_build_status: string | null;
+};
