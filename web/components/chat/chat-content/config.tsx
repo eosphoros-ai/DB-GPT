@@ -82,6 +82,11 @@ export function preprocessLaTeX(content: any): string {
   return content;
 }
 
+/**
+ * Citation markers are left as plain [1] [2] text in the markdown.
+ * OpenCodeSessionTurn attaches DOM-level hover tooltips after render.
+ */
+
 const codeComponents = {
   /**
    * @description
@@ -425,8 +430,12 @@ const extraComponents: MarkdownComponent = {
     if (children) {
       try {
         const referenceData = JSON.parse(children as string);
-        const references = referenceData.references;
-        return <ReferencesContent references={references} />;
+        // Normalize: backend sends array [{name, chunks}], but older code
+        // may wrap it as {knowledge: [...]}. Accept both.
+        const refs = Array.isArray(referenceData.references)
+          ? referenceData.references
+          : referenceData.references?.knowledge || [];
+        return <ReferencesContent references={refs} />;
       } catch {
         return null;
       }

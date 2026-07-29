@@ -50,7 +50,7 @@ def accurate_decimal(
                 new_col.append(
                     str(d.quantize(Decimal("1." + "0" * scale), rounding=ROUND_HALF_UP))
                 )
-            except Exception as e:
+            except Exception:
                 new_col.append(vs)
         out[k] = new_col
     return out

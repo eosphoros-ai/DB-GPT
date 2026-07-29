@@ -1,9 +1,11 @@
+import html
 import logging
 import os
 import shutil
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi.responses import HTMLResponse
 
 from dbgpt._private.config import Config
 from dbgpt.configs import TAG_KEY_KNOWLEDGE_FACTORY_DOMAIN_TYPE
@@ -284,12 +286,12 @@ def chunk_strategies():
                         if strategy in knowledge.support_chunk_strategy()
                         and knowledge.document_type() is not None
                     ],
-                    "type": set(
-                        [
+                    "type": list(
+                        {
                             knowledge.type().value
                             for knowledge in KnowledgeFactory.subclasses()
                             if strategy in knowledge.support_chunk_strategy()
-                        ]
+                        }
                     ),
                 }
                 for strategy in ChunkStrategy
@@ -379,6 +381,61 @@ def graph_vis(space_name: str, query_request: GraphVisRequest):
         )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"get graph vis error {e}")
+
+
+@router.get("/knowledge/{space_name}/codegraph/visualize")
+async def codegraph_visualize(space_name: str):
+    """Interactive HTML visualization of the code knowledge graph.
+
+    Returns a self-contained HTML page with vis-network force-directed graph.
+    Features: node coloring by type, community detection, search, click-to-inspect.
+    """
+    from dbgpt_serve.rag.tools.codegraph_tools import _load_graph
+
+    # space_name is a URL path param and flows into a filesystem join inside
+    # _load_graph → _get_graph_cache_dir. Reject path-traversal payloads up
+    # front (Binary/\\/..) rather than letting them build an out-of-tree path.
+    if (
+        not space_name
+        or "/" in space_name
+        or "\\" in space_name
+        or space_name
+        in (
+            ".",
+            "..",
+        )
+    ):
+        return HTMLResponse(
+            content="<html><body><h2>Invalid knowledge space name</h2></body></html>",
+            status_code=400,
+        )
+
+    graph, load_error = _load_graph(space_name)
+    if graph is None:
+        # Escape load_error before splicing into HTML — space_name is a
+        # user-controlled URL path param and the error message echoes it back,
+        # so an unescaped value is a reflected-XSS vector.
+        error_detail = f"<p>详情: {html.escape(load_error)}</p>" if load_error else ""
+        return HTMLResponse(
+            content="<html><body><h2>No code graph found</h2>"
+            "<p>请先构建代码图谱：创建知识库时启用代码图谱索引</p>"
+            f"{error_detail}</body></html>",
+            status_code=404,
+        )
+
+    try:
+        from dbgpt_ext.rag.graph_builder.codegraph_visualizer import codegraph_to_html
+
+        html_content = codegraph_to_html(graph, knowledge_id=space_name)
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        logger.error(f"codegraph_visualize error: {e}", exc_info=True)
+        # Escape the exception text to prevent reflected XSS via the error path.
+        return HTMLResponse(
+            content=f"<html><body><h2>Visualization Error</h2>"
+            f"<p>{html.escape(str(e))}</p></body></html>",
+            status_code=500,
+        )
 
 
 @router.post("/knowledge/{space_name}/document/delete")

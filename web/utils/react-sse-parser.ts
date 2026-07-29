@@ -66,12 +66,47 @@ export interface SSEContextStatusEvent {
   compact_layer?: string | null;
 }
 
+// ── Human-in-the-loop: question events ──────────────────────────────────────
+
+export interface QuestionOption {
+  label: string;
+  description: string;
+}
+
+export interface QuestionInfo {
+  question: string;
+  header: string;
+  options: QuestionOption[];
+  multiple?: boolean;
+  custom?: boolean;
+}
+
+export interface SSEQuestionAskedEvent {
+  type: 'question.asked';
+  request_id: string;
+  conv_id: string;
+  questions: QuestionInfo[];
+}
+
+export interface SSEQuestionRepliedEvent {
+  type: 'question.replied';
+  request_id: string;
+}
+
+export interface SSEQuestionRejectedEvent {
+  type: 'question.rejected';
+  request_id: string;
+}
+
 export type SSEEvent =
   | SSEStepStartEvent
   | SSEStepChunkEvent
   | SSEStepMetaEvent
   | SSEStepDoneEvent
   | SSEContextStatusEvent
+  | SSEQuestionAskedEvent
+  | SSEQuestionRepliedEvent
+  | SSEQuestionRejectedEvent
   | SSEFinalEvent
   | SSEDoneEvent;
 
@@ -108,6 +143,7 @@ export class ReActSSEState {
   private startTime: number;
   private endTime?: number;
   private _contextStatus: ContextStatus | null = null;
+  private _pendingQuestion: SSEQuestionAskedEvent | null = null;
 
   constructor() {
     this.startTime = Date.now();
@@ -133,6 +169,13 @@ export class ReActSSEState {
       case 'context.status':
         this.handleContextStatus(event);
         break;
+      case 'question.asked':
+        this._pendingQuestion = event;
+        break;
+      case 'question.replied':
+      case 'question.rejected':
+        this._pendingQuestion = null;
+        break;
       case 'final':
         this.handleFinal(event);
         break;
@@ -142,7 +185,21 @@ export class ReActSSEState {
     }
   }
 
+  /**
+   * Get the current pending question (null if none)
+   */
+  getPendingQuestion(): SSEQuestionAskedEvent | null {
+    return this._pendingQuestion;
+  }
+
   private handleStepStart(event: SSEStepStartEvent): void {
+    const existing = this.steps.get(event.id);
+    if (existing) {
+      // Backend sends two step.start for the same id ("思考中" + real title).
+      // Update tool name but don't duplicate in stepOrder.
+      existing.tool = this.mapTitleToTool(event.title);
+      return;
+    }
     const step: StepState = {
       id: event.id,
       tool: this.mapTitleToTool(event.title),
@@ -252,6 +309,11 @@ export class ReActSSEState {
     if (lowerTitle.includes('terminate')) return 'task';
     if (lowerTitle.includes('react round')) return 'task';
 
+    // Knowledge base tools — keep the action name as the tool type
+    if (lowerTitle.startsWith('kb_') || lowerTitle.startsWith('semantic_search')) {
+      return lowerTitle;
+    }
+
     return 'task'; // Default tool
   }
 
@@ -260,6 +322,12 @@ export class ReActSSEState {
    */
   private mapActionToTool(action: string): string {
     const lowerAction = action.toLowerCase();
+
+    // Knowledge base tools — keep the action name as the tool type so the
+    // frontend can render the real tool name (kb_ls, kb_grep, kb_cat, ...).
+    if (lowerAction.startsWith('kb_') || lowerAction === 'semantic_search') {
+      return lowerAction;
+    }
 
     // Map common actions to OpenCode tool types
     const actionMap: Record<string, string> = {

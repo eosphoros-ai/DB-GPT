@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -30,6 +30,13 @@ from dbgpt_app.openapi.api_view_model import (
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
+from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
+from .subagent.history import (
+    build_subagent_history_snapshot,
+    fail_running_subagent_history,
+    update_subagent_history,
+)
+
 router = APIRouter()
 CFG = Config()
 logger = logging.getLogger(__name__)
@@ -45,23 +52,6 @@ DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
-
-
-def _validate_upload_filename(filename: str) -> str:
-    if "\x00" in filename:
-        raise ValueError("filename must not contain null bytes")
-
-    posix_path = PurePosixPath(filename)
-    windows_path = PureWindowsPath(filename)
-    if (
-        posix_path.is_absolute()
-        or windows_path.is_absolute()
-        or len(posix_path.parts) != 1
-        or len(windows_path.parts) != 1
-        or filename in {"", ".", ".."}
-    ):
-        raise ValueError("filename must be a plain file name")
-    return filename
 
 
 async def _resolve_model_context_tokens(
@@ -561,11 +551,7 @@ async def skill_upload(
     user_dir = skills_dir / "user"
     user_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        filename = _validate_upload_filename(file.filename)
-    except ValueError as exc:
-        return Result.failed(code="E4002", msg=str(exc))
-
+    filename = file.filename
     suffix = Path(filename).suffix.lower()
     stem = Path(filename).stem
 
@@ -1013,7 +999,16 @@ def _shell_validation_error(code: str) -> Optional[str]:
 
 async def _react_agent_stream(
     dialogue: ConversationVo,
+    tool_mode: str = "full",
 ) -> AsyncGenerator[str, None]:
+    """Core ReAct agent streaming logic.
+
+    Args:
+        dialogue: Conversation parameters (user input, model, ext_info, etc.).
+        tool_mode: "full" (default) — all tools (skills, shell, sql, html, code, kb...).
+                   "knowledge" — only knowledge base tools + todowrite + terminate,
+                   optimized for pure knowledge-chat scenarios.
+    """
     import asyncio
 
     from dbgpt.agent import AgentContext, AgentMemory, AgentMessage
@@ -1024,14 +1019,12 @@ async def _react_agent_stream(
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
     from dbgpt.agent.expand.react_agent import ReActAgent
-    from dbgpt.agent.resource import ToolPack, tool
-    from dbgpt.agent.resource.base import AgentResource, ResourceType
+    from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
     from dbgpt.agent.util.react_parser import ReActOutputParser
     from dbgpt.core import StorageConversation
     from dbgpt.model.cluster.client import DefaultLLMClient
-    from dbgpt.util.code.server import get_code_server
     from dbgpt_serve.agent.agents.db_gpts_memory import MetaDbGptsMessageMemory
     from dbgpt_serve.conversation.serve import Serve as ConversationServe
 
@@ -1057,6 +1050,32 @@ async def _react_agent_stream(
 
     # Connector selection (Task C): only inject user-selected connectors.
     connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
+
+    def _has_code_graph(knowledge_space_id: str) -> bool:
+        """Check if the knowledge space has a built code graph index.
+
+        Used to conditionally expose codegraph tools (kb_codegraph_*) to the
+        agent. Returns True only when the graph meta record exists and has a
+        non-zero vertex count.
+        """
+        if not knowledge_space_id:
+            return False
+        try:
+            from dbgpt_serve.rag.models.code_graph_db import CodeGraphMetaDao
+            from dbgpt_serve.rag.tools.kb_file_tools import _resolve_space_name
+
+            space_name = _resolve_space_name(knowledge_space_id)
+            meta = CodeGraphMetaDao().get_by_knowledge_id(space_name)
+            return bool(meta and (meta.vertex_count or 0) > 0)
+        except Exception as e:
+            logger.warning(
+                f"Failed to check code graph status for {knowledge_space_id}: {e}"
+            )
+            return False
+
+    code_graph_available = (
+        _has_code_graph(knowledge_space) if knowledge_space else False
+    )
 
     def build_step(title: str, detail: str, phase: str = None):
         nonlocal step
@@ -1269,11 +1288,25 @@ async def _react_agent_stream(
                 system_app=CFG.SYSTEM_APP,
             )
             knowledge_resources.append(knowledge_resource)
+            codegraph_tools_desc = (
+                """
+  - kb_codegraph_explore: Query code structure (classes, call chains, inheritance)
+  - kb_codegraph_call_chain: Trace who calls / is called by a function
+  - kb_codegraph_class_hierarchy: Trace class inheritance and implementations
+"""
+                if code_graph_available
+                else ""
+            )
             knowledge_context = f"""
 ## Knowledge Base
 - Knowledge space: {knowledge_resource.retriever_name or knowledge_space}
 - Description: {knowledge_resource.retriever_desc or "Knowledge retrieval available"}
-- You can use the 'knowledge_retrieve' tool to search this knowledge base.
+- Available tools:
+  - kb_ls: List files and directories in the knowledge base
+  - kb_glob: Search files by name or glob pattern
+  - kb_grep: Search file contents by keyword (prefer for exact matches)
+  - kb_cat: Read the content of a specific file
+  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}
 """
             logger.info(
                 f"Loaded knowledge space resource: {knowledge_space} "
@@ -1502,6 +1535,8 @@ async def _react_agent_stream(
 
     @tool(description="Execute quick analysis on uploaded Excel/CSV file.")
     async def execute_analysis() -> str:
+        from dbgpt.util.code.server import get_code_server
+
         matched = react_state.get("matched")
         if not react_state.get("file_path"):
             return json.dumps(
@@ -1593,6 +1628,8 @@ print(json.dumps(summary, ensure_ascii=False))
 
     @tool(description="Resolve required tools for the selected skill.")
     def load_tools() -> str:
+        from dbgpt.agent.resource.base import AgentResource, ResourceType
+
         matched = react_state.get("matched")
         rm = get_resource_manager(CFG.SYSTEM_APP)
         required_tools = matched.metadata.required_tools if matched else []
@@ -1632,6 +1669,8 @@ print(json.dumps(summary, ensure_ascii=False))
 
     @tool(description="Execute a tool by name with JSON args.")
     async def execute_tool(tool_name: str, args: dict) -> str:
+        from dbgpt.agent.resource.base import AgentResource, ResourceType
+
         try:
             from dbgpt.agent.resource.connector.confirmation import (
                 _PENDING_CONFIRMATIONS,
@@ -1790,379 +1829,162 @@ print(json.dumps(summary, ensure_ascii=False))
                 ensure_ascii=False,
             )
 
-        resource = knowledge_resources[0]
-        try:
-            chunks = await resource.retrieve(query)
-            if chunks:
-                content = "\n".join(
-                    [f"[{i + 1}] {chunk.content}" for i, chunk in enumerate(chunks[:5])]
-                )
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {
-                                "output_type": "text",
-                                "content": (
-                                    f"Retrieved {len(chunks)} relevant documents"
-                                ),
-                            },
-                            {"output_type": "markdown", "content": content},
-                        ]
-                    },
-                    ensure_ascii=False,
-                )
-            else:
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {
-                                "output_type": "text",
-                                "content": "No relevant information found",
-                            }
-                        ]
-                    },
-                    ensure_ascii=False,
-                )
-        except Exception as e:
-            return json.dumps(
-                {
-                    "chunks": [
-                        {
-                            "output_type": "text",
-                            "content": f"Knowledge retrieval failed: {str(e)}",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
-
-    @tool(
-        description=(
-            "对用户选择的数据库执行 SQL 查询（仅支持 SELECT）。"
-            '参数: {"sql": "SELECT 语句"}'
-        )
+    # ── Import built-in tools from tools/ directory ──
+    from dbgpt_app.openapi.api_v1.tools import (
+        make_code_interpreter,
+        make_execute_analysis,
+        make_execute_skill_script_file,
+        make_execute_tool,
+        make_html_interpreter,
+        make_kb_tools,
+        make_knowledge_retrieve,
+        make_load_file,
+        make_load_skill,
+        make_load_tools,
+        make_question,
+        make_read_file,
+        make_shell_interpreter,
+        make_sql_query,
+        make_todowrite,
     )
-    def sql_query(sql: str) -> str:
-        """Execute a read-only SQL query against the selected database."""
-        if database_connector is None:
-            return json.dumps(
-                {
-                    "chunks": [
-                        {
-                            "output_type": "text",
-                            "content": "未选择数据库，请先在左侧面板选择一个数据源。",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
+    # ── Build tool instances via factory functions ──────────────────────────
+    # (Inline @tool definitions have been moved to tools/ directory.)
+    # Local helper aliases used by the SSE loop are defined below.
 
-        sql_stripped = sql.strip().rstrip(";")
-        sql_upper = sql_stripped.upper().lstrip()
-        forbidden = [
-            "INSERT",
-            "UPDATE",
-            "DELETE",
-            "DROP",
-            "ALTER",
-            "TRUNCATE",
-            "CREATE",
-            "GRANT",
-            "REVOKE",
-        ]
-        for kw in forbidden:
-            if sql_upper.startswith(kw):
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {
-                                "output_type": "text",
-                                "content": (
-                                    f"安全限制: 不允许执行 {kw} 语句，"
-                                    f"仅支持 SELECT 查询。"
-                                ),
-                            }
-                        ]
-                    },
-                    ensure_ascii=False,
+    # ── Stream queue (created early so question tool can use it) ────────
+    stream_queue: asyncio.Queue = asyncio.Queue()
+
+    async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
+        await stream_queue.put({"type": event_type, **payload})
+
+    # ── Build tool instances from tools/ directory ───────────────────────
+    _todo_list: List[Dict[str, str]] = []
+    # Reuse one visible plan card across all todowrite updates in this round.
+    # The mutable single-item list acts as a closure cell.
+    _todo_step_holder: List[str] = []
+    load_skill_tool = make_load_skill(react_state)
+    load_file_tool = make_load_file(react_state)
+    execute_analysis_tool = make_execute_analysis(react_state)
+    load_tools_tool = make_load_tools(react_state)
+    execute_tool_tool = make_execute_tool(react_state)
+    # Knowledge tools: use kb_tools (kb_ls, kb_glob, kb_grep, kb_cat, semantic_search)
+    # when a knowledge space is connected, otherwise fall back to knowledge_retrieve
+    if knowledge_space:
+        kb_tool_list = make_kb_tools(knowledge_space)
+        # Filter out codegraph tools when the space has no built code graph,
+        # so the agent never sees tools it cannot use successfully.
+        # @tool decorator wraps the function; the tool name lives on `._tool.name`
+        # (and `.__name__` via functools.wraps).
+        if not code_graph_available:
+            kb_tool_list = [
+                t
+                for t in kb_tool_list
+                if not getattr(getattr(t, "_tool", t), "name", "").startswith(
+                    "kb_codegraph"
                 )
+            ]
+    else:
+        # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
+        kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
+    sql_query_tool = make_sql_query(react_state, database_connector)
+    code_interpreter_tool = make_code_interpreter(react_state)
+    shell_interpreter_tool = make_shell_interpreter(react_state)
+    html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
+    todowrite_tool = make_todowrite(_todo_list, stream_callback)
+    question_tool = make_question(react_state, stream_callback)
+    # read_file lets the agent read back persisted tool results / snapshots
+    # from disk when a <persisted-output> block references a file path.
+    read_file_tool = make_read_file(react_state)
+    # Keep local aliases for backward compatibility (SSE loop references these names)
+    execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
 
-        try:
-            result = database_connector.run(sql_stripped)
-            if not result:
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {"output_type": "text", "content": "查询返回空结果。"}
-                        ]
-                    },
-                    ensure_ascii=False,
-                )
+    _todo_action_history: Dict[int, List[str]] = {}
 
-            # result[0] = column names, result[1:] = data rows
-            columns = result[0]
-            col_names = [str(c[0]) if isinstance(c, tuple) else str(c) for c in columns]
-            rows = result[1:]
-
-            # Build markdown table
-            header = "| " + " | ".join(col_names) + " |"
-            separator = "| " + " | ".join(["---"] * len(col_names)) + " |"
-            md_rows = []
-            for row in rows[:50]:
-                md_rows.append("| " + " | ".join(str(v) for v in row) + " |")
-            table = "\n".join([header, separator] + md_rows)
-            if len(rows) > 50:
-                table += f"\n\n（仅显示前 50 行，共 {len(rows)} 行）"
-
-            return json.dumps(
-                {"chunks": [{"output_type": "markdown", "content": table}]},
-                ensure_ascii=False,
-            )
-        except Exception as e:
-            return json.dumps(
-                {
-                    "chunks": [
-                        {
-                            "output_type": "text",
-                            "content": f"SQL 执行失败: {str(e)}",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
-
-    def _try_repair_truncated_code(raw_code: str) -> Optional[str]:
-        """Attempt to fix code that was truncated by the LLM's token limit.
-
-        Common symptoms: unterminated string literals, unclosed brackets/parens.
-        Strategy:
-          1. Remove the last (likely incomplete) logical line.
-          2. Close any remaining open brackets / parentheses.
-          3. Re-compile. If it passes, return the repaired code.
-        Returns None if repair is not possible.
-        """
-
-        lines = raw_code.split("\n")
-        # Try progressively removing trailing lines (up to 10) to find a
-        # clean cut-off point.
-        for trim in range(1, min(11, len(lines))):
-            candidate_lines = lines[: len(lines) - trim]
-            if not candidate_lines:
-                continue
-            candidate = "\n".join(candidate_lines)
-
-            # Strip any trailing incomplete string by trying to tokenize
-            # and removing broken tail tokens.
-            # Close unmatched brackets/parens/braces
-            open_chars = {"(": ")", "[": "]", "{": "}"}
-            close_chars = set(open_chars.values())
-            stack: list = []
-            for ch in candidate:
-                if ch in open_chars:
-                    stack.append(open_chars[ch])
-                elif ch in close_chars:
-                    if stack and stack[-1] == ch:
-                        stack.pop()
-
-            # Append closing chars in reverse order
-            if stack:
-                candidate += "\n" + "".join(reversed(stack))
-
-            try:
-                compile(candidate, "<repair>", "exec")
-                return candidate
-            except SyntaxError:
-                continue
+    def _active_todo_index() -> Optional[int]:
+        for idx, item in enumerate(_todo_list):
+            if item.get("status") == "in_progress":
+                return idx
         return None
 
-    @tool(
-        description="Execute Python code for data analysis and computation. "
-        "Supports pandas, numpy, matplotlib, json, os, etc. "
-        "Use this tool when you need to run Python code to process data, "
-        "generate charts, or perform calculations. "
-        'Parameters: {{"code": "python code string"}}'
-    )
-    async def code_interpreter(code: str) -> str:
-        """Execute arbitrary Python code and return stdout/stderr.
+    def _normalize_text(value: Optional[str]) -> str:
+        return (value or "").strip().lower()
 
-        Runs in a subprocess using the project's Python interpreter,
-        so all installed packages (pandas, numpy, etc.) are available.
-        CRITICAL: Each call is completely independent — variables do NOT
-        persist between calls. Every code snippet MUST include all necessary
-        data loading (e.g. df = pd.read_csv(FILE_PATH)) and processing.
-        Never assume df or any other variable already exists.
-        Always print() results you want to see in the output.
-        """
-        import asyncio
-        import shutil
-        import sys
-        import uuid
-
-        from dbgpt.configs.model_config import PILOT_PATH, STATIC_MESSAGE_IMG_PATH
-
-        if not code or not code.strip():
-            return json.dumps(
-                {
-                    "chunks": [
-                        {
-                            "output_type": "text",
-                            "content": "No code provided",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
-
-        # Use persistent work dir under pilot/tmp/{conv_id} so files
-        # survive across calls and can be referenced later (e.g. in HTML).
-        cid = react_state.get("conv_id") or "default"
-        work_dir = os.path.join(PILOT_PATH, "tmp", cid)
-        os.makedirs(work_dir, exist_ok=True)
-
-        # Collect image files that existed BEFORE this run
-        IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
-        pre_existing_images: set = set()
-        for root, _dirs, files in os.walk(work_dir):
-            for f in files:
-                ext = os.path.splitext(f)[1].lower()
-                if ext in IMAGE_EXTS:
-                    pre_existing_images.add(os.path.join(root, f))
-
-        preamble_lines = [
-            "import json",
-            "import os",
-            "import pandas as pd",
-            "import numpy as np",
-            f'PLOT_DIR = r"{work_dir}"',
-            "os.makedirs(PLOT_DIR, exist_ok=True)",
+    def _is_report_like(text: str) -> bool:
+        keywords = [
+            "report",
+            "html",
+            "dashboard",
+            "visual",
+            "visualization",
+            "图表",
+            "报告",
+            "报表",
+            "可视化",
+            "渲染",
+            "展示",
         ]
-        fp = react_state.get("file_path")
-        if fp:
-            preamble_lines.append(f'FILE_PATH = r"{fp}"')
-        preamble = "\n".join(preamble_lines) + "\n"
-        full_code = preamble + code
+        return any(keyword in text for keyword in keywords)
 
-        try:
-            compile(full_code, "<code_interpreter>", "exec")
-        except SyntaxError as se:
-            # Attempt auto-repair for truncated code (common with long LLM
-            # outputs that hit the token limit).
-            repaired = _try_repair_truncated_code(full_code)
-            if repaired is not None:
-                logger.warning(
-                    "code_interpreter: auto-repaired truncated code "
-                    f"(original SyntaxError: {se.msg} line {se.lineno})"
-                )
-                full_code = repaired
-                # Strip the preamble back out for the "code" display chunk
-                code = full_code[len(preamble) :]
-            else:
-                error_msg = (
-                    f"SyntaxError before execution: {se.msg} "
-                    f"(line {se.lineno})\n"
-                    "Please regenerate complete, syntactically valid Python "
-                    "code. Keep code under 80 lines and split long tasks "
-                    "into multiple code_interpreter calls."
-                )
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {"output_type": "code", "content": code.strip()},
-                            {"output_type": "text", "content": error_msg},
-                        ]
-                    },
-                    ensure_ascii=False,
-                )
+    def should_advance_todo(
+        action_name: Optional[str],
+        thought: Optional[str] = None,
+        observation_text: Optional[str] = None,
+    ) -> bool:
+        """Heuristically decide whether the current todo is actually complete."""
+        if not _todo_list:
+            return False
 
-        try:
-            tmp_path = os.path.join(work_dir, "_run.py")
-            with open(tmp_path, "w", encoding="utf-8") as tmp:
-                tmp.write(full_code)
+        active_idx = _active_todo_index()
+        if active_idx is None:
+            return False
 
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable,
-                tmp_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=work_dir,
-            )
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
-            output_text = stdout.decode("utf-8", errors="replace")
-            error_text = stderr.decode("utf-8", errors="replace")
+        action_lower = _normalize_text(action_name)
+        thought_lower = _normalize_text(thought)
+        observation_lower = _normalize_text(observation_text)
+        current_todo = _normalize_text(_todo_list[active_idx].get("content"))
+        next_todo = (
+            _normalize_text(_todo_list[active_idx + 1].get("content"))
+            if active_idx + 1 < len(_todo_list)
+            else ""
+        )
 
-            if proc.returncode != 0 and error_text:
-                output_text = (
-                    output_text + "\n[ERROR]\n" + error_text
-                    if output_text
-                    else error_text
-                )
-        except asyncio.TimeoutError:
-            output_text = "Execution timed out (60s limit)"
-        except Exception as e:
-            output_text = f"Execution error: {e}"
+        history = _todo_action_history.setdefault(active_idx, [])
+        if action_lower:
+            history.append(action_lower)
 
-        chunks: List[Dict[str, Any]] = [
-            {"output_type": "code", "content": code.strip()},
+        transition_markers = [
+            "next step",
+            "now i need",
+            "now i should",
+            "now let me",
+            "现在需要",
+            "下一步",
+            "接下来",
+            "然后",
+            "接着",
+            "接下来我将",
         ]
-        if output_text.strip():
-            clean_output = output_text.strip()
-            max_out_len = 2000
-            if len(clean_output) > max_out_len:
-                truncation_notice = (
-                    f"\n\n... [Output truncated, length: {len(clean_output)} chars."
-                    f" Only showing first {max_out_len} chars."
-                    f" If you generated HTML, the file is saved.]"
-                )
-                clean_output = clean_output[:max_out_len] + truncation_notice
-            chunks.append({"output_type": "text", "content": clean_output})
-        else:
-            chunks.append(
-                {
-                    "output_type": "text",
-                    "content": "(no output — add print() to see results)",
-                }
-            )
+        if next_todo and any(marker in thought_lower for marker in transition_markers):
+            if any(token and token in thought_lower for token in next_todo.split()):
+                return True
 
-        # Scan work_dir recursively for NEW image files generated by this run
-        try:
-            os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
-            for root, _dirs, files in os.walk(work_dir):
-                for fname in files:
-                    ext = os.path.splitext(fname)[1].lower()
-                    full_path = os.path.join(root, fname)
-                    if ext in IMAGE_EXTS and full_path not in pre_existing_images:
-                        unique_name = f"{uuid.uuid4().hex[:8]}_{fname}"
-                        dest = os.path.join(STATIC_MESSAGE_IMG_PATH, unique_name)
-                        shutil.copy2(full_path, dest)
-                        img_url = f"/images/{unique_name}"
-                        chunks.append(
-                            {
-                                "output_type": "image",
-                                "content": img_url,
-                            }
-                        )
-                        # Track generated images in react_state for
-                        # html_interpreter to reference later
-                        react_state.setdefault("generated_images", []).append(img_url)
-        except Exception:
-            pass
+        if action_lower == "html_interpreter":
+            return True
 
-        # Clean up the temp script file but keep work_dir for persistence
-        try:
-            script_path = os.path.join(work_dir, "_run.py")
-            if os.path.exists(script_path):
-                os.remove(script_path)
-        except Exception:
-            pass
+        if action_lower in {
+            "load_skill",
+            "execute_skill_script",
+            "execute_skill_script_file",
+        }:
+            if next_todo and next_todo in thought_lower:
+                return True
+            if _is_report_like(next_todo) and _is_report_like(thought_lower):
+                return True
 
-        # Append a summary of ALL generated images so far, so the LLM
-        # has a clear reference when generating HTML later.
-        all_images = react_state.get("generated_images", [])
-        if all_images:
-            img_summary = "已生成的图片URL（在生成HTML时请使用这些URL）:\n" + "\n".join(
-                f"  - {url}" for url in all_images
-            )
-            chunks.append({"output_type": "text", "content": img_summary})
+        if action_lower == "sql_query":
+            sql_calls = sum(1 for item in history if item == "sql_query")
+            if sql_calls < 3:
+                return False
 
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
@@ -3213,6 +3035,88 @@ print(json.dumps(summary, ensure_ascii=False))
 
         return list(_todo_list) if changed else None
 
+    llm_client = DefaultLLMClient(
+        CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create(),
+        auto_convert_message=True,
+    )
+    if dialogue.model_name:
+        llm_config = LLMConfig(
+            llm_client=llm_client,
+            llm_strategy=LLMStrategyType.Priority,
+            strategy_context=json.dumps([dialogue.model_name]),
+        )
+    else:
+        llm_config = LLMConfig(llm_client=llm_client)
+
+    conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    react_state["conv_id"] = conv_id
+    if conv_id in REACT_AGENT_MEMORY_CACHE:
+        gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
+    else:
+        gpt_memory = GptsMemory(
+            plans_memory=DefaultGptsPlansMemory(),
+            message_memory=MetaDbGptsMessageMemory(),
+        )
+        gpt_memory.init(conv_id, enable_vis_message=False)
+        REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
+    agent_memory = AgentMemory(gpts_memory=gpt_memory)
+
+    conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+    storage_conv = StorageConversation(
+        conv_uid=conv_id,
+        chat_mode=dialogue.chat_mode or "chat_react_agent",
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        summary=dialogue.user_input,
+        app_code=dialogue.app_code,
+        conv_storage=conv_serve.conv_storage,
+        message_storage=conv_serve.message_storage,
+    )
+    storage_conv.save_to_storage()
+    storage_conv.start_new_round()
+    storage_conv.add_user_message(user_input)
+    context = AgentContext(
+        conv_id=conv_id,
+        gpts_app_code="react_agent",
+        gpts_app_name="ReAct",
+        language="zh",
+        temperature=dialogue.temperature or 0.2,
+        enable_context_management=True,
+    )
+
+    file_context = ""
+    if file_path:
+        file_context = f"""
+## User Uploaded File
+- File path: {file_path}
+- Analyze this file if needed for the user's request.
+"""
+
+    skill_prompt_context = ""
+    execution_instruction = ""
+    if pre_matched_skill and react_state.get("skill_prompt"):
+        skill_template = react_state["skill_prompt"]
+        skill_text = (
+            skill_template.template
+            if hasattr(skill_template, "template")
+            else str(skill_template)
+        )
+        skill_prompt_context = f"""
+## 已加载技能指令（{pre_matched_skill.metadata.name}）
+以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
+
+{skill_text}
+"""
+        execution_instruction = f"""
+## 执行要求
+1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
+2. 你必须严格按照上述技能指令的步骤执行
+3. 阅读技能指令，理解每一步需要调用的工具
+4. 按顺序执行工具调用，完成技能目标
+"""
+
     # Build a hint listing all images currently available in
     # STATIC_MESSAGE_IMG_PATH so the LLM can reference them correctly in
     # html_interpreter.
@@ -3227,6 +3131,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
     # Inject connector tools — only the ones the user explicitly selected.
     connector_tool_extras: List[Any] = []
+    _connector_manager = None
     try:
         from dbgpt.agent.resource.connector.manager import (
             ConnectorManager as _ConnectorManager,
@@ -3253,6 +3158,35 @@ print(json.dumps(summary, ensure_ascii=False))
                 )
     except Exception:
         pass  # graceful degradation — connector tools are optional
+
+    # Parallel sub-agent dispatch is exposed only in the full-tool branch
+    # below. It shares the main stream queue so child lifecycle events and
+    # question events use the same ordered SSE channel.
+    _max_parallel_subagents = 3
+    try:
+        _app_cfg = CFG.SYSTEM_APP.config.configs.get("app_config")
+        _web_cfg = getattr(getattr(_app_cfg, "service", None), "web", None)
+        _agent_ctx = getattr(_web_cfg, "agent_context", None)
+        _cfg_val = getattr(_agent_ctx, "max_parallel_subagents", None)
+        if isinstance(_cfg_val, int) and _cfg_val > 0:
+            _max_parallel_subagents = _cfg_val
+    except Exception:
+        logger.debug("Failed to read max_parallel_subagents; using default 3")
+
+    async def _emit_subagent_event(payload: Dict[str, Any]) -> None:
+        await stream_queue.put(payload)
+
+    dispatch_parallel_tasks = make_dispatch_tool(
+        parent_conv_id=conv_id,
+        llm_client=llm_client,
+        sub_model_name=dialogue.model_name,
+        database_connector=database_connector,
+        knowledge_resources=knowledge_resources,
+        connector_tool_extras=connector_tool_extras,
+        connector_manager=_connector_manager,
+        emit_event=_emit_subagent_event,
+        max_parallel=_max_parallel_subagents,
+    )
 
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
@@ -3352,7 +3286,13 @@ Parameters: {{"sql": "SELECT statement"}}
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
 The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
-8. **terminate**: Return the final answer when the task is completed. Action Input
+8. **question**: Ask the user a question and wait for their response. Use this tool
+   when you need user input, clarification, or a decision to proceed. The tool blocks
+   until the user answers.
+   Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
+   {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
+   multiple selections. The tool returns the user's selected answers.
+9. **terminate**: Return the final answer when the task is completed. Action Input
 must be {{"result": "your final answer content"}}.
 
 ## Task Management
@@ -3390,22 +3330,45 @@ Action: The selected tool name (must be one of the tools listed above)
 Action Input: The JSON format of tool parameters
 """.strip()
 
-        tool_pack = ToolPack(
-            [
-                execute_skill_script,
-                get_skill_resource,
-                execute_skill_script_file,
-                shell_interpreter,
-                html_interpreter,
-                sql_query,
-                todowrite,
-                Terminate(),
-            ]
-            + business_tools
-            + connector_tool_extras
-        )
+        if tool_mode == "knowledge":
+            # Knowledge-chat mode: only kb tools + todowrite + terminate.
+            # No skill/shell/sql/html/code tools to keep the agent focused.
+            tool_pack = ToolPack(
+                [todowrite_tool, question_tool, Terminate()]
+                + business_tools
+                + connector_tool_extras
+            )
+        else:
+            tool_pack = ToolPack(
+                [
+                    execute_skill_script,
+                    get_skill_resource,
+                    execute_skill_script_file_tool,
+                    shell_interpreter_tool,
+                    html_interpreter_tool,
+                    sql_query_tool,
+                    todowrite_tool,
+                    question_tool,
+                    Terminate(),
+                ]
+                + business_tools
+                + connector_tool_extras
+            )
     else:
         # Full prompt with all tools when no skill is pre-selected
+        codegraph_section = (
+            "13.1. **kb_codegraph_explore**: Query the code knowledge graph for "
+            "structural info (classes, call chains, inheritance).\n"
+            'Parameters: {"query": "class/function name or \'who calls X\'"}\n'
+            "13.2. **kb_codegraph_call_chain**: Trace callers/callees of a function.\n"
+            'Parameters: {"function_name": "function name", "depth": 2, '
+            '"direction": "callers or callees"}\n'
+            "13.3. **kb_codegraph_class_hierarchy**: Trace class inheritance and "
+            "implementations.\n"
+            'Parameters: {"class_name": "class or interface name"}\n'
+            if code_graph_available
+            else ""
+        )
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
@@ -3434,6 +3397,15 @@ a structured task plan BEFORE starting work. This helps users track your progres
 - Mark exactly ONE task as `in_progress` at a time.
 - Mark tasks `completed` immediately after finishing each one.
 - Do NOT use todowrite for simple single-step tasks.
+- Parallel exception: when the task contains 2 or more mutually independent
+  subtasks eligible for `dispatch_parallel_tasks`, use `todowrite` even when
+  the overall task has fewer than 3 steps.
+- After splitting tasks with `todowrite`, delegate independent items with no
+  ordering dependency to `dispatch_parallel_tasks` (one sub-agent per item).
+  `todowrite` decomposes and tracks work; `dispatch_parallel_tasks` only executes
+  already-split items.
+- The "exactly one in_progress" rule controls the visible todo state; it does
+  not prevent dispatching other independent pending items in the same batch.
 
 CRITICAL: You MUST call `todowrite` to update the task list at EVERY transition:
 1. BEFORE starting a task: mark it `in_progress` (call todowrite)
@@ -3496,14 +3468,22 @@ Parameters: {{"code": "python code string"}}
 7. **load_file**: Load uploaded file info. Parameters: none.
 8. **execute_analysis**: Execute quick analysis on uploaded Excel/CSV file.
 Parameters: none.
-9. **knowledge_retrieve**: Retrieve relevant info from knowledge base.
-Parameters: {{"query": "search query"}}
-10. **sql_query**: Execute a read-only SQL query against the selected database.
+9. **kb_ls**: List files and directories in the knowledge base.
+Parameters: {{"path": "directory path (optional)"}}
+10. **kb_glob**: Search files by name or glob pattern in the knowledge base.
+Parameters: {{"pattern": "file name keyword or glob pattern"}}
+11. **kb_grep**: Search file contents by keyword in the knowledge base. Prefer for exact matches.
+Parameters: {{"query": "search keyword", "path": "directory filter (optional)", "file_pattern": "file pattern like *.py (optional)"}}
+12. **kb_cat**: Read the content of a specific file in the knowledge base.
+Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
+13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
+Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
+{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
-11. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
-12. **execute_tool**: Execute a tool by name with JSON args.
+15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
+16. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
-13. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
+17. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
 to display reports on the right panel). Default usage:
 {{"html": "<html>complete HTML code</html>", "title": "title"}}. Template mode:
 {{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
@@ -3515,7 +3495,17 @@ File mode: {{"file_path": "/path/to/report.html"}}
 IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
 The user sees progress in real time — never skip an update.
 Parameters: {{"todos": [{{...}}]}}
-15. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
+15. **dispatch_parallel_tasks**: Execute 2 or more mutually independent todo
+items concurrently with isolated sub-agents. Each task needs a self-contained
+goal and may include shared context and a display title.
+Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
+16. **question**: Ask the user a question and wait for their response. Use this tool
+   when you need user input, clarification, or a decision to proceed. The tool blocks
+   until the user answers.
+   Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
+   {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
+   multiple selections. The tool returns the user's selected answers.
+17. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
 
 {file_context}
 {knowledge_context}
@@ -3534,24 +3524,46 @@ Action: The selected tool name
 Action Input: The JSON format of tool parameters
 """.strip()
 
-        tool_pack = ToolPack(
-            [
-                load_skill,
-                load_tools,
-                knowledge_retrieve,
-                execute_skill_script,
-                get_skill_resource,
-                execute_skill_script_file,
-                code_interpreter,
-                shell_interpreter,
-                html_interpreter,
-                sql_query,
-                todowrite,
-                Terminate(),
-            ]
-            + business_tools
-            + connector_tool_extras
-        )
+        workflow_prompt = workflow_prompt + "\n\n" + DISPATCH_PROMPT_SECTION
+
+        if tool_mode == "knowledge":
+            # Knowledge-chat mode (no pre-selected skill): only kb
+            # tools + todowrite + terminate.  kb_tool_list already
+            # contains kb_semantic_search, kb_ls, kb_glob, kb_grep,
+            # kb_cat and optionally codegraph tools.
+            tool_pack = ToolPack(
+                kb_tool_list
+                + [todowrite_tool, question_tool, Terminate()]
+                + business_tools
+                + connector_tool_extras
+            )
+        else:
+            tool_pack = ToolPack(
+                [
+                    load_skill_tool,
+                    load_tools_tool,
+                ]
+                + kb_tool_list
+                + [
+                    execute_skill_script,
+                    get_skill_resource,
+                    execute_skill_script_file_tool,
+                    code_interpreter_tool,
+                    load_file_tool,
+                    execute_analysis_tool,
+                    shell_interpreter_tool,
+                    html_interpreter_tool,
+                    sql_query_tool,
+                    read_file_tool,
+                    todowrite_tool,
+                    execute_tool_tool,
+                    dispatch_parallel_tasks,
+                    question_tool,
+                    Terminate(),
+                ]
+                + business_tools
+                + connector_tool_extras
+            )
 
     # Debug: print all registered tools
     logger.info(f"ToolPack resources: {list(tool_pack._resources.keys())}")
@@ -3664,7 +3676,8 @@ Action Input: The JSON format of tool parameters
 
     parser = ReActOutputParser()
     received = AgentMessage(content=user_input)
-    stream_queue: asyncio.Queue = asyncio.Queue()
+    # stream_queue and stream_callback were created earlier (before ToolPack)
+    # so that the question tool can use them.
 
     # Wire up context-management status events into the SSE stream.
     async def _context_status_callback(status: Dict[str, Any]) -> None:
@@ -3678,9 +3691,6 @@ Action Input: The JSON format of tool parameters
         model_name=dialogue.model_name,
         on_status_event=_context_status_callback,
     )
-
-    async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
-        await stream_queue.put({"type": event_type, **payload})
 
     async def run_agent():
         return await agent.generate_reply(
@@ -3699,6 +3709,9 @@ Action Input: The JSON format of tool parameters
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
+    subagent_history: Dict[str, Dict[str, Any]] = {}
+    # Collect chunks from knowledge tool observations for citation
+    _cited_chunks: List[Dict[str, Any]] = []
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -3752,6 +3765,19 @@ Action Input: The JSON format of tool parameters
         event_type = event.get("type")
         if event_type == "context.status":
             # Forward context-management status to frontend as-is.
+            yield _sse_event(event)
+        elif event_type in ("question.asked", "question.replied", "question.rejected"):
+            # Forward human-in-the-loop question events to frontend as-is.
+            yield _sse_event(event)
+        elif event_type in (
+            "agent.start",
+            "agent.done",
+            "agent.step",
+            "subagent.artifacts",
+        ):
+            # Sub-agent progress uses a separate event channel so parallel
+            # child rounds cannot collide with the lead agent's round map.
+            update_subagent_history(subagent_history, event)
             yield _sse_event(event)
         elif event_type == "thinking":
             # Parse thinking content but don't create step yet
@@ -3902,38 +3928,33 @@ Action Input: The JSON format of tool parameters
                     else f"TODO::{todo_state}"
                 )
 
-                # Emit or update the step card for this round
+                # Emit or update the session-level task-plan card.
                 # NOTE: Do NOT set phase — let it fall into the default
                 # "Execution Steps" group so todowrite cards appear inline
                 # alongside other action steps in chronological order.
-                if round_num in round_step_map:
-                    todo_step_id = round_step_map[round_num]
-                    yield _sse_event(
-                        {
-                            "type": "step.start",
-                            "step": step,
-                            "id": todo_step_id,
-                            "title": _todo_step_title,
-                            "detail": "todowrite",
-                            "todo_meta": todo_meta,
-                        }
-                    )
+                #
+                # The lead agent calls todowrite repeatedly (create plan,
+                # update progress, complete plan). All calls must update the
+                # same card instead of creating TODO::init/progress/done cards.
+                if _todo_step_holder:
+                    todo_step_id = _todo_step_holder[0]
                 else:
-                    todo_step_id, todo_step_event = build_step(
+                    todo_step_id, _ = build_step(
                         _todo_step_title,
                         "todowrite",
                     )
-                    round_step_map[round_num] = todo_step_id
-                    yield _sse_event(
-                        {
-                            "type": "step.start",
-                            "step": step,
-                            "id": todo_step_id,
-                            "title": _todo_step_title,
-                            "detail": "todowrite",
-                            "todo_meta": todo_meta,
-                        }
-                    )
+                    _todo_step_holder.append(todo_step_id)
+                round_step_map[round_num] = todo_step_id
+                yield _sse_event(
+                    {
+                        "type": "step.start",
+                        "step": step,
+                        "id": todo_step_id,
+                        "title": _todo_step_title,
+                        "detail": "todowrite",
+                        "todo_meta": todo_meta,
+                    }
+                )
 
                 yield _sse_event({"type": "plan.update", "tasks": todos_payload})
                 yield step_meta(
@@ -4071,7 +4092,7 @@ Action Input: The JSON format of tool parameters
                 else:
                     for chunk in chunk_text(str(observation_text), max_len=600):
                         yield step_chunk(react_step_id, "text", chunk)
-                # --- History: collect outputs from observation ---
+                # --- History & citation: collect from observation ---
                 if current_history_step is not None:
                     parsed_obs = None
                     if isinstance(observation_text, str):
@@ -4084,12 +4105,16 @@ Action Input: The JSON format of tool parameters
                     ):
                         for item in parsed_obs["chunks"]:
                             if isinstance(item, dict):
+                                content = (item.get("content") or "").strip()
                                 current_history_step["outputs"].append(
                                     {
                                         "output_type": item.get("output_type", "text"),
-                                        "content": item.get("content"),
+                                        "content": content,
                                     }
                                 )
+                                clean = _strip_html_tags(content)
+                                if len(clean) >= 10:
+                                    _cited_chunks.append({"content": clean})
                     elif isinstance(observation_text, str) and observation_text:
                         current_history_step["outputs"].append(
                             {
@@ -4097,6 +4122,9 @@ Action Input: The JSON format of tool parameters
                                 "content": observation_text,
                             }
                         )
+                        clean = _strip_html_tags(observation_text)
+                        if len(clean) >= 10:
+                            _cited_chunks.append({"content": clean})
 
             # Mark step as done and track as last completed
             status = "done" if action_output.get("is_exe_success", True) else "failed"
@@ -4122,6 +4150,7 @@ Action Input: The JSON format of tool parameters
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        fail_running_subagent_history(subagent_history)
         error_payload = json.dumps(
             {
                 "version": 1,
@@ -4130,6 +4159,7 @@ Action Input: The JSON format of tool parameters
                 "steps": history_steps,
                 "task_plan": list(_todo_list),
                 "generated_images": react_state.get("generated_images", []),
+                "sub_agents": build_subagent_history_snapshot(subagent_history),
             },
             ensure_ascii=False,
         )
@@ -4189,6 +4219,23 @@ Action Input: The JSON format of tool parameters
     else:
         final_content = reply.content or ""
 
+    # Auto-annotate citations in the final answer: match collected chunks
+    # against the answer text and insert [n] markers for traceability.
+    if _cited_chunks:
+        # Deduplicate by content while preserving order
+        seen = set()
+        unique_chunks = []
+        for c in _cited_chunks:
+            key = c.get("content", "")
+            if key not in seen:
+                seen.add(key)
+                unique_chunks.append(c)
+        _cited_chunks[:] = unique_chunks
+        final_content = _auto_annotate_citations(final_content, _cited_chunks)
+
+    # Build references XML for frontend citation panel
+    references_xml = _build_references_xml(_cited_chunks)
+
     # Persist AI reply with structured history payload
     history_payload = json.dumps(
         {
@@ -4198,6 +4245,7 @@ Action Input: The JSON format of tool parameters
             "steps": history_steps,
             "task_plan": list(_todo_list),
             "generated_images": react_state.get("generated_images", []),
+            "sub_agents": build_subagent_history_snapshot(subagent_history),
         },
         ensure_ascii=False,
     )
@@ -4205,8 +4253,99 @@ Action Input: The JSON format of tool parameters
     storage_conv.end_current_round()
     storage_conv.save_to_storage()
 
-    yield _sse_event({"type": "final", "content": final_content})
+    # Emit final content with references appended so the frontend can render
+    # inline citations and the citation drawer panel.
+    final_with_refs = final_content + references_xml
+    yield _sse_event({"type": "final", "content": final_with_refs})
     yield _sse_event({"type": "done"})
+
+
+# ---------------------------------------------------------------------------
+# Citation helpers for react-agent knowledge chat
+# ---------------------------------------------------------------------------
+
+
+def _strip_html_tags(text: str) -> str:
+    """Remove HTML/XML tags and unescape HTML entities from a string."""
+    import html
+
+    text = html.unescape(text or "")
+    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _auto_annotate_citations(text: str, chunks: list) -> str:
+    """Insert [n] citation markers into the answer text by matching collected
+    knowledge tool observation chunks against the final answer.
+
+    Uses longest-common-substring matching (>= 10 chars) to find where each
+    chunk appears in the answer and inserts a [n] marker after it.
+    """
+    if not chunks or not text:
+        return text
+
+    # Sort by content length descending so longer (more specific) chunks
+    # are matched first.
+    indexed = sorted(
+        enumerate(chunks, start=1),
+        key=lambda x: len(x[1].get("content", "")),
+        reverse=True,
+    )
+
+    for idx, chunk_info in indexed:
+        content = (chunk_info.get("content") or "").strip()
+        if len(content) < 8:
+            continue
+        # Find longest common substring
+        match = _longest_common_substring(text, content, min_len=8, max_len=80)
+        if not match:
+            continue
+        marker = f"[{idx}]"
+        if marker not in text:
+            # Replace ALL occurrences — a single source chunk often
+            # supports multiple sentences in the answer.
+            text = text.replace(match, match + marker)
+    return text
+
+
+def _longest_common_substring(
+    text: str, chunk: str, min_len: int = 8, max_len: int = 80
+) -> str:
+    """Find the longest substring of `chunk` that appears in `text`."""
+    chunk = chunk.strip()
+    for length in range(min(max_len, len(chunk)), min_len - 1, -1):
+        for start in range(len(chunk) - length + 1):
+            sub = chunk[start : start + length]
+            if sub in text:
+                return sub
+    return ""
+
+
+def _build_references_xml(chunks: list) -> str:
+    """Build a <references> XML tag with collected chunks for the frontend
+    citation panel and inline citation hover popovers.
+
+    Uses single-quoted attribute (no HTML entity escaping) so the frontend
+    regex /<references[^>]*references='([^']*)'/ can extract and JSON.parse.
+    """
+    if not chunks:
+        return ""
+    refs = []
+    for idx, chunk_info in enumerate(chunks, start=1):
+        content = (chunk_info.get("content") or "").strip()
+        if len(content) < 10:
+            continue
+        refs.append({"index": idx, "id": idx, "content": content, "recall_score": None})
+    if not refs:
+        return ""
+    # Build with json.dumps then wrap in single quotes so the frontend can
+    # extract via regex and JSON.parse without unescaping HTML entities.
+    payload_obj = [{"name": "Knowledge Base", "chunks": refs}]
+    payload = json.dumps(payload_obj, ensure_ascii=False)
+    return (
+        '\n\n<references title="References" references=\'' + payload + "'></references>"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -4432,7 +4571,7 @@ async def chat_react_agent(
     }
     try:
         return StreamingResponse(
-            _react_agent_stream(dialogue),
+            _react_agent_stream(dialogue, tool_mode="full"),
             headers=headers,
             media_type="text/event-stream",
         )
@@ -4447,3 +4586,82 @@ async def chat_react_agent(
             headers=headers,
             media_type="text/plain",
         )
+
+
+@router.post("/v1/chat/knowledge-agent")
+async def chat_knowledge_agent(
+    dialogue: ConversationVo = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Knowledge-base chat agent — only kb tools + todowrite + terminate.
+
+    Optimized for pure knowledge-chat scenarios (no skill/shell/sql/html tools).
+    """
+    logger.info(
+        "chat_knowledge_agent:%s,%s,%s",
+        dialogue.chat_mode,
+        dialogue.select_param,
+        dialogue.model_name,
+    )
+    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    headers = {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Transfer-Encoding": "chunked",
+    }
+    try:
+        return StreamingResponse(
+            _react_agent_stream(dialogue, tool_mode="knowledge"),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+    except Exception as e:
+        logger.exception("Knowledge Agent Exception!%s", dialogue, exc_info=e)
+
+        async def error_text(err_msg):
+            yield f"data:{err_msg}\n\n"
+
+        return StreamingResponse(
+            error_text(str(e)),
+            headers=headers,
+            media_type="text/plain",
+        )
+
+
+# ── Human-in-the-Loop Question API ──────────────────────────────────────────
+
+
+class _QuestionReplyBody(_BaseModel):
+    answers: List[List[str]]
+
+
+@router.post("/v1/chat/question/{request_id}/reply", response_model=Result)
+async def question_reply(
+    request_id: str,
+    body: _QuestionReplyBody,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """User submits answers to a pending question, unblocking the agent tool."""
+    from dbgpt_app.openapi.api_v1.tools.question_manager import question_manager
+
+    try:
+        question_manager.reply(request_id, body.answers)
+        return Result.succ({"success": True, "request_id": request_id})
+    except KeyError as e:
+        return Result.failed(msg=str(e))
+
+
+@router.post("/v1/chat/question/{request_id}/reject", response_model=Result)
+async def question_reject(
+    request_id: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """User dismisses a pending question, unblocking the agent tool with rejection."""
+    from dbgpt_app.openapi.api_v1.tools.question_manager import question_manager
+
+    try:
+        question_manager.reject(request_id)
+        return Result.succ({"success": True, "request_id": request_id})
+    except KeyError as e:
+        return Result.failed(msg=str(e))

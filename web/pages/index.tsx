@@ -1,6 +1,7 @@
 import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
+import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
 import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -15,6 +16,8 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { MessagePart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import QuestionDock from '@/new-components/chat/content/QuestionDock';
+import SubAgentSection from '@/new-components/chat/content/SubAgentSection';
 import TaskPlanCard, { TaskItem } from '@/new-components/chat/content/TaskPlanCard';
 import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
@@ -22,6 +25,8 @@ import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling'
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
+import type { SubAgentState } from '@/types/subagent';
+import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
@@ -72,7 +77,7 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const generateUUID = () => {
@@ -183,7 +188,7 @@ interface ExecutionStep {
   detail: string;
   status: 'running' | 'done' | 'failed';
   action?: string;
-  actionInput?: string;
+  actionInput?: any;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -241,6 +246,8 @@ interface Artifact {
   mimeType?: string;
   size?: number;
   filePath?: string;
+  /** Which sub-agent produced this artifact (for sub-agent produced files). */
+  sourceAgent?: string;
   // Chart-specific metadata
   chartType?: ChartType;
   chartConfig?: Partial<ChartConfig>;
@@ -358,6 +365,21 @@ const convertToManusFormat = (
       return 'skill';
     if (actionLower === 'shell_interpreter') return 'bash';
     if (actionLower === 'sql_query') return 'sql';
+    if (actionLower === 'question') return 'question';
+    if (
+      actionLower === 'kb_ls' ||
+      actionLower === 'kb_glob' ||
+      actionLower === 'kb_grep' ||
+      actionLower === 'kb_cat' ||
+      actionLower === 'semantic_search'
+    )
+      return 'kb';
+    if (
+      actionLower === 'kb_codegraph_explore' ||
+      actionLower === 'kb_codegraph_call_chain' ||
+      actionLower === 'kb_codegraph_class_hierarchy'
+    )
+      return 'code_graph';
 
     const lower = (title || '').toLowerCase();
     if (
@@ -378,6 +400,7 @@ const convertToManusFormat = (
     if (lower.includes('glob') || lower.includes('find')) return 'glob';
     if (lower.includes('html')) return 'html';
     if (lower.includes('python') || lower.includes('code')) return 'python';
+    if (lower.includes('question')) return 'question';
     if (lower.includes('skill')) return 'skill';
     if (lower.includes('task')) return 'task';
     return 'other';
@@ -400,14 +423,19 @@ const convertToManusFormat = (
     })
     .map(step => {
       const cleanDetail = step.detail?.replace(/^Thought:.*\n?/gm, '').trim();
+      // Build a user-friendly subtitle: strip "Action: " prefix from the first line
+      const firstLine = cleanDetail?.split('\n')[0] || '';
+      const friendlySubtitle = firstLine.replace(/^Action:\s*/i, '').slice(0, 80);
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
         title: step.title || `Step ${step.step}`,
-        subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
+        subtitle: friendlySubtitle || undefined,
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
+        action: step.action,
+        actionInput: step.actionInput,
       };
     });
 
@@ -448,7 +476,14 @@ const convertToManusFormat = (
       }))
     : [];
 
-  return { sections, activeStep, outputs, stepThoughts: execution?.stepThoughts || {} };
+  const stepThoughts = { ...(execution.stepThoughts || {}) };
+  execution.steps.forEach(step => {
+    if (step.action === 'dispatch_parallel_tasks') {
+      delete stepThoughts[step.id];
+    }
+  });
+
+  return { sections, activeStep, outputs, stepThoughts };
 };
 
 const EXAMPLE_CARDS = [
@@ -538,6 +573,8 @@ const Playground: NextPage = () => {
         activeStepId: string | null;
         collapsed: boolean;
         stepThoughts: Record<string, string>;
+        subAgents?: Record<string, SubAgentState>;
+        subAgentArtifacts?: number;
       }
     >
   >({});
@@ -590,6 +627,15 @@ const Playground: NextPage = () => {
 
   // Active round tracking: which view message is currently selected for the right panel
   const [activeViewMsgId, setActiveViewMsgId] = useState<string | null>(null);
+  // Devin-style: which sub-agent's process to show in the right panel (clicked
+  // in the left SubAgentSection). null = show the main agent's execution.
+  // Carries messageId so switching rounds cannot leak another round's sub-agent
+  // of the same id into the view (sub_d1_0 from round A must not show round B's
+  // sub_d1_0).
+  const [activeSubAgent, setActiveSubAgent] = useState<{
+    messageId: string;
+    agentId: string;
+  } | null>(null);
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
@@ -607,7 +653,39 @@ const Playground: NextPage = () => {
     usage_percent: number;
     layer: string | null;
   } | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<{
+    request_id: string;
+    conv_id: string;
+    questions: Array<{
+      question: string;
+      header: string;
+      options: Array<{ label: string; description: string }>;
+      multiple?: boolean;
+      custom?: boolean;
+    }>;
+  } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
+
+  const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
+    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers }),
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
+
+  const rejectQuestion = useCallback(async (requestId: string) => {
+    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      setPendingQuestion(null);
+    }
+  }, []);
 
   // Fetch Data Sources
   const { data: dataSources, loading: _loadingSources } = useRequest(async () => {
@@ -632,7 +710,7 @@ const Playground: NextPage = () => {
   // Fetch Knowledge Bases
   const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
     try {
-      const response = await sendSpacePostRequest('/knowledge/space/list', {});
+      const response = await sendSpacePostRequest('/api/v1/knowledge/space/list', {});
       // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
       if (response?.success) {
         return response.data || [];
@@ -1230,6 +1308,7 @@ const Playground: NextPage = () => {
     execution: {
       steps: ExecutionStep[];
       outputs: Record<string, ExecutionOutput[]>;
+      subAgents?: Record<string, SubAgentState>;
     },
     summaryText?: string,
     filePath?: string | null,
@@ -1361,6 +1440,70 @@ const Playground: NextPage = () => {
           });
         }
       });
+    }
+
+    // Sub-agent artifacts: when restoring from history, the live
+    // ``subagent.artifacts`` SSE event is not replayed, so scan each
+    // sub-agent's step ``chunks`` for image/html (same shape the backend
+    // forwards in agent.step) and materialize them as Artifacts tagged with
+    // their source agent. Mirrors the live path in processEvent.
+    const subAgents = (execution as { subAgents?: Record<string, SubAgentState> }).subAgents;
+    if (subAgents) {
+      for (const agent of Object.values(subAgents)) {
+        const persistedArtifactUrls = new Set((agent.artifacts || []).map(artifact => artifact.url));
+        (agent.artifacts || []).forEach((artifact, artifactIndex) => {
+          const artifactType = artifact.type === 'image' ? 'image' : artifact.type === 'html' ? 'html' : 'file';
+          const fallbackName = artifact.url.split('/').pop() || `subagent-artifact-${artifactIndex}`;
+          const name = artifact.title || fallbackName;
+          finalArtifacts.push({
+            id: `${messageId}-subagent-ref-${agent.agentId}-${artifactIndex}`,
+            type: artifactType,
+            name: artifactType === 'html' && !name.endsWith('.html') ? `${name}.html` : name,
+            content: artifactType === 'file' ? { name, file_path: artifact.url } : artifact.url,
+            createdAt: now,
+            messageId,
+            stepId: agent.agentId,
+            sourceAgent: agent.name,
+            downloadable: true,
+            ...(artifactType === 'file' ? { filePath: artifact.url } : {}),
+          });
+        });
+        (agent.steps || []).forEach((step, sIdx) => {
+          (step.chunks || []).forEach((chunk, cIdx) => {
+            const ot = chunk.output_type;
+            const content = chunk.content;
+            if (ot === 'image' && typeof content === 'string') {
+              if (persistedArtifactUrls.has(content)) return;
+              const imgName = content.split('/').pop() || `image_${sIdx}_${cIdx}.png`;
+              finalArtifacts.push({
+                id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
+                type: 'image',
+                name: imgName.replace(/^[a-f0-9]{8}_/, ''),
+                content,
+                createdAt: now,
+                messageId,
+                stepId: agent.agentId,
+                sourceAgent: agent.name,
+                downloadable: true,
+              });
+            } else if (ot === 'html' && typeof content === 'string') {
+              if (persistedArtifactUrls.has(content)) return;
+              const htmlTitle = (chunk as { title?: string }).title || agent.name;
+              finalArtifacts.push({
+                id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
+                type: 'html',
+                name: `${htmlTitle}.html`,
+                content,
+                createdAt: now,
+                messageId,
+                stepId: agent.agentId,
+                sourceAgent: agent.name,
+                downloadable: true,
+              });
+            }
+          });
+        });
+      }
     }
 
     if (summaryText) {
@@ -1639,6 +1782,96 @@ const Playground: NextPage = () => {
           });
           return;
         }
+        if (
+          payload.type === 'agent.start' ||
+          payload.type === 'agent.step' ||
+          payload.type === 'agent.done' ||
+          payload.type === 'subagent.artifacts'
+        ) {
+          // Parallel sub-agent events -> grouped card state. Parsing is a
+          // pure function in use-subagent-stream; the apply (setState) stays
+          // here because processEvent closes over setExecutionMap (review I3).
+          const partial = parseSubAgentEvent(payload);
+          if (!partial) return;
+          // Artifacts flow into the GLOBAL artifacts list (files tab / preview /
+          // download) — a separate state from executionMap, so it gets its own
+          // setter. Dedup by id so a replayed event cannot stack duplicates.
+          if (partial.artifactItems && partial.artifactItems.length > 0) {
+            const newArts = buildSubAgentArtifacts(partial.artifactItems, responseId);
+            setArtifacts(prev => {
+              const ids = new Set(prev.map(a => a.id));
+              const merged = [...prev];
+              for (const a of newArts) {
+                if (!ids.has(a.id)) merged.push(a);
+              }
+              return merged;
+            });
+          }
+          setExecutionMap(prev => {
+            const current = prev[responseId] || {
+              steps: [],
+              outputs: {},
+              activeStepId: null,
+              collapsed: false,
+              stepThoughts: {},
+            };
+            const subAgents: Record<string, SubAgentState> = { ...(current.subAgents || {}) };
+            if (partial.upsert) {
+              const existing = subAgents[partial.upsert.agentId];
+              // agent.done carries status + final summary/timing. Merge those
+              // onto the existing row while preserving start/step metadata.
+              subAgents[partial.upsert.agentId] = existing
+                ? {
+                    ...existing,
+                    status: partial.upsert.status,
+                    result: partial.upsert.result ?? existing.result,
+                    elapsedMs: partial.upsert.elapsedMs ?? existing.elapsedMs,
+                  }
+                : partial.upsert;
+            }
+            if (partial.stepUpdate) {
+              const { agentId, step } = partial.stepUpdate;
+              const existing = subAgents[agentId];
+              if (existing) {
+                subAgents[agentId] = {
+                  ...existing,
+                  steps: [...existing.steps, step],
+                  currentAction: step.label,
+                };
+              }
+            }
+            // Per-agent artifact count: each item already carries its source
+            // agent_id, so accumulate per row for the aggregate-card badge.
+            if (partial.artifactItems && partial.artifactItems.length > 0) {
+              const countByAgent: Record<string, number> = {};
+              for (const it of partial.artifactItems) {
+                countByAgent[it.agent_id] = (countByAgent[it.agent_id] || 0) + 1;
+              }
+              for (const [aid, n] of Object.entries(countByAgent)) {
+                const existing = subAgents[aid];
+                if (existing) {
+                  subAgents[aid] = {
+                    ...existing,
+                    artifactCount: (existing.artifactCount || 0) + n,
+                  };
+                }
+              }
+            }
+            // Aggregate header count = sum of per-row counts (always
+            // consistent, immune to event replay / ordering quirks).
+            const subAgentArtifacts = Object.values(subAgents).reduce((sum, a) => sum + (a.artifactCount || 0), 0);
+            return { ...prev, [responseId]: { ...current, subAgents, subAgentArtifacts } };
+          });
+          return;
+        }
+        if (payload.type === 'question.asked') {
+          setPendingQuestion(payload);
+          return;
+        }
+        if (payload.type === 'question.replied' || payload.type === 'question.rejected') {
+          setPendingQuestion(null);
+          return;
+        }
         if (payload.type === 'plan.update') {
           if (Array.isArray(payload.tasks)) {
             const nextTasks = payload.tasks as TaskItem[];
@@ -1765,11 +1998,11 @@ const Playground: NextPage = () => {
               };
             });
             // Route model-provided action display fields to the subtle status row.
-            const displayThought = payload.action_intention
-              ? payload.action_reason
-                ? `${payload.action_intention}\n${payload.action_reason}`
-                : payload.action_intention
-              : payload.thought;
+            const displayThought = buildActionDisplayText({
+              actionIntention: payload.action_intention,
+              actionReason: payload.action_reason,
+              thought: payload.thought,
+            });
             const nextThoughts = displayThought
               ? {
                   ...current.stepThoughts,
@@ -1836,39 +2069,10 @@ const Playground: NextPage = () => {
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
         } else if (payload.type === 'step.thought') {
-          const content = payload.content || '';
-          let normalizedThought = '';
-          if (typeof content === 'string') {
-            normalizedThought = content;
-          } else if (content && typeof content === 'object') {
-            const todoValue = (content as Record<string, unknown>).TODO;
-            if (typeof todoValue === 'string') {
-              normalizedThought = todoValue;
-            } else {
-              try {
-                normalizedThought = JSON.stringify(content);
-              } catch {
-                normalizedThought = String(content);
-              }
-            }
-          }
-          if (normalizedThought) {
-            setExecutionMap(prev => {
-              const current = prev[responseId];
-              if (!current) return prev;
-              const targetId = payload.id || current.activeStepId || 'initial';
-              return {
-                ...prev,
-                [responseId]: {
-                  ...current,
-                  stepThoughts: {
-                    ...current.stepThoughts,
-                    [targetId]: (current.stepThoughts?.[targetId] || '') + normalizedThought,
-                  },
-                },
-              };
-            });
-          }
+          // Raw model reasoning is intentionally not rendered in the user-facing
+          // timeline. Display copy must come from step.meta action_intention or
+          // action_reason, which are constrained to concise, readable text.
+          return;
         } else if (payload.type === 'final') {
           setExecutionMap(prev => {
             const current = prev[responseId];
@@ -2095,6 +2299,7 @@ const Playground: NextPage = () => {
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
+    setActiveSubAgent(null);
     setArtifacts([]);
     setStreamingSummary('');
     setSummaryComplete(false);
@@ -2130,6 +2335,7 @@ const Playground: NextPage = () => {
 
           const outputs: Record<string, ExecutionOutput[]> = {};
           const stepThoughts: Record<string, string> = {};
+          const subAgents = restoreSubAgentStates(payload.sub_agents ?? payload.subAgents);
 
           (payload.steps || []).forEach((s: any, idx: number) => {
             const stepId = s.id || `history-step-${idx}`;
@@ -2153,26 +2359,13 @@ const Playground: NextPage = () => {
                 }
               }
             }
-            const historyThought = s.action_intention
-              ? s.action_reason
-                ? `${s.action_intention}\n${s.action_reason}`
-                : s.action_intention
-              : s.thought;
+            const historyThought = buildActionDisplayText({
+              actionIntention: s.action_intention,
+              actionReason: s.action_reason,
+              thought: s.thought,
+            });
             if (historyThought) {
-              if (typeof historyThought === 'string') {
-                stepThoughts[stepId] = historyThought;
-              } else if (typeof historyThought === 'object') {
-                const todoValue = (historyThought as Record<string, unknown>).TODO;
-                if (typeof todoValue === 'string') {
-                  stepThoughts[stepId] = todoValue;
-                } else {
-                  try {
-                    stepThoughts[stepId] = JSON.stringify(historyThought);
-                  } catch {
-                    stepThoughts[stepId] = String(historyThought);
-                  }
-                }
-              }
+              stepThoughts[stepId] = historyThought;
             }
           });
 
@@ -2182,11 +2375,25 @@ const Playground: NextPage = () => {
             activeStepId: steps.length > 0 ? steps[steps.length - 1].id : null,
             collapsed: false,
             stepThoughts,
+            ...(Object.keys(subAgents).length > 0
+              ? {
+                  subAgents,
+                  subAgentArtifacts: Object.values(subAgents).reduce(
+                    (sum, agent) => sum + (agent.artifactCount || 0),
+                    0,
+                  ),
+                }
+              : {}),
           };
 
           const finalContent = cleanFinalContent(payload.final_content || '');
 
-          const restoredArtifacts = buildArtifactsFromExecution(viewId, { steps, outputs }, finalContent, null);
+          const restoredArtifacts = buildArtifactsFromExecution(
+            viewId,
+            { steps, outputs, subAgents },
+            finalContent,
+            null,
+          );
           allArtifacts.push(...restoredArtifacts);
 
           // Detect skill creation from restored execution
@@ -2362,7 +2569,6 @@ const Playground: NextPage = () => {
     showUploadList: false,
     beforeUpload: (file: any) => {
       setUploadedFile(file);
-      parseLocalFilePreview(file as File);
       message.success(`${file.name} attached successfully`);
       return false; // Prevent auto upload, we just want to select it
     },
@@ -2378,7 +2584,7 @@ const Playground: NextPage = () => {
     >
       <div className='flex h-full w-full bg-[#f7f7f9] dark:bg-[#0f1012] text-[#1a1b1e] dark:text-gray-200 font-sans overflow-hidden'>
         {/* Main Content */}
-        <div className='flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-[#111217]'>
+        <div className='flex-1 min-h-0 flex flex-col relative overflow-hidden bg-white dark:bg-[#111217]'>
           {/* Top Header */}
           <div className='h-16 flex-shrink-0 flex items-center justify-between px-8 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-[#111217]/80 backdrop-blur z-20'>
             <div className='flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md'>
@@ -2413,9 +2619,9 @@ const Playground: NextPage = () => {
               <Spin size='large' tip='加载对话历史...' />
             </div>
           ) : messages.length > 0 ? (
-            <div className={`flex-1 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
+            <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
                   {rounds.map((round, roundIndex) => {
@@ -2443,11 +2649,36 @@ const Playground: NextPage = () => {
                       <ManusLeftPanel
                         key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
                         sections={sections}
+                        subAgentSlot={
+                          execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                            <SubAgentSection
+                              subAgents={execution.subAgents}
+                              artifactCount={execution.subAgentArtifacts}
+                              activeSubAgentId={
+                                isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                  ? activeSubAgent.agentId
+                                  : null
+                              }
+                              onSubAgentClick={agentId => {
+                                if (round.viewMsg?.id) {
+                                  setActiveViewMsgId(round.viewMsg.id);
+                                  setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                }
+                                setRightPanelView('execution');
+                                setRightPanelCollapsed(false);
+                              }}
+                            />
+                          ) : undefined
+                        }
                         activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
                         onStepClick={(stepId, _sectionId) => {
                           if (round.viewMsg?.id) {
                             setActiveViewMsgId(round.viewMsg.id);
                             setSelectedStepId(stepId);
+                            // Clicking a main-agent step exits the sub-agent
+                            // process view, so the right panel shows this step.
+                            setActiveSubAgent(null);
+                            setRightPanelView('execution');
                             setRightPanelCollapsed(false);
                             setExecutionMap(prev => ({
                               ...prev,
@@ -2612,6 +2843,21 @@ const Playground: NextPage = () => {
                           </Tag>
                         )}
                       </div>
+
+                      {/* Human-in-the-loop Question Dock */}
+                      {pendingQuestion && (
+                        <div className='mb-3 w-full'>
+                          <QuestionDock
+                            request={{
+                              request_id: pendingQuestion.request_id,
+                              conv_id: pendingQuestion.conv_id,
+                              questions: pendingQuestion.questions,
+                            }}
+                            onReply={replyQuestion}
+                            onReject={rejectQuestion}
+                          />
+                        </div>
+                      )}
 
                       {/* Outer Frame - Floating Effect */}
                       <div className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'>
@@ -3095,7 +3341,7 @@ const Playground: NextPage = () => {
                 </Tooltip>
               </div>
               <div
-                className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
+                className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
                 {(() => {
                   const activeViewMsg = messages.find(m => m.id === selectedViewMsgId && m.role === 'view');
@@ -3103,12 +3349,55 @@ const Playground: NextPage = () => {
                   // Respect user's manual step selection for the right panel
                   const execution =
                     rawExecution && selectedStepId ? { ...rawExecution, activeStepId: selectedStepId } : rawExecution;
-                  const {
-                    activeStep,
-                    outputs,
-                    stepThoughts: _stepThoughts,
-                  } = convertToManusFormat(execution, undefined, t);
-                  const isRunning = execution?.steps.some(s => s.status === 'running') || false;
+                  const _converted = convertToManusFormat(execution, undefined, t);
+                  let activeStep = _converted.activeStep;
+                  let outputs = _converted.outputs;
+                  let isRunning = execution?.steps.some(s => s.status === 'running') || false;
+
+                  // Devin-style sub-agent process view: when a sub-agent is
+                  // selected, override activeStep/outputs with that sub-agent's
+                  // step list (reusing the execution view's rendering).
+                  // Guard on messageId so a stale selection from another round
+                  // cannot leak a same-id sub-agent into this round's view.
+                  const activeSub =
+                    activeSubAgent && activeSubAgent.messageId === activeViewMsg?.id
+                      ? execution?.subAgents?.[activeSubAgent.agentId]
+                      : undefined;
+                  const activeDispatchStepId =
+                    _converted.activeStep?.action === 'dispatch_parallel_tasks' ? _converted.activeStep.id : null;
+                  const dispatchSteps =
+                    execution?.steps.filter(step => step.action === 'dispatch_parallel_tasks') || [];
+                  const dispatchStepIndex = activeDispatchStepId
+                    ? dispatchSteps.findIndex(step => step.id === activeDispatchStepId)
+                    : -1;
+                  const activeDispatchBatchId = dispatchStepIndex >= 0 ? dispatchStepIndex + 1 : null;
+                  const parallelSubAgents = activeDispatchBatchId
+                    ? Object.fromEntries(
+                        Object.entries(execution?.subAgents || {}).filter(
+                          ([, agent]) =>
+                            agent.batchId === activeDispatchBatchId ||
+                            (agent.batchId === 0 && activeDispatchBatchId === 1),
+                        ),
+                      )
+                    : undefined;
+                  if (activeSub) {
+                    activeStep = {
+                      id: `subagent-${activeSub.agentId}`,
+                      type: 'task',
+                      title: activeSub.name,
+                      status:
+                        activeSub.status === 'done'
+                          ? 'completed'
+                          : activeSub.status === 'running'
+                            ? 'running'
+                            : 'error',
+                    };
+                    // The sub-agent detail view consumes the structured steps
+                    // directly. Keeping the main dispatch output here would
+                    // duplicate titles/results and flatten step boundaries.
+                    outputs = [];
+                    isRunning = activeSub.status === 'running';
+                  }
 
                   return (
                     <ManusRightPanel
@@ -3117,7 +3406,6 @@ const Playground: NextPage = () => {
                       databaseType={selectedDb?.db_type}
                       databaseName={selectedDb?.db_name}
                       isRunning={isRunning}
-                      onCollapse={() => setRightPanelCollapsed(true)}
                       onRerun={router.query.from_task ? undefined : () => {}}
                       onShare={!loading && !!conversationId ? handleShare : undefined}
                       onSchedule={
@@ -3161,6 +3449,14 @@ const Playground: NextPage = () => {
                       skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
                       summaryContent={streamingSummary || activeViewMsg?.context || ''}
                       isSummaryStreaming={!_summaryComplete && !!streamingSummary}
+                      subAgents={parallelSubAgents}
+                      onSubAgentClick={agentId => {
+                        if (!activeViewMsg?.id) return;
+                        setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
+                        setRightPanelView('execution');
+                      }}
+                      subAgentContext={activeSub || null}
+                      onExitSubAgentView={() => setActiveSubAgent(null)}
                     />
                   );
                 })()}
@@ -3810,7 +4106,7 @@ const Playground: NextPage = () => {
                                     type='link'
                                     size='small'
                                     onClick={() => {
-                                      router.push('/knowledge');
+                                      router.push('/construct/knowledge');
                                       setIsKnowledgePanelOpen(false);
                                     }}
                                     className='text-[10px] p-0 h-auto'

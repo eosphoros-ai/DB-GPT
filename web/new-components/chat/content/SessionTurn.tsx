@@ -1,6 +1,7 @@
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import {
+  ApartmentOutlined,
   CheckOutlined,
   ClockCircleOutlined,
   CloseOutlined,
@@ -89,6 +90,10 @@ const getToolIcon = (tool?: string): React.ReactNode => {
       return <PlayCircleOutlined />;
     case 'code':
       return <CodeOutlined />;
+    case 'kb_codegraph_explore':
+    case 'kb_codegraph_call_chain':
+    case 'kb_codegraph_class_hierarchy':
+      return <ApartmentOutlined />;
     default:
       return <CodeOutlined />;
   }

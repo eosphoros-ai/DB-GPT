@@ -197,7 +197,33 @@ class ReActOutputParser:
         thought_matches = self._find_prefix_matches(text, self.thought_prefix_escaped)
 
         if not thought_matches:
-            return []
+            # Fallback: if no Thought: prefix found, try splitting on
+            # Action: prefix so we can still parse responses that omit
+            # Thought:.  Each step starts from the text before Action: (to
+            # capture Action Intention / Action Reason) up to the next
+            # Action: or end of text.
+            action_matches = self._find_prefix_matches(text, self.action_prefix_escaped)
+            if not action_matches:
+                return []
+            steps = []
+            for i, match in enumerate(action_matches):
+                # Include text before the Action: prefix (may contain
+                # Action Intention / Action Reason lines).
+                # Walk backwards to find the start of this logical block.
+                if i == 0:
+                    start_pos = 0
+                else:
+                    start_pos = action_matches[i - 1].end()
+                end_pos = (
+                    action_matches[i + 1].start()
+                    if i < len(action_matches) - 1
+                    else len(text)
+                )
+                step_text = text[start_pos:end_pos].strip()
+                step_data = self._parse_step(step_text)
+                if step_data:
+                    steps.append(step_data)
+            return steps
 
         # Process each thought section
         for i, match in enumerate(thought_matches):

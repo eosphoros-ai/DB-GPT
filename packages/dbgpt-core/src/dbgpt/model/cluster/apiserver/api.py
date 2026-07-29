@@ -50,7 +50,7 @@ from dbgpt.model.cluster.manager_base import WorkerManager, WorkerManagerFactory
 from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
 from dbgpt.util.chat_util import transform_to_sse
-from dbgpt.util.fastapi import create_app
+from dbgpt.util.fastapi import build_cors_config, create_app
 from dbgpt.util.tracer import initialize_tracer, root_tracer, trace
 from dbgpt.util.tracer.tracer_impl import TracerParameters
 from dbgpt.util.utils import (
@@ -899,10 +899,7 @@ def initialize_apiserver(
         # https://github.com/encode/starlette/issues/617
         cors_app = CORSMiddleware(
             app=app,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            allow_headers=["*"],
+            **build_cors_config(apiserver_params.cors_allowed_origins),
         )
         log_level = "info"
         if log_config:

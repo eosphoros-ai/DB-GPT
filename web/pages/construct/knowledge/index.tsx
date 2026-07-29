@@ -1,44 +1,43 @@
-import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delSpace, getSpaceConfig, getSpaceList, newDialogue } from '@/client/api';
-import DocPanel from '@/components/knowledge/doc-panel';
+import { apiInterceptors, delSpace, getKnowledgeSpaceStats, getSpaceConfig, getSpaceList } from '@/client/api';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
+import GitRepoSyncForm from '@/components/knowledge/git-repo-sync-form';
 import Segmentation from '@/components/knowledge/segmentation';
 import SpaceForm from '@/components/knowledge/space-form';
-import BlurredCard, { ChatButton, InnerDropdown } from '@/new-components/common/blurredCard';
+import BlurredCard, { InnerDropdown } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { File, ISpace, IStorage, StepChangeParams } from '@/types/knowledge';
-import { PlusOutlined, ReadOutlined, SearchOutlined, WarningOutlined } from '@ant-design/icons';
-import { Button, Input, Modal, Spin, Steps, Tag } from 'antd';
+import {
+  NodeIndexOutlined,
+  PlusOutlined,
+  ReadOutlined,
+  SearchOutlined,
+  ShareAltOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
+import { Button, Input, Modal, Spin, Tag } from 'antd';
 import classNames from 'classnames';
 import { debounce } from 'lodash';
 import moment from 'moment';
 import { useRouter } from 'next/router';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const Knowledge = () => {
-  const { setCurrentDialogInfo } = useContext(ChatContext);
   const [spaceList, setSpaceList] = useState<Array<ISpace> | null>([]);
   const [isAddShow, setIsAddShow] = useState<boolean>(false);
-  const [isPanelShow, setIsPanelShow] = useState<boolean>(false);
-  const [currentSpace, setCurrentSpace] = useState<ISpace>();
 
   const [activeStep, setActiveStep] = useState<number>(0);
   const [spaceName, setSpaceName] = useState<string>('');
   const [files, setFiles] = useState<Array<File>>([]);
   const [docType, setDocType] = useState<string>('');
-  const [addStatus, setAddStatus] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [spaceConfig, setSpaceConfig] = useState<IStorage | null>(null);
+  const [spaceStats, setSpaceStats] = useState<
+    Record<string, { vertexCount: number | null; edgeCount: number | null }>
+  >({});
 
   const { t } = useTranslation();
-  const addKnowledgeSteps = [
-    { title: t('Knowledge_Space_Config') },
-    { title: t('Choose_a_Datasource_type') },
-    { title: t('Upload') },
-    { title: t('Segmentation') },
-  ];
   const router = useRouter();
 
   async function getSpaces(params?: any) {
@@ -46,6 +45,25 @@ const Knowledge = () => {
     const [_, data] = await apiInterceptors(getSpaceList({ ...params }));
     setLoading(false);
     setSpaceList(data);
+    // Fetch stats for each space (graph info)
+    if (data) {
+      for (const space of data) {
+        try {
+          const [, stats] = await apiInterceptors(getKnowledgeSpaceStats(space.id));
+          if (stats) {
+            setSpaceStats(prev => ({
+              ...prev,
+              [space.name]: {
+                vertexCount: stats.graph_vertex_count ?? null,
+                edgeCount: stats.graph_edge_count ?? null,
+              },
+            }));
+          }
+        } catch {
+          /* ignore individual stat failures */
+        }
+      }
+    }
   }
 
   async function getSpaceConfigs() {
@@ -59,35 +77,12 @@ const Knowledge = () => {
     getSpaceConfigs();
   }, []);
 
-  const handleChat = async (space: ISpace) => {
-    const [_, data] = await apiInterceptors(
-      newDialogue({
-        chat_mode: 'chat_knowledge',
-      }),
-    );
-    // 知识库对话都默认私有知识库应用下
-    if (data?.conv_uid) {
-      setCurrentDialogInfo?.({
-        chat_scene: data.chat_mode,
-        app_code: data.chat_mode,
-      });
-      localStorage.setItem(
-        'cur_dialog_info',
-        JSON.stringify({
-          chat_scene: data.chat_mode,
-          app_code: data.chat_mode,
-        }),
-      );
-      router.push(`/chat?scene=chat_knowledge&id=${data?.conv_uid}&knowledge_id=${space.name}`);
-    }
-  };
   const handleStepChange = ({ label, spaceName, docType, files }: StepChangeParams) => {
     if (label === 'finish') {
       setIsAddShow(false);
       getSpaces();
       setSpaceName('');
       setDocType('');
-      setAddStatus('finish');
       localStorage.removeItem('cur_space_id');
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
@@ -100,12 +95,6 @@ const Knowledge = () => {
     docType && setDocType(docType);
   };
 
-  function onAddDoc(spaceName: string) {
-    setSpaceName(spaceName);
-    setActiveStep(1);
-    setIsAddShow(true);
-    setAddStatus('start');
-  }
   const showDeleteConfirm = (space: ISpace) => {
     Modal.confirm({
       title: t('Tips'),
@@ -167,9 +156,7 @@ const Knowledge = () => {
             {spaceList?.map((space: ISpace) => (
               <BlurredCard
                 onClick={() => {
-                  setCurrentSpace(space);
-                  setIsPanelShow(true);
-                  localStorage.setItem('cur_space_id', JSON.stringify(space.id));
+                  router.push(`/construct/knowledge/detail?spaceName=${space.name}`);
                 }}
                 description={space.desc}
                 name={space.name}
@@ -181,7 +168,7 @@ const Knowledge = () => {
                       ? '/models/knowledge-graph.png'
                       : space.vector_type === 'FullText'
                         ? '/models/knowledge-full-text.jpg'
-                        : '/models/knowledge-default.jpg'
+                        : '/icons/kb_icon.png'
                 }
                 RightTop={
                   <InnerDropdown
@@ -201,7 +188,7 @@ const Knowledge = () => {
                 }
                 rightTopHover={false}
                 Tags={
-                  <div className='flex item-center'>
+                  <div className='flex item-center flex-wrap gap-1'>
                     <Tag>
                       <span className='flex items-center gap-1'>
                         <ReadOutlined className='mt-[1px]' />
@@ -212,10 +199,43 @@ const Knowledge = () => {
                       <span className='flex items-center gap-1'>{space.domain_type || 'Normal'}</span>
                     </Tag>
                     {space.vector_type ? (
-                      <Tag>
+                      <Tag color='blue'>
                         <span className='flex items-center gap-1'>{space.vector_type}</span>
                       </Tag>
                     ) : null}
+                    {space.index_methods && space.index_methods.length > 0 ? (
+                      <Tag color='purple'>
+                        <span className='flex items-center gap-1'>
+                          {space.index_methods
+                            .map(m => {
+                              const map: Record<string, string> = {
+                                VectorStore: t('index_vector_store'),
+                                FullText: t('index_full_text'),
+                                KnowledgeGraph: t('index_knowledge_graph'),
+                              };
+                              return map[m] || m;
+                            })
+                            .join('+')}
+                        </span>
+                      </Tag>
+                    ) : null}
+                    {/* Graph stats */}
+                    {spaceStats[space.name]?.vertexCount != null && (
+                      <Tag color='violet-inverse' className='border-violet-300 text-violet-600'>
+                        <span className='flex items-center gap-0.5 text-[11px]'>
+                          <NodeIndexOutlined />
+                          {spaceStats[space.name].vertexCount}
+                        </span>
+                      </Tag>
+                    )}
+                    {spaceStats[space.name]?.edgeCount != null && (
+                      <Tag color='violet-inverse' className='border-violet-300 text-violet-600'>
+                        <span className='flex items-center gap-0.5 text-[11px]'>
+                          <ShareAltOutlined />
+                          {spaceStats[space.name].edgeCount}
+                        </span>
+                      </Tag>
+                    )}
                   </div>
                 }
                 LeftBottom={
@@ -225,28 +245,11 @@ const Knowledge = () => {
                     {space?.gmt_modified && <span>{moment(space?.gmt_modified).fromNow() + ' ' + t('update')}</span>}
                   </div>
                 }
-                RightBottom={
-                  <ChatButton
-                    text={t('start_chat')}
-                    onClick={() => {
-                      handleChat(space);
-                    }}
-                  />
-                }
+                RightBottom={null}
               />
             ))}
           </div>
         </div>
-        <Modal
-          className='h-5/6 overflow-hidden'
-          open={isPanelShow}
-          width={'70%'}
-          onCancel={() => setIsPanelShow(false)}
-          footer={null}
-          destroyOnClose={true}
-        >
-          <DocPanel space={currentSpace!} onAddDoc={onAddDoc} onDeleteDoc={getSpaces} addStatus={addStatus} />
-        </Modal>
         <Modal
           title={t('New_knowledge_base')}
           centered
@@ -262,15 +265,35 @@ const Knowledge = () => {
           }}
           footer={null}
         >
-          <Steps current={activeStep} items={addKnowledgeSteps} />
-          {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} spaceConfig={spaceConfig} />}
+          {activeStep === 0 && (
+            <SpaceForm
+              handleStepChange={handleStepChange}
+              spaceConfig={spaceConfig}
+              onSuccess={() => {
+                setIsAddShow(false);
+                getSpaces();
+                setActiveStep(0);
+              }}
+            />
+          )}
           {activeStep === 1 && <DocTypeForm handleStepChange={handleStepChange} />}
-          <DocUploadForm
-            className={classNames({ hidden: activeStep !== 2 })}
-            spaceName={spaceName}
-            docType={docType}
-            handleStepChange={handleStepChange}
-          />
+          {activeStep === 2 && docType === 'GIT_REPO' ? (
+            <GitRepoSyncForm
+              spaceName={spaceName}
+              onSuccess={() => {
+                setIsAddShow(false);
+                getSpaces();
+                setActiveStep(0);
+              }}
+            />
+          ) : (
+            <DocUploadForm
+              className={classNames({ hidden: activeStep !== 2 })}
+              spaceName={spaceName}
+              docType={docType}
+              handleStepChange={handleStepChange}
+            />
+          )}
           {activeStep === 3 && (
             <Segmentation
               spaceName={spaceName}

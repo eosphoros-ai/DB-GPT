@@ -154,7 +154,10 @@ class ContextManager:
         if state >= TokenState.ERROR and self.llm_client is not None:
             try:
                 messages = await self._layer3.compact(
-                    messages, self.llm_client, self.tracker
+                    messages,
+                    self.llm_client,
+                    self.tracker,
+                    model_name=self.model_name,
                 )
                 self.tracker.record_compact_success()
                 token_count = self.tracker.count_messages(messages)

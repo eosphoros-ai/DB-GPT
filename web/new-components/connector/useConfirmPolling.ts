@@ -24,9 +24,7 @@ export function useConfirmPolling({
 
   const fetchPending = useCallback(async () => {
     try {
-      const data = (await axios.get('/api/v2/serve/connectors/pending-confirms')) as
-        | PendingConfirmation[]
-        | undefined;
+      const data = (await axios.get('/api/v2/serve/connectors/pending-confirms')) as PendingConfirmation[] | undefined;
       if (data && data.length > 0) {
         const first = data[0];
         if (first.confirm_id !== currentConfirmIdRef.current) {
@@ -57,18 +55,21 @@ export function useConfirmPolling({
     };
   }, [isActive, pollInterval, fetchPending]);
 
-  const sendConfirm = useCallback(async (approved: boolean) => {
-    if (!pendingConfirmation) return;
-    const body: ConfirmActionRequest = {
-      confirm_id: pendingConfirmation.confirm_id,
-      approved,
-    };
-    try {
-      await axios.post('/api/v2/serve/connectors/confirm', body);
-    } catch {}
-    currentConfirmIdRef.current = null;
-    setPendingConfirmation(null);
-  }, [pendingConfirmation]);
+  const sendConfirm = useCallback(
+    async (approved: boolean) => {
+      if (!pendingConfirmation) return;
+      const body: ConfirmActionRequest = {
+        confirm_id: pendingConfirmation.confirm_id,
+        approved,
+      };
+      try {
+        await axios.post('/api/v2/serve/connectors/confirm', body);
+      } catch {}
+      currentConfirmIdRef.current = null;
+      setPendingConfirmation(null);
+    },
+    [pendingConfirmation],
+  );
 
   const approve = useCallback(() => sendConfirm(true), [sendConfirm]);
   const deny = useCallback(() => sendConfirm(false), [sendConfirm]);

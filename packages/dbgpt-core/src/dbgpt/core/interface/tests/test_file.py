@@ -13,6 +13,7 @@ from ..file import (
     InMemoryStorage,
     LocalFileStorage,
     SimpleDistributedStorage,
+    StreamedBytesIO,
 )
 
 
@@ -504,3 +505,16 @@ def test_simple_distributed_storage_delete_file_remote(
         f"http://{remote_node_address}/api/v2/serve/file/files/{bucket}/{file_id}",
         timeout=360,
     )
+
+
+class TestStreamedBytesIO:
+    def test_read_negative_size_reads_all(self):
+        stream = StreamedBytesIO(iter([b"hello ", b"world"]))
+        assert stream.read(-1) == b"hello world"
+
+    def test_seek_end_loads_all_and_returns_position(self):
+        stream = StreamedBytesIO(iter([b"hello ", b"world"]))
+        position = stream.seek(-5, io.SEEK_END)
+        assert position == 6
+        assert stream.tell() == 6
+        assert stream.read() == b"world"
