@@ -984,6 +984,33 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+def _normalize_sandbox_execution_status(result: Any):
+    """Normalize execution results returned by local and container runtimes."""
+    from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
+
+    status = getattr(result, "status", None)
+    if isinstance(status, ExecutionStatus):
+        return status
+    if getattr(result, "exit_code", None) == 124:
+        return ExecutionStatus.TIMEOUT
+    if isinstance(status, str):
+        try:
+            return ExecutionStatus(status.lower())
+        except ValueError:
+            pass
+    return ExecutionStatus.ERROR
+
+
+def _shell_validation_error(code: str) -> Optional[str]:
+    """Return the existing sandbox validation error for unsafe shell code."""
+    from dbgpt_sandbox.sandbox.execution_layer.utils import SecurityUtils
+
+    warnings = SecurityUtils.validate_code(code, "bash")
+    if warnings and any("危险操作" in warning for warning in warnings):
+        return f"代码安全检查失败: {'; '.join(warnings)}"
+    return None
+
+
 async def _react_agent_stream(
     dialogue: ConversationVo,
 ) -> AsyncGenerator[str, None]:
@@ -2177,8 +2204,8 @@ print(json.dumps(summary, ensure_ascii=False))
                 ExecutionStatus,
                 SessionConfig,
             )
-            from dbgpt_sandbox.sandbox.execution_layer.local_runtime import (
-                LocalRuntime,
+            from dbgpt_sandbox.sandbox.execution_layer.runtime_factory import (
+                RuntimeFactory,
             )
         except ImportError:
             return json.dumps(
@@ -2197,8 +2224,19 @@ print(json.dumps(summary, ensure_ascii=False))
                 ensure_ascii=False,
             )
 
+        validation_error = _shell_validation_error(code)
+        if validation_error:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {"output_type": "code", "content": code.strip()},
+                        {"output_type": "text", "content": validation_error},
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
         session_id = f"bash_{uuid.uuid4().hex[:12]}"
-        runtime = LocalRuntime()
 
         from dbgpt.configs.model_config import ROOT_PATH
 
@@ -2213,13 +2251,16 @@ print(json.dumps(summary, ensure_ascii=False))
         )
 
         output_text = ""
+        runtime = None
         try:
+            runtime = RuntimeFactory.create()
             session = await runtime.create_session(session_id, config)
             result = await session.execute(code)
+            result_status = _normalize_sandbox_execution_status(result)
 
-            if result.status == ExecutionStatus.SUCCESS:
+            if result_status == ExecutionStatus.SUCCESS:
                 output_text = result.output or ""
-            elif result.status == ExecutionStatus.TIMEOUT:
+            elif result_status == ExecutionStatus.TIMEOUT:
                 output_text = f"Execution timed out ({config.timeout}s limit)"
             else:
                 output_text = result.error or "Unknown execution error"
@@ -2228,10 +2269,11 @@ print(json.dumps(summary, ensure_ascii=False))
         except Exception as e:
             output_text = f"Sandbox execution error: {e}"
         finally:
-            try:
-                await runtime.destroy_session(session_id)
-            except Exception:
-                pass
+            if runtime is not None:
+                try:
+                    await runtime.destroy_session(session_id)
+                except Exception:
+                    pass
 
         chunks: List[Dict[str, Any]] = [
             {"output_type": "code", "content": code.strip()},
