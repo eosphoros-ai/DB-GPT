@@ -1,8 +1,8 @@
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
 import {
-  ApiOutlined,
   ApartmentOutlined,
+  ApiOutlined,
   AppstoreOutlined,
   BarChartOutlined,
   BookOutlined,
@@ -68,6 +68,10 @@ export interface ExecutionStep {
   phase?: string;
   status: StepStatus;
   output?: any;
+  /** Raw confirmed tool action, used for action-specific compact timeline cards. */
+  action?: string;
+  /** Confirmed tool input. Only compact, non-sensitive fields are rendered. */
+  actionInput?: unknown;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -104,6 +108,8 @@ export interface ManusLeftPanelProps {
   assistantText?: string;
   modelName?: string;
   stepThoughts?: Record<string, string>;
+  /** Optional slot rendered above the execution sections (sub-agent card). */
+  subAgentSlot?: React.ReactNode;
   artifacts?: ArtifactItem[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
   onArtifactDownload?: (artifact: ArtifactItem) => void;
@@ -749,6 +755,66 @@ const StepCard: React.FC<{
 
 StepCard.displayName = 'StepCard';
 
+interface ParallelDispatchTask {
+  title: string;
+}
+
+const parseParallelDispatchTasks = (actionInput: unknown): ParallelDispatchTask[] => {
+  let parsed = actionInput;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') return [];
+  const tasks = (parsed as { tasks?: unknown }).tasks;
+  if (!Array.isArray(tasks)) return [];
+  return tasks
+    .map(task => {
+      if (!task || typeof task !== 'object') return null;
+      const value = task as { title?: unknown; goal?: unknown };
+      const title = typeof value.title === 'string' ? value.title.trim() : '';
+      const goal = typeof value.goal === 'string' ? value.goal.trim() : '';
+      return title || goal ? { title: title || goal } : null;
+    })
+    .filter((task): task is ParallelDispatchTask => task !== null);
+};
+
+const ParallelDispatchSummary: React.FC<{ actionInput: unknown }> = memo(({ actionInput }) => {
+  const { t } = useTranslation();
+  const tasks = useMemo(() => parseParallelDispatchTasks(actionInput), [actionInput]);
+
+  return (
+    <div className='flex min-w-0 items-start gap-2 px-1 py-0.5'>
+      <span className='mt-[6px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300 dark:bg-slate-600' />
+      <div className='min-w-0 flex-1'>
+        <p className='m-0 text-[12px] leading-5 text-slate-500 dark:text-slate-400'>
+          {tasks.length > 0
+            ? t('parallel_tasks_dispatch_summary', { count: tasks.length })
+            : t('parallel_tasks_dispatch_summary_fallback')}
+        </p>
+        {tasks.length > 0 && (
+          <ul className='m-0 mt-0.5 list-none space-y-0.5 p-0'>
+            {tasks.map((task, index) => (
+              <li
+                key={`${index}-${task.title}`}
+                className='flex min-w-0 items-start gap-1.5 text-[11px] leading-5 text-slate-400 dark:text-slate-500'
+              >
+                <span className='mt-[8px] h-1 w-1 flex-shrink-0 rounded-full bg-slate-300 dark:bg-slate-600' />
+                <span className='line-clamp-2 min-w-0 break-words'>{task.title}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+});
+
+ParallelDispatchSummary.displayName = 'ParallelDispatchSummary';
+
 // Parse get_skill_resource step description to extract skill name, resource path, and content
 const parseSkillResourceDescription = (
   description?: string,
@@ -944,25 +1010,33 @@ const SectionBlock: React.FC<{
         <div className='ml-7 space-y-2 overflow-hidden'>
           {stepThoughts?.['initial'] && <ThoughtBubble text={stepThoughts['initial']} />}
 
-          {section.steps.map(step => (
-            <React.Fragment key={step.id}>
-              {step.description?.includes('Action: get_skill_resource') ? (
-                <SkillResourceCard
-                  step={step}
-                  isActive={step.id === activeStepId}
-                  onClick={() => onStepClick(step.id)}
-                />
-              ) : (
-                <StepCard
-                  step={step}
-                  isActive={step.id === activeStepId}
-                  onClick={() => onStepClick(step.id)}
-                  thought={stepThoughts?.[step.id]}
-                />
-              )}
-              {step.description?.includes('Observation:') && <ObservationFormatter observation={step.description} />}
-            </React.Fragment>
-          ))}
+          {section.steps.map(step => {
+            const isParallelDispatch = step.action === 'dispatch_parallel_tasks';
+            return (
+              <React.Fragment key={step.id}>
+                {isParallelDispatch ? (
+                  <div className='space-y-2'>
+                    <ParallelDispatchSummary actionInput={step.actionInput} />
+                    <StepCard step={step} isActive={step.id === activeStepId} onClick={() => onStepClick(step.id)} />
+                  </div>
+                ) : step.description?.includes('Action: get_skill_resource') ? (
+                  <SkillResourceCard
+                    step={step}
+                    isActive={step.id === activeStepId}
+                    onClick={() => onStepClick(step.id)}
+                  />
+                ) : (
+                  <StepCard
+                    step={step}
+                    isActive={step.id === activeStepId}
+                    onClick={() => onStepClick(step.id)}
+                    thought={stepThoughts?.[step.id]}
+                  />
+                )}
+                {step.description?.includes('Observation:') && <ObservationFormatter observation={step.description} />}
+              </React.Fragment>
+            );
+          })}
         </div>
       )}
     </div>
@@ -981,6 +1055,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   assistantText,
   modelName,
   stepThoughts,
+  subAgentSlot,
   artifacts,
   onArtifactClick,
   onArtifactDownload,
@@ -1168,6 +1243,11 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             )}
           </div>
         )}
+
+        {/* Parallel sub-agent activity — rendered after the thinking timeline,
+            but ABOVE the task-plan list so the plan card stays at the bottom
+            (its original position). */}
+        {subAgentSlot}
 
         {taskPlan && taskPlan.length > 0 && (
           <div className='mt-3 px-1'>

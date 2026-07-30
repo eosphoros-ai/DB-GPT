@@ -53,11 +53,12 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
                 ensure_ascii=False,
             )
 
-        from dbgpt.configs.model_config import ROOT_PATH
+        from dbgpt.configs.model_config import PILOT_PATH
 
         session_id = f"bash_{uuid.uuid4().hex[:12]}"
         runtime = LocalRuntime()
-        sandbox_work_dir = ROOT_PATH
+        cid = react_state.get("conv_id") or "default"
+        sandbox_work_dir = os.path.join(PILOT_PATH, "tmp", cid)
         os.makedirs(sandbox_work_dir, exist_ok=True)
 
         config = SessionConfig(

@@ -1,3 +1,4 @@
+import html
 import logging
 import os
 import shutil
@@ -391,9 +392,30 @@ async def codegraph_visualize(space_name: str):
     """
     from dbgpt_serve.rag.tools.codegraph_tools import _load_graph
 
+    # space_name is a URL path param and flows into a filesystem join inside
+    # _load_graph → _get_graph_cache_dir. Reject path-traversal payloads up
+    # front (Binary/\\/..) rather than letting them build an out-of-tree path.
+    if (
+        not space_name
+        or "/" in space_name
+        or "\\" in space_name
+        or space_name
+        in (
+            ".",
+            "..",
+        )
+    ):
+        return HTMLResponse(
+            content="<html><body><h2>Invalid knowledge space name</h2></body></html>",
+            status_code=400,
+        )
+
     graph, load_error = _load_graph(space_name)
     if graph is None:
-        error_detail = f"<p>详情: {load_error}</p>" if load_error else ""
+        # Escape load_error before splicing into HTML — space_name is a
+        # user-controlled URL path param and the error message echoes it back,
+        # so an unescaped value is a reflected-XSS vector.
+        error_detail = f"<p>详情: {html.escape(load_error)}</p>" if load_error else ""
         return HTMLResponse(
             content="<html><body><h2>No code graph found</h2>"
             "<p>请先构建代码图谱：创建知识库时启用代码图谱索引</p>"
@@ -408,8 +430,10 @@ async def codegraph_visualize(space_name: str):
         return HTMLResponse(content=html_content)
     except Exception as e:
         logger.error(f"codegraph_visualize error: {e}", exc_info=True)
+        # Escape the exception text to prevent reflected XSS via the error path.
         return HTMLResponse(
-            content=f"<html><body><h2>Visualization Error</h2><p>{e}</p></body></html>",
+            content=f"<html><body><h2>Visualization Error</h2>"
+            f"<p>{html.escape(str(e))}</p></body></html>",
             status_code=500,
         )
 

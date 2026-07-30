@@ -76,6 +76,7 @@ function CollapsibleTrigger({ children, className, asChild }: CollapsibleTrigger
     return React.cloneElement(children as React.ReactElement<any>, {
       onClick: handleClick,
       'data-state': open ? 'open' : 'closed',
+      'aria-expanded': open,
     });
   }
 
@@ -84,6 +85,7 @@ function CollapsibleTrigger({ children, className, asChild }: CollapsibleTrigger
       type='button'
       data-slot='collapsible-trigger'
       data-state={open ? 'open' : 'closed'}
+      aria-expanded={open}
       className={classNames(
         'oc-collapsible-trigger',
         'w-full text-left cursor-pointer',

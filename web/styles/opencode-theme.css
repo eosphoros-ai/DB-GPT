@@ -474,7 +474,7 @@
   transition: transform var(--transition-fast);
 }
 
-.oc-collapsible[data-state="open"] .oc-collapsible-arrow {
+.oc-collapsible-arrow[data-state="open"] {
   transform: rotate(180deg);
 }
 
@@ -2187,4 +2187,3 @@
   transform: translateX(2px);
   transition: transform 0.15s ease;
 }
-

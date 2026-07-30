@@ -15,8 +15,9 @@ def make_todowrite(
     @tool(
         description=(
             "Create and manage a structured task list for the current session. "
-            "Use this tool to plan complex tasks (3+ steps), track progress, "
-            "and show the user what you are doing. "
+            "Use this tool to plan complex tasks (3+ steps) or tasks containing "
+            "2 or more mutually independent subtasks, track progress, and show "
+            "the user what you are doing. "
             "Pass the FULL todo list every time (not incremental). "
             "Each todo has: content (brief description), "
             "status (pending | in_progress | completed | cancelled), "

@@ -25,6 +25,8 @@ max_observation_age_rounds = 5
 truncated_observation_max_chars = 200
 min_keep_tokens = 10000
 max_compact_failures = 3
+# Per dispatch_parallel_tasks call. DBGPT_MAX_PARALLEL_SUBAGENTS overrides it.
+max_parallel_subagents = 3
 
 [service.web.database]
 type = "sqlite"
