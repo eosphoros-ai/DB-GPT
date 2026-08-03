@@ -81,6 +81,9 @@ class ConnectorManager(BaseComponent):
             GaussDBConnector,
         )
         from dbgpt_ext.datasource.rdbms.conn_hive import HiveConnector  # noqa: F401
+        from dbgpt_ext.datasource.rdbms.conn_maxcompute import (  # noqa: F401
+            MaxComputeConnector,
+        )
         from dbgpt_ext.datasource.rdbms.conn_mssql import MSSQLConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_mysql import MySQLConnector  # noqa: F401
         from dbgpt_ext.datasource.rdbms.conn_oceanbase import (  # noqa: F401
