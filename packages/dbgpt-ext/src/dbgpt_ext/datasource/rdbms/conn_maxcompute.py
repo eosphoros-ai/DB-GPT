@@ -104,9 +104,7 @@ class MaxComputeConnector(RDBMSConnector):
         return MaxComputeParameters
 
     @classmethod
-    def from_parameters(
-        cls, parameters: MaxComputeParameters
-    ) -> "MaxComputeConnector":
+    def from_parameters(cls, parameters: MaxComputeParameters) -> "MaxComputeConnector":
         """Create MaxCompute connector from parameters."""
         db_url = parameters.db_url()
         engine_args = parameters.engine_args() or {}
@@ -136,9 +134,7 @@ class MaxComputeConnector(RDBMSConnector):
         db_url = f"{cls.driver}://{auth_str}{quote(db_name)}/"
         if host:
             db_url += f"?endpoint={urlquote(host)}"
-        return cast(
-            MaxComputeConnector, cls.from_uri(db_url, engine_args, **kwargs)
-        )
+        return cast(MaxComputeConnector, cls.from_uri(db_url, engine_args, **kwargs))
 
     def table_simple_info(self) -> List[Any]:
         """Get table simple info.
