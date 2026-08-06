@@ -59,6 +59,24 @@ class MaxComputeParameters(BaseDatasourceParameters):
         metadata={"help": _("SQLAlchemy driver name for MaxCompute, default 'odps'")},
     )
 
+    @classmethod
+    def _persisted_state_mapping(cls) -> Dict[str, str]:
+        """Return the mapping of persisted state.
+
+        MaxCompute's connection fields don't match the default
+        host/port/user/password/database mapping, so we map them explicitly to the
+        fixed ``connect_config`` columns. This keeps the semantics consistent with
+        ``from_uri_db`` (endpoint->host, access_id->user, access_key->password,
+        project->database), ensuring both datasource creation (``db_name`` is
+        populated, satisfying the NOT NULL constraint) and connector rebuild work.
+        """
+        return {
+            "endpoint": "db_host",
+            "access_id": "db_user",
+            "access_key": "db_pwd",
+            "project": "db_name",
+        }
+
     def engine_args(self) -> Optional[Dict[str, Any]]:
         """Get engine args."""
         return {}
