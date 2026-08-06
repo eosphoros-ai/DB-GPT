@@ -63,7 +63,7 @@ class SkillLoader:
 
         if path.suffix == ".json":
             return self._load_from_json(path)
-        elif path.name == "SKILL.md" or path.suffix == ".md":
+        elif path.name == "SKILL.md":
             return self._load_from_markdown(path)
         elif path.suffix in [".yaml", ".yml"]:
             return self._load_from_yaml(path)
@@ -113,12 +113,16 @@ class SkillLoader:
         # Look for JSON/YAML files and Claude-style SKILL.md files
         pattern = "**/*" if recursive else "*"
         for file_path in path.glob(pattern):
-            if file_path.is_file() and file_path.suffix in [
-                ".json",
-                ".yaml",
-                ".yml",
-                ".md",
-            ]:
+            if (
+                file_path.is_file()
+                and file_path.suffix
+                in [
+                    ".json",
+                    ".yaml",
+                    ".yml",
+                ]
+                or file_path.name == "SKILL.md"
+            ):
                 # load_skill_from_file will dispatch appropriately
                 skill = self.load_skill_from_file(str(file_path))
                 if skill:
