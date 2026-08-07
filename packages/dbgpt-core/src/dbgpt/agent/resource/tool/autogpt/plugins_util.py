@@ -11,6 +11,7 @@ import logging
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate
@@ -144,7 +145,8 @@ def update_from_git(
 
     os.makedirs(download_path, exist_ok=True)
     if github_repo:
-        if github_repo.index("github.com") <= 0:
+        parsed = urlparse(github_repo)
+        if parsed.scheme != "https" or parsed.netloc.lower() != "github.com":
             raise ValueError("Not a correct Github repository address！" + github_repo)
         github_repo = github_repo.replace(".git", "")
         url = github_repo + "/archive/refs/heads/" + branch_name + ".zip"
