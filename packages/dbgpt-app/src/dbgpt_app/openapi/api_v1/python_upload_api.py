@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, UploadFile
@@ -11,6 +12,45 @@ from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 router = APIRouter()
 CFG = Config()
 logger = logging.getLogger(__name__)
+
+# Only allow alphanumeric characters, underscores and hyphens in user_id.
+# This prevents path traversal via "../" or path separators in the header.
+_SAFE_USER_ID_RE = re.compile(r"^[A-Za-z0-9_\-]+$")
+
+
+def _resolve_user_id(user_id: str) -> str:
+    """Validate the user_id so it cannot be used for path traversal.
+
+    The user_id is sourced from an HTTP header and used as a path component
+    of the upload directory, so it must only contain safe characters.
+    """
+    if not user_id or not isinstance(user_id, str):
+        return "default"
+    user_id = user_id.strip()
+    if not user_id:
+        return "default"
+    if not _SAFE_USER_ID_RE.match(user_id):
+        raise ValueError(
+            "Invalid user_id: only alphanumeric characters, underscores and "
+            "hyphens are allowed"
+        )
+    return user_id
+
+
+def _resolve_upload_dir(base_dir: str, user_id: str) -> str:
+    """Build the per-user upload directory and verify it stays within
+    ``<base_dir>/python_uploads`` to prevent path traversal via user_id.
+    """
+    base_path = Path(base_dir).resolve()
+    uploads_root = (base_path / "python_uploads").resolve()
+    upload_dir = (uploads_root / user_id).resolve()
+    try:
+        upload_dir.relative_to(uploads_root)
+    except ValueError as exc:
+        raise ValueError(
+            "user_id resolves to a path outside the upload directory"
+        ) from exc
+    return str(upload_dir)
 
 
 def _resolve_upload_path(upload_dir: str, filename: str) -> str:
@@ -36,7 +76,7 @@ async def python_file_upload(
         if not file or not file.filename:
             return Result.failed(msg="No file provided or filename is empty")
 
-        user_id = user_token.user_id or "default"
+        user_id = _resolve_user_id(user_token.user_id)
         logger.info(
             f"Uploading file: {file.filename}, content_type: {file.content_type}, "
             f"user: {user_id}"
@@ -51,7 +91,7 @@ async def python_file_upload(
         ):
             base_dir = CFG.SYSTEM_APP.work_dir
 
-        upload_dir = os.path.join(base_dir, "python_uploads", user_id)
+        upload_dir = _resolve_upload_dir(base_dir, user_id)
         os.makedirs(upload_dir, exist_ok=True)
 
         file_path = _resolve_upload_path(upload_dir, file.filename)
