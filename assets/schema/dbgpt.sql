@@ -581,62 +581,6 @@ CREATE TABLE `share_links` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Conversation share link table';
 
 
-CREATE
-DATABASE IF NOT EXISTS EXAMPLE_1;
-use EXAMPLE_1;
-CREATE TABLE IF NOT EXISTS `users`
-(
-    `id`       int         NOT NULL AUTO_INCREMENT,
-    `username` varchar(50) NOT NULL COMMENT '用户名',
-    `password` varchar(50) NOT NULL COMMENT '密码',
-    `email`    varchar(50) NOT NULL COMMENT '邮箱',
-    `phone`    varchar(20) DEFAULT NULL COMMENT '电话',
-    PRIMARY KEY (`id`),
-    KEY        `idx_username` (`username`) COMMENT '索引：按用户名查询'
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='聊天用户表';
-
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_1', 'password_1', 'user_1@example.com', '12345678901');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_2', 'password_2', 'user_2@example.com', '12345678902');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_3', 'password_3', 'user_3@example.com', '12345678903');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_4', 'password_4', 'user_4@example.com', '12345678904');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_5', 'password_5', 'user_5@example.com', '12345678905');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_6', 'password_6', 'user_6@example.com', '12345678906');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_7', 'password_7', 'user_7@example.com', '12345678907');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_8', 'password_8', 'user_8@example.com', '12345678908');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_9', 'password_9', 'user_9@example.com', '12345678909');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_10', 'password_10', 'user_10@example.com', '12345678900');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_11', 'password_11', 'user_11@example.com', '12345678901');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_12', 'password_12', 'user_12@example.com', '12345678902');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_13', 'password_13', 'user_13@example.com', '12345678903');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_14', 'password_14', 'user_14@example.com', '12345678904');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_15', 'password_15', 'user_15@example.com', '12345678905');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_16', 'password_16', 'user_16@example.com', '12345678906');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_17', 'password_17', 'user_17@example.com', '12345678907');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_18', 'password_18', 'user_18@example.com', '12345678908');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_19', 'password_19', 'user_19@example.com', '12345678909');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_20', 'password_20', 'user_20@example.com', '12345678900');
-
-
 -- connector_instance, Persist MCP connector instances (encrypted credentials, transport/extra config, lifecycle status)
 CREATE TABLE IF NOT EXISTS `connector_instance` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
@@ -693,3 +637,60 @@ CREATE TABLE IF NOT EXISTS `dbgpt_serve_scheduled_run` (
   KEY `ix_scheduled_run_task_id` (`task_id`),
   KEY `ix_scheduled_run_started_at` (`started_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Scheduled task execution history table';
+
+
+-- Example database for chat users (moved to end to avoid breaking dbgpt database context)
+CREATE
+DATABASE IF NOT EXISTS EXAMPLE_1;
+use EXAMPLE_1;
+CREATE TABLE IF NOT EXISTS `users`
+(
+    `id`       int         NOT NULL AUTO_INCREMENT,
+    `username` varchar(50) NOT NULL COMMENT '用户名',
+    `password` varchar(50) NOT NULL COMMENT '密码',
+    `email`    varchar(50) NOT NULL COMMENT '邮箱',
+    `phone`    varchar(20) DEFAULT NULL COMMENT '电话',
+    PRIMARY KEY (`id`),
+    KEY        `idx_username` (`username`) COMMENT '索引：按用户名查询'
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='聊天用户表';
+
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_1', 'password_1', 'user_1@example.com', '12345678901');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_2', 'password_2', 'user_2@example.com', '12345678902');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_3', 'password_3', 'user_3@example.com', '12345678903');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_4', 'password_4', 'user_4@example.com', '12345678904');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_5', 'password_5', 'user_5@example.com', '12345678905');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_6', 'password_6', 'user_6@example.com', '12345678906');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_7', 'password_7', 'user_7@example.com', '12345678907');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_8', 'password_8', 'user_8@example.com', '12345678908');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_9', 'password_9', 'user_9@example.com', '12345678909');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_10', 'password_10', 'user_10@example.com', '12345678900');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_11', 'password_11', 'user_11@example.com', '12345678901');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_12', 'password_12', 'user_12@example.com', '12345678902');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_13', 'password_13', 'user_13@example.com', '12345678903');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_14', 'password_14', 'user_14@example.com', '12345678904');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_15', 'password_15', 'user_15@example.com', '12345678905');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_16', 'password_16', 'user_16@example.com', '12345678906');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_17', 'password_17', 'user_17@example.com', '12345678907');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_18', 'password_18', 'user_18@example.com', '12345678908');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_19', 'password_19', 'user_19@example.com', '12345678909');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_20', 'password_20', 'user_20@example.com', '12345678900');
