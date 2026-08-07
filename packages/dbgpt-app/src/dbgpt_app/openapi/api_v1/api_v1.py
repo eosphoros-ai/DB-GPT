@@ -44,6 +44,7 @@ from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     MessageVo,
     Result,
+    resolve_dialogue_user_name,
 )
 from dbgpt_app.scene import BaseChat, ChatFactory, ChatParam, ChatScene
 from dbgpt_serve.agent.db.gpts_app import UserRecentAppsDao, adapt_native_app_model
@@ -512,7 +513,9 @@ async def chat_prepare(
 ):
     logger.info(json.dumps(dialogue.__dict__))
     # dialogue.model_name = CFG.LLM_MODEL
-    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    dialogue.user_name = resolve_dialogue_user_name(
+        dialogue.user_name, user_token.user_id if user_token else None
+    )
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
     chat: BaseChat = await get_chat_instance(dialogue)
@@ -520,7 +523,7 @@ async def chat_prepare(
     await chat.prepare()
 
     # Refresh messages
-    return Result.succ(get_hist_messages(dialogue.conv_uid, user_token.user_id))
+    return Result.succ(get_hist_messages(dialogue.conv_uid, dialogue.user_name))
 
 
 @router.post("/v1/chat/completions")
@@ -533,7 +536,9 @@ async def chat_completions(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},"
         f"{dialogue.model_name}, timestamp={int(time.time() * 1000)}"
     )
-    dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    dialogue.user_name = resolve_dialogue_user_name(
+        dialogue.user_name, user_token.user_id if user_token else None
+    )
     dialogue = adapt_native_app_model(dialogue)
 
     # Handle knowledge space selection from ext_info for normal chat mode

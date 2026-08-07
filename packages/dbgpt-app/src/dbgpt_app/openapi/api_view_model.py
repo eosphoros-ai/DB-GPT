@@ -10,6 +10,13 @@ from dbgpt.core.schema.types import (
 T = TypeVar("T")
 
 
+def resolve_dialogue_user_name(
+    request_user_name: Optional[str], token_user_id: Optional[str]
+) -> Optional[str]:
+    """Prefer explicit dialogue user_name and fall back to the auth token user."""
+    return request_user_name or token_user_id
+
+
 class Result(BaseModel, Generic[T]):
     success: bool
     err_code: Optional[str] = None
