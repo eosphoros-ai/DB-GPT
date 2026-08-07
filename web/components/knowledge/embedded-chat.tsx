@@ -333,7 +333,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
           <div className='max-w-4xl mx-auto py-4 space-y-6 px-4'>
             {history.length === 0 && !streamingTurn ? (
               <div className='flex flex-col items-center justify-center h-full text-gray-400 gap-3 py-12'>
-                <Image src='/icons/kb_icon.png' alt='KB' width={48} height={48} className='opacity-30' />
+                <Image src='/icons/knowledge.png' alt='KB' width={48} height={48} className='opacity-30' />
                 <p className='text-sm'>{t('input_tips')}</p>
               </div>
             ) : (
@@ -394,7 +394,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                     onChange={val => setKnowledgeValue(val)}
                     placeholder={
                       <span className='flex items-center gap-1'>
-                        <Image src='/icons/kb_icon.png' alt='KB' width={14} height={14} />
+                        <Image src='/icons/knowledge.png' alt='KB' width={14} height={14} />
                         {t('knowledge')}
                       </span>
                     }
@@ -463,7 +463,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
           {/* Header */}
           <div className='flex items-center justify-between px-3 py-2.5 border-b dark:border-gray-700 bg-white dark:bg-[#232734]'>
             <div className='flex items-center gap-2 min-w-0'>
-              <Image src='/icons/kb_icon.png' alt='KB' width={16} height={16} className='flex-shrink-0' />
+              <Image src='/icons/knowledge.png' alt='KB' width={16} height={16} className='flex-shrink-0' />
               <span className='text-xs font-semibold text-gray-700 dark:text-gray-200 truncate'>{knowledgeValue}</span>
               <span className='text-[11px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium flex-shrink-0'>
                 {references.length}
