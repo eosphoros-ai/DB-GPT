@@ -26,7 +26,9 @@ build-backend = "hatchling.build"
 
 [project.optional-dependencies]
 rag = [
-    "spacy==3.7",
+    # spacy 3.8+ is compiled with Cython 3 and ships wheels for Python 3.13.
+    # Pin below 4.0 to avoid picking up a future major release with API changes.
+    "spacy>=3.8,<4.0",
     "markdown",
     "bs4",
     "python-pptx",
