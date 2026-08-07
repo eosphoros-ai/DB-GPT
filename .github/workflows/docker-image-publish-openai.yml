@@ -46,4 +46,6 @@ jobs:
             PIP_INDEX_URL=https://pypi.org/simple
           platforms: linux/arm64,linux/amd64
           push: true
+          provenance: mode=max
+          sbom: true
           tags: eosphorosai/dbgpt-openai:${{ github.ref_name }},eosphorosai/dbgpt-openai:latest
