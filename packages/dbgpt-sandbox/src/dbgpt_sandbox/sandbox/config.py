@@ -2,6 +2,7 @@ import os
 
 LANGUAGE_IMAGES = {
     "python": "python:3.11-slim",
+    "bash": "python:3.11-slim",
     "python-vnc": "vnc-gui-browser:latest",
     "javascript": "node:18-slim",
     "java": "openjdk:11-jre-slim",
@@ -22,6 +23,7 @@ def get_command_by_language(language: str, filename: str) -> str:
         "cpp": f"g++ -o program {filename} && ./program",
         "go": f"go run {filename}",
         "rust": f"rustc {filename} -o program && ./program",
+        "bash": f"sh {filename}",
     }
     return commands.get(language, f"cat {filename}")
 

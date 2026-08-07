@@ -346,6 +346,7 @@ class DockerSandboxSession(SandboxSession):
             "go": ".go",
             "rust": ".rs",
             "python-vnc": ".py",
+            "bash": ".sh",
         }
         ext = extensions.get(self.config.language, ".txt")
         timestamp = int(time.time() * 1000)

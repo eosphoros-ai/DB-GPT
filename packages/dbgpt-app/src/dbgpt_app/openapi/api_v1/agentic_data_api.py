@@ -970,6 +970,33 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+def _normalize_sandbox_execution_status(result: Any):
+    """Normalize execution results returned by local and container runtimes."""
+    from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
+
+    status = getattr(result, "status", None)
+    if isinstance(status, ExecutionStatus):
+        return status
+    if getattr(result, "exit_code", None) == 124:
+        return ExecutionStatus.TIMEOUT
+    if isinstance(status, str):
+        try:
+            return ExecutionStatus(status.lower())
+        except ValueError:
+            pass
+    return ExecutionStatus.ERROR
+
+
+def _shell_validation_error(code: str) -> Optional[str]:
+    """Return the existing sandbox validation error for unsafe shell code."""
+    from dbgpt_sandbox.sandbox.execution_layer.utils import SecurityUtils
+
+    warnings = SecurityUtils.validate_code(code, "bash")
+    if warnings and any("危险操作" in warning for warning in warnings):
+        return f"代码安全检查失败: {'; '.join(warnings)}"
+    return None
+
+
 async def _react_agent_stream(
     dialogue: ConversationVo,
     tool_mode: str = "full",
@@ -1870,6 +1897,985 @@ print(json.dumps(summary, ensure_ascii=False))
     read_file_tool = make_read_file(react_state)
     # Keep local aliases for backward compatibility (SSE loop references these names)
     execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
+
+    _todo_action_history: Dict[int, List[str]] = {}
+
+    def _active_todo_index() -> Optional[int]:
+        for idx, item in enumerate(_todo_list):
+            if item.get("status") == "in_progress":
+                return idx
+        return None
+
+    def _normalize_text(value: Optional[str]) -> str:
+        return (value or "").strip().lower()
+
+    def _is_report_like(text: str) -> bool:
+        keywords = [
+            "report",
+            "html",
+            "dashboard",
+            "visual",
+            "visualization",
+            "图表",
+            "报告",
+            "报表",
+            "可视化",
+            "渲染",
+            "展示",
+        ]
+        return any(keyword in text for keyword in keywords)
+
+    def should_advance_todo(
+        action_name: Optional[str],
+        thought: Optional[str] = None,
+        observation_text: Optional[str] = None,
+    ) -> bool:
+        """Heuristically decide whether the current todo is actually complete."""
+        if not _todo_list:
+            return False
+
+        active_idx = _active_todo_index()
+        if active_idx is None:
+            return False
+
+        action_lower = _normalize_text(action_name)
+        thought_lower = _normalize_text(thought)
+        observation_lower = _normalize_text(observation_text)
+        current_todo = _normalize_text(_todo_list[active_idx].get("content"))
+        next_todo = (
+            _normalize_text(_todo_list[active_idx + 1].get("content"))
+            if active_idx + 1 < len(_todo_list)
+            else ""
+        )
+
+        history = _todo_action_history.setdefault(active_idx, [])
+        if action_lower:
+            history.append(action_lower)
+
+        transition_markers = [
+            "next step",
+            "now i need",
+            "now i should",
+            "now let me",
+            "现在需要",
+            "下一步",
+            "接下来",
+            "然后",
+            "接着",
+            "接下来我将",
+        ]
+        if next_todo and any(marker in thought_lower for marker in transition_markers):
+            if any(token and token in thought_lower for token in next_todo.split()):
+                return True
+
+        if action_lower == "html_interpreter":
+            return True
+
+        if action_lower in {
+            "load_skill",
+            "execute_skill_script",
+            "execute_skill_script_file",
+        }:
+            if next_todo and next_todo in thought_lower:
+                return True
+            if _is_report_like(next_todo) and _is_report_like(thought_lower):
+                return True
+
+        if action_lower == "sql_query":
+            sql_calls = sum(1 for item in history if item == "sql_query")
+            if sql_calls < 3:
+                return False
+
+        return json.dumps({"chunks": chunks}, ensure_ascii=False)
+
+    @tool(
+        description="Execute shell/bash commands in a sandboxed environment. "
+        "Use this tool when you need to run shell commands such as ls, cat, "
+        "grep, curl, apt, pip, git, or any other CLI tool. "
+        "The sandbox provides resource limits (256MB memory, 30s timeout) "
+        "and process isolation. "
+        'Parameters: {"code": "shell command(s) to execute"}'
+    )
+    async def shell_interpreter(code: str) -> str:
+        """Execute shell/bash commands in a sandboxed environment.
+
+        Uses dbgpt-sandbox LocalRuntime to run bash scripts with:
+        - Memory limit: 256MB
+        - Timeout: 30 seconds
+        - Process tree management (cleanup on timeout/error)
+        - Security validation (blocks dangerous patterns like rm -rf /)
+        Each call is independent — no state persists between calls.
+        """
+        import uuid
+
+        if not code or not code.strip():
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": "No command provided",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
+        try:
+            from dbgpt_sandbox.sandbox.execution_layer.base import (
+                ExecutionStatus,
+                SessionConfig,
+            )
+            from dbgpt_sandbox.sandbox.execution_layer.runtime_factory import (
+                RuntimeFactory,
+            )
+        except ImportError:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {"output_type": "code", "content": code.strip()},
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "Error: dbgpt-sandbox package is not installed. "
+                                "Please install it with: pip install dbgpt-sandbox"
+                            ),
+                        },
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
+        validation_error = _shell_validation_error(code)
+        if validation_error:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {"output_type": "code", "content": code.strip()},
+                        {"output_type": "text", "content": validation_error},
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
+        session_id = f"bash_{uuid.uuid4().hex[:12]}"
+
+        from dbgpt.configs.model_config import ROOT_PATH
+
+        sandbox_work_dir = ROOT_PATH
+        os.makedirs(sandbox_work_dir, exist_ok=True)
+
+        config = SessionConfig(
+            language="bash",
+            working_dir=sandbox_work_dir,
+            max_memory=256 * 1024 * 1024,  # 256MB
+            timeout=30,
+        )
+
+        output_text = ""
+        runtime = None
+        try:
+            runtime = RuntimeFactory.create()
+            session = await runtime.create_session(session_id, config)
+            result = await session.execute(code)
+            result_status = _normalize_sandbox_execution_status(result)
+
+            if result_status == ExecutionStatus.SUCCESS:
+                output_text = result.output or ""
+            elif result_status == ExecutionStatus.TIMEOUT:
+                output_text = f"Execution timed out ({config.timeout}s limit)"
+            else:
+                output_text = result.error or "Unknown execution error"
+                if result.output:
+                    output_text = result.output + "\n[ERROR]\n" + output_text
+        except Exception as e:
+            output_text = f"Sandbox execution error: {e}"
+        finally:
+            if runtime is not None:
+                try:
+                    await runtime.destroy_session(session_id)
+                except Exception:
+                    pass
+
+        chunks: List[Dict[str, Any]] = [
+            {"output_type": "code", "content": code.strip()},
+        ]
+        if output_text.strip():
+            chunks.append({"output_type": "text", "content": output_text.strip()})
+        else:
+            chunks.append(
+                {
+                    "output_type": "text",
+                    "content": "(no output)",
+                }
+            )
+
+        # ── Safety-net post-processing for skill script execution ──
+        # If the LLM used shell_interpreter to run a skill script despite
+        # the prompt requesting execute_skill_script_file, we still capture
+        # critical side-effects (ratio_data, images) into react_state.
+        _code_lower = code.strip().lower()
+        _is_skill_script = "skills/" in _code_lower and ".py" in _code_lower
+        if _is_skill_script and output_text.strip():
+            import shutil
+
+            from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
+
+            # 1) Capture calculate_ratios.py output as ratio_data
+            if "calculate_ratios" in _code_lower:
+                try:
+                    ratio_data = json.loads(output_text.strip())
+                    if isinstance(ratio_data, dict):
+                        react_state["ratio_data"] = ratio_data
+                        logger.info(
+                            "shell_interpreter: captured %d ratio_data keys",
+                            len(ratio_data),
+                        )
+                except Exception:
+                    pass
+
+            # 2) Capture generate_charts.py output — look for image paths
+            #    and copy them to static dir, same as execute_skill_script_file
+            if "generate_charts" in _code_lower:
+                try:
+                    os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
+                    IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+                    # Try to parse JSON output for image paths
+                    try:
+                        chart_output = json.loads(output_text.strip())
+                        if isinstance(chart_output, dict):
+                            # Might be {"charts": {...}} or flat dict
+                            chart_map = chart_output.get("charts", chart_output)
+                            for name, abs_path in chart_map.items():
+                                if isinstance(abs_path, str) and os.path.isfile(
+                                    abs_path
+                                ):
+                                    ext = os.path.splitext(abs_path)[1].lower()
+                                    if ext in IMAGE_EXTS:
+                                        unique_name = (
+                                            f"{uuid.uuid4().hex[:8]}_"
+                                            f"{os.path.basename(abs_path)}"
+                                        )
+                                        dest = os.path.join(
+                                            STATIC_MESSAGE_IMG_PATH, unique_name
+                                        )
+                                        shutil.copy2(abs_path, dest)
+                                        img_url = f"/images/{unique_name}"
+                                        react_state.setdefault(
+                                            "generated_images", []
+                                        ).append(img_url)
+                                        orig_stem = os.path.splitext(
+                                            os.path.basename(abs_path)
+                                        )[0].lower()
+                                        react_state.setdefault("image_url_map", {})[
+                                            orig_stem
+                                        ] = img_url
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                    # Also scan the output dir for any new .png files
+                    cid = react_state.get("conv_id") or "default"
+                    from dbgpt.configs.model_config import PILOT_PATH
+
+                    out_dir = os.path.join(PILOT_PATH, "tmp", cid)
+                    if os.path.isdir(out_dir):
+                        for fname in os.listdir(out_dir):
+                            ext = os.path.splitext(fname)[1].lower()
+                            if ext in IMAGE_EXTS:
+                                abs_path = os.path.join(out_dir, fname)
+                                orig_stem = os.path.splitext(fname)[0].lower()
+                                if orig_stem not in react_state.get(
+                                    "image_url_map", {}
+                                ):
+                                    unique_name = f"{uuid.uuid4().hex[:8]}_{fname}"
+                                    dest = os.path.join(
+                                        STATIC_MESSAGE_IMG_PATH, unique_name
+                                    )
+                                    shutil.copy2(abs_path, dest)
+                                    img_url = f"/images/{unique_name}"
+                                    react_state.setdefault(
+                                        "generated_images", []
+                                    ).append(img_url)
+                                    react_state.setdefault("image_url_map", {})[
+                                        orig_stem
+                                    ] = img_url
+                    # Append image URL summary for LLM reference
+                    all_images = react_state.get("generated_images", [])
+                    if all_images:
+                        img_summary = (
+                            "\u5df2\u751f\u6210\u7684\u56fe\u7247URL\uff08\u5728\u751f\u6210HTML\u62a5\u544a\u65f6\u8bf7\u4f7f\u7528\u8fd9\u4e9bURL\uff09:\n"
+                            + "\n".join(f"  - {url}" for url in all_images)
+                        )
+                        chunks.append({"output_type": "text", "content": img_summary})
+                    logger.info(
+                        "shell_interpreter: captured %d images for skill script",
+                        len(react_state.get("image_url_map", {})),
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "shell_interpreter: image post-processing failed: %s", e
+                    )
+
+        return json.dumps({"chunks": chunks}, ensure_ascii=False)
+
+    @tool(
+        description="执行技能scripts目录下的脚本文件。参数: "
+        '{"skill_name": "技能名称", "script_file_name": "脚本文件名", "args": {参数}}'
+    )
+    async def execute_skill_script_file(
+        skill_name: str, script_file_name: str, args: Optional[dict] = None
+    ) -> str:
+        """Execute a script file from a skill's scripts directory.
+
+        After execution, any new image files (.png, .jpg, etc.) generated
+        by the script are automatically copied to the static images directory
+        and their URLs are returned in the output chunks.
+        """
+        import shutil
+        import uuid
+
+        from dbgpt.agent.skill.manage import get_skill_manager
+        from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
+
+        try:
+            from dbgpt.configs.model_config import PILOT_PATH
+
+            sm = get_skill_manager(CFG.SYSTEM_APP)
+            cid = react_state.get("conv_id") or "default"
+            out_dir = os.path.join(PILOT_PATH, "tmp", cid)
+            os.makedirs(out_dir, exist_ok=True)
+            # Auto-inject the correct file path from react_state into args.
+            # The LLM sometimes corrupts the uploaded file path (e.g. changing
+            # 'dbgpt-app' to 'dbgpt_app'), so we override any file-path-like
+            # keys in args with the known-good path from react_state.
+            real_file_path = react_state.get("file_path")
+            if real_file_path and args:
+                _FILE_PATH_KEYS = {
+                    "input_file",
+                    "file_path",
+                    "data_path",
+                    "csv_path",
+                    "excel_path",
+                    "data_file",
+                }
+                for key in list(args.keys()):
+                    if key in _FILE_PATH_KEYS:
+                        args[key] = real_file_path
+            result_str = await sm.execute_skill_script_file(
+                skill_name,
+                script_file_name,
+                args or {},
+                output_dir=out_dir,
+            )
+
+            # Read script source code and prepend as a 'code' chunk
+            # so the frontend can display it in the left pane.
+            try:
+                _skill_path = sm._get_skill_path(skill_name)
+                _sf = script_file_name.lstrip("/\\")
+                if _sf.startswith("scripts/") or _sf.startswith("scripts\\"):
+                    _sf = _sf[8:]
+                _script_abs = os.path.join(_skill_path, "scripts", _sf)
+                with open(_script_abs, "r", encoding="utf-8") as _f:
+                    _script_source = _f.read()
+            except Exception:
+                _script_source = None
+
+            # Post-process: copy image files to static dir and replace
+            # absolute paths with /images/ URLs.
+            try:
+                result_obj = json.loads(result_str)
+                chunks = result_obj.get("chunks", [])
+                # Prepend script source code as a 'code' chunk
+                if _script_source:
+                    chunks.insert(
+                        0,
+                        {
+                            "output_type": "code",
+                            "content": _script_source,
+                        },
+                    )
+                os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
+                IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+                for chunk in chunks:
+                    if chunk.get("output_type") == "image":
+                        abs_path = chunk["content"]
+                        if os.path.isabs(abs_path) and os.path.isfile(abs_path):
+                            ext = os.path.splitext(abs_path)[1].lower()
+                            if ext in IMAGE_EXTS:
+                                unique_name = (
+                                    f"{uuid.uuid4().hex[:8]}_"
+                                    f"{os.path.basename(abs_path)}"
+                                )
+                                dest = os.path.join(
+                                    STATIC_MESSAGE_IMG_PATH, unique_name
+                                )
+                                shutil.copy2(abs_path, dest)
+                                img_url = f"/images/{unique_name}"
+                                chunk["content"] = img_url
+                                react_state.setdefault("generated_images", []).append(
+                                    img_url
+                                )
+                                # Also store a map: original filename (no ext)
+                                # -> served URL for template placeholder
+                                # resolution.
+                                orig_stem = os.path.splitext(
+                                    os.path.basename(abs_path)
+                                )[0].lower()
+                                react_state.setdefault("image_url_map", {})[
+                                    orig_stem
+                                ] = img_url
+
+                # Append image URL summary for LLM reference
+                all_images = react_state.get("generated_images", [])
+                if all_images:
+                    img_summary = (
+                        "已生成的图片URL（在生成HTML报告时请使用这些URL）:\n"
+                        + "\n".join(f"  - {url}" for url in all_images)
+                    )
+                    chunks.append({"output_type": "text", "content": img_summary})
+                auto_data = react_state.get("auto_data")
+                if not isinstance(auto_data, dict):
+                    auto_data = {}
+                    react_state["auto_data"] = auto_data
+                filtered_chunks = []
+                for chunk in chunks:
+                    if chunk.get("output_type") != "text":
+                        filtered_chunks.append(chunk)
+                        continue
+                    content = chunk.get("content") or ""
+                    cleaned, extracted = _extract_auto_data_markers(content)
+                    if extracted:
+                        auto_data.update(extracted)
+                        logger.info(
+                            "execute_skill_script_file: captured auto_data keys=%s",
+                            sorted(extracted.keys()),
+                        )
+                    if cleaned:
+                        chunk["content"] = cleaned
+                        filtered_chunks.append(chunk)
+                    elif not extracted:
+                        filtered_chunks.append(chunk)
+                chunks = filtered_chunks
+
+                # Compatibility path for existing financial-report skill.
+                if script_file_name == "calculate_ratios.py":
+                    for chunk in chunks:
+                        if chunk.get("output_type") == "text":
+                            try:
+                                ratio_data = json.loads(chunk["content"])
+                                react_state["ratio_data"] = ratio_data
+                            except Exception:
+                                pass
+                return json.dumps({"chunks": chunks}, ensure_ascii=False)
+            except (json.JSONDecodeError, KeyError):
+                return result_str
+        except Exception as e:
+            return json.dumps(
+                {"chunks": [{"output_type": "text", "content": f"Error: {str(e)}"}]},
+                ensure_ascii=False,
+            )
+
+    @tool(
+        description="将 HTML 渲染为可交互的网页报告，这是向用户展示网页报告的唯一方式。"
+        "【默认用法】直接传入完整的 HTML 字符串："
+        '{"html": "<html>...</html>", "title": "报告标题"}。'
+        "你需要自己生成完整的 HTML 代码"
+        "（包含 <!DOCTYPE html>、<html>、<head>、<body> 等），"
+        "然后传给 html 参数即可。"
+        "HTML 可以很长，没有长度限制，不需要分段传入。"
+        "【禁止】不要用 code_interpreter 写 HTML 再 print，"
+        "不要用 code_interpreter 把 HTML 写入文件再读取，"
+        "直接把 HTML 传给本工具即可。"
+        "【技能模式 - 仅在使用技能时可选】如果正在使用技能（skill），可以用模板模式："
+        '{"template_path": "技能名/templates/模板.html", '
+        '"data": {"KEY": "值"}, "title": "标题"}。'
+        '也可以用文件模式：{"file_path": "/path/to/report.html"}'
+    )
+    async def html_interpreter(
+        html: str = "",
+        title: str = "Report",
+        file_path: str = "",
+        template_path: str = "",
+        data: dict | str = None,
+    ) -> str:
+        """Render HTML as an interactive web report.
+
+        Default usage: pass a complete HTML string via the `html` parameter.
+        The HTML can be arbitrarily long — no length limit, no chunking needed.
+
+        Skill template mode (optional): pass `template_path` (relative to skills
+        dir) plus a `data` dict whose keys match {{PLACEHOLDER}} tokens in the
+        template. The backend reads the template and performs all replacements.
+
+        Legacy fallback: `file_path` reads HTML from a file on disk.
+        """
+        import re
+
+        from dbgpt.configs.model_config import STATIC_MESSAGE_IMG_PATH
+
+        # ── Mode 1: template_path + data ──────────────────────────────
+        if template_path and template_path.strip():
+            tp = template_path.strip()
+            skills_dir = Path(DEFAULT_SKILLS_DIR).expanduser().resolve()
+            target = (skills_dir / tp).resolve()
+            # Security: must be under skills_dir
+            try:
+                target.relative_to(skills_dir)
+            except ValueError:
+                return json.dumps(
+                    {
+                        "chunks": [
+                            {
+                                "output_type": "text",
+                                "content": f"Invalid template_path: {tp}",
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+            if not target.is_file():
+                return json.dumps(
+                    {
+                        "chunks": [
+                            {
+                                "output_type": "text",
+                                "content": (
+                                    f"Template not found: {tp}. "
+                                    "This skill does not have HTML templates. "
+                                    "Please retry by calling html_interpreter "
+                                    "with the `html` parameter instead — "
+                                    "generate the complete HTML report code "
+                                    "yourself and pass it directly via "
+                                    '{"html": "<html>...</html>", '
+                                    '"title": "report title"}.'
+                                ),
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+            try:
+                raw_template = target.read_text(encoding="utf-8")
+            except Exception as e:
+                return json.dumps(
+                    {
+                        "chunks": [
+                            {
+                                "output_type": "text",
+                                "content": f"Error reading template: {e}",
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+            # Replace {{KEY}} placeholders with values from data dict
+            # Sometimes the LLM passes data as a JSON string instead of a dict
+            replacements = data
+            if isinstance(replacements, str):
+                try:
+                    replacements = json.loads(replacements)
+                except Exception as e:
+                    logger.warning(
+                        f"html_interpreter failed to parse string data as json: {e}"
+                    )
+                    # Attempt to fix truncated JSON by appending closing
+                    # braces/quotes
+                    try:
+                        fixed = str(replacements).rstrip()
+                        if not fixed.endswith("}"):
+                            if fixed.endswith('"'):
+                                fixed += "}"
+                            else:
+                                fixed += '"}'
+                        replacements = json.loads(fixed)
+                    except Exception:
+                        replacements = {}
+            if not isinstance(replacements, dict):
+                replacements = {}
+            auto_data = react_state.get("auto_data", {})
+            if isinstance(auto_data, dict):
+                replacements = {**auto_data, **replacements}
+
+            # Merge LLM replacements with ratio_data from calculate_ratios.py
+            ratio_data = react_state.get("ratio_data", {})
+            if isinstance(ratio_data, dict):
+                # auto_data / LLM data overwrites ratio_data if keys overlap
+                merged = {**ratio_data, **replacements}
+                replacements = merged
+
+            # Auto-resolve CHART_* placeholders from generated images.
+            # image_url_map: {
+            #     "financial_overview": "/images/abc_financial_overview.png"
+            # }
+            # Template uses:
+            #     {{CHART_FINANCIAL_OVERVIEW}}
+            #     -> /images/abc_financial_overview.png
+            image_url_map = react_state.get("image_url_map", {})
+            if isinstance(image_url_map, dict):
+                for stem, url in image_url_map.items():
+                    chart_key = f"CHART_{stem.upper()}"
+                    if chart_key not in replacements:
+                        replacements[chart_key] = url
+
+            def _replace_placeholder(m):
+                key = m.group(1)
+                return str(replacements.get(key, ""))
+
+            html = re.sub(r"\{\{([A-Z_0-9]+)\}\}", _replace_placeholder, raw_template)
+            if not title or title == "Report":
+                title = target.stem
+            logger.info(
+                "html_interpreter: template=%s, %d placeholders replaced, "
+                "html=%d chars",
+                tp,
+                len(replacements),
+                len(html),
+            )
+
+        # ── Mode 2: file_path ─────────────────────────────────────────
+        elif file_path and file_path.strip():
+            fp = file_path.strip()
+            if not os.path.isfile(fp):
+                cid = react_state.get("conv_id") or "default"
+                from dbgpt.configs.model_config import PILOT_PATH
+
+                alt = os.path.join(PILOT_PATH, "data", cid, os.path.basename(fp))
+                if os.path.isfile(alt):
+                    fp = alt
+                else:
+                    return json.dumps(
+                        {
+                            "chunks": [
+                                {
+                                    "output_type": "text",
+                                    "content": f"File not found: {file_path}",
+                                }
+                            ]
+                        },
+                        ensure_ascii=False,
+                    )
+            try:
+                with open(fp, "r", encoding="utf-8") as f:
+                    html = f.read()
+                if not title or title == "Report":
+                    title = os.path.splitext(os.path.basename(fp))[0]
+                logger.info(
+                    "html_interpreter: read %d chars from file %s",
+                    len(html),
+                    fp,
+                )
+            except Exception as e:
+                return json.dumps(
+                    {
+                        "chunks": [
+                            {
+                                "output_type": "text",
+                                "content": f"Error reading file: {e}",
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                )
+
+        # ── Mode 3: inline html ──────────────────────────────────────
+        # Unescape literal \n sequences that LLM may produce.
+        # IMPORTANT: Only apply this unescape when html was provided directly
+        # (inline mode).  Template mode (Mode 1) and file mode (Mode 2) produce
+        # real HTML that already contains actual newlines and may contain JS
+        # regex literals like /\\n/ which must NOT be collapsed into real
+        # newlines — doing so corrupts the JS and breaks chart rendering.
+        if html and isinstance(html, str) and not template_path and not file_path:
+            if "\\n" in html:
+                html = html.replace("\\n", "\n")
+            if "\\t" in html:
+                html = html.replace("\\t", "\t")
+        if not html or not html.strip():
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": "No HTML content provided",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
+        # Post-process: fix image URLs that the LLM may have guessed wrong.
+        # Files in STATIC_MESSAGE_IMG_PATH are named "{uuid8}_{original}.ext".
+        # The LLM might reference "/images/original.ext" (without UUID prefix)
+        # or even just "original.ext".  Build a lookup and replace.
+        fixed_html = html.strip()
+        try:
+            IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+            # Map: lowercase base name (without uuid prefix) -> served path
+            # e.g. "monthly_sales_trend.png"
+            #      -> "/images/a1b2c3ff_monthly_sales_trend.png"
+            name_to_served: Dict[str, str] = {}
+            if os.path.isdir(STATIC_MESSAGE_IMG_PATH):
+                for fname in os.listdir(STATIC_MESSAGE_IMG_PATH):
+                    ext = os.path.splitext(fname)[1].lower()
+                    if ext not in IMAGE_EXTS:
+                        continue
+                    # Strip the 8-char hex UUID prefix + underscore
+                    # Pattern: <8 hex chars>_<original_name>
+                    m = re.match(r"^[0-9a-f]{8}_(.+)$", fname, re.IGNORECASE)
+                    if m:
+                        base_name = m.group(1).lower()
+                        served_path = f"/images/{fname}"
+                        # Keep the latest (last alphabetically = most recent
+                        # UUID)
+                        name_to_served[base_name] = served_path
+
+            if name_to_served:
+                # Replace patterns like:
+                #   src="/images/monthly_sales_trend.png"
+                #   src="images/monthly_sales_trend.png"
+                #   src="monthly_sales_trend.png"
+                # with the correct served path.
+                def _fix_img_src(match: re.Match) -> str:
+                    prefix = match.group(1)  # src=" or src='
+                    raw_path = match.group(2)  # the path value
+                    quote = match.group(3)  # closing quote
+
+                    # Extract just the filename from the path
+                    filename = raw_path.rsplit("/", 1)[-1].lower()
+
+                    # Check if it's already a correct served path
+                    if re.match(r"^[0-9a-f]{8}_.+$", filename, re.IGNORECASE):
+                        return match.group(0)  # Already has UUID prefix
+
+                    if filename in name_to_served:
+                        return f"{prefix}{name_to_served[filename]}{quote}"
+                    return match.group(0)  # No match, keep original
+
+                # Match src="..." or src='...' containing image references
+                fixed_html = re.sub(
+                    r"""(src\s*=\s*["'])"""
+                    r"""([^"']+\.(?:png|jpg|jpeg|gif|svg|webp))"""
+                    r"""(["'])""",
+                    _fix_img_src,
+                    fixed_html,
+                    flags=re.IGNORECASE,
+                )
+        except Exception:
+            pass  # If post-processing fails, use original HTML
+
+        # Auto-append images generated during this session that the LLM
+        # forgot to include in the HTML.
+        try:
+            gen_images = react_state.get("generated_images", [])
+            if gen_images:
+                # Extract all image filenames already referenced in the HTML
+                # (e.g. "time_series_trend.png" from any src="...time_series_trend.png")
+                html_img_stems = set(
+                    re.sub(r"^[0-9a-f]+_", "", os.path.basename(src))
+                    for src in re.findall(
+                        r'<img[^>]+src=["\']([^"\']+)["\']', fixed_html, re.IGNORECASE
+                    )
+                )
+
+                # An image is "missing" only when neither its exact URL nor its
+                # stem (filename with UUID prefix stripped) is already covered.
+                def _img_stem(url):
+                    return re.sub(r"^[0-9a-f]+_", "", os.path.basename(url))
+
+                missing = [
+                    url
+                    for url in gen_images
+                    if url not in fixed_html and _img_stem(url) not in html_img_stems
+                ]
+                if missing:
+                    imgs_html = "".join(
+                        f'<div style="margin:16px 0">'
+                        f'<img src="{url}" '
+                        f'style="max-width:100%;height:auto;'
+                        f'border-radius:8px">'
+                        f"</div>"
+                        for url in missing
+                    )
+                    section = (
+                        '<div style="margin-top:32px">'
+                        "<h2>📊 分析图表</h2>"
+                        f"{imgs_html}</div>"
+                    )
+                    # Insert before </body> if present, otherwise append
+                    if "</body>" in fixed_html.lower():
+                        fixed_html = re.sub(
+                            r"(</body>)",
+                            section + r"\1",
+                            fixed_html,
+                            count=1,
+                            flags=re.IGNORECASE,
+                        )
+                    else:
+                        fixed_html += section
+        except Exception:
+            pass
+
+        chunks: List[Dict[str, Any]] = [
+            {"output_type": "html", "content": fixed_html, "title": title},
+        ]
+        return json.dumps({"chunks": chunks}, ensure_ascii=False)
+
+    llm_client = DefaultLLMClient(
+        CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create(),
+        auto_convert_message=True,
+    )
+    # If user specified a model_name, use Priority strategy to ensure the
+    # agent uses the requested model instead of picking the first available one.
+    if dialogue.model_name:
+        llm_config = LLMConfig(
+            llm_client=llm_client,
+            llm_strategy=LLMStrategyType.Priority,
+            strategy_context=json.dumps([dialogue.model_name]),
+        )
+    else:
+        llm_config = LLMConfig(llm_client=llm_client)
+
+    conv_id = dialogue.conv_uid or str(uuid.uuid4())
+    react_state["conv_id"] = conv_id
+    if conv_id in REACT_AGENT_MEMORY_CACHE:
+        gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
+    else:
+        gpt_memory = GptsMemory(
+            plans_memory=DefaultGptsPlansMemory(),
+            message_memory=MetaDbGptsMessageMemory(),
+        )
+        gpt_memory.init(conv_id, enable_vis_message=False)
+        REACT_AGENT_MEMORY_CACHE[conv_id] = gpt_memory
+    agent_memory = AgentMemory(gpts_memory=gpt_memory)
+
+    # --- Persist conversation to chat_history for sidebar display ---
+    conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+    storage_conv = StorageConversation(
+        conv_uid=conv_id,
+        chat_mode=dialogue.chat_mode or "chat_react_agent",
+        user_name=dialogue.user_name,
+        sys_code=dialogue.sys_code,
+        summary=dialogue.user_input,
+        app_code=dialogue.app_code,
+        conv_storage=conv_serve.conv_storage,
+        message_storage=conv_serve.message_storage,
+    )
+    storage_conv.save_to_storage()
+    storage_conv.start_new_round()
+    storage_conv.add_user_message(user_input)
+    context = AgentContext(
+        conv_id=conv_id,
+        gpts_app_code="react_agent",
+        gpts_app_name="ReAct",
+        language="zh",
+        temperature=dialogue.temperature or 0.2,
+        enable_context_management=True,
+    )
+
+    # Build file context if file uploaded
+    file_context = ""
+    if file_path:
+        file_context = f"""
+## User Uploaded File
+- File path: {file_path}
+- Analyze this file if needed for the user's request.
+"""
+
+    # Build skill context for system prompt when skill is pre-selected
+    skill_prompt_context = ""
+    execution_instruction = ""
+    if pre_matched_skill and react_state.get("skill_prompt"):
+        skill_template = react_state["skill_prompt"]
+        skill_text = (
+            skill_template.template
+            if hasattr(skill_template, "template")
+            else str(skill_template)
+        )
+        skill_prompt_context = f"""
+## 已加载技能指令（{pre_matched_skill.metadata.name}）
+以下是用户选择的技能的完整指令，请严格按照这些指令进行操作：
+
+{skill_text}
+"""
+        execution_instruction = f"""
+## 执行要求
+1. 用户已明确选择技能：{pre_matched_skill.metadata.name}
+2. 你必须严格按照上述技能指令的步骤执行
+3. 阅读技能指令，理解每一步需要调用的工具
+4. 按顺序执行工具调用，完成技能目标
+"""
+
+    # ── TodoWrite tool ──────────────────────────────────────────────────
+    # A session-level task list that the agent maintains.  The full list is
+    # replaced on every call (same semantics as OpenCode's todowrite).
+    # The tool pushes a ``plan.update`` SSE event so the frontend can
+    # render a live task-plan card.
+    _todo_list: List[Dict[str, str]] = []
+
+    @tool(
+        description=(
+            "Create and manage a structured task list for the current session. "
+            "Use this tool to plan complex tasks (3+ steps), track progress, "
+            "and show the user what you are doing. "
+            "Pass the FULL todo list every time (not incremental). "
+            "Each todo has: content (brief description), "
+            "status (pending | in_progress | completed | cancelled), "
+            "priority (high | medium | low). "
+            "Rules: only ONE task in_progress at a time; mark tasks completed "
+            "immediately after finishing; do NOT use for single trivial tasks."
+            '\nParameter: {"todos": [{"content": "...", "status": "...", '
+            '"priority": "..."}]}'
+        )
+    )
+    def todowrite(todos: str) -> str:
+        """Update the session todo list (full replacement)."""
+        import json as _json
+
+        parsed: List[Dict[str, str]] = []
+        try:
+            raw = _json.loads(todos) if isinstance(todos, str) else todos
+            items = raw if isinstance(raw, list) else raw.get("todos", raw)
+            if isinstance(items, list):
+                for item in items:
+                    parsed.append(
+                        {
+                            "content": str(item.get("content", "")),
+                            "status": str(item.get("status", "pending")),
+                            "priority": str(item.get("priority", "medium")),
+                        }
+                    )
+        except Exception:
+            return _json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": "Error: invalid todos JSON",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+
+        _todo_list.clear()
+        _todo_list.extend(parsed)
+
+        total = len(parsed)
+        done = sum(1 for t in parsed if t["status"] == "completed")
+        return _json.dumps(
+            {
+                "chunks": [
+                    {
+                        "output_type": "text",
+                        "content": f"Todo list updated: {done}/{total} completed",
+                    }
+                ],
+                # Attach the todo list so SSE handler can forward it
+                "__todos__": parsed,
+            },
+            ensure_ascii=False,
+        )
 
     _todo_action_history: Dict[int, List[str]] = {}
 
