@@ -3,10 +3,12 @@ import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/componen
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
+import type { AgentCitation } from '@/utils/react-agent-final';
 import {
   ApartmentOutlined,
   AppstoreOutlined,
   BarChartOutlined,
+  BookOutlined,
   CheckCircleFilled,
   CheckOutlined,
   ClockCircleOutlined,
@@ -193,6 +195,12 @@ export interface ManusRightPanelProps {
   summaryContent?: string;
   /** Whether the summary is currently streaming */
   isSummaryStreaming?: boolean;
+  /** Structured knowledge sources retrieved or read during this answer. */
+  citations?: AgentCitation[];
+  /** Source currently selected in the references panel. */
+  selectedCitationIndex?: number | null;
+  /** Keep selection in sync when a reference card is clicked. */
+  onCitationSelect?: (index: number) => void;
   /** Structured rows for the active dispatch_parallel_tasks step. */
   subAgents?: Record<string, SubAgentState>;
   /** Drill into one structured sub-agent from the parallel overview. */
@@ -207,7 +215,14 @@ export interface ManusRightPanelProps {
   onExitSubAgentView?: () => void;
 }
 
-export type PanelView = 'execution' | 'files' | 'html-preview' | 'image-preview' | 'skill-preview' | 'summary';
+export type PanelView =
+  | 'execution'
+  | 'files'
+  | 'html-preview'
+  | 'image-preview'
+  | 'skill-preview'
+  | 'summary'
+  | 'references';
 
 // Get icon for step type
 const getStepTypeIcon = (type: StepType) => {
@@ -2313,6 +2328,113 @@ const SkillCardRenderer: React.FC<{
 
 SkillCardRenderer.displayName = 'SkillCardRenderer';
 
+const getSafeReferenceUrl = (url?: string): string | null => {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const formatReferenceScore = (score?: number | null): string | null => {
+  if (typeof score !== 'number' || !Number.isFinite(score)) return null;
+  if (score >= 0 && score <= 1) return `${(score * 100).toFixed(1)}%`;
+  return score.toFixed(2);
+};
+
+const ReferencesPanel: React.FC<{
+  citations: AgentCitation[];
+  selectedCitationIndex?: number | null;
+  onCitationSelect?: (index: number) => void;
+}> = ({ citations, selectedCitationIndex, onCitationSelect }) => {
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  useEffect(() => {
+    if (selectedCitationIndex == null) return;
+    itemRefs.current.get(selectedCitationIndex)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedCitationIndex]);
+
+  return (
+    <div className='space-y-3' data-testid='references-panel'>
+      <div className='rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs leading-5 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300'>
+        以下内容是回答过程中检索或读取的知识来源，不包含脚本执行回显、SQL 执行结果或其他工具输出。
+      </div>
+      {citations.map(citation => {
+        const isSelected = citation.index === selectedCitationIndex;
+        const score = formatReferenceScore(citation.score);
+        const safeUrl = getSafeReferenceUrl(citation.url);
+        return (
+          <div
+            key={`${citation.id}-${citation.index}`}
+            ref={node => {
+              if (node) itemRefs.current.set(citation.index, node);
+              else itemRefs.current.delete(citation.index);
+            }}
+            role='button'
+            tabIndex={0}
+            onClick={() => onCitationSelect?.(citation.index)}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onCitationSelect?.(citation.index);
+              }
+            }}
+            className={classNames(
+              'w-full rounded-xl border bg-white p-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:bg-[#1a1b1e]',
+              isSelected
+                ? 'border-blue-400 ring-1 ring-blue-200 dark:border-blue-500 dark:ring-blue-500/20'
+                : 'border-gray-200 hover:border-blue-300 dark:border-gray-800 dark:hover:border-blue-600',
+            )}
+            data-reference-index={citation.index}
+          >
+            <div className='flex items-start gap-3'>
+              <span className='inline-flex h-6 min-w-6 flex-shrink-0 items-center justify-center rounded-md bg-blue-500 px-1.5 text-xs font-semibold text-white'>
+                {citation.index}
+              </span>
+              <div className='min-w-0 flex-1'>
+                <div className='flex flex-wrap items-center justify-between gap-2'>
+                  <span className='min-w-0 break-words text-sm font-semibold text-gray-900 dark:text-gray-100'>
+                    {citation.sourceName || citation.path || `来源 ${citation.index}`}
+                  </span>
+                  {score && (
+                    <span className='flex-shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'>
+                      相关度 {score}
+                    </span>
+                  )}
+                </div>
+                {citation.path && (
+                  <div className='mt-1 break-all font-mono text-[11px] text-gray-400 dark:text-gray-500'>
+                    {citation.path}
+                  </div>
+                )}
+                {citation.excerpt && (
+                  <div className='mt-3 whitespace-pre-wrap break-words text-xs leading-5 text-gray-600 dark:text-gray-300'>
+                    {citation.excerpt}
+                  </div>
+                )}
+                {safeUrl && (
+                  <a
+                    href={safeUrl}
+                    target='_blank'
+                    rel='noreferrer noopener'
+                    onClick={event => event.stopPropagation()}
+                    className='mt-3 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
+                  >
+                    <LinkOutlined aria-hidden />
+                    打开来源
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // Main Component
 const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   activeStep,
@@ -2332,6 +2454,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   skillName,
   summaryContent,
   isSummaryStreaming,
+  citations = [],
+  selectedCitationIndex,
+  onCitationSelect,
   subAgents,
   onSubAgentClick,
   subAgentContext,
@@ -2381,6 +2506,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       setInternalPanelView(controlledPanelView);
     }
   }, [controlledPanelView]);
+  useEffect(() => {
+    if (panelView === 'references' && citations.length === 0) {
+      setInternalPanelView('execution');
+      onPanelViewChange?.('execution');
+    }
+  }, [citations.length, onPanelViewChange, panelView]);
   const visibleOutputs = useMemo(() => outputs.filter(o => o.output_type !== 'thought'), [outputs]);
 
   const filteredArtifacts = useMemo(() => {
@@ -2549,8 +2680,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       )}
 
       {/* View Toggle Tabs */}
-      {((artifacts && artifacts.length > 0) || previewArtifact || skillName || !!summaryContent) && (
-        <div className='flex flex-shrink-0 items-center gap-0 border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
+      {((artifacts && artifacts.length > 0) ||
+        previewArtifact ||
+        skillName ||
+        !!summaryContent ||
+        citations.length > 0) && (
+        <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
           <button
             onClick={() => setPanelView('execution')}
             className={classNames(
@@ -2620,6 +2755,26 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             </button>
           )}
+          {citations.length > 0 && (
+            <button
+              onClick={() => setPanelView('references')}
+              className={classNames(
+                'px-4 py-2.5 text-xs font-medium transition-colors relative whitespace-nowrap',
+                panelView === 'references'
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <BookOutlined className='mr-1.5' />
+              参考来源
+              <span className='ml-1.5 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-600 dark:bg-blue-500/10 dark:text-blue-300'>
+                {citations.length}
+              </span>
+              {panelView === 'references' && (
+                <div className='absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-gray-900 dark:bg-gray-100' />
+              )}
+            </button>
+          )}
           {previewArtifact && (
             <button
               onClick={() => setPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview')}
@@ -2654,7 +2809,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         )}
         data-testid='right-panel-content'
       >
-        {panelView === 'skill-preview' && skillName ? (
+        {panelView === 'references' && citations.length > 0 ? (
+          <ReferencesPanel
+            citations={citations}
+            selectedCitationIndex={selectedCitationIndex}
+            onCitationSelect={onCitationSelect}
+          />
+        ) : panelView === 'skill-preview' && skillName ? (
           <div className='w-full h-full flex flex-col p-5 overflow-auto'>
             <SkillCardRenderer skillName={skillName} outputs={visibleOutputs} />
           </div>
@@ -2710,7 +2871,11 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'summary' && summaryContent ? (
           <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-            <MarkDownContext>{fixSquishedTables(summaryContent)}</MarkDownContext>
+            {isSummaryStreaming ? (
+              <span className='whitespace-pre-wrap break-words'>{summaryContent}</span>
+            ) : (
+              <MarkDownContext>{fixSquishedTables(summaryContent)}</MarkDownContext>
+            )}
             {isSummaryStreaming && (
               <span className='inline-block w-1.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-text-bottom' />
             )}
