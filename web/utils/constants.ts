@@ -322,6 +322,11 @@ export const dbMapper: Record<DBType, { label: string; icon: string; desc: strin
   },
   spark: { label: 'Spark', icon: '/icons/spark.png', desc: 'Unified engine for large-scale data analytics.' },
   hive: { label: 'Hive', icon: '/icons/hive.png', desc: 'A distributed fault-tolerant data warehouse system.' },
+  maxcompute: {
+    label: 'MaxCompute',
+    icon: '/icons/maxcompute.png',
+    desc: 'Alibaba Cloud fully managed, large-scale data warehouse service for batch analytics.',
+  },
   space: { label: 'Space', icon: '/icons/knowledge.png', desc: 'knowledge analytics.' },
   tugraph: {
     label: 'TuGraph',
