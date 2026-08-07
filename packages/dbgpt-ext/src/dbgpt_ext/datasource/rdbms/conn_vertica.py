@@ -98,11 +98,11 @@ table name should keep its schema name in "
                     """
                     SELECT table_schema||'.'||table_name
                     FROM v_catalog.tables
-                    WHERE table_schema NOT LIKE 'v\_%'
+                    WHERE table_schema NOT LIKE 'v\\_%'
                     UNION
                     SELECT table_schema||'.'||table_name
                     FROM v_catalog.views
-                    WHERE table_schema NOT LIKE 'v\_%';
+                    WHERE table_schema NOT LIKE 'v\\_%';
                     """
                 )
             )
@@ -292,7 +292,7 @@ table name should keep its schema name in "
             SELECT table_schema||'.'||table_name
               , listagg(column_name using parameters max_length=65000)
             FROM v_catalog.columns
-            WHERE table_schema NOT LIKE 'v\_%'
+            WHERE table_schema NOT LIKE 'v\\_%'
             GROUP BY 1;
             """
         with self.session_scope() as session:
