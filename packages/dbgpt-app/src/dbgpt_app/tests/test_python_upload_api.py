@@ -101,6 +101,9 @@ async def test_python_file_upload_rejects_symlink_escape(tmp_path, monkeypatch):
 async def test_python_file_upload_rejects_traversal_user_id(tmp_path, monkeypatch):
     from dbgpt_app.openapi.api_v1 import python_upload_api
 
+    outside_dir = tmp_path.parent / f"{tmp_path.name}-outside"
+    outside_dir.mkdir()
+
     monkeypatch.setattr(
         python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
     )
@@ -108,11 +111,11 @@ async def test_python_file_upload_rejects_traversal_user_id(tmp_path, monkeypatc
     with pytest.raises(HTTPException) as exc_info:
         await python_upload_api.python_file_upload(
             FakeUploadFile("inside.py", b"print('inside')"),
-            UserRequest(user_id="../../../../tmp/evil"),
+            UserRequest(user_id=f"../../{outside_dir.name}"),
         )
 
     assert exc_info.value.status_code == 400
-    assert not (tmp_path / "tmp" / "evil").exists()
+    assert not (outside_dir / "inside.py").exists()
 
 
 @pytest.mark.asyncio
@@ -130,11 +133,14 @@ async def test_python_file_upload_rejects_whitespace_user_id(tmp_path, monkeypat
         )
 
     assert exc_info.value.status_code == 400
-    assert not (tmp_path / "python_uploads" / "alice").exists()
+    assert not (tmp_path / "python_uploads" / " alice ").exists()
 
 
+@pytest.mark.parametrize("user_id", [None, "", "   "])
 @pytest.mark.asyncio
-async def test_python_file_upload_defaults_empty_user_id(tmp_path, monkeypatch):
+async def test_python_file_upload_defaults_empty_user_id(
+    tmp_path, monkeypatch, user_id
+):
     from dbgpt_app.openapi.api_v1 import python_upload_api
 
     monkeypatch.setattr(
@@ -143,7 +149,7 @@ async def test_python_file_upload_defaults_empty_user_id(tmp_path, monkeypatch):
 
     result = await python_upload_api.python_file_upload(
         FakeUploadFile("inside.py", b"print('inside')"),
-        UserRequest(user_id=None),
+        UserRequest(user_id=user_id),
     )
 
     expected_path = tmp_path / "python_uploads" / "default" / "inside.py"

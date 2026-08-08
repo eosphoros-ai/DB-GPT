@@ -109,6 +109,15 @@ async def python_file_upload(
 
         file_path = _resolve_upload_path(upload_dir, file.filename)
 
+        # Re-verify the resolved file path is still inside upload_dir after
+        # directory creation.  This mitigates TOCTOU races where a symlink is
+        # planted between the containment check and the actual write.
+        if not Path(file_path).resolve().is_relative_to(Path(upload_dir).resolve()):
+            raise HTTPException(
+                status_code=400,
+                detail="Resolved file path escapes the upload directory",
+            )
+
         # Read file content and write to disk
         content = await file.read()
         if not content:
