@@ -114,9 +114,7 @@ class ChromaStore(VectorStoreBase):
         except ImportError:
             raise ImportError("Please install chroma package first.")
         chroma_vector_config = vector_store_config.to_dict()
-        chroma_path = chroma_vector_config.get(
-            "persist_path", os.path.join(PILOT_PATH, "data")
-        )
+        chroma_path = chroma_vector_config.get("persist_path") or os.path.join(PILOT_PATH, "data")
         self.persist_dir = os.path.join(resolve_root_path(chroma_path) + "/chromadb")
         self.embeddings = embedding_fn
         if not self.embeddings:
