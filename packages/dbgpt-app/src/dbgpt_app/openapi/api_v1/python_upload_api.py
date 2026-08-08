@@ -3,7 +3,7 @@ import os
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt_app.openapi.api_view_model import Result
@@ -26,10 +26,9 @@ def _resolve_user_id(user_id: str) -> str:
     """
     if not user_id or not isinstance(user_id, str):
         return "default"
-    user_id = user_id.strip()
-    if not user_id:
+    if not user_id.strip():
         return "default"
-    if not _SAFE_USER_ID_RE.match(user_id):
+    if not _SAFE_USER_ID_RE.fullmatch(user_id):
         raise ValueError(
             "Invalid user_id: only alphanumeric characters, underscores and "
             "hyphens are allowed"
@@ -43,6 +42,12 @@ def _resolve_upload_dir(base_dir: str, user_id: str) -> str:
     """
     base_path = Path(base_dir).resolve()
     uploads_root = (base_path / "python_uploads").resolve()
+    try:
+        uploads_root.relative_to(base_path)
+    except ValueError as exc:
+        raise ValueError(
+            "python_uploads resolves to a path outside the base directory"
+        ) from exc
     upload_dir = (uploads_root / user_id).resolve()
     try:
         upload_dir.relative_to(uploads_root)
@@ -76,7 +81,11 @@ async def python_file_upload(
         if not file or not file.filename:
             return Result.failed(msg="No file provided or filename is empty")
 
-        user_id = _resolve_user_id(user_token.user_id)
+        try:
+            user_id = _resolve_user_id(user_token.user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
         logger.info(
             f"Uploading file: {file.filename}, content_type: {file.content_type}, "
             f"user: {user_id}"
@@ -91,7 +100,11 @@ async def python_file_upload(
         ):
             base_dir = CFG.SYSTEM_APP.work_dir
 
-        upload_dir = _resolve_upload_dir(base_dir, user_id)
+        try:
+            upload_dir = _resolve_upload_dir(base_dir, user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
         os.makedirs(upload_dir, exist_ok=True)
 
         file_path = _resolve_upload_path(upload_dir, file.filename)
@@ -108,6 +121,8 @@ async def python_file_upload(
         logger.info(f"File uploaded successfully to {abs_path} ({len(content)} bytes)")
 
         return Result.succ(abs_path)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"File upload failed: {e}")
         return Result.failed(msg=f"Upload error: {str(e)}")
