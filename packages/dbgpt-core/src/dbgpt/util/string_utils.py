@@ -94,12 +94,10 @@ def extract_content_open_ending(long_string, s1, s2, is_include: bool = False):
 def str_to_bool(s):
     if s.lower() in ("true", "t", "1", "yes", "y"):
         return True
-    elif s.lower().startswith("true"):
-        return True
     elif s.lower() in ("false", "f", "0", "no", "n"):
         return False
     else:
-        return False
+        raise ValueError(f"Could not convert string to bool: '{s}'")
 
 
 def _to_str(x, charset="utf8", errors="strict"):
