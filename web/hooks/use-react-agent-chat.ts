@@ -7,6 +7,7 @@
 
 import { MessagePart, ToolPart } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import { ChatHistoryResponse } from '@/types/chat';
+import type { AgentCitation } from '@/utils/react-agent-final';
 import {
   ContextStatus,
   ReActSSEState,
@@ -32,6 +33,7 @@ export interface StreamingTurn {
   userMessage: string;
   parts: MessagePart[];
   finalContent: string;
+  citations: AgentCitation[];
   isWorking: boolean;
   startTime: number;
   endTime?: number;
@@ -74,13 +76,6 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
   const sseStateRef = useRef<ReActSSEState | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cancel();
-    };
-  }, []);
-
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -99,6 +94,13 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
     });
   }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancel();
+    };
+  }, [cancel]);
+
   const processSSELine = useCallback((line: string) => {
     if (!sseStateRef.current) return;
 
@@ -109,7 +111,8 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
 
     // Update streaming turn state
     const parts = sseStateRef.current.toMessageParts();
-    const finalContent = sseStateRef.current.getFinalContent();
+    const finalAnswer = sseStateRef.current.getFinalAnswer();
+    const finalContent = finalAnswer.content;
     const isWorking = sseStateRef.current.isWorking();
     const currentStatus = sseStateRef.current.getCurrentStatus();
 
@@ -133,6 +136,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
         ...prev,
         parts,
         finalContent,
+        citations: finalAnswer.citations,
         isWorking,
         currentStatus,
         thinkingContent,
@@ -166,6 +170,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
         userMessage,
         parts: [],
         finalContent: '',
+        citations: [],
         isWorking: true,
         startTime,
         currentStatus: 'Starting...',
@@ -219,7 +224,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
+        for (;;) {
           const { done, value } = await reader.read();
 
           if (done) {
@@ -252,13 +257,23 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
 
         // Get final state
         const finalParts = sseStateRef.current?.toMessageParts() || [];
-        const finalContent = sseStateRef.current?.getFinalContent() || '';
+        const finalAnswer = sseStateRef.current?.getFinalAnswer() || { content: '', citations: [] };
+        const finalContent = finalAnswer.content;
 
         // Format final response for history
         // Combine tool parts and final content into a structured response
         const formattedResponse = formatReActResponse(finalParts, finalContent);
 
         // Update final history
+        const finalViewMessage: ChatHistoryResponse[number] = {
+          role: 'view',
+          context: formattedResponse,
+          model_name: request.model_name || '',
+          order: order,
+          time_stamp: Date.now(),
+          thinking: false,
+          citations: finalAnswer.citations,
+        };
         const finalHistory: ChatHistoryResponse = [
           ...currentHistory,
           {
@@ -268,14 +283,7 @@ export function useReActAgentChat(options: UseReActAgentChatOptions = {}): UseRe
             order: order,
             time_stamp: startTime,
           },
-          {
-            role: 'view',
-            context: formattedResponse,
-            model_name: request.model_name || '',
-            order: order,
-            time_stamp: Date.now(),
-            thinking: false,
-          },
+          finalViewMessage,
         ];
 
         // Clear streaming turn after a brief delay
@@ -394,14 +402,11 @@ function formatReActResponse(parts: MessagePart[], finalContent: string): string
 
   // Format as ReAct-style text that can be parsed later
   let formatted = '';
-  let stepNum = 0;
-
   for (const part of parts) {
     if (part.type === 'reasoning') {
       formatted += `Thought: ${(part as any).text}\n`;
     } else if (part.type === 'tool') {
       const tool = part as ToolPart;
-      stepNum++;
       const action = tool.state.metadata?.action || tool.tool;
       formatted += `Action: ${action}\n`;
       if (tool.state.input) {
