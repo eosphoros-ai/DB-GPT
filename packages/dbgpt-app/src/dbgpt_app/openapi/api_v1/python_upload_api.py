@@ -84,7 +84,7 @@ async def python_file_upload(
         try:
             user_id = _resolve_user_id(user_token.user_id)
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         logger.info(
             f"Uploading file: {file.filename}, content_type: {file.content_type}, "
@@ -103,7 +103,7 @@ async def python_file_upload(
         try:
             upload_dir = _resolve_upload_dir(base_dir, user_id)
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         os.makedirs(upload_dir, exist_ok=True)
 
