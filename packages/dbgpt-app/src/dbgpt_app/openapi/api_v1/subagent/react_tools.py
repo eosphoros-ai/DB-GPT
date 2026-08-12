@@ -35,6 +35,7 @@ from dbgpt.agent.resource.base import AgentResource, ResourceType
 from dbgpt.agent.resource.manage import get_resource_manager
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.configs.model_config import SKILLS_DIR
+from dbgpt_app.openapi.api_v1.template_renderer import render_template_placeholders
 
 CFG = Config()
 logger = logging.getLogger(__name__)
@@ -1124,11 +1125,7 @@ def make_react_tools(
                     if chart_key not in replacements:
                         replacements[chart_key] = url
 
-            def _replace_placeholder(m):
-                key = m.group(1)
-                return str(replacements.get(key, ""))
-
-            html = re.sub(r"\{\{([A-Z_0-9]+)\}\}", _replace_placeholder, raw_template)
+            html = render_template_placeholders(raw_template, replacements)
             if not title or title == "Report":
                 title = target.stem
             logger.info(
