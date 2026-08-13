@@ -8,11 +8,63 @@ import pytest
 
 from dbgpt_app.openapi.api_v1 import agentic_data_api
 from dbgpt_app.openapi.api_v1.react_final import AgentFinalAnswer
+from dbgpt_app.openapi.api_view_model import ConversationVo
 
 
 def _decode_sse_event(event: str):
     assert event.startswith("data: ")
     return json.loads(event.removeprefix("data: ").strip())
+
+
+def test_agent_max_new_tokens_defaults_to_config(monkeypatch) -> None:
+    agent_context = SimpleNamespace(max_new_tokens=16384)
+    app_config = SimpleNamespace(
+        service=SimpleNamespace(web=SimpleNamespace(agent_context=agent_context))
+    )
+    system_app = SimpleNamespace(
+        config=SimpleNamespace(configs={"app_config": app_config})
+    )
+    monkeypatch.setattr(agentic_data_api.CFG, "SYSTEM_APP", system_app)
+
+    assert ConversationVo().max_new_tokens is None
+    assert agentic_data_api._resolve_agent_max_new_tokens(None) == 16384
+
+
+def test_agent_max_new_tokens_request_overrides_config(monkeypatch) -> None:
+    agent_context = SimpleNamespace(max_new_tokens=16384)
+    app_config = SimpleNamespace(
+        service=SimpleNamespace(web=SimpleNamespace(agent_context=agent_context))
+    )
+    system_app = SimpleNamespace(
+        config=SimpleNamespace(configs={"app_config": app_config})
+    )
+    monkeypatch.setattr(agentic_data_api.CFG, "SYSTEM_APP", system_app)
+
+    assert agentic_data_api._resolve_agent_max_new_tokens(32768) == 32768
+
+
+def test_agent_max_new_tokens_rejects_non_positive_request() -> None:
+    with pytest.raises(ValueError, match="greater than zero"):
+        agentic_data_api._resolve_agent_max_new_tokens(0)
+
+
+@pytest.mark.asyncio
+async def test_context_budget_reserves_configured_output_tokens(monkeypatch) -> None:
+    agent_context = SimpleNamespace(
+        max_context_tokens=120000,
+        reserved_tokens=4096,
+    )
+    app_config = SimpleNamespace(
+        service=SimpleNamespace(web=SimpleNamespace(agent_context=agent_context))
+    )
+    system_app = SimpleNamespace(
+        config=SimpleNamespace(configs={"app_config": app_config})
+    )
+    monkeypatch.setattr(agentic_data_api.CFG, "SYSTEM_APP", system_app)
+
+    config = await agentic_data_api._load_context_budget_config(max_new_tokens=16384)
+
+    assert config.reserved_tokens == 16384
 
 
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:

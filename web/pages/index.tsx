@@ -1893,7 +1893,6 @@ const Playground: NextPage = () => {
       model_name: model,
       select_param: selectParam,
       temperature: 0.6,
-      max_new_tokens: 4000,
       ext_info: extInfo,
     };
 
@@ -1909,7 +1908,6 @@ const Playground: NextPage = () => {
           model_name: model,
           user_input: finalQuery,
           temperature: 0.6,
-          max_new_tokens: 4000,
           select_param: selectParam,
           ext_info: extInfo,
         }),

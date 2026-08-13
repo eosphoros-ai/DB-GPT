@@ -301,6 +301,7 @@ async def build_sub_react_agent(
     *,
     parent_conv_id: str,
     llm_client: Any,
+    max_new_tokens: int = 4096,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
     knowledge_resources: Any = None,
@@ -315,6 +316,7 @@ async def build_sub_react_agent(
         sub_index: Index within the dispatch batch (drives conv_id / lane).
         parent_conv_id: The lead agent's conv_id.
         llm_client: The lead agent's ``LLMClient`` (reused, not the config).
+        max_new_tokens: Maximum output tokens inherited from the lead agent.
         sub_model_name: Model for the sub-agent; None => same as main model.
         database_connector: Shared read-only DB connector (or None).
         knowledge_resources: Shared read-only knowledge resources (or None).
@@ -384,6 +386,7 @@ async def build_sub_react_agent(
         gpts_app_code="react_agent_sub",
         gpts_app_name="ReAct-Sub",
         language="zh",
+        max_new_tokens=max_new_tokens,
         enable_context_management=True,
     )
 
@@ -488,6 +491,7 @@ def make_dispatch_tool(
     *,
     parent_conv_id: str,
     llm_client: Any,
+    max_new_tokens: int = 4096,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
     knowledge_resources: Any = None,
@@ -501,6 +505,7 @@ def make_dispatch_tool(
     Args:
         parent_conv_id: The lead agent's conv_id (sub conv_ids derive from it).
         llm_client: The lead agent's ``LLMClient`` (reused for sub-agents).
+        max_new_tokens: Maximum output tokens inherited by sub-agents.
         sub_model_name: Sub-agent model; None => same as main model.
         database_connector: Shared read-only DB connector (or None).
         knowledge_resources: Shared read-only knowledge resources (or None).
@@ -586,6 +591,7 @@ def make_dispatch_tool(
                     idx,
                     parent_conv_id=parent_conv_id,
                     llm_client=llm_client,
+                    max_new_tokens=max_new_tokens,
                     sub_model_name=sub_model_name,
                     database_connector=database_connector,
                     knowledge_resources=knowledge_resources,

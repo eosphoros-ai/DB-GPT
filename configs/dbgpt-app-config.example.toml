@@ -13,6 +13,8 @@ port = 5670
 cors_allowed_origins = "${env:DBGPT_CORS_ALLOWED_ORIGINS:-*}"
 
 [service.web.agent_context]
+# Default output-token limit for Agent calls. A positive API request value wins.
+max_new_tokens = 4096
 # Agent context-window budget. Set max_context_tokens to 0 to auto-detect from
 # the selected model's metadata. The effective budget shown in the UI is
 # max_context_tokens - reserved_tokens.

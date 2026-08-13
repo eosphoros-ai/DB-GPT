@@ -6,6 +6,27 @@ from dbgpt.util.configure.manager import ConfigurationManager
 from dbgpt_app.config import AgentContextParameters
 
 
+def test_max_new_tokens_accepts_config_value():
+    config = AgentContextParameters(max_new_tokens=16384)
+
+    assert config.max_new_tokens == 16384
+
+
+@pytest.mark.parametrize("configured_value", [0, -1])
+def test_non_positive_max_new_tokens_uses_default(configured_value):
+    config = AgentContextParameters(max_new_tokens=configured_value)
+
+    assert config.max_new_tokens == 4096
+
+
+def test_configuration_manager_parses_max_new_tokens():
+    manager = ConfigurationManager({"agent_context": {"max_new_tokens": 16384}})
+
+    config = manager.parse_config(AgentContextParameters, "agent_context")
+
+    assert config.max_new_tokens == 16384
+
+
 def test_max_parallel_subagents_uses_builtin_default(monkeypatch):
     """Use the built-in limit when neither TOML nor the environment sets it."""
     monkeypatch.delenv("DBGPT_MAX_PARALLEL_SUBAGENTS", raising=False)

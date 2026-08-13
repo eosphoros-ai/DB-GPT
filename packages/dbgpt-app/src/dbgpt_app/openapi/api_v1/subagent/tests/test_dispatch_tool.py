@@ -151,6 +151,29 @@ async def test_dispatch_runs_all_tasks_and_relays_text(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_dispatch_passes_parent_max_new_tokens_to_subagents(monkeypatch):
+    captured_limits = []
+
+    async def _fake_build(goal, idx, **kwargs):
+        captured_limits.append(kwargs["max_new_tokens"])
+        return _FakeAgent(f"result-{idx}"), f"parent__sub_{idx}", {
+            "generated_images": []
+        }
+
+    monkeypatch.setattr(disp, "build_sub_react_agent", _fake_build)
+    tool = make_dispatch_tool(
+        parent_conv_id="p",
+        llm_client=_make_fake_llm_client(),
+        max_new_tokens=16384,
+        emit_event=_collector()[1],
+    )
+
+    await tool(tasks=[{"goal": "g0"}, {"goal": "g1"}])
+
+    assert captured_limits == [16384, 16384]
+
+
+@pytest.mark.asyncio
 async def test_dispatch_summary_never_relays_react_envelope(monkeypatch):
     raw = """``````vis-thinking
 internal draft
