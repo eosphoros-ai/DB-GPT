@@ -4,11 +4,7 @@ from dbgpt_app.openapi.api_v1.template_renderer import render_template_placehold
 
 
 def test_renders_spaced_and_lowercase_placeholders():
-    template = (
-        "<h1>{{ TITLE }}</h1>"
-        "<p>{{ lower_key }}</p>"
-        "<span>{{ MISSING_KEY }}</span>"
-    )
+    template = "<h1>{{ TITLE }}</h1><p>{{ lower_key }}</p><span>{{ MISSING_KEY }}</span>"
 
     html = render_template_placeholders(
         template, {"TITLE": "Sales Report", "lower_key": "insight"}

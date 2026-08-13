@@ -6,9 +6,7 @@ from typing import Any, Mapping
 _PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*([A-Za-z0-9_]+)\s*\}\}")
 
 
-def render_template_placeholders(
-    template: str, replacements: Mapping[str, Any]
-) -> str:
+def render_template_placeholders(template: str, replacements: Mapping[str, Any]) -> str:
     """Replace simple ``{{ key }}`` placeholders without evaluating code."""
 
     def _replace_placeholder(match: re.Match) -> str:
