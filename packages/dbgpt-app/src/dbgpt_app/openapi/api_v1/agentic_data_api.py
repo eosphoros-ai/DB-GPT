@@ -149,7 +149,12 @@ async def _load_context_budget_config(
 
 
 def _resolve_agent_max_new_tokens(requested: Optional[int]) -> int:
-    """Resolve agent output tokens with request-over-config precedence."""
+    """Resolve agent output tokens with request-over-config precedence.
+
+    A positive per-request value wins. Otherwise the value configured under
+    ``[service.web.agent_context].max_new_tokens`` is used, falling back to
+    the default of 4096 when no valid configuration is available.
+    """
     if requested is not None:
         if requested <= 0:
             raise ValueError("max_new_tokens must be greater than zero")

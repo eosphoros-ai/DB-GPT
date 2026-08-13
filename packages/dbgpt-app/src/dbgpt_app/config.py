@@ -286,6 +286,7 @@ class AgentContextParameters(BaseParameters):
     )
 
     def __post_init__(self):
+        """Validate and normalize agent context parameters."""
         if self.max_new_tokens <= 0:
             logger.warning(
                 "Invalid max_new_tokens=%s; using default 4096",
