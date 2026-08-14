@@ -174,6 +174,14 @@ function SideBar() {
         activeIconSrc: '/pictures/knowledge_sidebar_active.svg',
         path: '/construct/knowledge',
       },
+      {
+        key: 'finance',
+        name: t('finance'),
+        isActive: pathname.startsWith('/finance'),
+        iconSrc: '/pictures/datasource.svg',
+        activeIconSrc: '/pictures/datasource_active.svg',
+        path: '/finance',
+      },
     ];
     return items;
   }, [t, pathname]);

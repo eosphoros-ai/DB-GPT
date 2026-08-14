@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "finance-research"
+version = "0.1.0"
+description = "Public financial report collection & traceable research analysis."
+readme = "README.md"
+requires-python = ">= 3.10"
+dependencies = [
+    "pydantic>=2.0",
+    "pandas>=1.5",
+    "pdfplumber>=0.10",
+    "requests>=2.28",
+    "beautifulsoup4>=4.11",
+    "lxml>=4.9",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+llm = ["openai>=1.0"]
+storage = ["SQLAlchemy>=1.4"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["finance_research"]

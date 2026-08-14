@@ -9,6 +9,7 @@ module.exports = {
   bracketSpacing: true,
   jsxBracketSameLine: false,
   arrowParens: "avoid",
+  endOfLine: "auto",
   plugins: [
     require.resolve('prettier-plugin-organize-imports'),
     require.resolve('prettier-plugin-packagejson'),

@@ -30,6 +30,7 @@ def scan_serve_configs():
         "dbgpt_serve.prompt",
         "dbgpt_serve.rag",
         "dbgpt_serve.connector",  # External connectors serve
+        "dbgpt_serve.finance",  # Public finance research & traceable reports
     ]
 
     scanner = ModelScanner[BaseServeConfig]()
@@ -341,3 +342,18 @@ def register_serve_apps(
         ),
     )
     # ######################### Scheduled Task Serve Register End ####################
+
+    # ########################### Finance Serve Register Begin #######################
+    from dbgpt_serve.finance.serve import Serve as FinanceServe
+
+    # Register finance serve (public finance research & traceable reports)
+    system_app.register(
+        FinanceServe,
+        config=get_config(
+            serve_configs,
+            FinanceServe.name,
+            dbgpt_serve.finance.serve.ServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ########################### Finance Serve Register End #########################

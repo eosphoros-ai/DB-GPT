@@ -1,0 +1,2 @@
+# SQLite databases created at runtime by examples / serve module
+*.db
