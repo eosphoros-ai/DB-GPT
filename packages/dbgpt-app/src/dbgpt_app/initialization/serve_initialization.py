@@ -341,3 +341,22 @@ def register_serve_apps(
         ),
     )
     # ######################### Scheduled Task Serve Register End ####################
+
+    # ######################### Session File Serve Register Begin ###################
+    from dbgpt_serve.session_file.config import (
+        ServeConfig as SessionFileServeConfig,
+    )
+    from dbgpt_serve.session_file.serve import SessionFileServe
+
+    # Register serve session_file (owner-aware agent session files)
+    system_app.register(
+        SessionFileServe,
+        api_prefix="/api/v1/agent/files",
+        config=get_config(
+            serve_configs,
+            SessionFileServe.name,
+            SessionFileServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ######################### Session File Serve Register End #####################

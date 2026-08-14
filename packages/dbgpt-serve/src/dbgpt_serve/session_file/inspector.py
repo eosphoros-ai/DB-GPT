@@ -59,7 +59,9 @@ class InspectionLimits:
     max_archive_entry_bytes: int = 16 * 1024 * 1024
     max_compression_ratio: float = 100.0
     max_xml_nodes: int = 100_000
+    max_open_files: int = 64
     timeout_seconds: float = 10.0
+    queue_timeout_seconds: float = 10.0
     max_concurrency: int = 4
 
     def __post_init__(self) -> None:
@@ -89,6 +91,9 @@ class _InspectionError(Exception):
         super().__init__(message)
         self.code = code
         self.safe_message = message
+
+
+INSPECTION_BUSY_CODE = "INSPECTION_BUSY"
 
 
 _TYPE_INFO = {
@@ -151,7 +156,8 @@ class SessionFileInspector:
         self, path: Path, declared_media_type: Optional[str] = None
     ) -> InspectionResult:
         """Inspect a local file with a wall-clock timeout."""
-        self._slots.acquire()
+        if not self._slots.acquire(timeout=self.limits.queue_timeout_seconds):
+            return self._failure(*_result_type(Path(path)), INSPECTION_BUSY_CODE)
         return self._inspect_with_acquired_slot(Path(path), declared_media_type)
 
     def _inspect_with_acquired_slot(
@@ -171,6 +177,7 @@ class SessionFileInspector:
                     _inspect_builtin,
                     (path, declared_media_type, self.limits),
                     self.limits.timeout_seconds,
+                    self.limits,
                 )
             finally:
                 self._slots.release()
@@ -194,8 +201,11 @@ class SessionFileInspector:
         self, path: Path, declared_media_type: Optional[str] = None
     ) -> InspectionResult:
         """Inspect without blocking the event loop, with bounded concurrency."""
-        while not self._slots.acquire(blocking=False):
-            await asyncio.sleep(0.001)
+        acquired = await asyncio.to_thread(
+            self._slots.acquire, True, self.limits.queue_timeout_seconds
+        )
+        if not acquired:
+            return self._failure(*_result_type(Path(path)), INSPECTION_BUSY_CODE)
         return await asyncio.to_thread(
             self._inspect_with_acquired_slot, Path(path), declared_media_type
         )
@@ -211,6 +221,11 @@ class SessionFileInspector:
             )
         kind, media_type, signature = type_info
         try:
+            if path.is_symlink():
+                raise _InspectionError(
+                    "UNSAFE_FILE_REFERENCE",
+                    "File references outside the managed store are not allowed.",
+                )
             size = path.stat().st_size
             if size > self.limits.max_parse_bytes:
                 raise _InspectionError(
@@ -441,22 +456,31 @@ class SessionFileInspector:
                 "PARSER_UNAVAILABLE", "Parser for doc is unavailable."
             )
         _validate_zip_bounds(path, limits)
+        extra_slides = False
         if suffix == ".docx":
             names = ("word/document.xml",)
             tags = {"{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t"}
         else:
             with zipfile.ZipFile(path) as archive:
-                names = tuple(
-                    sorted(
-                        name
-                        for name in archive.namelist()
-                        if name.startswith("ppt/slides/slide") and name.endswith(".xml")
-                    )[: limits.max_pages]
+                slide_names = [
+                    name
+                    for name in archive.namelist()
+                    if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+                ]
+            slide_names.sort(
+                key=lambda name: int(
+                    name.rsplit("slide", 1)[1].split(".")[0]
+                    if name.rsplit("slide", 1)[1].split(".")[0].isdigit()
+                    else 0
                 )
+            )
+            names = tuple(slide_names[: limits.max_pages])
+            extra_slides = len(slide_names) > limits.max_pages
             tags = {"{http://schemas.openxmlformats.org/drawingml/2006/main}t"}
         chunks = []
         used = 0
         nodes = 0
+        truncated = extra_slides
         with zipfile.ZipFile(path) as archive:
             for name in names:
                 with archive.open(name) as stream:
@@ -474,7 +498,7 @@ class SessionFileInspector:
                             if used >= limits.max_text_bytes:
                                 return {"text": "\n".join(chunks)}, True
                         node.clear()
-        return {"text": "\n".join(chunks)}, False
+        return {"text": "\n".join(chunks)}, truncated
 
     def _require(self, module_name: str, format_name: str) -> Any:
         module = self._optional_import(module_name)
@@ -491,6 +515,7 @@ class SessionFileInspector:
             "INSPECTION_TIMEOUT": "File preview timed out.",
             "INTERNAL_PREVIEW_VIOLATION": "The preview contained internal metadata.",
             "UNSUPPORTED_TYPE": "The file type is not supported.",
+            "INSPECTION_BUSY": "Inspection backlog is full; retry later.",
         }
         return InspectionResult(
             kind=kind,
@@ -518,11 +543,38 @@ def _inspect_builtin(
     return SessionFileInspector(limits)._inspect_core(path, declared_media_type)
 
 
+def _apply_resource_limits(limits: InspectionLimits) -> None:
+    """Best-effort per-worker guardrails; ignored when unavailable."""
+    try:
+        import resource
+    except ImportError:
+        return
+    try:
+        resource.setrlimit(resource.RLIMIT_NOFILE, (limits.max_open_files,) * 2)
+    except (ValueError, OSError):
+        pass
+    try:
+        cpu_seconds = int(limits.timeout_seconds) + 5
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds))
+    except (ValueError, OSError):
+        pass
+    try:
+        # Cap address space generously above the parse input cap; platforms
+        # that cannot enforce it (e.g. some macOS paths) are skipped silently.
+        address_space = max(limits.max_parse_bytes * 32, 512 * 1024 * 1024)
+        resource.setrlimit(resource.RLIMIT_AS, (address_space, address_space))
+    except (ValueError, OSError):
+        pass
+
+
 def _process_worker(
     output: Any,
     target: Callable[..., Any],
     args: Tuple[Any, ...],
+    limits: Optional[InspectionLimits],
 ) -> None:
+    if limits is not None:
+        _apply_resource_limits(limits)
     try:
         output.send((True, target(*args)))
     except BaseException as error:
@@ -535,13 +587,36 @@ def _run_isolated(
     target: Callable[..., Any],
     args: Tuple[Any, ...],
     timeout_seconds: float,
+    limits: Optional[InspectionLimits] = None,
 ) -> Tuple[bool, Any]:
     """Run picklable built-in work in a process that can be forcibly stopped."""
     context = multiprocessing.get_context("spawn")
     output, child_output = context.Pipe(duplex=False)
-    process = context.Process(target=_process_worker, args=(child_output, target, args))
+    process = context.Process(
+        target=_process_worker, args=(child_output, target, args, limits)
+    )
     process.start()
     child_output.close()
+
+    # Drain the pipe concurrently: large results must not block the worker
+    # while the parent is joining (capacity is smaller than max_preview_bytes).
+    received: list = []
+    received_error: list = []
+
+    def _drain() -> None:
+        try:
+            received.append(output.recv())
+        except EOFError as error:  # child crashed / exited without result
+            received_error.append(error)
+        except BaseException as error:  # unpicklable error objects, etc.
+            received_error.append(error)
+        finally:
+            output.close()
+
+    drainer = threading.Thread(
+        target=_drain, name="session-file-pipe-drain", daemon=True
+    )
+    drainer.start()
     process.join(timeout_seconds)
     if process.is_alive():
         process.terminate()
@@ -549,16 +624,16 @@ def _run_isolated(
         if process.is_alive():
             process.kill()
             process.join(0.2)
-        output.close()
+        if process.is_alive():
+            raise RuntimeError("Inspection worker did not terminate.")
         return False, process.pid
-    try:
-        if not output.poll(0.2):
-            raise EOFError
-        succeeded, value = output.recv()
-    except EOFError:
+    process.join()
+    drainer.join(timeout=1.0)
+    if received_error:
         raise RuntimeError("Inspection worker exited without a result.")
-    finally:
-        output.close()
+    if not received:
+        raise RuntimeError("Inspection worker exited without a result.")
+    succeeded, value = received[0]
     if not succeeded:
         raise value
     return True, value
@@ -699,6 +774,7 @@ def _bound_preview(preview: Dict[str, Any], max_bytes: int) -> ParserResult:
     truncated = False
     collection_keys = ("rows", "pages", "sheets")
     while _serialized_size(bounded) > max_bytes:
+        previous_size = _serialized_size(bounded)
         candidates = [
             value
             for key in collection_keys
@@ -710,19 +786,27 @@ def _bound_preview(preview: Dict[str, Any], max_bytes: int) -> ParserResult:
         if candidates:
             max(candidates, key=len).pop()
             truncated = True
-            continue
-        strings = list(_string_locations(bounded))
-        if not strings:
-            break
-        parent, key, value = max(strings, key=lambda item: len(item[2].encode("utf-8")))
-        encoded_length = len(value.encode("utf-8"))
-        if encoded_length <= 1:
-            parent[key] = ""
         else:
-            parent[key] = _truncate_utf8(value, encoded_length // 2)
-        truncated = True
-    if _serialized_size(bounded) > max_bytes:
-        return {}, True
+            strings = list(_string_locations(bounded))
+            if not strings:
+                raise _InspectionError(
+                    "PREVIEW_TOO_LARGE",
+                    "File exceeds the bounded preview output limit.",
+                )
+            parent, key, value = max(
+                strings, key=lambda item: len(item[2].encode("utf-8"))
+            )
+            encoded_length = len(value.encode("utf-8"))
+            if encoded_length <= 1:
+                parent[key] = ""
+            else:
+                parent[key] = _truncate_utf8(value, encoded_length // 2)
+            truncated = True
+        if _serialized_size(bounded) >= previous_size:
+            raise _InspectionError(
+                "PREVIEW_TOO_LARGE",
+                "File exceeds the bounded preview output limit.",
+            )
     return bounded, truncated
 
 

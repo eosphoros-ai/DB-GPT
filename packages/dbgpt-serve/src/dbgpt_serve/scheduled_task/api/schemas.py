@@ -6,7 +6,15 @@ from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatReplayPayload(BaseModel):
-    """冻结的对话快照,定时执行时用于回放对话。"""
+    """冻结的对话快照,定时执行时用于回放对话。
+
+    v2 冻结文件输入:创建时可在 ``ext_info.file_ids`` 携带会话作用域文件 ID
+    列表(配合 ``ext_info.session_id`` 指明来源会话);服务会把这些文件“冻结
+    复制”到任务作用域后再持久化,因此落库的 ``ext_info.file_ids`` 只会包含
+    任务作用域 ID —— 绝不包含会话作用域 ID,也绝不保存 ``file_path``。
+    每次回放执行前,任务文件会被再复制进当次运行的新会话,并使用新的会话
+    作用域 ID 重建对话请求。
+    """
 
     model_config = ConfigDict(protected_namespaces=())
 
@@ -19,7 +27,11 @@ class ChatReplayPayload(BaseModel):
     max_new_tokens: Optional[int] = Field(default=None)
     ext_info: Optional[Dict[str, Any]] = Field(
         default_factory=dict,
-        description="扩展信息,含 skill_id / connector_ids / mcp_ids 等",
+        description=(
+            "扩展信息,含 skill_id / connector_ids / mcp_ids 等;"
+            "文件输入使用 file_ids(创建时为会话作用域,落库后为任务作用域,"
+            "见类 docstring),不保存 file_path"
+        ),
     )
 
 

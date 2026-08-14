@@ -5,6 +5,8 @@
  * 无需登录，只读，不可继续对话。
  */
 
+import { displayOnlySnapshots, parseShareViewPayload } from '@/modules/session-files/recovery';
+import type { SessionFileSnapshot } from '@/modules/session-files/types';
 import ManusLeftPanel, {
   ArtifactItem,
   ExecutionStep as ManusExecutionStep,
@@ -53,6 +55,8 @@ interface RawPayload {
   final_content: string;
   steps: RawStep[];
   generated_images?: string[];
+  /** v2 only: display-safe input file snapshots (share payloads use display_key). */
+  input_files?: unknown;
 }
 
 interface _ParsedMessage {
@@ -70,6 +74,8 @@ interface ReplayRound {
   stepThoughts: Record<string, string>;
   finalContent: string;
   artifacts: ArtifactItem[];
+  /** Read-only v2 input_files snapshots (share payloads key them by display_key). */
+  attachedFiles: readonly SessionFileSnapshot[];
 }
 
 // ---------------------------------------------------------------------------
@@ -192,15 +198,10 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
     if (msg.role === 'human') {
       pendingHuman = msg.context;
     } else if (msg.role === 'view') {
-      let payload: RawPayload | null = null;
-      try {
-        const parsed = JSON.parse(msg.context);
-        if (parsed?.version === 1 && parsed?.type === 'react-agent') {
-          payload = parsed as RawPayload;
-        }
-      } catch {
-        /* ignore */
-      }
+      // Public replay accepts react history versions 1 and 2 only; malformed
+      // or future payloads are skipped without breaking the round pairing.
+      const sharePayload = parseShareViewPayload(msg.context);
+      const payload = sharePayload ? (sharePayload.payload as unknown as RawPayload) : null;
 
       if (!payload) continue;
 
@@ -252,6 +253,7 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
         stepThoughts,
         finalContent: payload.final_content || '',
         artifacts,
+        attachedFiles: displayOnlySnapshots(payload.input_files),
       });
       pendingHuman = null;
     }
@@ -776,6 +778,7 @@ const SharePage: NextPage = () => {
                   onStepClick={undefined /* read-only */}
                   isWorking={isCurrentRound && playing && !state.showFinalForRound}
                   userQuery={data.round.humanText}
+                  attachedFiles={data.round.attachedFiles}
                   assistantText={data.showFinal ? data.round.finalContent : undefined}
                   stepThoughts={data.round.stepThoughts}
                   artifacts={data.showFinal ? data.round.artifacts : []}

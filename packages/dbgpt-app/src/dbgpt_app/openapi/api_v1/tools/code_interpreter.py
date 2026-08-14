@@ -1,4 +1,10 @@
-"""code_interpreter tool — execute Python code in a subprocess."""
+"""code_interpreter tool — execute Python code in a subprocess.
+
+Execution boundary: file locations (``FILE_PATH``/``FILES_JSON``/``PLOT_DIR``)
+travel only through the subprocess environment; the generated Python source
+never interpolates a path literal, so adversarial display names or paths
+cannot inject code.
+"""
 
 import asyncio
 import json
@@ -7,11 +13,67 @@ import os
 import shutil
 import sys
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from dbgpt.agent.resource.tool.base import tool
 
 logger = logging.getLogger(__name__)
+
+EXECUTION_TIMEOUT_SECONDS = 60
+
+
+async def _run_python_file(
+    script_path: str,
+    *,
+    cwd: str,
+    env: Optional[Dict[str, str]] = None,
+    timeout: int = EXECUTION_TIMEOUT_SECONDS,
+) -> Tuple[Optional[int], bytes, bytes]:
+    """Run one Python script via ``asyncio.create_subprocess_exec``.
+
+    The process is spawned with an argument list (never a shell string) and
+    inherits the parent environment; file locations reach the child only
+    through ``env``. Returns ``(returncode, stdout, stderr)``; ``returncode``
+    is ``None`` when the run timed out.
+    """
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable,
+        script_path,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=cwd,
+        env=env,
+    )
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        try:
+            proc.kill()
+            await proc.wait()
+        except Exception:
+            pass
+        return None, b"", b""
+    return proc.returncode, stdout, stderr
+
+
+def build_execution_env(
+    *,
+    work_dir: str,
+    file_path: Optional[str] = None,
+    files_json_path: Optional[str] = None,
+    extra: Optional[Dict[str, str]] = None,
+) -> Dict[str, str]:
+    """Build the subprocess environment for file-aware code execution."""
+    env = dict(os.environ)
+    env["PLOT_DIR"] = work_dir
+    if file_path:
+        env["FILE_PATH"] = file_path
+    if files_json_path:
+        env["FILES_JSON"] = files_json_path
+    for key, value in (extra or {}).items():
+        if value is not None:
+            env[key] = value
+    return env
 
 
 def _try_repair_truncated_code(raw_code: str) -> Optional[str]:
@@ -83,12 +145,11 @@ def make_code_interpreter(react_state: Dict[str, Any]):
             "import os",
             "import pandas as pd",
             "import numpy as np",
-            f'PLOT_DIR = r"{work_dir}"',
+            'PLOT_DIR = os.environ["PLOT_DIR"]',
             "os.makedirs(PLOT_DIR, exist_ok=True)",
+            'FILE_PATH = os.environ.get("FILE_PATH") or None',
+            'FILES_JSON = os.environ.get("FILES_JSON") or None',
         ]
-        fp = react_state.get("file_path")
-        if fp:
-            preamble_lines.append(f'FILE_PATH = r"{fp}"')
         preamble = "\n".join(preamble_lines) + "\n"
         full_code = preamble + code
 
@@ -128,25 +189,30 @@ def make_code_interpreter(react_state: Dict[str, Any]):
             with open(tmp_path, "w", encoding="utf-8") as tmp:
                 tmp.write(full_code)
 
-            proc = await asyncio.create_subprocess_exec(
-                sys.executable,
+            returncode, stdout, stderr = await _run_python_file(
                 tmp_path,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
                 cwd=work_dir,
+                env=build_execution_env(
+                    work_dir=work_dir,
+                    file_path=react_state.get("file_path"),
+                    files_json_path=react_state.get("files_json_path"),
+                ),
+                timeout=EXECUTION_TIMEOUT_SECONDS,
             )
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
             output_text = stdout.decode("utf-8", errors="replace")
             error_text = stderr.decode("utf-8", errors="replace")
 
-            if proc.returncode != 0 and error_text:
+            if returncode is None:
+                # ``_run_python_file`` returns ``None`` only on timeout.
+                output_text = (
+                    f"Execution timed out ({EXECUTION_TIMEOUT_SECONDS}s limit)"
+                )
+            elif returncode and error_text:
                 output_text = (
                     output_text + "\n[ERROR]\n" + error_text
                     if output_text
                     else error_text
                 )
-        except asyncio.TimeoutError:
-            output_text = "Execution timed out (60s limit)"
         except Exception as e:
             output_text = f"Execution error: {e}"
 

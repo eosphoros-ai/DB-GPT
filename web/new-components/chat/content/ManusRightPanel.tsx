@@ -1,5 +1,6 @@
 import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
+import type { SessionFileSnapshot } from '@/modules/session-files/types';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
@@ -176,6 +177,7 @@ export interface ManusRightPanelProps {
   terminalTitle?: string;
   isCollapsed?: boolean;
   artifacts?: ArtifactItem[];
+  inputFiles?: readonly SessionFileSnapshot[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
   /** Controlled panel view — when provided, overrides internal state */
   panelView?: PanelView;
@@ -389,6 +391,25 @@ const getFileFilterCategory = (artifact: ArtifactItem): FileFilterTab[] => {
   return categories;
 };
 
+const getInputFileFilterCategory = (file: SessionFileSnapshot): FileFilterTab[] => {
+  const categories: FileFilterTab[] = ['all'];
+  const ext = file.name.toLowerCase().split('.').pop() || '';
+  if (file.media_type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) {
+    categories.push('image');
+  }
+  if (['py', 'js', 'ts', 'tsx', 'jsx', 'sql', 'sh', 'json', 'yaml', 'yml'].includes(ext)) {
+    categories.push('code');
+  }
+  if (
+    file.kind === 'table' ||
+    ['xlsx', 'xls', 'csv', 'tsv', 'doc', 'docx', 'pdf', 'ppt', 'pptx', 'md', 'txt', 'html', 'htm'].includes(ext)
+  ) {
+    categories.push('document');
+  }
+  if (categories.length === 1) categories.push('document');
+  return categories;
+};
+
 const formatArtifactDate = (timestamp: number): string => {
   const now = new Date();
   const date = new Date(timestamp);
@@ -404,25 +425,84 @@ const formatArtifactDate = (timestamp: number): string => {
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 };
 
+const formatPanelFileSize = (bytes?: number): string => {
+  if (!Number.isFinite(bytes ?? NaN)) return '';
+  const value = bytes ?? 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const getInputFileIcon = (file: SessionFileSnapshot) => {
+  const ext = file.name.toLowerCase().split('.').pop() || '';
+  if (['xlsx', 'xls', 'csv', 'tsv', 'json', 'parquet'].includes(ext) || file.kind === 'table') {
+    return <FileExcelOutlined className='text-emerald-600 dark:text-emerald-400' />;
+  }
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || file.media_type.startsWith('image/')) {
+    return <FileImageOutlined className='text-pink-500' />;
+  }
+  if (['ppt', 'pptx'].includes(ext)) {
+    return <FilePptOutlined className='text-orange-500' />;
+  }
+  return <FileTextOutlined className='text-indigo-500 dark:text-indigo-400' />;
+};
+
+const InputFileListItem: React.FC<{ file: SessionFileSnapshot; selected?: boolean; onClick?: () => void }> = memo(
+  ({ file, selected, onClick }) => (
+    <button
+      type='button'
+      onClick={onClick}
+      className={classNames(
+        'group flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-200',
+        selected
+          ? 'border-emerald-200 bg-emerald-50/80 shadow-sm dark:border-emerald-800/60 dark:bg-emerald-900/20'
+          : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40 dark:border-slate-800 dark:bg-[#17181b] dark:hover:border-emerald-800/60 dark:hover:bg-emerald-900/10',
+      )}
+    >
+      <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/30'>
+        {getInputFileIcon(file)}
+      </div>
+      <div className='min-w-0 flex-1'>
+        <div className='truncate text-sm font-medium text-slate-800 dark:text-slate-100'>{file.name}</div>
+        <div className='mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500'>
+          <span>{file.kind || '资料'}</span>
+          {file.size > 0 && (
+            <>
+              <span className='text-slate-300 dark:text-slate-600'>·</span>
+              <span>{formatPanelFileSize(file.size)}</span>
+            </>
+          )}
+        </div>
+      </div>
+      <span className='rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'>
+        上传资料
+      </span>
+    </button>
+  ),
+);
+
+InputFileListItem.displayName = 'InputFileListItem';
+
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
   const isImage = artifact.type === 'image' || /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(artifact.name);
   const imgSrc = isImage && typeof artifact.content === 'string' ? resolveImageUrl(artifact.content) : null;
 
   return (
-    <div
+    <button
+      type='button'
       onClick={onClick}
-      className='flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1f2025] transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0'
+      className='group flex w-full items-center gap-3 rounded-xl border border-indigo-100 bg-white px-3 py-3 text-left transition-all duration-200 hover:border-indigo-200 hover:bg-indigo-50/40 dark:border-indigo-900/40 dark:bg-[#17181b] dark:hover:border-indigo-800 dark:hover:bg-indigo-900/10'
     >
       {imgSrc ? (
         <img
           src={imgSrc}
           alt={artifact.name}
-          className='w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700'
+          className='h-9 w-9 flex-shrink-0 rounded-lg border border-gray-200 object-cover dark:border-gray-700'
         />
       ) : (
         <div
           className={classNames(
-            'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg',
             getArtifactFileBg(artifact.type),
           )}
         >
@@ -447,7 +527,10 @@ const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> =
           )}
         </div>
       </div>
-    </div>
+      <span className='rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'>
+        推理生成
+      </span>
+    </button>
   );
 });
 
@@ -2323,6 +2406,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   onSchedule,
   terminalTitle,
   artifacts,
+  inputFiles,
   onArtifactClick,
   panelView: controlledPanelView,
   onPanelViewChange,
@@ -2341,6 +2425,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const [inputCollapsed, setInputCollapsed] = useState(false);
   const [internalPanelView, setInternalPanelView] = useState<PanelView>('execution');
   const [fileFilter, setFileFilter] = useState<FileFilterTab>('all');
+  const [selectedInputFileId, setSelectedInputFileId] = useState<string | null>(null);
   const htmlPreviewRef = useRef<HTMLIFrameElement>(null);
   const panelView = controlledPanelView ?? internalPanelView;
   const setPanelView = (view: PanelView) => {
@@ -2389,6 +2474,27 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     return artifacts.filter(a => getFileFilterCategory(a).includes(fileFilter));
   }, [artifacts, fileFilter]);
 
+  const visibleInputFiles = useMemo(() => {
+    if (!inputFiles) return [];
+    if (fileFilter === 'all') return [...inputFiles];
+    return inputFiles.filter(file => getInputFileFilterCategory(file).includes(fileFilter));
+  }, [inputFiles, fileFilter]);
+
+  useEffect(() => {
+    if (!inputFiles || inputFiles.length === 0) {
+      setSelectedInputFileId(null);
+      return;
+    }
+    if (!selectedInputFileId || !inputFiles.some(file => file.file_id === selectedInputFileId)) {
+      setSelectedInputFileId(inputFiles[0].file_id);
+    }
+  }, [inputFiles, selectedInputFileId]);
+
+  const selectedInputFile = useMemo(
+    () => inputFiles?.find(file => file.file_id === selectedInputFileId) || inputFiles?.[0] || null,
+    [inputFiles, selectedInputFileId],
+  );
+
   const dateGroupedArtifacts = useMemo(() => {
     const groups: { label: string; items: ArtifactItem[] }[] = [];
     const groupMap = new Map<string, ArtifactItem[]>();
@@ -2407,6 +2513,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const subAgentDisplayName = subAgentContext ? getSubAgentDisplayName(subAgentContext) : '';
   const subAgentDuration = formatSubAgentDuration(subAgentContext?.elapsedMs);
   const isSubAgentExecution = panelView === 'execution' && Boolean(subAgentContext);
+  const inputFileCount = inputFiles?.length ?? 0;
+  const artifactCount = artifacts?.length ?? 0;
+  const totalFileCount = inputFileCount + artifactCount;
 
   return (
     <div className='relative flex h-full min-h-0 flex-col overflow-hidden bg-[#f8f9fc] dark:bg-[#0d0e11]'>
@@ -2549,7 +2658,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       )}
 
       {/* View Toggle Tabs */}
-      {((artifacts && artifacts.length > 0) || previewArtifact || skillName || !!summaryContent) && (
+      {(totalFileCount > 0 || previewArtifact || skillName || !!summaryContent) && (
         <div className='flex flex-shrink-0 items-center gap-0 border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
           <button
             onClick={() => setPanelView('execution')}
@@ -2566,7 +2675,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
             )}
           </button>
-          {artifacts && artifacts.length > 0 && (
+          {totalFileCount > 0 && (
             <button
               onClick={() => setPanelView('files')}
               className={classNames(
@@ -2579,7 +2688,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               <FolderOpenOutlined className='mr-1.5' />
               {t('task_files')}
               <span className='ml-1.5 text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded-full'>
-                {artifacts.length}
+                {totalFileCount}
               </span>
               {panelView === 'files' && (
                 <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
@@ -2716,13 +2825,18 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             )}
           </div>
         ) : panelView === 'files' ? (
-          <div className='space-y-0'>
-            <div className='flex items-center gap-1 mb-4 bg-gray-100/80 dark:bg-gray-800/60 rounded-lg p-1'>
+          <div className='space-y-5'>
+            <div className='flex items-center gap-1 rounded-lg bg-gray-100/80 p-1 dark:bg-gray-800/60'>
               {FILE_FILTER_TABS.map(tab => {
-                const count =
+                const inputCount =
                   tab.key === 'all'
-                    ? artifacts?.length || 0
+                    ? inputFileCount
+                    : (inputFiles || []).filter(file => getInputFileFilterCategory(file).includes(tab.key)).length;
+                const artifactTabCount =
+                  tab.key === 'all'
+                    ? artifactCount
                     : (artifacts || []).filter(a => getFileFilterCategory(a).includes(tab.key)).length;
+                const count = tab.key === 'all' ? totalFileCount : inputCount + artifactTabCount;
                 if (tab.key !== 'all' && count === 0) return null;
                 return (
                   <button
@@ -2742,20 +2856,93 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               })}
             </div>
 
-            {dateGroupedArtifacts.length > 0 ? (
-              dateGroupedArtifacts.map(group => (
-                <div key={group.label}>
-                  <div className='px-1 py-2 text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider'>
-                    {group.label}
+            {visibleInputFiles.length > 0 && (
+              <section className='space-y-3'>
+                <div className='flex items-center justify-between px-1'>
+                  <div>
+                    <div className='text-[11px] font-semibold uppercase tracking-wider text-emerald-600/80 dark:text-emerald-400/80'>
+                      上传资料 · {visibleInputFiles.length}
+                    </div>
+                    <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
+                      用户本轮带入的分析上下文
+                    </div>
                   </div>
-                  <div className='rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1b1e] overflow-hidden mb-3'>
-                    {group.items.map(artifact => (
-                      <FileListItem key={artifact.id} artifact={artifact} onClick={() => onArtifactClick?.(artifact)} />
-                    ))}
-                  </div>
+                  <span className='rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'>
+                    Input
+                  </span>
                 </div>
-              ))
-            ) : (
+                <div className='space-y-2'>
+                  {visibleInputFiles.map(file => (
+                    <InputFileListItem
+                      key={file.file_id}
+                      file={file}
+                      selected={selectedInputFile?.file_id === file.file_id}
+                      onClick={() => setSelectedInputFileId(file.file_id)}
+                    />
+                  ))}
+                </div>
+                {selectedInputFile && (
+                  <div className='rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/10'>
+                    <div className='mb-2 flex items-center justify-between gap-3'>
+                      <div className='min-w-0'>
+                        <div className='truncate text-sm font-medium text-slate-800 dark:text-slate-100'>
+                          {selectedInputFile.name}
+                        </div>
+                        <div className='mt-0.5 text-[11px] text-slate-500 dark:text-slate-400'>
+                          {selectedInputFile.kind || '资料'} ·{' '}
+                          {formatPanelFileSize(selectedInputFile.size) || '未知大小'}
+                        </div>
+                      </div>
+                      <span className='rounded-md bg-white px-2 py-1 text-[10px] font-medium text-emerald-700 shadow-sm dark:bg-white/10 dark:text-emerald-300'>
+                        {selectedInputFile.status === 'ready' ? '已就绪' : selectedInputFile.status}
+                      </span>
+                    </div>
+                    <div className='grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400'>
+                      <div className='rounded-lg bg-white/70 px-2 py-1.5 dark:bg-white/[0.04]'>模型可读取</div>
+                      <div className='rounded-lg bg-white/70 px-2 py-1.5 dark:bg-white/[0.04]'>会话内可用</div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {filteredArtifacts.length > 0 && (
+              <section className='space-y-3'>
+                <div className='flex items-center justify-between px-1'>
+                  <div>
+                    <div className='text-[11px] font-semibold uppercase tracking-wider text-indigo-600/80 dark:text-indigo-400/80'>
+                      推理生成 · {filteredArtifacts.length}
+                    </div>
+                    <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
+                      Agent 在本轮推理过程中生成的文件
+                    </div>
+                  </div>
+                  <span className='rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'>
+                    Output
+                  </span>
+                </div>
+                <div className='space-y-3'>
+                  {dateGroupedArtifacts.map(group => (
+                    <div key={group.label} className='space-y-2'>
+                      <div className='px-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500'>
+                        {group.label}
+                      </div>
+                      <div className='space-y-2'>
+                        {group.items.map(artifact => (
+                          <FileListItem
+                            key={artifact.id}
+                            artifact={artifact}
+                            onClick={() => onArtifactClick?.(artifact)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {visibleInputFiles.length === 0 && filteredArtifacts.length === 0 && (
               <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
                 <FolderOpenOutlined className='text-3xl mb-4' />
                 <span className='text-sm'>暂无文件</span>

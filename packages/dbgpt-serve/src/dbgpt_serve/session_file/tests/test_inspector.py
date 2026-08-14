@@ -17,6 +17,8 @@ from dbgpt_serve.session_file.inspector import (
     InspectionLimits,
     InspectionResult,
     SessionFileInspector,
+    _bound_preview,
+    _InspectionError,
 )
 
 
@@ -438,3 +440,146 @@ def test_preview_cap_uses_public_json_serialization_with_unicode(tmp_path):
     assert len(serialized) <= 16
     assert json.loads(serialized) == result.preview
     assert result.truncated is True
+
+
+def test_bound_preview_raises_instead_of_looping_when_limit_unattainable():
+    with pytest.raises(_InspectionError) as error:
+        _bound_preview({"a": ""}, 1)
+
+    assert error.value.code == "PREVIEW_TOO_LARGE"
+
+
+def _write_pptx(path, slide_numbers):
+    parts = {
+        "ppt/presentation.xml": '<?xml version="1.0"?>'
+        '<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>',
+    }
+    for number in slide_numbers:
+        pptx_ns = "http://schemas.openxmlformats.org/presentationml/2006/main"
+        parts[f"ppt/slides/slide{number}.xml"] = (
+            '<?xml version="1.0"?>'
+            f'<p:sld xmlns:p="{pptx_ns}" '
+            'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+            f"<a:t>slide {number}</a:t>"
+            "</p:sld>"
+        )
+    _write_ooxml(path, parts)
+
+
+def test_pptx_slides_are_naturally_ordered_and_truncated(tmp_path):
+    path = tmp_path / "deck.pptx"
+    _write_pptx(path, [1, 2, 10])
+
+    result = SessionFileInspector(InspectionLimits(max_pages=2)).inspect(path)
+
+    assert result.status is SessionFileStatus.READY
+    assert result.preview["text"] == "slide 1\nslide 2"
+    assert result.truncated is True
+
+
+def test_isolated_process_handles_result_larger_than_pipe_buffer(tmp_path):
+    path = tmp_path / "large.txt"
+    path.write_text("a" * (64 * 1024))
+
+    result = SessionFileInspector(
+        InspectionLimits(max_preview_bytes=32 * 1024)
+    ).inspect(path)
+
+    assert result.status is SessionFileStatus.READY
+    assert result.truncated is True
+    assert len(json.dumps(result.preview).encode("utf-8")) <= 32 * 1024
+
+
+def test_symlink_inputs_are_rejected_safely(tmp_path):
+    real = tmp_path / "real.txt"
+    real.write_text("safe")
+    link = tmp_path / "link.txt"
+    link.symlink_to(real)
+
+    result = SessionFileInspector().inspect(link)
+
+    assert result.status is SessionFileStatus.PREVIEW_FAILED
+    assert result.error_code == "UNSAFE_FILE_REFERENCE"
+
+
+def test_inspection_returns_busy_when_slots_are_held(tmp_path):
+    path = tmp_path / "busy.txt"
+    path.write_text("safe")
+    inspector = SessionFileInspector(
+        InspectionLimits(max_concurrency=1, queue_timeout_seconds=0.05)
+    )
+    semaphore = inspector._slots
+    semaphore.acquire()
+    try:
+        result = inspector.inspect(path)
+    finally:
+        semaphore.release()
+
+    assert result.status is SessionFileStatus.PREVIEW_FAILED
+    assert result.error_code == "INSPECTION_BUSY"
+
+
+@pytest.mark.asyncio
+async def test_async_inspection_returns_busy_when_slots_are_held(tmp_path):
+    path = tmp_path / "busy.txt"
+    path.write_text("safe")
+    inspector = SessionFileInspector(
+        InspectionLimits(max_concurrency=1, queue_timeout_seconds=0.05)
+    )
+    semaphore = inspector._slots
+    semaphore.acquire()
+    try:
+        result = await inspector.inspect_async(path)
+    finally:
+        semaphore.release()
+
+    assert result.status is SessionFileStatus.PREVIEW_FAILED
+    assert result.error_code == "INSPECTION_BUSY"
+
+
+def test_process_worker_applies_limits_before_target(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        inspector_module,
+        "_apply_resource_limits",
+        lambda limits: calls.append(limits),
+    )
+
+    class _FakeOutput:
+        def __init__(self):
+            self.sent = []
+            self.closed = False
+
+        def send(self, value):
+            self.sent.append(value)
+
+        def close(self):
+            self.closed = True
+
+    output = _FakeOutput()
+    limits = InspectionLimits()
+    inspector_module._process_worker(output, lambda: "done", (), limits)
+
+    assert calls == [limits]
+    assert output.sent == [(True, "done")]
+    assert output.closed is True
+
+
+def test_apply_resource_limits_calls_os_guardrails(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    calls = []
+    fake_resource = SimpleNamespace(
+        RLIMIT_NOFILE=1,
+        RLIMIT_CPU=2,
+        RLIMIT_AS=3,
+        setrlimit=lambda res, value: calls.append((res, value)),
+    )
+    monkeypatch.setitem(sys.modules, "resource", fake_resource)
+    limits = InspectionLimits()
+
+    inspector_module._apply_resource_limits(limits)
+
+    applied = {res for res, _ in calls}
+    assert {1, 2, 3} <= applied

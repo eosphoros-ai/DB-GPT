@@ -2,7 +2,18 @@ import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
-import { ColumnAnalysis, PreprocessingResult, analyzeDataset } from '@/new-components/analysis';
+import AttachmentPreview from '@/modules/session-files/AttachmentPreview';
+import AttachmentRail, { AttachmentRailAddButton, type RailPreviewState } from '@/modules/session-files/AttachmentRail';
+import { previewFile as previewSessionFile, sessionFilesApi } from '@/modules/session-files/api';
+import {
+  PREVIEW_DESKTOP_MIN_WIDTH,
+  PREVIEW_DRAWER_MAX_WIDTH,
+  type RailItem,
+} from '@/modules/session-files/attachment-view-model';
+import { extInfoForSend, snapshotsForSend, snapshotsFromInputFiles } from '@/modules/session-files/home-adapter';
+import type { SessionFileSnapshot, SessionFilesSendSnapshot } from '@/modules/session-files/types';
+import { useSessionFiles } from '@/modules/session-files/use-session-files';
+import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
 import ManusLeftPanel, {
@@ -28,7 +39,7 @@ import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
-import { sendSpacePostRequest } from '@/utils/request';
+import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import {
   ApiOutlined,
   ArrowUpOutlined,
@@ -37,6 +48,7 @@ import {
   BellOutlined,
   BookOutlined,
   CheckCircleFilled,
+  CloseOutlined,
   CloudServerOutlined,
   CodeOutlined,
   ConsoleSqlOutlined,
@@ -60,9 +72,11 @@ import {
 } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import {
+  Alert,
   Avatar,
   Button,
   ConfigProvider,
+  Drawer,
   Dropdown,
   Input,
   List,
@@ -158,13 +172,6 @@ interface KnowledgeSpace {
   owner?: string;
 }
 
-// Define file attachment type for user messages
-interface FileAttachment {
-  name: string;
-  size: number;
-  type: string;
-}
-
 // Define message type for chat
 interface ChatMessage {
   id?: string;
@@ -173,7 +180,8 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
-  attachedFile?: FileAttachment;
+  /** Immutable server snapshots of every session file attached to this message. */
+  attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
   attachedSkill?: { name: string; id: string };
   attachedDb?: { db_name: string; db_type: string };
@@ -199,29 +207,6 @@ interface ExecutionStep {
 interface ExecutionOutput {
   output_type: string;
   content: any;
-}
-
-interface FilePreview {
-  kind: 'table' | 'text';
-  file_name?: string;
-  file_path?: string;
-  columns?: string[];
-  rows?: Record<string, any>[];
-  text?: string;
-  shape?: [number, number];
-}
-
-interface ChartPreview {
-  chartType?: ChartType;
-  data: Array<{ x: string | number; y: number; [key: string]: any }>;
-  xField: string;
-  yField: string;
-  seriesField?: string;
-  colorField?: string;
-  angleField?: string;
-  title?: string;
-  description?: string;
-  smooth?: boolean;
 }
 
 interface Skill {
@@ -557,12 +542,161 @@ const Playground: NextPage = () => {
   // Contexts
   const [selectedDb, setSelectedDb] = useState<DataSource | null>(null);
   const [selectedKnowledge, setSelectedKnowledge] = useState<KnowledgeSpace | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<any | null>(null);
-
   // Chat messages state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // --- Session files (Task12): rail drafts + send snapshots ---------------
+  const sessionFiles = useSessionFiles({ api: sessionFilesApi });
+  const hasSessionFileDrafts = sessionFiles.files.length > 0;
+  // Legacy example file staged in the rail (legacy file_path protocol).
+  const hasLegacyFile = !!sessionFiles.legacyFile;
+  // Ref mirror so pick/send callbacks always read the latest conversation id.
+  const conversationIdRef = useRef<string | null>(null);
+  conversationIdRef.current = conversationId;
+
+  // Composer attachment preview state; desktop renders inside the right
+  // panel, smaller viewports use the rail's own overlay Drawer.
+  const [sessionFilePreview, setSessionFilePreview] = useState<RailPreviewState | null>(null);
+  const [queuedSendAfterUpload, setQueuedSendAfterUpload] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState<number>(() =>
+    typeof window === 'undefined' ? PREVIEW_DESKTOP_MIN_WIDTH : window.innerWidth,
+  );
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const isDesktopWidth = viewportWidth >= PREVIEW_DESKTOP_MIN_WIDTH;
+  // Desktop + chat view swaps the right panel content for the preview, so the
+  // rail must not open its own Drawer (its overlay already hides ≥1024px).
+  const showInlineAttachmentPreview = isDesktopWidth && !!sessionFilePreview && messages.length > 0;
+
+  const ensureSessionFilesConvId = useCallback((): string => {
+    const existing = conversationIdRef.current;
+    if (existing) return existing;
+    const next = generateUUID();
+    conversationIdRef.current = next;
+    setConversationId(next);
+    return next;
+  }, []);
+
+  const openSessionFilePreview = useCallback(async (item: RailItem) => {
+    const convId = conversationIdRef.current;
+    if (!convId || !item.fileId) return;
+    // Desktop previews render inside the right panel: make sure it is visible.
+    setRightPanelCollapsed(false);
+    setSessionFilePreview({ snapshot: null, loading: true, error: null, size: item.size });
+    try {
+      const previewSnapshot = await previewSessionFile(convId, item.fileId);
+      setSessionFilePreview({ snapshot: previewSnapshot, loading: false, error: null, size: item.size });
+    } catch (err: any) {
+      setSessionFilePreview({
+        snapshot: null,
+        loading: false,
+        error: err?.message || 'Preview failed',
+        size: item.size,
+      });
+    }
+  }, []);
+
+  const closeSessionFilePreview = useCallback(() => setSessionFilePreview(null), []);
+
+  // Drag & drop files anywhere on the page into the composer draft rail.
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => {
+      if (!e.dataTransfer?.types?.includes('Files')) return;
+      e.preventDefault();
+    };
+    const onDrop = (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+      e.preventDefault();
+      const sessionId = ensureSessionFilesConvId();
+      void sessionFiles.addFiles(Array.from(files), sessionId);
+    };
+    window.addEventListener('dragover', onDragOver);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragover', onDragOver);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [ensureSessionFilesConvId, sessionFiles]);
+
+  // Legacy server-preloaded example file: fetch bounded content and render it
+  // through the same preview surfaces (Drawer/desktop right panel).
+  const openLegacyFilePreview = useCallback(
+    async (file: { name: string; size: number; media_type: string; file_path: string }) => {
+      setRightPanelCollapsed(false);
+      setSessionFilePreview({ snapshot: null, loading: true, error: null, size: file.size });
+      try {
+        const [data] = await sendGetRequest('/api/v1/resource/file/read', { file_key: file.file_path });
+        const content: string = typeof data?.content === 'string' ? data.content : '';
+        const ext = file.name.toLowerCase().split('.').pop() ?? '';
+        const TABLE_EXTS = new Set(['csv']);
+        const truncated = content.length > 1024 * 1024;
+        const text = truncated ? content.slice(0, 1024 * 1024) : content;
+        let preview: Record<string, unknown>;
+        let kind: string;
+        if (TABLE_EXTS.has(ext)) {
+          kind = 'table';
+          const lines = text
+            .split(/\r?\n/)
+            .filter(line => line.length > 0)
+            .slice(0, 101);
+          const rows = lines.map(line => line.split(','));
+          preview = { encoding: 'utf-8', delimiter: ',', rows };
+        } else {
+          kind = 'text';
+          preview = { encoding: 'utf-8', text };
+        }
+        setSessionFilePreview({
+          snapshot: {
+            file_id: `legacy:${file.name}`,
+            name: file.name,
+            media_type: file.media_type,
+            kind,
+            status: 'ready',
+            truncated,
+            preview,
+          },
+          loading: false,
+          error: null,
+          size: file.size,
+        });
+      } catch (err: any) {
+        setSessionFilePreview({
+          snapshot: null,
+          loading: false,
+          error: err?.message || 'Preview failed',
+          size: file.size,
+        });
+      }
+    },
+    [],
+  );
+
+  const renderSessionFilePreviewBody = () => {
+    if (!sessionFilePreview) return null;
+    if (sessionFilePreview.loading) {
+      return (
+        <div className='flex h-40 items-center justify-center'>
+          <Spin />
+        </div>
+      );
+    }
+    if (sessionFilePreview.error) {
+      return <Alert type='error' showIcon message='Preview failed' description={sessionFilePreview.error} />;
+    }
+    return <AttachmentPreview snapshot={sessionFilePreview.snapshot} size={sessionFilePreview.size} />;
+  };
+
+  const clearComposerAttachments = useCallback(() => {
+    sessionFiles.clearTurn();
+    setSessionFilePreview(null);
+    setQueuedSendAfterUpload(false);
+  }, [sessionFiles]);
 
   const [executionMap, setExecutionMap] = useState<
     Record<
@@ -578,21 +712,13 @@ const Playground: NextPage = () => {
       }
     >
   >({});
-  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
-  const [uploadedFilePath, setUploadedFilePath] = useState<string | null>(null);
-  const [filePreview, setFilePreview] = useState<FilePreview | null>(null);
-  const [_filePreviewLoading, setFilePreviewLoading] = useState(false);
-  const [_filePreviewError, setFilePreviewError] = useState<string | null>(null);
-  const [chartPreview, setChartPreview] = useState<ChartPreview | null>(null);
-  const lastArtifactKeyRef = useRef<string>('');
+  const [_activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [createdSkillNames, setCreatedSkillNames] = useState<Record<string, string>>({});
   const [_rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('preview');
   const [streamingSummary, setStreamingSummary] = useState<string>('');
   const [_summaryComplete, setSummaryComplete] = useState(false);
-  const [_dataAnalysis, setDataAnalysis] = useState<ColumnAnalysis[] | null>(null);
-  const [_analysisLoading, setAnalysisLoading] = useState(false);
   const [_showProfessionalReport, _setShowProfessionalReport] = useState(false);
   const [_preprocessedData, _setPreprocessedData] = useState<PreprocessingResult | null>(null);
 
@@ -639,7 +765,6 @@ const Playground: NextPage = () => {
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
-  const preloadedFilePathRef = useRef<string | null>(null);
   // Snapshot of the exact payload last sent to the agent, captured at send
   // time so "保存定时任务" can replay the real execution (file / database /
   // knowledge / skill / connectors) instead of a drifting UI state.
@@ -798,6 +923,10 @@ const Playground: NextPage = () => {
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
+      // Rebuild the composer rail from the server-owned session files so a
+      // conversation switch never leaks drafts from another session scope.
+      void sessionFiles.rehydrateFromServer(convId);
+      setSessionFilePreview(null);
     } else if (!convId && conversationId) {
       // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
       setMessages([]);
@@ -806,14 +935,13 @@ const Playground: NextPage = () => {
       setExecutionMap({});
       setActiveMessageId(null);
       setActiveViewMsgId(null);
-      setUploadedFilePath(null);
-      setFilePreview(null);
-      setFilePreviewError(null);
       setArtifacts([]);
       setRightPanelTab('preview');
       setStreamingSummary('');
       setSummaryComplete(false);
       setTaskPlan([]);
+      sessionFiles.clearTurn();
+      setSessionFilePreview(null);
     }
   }, [router.query.id]);
 
@@ -823,180 +951,6 @@ const Playground: NextPage = () => {
       setActiveMessageId(lastView.id);
     }
   }, [messages]);
-
-  useEffect(() => {
-    const loadPreview = async () => {
-      if (!uploadedFilePath) return;
-      setFilePreviewLoading(true);
-      setFilePreviewError(null);
-      try {
-        const res = await axios.post(`${process.env.API_BASE_URL ?? ''}/api/v1/resource/file/read`, null, {
-          params: {
-            conv_uid: conversationId || 'preview',
-            file_key: uploadedFilePath,
-          },
-        });
-        if (res.data?.success && res.data?.data) {
-          let parsed: any;
-          try {
-            parsed = JSON.parse(res.data.data);
-          } catch {
-            parsed = res.data.data;
-          }
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const columns = Object.keys(parsed[0] || {});
-            setFilePreview({
-              kind: 'table',
-              file_name: uploadedFile?.name,
-              file_path: uploadedFilePath,
-              columns,
-              rows: parsed.slice(0, 50),
-              shape: [parsed.length, columns.length],
-            });
-          } else if (typeof parsed === 'string') {
-            setFilePreview({
-              kind: 'text',
-              file_name: uploadedFile?.name,
-              file_path: uploadedFilePath,
-              text: parsed,
-            });
-          } else {
-            setFilePreview({
-              kind: 'text',
-              file_name: uploadedFile?.name,
-              file_path: uploadedFilePath,
-              text: JSON.stringify(parsed, null, 2),
-            });
-          }
-        } else {
-          setFilePreviewError(res.data?.err_msg || '文件预览失败');
-        }
-      } catch (err: any) {
-        setFilePreviewError(err?.message || '文件预览失败');
-      } finally {
-        setFilePreviewLoading(false);
-      }
-    };
-    loadPreview();
-  }, [uploadedFilePath, conversationId, uploadedFile]);
-
-  useEffect(() => {
-    if (!filePreview || filePreview.kind !== 'table') {
-      setChartPreview(null);
-      return;
-    }
-    const rows = filePreview.rows || [];
-    const columns = filePreview.columns || [];
-    if (!rows.length || !columns.length) {
-      setChartPreview(null);
-      return;
-    }
-    const numericColumns = columns.filter(col => {
-      const sample = rows.slice(0, 20).map(row => Number(row[col]));
-      const numericCount = sample.filter(val => Number.isFinite(val)).length;
-      return numericCount >= Math.max(3, Math.floor(sample.length * 0.6));
-    });
-    if (!numericColumns.length) {
-      setChartPreview(null);
-      return;
-    }
-    const yCol = numericColumns[0];
-    const xCol = columns.find(col => col !== yCol) || '__index__';
-    const data = rows.slice(0, 60).map((row, idx) => {
-      const xVal = xCol === '__index__' ? idx + 1 : row[xCol];
-      const yVal = Number(row[yCol]);
-      return {
-        x: typeof xVal === 'string' || typeof xVal === 'number' ? xVal : String(xVal ?? idx + 1),
-        y: Number.isFinite(yVal) ? yVal : 0,
-      };
-    });
-    setChartPreview({
-      data,
-      xField: 'x',
-      yField: 'y',
-      title: `${yCol} trend`,
-    });
-  }, [filePreview]);
-
-  // Auto-analyze data when filePreview updates
-  useEffect(() => {
-    if (!filePreview || filePreview.kind !== 'table' || !filePreview.rows?.length) {
-      setDataAnalysis(null);
-      return;
-    }
-
-    setAnalysisLoading(true);
-    try {
-      const analysis = analyzeDataset(filePreview.rows, filePreview.columns);
-      setDataAnalysis(analysis);
-      // Auto-switch to analysis tab when data is ready
-      if (analysis.length > 0) {
-        setRightPanelTab('analysis');
-      }
-    } catch (err) {
-      console.error('Data analysis failed:', err);
-      setDataAnalysis(null);
-    } finally {
-      setAnalysisLoading(false);
-    }
-  }, [filePreview]);
-
-  useEffect(() => {
-    if (!activeMessageId || !filePreview) return;
-    const artifactKey = `${activeMessageId}:${filePreview.file_path || filePreview.file_name || ''}`;
-    if (artifactKey === lastArtifactKeyRef.current) return;
-    lastArtifactKeyRef.current = artifactKey;
-    const previewStepId = 'client-preview';
-    setExecutionMap(prev => {
-      const current = prev[activeMessageId] || { steps: [], outputs: {}, activeStepId: null, collapsed: false };
-      const hasStep = current.steps.some(step => step.id === previewStepId);
-      const nextSteps = hasStep
-        ? current.steps.map(step => (step.id === previewStepId ? { ...step, status: 'done' as const } : step))
-        : [
-            ...current.steps,
-            {
-              id: previewStepId,
-              step: current.steps.length + 1,
-              title: 'Preview & Visualize',
-              detail: 'Parsed file preview and prepared visual insights.',
-              status: 'done' as const,
-            },
-          ];
-      const outputs = { ...current.outputs };
-      const previewOutputs: ExecutionOutput[] = [];
-      if (filePreview.kind === 'table') {
-        previewOutputs.push({
-          output_type: 'table',
-          content: {
-            columns: (filePreview.columns || []).map(col => ({ title: col, dataIndex: col, key: col })),
-            rows: filePreview.rows || [],
-          },
-        });
-      } else if (filePreview.kind === 'text') {
-        previewOutputs.push({ output_type: 'text', content: filePreview.text || '' });
-      }
-      if (chartPreview) {
-        previewOutputs.push({
-          output_type: 'chart',
-          content: {
-            data: chartPreview.data,
-            xField: chartPreview.xField,
-            yField: chartPreview.yField,
-          },
-        });
-      }
-      outputs[previewStepId] = previewOutputs;
-      return {
-        ...prev,
-        [activeMessageId]: {
-          ...current,
-          steps: nextSteps,
-          outputs,
-          activeStepId: previewStepId,
-        },
-      };
-    });
-  }, [activeMessageId, filePreview, chartPreview]);
 
   interface Round {
     humanMsg: ChatMessage | null;
@@ -1556,70 +1510,57 @@ const Playground: NextPage = () => {
     return deduped;
   };
 
-  const handleStart = async (
-    inputQuery = query,
-    overrideFile?: File | null,
-    overrideSkill?: Skill | null,
-    overrideDb?: DataSource | null,
-  ) => {
-    const effectiveFile = overrideFile !== undefined ? overrideFile : uploadedFile;
+  const handleStart = async (inputQuery = query, overrideSkill?: Skill | null, overrideDb?: DataSource | null) => {
     const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
-    if ((!inputQuery.trim() && !effectiveFile) || loading) return;
+    if ((!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile) || loading || queuedSendAfterUpload) return;
 
     let finalQuery = inputQuery;
     const appCode = 'chat_react_agent';
     const chatMode = 'chat_react_agent';
-    let currentUploadedFilePath = null;
 
-    // Handle File Upload if present
-    if (preloadedFilePathRef.current) {
-      // Example file already copied to server - skip upload
-      currentUploadedFilePath = preloadedFilePathRef.current;
-      setUploadedFilePath(currentUploadedFilePath);
-      preloadedFilePathRef.current = null;
-      finalQuery = inputQuery || 'Analyze the uploaded file.';
-    } else if (effectiveFile) {
-      const formData = new FormData();
-      formData.append('file', effectiveFile);
+    // The conversation id must be settled before preparing file sends so the
+    // uploads (bound at pick time) and this request share one session scope.
+    const currentConvId = conversationIdRef.current || generateUUID();
+    if (!conversationIdRef.current) {
+      conversationIdRef.current = currentConvId;
+      setConversationId(currentConvId);
+    }
+    let sendSnapshot: SessionFilesSendSnapshot | null = null;
 
-      try {
-        const uploadRes = await axios.post(`${process.env.API_BASE_URL ?? ''}/api/v1/python/file/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        const resData = uploadRes.data;
-        // Handle both wrapped Result {success, data} and raw string path
-        if (resData?.success && resData?.data) {
-          currentUploadedFilePath = resData.data;
-          setUploadedFilePath(currentUploadedFilePath);
-          finalQuery = inputQuery || 'Analyze the uploaded Excel file.';
-        } else if (typeof resData === 'string' && resData.length > 0) {
-          // Backend returned the file path directly as a string
-          currentUploadedFilePath = resData;
-          setUploadedFilePath(currentUploadedFilePath);
-          finalQuery = inputQuery || 'Analyze the uploaded Excel file.';
-        } else {
-          const errMsg = resData?.err_msg || resData?.message || 'Unknown error';
-          message.error('File upload failed: ' + errMsg);
-          return;
-        }
-      } catch (uploadErr: any) {
-        console.error('[Upload] error:', uploadErr);
-        const errDetail =
-          uploadErr?.response?.data?.err_msg ||
-          uploadErr?.response?.data?.message ||
-          uploadErr?.message ||
-          'Network error';
-        message.error('File upload failed: ' + errDetail);
+    // Every file send goes through the session-files state machine: local
+    // drafts ride the file_ids protocol, a staged legacy example file rides
+    // the legacy file_path protocol. The state machine keeps them mutually
+    // exclusive (legacy file_path conflicts with file_ids server-side).
+    if (hasSessionFileDrafts || hasLegacyFile) {
+      if (sessionFiles.files.some(draft => draft.validation.status !== 'ok')) {
+        message.error('存在未通过校验的附件，请先移除后再发送');
         return;
       }
-    } else {
-      if (uploadedFilePath) {
-        setUploadedFilePath(null);
-        setFilePreview(null);
+      if (sessionFiles.hasHardFailures) {
+        message.error('有附件上传失败，请重试或移除后再发送');
+        return;
       }
-      // Construct context prefix for non-file queries
+      try {
+        setQueuedSendAfterUpload(sessionFiles.isUploading);
+        sendSnapshot = await sessionFiles.prepare(currentConvId);
+      } catch (prepareErr: any) {
+        message.error(prepareErr?.message || '附件校验失败，请重试');
+        return;
+      } finally {
+        setQueuedSendAfterUpload(false);
+      }
+      if (sendSnapshot && sendSnapshot.fileIds.length === 0 && !sendSnapshot.legacyFile) {
+        sendSnapshot = null;
+      }
+    }
+    if (sendSnapshot?.legacyFile && !finalQuery.trim()) {
+      // Legacy example-card default (unchanged from the preloaded flow).
+      finalQuery = 'Analyze the uploaded file.';
+    }
+    // Construct context prefix for non-legacy queries. Legacy example sends
+    // reproduce the old payload, which never carried a context prefix.
+    if (!sendSnapshot?.legacyFile) {
       const contextParts = [];
       if (effectiveDb) contextParts.push(`[Database: ${effectiveDb.db_name}]`);
       if (selectedKnowledge) contextParts.push(`[Knowledge: ${selectedKnowledge.name}]`);
@@ -1628,11 +1569,9 @@ const Playground: NextPage = () => {
       }
     }
 
-    // Prepare conversation ID
-    const currentConvId = conversationId || generateUUID();
-    if (!conversationId) {
-      setConversationId(currentConvId);
-    }
+    // Conversation id was already settled above (see send gating).
+    // const snapshot so TS narrowing survives inside the map closure below.
+    const filesAttachedThisSend: SessionFilesSendSnapshot | null = sendSnapshot;
 
     // Calculate current order
     const currentOrder = Math.floor(messages.length / 2) + 1;
@@ -1649,13 +1588,7 @@ const Playground: NextPage = () => {
         role: 'human',
         context: inputQuery,
         order: currentOrder,
-        attachedFile: effectiveFile
-          ? {
-              name: effectiveFile.name,
-              size: effectiveFile.size,
-              type: effectiveFile.type,
-            }
-          : undefined,
+        attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
         attachedKnowledge: selectedKnowledge ?? undefined,
         attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
         attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
@@ -1698,9 +1631,8 @@ const Playground: NextPage = () => {
 
     // Build ext_info once and reuse it for both the live request and the
     // snapshot captured for "保存定时任务", so a saved task replays the exact
-    // same context (file / database / knowledge / skill / connectors).
-    const extInfo: Record<string, any> = {
-      ...(currentUploadedFilePath ? { file_path: currentUploadedFilePath } : {}),
+    // same context (files / database / knowledge / skill / connectors).
+    const baseExtInfo: Record<string, any> = {
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
       ...(selectedKnowledge
@@ -1708,12 +1640,17 @@ const Playground: NextPage = () => {
         : {}),
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
     };
+    // Session-file sends travel via file_ids (+ display-safe task snapshot);
+    // zero files keep the legacy payload byte-for-byte unchanged.
+    const extInfo = extInfoForSend(baseExtInfo, filesAttachedThisSend);
     const selectParam = appCode === 'chat_react_agent' ? '' : appCode;
 
     // Snapshot the exact payload being sent (minus the per-run conv_uid, which
     // each scheduled run regenerates) so buildSnapshot replays this real run.
+    // version 2 marks the session-file file_ids contract; legacy file_path
+    // example sends stay on version 1 so task replay reuses the same protocol.
     lastSentPayloadRef.current = {
-      version: 1,
+      version: filesAttachedThisSend && filesAttachedThisSend.fileIds.length > 0 ? 2 : 1,
       user_input: finalQuery,
       chat_mode: chatMode,
       model_name: model,
@@ -1744,6 +1681,12 @@ const Playground: NextPage = () => {
 
       if (!response.body) {
         throw new Error('No response body');
+      }
+
+      // Submission accepted by the server: the sent files now belong to the
+      // turn, so the composer rail resets for the next one.
+      if (filesAttachedThisSend) {
+        clearComposerAttachments();
       }
 
       const reader = response.body.getReader();
@@ -2114,7 +2057,7 @@ const Playground: NextPage = () => {
                       responseId,
                       execution || { steps: [], outputs: {} },
                       summaryText,
-                      uploadedFilePath,
+                      filesAttachedThisSend?.legacyFile?.file_path ?? null,
                     );
 
                     setArtifacts(prevArtifacts => {
@@ -2220,22 +2163,31 @@ const Playground: NextPage = () => {
     try {
       message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
 
-      let filePath: string | null = null;
-      let fakeFile: File | null = null;
-
-      // If example has a file, request it from backend
+      // Example files already exist on the server: copy them, then stage the
+      // returned path as a read-only legacy rail item (legacy file_path
+      // protocol — mutually exclusive with local draft uploads).
       if (example.fileName) {
+        if (hasSessionFileDrafts) {
+          message.destroy('example-loading');
+          message.warning('示例文件与本地上传的附件不能混用，请先移除已选附件');
+          return;
+        }
         const res = await axios.post(`${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`, {
           example_id: example.id,
         });
 
         if (res?.success && res?.data) {
-          filePath = res.data;
-          preloadedFilePathRef.current = filePath;
-          fakeFile = new File([new ArrayBuffer(example.fileSize || 0)], example.fileName, {
-            type: example.fileType,
+          const staged = sessionFiles.addLegacyFile({
+            name: example.fileName,
+            size: example.fileSize || 0,
+            media_type: example.fileType,
+            file_path: res.data,
           });
-          setUploadedFile(fakeFile);
+          if (!staged.ok) {
+            message.destroy('example-loading');
+            message.error('加载示例失败: ' + (staged.error ?? 'Unknown error'));
+            return;
+          }
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
@@ -2266,7 +2218,7 @@ const Playground: NextPage = () => {
         }
       }
 
-      handleStart(translatedQuery, fakeFile, exampleSkill, matchedDb);
+      handleStart(translatedQuery, exampleSkill, matchedDb);
     } catch (err: unknown) {
       message.destroy('example-loading');
       console.error('Example click error:', err);
@@ -2283,13 +2235,12 @@ const Playground: NextPage = () => {
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
-    setUploadedFilePath(null);
-    setFilePreview(null);
-    setFilePreviewError(null);
     setArtifacts([]);
     setRightPanelTab('preview');
     setStreamingSummary('');
     setSummaryComplete(false);
+    sessionFiles.clearTurn();
+    setSessionFilePreview(null);
     router.push('/', undefined, { shallow: true });
   };
 
@@ -2321,7 +2272,7 @@ const Playground: NextPage = () => {
           /* ignore parse failure */
         }
 
-        if (payload && payload.version === 1 && payload.type === 'react-agent') {
+        if (payload && (payload.version === 1 || payload.version === 2) && payload.type === 'react-agent') {
           const steps: ExecutionStep[] = (payload.steps || []).map((s: any, idx: number) => ({
             id: s.id || `history-step-${idx}`,
             step: idx + 1,
@@ -2387,6 +2338,19 @@ const Playground: NextPage = () => {
           };
 
           const finalContent = cleanFinalContent(payload.final_content || '');
+
+          // History payload v2: the turn's input_files snapshot attaches to
+          // the human message of this round. v1 stays on the legacy one-item
+          // bridge (no snapshots, AttachmentMessageGroup falls back).
+          if (payload.version === 2) {
+            const attachedSnapshots = snapshotsFromInputFiles(payload.input_files);
+            if (attachedSnapshots.length > 0) {
+              const lastHuman = [...newMessages].reverse().find(m => m.role === 'human');
+              if (lastHuman && !lastHuman.attachedFiles) {
+                lastHuman.attachedFiles = attachedSnapshots;
+              }
+            }
+          }
 
           const restoredArtifacts = buildArtifactsFromExecution(
             viewId,
@@ -2516,8 +2480,8 @@ const Playground: NextPage = () => {
   // Build snapshot of current conversation state for scheduled task creation
   const buildSnapshot = (): ChatReplayPayload => {
     // Prefer the payload actually sent to the agent this session — it carries
-    // the real execution context (file_path / database / knowledge / skill /
-    // connectors) and is immune to UI state changed after sending.
+    // the real execution context (file_path / file_ids / database / knowledge /
+    // skill / connectors) and is immune to UI state changed after sending.
     if (lastSentPayloadRef.current) {
       return lastSentPayloadRef.current;
     }
@@ -2532,7 +2496,6 @@ const Playground: NextPage = () => {
       model_name: model,
       select_param: '',
       ext_info: {
-        ...(uploadedFilePath ? { file_path: uploadedFilePath } : {}),
         ...(selectedSkill ? { skill_id: selectedSkill.id, skill_name: selectedSkill.name } : {}),
         ...(selectedDb ? { database_name: selectedDb.db_name, database_type: selectedDb.db_type } : {}),
         ...(selectedKnowledge
@@ -2565,12 +2528,20 @@ const Playground: NextPage = () => {
   // Upload Props
   const uploadProps: any = {
     name: 'file',
-    multiple: false,
+    multiple: true,
     showUploadList: false,
     beforeUpload: (file: any) => {
-      setUploadedFile(file);
-      message.success(`${file.name} attached successfully`);
-      return false; // Prevent auto upload, we just want to select it
+      // Session-files flow: antd calls beforeUpload once per picked file; the
+      // draft starts uploading immediately against the settled conversation
+      // scope (violations render as blocked/error items in the rail). A staged
+      // legacy example file must never mix with local uploads (file_path vs
+      // file_ids), so the pick is refused before a draft is created.
+      if (hasLegacyFile) {
+        message.warning('示例文件与本地上传的附件不能混用，请先清除示例文件');
+        return false;
+      }
+      void sessionFiles.addFiles([file as File], ensureSessionFilesConvId());
+      return false; // Prevent auto upload, the session-files module owns it
     },
   };
 
@@ -2691,7 +2662,7 @@ const Playground: NextPage = () => {
                         }}
                         isWorking={isWorking}
                         userQuery={round.humanMsg?.context}
-                        attachedFile={round.humanMsg?.attachedFile}
+                        attachedFiles={round.humanMsg?.attachedFiles}
                         attachedKnowledge={round.humanMsg?.attachedKnowledge}
                         attachedSkill={round.humanMsg?.attachedSkill}
                         attachedDb={round.humanMsg?.attachedDb}
@@ -2833,15 +2804,6 @@ const Playground: NextPage = () => {
                             ))}
                           </>
                         )}
-                        {uploadedFile && (
-                          <Tag
-                            closable
-                            onClose={() => setUploadedFile(null)}
-                            className='flex items-center gap-1 bg-green-50 border-green-200 text-green-700 px-3 py-1 rounded-full'
-                          >
-                            <FileExcelOutlined /> <span className='font-medium ml-1'>{uploadedFile.name}</span>
-                          </Tag>
-                        )}
                       </div>
 
                       {/* Human-in-the-loop Question Dock */}
@@ -2863,6 +2825,23 @@ const Playground: NextPage = () => {
                       <div className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'>
                         {/* White Inner Box - Clean Glass Card */}
                         <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-2xl border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-3 px-4'>
+                          <AttachmentRail
+                            drafts={sessionFiles.files}
+                            legacyFiles={sessionFiles.legacyFile ? [sessionFiles.legacyFile] : []}
+                            onRemove={sessionFiles.remove}
+                            onRetry={() => sessionFiles.retryFailed()}
+                            onPreview={openSessionFilePreview}
+                            onLegacyPreview={openLegacyFilePreview}
+                            onClearAll={clearComposerAttachments}
+                            addControl={
+                              <Upload {...uploadProps}>
+                                <AttachmentRailAddButton />
+                              </Upload>
+                            }
+                            preview={showInlineAttachmentPreview ? null : sessionFilePreview}
+                            onClosePreview={closeSessionFilePreview}
+                            className='mb-3'
+                          />
                           {taskPlan.length > 0 && (
                             <div className='mb-3'>
                               <TaskPlanCard tasks={taskPlan} embedded />
@@ -3285,23 +3264,30 @@ const Playground: NextPage = () => {
                               {/* Send Button with blue gradient + gloss animation */}
                               <Button
                                 type='primary'
-                                shape='circle'
-                                icon={<ArrowUpOutlined />}
+                                shape={queuedSendAfterUpload ? 'round' : 'circle'}
+                                icon={queuedSendAfterUpload ? undefined : <ArrowUpOutlined />}
                                 onClick={() => handleStart()}
-                                disabled={(!query.trim() && !uploadedFile) || loading}
-                                loading={loading}
-                                className={`group/send relative overflow-hidden border-none shadow-lg flex-shrink-0 h-9 w-9 transition-all duration-200 ${
-                                  query.trim() || uploadedFile
+                                disabled={
+                                  (!query.trim() && !hasSessionFileDrafts && !hasLegacyFile) ||
+                                  loading ||
+                                  queuedSendAfterUpload
+                                }
+                                loading={loading || queuedSendAfterUpload}
+                                className={`group/send relative overflow-hidden border-none shadow-lg flex-shrink-0 h-9 transition-all duration-200 ${
+                                  queuedSendAfterUpload ? 'px-4' : 'w-9'
+                                } ${
+                                  query.trim() || hasSessionFileDrafts || hasLegacyFile
                                     ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
                                     : 'bg-gray-200 text-gray-400'
                                 }`}
                                 style={
-                                  query.trim() || uploadedFile
+                                  query.trim() || hasSessionFileDrafts || hasLegacyFile
                                     ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
                                     : undefined
                                 }
                               >
-                                {(query.trim() || uploadedFile) && (
+                                {queuedSendAfterUpload && <span className='text-[13px] font-medium'>上传后发送</span>}
+                                {(query.trim() || hasSessionFileDrafts || hasLegacyFile) && (
                                   <span
                                     className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
                                     style={{
@@ -3343,123 +3329,142 @@ const Playground: NextPage = () => {
               <div
                 className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
-                {(() => {
-                  const activeViewMsg = messages.find(m => m.id === selectedViewMsgId && m.role === 'view');
-                  const rawExecution = activeViewMsg?.id ? executionMap[activeViewMsg.id] : undefined;
-                  // Respect user's manual step selection for the right panel
-                  const execution =
-                    rawExecution && selectedStepId ? { ...rawExecution, activeStepId: selectedStepId } : rawExecution;
-                  const _converted = convertToManusFormat(execution, undefined, t);
-                  let activeStep = _converted.activeStep;
-                  let outputs = _converted.outputs;
-                  let isRunning = execution?.steps.some(s => s.status === 'running') || false;
+                {showInlineAttachmentPreview ? (
+                  <div className='flex-1 min-h-0 flex flex-col bg-white dark:bg-[#1a1b1e]'>
+                    <div className='flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-800 flex-shrink-0'>
+                      <span className='truncate text-sm font-medium text-gray-800 dark:text-gray-200'>
+                        {sessionFilePreview?.snapshot?.name ?? '附件预览'}
+                      </span>
+                      <Button
+                        type='text'
+                        size='small'
+                        icon={<CloseOutlined />}
+                        aria-label='Close attachment preview'
+                        onClick={closeSessionFilePreview}
+                      />
+                    </div>
+                    <div className='flex-1 overflow-y-auto p-4'>{renderSessionFilePreviewBody()}</div>
+                  </div>
+                ) : (
+                  (() => {
+                    const activeViewMsg = messages.find(m => m.id === selectedViewMsgId && m.role === 'view');
+                    const rawExecution = activeViewMsg?.id ? executionMap[activeViewMsg.id] : undefined;
+                    // Respect user's manual step selection for the right panel
+                    const execution =
+                      rawExecution && selectedStepId ? { ...rawExecution, activeStepId: selectedStepId } : rawExecution;
+                    const _converted = convertToManusFormat(execution, undefined, t);
+                    let activeStep = _converted.activeStep;
+                    let outputs = _converted.outputs;
+                    let isRunning = execution?.steps.some(s => s.status === 'running') || false;
 
-                  // Devin-style sub-agent process view: when a sub-agent is
-                  // selected, override activeStep/outputs with that sub-agent's
-                  // step list (reusing the execution view's rendering).
-                  // Guard on messageId so a stale selection from another round
-                  // cannot leak a same-id sub-agent into this round's view.
-                  const activeSub =
-                    activeSubAgent && activeSubAgent.messageId === activeViewMsg?.id
-                      ? execution?.subAgents?.[activeSubAgent.agentId]
+                    // Devin-style sub-agent process view: when a sub-agent is
+                    // selected, override activeStep/outputs with that sub-agent's
+                    // step list (reusing the execution view's rendering).
+                    // Guard on messageId so a stale selection from another round
+                    // cannot leak a same-id sub-agent into this round's view.
+                    const activeSub =
+                      activeSubAgent && activeSubAgent.messageId === activeViewMsg?.id
+                        ? execution?.subAgents?.[activeSubAgent.agentId]
+                        : undefined;
+                    const activeDispatchStepId =
+                      _converted.activeStep?.action === 'dispatch_parallel_tasks' ? _converted.activeStep.id : null;
+                    const dispatchSteps =
+                      execution?.steps.filter(step => step.action === 'dispatch_parallel_tasks') || [];
+                    const dispatchStepIndex = activeDispatchStepId
+                      ? dispatchSteps.findIndex(step => step.id === activeDispatchStepId)
+                      : -1;
+                    const activeDispatchBatchId = dispatchStepIndex >= 0 ? dispatchStepIndex + 1 : null;
+                    const parallelSubAgents = activeDispatchBatchId
+                      ? Object.fromEntries(
+                          Object.entries(execution?.subAgents || {}).filter(
+                            ([, agent]) =>
+                              agent.batchId === activeDispatchBatchId ||
+                              (agent.batchId === 0 && activeDispatchBatchId === 1),
+                          ),
+                        )
                       : undefined;
-                  const activeDispatchStepId =
-                    _converted.activeStep?.action === 'dispatch_parallel_tasks' ? _converted.activeStep.id : null;
-                  const dispatchSteps =
-                    execution?.steps.filter(step => step.action === 'dispatch_parallel_tasks') || [];
-                  const dispatchStepIndex = activeDispatchStepId
-                    ? dispatchSteps.findIndex(step => step.id === activeDispatchStepId)
-                    : -1;
-                  const activeDispatchBatchId = dispatchStepIndex >= 0 ? dispatchStepIndex + 1 : null;
-                  const parallelSubAgents = activeDispatchBatchId
-                    ? Object.fromEntries(
-                        Object.entries(execution?.subAgents || {}).filter(
-                          ([, agent]) =>
-                            agent.batchId === activeDispatchBatchId ||
-                            (agent.batchId === 0 && activeDispatchBatchId === 1),
-                        ),
-                      )
-                    : undefined;
-                  if (activeSub) {
-                    activeStep = {
-                      id: `subagent-${activeSub.agentId}`,
-                      type: 'task',
-                      title: activeSub.name,
-                      status:
-                        activeSub.status === 'done'
-                          ? 'completed'
-                          : activeSub.status === 'running'
-                            ? 'running'
-                            : 'error',
-                    };
-                    // The sub-agent detail view consumes the structured steps
-                    // directly. Keeping the main dispatch output here would
-                    // duplicate titles/results and flatten step boundaries.
-                    outputs = [];
-                    isRunning = activeSub.status === 'running';
-                  }
+                    if (activeSub) {
+                      activeStep = {
+                        id: `subagent-${activeSub.agentId}`,
+                        type: 'task',
+                        title: activeSub.name,
+                        status:
+                          activeSub.status === 'done'
+                            ? 'completed'
+                            : activeSub.status === 'running'
+                              ? 'running'
+                              : 'error',
+                      };
+                      // The sub-agent detail view consumes the structured steps
+                      // directly. Keeping the main dispatch output here would
+                      // duplicate titles/results and flatten step boundaries.
+                      outputs = [];
+                      isRunning = activeSub.status === 'running';
+                    }
 
-                  return (
-                    <ManusRightPanel
-                      activeStep={activeStep}
-                      outputs={outputs}
-                      databaseType={selectedDb?.db_type}
-                      databaseName={selectedDb?.db_name}
-                      isRunning={isRunning}
-                      onRerun={router.query.from_task ? undefined : () => {}}
-                      onShare={!loading && !!conversationId ? handleShare : undefined}
-                      onSchedule={
-                        !loading && !!conversationId && !router.query.from_task
-                          ? () => setScheduleOpen(true)
-                          : undefined
-                      }
-                      terminalTitle={t('db_gpt_computer')}
-                      artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
-                      onArtifactClick={artifact => {
-                        if (artifact.type === 'html') {
-                          setPreviewArtifact(artifact as Artifact);
-                          setRightPanelView('html-preview');
-                        } else if (artifact.type === 'code' && artifact.stepId) {
-                          setSelectedStepId(artifact.stepId);
-                          setRightPanelView('execution');
-                          if (activeViewMsg?.id && execution) {
-                            setExecutionMap(prev => ({
-                              ...prev,
-                              [activeViewMsg.id!]: {
-                                ...prev[activeViewMsg.id!],
-                                activeStepId: artifact.stepId!,
-                              },
-                            }));
-                          }
-                        } else if (artifact.type === 'file') {
-                          if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                    return (
+                      <ManusRightPanel
+                        activeStep={activeStep}
+                        outputs={outputs}
+                        databaseType={selectedDb?.db_type}
+                        databaseName={selectedDb?.db_name}
+                        isRunning={isRunning}
+                        onRerun={router.query.from_task ? undefined : () => {}}
+                        onShare={!loading && !!conversationId ? handleShare : undefined}
+                        onSchedule={
+                          !loading && !!conversationId && !router.query.from_task
+                            ? () => setScheduleOpen(true)
+                            : undefined
+                        }
+                        terminalTitle={t('db_gpt_computer')}
+                        artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
+                        inputFiles={rounds.find(r => r.viewMsg?.id === activeViewMsg?.id)?.humanMsg?.attachedFiles}
+                        onArtifactClick={artifact => {
+                          if (artifact.type === 'html') {
+                            setPreviewArtifact(artifact as Artifact);
+                            setRightPanelView('html-preview');
+                          } else if (artifact.type === 'code' && artifact.stepId) {
+                            setSelectedStepId(artifact.stepId);
+                            setRightPanelView('execution');
+                            if (activeViewMsg?.id && execution) {
+                              setExecutionMap(prev => ({
+                                ...prev,
+                                [activeViewMsg.id!]: {
+                                  ...prev[activeViewMsg.id!],
+                                  activeStepId: artifact.stepId!,
+                                },
+                              }));
+                            }
+                          } else if (artifact.type === 'file') {
+                            if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                              setPreviewArtifact(artifact as Artifact);
+                              setRightPanelView('image-preview');
+                              setRightPanelCollapsed(false);
+                            }
+                          } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
                             setRightPanelView('image-preview');
                             setRightPanelCollapsed(false);
                           }
-                        } else if (artifact.type === 'image') {
-                          setPreviewArtifact(artifact as Artifact);
-                          setRightPanelView('image-preview');
-                          setRightPanelCollapsed(false);
-                        }
-                      }}
-                      panelView={rightPanelView}
-                      onPanelViewChange={setRightPanelView}
-                      previewArtifact={previewArtifact}
-                      skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
-                      summaryContent={streamingSummary || activeViewMsg?.context || ''}
-                      isSummaryStreaming={!_summaryComplete && !!streamingSummary}
-                      subAgents={parallelSubAgents}
-                      onSubAgentClick={agentId => {
-                        if (!activeViewMsg?.id) return;
-                        setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
-                        setRightPanelView('execution');
-                      }}
-                      subAgentContext={activeSub || null}
-                      onExitSubAgentView={() => setActiveSubAgent(null)}
-                    />
-                  );
-                })()}
+                        }}
+                        panelView={rightPanelView}
+                        onPanelViewChange={setRightPanelView}
+                        previewArtifact={previewArtifact}
+                        skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
+                        summaryContent={streamingSummary || activeViewMsg?.context || ''}
+                        isSummaryStreaming={!_summaryComplete && !!streamingSummary}
+                        subAgents={parallelSubAgents}
+                        onSubAgentClick={agentId => {
+                          if (!activeViewMsg?.id) return;
+                          setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
+                          setRightPanelView('execution');
+                        }}
+                        subAgentContext={activeSub || null}
+                        onExitSubAgentView={() => setActiveSubAgent(null)}
+                      />
+                    );
+                  })()
+                )}
               </div>
             </div>
           ) : (
@@ -3483,18 +3488,26 @@ const Playground: NextPage = () => {
                   <div className='w-full relative transition-all duration-500 rounded-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_24px_64px_rgba(0,0,0,0.2),0_12px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'>
                     {/* White Inner Box - Clean Glass Card */}
                     <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-[28px] border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-5 relative z-10'>
-                      {/* Uploaded File, Database, Knowledge, Connector Tags */}
-                      {(uploadedFile || selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
+                      <AttachmentRail
+                        drafts={sessionFiles.files}
+                        legacyFiles={sessionFiles.legacyFile ? [sessionFiles.legacyFile] : []}
+                        onRemove={sessionFiles.remove}
+                        onRetry={() => sessionFiles.retryFailed()}
+                        onPreview={openSessionFilePreview}
+                        onLegacyPreview={openLegacyFilePreview}
+                        onClearAll={clearComposerAttachments}
+                        addControl={
+                          <Upload {...uploadProps}>
+                            <AttachmentRailAddButton />
+                          </Upload>
+                        }
+                        preview={showInlineAttachmentPreview ? null : sessionFilePreview}
+                        onClosePreview={closeSessionFilePreview}
+                        className='mb-3'
+                      />
+                      {/* Database, Knowledge, Connector Tags */}
+                      {(selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
                         <div className='flex flex-wrap gap-2 mb-2'>
-                          {uploadedFile && (
-                            <Tag
-                              closable
-                              onClose={() => setUploadedFile(null)}
-                              className='flex items-center gap-1 bg-green-50 border-green-200 text-green-700 px-3 py-1 rounded-full'
-                            >
-                              <FileExcelOutlined /> <span className='font-medium ml-1'>{uploadedFile.name}</span>
-                            </Tag>
-                          )}
                           {selectedDb && (
                             <Tag
                               closable
@@ -4190,24 +4203,31 @@ const Playground: NextPage = () => {
                           {/* Send Button with blue gradient + gloss */}
                           <Button
                             type='primary'
-                            shape='circle'
+                            shape={queuedSendAfterUpload ? 'round' : 'circle'}
                             size='large'
-                            icon={<ArrowUpOutlined />}
+                            icon={queuedSendAfterUpload ? undefined : <ArrowUpOutlined />}
                             onClick={() => handleStart()}
-                            disabled={(!query.trim() && !uploadedFile) || loading}
-                            loading={loading}
+                            disabled={
+                              (!query.trim() && !hasSessionFileDrafts && !hasLegacyFile) ||
+                              loading ||
+                              queuedSendAfterUpload
+                            }
+                            loading={loading || queuedSendAfterUpload}
                             className={`group/send relative overflow-hidden border-none shadow-lg transition-all duration-200 ${
-                              query.trim() || uploadedFile
+                              queuedSendAfterUpload ? 'px-4' : ''
+                            } ${
+                              query.trim() || hasSessionFileDrafts || hasLegacyFile
                                 ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
                                 : 'bg-gray-200 text-gray-400'
                             }`}
                             style={
-                              query.trim() || uploadedFile
+                              query.trim() || hasSessionFileDrafts || hasLegacyFile
                                 ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
                                 : undefined
                             }
                           >
-                            {(query.trim() || uploadedFile) && (
+                            {queuedSendAfterUpload && <span className='text-[13px] font-medium'>上传后发送</span>}
+                            {(query.trim() || hasSessionFileDrafts || hasLegacyFile) && (
                               <span
                                 className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
                                 style={{
@@ -4384,6 +4404,19 @@ const Playground: NextPage = () => {
           onClose={() => setScheduleOpen(false)}
           snapshot={buildSnapshot()}
         />
+        {/* Hero view has no right panel; desktop previews there fall back to a Drawer. */}
+        {sessionFilePreview && isDesktopWidth && messages.length === 0 && (
+          <Drawer
+            open
+            placement='right'
+            destroyOnClose
+            width={PREVIEW_DRAWER_MAX_WIDTH}
+            title={sessionFilePreview.snapshot?.name ?? '附件预览'}
+            onClose={closeSessionFilePreview}
+          >
+            {renderSessionFilePreviewBody()}
+          </Drawer>
+        )}
         <ConfirmDialog confirmation={pendingConfirmation} onApprove={approve} onDeny={deny} onDismiss={dismiss} />
       </div>
     </ConfigProvider>
