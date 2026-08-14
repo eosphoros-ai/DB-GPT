@@ -72,16 +72,18 @@ async def test_create_flow_posts_instead_of_get():
 @pytest.mark.asyncio
 async def test_update_flow_puts_to_flow_uid_path():
     request = FlowPanel(uid="flow-123", label="test-flow", name="test_flow")
+    response = FlowPanel(uid="flow-123", label="updated-flow", name="updated_flow")
     client = _UpdateFlowClient(
         {
             "success": True,
             "err_code": None,
             "err_msg": None,
-            "data": request.to_dict(),
+            "data": response.to_dict(),
         }
     )
 
     updated = await update_flow(client, request)
 
     assert updated.uid == "flow-123"
+    assert updated.label == "updated-flow"
     assert client.requests == [("put", "/awel/flows/flow-123", request.to_dict())]
