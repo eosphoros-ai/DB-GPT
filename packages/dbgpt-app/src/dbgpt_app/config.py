@@ -26,6 +26,7 @@ from dbgpt_serve.core.config import GPTsAppConfig
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MAX_PARALLEL_SUBAGENTS = 3
+DEFAULT_MAX_NEW_TOKENS = 4096
 _MAX_PARALLEL_SUBAGENTS_ENV_VAR = "DBGPT_MAX_PARALLEL_SUBAGENTS"
 
 

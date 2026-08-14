@@ -34,6 +34,7 @@ from dbgpt.util.annotations import Deprecated
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.retry import async_retry
 from dbgpt.util.tracer import root_tracer, trace
+from dbgpt_app.config import DEFAULT_MAX_NEW_TOKENS
 from dbgpt_app.scene.base import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt_app.scene.operators.app_operator import (
     AppChatComposerOperator,
@@ -108,6 +109,23 @@ def _build_conversation(
         conv_storage=conv_serve.conv_storage,
         message_storage=conv_serve.message_storage,
     )
+
+
+def resolve_max_new_tokens(
+    requested: Optional[int], app_config_max: Optional[int]
+) -> int:
+    """Resolve scene max_new_tokens with request > config > default precedence.
+
+    Mirrors the agent-side resolution (``_resolve_agent_max_new_tokens``) so
+    that omitting ``max_new_tokens`` on the standard chat path does not regress
+    the default from ``DEFAULT_MAX_NEW_TOKENS`` (4096) to a lower scene
+    fallback. Non-positive values are treated as unset.
+    """
+    if requested is not None and int(requested) > 0:
+        return int(requested)
+    if app_config_max is not None and int(app_config_max) > 0:
+        return int(app_config_max)
+    return DEFAULT_MAX_NEW_TOKENS
 
 
 class BaseChat(ABC):
@@ -304,15 +322,14 @@ class BaseChat(ABC):
         """Get the max new tokens for LLM generation.
 
         The order of priority is:
-        1. chat_param.max_new_tokens(From API)
-        2. app_config.max_new_tokens(From config file)
-        3. prompt_template.max_new_tokens(From prompt template)
+        1. chat_param.max_new_tokens (From API)
+        2. app_config.max_new_tokens (From config file)
+        3. DEFAULT_MAX_NEW_TOKENS (fallback, 4096)
         """
-        if self._chat_param.max_new_tokens:
-            return int(self._chat_param.max_new_tokens)
-        elif self._chat_param.app_config and self._chat_param.app_config.max_new_tokens:
-            return int(self.app_config.max_new_tokens)
-        return self.prompt_template.max_new_tokens
+        return resolve_max_new_tokens(
+            self._chat_param.max_new_tokens,
+            self.app_config.max_new_tokens if self.app_config else None,
+        )
 
     def llm_temperature(self):
         """Get the temperature for LLM generation.

@@ -24,6 +24,7 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt_app.config import DEFAULT_MAX_NEW_TOKENS
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -169,7 +170,7 @@ def _resolve_agent_max_new_tokens(requested: Optional[int]) -> int:
             return configured
     except Exception:
         logger.debug("Failed to read agent max_new_tokens; using default 4096")
-    return 4096
+    return DEFAULT_MAX_NEW_TOKENS
 
 
 def _extract_auto_data_markers(text: str) -> tuple[str, Dict[str, str]]:
