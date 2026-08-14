@@ -113,7 +113,7 @@ Return <a href="#the-flow-object">Flow Object</a>
 
 ### Update Flow
 ```python
-PUT /api/v2/serve/awel/flows
+PUT /api/v2/serve/awel/flows/{flow_id}
 ```
 
 #### Request body
