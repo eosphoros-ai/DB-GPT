@@ -1,9 +1,10 @@
 import logging
 import os
+import re
 import stat
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt_app.openapi.api_view_model import Result
@@ -14,6 +15,28 @@ CFG = Config()
 logger = logging.getLogger(__name__)
 
 _UPLOAD_CHUNK_BYTES = 64 * 1024
+
+# Only allow alphanumeric characters, underscores and hyphens in user_id.
+# This prevents path traversal via "../" or path separators in the header.
+_SAFE_USER_ID_RE = re.compile(r"^[A-Za-z0-9_\-]+$")
+
+
+def _resolve_user_id(user_id: str) -> str:
+    """Validate the user_id so it cannot be used for path traversal.
+
+    The user_id is sourced from an HTTP header and used as a path component
+    of the upload directory, so it must only contain safe characters.
+    """
+    if not user_id or not isinstance(user_id, str):
+        return "default"
+    if not user_id.strip():
+        return "default"
+    if not _SAFE_USER_ID_RE.fullmatch(user_id):
+        raise ValueError(
+            "Invalid user_id: only alphanumeric characters, underscores and "
+            "hyphens are allowed"
+        )
+    return user_id
 
 
 def _resolve_owner_root(base_dir: str, owner_id: str) -> Path:
@@ -34,7 +57,9 @@ def _resolve_owner_root(base_dir: str, owner_id: str) -> Path:
     ):
         raise ValueError("owner id is invalid")
 
-    uploads_root = Path(base_dir, "python_uploads").resolve()
+    base_path = Path(base_dir).resolve()
+    uploads_root = (base_path / "python_uploads").resolve()
+    _assert_inside(base_path, uploads_root)
     uploads_root.mkdir(parents=True, exist_ok=True)
 
     owner_root = (uploads_root / owner_id).resolve()
@@ -90,7 +115,11 @@ async def python_file_upload(
         if not file or not file.filename:
             return Result.failed(msg="No file provided or filename is empty")
 
-        user_id = user_token.user_id or "default"
+        try:
+            user_id = _resolve_user_id(user_token.user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         logger.info(
             f"Uploading file: {file.filename}, content_type: {file.content_type}, "
             f"user: {user_id}"
@@ -105,8 +134,15 @@ async def python_file_upload(
         ):
             base_dir = CFG.SYSTEM_APP.work_dir
 
-        owner_root = _resolve_owner_root(base_dir, user_id)
-        file_path = _resolve_upload_path(owner_root, file.filename)
+        try:
+            owner_root = _resolve_owner_root(base_dir, user_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        try:
+            file_path = _resolve_upload_path(owner_root, file.filename)
+        except ValueError as exc:
+            return Result.failed(msg=str(exc))
 
         # Empty uploads are rejected before the target file is touched, so
         # an existing regular file is never truncated by an empty request.
@@ -140,6 +176,8 @@ async def python_file_upload(
         logger.info(f"File uploaded successfully to {abs_path} ({total_bytes} bytes)")
 
         return Result.succ(abs_path)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"File upload failed: {e}")
         return Result.failed(msg=f"Upload error: {str(e)}")

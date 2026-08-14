@@ -39,6 +39,8 @@ import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
+import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
+import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import {
   ApiOutlined,
@@ -187,6 +189,7 @@ interface ChatMessage {
   attachedDb?: { db_name: string; db_type: string };
   taskPlan?: TaskItem[];
   attachedConnectors?: AttachedConnector[];
+  citations?: AgentCitation[];
 }
 
 interface ExecutionStep {
@@ -749,7 +752,45 @@ const Playground: NextPage = () => {
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [rightPanelView, setRightPanelView] = useState<PanelView>('execution');
+  const [selectedCitationIndex, setSelectedCitationIndex] = useState<number | null>(null);
+  const [pendingFinalization, setPendingFinalization] = useState<{
+    responseId: string;
+    summaryText: string;
+    uploadedFilePath: string | null;
+  } | null>(null);
+  const [pendingSummaryPresentation, setPendingSummaryPresentation] = useState<{
+    responseId: string;
+    summaryText: string;
+    targetView: 'html-preview' | 'image-preview' | 'skill-preview' | null;
+  } | null>(null);
+  const [summaryPresentationResponseId, setSummaryPresentationResponseId] = useState<string | null>(null);
+  const summaryPresentationRef = useRef<SummaryPresentation | null>(null);
+  const summaryPresentationResponseIdRef = useRef<string | null>(null);
+  const summaryPresentationFullTextRef = useRef('');
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+
+  const cancelSummaryPresentation = useCallback(() => {
+    if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
+
+    summaryPresentationRef.current?.cancel();
+    summaryPresentationRef.current = null;
+    if (summaryPresentationFullTextRef.current) {
+      setStreamingSummary(summaryPresentationFullTextRef.current);
+    }
+    summaryPresentationFullTextRef.current = '';
+    summaryPresentationResponseIdRef.current = null;
+    setSummaryPresentationResponseId(null);
+    setPendingSummaryPresentation(null);
+    setSummaryComplete(true);
+  }, []);
+
+  const handleUserPanelViewChange = useCallback(
+    (view: PanelView) => {
+      cancelSummaryPresentation();
+      setRightPanelView(view);
+    },
+    [cancelSummaryPresentation],
+  );
 
   // Active round tracking: which view message is currently selected for the right panel
   const [activeViewMsgId, setActiveViewMsgId] = useState<string | null>(null);
@@ -920,6 +961,7 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
+    cancelSummaryPresentation();
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
@@ -943,7 +985,7 @@ const Playground: NextPage = () => {
       sessionFiles.clearTurn();
       setSessionFilePreview(null);
     }
-  }, [router.query.id]);
+  }, [cancelSummaryPresentation, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1257,263 +1299,391 @@ const Playground: NextPage = () => {
   };
 
   // Build artifacts from execution data — shared between live streaming and history restore
-  const buildArtifactsFromExecution = (
-    messageId: string,
-    execution: {
-      steps: ExecutionStep[];
-      outputs: Record<string, ExecutionOutput[]>;
-      subAgents?: Record<string, SubAgentState>;
-    },
-    summaryText?: string,
-    filePath?: string | null,
-  ): Artifact[] => {
-    const finalArtifacts: Artifact[] = [];
-    const now = Date.now();
-    const seenCodeHashes = new Set<string>();
+  const buildArtifactsFromExecution = useCallback(
+    (
+      messageId: string,
+      execution: {
+        steps: ExecutionStep[];
+        outputs: Record<string, ExecutionOutput[]>;
+        subAgents?: Record<string, SubAgentState>;
+      },
+      summaryText?: string,
+      filePath?: string | null,
+    ): Artifact[] => {
+      const finalArtifacts: Artifact[] = [];
+      const now = Date.now();
+      const seenCodeHashes = new Set<string>();
 
-    if (execution) {
-      const allSteps = execution.steps || [];
-      allSteps.forEach(step => {
-        const stepOutputs = execution.outputs[step.id] || [];
-        stepOutputs.forEach((output, oIdx) => {
-          if (output.output_type === 'code') {
-            const codeStr = String(output.content || '').trim();
-            const hash = codeStr.slice(0, 200);
-            if (codeStr && !seenCodeHashes.has(hash)) {
-              seenCodeHashes.add(hash);
-              const fileName = extractCodeFileName(codeStr, step.action || step.id, oIdx);
+      if (execution) {
+        const allSteps = execution.steps || [];
+        allSteps.forEach(step => {
+          const stepOutputs = execution.outputs[step.id] || [];
+          stepOutputs.forEach((output, oIdx) => {
+            if (output.output_type === 'code') {
+              const codeStr = String(output.content || '').trim();
+              const hash = codeStr.slice(0, 200);
+              if (codeStr && !seenCodeHashes.has(hash)) {
+                seenCodeHashes.add(hash);
+                const fileName = extractCodeFileName(codeStr, step.action || step.id, oIdx);
+                finalArtifacts.push({
+                  id: `${messageId}-code-${step.id}-${oIdx}`,
+                  type: 'code',
+                  name: fileName,
+                  content: codeStr,
+                  createdAt: now,
+                  messageId,
+                  stepId: step.id,
+                  downloadable: true,
+                });
+              }
+            } else if (output.output_type === 'file') {
               finalArtifacts.push({
-                id: `${messageId}-code-${step.id}-${oIdx}`,
-                type: 'code',
-                name: fileName,
-                content: codeStr,
+                id: `${messageId}-file-${step.id}-${oIdx}`,
+                type: 'file',
+                name: output.content?.name || output.content?.file_name || 'File',
+                content: output.content,
+                createdAt: now,
+                messageId,
+                stepId: step.id,
+                downloadable: true,
+                size: output.content?.size,
+              });
+            } else if (output.output_type === 'html') {
+              const htmlContent =
+                typeof output.content === 'string'
+                  ? output.content
+                  : output.content?.content || output.content?.html || String(output.content);
+              const htmlTitle = output.content?.title || 'Report';
+              finalArtifacts.push({
+                id: `${messageId}-html-${step.id}-${oIdx}`,
+                type: 'html',
+                name: `${htmlTitle}.html`,
+                content: htmlContent,
+                createdAt: now,
+                messageId,
+                stepId: step.id,
+                downloadable: true,
+              });
+            } else if (output.output_type === 'image') {
+              const imgUrl =
+                typeof output.content === 'string'
+                  ? output.content
+                  : output.content?.url || output.content?.src || String(output.content);
+              const imgName = imgUrl.split('/').pop() || `image_${oIdx}.png`;
+              const displayName = imgName.replace(/^[a-f0-9]{8}_/, '');
+              finalArtifacts.push({
+                id: `${messageId}-img-${step.id}-${oIdx}`,
+                type: 'image',
+                name: displayName,
+                content: imgUrl,
                 createdAt: now,
                 messageId,
                 stepId: step.id,
                 downloadable: true,
               });
             }
-          } else if (output.output_type === 'file') {
-            finalArtifacts.push({
-              id: `${messageId}-file-${step.id}-${oIdx}`,
-              type: 'file',
-              name: output.content?.name || output.content?.file_name || 'File',
-              content: output.content,
-              createdAt: now,
-              messageId,
-              stepId: step.id,
-              downloadable: true,
-              size: output.content?.size,
-            });
-          } else if (output.output_type === 'html') {
-            const htmlContent =
-              typeof output.content === 'string'
-                ? output.content
-                : output.content?.content || output.content?.html || String(output.content);
-            const htmlTitle = output.content?.title || 'Report';
-            finalArtifacts.push({
-              id: `${messageId}-html-${step.id}-${oIdx}`,
-              type: 'html',
-              name: `${htmlTitle}.html`,
-              content: htmlContent,
-              createdAt: now,
-              messageId,
-              stepId: step.id,
-              downloadable: true,
-            });
-          } else if (output.output_type === 'image') {
-            const imgUrl =
-              typeof output.content === 'string'
-                ? output.content
-                : output.content?.url || output.content?.src || String(output.content);
-            const imgName = imgUrl.split('/').pop() || `image_${oIdx}.png`;
-            const displayName = imgName.replace(/^[a-f0-9]{8}_/, '');
-            finalArtifacts.push({
-              id: `${messageId}-img-${step.id}-${oIdx}`,
-              type: 'image',
-              name: displayName,
-              content: imgUrl,
-              createdAt: now,
-              messageId,
-              stepId: step.id,
-              downloadable: true,
+          });
+
+          // For shell_interpreter steps, extract file paths from code/text outputs
+          // and create downloadable file artifacts
+          if (step.action === 'shell_interpreter') {
+            // Match both absolute paths and relative filenames with extensions
+            const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
+            const relFilePattern = /(?:>|>>|\btee\b|\btouch\b)\s+([\w\-./ ]+\.\w{1,10})/g;
+            const seenFilePaths = new Set<string>();
+            stepOutputs.forEach(output => {
+              if (output.output_type === 'code' || output.output_type === 'text') {
+                const text = String(output.content || '');
+                // Look for file creation patterns
+                const hasFileCreation = /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>)/.test(text);
+                if (hasFileCreation) {
+                  const foundPaths: string[] = [];
+                  // Extract absolute paths
+                  const absMatches = text.match(absPathPattern) || [];
+                  foundPaths.push(...absMatches);
+                  // Extract relative paths after redirection operators
+                  let relMatch;
+                  while ((relMatch = relFilePattern.exec(text)) !== null) {
+                    const p = relMatch[1].trim();
+                    if (p && !p.startsWith('/')) foundPaths.push(p);
+                  }
+                  foundPaths.forEach(fp => {
+                    // Normalize: strip leading ./ if present
+                    const normalized = fp.replace(/^\.\//, '');
+                    const fileName = normalized.split('/').pop() || normalized;
+                    if (!seenFilePaths.has(fileName.toLowerCase())) {
+                      seenFilePaths.add(fileName.toLowerCase());
+                      const alreadyHasFile = finalArtifacts.some(
+                        a =>
+                          (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
+                      );
+                      if (!alreadyHasFile) {
+                        // Use the path as-is; backend resolves relative paths against pilot/tmp
+                        finalArtifacts.push({
+                          id: `${messageId}-shellfile-${step.id}-${fileName}`,
+                          type: 'file',
+                          name: fileName,
+                          content: { name: fileName, file_path: normalized },
+                          createdAt: now,
+                          messageId,
+                          stepId: step.id,
+                          downloadable: true,
+                          filePath: normalized,
+                        });
+                      }
+                    }
+                  });
+                }
+              }
             });
           }
         });
+      }
 
-        // For shell_interpreter steps, extract file paths from code/text outputs
-        // and create downloadable file artifacts
-        if (step.action === 'shell_interpreter') {
-          // Match both absolute paths and relative filenames with extensions
-          const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
-          const relFilePattern = /(?:>|>>|\btee\b|\btouch\b)\s+([\w\-./ ]+\.\w{1,10})/g;
-          const seenFilePaths = new Set<string>();
-          stepOutputs.forEach(output => {
-            if (output.output_type === 'code' || output.output_type === 'text') {
-              const text = String(output.content || '');
-              // Look for file creation patterns
-              const hasFileCreation = /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>)/.test(text);
-              if (hasFileCreation) {
-                const foundPaths: string[] = [];
-                // Extract absolute paths
-                const absMatches = text.match(absPathPattern) || [];
-                foundPaths.push(...absMatches);
-                // Extract relative paths after redirection operators
-                let relMatch;
-                while ((relMatch = relFilePattern.exec(text)) !== null) {
-                  const p = relMatch[1].trim();
-                  if (p && !p.startsWith('/')) foundPaths.push(p);
-                }
-                foundPaths.forEach(fp => {
-                  // Normalize: strip leading ./ if present
-                  const normalized = fp.replace(/^\.\//, '');
-                  const fileName = normalized.split('/').pop() || normalized;
-                  if (!seenFilePaths.has(fileName.toLowerCase())) {
-                    seenFilePaths.add(fileName.toLowerCase());
-                    const alreadyHasFile = finalArtifacts.some(
-                      a => (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
-                    );
-                    if (!alreadyHasFile) {
-                      // Use the path as-is; backend resolves relative paths against pilot/tmp
-                      finalArtifacts.push({
-                        id: `${messageId}-shellfile-${step.id}-${fileName}`,
-                        type: 'file',
-                        name: fileName,
-                        content: { name: fileName, file_path: normalized },
-                        createdAt: now,
-                        messageId,
-                        stepId: step.id,
-                        downloadable: true,
-                        filePath: normalized,
-                      });
-                    }
-                  }
+      // Sub-agent artifacts: when restoring from history, the live
+      // ``subagent.artifacts`` SSE event is not replayed, so scan each
+      // sub-agent's step ``chunks`` for image/html (same shape the backend
+      // forwards in agent.step) and materialize them as Artifacts tagged with
+      // their source agent. Mirrors the live path in processEvent.
+      const subAgents = (execution as { subAgents?: Record<string, SubAgentState> }).subAgents;
+      if (subAgents) {
+        for (const agent of Object.values(subAgents)) {
+          const persistedArtifactUrls = new Set((agent.artifacts || []).map(artifact => artifact.url));
+          (agent.artifacts || []).forEach((artifact, artifactIndex) => {
+            const artifactType = artifact.type === 'image' ? 'image' : artifact.type === 'html' ? 'html' : 'file';
+            const fallbackName = artifact.url.split('/').pop() || `subagent-artifact-${artifactIndex}`;
+            const name = artifact.title || fallbackName;
+            finalArtifacts.push({
+              id: `${messageId}-subagent-ref-${agent.agentId}-${artifactIndex}`,
+              type: artifactType,
+              name: artifactType === 'html' && !name.endsWith('.html') ? `${name}.html` : name,
+              content: artifactType === 'file' ? { name, file_path: artifact.url } : artifact.url,
+              createdAt: now,
+              messageId,
+              stepId: agent.agentId,
+              sourceAgent: agent.name,
+              downloadable: true,
+              ...(artifactType === 'file' ? { filePath: artifact.url } : {}),
+            });
+          });
+          (agent.steps || []).forEach((step, sIdx) => {
+            (step.chunks || []).forEach((chunk, cIdx) => {
+              const ot = chunk.output_type;
+              const content = chunk.content;
+              if (ot === 'image' && typeof content === 'string') {
+                if (persistedArtifactUrls.has(content)) return;
+                const imgName = content.split('/').pop() || `image_${sIdx}_${cIdx}.png`;
+                finalArtifacts.push({
+                  id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
+                  type: 'image',
+                  name: imgName.replace(/^[a-f0-9]{8}_/, ''),
+                  content,
+                  createdAt: now,
+                  messageId,
+                  stepId: agent.agentId,
+                  sourceAgent: agent.name,
+                  downloadable: true,
+                });
+              } else if (ot === 'html' && typeof content === 'string') {
+                if (persistedArtifactUrls.has(content)) return;
+                const htmlTitle = (chunk as { title?: string }).title || agent.name;
+                finalArtifacts.push({
+                  id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
+                  type: 'html',
+                  name: `${htmlTitle}.html`,
+                  content,
+                  createdAt: now,
+                  messageId,
+                  stepId: agent.agentId,
+                  sourceAgent: agent.name,
+                  downloadable: true,
                 });
               }
-            }
+            });
           });
         }
-      });
-    }
+      }
 
-    // Sub-agent artifacts: when restoring from history, the live
-    // ``subagent.artifacts`` SSE event is not replayed, so scan each
-    // sub-agent's step ``chunks`` for image/html (same shape the backend
-    // forwards in agent.step) and materialize them as Artifacts tagged with
-    // their source agent. Mirrors the live path in processEvent.
-    const subAgents = (execution as { subAgents?: Record<string, SubAgentState> }).subAgents;
-    if (subAgents) {
-      for (const agent of Object.values(subAgents)) {
-        const persistedArtifactUrls = new Set((agent.artifacts || []).map(artifact => artifact.url));
-        (agent.artifacts || []).forEach((artifact, artifactIndex) => {
-          const artifactType = artifact.type === 'image' ? 'image' : artifact.type === 'html' ? 'html' : 'file';
-          const fallbackName = artifact.url.split('/').pop() || `subagent-artifact-${artifactIndex}`;
-          const name = artifact.title || fallbackName;
-          finalArtifacts.push({
-            id: `${messageId}-subagent-ref-${agent.agentId}-${artifactIndex}`,
-            type: artifactType,
-            name: artifactType === 'html' && !name.endsWith('.html') ? `${name}.html` : name,
-            content: artifactType === 'file' ? { name, file_path: artifact.url } : artifact.url,
-            createdAt: now,
-            messageId,
-            stepId: agent.agentId,
-            sourceAgent: agent.name,
-            downloadable: true,
-            ...(artifactType === 'file' ? { filePath: artifact.url } : {}),
-          });
-        });
-        (agent.steps || []).forEach((step, sIdx) => {
-          (step.chunks || []).forEach((chunk, cIdx) => {
-            const ot = chunk.output_type;
-            const content = chunk.content;
-            if (ot === 'image' && typeof content === 'string') {
-              if (persistedArtifactUrls.has(content)) return;
-              const imgName = content.split('/').pop() || `image_${sIdx}_${cIdx}.png`;
-              finalArtifacts.push({
-                id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
-                type: 'image',
-                name: imgName.replace(/^[a-f0-9]{8}_/, ''),
-                content,
-                createdAt: now,
-                messageId,
-                stepId: agent.agentId,
-                sourceAgent: agent.name,
-                downloadable: true,
-              });
-            } else if (ot === 'html' && typeof content === 'string') {
-              if (persistedArtifactUrls.has(content)) return;
-              const htmlTitle = (chunk as { title?: string }).title || agent.name;
-              finalArtifacts.push({
-                id: `${messageId}-subagent-${agent.agentId}-${sIdx}-${cIdx}`,
-                type: 'html',
-                name: `${htmlTitle}.html`,
-                content,
-                createdAt: now,
-                messageId,
-                stepId: agent.agentId,
-                sourceAgent: agent.name,
-                downloadable: true,
-              });
-            }
-          });
+      if (summaryText) {
+        const fileRefs = extractFileReferences(summaryText);
+        fileRefs.forEach((ref, idx) => {
+          const alreadyExists = finalArtifacts.some(a => a.name.toLowerCase() === ref.name.toLowerCase());
+          if (!alreadyExists) {
+            finalArtifacts.push({
+              id: `${messageId}-fileref-${idx}`,
+              type: 'file',
+              name: ref.name,
+              content: { name: ref.name, file_path: ref.filePath },
+              createdAt: now,
+              messageId,
+              downloadable: ref.downloadable,
+              filePath: ref.filePath,
+              size: ref.size,
+            });
+          }
         });
       }
-    }
 
-    if (summaryText) {
-      const fileRefs = extractFileReferences(summaryText);
-      fileRefs.forEach((ref, idx) => {
-        const alreadyExists = finalArtifacts.some(a => a.name.toLowerCase() === ref.name.toLowerCase());
+      if (filePath) {
+        const uploadName = filePath.split('/').pop() || 'uploaded_file';
+        const alreadyExists = finalArtifacts.some(a => a.name.toLowerCase() === uploadName.toLowerCase());
         if (!alreadyExists) {
           finalArtifacts.push({
-            id: `${messageId}-fileref-${idx}`,
+            id: `${messageId}-upload`,
             type: 'file',
-            name: ref.name,
-            content: { name: ref.name, file_path: ref.filePath },
+            name: uploadName,
+            content: { name: uploadName, file_path: filePath },
             createdAt: now,
             messageId,
-            downloadable: ref.downloadable,
-            filePath: ref.filePath,
-            size: ref.size,
+            downloadable: true,
           });
         }
+      }
+
+      // Deduplicate: for artifacts with the same name+type, keep only the last one
+      const deduped: Artifact[] = [];
+      const seen = new Map<string, number>();
+      for (let i = finalArtifacts.length - 1; i >= 0; i--) {
+        const key = `${finalArtifacts[i].type}:${finalArtifacts[i].name}`;
+        if (!seen.has(key)) {
+          seen.set(key, i);
+          deduped.unshift(finalArtifacts[i]);
+        }
+      }
+
+      return deduped;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!pendingFinalization) return;
+
+    const { responseId, summaryText, uploadedFilePath: finalFilePath } = pendingFinalization;
+    const execution = executionMap[responseId];
+    const deduped = buildArtifactsFromExecution(
+      responseId,
+      execution || { steps: [], outputs: {} },
+      summaryText,
+      finalFilePath,
+    );
+
+    setArtifacts(prevArtifacts => {
+      const filtered = prevArtifacts.filter(artifact => artifact.messageId !== responseId);
+      return [...filtered, ...deduped];
+    });
+
+    const htmlArtifact = deduped.find(artifact => artifact.type === 'html');
+    const imageArtifact = deduped.find(artifact => artifact.type === 'image');
+    let targetView: 'html-preview' | 'image-preview' | 'skill-preview' | null = null;
+    if (htmlArtifact) {
+      setPreviewArtifact(htmlArtifact as Artifact);
+      targetView = 'html-preview';
+    } else if (imageArtifact) {
+      setPreviewArtifact(imageArtifact as Artifact);
+      targetView = 'image-preview';
+    }
+
+    if (execution) {
+      const skillStep = execution.steps.find(step => {
+        if (step.action !== 'shell_interpreter') return false;
+        const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
+        const inputHas = step.actionInput?.includes('package_skill') || step.actionInput?.includes('init_skill');
+        const outputTexts = (execution.outputs[step.id] || []).map(output => String(output.content)).join(' ');
+        const outputHas =
+          outputTexts.includes('package_skill') ||
+          outputTexts.includes('init_skill') ||
+          outputTexts.includes('Successfully packaged');
+        return detailHas || inputHas || outputHas;
       });
-    }
-
-    if (filePath) {
-      const uploadName = filePath.split('/').pop() || 'uploaded_file';
-      const alreadyExists = finalArtifacts.some(a => a.name.toLowerCase() === uploadName.toLowerCase());
-      if (!alreadyExists) {
-        finalArtifacts.push({
-          id: `${messageId}-upload`,
-          type: 'file',
-          name: uploadName,
-          content: { name: uploadName, file_path: filePath },
-          createdAt: now,
-          messageId,
-          downloadable: true,
-        });
+      if (skillStep) {
+        const allText = [
+          skillStep.actionInput || '',
+          skillStep.detail || '',
+          ...(execution.outputs[skillStep.id] || []).map(output => String(output.content)),
+        ].join(' ');
+        const skillName = extractCreatedSkillName(allText);
+        if (skillName) {
+          setCreatedSkillNames(prev => ({ ...prev, [responseId]: skillName }));
+          targetView = 'skill-preview';
+        }
       }
     }
 
-    // Deduplicate: for artifacts with the same name+type, keep only the last one
-    const deduped: Artifact[] = [];
-    const seen = new Map<string, number>();
-    for (let i = finalArtifacts.length - 1; i >= 0; i--) {
-      const key = `${finalArtifacts[i].type}:${finalArtifacts[i].name}`;
-      if (!seen.has(key)) {
-        seen.set(key, i);
-        deduped.unshift(finalArtifacts[i]);
-      }
+    if (targetView) {
+      setRightPanelCollapsed(false);
     }
 
-    return deduped;
-  };
+    // Artifact preparation and visible navigation are intentionally separate.
+    // Keep the clean summary visible first; the bounded presentation controller
+    // will open the prepared preview after the reveal/hold phase completes.
+    if (summaryText && summaryPresentationResponseIdRef.current === responseId) {
+      setPendingSummaryPresentation({ responseId, summaryText, targetView });
+    } else if (!summaryText && targetView) {
+      setRightPanelView(targetView);
+    }
+
+    setPendingFinalization(null);
+  }, [buildArtifactsFromExecution, executionMap, pendingFinalization]);
+
+  useEffect(() => {
+    if (!pendingSummaryPresentation) return;
+
+    const { responseId, summaryText, targetView } = pendingSummaryPresentation;
+    if (
+      summaryPresentationResponseIdRef.current !== responseId ||
+      activeViewMsgId !== responseId ||
+      rightPanelView !== 'summary'
+    ) {
+      cancelSummaryPresentation();
+      return;
+    }
+
+    const presentation = createSummaryPresentation({
+      summary: summaryText,
+      reducedMotion:
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      onSummaryUpdate: (content, complete) => {
+        if (summaryPresentationResponseIdRef.current !== responseId) return;
+        setStreamingSummary(content);
+        setSummaryComplete(complete);
+      },
+      onPreviewReady: () => {
+        if (summaryPresentationResponseIdRef.current !== responseId) return;
+
+        summaryPresentationRef.current = null;
+        summaryPresentationFullTextRef.current = '';
+        summaryPresentationResponseIdRef.current = null;
+        setStreamingSummary(summaryText);
+        setSummaryComplete(true);
+        setSummaryPresentationResponseId(null);
+        setPendingSummaryPresentation(null);
+        if (targetView) {
+          setRightPanelView(targetView);
+          setRightPanelCollapsed(false);
+        }
+      },
+    });
+
+    summaryPresentationRef.current = presentation;
+    presentation.start();
+
+    return () => {
+      presentation.cancel();
+      if (summaryPresentationRef.current === presentation) {
+        summaryPresentationRef.current = null;
+      }
+    };
+  }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation, rightPanelView]);
 
   const handleStart = async (inputQuery = query, overrideSkill?: Skill | null, overrideDb?: DataSource | null) => {
     const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     if ((!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile) || loading || queuedSendAfterUpload) return;
+
+    cancelSummaryPresentation();
 
     let finalQuery = inputQuery;
     const appCode = 'chat_react_agent';
@@ -1613,6 +1783,10 @@ const Playground: NextPage = () => {
     setLoading(true);
     setQuery(''); // Clear input
     setStreamingSummary('');
+    setSummaryComplete(false);
+    setSelectedCitationIndex(null);
+    setPendingFinalization(null);
+    setPendingSummaryPresentation(null);
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
@@ -2017,11 +2191,14 @@ const Playground: NextPage = () => {
           // action_reason, which are constrained to concise, readable text.
           return;
         } else if (payload.type === 'final') {
+          const finalAnswer = decodeFinalEvent(payload);
+          const summaryText = cleanFinalContent(finalAnswer.content);
+          cancelSummaryPresentation();
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
             const nextSteps = current.steps.map(item =>
-              item.status === 'running' ? { ...item, status: 'done' } : item,
+              item.status === 'running' ? { ...item, status: 'done' as const } : item,
             );
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
@@ -2030,99 +2207,38 @@ const Playground: NextPage = () => {
               if (msg.id !== responseId || msg.role !== 'view') return msg;
               return {
                 ...msg,
-                context: cleanFinalContent(payload.content || ''),
+                context: summaryText,
+                citations: finalAnswer.citations,
                 thinking: false,
               };
             }),
           );
           setTaskPlan([]);
           setActiveMessageId(responseId);
+          setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
-          if (payload.content && payload.content.trim()) {
-            setStreamingSummary('');
+          if (summaryText) {
+            const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
+            summaryPresentationResponseIdRef.current = responseId;
+            summaryPresentationFullTextRef.current = summaryText;
+            setSummaryPresentationResponseId(responseId);
+            setStreamingSummary(firstSummaryCharacter);
             setSummaryComplete(false);
             setRightPanelTab('summary');
             setRightPanelView('summary');
-
-            const summaryText = cleanFinalContent(payload.content);
-            const streamInterval = setInterval(() => {
-              setStreamingSummary(prev => {
-                if (prev.length >= summaryText.length) {
-                  clearInterval(streamInterval);
-                  setSummaryComplete(true);
-
-                  setExecutionMap(currentExecMap => {
-                    const execution = currentExecMap[responseId];
-                    const deduped = buildArtifactsFromExecution(
-                      responseId,
-                      execution || { steps: [], outputs: {} },
-                      summaryText,
-                      filesAttachedThisSend?.legacyFile?.file_path ?? null,
-                    );
-
-                    setArtifacts(prevArtifacts => {
-                      const filtered = prevArtifacts.filter(a => a.messageId !== responseId);
-                      const newArtifacts = [...filtered, ...deduped];
-
-                      // Auto-select the first HTML artifact for preview, or image if no HTML
-                      const htmlArtifact = deduped.find(a => a.type === 'html');
-                      if (htmlArtifact) {
-                        setPreviewArtifact(htmlArtifact as Artifact);
-                        setRightPanelView('html-preview');
-                        setRightPanelCollapsed(false);
-                      } else {
-                        const imgArtifact = deduped.find(a => a.type === 'image');
-                        if (imgArtifact) {
-                          setPreviewArtifact(imgArtifact as Artifact);
-                          setRightPanelView('image-preview');
-                          setRightPanelCollapsed(false);
-                        }
-                      }
-
-                      return newArtifacts;
-                    });
-
-                    // Detect skill creation from shell_interpreter steps
-                    if (execution) {
-                      const isSkillPackageStep = (s: ExecutionStep) => {
-                        if (s.action !== 'shell_interpreter') return false;
-                        // Check detail, actionInput, and outputs for package_skill/init_skill
-                        const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-                        const inputHas =
-                          s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
-                        const outputTexts = (execution.outputs[s.id] || []).map(o => String(o.content)).join(' ');
-                        const outputHas =
-                          outputTexts.includes('package_skill') ||
-                          outputTexts.includes('init_skill') ||
-                          outputTexts.includes('Successfully packaged');
-                        return detailHas || inputHas || outputHas;
-                      };
-                      const skillStep = (execution.steps || []).find(isSkillPackageStep);
-                      if (skillStep) {
-                        // Extract skill name from actionInput, detail, or outputs
-                        const allText = [
-                          skillStep.actionInput || '',
-                          skillStep.detail || '',
-                          ...(execution.outputs[skillStep.id] || []).map(o => String(o.content)),
-                        ].join(' ');
-                        const skillName = extractCreatedSkillName(allText);
-                        if (skillName) {
-                          setCreatedSkillNames(prev => ({ ...prev, [responseId]: skillName }));
-                          setRightPanelView('skill-preview');
-                        }
-                      }
-                    }
-
-                    return currentExecMap;
-                  });
-
-                  return prev;
-                }
-                const chunkSize = Math.min(3, summaryText.length - prev.length);
-                return prev + summaryText.slice(prev.length, prev.length + chunkSize);
-              });
-            }, 15);
+            setRightPanelCollapsed(false);
+          } else if (finalAnswer.citations.length > 0) {
+            setStreamingSummary('');
+            setSummaryComplete(true);
+            setRightPanelView('references');
+          } else {
+            setStreamingSummary('');
+            setSummaryComplete(true);
           }
+
+          // Final is already a complete server event. Build artifacts now;
+          // the bounded summary presentation controls only visible navigation.
+          setPendingFinalization({ responseId, summaryText, uploadedFilePath });
         } else if (payload.type === 'done') {
           setLoading(false);
         }
@@ -2229,6 +2345,7 @@ const Playground: NextPage = () => {
 
   // Clear chat history
   const handleClearChat = () => {
+    cancelSummaryPresentation();
     setMessages([]);
     setConversationId(null);
     setQuery('');
@@ -2241,12 +2358,16 @@ const Playground: NextPage = () => {
     setSummaryComplete(false);
     sessionFiles.clearTurn();
     setSessionFilePreview(null);
+    setSelectedCitationIndex(null);
+    setPendingFinalization(null);
+    setPendingSummaryPresentation(null);
     router.push('/', undefined, { shallow: true });
   };
 
   const restoreFromHistory = (
     historyMessages: Array<{ role: string; context: string; order?: number; model_name?: string }>,
   ) => {
+    cancelSummaryPresentation();
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
@@ -2254,6 +2375,9 @@ const Playground: NextPage = () => {
     setArtifacts([]);
     setStreamingSummary('');
     setSummaryComplete(false);
+    setSelectedCitationIndex(null);
+    setPendingFinalization(null);
+    setPendingSummaryPresentation(null);
 
     const newMessages: ChatMessage[] = [];
     const newExecutionMap: typeof executionMap = {};
@@ -2337,7 +2461,8 @@ const Playground: NextPage = () => {
               : {}),
           };
 
-          const finalContent = cleanFinalContent(payload.final_content || '');
+          const historyAnswer = decodeHistoryAnswer(payload);
+          const finalContent = cleanFinalContent(historyAnswer.content);
 
           // History payload v2: the turn's input_files snapshot attaches to
           // the human message of this round. v1 stays on the legacy one-item
@@ -2389,6 +2514,7 @@ const Playground: NextPage = () => {
             id: viewId,
             role: 'view',
             context: finalContent,
+            citations: historyAnswer.citations,
             order: msg.order,
             thinking: false,
             taskPlan: Array.isArray(payload.task_plan)
@@ -2398,10 +2524,12 @@ const Playground: NextPage = () => {
                 : undefined,
           });
         } else {
+          const historyAnswer = decodeHistoryAnswer(msg.context || '');
           newMessages.push({
             id: viewId,
             role: 'view',
-            context: msg.context || '',
+            context: cleanFinalContent(historyAnswer.content),
+            citations: historyAnswer.citations,
             order: msg.order,
             thinking: false,
           });
@@ -2421,6 +2549,7 @@ const Playground: NextPage = () => {
       setActiveMessageId(lastView.id);
       setStreamingSummary(lastView.context || '');
       setSummaryComplete(true);
+      setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
     }
   };
 
@@ -2612,9 +2741,11 @@ const Playground: NextPage = () => {
                         (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
                       false;
 
-                    const roundAssistantText = isLastRound
-                      ? streamingSummary || round.viewMsg?.context || undefined
+                    const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
+                    const roundAssistantText = isPresentingThisRound
+                      ? streamingSummary
                       : round.viewMsg?.context || undefined;
+                    const roundCitations = round.viewMsg?.citations || [];
 
                     return (
                       <ManusLeftPanel
@@ -2669,6 +2800,18 @@ const Playground: NextPage = () => {
                         taskPlan={round.viewMsg?.taskPlan}
                         attachedConnectors={round.humanMsg?.attachedConnectors}
                         assistantText={roundAssistantText}
+                        isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
+                        citationIndexes={roundCitations.map(citation => citation.index)}
+                        onReferencesClick={
+                          roundCitations.length > 0
+                            ? () => {
+                                if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                setSelectedCitationIndex(roundCitations[0].index);
+                                setRightPanelView('references');
+                                setRightPanelCollapsed(false);
+                              }
+                            : undefined
+                        }
                         modelName={round.viewMsg?.model_name || model}
                         stepThoughts={stepThoughts}
                         artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
@@ -3448,11 +3591,22 @@ const Playground: NextPage = () => {
                           }
                         }}
                         panelView={rightPanelView}
-                        onPanelViewChange={setRightPanelView}
+                        onPanelViewChange={handleUserPanelViewChange}
                         previewArtifact={previewArtifact}
                         skillName={createdSkillNames[activeViewMsg?.id || ''] || null}
-                        summaryContent={streamingSummary || activeViewMsg?.context || ''}
-                        isSummaryStreaming={!_summaryComplete && !!streamingSummary}
+                        summaryContent={
+                          summaryPresentationResponseId === activeViewMsg?.id
+                            ? streamingSummary
+                            : activeViewMsg?.context || ''
+                        }
+                        isSummaryStreaming={summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete}
+                        citations={activeViewMsg?.citations || []}
+                        selectedCitationIndex={
+                          activeViewMsg?.citations?.some(citation => citation.index === selectedCitationIndex)
+                            ? selectedCitationIndex
+                            : null
+                        }
+                        onCitationSelect={setSelectedCitationIndex}
                         subAgents={parallelSubAgents}
                         onSubAgentClick={agentId => {
                           if (!activeViewMsg?.id) return;
