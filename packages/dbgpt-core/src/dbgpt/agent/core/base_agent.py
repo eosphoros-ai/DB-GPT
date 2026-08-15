@@ -1350,7 +1350,6 @@ class ConversableAgent(Role, Agent):
             memory_list = memories
         else:
             most_recent_memories = memories
-        has_memories = True if memories else False
         reply_message_str = ""
         if context is None:
             context = {}
@@ -1411,20 +1410,16 @@ class ConversableAgent(Role, Agent):
                     role=ModelMessageRoleType.SYSTEM,
                 )
             )
-        if historical_dialogues and not has_memories:
-            # If we can't read the memory, we need to rely on the historical dialogue
-            for i in range(len(historical_dialogues)):
-                if i % 2 == 0:
-                    # The even number starts, and the even number is the user
-                    # information
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.HUMAN
-                    agent_messages.append(message)
-                else:
-                    # The odd number is AI information
-                    message = historical_dialogues[i]
-                    message.role = ModelMessageRoleType.AI
-                    agent_messages.append(message)
+        if historical_dialogues:
+            # Prior completed turns must be included even when short-term tool
+            # memories exist. Those memories are the current ReAct loop (and a
+            # 5-slot buffer), so they usually do not carry the previous user
+            # question / final answer that follow-up questions refer to.
+            for message in historical_dialogues:
+                copied = message.copy()
+                if not copied.role:
+                    copied.role = ModelMessageRoleType.HUMAN
+                agent_messages.append(copied)
 
         if memory_list:
             agent_messages.extend(memory_list)

@@ -2649,6 +2649,17 @@ Action Input: The JSON format of tool parameters
         pass  # graceful degradation
     # --- End connector system prompt injection ---
 
+    from dbgpt_app.openapi.api_v1.react_history import (
+        build_react_historical_dialogues,
+        history_prompt_hint,
+    )
+
+    historical_dialogues = build_react_historical_dialogues(
+        getattr(storage_conv, "messages", None),
+        user_input,
+    )
+    workflow_prompt += history_prompt_hint(historical_dialogues)
+
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
     workflow_prompt_template = PromptTemplate(
@@ -2690,6 +2701,7 @@ Action Input: The JSON format of tool parameters
         return await agent.generate_reply(
             received_message=received,
             sender=agent,
+            historical_dialogues=historical_dialogues or None,
             stream_callback=stream_callback,
         )
 
