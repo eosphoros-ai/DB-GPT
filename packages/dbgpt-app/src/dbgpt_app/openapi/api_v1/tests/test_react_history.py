@@ -47,6 +47,30 @@ def test_extract_prefers_final_content_and_drops_tool_steps():
 def test_extract_keeps_plain_text_and_truncates():
     assert extract_react_final_content("hello") == "hello"
     assert extract_react_final_content("abcdef", max_chars=5) == "ab..."
+    assert len(extract_react_final_content("abcdef", max_chars=1)) <= 1
+    assert len(extract_react_final_content("abcdef", max_chars=2)) <= 2
+    assert extract_react_final_content("abcdef", max_chars=1) == "a"
+    assert extract_react_final_content("abcdef", max_chars=2) == "ab"
+
+
+def test_empty_final_content_does_not_inject_tool_steps():
+    payload = json.dumps(
+        {
+            "version": 1,
+            "type": "react-agent",
+            "final_content": "",
+            "steps": [{"action": "sql_query", "action_input": '{"sql": "SELECT 1"}'}],
+        },
+        ensure_ascii=False,
+    )
+    assert extract_react_final_content(payload) == ""
+    messages = [
+        HumanMessage(content="q1"),
+        ViewMessage(content=payload),
+        HumanMessage(content="q2"),
+    ]
+    assert format_react_followup_question("q2", messages) == "q2"
+    assert completed_turn_pairs(messages, "q2") == []
 
 
 def test_issue_3171_followup_observation_contains_sku_and_current_question():

@@ -40,12 +40,16 @@ def extract_react_final_content(
     if text.startswith("{") and "final_content" in text:
         try:
             payload = json.loads(text)
-            if isinstance(payload, dict) and payload.get("final_content"):
-                text = str(payload["final_content"]).strip()
+            if isinstance(payload, dict) and "final_content" in payload:
+                final_content = payload["final_content"]
+                text = str(final_content).strip() if final_content is not None else ""
         except (TypeError, ValueError, json.JSONDecodeError):
             logger.debug("Failed to parse react-agent view payload as JSON")
     if max_chars > 0 and len(text) > max_chars:
-        text = text[: max_chars - 3] + "..."
+        if max_chars <= 3:
+            text = text[:max_chars]
+        else:
+            text = text[: max_chars - 3] + "..."
     return text
 
 
