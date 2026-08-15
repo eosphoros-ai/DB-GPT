@@ -2650,15 +2650,15 @@ Action Input: The JSON format of tool parameters
     # --- End connector system prompt injection ---
 
     from dbgpt_app.openapi.api_v1.react_history import (
-        build_react_historical_dialogues,
+        format_react_followup_question,
         history_prompt_hint,
     )
 
-    historical_dialogues = build_react_historical_dialogues(
-        getattr(storage_conv, "messages", None),
-        user_input,
+    followup_question = format_react_followup_question(
+        user_input, getattr(storage_conv, "messages", None)
     )
-    workflow_prompt += history_prompt_hint(historical_dialogues)
+    has_prior_turns = followup_question != user_input
+    workflow_prompt += history_prompt_hint(has_prior_turns)
 
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
@@ -2680,7 +2680,7 @@ Action Input: The JSON format of tool parameters
     agent = await agent_builder.build()
 
     parser = ReActOutputParser()
-    received = AgentMessage(content=user_input)
+    received = AgentMessage(content=followup_question)
     # stream_queue and stream_callback were created earlier (before ToolPack)
     # so that the question tool can use them.
 
@@ -2701,7 +2701,6 @@ Action Input: The JSON format of tool parameters
         return await agent.generate_reply(
             received_message=received,
             sender=agent,
-            historical_dialogues=historical_dialogues or None,
             stream_callback=stream_callback,
         )
 
