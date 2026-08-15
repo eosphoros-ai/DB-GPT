@@ -4,6 +4,7 @@ import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
+import { REFRESH_DIALOGUE_LIST_EVENT, dispatchResetChat } from '@/utils/chat-events';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
@@ -320,6 +321,29 @@ function SideBar() {
     fetchDialogueList();
   }, [fetchDialogueList]);
 
+  useEffect(() => {
+    const onRefresh = () => {
+      fetchDialogueList();
+    };
+    window.addEventListener(REFRESH_DIALOGUE_LIST_EVENT, onRefresh);
+    return () => window.removeEventListener(REFRESH_DIALOGUE_LIST_EVENT, onRefresh);
+  }, [fetchDialogueList]);
+
+  const handleNewTask = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (pathname === '/') {
+        dispatchResetChat();
+        if (router.query.id) {
+          router.push('/', undefined, { shallow: true });
+        }
+        return;
+      }
+      router.push('/');
+    },
+    [pathname, router],
+  );
+
   // ============ COLLAPSED SIDEBAR ============
   if (!isMenuExpand) {
     return (
@@ -409,12 +433,14 @@ function SideBar() {
       </div>
 
       {/* New Task Button */}
-      <Link href='/'>
-        <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
-          <PlusOutlined className='text-xs' />
-          <span>{t('new_task')}</span>
-        </div>
-      </Link>
+      <button
+        type='button'
+        onClick={handleNewTask}
+        className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 w-full bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer border-0'
+      >
+        <PlusOutlined className='text-xs' />
+        <span>{t('new_task')}</span>
+      </button>
 
       {/* Functions */}
       <div className='flex flex-col gap-1'>

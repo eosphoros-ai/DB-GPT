@@ -27,6 +27,7 @@ import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsSch
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
+import { RESET_CHAT_EVENT, dispatchRefreshDialogueList } from '@/utils/chat-events';
 import axios from '@/utils/ctx-axios';
 import { sendSpacePostRequest } from '@/utils/request';
 import {
@@ -644,6 +645,7 @@ const Playground: NextPage = () => {
   // time so "保存定时任务" can replay the real execution (file / database /
   // knowledge / skill / connectors) instead of a drifting UI state.
   const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -794,28 +796,57 @@ const Playground: NextPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const resetChatState = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setMessages([]);
+    setConversationId(null);
+    setQuery('');
+    setExecutionMap({});
+    setActiveMessageId(null);
+    setActiveViewMsgId(null);
+    setUploadedFilePath(null);
+    setFilePreview(null);
+    setFilePreviewError(null);
+    setArtifacts([]);
+    setRightPanelTab('preview');
+    setStreamingSummary('');
+    setSummaryComplete(false);
+    setTaskPlan([]);
+    setActiveSubAgent(null);
+    setLoading(false);
+    lastSentPayloadRef.current = null;
+    terminatedStepIdsRef.current.clear();
+  }, []);
+
   useEffect(() => {
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
     } else if (!convId && conversationId) {
-      // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
-      setMessages([]);
-      setConversationId(null);
-      setQuery('');
-      setExecutionMap({});
-      setActiveMessageId(null);
-      setActiveViewMsgId(null);
-      setUploadedFilePath(null);
-      setFilePreview(null);
-      setFilePreviewError(null);
-      setArtifacts([]);
-      setRightPanelTab('preview');
-      setStreamingSummary('');
-      setSummaryComplete(false);
-      setTaskPlan([]);
+      resetChatState();
     }
+    // Intentionally keyed on the URL id so in-progress sends are not reset
+    // when conversationId is assigned locally before the query updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.id]);
+
+  useEffect(() => {
+    const onReset = () => {
+      resetChatState();
+      if (router.query.id) {
+        router.push('/', undefined, { shallow: true });
+      }
+    };
+    window.addEventListener(RESET_CHAT_EVENT, onReset);
+    return () => window.removeEventListener(RESET_CHAT_EVENT, onReset);
+  }, [resetChatState, router]);
+
+  useEffect(() => {
+    if (!loading && conversationId) {
+      dispatchRefreshDialogueList();
+    }
+  }, [loading, conversationId]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1683,6 +1714,7 @@ const Playground: NextPage = () => {
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    abortRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
       ...prev,
@@ -2277,19 +2309,7 @@ const Playground: NextPage = () => {
 
   // Clear chat history
   const handleClearChat = () => {
-    setMessages([]);
-    setConversationId(null);
-    setQuery('');
-    setExecutionMap({});
-    setActiveMessageId(null);
-    setActiveViewMsgId(null);
-    setUploadedFilePath(null);
-    setFilePreview(null);
-    setFilePreviewError(null);
-    setArtifacts([]);
-    setRightPanelTab('preview');
-    setStreamingSummary('');
-    setSummaryComplete(false);
+    resetChatState();
     router.push('/', undefined, { shallow: true });
   };
 
