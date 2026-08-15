@@ -28,7 +28,7 @@ import 'moment/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type RouteItem = {
@@ -79,18 +79,23 @@ function SideBar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dialogueList, setDialogueList] = useState<IChatDialogueSchema[]>([]);
   const [loadingDialogues, setLoadingDialogues] = useState(false);
+  const dialogueFetchSeqRef = useRef(0);
 
   const fetchDialogueList = useCallback(async () => {
+    const seq = ++dialogueFetchSeqRef.current;
     setLoadingDialogues(true);
     try {
       const [, data] = await apiInterceptors(getDialogueList());
+      if (seq !== dialogueFetchSeqRef.current) return;
       if (data && Array.isArray(data)) {
         setDialogueList(data.filter(item => item.chat_mode === 'chat_react_agent'));
       }
     } catch (e) {
       console.error('Failed to fetch dialogue list', e);
     } finally {
-      setLoadingDialogues(false);
+      if (seq === dialogueFetchSeqRef.current) {
+        setLoadingDialogues(false);
+      }
     }
   }, []);
 

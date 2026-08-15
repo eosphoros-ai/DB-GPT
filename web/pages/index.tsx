@@ -646,6 +646,8 @@ const Playground: NextPage = () => {
   // knowledge / skill / connectors) instead of a drifting UI state.
   const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const chatEpochRef = useRef(0);
+  const summaryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -797,8 +799,13 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   const resetChatState = useCallback(() => {
+    chatEpochRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
+    if (summaryIntervalRef.current) {
+      clearInterval(summaryIntervalRef.current);
+      summaryIntervalRef.current = null;
+    }
     setMessages([]);
     setConversationId(null);
     setQuery('');
@@ -809,11 +816,14 @@ const Playground: NextPage = () => {
     setFilePreview(null);
     setFilePreviewError(null);
     setArtifacts([]);
+    setPreviewArtifact(null);
     setRightPanelTab('preview');
     setStreamingSummary('');
     setSummaryComplete(false);
     setTaskPlan([]);
     setActiveSubAgent(null);
+    setPendingQuestion(null);
+    setContextStatus(null);
     setLoading(false);
     lastSentPayloadRef.current = null;
     terminatedStepIdsRef.current.clear();
@@ -1713,6 +1723,13 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
+    abortRef.current?.abort();
+    if (summaryIntervalRef.current) {
+      clearInterval(summaryIntervalRef.current);
+      summaryIntervalRef.current = null;
+    }
+    chatEpochRef.current += 1;
+    const epoch = chatEpochRef.current;
     const controller = new AbortController();
     abortRef.current = controller;
     terminatedStepIdsRef.current.clear();
@@ -1783,6 +1800,7 @@ const Playground: NextPage = () => {
       let buffer = '';
 
       const processEvent = (raw: string) => {
+        if (chatEpochRef.current !== epoch) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -2134,7 +2152,14 @@ const Playground: NextPage = () => {
             setRightPanelView('summary');
 
             const summaryText = cleanFinalContent(payload.content);
+            if (summaryIntervalRef.current) {
+              clearInterval(summaryIntervalRef.current);
+            }
             const streamInterval = setInterval(() => {
+              if (chatEpochRef.current !== epoch) {
+                clearInterval(streamInterval);
+                return;
+              }
               setStreamingSummary(prev => {
                 if (prev.length >= summaryText.length) {
                   clearInterval(streamInterval);
@@ -2211,6 +2236,7 @@ const Playground: NextPage = () => {
                 return prev + summaryText.slice(prev.length, prev.length + chunkSize);
               });
             }, 15);
+            summaryIntervalRef.current = streamInterval;
           }
         } else if (payload.type === 'done') {
           setLoading(false);
@@ -2226,8 +2252,13 @@ const Playground: NextPage = () => {
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
-      setLoading(false);
+      if (chatEpochRef.current === epoch) {
+        setLoading(false);
+      }
     } catch (err: any) {
+      if (chatEpochRef.current !== epoch || controller.signal.aborted) {
+        return;
+      }
       setLoading(false);
       message.error(err?.message || 'Failed to get response');
       setMessages(prev => {
