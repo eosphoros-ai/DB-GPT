@@ -1,7 +1,7 @@
 import pytest
 
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
-from dbgpt_client.flow import create_flow
+from dbgpt_client.flow import create_flow, update_flow
 
 
 class _Response:
@@ -38,6 +38,10 @@ class _CreateFlowClient:
         self.requests.append(("post", path, body))
         return _Response(self.payload)
 
+    async def put(self, path, body):
+        self.requests.append(("put", path, body))
+        return _Response(self.payload)
+
 
 @pytest.mark.asyncio
 async def test_create_flow_posts_instead_of_get():
@@ -57,3 +61,24 @@ async def test_create_flow_posts_instead_of_get():
     assert client.requests[0][0] == "post"
     assert client.requests[0][1] == "/awel/flows"
     assert client.requests[0][2] == request.to_dict()
+
+
+@pytest.mark.asyncio
+async def test_update_flow_puts_to_uid_path():
+    """Server route is PUT /awel/flows/{uid}; the client must include the uid."""
+    flow = FlowPanel(uid="flow-123", label="demo", name="demo")
+    client = _CreateFlowClient(
+        {
+            "success": True,
+            "err_code": None,
+            "err_msg": None,
+            "data": flow.to_dict(),
+        }
+    )
+
+    updated = await update_flow(client, flow)
+
+    assert updated.uid == "flow-123"
+    assert client.requests[0][0] == "put"
+    assert client.requests[0][1] == "/awel/flows/flow-123"
+    assert client.requests[0][2]["uid"] == "flow-123"

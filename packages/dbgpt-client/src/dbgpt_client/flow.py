@@ -40,7 +40,9 @@ async def update_flow(client: Client, flow: FlowPanel) -> FlowPanel:
         ClientException: If the request failed.
     """
     try:
-        res = await client.put("/awel/flows", flow.to_dict())
+        if not flow.uid:
+            raise ClientException("Failed to update flow: flow.uid is required")
+        res = await client.put(f"/awel/flows/{flow.uid}", flow.to_dict())
         result: Result = res.json()
         if result["success"]:
             return FlowPanel(**result["data"])
