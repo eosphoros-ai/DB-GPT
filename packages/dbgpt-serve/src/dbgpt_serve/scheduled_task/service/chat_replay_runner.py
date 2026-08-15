@@ -190,8 +190,8 @@ class ChatReplayRunner:
     # ── Database context enrichment ──────────────────────────────────
 
     # Pattern produced by the frontend: "[Database: my_db]" or
-    # "[Database: my_db] [Knowledge: ...] user question ..."
-    _DB_FROM_INPUT_RE = re.compile(r"\[Database:\s*(\S+?)\]")
+    # "[Database: sales warehouse] [Knowledge: ...] user question ..."
+    _DB_FROM_INPUT_RE = re.compile(r"\[Database:\s*([^\]]+)\]")
 
     @staticmethod
     def _enrich_database_context(payload: dict) -> None:
@@ -224,7 +224,9 @@ class ChatReplayRunner:
         if not m:
             return
 
-        database_name = m.group(1)
+        database_name = m.group(1).strip()
+        if not database_name:
+            return
         logger.info(
             "Enriched database_name='%s' from user_input pattern",
             database_name,

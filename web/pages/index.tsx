@@ -2527,7 +2527,7 @@ const Playground: NextPage = () => {
     // carries "[Database: xxx]", keep that name so the snapshot can replay.
     const firstUserMsg = messages.find(m => m.role === 'human');
     const userInput = firstUserMsg?.context ?? '';
-    const dbFromInput = userInput.match(/\[Database:\s*(\S+?)\]/)?.[1];
+    const dbFromInput = userInput.match(/\[Database:\s*([^\]]+)\]/)?.[1]?.trim();
     return {
       version: 1,
       user_input: userInput,

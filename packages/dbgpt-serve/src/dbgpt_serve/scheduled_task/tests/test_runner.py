@@ -440,6 +440,15 @@ class TestEnrichDatabaseContext:
         ChatReplayRunner._enrich_database_context(payload)
         assert payload["ext_info"]["database_name"] == "postgres"
 
+    def test_parse_database_name_with_spaces(self):
+        """Names may contain spaces (CodeRabbit: \\S+ stopped at the first space)."""
+        payload = {
+            "user_input": "[Database: sales warehouse] query orders",
+            "ext_info": {},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "sales warehouse"
+
     def test_parse_database_with_knowledge_prefix(self):
         """Should handle [Database: xxx] followed by [Knowledge: yyy]."""
         payload = {
