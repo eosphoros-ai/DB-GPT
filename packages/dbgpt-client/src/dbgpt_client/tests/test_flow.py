@@ -1,6 +1,7 @@
 import pytest
 
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
+from dbgpt_client.client import ClientException
 from dbgpt_client.flow import create_flow, update_flow
 
 
@@ -82,3 +83,17 @@ async def test_update_flow_puts_to_uid_path():
     assert client.requests[0][0] == "put"
     assert client.requests[0][1] == "/awel/flows/flow-123"
     assert client.requests[0][2]["uid"] == "flow-123"
+
+
+@pytest.mark.asyncio
+async def test_update_flow_requires_uid():
+    client = _CreateFlowClient(
+        {"success": True, "err_code": None, "err_msg": None, "data": {}}
+    )
+    flow = FlowPanel(uid="", label="demo", name="demo")
+
+    with pytest.raises(ClientException) as exc:
+        await update_flow(client, flow)
+
+    assert client.requests == []
+    assert "flow.uid is required" in str(exc.value.reason)
