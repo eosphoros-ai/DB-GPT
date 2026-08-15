@@ -15,9 +15,10 @@ unpicklable SQLAlchemy sessions.
 import asyncio
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from ..dao.run_dao import ScheduledRunDao
 from ..dao.task_dao import ScheduledTaskDao
@@ -101,6 +102,13 @@ class ChatReplayRunner:
             payload["user_name"] = task.get("user_name")
             payload.pop("version", None)  # internal field, not a ConversationVo key
 
+            # 3b. Backfill database_name into ext_info if missing.
+            #     Existing tasks saved from a restored history conversation
+            #     may only have "[Database: xxx]" in user_input, not in
+            #     ext_info. Parse that prefix so replay can load the
+            #     connector (issue #3180).
+            self._enrich_database_context(payload)
+
             # 4. Replay in-process with a hard timeout
             final_texts, step_texts, artifact_count = await asyncio.wait_for(
                 self._run_agent_stream(payload),
@@ -178,6 +186,53 @@ class ChatReplayRunner:
             # done/react-agent) are ignored.
 
         return final_texts, step_texts, artifact_count
+
+    # ── Database context enrichment ──────────────────────────────────
+
+    # Pattern produced by the frontend: "[Database: my_db]" or
+    # "[Database: my_db] [Knowledge: ...] user question ..."
+    _DB_FROM_INPUT_RE = re.compile(r"\[Database:\s*(\S+?)\]")
+
+    @staticmethod
+    def _enrich_database_context(payload: dict) -> None:
+        """Backfill ``database_name`` into ``payload["ext_info"]`` when missing.
+
+        Scheduled tasks replay from a frozen ``payload_json``. If the
+        original conversation used a database but ``ext_info`` omitted
+        ``database_name``, ``_react_agent_stream`` fails with
+        "No database selected".
+
+        The UI prefixes ``user_input`` with ``[Database: xxx]`` when a
+        data source is selected. Parse that prefix as a backward-compat
+        fallback for snapshots that only kept the context string.
+
+        ``database_type`` is not required to load the connector, so it
+        is left unset rather than reflecting the full schema at cron
+        time.
+
+        Args:
+            payload: The deserialized ChatReplayPayload dict (modified
+                in-place).
+        """
+        ext_info: Dict = payload.get("ext_info") or {}
+
+        if ext_info.get("database_name"):
+            return
+
+        user_input = payload.get("user_input") or ""
+        m = ChatReplayRunner._DB_FROM_INPUT_RE.search(user_input)
+        if not m:
+            return
+
+        database_name = m.group(1)
+        logger.info(
+            "Enriched database_name='%s' from user_input pattern",
+            database_name,
+        )
+        ext_info["database_name"] = database_name
+        payload["ext_info"] = ext_info
+
+    # ── Helpers ──────────────────────────────────────────────────────
 
     def _fail(self, run_id: str, message: str, conv_uid: str) -> None:
         """Record a failed run with the given error message."""

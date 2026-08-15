@@ -2523,18 +2523,25 @@ const Playground: NextPage = () => {
     }
     // Fallback (e.g. conversation restored from history, where no send
     // happened this session): reconstruct from the first question + current
-    // selections. Keeps the old behavior so this path never regresses.
+    // selections. If the UI selection was lost but the question still
+    // carries "[Database: xxx]", keep that name so the snapshot can replay.
     const firstUserMsg = messages.find(m => m.role === 'human');
+    const userInput = firstUserMsg?.context ?? '';
+    const dbFromInput = userInput.match(/\[Database:\s*(\S+?)\]/)?.[1];
     return {
       version: 1,
-      user_input: firstUserMsg?.context ?? '',
+      user_input: userInput,
       chat_mode: 'chat_react_agent',
       model_name: model,
       select_param: '',
       ext_info: {
         ...(uploadedFilePath ? { file_path: uploadedFilePath } : {}),
         ...(selectedSkill ? { skill_id: selectedSkill.id, skill_name: selectedSkill.name } : {}),
-        ...(selectedDb ? { database_name: selectedDb.db_name, database_type: selectedDb.db_type } : {}),
+        ...(selectedDb
+          ? { database_name: selectedDb.db_name, database_type: selectedDb.db_type }
+          : dbFromInput
+            ? { database_name: dbFromInput }
+            : {}),
         ...(selectedKnowledge
           ? { knowledge_space_name: selectedKnowledge.name, knowledge_space_id: selectedKnowledge.id }
           : {}),
