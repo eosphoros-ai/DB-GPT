@@ -812,6 +812,7 @@ const Playground: NextPage = () => {
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
+    setUploadedFile(null);
     setUploadedFilePath(null);
     setFilePreview(null);
     setFilePreviewError(null);
@@ -1608,6 +1609,14 @@ const Playground: NextPage = () => {
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     if ((!inputQuery.trim() && !effectiveFile) || loading) return;
 
+    abortRef.current?.abort();
+    if (summaryIntervalRef.current) {
+      clearInterval(summaryIntervalRef.current);
+      summaryIntervalRef.current = null;
+    }
+    chatEpochRef.current += 1;
+    const epoch = chatEpochRef.current;
+
     let finalQuery = inputQuery;
     const appCode = 'chat_react_agent';
     const chatMode = 'chat_react_agent';
@@ -1669,6 +1678,10 @@ const Playground: NextPage = () => {
       }
     }
 
+    if (chatEpochRef.current !== epoch) {
+      return;
+    }
+
     // Prepare conversation ID
     const currentConvId = conversationId || generateUUID();
     if (!conversationId) {
@@ -1723,13 +1736,9 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
-    abortRef.current?.abort();
-    if (summaryIntervalRef.current) {
-      clearInterval(summaryIntervalRef.current);
-      summaryIntervalRef.current = null;
+    if (chatEpochRef.current !== epoch) {
+      return;
     }
-    chatEpochRef.current += 1;
-    const epoch = chatEpochRef.current;
     const controller = new AbortController();
     abortRef.current = controller;
     terminatedStepIdsRef.current.clear();
@@ -2280,6 +2289,8 @@ const Playground: NextPage = () => {
 
     if (loading) return;
 
+    const epoch = chatEpochRef.current;
+
     try {
       message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
 
@@ -2291,6 +2302,11 @@ const Playground: NextPage = () => {
         const res = await axios.post(`${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`, {
           example_id: example.id,
         });
+
+        if (chatEpochRef.current !== epoch) {
+          message.destroy('example-loading');
+          return;
+        }
 
         if (res?.success && res?.data) {
           filePath = res.data;
@@ -2308,6 +2324,10 @@ const Playground: NextPage = () => {
       }
 
       message.destroy('example-loading');
+
+      if (chatEpochRef.current !== epoch) {
+        return;
+      }
 
       // Auto-select skill if example specifies one
       let exampleSkill: Skill | null = null;
