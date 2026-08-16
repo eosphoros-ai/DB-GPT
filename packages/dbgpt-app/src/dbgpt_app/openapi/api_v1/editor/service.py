@@ -51,6 +51,7 @@ class EditorService(BaseComponent):
     def get_editor_sql_rounds(self, conv_uid: str) -> List[ChatDbRounds]:
         storage_conv: StorageConversation = self.get_storage_conv(conv_uid)
         messages_by_round = _split_messages_by_round(storage_conv.messages)
+        fallback_db = (storage_conv.param_value or "").strip()
         result: List[ChatDbRounds] = []
         for one_round_message in messages_by_round:
             if not one_round_message:
@@ -58,13 +59,18 @@ class EditorService(BaseComponent):
             for message in one_round_message:
                 if message.type == "human":
                     round_name = message.content
-                    if message.additional_kwargs.get("param_value"):
-                        chat_db_round: ChatDbRounds = ChatDbRounds(
-                            round=message.round_index,
-                            db_name=message.additional_kwargs.get("param_value"),
-                            round_name=round_name,
-                        )
-                        result.append(chat_db_round)
+                    db_name = (message.additional_kwargs or {}).get("param_value")
+                    if isinstance(db_name, str):
+                        db_name = db_name.strip()
+                    db_name = db_name or fallback_db
+                    if not db_name:
+                        continue
+                    chat_db_round: ChatDbRounds = ChatDbRounds(
+                        round=message.round_index,
+                        db_name=db_name,
+                        round_name=round_name,
+                    )
+                    result.append(chat_db_round)
 
         return result
 
@@ -130,7 +136,11 @@ class EditorService(BaseComponent):
                     context_dict = _parse_pure_dict(message.content)
                     chart_list: ChartList = ChartList(
                         round=message.round_index,
-                        db_name=message.additional_kwargs.get("param_value"),
+                        db_name=(
+                            (message.additional_kwargs or {}).get("param_value")
+                            or storage_conv.param_value
+                            or ""
+                        ),
                         charts=context_dict,
                     )
                     return chart_list
@@ -145,6 +155,9 @@ class EditorService(BaseComponent):
                 continue
             for message in one_round_message:
                 db_name = message.additional_kwargs.get("param_value")
+                if isinstance(db_name, str):
+                    db_name = db_name.strip()
+                db_name = db_name or (storage_conv.param_value or "").strip()
                 if not db_name:
                     logger.error(
                         "this dashboard dialogue version too old, can't support editor!"
