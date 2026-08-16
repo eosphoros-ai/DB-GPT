@@ -411,3 +411,99 @@ async def test_runner_collects_final_event_as_summary(runner: ChatReplayRunner):
     assert "查询中" not in summary, (
         f"summary should prefer 'final' over step.chunk text, got '{summary}'"
     )
+
+
+# ---------------------------------------------------------------------------
+# Database context enrichment tests
+# ---------------------------------------------------------------------------
+
+
+class TestEnrichDatabaseContext:
+    """Tests for ChatReplayRunner._enrich_database_context."""
+
+    def test_noop_when_database_name_already_present(self):
+        """Should not modify ext_info if database_name is already set."""
+        payload = {
+            "user_input": "query orders",
+            "ext_info": {"database_name": "my_db", "database_type": "mysql"},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "my_db"
+        assert payload["ext_info"]["database_type"] == "mysql"
+
+    def test_parse_database_from_user_input(self):
+        """Should extract database_name from [Database: xxx] in user_input."""
+        payload = {
+            "user_input": "[Database: postgres] 查询最近7天订单量",
+            "ext_info": {},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "postgres"
+
+    def test_parse_database_name_with_spaces(self):
+        """Names may contain spaces (CodeRabbit: \\S+ stopped at the first space)."""
+        payload = {
+            "user_input": "[Database: sales warehouse] query orders",
+            "ext_info": {},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "sales warehouse"
+
+    def test_parse_database_with_knowledge_prefix(self):
+        """Should handle [Database: xxx] followed by [Knowledge: yyy]."""
+        payload = {
+            "user_input": "[Database: my_mysql] [Knowledge: docs] 查询",
+            "ext_info": {},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "my_mysql"
+
+    def test_no_modification_when_no_database_hint(self):
+        """Should not modify payload if no database hint found anywhere."""
+        payload = {
+            "user_input": "generate daily report",
+            "ext_info": {"skill_name": "report-skill"},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert "database_name" not in payload["ext_info"]
+
+    def test_skill_name_alone_does_not_invent_database(self):
+        """skill_name without a [Database:] prefix is not a data source."""
+        payload = {
+            "user_input": "generate daily report",
+            "ext_info": {"skill_name": "customs-data-assistant"},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert "database_name" not in payload["ext_info"]
+
+    def test_preserves_existing_database_type(self):
+        """Should not overwrite database_type if already in ext_info."""
+        payload = {
+            "user_input": "[Database: my_db] query",
+            "ext_info": {"database_type": "custom_type"},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "my_db"
+        assert payload["ext_info"]["database_type"] == "custom_type"
+
+    def test_does_not_set_database_type_from_name_only(self):
+        """Name parsed from user_input is enough; type stays unset."""
+        payload = {
+            "user_input": "[Database: my_pg] query",
+            "ext_info": {},
+        }
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "my_pg"
+        assert "database_type" not in payload["ext_info"]
+
+    def test_handles_null_ext_info(self):
+        """Should handle payload with no ext_info key at all."""
+        payload = {"user_input": "[Database: testdb] query"}
+        ChatReplayRunner._enrich_database_context(payload)
+        assert payload["ext_info"]["database_name"] == "testdb"
+
+    def test_handles_empty_user_input(self):
+        """Should not crash on empty user_input."""
+        payload = {"user_input": "", "ext_info": {}}
+        ChatReplayRunner._enrich_database_context(payload)
+        assert "database_name" not in payload["ext_info"]
