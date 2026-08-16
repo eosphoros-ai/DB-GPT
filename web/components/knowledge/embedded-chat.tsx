@@ -1,10 +1,10 @@
 import { apiInterceptors, getKnowledgeSpaceStats, getSpaceList, getUsableModels, newDialogue } from '@/client/api';
 import useReActAgent from '@/hooks/use-react-agent';
-import OpenCodeSessionTurn, { MessagePart, ToolPart } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import OpenCodeSessionTurn, { MessagePart } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import { AgentCitation, AgentFinalAnswer } from '@/utils/react-agent-final';
 import {
   ClearOutlined,
   CopyOutlined,
-  FileSearchOutlined,
   FileTextOutlined,
   LoadingOutlined,
   NodeIndexOutlined,
@@ -22,6 +22,7 @@ interface StreamingTurn {
   userMessage: string;
   parts: MessagePart[];
   finalContent: string;
+  citations: AgentCitation[];
   isWorking: boolean;
   startTime: number;
   endTime?: number;
@@ -32,6 +33,7 @@ interface HistoryTurn {
   userMessage: string;
   assistantMessage: string;
   parts: MessagePart[];
+  citations: AgentCitation[];
   references: FileReference[];
   startTime: number | null;
   endTime: number | null;
@@ -48,72 +50,23 @@ interface FileReference {
   name: string;
   content: string;
   status: 'running' | 'completed' | 'error';
-  source: 'kb_cat' | 'kb_grep' | 'kb_ls' | 'kb_glob' | 'semantic_search';
 }
 
 let turnIdCounter = 0;
 
-/** Extract file references from tool parts */
-function extractReferences(parts: MessagePart[]): FileReference[] {
-  const refs: FileReference[] = [];
-  for (const p of parts) {
-    if (p.type !== 'tool') continue;
-    const tp = p as ToolPart;
-    const action = (tp.state.metadata?.action as string) || tp.tool || '';
-    const input = tp.state.input as Record<string, unknown> | undefined;
-    const output = tp.state.output || '';
-    if (!output) continue;
+/** Adapt canonical citations to the knowledge page's reference panel model. */
+function getReferenceId(citation: AgentCitation): string {
+  return `${citation.index}:${citation.id}`;
+}
 
-    const path = (input?.path as string) || (input?.query as string) || (input?.pattern as string) || '';
-
-    if (action === 'kb_cat' && path) {
-      refs.push({
-        id: tp.id,
-        path,
-        name: path.split('/').pop() || path,
-        content: output,
-        status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
-        source: 'kb_cat',
-      });
-    } else if (action === 'kb_grep' && path) {
-      refs.push({
-        id: tp.id,
-        path,
-        name: path.split('/').pop() || path,
-        content: output,
-        status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
-        source: 'kb_grep',
-      });
-    } else if (action === 'kb_ls' && output) {
-      refs.push({
-        id: tp.id,
-        path: (input?.path as string) || '/',
-        name: `📂 ${(input?.path as string) || '/'}`,
-        content: output,
-        status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
-        source: 'kb_ls',
-      });
-    } else if (action === 'kb_glob' && output) {
-      refs.push({
-        id: tp.id,
-        path: (input?.query as string) || (input?.pattern as string) || '*',
-        name: `🔍 ${(input?.query as string) || (input?.pattern as string) || '*'}`,
-        content: output,
-        status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
-        source: 'kb_glob',
-      });
-    } else if (action === 'semantic_search' && output) {
-      refs.push({
-        id: tp.id,
-        path: 'Semantic Search',
-        name: `🔍 ${(input?.query as string)?.slice(0, 40) || 'Semantic Search'}`,
-        content: output,
-        status: tp.state.status === 'running' ? 'running' : tp.state.status === 'error' ? 'error' : 'completed',
-        source: 'semantic_search',
-      });
-    }
-  }
-  return refs;
+function toFileReferences(citations: AgentCitation[]): FileReference[] {
+  return citations.map(citation => ({
+    id: getReferenceId(citation),
+    path: citation.path || citation.url || citation.sourceName,
+    name: citation.sourceName,
+    content: citation.excerpt,
+    status: 'completed',
+  }));
 }
 
 /** Get icon for file type based on extension */
@@ -183,45 +136,64 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
   });
 
   const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(null);
+  const streamingTurnRef = useRef<StreamingTurn | null>(null);
 
   // Right panel state
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [selectedRefId, setSelectedRefId] = useState<string | null>(null);
+  const [references, setReferences] = useState<FileReference[]>([]);
 
   const onPartUpdateRef = useRef<(parts: MessagePart[]) => void>(() => {});
-  const onFinalContentRef = useRef<(content: string) => void>(() => {});
+  const onFinalAnswerRef = useRef<(answer: AgentFinalAnswer) => void>(() => {});
   const onCompleteRef = useRef<() => void>(() => {});
   const onErrorRef = useRef<(error: string) => void>(() => {});
 
   onPartUpdateRef.current = parts => {
-    setStreamingTurn(prev => (prev ? { ...prev, parts } : null));
+    const current = streamingTurnRef.current;
+    if (!current) return;
+    const next = { ...current, parts };
+    streamingTurnRef.current = next;
+    setStreamingTurn(next);
   };
-  onFinalContentRef.current = content => {
-    setStreamingTurn(prev => (prev ? { ...prev, finalContent: content } : null));
+  onFinalAnswerRef.current = answer => {
+    const current = streamingTurnRef.current;
+    if (!current) return;
+    const next = { ...current, finalContent: answer.content, citations: answer.citations };
+    const nextReferences = toFileReferences(answer.citations);
+    streamingTurnRef.current = next;
+    setStreamingTurn(next);
+    setReferences(nextReferences);
+    setSelectedRefId(nextReferences[0]?.id ?? null);
+    if (nextReferences.length > 0) setRightPanelCollapsed(false);
   };
   onCompleteRef.current = () => {
-    setStreamingTurn(prev => {
-      if (!prev) return null;
-      const endTime = Date.now();
-      const savedRefs = extractReferences(prev.parts);
-      turnIdCounter += 1;
-      setHistory(h => [
-        ...h,
-        {
-          id: `turn-${turnIdCounter}`,
-          userMessage: prev.userMessage,
-          assistantMessage: prev.finalContent || buildReActContext(prev.parts),
-          parts: prev.parts,
-          references: savedRefs,
-          startTime: prev.startTime,
-          endTime,
-        },
-      ]);
-      return { ...prev, isWorking: false, endTime };
-    });
+    const current = streamingTurnRef.current;
+    if (!current) return;
+    const endTime = Date.now();
+    const savedRefs = toFileReferences(current.citations);
+    turnIdCounter += 1;
+    setHistory(historyTurns => [
+      ...historyTurns,
+      {
+        id: `turn-${turnIdCounter}`,
+        userMessage: current.userMessage,
+        assistantMessage: current.finalContent,
+        parts: current.parts,
+        citations: current.citations,
+        references: savedRefs,
+        startTime: current.startTime,
+        endTime,
+      },
+    ]);
+    streamingTurnRef.current = null;
+    setStreamingTurn(null);
   };
   onErrorRef.current = () => {
-    setStreamingTurn(prev => (prev ? { ...prev, isWorking: false } : null));
+    const current = streamingTurnRef.current;
+    if (!current) return;
+    const next = { ...current, isWorking: false, endTime: Date.now() };
+    streamingTurnRef.current = next;
+    setStreamingTurn(next);
   };
 
   const {
@@ -231,7 +203,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
   } = useReActAgent({
     baseUrl: `${process.env.API_BASE_URL ?? ''}/api/v1/chat/knowledge-agent`,
     onPartUpdate: (parts: MessagePart[]) => onPartUpdateRef.current(parts),
-    onFinalContent: (content: string) => onFinalContentRef.current(content),
+    onFinalAnswer: (answer: AgentFinalAnswer) => onFinalAnswerRef.current(answer),
     onComplete: () => onCompleteRef.current(),
     onError: (error: string) => onErrorRef.current(error),
   });
@@ -271,32 +243,6 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
     }
   }, [history.length, streamingTurn?.parts.length, streamingTurn?.finalContent]);
 
-  // References: from streaming turn (live) or latest history turn (after complete)
-  const references = useMemo(() => {
-    if (streamingTurn?.isWorking) return extractReferences(streamingTurn.parts);
-    const lastTurn = history[history.length - 1];
-    if (lastTurn?.references?.length) return lastTurn.references;
-    if (streamingTurn?.parts?.length) return extractReferences(streamingTurn.parts);
-    return [] as FileReference[];
-  }, [streamingTurn, history]);
-
-  // Auto-select latest reference (only during streaming)
-  useEffect(() => {
-    if (!streamingTurn || references.length === 0) return;
-    const last = references[references.length - 1];
-    setSelectedRefId(last.id);
-    if (rightPanelCollapsed) setRightPanelCollapsed(false);
-  }, [references.length, streamingTurn]);
-
-  // When history changes (new turn added), select first reference
-  useEffect(() => {
-    if (streamingTurn) return;
-    const lastTurn = history[history.length - 1];
-    if (lastTurn?.references?.length) {
-      setSelectedRefId(lastTurn.references[0].id);
-    }
-  }, [history.length, streamingTurn]);
-
   const handleSend = useCallback(async () => {
     const text = userInput.trim();
     if (!text || !convUid || agentState.isWorking) return;
@@ -304,7 +250,17 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
     const selectedSpaceId = selectedSpace?.id;
     setUserInput('');
     setSelectedRefId(null);
-    setStreamingTurn({ userMessage: text, parts: [], finalContent: '', isWorking: true, startTime: Date.now() });
+    setReferences([]);
+    const nextTurn: StreamingTurn = {
+      userMessage: text,
+      parts: [],
+      finalContent: '',
+      citations: [],
+      isWorking: true,
+      startTime: Date.now(),
+    };
+    streamingTurnRef.current = nextTurn;
+    setStreamingTurn(nextTurn);
     await sendMessage({
       user_input: `[Knowledge: ${knowledgeValue}] ${text}`,
       conv_uid: convUid,
@@ -319,16 +275,35 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
     });
   }, [userInput, convUid, agentState.isWorking, sendMessage, modelValue, knowledgeValue, knowledgeSpaces]);
 
-  const handleStop = useCallback(() => cancel(), [cancel]);
+  const handleStop = useCallback(() => {
+    cancel();
+    const current = streamingTurnRef.current;
+    if (!current) return;
+    const next = { ...current, isWorking: false, endTime: Date.now() };
+    streamingTurnRef.current = next;
+    setStreamingTurn(next);
+  }, [cancel]);
   const handleRetry = useCallback(() => {
     const lastTurn = history[history.length - 1];
     if (!lastTurn || agentState.isWorking) return;
-    setHistory(prev => prev.slice(0, -1));
+    const nextHistory = history.slice(0, -1);
+    const nextReferences = nextHistory[nextHistory.length - 1]?.references || [];
+    setHistory(nextHistory);
+    setReferences(nextReferences);
+    setSelectedRefId(nextReferences[0]?.id ?? null);
     setUserInput(lastTurn.userMessage);
   }, [history, agentState.isWorking]);
   const handleClear = useCallback(() => {
+    streamingTurnRef.current = null;
+    setStreamingTurn(null);
     setHistory([]);
+    setReferences([]);
     setSelectedRefId(null);
+  }, []);
+  const handleCitationClick = useCallback((turnCitations: AgentCitation[], citation: AgentCitation) => {
+    setReferences(toFileReferences(turnCitations));
+    setSelectedRefId(getReferenceId(citation));
+    setRightPanelCollapsed(false);
   }, []);
 
   const knowledgeOptions = useMemo(
@@ -358,7 +333,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
           <div className='max-w-4xl mx-auto py-4 space-y-6 px-4'>
             {history.length === 0 && !streamingTurn ? (
               <div className='flex flex-col items-center justify-center h-full text-gray-400 gap-3 py-12'>
-                <Image src='/icons/kb_icon.png' alt='KB' width={48} height={48} className='opacity-30' />
+                <Image src='/icons/knowledge.png' alt='KB' width={48} height={48} className='opacity-30' />
                 <p className='text-sm'>{t('input_tips')}</p>
               </div>
             ) : (
@@ -368,6 +343,8 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                     key={turn.id}
                     userMessage={turn.userMessage}
                     assistantMessage={turn.assistantMessage}
+                    citations={turn.citations}
+                    onCitationClick={citation => handleCitationClick(turn.citations, citation)}
                     parts={turn.parts}
                     isWorking={false}
                     showSteps={turn.parts.length > 0}
@@ -376,10 +353,12 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                     className='w-full'
                   />
                 ))}
-                {streamingTurn && streamingTurn.isWorking && (
+                {streamingTurn && (
                   <OpenCodeSessionTurn
                     userMessage={streamingTurn.userMessage}
                     assistantMessage={streamingTurn.finalContent}
+                    citations={streamingTurn.citations}
+                    onCitationClick={citation => handleCitationClick(streamingTurn.citations, citation)}
                     parts={streamingTurn.parts}
                     isWorking={streamingTurn.isWorking}
                     startTime={streamingTurn.startTime}
@@ -415,7 +394,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                     onChange={val => setKnowledgeValue(val)}
                     placeholder={
                       <span className='flex items-center gap-1'>
-                        <Image src='/icons/kb_icon.png' alt='KB' width={14} height={14} />
+                        <Image src='/icons/knowledge.png' alt='KB' width={14} height={14} />
                         {t('knowledge')}
                       </span>
                     }
@@ -484,7 +463,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
           {/* Header */}
           <div className='flex items-center justify-between px-3 py-2.5 border-b dark:border-gray-700 bg-white dark:bg-[#232734]'>
             <div className='flex items-center gap-2 min-w-0'>
-              <Image src='/icons/kb_icon.png' alt='KB' width={16} height={16} className='flex-shrink-0' />
+              <Image src='/icons/knowledge.png' alt='KB' width={16} height={16} className='flex-shrink-0' />
               <span className='text-xs font-semibold text-gray-700 dark:text-gray-200 truncate'>{knowledgeValue}</span>
               <span className='text-[11px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium flex-shrink-0'>
                 {references.length}
@@ -518,7 +497,7 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
               const isActive = selectedRefId === ref.id;
               const isRunning = ref.status === 'running';
               const contentPreview = ref.content.slice(0, 200);
-              const isFile = ref.source === 'kb_cat' || ref.source === 'kb_grep';
+              const isFile = Boolean(ref.path);
               return (
                 <div key={ref.id}>
                   {/* File row — clickable */}
@@ -533,8 +512,6 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
                     <div className='flex items-center gap-2'>
                       {isRunning ? (
                         <LoadingOutlined className='text-blue-500 text-xs flex-shrink-0' />
-                      ) : ref.source === 'semantic_search' ? (
-                        <FileSearchOutlined className='text-green-500 text-xs flex-shrink-0' />
                       ) : (
                         getFileIcon(ref.name)
                       )}
@@ -605,21 +582,5 @@ const EmbeddedChat: React.FC<EmbeddedChatProps> = ({ spaceName }) => {
     </div>
   );
 };
-
-function buildReActContext(parts: MessagePart[]): string {
-  const lines: string[] = [];
-  for (const part of parts) {
-    if (part.type === 'reasoning') {
-      lines.push(`Thought: ${part.text}`);
-    } else if (part.type === 'tool') {
-      const toolPart = part as any;
-      const action = toolPart.state?.metadata?.action || toolPart.tool;
-      lines.push(`Action: ${action}`);
-      if (toolPart.state?.input) lines.push(`Action Input: ${JSON.stringify(toolPart.state.input)}`);
-      if (toolPart.state?.output) lines.push(`Observation: ${toolPart.state.output}`);
-    }
-  }
-  return lines.join('\n');
-}
 
 export default EmbeddedChat;
