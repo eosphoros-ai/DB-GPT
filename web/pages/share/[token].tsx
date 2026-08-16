@@ -17,6 +17,7 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { buildActionDisplayText } from '@/utils/action-display';
+import { decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import {
   LinkOutlined,
   PauseCircleOutlined,
@@ -53,6 +54,7 @@ interface RawPayload {
   final_content: string;
   steps: RawStep[];
   generated_images?: string[];
+  citations?: AgentCitation[];
 }
 
 interface _ParsedMessage {
@@ -69,6 +71,7 @@ interface ReplayRound {
   outputs: Record<string, ManusExecutionOutput[]>;
   stepThoughts: Record<string, string>;
   finalContent: string;
+  citations: AgentCitation[];
   artifacts: ArtifactItem[];
 }
 
@@ -244,13 +247,15 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
         if (displayThought) stepThoughts[stepId] = displayThought;
       });
 
-      const artifacts = buildArtifacts(`round-${rounds.length}`, steps, outputs, payload.final_content || '');
+      const finalAnswer = decodeHistoryAnswer(payload);
+      const artifacts = buildArtifacts(`round-${rounds.length}`, steps, outputs, finalAnswer.content);
       rounds.push({
         humanText: pendingHuman || '',
         steps,
         outputs,
         stepThoughts,
-        finalContent: payload.final_content || '',
+        finalContent: finalAnswer.content,
+        citations: finalAnswer.citations,
         artifacts,
       });
       pendingHuman = null;
@@ -485,6 +490,7 @@ const SharePage: NextPage = () => {
   const [firstQuestion, setFirstQuestion] = useState<string>('');
   const [speed, setSpeed] = useState(1);
   const [rightPanelView, setRightPanelView] = useState<PanelView>('execution');
+  const [selectedCitationIndex, setSelectedCitationIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -777,6 +783,15 @@ const SharePage: NextPage = () => {
                   isWorking={isCurrentRound && playing && !state.showFinalForRound}
                   userQuery={data.round.humanText}
                   assistantText={data.showFinal ? data.round.finalContent : undefined}
+                  citationIndexes={data.showFinal ? data.round.citations.map(citation => citation.index) : []}
+                  onReferencesClick={
+                    data.showFinal && data.round.citations.length > 0
+                      ? () => {
+                          setSelectedCitationIndex(data.round.citations[0].index);
+                          setRightPanelView('references');
+                        }
+                      : undefined
+                  }
                   stepThoughts={data.round.stepThoughts}
                   artifacts={data.showFinal ? data.round.artifacts : []}
                   onViewAllFiles={data.showFinal ? () => setRightPanelView('files') : undefined}
@@ -805,6 +820,9 @@ const SharePage: NextPage = () => {
               artifacts={activeRoundData?.round.artifacts ?? []}
               panelView={rightPanelView}
               onPanelViewChange={setRightPanelView}
+              citations={activeRoundData?.showFinal ? activeRoundData.round.citations : []}
+              selectedCitationIndex={selectedCitationIndex}
+              onCitationSelect={setSelectedCitationIndex}
             />
           </div>
         </div>

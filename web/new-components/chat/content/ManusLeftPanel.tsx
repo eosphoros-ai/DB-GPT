@@ -106,6 +106,8 @@ export interface ManusLeftPanelProps {
   isWorking?: boolean;
   userQuery?: string;
   assistantText?: string;
+  /** Render incremental answer text without reparsing Markdown on every frame. */
+  isAssistantStreaming?: boolean;
   modelName?: string;
   stepThoughts?: Record<string, string>;
   /** Optional slot rendered above the execution sections (sub-agent card). */
@@ -142,6 +144,10 @@ export interface ManusLeftPanelProps {
   onSkillCardClick?: (skillName: string) => void;
   onSkillDownload?: (skillName: string) => void;
   taskPlan?: TaskItem[];
+  /** Citation indexes that are valid for this answer. */
+  citationIndexes?: number[];
+  /** Open the references panel from the answer footer. */
+  onReferencesClick?: () => void;
 }
 
 // Get step icon based on type and status
@@ -1053,6 +1059,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   isWorking,
   userQuery,
   assistantText,
+  isAssistantStreaming = false,
   modelName,
   stepThoughts,
   subAgentSlot,
@@ -1072,6 +1079,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onSkillCardClick,
   onSkillDownload,
   taskPlan,
+  citationIndexes = [],
+  onReferencesClick,
 }) => {
   const { t } = useTranslation();
   const handleStepClick = useCallback(
@@ -1258,8 +1267,22 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {assistantText && (
           <div className='mt-4 px-1'>
             <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-              <MarkdownContext>{assistantText}</MarkdownContext>
+              {isAssistantStreaming ? (
+                <span className='whitespace-pre-wrap break-words'>{assistantText}</span>
+              ) : (
+                <MarkdownContext>{assistantText}</MarkdownContext>
+              )}
             </div>
+            {citationIndexes.length > 0 && onReferencesClick && (
+              <button
+                type='button'
+                onClick={onReferencesClick}
+                className='mt-3 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
+              >
+                <BookOutlined aria-hidden />
+                查看 {citationIndexes.length} 条参考来源
+              </button>
+            )}
           </div>
         )}
 

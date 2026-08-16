@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import useReActAgent, { ReActAgentRequest, parseReActText } from '@/hooks/use-react-agent';
 import OpenCodeSessionTurn, { MessagePart } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import QuestionDock from '@/new-components/chat/content/QuestionDock';
+import { AgentCitation, decodeHistoryAnswer } from '@/utils/react-agent-final';
 import MyEmpty from '../common/MyEmpty';
 import CompletionInput from '../common/completion-input';
 import MuiLoading from '../common/loading';
@@ -29,6 +30,7 @@ interface StreamingTurn {
   userMessage: string;
   parts: MessagePart[];
   finalContent: string;
+  citations: AgentCitation[];
   isWorking: boolean;
   startTime: number;
   endTime?: number;
@@ -45,7 +47,10 @@ const OpenCodeAgentChatContainer: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [streamingTurn, setStreamingTurn] = useState<StreamingTurn | null>(null);
+  const streamingTurnRef = useRef<StreamingTurn | null>(null);
   const scrollableRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef(history);
+  historyRef.current = history;
 
   const {
     state: agentState,
@@ -58,34 +63,44 @@ const OpenCodeAgentChatContainer: React.FC = () => {
   } = useReActAgent({
     baseUrl: '/api/v1/chat/react-agent',
     onPartUpdate: parts => {
-      setStreamingTurn(prev => (prev ? { ...prev, parts } : null));
+      const current = streamingTurnRef.current;
+      if (!current) return;
+      const next = { ...current, parts };
+      streamingTurnRef.current = next;
+      setStreamingTurn(next);
     },
-    onFinalContent: content => {
-      setStreamingTurn(prev => (prev ? { ...prev, finalContent: content } : null));
+    onFinalAnswer: answer => {
+      const current = streamingTurnRef.current;
+      if (!current) return;
+      const next = { ...current, finalContent: answer.content, citations: answer.citations };
+      streamingTurnRef.current = next;
+      setStreamingTurn(next);
     },
     onComplete: () => {
-      setStreamingTurn(prev => {
-        if (!prev) return null;
-
-        const endTime = Date.now();
-        const newHistoryItem: IChatDialogueMessageSchema = {
-          role: 'view',
-          context: prev.finalContent || buildReActContext(prev.parts),
-          model_name: model,
-          order: history.length,
-          time_stamp: endTime,
-        };
-
-        setHistory(h => [...h, newHistoryItem]);
-
-        return { ...prev, isWorking: false, endTime };
-      });
-
-      setTimeout(() => setStreamingTurn(null), 100);
+      const current = streamingTurnRef.current;
+      if (!current) return;
+      const endTime = Date.now();
+      const newHistoryItem: IChatDialogueMessageSchema = {
+        role: 'view',
+        context: current.finalContent,
+        model_name: model,
+        order: historyRef.current.length,
+        time_stamp: endTime,
+        citations: current.citations,
+      };
+      const nextHistory = [...historyRef.current, newHistoryItem];
+      historyRef.current = nextHistory;
+      setHistory(nextHistory);
+      streamingTurnRef.current = null;
+      setStreamingTurn(null);
     },
     onError: error => {
       message.error(error);
-      setStreamingTurn(prev => (prev ? { ...prev, isWorking: false } : null));
+      const current = streamingTurnRef.current;
+      if (!current) return;
+      const next = { ...current, isWorking: false, endTime: Date.now() };
+      streamingTurnRef.current = next;
+      setStreamingTurn(next);
     },
   });
 
@@ -106,7 +121,7 @@ const OpenCodeAgentChatContainer: React.FC = () => {
     if (!history.length) return;
     const lastView = history.filter(i => i.role === 'view')?.slice(-1)?.[0];
     lastView?.model_name && setModel(lastView.model_name);
-  }, [history.length, setModel]);
+  }, [history, setModel]);
 
   useEffect(() => {
     return () => {
@@ -130,15 +145,20 @@ const OpenCodeAgentChatContainer: React.FC = () => {
         order: history.length,
         time_stamp: Date.now(),
       };
-      setHistory(h => [...h, humanMessage]);
+      const nextHistory = [...historyRef.current, humanMessage];
+      historyRef.current = nextHistory;
+      setHistory(nextHistory);
 
-      setStreamingTurn({
+      const nextTurn: StreamingTurn = {
         userMessage: content,
         parts: [],
         finalContent: '',
+        citations: [],
         isWorking: true,
         startTime: Date.now(),
-      });
+      };
+      streamingTurnRef.current = nextTurn;
+      setStreamingTurn(nextTurn);
 
       const request: ReActAgentRequest = {
         user_input: content,
@@ -205,13 +225,18 @@ const OpenCodeAgentChatContainer: React.FC = () => {
 
     let assistantMessage = '';
     let parts: MessagePart[] = [];
+    let citations: AgentCitation[] = [];
 
     if (turn.view?.context) {
       const contextStr = typeof turn.view.context === 'string' ? turn.view.context : JSON.stringify(turn.view.context);
 
-      const parsed = parseReActText(contextStr);
+      const historyAnswer = decodeHistoryAnswer(contextStr);
+      const parsed = parseReActText(historyAnswer.content);
       parts = parsed.parts;
-      assistantMessage = parsed.finalContent || contextStr;
+      assistantMessage = parsed.finalContent || historyAnswer.content;
+      citations =
+        (turn.view as (IChatDialogueMessageSchema & { citations?: AgentCitation[] }) | undefined)?.citations ??
+        historyAnswer.citations;
     }
 
     return (
@@ -219,6 +244,7 @@ const OpenCodeAgentChatContainer: React.FC = () => {
         key={`turn-${index}`}
         userMessage={userMessage}
         assistantMessage={assistantMessage}
+        citations={citations}
         parts={parts}
         isWorking={false}
         showSteps={parts.length > 0}
@@ -252,6 +278,7 @@ const OpenCodeAgentChatContainer: React.FC = () => {
                   <OpenCodeSessionTurn
                     userMessage={streamingTurn.userMessage}
                     assistantMessage={streamingTurn.finalContent}
+                    citations={streamingTurn.citations}
                     parts={streamingTurn.parts}
                     isWorking={streamingTurn.isWorking}
                     startTime={streamingTurn.startTime}
@@ -299,27 +326,5 @@ const OpenCodeAgentChatContainer: React.FC = () => {
     </div>
   );
 };
-
-function buildReActContext(parts: MessagePart[]): string {
-  const lines: string[] = [];
-
-  for (const part of parts) {
-    if (part.type === 'reasoning') {
-      lines.push(`Thought: ${part.text}`);
-    } else if (part.type === 'tool') {
-      const toolPart = part as MessagePart & { tool: string; state: any };
-      const action = toolPart.state?.metadata?.action || toolPart.tool;
-      lines.push(`Action: ${action}`);
-      if (toolPart.state?.input) {
-        lines.push(`Action Input: ${JSON.stringify(toolPart.state.input)}`);
-      }
-      if (toolPart.state?.output) {
-        lines.push(`Observation: ${toolPart.state.output}`);
-      }
-    }
-  }
-
-  return lines.join('\n');
-}
 
 export default OpenCodeAgentChatContainer;
