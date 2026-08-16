@@ -41,9 +41,7 @@ async def update_flow(client: Client, flow: FlowPanel) -> FlowPanel:
     """
     try:
         if not flow.uid:
-            raise ClientException(
-                reason="Failed to update flow: flow.uid is required"
-            )
+            raise ClientException(reason="Failed to update flow: flow.uid is required")
         res = await client.put(f"/awel/flows/{flow.uid}", flow.to_dict())
         result: Result = res.json()
         if result["success"]:
@@ -53,7 +51,7 @@ async def update_flow(client: Client, flow: FlowPanel) -> FlowPanel:
     except ClientException:
         raise
     except Exception as e:
-        raise ClientException(reason=f"Failed to update flow: {e}")
+        raise ClientException(reason=f"Failed to update flow: {e}") from e
 
 
 async def delete_flow(client: Client, flow_id: str) -> FlowPanel:
