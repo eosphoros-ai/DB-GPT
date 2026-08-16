@@ -5,6 +5,13 @@ from dbgpt_app.openapi.api_v1.editor.api_editor_v1 import (
     editor_sql_run,
     resolve_editor_db_name,
 )
+from dbgpt_app.openapi.api_v1.editor.service import nonempty_db_name
+
+
+def test_nonempty_db_name_skips_whitespace_before_fallback():
+    assert nonempty_db_name("   ", "Walmart_Sales") == "Walmart_Sales"
+    assert nonempty_db_name(None, "  orders  ") == "orders"
+    assert nonempty_db_name("   ", None, "") == ""
 
 
 def test_resolve_editor_db_name_from_request():

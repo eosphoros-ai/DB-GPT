@@ -6,6 +6,7 @@ import { Button, Input, Select, Table, Tooltip, Tree, message } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { useSearchParams } from 'next/navigation';
 import { ChangeEvent, Key, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Chart from '../chart';
 import Header from './header';
 import MonacoEditor, { ISession } from './monaco-editor';
@@ -150,6 +151,7 @@ function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, table
 }
 
 function DbEditor() {
+  const { t } = useTranslation();
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [currentRound, setCurrentRound] = useState<null | string | number>();
@@ -157,7 +159,7 @@ function DbEditor() {
   const [chartData, setChartData] = useState<any>();
   const [editorValue, setEditorValue] = useState<EditorValueProps | EditorValueProps[]>();
   const [newEditorValue, setNewEditorValue] = useState<EditorValueProps>();
-  const latestSqlRef = useRef('');
+  const latestSqlRef = useRef<string | undefined>(undefined);
   const [tableData, setTableData] = useState<{ columns: string[]; values: (string | number)[] }>();
   const [currentTabIndex, setCurrentTabIndex] = useState<number>();
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
@@ -188,24 +190,28 @@ function DbEditor() {
   };
 
   const resolveSql = () => {
-    return (
-      latestSqlRef.current ||
-      newEditorValue?.sql ||
-      (Array.isArray(editorValue) ? editorValue?.[currentTabIndex ?? 0]?.sql : editorValue?.sql) ||
-      ''
-    ).trim();
+    if (latestSqlRef.current !== undefined) {
+      return latestSqlRef.current.trim();
+    }
+    if (newEditorValue?.sql !== undefined) {
+      return newEditorValue.sql.trim();
+    }
+    const persisted = Array.isArray(editorValue)
+      ? editorValue?.[currentTabIndex ?? 0]?.sql
+      : editorValue?.sql;
+    return (persisted || '').trim();
   };
 
   const { run: runSql, loading: runLoading } = useRequest(
     async () => {
       const db_name = resolveDbName();
       if (!db_name) {
-        message.error('Please select a database before running SQL');
+        message.error(t('editor.please_select_database'));
         return;
       }
       const sql = resolveSql();
       if (!sql) {
-        message.error('Please enter SQL before running');
+        message.error(t('editor.please_enter_sql'));
         return;
       }
       return await sendSpacePostRequest(`/api/v1/editor/sql/run`, {
@@ -217,9 +223,12 @@ function DbEditor() {
     {
       manual: true,
       onSuccess: res => {
+        if (!res?.data) {
+          return;
+        }
         setTableData({
-          columns: res?.data?.colunms,
-          values: res?.data?.values,
+          columns: res.data.colunms || [],
+          values: res.data.values || [],
         });
       },
     },
@@ -229,12 +238,12 @@ function DbEditor() {
     async () => {
       const db_name = resolveDbName();
       if (!db_name) {
-        message.error('Please select a database before running the chart');
+        message.error(t('editor.please_select_database'));
         return;
       }
       const sql = resolveSql();
       if (!sql) {
-        message.error('Please enter SQL before running');
+        message.error(t('editor.please_enter_sql'));
         return;
       }
       const params: {
@@ -279,7 +288,7 @@ function DbEditor() {
     async () => {
       const db_name = resolveDbName();
       if (!db_name) {
-        message.error('Please select a database before submitting SQL');
+        message.error(t('editor.please_select_database'));
         return;
       }
       return await sendSpacePostRequest(`/api/v1/sql/editor/submit`, {
@@ -306,7 +315,7 @@ function DbEditor() {
     async () => {
       const db_name = resolveDbName();
       if (!db_name) {
-        message.error('Please select a database before submitting the chart');
+        message.error(t('editor.please_select_database'));
         return;
       }
       return await sendSpacePostRequest(`/api/v1/chart/editor/submit`, {
@@ -370,12 +379,14 @@ function DbEditor() {
         } finally {
           setEditorValue(sql);
           if (Array.isArray(sql)) {
-            const current = sql?.[Number(currentTabIndex || 0)];
+            const tabIndex = 0;
+            setCurrentTabIndex(tabIndex);
+            const current = sql[tabIndex];
             setNewEditorValue(current);
-            latestSqlRef.current = current?.sql || '';
+            latestSqlRef.current = current?.sql ?? '';
           } else {
             setNewEditorValue(sql);
-            latestSqlRef.current = sql?.sql || '';
+            latestSqlRef.current = sql?.sql ?? '';
           }
         }
       },
@@ -658,7 +669,9 @@ function DbEditor() {
                       )}
                       onClick={() => {
                         setCurrentTabIndex(index);
-                        setNewEditorValue(editorValue?.[index]);
+                        const current = editorValue?.[index];
+                        setNewEditorValue(current);
+                        latestSqlRef.current = current?.sql ?? '';
                       }}
                     >
                       {item.title}
@@ -678,10 +691,10 @@ function DbEditor() {
                     <DbEditorContent
                       layout={layout}
                       editorValue={item}
-                      liveSql={index === currentTabIndex ? newEditorValue?.sql : item.sql}
+                      liveSql={index === currentTabIndex ? newEditorValue?.sql ?? item.sql : item.sql}
                       handleChange={value => {
                         const { sql, thoughts } = resolveSqlAndThoughts(value);
-                        latestSqlRef.current = sql || '';
+                        latestSqlRef.current = sql ?? '';
                         setNewEditorValue(old => {
                           return Object.assign({}, old, {
                             sql,
@@ -703,7 +716,7 @@ function DbEditor() {
               liveSql={newEditorValue?.sql}
               handleChange={value => {
                 const { sql, thoughts } = resolveSqlAndThoughts(value);
-                latestSqlRef.current = sql || '';
+                latestSqlRef.current = sql ?? '';
                 setNewEditorValue(old => {
                   return Object.assign({}, old, {
                     sql,
