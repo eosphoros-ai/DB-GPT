@@ -113,7 +113,7 @@ Return <a href="#the-flow-object">Flow Object</a>
 
 ### Update Flow
 ```python
-PUT /api/v2/serve/awel/flows
+PUT /api/v2/serve/awel/flows/{uid}
 ```
 
 #### Request body
@@ -125,7 +125,7 @@ Return <a href="#the-flow-object">Flow Object</a>
 ### Delete Flow
 
 ```python
-DELETE /api/v2/serve/awel/flows
+DELETE /api/v2/serve/awel/flows/{uid}
 ```
 
 <Tabs
