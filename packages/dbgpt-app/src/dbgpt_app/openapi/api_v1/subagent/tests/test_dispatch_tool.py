@@ -156,9 +156,11 @@ async def test_dispatch_passes_parent_max_new_tokens_to_subagents(monkeypatch):
 
     async def _fake_build(goal, idx, **kwargs):
         captured_limits.append(kwargs["max_new_tokens"])
-        return _FakeAgent(f"result-{idx}"), f"parent__sub_{idx}", {
-            "generated_images": []
-        }
+        return (
+            _FakeAgent(f"result-{idx}"),
+            f"parent__sub_{idx}",
+            {"generated_images": []},
+        )
 
     monkeypatch.setattr(disp, "build_sub_react_agent", _fake_build)
     tool = make_dispatch_tool(
