@@ -26,6 +26,7 @@ from dbgpt_serve.core.config import GPTsAppConfig
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MAX_PARALLEL_SUBAGENTS = 3
+DEFAULT_MAX_NEW_TOKENS = 4096
 _MAX_PARALLEL_SUBAGENTS_ENV_VAR = "DBGPT_MAX_PARALLEL_SUBAGENTS"
 
 
@@ -218,6 +219,16 @@ class AgentContextParameters(BaseParameters):
 
     __cfg_type__ = "service"
 
+    max_new_tokens: int = field(
+        default=4096,
+        metadata={
+            "help": _(
+                "Default maximum number of output tokens for agent model calls. "
+                "A positive per-request value takes precedence."
+            )
+        },
+    )
+
     max_context_tokens: Optional[int] = field(
         default=DEFAULT_MAX_CONTEXT_TOKENS,
         metadata={
@@ -276,6 +287,14 @@ class AgentContextParameters(BaseParameters):
     )
 
     def __post_init__(self):
+        """Validate and normalize agent context parameters."""
+        if self.max_new_tokens <= 0:
+            logger.warning(
+                "Invalid max_new_tokens=%s; using default 4096",
+                self.max_new_tokens,
+            )
+            self.max_new_tokens = 4096
+
         if self.max_context_tokens is None or self.max_context_tokens <= 0:
             self.max_context_tokens = DEFAULT_MAX_CONTEXT_TOKENS
 

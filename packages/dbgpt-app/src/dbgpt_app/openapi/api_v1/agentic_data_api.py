@@ -24,6 +24,7 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt_app.config import DEFAULT_MAX_NEW_TOKENS
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -78,6 +79,7 @@ async def _resolve_model_context_tokens(
 async def _load_context_budget_config(
     llm_client: Any = None,
     model_name: Optional[str] = None,
+    max_new_tokens: Optional[int] = None,
 ) -> ContextBudgetConfig:
     """Build context budget config from app TOML and model metadata."""
     defaults = ContextBudgetConfig()
@@ -95,6 +97,11 @@ async def _load_context_budget_config(
         max_context_tokens = _value(
             agent_context, "max_context_tokens", defaults.max_context_tokens
         )
+        reserved_tokens = _value(
+            agent_context, "reserved_tokens", defaults.reserved_tokens
+        )
+        if max_new_tokens is not None:
+            reserved_tokens = max(reserved_tokens, max_new_tokens)
         return ContextBudgetConfig(
             max_context_tokens=max_context_tokens,
             warning_threshold=_value(
@@ -106,9 +113,7 @@ async def _load_context_budget_config(
             critical_threshold=_value(
                 agent_context, "critical_threshold", defaults.critical_threshold
             ),
-            reserved_tokens=_value(
-                agent_context, "reserved_tokens", defaults.reserved_tokens
-            ),
+            reserved_tokens=reserved_tokens,
             min_keep_recent_rounds=_value(
                 agent_context,
                 "min_keep_recent_rounds",
@@ -142,6 +147,30 @@ async def _load_context_budget_config(
             "Failed to load agent context config; using defaults", exc_info=True
         )
         return defaults
+
+
+def _resolve_agent_max_new_tokens(requested: Optional[int]) -> int:
+    """Resolve agent output tokens with request-over-config precedence.
+
+    A positive per-request value wins. Otherwise the value configured under
+    ``[service.web.agent_context].max_new_tokens`` is used, falling back to
+    the default of 4096 when no valid configuration is available.
+    """
+    if requested is not None:
+        if requested <= 0:
+            raise ValueError("max_new_tokens must be greater than zero")
+        return requested
+
+    try:
+        app_config = CFG.SYSTEM_APP.config.configs.get("app_config")
+        web_config = getattr(getattr(app_config, "service", None), "web", None)
+        agent_context = getattr(web_config, "agent_context", None)
+        configured = getattr(agent_context, "max_new_tokens", None)
+        if isinstance(configured, int) and configured > 0:
+            return configured
+    except Exception:
+        logger.debug("Failed to read agent max_new_tokens; using default 4096")
+    return DEFAULT_MAX_NEW_TOKENS
 
 
 def _extract_auto_data_markers(text: str) -> tuple[str, Dict[str, str]]:
@@ -2176,6 +2205,7 @@ print(json.dumps(summary, ensure_ascii=False))
         gpts_app_name="ReAct",
         language="zh",
         temperature=dialogue.temperature or 0.2,
+        max_new_tokens=_resolve_agent_max_new_tokens(dialogue.max_new_tokens),
         enable_context_management=True,
     )
 
@@ -2272,6 +2302,7 @@ print(json.dumps(summary, ensure_ascii=False))
     dispatch_parallel_tasks = make_dispatch_tool(
         parent_conv_id=conv_id,
         llm_client=llm_client,
+        max_new_tokens=context.max_new_tokens,
         sub_model_name=dialogue.model_name,
         database_connector=database_connector,
         knowledge_resources=knowledge_resources,
@@ -2780,6 +2811,7 @@ Action Input: The JSON format of tool parameters
         config=await _load_context_budget_config(
             llm_client=llm_client,
             model_name=dialogue.model_name,
+            max_new_tokens=context.max_new_tokens,
         ),
         model_name=dialogue.model_name,
         on_status_event=_context_status_callback,

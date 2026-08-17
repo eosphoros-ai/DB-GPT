@@ -4,6 +4,59 @@ import pytest
 
 from dbgpt.util.configure.manager import ConfigurationManager
 from dbgpt_app.config import AgentContextParameters
+from dbgpt_app.scene.base_chat import DEFAULT_MAX_NEW_TOKENS, resolve_max_new_tokens
+
+
+def test_resolve_max_new_tokens_request_takes_precedence():
+    """The per-request value wins over the application config."""
+    assert resolve_max_new_tokens(2048, 1024) == 2048
+
+
+def test_resolve_max_new_tokens_config_used_when_request_omitted():
+    """Fall back to the configured value when the request omits the field."""
+    assert resolve_max_new_tokens(None, 2048) == 2048
+
+
+def test_resolve_max_new_tokens_default_when_both_omitted():
+    """Fall back to the shared 4096 default so clients are not regressed."""
+    assert resolve_max_new_tokens(None, None) == DEFAULT_MAX_NEW_TOKENS
+    assert DEFAULT_MAX_NEW_TOKENS == 4096
+
+
+@pytest.mark.parametrize("requested", [0, -1])
+def test_resolve_max_new_tokens_non_positive_request_falls_through(
+    requested,
+):
+    """Treat non-positive request values as unset, matching the agent resolver."""
+    assert resolve_max_new_tokens(requested, 2048) == 2048
+    assert resolve_max_new_tokens(requested, None) == DEFAULT_MAX_NEW_TOKENS
+
+
+def test_resolve_max_new_tokens_accepts_numeric_strings():
+    """Keep the previous behavior of coercing numeric strings to ints."""
+    assert resolve_max_new_tokens("2048", 1024) == 2048
+    assert resolve_max_new_tokens(None, "2048") == 2048
+
+
+def test_max_new_tokens_accepts_config_value():
+    config = AgentContextParameters(max_new_tokens=16384)
+
+    assert config.max_new_tokens == 16384
+
+
+@pytest.mark.parametrize("configured_value", [0, -1])
+def test_non_positive_max_new_tokens_uses_default(configured_value):
+    config = AgentContextParameters(max_new_tokens=configured_value)
+
+    assert config.max_new_tokens == 4096
+
+
+def test_configuration_manager_parses_max_new_tokens():
+    manager = ConfigurationManager({"agent_context": {"max_new_tokens": 16384}})
+
+    config = manager.parse_config(AgentContextParameters, "agent_context")
+
+    assert config.max_new_tokens == 16384
 
 
 def test_max_parallel_subagents_uses_builtin_default(monkeypatch):
@@ -74,3 +127,33 @@ def test_non_positive_max_parallel_subagents_environment_keeps_config(
     config = AgentContextParameters(max_parallel_subagents=5)
 
     assert config.max_parallel_subagents == 5
+
+
+def test_llm_max_new_tokens_standard_chat_path_omitted_field():
+    """Standard chat path omitting ``max_new_tokens`` falls back to 4096.
+
+    This is the regression chen-alan flagged: with
+    ``ConversationVo.max_new_tokens`` defaulting to ``None``, external clients
+    that omit the field must still get ``DEFAULT_MAX_NEW_TOKENS`` (4096)
+    through ``BaseChat.llm_max_new_tokens()`` instead of a lower scene
+    fallback.
+    """
+    from types import SimpleNamespace
+
+    from dbgpt_app.scene.base_chat import BaseChat
+
+    class _StubChat(BaseChat):
+        """Minimal subclass exposing the max_new_tokens resolution path."""
+
+        @classmethod
+        def param_class(cls):
+            return None
+
+    chat = object.__new__(_StubChat)
+    chat._chat_param = SimpleNamespace(max_new_tokens=None)
+    chat.app_config = None
+    assert chat.llm_max_new_tokens() == DEFAULT_MAX_NEW_TOKENS
+
+    # The per-request value still wins when explicitly provided.
+    chat._chat_param = SimpleNamespace(max_new_tokens=2048)
+    assert chat.llm_max_new_tokens() == 2048
