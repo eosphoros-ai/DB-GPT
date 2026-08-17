@@ -684,7 +684,12 @@ const Playground: NextPage = () => {
   // Snapshot of the exact payload last sent to the agent, captured at send
   // time so "保存定时任务" can replay the real execution (file / database /
   // knowledge / skill / connectors) instead of a drifting UI state.
-  const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
+  // Bound to conv_uid so opening another history conversation cannot reuse
+  // the previous conversation's request when saving a scheduled task.
+  const lastSentPayloadRef = useRef<{
+    convUid: string;
+    payload: ChatReplayPayload;
+  } | null>(null);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -842,12 +847,14 @@ const Playground: NextPage = () => {
       loadConversation(convId);
     } else if (!convId && conversationId) {
       // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
+      lastSentPayloadRef.current = null;
       setMessages([]);
       setConversationId(null);
       setQuery('');
       setExecutionMap({});
       setActiveMessageId(null);
       setActiveViewMsgId(null);
+      setUploadedFile(null);
       setUploadedFilePath(null);
       setFilePreview(null);
       setFilePreviewError(null);
@@ -856,6 +863,10 @@ const Playground: NextPage = () => {
       setStreamingSummary('');
       setSummaryComplete(false);
       setTaskPlan([]);
+      setSelectedDb(null);
+      setSelectedKnowledge(null);
+      setSelectedSkill(null);
+      setSelectedConnectors([]);
     }
   }, [cancelSummaryPresentation, router.query.id]);
 
@@ -1887,14 +1898,17 @@ const Playground: NextPage = () => {
     // Snapshot the exact payload being sent (minus the per-run conv_uid, which
     // each scheduled run regenerates) so buildSnapshot replays this real run.
     lastSentPayloadRef.current = {
-      version: 1,
-      user_input: finalQuery,
-      chat_mode: chatMode,
-      model_name: model,
-      select_param: selectParam,
-      temperature: 0.6,
-      max_new_tokens: 4000,
-      ext_info: extInfo,
+      convUid: currentConvId,
+      payload: {
+        version: 1,
+        user_input: finalQuery,
+        chat_mode: chatMode,
+        model_name: model,
+        select_param: selectParam,
+        temperature: 0.6,
+        max_new_tokens: 4000,
+        ext_info: extInfo,
+      },
     };
 
     try {
@@ -2417,6 +2431,17 @@ const Playground: NextPage = () => {
     historyMessages: Array<{ role: string; context: string; order?: number; model_name?: string }>,
   ) => {
     cancelSummaryPresentation();
+    // Drop page-scoped send snapshot / composer selections so "保存定时任务"
+    // cannot reuse another conversation's last request or selected datasource.
+    lastSentPayloadRef.current = null;
+    setSelectedDb(null);
+    setSelectedKnowledge(null);
+    setSelectedSkill(null);
+    setSelectedConnectors([]);
+    setUploadedFile(null);
+    setUploadedFilePath(null);
+    setFilePreview(null);
+    setFilePreviewError(null);
     setExecutionMap({});
     setActiveMessageId(null);
     setActiveViewMsgId(null);
@@ -2644,11 +2669,12 @@ const Playground: NextPage = () => {
 
   // Build snapshot of current conversation state for scheduled task creation
   const buildSnapshot = (): ChatReplayPayload => {
-    // Prefer the payload actually sent to the agent this session — it carries
-    // the real execution context (file_path / database / knowledge / skill /
-    // connectors) and is immune to UI state changed after sending.
-    if (lastSentPayloadRef.current) {
-      return lastSentPayloadRef.current;
+    // Prefer the payload actually sent to the agent for *this* conversation —
+    // it carries the real execution context (file_path / database / knowledge /
+    // skill / connectors) and is immune to UI state changed after sending.
+    const cached = lastSentPayloadRef.current;
+    if (cached && conversationId && cached.convUid === conversationId) {
+      return cached.payload;
     }
     // Fallback (e.g. conversation restored from history, where no send
     // happened this session): reconstruct from the first question + current
