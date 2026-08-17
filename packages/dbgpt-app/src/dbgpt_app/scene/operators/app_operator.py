@@ -151,7 +151,7 @@ def build_cached_chat_operator(
     system_app: SystemApp,
     cache_manager: Optional[CacheManager] = None,
 ):
-    """Builds and returns a model processing workflow (DAG) operator.
+    r"""Builds and returns a model processing workflow (DAG) operator.
 
     This function constructs a Directed Acyclic Graph (DAG) for processing data using
     a model.
