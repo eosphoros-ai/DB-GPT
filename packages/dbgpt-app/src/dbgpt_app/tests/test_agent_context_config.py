@@ -127,3 +127,33 @@ def test_non_positive_max_parallel_subagents_environment_keeps_config(
     config = AgentContextParameters(max_parallel_subagents=5)
 
     assert config.max_parallel_subagents == 5
+
+
+def test_llm_max_new_tokens_standard_chat_path_omitted_field():
+    """Standard chat path omitting ``max_new_tokens`` falls back to 4096.
+
+    This is the regression chen-alan flagged: with
+    ``ConversationVo.max_new_tokens`` defaulting to ``None``, external clients
+    that omit the field must still get ``DEFAULT_MAX_NEW_TOKENS`` (4096)
+    through ``BaseChat.llm_max_new_tokens()`` instead of a lower scene
+    fallback.
+    """
+    from types import SimpleNamespace
+
+    from dbgpt_app.scene.base_chat import BaseChat
+
+    class _StubChat(BaseChat):
+        """Minimal subclass exposing the max_new_tokens resolution path."""
+
+        @classmethod
+        def param_class(cls):
+            return None
+
+    chat = object.__new__(_StubChat)
+    chat._chat_param = SimpleNamespace(max_new_tokens=None)
+    chat.app_config = None
+    assert chat.llm_max_new_tokens() == DEFAULT_MAX_NEW_TOKENS
+
+    # The per-request value still wins when explicitly provided.
+    chat._chat_param = SimpleNamespace(max_new_tokens=2048)
+    assert chat.llm_max_new_tokens() == 2048
