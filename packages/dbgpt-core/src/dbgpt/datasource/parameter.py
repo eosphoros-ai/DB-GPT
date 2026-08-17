@@ -24,6 +24,19 @@ class BaseDatasourceParameters(BaseParameters, RegisterParameters):
         """Create a connector."""
         raise NotImplementedError("Current connector does not support create_connector")
 
+    def test_connection(self) -> bool:
+        """Test whether the datasource can create a working connector.
+
+        Datasource implementations with a cheaper connectivity probe should override
+        this method. The default keeps the existing connector-construction behavior
+        while ensuring temporary resources are released promptly.
+        """
+        connector = self.create_connector()
+        try:
+            return True
+        finally:
+            connector.close()
+
     @classmethod
     def from_persisted_state(
         cls: Type["BaseDatasourceParameters"], state: Dict[str, Any]
