@@ -1,0 +1,120 @@
+"""Build bounded database context for the ReAct agent."""
+
+import logging
+import re
+from typing import Any, Iterable, List, Sequence, Tuple
+
+logger = logging.getLogger(__name__)
+
+DATABASE_CONTEXT_MAX_CHARS = 12_000
+DATABASE_SCHEMA_CONTEXT_MAX_CHARS = 8_000
+DATABASE_TABLE_PREVIEW_LIMIT = 40
+DATABASE_MENTIONED_TABLE_LIMIT = 5
+
+
+def truncate_text(text: str, max_chars: int) -> str:
+    """Truncate text to a strict character budget."""
+    if len(text) <= max_chars:
+        return text
+    suffix = f"\n... [truncated at {max_chars} characters]"
+    return text[: max_chars - len(suffix)] + suffix
+
+
+def get_database_table_names(database_connector: Any) -> List[str]:
+    """Return stable, unique table names exposed by a connector."""
+    names: Iterable[Any] = database_connector.get_table_names()
+    return sorted({str(name) for name in names}, key=str.casefold)
+
+
+def find_mentioned_tables(
+    user_input: str,
+    table_names: Sequence[str],
+    limit: int = DATABASE_MENTIONED_TABLE_LIMIT,
+) -> List[str]:
+    """Find explicitly named tables using identifier-safe, exact matching."""
+    matches: List[Tuple[int, str]] = []
+    for table_name in table_names:
+        pattern = rf"(?<![\w$]){re.escape(table_name)}(?![\w$])"
+        match = re.search(pattern, user_input, flags=re.IGNORECASE)
+        if match:
+            matches.append((match.start(), table_name))
+    matches.sort(key=lambda item: (item[0], item[1].casefold()))
+    return [table_name for _, table_name in matches[: max(0, limit)]]
+
+
+def format_table_names(table_names: Sequence[str]) -> str:
+    """Format table names as escaped inline code for prompt/tool output."""
+    escaped_names = [
+        str(name).replace("`", "``").replace("\r", " ").replace("\n", " ")
+        for name in table_names
+    ]
+    return ", ".join(f"`{name}`" for name in escaped_names)
+
+
+def build_database_context(
+    database_name: str,
+    user_input: str,
+    database_connector: Any,
+    database_tools_enabled: bool = True,
+) -> Tuple[str, List[str], List[str]]:
+    """Build a bounded prompt context without dumping the whole database schema."""
+    table_names = get_database_table_names(database_connector)
+    mentioned_tables = find_mentioned_tables(user_input, table_names)
+
+    preview_tables = list(mentioned_tables)
+    for table_name in table_names:
+        if table_name not in preview_tables:
+            preview_tables.append(table_name)
+        if len(preview_tables) >= DATABASE_TABLE_PREVIEW_LIMIT:
+            break
+
+    if database_tools_enabled:
+        tool_guidance = """
+- The `list_database_tables`, `get_table_schema`, and `sql_query` tools are already
+  registered. Call them directly when database information is needed.
+- Do not terminate or claim that database tools are unavailable merely because a
+  table schema is not embedded below.
+""".strip()
+    else:
+        tool_guidance = (
+            "- Database tools are disabled because this request is in knowledge-only "
+            "mode."
+        )
+
+    if mentioned_tables:
+        try:
+            schema = database_connector.get_table_info_no_throw(mentioned_tables)
+        except Exception as error:
+            logger.warning(
+                "Failed to load schemas for explicitly mentioned tables",
+                exc_info=error,
+            )
+            schema = f"Schema lookup failed: {error}"
+        schema = truncate_text(schema, DATABASE_SCHEMA_CONTEXT_MAX_CHARS)
+        schema_section = (
+            f"- Tables detected in the user request: "
+            f"{format_table_names(mentioned_tables)}\n"
+            f"- Schemas for detected tables:\n{schema}"
+        )
+    else:
+        schema_section = (
+            "- Tables detected in the user request: none\n"
+            "- No schema is embedded. Discover tables and request schemas on demand."
+        )
+
+    safe_database_name = str(database_name).replace("\r", " ").replace("\n", " ")
+    formatted_preview = format_table_names(preview_tables)
+    context = f"""
+## Database
+- Name: {safe_database_name}
+- Total tables: {len(table_names)}
+- Table preview (up to {DATABASE_TABLE_PREVIEW_LIMIT}): {formatted_preview}
+{tool_guidance}
+{schema_section}
+- Only run read-only SELECT statements. Never run write or DDL statements.
+""".strip()
+    return (
+        truncate_text(context, DATABASE_CONTEXT_MAX_CHARS),
+        table_names,
+        mentioned_tables,
+    )
