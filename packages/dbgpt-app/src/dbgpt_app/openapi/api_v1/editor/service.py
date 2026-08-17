@@ -27,6 +27,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def nonempty_db_name(*values: object) -> str:
+    """Return the first non-empty stripped database name."""
+    for value in values:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped:
+                return stripped
+    return ""
+
+
 class EditorService(BaseComponent):
     name = "dbgpt_app_editor_service"
 
@@ -51,6 +61,7 @@ class EditorService(BaseComponent):
     def get_editor_sql_rounds(self, conv_uid: str) -> List[ChatDbRounds]:
         storage_conv: StorageConversation = self.get_storage_conv(conv_uid)
         messages_by_round = _split_messages_by_round(storage_conv.messages)
+        fallback_db = nonempty_db_name(storage_conv.param_value)
         result: List[ChatDbRounds] = []
         for one_round_message in messages_by_round:
             if not one_round_message:
@@ -58,13 +69,18 @@ class EditorService(BaseComponent):
             for message in one_round_message:
                 if message.type == "human":
                     round_name = message.content
-                    if message.additional_kwargs.get("param_value"):
-                        chat_db_round: ChatDbRounds = ChatDbRounds(
-                            round=message.round_index,
-                            db_name=message.additional_kwargs.get("param_value"),
-                            round_name=round_name,
-                        )
-                        result.append(chat_db_round)
+                    db_name = nonempty_db_name(
+                        (message.additional_kwargs or {}).get("param_value"),
+                        fallback_db,
+                    )
+                    if not db_name:
+                        continue
+                    chat_db_round: ChatDbRounds = ChatDbRounds(
+                        round=message.round_index,
+                        db_name=db_name,
+                        round_name=round_name,
+                    )
+                    result.append(chat_db_round)
 
         return result
 
@@ -130,7 +146,10 @@ class EditorService(BaseComponent):
                     context_dict = _parse_pure_dict(message.content)
                     chart_list: ChartList = ChartList(
                         round=message.round_index,
-                        db_name=message.additional_kwargs.get("param_value"),
+                        db_name=nonempty_db_name(
+                            (message.additional_kwargs or {}).get("param_value"),
+                            storage_conv.param_value,
+                        ),
                         charts=context_dict,
                     )
                     return chart_list
@@ -144,7 +163,10 @@ class EditorService(BaseComponent):
             if not one_round_message:
                 continue
             for message in one_round_message:
-                db_name = message.additional_kwargs.get("param_value")
+                db_name = nonempty_db_name(
+                    (message.additional_kwargs or {}).get("param_value"),
+                    storage_conv.param_value,
+                )
                 if not db_name:
                     logger.error(
                         "this dashboard dialogue version too old, can't support editor!"
