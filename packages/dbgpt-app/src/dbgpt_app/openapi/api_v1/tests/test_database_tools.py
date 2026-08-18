@@ -3,6 +3,7 @@
 import json
 
 from dbgpt_app.openapi.api_v1.tools.database import (
+    DATABASE_SCHEMA_CACHE_MAX_ENTRIES,
     DATABASE_TOOL_OUTPUT_MAX_CHARS,
     make_database_tools,
     make_get_table_schema,
@@ -57,6 +58,22 @@ def test_get_table_schema_output_is_bounded():
 
     assert len(content) <= DATABASE_TOOL_OUTPUT_MAX_CHARS
     assert f"truncated at {DATABASE_TOOL_OUTPUT_MAX_CHARS} characters" in content
+
+
+def test_get_table_schema_cache_evicts_least_recently_used_entry():
+    table_names = [
+        f"table_{index}" for index in range(DATABASE_SCHEMA_CACHE_MAX_ENTRIES + 1)
+    ]
+    connector = _Connector(table_names, schema_size=50_000)
+    schema_tool = make_get_table_schema(connector)
+
+    for table_name in table_names:
+        content = _content(schema_tool(table_name))
+        assert len(content) <= DATABASE_TOOL_OUTPUT_MAX_CHARS
+
+    _content(schema_tool(table_names[0]))
+
+    assert connector.schema_calls.count([table_names[0]]) == 2
 
 
 def test_list_database_tables_filters_and_limits_results():

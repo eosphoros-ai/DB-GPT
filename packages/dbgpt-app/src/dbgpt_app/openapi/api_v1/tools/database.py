@@ -1,6 +1,7 @@
 """Bounded database schema-discovery tools for the ReAct agent."""
 
 import json
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Sequence
 
 from dbgpt.agent.resource.tool.base import tool
@@ -14,9 +15,11 @@ from .sql_query import make_sql_query
 
 DATABASE_TOOL_OUTPUT_MAX_CHARS = 20_000
 DATABASE_TABLE_LIST_LIMIT = 100
+DATABASE_SCHEMA_CACHE_MAX_ENTRIES = 32
 
 
 def _tool_response(content: str, output_type: str = "text") -> str:
+    """Serialize one tool result chunk."""
     return json.dumps(
         {"chunks": [{"output_type": output_type, "content": content}]},
         ensure_ascii=False,
@@ -26,6 +29,7 @@ def _tool_response(content: str, output_type: str = "text") -> str:
 def _resolve_table_name(
     requested_name: str, table_names: Sequence[str]
 ) -> Optional[str]:
+    """Resolve an exact or unambiguous case-insensitive table name."""
     candidate = requested_name.strip().strip("`\"'")
     if candidate in table_names:
         return candidate
@@ -57,6 +61,7 @@ def make_list_database_tables(database_connector: Optional[Any]):
         )
     )
     def list_database_tables(query: str = "", limit: int = 50) -> str:
+        """List table names using a bounded optional substring filter."""
         if database_connector is None:
             return _tool_response("No database is selected.")
 
@@ -85,7 +90,7 @@ def make_list_database_tables(database_connector: Optional[Any]):
 
 def make_get_table_schema(database_connector: Optional[Any]):
     """Create a validated, bounded, per-table schema lookup tool."""
-    schema_cache: Dict[str, str] = {}
+    schema_cache: OrderedDict[str, str] = OrderedDict()
 
     @tool(
         description=(
@@ -95,6 +100,7 @@ def make_get_table_schema(database_connector: Optional[Any]):
         )
     )
     def get_table_schema(table_name: str) -> str:
+        """Return a bounded schema for one validated table name."""
         if database_connector is None:
             return _tool_response("No database is selected.")
 
@@ -107,14 +113,16 @@ def make_get_table_schema(database_connector: Optional[Any]):
                     "Use list_database_tables to find the exact name."
                 )
 
-            if resolved_name not in schema_cache:
-                schema_cache[resolved_name] = (
-                    database_connector.get_table_info_no_throw([resolved_name])
+            if resolved_name in schema_cache:
+                schema_cache.move_to_end(resolved_name)
+            else:
+                schema_cache[resolved_name] = truncate_text(
+                    database_connector.get_table_info_no_throw([resolved_name]),
+                    DATABASE_TOOL_OUTPUT_MAX_CHARS,
                 )
-            schema = truncate_text(
-                schema_cache[resolved_name], DATABASE_TOOL_OUTPUT_MAX_CHARS
-            )
-            return _tool_response(schema, "markdown")
+                if len(schema_cache) > DATABASE_SCHEMA_CACHE_MAX_ENTRIES:
+                    schema_cache.popitem(last=False)
+            return _tool_response(schema_cache[resolved_name], "markdown")
         except Exception as error:
             return _tool_response(f"Failed to load table schema: {error}")
 

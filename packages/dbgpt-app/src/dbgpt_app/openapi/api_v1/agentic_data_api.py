@@ -31,7 +31,7 @@ from dbgpt_app.openapi.api_view_model import (
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
-from .database_context import build_database_context
+from .database_context import build_database_context, build_database_tools_prompt
 from .react_final import AgentFinalAnswer, FinalAnswerAssembler
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
@@ -1957,6 +1957,8 @@ print(json.dumps(summary, ensure_ascii=False))
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
     database_tools = make_database_tools(react_state, database_connector)
+    skill_database_tools_prompt = build_database_tools_prompt(tool_mode, 6)
+    full_database_tools_prompt = build_database_tools_prompt(tool_mode, 14)
     code_interpreter_tool = make_code_interpreter(react_state)
     shell_interpreter_tool = make_shell_interpreter(react_state)
     html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
@@ -2368,12 +2370,7 @@ to this tool.
 If template_path returns "Template not found", immediately switch to the default
 `html` parameter usage.
    {available_images_hint}
-6. **sql_query**: Execute a read-only SQL query against the selected database.
-Parameters: {{"sql": "SELECT statement"}}
-6.1. **list_database_tables**: List or search table names without loading schemas.
-Parameters: {{"query": "optional name fragment", "limit": 50}}
-6.2. **get_table_schema**: Load one table schema on demand.
-Parameters: {{"table_name": "exact table name"}}
+{skill_database_tools_prompt}
 7. **todowrite**: Create and manage a structured task list. Use for complex tasks
 (3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
@@ -2575,12 +2572,7 @@ Parameters: {{"query": "search keyword", "path": "directory filter (optional)", 
 Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
 13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
 Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
-{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
-Parameters: {{"sql": "SELECT statement"}}
-14.1. **list_database_tables**: List or search table names without loading schemas.
-Parameters: {{"query": "optional name fragment", "limit": 50}}
-14.2. **get_table_schema**: Load one table schema on demand.
-Parameters: {{"table_name": "exact table name"}}
+{codegraph_section}{full_database_tools_prompt}
 15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
 16. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}

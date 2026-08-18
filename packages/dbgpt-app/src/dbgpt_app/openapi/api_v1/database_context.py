@@ -9,7 +9,26 @@ logger = logging.getLogger(__name__)
 DATABASE_CONTEXT_MAX_CHARS = 12_000
 DATABASE_SCHEMA_CONTEXT_MAX_CHARS = 8_000
 DATABASE_TABLE_PREVIEW_LIMIT = 40
+DATABASE_TABLE_PREVIEW_MAX_CHARS = 2_000
 DATABASE_MENTIONED_TABLE_LIMIT = 5
+DATABASE_MENTIONED_TABLES_MAX_CHARS = 1_000
+DATABASE_NAME_MAX_CHARS = 256
+
+
+def build_database_tools_prompt(tool_mode: str, section_number: int) -> str:
+    """Describe database tools only when the current mode registers them."""
+    if tool_mode == "knowledge":
+        return ""
+    return f"""
+{section_number}. **sql_query**: Execute a read-only SQL query against the selected
+database.
+Parameters: {{"sql": "SELECT statement"}}
+{section_number}.1. **list_database_tables**: List or search table names without
+loading schemas.
+Parameters: {{"query": "optional name fragment", "limit": 50}}
+{section_number}.2. **get_table_schema**: Load one table schema on demand.
+Parameters: {{"table_name": "exact table name"}}
+""".strip()
 
 
 def truncate_text(text: str, max_chars: int) -> str:
@@ -91,9 +110,13 @@ def build_database_context(
             )
             schema = f"Schema lookup failed: {error}"
         schema = truncate_text(schema, DATABASE_SCHEMA_CONTEXT_MAX_CHARS)
+        formatted_mentioned_tables = truncate_text(
+            format_table_names(mentioned_tables),
+            DATABASE_MENTIONED_TABLES_MAX_CHARS,
+        )
         schema_section = (
             f"- Tables detected in the user request: "
-            f"{format_table_names(mentioned_tables)}\n"
+            f"{formatted_mentioned_tables}\n"
             f"- Schemas for detected tables:\n{schema}"
         )
     else:
@@ -102,16 +125,20 @@ def build_database_context(
             "- No schema is embedded. Discover tables and request schemas on demand."
         )
 
-    safe_database_name = str(database_name).replace("\r", " ").replace("\n", " ")
-    formatted_preview = format_table_names(preview_tables)
+    safe_database_name = (str(database_name).replace("\r", " ").replace("\n", " "))[
+        :DATABASE_NAME_MAX_CHARS
+    ]
+    formatted_preview = truncate_text(
+        format_table_names(preview_tables), DATABASE_TABLE_PREVIEW_MAX_CHARS
+    )
     context = f"""
 ## Database
+{tool_guidance}
+- Only run read-only SELECT statements. Never run write or DDL statements.
 - Name: {safe_database_name}
 - Total tables: {len(table_names)}
 - Table preview (up to {DATABASE_TABLE_PREVIEW_LIMIT}): {formatted_preview}
-{tool_guidance}
 {schema_section}
-- Only run read-only SELECT statements. Never run write or DDL statements.
 """.strip()
     return (
         truncate_text(context, DATABASE_CONTEXT_MAX_CHARS),

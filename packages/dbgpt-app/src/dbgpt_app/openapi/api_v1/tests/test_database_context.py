@@ -5,6 +5,7 @@ from dbgpt_app.openapi.api_v1.database_context import (
     DATABASE_SCHEMA_CONTEXT_MAX_CHARS,
     DATABASE_TABLE_PREVIEW_LIMIT,
     build_database_context,
+    build_database_tools_prompt,
 )
 
 
@@ -80,3 +81,25 @@ def test_knowledge_mode_does_not_claim_database_tools_are_registered():
 
     assert "database tools are disabled" in context.lower()
     assert "tools are already" not in context
+
+
+def test_database_tool_prompt_matches_tool_mode():
+    assert build_database_tools_prompt("knowledge", 6) == ""
+
+    prompt = build_database_tools_prompt("full", 14)
+    assert "14. **sql_query**" in prompt
+    assert "14.1. **list_database_tables**" in prompt
+    assert "14.2. **get_table_schema**" in prompt
+
+
+def test_mandatory_guidance_survives_long_table_names_and_schema():
+    table_names = [f"table_{index}_{'x' * 220}" for index in range(40)]
+    connector = _Connector(table_names, schema_size=50_000)
+
+    context, _, _ = build_database_context(
+        "warehouse", f"Inspect {table_names[0]}", connector
+    )
+
+    assert len(context) <= DATABASE_CONTEXT_MAX_CHARS
+    assert "Only run read-only SELECT statements" in context
+    assert "tools are already\n  registered" in context
