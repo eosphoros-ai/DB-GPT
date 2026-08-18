@@ -31,6 +31,7 @@ from dbgpt_app.openapi.api_view_model import (
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
+from .database_context import build_database_context, build_database_tools_prompt
 from .react_final import AgentFinalAnswer, FinalAnswerAssembler
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
@@ -1398,20 +1399,17 @@ async def _react_agent_stream_impl(
         try:
             local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
             database_connector = local_db_manager.get_connector(database_name)
-            table_names = list(database_connector.get_table_names())
-            table_info = database_connector.get_table_info_no_throw()
-            database_context = f"""
-## 数据库信息
-- 数据库名: {database_name}
-- 可用表: {", ".join(table_names)}
-- 表结构:
-{table_info}
-- 使用 'sql_query' 工具执行 SQL 查询
-- **只允许 SELECT 查询，禁止 INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE**
-"""
+            database_context, table_names, mentioned_tables = build_database_context(
+                database_name,
+                user_input,
+                database_connector,
+                database_tools_enabled=tool_mode != "knowledge",
+            )
             logger.info(
-                f"Loaded database connector: {database_name} "
-                f"(tables: {', '.join(table_names)})"
+                "Loaded database connector: %s (tables=%d, mentioned=%s)",
+                database_name,
+                len(table_names),
+                mentioned_tables,
             )
         except Exception as e:
             logger.warning(f"Failed to load database connector: {e}", exc_info=e)
@@ -1904,6 +1902,7 @@ print(json.dumps(summary, ensure_ascii=False))
     # ── Import built-in tools from tools/ directory ──
     from dbgpt_app.openapi.api_v1.tools import (
         make_code_interpreter,
+        make_database_tools,
         make_execute_analysis,
         make_execute_skill_script_file,
         make_execute_tool,
@@ -1916,7 +1915,6 @@ print(json.dumps(summary, ensure_ascii=False))
         make_question,
         make_read_file,
         make_shell_interpreter,
-        make_sql_query,
         make_todowrite,
     )
     # ── Build tool instances via factory functions ──────────────────────────
@@ -1958,7 +1956,9 @@ print(json.dumps(summary, ensure_ascii=False))
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
-    sql_query_tool = make_sql_query(react_state, database_connector)
+    database_tools = make_database_tools(react_state, database_connector)
+    skill_database_tools_prompt = build_database_tools_prompt(tool_mode, 6)
+    full_database_tools_prompt = build_database_tools_prompt(tool_mode, 14)
     code_interpreter_tool = make_code_interpreter(react_state)
     shell_interpreter_tool = make_shell_interpreter(react_state)
     html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
@@ -2370,8 +2370,7 @@ to this tool.
 If template_path returns "Template not found", immediately switch to the default
 `html` parameter usage.
    {available_images_hint}
-6. **sql_query**: Execute a read-only SQL query against the selected database.
-Parameters: {{"sql": "SELECT statement"}}
+{skill_database_tools_prompt}
 7. **todowrite**: Create and manage a structured task list. Use for complex tasks
 (3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
 {{"content": "description", "status": "pending|in_progress|completed|cancelled",
@@ -2439,7 +2438,9 @@ Action Input: The JSON format of tool parameters
                     execute_skill_script_file_tool,
                     shell_interpreter_tool,
                     html_interpreter_tool,
-                    sql_query_tool,
+                ]
+                + database_tools
+                + [
                     todowrite_tool,
                     question_tool,
                     Terminate(),
@@ -2571,8 +2572,7 @@ Parameters: {{"query": "search keyword", "path": "directory filter (optional)", 
 Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
 13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
 Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
-{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
-Parameters: {{"sql": "SELECT statement"}}
+{codegraph_section}{full_database_tools_prompt}
 15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
 16. **execute_tool**: Execute a tool by name with JSON args.
 Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
@@ -2646,7 +2646,9 @@ Action Input: The JSON format of tool parameters
                     execute_analysis_tool,
                     shell_interpreter_tool,
                     html_interpreter_tool,
-                    sql_query_tool,
+                ]
+                + database_tools
+                + [
                     read_file_tool,
                     todowrite_tool,
                     execute_tool_tool,
