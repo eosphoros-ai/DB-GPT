@@ -34,6 +34,7 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.util.json_utils import parse_or_raise_error
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -2578,6 +2579,11 @@ Action Reason: Why this action is needed now, plain text, MUST be concise and fi
 Do not use ellipsis.
 Action: The selected tool name (must be one of the tools listed above)
 Action Input: The JSON format of tool parameters
+
+IMPORTANT: Never emit native tool-call markup such as
+<|tool_calls_section_begin|>, <|tool_call_begin|>, <|tool_call_argument_begin|>
+or any other <|...|> tokens. Tool calls are ONLY valid in the textual
+Thought/Action/Action Input format shown above.
 """.strip()
 
         if tool_mode == "knowledge":
@@ -2772,6 +2778,11 @@ Action Reason: Why this action is needed now, plain text, MUST be concise and fi
 Do not use ellipsis.
 Action: The selected tool name
 Action Input: The JSON format of tool parameters
+
+IMPORTANT: Never emit native tool-call markup such as
+<|tool_calls_section_begin|>, <|tool_call_begin|>, <|tool_call_argument_begin|>
+or any other <|...|> tokens. Tool calls are ONLY valid in the textual
+Thought/Action/Action Input format shown above.
 """.strip()
 
         workflow_prompt = workflow_prompt + "\n\n" + DISPATCH_PROMPT_SECTION
@@ -3357,7 +3368,9 @@ Action Input: The JSON format of tool parameters
                     ):
                         for item in parsed_obs["chunks"]:
                             if isinstance(item, dict):
-                                content = (item.get("content") or "").strip()
+                                content = item.get("content")
+                                if isinstance(content, str):
+                                    content = content.strip()
                                 current_history_step["outputs"].append(
                                     {
                                         "output_type": item.get("output_type", "text"),
@@ -3433,9 +3446,12 @@ Action Input: The JSON format of tool parameters
             if steps:
                 action_input = steps[0].action_input
                 if action_input:
-                    # action_input could be a string like '{"result": "..."}'
+                    # action_input could be a string like '{"result": "..."}';
+                    # tolerate trailing artifacts after the JSON object (the
+                    # parser already strips known special tokens, this is the
+                    # second line of defense for unknown ones).
                     if isinstance(action_input, str):
-                        parsed_input = json.loads(action_input)
+                        parsed_input = parse_or_raise_error(action_input)
                     else:
                         parsed_input = action_input
                     if isinstance(parsed_input, dict) and "result" in parsed_input:

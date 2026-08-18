@@ -11,8 +11,10 @@ inspector doubles + fake agent stream) against hostile inputs:
 - the owner quota is race-proof;
 - storage/DAO/copy/scheduler failures compensate with no residue;
 - a cancelled request frees every materialized file exactly once;
-- no absolute path, storage URI or hash reaches prompts, history payloads,
-  public shares or log records.
+- per-turn materialized paths may surface in prompts and history (the
+  model analyzes files with code_interpreter) but are masked at the
+  public share boundary, while storage URIs and hashes never reach
+  prompts, history payloads, public shares or log records.
 """
 
 import hashlib
@@ -729,14 +731,20 @@ async def test_cancelled_stream_closes_attachments_exactly_once(env, monkeypatch
 
 
 # ---------------------------------------------------------------------------
-# No absolute paths: prompt / history / share / logs are scrubbed surfaces
+# Path hygiene: prompts/history may carry per-turn paths; the share boundary
+# masks every server path; storage URIs/hashes never leave the registry
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_prompt_history_share_and_logs_never_expose_absolute_paths(
+async def test_materialized_paths_stay_internal_until_share_boundary(
     env, monkeypatch, caplog
 ):
+    """Per-turn materialized paths legitimately surface in prompts and
+    history payloads (the model analyzes files with code_interpreter, and
+    tracebacks carry paths), but storage URIs/hashes never do — and the
+    public share payload masks every server path prefix at the boundary.
+    """
     import logging
 
     from dbgpt_app.openapi.api_v1.agentic_data_api import (
@@ -748,14 +756,29 @@ async def test_prompt_history_share_and_logs_never_expose_absolute_paths(
         build_input_files_v2,
     )
 
+    _bind_registry(monkeypatch, env.registry)
     record = _ingest(env, name="confidential.csv")
     with caplog.at_level(logging.DEBUG):
         ctx = _open(env, OWNER, SESSION, [record.file_id])
         try:
             prompt = build_file_context(ctx, None)
+            # A real turn: tool observations (e.g. tracebacks) carry the
+            # materialized path into history steps.
+            steps = [
+                {
+                    "id": "s1",
+                    "status": "done",
+                    "outputs": [
+                        {
+                            "output_type": "text",
+                            "content": (f"FileNotFoundError: {ctx.primary_local_path}"),
+                        }
+                    ],
+                }
+            ]
             raw_history = _build_react_history_payload(
-                final_content="done",
-                steps=[{"id": "s1", "status": "done"}],
+                final_content=f"analyzed {ctx.primary_local_path}",
+                steps=steps,
                 task_plan=[],
                 generated_images=[],
                 sub_agents=[],
@@ -765,13 +788,20 @@ async def test_prompt_history_share_and_logs_never_expose_absolute_paths(
             ctx.close()
         scrubbed_share = scrub_react_history_for_share(raw_history)
 
-    leaked_targets = {
-        "prompt": prompt,
-        "history": raw_history,
-        "share": scrubbed_share,
-        "logs": caplog.text,
-    }
-    forbidden = (
+    # Supply side: prompts and history may carry the per-turn materialized
+    # path, but never storage internals.
+    for surface, content in {"prompt": prompt, "history": raw_history}.items():
+        for marker in (record.storage_uri, record.sha256):
+            assert marker not in content, (
+                f"{marker!r} leaked into {surface}: {content[:300]}"
+            )
+    assert ctx.primary_local_path in prompt
+    assert ctx.primary_local_path in raw_history
+    assert record.file_id in prompt
+    assert "confidential.csv" in prompt
+
+    # Trust boundary: the public share payload masks every server path.
+    share_forbidden = (
         record.storage_uri,
         record.sha256,
         str(env.work_root),
@@ -780,14 +810,65 @@ async def test_prompt_history_share_and_logs_never_expose_absolute_paths(
         ctx.files_json_path,
         "python_uploads",
     )
-    for surface, content in leaked_targets.items():
-        for marker in forbidden:
-            assert marker not in content, (
-                f"{marker!r} leaked into {surface}: {content[:300]}"
-            )
-    # The prompt does the opposite: it carries the public manifest.
-    assert record.file_id in prompt
-    assert "confidential.csv" in prompt
+    for marker in share_forbidden:
+        assert marker not in scrubbed_share, (
+            f"{marker!r} leaked into share: {scrubbed_share[:300]}"
+        )
+    assert "<server-path>" in scrubbed_share
+
+    # Logs stay free of paths and storage internals.
+    for marker in (record.storage_uri, record.sha256, ctx.primary_local_path):
+        assert marker not in caplog.text
+
+
+def test_share_scrub_masks_traceback_paths_in_steps(env, monkeypatch):
+    """Regression: tool tracebacks embed absolute paths into history steps;
+    the share boundary must mask them (work root + home prefixes)."""
+    from dbgpt_app.openapi.api_v1.agentic_data_api import (
+        _build_react_history_payload,
+        scrub_react_history_for_share,
+    )
+
+    _bind_registry(monkeypatch, env.registry)
+    monkeypatch.setattr(
+        "dbgpt.configs.model_config.PILOT_PATH", str(env.tmp_path / "pilot")
+    )
+    record = _ingest(env)
+    ctx = _open(env, OWNER, SESSION, [record.file_id])
+    try:
+        materialized = ctx.primary_local_path
+        traceback_text = (
+            "Traceback (most recent call last):\n"
+            f'  File "{env.tmp_path}/pilot/tmp/conv/_run.py", line 12\n'
+            f"FileNotFoundError: [Errno 2] No such file: '{materialized}'"
+        )
+        raw_history = _build_react_history_payload(
+            final_content=f"read {materialized} failed",
+            steps=[
+                {
+                    "id": "s1",
+                    "status": "failed",
+                    "outputs": [{"output_type": "text", "content": traceback_text}],
+                }
+            ],
+            task_plan=[],
+            generated_images=[],
+            sub_agents=[],
+            input_files=[],
+        )
+    finally:
+        ctx.close()
+
+    scrubbed = scrub_react_history_for_share(raw_history)
+
+    assert materialized in raw_history  # supply side keeps full fidelity
+    assert materialized not in scrubbed
+    assert str(env.tmp_path) not in scrubbed
+    assert "<server-path>" in scrubbed
+    # Structured step content survives scrubbing intact apart from masking.
+    parsed = json.loads(scrubbed)
+    assert parsed["steps"][0]["status"] == "failed"
+    assert "Traceback" in parsed["steps"][0]["outputs"][0]["content"]
 
 
 def test_history_payload_surfaces_only_public_fields_in_json(env):

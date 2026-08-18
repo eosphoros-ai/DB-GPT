@@ -1,7 +1,6 @@
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
-import AttachmentMessageGroup from '@/modules/session-files/AttachmentMessageGroup';
-import { scheduledTaskFiles } from '@/modules/session-files/recovery';
+import { AttachmentMessageGroup, scheduledTaskFiles } from '@/modules/session-files';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import { Button, Drawer, Form, Input, Space, Tag, Typography, message } from 'antd';
 import React, { useMemo, useState } from 'react';

@@ -11,12 +11,16 @@ Responsibilities:
   wrong-session, failed and deleted files all raise the same
   indistinguishable, non-enumerating 404-style error; only ``ready`` and
   ``preview_failed`` files are accepted, in request order;
-- build the prompt-safe public manifest block (file ids + public metadata
-  only — never absolute paths, storage URIs, bodies or hashes);
+- build the prompt manifest block (file ids + public metadata + the
+  per-turn materialized path — never storage URIs, bodies or hashes);
 - materialize resolved files under the registry work root and keep the
-  materialization context open until the turn ends; the primary local path
-  and the ``files_json`` mapping are exposed for internal execution/runtime
-  only, never for prompts, logs or conversation history.
+  materialization context open until the turn ends. Materialized local
+  paths are per-turn temporary copies: they may reach prompts and tool
+  observations so the model can analyze files with ``code_interpreter``,
+  and they are scrubbed at the share boundary (see
+  :func:`scrub_react_history_for_share`). Storage URIs and hashes remain
+  internal everywhere; ``files_json_path`` stays an internal child-process
+  handoff detail.
 """
 
 import contextlib
@@ -223,24 +227,38 @@ def _to_manifest(record: SessionFilePrivateRecord) -> SessionFileManifest:
     )
 
 
-def build_manifest_prompt(manifests: Tuple[SessionFileManifest, ...]) -> str:
-    """Build the numbered public manifest block for the system prompt.
+def build_manifest_prompt(
+    manifests: Tuple[SessionFileManifest, ...],
+    local_paths: Optional[Dict[str, str]] = None,
+) -> str:
+    """Build the numbered manifest block for the system prompt.
 
-    Every line contains only ``[file_id] name — kind, media_type, size,
-    status`` — never absolute paths, storage URIs, file bodies or hashes.
+    Every line carries ``[file_id] name — kind, media_type, size, status``
+    plus the per-turn materialized ``path`` when available. The path is a
+    temporary local copy valid only for the current turn, exposed so the
+    model can analyze the file with ``code_interpreter`` without guessing;
+    storage URIs, file bodies and hashes never appear here.
     """
-    lines = [
-        f"{index}. [{manifest.file_id}] {manifest.name} — {manifest.kind}, "
-        f"{manifest.media_type}, {_format_size(manifest.size)}, "
-        f"{manifest.status.value}"
-        for index, manifest in enumerate(manifests, start=1)
-    ]
+    paths = local_paths or {}
+    lines = []
+    for index, manifest in enumerate(manifests, start=1):
+        line = (
+            f"{index}. [{manifest.file_id}] {manifest.name} — {manifest.kind}, "
+            f"{manifest.media_type}, {_format_size(manifest.size)}, "
+            f"{manifest.status.value}"
+        )
+        path = paths.get(manifest.file_id)
+        if path:
+            line += f"\n   path: {path} (valid for this turn only)"
+        lines.append(line)
     body = "\n".join(lines)
     return (
         "\n## User Attachments\n"
         f"{body}\n"
-        "- Analyze these files if needed for the user's request. "
-        "Reference files by file_id.\n"
+        "- Analyze these files if needed for the user's request. Use the "
+        "shown path with code_interpreter for free-form analysis (valid for "
+        "this turn only — re-run load_file in a new turn), or reference "
+        "files by file_id.\n"
     )
 
 
@@ -267,9 +285,13 @@ class SessionAttachmentContext:
     """Resolved attachment state for one chat turn.
 
     ``manifests``/``prompt``/``inspections`` are public and safe to render.
-    ``local_paths``, ``primary_local_path`` and ``files_json_path`` are
-    internal execution data and must never reach prompts, logs or
-    conversation history.
+    ``local_paths``/``primary_local_path`` are per-turn temporary copies:
+    they may reach prompts and tool observations so the model can analyze
+    files with ``code_interpreter``; they are deleted on :meth:`close` and
+    scrubbed at the share boundary (see
+    :func:`scrub_react_history_for_share`). ``files_json_path`` remains
+    internal (child-process handoff only). Storage URIs and hashes never
+    leave the registry.
     """
 
     manifests: Tuple[SessionFileManifest, ...]
@@ -348,7 +370,7 @@ def open_session_attachments(
     manifests = tuple(_to_manifest(record) for record in records)
     return SessionAttachmentContext(
         manifests=manifests,
-        prompt=build_manifest_prompt(manifests),
+        prompt=build_manifest_prompt(manifests, local_paths),
         inspections={record.file_id: _public_inspection(record) for record in records},
         local_paths=local_paths,
         primary_local_path=local_paths[records[0].file_id],
@@ -406,16 +428,17 @@ async def prepare_react_attachments(
 
 
 def react_state_patch(ctx: SessionAttachmentContext) -> Dict[str, Any]:
-    """Return the react_state entries for internal execution/runtime only.
+    """Return the react_state entries for the ReAct runtime.
 
-    The public manifest list carries no server-side paths; ``file_path``
-    (primary materialized path, legacy compatibility key) and
-    ``files_json_path`` are internal and must not be written to prompts,
-    logs or history.
+    ``session_files``/``session_file_inspections`` are public metadata.
+    ``session_file_paths`` and ``file_path`` (legacy compatibility key) are
+    the per-turn materialized paths tools may surface to the model for
+    analysis; ``files_json_path`` stays internal (child-process handoff).
     """
     return {
         "session_files": list(ctx.manifests),
         "session_file_inspections": dict(ctx.inspections),
+        "session_file_paths": dict(ctx.local_paths),
         "file_path": ctx.primary_local_path,
         "files_json_path": ctx.files_json_path,
     }
@@ -463,6 +486,59 @@ def build_input_files_v2(manifests) -> List[Dict[str, Any]]:
     ]
 
 
+_SHARE_PATH_PLACEHOLDER = "<server-path>"
+
+
+def _share_path_prefixes() -> List[str]:
+    """Absolute path prefixes scrubbed from public share payloads.
+
+    Covers the three roots that legitimately appear in turns: the home
+    directory (default work root and legacy upload roots), the configured
+    registry work root (non-default deployments), and the pilot root
+    (code_interpreter tracebacks). Missing config degrades gracefully.
+    """
+    prefixes: List[str] = []
+    home = str(Path.home())
+    if home and home != os.sep:
+        prefixes.append(home)
+    try:
+        service = _session_file_registry()
+        registry = getattr(service, "registry", None) or service
+        work_root = getattr(registry, "work_root", None)
+        if work_root:
+            prefixes.append(str(work_root))
+    except Exception:
+        pass
+    try:
+        from dbgpt.configs.model_config import PILOT_PATH
+
+        if PILOT_PATH:
+            prefixes.append(str(PILOT_PATH))
+    except Exception:
+        pass
+    return prefixes
+
+
+def _scrub_server_paths(value: Any, prefixes: List[str]) -> Any:
+    """Replace known server path prefixes in nested text with a placeholder.
+
+    Only string values are touched; table/chart payloads keep their
+    structure since their content rarely carries paths and replacements
+    apply to any nested text uniformly.
+    """
+    if isinstance(value, str):
+        for prefix in prefixes:
+            needle = prefix + os.sep
+            if needle in value:
+                value = value.replace(needle, _SHARE_PATH_PLACEHOLDER + os.sep)
+        return value
+    if isinstance(value, list):
+        return [_scrub_server_paths(item, prefixes) for item in value]
+    if isinstance(value, dict):
+        return {key: _scrub_server_paths(item, prefixes) for key, item in value.items()}
+    return value
+
+
 def scrub_react_history_for_share(context: str) -> str:
     """Return the share-safe form of a stored react history payload.
 
@@ -472,6 +548,13 @@ def scrub_react_history_for_share(context: str) -> str:
     ``file_id`` replaced by a non-resolvable ``display_key`` — public viewers
     must never receive a usable key for the auth-protected preview/download
     endpoints, nor any storage_uri/file_path/work_root internals.
+
+    ``steps`` and ``final_content`` additionally get known server path
+    prefixes (home directory, registry work root) replaced with
+    ``<server-path>``: materialized paths legitimately surface in tool
+    observations and tracebacks during a turn, and the share view is the
+    trust boundary where they are masked. ``generated_images``,
+    ``sub_agents`` and ``citations`` are passed through unchanged.
     """
     if not isinstance(context, str):
         return context
@@ -494,6 +577,14 @@ def scrub_react_history_for_share(context: str) -> str:
                         snapshot[key] = entry[key]
             public_files.append(snapshot)
     payload["input_files"] = public_files
+    prefixes = _share_path_prefixes()
+    if prefixes:
+        steps = payload.get("steps")
+        if isinstance(steps, list):
+            payload["steps"] = _scrub_server_paths(steps, prefixes)
+        final_content = payload.get("final_content")
+        if isinstance(final_content, str):
+            payload["final_content"] = _scrub_server_paths(final_content, prefixes)
     return json.dumps(payload, ensure_ascii=False)
 
 

@@ -2,17 +2,28 @@ import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
-import AttachmentPreview from '@/modules/session-files/AttachmentPreview';
-import AttachmentRail, { AttachmentRailAddButton, type RailPreviewState } from '@/modules/session-files/AttachmentRail';
-import { previewFile as previewSessionFile, sessionFilesApi } from '@/modules/session-files/api';
 import {
+  ATTACHMENT_PREVIEW_DRAWER_STYLES,
+  AttachmentPreview,
+  AttachmentPreviewCloseButton,
+  AttachmentPreviewPanelTitle,
+  AttachmentRail,
+  AttachmentRailAddButton,
+  AttachmentRailCompactAddButton,
+  DEFAULT_UPLOAD_CAPABILITIES,
   PREVIEW_DESKTOP_MIN_WIDTH,
   PREVIEW_DRAWER_MAX_WIDTH,
+  extInfoForSend,
+  previewFile as previewSessionFile,
+  sessionFilesApi,
+  snapshotsForSend,
+  snapshotsFromInputFiles,
+  useSessionFiles,
   type RailItem,
-} from '@/modules/session-files/attachment-view-model';
-import { extInfoForSend, snapshotsForSend, snapshotsFromInputFiles } from '@/modules/session-files/home-adapter';
-import type { SessionFileSnapshot, SessionFilesSendSnapshot } from '@/modules/session-files/types';
-import { useSessionFiles } from '@/modules/session-files/use-session-files';
+  type RailPreviewState,
+  type SessionFileSnapshot,
+  type SessionFilesSendSnapshot,
+} from '@/modules/session-files';
 import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -50,11 +61,11 @@ import {
   BellOutlined,
   BookOutlined,
   CheckCircleFilled,
-  CloseOutlined,
   CloudServerOutlined,
   CodeOutlined,
   ConsoleSqlOutlined,
   DatabaseOutlined,
+  DownloadOutlined,
   FileExcelOutlined,
   FileImageOutlined,
   FileOutlined,
@@ -562,6 +573,7 @@ const Playground: NextPage = () => {
   // Composer attachment preview state; desktop renders inside the right
   // panel, smaller viewports use the rail's own overlay Drawer.
   const [sessionFilePreview, setSessionFilePreview] = useState<RailPreviewState | null>(null);
+  const sessionFilePreviewRequestRef = useRef(0);
   const [queuedSendAfterUpload, setQueuedSendAfterUpload] = useState(false);
   const [viewportWidth, setViewportWidth] = useState<number>(() =>
     typeof window === 'undefined' ? PREVIEW_DESKTOP_MIN_WIDTH : window.innerWidth,
@@ -588,13 +600,16 @@ const Playground: NextPage = () => {
   const openSessionFilePreview = useCallback(async (item: RailItem) => {
     const convId = conversationIdRef.current;
     if (!convId || !item.fileId) return;
+    const requestVersion = ++sessionFilePreviewRequestRef.current;
     // Desktop previews render inside the right panel: make sure it is visible.
     setRightPanelCollapsed(false);
     setSessionFilePreview({ snapshot: null, loading: true, error: null, size: item.size });
     try {
       const previewSnapshot = await previewSessionFile(convId, item.fileId);
+      if (requestVersion !== sessionFilePreviewRequestRef.current) return;
       setSessionFilePreview({ snapshot: previewSnapshot, loading: false, error: null, size: item.size });
     } catch (err: any) {
+      if (requestVersion !== sessionFilePreviewRequestRef.current) return;
       setSessionFilePreview({
         snapshot: null,
         loading: false,
@@ -604,33 +619,107 @@ const Playground: NextPage = () => {
     }
   }, []);
 
-  const closeSessionFilePreview = useCallback(() => setSessionFilePreview(null), []);
+  const closeSessionFilePreview = useCallback(() => {
+    sessionFilePreviewRequestRef.current += 1;
+    setSessionFilePreview(null);
+  }, []);
 
-  // Drag & drop files anywhere on the page into the composer draft rail.
+  // Ant Drawer handles Escape itself. The desktop in-chat preview is an
+  // inline panel, so mirror the same keyboard interaction there.
   useEffect(() => {
-    const onDragOver = (e: DragEvent) => {
+    if (!showInlineAttachmentPreview) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeSessionFilePreview();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [closeSessionFilePreview, showInlineAttachmentPreview]);
+
+  // Drag & drop is scoped to the composer: the hover overlay and the upload
+  // live on the composer containers (see composerDragHandlers below). These
+  // window handlers only swallow the browser default so that dropping a file
+  // anywhere outside the composer never navigates away to the file.
+  useEffect(() => {
+    const swallow = (e: DragEvent) => {
       if (!e.dataTransfer?.types?.includes('Files')) return;
       e.preventDefault();
     };
-    const onDrop = (e: DragEvent) => {
+    window.addEventListener('dragover', swallow);
+    window.addEventListener('drop', swallow);
+    return () => {
+      window.removeEventListener('dragover', swallow);
+      window.removeEventListener('drop', swallow);
+    };
+  }, []);
+
+  // Composer-scoped drag & drop ("拖拽悬停态"): hovering a file drag over the
+  // composer shows the dashed overlay (only while hovering, never persistent);
+  // dropping there uploads into the draft rail. A depth counter absorbs the
+  // enter/leave pairs fired when moving between child elements.
+  const [isFileDragActive, setIsFileDragActive] = useState(false);
+  const fileDragDepthRef = useRef(0);
+  const dragEventHasFiles = (e: React.DragEvent) => e.dataTransfer?.types?.includes('Files') ?? false;
+  const composerDragHandlers = {
+    onDragEnter: (e: React.DragEvent) => {
+      if (!dragEventHasFiles(e)) return;
+      e.preventDefault();
+      fileDragDepthRef.current += 1;
+      setIsFileDragActive(true);
+    },
+    // Required so the browser fires `drop` instead of navigating away.
+    onDragOver: (e: React.DragEvent) => {
+      if (!dragEventHasFiles(e)) return;
+      e.preventDefault();
+    },
+    onDragLeave: (e: React.DragEvent) => {
+      if (!dragEventHasFiles(e)) return;
+      fileDragDepthRef.current = Math.max(0, fileDragDepthRef.current - 1);
+      if (fileDragDepthRef.current === 0) setIsFileDragActive(false);
+    },
+    onDrop: (e: React.DragEvent) => {
+      if (!dragEventHasFiles(e)) return;
+      e.preventDefault();
+      // Keep the window-level swallow handler from seeing this drop twice.
+      e.stopPropagation();
+      fileDragDepthRef.current = 0;
+      setIsFileDragActive(false);
       const files = e.dataTransfer?.files;
       if (!files || files.length === 0) return;
-      e.preventDefault();
-      const sessionId = ensureSessionFilesConvId();
-      void sessionFiles.addFiles(Array.from(files), sessionId);
-    };
-    window.addEventListener('dragover', onDragOver);
-    window.addEventListener('drop', onDrop);
-    return () => {
-      window.removeEventListener('dragover', onDragOver);
-      window.removeEventListener('drop', onDrop);
-    };
-  }, [ensureSessionFilesConvId, sessionFiles]);
+      void sessionFiles.addFiles(Array.from(files), ensureSessionFilesConvId());
+    },
+  };
+
+  // Extension list for the drag overlay subtitle, driven by server
+  // capabilities with the same fallback used for validation.
+  const supportedDragFormats = useMemo(() => {
+    const exts = sessionFiles.capabilities?.supported_extensions ?? DEFAULT_UPLOAD_CAPABILITIES.supported_extensions;
+    return exts.map(ext => ext.replace(/^\./, '')).join(' · ');
+  }, [sessionFiles.capabilities]);
+
+  // Overlay rendered inside the composer container while isFileDragActive.
+  // pointer-events-none keeps it visual-only: the composer container's own
+  // handlers above own drag bookkeeping and the drop.
+  const composerDragOverlay = isFileDragActive ? (
+    <div className='pointer-events-none absolute inset-0 z-30 flex p-2'>
+      <div className='flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-400 bg-blue-50/95 dark:border-blue-500 dark:bg-[#111217]/95'>
+        <div className='flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/30'>
+          <DownloadOutlined className='text-lg text-white' />
+        </div>
+        <div className='text-sm font-semibold text-blue-600 dark:text-blue-400'>{t('release_to_add_files')}</div>
+        <div className='max-w-sm px-3 text-center text-xs text-gray-400 dark:text-gray-500'>
+          {t('supported_file_formats')} {supportedDragFormats}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   // Legacy server-preloaded example file: fetch bounded content and render it
   // through the same preview surfaces (Drawer/desktop right panel).
   const openLegacyFilePreview = useCallback(
     async (file: { name: string; size: number; media_type: string; file_path: string }) => {
+      const requestVersion = ++sessionFilePreviewRequestRef.current;
       setRightPanelCollapsed(false);
       setSessionFilePreview({ snapshot: null, loading: true, error: null, size: file.size });
       try {
@@ -638,22 +727,23 @@ const Playground: NextPage = () => {
         const content: string = typeof data?.content === 'string' ? data.content : '';
         const ext = file.name.toLowerCase().split('.').pop() ?? '';
         const TABLE_EXTS = new Set(['csv']);
-        const truncated = content.length > 1024 * 1024;
-        const text = truncated ? content.slice(0, 1024 * 1024) : content;
+        const byteTruncated = content.length > 1024 * 1024;
+        const text = byteTruncated ? content.slice(0, 1024 * 1024) : content;
+        let truncated = byteTruncated;
         let preview: Record<string, unknown>;
         let kind: string;
         if (TABLE_EXTS.has(ext)) {
           kind = 'table';
-          const lines = text
-            .split(/\r?\n/)
-            .filter(line => line.length > 0)
-            .slice(0, 101);
+          const availableLines = text.split(/\r?\n/).filter(line => line.length > 0);
+          truncated = truncated || availableLines.length > 101;
+          const lines = availableLines.slice(0, 101);
           const rows = lines.map(line => line.split(','));
           preview = { encoding: 'utf-8', delimiter: ',', rows };
         } else {
           kind = 'text';
           preview = { encoding: 'utf-8', text };
         }
+        if (requestVersion !== sessionFilePreviewRequestRef.current) return;
         setSessionFilePreview({
           snapshot: {
             file_id: `legacy:${file.name}`,
@@ -669,6 +759,7 @@ const Playground: NextPage = () => {
           size: file.size,
         });
       } catch (err: any) {
+        if (requestVersion !== sessionFilePreviewRequestRef.current) return;
         setSessionFilePreview({
           snapshot: null,
           loading: false,
@@ -690,16 +781,16 @@ const Playground: NextPage = () => {
       );
     }
     if (sessionFilePreview.error) {
-      return <Alert type='error' showIcon message='Preview failed' description={sessionFilePreview.error} />;
+      return <Alert type='error' showIcon message='预览失败' description={sessionFilePreview.error} />;
     }
     return <AttachmentPreview snapshot={sessionFilePreview.snapshot} size={sessionFilePreview.size} />;
   };
 
   const clearComposerAttachments = useCallback(() => {
     sessionFiles.clearTurn();
-    setSessionFilePreview(null);
+    closeSessionFilePreview();
     setQueuedSendAfterUpload(false);
-  }, [sessionFiles]);
+  }, [closeSessionFilePreview, sessionFiles]);
 
   const [executionMap, setExecutionMap] = useState<
     Record<
@@ -968,7 +1059,7 @@ const Playground: NextPage = () => {
       // Rebuild the composer rail from the server-owned session files so a
       // conversation switch never leaks drafts from another session scope.
       void sessionFiles.rehydrateFromServer(convId);
-      setSessionFilePreview(null);
+      closeSessionFilePreview();
     } else if (!convId && conversationId) {
       // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
       setMessages([]);
@@ -983,9 +1074,9 @@ const Playground: NextPage = () => {
       setSummaryComplete(false);
       setTaskPlan([]);
       sessionFiles.clearTurn();
-      setSessionFilePreview(null);
+      closeSessionFilePreview();
     }
-  }, [cancelSummaryPresentation, router.query.id]);
+  }, [cancelSummaryPresentation, closeSessionFilePreview, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1857,11 +1948,12 @@ const Playground: NextPage = () => {
         throw new Error('No response body');
       }
 
-      // Submission accepted by the server: the sent files now belong to the
-      // turn, so the composer rail resets for the next one.
-      if (filesAttachedThisSend) {
-        clearComposerAttachments();
-      }
+      // Submission accepted by the server. The composer rail intentionally
+      // keeps the sent files: they stay attached to the conversation scope
+      // (file_ids are server-side already, so follow-up questions reuse them
+      // without re-uploading) until the user removes them manually, switches
+      // conversation, or clears the chat — same semantics as the legacy
+      // single-file protocol.
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -2238,7 +2330,13 @@ const Playground: NextPage = () => {
 
           // Final is already a complete server event. Build artifacts now;
           // the bounded summary presentation controls only visible navigation.
-          setPendingFinalization({ responseId, summaryText, uploadedFilePath });
+          // uploadedFilePath only exists for the legacy single-file protocol;
+          // session-file (file_ids) sends carry no server path client-side.
+          setPendingFinalization({
+            responseId,
+            summaryText,
+            uploadedFilePath: filesAttachedThisSend?.legacyFile?.file_path ?? null,
+          });
         } else if (payload.type === 'done') {
           setLoading(false);
         }
@@ -2357,7 +2455,7 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     sessionFiles.clearTurn();
-    setSessionFilePreview(null);
+    closeSessionFilePreview();
     setSelectedCitationIndex(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
@@ -2965,7 +3063,11 @@ const Playground: NextPage = () => {
                       )}
 
                       {/* Outer Frame - Floating Effect */}
-                      <div className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'>
+                      <div
+                        className='rounded-2xl w-full relative transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.16),0_8px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_20px_48px_rgba(0,0,0,0.5)]'
+                        {...composerDragHandlers}
+                      >
+                        {composerDragOverlay}
                         {/* White Inner Box - Clean Glass Card */}
                         <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-2xl border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-3 px-4'>
                           <AttachmentRail
@@ -2976,14 +3078,15 @@ const Playground: NextPage = () => {
                             onPreview={openSessionFilePreview}
                             onLegacyPreview={openLegacyFilePreview}
                             onClearAll={clearComposerAttachments}
+                            density='compact'
                             addControl={
                               <Upload {...uploadProps}>
-                                <AttachmentRailAddButton />
+                                <AttachmentRailCompactAddButton />
                               </Upload>
                             }
                             preview={showInlineAttachmentPreview ? null : sessionFilePreview}
                             onClosePreview={closeSessionFilePreview}
-                            className='mb-3'
+                            className='mb-2'
                           />
                           {taskPlan.length > 0 && (
                             <div className='mb-3'>
@@ -3474,19 +3577,11 @@ const Playground: NextPage = () => {
               >
                 {showInlineAttachmentPreview ? (
                   <div className='flex-1 min-h-0 flex flex-col bg-white dark:bg-[#1a1b1e]'>
-                    <div className='flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-800 flex-shrink-0'>
-                      <span className='truncate text-sm font-medium text-gray-800 dark:text-gray-200'>
-                        {sessionFilePreview?.snapshot?.name ?? '附件预览'}
-                      </span>
-                      <Button
-                        type='text'
-                        size='small'
-                        icon={<CloseOutlined />}
-                        aria-label='Close attachment preview'
-                        onClick={closeSessionFilePreview}
-                      />
+                    <div className='flex h-12 flex-shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 dark:border-white/10 dark:bg-[#1a1b1e]/95'>
+                      <AttachmentPreviewPanelTitle />
+                      <AttachmentPreviewCloseButton onClose={closeSessionFilePreview} />
                     </div>
-                    <div className='flex-1 overflow-y-auto p-4'>{renderSessionFilePreviewBody()}</div>
+                    <div className='flex-1 overflow-y-auto p-3'>{renderSessionFilePreviewBody()}</div>
                   </div>
                 ) : (
                   (() => {
@@ -3639,7 +3734,11 @@ const Playground: NextPage = () => {
                 {/* Input Box Container - Premium Layered Style */}
                 <div className='w-full relative'>
                   {/* Outer Frame - Floating Effect */}
-                  <div className='w-full relative transition-all duration-500 rounded-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_24px_64px_rgba(0,0,0,0.2),0_12px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'>
+                  <div
+                    className='w-full relative transition-all duration-500 rounded-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.12),0_6px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_24px_64px_rgba(0,0,0,0.2),0_12px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] dark:hover:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
+                    {...composerDragHandlers}
+                  >
+                    {composerDragOverlay}
                     {/* White Inner Box - Clean Glass Card */}
                     <div className='bg-white/95 backdrop-blur-md dark:bg-[#1e1f24]/95 rounded-[28px] border border-gray-100 dark:border-[#33353b] shadow-[inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] p-5 relative z-10'>
                       <AttachmentRail
@@ -3657,7 +3756,7 @@ const Playground: NextPage = () => {
                         }
                         preview={showInlineAttachmentPreview ? null : sessionFilePreview}
                         onClosePreview={closeSessionFilePreview}
-                        className='mb-3'
+                        className='mb-2'
                       />
                       {/* Database, Knowledge, Connector Tags */}
                       {(selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
@@ -4564,8 +4663,11 @@ const Playground: NextPage = () => {
             open
             placement='right'
             destroyOnClose
+            closable={false}
             width={PREVIEW_DRAWER_MAX_WIDTH}
-            title={sessionFilePreview.snapshot?.name ?? '附件预览'}
+            title={<AttachmentPreviewPanelTitle />}
+            extra={<AttachmentPreviewCloseButton onClose={closeSessionFilePreview} />}
+            styles={ATTACHMENT_PREVIEW_DRAWER_STYLES}
             onClose={closeSessionFilePreview}
           >
             {renderSessionFilePreviewBody()}

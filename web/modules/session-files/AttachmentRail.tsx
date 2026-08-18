@@ -7,12 +7,25 @@
  * folded "+N" remainder, and an optional add-file card owned by the caller.
  */
 
-import { CheckCircleFilled, CloseOutlined, LoadingOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Alert, Drawer, Spin, Tooltip } from 'antd';
+import {
+  CheckCircleFilled,
+  CloseOutlined,
+  DeleteOutlined,
+  ExclamationCircleFilled,
+  LoadingOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import { Alert, Drawer, Popconfirm, Popover, Spin, Tooltip } from 'antd';
 import classNames from 'classnames';
-import React, { ReactNode, memo, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, memo, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import AttachmentPreview, { FileKindIcon } from './AttachmentPreview';
+import AttachmentPreview, {
+  ATTACHMENT_PREVIEW_DRAWER_STYLES,
+  AttachmentPreviewCloseButton,
+  AttachmentPreviewPanelTitle,
+  FileKindIcon,
+} from './AttachmentPreview';
 import type { RailItem } from './attachment-view-model';
 import {
   PREVIEW_DESKTOP_MIN_WIDTH,
@@ -20,6 +33,7 @@ import {
   aggregateUploadProgress,
   canPreviewItem,
   canRetry,
+  collapseCompactRail,
   collapseRail,
   formatBytes,
   isHardFailure,
@@ -28,6 +42,8 @@ import {
   removeAriaLabel,
   resolvePreviewOverlay,
   retryAriaLabel,
+  shouldShowComfortableSummary,
+  summarizeCompactRailStatus,
   toLegacyRailItem,
   toRailItems,
 } from './attachment-view-model';
@@ -60,6 +76,12 @@ export interface AttachmentRailProps {
   preview?: RailPreviewState | null;
   onClosePreview?: () => void;
   className?: string;
+  /**
+   * Layout density. 'comfortable' (default) renders the mockup's 228px file
+   * cards for the wide home composer; 'compact' renders single-line chips for
+   * the narrow chat composer, where the full card row would dominate the box.
+   */
+  density?: 'comfortable' | 'compact';
 }
 
 /** SSR-safe viewport width; defaults to desktop before hydration. */
@@ -127,7 +149,7 @@ const BaseFileCard: React.FC<{
     }}
     title={title}
     className={classNames(
-      'group relative flex min-h-[52px] items-center gap-2.5 rounded-xl border px-3 py-2 transition-all duration-200',
+      'group relative flex h-11 items-center gap-2 rounded-lg border px-2.5 py-1.5 outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/30',
       FILE_CARD_WIDTH,
       onClick && 'cursor-pointer',
       tone === 'ready' &&
@@ -143,19 +165,19 @@ const BaseFileCard: React.FC<{
   >
     <div
       className={classNames(
-        'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[15px]',
+        'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[14px]',
         tone === 'error'
           ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
           : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
       )}
     >
-      <FileKindIcon name={name} mediaType={mediaType} kind={kind} className='text-base' />
+      <FileKindIcon name={name} mediaType={mediaType} kind={kind} className='text-[14px]' />
     </div>
     <div className='min-w-0 flex-1'>
       <div className='truncate text-[13px] font-medium text-slate-800 dark:text-slate-100' title={name}>
         {name}
       </div>
-      <div className='mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500'>
+      <div className='mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400'>
         {status}
       </div>
     </div>
@@ -259,8 +281,10 @@ const RailItemCard: React.FC<{
               onRemove(item.clientId);
             }}
             className={classNames(
-              'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] text-slate-500 transition hover:bg-red-500 hover:text-white dark:bg-slate-700',
-              !failed && item.uploadStatus !== 'uploading' && 'opacity-0 group-hover:opacity-100',
+              'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] text-slate-500 outline-none transition hover:bg-red-500 hover:text-white focus-visible:ring-2 focus-visible:ring-red-500/30 dark:bg-slate-700',
+              !failed &&
+                item.uploadStatus !== 'uploading' &&
+                'opacity-60 group-hover:opacity-100 focus-visible:opacity-100',
             )}
           >
             <CloseOutlined className='text-[10px]' />
@@ -280,6 +304,297 @@ const RailItemCard: React.FC<{
 
 RailItemCard.displayName = 'RailItemCard';
 
+/** Compact composer item: one quiet, container-aware file token. */
+const CompactFileChip: React.FC<{
+  item: RailItem;
+  onRemove?: (clientId: string) => void;
+  onRetry?: (clientId: string) => void;
+  onPreview?: (item: RailItem) => void;
+}> = memo(({ item, onRemove, onRetry, onPreview }) => {
+  const failed = isHardFailure(item);
+  const previewable = !!onPreview && canPreviewItem(item);
+  const percent = progressPercent(item.uploadProgress);
+  const uploading = item.uploadStatus === 'uploading' || item.uploadStatus === 'queued';
+  const parsing = item.uploadStatus === 'done' && item.previewStatus === 'loading';
+  const processing = uploading || parsing;
+
+  return (
+    <div
+      role='group'
+      aria-label={item.name}
+      aria-busy={processing}
+      data-state={failed ? 'error' : uploading ? 'uploading' : parsing ? 'parsing' : 'ready'}
+      className={classNames(
+        'session-file-compact-item group relative flex h-8 min-w-[88px] max-w-[156px] shrink items-center overflow-hidden rounded-full border pr-1 text-[12px] transition-[background-color,border-color,color] duration-150',
+        failed
+          ? 'border-red-200 bg-red-50/75 text-red-700 hover:border-red-300 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300'
+          : processing
+            ? 'border-blue-200 bg-blue-50/55 text-slate-700 hover:border-blue-300 dark:border-blue-900/60 dark:bg-blue-950/25 dark:text-slate-200'
+            : 'border-emerald-200/90 bg-emerald-50/80 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:border-emerald-700/70 dark:hover:bg-emerald-950/40',
+      )}
+      title={`${item.name} · ${formatBytes(item.size)}${item.error ? ` · ${statusErrorText(item.error)}` : ''}`}
+    >
+      <button
+        type='button'
+        disabled={!previewable}
+        aria-label={previewable ? `预览 ${item.name}` : undefined}
+        onClick={() => onPreview?.(item)}
+        className={classNames(
+          'flex h-full min-w-0 items-center gap-1.5 rounded-l-full pl-1.5 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-1 active:scale-[0.985]',
+          previewable ? 'cursor-pointer' : 'cursor-default',
+        )}
+      >
+        <span
+          className={classNames(
+            'flex h-5 w-5 flex-none items-center justify-center rounded-md bg-white/90 text-[12px] shadow-[0_1px_1px_rgba(15,23,42,0.06)] dark:bg-white/[0.08] dark:shadow-none',
+            failed && '!bg-red-100 dark:!bg-red-900/35',
+          )}
+        >
+          <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[12px]' />
+        </span>
+        <span className='max-w-[96px] truncate font-medium tracking-[-0.005em]'>{item.name}</span>
+      </button>
+      {uploading && (
+        <span className='flex flex-none items-center gap-1 px-0.5 text-[10px] font-medium tabular-nums text-blue-600 dark:text-blue-300'>
+          <LoadingOutlined className='text-[9px]' />
+          {percent}%
+        </span>
+      )}
+      {parsing && (
+        <span className='flex flex-none items-center gap-1 px-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-300'>
+          <LoadingOutlined className='text-[9px]' />
+          解析中
+        </span>
+      )}
+      {item.previewStatus === 'preview_failed' && !failed && (
+        <span
+          className='flex flex-none items-center px-0.5 text-[10px] text-amber-500 dark:text-amber-400'
+          title='预览不可用，文件仍可分析'
+        >
+          <ExclamationCircleFilled />
+        </span>
+      )}
+      {failed && canRetry(item) && onRetry && (
+        <button
+          type='button'
+          aria-label={retryAriaLabel(item.name)}
+          onClick={event => {
+            event.stopPropagation();
+            onRetry(item.clientId);
+          }}
+          className='flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] text-red-500 outline-none transition-colors hover:bg-red-100 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-500/30 active:scale-95 dark:hover:bg-red-900/35'
+        >
+          <ReloadOutlined />
+        </button>
+      )}
+      {onRemove && (
+        <button
+          type='button'
+          aria-label={removeAriaLabel(item.name)}
+          onClick={event => {
+            event.stopPropagation();
+            onRemove(item.clientId);
+          }}
+          className='flex h-6 w-6 flex-none items-center justify-center rounded-full text-[10px] text-emerald-600/55 outline-none transition-[background-color,color,opacity,transform] hover:bg-red-50 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-90 dark:text-emerald-400/55 dark:hover:bg-red-950/35 dark:hover:text-red-300'
+        >
+          <CloseOutlined className='text-[10px]' />
+        </button>
+      )}
+      {item.uploadStatus === 'uploading' && (
+        <div
+          role='progressbar'
+          aria-label={`${item.name} 上传进度`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+          className='absolute inset-x-0 bottom-0 h-[2px] origin-left bg-blue-500/85 transition-transform duration-200 ease-out'
+          style={{ transform: `scaleX(${percent / 100})` }}
+        />
+      )}
+      {parsing && <div className='session-files-indeterminate absolute bottom-0 left-0 h-[2px] w-1/3 bg-blue-500/80' />}
+    </div>
+  );
+});
+
+CompactFileChip.displayName = 'CompactFileChip';
+
+/** Legacy example file as a compact read-only chip (no remove, no upload state). */
+const CompactLegacyChip: React.FC<{
+  file: LegacyServerFile;
+  onPreview?: (file: LegacyServerFile) => void;
+}> = memo(({ file, onPreview }) => {
+  const item = toLegacyRailItem(file);
+  return (
+    <div
+      role={onPreview ? 'button' : undefined}
+      tabIndex={onPreview ? 0 : undefined}
+      onClick={onPreview ? () => onPreview(file) : undefined}
+      onKeyDown={event => {
+        if (!onPreview) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onPreview(file);
+        }
+      }}
+      title={item.name}
+      className={classNames(
+        'session-file-compact-item inline-flex h-8 min-w-[88px] max-w-[156px] shrink items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50/80 pl-1.5 pr-2.5 text-[12px] text-emerald-800 outline-none transition-[background-color,border-color] duration-150 hover:border-emerald-300 hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-1 active:scale-[0.985]',
+        onPreview && 'cursor-pointer',
+        'dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:border-emerald-700/70 dark:hover:bg-emerald-950/40',
+      )}
+    >
+      <span className='flex h-5 w-5 flex-none items-center justify-center rounded-md bg-white/90 shadow-[0_1px_1px_rgba(15,23,42,0.06)] dark:bg-white/[0.08] dark:shadow-none'>
+        <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-[12px]' />
+      </span>
+      <span className='max-w-[116px] truncate font-medium tracking-[-0.005em]'>{item.name}</span>
+    </div>
+  );
+});
+
+CompactLegacyChip.displayName = 'CompactLegacyChip';
+
+type CompactRailEntry =
+  | { type: 'legacy'; key: string; file: LegacyServerFile }
+  | { type: 'draft'; key: string; item: RailItem };
+
+const CompactOverflowDraftRow: React.FC<{
+  item: RailItem;
+  onRemove?: (clientId: string) => void;
+  onRetry?: (clientId: string) => void;
+  onPreview?: (item: RailItem) => void;
+}> = memo(({ item, onRemove, onRetry, onPreview }) => {
+  const failed = isHardFailure(item);
+  const previewable = !!onPreview && canPreviewItem(item);
+  const percent = progressPercent(item.uploadProgress);
+  const uploading = item.uploadStatus === 'uploading' || item.uploadStatus === 'queued';
+  const parsing = item.uploadStatus === 'done' && item.previewStatus === 'loading';
+
+  const status = failed
+    ? statusErrorText(item.error)
+    : item.uploadStatus === 'queued'
+      ? '等待上传'
+      : item.uploadStatus === 'uploading'
+        ? `上传中 ${percent}%`
+        : parsing
+          ? '正在解析'
+          : item.previewStatus === 'preview_failed'
+            ? '已就绪 · 预览不可用'
+            : `已就绪 · ${formatBytes(item.size)}`;
+
+  return (
+    <div
+      className={classNames(
+        'group flex min-h-11 items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition-colors',
+        failed
+          ? 'bg-red-50/70 hover:border-red-100 dark:bg-red-950/20 dark:hover:border-red-900/50'
+          : 'hover:border-slate-100 hover:bg-slate-50/90 dark:hover:border-white/[0.06] dark:hover:bg-white/[0.035]',
+      )}
+    >
+      <button
+        type='button'
+        disabled={!previewable}
+        aria-label={previewable ? `预览 ${item.name}` : undefined}
+        onClick={() => onPreview?.(item)}
+        className={classNames(
+          'flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500/30',
+          previewable ? 'cursor-pointer' : 'cursor-default',
+        )}
+      >
+        <span
+          className={classNames(
+            'flex h-8 w-8 flex-none items-center justify-center rounded-lg border bg-white text-sm shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:bg-white/[0.05] dark:shadow-none',
+            failed
+              ? 'border-red-100 text-red-500 dark:border-red-900/50 dark:text-red-400'
+              : uploading || parsing
+                ? 'border-blue-100 text-blue-500 dark:border-blue-900/50 dark:text-blue-300'
+                : 'border-emerald-100 text-emerald-600 dark:border-emerald-900/50 dark:text-emerald-300',
+          )}
+        >
+          <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-sm' />
+        </span>
+        <span className='min-w-0 flex-1'>
+          <span className='block truncate text-[13px] font-medium text-slate-800 dark:text-slate-100' title={item.name}>
+            {item.name}
+          </span>
+          <span
+            className={classNames(
+              'mt-0.5 block truncate text-[11px]',
+              failed
+                ? 'text-red-500 dark:text-red-400'
+                : uploading || parsing
+                  ? 'text-blue-500 dark:text-blue-300'
+                  : item.previewStatus === 'preview_failed'
+                    ? 'text-amber-500 dark:text-amber-400'
+                    : 'text-slate-400 dark:text-slate-500',
+            )}
+          >
+            {status}
+          </span>
+        </span>
+      </button>
+      {failed && canRetry(item) && onRetry && (
+        <Tooltip title='重试上传'>
+          <button
+            type='button'
+            aria-label={retryAriaLabel(item.name)}
+            onClick={() => onRetry(item.clientId)}
+            className='flex h-7 w-7 flex-none items-center justify-center rounded-lg text-[12px] text-red-500 outline-none transition-colors hover:bg-red-100 focus-visible:ring-2 focus-visible:ring-red-500/30 dark:hover:bg-red-900/35'
+          >
+            <ReloadOutlined />
+          </button>
+        </Tooltip>
+      )}
+      {onRemove && (
+        <Tooltip title='移除文件'>
+          <button
+            type='button'
+            aria-label={removeAriaLabel(item.name)}
+            onClick={() => onRemove(item.clientId)}
+            className='flex h-7 w-7 flex-none items-center justify-center rounded-lg text-[11px] text-slate-400 outline-none transition-[background-color,color,transform] hover:bg-red-50 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-90 dark:text-slate-500 dark:hover:bg-red-950/35 dark:hover:text-red-300'
+          >
+            <CloseOutlined />
+          </button>
+        </Tooltip>
+      )}
+    </div>
+  );
+});
+
+CompactOverflowDraftRow.displayName = 'CompactOverflowDraftRow';
+
+const CompactOverflowLegacyRow: React.FC<{
+  file: LegacyServerFile;
+  onPreview?: (file: LegacyServerFile) => void;
+}> = memo(({ file, onPreview }) => {
+  const item = toLegacyRailItem(file);
+  return (
+    <button
+      type='button'
+      disabled={!onPreview}
+      aria-label={onPreview ? `预览 ${item.name}` : undefined}
+      onClick={() => onPreview?.(file)}
+      className={classNames(
+        'flex min-h-11 w-full items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 text-left outline-none transition-colors hover:border-slate-100 hover:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:hover:border-white/[0.06] dark:hover:bg-white/[0.035]',
+        onPreview ? 'cursor-pointer' : 'cursor-default',
+      )}
+    >
+      <span className='flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-emerald-100 bg-white text-sm text-emerald-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-emerald-900/50 dark:bg-white/[0.05] dark:text-emerald-300 dark:shadow-none'>
+        <FileKindIcon name={item.name} mediaType={item.mediaType} className='text-sm' />
+      </span>
+      <span className='min-w-0 flex-1'>
+        <span className='block truncate text-[13px] font-medium text-slate-800 dark:text-slate-100' title={item.name}>
+          {item.name}
+        </span>
+        <span className='mt-0.5 block truncate text-[11px] text-slate-400 dark:text-slate-500'>
+          已就绪 · {formatBytes(item.size)}
+        </span>
+      </span>
+    </button>
+  );
+});
+
+CompactOverflowLegacyRow.displayName = 'CompactOverflowLegacyRow';
+
 const AttachmentRail: React.FC<AttachmentRailProps> = ({
   drafts,
   legacyFiles,
@@ -292,10 +607,17 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
   preview,
   onClosePreview,
   className,
+  density = 'comfortable',
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [compactOverflowOpen, setCompactOverflowOpen] = useState(false);
+  const [compactRailWidth, setCompactRailWidth] = useState(0);
+  const compactRailRef = useRef<HTMLDivElement>(null);
+  const compactOverflowButtonRef = useRef<HTMLButtonElement>(null);
+  const compactPanelId = useId();
   const viewportWidth = useViewportWidth();
   const prefersReducedMotion = usePrefersReducedMotion();
+  const compact = density === 'compact';
 
   const items = useMemo(() => toRailItems(drafts), [drafts]);
   const uploading = items.some(item => item.uploadStatus === 'uploading' || item.uploadStatus === 'queued');
@@ -310,23 +632,241 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
   const totalBytes =
     items.reduce((sum, item) => sum + item.size, 0) + (legacyFiles ?? []).reduce((sum, file) => sum + file.size, 0);
   const canShowFoldControls = items.length > visible.length || expanded;
+  const compactEntries = useMemo<CompactRailEntry[]>(
+    () => [
+      ...(legacyFiles ?? []).map(file => ({
+        type: 'legacy' as const,
+        key: `legacy:${file.file_path}`,
+        file,
+      })),
+      ...items.map(item => ({ type: 'draft' as const, key: item.clientId, item })),
+    ],
+    [items, legacyFiles],
+  );
+  const compactLayout = useMemo(
+    () => collapseCompactRail(compactEntries, compactRailWidth),
+    [compactEntries, compactRailWidth],
+  );
+  const compactHiddenState = useMemo(
+    () =>
+      summarizeCompactRailStatus(
+        compactLayout.hidden
+          .filter((entry): entry is Extract<CompactRailEntry, { type: 'draft' }> => entry.type === 'draft')
+          .map(entry => entry.item),
+      ),
+    [compactLayout.hidden],
+  );
+  const showCompactManager = compactLayout.hiddenCount > 0;
+  // Compact mode keeps a fixed one-line footprint; each token carries its own
+  // state and the count is available to assistive technology below.
+  // One removable draft already exposes name, status, size and its remove
+  // action in the card. Keep the summary for multi-file sets and legacy files,
+  // whose read-only card relies on “全部移除” as its clear affordance.
+  const showSummaryRow =
+    !compact &&
+    shouldShowComfortableSummary({
+      totalCount,
+      legacyCount,
+      hasPerItemRemove: !!onRemove,
+    });
+
+  useEffect(() => {
+    if (!compact) return;
+    const node = compactRailRef.current;
+    if (!node) return;
+
+    const updateWidth = () => {
+      const nextWidth = Math.floor(node.getBoundingClientRect().width);
+      setCompactRailWidth(current => (current === nextWidth ? current : nextWidth));
+    };
+
+    updateWidth();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateWidth);
+      observer.observe(node);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [compact]);
+
+  useEffect(() => {
+    if (totalCount <= 1) setCompactOverflowOpen(false);
+  }, [totalCount]);
+
+  useEffect(() => {
+    if (!compactOverflowOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setCompactOverflowOpen(false);
+      compactOverflowButtonRef.current?.focus();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [compactOverflowOpen]);
 
   if (totalCount === 0 && !preview) return null;
 
+  const handleCompactDraftPreview = (item: RailItem) => {
+    setCompactOverflowOpen(false);
+    onPreview?.(item);
+  };
+
+  const handleCompactLegacyPreview = (file: LegacyServerFile) => {
+    setCompactOverflowOpen(false);
+    onLegacyPreview?.(file);
+  };
+
+  const compactPanelWidth = Math.min(compactRailWidth || 360, compactRailWidth >= 640 ? 520 : 360);
+  const compactManagerContent = (
+    <section
+      id={compactPanelId}
+      role='region'
+      aria-label={`本轮附件，共 ${totalCount} 个`}
+      style={{ width: compactPanelWidth }}
+      className='overflow-hidden rounded-[14px] bg-white dark:bg-[#202126]'
+    >
+      <div className='flex h-12 items-center justify-between border-b border-slate-100 px-3 dark:border-white/[0.07]'>
+        <div className='flex items-center gap-2'>
+          <span className='text-[13px] font-semibold text-slate-800 dark:text-slate-100'>本轮附件</span>
+          <span className='rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500 dark:bg-white/[0.07] dark:text-slate-400'>
+            {totalCount}
+          </span>
+        </div>
+        {onClearAll && totalCount > 1 && (
+          <Popconfirm
+            title='移除全部附件？'
+            description='已上传的文件将从本轮提问中移除。'
+            okText='全部移除'
+            cancelText='取消'
+            okButtonProps={{ danger: true }}
+            placement='topRight'
+            onConfirm={() => {
+              setCompactOverflowOpen(false);
+              onClearAll();
+            }}
+          >
+            <button
+              type='button'
+              className='flex h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-medium text-slate-400 outline-none transition-colors hover:bg-red-50 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-red-500/25 dark:text-slate-500 dark:hover:bg-red-950/30 dark:hover:text-red-300'
+            >
+              <DeleteOutlined className='text-[11px]' />
+              全部移除
+            </button>
+          </Popconfirm>
+        )}
+      </div>
+      <div
+        className={classNames(
+          'grid max-h-[236px] gap-0.5 overflow-y-auto p-1.5',
+          compactRailWidth >= 640 ? 'grid-cols-2' : 'grid-cols-1',
+        )}
+      >
+        {compactEntries.map(entry =>
+          entry.type === 'legacy' ? (
+            <CompactOverflowLegacyRow
+              key={entry.key}
+              file={entry.file}
+              onPreview={onLegacyPreview ? handleCompactLegacyPreview : undefined}
+            />
+          ) : (
+            <CompactOverflowDraftRow
+              key={entry.key}
+              item={entry.item}
+              onRemove={onRemove}
+              onRetry={onRetry}
+              onPreview={onPreview ? handleCompactDraftPreview : undefined}
+            />
+          ),
+        )}
+      </div>
+      <div className='border-t border-slate-100 px-3 py-2 text-[10px] text-slate-400 dark:border-white/[0.07] dark:text-slate-500'>
+        共 {formatBytes(totalBytes)} · 点击文件可打开预览
+      </div>
+    </section>
+  );
+
+  const compactManager = showCompactManager ? (
+    <Popover
+      trigger='click'
+      placement='topLeft'
+      arrow={false}
+      open={compactOverflowOpen}
+      onOpenChange={setCompactOverflowOpen}
+      content={compactManagerContent}
+      overlayInnerStyle={{ padding: 0, borderRadius: 14, overflow: 'hidden' }}
+      overlayClassName='session-files-compact-popover'
+    >
+      <button
+        ref={compactOverflowButtonRef}
+        type='button'
+        aria-expanded={compactOverflowOpen}
+        aria-controls={compactPanelId}
+        aria-label={`查看另外 ${compactLayout.hiddenCount} 个附件，共 ${totalCount} 个`}
+        title={`另有 ${compactLayout.hiddenCount} 个文件`}
+        className={classNames(
+          'session-file-compact-item relative flex h-8 min-w-8 flex-none items-center justify-center rounded-full border px-2 text-[11px] font-semibold tabular-nums outline-none transition-[background-color,border-color,color,transform] focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-95',
+          compactHiddenState.errorCount > 0
+            ? 'border-red-200 bg-red-50 text-red-600 hover:border-red-300 hover:bg-red-100/70 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300'
+            : compactHiddenState.processingCount > 0
+              ? 'border-blue-200 bg-blue-50/70 text-blue-600 hover:border-blue-300 hover:bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/25 dark:text-blue-300'
+              : compactHiddenState.warningCount > 0
+                ? 'border-amber-200 bg-amber-50/70 text-amber-600 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300'
+                : 'border-slate-200 bg-slate-50/90 text-slate-600 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:bg-white/[0.07]',
+        )}
+      >
+        +{compactLayout.hiddenCount}
+        {(compactHiddenState.errorCount > 0 ||
+          compactHiddenState.processingCount > 0 ||
+          compactHiddenState.warningCount > 0) && (
+          <span
+            aria-hidden='true'
+            className={classNames(
+              'absolute right-0 top-0 h-2 w-2 rounded-full border-2 border-white dark:border-[#1e1f24]',
+              compactHiddenState.errorCount > 0
+                ? 'bg-red-500'
+                : compactHiddenState.processingCount > 0
+                  ? 'bg-blue-500'
+                  : 'bg-amber-500',
+            )}
+          />
+        )}
+      </button>
+    </Popover>
+  ) : null;
+
   return (
     <div
-      aria-live='polite'
+      aria-live={compact ? undefined : 'polite'}
       data-component='attachment-rail'
+      data-density={density}
       className={classNames('w-full', motionClassName(prefersReducedMotion), className)}
     >
       <style>{`
         @keyframes sessionFilesIndeterminate { 0% { transform: translateX(-110%); } 100% { transform: translateX(320%); } }
+        @keyframes sessionFileCompactEnter { from { opacity: 0; transform: translateY(-2px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .session-files-indeterminate { animation: sessionFilesIndeterminate 1.4s ease-in-out infinite; }
+        .session-file-compact-item { animation: sessionFileCompactEnter 160ms cubic-bezier(.22,1,.36,1) both; }
+        .session-file-add-control,.session-file-add-control .ant-upload-wrapper,.session-file-add-control .ant-upload,.session-file-add-control .ant-upload-select { flex: none !important; white-space: nowrap !important; }
+        .session-file-add-control .ant-upload,.session-file-add-control .ant-upload-select { display: flex !important; }
+        .session-file-add-control-comfortable,.session-file-add-control-comfortable .ant-upload-wrapper,.session-file-add-control-comfortable .ant-upload,.session-file-add-control-comfortable .ant-upload-select { height: 44px !important; }
+        .session-file-add-control-comfortable .ant-upload-wrapper,.session-file-add-control-comfortable .ant-upload,.session-file-add-control-comfortable .ant-upload-select { align-items: stretch !important; display: flex !important; }
+        .session-files-compact-popover .ant-popover-inner { border: 1px solid rgba(226,232,240,.92); box-shadow: 0 18px 44px rgba(15,23,42,.14),0 4px 12px rgba(15,23,42,.06); }
+        .dark .session-files-compact-popover .ant-popover-inner { border-color: rgba(255,255,255,.08); box-shadow: 0 20px 48px rgba(0,0,0,.42); }
+        .session-files-visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+        @media (prefers-reduced-motion: reduce) { .session-files-compact-popover,.session-files-compact-popover * { animation: none !important; transition: none !important; } }
         .${REDUCED_MOTION_CLASS},.${REDUCED_MOTION_CLASS} *{animation:none!important;transition:none!important;}
       `}</style>
 
-      {totalCount > 0 && (
-        <div className='mb-2 flex items-center justify-between px-1 text-[11px] font-medium text-slate-400 dark:text-slate-500'>
+      {compact && (
+        <span className='session-files-visually-hidden' role='status' aria-live='polite' aria-atomic='true'>
+          {uploading ? `${totalCount} 个附件正在上传，整体进度 ${aggregatePercent}%` : `已添加 ${totalCount} 个附件`}
+        </span>
+      )}
+
+      {showSummaryRow && (
+        <div className='mb-1.5 flex items-center justify-between px-0.5 text-[11px] font-medium text-slate-500/80 dark:text-slate-400'>
           <span>
             已添加 {totalCount} 个文件 · 共 {formatBytes(totalBytes)}
           </span>
@@ -345,48 +885,82 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
         </div>
       )}
 
-      <div className='flex max-h-[136px] flex-wrap gap-2 overflow-y-auto pr-1'>
-        {legacyFiles?.map(file => (
-          <LegacyRailItemCard key={`legacy:${file.file_path}`} file={file} onPreview={onLegacyPreview} />
-        ))}
-        {visible.map(item => (
-          <RailItemCard key={item.clientId} item={item} onRemove={onRemove} onRetry={onRetry} onPreview={onPreview} />
-        ))}
-        {hiddenCount > 0 && (
-          <button
-            type='button'
-            aria-label={`Show ${hiddenCount} more attachments`}
-            onClick={() => setExpanded(true)}
-            className={classNames(
-              'flex min-h-[52px] items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-[13px] text-slate-600 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:bg-slate-800',
-              FILE_CARD_WIDTH,
+      {compact ? (
+        <div
+          ref={compactRailRef}
+          className='flex min-h-9 w-full min-w-0 items-center gap-1.5 py-0.5'
+          role='group'
+          aria-label='本轮附件'
+        >
+          <div className='flex min-w-0 shrink items-center gap-1.5 overflow-hidden'>
+            {compactManager}
+            {compactLayout.visible.map(entry =>
+              entry.type === 'legacy' ? (
+                <CompactLegacyChip key={entry.key} file={entry.file} onPreview={onLegacyPreview} />
+              ) : (
+                <CompactFileChip
+                  key={entry.key}
+                  item={entry.item}
+                  onRemove={onRemove}
+                  onRetry={onRetry}
+                  onPreview={onPreview}
+                />
+              ),
             )}
-          >
-            还有 {hiddenCount} 个文件 · 展开
-          </button>
-        )}
-        {expanded && canShowFoldControls && (
-          <button
-            type='button'
-            onClick={() => setExpanded(false)}
-            className={classNames(
-              'flex min-h-[52px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-[13px] text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/60',
-              FILE_CARD_WIDTH,
-            )}
-          >
-            收起
-          </button>
-        )}
-        {addControl && <div className={classNames('session-file-add-control', FILE_CARD_WIDTH)}>{addControl}</div>}
-      </div>
+          </div>
+          {addControl && <div className='session-file-add-control flex flex-none whitespace-nowrap'>{addControl}</div>}
+        </div>
+      ) : (
+        <div className='flex max-h-[108px] flex-wrap items-start gap-1.5 overflow-y-auto pr-1'>
+          {legacyFiles?.map(file => (
+            <LegacyRailItemCard key={`legacy:${file.file_path}`} file={file} onPreview={onLegacyPreview} />
+          ))}
+          {visible.map(item => (
+            <RailItemCard key={item.clientId} item={item} onRemove={onRemove} onRetry={onRetry} onPreview={onPreview} />
+          ))}
+          {hiddenCount > 0 && (
+            <button
+              type='button'
+              aria-label={`Show ${hiddenCount} more attachments`}
+              onClick={() => setExpanded(true)}
+              className={classNames(
+                'flex h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1.5 text-[12px] text-slate-600 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:bg-slate-800',
+                FILE_CARD_WIDTH,
+              )}
+            >
+              还有 {hiddenCount} 个文件 · 展开
+            </button>
+          )}
+          {expanded && canShowFoldControls && (
+            <button
+              type='button'
+              onClick={() => setExpanded(false)}
+              className={classNames(
+                'flex h-11 items-center justify-center rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/60',
+                FILE_CARD_WIDTH,
+              )}
+            >
+              收起
+            </button>
+          )}
+          {addControl && (
+            <div className='session-file-add-control session-file-add-control-comfortable flex h-11 w-auto max-w-full items-stretch'>
+              {addControl}
+            </div>
+          )}
+        </div>
+      )}
 
       {preview && overlay.mode !== 'right-panel' && (
         <Drawer
           open
           placement='right'
           destroyOnClose
+          closable={false}
           width={overlay.mode === 'fullscreen' ? '100%' : overlay.width}
-          title={preview.snapshot?.name ?? '附件预览'}
+          title={<AttachmentPreviewPanelTitle />}
+          extra={onClosePreview ? <AttachmentPreviewCloseButton onClose={onClosePreview} /> : null}
+          styles={ATTACHMENT_PREVIEW_DRAWER_STYLES}
           onClose={onClosePreview}
           className={overlay.mode === 'fullscreen' ? 'attachment-preview-fullscreen' : undefined}
         >
@@ -395,7 +969,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
               <Spin indicator={<LoadingOutlined spin />} />
             </div>
           ) : preview.error ? (
-            <Alert type='error' showIcon message='Preview failed' description={preview.error} />
+            <Alert type='error' showIcon message='预览失败' description={preview.error} />
           ) : (
             <AttachmentPreview snapshot={preview.snapshot} size={preview.size} />
           )}
@@ -407,12 +981,26 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
 
 AttachmentRail.displayName = 'AttachmentRail';
 
+/** Compact-density upload entry placed directly after the final file token. */
+export const AttachmentRailCompactAddButton: React.FC<{ label?: string }> = ({ label = '添加' }) => (
+  <Tooltip title='继续添加文件'>
+    <button
+      type='button'
+      aria-label='继续添加文件'
+      className='flex h-8 flex-none items-center justify-center gap-1 whitespace-nowrap rounded-full border border-dashed border-slate-300/90 bg-white/45 px-2.5 text-[12px] font-medium text-slate-500 outline-none transition-[background-color,border-color,color,transform] hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-[0.97] dark:border-white/15 dark:bg-white/[0.025] dark:text-slate-400 dark:hover:border-blue-700/70 dark:hover:bg-blue-950/35 dark:hover:text-blue-300'
+    >
+      <PlusOutlined className='text-[11px]' />
+      <span>{label}</span>
+    </button>
+  </Tooltip>
+);
+
 export const AttachmentRailAddButton: React.FC<{ label?: string }> = ({ label = '添加文件' }) => (
   <button
     type='button'
-    className='flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-3 py-2 text-[13px] text-slate-400 transition hover:border-slate-400 hover:text-slate-500 dark:border-slate-600 dark:hover:border-slate-500'
+    className='flex h-11 min-w-[104px] items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-slate-50/35 px-3 py-1.5 text-[12px] text-slate-400 outline-none transition-[background-color,border-color,color,transform] hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-[0.98] dark:border-slate-600 dark:bg-white/[0.02] dark:hover:border-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-300'
   >
-    <PlusOutlined className='text-[13px]' />
+    <PlusOutlined className='text-[12px]' />
     {label}
   </button>
 );

@@ -1,8 +1,10 @@
 """Tests for the session-file aware file tools.
 
-load_file must return only public file metadata, execute_analysis and
-code_interpreter must pass file locations to subprocesses through the
-environment, and no user-visible chunk may contain a server path.
+load_file returns public file metadata plus the per-turn materialized
+path (so the model can analyze files with code_interpreter without
+guessing); execute_analysis and code_interpreter pass file locations to
+subprocesses through the environment. Internal handoff details
+(``files_json_path``) and storage URIs/hashes never appear in chunks.
 """
 
 import json
@@ -63,6 +65,7 @@ def _session_state(tmp_path, entries):
     return {
         "session_files": manifests,
         "session_file_inspections": inspections,
+        "session_file_paths": dict(mapping),
         "file_path": local_paths[0],
         "files_json_path": str(files_json),
         "conv_id": "conv-test",
@@ -101,18 +104,16 @@ def test_load_file_text_only_output_is_unchanged(react_state):
     }
 
 
-def test_load_file_legacy_file_reports_only_public_name(tmp_path):
+def test_load_file_legacy_file_reports_name_and_current_path(tmp_path):
     target = _write_materialized(tmp_path, 0, "sf_legacy")
     tool = load_file_module.make_load_file({"file_path": target})
 
     chunks = _chunks(tool())
 
     payload = json.dumps(chunks, ensure_ascii=False)
-    assert target not in payload
-    assert str(tmp_path) not in payload
+    assert target in payload
     assert Path(target).name in payload
     assert "File provided by user upload" in payload
-    assert all(not chunk["content"].startswith("/") for chunk in chunks)
 
 
 def test_load_file_without_session_files_rejects_id_selection(tmp_path):
@@ -161,14 +162,16 @@ def test_load_file_no_args_summarizes_selected_session_files(tmp_path):
         "sales",
         "truncated",
         "file_id",
+        "valid for this turn only",
     ):
         assert expected in content
     payload = json.dumps(chunks, ensure_ascii=False)
-    assert str(tmp_path) not in payload
-    assert state["file_path"] not in payload
+    # Materialized per-turn paths are surfaced so the model can analyze the
+    # files directly with code_interpreter.
+    for path in state["session_file_paths"].values():
+        assert path in payload
+    # The internal child-process handoff file stays invisible.
     assert state["files_json_path"] not in payload
-    for path in json.loads(Path(state["files_json_path"]).read_text()).values():
-        assert path not in payload
 
 
 def test_load_file_exact_subset_is_bounded_with_notice(tmp_path, monkeypatch):
@@ -187,7 +190,10 @@ def test_load_file_exact_subset_is_bounded_with_notice(tmp_path, monkeypatch):
     assert "sf_1" in content
     assert "sf_2" not in content
     assert "3 more file(s) not shown" in content
-    assert str(tmp_path) not in json.dumps(chunks, ensure_ascii=False)
+    # Only the shown files' paths surface.
+    assert state["session_file_paths"]["sf_0"] in content
+    assert state["session_file_paths"]["sf_1"] in content
+    assert state["session_file_paths"]["sf_2"] not in content
 
 
 def test_load_file_observation_chars_are_capped_with_notice(tmp_path, monkeypatch):
@@ -208,7 +214,7 @@ def test_load_file_observation_chars_are_capped_with_notice(tmp_path, monkeypatc
 
     assert len(chunks) == 1
     content = chunks[0]["content"]
-    assert len(content) <= 190  # cap plus the short truncation notice
+    assert len(content) <= 250  # cap plus guide and the truncation notice
     assert "truncated" in content
     assert str(tmp_path) not in content
 

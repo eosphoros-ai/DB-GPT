@@ -66,7 +66,8 @@ def test_csv_preview_caps_rows_columns_and_serialized_bytes(tmp_path):
     assert result.media_type == "text/csv"
     assert result.preview["delimiter"] == ";"
     assert result.preview["encoding"] == "utf-8"
-    assert len(result.preview["rows"]) == 3
+    # max_rows counts data rows only; the header row rides for free.
+    assert len(result.preview["rows"]) == 4
     assert all(len(row) <= 2 for row in result.preview["rows"])
     assert len(json.dumps(result.preview, ensure_ascii=False).encode("utf-8")) <= 180
     assert result.truncated is True
@@ -131,7 +132,8 @@ def test_xlsx_preview_caps_sheets_rows_and_columns(tmp_path):
 
     assert result.status is SessionFileStatus.READY
     assert len(result.preview["sheets"]) == 1
-    assert len(result.preview["sheets"][0]["rows"]) == 2
+    # max_rows counts data rows only; the header row rides for free.
+    assert len(result.preview["sheets"][0]["rows"]) == 3
     assert len(result.preview["sheets"][0]["rows"][0]) == 2
     assert result.truncated is True
 

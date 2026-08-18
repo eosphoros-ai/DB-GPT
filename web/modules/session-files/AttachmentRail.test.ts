@@ -11,9 +11,11 @@ const {
   REDUCED_MOTION_CLASS,
   UPLOAD_STATUS_LABELS,
   aggregateUploadProgress,
+  buildPreviewScopeSummary,
   canPreviewItem,
   canPreviewSnapshot,
   canRetry,
+  collapseCompactRail,
   collapseRail,
   fileIconKey,
   formatBytes,
@@ -25,8 +27,11 @@ const {
   progressPercent,
   removeAriaLabel,
   resolvePreviewMode,
+  resolveCompactRailLimit,
   resolvePreviewOverlay,
   retryAriaLabel,
+  shouldShowComfortableSummary,
+  summarizeCompactRailStatus,
   toLegacyRailItem,
   toRailItems,
 } = viewModel;
@@ -202,6 +207,96 @@ test('keeps every item visible at or below the visible cap', () => {
   assert.deepEqual(collapseRail([]), { visible: [], hiddenCount: 0 });
 });
 
+test('hides only the redundant single-draft summary in comfortable mode', () => {
+  assert.equal(shouldShowComfortableSummary({ totalCount: 0, legacyCount: 0, hasPerItemRemove: true }), false);
+  assert.equal(shouldShowComfortableSummary({ totalCount: 1, legacyCount: 0, hasPerItemRemove: true }), false);
+  assert.equal(shouldShowComfortableSummary({ totalCount: 2, legacyCount: 0, hasPerItemRemove: true }), true);
+  assert.equal(shouldShowComfortableSummary({ totalCount: 1, legacyCount: 1, hasPerItemRemove: false }), true);
+  assert.equal(shouldShowComfortableSummary({ totalCount: 1, legacyCount: 0, hasPerItemRemove: false }), true);
+});
+
+// ---------------------------------------------------------------------------
+// Compact rail: container-aware 1 / 2 / 3 item layout
+// ---------------------------------------------------------------------------
+
+test('uses the compact rail container width rather than viewport breakpoints', () => {
+  assert.equal(resolveCompactRailLimit(Number.NaN), 0);
+  assert.equal(resolveCompactRailLimit(0), 0);
+  assert.equal(resolveCompactRailLimit(279), 0);
+  assert.equal(resolveCompactRailLimit(280), 1);
+  assert.equal(resolveCompactRailLimit(319), 1);
+  assert.equal(resolveCompactRailLimit(320), 2);
+  assert.equal(resolveCompactRailLimit(559), 2);
+  assert.equal(resolveCompactRailLimit(560), 3);
+});
+
+test('keeps newest compact attachments visible and folds older entries into +N', () => {
+  const files = ['a.csv', 'b.csv', 'c.csv', 'd.csv'];
+  const extraNarrow = collapseCompactRail(files, 240);
+  assert.deepEqual(extraNarrow, {
+    visible: [],
+    hidden: files,
+    hiddenCount: 4,
+  });
+
+  const narrow = collapseCompactRail(files, 300);
+  assert.deepEqual(narrow, {
+    visible: ['d.csv'],
+    hidden: ['a.csv', 'b.csv', 'c.csv'],
+    hiddenCount: 3,
+  });
+
+  const medium = collapseCompactRail(files, 400);
+  assert.deepEqual(medium, {
+    visible: ['c.csv', 'd.csv'],
+    hidden: ['a.csv', 'b.csv'],
+    hiddenCount: 2,
+  });
+
+  const wide = collapseCompactRail(files, 600);
+  assert.deepEqual(wide, {
+    visible: ['b.csv', 'c.csv', 'd.csv'],
+    hidden: ['a.csv'],
+    hiddenCount: 1,
+  });
+  assert.deepEqual(files, ['a.csv', 'b.csv', 'c.csv', 'd.csv']);
+});
+
+test('does not create a compact remainder at or below the measured capacity', () => {
+  const files = ['a.csv', 'b.csv'];
+  assert.deepEqual(collapseCompactRail(files, 600), {
+    visible: files,
+    hidden: [],
+    hiddenCount: 0,
+  });
+  assert.deepEqual(collapseCompactRail([], 320), {
+    visible: [],
+    hidden: [],
+    hiddenCount: 0,
+  });
+});
+
+test('summarizes processing and failures hidden behind the compact +N control', () => {
+  const items = toRailItems([
+    makeDraft({ clientId: 'queued', upload: { status: 'queued' } }),
+    makeDraft({ clientId: 'uploading', upload: { status: 'uploading', progress: 0.5 } }),
+    makeDraft({ clientId: 'parsing', upload: { status: 'done' }, preview: { status: 'loading' } }),
+    makeDraft({ clientId: 'failed', upload: { status: 'failed' } }),
+    makeDraft({
+      clientId: 'blocked',
+      validation: { status: 'invalid', error: 'bad type' },
+      upload: { status: 'blocked' },
+    }),
+    makeDraft({ clientId: 'warning', upload: { status: 'done' }, preview: { status: 'preview_failed' } }),
+    makeDraft({ clientId: 'ready', upload: { status: 'done' }, preview: { status: 'ready' } }),
+  ]);
+  assert.deepEqual(summarizeCompactRailStatus(items), {
+    errorCount: 2,
+    processingCount: 3,
+    warningCount: 1,
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Preview eligibility
 // ---------------------------------------------------------------------------
@@ -372,8 +467,85 @@ test('normalizes array and record rows into column-ordered arrays', () => {
   const fromRecords = normalizeTablePreview({ columns: ['a', 'b'], rows: [{ b: 2, a: 1 }] });
   assert.deepEqual(fromRecords, { columns: ['a', 'b'], rows: [[1, 2]] });
 
-  assert.equal(normalizeTablePreview({ rows: [[1]] }), null);
   assert.equal(normalizeTablePreview({ columns: 'x' }), null);
+  assert.equal(normalizeTablePreview({ rows: 'nope' }), null);
+  assert.equal(normalizeTablePreview({ rows: [] }), null);
+});
+
+test('normalizes CSV/TSV payloads whose first row is the header', () => {
+  // Inspector `_parse_delimited` output: { encoding, delimiter, rows } — no
+  // explicit `columns`; the first row carries the header.
+  const normalized = normalizeTablePreview({
+    encoding: 'utf-8',
+    delimiter: ',',
+    rows: [
+      ['TrackId', 'Name', 'Milliseconds'],
+      ['1', 'For Those About To Rock', '343719'],
+      ['2', 'Balls to the Wall', '342562'],
+    ],
+  });
+  assert.deepEqual(normalized, {
+    columns: ['TrackId', 'Name', 'Milliseconds'],
+    rows: [
+      ['1', 'For Those About To Rock', '343719'],
+      ['2', 'Balls to the Wall', '342562'],
+    ],
+  });
+
+  // Header-only file degrades to zero data rows, not a rejection.
+  assert.deepEqual(normalizeTablePreview({ rows: [['a', 'b']] }), { columns: ['a', 'b'], rows: [] });
+  // Non-string header cells are stringified (xlsx headers may be numeric/null).
+  assert.deepEqual(
+    normalizeTablePreview({
+      rows: [
+        [1, null],
+        ['x', 'y'],
+      ],
+    }),
+    {
+      columns: ['1', ''],
+      rows: [['x', 'y']],
+    },
+  );
+  // A malformed row must never reach AttachmentPreview as a non-array.
+  assert.deepEqual(normalizeTablePreview({ rows: [['a', 'b'], null, ['x']] }), {
+    columns: ['a', 'b'],
+    rows: [
+      [undefined, undefined],
+      ['x', undefined],
+    ],
+  });
+});
+
+test('normalizes xlsx workbook payloads from the first sheet', () => {
+  // Inspector `_parse_xlsx`/`_parse_xls` output: { sheets: [{ name, rows }] }.
+  const normalized = normalizeTablePreview({
+    sheets: [
+      {
+        name: 'Sheet1',
+        rows: [
+          ['city', 'sales'],
+          ['hz', 10],
+          ['sh', 20],
+        ],
+      },
+      { name: 'Sheet2', rows: [['ignored']] },
+    ],
+  });
+  assert.deepEqual(normalized, {
+    columns: ['city', 'sales'],
+    rows: [
+      ['hz', 10],
+      ['sh', 20],
+    ],
+  });
+
+  assert.equal(normalizeTablePreview({ sheets: [] }), null);
+  assert.equal(normalizeTablePreview({ sheets: [{ name: 'S', rows: [] }] }), null);
+  assert.deepEqual(normalizeTablePreview({ sheets: [{ name: 'S', rows: [['a'], null] }] }), {
+    columns: ['a'],
+    rows: [[undefined]],
+  });
 });
 
 test('extracts plain text from text/markdown payloads', () => {
@@ -389,6 +561,39 @@ test('extracts metadata and optional body text from document payloads', () => {
   });
   assert.deepEqual(normalizeDocumentPreview({ metadata: { pages: 2 } }), { metadata: { pages: 2 }, text: null });
   assert.equal(normalizeDocumentPreview({}), null);
+});
+
+test('describes table preview rows without treating truncated as a row-only limit', () => {
+  assert.deepEqual(buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 7 }), {
+    label: '数据预览 · 7 行',
+    partial: false,
+    hint: null,
+  });
+  assert.deepEqual(buildPreviewScopeSummary({ mode: 'table', truncated: true, visibleRows: 1 }), {
+    label: '数据预览 · 1 行',
+    partial: true,
+    hint: '为保证预览性能，当前仅展示部分内容，完整文件仍可用于分析。',
+  });
+  assert.equal(
+    buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 20 })?.label,
+    '数据预览 · 20 行',
+  );
+  assert.equal(
+    buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 0 })?.label,
+    '数据预览 · 暂无数据行',
+  );
+});
+
+test('describes text and document preview scope in user-facing language', () => {
+  assert.equal(buildPreviewScopeSummary({ mode: 'text', truncated: false })?.label, '内容预览');
+  assert.equal(buildPreviewScopeSummary({ mode: 'document', truncated: false })?.label, '文档预览');
+  assert.equal(buildPreviewScopeSummary({ mode: 'document', truncated: true })?.label, '文档预览');
+  assert.deepEqual(buildPreviewScopeSummary({ mode: 'empty', truncated: true }), {
+    label: '预览内容受限',
+    partial: true,
+    hint: '为保证预览性能，当前仅展示部分内容，完整文件仍可用于分析。',
+  });
+  assert.equal(buildPreviewScopeSummary({ mode: 'empty', truncated: false }), null);
 });
 
 // ---------------------------------------------------------------------------

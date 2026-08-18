@@ -359,11 +359,12 @@ async def test_n_files_resolve_in_exact_request_order(env, monkeypatch):
             first.file_id,
             second.file_id,
         ]
-        # Prompt enumerates the same order, numbered 1..N.
+        # Prompt enumerates the same order, numbered 1..N; each manifest
+        # line is followed by its per-turn materialized path line.
         lines = ctx.prompt.strip().splitlines()
         assert lines[1].startswith(f"1. [{third.file_id}] c.csv")
-        assert lines[2].startswith(f"2. [{first.file_id}] a.csv")
-        assert lines[3].startswith(f"3. [{second.file_id}] b.csv")
+        assert lines[3].startswith(f"2. [{first.file_id}] a.csv")
+        assert lines[5].startswith(f"3. [{second.file_id}] b.csv")
         # Primary path is the first requested file (single-file tool compat).
         assert ctx.primary_local_path == ctx.local_paths[third.file_id]
         # files_json maps every public id to its materialized path.

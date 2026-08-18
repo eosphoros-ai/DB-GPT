@@ -411,6 +411,10 @@ test('rehydrateFromServer restores the conversation-scoped drafts from server li
     ],
   );
   assert.equal(api.uploads.length, 0, 'rehydrated drafts must not re-upload');
+  assert.deepEqual(
+    result.current.files.map(file => file.preview.status),
+    ['ready', 'ready'],
+  );
 
   const snapshot = await result.current.prepare('sess-9');
   assert.deepEqual([...snapshot.fileIds], ['sf_1', 'sf_2']);

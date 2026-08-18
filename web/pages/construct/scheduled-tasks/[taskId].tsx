@@ -14,8 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
-import AttachmentMessageGroup from '@/modules/session-files/AttachmentMessageGroup';
-import { legacyFilePathDisplayName, scheduledTaskFiles } from '@/modules/session-files/recovery';
+import { AttachmentMessageGroup, legacyFilePathDisplayName, scheduledTaskFiles } from '@/modules/session-files';
 import ConstructLayout from '@/new-components/layout/Construct';
 import EditScheduledTaskDrawer from '@/new-components/scheduled-task/EditScheduledTaskDrawer';
 import TaskRunsTable from '@/new-components/scheduled-task/TaskRunsTable';

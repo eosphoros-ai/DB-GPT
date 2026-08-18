@@ -1,6 +1,5 @@
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
-import AttachmentMessageGroup from '@/modules/session-files/AttachmentMessageGroup';
-import type { SessionFileSnapshot } from '@/modules/session-files/types';
+import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { AgentCitation, decodeFinalEvent } from '@/utils/react-agent-final';
 import { CheckOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -591,8 +590,8 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
           <div className='flex-1 min-w-0'>
             <div className='flex items-start justify-between'>
               <div className='flex-1 min-w-0'>
+                <AttachmentMessageCards files={attachedFiles} className='mb-2' />
                 <div className='rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-800 shadow-sm dark:bg-[#2a2b2f] dark:text-gray-200'>
-                  <AttachmentMessageGroup files={attachedFiles} className='mb-3' />
                   <div className='whitespace-pre-wrap break-words leading-relaxed'>{userMessage}</div>
                 </div>
                 {startTime && <div className='mt-1 text-xs text-gray-400'>{formatTimestamp(startTime)}</div>}

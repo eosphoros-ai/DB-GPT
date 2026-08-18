@@ -429,15 +429,17 @@ def test_prompt_lists_numbered_manifests_without_private_fields(registry):
             "\n## User Attachments\n"
             f"1. [{record.file_id}] report.csv — table, text/csv, "
             f"{len(CSV_CONTENT)} B, ready\n"
-            "- Analyze these files if needed for the user's request. "
-            "Reference files by file_id.\n"
+            f"   path: {ctx.primary_local_path} (valid for this turn only)\n"
+            "- Analyze these files if needed for the user's request. Use the "
+            "shown path with code_interpreter for free-form analysis (valid "
+            "for this turn only — re-run load_file in a new turn), or "
+            "reference files by file_id.\n"
         )
         assert prompt == expected
-        # Public prompt must never leak server-side internals.
+        # The per-turn materialized path is intentionally exposed for
+        # analysis; storage internals must never leak into the prompt.
         assert record.storage_uri not in prompt
         assert record.sha256 not in prompt
-        assert str(registry.work_root) not in prompt
-        assert ctx.primary_local_path not in prompt
         assert ctx.files_json_path not in prompt
         # And the file_context builder uses exactly the same prompt block.
         assert build_file_context(ctx, None) == prompt
@@ -462,11 +464,14 @@ def test_manifest_prompt_includes_ids_and_names_for_multiple_ready_files(registr
         lines = ctx.prompt.strip().splitlines()
         assert lines[0] == "## User Attachments"
         assert lines[1].startswith(f"1. [{first.file_id}] a.csv — table, text/csv, ")
-        assert lines[2].startswith(f"2. [{second.file_id}] b.csv — table, text/csv, ")
+        assert lines[3].startswith(f"2. [{second.file_id}] b.csv — table, text/csv, ")
         assert first.file_id in ctx.prompt
         assert "a.csv" in ctx.prompt
+        # Materialized per-turn paths are listed for in-turn analysis.
         for local_path in ctx.local_paths.values():
-            assert local_path not in ctx.prompt
+            assert local_path in ctx.prompt
+        # The internal child-process handoff file stays invisible.
+        assert ctx.files_json_path not in ctx.prompt
     finally:
         ctx.close()
 

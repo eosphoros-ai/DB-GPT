@@ -1,8 +1,11 @@
-"""load_file tool — bounded public summaries of the turn's files.
+"""load_file tool — bounded summaries of the turn's files.
 
-Never exposes materialized local paths: session files are described by
-``file_id`` + public metadata + inspection schema/preview, and the legacy
-single-file flow only reports the uploaded file's display name.
+Session files are described by ``file_id`` + public metadata + inspection
+schema/preview + the per-turn materialized local path, so the model can run
+free-form analysis with ``code_interpreter`` without guessing paths. The
+path is a temporary copy valid only for the current turn; storage URIs and
+hashes never appear. Server paths are masked at the share boundary (see
+``scrub_react_history_for_share``).
 """
 
 import json
@@ -52,7 +55,9 @@ def _summarize_preview(preview: Any, truncated: bool) -> str:
     return f"preview: {payload[:200]}"
 
 
-def _file_section(manifest: Any, inspection: Optional[Dict[str, Any]]) -> str:
+def _file_section(
+    manifest: Any, inspection: Optional[Dict[str, Any]], path: Optional[str] = None
+) -> str:
     status = (
         manifest.status.value
         if hasattr(manifest.status, "value")
@@ -62,6 +67,8 @@ def _file_section(manifest: Any, inspection: Optional[Dict[str, Any]]) -> str:
         f"[{manifest.file_id}] {manifest.name} — {manifest.kind}, "
         f"{manifest.media_type}, {manifest.size} B, {status}"
     ]
+    if path:
+        lines.append(f"  path: {path} (valid for this turn only)")
     if inspection is not None:
         preview = inspection.get("preview")
         truncated = bool(inspection.get("truncated"))
@@ -107,18 +114,22 @@ def make_load_file(react_state: Dict[str, Any]):
     @tool(
         description=(
             "Inspect files attached to this conversation. Returns public file "
-            "metadata plus schema/preview summaries, bounded in size; never "
-            "returns server paths. Reference files by file_id."
+            "metadata, schema/preview summaries and the per-turn materialized "
+            "local path, bounded in size. Use the returned path with "
+            "code_interpreter for free-form analysis; the path is valid only "
+            "for the current turn — call load_file again in a new turn. "
+            "Reference files by file_id."
             'Parameters: {"file_ids": "optional subset of file ids"}'
         )
     )
     def load_file(file_ids: Optional[List[str]] = None) -> str:
-        """Return bounded public info for the selected files."""
+        """Return bounded info for the selected files."""
         manifests = list(react_state.get("session_files") or [])
         inspections = react_state.get("session_file_inspections") or {}
+        paths = react_state.get("session_file_paths") or {}
 
         # Legacy ``ext_info.file_path`` flow (no session file manifests):
-        # report the uploaded file's public name only — never the server path.
+        # report the uploaded file's name and current local path.
         if not manifests:
             legacy_path = react_state.get("file_path")
             if not legacy_path:
@@ -129,6 +140,7 @@ def make_load_file(react_state: Dict[str, Any]):
                 )
             return _text_response(
                 f"File uploaded: {Path(str(legacy_path)).name}",
+                f"path: {legacy_path}",
                 "File provided by user upload",
             )
 
@@ -145,7 +157,11 @@ def make_load_file(react_state: Dict[str, Any]):
             if shown >= MAX_LOAD_FILE_FILES:
                 hidden += 1
                 continue
-            section = _file_section(manifest, inspections.get(manifest.file_id))
+            section = _file_section(
+                manifest,
+                inspections.get(manifest.file_id),
+                paths.get(manifest.file_id),
+            )
             block = f"\n{shown + 1}. {section}"
             if used + len(block) > MAX_LOAD_FILE_CHARS:
                 hidden += 1
@@ -157,7 +173,10 @@ def make_load_file(react_state: Dict[str, Any]):
         notice = ""
         if hidden:
             notice = f"\n… [observation truncated — {hidden} more file(s) not shown]"
-        guide = "\nReference files by file_id."
+        guide = (
+            "\nReference files by file_id; use the shown path with "
+            "code_interpreter for free-form analysis (this turn only)."
+        )
         content = "".join(body_parts) + notice + guide
         if len(content) > MAX_LOAD_FILE_CHARS:
             content = content[:MAX_LOAD_FILE_CHARS] + _TRUNCATION_NOTICE

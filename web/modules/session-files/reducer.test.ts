@@ -328,6 +328,7 @@ test('rehydrate rebuilds drafts from the server list ordered by ordinal', () => 
   );
   // Rehydrated drafts carry no local File bytes but stay sendable.
   assert.equal(state.files[0].file, null);
+  assert.equal(state.files[0].preview.status, 'ready');
   assert.deepEqual(buildSendSnapshot(state, 'sess-2').fileIds, ['sf_1', 'sf_2']);
   // Server snapshot failure state is preserved as a hard gate.
   state = apply(state, {

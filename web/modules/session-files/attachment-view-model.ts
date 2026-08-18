@@ -157,6 +157,87 @@ export function collapseRail<T>(
   return { visible: items.slice(0, maxVisible), hiddenCount: items.length - maxVisible };
 }
 
+/**
+ * A single removable draft already communicates its own metadata and remove
+ * action. Multi-file and legacy sets keep the summary for count/total and the
+ * legacy-only clear affordance.
+ */
+export function shouldShowComfortableSummary(input: {
+  totalCount: number;
+  legacyCount: number;
+  hasPerItemRemove: boolean;
+}): boolean {
+  if (input.totalCount <= 0) return false;
+  return input.totalCount > 1 || input.legacyCount > 0 || !input.hasPerItemRemove;
+}
+
+// ---------------------------------------------------------------------------
+// Compact composer rail
+// ---------------------------------------------------------------------------
+
+/**
+ * Compact mode reserves room for the overflow manager and add-file control.
+ * These breakpoints intentionally use the rail's own measured width rather
+ * than the viewport: the inference panel may be narrow on a desktop screen.
+ */
+export function resolveCompactRailLimit(containerWidth: number): 0 | 1 | 2 | 3 {
+  const width = Number.isFinite(containerWidth) ? Math.max(0, containerWidth) : 0;
+  if (width < 280) return 0;
+  if (width < 320) return 1;
+  if (width < 560) return 2;
+  return 3;
+}
+
+export interface CompactRailLayout<T> {
+  /** Most recently added entries kept visible beside the add control. */
+  visible: readonly T[];
+  /** Older entries represented by the +N manager. */
+  hidden: readonly T[];
+  hiddenCount: number;
+}
+
+/**
+ * Keep the newest entries visible so adding a file always gives immediate
+ * visual confirmation. Hidden entries retain their original ordering.
+ */
+export function collapseCompactRail<T>(items: readonly T[], containerWidth: number): CompactRailLayout<T> {
+  const limit = resolveCompactRailLimit(containerWidth);
+  const hiddenCount = Math.max(0, items.length - limit);
+  return {
+    visible: items.slice(hiddenCount),
+    hidden: items.slice(0, hiddenCount),
+    hiddenCount,
+  };
+}
+
+export interface CompactRailStatusSummary {
+  errorCount: number;
+  processingCount: number;
+  warningCount: number;
+}
+
+/** Status signal displayed on +N so folded failures never disappear. */
+export function summarizeCompactRailStatus(
+  items: readonly Pick<RailItem, 'uploadStatus' | 'previewStatus'>[],
+): CompactRailStatusSummary {
+  return items.reduce<CompactRailStatusSummary>(
+    (summary, item) => {
+      if (isHardFailure(item)) summary.errorCount += 1;
+      else if (
+        item.uploadStatus === 'queued' ||
+        item.uploadStatus === 'uploading' ||
+        (item.uploadStatus === 'done' && item.previewStatus === 'loading')
+      ) {
+        summary.processingCount += 1;
+      } else if (item.previewStatus === 'preview_failed') {
+        summary.warningCount += 1;
+      }
+      return summary;
+    },
+    { errorCount: 0, processingCount: 0, warningCount: 0 },
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Preview eligibility
 // ---------------------------------------------------------------------------
@@ -265,6 +346,51 @@ export function fileIconKey(input: { name?: string; mediaType?: string; kind?: s
 
 export type PreviewMode = 'table' | 'text' | 'document' | 'empty';
 
+/** User-facing scope shown beside the previewed file metadata. */
+export interface PreviewScopeSummary {
+  label: string;
+  partial: boolean;
+  hint: string | null;
+}
+
+/**
+ * Describe what is visibly rendered without pretending `truncated` means a
+ * row-only limit. The backend may truncate rows, columns, sheets, pages or
+ * bytes, so table row counts always come from the normalized visible rows.
+ */
+export function buildPreviewScopeSummary(input: {
+  mode: PreviewMode;
+  truncated: boolean;
+  visibleRows?: number;
+}): PreviewScopeSummary | null {
+  const hint = input.truncated ? '为保证预览性能，当前仅展示部分内容，完整文件仍可用于分析。' : null;
+
+  if (input.mode === 'empty') {
+    return input.truncated
+      ? {
+          label: '预览内容受限',
+          partial: true,
+          hint,
+        }
+      : null;
+  }
+
+  if (input.mode === 'table') {
+    const rows = Number.isFinite(input.visibleRows) ? Math.max(0, Math.floor(input.visibleRows ?? 0)) : 0;
+    return {
+      label: rows === 0 ? '数据预览 · 暂无数据行' : `数据预览 · ${rows} 行`,
+      partial: input.truncated,
+      hint,
+    };
+  }
+
+  return {
+    label: input.mode === 'document' ? '文档预览' : '内容预览',
+    partial: input.truncated,
+    hint,
+  };
+}
+
 export interface TablePreviewData {
   columns: string[];
   rows: unknown[][];
@@ -280,23 +406,60 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Columns + rows arrays (or record rows) aligned to the column order. */
+/** Header cells may be numbers/null (xlsx); table columns must be strings. */
+const headerCellText = (cell: unknown): string => {
+  if (cell === null || cell === undefined) return '';
+  return String(cell);
+};
+
 export function normalizeTablePreview(preview: Record<string, unknown> | null | undefined): TablePreviewData | null {
   if (!isPlainRecord(preview)) return null;
+
+  // Shape A — explicit columns (JSON/JSONL inspector output). Rows may be
+  // arrays or records keyed by column name.
   const columns = preview.columns;
-  if (!Array.isArray(columns) || columns.some(column => typeof column !== 'string')) return null;
-  const typedColumns = columns as string[];
-  const rows = preview.rows;
-  if (!Array.isArray(rows)) return null;
-  const normalizedRows: unknown[][] = rows.map(row => {
-    if (Array.isArray(row)) {
-      return typedColumns.map((_, index) => row[index]);
+  if (Array.isArray(columns) && !columns.some(column => typeof column !== 'string')) {
+    const typedColumns = columns as string[];
+    const rows = preview.rows;
+    if (!Array.isArray(rows)) return null;
+    const normalizedRows: unknown[][] = rows.map(row => {
+      if (Array.isArray(row)) {
+        return typedColumns.map((_, index) => row[index]);
+      }
+      if (isPlainRecord(row)) {
+        return typedColumns.map(column => row[column]);
+      }
+      return typedColumns.map(() => undefined);
+    });
+    return { columns: typedColumns, rows: normalizedRows };
+  }
+
+  // Shape B — raw delimited rows (CSV/TSV inspector output: no `columns`,
+  // the first row is the header, mirroring spreadsheet conventions).
+  const rawRows = preview.rows;
+  if (Array.isArray(rawRows) && rawRows.length > 0 && Array.isArray(rawRows[0])) {
+    const header = (rawRows[0] as unknown[]).map(headerCellText);
+    const rows = rawRows
+      .slice(1)
+      .map(row => (Array.isArray(row) ? header.map((_, index) => row[index]) : header.map(() => undefined)));
+    return { columns: header, rows };
+  }
+
+  // Shape C — workbook sheets (XLSX/XLS inspector output). The first sheet
+  // represents the table; its first row is the header.
+  const sheets = preview.sheets;
+  if (Array.isArray(sheets) && sheets.length > 0) {
+    const first = sheets[0];
+    if (isPlainRecord(first) && Array.isArray(first.rows) && first.rows.length > 0 && Array.isArray(first.rows[0])) {
+      const header = (first.rows[0] as unknown[]).map(headerCellText);
+      const rows = first.rows
+        .slice(1)
+        .map(row => (Array.isArray(row) ? header.map((_, index) => row[index]) : header.map(() => undefined)));
+      return { columns: header, rows };
     }
-    if (isPlainRecord(row)) {
-      return typedColumns.map(column => row[column]);
-    }
-    return typedColumns.map(() => undefined);
-  });
-  return { columns: typedColumns, rows: normalizedRows };
+  }
+
+  return null;
 }
 
 /** Plain text body of a text/markdown preview (`text` or `content`). */

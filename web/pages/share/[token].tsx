@@ -5,8 +5,7 @@
  * 无需登录，只读，不可继续对话。
  */
 
-import { displayOnlySnapshots, parseShareViewPayload } from '@/modules/session-files/recovery';
-import type { SessionFileSnapshot } from '@/modules/session-files/types';
+import { displayOnlySnapshots, parseShareViewPayload, type SessionFileSnapshot } from '@/modules/session-files';
 import ManusLeftPanel, {
   ArtifactItem,
   ExecutionStep as ManusExecutionStep,
@@ -27,7 +26,7 @@ import {
   ReloadOutlined,
   StepForwardOutlined,
 } from '@ant-design/icons';
-import { Button, Tooltip, message } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';

@@ -5,6 +5,29 @@ from typing import Any, List, Optional
 
 from dbgpt.vis.tags.vis_thinking import VisThinking
 
+# Special tokens leaked as plain text by some model servers (e.g. native
+# tool-calling models served behind proxies): ``<|tool_call_end|>``,
+# ``<|tool_calls_section_end|>``, ``<|im_end|>`` ... They are inference
+# protocol artifacts glued to the real content, never part of it — when
+# they stick to an ``Action Input`` JSON tail they break downstream JSON
+# parsing and the whole final-answer extraction chain collapses.
+_SPECIAL_TOKEN_PATTERN = re.compile(r"<\|[^|<>\n]*\|>")
+
+# Kimi-style native tool-calling protocol leaked as plain text by some model
+# servers: ``<|tool_calls_section_begin|><|tool_call_begin|>functions.X:0
+# <|tool_call_argument_begin|>{...}<|tool_call_end|><|tool_calls_section_end|>``.
+# Native tool-call models intermittently fall back to this protocol instead of
+# the textual ReAct format; the argument part has no end marker of its own and
+# runs until ``<|tool_call_end|>``. Markers may be space-separated.
+_NATIVE_TOOL_CALL_PATTERN = re.compile(
+    r"<\|tool_call_begin\|>\s*"
+    r"(?:functions\.)?(?P<tool>[\w.\-]+?)\s*(?::\d+)?\s*"
+    r"<\|tool_call_argument_begin\|>\s*"
+    r"(?P<args>.*?)\s*"
+    r"<\|tool_call_end\|>",
+    re.DOTALL,
+)
+
 
 @dataclass
 class ReActStep:
@@ -144,11 +167,32 @@ class ReActOutputParser:
             return match.group(1).strip()
         return text
 
+    def _translate_native_tool_calls(self, text: str) -> str:
+        """Translate leaked native tool-call blocks into ReAct text lines.
+
+        Runs BEFORE the special-token stripping so the tool name and JSON
+        arguments survive; leftover section wrapper markers are removed by
+        the token pass in :meth:`_normalize_react_text`. Free text around
+        the call is preserved — the ``Action:``-split fallback in
+        :meth:`parse` handles blocks without a ``Thought:`` prefix.
+        """
+        if "<|tool_call_begin|>" not in text:
+            return text
+
+        def _render(match: "re.Match[str]") -> str:
+            tool = match.group("tool")
+            args = match.group("args").strip()
+            return f"\nAction: {tool}\nAction Input: {args}\n"
+
+        return _NATIVE_TOOL_CALL_PATTERN.sub(_render, text)
+
     def _normalize_react_text(self, text: str) -> str:
         """Normalize common wrappers before ReAct parsing."""
         if not text:
             return text
 
+        text = self._translate_native_tool_calls(text)
+        text = _SPECIAL_TOKEN_PATTERN.sub("", text)
         text = self._strip_vis_thinking_blocks(text)
         text = self._strip_markdown_code_fence(text)
         stripped = text.lstrip()

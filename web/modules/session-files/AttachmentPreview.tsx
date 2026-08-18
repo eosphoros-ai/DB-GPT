@@ -1,7 +1,7 @@
 /**
  * Read-only preview renderer for one session file.
  *
- * Renders a header (icon/name/size + truncated badge), a soft warning banner
+ * Renders a header (icon/name/size + human preview scope), a soft warning banner
  * for `preview_failed` snapshots, and a payload body routed by
  * `resolvePreviewMode`: table → Ant Table, text/markdown → <pre>,
  * document → metadata + extracted text. Empty/malformed payloads degrade to a
@@ -12,18 +12,22 @@
  */
 
 import {
+  CloseOutlined,
+  EyeOutlined,
   FileExcelOutlined,
   FileImageOutlined,
   FileOutlined,
   FilePptOutlined,
   FileTextOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
-import { Alert, Descriptions, Table, Tag } from 'antd';
+import { Alert, Descriptions, Table, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useMemo } from 'react';
 
 import type { FileIconKey } from './attachment-view-model';
 import {
+  buildPreviewScopeSummary,
   fileIconKey,
   formatBytes,
   normalizeDocumentPreview,
@@ -76,6 +80,44 @@ export interface AttachmentPreviewProps {
   className?: string;
 }
 
+/** Shared compact spacing for the home and responsive preview Drawers. */
+export const ATTACHMENT_PREVIEW_DRAWER_STYLES = {
+  header: { minHeight: 48, padding: '8px 12px' },
+  body: { padding: 12 },
+};
+
+/** Consistent title used by the home Drawer and the in-chat right panel. */
+export const AttachmentPreviewPanelTitle: React.FC = () => (
+  <div className='flex min-w-0 items-center gap-2'>
+    <span className='flex h-7 w-7 flex-none items-center justify-center rounded-md bg-blue-50 text-[13px] text-blue-600 dark:bg-blue-950/45 dark:text-blue-300'>
+      <EyeOutlined aria-hidden='true' />
+    </span>
+    <span className='truncate text-[13px] font-medium text-slate-700 dark:text-slate-200'>文件预览</span>
+  </div>
+);
+
+/** A visible dismiss action that stays neutral until the user interacts. */
+export const AttachmentPreviewCloseButton: React.FC<{ onClose: () => void; className?: string }> = ({
+  onClose,
+  className,
+}) => (
+  <Tooltip title='关闭预览（Esc）' placement='left'>
+    <button
+      type='button'
+      aria-label='关闭文件预览'
+      aria-keyshortcuts='Escape'
+      onClick={onClose}
+      className={classNames(
+        'group inline-flex h-11 flex-none items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-red-200 hover:bg-red-50/80 hover:text-red-600 hover:shadow-[0_2px_8px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/35 active:scale-[0.97] dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-red-900/70 dark:hover:bg-red-950/40 dark:hover:text-red-300 sm:h-8',
+        className,
+      )}
+    >
+      <CloseOutlined aria-hidden='true' className='text-[11px]' />
+      <span>关闭</span>
+    </button>
+  </Tooltip>
+);
+
 const PRE_TEXT_CLASS =
   'max-h-[480px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 
@@ -95,22 +137,32 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
     () => (mode === 'document' ? normalizeDocumentPreview(snapshot?.preview) : null),
     [mode, snapshot],
   );
+  const scopeSummary = useMemo(
+    () =>
+      buildPreviewScopeSummary({
+        mode,
+        truncated: snapshot?.truncated ?? false,
+        visibleRows: table?.rows.length,
+      }),
+    [mode, snapshot?.truncated, table?.rows.length],
+  );
 
   if (!snapshot) {
     return (
-      <div className={classNames('px-3 py-4 text-sm text-gray-400 dark:text-gray-500', className)}>
-        No preview available.
-      </div>
+      <div className={classNames('px-3 py-4 text-sm text-gray-400 dark:text-gray-500', className)}>暂无可预览内容</div>
     );
   }
 
   const metadataEntries = documentData ? Object.entries(documentData.metadata) : [];
 
+  const visibleScopeLabel =
+    mode === 'table' ? (table?.rows.length ? `${table.rows.length} 行预览` : '暂无数据行') : scopeSummary?.label;
+
   return (
-    <div className={classNames('flex flex-col gap-3', className)} data-component='attachment-preview'>
-      {/* Header: icon + name (+size) + truncated badge */}
-      <div className='flex min-w-0 items-center gap-2.5'>
-        <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/30'>
+    <div className={classNames('flex flex-col gap-2', className)} data-component='attachment-preview'>
+      {/* File identity and the exact scope visible in this preview. */}
+      <div className='flex min-w-0 flex-wrap items-center gap-2.5 rounded-lg border border-slate-200/80 bg-slate-50/65 px-2.5 py-2 dark:border-white/10 dark:bg-white/[0.035]'>
+        <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white text-base shadow-[0_1px_2px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/70 dark:bg-white/[0.06] dark:ring-white/10'>
           <FileKindIcon
             name={snapshot.name}
             mediaType={snapshot.media_type}
@@ -118,15 +170,40 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
             className='text-base'
           />
         </div>
-        <div className='min-w-0 flex-1'>
-          <div className='truncate text-sm font-medium text-gray-800 dark:text-gray-200' title={snapshot.name}>
+        <div className='flex min-w-[140px] flex-1 items-baseline gap-1.5'>
+          <div
+            className='min-w-0 truncate text-sm font-semibold text-slate-800 dark:text-slate-100'
+            title={snapshot.name}
+          >
             {snapshot.name}
           </div>
           {typeof size === 'number' && (
-            <div className='text-[11px] text-gray-400 dark:text-gray-500'>{formatBytes(size)}</div>
+            <div className='flex-none text-[11px] text-slate-400 dark:text-slate-500'>· {formatBytes(size)}</div>
           )}
         </div>
-        {snapshot.truncated && <Tag color='warning'>Truncated</Tag>}
+        {scopeSummary && (
+          <Tooltip title={scopeSummary.hint ?? undefined} placement='bottom'>
+            <span
+              tabIndex={scopeSummary.partial ? 0 : undefined}
+              aria-label={
+                scopeSummary.partial
+                  ? `${scopeSummary.label}，仅展示部分内容。${scopeSummary.hint}`
+                  : scopeSummary.label
+              }
+              className='inline-flex h-7 flex-none items-center gap-1.5 rounded-md border border-blue-100 bg-blue-50/75 px-2 text-[11px] font-medium text-blue-700 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:border-blue-900/60 dark:bg-blue-950/35 dark:text-blue-300'
+            >
+              <EyeOutlined aria-hidden='true' className='text-[11px]' />
+              <span>{visibleScopeLabel}</span>
+              {scopeSummary.partial && (
+                <>
+                  <span aria-hidden='true' className='mx-0.5 h-3 w-px bg-blue-200 dark:bg-blue-800' />
+                  <InfoCircleOutlined aria-hidden='true' className='text-[11px]' />
+                  <span>部分</span>
+                </>
+              )}
+            </span>
+          </Tooltip>
+        )}
       </div>
 
       {/* preview_failed is a soft warning: the uploaded file is still analyzable */}
@@ -134,19 +211,22 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
         <Alert
           type='warning'
           showIcon
-          message='Preview unavailable'
+          message='暂时无法生成预览'
           description={
             snapshot.error_code
-              ? `The file was uploaded, but its preview could not be generated (${snapshot.error_code}). The original file can still be analyzed.`
-              : 'The file was uploaded, but its preview could not be generated. The original file can still be analyzed.'
+              ? `文件已上传，但预览生成失败（${snapshot.error_code}）。完整文件仍可用于分析。`
+              : '文件已上传，但暂时无法生成预览。完整文件仍可用于分析。'
           }
         />
       )}
 
       {mode === 'table' && table && (
         <Table<Record<string, unknown>>
+          className='overflow-hidden rounded-xl border border-slate-200/80 dark:border-white/10'
           size='small'
           scroll={{ x: true }}
+          // Session-file previews are normally bounded to 20 rows; the legacy
+          // adapter can expose more, so preserve its compact pagination.
           pagination={table.rows.length > 50 ? { pageSize: 50, size: 'small', hideOnSinglePage: true } : false}
           columns={table.columns.map((column, index) => ({
             title: column,
@@ -186,13 +266,17 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
       )}
 
       {mode === 'empty' && (
-        <div className='px-3 py-4 text-sm text-gray-400 dark:text-gray-500'>No preview available.</div>
+        <div className='rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-400 dark:border-white/10 dark:text-slate-500'>
+          {snapshot.truncated ? '当前预览内容受限，完整文件仍可用于分析。' : '暂无可预览内容'}
+        </div>
       )}
     </div>
   );
 };
 
 AttachmentPreview.displayName = 'AttachmentPreview';
+AttachmentPreviewPanelTitle.displayName = 'AttachmentPreviewPanelTitle';
+AttachmentPreviewCloseButton.displayName = 'AttachmentPreviewCloseButton';
 FileKindIcon.displayName = 'FileKindIcon';
 
 export default memo(AttachmentPreview);

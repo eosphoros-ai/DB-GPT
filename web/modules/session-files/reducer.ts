@@ -103,7 +103,7 @@ const snapshotToDraft = (snapshot: SessionFileSnapshot): DraftFile => {
       error: failed ? (snapshot.error_code ?? 'failed') : null,
     },
     preview: {
-      status: snapshot.status === 'preview_failed' ? 'preview_failed' : 'idle',
+      status: snapshot.status === 'ready' ? 'ready' : snapshot.status === 'preview_failed' ? 'preview_failed' : 'idle',
       error: snapshot.status === 'preview_failed' ? (snapshot.error_code ?? null) : null,
     },
     snapshot,

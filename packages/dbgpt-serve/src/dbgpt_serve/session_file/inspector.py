@@ -46,7 +46,8 @@ class _FrozenDict(dict):
 class InspectionLimits:
     """Hard limits applied to parser work and serialized preview output."""
 
-    max_rows: int = 50
+    # Data rows per table preview (header row is not counted).
+    max_rows: int = 20
     max_columns: int = 20
     max_sheets: int = 3
     max_pages: int = 10
@@ -318,7 +319,8 @@ class SessionFileInspector:
         truncated = len(raw) < path.stat().st_size
         reader = csv.reader(io.StringIO(text), delimiter=delimiter)
         for index, row in enumerate(reader):
-            if index >= limits.max_rows:
+            # The header row rides for free: max_rows counts data rows only.
+            if index > limits.max_rows:
                 truncated = True
                 break
             if len(row) > limits.max_columns:
@@ -384,7 +386,8 @@ class SessionFileInspector:
             for worksheet in list(workbook.worksheets)[: limits.max_sheets]:
                 rows = []
                 for index, row in enumerate(worksheet.iter_rows(values_only=True)):
-                    if index >= limits.max_rows:
+                    # Header rides for free: max_rows counts data rows only.
+                    if index > limits.max_rows:
                         truncated = True
                         break
                     values = list(row)
@@ -404,11 +407,12 @@ class SessionFileInspector:
         try:
             for worksheet in workbook.sheets()[: limits.max_sheets]:
                 rows = []
-                for row_index in range(min(worksheet.nrows, limits.max_rows)):
+                # Header rides for free: max_rows counts data rows only.
+                for row_index in range(min(worksheet.nrows, limits.max_rows + 1)):
                     row = worksheet.row_values(row_index)
                     rows.append(row[: limits.max_columns])
                 truncated |= (
-                    worksheet.nrows > limits.max_rows
+                    worksheet.nrows > limits.max_rows + 1
                     or worksheet.ncols > limits.max_columns
                 )
                 sheets.append({"name": worksheet.name, "rows": rows})

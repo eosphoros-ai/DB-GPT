@@ -1,5 +1,4 @@
-import AttachmentMessageGroup from '@/modules/session-files/AttachmentMessageGroup';
-import type { SessionFileSnapshot } from '@/modules/session-files/types';
+import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
 import {
@@ -1179,8 +1178,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                   </div>
                 </div>
               ))}
+              <AttachmentMessageCards files={attachedFiles} />
               <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm'>
-                <AttachmentMessageGroup files={attachedFiles} className='mb-3' />
                 {userQuery}
               </div>
             </div>
