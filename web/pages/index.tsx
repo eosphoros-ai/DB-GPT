@@ -685,6 +685,9 @@ const Playground: NextPage = () => {
   // time so "保存定时任务" can replay the real execution (file / database /
   // knowledge / skill / connectors) instead of a drifting UI state.
   const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
+  // Tracks which conversation the last-sent payload belongs to, so a scheduled
+  // task snapshot is only reused for the conversation it was actually sent in.
+  const lastSentConvUidRef = useRef<string | null>(null);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -856,6 +859,14 @@ const Playground: NextPage = () => {
       setStreamingSummary('');
       setSummaryComplete(false);
       setTaskPlan([]);
+      // Reset the scheduled-task snapshot and composer selections for the new task (#3200).
+      lastSentPayloadRef.current = null;
+      lastSentConvUidRef.current = null;
+      setSelectedDb(null);
+      setSelectedKnowledge(null);
+      setSelectedSkill(null);
+      setSelectedConnectors([]);
+      setUploadedFile(null);
     }
   }, [cancelSummaryPresentation, router.query.id]);
 
@@ -1896,6 +1907,7 @@ const Playground: NextPage = () => {
       max_new_tokens: 4000,
       ext_info: extInfo,
     };
+    lastSentConvUidRef.current = currentConvId;
 
     try {
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
@@ -2428,6 +2440,17 @@ const Playground: NextPage = () => {
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
 
+    // Reset the scheduled-task snapshot and composer selections so a restored
+    // conversation never replays state from the previously viewed conversation (#3200).
+    lastSentPayloadRef.current = null;
+    lastSentConvUidRef.current = null;
+    setSelectedDb(null);
+    setSelectedKnowledge(null);
+    setSelectedSkill(null);
+    setSelectedConnectors([]);
+    setUploadedFile(null);
+    setUploadedFilePath(null);
+
     const newMessages: ChatMessage[] = [];
     const newExecutionMap: typeof executionMap = {};
     const allArtifacts: Artifact[] = [];
@@ -2647,7 +2670,11 @@ const Playground: NextPage = () => {
     // Prefer the payload actually sent to the agent this session — it carries
     // the real execution context (file_path / database / knowledge / skill /
     // connectors) and is immune to UI state changed after sending.
-    if (lastSentPayloadRef.current) {
+    // Only reuse the last-sent payload when it belongs to the conversation
+    // currently being viewed. Otherwise fall back to reconstructing from the
+    // restored messages / current composer so we never replay another
+    // conversation's question or execution context (#3200).
+    if (lastSentPayloadRef.current && lastSentConvUidRef.current === conversationId) {
       return lastSentPayloadRef.current;
     }
     // Fallback (e.g. conversation restored from history, where no send
