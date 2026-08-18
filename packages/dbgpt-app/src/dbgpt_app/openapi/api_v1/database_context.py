@@ -70,6 +70,26 @@ def format_table_names(table_names: Sequence[str]) -> str:
     return ", ".join(f"`{name}`" for name in escaped_names)
 
 
+def format_table_names_bounded(table_names: Sequence[str], max_chars: int) -> str:
+    """Format a prefix of whole table names within a strict character budget."""
+    if max_chars <= 0 or not table_names:
+        return ""
+
+    formatted_names = [format_table_names([name]) for name in table_names]
+    for included_count in range(len(formatted_names), -1, -1):
+        parts = formatted_names[:included_count]
+        omitted_count = len(formatted_names) - included_count
+        if omitted_count:
+            noun = "table name" if omitted_count == 1 else "table names"
+            parts.append(f"... [{omitted_count} {noun} omitted]")
+        candidate = ", ".join(parts)
+        if len(candidate) <= max_chars:
+            return candidate
+
+    omitted_marker = f"... [{len(formatted_names)} table names omitted]"
+    return omitted_marker[:max_chars]
+
+
 def build_database_context(
     database_name: str,
     user_input: str,
@@ -110,8 +130,8 @@ def build_database_context(
             )
             schema = f"Schema lookup failed: {error}"
         schema = truncate_text(schema, DATABASE_SCHEMA_CONTEXT_MAX_CHARS)
-        formatted_mentioned_tables = truncate_text(
-            format_table_names(mentioned_tables),
+        formatted_mentioned_tables = format_table_names_bounded(
+            mentioned_tables,
             DATABASE_MENTIONED_TABLES_MAX_CHARS,
         )
         schema_section = (
@@ -128,8 +148,8 @@ def build_database_context(
     safe_database_name = (str(database_name).replace("\r", " ").replace("\n", " "))[
         :DATABASE_NAME_MAX_CHARS
     ]
-    formatted_preview = truncate_text(
-        format_table_names(preview_tables), DATABASE_TABLE_PREVIEW_MAX_CHARS
+    formatted_preview = format_table_names_bounded(
+        preview_tables, DATABASE_TABLE_PREVIEW_MAX_CHARS
     )
     context = f"""
 ## Database

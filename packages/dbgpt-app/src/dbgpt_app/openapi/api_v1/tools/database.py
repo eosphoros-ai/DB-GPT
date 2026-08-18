@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from dbgpt.agent.resource.tool.base import tool
 
 from ..database_context import (
-    format_table_names,
+    format_table_names_bounded,
     get_database_table_names,
     truncate_text,
 )
@@ -75,13 +75,14 @@ def make_list_database_tables(database_connector: Optional[Any]):
             ]
             safe_limit = max(1, min(int(limit), DATABASE_TABLE_LIST_LIMIT))
             displayed = matched[:safe_limit]
-            content = (
+            prefix = (
                 f"Matched {len(matched)} of {len(table_names)} tables; "
-                f"showing {len(displayed)}:\n{format_table_names(displayed)}"
+                f"showing {len(displayed)}:\n"
             )
-            return _tool_response(
-                truncate_text(content, DATABASE_TOOL_OUTPUT_MAX_CHARS), "markdown"
+            formatted_names = format_table_names_bounded(
+                displayed, DATABASE_TOOL_OUTPUT_MAX_CHARS - len(prefix)
             )
+            return _tool_response(prefix + formatted_names, "markdown")
         except Exception as error:
             return _tool_response(f"Failed to list database tables: {error}")
 

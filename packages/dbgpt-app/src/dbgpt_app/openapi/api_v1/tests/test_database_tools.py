@@ -87,6 +87,25 @@ def test_list_database_tables_filters_and_limits_results():
     assert "`sales_monthly`" not in content
 
 
+def test_list_database_tables_never_splits_long_names():
+    table_names = [f"table_{index}_{'x' * 300}" for index in range(100)]
+    list_tool = make_list_database_tables(_Connector(table_names))
+
+    content = _content(list_tool(limit=100))
+    formatted_names = content.splitlines()[1]
+    rendered_names = [
+        fragment for fragment in formatted_names.split(", ") if fragment.startswith("`")
+    ]
+
+    assert len(content) <= DATABASE_TOOL_OUTPUT_MAX_CHARS
+    assert "table names omitted" in formatted_names
+    assert rendered_names
+    assert all(
+        fragment.endswith("`") and fragment.strip("`") in table_names
+        for fragment in rendered_names
+    )
+
+
 def test_database_tool_factory_is_shared_by_agent_modes():
     tools = make_database_tools({}, _Connector(["events"]))
 

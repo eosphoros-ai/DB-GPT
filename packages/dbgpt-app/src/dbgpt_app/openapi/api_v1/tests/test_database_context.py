@@ -2,10 +2,13 @@
 
 from dbgpt_app.openapi.api_v1.database_context import (
     DATABASE_CONTEXT_MAX_CHARS,
+    DATABASE_MENTIONED_TABLES_MAX_CHARS,
     DATABASE_SCHEMA_CONTEXT_MAX_CHARS,
     DATABASE_TABLE_PREVIEW_LIMIT,
+    DATABASE_TABLE_PREVIEW_MAX_CHARS,
     build_database_context,
     build_database_tools_prompt,
+    format_table_names_bounded,
 )
 
 
@@ -103,3 +106,61 @@ def test_mandatory_guidance_survives_long_table_names_and_schema():
     assert len(context) <= DATABASE_CONTEXT_MAX_CHARS
     assert "Only run read-only SELECT statements" in context
     assert "tools are already\n  registered" in context
+
+
+def test_bounded_table_names_never_split_an_identifier():
+    table_names = [f"table_{index}_{'x' * 300}" for index in range(5)]
+
+    formatted = format_table_names_bounded(table_names, 1_000)
+
+    assert len(formatted) <= 1_000
+    assert formatted.endswith("[2 table names omitted]")
+    assert all(f"`{name}`" in formatted for name in table_names[:3])
+    assert all(name not in formatted for name in table_names[3:])
+    assert formatted.count("`") == 6
+
+
+def test_bounded_table_names_omit_an_individually_oversized_name():
+    table_name = "table_" + "x" * 1_100
+
+    formatted = format_table_names_bounded([table_name], 100)
+
+    assert formatted == "... [1 table name omitted]"
+    assert table_name[:50] not in formatted
+
+
+def test_context_keeps_multiple_long_mentioned_names_intact():
+    table_names = [f"table_{index}_{'x' * 300}" for index in range(8)]
+    connector = _Connector(table_names)
+
+    context, _, mentioned_tables = build_database_context(
+        "warehouse", "Inspect " + " and ".join(table_names[:5]), connector
+    )
+
+    detected_line = next(
+        line
+        for line in context.splitlines()
+        if line.startswith("- Tables detected in the user request:")
+    )
+    detected_names = detected_line.split(": ", 1)[1]
+    preview_line = next(
+        line for line in context.splitlines() if line.startswith("- Table preview")
+    )
+    preview_names = preview_line.split(": ", 1)[1]
+
+    assert mentioned_tables == table_names[:5]
+    assert connector.schema_calls == [table_names[:5]]
+    assert len(detected_names) <= DATABASE_MENTIONED_TABLES_MAX_CHARS
+    assert len(preview_names) <= DATABASE_TABLE_PREVIEW_MAX_CHARS
+    assert detected_names.endswith("[2 table names omitted]")
+    assert preview_names.endswith("[2 table names omitted]")
+    assert all(
+        fragment.strip("`") in table_names
+        for fragment in detected_names.split(", ")
+        if fragment.startswith("`")
+    )
+    assert all(
+        fragment.strip("`") in table_names
+        for fragment in preview_names.split(", ")
+        if fragment.startswith("`")
+    )
