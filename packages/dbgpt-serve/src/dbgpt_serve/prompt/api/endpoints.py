@@ -2,7 +2,7 @@ import logging
 from functools import cache
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.responses import StreamingResponse
 
@@ -54,7 +54,6 @@ def _parse_api_keys(api_keys: str) -> List[str]:
 
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
-    request: Request = None,
     service: Service = Depends(get_service),
 ) -> Optional[str]:
     """Check the api key
@@ -73,7 +72,23 @@ async def check_api_key(
         assert res.status_code == 200
 
     """
-    if request.url.path.startswith("/api/v1"):
+    if service.config.api_keys:
+        api_keys = _parse_api_keys(service.config.api_keys)
+        if auth is None or (token := auth.credentials) not in api_keys:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": {
+                        "message": "",
+                        "type": "invalid_request_error",
+                        "param": None,
+                        "code": "invalid_api_key",
+                    }
+                },
+            )
+        return token
+    else:
+        # api_keys not set; allow all
         return None
 
 
