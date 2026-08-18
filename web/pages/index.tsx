@@ -27,6 +27,7 @@ import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsSch
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
+import { RESET_CHAT_EVENT, dispatchRefreshDialogueList } from '@/utils/chat-events';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
@@ -685,6 +686,8 @@ const Playground: NextPage = () => {
   // time so "保存定时任务" can replay the real execution (file / database /
   // knowledge / skill / connectors) instead of a drifting UI state.
   const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const chatEpochRef = useRef(0);
 
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
@@ -835,29 +838,70 @@ const Playground: NextPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const resetChatState = useCallback(() => {
+    chatEpochRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    cancelSummaryPresentation();
+    setMessages([]);
+    setConversationId(null);
+    setQuery('');
+    setExecutionMap({});
+    setActiveMessageId(null);
+    setActiveViewMsgId(null);
+    setUploadedFile(null);
+    setUploadedFilePath(null);
+    setFilePreview(null);
+    setFilePreviewError(null);
+    setArtifacts([]);
+    setPreviewArtifact(null);
+    setRightPanelTab('preview');
+    setRightPanelView('execution');
+    setSelectedStepId(null);
+    setRightPanelCollapsed(false);
+    setStreamingSummary('');
+    setSummaryComplete(false);
+    setSelectedCitationIndex(null);
+    setPendingFinalization(null);
+    setPendingSummaryPresentation(null);
+    setTaskPlan([]);
+    setActiveSubAgent(null);
+    setPendingQuestion(null);
+    setContextStatus(null);
+    setLoading(false);
+    lastSentPayloadRef.current = null;
+    terminatedStepIdsRef.current.clear();
+  }, [cancelSummaryPresentation]);
+
   useEffect(() => {
     cancelSummaryPresentation();
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
       loadConversation(convId);
     } else if (!convId && conversationId) {
-      // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
-      setMessages([]);
-      setConversationId(null);
-      setQuery('');
-      setExecutionMap({});
-      setActiveMessageId(null);
-      setActiveViewMsgId(null);
-      setUploadedFilePath(null);
-      setFilePreview(null);
-      setFilePreviewError(null);
-      setArtifacts([]);
-      setRightPanelTab('preview');
-      setStreamingSummary('');
-      setSummaryComplete(false);
-      setTaskPlan([]);
+      resetChatState();
     }
+    // Intentionally keyed on the URL id so in-progress sends are not reset
+    // when conversationId is assigned locally before the query updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cancelSummaryPresentation, router.query.id]);
+
+  useEffect(() => {
+    const onReset = () => {
+      resetChatState();
+      if (router.query.id) {
+        router.push('/', undefined, { shallow: true });
+      }
+    };
+    window.addEventListener(RESET_CHAT_EVENT, onReset);
+    return () => window.removeEventListener(RESET_CHAT_EVENT, onReset);
+  }, [resetChatState, router]);
+
+  useEffect(() => {
+    if (!loading && conversationId) {
+      dispatchRefreshDialogueList();
+    }
+  }, [loading, conversationId]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1735,6 +1779,9 @@ const Playground: NextPage = () => {
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
     if ((!inputQuery.trim() && !effectiveFile) || loading) return;
 
+    abortRef.current?.abort();
+    chatEpochRef.current += 1;
+    const epoch = chatEpochRef.current;
     cancelSummaryPresentation();
 
     let finalQuery = inputQuery;
@@ -1798,6 +1845,10 @@ const Playground: NextPage = () => {
       }
     }
 
+    if (chatEpochRef.current !== epoch) {
+      return;
+    }
+
     // Prepare conversation ID
     const currentConvId = conversationId || generateUUID();
     if (!conversationId) {
@@ -1856,7 +1907,11 @@ const Playground: NextPage = () => {
     setPendingSummaryPresentation(null);
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
+    if (chatEpochRef.current !== epoch) {
+      return;
+    }
     const controller = new AbortController();
+    abortRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
       ...prev,
@@ -1925,6 +1980,7 @@ const Playground: NextPage = () => {
       let buffer = '';
 
       const processEvent = (raw: string) => {
+        if (chatEpochRef.current !== epoch) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -2310,8 +2366,13 @@ const Playground: NextPage = () => {
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
-      setLoading(false);
+      if (chatEpochRef.current === epoch) {
+        setLoading(false);
+      }
     } catch (err: any) {
+      if (chatEpochRef.current !== epoch || controller.signal.aborted) {
+        return;
+      }
       setLoading(false);
       message.error(err?.message || 'Failed to get response');
       setMessages(prev => {
@@ -2333,6 +2394,8 @@ const Playground: NextPage = () => {
 
     if (loading) return;
 
+    const epoch = chatEpochRef.current;
+
     try {
       message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
 
@@ -2344,6 +2407,11 @@ const Playground: NextPage = () => {
         const res = await axios.post(`${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`, {
           example_id: example.id,
         });
+
+        if (chatEpochRef.current !== epoch) {
+          message.destroy('example-loading');
+          return;
+        }
 
         if (res?.success && res?.data) {
           filePath = res.data;
@@ -2361,6 +2429,10 @@ const Playground: NextPage = () => {
       }
 
       message.destroy('example-loading');
+
+      if (chatEpochRef.current !== epoch) {
+        return;
+      }
 
       // Auto-select skill if example specifies one
       let exampleSkill: Skill | null = null;
@@ -2393,23 +2465,7 @@ const Playground: NextPage = () => {
 
   // Clear chat history
   const handleClearChat = () => {
-    cancelSummaryPresentation();
-    setMessages([]);
-    setConversationId(null);
-    setQuery('');
-    setExecutionMap({});
-    setActiveMessageId(null);
-    setActiveViewMsgId(null);
-    setUploadedFilePath(null);
-    setFilePreview(null);
-    setFilePreviewError(null);
-    setArtifacts([]);
-    setRightPanelTab('preview');
-    setStreamingSummary('');
-    setSummaryComplete(false);
-    setSelectedCitationIndex(null);
-    setPendingFinalization(null);
-    setPendingSummaryPresentation(null);
+    resetChatState();
     router.push('/', undefined, { shallow: true });
   };
 

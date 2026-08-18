@@ -4,6 +4,7 @@ import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
 import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
+import { REFRESH_DIALOGUE_LIST_EVENT, dispatchResetChat } from '@/utils/chat-events';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
@@ -27,7 +28,7 @@ import 'moment/locale/zh-cn';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type RouteItem = {
@@ -78,18 +79,23 @@ function SideBar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dialogueList, setDialogueList] = useState<IChatDialogueSchema[]>([]);
   const [loadingDialogues, setLoadingDialogues] = useState(false);
+  const dialogueFetchSeqRef = useRef(0);
 
   const fetchDialogueList = useCallback(async () => {
+    const seq = ++dialogueFetchSeqRef.current;
     setLoadingDialogues(true);
     try {
       const [, data] = await apiInterceptors(getDialogueList());
+      if (seq !== dialogueFetchSeqRef.current) return;
       if (data && Array.isArray(data)) {
         setDialogueList(data.filter(item => item.chat_mode === 'chat_react_agent'));
       }
     } catch (e) {
       console.error('Failed to fetch dialogue list', e);
     } finally {
-      setLoadingDialogues(false);
+      if (seq === dialogueFetchSeqRef.current) {
+        setLoadingDialogues(false);
+      }
     }
   }, []);
 
@@ -320,6 +326,29 @@ function SideBar() {
     fetchDialogueList();
   }, [fetchDialogueList]);
 
+  useEffect(() => {
+    const onRefresh = () => {
+      fetchDialogueList();
+    };
+    window.addEventListener(REFRESH_DIALOGUE_LIST_EVENT, onRefresh);
+    return () => window.removeEventListener(REFRESH_DIALOGUE_LIST_EVENT, onRefresh);
+  }, [fetchDialogueList]);
+
+  const handleNewTask = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (pathname === '/') {
+        dispatchResetChat();
+        if (router.query.id) {
+          router.push('/', undefined, { shallow: true });
+        }
+        return;
+      }
+      router.push('/');
+    },
+    [pathname, router],
+  );
+
   // ============ COLLAPSED SIDEBAR ============
   if (!isMenuExpand) {
     return (
@@ -409,12 +438,14 @@ function SideBar() {
       </div>
 
       {/* New Task Button */}
-      <Link href='/'>
-        <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
-          <PlusOutlined className='text-xs' />
-          <span>{t('new_task')}</span>
-        </div>
-      </Link>
+      <button
+        type='button'
+        onClick={handleNewTask}
+        className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 w-full bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer border-0'
+      >
+        <PlusOutlined className='text-xs' />
+        <span>{t('new_task')}</span>
+      </button>
 
       {/* Functions */}
       <div className='flex flex-col gap-1'>
