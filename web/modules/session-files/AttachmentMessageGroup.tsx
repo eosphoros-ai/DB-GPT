@@ -12,6 +12,7 @@
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import classNames from 'classnames';
 import React, { memo, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { FileKindIcon } from './AttachmentPreview';
 import { canPreviewSnapshot, formatBytes } from './attachment-view-model';
@@ -26,6 +27,7 @@ export interface AttachmentMessageGroupProps {
 }
 
 const AttachmentMessageGroup: React.FC<AttachmentMessageGroupProps> = ({ files, onPreview, className }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const ordered = useMemo(() => [...(files ?? [])].sort((a, b) => a.ordinal - b.ordinal), [files]);
 
@@ -70,7 +72,7 @@ const AttachmentMessageGroup: React.FC<AttachmentMessageGroupProps> = ({ files, 
             {file.status === 'preview_failed' && (
               <span
                 className='flex flex-shrink-0 items-center gap-1 text-[11px] text-amber-500 dark:text-amber-400'
-                title='预览不可用，文件仍可分析'
+                title={t('session_files_preview_unavailable_hint')}
               >
                 <ExclamationCircleFilled />
               </span>
@@ -99,7 +101,7 @@ const AttachmentMessageGroup: React.FC<AttachmentMessageGroupProps> = ({ files, 
           onClick={() => setExpanded(false)}
           className='inline-flex h-8 items-center rounded-full border border-slate-200 bg-white/70 px-3 text-[12px] text-slate-400 transition hover:text-slate-600 dark:border-slate-700 dark:bg-[#212226] dark:hover:text-slate-200'
         >
-          收起
+          {t('session_files_collapse')}
         </button>
       )}
     </div>

@@ -101,7 +101,7 @@ const AttachmentMessageCards: React.FC<AttachmentMessageCardsProps> = ({ files, 
                 {file.status === 'preview_failed' && (
                   <span
                     className='flex flex-shrink-0 items-center text-amber-500 dark:text-amber-400'
-                    title='预览不可用，文件仍可分析'
+                    title={t('session_files_preview_unavailable_hint')}
                   >
                     <ExclamationCircleFilled />
                   </span>

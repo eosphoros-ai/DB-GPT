@@ -565,33 +565,41 @@ test('extracts metadata and optional body text from document payloads', () => {
 
 test('describes table preview rows without treating truncated as a row-only limit', () => {
   assert.deepEqual(buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 7 }), {
-    label: '数据预览 · 7 行',
+    labelKey: 'session_files_scope_table_rows',
+    labelParams: { count: 7 },
     partial: false,
-    hint: null,
+    hintKey: null,
   });
   assert.deepEqual(buildPreviewScopeSummary({ mode: 'table', truncated: true, visibleRows: 1 }), {
-    label: '数据预览 · 1 行',
+    labelKey: 'session_files_scope_table_rows',
+    labelParams: { count: 1 },
     partial: true,
-    hint: '为保证预览性能，当前仅展示部分内容，完整文件仍可用于分析。',
+    hintKey: 'session_files_scope_truncated_hint',
   });
   assert.equal(
-    buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 20 })?.label,
-    '数据预览 · 20 行',
+    buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 20 })?.labelKey,
+    'session_files_scope_table_rows',
   );
   assert.equal(
-    buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 0 })?.label,
-    '数据预览 · 暂无数据行',
+    buildPreviewScopeSummary({ mode: 'table', truncated: false, visibleRows: 0 })?.labelKey,
+    'session_files_scope_table_empty',
   );
 });
 
 test('describes text and document preview scope in user-facing language', () => {
-  assert.equal(buildPreviewScopeSummary({ mode: 'text', truncated: false })?.label, '内容预览');
-  assert.equal(buildPreviewScopeSummary({ mode: 'document', truncated: false })?.label, '文档预览');
-  assert.equal(buildPreviewScopeSummary({ mode: 'document', truncated: true })?.label, '文档预览');
+  assert.equal(buildPreviewScopeSummary({ mode: 'text', truncated: false })?.labelKey, 'session_files_scope_content');
+  assert.equal(
+    buildPreviewScopeSummary({ mode: 'document', truncated: false })?.labelKey,
+    'session_files_scope_document',
+  );
+  assert.equal(
+    buildPreviewScopeSummary({ mode: 'document', truncated: true })?.labelKey,
+    'session_files_scope_document',
+  );
   assert.deepEqual(buildPreviewScopeSummary({ mode: 'empty', truncated: true }), {
-    label: '预览内容受限',
+    labelKey: 'session_files_scope_limited',
     partial: true,
-    hint: '为保证预览性能，当前仅展示部分内容，完整文件仍可用于分析。',
+    hintKey: 'session_files_scope_truncated_hint',
   });
   assert.equal(buildPreviewScopeSummary({ mode: 'empty', truncated: false }), null);
 });

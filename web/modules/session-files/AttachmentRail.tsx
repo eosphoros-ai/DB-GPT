@@ -19,6 +19,7 @@ import {
 import { Alert, Drawer, Popconfirm, Popover, Spin, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { ReactNode, memo, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import AttachmentPreview, {
   ATTACHMENT_PREVIEW_DRAWER_STYLES,
@@ -116,14 +117,29 @@ function usePrefersReducedMotion(): boolean {
 
 const FILE_CARD_WIDTH = 'w-[228px] max-w-full';
 
-const statusErrorText = (error: string | null): string => {
-  const map: Record<string, string> = {
-    DUPLICATE_FILE: '重复文件',
-    FILE_TOO_LARGE: '超过大小限制',
-    TOO_MANY_FILES: '文件数量超限',
-    REQUEST_TOO_LARGE: '总大小超限',
-  };
-  return error ? map[error] || error : '上传失败';
+/** Error code → i18n key; callers render through `t()`. Unknown codes pass through raw. */
+const statusErrorKey = (
+  error: string | null,
+):
+  | 'session_files_error_duplicate'
+  | 'session_files_error_too_large'
+  | 'session_files_error_too_many'
+  | 'session_files_error_request_too_large'
+  | 'session_files_error_upload_failed'
+  | null => {
+  if (!error) return 'session_files_error_upload_failed';
+  switch (error) {
+    case 'DUPLICATE_FILE':
+      return 'session_files_error_duplicate';
+    case 'FILE_TOO_LARGE':
+      return 'session_files_error_too_large';
+    case 'TOO_MANY_FILES':
+      return 'session_files_error_too_many';
+    case 'REQUEST_TOO_LARGE':
+      return 'session_files_error_request_too_large';
+    default:
+      return null;
+  }
 };
 
 const BaseFileCard: React.FC<{
@@ -191,6 +207,7 @@ const LegacyRailItemCard: React.FC<{
   file: LegacyServerFile;
   onPreview?: (file: LegacyServerFile) => void;
 }> = memo(({ file, onPreview }) => {
+  const { t } = useTranslation();
   const item = toLegacyRailItem(file);
   return (
     <BaseFileCard
@@ -202,7 +219,7 @@ const LegacyRailItemCard: React.FC<{
       status={
         <>
           <CheckCircleFilled className='text-emerald-500' />
-          <span className='truncate'>已就绪 · {formatBytes(item.size)}</span>
+          <span className='truncate'>{t('session_files_ready', { size: formatBytes(item.size) })}</span>
         </>
       }
     />
@@ -217,6 +234,7 @@ const RailItemCard: React.FC<{
   onRetry?: (clientId: string) => void;
   onPreview?: (item: RailItem) => void;
 }> = memo(({ item, onRemove, onRetry, onPreview }) => {
+  const { t } = useTranslation();
   const failed = isHardFailure(item);
   const previewable = !!onPreview && canPreviewItem(item);
   const percent = progressPercent(item.uploadProgress);
@@ -229,20 +247,23 @@ const RailItemCard: React.FC<{
         ? 'parsing'
         : 'ready';
 
+  const errorKey = statusErrorKey(item.error);
   const status = failed ? (
-    <span className='truncate text-red-600 dark:text-red-400'>{statusErrorText(item.error)}</span>
+    <span className='truncate text-red-600 dark:text-red-400'>{errorKey ? t(errorKey) : item.error}</span>
   ) : item.uploadStatus === 'queued' ? (
-    <span className='truncate text-blue-600 dark:text-blue-400'>等待上传</span>
+    <span className='truncate text-blue-600 dark:text-blue-400'>{t('session_files_waiting_upload')}</span>
   ) : item.uploadStatus === 'uploading' ? (
-    <span className='truncate text-blue-600 dark:text-blue-400'>上传中 {percent}%</span>
+    <span className='truncate text-blue-600 dark:text-blue-400'>
+      {t('session_files_uploading_progress', { percent })}
+    </span>
   ) : parsing ? (
-    <span className='truncate text-amber-600 dark:text-amber-400'>正在解析...</span>
+    <span className='truncate text-amber-600 dark:text-amber-400'>{t('session_files_parsing')}</span>
   ) : item.previewStatus === 'preview_failed' ? (
-    <span className='truncate text-amber-600 dark:text-amber-400'>已就绪 · 预览不可用</span>
+    <span className='truncate text-amber-600 dark:text-amber-400'>{t('session_files_ready_preview_unavailable')}</span>
   ) : (
     <>
       <CheckCircleFilled className='text-emerald-500' />
-      <span className='truncate'>已就绪 · {formatBytes(item.size)}</span>
+      <span className='truncate'>{t('session_files_ready', { size: formatBytes(item.size) })}</span>
     </>
   );
 
@@ -256,7 +277,7 @@ const RailItemCard: React.FC<{
       status={status}
     >
       {canRetry(item) && onRetry && (
-        <Tooltip title='重试上传'>
+        <Tooltip title={t('session_files_retry_upload')}>
           <button
             type='button'
             aria-label={retryAriaLabel(item.name)}
@@ -267,12 +288,12 @@ const RailItemCard: React.FC<{
             className='h-6 flex-shrink-0 rounded-md bg-red-100 px-1.5 text-[11px] leading-none text-red-600 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400'
           >
             <ReloadOutlined className='mr-1 text-[10px]' />
-            重试
+            {t('session_files_retry')}
           </button>
         </Tooltip>
       )}
       {onRemove && (
-        <Tooltip title='移除文件'>
+        <Tooltip title={t('session_files_remove_file')}>
           <button
             type='button'
             aria-label={removeAriaLabel(item.name)}
@@ -311,12 +332,15 @@ const CompactFileChip: React.FC<{
   onRetry?: (clientId: string) => void;
   onPreview?: (item: RailItem) => void;
 }> = memo(({ item, onRemove, onRetry, onPreview }) => {
+  const { t } = useTranslation();
   const failed = isHardFailure(item);
   const previewable = !!onPreview && canPreviewItem(item);
   const percent = progressPercent(item.uploadProgress);
   const uploading = item.uploadStatus === 'uploading' || item.uploadStatus === 'queued';
   const parsing = item.uploadStatus === 'done' && item.previewStatus === 'loading';
   const processing = uploading || parsing;
+  const errorKey = statusErrorKey(item.error);
+  const errorText = errorKey ? t(errorKey) : item.error;
 
   return (
     <div
@@ -332,12 +356,12 @@ const CompactFileChip: React.FC<{
             ? 'border-blue-200 bg-blue-50/55 text-slate-700 hover:border-blue-300 dark:border-blue-900/60 dark:bg-blue-950/25 dark:text-slate-200'
             : 'border-emerald-200/90 bg-emerald-50/80 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:border-emerald-700/70 dark:hover:bg-emerald-950/40',
       )}
-      title={`${item.name} · ${formatBytes(item.size)}${item.error ? ` · ${statusErrorText(item.error)}` : ''}`}
+      title={`${item.name} · ${formatBytes(item.size)}${errorText ? ` · ${errorText}` : ''}`}
     >
       <button
         type='button'
         disabled={!previewable}
-        aria-label={previewable ? `预览 ${item.name}` : undefined}
+        aria-label={previewable ? t('session_files_preview_name', { name: item.name }) : undefined}
         onClick={() => onPreview?.(item)}
         className={classNames(
           'flex h-full min-w-0 items-center gap-1.5 rounded-l-full pl-1.5 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-1 active:scale-[0.985]',
@@ -363,13 +387,13 @@ const CompactFileChip: React.FC<{
       {parsing && (
         <span className='flex flex-none items-center gap-1 px-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-300'>
           <LoadingOutlined className='text-[9px]' />
-          解析中
+          {t('session_files_parsing_short')}
         </span>
       )}
       {item.previewStatus === 'preview_failed' && !failed && (
         <span
           className='flex flex-none items-center px-0.5 text-[10px] text-amber-500 dark:text-amber-400'
-          title='预览不可用，文件仍可分析'
+          title={t('session_files_preview_unavailable_hint')}
         >
           <ExclamationCircleFilled />
         </span>
@@ -403,7 +427,7 @@ const CompactFileChip: React.FC<{
       {item.uploadStatus === 'uploading' && (
         <div
           role='progressbar'
-          aria-label={`${item.name} 上传进度`}
+          aria-label={t('session_files_upload_progress_aria', { name: item.name })}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={percent}
@@ -463,23 +487,27 @@ const CompactOverflowDraftRow: React.FC<{
   onRetry?: (clientId: string) => void;
   onPreview?: (item: RailItem) => void;
 }> = memo(({ item, onRemove, onRetry, onPreview }) => {
+  const { t } = useTranslation();
   const failed = isHardFailure(item);
   const previewable = !!onPreview && canPreviewItem(item);
   const percent = progressPercent(item.uploadProgress);
   const uploading = item.uploadStatus === 'uploading' || item.uploadStatus === 'queued';
   const parsing = item.uploadStatus === 'done' && item.previewStatus === 'loading';
 
+  const errorKey = statusErrorKey(item.error);
   const status = failed
-    ? statusErrorText(item.error)
+    ? errorKey
+      ? t(errorKey)
+      : item.error
     : item.uploadStatus === 'queued'
-      ? '等待上传'
+      ? t('session_files_waiting_upload')
       : item.uploadStatus === 'uploading'
-        ? `上传中 ${percent}%`
+        ? t('session_files_uploading_progress', { percent })
         : parsing
-          ? '正在解析'
+          ? t('session_files_parsing_short')
           : item.previewStatus === 'preview_failed'
-            ? '已就绪 · 预览不可用'
-            : `已就绪 · ${formatBytes(item.size)}`;
+            ? t('session_files_ready_preview_unavailable')
+            : t('session_files_ready', { size: formatBytes(item.size) });
 
   return (
     <div
@@ -493,7 +521,7 @@ const CompactOverflowDraftRow: React.FC<{
       <button
         type='button'
         disabled={!previewable}
-        aria-label={previewable ? `预览 ${item.name}` : undefined}
+        aria-label={previewable ? t('session_files_preview_name', { name: item.name }) : undefined}
         onClick={() => onPreview?.(item)}
         className={classNames(
           'flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500/30',
@@ -533,7 +561,7 @@ const CompactOverflowDraftRow: React.FC<{
         </span>
       </button>
       {failed && canRetry(item) && onRetry && (
-        <Tooltip title='重试上传'>
+        <Tooltip title={t('session_files_retry_upload')}>
           <button
             type='button'
             aria-label={retryAriaLabel(item.name)}
@@ -545,7 +573,7 @@ const CompactOverflowDraftRow: React.FC<{
         </Tooltip>
       )}
       {onRemove && (
-        <Tooltip title='移除文件'>
+        <Tooltip title={t('session_files_remove_file')}>
           <button
             type='button'
             aria-label={removeAriaLabel(item.name)}
@@ -566,12 +594,13 @@ const CompactOverflowLegacyRow: React.FC<{
   file: LegacyServerFile;
   onPreview?: (file: LegacyServerFile) => void;
 }> = memo(({ file, onPreview }) => {
+  const { t } = useTranslation();
   const item = toLegacyRailItem(file);
   return (
     <button
       type='button'
       disabled={!onPreview}
-      aria-label={onPreview ? `预览 ${item.name}` : undefined}
+      aria-label={onPreview ? t('session_files_preview_name', { name: item.name }) : undefined}
       onClick={() => onPreview?.(file)}
       className={classNames(
         'flex min-h-11 w-full items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 text-left outline-none transition-colors hover:border-slate-100 hover:bg-slate-50/90 focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:hover:border-white/[0.06] dark:hover:bg-white/[0.035]',
@@ -586,7 +615,7 @@ const CompactOverflowLegacyRow: React.FC<{
           {item.name}
         </span>
         <span className='mt-0.5 block truncate text-[11px] text-slate-400 dark:text-slate-500'>
-          已就绪 · {formatBytes(item.size)}
+          {t('session_files_ready', { size: formatBytes(item.size) })}
         </span>
       </span>
     </button>
@@ -609,6 +638,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
   className,
   density = 'comfortable',
 }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [compactOverflowOpen, setCompactOverflowOpen] = useState(false);
   const [compactRailWidth, setCompactRailWidth] = useState(0);
@@ -723,23 +753,25 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
     <section
       id={compactPanelId}
       role='region'
-      aria-label={`本轮附件，共 ${totalCount} 个`}
+      aria-label={t('session_files_round_attachments_aria', { count: totalCount })}
       style={{ width: compactPanelWidth }}
       className='overflow-hidden rounded-[14px] bg-white dark:bg-[#202126]'
     >
       <div className='flex h-12 items-center justify-between border-b border-slate-100 px-3 dark:border-white/[0.07]'>
         <div className='flex items-center gap-2'>
-          <span className='text-[13px] font-semibold text-slate-800 dark:text-slate-100'>本轮附件</span>
+          <span className='text-[13px] font-semibold text-slate-800 dark:text-slate-100'>
+            {t('session_files_round_attachments')}
+          </span>
           <span className='rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-slate-500 dark:bg-white/[0.07] dark:text-slate-400'>
             {totalCount}
           </span>
         </div>
         {onClearAll && totalCount > 1 && (
           <Popconfirm
-            title='移除全部附件？'
-            description='已上传的文件将从本轮提问中移除。'
-            okText='全部移除'
-            cancelText='取消'
+            title={t('session_files_remove_all_confirm_title')}
+            description={t('session_files_remove_all_confirm_desc')}
+            okText={t('session_files_remove_all')}
+            cancelText={t('session_files_cancel')}
             okButtonProps={{ danger: true }}
             placement='topRight'
             onConfirm={() => {
@@ -752,7 +784,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
               className='flex h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-medium text-slate-400 outline-none transition-colors hover:bg-red-50 hover:text-red-500 focus-visible:ring-2 focus-visible:ring-red-500/25 dark:text-slate-500 dark:hover:bg-red-950/30 dark:hover:text-red-300'
             >
               <DeleteOutlined className='text-[11px]' />
-              全部移除
+              {t('session_files_remove_all')}
             </button>
           </Popconfirm>
         )}
@@ -782,7 +814,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
         )}
       </div>
       <div className='border-t border-slate-100 px-3 py-2 text-[10px] text-slate-400 dark:border-white/[0.07] dark:text-slate-500'>
-        共 {formatBytes(totalBytes)} · 点击文件可打开预览
+        {t('session_files_total_size_hint', { size: formatBytes(totalBytes) })}
       </div>
     </section>
   );
@@ -803,8 +835,8 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
         type='button'
         aria-expanded={compactOverflowOpen}
         aria-controls={compactPanelId}
-        aria-label={`查看另外 ${compactLayout.hiddenCount} 个附件，共 ${totalCount} 个`}
-        title={`另有 ${compactLayout.hiddenCount} 个文件`}
+        aria-label={t('session_files_more_attachments_aria', { hidden: compactLayout.hiddenCount, total: totalCount })}
+        title={t('session_files_more_files_title', { count: compactLayout.hiddenCount })}
         className={classNames(
           'session-file-compact-item relative flex h-8 min-w-8 flex-none items-center justify-center rounded-full border px-2 text-[11px] font-semibold tabular-nums outline-none transition-[background-color,border-color,color,transform] focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-95',
           compactHiddenState.errorCount > 0
@@ -861,24 +893,24 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
 
       {compact && (
         <span className='session-files-visually-hidden' role='status' aria-live='polite' aria-atomic='true'>
-          {uploading ? `${totalCount} 个附件正在上传，整体进度 ${aggregatePercent}%` : `已添加 ${totalCount} 个附件`}
+          {uploading
+            ? t('session_files_uploading_aria', { count: totalCount, percent: aggregatePercent })
+            : t('session_files_added_aria', { count: totalCount })}
         </span>
       )}
 
       {showSummaryRow && (
         <div className='mb-1.5 flex items-center justify-between px-0.5 text-[11px] font-medium text-slate-500/80 dark:text-slate-400'>
-          <span>
-            已添加 {totalCount} 个文件 · 共 {formatBytes(totalBytes)}
-          </span>
+          <span>{t('session_files_added_summary', { count: totalCount, size: formatBytes(totalBytes) })}</span>
           <div className='flex items-center gap-3'>
             {uploading && (
               <span role='status' aria-live='polite' aria-label={`Overall upload progress ${aggregatePercent}%`}>
-                上传中 {aggregatePercent}%
+                {t('session_files_uploading_progress', { percent: aggregatePercent })}
               </span>
             )}
             {onClearAll && (
               <button type='button' onClick={onClearAll} className='transition hover:text-red-500'>
-                全部移除
+                {t('session_files_remove_all')}
               </button>
             )}
           </div>
@@ -890,7 +922,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
           ref={compactRailRef}
           className='flex min-h-9 w-full min-w-0 items-center gap-1.5 py-0.5'
           role='group'
-          aria-label='本轮附件'
+          aria-label={t('session_files_round_attachments')}
         >
           <div className='flex min-w-0 shrink items-center gap-1.5 overflow-hidden'>
             {compactManager}
@@ -928,7 +960,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
                 FILE_CARD_WIDTH,
               )}
             >
-              还有 {hiddenCount} 个文件 · 展开
+              {t('session_files_expand_more', { count: hiddenCount })}
             </button>
           )}
           {expanded && canShowFoldControls && (
@@ -940,7 +972,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
                 FILE_CARD_WIDTH,
               )}
             >
-              收起
+              {t('session_files_collapse')}
             </button>
           )}
           {addControl && (
@@ -969,7 +1001,7 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
               <Spin indicator={<LoadingOutlined spin />} />
             </div>
           ) : preview.error ? (
-            <Alert type='error' showIcon message='预览失败' description={preview.error} />
+            <Alert type='error' showIcon message={t('session_files_preview_failed')} description={preview.error} />
           ) : (
             <AttachmentPreview snapshot={preview.snapshot} size={preview.size} />
           )}
@@ -982,27 +1014,33 @@ const AttachmentRail: React.FC<AttachmentRailProps> = ({
 AttachmentRail.displayName = 'AttachmentRail';
 
 /** Compact-density upload entry placed directly after the final file token. */
-export const AttachmentRailCompactAddButton: React.FC<{ label?: string }> = ({ label = '添加' }) => (
-  <Tooltip title='继续添加文件'>
+export const AttachmentRailCompactAddButton: React.FC<{ label?: string }> = ({ label }) => {
+  const { t } = useTranslation();
+  return (
+    <Tooltip title={t('session_files_add_more')}>
+      <button
+        type='button'
+        aria-label={t('session_files_add_more')}
+        className='flex h-8 flex-none items-center justify-center gap-1 whitespace-nowrap rounded-full border border-dashed border-slate-300/90 bg-white/45 px-2.5 text-[12px] font-medium text-slate-500 outline-none transition-[background-color,border-color,color,transform] hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-[0.97] dark:border-white/15 dark:bg-white/[0.025] dark:text-slate-400 dark:hover:border-blue-700/70 dark:hover:bg-blue-950/35 dark:hover:text-blue-300'
+      >
+        <PlusOutlined className='text-[11px]' />
+        <span>{label ?? t('session_files_add')}</span>
+      </button>
+    </Tooltip>
+  );
+};
+
+export const AttachmentRailAddButton: React.FC<{ label?: string }> = ({ label }) => {
+  const { t } = useTranslation();
+  return (
     <button
       type='button'
-      aria-label='继续添加文件'
-      className='flex h-8 flex-none items-center justify-center gap-1 whitespace-nowrap rounded-full border border-dashed border-slate-300/90 bg-white/45 px-2.5 text-[12px] font-medium text-slate-500 outline-none transition-[background-color,border-color,color,transform] hover:border-blue-300 hover:bg-blue-50/60 hover:text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-[0.97] dark:border-white/15 dark:bg-white/[0.025] dark:text-slate-400 dark:hover:border-blue-700/70 dark:hover:bg-blue-950/35 dark:hover:text-blue-300'
+      className='flex h-11 min-w-[104px] items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-slate-50/35 px-3 py-1.5 text-[12px] text-slate-400 outline-none transition-[background-color,border-color,color,transform] hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-[0.98] dark:border-slate-600 dark:bg-white/[0.02] dark:hover:border-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-300'
     >
-      <PlusOutlined className='text-[11px]' />
-      <span>{label}</span>
+      <PlusOutlined className='text-[12px]' />
+      {label ?? t('session_files_add_files')}
     </button>
-  </Tooltip>
-);
-
-export const AttachmentRailAddButton: React.FC<{ label?: string }> = ({ label = '添加文件' }) => (
-  <button
-    type='button'
-    className='flex h-11 min-w-[104px] items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-slate-50/35 px-3 py-1.5 text-[12px] text-slate-400 outline-none transition-[background-color,border-color,color,transform] hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500/30 active:scale-[0.98] dark:border-slate-600 dark:bg-white/[0.02] dark:hover:border-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-300'
-  >
-    <PlusOutlined className='text-[12px]' />
-    {label}
-  </button>
-);
+  );
+};
 
 export default memo(AttachmentRail);

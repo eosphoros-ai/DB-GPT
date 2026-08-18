@@ -24,6 +24,7 @@ import {
 import { Alert, Descriptions, Table, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { FileIconKey } from './attachment-view-model';
 import {
@@ -87,41 +88,50 @@ export const ATTACHMENT_PREVIEW_DRAWER_STYLES = {
 };
 
 /** Consistent title used by the home Drawer and the in-chat right panel. */
-export const AttachmentPreviewPanelTitle: React.FC = () => (
-  <div className='flex min-w-0 items-center gap-2'>
-    <span className='flex h-7 w-7 flex-none items-center justify-center rounded-md bg-blue-50 text-[13px] text-blue-600 dark:bg-blue-950/45 dark:text-blue-300'>
-      <EyeOutlined aria-hidden='true' />
-    </span>
-    <span className='truncate text-[13px] font-medium text-slate-700 dark:text-slate-200'>文件预览</span>
-  </div>
-);
+export const AttachmentPreviewPanelTitle: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div className='flex min-w-0 items-center gap-2'>
+      <span className='flex h-7 w-7 flex-none items-center justify-center rounded-md bg-blue-50 text-[13px] text-blue-600 dark:bg-blue-950/45 dark:text-blue-300'>
+        <EyeOutlined aria-hidden='true' />
+      </span>
+      <span className='truncate text-[13px] font-medium text-slate-700 dark:text-slate-200'>
+        {t('session_files_preview_title')}
+      </span>
+    </div>
+  );
+};
 
 /** A visible dismiss action that stays neutral until the user interacts. */
 export const AttachmentPreviewCloseButton: React.FC<{ onClose: () => void; className?: string }> = ({
   onClose,
   className,
-}) => (
-  <Tooltip title='关闭预览（Esc）' placement='left'>
-    <button
-      type='button'
-      aria-label='关闭文件预览'
-      aria-keyshortcuts='Escape'
-      onClick={onClose}
-      className={classNames(
-        'group inline-flex h-11 flex-none items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-red-200 hover:bg-red-50/80 hover:text-red-600 hover:shadow-[0_2px_8px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/35 active:scale-[0.97] dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-red-900/70 dark:hover:bg-red-950/40 dark:hover:text-red-300 sm:h-8',
-        className,
-      )}
-    >
-      <CloseOutlined aria-hidden='true' className='text-[11px]' />
-      <span>关闭</span>
-    </button>
-  </Tooltip>
-);
+}) => {
+  const { t } = useTranslation();
+  return (
+    <Tooltip title={t('session_files_close_preview_tooltip')} placement='left'>
+      <button
+        type='button'
+        aria-label={t('session_files_close_preview_aria')}
+        aria-keyshortcuts='Escape'
+        onClick={onClose}
+        className={classNames(
+          'group inline-flex h-11 flex-none items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-[background-color,border-color,color,box-shadow,transform] duration-200 hover:border-red-200 hover:bg-red-50/80 hover:text-red-600 hover:shadow-[0_2px_8px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/35 active:scale-[0.97] dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-red-900/70 dark:hover:bg-red-950/40 dark:hover:text-red-300 sm:h-8',
+          className,
+        )}
+      >
+        <CloseOutlined aria-hidden='true' className='text-[11px]' />
+        <span>{t('session_files_close')}</span>
+      </button>
+    </Tooltip>
+  );
+};
 
 const PRE_TEXT_CLASS =
   'max-h-[480px] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 
 const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, className }) => {
+  const { t } = useTranslation();
   const mode = useMemo(
     () =>
       resolvePreviewMode({
@@ -149,14 +159,22 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
 
   if (!snapshot) {
     return (
-      <div className={classNames('px-3 py-4 text-sm text-gray-400 dark:text-gray-500', className)}>暂无可预览内容</div>
+      <div className={classNames('px-3 py-4 text-sm text-gray-400 dark:text-gray-500', className)}>
+        {t('session_files_no_preview')}
+      </div>
     );
   }
 
   const metadataEntries = documentData ? Object.entries(documentData.metadata) : [];
 
   const visibleScopeLabel =
-    mode === 'table' ? (table?.rows.length ? `${table.rows.length} 行预览` : '暂无数据行') : scopeSummary?.label;
+    mode === 'table'
+      ? table?.rows.length
+        ? t('session_files_rows_preview', { count: table.rows.length })
+        : t('session_files_no_data_rows')
+      : scopeSummary
+        ? t(scopeSummary.labelKey, scopeSummary.labelParams)
+        : undefined;
 
   return (
     <div className={classNames('flex flex-col gap-2', className)} data-component='attachment-preview'>
@@ -182,13 +200,16 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
           )}
         </div>
         {scopeSummary && (
-          <Tooltip title={scopeSummary.hint ?? undefined} placement='bottom'>
+          <Tooltip title={scopeSummary.hintKey ? t(scopeSummary.hintKey) : undefined} placement='bottom'>
             <span
               tabIndex={scopeSummary.partial ? 0 : undefined}
               aria-label={
                 scopeSummary.partial
-                  ? `${scopeSummary.label}，仅展示部分内容。${scopeSummary.hint}`
-                  : scopeSummary.label
+                  ? t('session_files_partial_aria', {
+                      label: t(scopeSummary.labelKey, scopeSummary.labelParams),
+                      hint: scopeSummary.hintKey ? t(scopeSummary.hintKey) : '',
+                    })
+                  : t(scopeSummary.labelKey, scopeSummary.labelParams)
               }
               className='inline-flex h-7 flex-none items-center gap-1.5 rounded-md border border-blue-100 bg-blue-50/75 px-2 text-[11px] font-medium text-blue-700 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 dark:border-blue-900/60 dark:bg-blue-950/35 dark:text-blue-300'
             >
@@ -198,7 +219,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
                 <>
                   <span aria-hidden='true' className='mx-0.5 h-3 w-px bg-blue-200 dark:bg-blue-800' />
                   <InfoCircleOutlined aria-hidden='true' className='text-[11px]' />
-                  <span>部分</span>
+                  <span>{t('session_files_partial')}</span>
                 </>
               )}
             </span>
@@ -211,11 +232,11 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
         <Alert
           type='warning'
           showIcon
-          message='暂时无法生成预览'
+          message={t('session_files_preview_unavailable_title')}
           description={
             snapshot.error_code
-              ? `文件已上传，但预览生成失败（${snapshot.error_code}）。完整文件仍可用于分析。`
-              : '文件已上传，但暂时无法生成预览。完整文件仍可用于分析。'
+              ? t('session_files_preview_failed_with_code', { code: snapshot.error_code })
+              : t('session_files_preview_failed_no_code')
           }
         />
       )}
@@ -267,7 +288,7 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ snapshot, size, c
 
       {mode === 'empty' && (
         <div className='rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-400 dark:border-white/10 dark:text-slate-500'>
-          {snapshot.truncated ? '当前预览内容受限，完整文件仍可用于分析。' : '暂无可预览内容'}
+          {snapshot.truncated ? t('session_files_preview_limited') : t('session_files_no_preview')}
         </div>
       )}
     </div>

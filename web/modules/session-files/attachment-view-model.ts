@@ -346,11 +346,22 @@ export function fileIconKey(input: { name?: string; mediaType?: string; kind?: s
 
 export type PreviewMode = 'table' | 'text' | 'document' | 'empty';
 
-/** User-facing scope shown beside the previewed file metadata. */
+/**
+ * User-facing scope shown beside the previewed file metadata. The view-model
+ * stays i18n-agnostic: it returns translation keys (+ interpolation params)
+ * and the React layer renders them through `t()` — same pattern as
+ * `typeLabelKey` in AttachmentMessageCards.
+ */
 export interface PreviewScopeSummary {
-  label: string;
+  labelKey:
+    | 'session_files_scope_limited'
+    | 'session_files_scope_table_empty'
+    | 'session_files_scope_table_rows'
+    | 'session_files_scope_document'
+    | 'session_files_scope_content';
+  labelParams?: { count: number };
   partial: boolean;
-  hint: string | null;
+  hintKey: 'session_files_scope_truncated_hint' | null;
 }
 
 /**
@@ -363,31 +374,38 @@ export function buildPreviewScopeSummary(input: {
   truncated: boolean;
   visibleRows?: number;
 }): PreviewScopeSummary | null {
-  const hint = input.truncated ? '为保证预览性能，当前仅展示部分内容，完整文件仍可用于分析。' : null;
+  const hintKey: PreviewScopeSummary['hintKey'] = input.truncated ? 'session_files_scope_truncated_hint' : null;
 
   if (input.mode === 'empty') {
     return input.truncated
       ? {
-          label: '预览内容受限',
+          labelKey: 'session_files_scope_limited',
           partial: true,
-          hint,
+          hintKey,
         }
       : null;
   }
 
   if (input.mode === 'table') {
     const rows = Number.isFinite(input.visibleRows) ? Math.max(0, Math.floor(input.visibleRows ?? 0)) : 0;
-    return {
-      label: rows === 0 ? '数据预览 · 暂无数据行' : `数据预览 · ${rows} 行`,
-      partial: input.truncated,
-      hint,
-    };
+    return rows === 0
+      ? {
+          labelKey: 'session_files_scope_table_empty',
+          partial: input.truncated,
+          hintKey,
+        }
+      : {
+          labelKey: 'session_files_scope_table_rows',
+          labelParams: { count: rows },
+          partial: input.truncated,
+          hintKey,
+        };
   }
 
   return {
-    label: input.mode === 'document' ? '文档预览' : '内容预览',
+    labelKey: input.mode === 'document' ? 'session_files_scope_document' : 'session_files_scope_content',
     partial: input.truncated,
-    hint,
+    hintKey,
   };
 }
 
