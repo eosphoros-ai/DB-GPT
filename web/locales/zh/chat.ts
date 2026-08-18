@@ -145,6 +145,8 @@ export const ChatZh: Resources['translation'] = {
   voice_input: '语音输入',
   voice_input_coming_soon: '语音输入即将上线',
   expand_panel: '展开面板',
+  stop_generating: '停止生成',
+  generation_stopped: '已停止生成',
   search_skill: '搜索技能',
   step_type_skill: '加载技能',
   running: '运行中...',

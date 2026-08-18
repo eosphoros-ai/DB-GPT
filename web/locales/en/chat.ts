@@ -137,6 +137,8 @@ export const ChatEn = {
   voice_input: 'Voice Input',
   voice_input_coming_soon: 'Voice input coming soon',
   expand_panel: 'Expand Panel',
+  stop_generating: 'Stop generating',
+  generation_stopped: 'Generation stopped',
   search_skill: 'Search skills',
   step_type_skill: 'Load Skill',
   running: 'Running...',

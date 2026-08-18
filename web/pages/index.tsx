@@ -902,6 +902,19 @@ const Playground: NextPage = () => {
   // knowledge / skill / connectors) instead of a drifting UI state.
   const lastSentPayloadRef = useRef<ChatReplayPayload | null>(null);
 
+  // AbortController of the in-flight chat request, stored so the stop button
+  // and the conversation-switch effect can both reach it. Ownership stays
+  // with the streaming loop in handleStart, which clears it in `finally`.
+  const chatAbortControllerRef = useRef<AbortController | null>(null);
+
+  const abortInFlightChat = useCallback(() => {
+    chatAbortControllerRef.current?.abort();
+  }, []);
+
+  const handleStopGeneration = useCallback(() => {
+    abortInFlightChat();
+  }, [abortInFlightChat]);
+
   const [historyLoading, setHistoryLoading] = useState(false);
   const [contextStatus, setContextStatus] = useState<{
     state: 'OK' | 'WARNING' | 'ERROR';
@@ -1055,6 +1068,10 @@ const Playground: NextPage = () => {
     cancelSummaryPresentation();
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationId) {
+      // Abort any in-flight turn before switching away — its stream would
+      // otherwise keep writing into global UI state (loading, right panel)
+      // of the newly opened conversation.
+      abortInFlightChat();
       loadConversation(convId);
       // Rebuild the composer rail from the server-owned session files so a
       // conversation switch never leaks drafts from another session scope.
@@ -1062,6 +1079,7 @@ const Playground: NextPage = () => {
       closeSessionFilePreview();
     } else if (!convId && conversationId) {
       // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
+      abortInFlightChat();
       setMessages([]);
       setConversationId(null);
       setQuery('');
@@ -1076,7 +1094,7 @@ const Playground: NextPage = () => {
       sessionFiles.clearTurn();
       closeSessionFilePreview();
     }
-  }, [cancelSummaryPresentation, closeSessionFilePreview, router.query.id]);
+  }, [abortInFlightChat, cancelSummaryPresentation, closeSessionFilePreview, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1881,6 +1899,7 @@ const Playground: NextPage = () => {
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    chatAbortControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
       ...prev,
@@ -2351,19 +2370,53 @@ const Playground: NextPage = () => {
         buffer = parts.pop() || '';
         parts.forEach(processEvent);
       }
-      setLoading(false);
     } catch (err: any) {
-      setLoading(false);
-      message.error(err?.message || 'Failed to get response');
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastMsg = newMessages[newMessages.length - 1];
-        if (lastMsg && lastMsg.role === 'view') {
-          lastMsg.context = err?.message || 'Error occurred';
-          lastMsg.thinking = false;
+      if (err?.name === 'AbortError' || controller.signal.aborted) {
+        // User-initiated stop (stop button, or the conversation-switch effect
+        // aborting the in-flight request). Not an error: keep the partial
+        // round in place and mark it stopped. Updates are keyed by responseId
+        // and guarded by conversation ownership, so an abort triggered by
+        // switching away is a safe no-op on the newly shown conversation.
+        if (conversationIdRef.current === currentConvId) {
+          setExecutionMap(prev => {
+            const current = prev[responseId];
+            if (!current) return prev;
+            const nextSteps = current.steps.map(item =>
+              item.status === 'running' ? { ...item, status: 'failed' as const } : item,
+            );
+            return { ...prev, [responseId]: { ...current, steps: nextSteps } };
+          });
+          setMessages(prev =>
+            prev.map(msg => {
+              if (msg.id !== responseId || msg.role !== 'view') return msg;
+              const partial = msg.context?.trim();
+              const stoppedMark = t('generation_stopped');
+              return {
+                ...msg,
+                context: partial ? `${partial}\n\n_${stoppedMark}_` : `_${stoppedMark}_`,
+                thinking: false,
+              };
+            }),
+          );
+          setTaskPlan([]);
         }
-        return newMessages;
-      });
+      } else {
+        message.error(err?.message || 'Failed to get response');
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg && lastMsg.role === 'view') {
+            lastMsg.context = err?.message || 'Error occurred';
+            lastMsg.thinking = false;
+          }
+          return newMessages;
+        });
+      }
+    } finally {
+      if (chatAbortControllerRef.current === controller) {
+        chatAbortControllerRef.current = null;
+      }
+      setLoading(false);
     }
   };
 
@@ -3507,43 +3560,60 @@ const Playground: NextPage = () => {
                                 />
                               </Tooltip>
 
-                              {/* Send Button with blue gradient + gloss animation */}
-                              <Button
-                                type='primary'
-                                shape={queuedSendAfterUpload ? 'round' : 'circle'}
-                                icon={queuedSendAfterUpload ? undefined : <ArrowUpOutlined />}
-                                onClick={() => handleStart()}
-                                disabled={
-                                  (!query.trim() && !hasSessionFileDrafts && !hasLegacyFile) ||
-                                  loading ||
-                                  queuedSendAfterUpload
-                                }
-                                loading={loading || queuedSendAfterUpload}
-                                className={`group/send relative overflow-hidden border-none shadow-lg flex-shrink-0 h-9 transition-all duration-200 ${
-                                  queuedSendAfterUpload ? 'px-4' : 'w-9'
-                                } ${
-                                  query.trim() || hasSessionFileDrafts || hasLegacyFile
-                                    ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
-                                    : 'bg-gray-200 text-gray-400'
-                                }`}
-                                style={
-                                  query.trim() || hasSessionFileDrafts || hasLegacyFile
-                                    ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
-                                    : undefined
-                                }
-                              >
-                                {queuedSendAfterUpload && <span className='text-[13px] font-medium'>上传后发送</span>}
-                                {(query.trim() || hasSessionFileDrafts || hasLegacyFile) && (
-                                  <span
-                                    className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
-                                    style={{
-                                      background:
-                                        'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 60%)',
-                                      animation: 'glossSweepChat 1.8s ease-in-out infinite',
-                                    }}
-                                  />
-                                )}
-                              </Button>
+                              {/* Send Button with blue gradient + gloss animation.
+                                  While a reply is streaming it becomes a stop button. */}
+                              {loading && !queuedSendAfterUpload ? (
+                                // Stop button — same shape/color family as the send button
+                                // (ChatGPT/Claude pattern): blue gradient circle carrying a
+                                // white rounded-square stop glyph. Native <button> keeps
+                                // antd's primary-button hover overrides out of the way.
+                                <button
+                                  type='button'
+                                  aria-label={t('stop_generating')}
+                                  onClick={handleStopGeneration}
+                                  className='relative flex-shrink-0 h-9 w-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
+                                  style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
+                                >
+                                  <span className='h-3 w-3 rounded-[3px] bg-white' />
+                                </button>
+                              ) : (
+                                <Button
+                                  type='primary'
+                                  shape={queuedSendAfterUpload ? 'round' : 'circle'}
+                                  icon={queuedSendAfterUpload ? undefined : <ArrowUpOutlined />}
+                                  onClick={() => handleStart()}
+                                  disabled={
+                                    (!query.trim() && !hasSessionFileDrafts && !hasLegacyFile) ||
+                                    loading ||
+                                    queuedSendAfterUpload
+                                  }
+                                  loading={queuedSendAfterUpload}
+                                  className={`group/send relative overflow-hidden border-none shadow-lg flex-shrink-0 h-9 transition-all duration-200 ${
+                                    queuedSendAfterUpload ? 'px-4' : 'w-9'
+                                  } ${
+                                    query.trim() || hasSessionFileDrafts || hasLegacyFile
+                                      ? 'bg-gradient-to-br from-[#3b82f6] to-[#2563eb] hover:shadow-blue-300/40 hover:shadow-xl hover:scale-105'
+                                      : 'bg-gray-200 text-gray-400'
+                                  }`}
+                                  style={
+                                    query.trim() || hasSessionFileDrafts || hasLegacyFile
+                                      ? { background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }
+                                      : undefined
+                                  }
+                                >
+                                  {queuedSendAfterUpload && <span className='text-[13px] font-medium'>上传后发送</span>}
+                                  {(query.trim() || hasSessionFileDrafts || hasLegacyFile) && (
+                                    <span
+                                      className='absolute inset-0 opacity-0 group-hover/send:opacity-100 transition-opacity duration-300 pointer-events-none'
+                                      style={{
+                                        background:
+                                          'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 60%)',
+                                        animation: 'glossSweepChat 1.8s ease-in-out infinite',
+                                      }}
+                                    />
+                                  )}
+                                </Button>
+                              )}
                             </div>
                             <style
                               dangerouslySetInnerHTML={{
