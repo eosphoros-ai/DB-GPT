@@ -838,6 +838,23 @@ const Playground: NextPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Reset scheduled-task replay state and composer selections so a cleared or
+  // restored conversation never replays state from a previously viewed
+  // conversation (#3200). Shared by handleClearChat and the route-id effect.
+  const resetScheduledTaskReplayState = () => {
+    lastSentPayloadRef.current = null;
+    lastSentConvUidRef.current = null;
+    setSelectedDb(null);
+    setSelectedKnowledge(null);
+    setSelectedSkill(null);
+    setSelectedConnectors([]);
+    setUploadedFile(null);
+    setUploadedFilePath(null);
+    setFilePreview(null);
+    setChartPreview(null);
+    setFilePreviewError(null);
+  };
+
   useEffect(() => {
     cancelSummaryPresentation();
     const convId = router.query.id as string | undefined;
@@ -860,13 +877,7 @@ const Playground: NextPage = () => {
       setSummaryComplete(false);
       setTaskPlan([]);
       // Reset the scheduled-task snapshot and composer selections for the new task (#3200).
-      lastSentPayloadRef.current = null;
-      lastSentConvUidRef.current = null;
-      setSelectedDb(null);
-      setSelectedKnowledge(null);
-      setSelectedSkill(null);
-      setSelectedConnectors([]);
-      setUploadedFile(null);
+      resetScheduledTaskReplayState();
     }
   }, [cancelSummaryPresentation, router.query.id]);
 
@@ -2422,6 +2433,8 @@ const Playground: NextPage = () => {
     setSelectedCitationIndex(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
+    // Reset the scheduled-task snapshot and composer selections for the cleared chat (#3200).
+    resetScheduledTaskReplayState();
     router.push('/', undefined, { shallow: true });
   };
 
