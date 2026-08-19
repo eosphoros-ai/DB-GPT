@@ -850,4 +850,6 @@ export const CommonEn = {
     'Cannot connect to DB-GPT service: network unreachable (possibly CORS restriction or service not running). Please check cors_allowed_origins config and whether the service is up.',
   'request.error.timeout': 'Request timed out, please try again later.',
   'request.error.default': 'Request failed (HTTP {{status}}).',
+  'editor.please_select_database': 'Please select a database first',
+  'editor.please_enter_sql': 'Please enter SQL first',
 } as const;

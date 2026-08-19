@@ -846,4 +846,6 @@ export const CommonZh: Resources['translation'] = {
     '无法连接 DB-GPT 服务：网络不可达（可能是 CORS 跨域限制或服务未启动），请检查 cors_allowed_origins 配置及服务是否运行。',
   'request.error.timeout': '请求超时，请稍后重试。',
   'request.error.default': '请求失败（HTTP {{status}}）。',
+  'editor.please_select_database': '请先选择数据库',
+  'editor.please_enter_sql': '请先输入 SQL',
 } as const;
