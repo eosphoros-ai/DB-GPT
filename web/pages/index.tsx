@@ -853,6 +853,8 @@ const Playground: NextPage = () => {
     setFilePreview(null);
     setChartPreview(null);
     setFilePreviewError(null);
+    setPreviewArtifact(null);
+    setRightPanelView('execution');
   };
 
   useEffect(() => {
