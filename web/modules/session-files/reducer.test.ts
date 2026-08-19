@@ -14,6 +14,7 @@ const CAPS: UploadCapabilities = {
   max_file_bytes: 100,
   max_upload_bytes: 250,
   max_owner_bytes: 1024,
+  upload_request_timeout_seconds: 180,
   upload_concurrency: 3,
   supported_extensions: ['.csv'],
 };

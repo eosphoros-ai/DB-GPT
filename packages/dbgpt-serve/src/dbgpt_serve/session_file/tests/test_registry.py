@@ -634,6 +634,33 @@ class TestOwnerQuota:
         total = sum(r.size_bytes for r in records)
         assert total == 3 * len(CSV_CONTENT)
 
+    def test_disabled_quota_allows_overflow(self, tmp_path, storage):
+        # A negative max_owner_bytes disables quota accounting; uploads that
+        # would normally exceed the limit must all succeed and persist.
+        registry = _make_registry(
+            tmp_path / "work", storage=storage, config=_config(max_owner_bytes=-1)
+        )
+        for index in range(6):
+            _ingest(registry, name=f"f{index}.csv")
+
+        records = registry.list_files(owner_id=OWNER, session_id=SESSION)
+        assert len(records) == 6
+        assert len(storage.saved) == 6
+        total = sum(r.size_bytes for r in records)
+        assert total == 6 * len(CSV_CONTENT)
+
+    def test_delete_session_files_clears_scope(self, tmp_path, storage):
+        registry = _make_registry(tmp_path / "work", storage=storage, config=_config())
+        for index in range(3):
+            _ingest(registry, name=f"f{index}.csv")
+        assert len(registry.list_files(owner_id=OWNER, session_id=SESSION)) == 3
+
+        removed = registry.delete_session_files(owner_id=OWNER, session_id=SESSION)
+
+        assert removed == 3
+        assert registry.list_files(owner_id=OWNER, session_id=SESSION) == []
+        assert len(storage.saved) == 0  # blobs deleted too
+
     def test_quota_counts_copies_towards_owner_total(self, tmp_path, storage):
         registry = _make_registry(
             tmp_path / "work", storage=storage, config=_config(max_owner_bytes=20)

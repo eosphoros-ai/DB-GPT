@@ -42,6 +42,7 @@ export interface UploadCapabilities {
   max_file_bytes: number;
   max_upload_bytes: number;
   max_owner_bytes: number;
+  upload_request_timeout_seconds: number;
   upload_concurrency: number;
   supported_extensions: string[];
 }
@@ -52,6 +53,7 @@ export const DEFAULT_UPLOAD_CAPABILITIES: UploadCapabilities = {
   max_file_bytes: 100 * 1024 * 1024,
   max_upload_bytes: 500 * 1024 * 1024,
   max_owner_bytes: 1024 * 1024 * 1024,
+  upload_request_timeout_seconds: 180,
   upload_concurrency: 3,
   supported_extensions: [
     '.csv',
@@ -86,6 +88,7 @@ export interface SessionFilesApi {
     files: readonly File[];
     signal?: AbortSignal;
     onProgress?: (ratio: number) => void;
+    timeoutMs?: number;
   }): Promise<SessionFileSnapshot[]>;
   listFiles(sessionId: string): Promise<SessionFileSnapshot[]>;
   deleteFile(sessionId: string, fileId: string): Promise<void>;

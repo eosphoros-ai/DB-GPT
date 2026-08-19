@@ -101,6 +101,9 @@ class SessionFileCapabilitiesResponse(BaseModel):
         ..., description="Maximum aggregate bytes per upload request"
     )
     max_owner_bytes: int = Field(..., description="Total storage quota per owner")
+    upload_request_timeout_seconds: int = Field(
+        ..., description="Advertised per-request upload timeout in seconds"
+    )
     upload_concurrency: int = Field(
         ..., description="Advised client-side upload concurrency"
     )
@@ -116,6 +119,7 @@ class SessionFileCapabilitiesResponse(BaseModel):
             max_file_bytes=config.max_file_bytes,
             max_upload_bytes=config.max_upload_bytes,
             max_owner_bytes=config.max_owner_bytes,
+            upload_request_timeout_seconds=config.upload_request_timeout_seconds,
             upload_concurrency=config.upload_concurrency_advice,
             supported_extensions=config.supported_extension_list,
         )

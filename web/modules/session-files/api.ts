@@ -66,6 +66,7 @@ export async function uploadFiles(params: {
   files: readonly File[];
   signal?: AbortSignal;
   onProgress?: (ratio: number) => void;
+  timeoutMs?: number;
 }): Promise<SessionFileSnapshot[]> {
   const form = new FormData();
   form.append('session_id', params.sessionId);
@@ -75,7 +76,7 @@ export async function uploadFiles(params: {
   const response = await POST<FormData, SessionFileSnapshot[]>(BASE, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
     signal: params.signal,
-    timeout: 60000,
+    timeout: params.timeoutMs ?? 180000,
     onUploadProgress: event => {
       if (params.onProgress && event.total) {
         params.onProgress(Math.min(1, event.loaded / event.total));

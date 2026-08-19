@@ -453,6 +453,9 @@ class SessionFileRegistry:
 
         Must only be called while holding ``OwnerQuotaLocker`` for the owner.
         """
+        if self._config.max_owner_bytes < 0:
+            # Negative quota means unlimited; skip the accounting read entirely.
+            return
         committed = self._dao.total_owner_size_bytes(owner_id)
         if committed + incoming_bytes > self._config.max_owner_bytes:
             raise SessionFileRegistryError(
@@ -593,6 +596,20 @@ class SessionFileRegistry:
     def delete_task_file(self, *, owner_id: str, task_id: str, file_id: str) -> bool:
         """Delete the DAO row then the blob for an exact task scope."""
         return self._delete_in_scope(FileScope(owner_id, task_id=task_id), file_id)
+
+    def delete_session_files(self, *, owner_id: str, session_id: str) -> int:
+        """Delete all files in a session scope; returns the number removed.
+
+        Used by scheduled-task replay to reclaim the previous run's copied
+        files before freezing the current run into a fresh session, so
+        run-session copies do not accumulate unbounded on disk.
+        """
+        scope = FileScope(owner_id, session_id=session_id)
+        removed = 0
+        for item in self._dao.list_by_scope(scope):
+            if self._delete_in_scope(scope, item.file_id):
+                removed += 1
+        return removed
 
     def _delete_in_scope(self, scope: FileScope, file_id: str) -> bool:
         record = self._dao.get_private_file_by_id(file_id, scope)

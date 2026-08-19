@@ -20,6 +20,7 @@ _LIMIT_FIELDS = (
     "max_file_bytes",
     "max_upload_bytes",
     "max_owner_bytes",
+    "upload_request_timeout_seconds",
     "upload_concurrency_advice",
     "upload_chunk_bytes",
     "upload_spool_bytes",
@@ -54,8 +55,24 @@ class ServeConfig(BaseServeConfig):
         metadata={"help": "Maximum aggregate byte size of one upload request"},
     )
     max_owner_bytes: int = field(
-        default=1024 * 1024 * 1024,
-        metadata={"help": "Total storage quota in bytes per owner"},
+        default=-1,
+        metadata={
+            "help": (
+                "Total storage quota in bytes per owner; -1 (or any negative "
+                "value) disables the per-owner quota (unlimited). Set a "
+                "positive integer to enforce the limit."
+            )
+        },
+    )
+    upload_request_timeout_seconds: int = field(
+        default=180,
+        metadata={
+            "help": (
+                "Advertised per-request upload timeout in seconds. Surfaced "
+                "through /capabilities so the client applies it as the upload "
+                "timeout; override per deployment as needed."
+            )
+        },
     )
     upload_concurrency_advice: int = field(
         default=3,
@@ -84,7 +101,14 @@ class ServeConfig(BaseServeConfig):
 
     def __post_init__(self) -> None:
         for name in _LIMIT_FIELDS:
-            if getattr(self, name) <= 0:
+            value = getattr(self, name)
+            if name == "max_owner_bytes":
+                # A negative value disables the per-owner quota (unlimited).
+                # Zero is rejected to avoid the "zero-byte quota" ambiguity.
+                if value == 0:
+                    raise ValueError(f"{name} must be positive or -1 (unlimited)")
+                continue
+            if value <= 0:
                 raise ValueError(f"{name} must be positive")
 
     @property

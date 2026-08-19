@@ -14,9 +14,11 @@ unpicklable SQLAlchemy sessions.
 For payload v2 tasks (``ext_info.file_ids`` frozen into the task scope at
 creation time) every run copies the task files into the run's fresh
 ``new_conv_uid`` session and rewrites the payload with the fresh
-session-scoped IDs before ``ConversationVo`` is built. Run-session files
-are deliberately left in place after completion so ``/from_task`` history
-previews can still resolve them; lifecycle GC is out of scope here.
+session-scoped IDs before ``ConversationVo`` is built. Before copying, the
+previous run's copied files (located via the run table's
+``output_conv_uid``) are deleted so run-session copies do not accumulate
+unbounded on disk. ``/from_task`` history previews do not depend on those
+files (they render from the message table and payload-embedded snapshots).
 Legacy v1 ``file_path`` payloads replay exactly as before and never touch
 the session file registry.
 """
@@ -239,6 +241,11 @@ class ChatReplayRunner:
         registry = self._session_file_registry or _default_session_file_registry()
         if registry is None:
             raise RuntimeError("session file storage unavailable during replay")
+        # Reclaim the previous run's copied files first so run-session copies
+        # do not accumulate on disk. Best-effort: failure must not abort the run.
+        self._reclaim_previous_run_session_files(
+            owner_id, task_id, new_conv_uid, registry
+        )
         records = registry.copy_task_to_session(
             owner_id=owner_id, task_id=task_id, session_id=new_conv_uid
         )
@@ -248,6 +255,40 @@ class ChatReplayRunner:
             **ext_info,
             "file_ids": [record.file_id for record in records],
         }
+
+    def _reclaim_previous_run_session_files(
+        self, owner_id: str, task_id: str, new_conv_uid: str, registry
+    ) -> None:
+        """Best-effort delete of the previous run's copied session files.
+
+        Locates the most recent prior *completed* run via the run table's
+        ``output_conv_uid`` (skipping the current run, whose record already
+        exists but has no ``output_conv_uid`` yet) and deletes that
+        session's files before freezing the current run. This keeps disk
+        usage bounded to ~one prior copy plus the current one. Any error is
+        logged and swallowed so it never aborts the current replay.
+        """
+        try:
+            prior_runs = self._run_dao.list_by_task_id(task_id, limit=3, offset=0)
+        except Exception:
+            logger.exception("list prior runs failed for task %s", task_id)
+            return
+        prev_conv_uid = ""
+        for run in prior_runs:
+            uid = (run.get("output_conv_uid") or "").strip()
+            if uid and uid != new_conv_uid:
+                prev_conv_uid = uid
+                break
+        if not prev_conv_uid:
+            return
+        try:
+            registry.delete_session_files(owner_id=owner_id, session_id=prev_conv_uid)
+        except Exception:
+            logger.exception(
+                "reclaim previous run session files failed task=%s session=%s",
+                task_id,
+                prev_conv_uid,
+            )
 
     def _fail(self, run_id: str, message: str, conv_uid: str) -> None:
         """Record a failed run with the given error message."""

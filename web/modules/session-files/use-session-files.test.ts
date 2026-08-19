@@ -72,6 +72,14 @@ function renderHook<Result>(hookFactory: () => Result): { result: { readonly cur
       cursor++;
       return fn;
     },
+    useEffect(fn: () => unknown): void {
+      // Cleanup-only effect (unmount aborts). This harness has no unmount
+      // step, so consume the hook slot, run the setup (a no-op for
+      // cleanup-only effects), and drop the returned cleanup. Real unmount
+      // behavior is covered by component tests.
+      cursor++;
+      void fn();
+    },
   };
 
   function rerender(): void {
@@ -104,6 +112,7 @@ const CAPS: UploadCapabilities = {
   max_file_bytes: 1024,
   max_upload_bytes: 10 * 1024,
   max_owner_bytes: 10 * 1024 * 1024,
+  upload_request_timeout_seconds: 180,
   upload_concurrency: 3,
   supported_extensions: ['.csv'],
 };

@@ -160,6 +160,38 @@ async def test_create_writes_db_and_adds_job(
 
 
 # ===========================================================================
+# Test 1b: delete_task cleans frozen files using the stripped owner_id
+# ===========================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_task_cleans_frozen_files_with_stripped_owner(
+    service: ScheduledTaskService,
+):
+    """delete_task should delete files frozen into the task scope, deriving
+    owner_id from the stored user_name with the same ``(user_name or
+    "").strip()`` normalization used when freezing. Leading/trailing
+    whitespace must not cause a mismatch that leaves orphan files behind.
+    """
+    mock_registry = MagicMock()
+    mock_registry.list_task_files.return_value = []
+    service._session_file_registry = mock_registry
+
+    # user_name with surrounding whitespace: the DB stores it raw, but the
+    # cleanup must strip it to match the owner_id used when freezing.
+    result = await service.create_task(
+        _make_create_request(), user_name="  test_user  "
+    )
+    task_id = result.task_id
+
+    await service.delete_task(task_id)
+
+    mock_registry.list_task_files.assert_called_once_with(
+        owner_id="test_user", task_id=task_id
+    )
+
+
+# ===========================================================================
 # Test 2: create_task validates cron expression
 # ===========================================================================
 

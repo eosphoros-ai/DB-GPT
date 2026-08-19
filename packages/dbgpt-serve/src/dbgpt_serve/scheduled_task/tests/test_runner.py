@@ -600,3 +600,48 @@ async def test_runner_malformed_file_ids_records_failed_run():
     assert runs[0]["status"] == "failed"
     assert "INVALID_FILE_IDS" in runs[0]["error_message"]
     assert registry.copy_calls == []
+
+
+def test_reclaim_previous_run_skips_current_and_deletes_prior():
+    """The current run's record exists but has no output_conv_uid yet; reclaim
+    must skip it and delete the most recent prior run's copied files."""
+    runner = ChatReplayRunner()
+    runner._run_dao = MagicMock()
+    runner._run_dao.list_by_task_id.return_value = [
+        {"output_conv_uid": None},  # current run, output not written yet
+        {"output_conv_uid": "prev-conv"},  # previous completed run
+    ]
+    registry = MagicMock()
+
+    runner._reclaim_previous_run_session_files("alice", "task-1", "new-conv", registry)
+
+    runner._run_dao.list_by_task_id.assert_called_once_with("task-1", limit=3, offset=0)
+    registry.delete_session_files.assert_called_once_with(
+        owner_id="alice", session_id="prev-conv"
+    )
+
+
+def test_reclaim_previous_run_no_prior_run_does_nothing():
+    """When the current run is the only one, reclaim deletes nothing."""
+    runner = ChatReplayRunner()
+    runner._run_dao = MagicMock()
+    runner._run_dao.list_by_task_id.return_value = [{"output_conv_uid": None}]
+    registry = MagicMock()
+
+    runner._reclaim_previous_run_session_files("alice", "task-1", "new-conv", registry)
+
+    registry.delete_session_files.assert_not_called()
+
+
+def test_reclaim_previous_run_swallows_errors():
+    """Reclaim is best-effort: a failing list_by_task_id must not propagate
+    (it must never abort the current replay)."""
+    runner = ChatReplayRunner()
+    runner._run_dao = MagicMock()
+    runner._run_dao.list_by_task_id.side_effect = RuntimeError("db down")
+    registry = MagicMock()
+
+    # Must not raise.
+    runner._reclaim_previous_run_session_files("alice", "task-1", "new-conv", registry)
+
+    registry.delete_session_files.assert_not_called()

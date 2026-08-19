@@ -393,11 +393,20 @@ class ScheduledTaskService:
 
         If the scheduler job is already gone (e.g. after a restart with
         MemoryJobStore), the ValueError is caught and logged so the DB
-        row can still be cleaned up.
+        row can still be cleaned up. After the DB row is removed, files
+        frozen into the task scope at creation time are also deleted
+        best-effort so they do not linger as unreachable orphans.
 
         Args:
             task_id: The task UUID.
         """
+        # Read owner_id BEFORE deleting the row (mirror the normalization used
+        # when freezing files: ``(user_name or "").strip()`` in create_task).
+        # The DB stores the raw user_name; the session_file registry matches
+        # owner_id exactly, so it must be stripped or the files won't be found.
+        existing = self._task_dao.get_one({"task_id": task_id})
+        owner_id = (existing.get("user_name") or "").strip() if existing else ""
+
         # Best-effort remove scheduler job
         if self._scheduler is not None:
             try:
@@ -411,6 +420,12 @@ class ScheduledTaskService:
 
         # Delete DB row
         self._task_dao.delete({"task_id": task_id})
+
+        # Best-effort clean up task-scope frozen files created at task
+        # creation; skip when there is no owner (pure-text tasks never freeze
+        # files). Storage failures must not block the deletion.
+        if owner_id:
+            self._delete_task_files_quietly(owner_id, task_id)
 
     async def list_runs(
         self, task_id: str, limit: int = 50, offset: int = 0

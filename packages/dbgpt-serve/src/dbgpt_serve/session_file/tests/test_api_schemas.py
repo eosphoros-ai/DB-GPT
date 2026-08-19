@@ -74,7 +74,8 @@ def test_config_defaults_match_planned_limits():
     assert config.max_files_per_upload == 20
     assert config.max_file_bytes == 100 * 1024 * 1024
     assert config.max_upload_bytes == 500 * 1024 * 1024
-    assert config.max_owner_bytes == 1024 * 1024 * 1024
+    assert config.max_owner_bytes == -1
+    assert config.upload_request_timeout_seconds == 180
     assert config.upload_concurrency_advice == 3
     assert config.upload_chunk_bytes > 0
     assert config.upload_spool_bytes > 0
@@ -98,8 +99,18 @@ def test_config_defaults_match_planned_limits():
 )
 @pytest.mark.parametrize("value", [0, -1])
 def test_config_rejects_non_positive_limits(field_name, value):
+    # max_owner_bytes accepts negative values as "unlimited"; only 0 is
+    # rejected for it. Every other limit field must be strictly positive.
+    if field_name == "max_owner_bytes" and value < 0:
+        pytest.skip("max_owner_bytes is unlimited when negative")
     with pytest.raises(ValueError, match="positive"):
         ServeConfig(**{field_name: value})
+
+
+def test_config_allows_unlimited_owner_quota():
+    # A negative max_owner_bytes disables the per-owner quota and must
+    # construct successfully (the framework default is now -1).
+    assert ServeConfig(max_owner_bytes=-1).max_owner_bytes == -1
 
 
 def test_config_supported_extension_list_parsing():
@@ -213,6 +224,7 @@ def test_capabilities_response_mirrors_config():
         max_file_bytes=11,
         max_upload_bytes=101,
         max_owner_bytes=202,
+        upload_request_timeout_seconds=99,
         upload_concurrency_advice=5,
         supported_extensions=".csv,.txt",
     )
@@ -225,6 +237,7 @@ def test_capabilities_response_mirrors_config():
         "max_file_bytes": 11,
         "max_upload_bytes": 101,
         "max_owner_bytes": 202,
+        "upload_request_timeout_seconds": 99,
         "upload_concurrency": 5,
         "supported_extensions": [".csv", ".txt"],
     }

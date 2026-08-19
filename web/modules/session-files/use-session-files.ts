@@ -7,7 +7,7 @@
  * promise) lives in refs so captured callbacks never read stale closures.
  */
 
-import { useCallback, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 // @ts-expect-error Node's built-in TypeScript runner requires the extension.
 import * as reducerModule from './reducer.ts';
@@ -92,6 +92,17 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
   const attemptsRef = useRef(new Map<string, number>());
   const capabilitiesPromiseRef = useRef<Promise<UploadCapabilities> | null>(null);
 
+  // Abort every in-flight upload when the owning component unmounts so
+  // requests do not run to completion (wasting bandwidth and leaving orphan
+  // files) after the UI that owns them is gone.
+  useEffect(
+    () => () => {
+      queueRef.current?.cancelAll();
+      attemptsRef.current.clear();
+    },
+    [],
+  );
+
   const settleUpload = useCallback(
     (
       draft: DraftFile,
@@ -148,11 +159,13 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
       attemptsRef.current.set(draft.clientId, attempt);
       dispatch({ type: 'upload_start', clientId: draft.clientId, attempt });
 
+      const uploadTimeoutSeconds = stateRef.current.capabilities?.upload_request_timeout_seconds;
       const promise = queue.enqueue(draft.clientId, async signal => {
         const snapshots = await apiRef.current.uploadFiles({
           sessionId,
           files: [file],
           signal,
+          timeoutMs: uploadTimeoutSeconds != null ? uploadTimeoutSeconds * 1000 : undefined,
           onProgress: ratio => {
             if (attemptsRef.current.get(draft.clientId) !== attempt) return;
             dispatch({
@@ -234,6 +247,15 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
   const remove = useCallback((clientId: string) => {
     queueRef.current!.cancel(clientId);
     attemptsRef.current.delete(clientId);
+    // Best-effort server delete for already-uploaded files. A missing/failed
+    // delete must not block the local card removal, but leaving the file on
+    // the server would let it resurrect on the next rehydrate and keep feeding
+    // the agent's file_ids.
+    const draft = stateRef.current.files.find(item => item.clientId === clientId);
+    const sessionId = stateRef.current.sessionId;
+    if (draft?.snapshot?.file_id && sessionId) {
+      void apiRef.current.deleteFile(sessionId, draft.snapshot.file_id).catch(() => undefined);
+    }
     dispatch({ type: 'remove', clientId });
   }, []);
 
