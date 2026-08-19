@@ -712,6 +712,7 @@ export const CommonEn = {
   'scheduled.save.envQuestion': 'Original question: ',
   'scheduled.save.envSkill': 'Skill: ',
   'scheduled.save.envMcp': 'MCP: ',
+  'scheduled.save.historyWarning': 'This conversation was restored from history, so the original file/database/knowledge/skill/MCP context is not available in the history and cannot be recovered. The scheduled task will replay with the context currently selected in the composer; re-select any needed context before saving.',
   'scheduled.edit.title': 'Edit Scheduled Task',
   'scheduled.edit.save': 'Save',
   'scheduled.edit.rawQuestionLabel': 'Original question',

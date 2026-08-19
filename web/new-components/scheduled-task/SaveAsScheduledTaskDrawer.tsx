@@ -1,7 +1,7 @@
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
-import { Button, Drawer, Form, Input, Space, Tag, Typography, message } from 'antd';
+import { Alert, Button, Drawer, Form, Input, Space, Tag, Typography, message } from 'antd';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CronInput from './CronInput';
@@ -27,6 +27,8 @@ interface SaveAsScheduledTaskDrawerProps {
   snapshot: ChatReplayPayload;
   /** 默认任务名称，不传则截取 user_input 前 30 字符 */
   defaultName?: string;
+  /** 快照是否由历史恢复的对话重建（原执行的上下文无法从历史中找回） */
+  restoredFromHistory?: boolean;
 }
 
 const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
@@ -34,6 +36,7 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
   onClose,
   snapshot,
   defaultName,
+  restoredFromHistory = false,
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -99,6 +102,15 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
           description: '',
         }}
       >
+        {restoredFromHistory && (
+          <Alert
+            type='warning'
+            showIcon
+            message={t('scheduled.save.historyWarning')}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         <Form.Item
           label={t('scheduled.save.nameLabel')}
           name='task_name'

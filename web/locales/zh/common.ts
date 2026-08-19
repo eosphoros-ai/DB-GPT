@@ -711,6 +711,7 @@ export const CommonZh: Resources['translation'] = {
   'scheduled.save.envQuestion': '原始问题：',
   'scheduled.save.envSkill': '技能：',
   'scheduled.save.envMcp': 'MCP：',
+  'scheduled.save.historyWarning': '该对话是从历史记录恢复的，原执行的附件/数据库/知识库/技能/MCP 上下文无法从历史中找回。定时任务将以当前输入框中选择的上下文回放；如需携带上下文，请先重新选择再保存。',
   'scheduled.edit.title': '编辑定时任务',
   'scheduled.edit.save': '保存',
   'scheduled.edit.rawQuestionLabel': '原始问题',
