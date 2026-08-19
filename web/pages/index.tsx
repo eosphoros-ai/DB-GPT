@@ -2453,16 +2453,13 @@ const Playground: NextPage = () => {
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
 
-    // Reset the scheduled-task snapshot and composer selections so a restored
-    // conversation never replays state from the previously viewed conversation (#3200).
-    lastSentPayloadRef.current = null;
-    lastSentConvUidRef.current = null;
-    setSelectedDb(null);
-    setSelectedKnowledge(null);
-    setSelectedSkill(null);
-    setSelectedConnectors([]);
-    setUploadedFile(null);
-    setUploadedFilePath(null);
+    // Reset the scheduled-task snapshot, composer selections and derived
+    // file/chart previews so a restored conversation never replays state from
+    // the previously viewed conversation (#3200). Clearing filePreview /
+    // chartPreview / filePreviewError is required: otherwise a stale preview
+    // from the previous conversation gets injected into the restored
+    // conversation's executionMap via the activeMessageId effect.
+    resetScheduledTaskReplayState();
 
     const newMessages: ChatMessage[] = [];
     const newExecutionMap: typeof executionMap = {};
@@ -4577,6 +4574,9 @@ const Playground: NextPage = () => {
           open={isScheduleOpen}
           onClose={() => setScheduleOpen(false)}
           snapshot={buildSnapshot()}
+          restoredFromHistory={
+            !(lastSentPayloadRef.current && lastSentConvUidRef.current === conversationId)
+          }
         />
         <ConfirmDialog confirmation={pendingConfirmation} onApprove={approve} onDeny={deny} onDismiss={dismiss} />
       </div>
