@@ -45,8 +45,8 @@ EXPECTED_INDEXES = {
 }
 SCHEMA_PATHS = (
     "assets/schema/dbgpt.sql",
-    "assets/schema/upgrade/v0_8_1/upgrade_to_v0.8.1.sql",
-    "assets/schema/upgrade/v0_8_1/v0.8.1.sql",
+    "assets/schema/upgrade/v0_8_2/upgrade_to_v0.8.2.sql",
+    "assets/schema/upgrade/v0_8_2/v0.8.2.sql",
 )
 
 

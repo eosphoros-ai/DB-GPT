@@ -580,62 +580,6 @@ CREATE TABLE `share_links` (
   KEY `ix_share_links_conv_uid` (`conv_uid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Conversation share link table';
 
-
-CREATE
-DATABASE IF NOT EXISTS EXAMPLE_1;
-use EXAMPLE_1;
-CREATE TABLE IF NOT EXISTS `users`
-(
-    `id`       int         NOT NULL AUTO_INCREMENT,
-    `username` varchar(50) NOT NULL COMMENT '用户名',
-    `password` varchar(50) NOT NULL COMMENT '密码',
-    `email`    varchar(50) NOT NULL COMMENT '邮箱',
-    `phone`    varchar(20) DEFAULT NULL COMMENT '电话',
-    PRIMARY KEY (`id`),
-    KEY        `idx_username` (`username`) COMMENT '索引：按用户名查询'
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='聊天用户表';
-
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_1', 'password_1', 'user_1@example.com', '12345678901');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_2', 'password_2', 'user_2@example.com', '12345678902');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_3', 'password_3', 'user_3@example.com', '12345678903');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_4', 'password_4', 'user_4@example.com', '12345678904');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_5', 'password_5', 'user_5@example.com', '12345678905');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_6', 'password_6', 'user_6@example.com', '12345678906');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_7', 'password_7', 'user_7@example.com', '12345678907');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_8', 'password_8', 'user_8@example.com', '12345678908');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_9', 'password_9', 'user_9@example.com', '12345678909');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_10', 'password_10', 'user_10@example.com', '12345678900');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_11', 'password_11', 'user_11@example.com', '12345678901');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_12', 'password_12', 'user_12@example.com', '12345678902');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_13', 'password_13', 'user_13@example.com', '12345678903');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_14', 'password_14', 'user_14@example.com', '12345678904');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_15', 'password_15', 'user_15@example.com', '12345678905');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_16', 'password_16', 'user_16@example.com', '12345678906');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_17', 'password_17', 'user_17@example.com', '12345678907');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_18', 'password_18', 'user_18@example.com', '12345678908');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_19', 'password_19', 'user_19@example.com', '12345678909');
-INSERT INTO users (username, password, email, phone)
-VALUES ('user_20', 'password_20', 'user_20@example.com', '12345678900');
-
 -- connector_instance, Persist MCP connector instances (encrypted credentials, transport/extra config, lifecycle status)
 CREATE TABLE IF NOT EXISTS `connector_instance` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
@@ -692,3 +636,88 @@ CREATE TABLE IF NOT EXISTS `dbgpt_serve_scheduled_run` (
   KEY `ix_scheduled_run_task_id` (`task_id`),
   KEY `ix_scheduled_run_started_at` (`started_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Scheduled task execution history table';
+
+-- dbgpt_session_file, Private persistence for owner-bound session and task files
+CREATE TABLE IF NOT EXISTS `dbgpt_session_file` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `file_id` varchar(64) NOT NULL COMMENT 'Public file ID',
+  `owner_id` varchar(255) NOT NULL COMMENT 'Owning user ID',
+  `session_id` varchar(255) DEFAULT NULL COMMENT 'Interactive session ID',
+  `task_id` varchar(64) DEFAULT NULL COMMENT 'Scheduled task ID',
+  `display_name` varchar(256) NOT NULL COMMENT 'Display file name',
+  `storage_uri` varchar(512) NOT NULL COMMENT 'Private managed storage URI',
+  `media_type` varchar(255) NOT NULL COMMENT 'Detected media type',
+  `file_kind` varchar(32) NOT NULL COMMENT 'File kind',
+  `size_bytes` bigint NOT NULL COMMENT 'File size in bytes',
+  `sha256` varchar(64) NOT NULL COMMENT 'File content SHA-256',
+  `ordinal` int NOT NULL COMMENT 'Stable order within the scope',
+  `status` varchar(32) NOT NULL COMMENT 'File lifecycle status',
+  `inspection_json` longtext DEFAULT NULL COMMENT 'Private inspection metadata JSON',
+  `error_code` varchar(64) DEFAULT NULL COMMENT 'Private processing error code',
+  `error_message` text DEFAULT NULL COMMENT 'Private processing error message',
+  `source_file_id` varchar(64) DEFAULT NULL COMMENT 'Source file ID for task lineage',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Record creation time',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record update time',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `ck_session_file_scope` CHECK ((`session_id` IS NULL) <> (`task_id` IS NULL)),
+  UNIQUE KEY `uk_session_file_file_id` (`file_id`),
+  KEY `idx_session_file_owner_session` (`owner_id`,`session_id`,`ordinal`),
+  KEY `idx_session_file_owner_task` (`owner_id`,`task_id`,`ordinal`),
+  KEY `idx_session_file_sha256` (`owner_id`,`sha256`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Session file metadata table';
+
+
+CREATE
+DATABASE IF NOT EXISTS EXAMPLE_1;
+use EXAMPLE_1;
+CREATE TABLE IF NOT EXISTS `users`
+(
+    `id`       int         NOT NULL AUTO_INCREMENT,
+    `username` varchar(50) NOT NULL COMMENT '用户名',
+    `password` varchar(50) NOT NULL COMMENT '密码',
+    `email`    varchar(50) NOT NULL COMMENT '邮箱',
+    `phone`    varchar(20) DEFAULT NULL COMMENT '电话',
+    PRIMARY KEY (`id`),
+    KEY        `idx_username` (`username`) COMMENT '索引：按用户名查询'
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='聊天用户表';
+
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_1', 'password_1', 'user_1@example.com', '12345678901');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_2', 'password_2', 'user_2@example.com', '12345678902');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_3', 'password_3', 'user_3@example.com', '12345678903');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_4', 'password_4', 'user_4@example.com', '12345678904');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_5', 'password_5', 'user_5@example.com', '12345678905');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_6', 'password_6', 'user_6@example.com', '12345678906');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_7', 'password_7', 'user_7@example.com', '12345678907');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_8', 'password_8', 'user_8@example.com', '12345678908');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_9', 'password_9', 'user_9@example.com', '12345678909');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_10', 'password_10', 'user_10@example.com', '12345678900');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_11', 'password_11', 'user_11@example.com', '12345678901');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_12', 'password_12', 'user_12@example.com', '12345678902');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_13', 'password_13', 'user_13@example.com', '12345678903');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_14', 'password_14', 'user_14@example.com', '12345678904');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_15', 'password_15', 'user_15@example.com', '12345678905');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_16', 'password_16', 'user_16@example.com', '12345678906');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_17', 'password_17', 'user_17@example.com', '12345678907');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_18', 'password_18', 'user_18@example.com', '12345678908');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_19', 'password_19', 'user_19@example.com', '12345678909');
+INSERT INTO users (username, password, email, phone)
+VALUES ('user_20', 'password_20', 'user_20@example.com', '12345678900');
