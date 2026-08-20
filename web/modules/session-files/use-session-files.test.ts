@@ -5,13 +5,16 @@ import React from 'react';
 import type { SessionFileSnapshot, SessionFilesApi, UploadCapabilities } from './types';
 import type { UseSessionFiles } from './use-session-files';
 // @ts-expect-error Node's built-in TypeScript runner requires the extension.
+import { extInfoForSend, snapshotsForSend } from './home-adapter.ts';
+// @ts-expect-error Node's built-in TypeScript runner requires the extension.
 import { useSessionFiles } from './use-session-files.ts';
 
 /**
  * Minimal hooks runtime so the orchestration hook can be tested with
  * node:test only (no extra test framework). Supports the hooks the module
  * uses: useReducer/useState/useRef/useCallback. Dispatch re-renders
- * synchronously so effects of an action are observable immediately.
+ * synchronously by default; selected tests defer it to reproduce React's
+ * event-batching window and exercise captured page renders.
  */
 const REACT_INTERNALS = (
   React as unknown as {
@@ -27,10 +30,14 @@ interface StateCell {
   dispatch?: (action: unknown) => void;
 }
 
-function renderHook<Result>(hookFactory: () => Result): { result: { readonly current: Result } } {
+function renderHook<Result>(
+  hookFactory: () => Result,
+  options: { batchReducerDispatch?: boolean } = {},
+): { result: { readonly current: Result } } {
   const cells: StateCell[] = [];
   let cursor = 0;
   let current!: Result;
+  let renderQueued = false;
 
   const dispatcher = {
     useReducer<S, A>(
@@ -46,7 +53,15 @@ function renderHook<Result>(hookFactory: () => Result): { result: { readonly cur
         };
         cell.dispatch = (action: unknown) => {
           cell.value = reducer(cell.value as S, action as A);
-          rerender();
+          if (!options.batchReducerDispatch) {
+            rerender();
+          } else if (!renderQueued) {
+            renderQueued = true;
+            setImmediate(() => {
+              renderQueued = false;
+              rerender();
+            });
+          }
         };
         cells[index] = cell;
       }
@@ -206,13 +221,15 @@ function makeFakeApi(overrides: Partial<SessionFilesApi> = {}): FakeApi {
   };
 }
 
-function setup(api: FakeApi = makeFakeApi()) {
+function setup(api: FakeApi = makeFakeApi(), options: { batchReducerDispatch?: boolean } = {}) {
   let seq = 0;
-  const harness = renderHook(() =>
-    useSessionFiles({
-      api,
-      createClientId: () => `c${seq++}`,
-    }),
+  const harness = renderHook(
+    () =>
+      useSessionFiles({
+        api,
+        createClientId: () => `c${seq++}`,
+      }),
+    options,
   );
   return { api, ...harness };
 }
@@ -458,26 +475,106 @@ const LEGACY_FILE = {
   file_path: '/data/python_uploads/u1/sales.csv',
 };
 
-test('addLegacyFile stages a server-preloaded example file and prepare sends it', async () => {
+test('stageLegacyForSend atomically stages a server-preloaded example file and returns its send snapshot', async () => {
   const { result } = setup();
-  const staged = result.current.addLegacyFile(LEGACY_FILE);
+  const staged = result.current.stageLegacyForSend(LEGACY_FILE, 'sess-legacy');
   assert.equal(staged.ok, true);
   assert.equal(result.current.legacyFile?.file_path, '/data/python_uploads/u1/sales.csv');
 
   // The staged legacy file rides the legacy file_path protocol: no uploads.
-  const snapshot = await result.current.prepare('sess-legacy');
+  assert.ok(staged.ok);
+  const snapshot = staged.snapshot;
   assert.deepEqual([...snapshot.fileIds], []);
   assert.equal(snapshot.legacyFile?.file_path, '/data/python_uploads/u1/sales.csv');
+  assert.equal(Object.isFrozen(snapshot), true);
 
   result.current.clearTurn();
   assert.equal(result.current.legacyFile, null);
+});
+
+test('an example file is sent from the captured page render before React flushes the staged rail state', async () => {
+  const { result } = setup(makeFakeApi(), { batchReducerDispatch: true });
+  const capturedPageRender = result.current;
+
+  const staged = capturedPageRender.stageLegacyForSend(LEGACY_FILE, 'sess-legacy');
+  assert.ok(staged.ok);
+  assert.equal(capturedPageRender.legacyFile, null, 'the captured page render must remain stale until React flushes');
+
+  const snapshot = staged.snapshot;
+  const extInfo = extInfoForSend({ skill_id: 'financial-report-analyzer' }, snapshot);
+
+  assert.equal(extInfo.file_path, LEGACY_FILE.file_path);
+  assert.equal(extInfo.file_ids, undefined);
+  assert.deepEqual(
+    snapshotsForSend(snapshot).map(file => file.name),
+    [LEGACY_FILE.name],
+  );
+});
+
+test('atomic legacy staging blocks conflicting examples and local uploads before React flushes', async () => {
+  const { api, result } = setup(makeFakeApi(), { batchReducerDispatch: true });
+  const capturedPageRender = result.current;
+
+  assert.equal(capturedPageRender.stageLegacyForSend(LEGACY_FILE, 'sess-legacy').ok, true);
+
+  const conflicting = capturedPageRender.stageLegacyForSend(
+    {
+      ...LEGACY_FILE,
+      name: 'report.pdf',
+      media_type: 'application/pdf',
+      file_path: '/data/python_uploads/u1/report.pdf',
+    },
+    'sess-legacy',
+  );
+  assert.equal(conflicting.ok, false);
+  assert.match(conflicting.error ?? '', /SESSION_FILES_LEGACY_CONFLICT/);
+
+  await capturedPageRender.addFiles([makeFile('local.csv')], 'sess-legacy');
+  assert.equal(api.uploads.length, 0, 'legacy file_path must block same-tick file_ids uploads');
+});
+
+test('legacy staging wins while addFiles is waiting for upload capabilities and prevents an orphan upload', async () => {
+  const capabilities = deferred<{ capabilities: UploadCapabilities; source: 'server' }>();
+  const api = makeFakeApi({
+    fetchCapabilities: () => capabilities.promise,
+  });
+  const { result } = setup(api);
+
+  const adding = result.current.addFiles([makeFile('local.csv')], 'sess-legacy');
+  assert.equal(api.uploads.length, 0, 'the local upload must still be waiting for capabilities');
+
+  const staged = result.current.stageLegacyForSend(LEGACY_FILE, 'sess-legacy');
+  assert.equal(staged.ok, true);
+
+  capabilities.resolve({ capabilities: CAPS, source: 'server' });
+  await adding;
+
+  assert.equal(api.uploads.length, 0, 'a reducer-rejected draft must never launch an invisible upload');
+  assert.equal(result.current.files.length, 0);
+  assert.equal(result.current.legacyFile?.file_path, LEGACY_FILE.file_path);
+});
+
+test('a dispatched local upload blocks legacy staging before React flushes the draft state', async () => {
+  const { api, result } = setup(makeFakeApi(), { batchReducerDispatch: true });
+  const capturedPageRender = result.current;
+
+  await capturedPageRender.addFiles([makeFile('local.csv')], 'sess-1');
+  assert.equal(api.uploads.length, 1);
+  assert.equal(capturedPageRender.files.length, 0, 'the captured page render must still be stale');
+
+  const staged = capturedPageRender.stageLegacyForSend(LEGACY_FILE, 'sess-1');
+  assert.equal(staged.ok, false);
+  assert.match(staged.error ?? '', /SESSION_FILES_MIXED_PROTOCOL/);
+
+  api.uploads[0].gate.reject(new Error('test cleanup'));
+  await flush();
 });
 
 test('legacy staging refuses to mix with local uploads in both directions', async () => {
   const { result } = setup();
 
   // Legacy staged first: local picks are refused (file_path vs file_ids).
-  assert.equal(result.current.addLegacyFile(LEGACY_FILE).ok, true);
+  assert.equal(result.current.stageLegacyForSend(LEGACY_FILE, 'sess-1').ok, true);
   await result.current.addFiles([makeFile('local.csv')], 'sess-1');
   assert.equal(result.current.files.length, 0);
 
@@ -486,12 +583,15 @@ test('legacy staging refuses to mix with local uploads in both directions', asyn
 
   // Local drafts first: staging legacy is refused.
   await result.current.addFiles([makeFile('local.csv')], 'sess-1');
-  const refused = result.current.addLegacyFile(LEGACY_FILE);
+  const refused = result.current.stageLegacyForSend(LEGACY_FILE, 'sess-1');
   assert.equal(refused.ok, false);
   assert.match(refused.error ?? '', /SESSION_FILES_MIXED_PROTOCOL/);
   assert.equal(result.current.legacyFile, null);
 
   // Malformed legacy payloads are rejected before staging.
   result.current.clearTurn();
-  assert.equal(result.current.addLegacyFile({ name: 'x.csv', size: 1, media_type: '', file_path: '' }).ok, false);
+  assert.equal(
+    result.current.stageLegacyForSend({ name: 'x.csv', size: 1, media_type: '', file_path: '' }, 'sess-1').ok,
+    false,
+  );
 });

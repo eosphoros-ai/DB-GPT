@@ -30,6 +30,17 @@ export interface UseSessionFilesOptions {
   createClientId?: () => string;
 }
 
+export type StageLegacyForSendResult = { ok: true; snapshot: SessionFilesSendSnapshot } | { ok: false; error: string };
+
+const isValidLegacyFile = (file: LegacyServerFile): boolean =>
+  !!file && typeof file.file_path === 'string' && !!file.file_path.trim() && !!file.name?.trim();
+
+const isSameLegacyFile = (left: LegacyServerFile, right: LegacyServerFile): boolean =>
+  left.name === right.name &&
+  left.size === right.size &&
+  left.media_type === right.media_type &&
+  left.file_path === right.file_path;
+
 export interface UseSessionFiles {
   files: readonly DraftFile[];
   sessionId: string | null;
@@ -40,7 +51,7 @@ export interface UseSessionFiles {
   /**
    * Legacy server-preloaded file staged by an example card (read-only in the
    * rail). Mutually exclusive with local drafts: while staged, `addFiles` is
-   * refused; while drafts exist, `addLegacyFile` is refused.
+   * refused; while drafts exist, `stageLegacyForSend` is refused.
    */
   legacyFile: LegacyServerFile | null;
   addFiles: (incoming: File[] | ArrayLike<File>, sessionId: string) => Promise<void>;
@@ -48,10 +59,11 @@ export interface UseSessionFiles {
   cancel: (clientId: string) => void;
   retryFailed: () => string[];
   /**
-   * Stage a legacy server-preloaded file (example cards). Refuses to mix
-   * with local drafts and rejects malformed payloads (`LEGACY_FILE_INVALID`).
+   * Atomically stage a legacy server-preloaded example and return the frozen
+   * snapshot for this send. The returned snapshot is authoritative even when
+   * React has not committed the rail-state dispatch yet.
    */
-  addLegacyFile: (file: LegacyServerFile) => { ok: boolean; error?: string };
+  stageLegacyForSend: (file: LegacyServerFile, sessionId: string) => StageLegacyForSendResult;
   /** Unstage the legacy example file without touching drafts. */
   clearLegacyFile: () => void;
   /** Wait for in-flight uploads and return the frozen, ordered send payload. */
@@ -190,7 +202,9 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     if (existing) return Promise.resolve(existing);
     if (!capabilitiesPromiseRef.current) {
       capabilitiesPromiseRef.current = apiRef.current.fetchCapabilities().then(result => {
-        dispatch({ type: 'capabilities', capabilities: result.capabilities, source: result.source });
+        const action = { type: 'capabilities' as const, capabilities: result.capabilities, source: result.source };
+        stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
+        dispatch(action);
         return result.capabilities;
       });
     }
@@ -204,9 +218,15 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
       // Legacy example file staged: refuse mixing with the file_ids protocol.
       if (stateRef.current.legacyFile) return;
       if (stateRef.current.sessionId !== sessionId) {
-        dispatch({ type: 'bind_session', sessionId });
+        const action = { type: 'bind_session' as const, sessionId };
+        stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
+        dispatch(action);
       }
       const capabilities = await ensureCapabilities();
+      // Capabilities may require a network round-trip. A legacy example can
+      // be staged while that request is in flight, so re-check the protocol
+      // intent before planning drafts or launching any uploads.
+      if (stateRef.current.legacyFile) return;
       const drafts = reducerModule.planAddDrafts({
         existing: stateRef.current.files,
         files,
@@ -214,30 +234,73 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
         createClientId: () => createClientIdRef.current(),
       });
       if (drafts.length === 0) return;
-      dispatch({
-        type: 'add',
+      const action = {
+        type: 'add' as const,
         inputs: drafts.map(draft => ({ clientId: draft.clientId, file: draft.file! })),
-      });
+      };
+      const current = stateRef.current;
+      const projected = reducerModule.sessionFilesReducer(current, action);
+      const existingClientIds = new Set(current.files.map(draft => draft.clientId));
+      const acceptedClientIds = new Set(
+        projected.files.filter(draft => !existingClientIds.has(draft.clientId)).map(draft => draft.clientId),
+      );
+      stateRef.current = projected;
+      dispatch(action);
       for (const draft of drafts) {
-        launchUpload(draft, sessionId);
+        if (acceptedClientIds.has(draft.clientId)) {
+          launchUpload(draft, sessionId);
+        }
       }
     },
     [dispatch, ensureCapabilities, launchUpload],
   );
 
-  const addLegacyFile = useCallback((file: LegacyServerFile): { ok: boolean; error?: string } => {
-    if (!file || typeof file.file_path !== 'string' || !file.file_path.trim() || !file.name?.trim()) {
+  const stageLegacyForSend = useCallback((file: LegacyServerFile, sessionId: string): StageLegacyForSendResult => {
+    if (!isValidLegacyFile(file)) {
       return { ok: false, error: 'LEGACY_FILE_INVALID' };
     }
-    if (stateRef.current.files.length > 0) {
+    if (!sessionId?.trim()) {
+      return { ok: false, error: 'SESSION_SCOPE_INVALID: a conversation id is required' };
+    }
+
+    const current = stateRef.current;
+    if (current.files.length > 0) {
       // file_path and file_ids are mutually exclusive server-side.
       return {
         ok: false,
         error: 'SESSION_FILES_MIXED_PROTOCOL: remove local uploads before staging a legacy example file',
       };
     }
-    dispatch({ type: 'set_legacy', file });
-    return { ok: true };
+    if (current.legacyFile && !isSameLegacyFile(current.legacyFile, file)) {
+      return {
+        ok: false,
+        error: 'SESSION_FILES_LEGACY_CONFLICT: remove the staged example file before selecting another one',
+      };
+    }
+
+    // Project the exact reducer state synchronously and build the immutable
+    // send snapshot from that projection. React dispatch remains responsible
+    // only for committing the same state to the attachment rail.
+    let projected = current;
+    if (projected.sessionId !== sessionId) {
+      projected = reducerModule.sessionFilesReducer(projected, { type: 'bind_session', sessionId });
+    }
+    if (!projected.legacyFile) {
+      projected = reducerModule.sessionFilesReducer(projected, { type: 'set_legacy', file });
+    }
+
+    // Keep callback reads authoritative during React's batched window. The
+    // queued reducer actions below commit the identical projection to the UI.
+    stateRef.current = projected;
+
+    if (current.sessionId !== sessionId) {
+      dispatch({ type: 'bind_session', sessionId });
+    }
+    if (!current.legacyFile) {
+      dispatch({ type: 'set_legacy', file });
+    }
+
+    return { ok: true, snapshot: reducerModule.buildSendSnapshot(projected, sessionId) };
   }, []);
 
   const clearLegacyFile = useCallback(() => {
@@ -306,7 +369,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     isUploading: state.files.some(draft => draft.upload.status === 'uploading' || draft.upload.status === 'queued'),
     legacyFile: state.legacyFile,
     addFiles,
-    addLegacyFile,
+    stageLegacyForSend,
     clearLegacyFile,
     remove,
     cancel,

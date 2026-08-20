@@ -19,6 +19,7 @@ import {
   snapshotsForSend,
   snapshotsFromInputFiles,
   useSessionFiles,
+  type LegacyServerFile,
   type RailItem,
   type RailPreviewState,
   type SessionFileSnapshot,
@@ -548,6 +549,8 @@ const Playground: NextPage = () => {
   const { model, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const exampleRunInFlightRef = useRef(false);
+  const sendInFlightRef = useRef(false);
 
   // Selection State
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
@@ -1787,10 +1790,20 @@ const Playground: NextPage = () => {
     };
   }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation, rightPanelView]);
 
-  const handleStart = async (inputQuery = query, overrideSkill?: Skill | null, overrideDb?: DataSource | null) => {
+  const performStart = async (
+    inputQuery = query,
+    overrideSkill?: Skill | null,
+    overrideDb?: DataSource | null,
+    explicitLegacyFile?: LegacyServerFile | null,
+  ) => {
     const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
-    if ((!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile) || loading || queuedSendAfterUpload) return;
+    if (
+      (!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile && !explicitLegacyFile) ||
+      loading ||
+      queuedSendAfterUpload
+    )
+      return;
 
     cancelSummaryPresentation();
 
@@ -1807,11 +1820,18 @@ const Playground: NextPage = () => {
     }
     let sendSnapshot: SessionFilesSendSnapshot | null = null;
 
-    // Every file send goes through the session-files state machine: local
-    // drafts ride the file_ids protocol, a staged legacy example file rides
-    // the legacy file_path protocol. The state machine keeps them mutually
-    // exclusive (legacy file_path conflicts with file_ids server-side).
-    if (hasSessionFileDrafts || hasLegacyFile) {
+    // A preloaded example is staged and snapshotted atomically from this
+    // explicit value, so the first auto-send never waits for React to commit
+    // the attachment-rail state. Manual uploads keep the existing queued
+    // file_ids flow below; the session-files module rejects protocol mixing.
+    if (explicitLegacyFile) {
+      const staged = sessionFiles.stageLegacyForSend(explicitLegacyFile, currentConvId);
+      if (!staged.ok) {
+        message.error('加载示例失败: ' + staged.error);
+        return;
+      }
+      sendSnapshot = staged.snapshot;
+    } else if (hasSessionFileDrafts || hasLegacyFile) {
       if (sessionFiles.files.some(draft => draft.validation.status !== 'ok')) {
         message.error('存在未通过校验的附件，请先移除后再发送');
         return;
@@ -2420,19 +2440,34 @@ const Playground: NextPage = () => {
     }
   };
 
+  const handleStart = async (...args: Parameters<typeof performStart>): Promise<void> => {
+    // React state is only a UI projection and may be stale in callbacks that
+    // crossed an await. These refs serialize every send entry point, including
+    // the composer and delayed example-card execution.
+    if (sendInFlightRef.current || exampleRunInFlightRef.current) return;
+    sendInFlightRef.current = true;
+    try {
+      await performStart(...args);
+    } finally {
+      sendInFlightRef.current = false;
+    }
+  };
+
   const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
     const queryKey = `example_${example.id}_query`;
     const queryVal = t(queryKey) as string;
     const translatedQuery = (queryVal && queryVal !== queryKey ? queryVal : example.query) as string;
 
-    if (loading) return;
+    if (loading || sendInFlightRef.current || exampleRunInFlightRef.current) return;
+    exampleRunInFlightRef.current = true;
 
     try {
       message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
+      let exampleLegacyFile: LegacyServerFile | null = null;
 
-      // Example files already exist on the server: copy them, then stage the
-      // returned path as a read-only legacy rail item (legacy file_path
-      // protocol — mutually exclusive with local draft uploads).
+      // Example files already exist on the server: materialize the selected
+      // file, then explicitly hand it to this turn. handleStart atomically
+      // stages the read-only rail item and freezes the legacy file_path send.
       if (example.fileName) {
         if (hasSessionFileDrafts) {
           message.destroy('example-loading');
@@ -2444,17 +2479,12 @@ const Playground: NextPage = () => {
         });
 
         if (res?.success && res?.data) {
-          const staged = sessionFiles.addLegacyFile({
+          exampleLegacyFile = {
             name: example.fileName,
             size: example.fileSize || 0,
             media_type: example.fileType,
             file_path: res.data,
-          });
-          if (!staged.ok) {
-            message.destroy('example-loading');
-            message.error('加载示例失败: ' + (staged.error ?? 'Unknown error'));
-            return;
-          }
+          };
         } else {
           message.destroy('example-loading');
           const errMsg = res?.err_msg || 'Unknown error';
@@ -2485,12 +2515,18 @@ const Playground: NextPage = () => {
         }
       }
 
-      handleStart(translatedQuery, exampleSkill, matchedDb);
+      // Transfer the single-flight ownership to the common send entry point.
+      // No other browser event can interleave between this ref write and the
+      // synchronous acquisition at the start of handleStart.
+      exampleRunInFlightRef.current = false;
+      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile);
     } catch (err: unknown) {
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
       message.error('加载示例失败: ' + errMessage);
+    } finally {
+      exampleRunInFlightRef.current = false;
     }
   };
 

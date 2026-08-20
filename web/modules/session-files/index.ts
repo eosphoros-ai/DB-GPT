@@ -22,7 +22,7 @@ export type { AttachmentRailProps } from './AttachmentRail';
 
 // State orchestration hook
 export { useSessionFiles } from './use-session-files';
-export type { UseSessionFiles, UseSessionFilesOptions } from './use-session-files';
+export type { StageLegacyForSendResult, UseSessionFiles, UseSessionFilesOptions } from './use-session-files';
 
 // API seam
 export { SessionFilesApiError, previewFile, sessionFilesApi } from './api';
