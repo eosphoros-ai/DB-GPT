@@ -2916,6 +2916,17 @@ Thought/Action/Action Input format shown above.
         pass  # graceful degradation
     # --- End connector system prompt injection ---
 
+    from dbgpt_app.openapi.api_v1.react_history import (
+        format_react_followup_question,
+        history_prompt_hint,
+    )
+
+    followup_question = format_react_followup_question(
+        user_input, getattr(storage_conv, "messages", None)
+    )
+    has_prior_turns = followup_question != user_input
+    workflow_prompt += history_prompt_hint(has_prior_turns)
+
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
     workflow_prompt_template = PromptTemplate(
@@ -2936,7 +2947,7 @@ Thought/Action/Action Input format shown above.
     agent = await agent_builder.build()
 
     parser = ReActOutputParser()
-    received = AgentMessage(content=user_input)
+    received = AgentMessage(content=followup_question)
     # stream_queue and stream_callback were created earlier (before ToolPack)
     # so that the question tool can use them.
 
