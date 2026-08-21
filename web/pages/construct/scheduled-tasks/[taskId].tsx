@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
+import { AttachmentMessageGroup, legacyFilePathDisplayName, scheduledTaskFiles } from '@/modules/session-files';
 import ConstructLayout from '@/new-components/layout/Construct';
 import EditScheduledTaskDrawer from '@/new-components/scheduled-task/EditScheduledTaskDrawer';
 import TaskRunsTable from '@/new-components/scheduled-task/TaskRunsTable';
@@ -80,6 +81,8 @@ function ScheduledTaskDetail() {
   }
 
   const ext = (task.payload?.ext_info ?? {}) as Record<string, any>;
+  /** Task-scoped v2 附件展示快照(仅元数据,不含 file_path / 可用 file_id)。 */
+  const taskFiles = scheduledTaskFiles(task.payload?.ext_info);
 
   return (
     <ConstructLayout className='scrollable-tabs'>
@@ -234,8 +237,14 @@ function ScheduledTaskDetail() {
                       title={String(ext.file_path)}
                       className='inline-flex items-center max-w-full truncate px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-50 text-green-600 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/40'
                     >
-                      {String(ext.file_path).split('/').pop()}
+                      {legacyFilePathDisplayName(ext.file_path)}
                     </span>
+                  </InfoField>
+                )}
+                {taskFiles.length > 0 && (
+                  <InfoField label={t('scheduled.detail.fileLabel')} className='sm:col-span-2 lg:col-span-3'>
+                    {/* v2 任务附件:仅展示名称/大小/类型元数据,不暴露 file_path 与可用 file_id。 */}
+                    <AttachmentMessageGroup files={taskFiles} />
                   </InfoField>
                 )}
                 {ext.knowledge_space_name && (

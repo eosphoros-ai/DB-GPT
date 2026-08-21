@@ -1,5 +1,6 @@
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
+import { AttachmentMessageGroup, scheduledTaskFiles } from '@/modules/session-files';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import { Button, Drawer, Form, Input, Space, Tag, Typography, message } from 'antd';
 import React, { useMemo, useState } from 'react';
@@ -74,6 +75,8 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
   };
 
   const ext = (snapshot.ext_info ?? {}) as Record<string, any>;
+  /** v2 文件输入:创建时将被“冻结复制”到任务作用域的附件(展示快照,无可用 id/路径)。 */
+  const freezingFiles = scheduledTaskFiles(snapshot.ext_info);
 
   return (
     <Drawer
@@ -155,6 +158,12 @@ const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
             </div>
           );
         })()}
+        {freezingFiles.length > 0 && (
+          <div className='mt-2'>
+            <div className='mb-1 text-xs text-gray-400'>将冻结以下附件（创建后与当前会话解耦）:</div>
+            <AttachmentMessageGroup files={freezingFiles} />
+          </div>
+        )}
       </div>
     </Drawer>
   );

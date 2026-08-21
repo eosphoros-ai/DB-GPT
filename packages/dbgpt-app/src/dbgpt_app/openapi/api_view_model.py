@@ -1,11 +1,14 @@
 import socket
 from enum import Enum
-from typing import Any, Dict, Generic, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, Generic, Optional, TypeVar, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 from dbgpt.core.schema.types import (
     ChatCompletionUserMessageParam,
 )
+
+if TYPE_CHECKING:
+    from dbgpt_serve.session_file.domain import FileInputSpec
 
 T = TypeVar("T")
 
@@ -90,6 +93,22 @@ class ConversationVo(BaseModel):
     prompt_code: Optional[str] = Field(None, description="prompt code")
 
     ext_info: Optional[dict] = {}
+
+    def file_input_spec(self) -> "FileInputSpec":
+        """Parse chat file input via the session-file domain contract.
+
+        Normalizes ``ext_info.file_ids`` / legacy ``ext_info.file_path``
+        through :func:`dbgpt_serve.session_file.domain.parse_file_input`.
+
+        Raises:
+            FileInputError: deterministic error code
+                (``CONFLICTING_FILE_INPUTS``/``INVALID_FILE_IDS``/
+                ``INVALID_FILE_PATH``/``TOO_MANY_FILES``) when the file
+                input is malformed.
+        """
+        from dbgpt_serve.session_file.domain import parse_file_input
+
+        return parse_file_input(self.ext_info)
 
 
 class MessageVo(BaseModel):

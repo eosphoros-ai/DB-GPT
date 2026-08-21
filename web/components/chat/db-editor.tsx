@@ -196,9 +196,7 @@ function DbEditor() {
     if (newEditorValue?.sql !== undefined) {
       return newEditorValue.sql.trim();
     }
-    const persisted = Array.isArray(editorValue)
-      ? editorValue?.[currentTabIndex ?? 0]?.sql
-      : editorValue?.sql;
+    const persisted = Array.isArray(editorValue) ? editorValue?.[currentTabIndex ?? 0]?.sql : editorValue?.sql;
     return (persisted || '').trim();
   };
 
@@ -691,7 +689,7 @@ function DbEditor() {
                     <DbEditorContent
                       layout={layout}
                       editorValue={item}
-                      liveSql={index === currentTabIndex ? newEditorValue?.sql ?? item.sql : item.sql}
+                      liveSql={index === currentTabIndex ? (newEditorValue?.sql ?? item.sql) : item.sql}
                       handleChange={value => {
                         const { sql, thoughts } = resolveSqlAndThoughts(value);
                         latestSqlRef.current = sql ?? '';

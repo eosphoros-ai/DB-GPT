@@ -1,4 +1,5 @@
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
+import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
 import { AgentCitation, decodeFinalEvent } from '@/utils/react-agent-final';
 import { CheckOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -12,8 +13,6 @@ import { ToolIcon, getStatusText, getToolIconName } from '../icons/ToolIcon';
 import { BasicTool } from '../tools/BasicTool';
 import { ErrorDisplay, ReActThinking } from './ReActThinking';
 import RobotIcon from './RobotIcon';
-
-import { FileExcelOutlined, FileImageOutlined, FilePptOutlined, FileTextOutlined } from '@ant-design/icons';
 
 export type ToolStatus = 'pending' | 'running' | 'completed' | 'error';
 
@@ -46,12 +45,6 @@ export interface ReasoningPart {
 
 export type MessagePart = ToolPart | TextPart | ReasoningPart;
 
-export interface FileAttachment {
-  name: string;
-  size: number;
-  type: string;
-}
-
 export interface OpenCodeSessionTurnProps {
   userMessage: string;
   assistantMessage?: string;
@@ -67,7 +60,11 @@ export interface OpenCodeSessionTurnProps {
   currentStatus?: string;
   stepsPlacement?: 'inside' | 'outside';
   className?: string;
-  attachedFile?: FileAttachment;
+  /**
+   * Immutable display snapshots of every file attached to this message
+   * (session snapshots, or legacy attachments via `snapshotFromLegacyFile`).
+   */
+  attachedFiles?: readonly SessionFileSnapshot[];
   citations?: AgentCitation[];
   onCitationClick?: (citation: AgentCitation) => void;
 }
@@ -418,66 +415,6 @@ const PulseIndicator: React.FC = () => (
   </span>
 );
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-};
-
-const getFileTypeLabel = (fileName: string, mimeType?: string): string => {
-  const ext = fileName.toLowerCase().split('.').pop() || '';
-  if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
-  }
-  if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
-  }
-  if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
-  if (['json'].includes(ext)) return 'JSON';
-  return '文件';
-};
-
-const FileIconComponent: React.FC<{ fileName: string; mimeType?: string }> = ({ fileName, mimeType }) => {
-  const ext = fileName.toLowerCase().split('.').pop() || '';
-  if (
-    ['xlsx', 'xls', 'csv'].includes(ext) ||
-    mimeType?.includes('spreadsheet') ||
-    mimeType?.includes('excel') ||
-    mimeType?.includes('csv')
-  ) {
-    return <FileExcelOutlined className='text-green-600 text-lg' />;
-  }
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) {
-    return <FileImageOutlined className='text-pink-500 text-lg' />;
-  }
-  if (['ppt', 'pptx'].includes(ext)) {
-    return <FilePptOutlined className='text-orange-500 text-lg' />;
-  }
-  return <FileTextOutlined className='text-blue-500 text-lg' />;
-};
-
-const FileAttachmentCard: React.FC<{ file: FileAttachment }> = ({ file }) => {
-  const fileTypeLabel = getFileTypeLabel(file.name, file.type);
-  const formattedSize = formatFileSize(file.size);
-
-  return (
-    <div className='inline-flex items-center gap-3 px-3 py-2 bg-white dark:bg-[#1f2024] border border-gray-200 dark:border-gray-700 rounded-xl mb-2 max-w-sm shadow-sm'>
-      <div className='w-9 h-9 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0'>
-        <FileIconComponent fileName={file.name} mimeType={file.type} />
-      </div>
-      <div className='min-w-0 flex-1'>
-        <div className='font-medium text-sm text-gray-800 dark:text-gray-200 truncate'>{file.name}</div>
-        <div className='text-xs text-gray-500 dark:text-gray-400'>
-          {fileTypeLabel} · {formattedSize}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   userMessage,
   assistantMessage,
@@ -485,6 +422,7 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   isWorking = false,
   startTime,
   endTime,
+  onCopy: _onCopy,
   showSteps = true,
   defaultStepsExpanded = false,
   modelName,
@@ -492,7 +430,7 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   currentStatus,
   stepsPlacement = 'inside',
   className,
-  attachedFile,
+  attachedFiles,
   citations = [],
   onCitationClick,
 }) => {
@@ -652,9 +590,9 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
           <div className='flex-1 min-w-0'>
             <div className='flex items-start justify-between'>
               <div className='flex-1 min-w-0'>
-                {attachedFile && <FileAttachmentCard file={attachedFile} />}
-                <div className='text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed'>
-                  {userMessage}
+                <AttachmentMessageCards files={attachedFiles} className='mb-2' />
+                <div className='rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-800 shadow-sm dark:bg-[#2a2b2f] dark:text-gray-200'>
+                  <div className='whitespace-pre-wrap break-words leading-relaxed'>{userMessage}</div>
                 </div>
                 {startTime && <div className='mt-1 text-xs text-gray-400'>{formatTimestamp(startTime)}</div>}
               </div>
