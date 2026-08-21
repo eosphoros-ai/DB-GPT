@@ -148,4 +148,18 @@ def parse_sqltype(type_str: str) -> TypeEngine:
         logger.warning(f"Did not recognize type '{type_name}'")
         return sqltypes.NULLTYPE
     type_class = _type_map[type_name]
+    options = match.group("options")
+    if not options:
+        return type_class()
+
+    try:
+        values = [int(value.strip()) for value in options.split(",")]
+        if type_name in {"binary", "char", "varbinary", "varchar"}:
+            return type_class(length=values[0])
+        if type_name == "decimal":
+            precision = values[0]
+            scale = values[1] if len(values) > 1 else None
+            return type_class(precision=precision, scale=scale)
+    except (IndexError, ValueError):
+        logger.warning("Could not parse options for type '%s'", type_str)
     return type_class()

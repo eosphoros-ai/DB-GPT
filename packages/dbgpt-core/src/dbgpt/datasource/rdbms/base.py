@@ -27,7 +27,7 @@ import sqlalchemy
 import sqlparse
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import CursorResult
-from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
+from sqlalchemy.exc import CompileError, ProgrammingError, SQLAlchemyError
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.schema import CreateTable
@@ -101,6 +101,16 @@ class RDBMSDatasourceParameters(BaseDatasourceParameters):
         """Create connector"""
         return RDBMSConnector.from_parameters(self)
 
+    def test_connection(self) -> bool:
+        """Test connectivity without reflecting the database schema."""
+        engine = create_engine(self.db_url(), **(self.engine_args() or {}))
+        try:
+            with engine.connect() as connection:
+                connection.execute(select(1))
+                return True
+        finally:
+            engine.dispose()
+
     def db_url(self, ssl: bool = False, charset: Optional[str] = None) -> str:
         """Return database engine url."""
         url = f"{self.driver}://{quote(self.user)}:{urlquote(self.password)}@{self.host}:{str(self.port)}/{self.database}"
@@ -163,9 +173,13 @@ class RDBMSConnector(BaseConnector):
         self._indexes_in_table_info = indexes_in_table_info
 
         self._metadata = metadata or MetaData()
-        self._metadata.reflect(bind=self._engine)
+        self._reflect_metadata()
 
         self._all_tables: Set[str] = cast(Set[str], self._sync_tables_from_db())
+
+    def _reflect_metadata(self) -> None:
+        """Populate SQLAlchemy metadata for connectors that rely on reflection."""
+        self._metadata.reflect(bind=self._engine)
 
     @classmethod
     def param_class(cls) -> Type[RDBMSDatasourceParameters]:
@@ -422,7 +436,7 @@ class RDBMSConnector(BaseConnector):
         """Get information about specified tables."""
         try:
             return self.get_table_info(table_names)
-        except ValueError as e:
+        except (CompileError, ValueError) as e:
             """Format the error message"""
             return f"Error: {e}"
 

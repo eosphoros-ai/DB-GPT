@@ -49,12 +49,13 @@ class StarRocksDialect(MySQLDialect_pymysql):  # type: ignore
 
         assert schema is not None
 
-        quote = self.identifier_preparer.quote_identifier
-        full_name = quote(table_name)
-        if schema:
-            full_name = "{}.{}".format(quote(schema), full_name)
-
-        res = connection.execute(text(f"DESCRIBE {full_name}"))
+        res = connection.execute(
+            text(
+                "SELECT 1 FROM information_schema.tables "
+                "WHERE TABLE_SCHEMA=:schema AND TABLE_NAME=:table_name LIMIT 1"
+            ),
+            {"schema": schema, "table_name": table_name},
+        )
         return res.first() is not None
 
     def get_schema_names(self, connection, **kw):
@@ -103,25 +104,29 @@ class StarRocksDialect(MySQLDialect_pymysql):  # type: ignore
         **kw,
     ) -> List[Dict[str, Any]]:  # type: ignore
         """Return information about columns in `table_name`."""
-        if not self.has_table(connection, table_name, schema):
-            raise exc.NoSuchTableError(f"schema={schema}, table={table_name}")
         schema = schema or self._get_default_schema_name(connection)
-
-        quote = self.identifier_preparer.quote_identifier
-        full_name = quote(table_name)
-        if schema:
-            full_name = "{}.{}".format(quote(schema), full_name)
-
-        res = connection.execute(text(f"SHOW COLUMNS FROM {full_name}"))
+        assert schema is not None
+        res = connection.execute(
+            text(
+                "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, "
+                "COLUMN_COMMENT FROM information_schema.columns "
+                "WHERE TABLE_SCHEMA=:schema AND TABLE_NAME=:table_name "
+                "ORDER BY ORDINAL_POSITION"
+            ),
+            {"schema": schema, "table_name": table_name},
+        )
         columns = []
         for record in res:
             column = dict(
-                name=record.Field,
-                type=datatype.parse_sqltype(record.Type),
-                nullable=record.Null == "YES",
-                default=record.Default,
+                name=record[0],
+                type=datatype.parse_sqltype(record[1]),
+                nullable=record[2] == "YES",
+                default=record[3],
+                comment=record[4],
             )
             columns.append(column)
+        if not columns:
+            raise exc.NoSuchTableError(f"schema={schema}, table={table_name}")
         return columns
 
     def get_pk_constraint(

@@ -419,8 +419,7 @@ class ConnectorManager(BaseComponent):
                 request.params["password"] = _resolve_env_vars(pwd)
 
             param = self._create_parameters(request)
-            _connector = self.create_connector(param)
-            return True
+            return param.test_connection()
         except Exception as e:
             logger.error(f"Test connection Failure!{str(e)}")
             raise ValueError(f"Test connection Failure!{str(e)}")
