@@ -56,7 +56,13 @@ const BlurredCard: React.FC<{
                 <AppDefaultIcon scene={scene} width={14} height={14} />
               ) : (
                 logo && (
-                  <Image src={logo} width={44} height={44} alt={name} className='w-8 min-w-8 max-w-none object-contain' />
+                  <Image
+                    src={logo}
+                    width={44}
+                    height={44}
+                    alt={name}
+                    className='w-8 min-w-8 max-w-none object-contain'
+                  />
                 )
               )}
             </div>

@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 from typing import List, Optional
@@ -14,9 +15,12 @@ from sqlalchemy import (
     desc,
     or_,
 )
+from sqlalchemy.exc import OperationalError
 
 from dbgpt.agent.util.conv_utils import parse_conv_id
-from dbgpt.storage.metadata import BaseDao, Model
+from dbgpt.storage.metadata import BaseDao, Model, ensure_column
+
+logger = logging.getLogger(__name__)
 
 
 class GptsMessagesEntity(Model):
@@ -72,6 +76,12 @@ class GptsMessagesEntity(Model):
     role = Column(
         String(255), nullable=True, comment="The role of the current message content"
     )
+    trace_id = Column(
+        String(64),
+        index=True,
+        nullable=True,
+        comment="Trace id linking this message to observability spans",
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
     updated_at = Column(
@@ -85,8 +95,15 @@ class GptsMessagesEntity(Model):
 
 class GptsMessagesDao(BaseDao):
     def append(self, entity: dict):
+        # Lightweight additive migration: ensure trace_id exists on existing DBs
+        # (create_all won't add columns to existing tables). Run-once & idempotent.
+        ensure_column(
+            self._db_manager,
+            GptsMessagesEntity.__tablename__,
+            GptsMessagesEntity.trace_id,
+        )
         session = self.get_raw_session()
-        message = GptsMessagesEntity(
+        kwargs = dict(
             conv_id=entity.get("conv_id"),
             sender=entity.get("sender"),
             receiver=entity.get("receiver"),
@@ -103,8 +120,25 @@ class GptsMessagesDao(BaseDao):
             action_report=entity.get("action_report", None),
             resource_info=entity.get("resource_info", None),
         )
+        if entity.get("trace_id") is not None:
+            kwargs["trace_id"] = entity.get("trace_id")
+        message = GptsMessagesEntity(**kwargs)
         session.add(message)
-        session.commit()
+        try:
+            session.commit()
+        except OperationalError as e:
+            session.rollback()
+            # Backward-compat: DBs created before the trace_id column was added.
+            if "trace_id" in str(e).lower() and "trace_id" in kwargs:
+                logger.warning(
+                    "trace_id column missing on gpts_messages; retrying without it"
+                )
+                kwargs.pop("trace_id", None)
+                message = GptsMessagesEntity(**kwargs)
+                session.add(message)
+                session.commit()
+            else:
+                raise
         id = message.id
         session.close()
         return id

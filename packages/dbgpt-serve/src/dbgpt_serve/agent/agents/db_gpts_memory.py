@@ -6,6 +6,7 @@ from dbgpt.agent.core.memory.gpts import (
     GptsPlan,
     GptsPlansMemory,
 )
+from dbgpt.util.tracer.tracer_impl import root_tracer
 
 from ..db.gpts_messages_db import GptsMessagesDao
 from ..db.gpts_plans_db import GptsPlansDao, GptsPlansEntity
@@ -79,7 +80,15 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
         self.gpts_message = GptsMessagesDao()
 
     def append(self, message: GptsMessage):
-        self.gpts_message.append(message.to_dict())
+        data = message.to_dict()
+        # Link this message to its observability trace (for the Observability dashboard).
+        try:
+            span_id = root_tracer.get_current_span_id()
+            if span_id:
+                data["trace_id"] = span_id
+        except Exception:
+            pass
+        self.gpts_message.append(data)
 
     def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
         db_results = self.gpts_message.get_by_agent(conv_id, agent)

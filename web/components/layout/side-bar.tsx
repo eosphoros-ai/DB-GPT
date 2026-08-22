@@ -10,6 +10,7 @@ import Icon, {
   ApiOutlined,
   AppstoreOutlined,
   ClockCircleOutlined,
+  DashboardOutlined,
   DeleteOutlined,
   EditOutlined,
   GlobalOutlined,
@@ -72,7 +73,8 @@ function SideBar() {
     pathname.startsWith('/construct/dbgpts') ||
     pathname.startsWith('/construct/models') ||
     pathname.startsWith('/construct/scheduled-tasks') ||
-    pathname === '/models_evaluation';
+    pathname === '/models_evaluation' ||
+    pathname.startsWith('/observability');
   const { t, i18n } = useTranslation();
   const [logo, setLogo] = useState<string>('/logo_zh_latest.png');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -302,6 +304,21 @@ function SideBar() {
       >
         <LineChartOutlined className='text-red-500' />
         <span>{t('models_evaluation')}</span>
+      </div>
+      <div
+        onClick={() => {
+          router.push('/observability');
+          setSettingsOpen(false);
+        }}
+        className={cls(
+          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+          {
+            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/observability'),
+          },
+        )}
+      >
+        <DashboardOutlined className='text-indigo-500' />
+        <span>{t('observability')}</span>
       </div>
     </div>
   );

@@ -1,13 +1,28 @@
+import logging
 from contextlib import contextmanager
-from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
-from sqlalchemy import desc
+from sqlalchemy import Column, desc, inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.session import Session
 
 from dbgpt._private.pydantic import model_to_dict
 from dbgpt.util.pagination_utils import PaginationResult
 
 from .db_manager import BaseQuery, DatabaseManager, db
+
+logger = logging.getLogger(__name__)
 
 # The entity type
 T = TypeVar("T")
@@ -17,6 +32,63 @@ REQ = TypeVar("REQ")
 RES = TypeVar("RES")
 
 QUERY_SPEC = Union[REQ, Dict[str, Any]]
+
+# Tracks (db_manager identity, table, column) tuples already ensured this process,
+# so the migration probe runs at most once per column even across hot sleeves.
+_ensured_columns: Set[Tuple[int, str, str]] = set()
+
+
+def ensure_column(db_manager: DatabaseManager, table_name: str, column: Column) -> None:
+    """Ensure ``column`` exists on ``table_name`` (lightweight additive migration).
+
+    ``metadata.create_all`` only creates tables that don't yet exist; it never
+    adds columns to already-existing tables. This helper is the pragmatic
+    migration path for *additive, nullable, no-default* columns (e.g. the
+    observability ``trace_id`` linkage columns): probe via the inspector and,
+    if missing, ``ALTER TABLE ... ADD COLUMN``. The ALTER form for nullable
+    columns is portable across SQLite / MySQL / PostgreSQL.
+
+    Idempotent and run-once per (db, table, column): subsequent calls return
+    immediately. Failure is non-fatal (logged at warning level) — callers
+    should also carry a defensive fallback at the write site.
+    """
+    key = (id(db_manager), table_name, column.name)
+    if key in _ensured_columns:
+        return
+    try:
+        engine = db_manager.engine
+        if engine is None:
+            # DB not initialised yet; do NOT mark done so a later call retries.
+            return
+        insp = inspect(engine)
+        if table_name not in insp.get_table_names():
+            # Table not created yet -> create_all will bring it up with the column.
+            # Mark done since there's nothing else to do for this table/column pair.
+            _ensured_columns.add(key)
+            return
+        existing = {c["name"] for c in insp.get_columns(table_name)}
+        if column.name in existing:
+            _ensured_columns.add(key)
+            return
+        col_type = column.type.compile(dialect=engine.dialect)
+        with engine.begin() as conn:
+            conn.execute(
+                text(f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type}")
+            )
+        _ensured_columns.add(key)
+        logger.info(
+            "ensure_column: added column %s to table %s", column.name, table_name
+        )
+    except SQLAlchemyError as e:
+        # Mark done to avoid hot-loop logs on a persistent failure; write-site
+        # OperationalError fallback still covers correctness.
+        _ensured_columns.add(key)
+        logger.warning(
+            "ensure_column: failed to add %s.%s (%s); deferring to write-site fallback",
+            table_name,
+            column.name,
+            e,
+        )
 
 
 class BaseDao(Generic[T, REQ, RES]):

@@ -33,6 +33,7 @@ import {
   LoadingOutlined,
   PlayCircleOutlined,
   PlusOutlined,
+  ProfileOutlined,
   RightOutlined,
   SearchOutlined,
   SyncOutlined,
@@ -46,6 +47,7 @@ import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Collapsible } from '../tools/Collapsible';
+import ConversationTracePanel from './ConversationTracePanel';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
 import ParallelTasksPanel from './ParallelTasksPanel';
 import SubAgentStatusBadge from './SubAgentStatusBadge';
@@ -205,9 +207,22 @@ export interface ManusRightPanelProps {
   subAgentContext?: SubAgentState | null;
   /** Exit the sub-agent process view (return to the main agent timeline). */
   onExitSubAgentView?: () => void;
+  /**
+   * Active conversation id used to query the observability trace for the
+   * current conversation. When conversationId is provided, a "Trace" tab is
+   * shown in the right panel.
+   */
+  conversationId?: string | null;
 }
 
-export type PanelView = 'execution' | 'files' | 'html-preview' | 'image-preview' | 'skill-preview' | 'summary';
+export type PanelView =
+  | 'execution'
+  | 'files'
+  | 'html-preview'
+  | 'image-preview'
+  | 'skill-preview'
+  | 'summary'
+  | 'trace';
 
 // Get icon for step type
 const getStepTypeIcon = (type: StepType) => {
@@ -2336,6 +2351,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   onSubAgentClick,
   subAgentContext,
   onExitSubAgentView,
+  conversationId,
 }) => {
   const { t } = useTranslation();
   const [inputCollapsed, setInputCollapsed] = useState(false);
@@ -2549,7 +2565,11 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       )}
 
       {/* View Toggle Tabs */}
-      {((artifacts && artifacts.length > 0) || previewArtifact || skillName || !!summaryContent) && (
+      {((artifacts && artifacts.length > 0) ||
+        previewArtifact ||
+        skillName ||
+        !!summaryContent ||
+        !!conversationId) && (
         <div className='flex flex-shrink-0 items-center gap-0 border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
           <button
             onClick={() => setPanelView('execution')}
@@ -2566,6 +2586,23 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
             )}
           </button>
+          {conversationId && (
+            <button
+              onClick={() => setPanelView('trace')}
+              className={classNames(
+                'px-4 py-2.5 text-xs font-medium transition-colors relative',
+                panelView === 'trace'
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <ProfileOutlined className='mr-1.5' />
+              {t('observability_trace_tab') || 'Trace'}
+              {panelView === 'trace' && (
+                <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
+              )}
+            </button>
+          )}
           {artifacts && artifacts.length > 0 && (
             <button
               onClick={() => setPanelView('files')}
@@ -2648,13 +2685,16 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           isSubAgentExecution ||
             panelView === 'html-preview' ||
             panelView === 'image-preview' ||
-            panelView === 'skill-preview'
+            panelView === 'skill-preview' ||
+            panelView === 'trace'
             ? 'p-0'
             : 'p-5 space-y-4',
         )}
         data-testid='right-panel-content'
       >
-        {panelView === 'skill-preview' && skillName ? (
+        {panelView === 'trace' && conversationId ? (
+          <ConversationTracePanel conversationId={conversationId} />
+        ) : panelView === 'skill-preview' && skillName ? (
           <div className='w-full h-full flex flex-col p-5 overflow-auto'>
             <SkillCardRenderer skillName={skillName} outputs={visibleOutputs} />
           </div>

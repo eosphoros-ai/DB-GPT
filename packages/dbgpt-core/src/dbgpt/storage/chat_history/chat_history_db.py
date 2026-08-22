@@ -17,7 +17,7 @@ from sqlalchemy import (
     text,
 )
 
-from dbgpt.storage.metadata import BaseDao, Model
+from dbgpt.storage.metadata import BaseDao, Model, ensure_column
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +81,12 @@ class ChatHistoryMessageEntity(Model):
     message_detail = Column(
         Text(length=2**31 - 1), nullable=True, comment="Message details, json format"
     )
+    trace_id = Column(
+        String(128),
+        nullable=True,
+        index=True,
+        comment="Trace id linking this message to its observability span tree",
+    )
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
 
@@ -92,6 +98,15 @@ class ChatHistoryDao(BaseDao):
         self, user_name: Optional[str] = None, sys_code: Optional[str] = None
     ):
         """Retrieve the last 20 chat history records."""
+        # Lightweight additive migration for the observability trace_id linkage
+        # column on existing DBs (create_all won't add columns to existing tables).
+        # Idempotent & run-once; called here because list_last_20 is high-frequency
+        # and only runs after the DB engine is up.
+        ensure_column(
+            self._db_manager,
+            ChatHistoryMessageEntity.__tablename__,
+            ChatHistoryMessageEntity.trace_id,
+        )
         session = self.get_raw_session()
         chat_history = session.query(ChatHistoryEntity)
         if user_name:

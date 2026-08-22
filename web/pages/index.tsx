@@ -3403,6 +3403,7 @@ const Playground: NextPage = () => {
                     <ManusRightPanel
                       activeStep={activeStep}
                       outputs={outputs}
+                      conversationId={conversationId}
                       databaseType={selectedDb?.db_type}
                       databaseName={selectedDb?.db_name}
                       isRunning={isRunning}
