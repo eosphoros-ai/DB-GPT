@@ -20,6 +20,7 @@ import { ChatContentContext } from '@/pages/chat';
 import { IApp } from '@/types/app';
 import { IChatDialogueMessageSchema } from '@/types/chat';
 import { STORAGE_INIT_MESSAGE_KET, getInitMessage } from '@/utils';
+import { AgentCitation, decodeHistoryAnswer } from '@/utils/react-agent-final';
 
 import { parseReActText } from '@/hooks/use-react-agent';
 import ContextUsageBar from './ContextUsageBar';
@@ -48,14 +49,14 @@ const OpenCodeChatCompletion: React.FC = () => {
     setResourceValue,
     replyLoading,
     modelValue,
-    setHistory,
-    setReplyLoading,
+    setHistory: _setHistory,
+    setReplyLoading: _setReplyLoading,
     // Context management status from use-chat hook
     contextStatus,
   } = useContext(ChatContentContext);
 
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
-  const [jsonValue, setJsonValue] = useState<string>('');
+  const [jsonValue, _setJsonValue] = useState<string>('');
 
   // ReAct streaming turn is not used when routing through completions API
   const streamingTurn: any = null;
@@ -127,7 +128,7 @@ const OpenCodeChatCompletion: React.FC = () => {
 
   // Render a single turn from history
   const renderTurn = useCallback(
-    (turn: GroupedTurn, index: number, isLast: boolean) => {
+    (turn: GroupedTurn, _index: number, isLast: boolean) => {
       const userMessage = turn.human?.context
         ? typeof turn.human.context === 'string'
           ? turn.human.context
@@ -136,16 +137,21 @@ const OpenCodeChatCompletion: React.FC = () => {
 
       let assistantMessage = '';
       let parts: MessagePart[] = [];
+      let citations: AgentCitation[] = [];
       const isThinking = turn.view?.thinking && !turn.view?.context;
 
       if (turn.view?.context) {
-        const contextStr =
+        const rawContext =
           typeof turn.view.context === 'string' ? turn.view.context : JSON.stringify(turn.view.context);
+        const historyAnswer = decodeHistoryAnswer(rawContext);
+        const contextStr = historyAnswer.content;
+        citations = turn.view?.citations ?? historyAnswer.citations;
 
         // Parse ReAct format for agent mode, plain text for others
         if (useReActAPI || contextStr.includes('Thought:') || contextStr.includes('Action:')) {
           const parsed = parseReActText(contextStr);
           parts = parsed.parts;
+          if (citations.length === 0) citations = parsed.citations;
           // Use final content if available, otherwise use the original context
           assistantMessage = parsed.finalContent || extractFinalAnswer(contextStr) || contextStr;
         } else {
@@ -162,6 +168,7 @@ const OpenCodeChatCompletion: React.FC = () => {
           key={turn.key}
           userMessage={userMessage}
           assistantMessage={assistantMessage}
+          citations={citations}
           parts={parts}
           isWorking={isWorking}
           showSteps={parts.length > 0}
@@ -185,6 +192,7 @@ const OpenCodeChatCompletion: React.FC = () => {
         key='streaming-turn'
         userMessage={streamingTurn.userMessage}
         assistantMessage={streamingTurn.finalContent}
+        citations={streamingTurn.citations || []}
         parts={streamingTurn.parts}
         isWorking={streamingTurn.isWorking}
         startTime={streamingTurn.startTime}

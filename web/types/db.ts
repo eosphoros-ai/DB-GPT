@@ -24,6 +24,7 @@ export type DBType =
   | 'access'
   | 'mongodb'
   | 'starrocks'
+  | 'maxcompute'
   | 'hbase'
   | 'redis'
   | 'cassandra'

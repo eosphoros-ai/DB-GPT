@@ -10,11 +10,12 @@
  * - step.meta: Step metadata { type, id, thought, action, action_input }
  * - step.done: Step completed { type, id, status }
  * - context.status: Context budget status { type, used, budget, ratio, state, compact_layer }
- * - final: Final answer { type, content }
+ * - final: Final answer { type, protocol_version, content, citations }
  * - done: Stream completed { type }
  */
 
 import { MessagePart, ReasoningPart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import { AgentCitation, AgentFinalAnswer, decodeFinalEvent } from '@/utils/react-agent-final';
 
 // SSE Event Types
 export interface SSEStepStartEvent {
@@ -49,6 +50,8 @@ export interface SSEStepDoneEvent {
 export interface SSEFinalEvent {
   type: 'final';
   content: string;
+  protocol_version?: number;
+  citations?: unknown[];
 }
 
 export interface SSEDoneEvent {
@@ -138,7 +141,7 @@ interface StepState {
 export class ReActSSEState {
   private steps: Map<string, StepState> = new Map();
   private stepOrder: string[] = [];
-  private finalContent: string = '';
+  private finalAnswer: AgentFinalAnswer = { content: '', citations: [] };
   private isDone: boolean = false;
   private startTime: number;
   private endTime?: number;
@@ -249,7 +252,7 @@ export class ReActSSEState {
   }
 
   private handleFinal(event: SSEFinalEvent): void {
-    this.finalContent = event.content;
+    this.finalAnswer = decodeFinalEvent(event);
   }
 
   private handleDone(): void {
@@ -366,8 +369,8 @@ export class ReActSSEState {
       // Skip terminate action — its output is shown as finalContent, not as a step card
       if (step.action && step.action.toLowerCase() === 'terminate') {
         // If terminate has output and we don't yet have finalContent, use it
-        if (!this.finalContent && step.output.length > 0) {
-          this.finalContent = step.output.join('\n');
+        if (!this.finalAnswer.content && step.output.length > 0) {
+          this.finalAnswer = decodeFinalEvent(step.output.join('\n'));
         }
         continue;
       }
@@ -408,7 +411,20 @@ export class ReActSSEState {
    * Get final assistant message
    */
   getFinalContent(): string {
-    return this.finalContent;
+    return this.finalAnswer.content;
+  }
+
+  /** Get the canonical final answer, including structured citations. */
+  getFinalAnswer(): AgentFinalAnswer {
+    return {
+      content: this.finalAnswer.content,
+      citations: [...this.finalAnswer.citations],
+    };
+  }
+
+  /** Get structured citations attached to the final answer. */
+  getCitations(): AgentCitation[] {
+    return [...this.finalAnswer.citations];
   }
 
   /**

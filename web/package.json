@@ -18,7 +18,10 @@
     "lint": "eslint '**/*.{ts,tsx}' --fix",
     "format": "prettier --write '**/*.{ts,tsx}'",
     "export": "next export",
-    "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export"
+    "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export",
+    "test": "npm run test:react-final && npm run test:final-presentation",
+    "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
+    "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",

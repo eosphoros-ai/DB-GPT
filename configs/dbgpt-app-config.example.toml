@@ -29,6 +29,10 @@ max_compact_failures = 3
 # Per dispatch_parallel_tasks call. DBGPT_MAX_PARALLEL_SUBAGENTS overrides it.
 max_parallel_subagents = 3
 
+# Session file upload limits
+[dbgpt.serve.session_file]
+max_owner_bytes = -1
+
 [service.web.database]
 type = "sqlite"
 path = "pilot/meta_data/dbgpt.db"

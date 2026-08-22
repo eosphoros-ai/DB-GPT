@@ -66,6 +66,7 @@ datasource_hive = [
     "thrift_sasl",
 ]
 datasource_vertica = ["vertica-python"]
+datasource_maxcompute = ["pyodps"]
 datasource_duckdb = [
     "duckdb",
     "duckdb-engine==0.9.1",

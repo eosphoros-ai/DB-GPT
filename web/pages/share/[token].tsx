@@ -5,6 +5,7 @@
  * 无需登录，只读，不可继续对话。
  */
 
+import { displayOnlySnapshots, parseShareViewPayload, type SessionFileSnapshot } from '@/modules/session-files';
 import ManusLeftPanel, {
   ArtifactItem,
   ExecutionStep as ManusExecutionStep,
@@ -17,6 +18,7 @@ import ManusRightPanel, {
   PanelView,
 } from '@/new-components/chat/content/ManusRightPanel';
 import { buildActionDisplayText } from '@/utils/action-display';
+import { decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import {
   LinkOutlined,
   PauseCircleOutlined,
@@ -24,7 +26,7 @@ import {
   ReloadOutlined,
   StepForwardOutlined,
 } from '@ant-design/icons';
-import { Button, Tooltip, message } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -53,6 +55,9 @@ interface RawPayload {
   final_content: string;
   steps: RawStep[];
   generated_images?: string[];
+  /** v2 only: display-safe input file snapshots (share payloads use display_key). */
+  input_files?: unknown;
+  citations?: AgentCitation[];
 }
 
 interface _ParsedMessage {
@@ -69,7 +74,10 @@ interface ReplayRound {
   outputs: Record<string, ManusExecutionOutput[]>;
   stepThoughts: Record<string, string>;
   finalContent: string;
+  citations: AgentCitation[];
   artifacts: ArtifactItem[];
+  /** Read-only v2 input_files snapshots (share payloads key them by display_key). */
+  attachedFiles: readonly SessionFileSnapshot[];
 }
 
 // ---------------------------------------------------------------------------
@@ -192,15 +200,10 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
     if (msg.role === 'human') {
       pendingHuman = msg.context;
     } else if (msg.role === 'view') {
-      let payload: RawPayload | null = null;
-      try {
-        const parsed = JSON.parse(msg.context);
-        if (parsed?.version === 1 && parsed?.type === 'react-agent') {
-          payload = parsed as RawPayload;
-        }
-      } catch {
-        /* ignore */
-      }
+      // Public replay accepts react history versions 1 and 2 only; malformed
+      // or future payloads are skipped without breaking the round pairing.
+      const sharePayload = parseShareViewPayload(msg.context);
+      const payload = sharePayload ? (sharePayload.payload as unknown as RawPayload) : null;
 
       if (!payload) continue;
 
@@ -244,14 +247,17 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
         if (displayThought) stepThoughts[stepId] = displayThought;
       });
 
-      const artifacts = buildArtifacts(`round-${rounds.length}`, steps, outputs, payload.final_content || '');
+      const finalAnswer = decodeHistoryAnswer(payload);
+      const artifacts = buildArtifacts(`round-${rounds.length}`, steps, outputs, finalAnswer.content);
       rounds.push({
         humanText: pendingHuman || '',
         steps,
         outputs,
         stepThoughts,
-        finalContent: payload.final_content || '',
+        finalContent: finalAnswer.content,
+        citations: finalAnswer.citations,
         artifacts,
+        attachedFiles: displayOnlySnapshots(payload.input_files),
       });
       pendingHuman = null;
     }
@@ -485,6 +491,7 @@ const SharePage: NextPage = () => {
   const [firstQuestion, setFirstQuestion] = useState<string>('');
   const [speed, setSpeed] = useState(1);
   const [rightPanelView, setRightPanelView] = useState<PanelView>('execution');
+  const [selectedCitationIndex, setSelectedCitationIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -776,7 +783,17 @@ const SharePage: NextPage = () => {
                   onStepClick={undefined /* read-only */}
                   isWorking={isCurrentRound && playing && !state.showFinalForRound}
                   userQuery={data.round.humanText}
+                  attachedFiles={data.round.attachedFiles}
                   assistantText={data.showFinal ? data.round.finalContent : undefined}
+                  citationIndexes={data.showFinal ? data.round.citations.map(citation => citation.index) : []}
+                  onReferencesClick={
+                    data.showFinal && data.round.citations.length > 0
+                      ? () => {
+                          setSelectedCitationIndex(data.round.citations[0].index);
+                          setRightPanelView('references');
+                        }
+                      : undefined
+                  }
                   stepThoughts={data.round.stepThoughts}
                   artifacts={data.showFinal ? data.round.artifacts : []}
                   onViewAllFiles={data.showFinal ? () => setRightPanelView('files') : undefined}
@@ -805,6 +822,9 @@ const SharePage: NextPage = () => {
               artifacts={activeRoundData?.round.artifacts ?? []}
               panelView={rightPanelView}
               onPanelViewChange={setRightPanelView}
+              citations={activeRoundData?.showFinal ? activeRoundData.round.citations : []}
+              selectedCitationIndex={selectedCitationIndex}
+              onCitationSelect={setSelectedCitationIndex}
             />
           </div>
         </div>

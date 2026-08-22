@@ -5978,6 +5978,9 @@ datasource-hive = [
     { name = "thrift" },
     { name = "thrift-sasl" },
 ]
+datasource-maxcompute = [
+    { name = "pyodps" },
+]
 datasource-mssql = [
     { name = "pymssql" },
 ]
@@ -6071,6 +6074,7 @@ requires-dist = [
     { name = "pymssql", marker = "extra == 'datasource-mssql'" },
     { name = "pymysql" },
     { name = "pyobvector", marker = "extra == 'storage-obvector'" },
+    { name = "pyodps", marker = "extra == 'datasource-maxcompute'" },
     { name = "pypdf", marker = "extra == 'rag'" },
     { name = "pyspark", marker = "extra == 'datasource-spark'" },
     { name = "python-docx", marker = "extra == 'rag'" },
@@ -6083,7 +6087,7 @@ requires-dist = [
     { name = "vertica-python", marker = "extra == 'datasource-vertica'" },
     { name = "weaviate-client", marker = "extra == 'storage-weaviate'" },
 ]
-provides-extras = ["rag", "graph-rag", "datasource-mysql", "datasource-oracle", "datasource-postgres", "datasource-clickhouse", "datasource-spark", "datasource-mssql", "datasource-hive", "datasource-vertica", "datasource-duckdb", "storage-milvus", "storage-weaviate", "storage-chromadb", "storage-elasticsearch", "storage-qdrant", "storage-obvector", "storage-valkey", "file-oss", "file-s3"]
+provides-extras = ["rag", "graph-rag", "datasource-mysql", "datasource-oracle", "datasource-postgres", "datasource-clickhouse", "datasource-spark", "datasource-mssql", "datasource-hive", "datasource-vertica", "datasource-maxcompute", "datasource-duckdb", "storage-milvus", "storage-weaviate", "storage-chromadb", "storage-elasticsearch", "storage-qdrant", "storage-obvector", "storage-valkey", "file-oss", "file-s3"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.3.4" }]
@@ -15637,6 +15641,54 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d8/85/387d70fae8288420ea6edd6e3cb3adf2d220b12da15d37584b69a147e770/pyobvector-0.2.10.tar.gz", hash = "sha256:06c783f984c94f2177e97f9e4f107fa5aac2277d6285b7696d00d93765aae6f1", size = 37593, upload-time = "2025-04-14T06:48:31.294Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/aa/cd/3c6bf7b05938563cb74bd609cbc21e6f8c9c7cf48248bd888c61716a04b6/pyobvector-0.2.10-py3-none-any.whl", hash = "sha256:2d978cf5185848867d4ee3bfda6ae558b9cc0e4fe7edb01d1105779fa92704bb", size = 50098, upload-time = "2025-04-14T06:48:30.072Z" },
+]
+
+[[package]]
+name = "pyodps"
+version = "0.13.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyarrow" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/ff/09833bb5ea9a48805e345bc14e26f016268f5eded0f8b14d401c97f94375/pyodps-0.13.1.tar.gz", hash = "sha256:f1de80ffc9117d4c1b2304f0edf10e2305080779cbaebc6d96e10c583d925e1c", size = 1205086, upload-time = "2026-08-14T05:33:34.492Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ca/66/d5ea19bc9c745387b1366c77952a6c4ffcd8e624cb605a1b59de1af9cb1a/pyodps-0.13.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:536784157f0bf742f949733b770eeed2bf99d2731719953058bf197a71e1514e", size = 2341779, upload-time = "2026-08-14T02:45:50.724Z" },
+    { url = "https://files.pythonhosted.org/packages/03/0b/0a585213270d5e82af8bfce4fdf350b3c283bc3613a60eeb30159c6def7b/pyodps-0.13.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:64164e7a2395c8f4c83c10bcbc277bc5e51b379ff22e23d386ac11f7b6530c04", size = 2291105, upload-time = "2026-08-14T02:40:29.715Z" },
+    { url = "https://files.pythonhosted.org/packages/21/b7/18c6fbb0cb838cd3e30396e737451b36f5e03b82765c46007237898a9656/pyodps-0.13.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ca429ecd47f9c038a861d171ff3f3968740e8930018704d22629013d8e73ab57", size = 6647557, upload-time = "2026-08-14T05:30:33.352Z" },
+    { url = "https://files.pythonhosted.org/packages/99/fe/92df8f8242238dd0c9a85b3d56d67b2c94aefb10f4a3bd546b2d9e01ec69/pyodps-0.13.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6e070fe803a97082e3df3831df415d476a3ab2ee6a490c33d45de22e86bc88c1", size = 6724151, upload-time = "2026-08-14T05:33:13.582Z" },
+    { url = "https://files.pythonhosted.org/packages/50/53/889ea89b7b70cd0f7f7a954fb07c9e294077c58f95bb7da600ad0b197c0c/pyodps-0.13.1-cp310-cp310-win32.whl", hash = "sha256:10349ffee962e8d83d95adaf17128a425f17496d7d21c442e8c8950a3a7e5f08", size = 2064548, upload-time = "2026-08-14T02:58:13.509Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/fa/720a8bb299f7736f0a1c9a5091af8abe3d24023adde3a60369ff3313efc5/pyodps-0.13.1-cp310-cp310-win_amd64.whl", hash = "sha256:c15bc888b664f4cbf06a419ff5146a3978ac4016d2e88c8e2c8170a21718c1e7", size = 2184473, upload-time = "2026-08-14T02:58:15.575Z" },
+    { url = "https://files.pythonhosted.org/packages/89/1d/cff6ac21e1f6aaa73026f6171e723bf8ce2f95883274b4e08690d77653ea/pyodps-0.13.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:f03eae1b091e70658961b59d0cc17330d7800eaa3fc07cb479f572f7c0926821", size = 2346103, upload-time = "2026-08-14T02:45:52.083Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/e1/d40cfd29f7e479109490b47604a1301237dbf2d7b92abaf4a3eb3ad6af55/pyodps-0.13.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ffe734724ed39ea003a33f6f2f0cbf3ef73f11f7131fc4716b8d5bf2a6ce7134", size = 2296689, upload-time = "2026-08-14T02:40:31.088Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/f7/eb9c7039c05342c3ea2efa69d273840b144c4eb65449366f60de7d40ef2d/pyodps-0.13.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:efce96b66253f2c8658ec345b28db8c8a29284d450e144c3d717be633ec55340", size = 7253296, upload-time = "2026-08-14T05:30:35.727Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/9d/d38ca7ea7be9b906f3bc1c2ece6b2766332df471af4fe97ce00f5c02db64/pyodps-0.13.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4c20204ebb35bed3e42894e759f0051ef59ddada06da3ae0ad6638401cbf671c", size = 7319618, upload-time = "2026-08-14T05:33:15.663Z" },
+    { url = "https://files.pythonhosted.org/packages/73/91/6c697384f9a75e6c06bbb28b704258184f7c51069cf9dc25d5648c942d85/pyodps-0.13.1-cp311-cp311-win32.whl", hash = "sha256:f815918676e13960c8a79618d5e9c75cdbf9e243539aabc77c4eec1080b95133", size = 2063132, upload-time = "2026-08-14T02:58:16.755Z" },
+    { url = "https://files.pythonhosted.org/packages/82/ce/acd49954ce61a259b6618c136672ea5c3d6e9e1162bdd63cdbcf42a194a4/pyodps-0.13.1-cp311-cp311-win_amd64.whl", hash = "sha256:140bc1aa1c23400f02ace3f60e46d47a990cc79d24cf3cf3c2adce90e9e1e235", size = 2186863, upload-time = "2026-08-14T02:58:18.088Z" },
+    { url = "https://files.pythonhosted.org/packages/44/7d/b659ad0dbaeb209c9084e68ee0fa3432c78e6973d9772fdbdbbf9955fa12/pyodps-0.13.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:90e1b5e791bdbab4b969f80eebd6d6a86c0691a794533333ebbc15bd13e8f5e3", size = 2348006, upload-time = "2026-08-14T02:45:53.337Z" },
+    { url = "https://files.pythonhosted.org/packages/45/96/deb089a73b3bbc649563fdea4807cbc8b72a3a36c34736a542b493f5d86e/pyodps-0.13.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:66538087192d66d949d5ccd77bb930804604df57f2c54aebbb19f69cb472b7ee", size = 2306194, upload-time = "2026-08-14T02:40:32.73Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/09/93c95ad5688f9efcd59e3466454a1e6d22dbb94ac9d095f3ea3734a97f1a/pyodps-0.13.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c31d439996c961330b93b259217000963f0c09530351006416505ab4c7c4241e", size = 7109459, upload-time = "2026-08-14T05:30:37.454Z" },
+    { url = "https://files.pythonhosted.org/packages/95/cb/edc7b8974a54d39efde06a062c90c058d6ea274f3d6dc6e9ef12ce17744d/pyodps-0.13.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5e49039ba477979e66a82569312901a815c51c00eddbe69d40527585da8ec05b", size = 7217781, upload-time = "2026-08-14T05:33:18.073Z" },
+    { url = "https://files.pythonhosted.org/packages/e8/57/539da230586f3d755d1df44e0d5e39aacdf8a59a485c13b79ee494dbdd45/pyodps-0.13.1-cp312-cp312-win32.whl", hash = "sha256:c8a803043536298f1a6b3957a5f9c6e94577ed7d00f3696e1e6684009335cbca", size = 2050909, upload-time = "2026-08-14T02:58:19.788Z" },
+    { url = "https://files.pythonhosted.org/packages/15/86/59b6d74cfdc996e52d6bb89744cac7f039a8209ca2715339218cdf300d12/pyodps-0.13.1-cp312-cp312-win_amd64.whl", hash = "sha256:c7c58b5ff88648c596f90772ee5c8806a0066f03e9022f124437c0a7c2883746", size = 2170152, upload-time = "2026-08-14T02:58:20.97Z" },
+    { url = "https://files.pythonhosted.org/packages/85/8d/8aebfebe35f7e25bee85542d1f577f1c2f53797ba033b216a254fb64fdfb/pyodps-0.13.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:1facf267f289831f41c7a3b8a2c706a0762d9e4180b69dd8e5f8bd9b2483568c", size = 2214922, upload-time = "2026-08-14T02:45:54.561Z" },
+    { url = "https://files.pythonhosted.org/packages/92/74/2c978e765128163e331108955e0d9314f485c4d5924e5af586f73adacad7/pyodps-0.13.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:7389cba9f04f211f82a92a7522246539fe9b8b5dd0b40e7e66aa279c7dc406a9", size = 2185383, upload-time = "2026-08-14T02:40:34.755Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/44/c3f5011ea5befa48b58292442827df8354610423b13297fa578422a852c0/pyodps-0.13.1-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ebdddf39f5a64d664b922634b7e1fca2b421bf2b19a2101cd2bf244442b420b3", size = 6838107, upload-time = "2026-08-14T05:30:39.836Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/fa/6e05d956fad465f1cd29f4930898122d27c46ce0c8c4bbe3934e47d59b3e/pyodps-0.13.1-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d5703882de46ad3faf2d787a26d8b9f6d564db4ebdaca37fbee3f7b41fb8c5f0", size = 6926654, upload-time = "2026-08-14T05:33:20.293Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/a0/13d21ab965e0fc047e282ae61a397bc899cc5c3cdbfd17089000ec7ffe2e/pyodps-0.13.1-cp313-cp313-win32.whl", hash = "sha256:423805aa3c4e3e39426094cc154d5c4ae62ea53f3fa40f997c40dd1ed311c474", size = 1972238, upload-time = "2026-08-14T02:58:22.193Z" },
+    { url = "https://files.pythonhosted.org/packages/26/ee/2709ebbb5cee37543ca6024b541d45d9ff299e309605cb0a51ed6693909f/pyodps-0.13.1-cp313-cp313-win_amd64.whl", hash = "sha256:91c25e3f7fad8475e0cb0127fd98ad0488501faac6a08b340424bc574e7b0d19", size = 2082686, upload-time = "2026-08-14T02:58:23.73Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/07/767c38af9d074a29a6424eaf85db2dd2234db65586e66016547a2c376237/pyodps-0.13.1-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:5d91134bccfbe48f0c55f4010e5dbdcdc28fab5ee3027e1142400f0b4ec95454", size = 2223344, upload-time = "2026-08-14T02:45:55.762Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/96/3ba339ed3af354d15d2630b65afe3db27e0fe023a10084d79a33544040de/pyodps-0.13.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:8bc25b95804b320e5ee4e0f0c714fa0a7e3736f846509f4231f239f284c7af20", size = 2197048, upload-time = "2026-08-14T02:40:35.909Z" },
+    { url = "https://files.pythonhosted.org/packages/be/28/d2bd8562b842230040000e5bd7e160b5a927591500af8b0159d7df5d47bc/pyodps-0.13.1-cp314-cp314-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1eb2c134b0fc0ddfe8e3c87646d93078ae30b3cc4878a15a103995cd020d33c1", size = 6829334, upload-time = "2026-08-14T05:30:41.597Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/60/77b1f01b4ecb3d22a003525aea20a3599928ae7c494ceade28468b36ec6f/pyodps-0.13.1-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:da178a9a674e341fd431a8cc7c77f01c5f7f4a5d8f8661a77e9e0db255eadc97", size = 6868310, upload-time = "2026-08-14T05:33:23.015Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/43/5dfaa576b4f1989a4726f5f975a3fb121875d9c2d111716263dcc610504e/pyodps-0.13.1-cp314-cp314-win32.whl", hash = "sha256:8d4f97e90d37adf93c551a90b319b13ccc4801d4dfacb7ec807676c9ce8c4221", size = 1987749, upload-time = "2026-08-14T02:58:25.046Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/49/2ec50849db7e9711d28c874c121ef708dd07f899088221479db1938bd1b6/pyodps-0.13.1-cp314-cp314-win_amd64.whl", hash = "sha256:9c2867a39164da2a2a1bf6609a6004802e8f3c92592c69ac610d6ff51e08e959", size = 2103846, upload-time = "2026-08-14T02:58:26.486Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/e7/eab5a9e1e43d1f4d7869240114129d293e1bc5f0c5ae42196eec625e142c/pyodps-0.13.1-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:d2b985d33fae55e0d2c2b51d0a7e1e379de1a8a80d619d51344d4745fdb4bef8", size = 2262364, upload-time = "2026-08-14T02:45:57.042Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/90/e027e76632a1880bf072d4122bf12d580092b51e4e475ecbebb0e668efc8/pyodps-0.13.1-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:79eac9f29d0062c67fa7f917d3c33bcdca2ef2d8e897c62930ec9c43afcc73bb", size = 2240215, upload-time = "2026-08-14T02:40:37.134Z" },
+    { url = "https://files.pythonhosted.org/packages/21/6f/5608606ee55b409522f4fa8ed068a2a8b7139d00e1d2c71e3c850b2c731d/pyodps-0.13.1-cp314-cp314t-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:af42cd8b67052c27f477547868530a1fe1cfa5e08d6bd245e08909a371383ed5", size = 7367144, upload-time = "2026-08-14T05:30:43.197Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/c0/5f749b2fca1611958e1d591c0054fc70de449b125cfdb3d5e0003c6173c2/pyodps-0.13.1-cp314-cp314t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:65cb24f84587fe5efb9b4ebeb78f79709b06d59e5f6d7c08e26478a5ad329c08", size = 6996507, upload-time = "2026-08-14T05:33:25.73Z" },
+    { url = "https://files.pythonhosted.org/packages/67/81/42aa74d2de4a216a7e4faefd3dd1be79332d36955fa1a9bebe449c7332f5/pyodps-0.13.1-cp314-cp314t-win32.whl", hash = "sha256:fc5a1dc5a70f3f7962e3d33deaad0e092d90919bb93d7048ff1653c70c592a80", size = 2040708, upload-time = "2026-08-14T02:58:27.76Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/e2/62b7293312e14aea1cb2f7f38f944b19305b05f0faf4d7cd530520bce66a/pyodps-0.13.1-cp314-cp314t-win_amd64.whl", hash = "sha256:440a445da02b82eef7f637c59070a59d3088f7ac2563da9e0806767c88778a49", size = 2159720, upload-time = "2026-08-14T02:58:29.155Z" },
 ]
 
 [[package]]

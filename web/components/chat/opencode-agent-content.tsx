@@ -11,6 +11,7 @@ import { ChatContext } from '@/app/chat-context';
 import { parseReActText } from '@/hooks/use-react-agent';
 import OpenCodeSessionTurn, { MessagePart } from '@/new-components/chat/content/OpenCodeSessionTurn';
 import { IChatDialogueMessageSchema } from '@/types/chat';
+import { AgentCitation, decodeHistoryAnswer } from '@/utils/react-agent-final';
 import classNames from 'classnames';
 import { memo, useContext, useMemo } from 'react';
 
@@ -20,6 +21,8 @@ interface Props {
   streamingParts?: MessagePart[];
   /** Optional streaming final content */
   streamingFinalContent?: string;
+  /** Optional structured citations for the streaming final answer. */
+  streamingCitations?: AgentCitation[];
   /** Is currently working (streaming in progress) */
   isWorking?: boolean;
   /** Start time for duration tracking */
@@ -36,25 +39,37 @@ interface Props {
  * Parse ReAct format text from message context
  * This handles the historical messages stored in the database
  */
-function parseContextToMessageParts(context: string): { parts: MessagePart[]; finalContent: string } {
+function parseContextToMessageParts(context: string): {
+  parts: MessagePart[];
+  finalContent: string;
+  citations: AgentCitation[];
+} {
   if (!context || typeof context !== 'string') {
-    return { parts: [], finalContent: '' };
+    return { parts: [], finalContent: '', citations: [] };
   }
+
+  const historyAnswer = decodeHistoryAnswer(context);
+  const cleanContext = historyAnswer.content;
 
   // Check if this looks like ReAct format
   const hasReActFormat =
-    context.includes('Thought:') ||
-    context.includes('Action:') ||
-    context.includes('Action Input:') ||
-    context.includes('Observation:');
+    cleanContext.includes('Thought:') ||
+    cleanContext.includes('Action:') ||
+    cleanContext.includes('Action Input:') ||
+    cleanContext.includes('Observation:');
 
   if (!hasReActFormat) {
     // Not ReAct format, return as plain text
-    return { parts: [], finalContent: context };
+    return { parts: [], finalContent: cleanContext, citations: historyAnswer.citations };
   }
 
   // Use the parseReActText function from the hook
-  return parseReActText(context);
+  const parsed = parseReActText(cleanContext);
+  return {
+    parts: parsed.parts,
+    finalContent: parsed.finalContent,
+    citations: historyAnswer.citations.length > 0 ? historyAnswer.citations : parsed.citations,
+  };
 }
 
 /**
@@ -63,13 +78,14 @@ function parseContextToMessageParts(context: string): { parts: MessagePart[]; fi
 function extractMessages(
   content: IChatDialogueMessageSchema,
   allMessages?: IChatDialogueMessageSchema[],
-): { userMessage: string; assistantMessage: string; parts: MessagePart[] } {
+): { userMessage: string; assistantMessage: string; parts: MessagePart[]; citations: AgentCitation[] } {
   const isView = content.role === 'view';
   const context = typeof content.context === 'string' ? content.context : JSON.stringify(content.context);
 
   if (isView) {
     // This is an assistant message (view role)
-    const { parts, finalContent } = parseContextToMessageParts(context);
+    const { parts, finalContent, citations } = parseContextToMessageParts(context);
+    const historyAnswer = decodeHistoryAnswer(context);
 
     // Try to find the corresponding user message
     let userMessage = '';
@@ -82,8 +98,9 @@ function extractMessages(
 
     return {
       userMessage,
-      assistantMessage: finalContent || context,
+      assistantMessage: finalContent || historyAnswer.content,
       parts,
+      citations: content.citations ?? citations,
     };
   } else {
     // This is a user message (human role)
@@ -91,6 +108,7 @@ function extractMessages(
       userMessage: context,
       assistantMessage: '',
       parts: [],
+      citations: [],
     };
   }
 }
@@ -104,6 +122,7 @@ function OpenCodeAgentContent({
   content,
   streamingParts,
   streamingFinalContent,
+  streamingCitations,
   isWorking = false,
   startTime,
   endTime,
@@ -114,13 +133,14 @@ function OpenCodeAgentContent({
   const isView = content.role === 'view';
 
   // Parse the content to get message parts
-  const { userMessage, assistantMessage, parts } = useMemo(() => {
+  const { userMessage, assistantMessage, parts, citations } = useMemo(() => {
     return extractMessages(content);
   }, [content]);
 
   // Use streaming parts if provided, otherwise use parsed parts
   const displayParts = streamingParts || parts;
   const displayFinalContent = streamingFinalContent ?? assistantMessage;
+  const displayCitations = streamingCitations ?? citations;
 
   // Only render view messages with OpenCodeSessionTurn
   // Human messages will be rendered as part of the next view message
@@ -146,6 +166,7 @@ function OpenCodeAgentContent({
       <OpenCodeSessionTurn
         userMessage={userMessage}
         assistantMessage={displayFinalContent}
+        citations={displayCitations}
         parts={displayParts}
         isWorking={isWorking}
         startTime={startTime}
@@ -172,6 +193,7 @@ interface MessagePairProps {
   viewMessage: IChatDialogueMessageSchema;
   streamingParts?: MessagePart[];
   streamingFinalContent?: string;
+  streamingCitations?: AgentCitation[];
   isWorking?: boolean;
   startTime?: number;
   endTime?: number;
@@ -183,6 +205,7 @@ export const OpenCodeAgentMessagePair = memo(function OpenCodeAgentMessagePair({
   viewMessage,
   streamingParts,
   streamingFinalContent,
+  streamingCitations,
   isWorking = false,
   startTime,
   endTime,
@@ -197,7 +220,7 @@ export const OpenCodeAgentMessagePair = memo(function OpenCodeAgentMessagePair({
   }, [humanMessage]);
 
   // Parse view message
-  const { parts, finalContent } = useMemo(() => {
+  const { parts, finalContent, citations } = useMemo(() => {
     const ctx = viewMessage.context;
     const contextStr = typeof ctx === 'string' ? ctx : JSON.stringify(ctx);
     return parseContextToMessageParts(contextStr);
@@ -206,12 +229,14 @@ export const OpenCodeAgentMessagePair = memo(function OpenCodeAgentMessagePair({
   // Use streaming data if provided
   const displayParts = streamingParts || parts;
   const displayFinalContent = streamingFinalContent ?? finalContent;
+  const displayCitations = streamingCitations ?? viewMessage.citations ?? citations;
 
   return (
     <div className={classNames('w-full', className)}>
       <OpenCodeSessionTurn
         userMessage={userMessage}
         assistantMessage={displayFinalContent}
+        citations={displayCitations}
         parts={displayParts}
         isWorking={isWorking}
         startTime={startTime}

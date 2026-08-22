@@ -1,3 +1,4 @@
+import asyncio
 import io
 import json
 import logging
@@ -11,8 +12,18 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Body, Depends, File, Query, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import StreamingResponse
+from starlette.concurrency import run_in_threadpool
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import BaseModel as _BaseModel
@@ -23,6 +34,7 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.util.json_utils import parse_or_raise_error
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -30,6 +42,17 @@ from dbgpt_app.openapi.api_view_model import (
 from dbgpt_serve.datasource.manages import ConnectorManager
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
+from .attachment_react_adapter import (
+    AttachmentInputError,
+    SessionAttachmentContext,
+    build_file_context,
+    build_input_files_v2,
+    prepare_react_attachments,
+    react_state_patch,
+    resolve_legacy_chat_file_path,
+    scrub_react_history_for_share,
+)
+from .react_final import AgentFinalAnswer, FinalAnswerAssembler
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
     build_subagent_history_snapshot,
@@ -970,9 +993,236 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+def _build_react_history_payload(
+    *,
+    final_content: str,
+    steps: List[Dict[str, Any]],
+    task_plan: List[Dict[str, Any]],
+    generated_images: List[Any],
+    sub_agents: Any,
+    input_files: List[Dict[str, Any]],
+    citations: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """Serialize the persisted react-agent history payload (version 2).
+
+    The success and error paths share this builder so both persist the same
+    shape. ``input_files`` is the current turn's public snapshot produced by
+    :func:`build_input_files_v2` — safe metadata only, never server paths,
+    storage URIs, owner ids, hashes or inspection bodies. ``citations`` comes
+    from the final-answer assembler and remains display-safe metadata.
+    """
+    return json.dumps(
+        {
+            "version": 2,
+            "protocol_version": 2,
+            "type": "react-agent",
+            "final_content": final_content,
+            "citations": citations or [],
+            "steps": steps,
+            "task_plan": task_plan,
+            "generated_images": generated_images,
+            "sub_agents": sub_agents,
+            "input_files": input_files,
+        },
+        ensure_ascii=False,
+    )
+
+
+def _sse_event_type(event: Any) -> Optional[str]:
+    """Read an SSE event type without trusting arbitrary streamed text."""
+    if not isinstance(event, str):
+        return None
+    first_line = event.splitlines()[0] if event else ""
+    if not first_line.startswith("data:"):
+        return None
+    try:
+        payload = json.loads(first_line.removeprefix("data:").strip())
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    event_type = payload.get("type") if isinstance(payload, dict) else None
+    return event_type if isinstance(event_type, str) else None
+
+
+def _react_terminal_events(
+    storage_conv: Any,
+    history_payload: str,
+    final_answer: AgentFinalAnswer,
+) -> Tuple[str, str]:
+    """Persist one ReAct round without risking its terminal SSE events."""
+    try:
+        storage_conv.add_view_message(history_payload)
+        storage_conv.end_current_round()
+        storage_conv.save_to_storage()
+    except Exception:
+        logger.exception("Failed to persist ReAct agent history")
+
+    return (
+        _sse_event(final_answer.to_sse_payload()),
+        _sse_event({"type": "done"}),
+    )
+
+
+async def _cancel_and_await_agent_task(task: "asyncio.Task[Any]") -> None:
+    """Cancel a running agent task and always consume its terminal result."""
+    was_done = task.done()
+    if not was_done:
+        task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        if not was_done:
+            logger.exception("ReAct agent task failed during stream cleanup")
+
+
 async def _react_agent_stream(
     dialogue: ConversationVo,
     tool_mode: str = "full",
+    attachment_ctx: Optional[SessionAttachmentContext] = None,
+) -> AsyncGenerator[str, None]:
+    """Stream the ReAct agent turn, owning the attachment lifecycle.
+
+    The resolved session-file attachment context (when ``file_ids`` were
+    supplied) stays open for the whole turn and is closed exactly once when
+    the stream completes, fails, or is closed early by the client.
+
+    Args:
+        dialogue: Conversation parameters (user input, model, ext_info, etc.).
+        tool_mode: "full" (default) — all tools; "knowledge" — kb tools only.
+        attachment_ctx: Pre-resolved attachment context for this turn (or
+            ``None`` for pure-text / legacy ``file_path`` requests).
+    """
+    try:
+        async for event in _react_agent_stream_inner(
+            dialogue, tool_mode, attachment_ctx
+        ):
+            yield event
+    finally:
+        if attachment_ctx is not None:
+            try:
+                attachment_ctx.close()
+            except Exception:
+                logger.warning(
+                    "Failed to close session attachment context", exc_info=True
+                )
+
+
+def _legacy_upload_base_dir() -> str:
+    """Return the base dir of the legacy ``python_uploads`` tree."""
+    app = CFG.SYSTEM_APP
+    work_dir = getattr(app, "work_dir", None) if app else None
+    return work_dir or os.getcwd()
+
+
+async def _open_turn_attachments(
+    dialogue: ConversationVo, user_token: Optional[UserRequest]
+) -> Optional[SessionAttachmentContext]:
+    """Validate file input and resolve session attachments before streaming.
+
+    Conflicting/malformed/too-many inputs raise 400; any unresolvable
+    ``file_id`` raises one indistinguishable, non-enumerating 404. Errors
+    always surface before the SSE stream (and the agent) is constructed.
+    """
+    owner_id = (user_token.user_id if user_token else None) or dialogue.user_name
+    try:
+        attachment_ctx = await prepare_react_attachments(dialogue, owner_id=owner_id)
+        if attachment_ctx is None:
+            # Legacy ``ext_info.file_path`` requests are confined to the
+            # authenticated owner's ``python_uploads/<owner>`` root; invalid
+            # input raises the same 400 and ownership failures the same
+            # non-enumerating 404 as the file_ids flow.
+            try:
+                spec = dialogue.file_input_spec()
+            except Exception:
+                spec = None
+            legacy_path = spec.file_path if spec is not None else None
+            if legacy_path:
+                resolved = await run_in_threadpool(
+                    lambda: resolve_legacy_chat_file_path(
+                        file_path=legacy_path,
+                        owner_id=owner_id,
+                        base_dir=_legacy_upload_base_dir(),
+                    )
+                )
+                dialogue.ext_info = dict(dialogue.ext_info or {})
+                dialogue.ext_info["file_path"] = resolved
+        return attachment_ctx
+    except AttachmentInputError as error:
+        raise HTTPException(
+            status_code=error.status_code, detail=error.message
+        ) from error
+
+
+def _close_turn_attachments_quietly(
+    attachment_ctx: Optional[SessionAttachmentContext],
+) -> None:
+    """Close the turn attachment context, logging instead of raising."""
+    if attachment_ctx is None:
+        return
+    try:
+        attachment_ctx.close()
+    except Exception:
+        logger.warning("Failed to close session attachment context", exc_info=True)
+
+
+async def _react_agent_stream_inner(
+    dialogue: ConversationVo,
+    tool_mode: str = "full",
+    attachment_ctx: Optional[SessionAttachmentContext] = None,
+) -> AsyncGenerator[str, None]:
+    """Stream ReAct events while owning the lifetime of its background task."""
+    agent_task_holder: List["asyncio.Task[Any]"] = []
+    final_emitted = False
+    done_emitted = False
+    try:
+        async for event in _react_agent_stream_impl(
+            dialogue,
+            tool_mode=tool_mode,
+            attachment_ctx=attachment_ctx,
+            agent_task_holder=agent_task_holder,
+        ):
+            event_type = _sse_event_type(event)
+            final_emitted = final_emitted or event_type == "final"
+            done_emitted = done_emitted or event_type == "done"
+            yield event
+    except Exception:
+        logger.exception("ReAct agent stream failed before normal completion")
+        if not final_emitted and not done_emitted:
+            yield _sse_event(
+                AgentFinalAnswer(
+                    content="抱歉，回答生成过程中发生错误，请重试。"
+                ).to_sse_payload()
+            )
+        if not done_emitted:
+            yield _sse_event({"type": "done"})
+    finally:
+        if agent_task_holder:
+            await _cancel_and_await_agent_task(agent_task_holder[0])
+
+
+class _AgentStreamingResponse(StreamingResponse):
+    """Streaming response that explicitly closes its owned body iterator."""
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            close = getattr(self.body_iterator, "aclose", None)
+            if callable(close):
+                try:
+                    await close()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    logger.exception("Failed to close ReAct agent stream iterator")
+
+
+async def _react_agent_stream_impl(
+    dialogue: ConversationVo,
+    tool_mode: str = "full",
+    attachment_ctx: Optional[SessionAttachmentContext] = None,
+    agent_task_holder: Optional[List["asyncio.Task[Any]"]] = None,
 ) -> AsyncGenerator[str, None]:
     """Core ReAct agent streaming logic.
 
@@ -981,9 +1231,8 @@ async def _react_agent_stream(
         tool_mode: "full" (default) — all tools (skills, shell, sql, html, code, kb...).
                    "knowledge" — only knowledge base tools + todowrite + terminate,
                    optimized for pure knowledge-chat scenarios.
+        attachment_ctx: Pre-resolved session attachment context for this turn.
     """
-    import asyncio
-
     from dbgpt.agent import AgentContext, AgentMemory, AgentMessage
     from dbgpt.agent.claude_skill import get_registry, load_skills_from_dir
     from dbgpt.agent.core.memory.gpts import (
@@ -2046,6 +2295,18 @@ print(json.dumps(summary, ensure_ascii=False))
 
     conv_id = dialogue.conv_uid or str(uuid.uuid4())
     react_state["conv_id"] = conv_id
+    if attachment_ctx is not None:
+        # Public manifests for runtime tools plus the internal primary
+        # materialized path / files_json mapping (execution-only values —
+        # never written to prompts, logs or history).
+        react_state.update(react_state_patch(attachment_ctx))
+    # Public per-turn snapshot of input files for the persisted history
+    # payload (v2). Only public metadata — never server paths, storage URIs,
+    # owner ids, hashes or inspection bodies. Later turns resolve files
+    # fresh from the registry; old payloads are never scanned for files.
+    input_files_snapshot = build_input_files_v2(
+        attachment_ctx.manifests if attachment_ctx is not None else ()
+    )
     if conv_id in REACT_AGENT_MEMORY_CACHE:
         gpt_memory = REACT_AGENT_MEMORY_CACHE[conv_id]
     else:
@@ -2080,13 +2341,9 @@ print(json.dumps(summary, ensure_ascii=False))
         enable_context_management=True,
     )
 
-    file_context = ""
-    if file_path:
-        file_context = f"""
-## User Uploaded File
-- File path: {file_path}
-- Analyze this file if needed for the user's request.
-"""
+    # file_ids requests use the public manifest block; legacy file_path and
+    # pure-text requests keep their existing wording byte-for-byte.
+    file_context = build_file_context(attachment_ctx, file_path)
 
     skill_prompt_context = ""
     execution_instruction = ""
@@ -2322,6 +2579,11 @@ Action Reason: Why this action is needed now, plain text, MUST be concise and fi
 Do not use ellipsis.
 Action: The selected tool name (must be one of the tools listed above)
 Action Input: The JSON format of tool parameters
+
+IMPORTANT: Never emit native tool-call markup such as
+<|tool_calls_section_begin|>, <|tool_call_begin|>, <|tool_call_argument_begin|>
+or any other <|...|> tokens. Tool calls are ONLY valid in the textual
+Thought/Action/Action Input format shown above.
 """.strip()
 
         if tool_mode == "knowledge":
@@ -2516,6 +2778,11 @@ Action Reason: Why this action is needed now, plain text, MUST be concise and fi
 Do not use ellipsis.
 Action: The selected tool name
 Action Input: The JSON format of tool parameters
+
+IMPORTANT: Never emit native tool-call markup such as
+<|tool_calls_section_begin|>, <|tool_call_begin|>, <|tool_call_argument_begin|>
+or any other <|...|> tokens. Tool calls are ONLY valid in the textual
+Thought/Action/Action Input format shown above.
 """.strip()
 
         workflow_prompt = workflow_prompt + "\n\n" + DISPATCH_PROMPT_SECTION
@@ -2694,6 +2961,8 @@ Action Input: The JSON format of tool parameters
         )
 
     agent_task = asyncio.create_task(run_agent())
+    if agent_task_holder is not None:
+        agent_task_holder.append(agent_task)
     round_step_map: Dict[int, str] = {}
     pending_thoughts: Dict[
         int, List[str]
@@ -2704,8 +2973,7 @@ Action Input: The JSON format of tool parameters
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
     subagent_history: Dict[str, Dict[str, Any]] = {}
-    # Collect chunks from knowledge tool observations for citation
-    _cited_chunks: List[Dict[str, Any]] = []
+    final_answer_assembler = FinalAnswerAssembler()
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -3078,6 +3346,7 @@ Action Input: The JSON format of tool parameters
             observation_text = action_output.get("observations") or action_output.get(
                 "content"
             )
+            status = "done" if action_output.get("is_exe_success", True) else "failed"
             if observation_text:
                 raw_chunks = emit_tool_chunks(react_step_id, observation_text)
                 if raw_chunks:
@@ -3086,7 +3355,7 @@ Action Input: The JSON format of tool parameters
                 else:
                     for chunk in chunk_text(str(observation_text), max_len=600):
                         yield step_chunk(react_step_id, "text", chunk)
-                # --- History & citation: collect from observation ---
+                # --- History: collect the tool output for replay ---
                 if current_history_step is not None:
                     parsed_obs = None
                     if isinstance(observation_text, str):
@@ -3099,16 +3368,15 @@ Action Input: The JSON format of tool parameters
                     ):
                         for item in parsed_obs["chunks"]:
                             if isinstance(item, dict):
-                                content = (item.get("content") or "").strip()
+                                content = item.get("content")
+                                if isinstance(content, str):
+                                    content = content.strip()
                                 current_history_step["outputs"].append(
                                     {
                                         "output_type": item.get("output_type", "text"),
                                         "content": content,
                                     }
                                 )
-                                clean = _strip_html_tags(content)
-                                if len(clean) >= 10:
-                                    _cited_chunks.append({"content": clean})
                     elif isinstance(observation_text, str) and observation_text:
                         current_history_step["outputs"].append(
                             {
@@ -3116,12 +3384,17 @@ Action Input: The JSON format of tool parameters
                                 "content": observation_text,
                             }
                         )
-                        clean = _strip_html_tags(observation_text)
-                        if len(clean) >= 10:
-                            _cited_chunks.append({"content": clean})
+
+                # Citations are opt-in: the assembler accepts only explicitly
+                # supported knowledge tools and fails closed on malformed data.
+                final_answer_assembler.observe(
+                    action,
+                    action_input_data,
+                    observation_text,
+                    succeeded=status == "done",
+                )
 
             # Mark step as done and track as last completed
-            status = "done" if action_output.get("is_exe_success", True) else "failed"
             yield step_done(react_step_id, status)
             if (
                 status == "done"
@@ -3145,23 +3418,21 @@ Action Input: The JSON format of tool parameters
     except Exception as e:
         err_msg = f"React agent failed: {e}"
         fail_running_subagent_history(subagent_history)
-        error_payload = json.dumps(
-            {
-                "version": 1,
-                "type": "react-agent",
-                "final_content": err_msg,
-                "steps": history_steps,
-                "task_plan": list(_todo_list),
-                "generated_images": react_state.get("generated_images", []),
-                "sub_agents": build_subagent_history_snapshot(subagent_history),
-            },
-            ensure_ascii=False,
+        error_payload = _build_react_history_payload(
+            final_content=err_msg,
+            steps=history_steps,
+            task_plan=list(_todo_list),
+            generated_images=react_state.get("generated_images", []),
+            sub_agents=build_subagent_history_snapshot(subagent_history),
+            input_files=input_files_snapshot,
+            citations=[],
         )
-        storage_conv.add_view_message(error_payload)
-        storage_conv.end_current_round()
-        storage_conv.save_to_storage()
-        yield _sse_event({"type": "final", "content": err_msg})
-        yield _sse_event({"type": "done"})
+        for terminal_event in _react_terminal_events(
+            storage_conv,
+            error_payload,
+            AgentFinalAnswer(content=err_msg),
+        ):
+            yield terminal_event
         return
 
     if reply.action_report and reply.action_report.terminate:
@@ -3175,9 +3446,12 @@ Action Input: The JSON format of tool parameters
             if steps:
                 action_input = steps[0].action_input
                 if action_input:
-                    # action_input could be a string like '{"result": "..."}'
+                    # action_input could be a string like '{"result": "..."}';
+                    # tolerate trailing artifacts after the JSON object (the
+                    # parser already strips known special tokens, this is the
+                    # second line of defense for unknown ones).
                     if isinstance(action_input, str):
-                        parsed_input = json.loads(action_input)
+                        parsed_input = parse_or_raise_error(action_input)
                     else:
                         parsed_input = action_input
                     if isinstance(parsed_input, dict) and "result" in parsed_input:
@@ -3213,133 +3487,24 @@ Action Input: The JSON format of tool parameters
     else:
         final_content = reply.content or ""
 
-    # Auto-annotate citations in the final answer: match collected chunks
-    # against the answer text and insert [n] markers for traceability.
-    if _cited_chunks:
-        # Deduplicate by content while preserving order
-        seen = set()
-        unique_chunks = []
-        for c in _cited_chunks:
-            key = c.get("content", "")
-            if key not in seen:
-                seen.add(key)
-                unique_chunks.append(c)
-        _cited_chunks[:] = unique_chunks
-        final_content = _auto_annotate_citations(final_content, _cited_chunks)
-
-    # Build references XML for frontend citation panel
-    references_xml = _build_references_xml(_cited_chunks)
+    final_answer = final_answer_assembler.finalize(final_content)
 
     # Persist AI reply with structured history payload
-    history_payload = json.dumps(
-        {
-            "version": 1,
-            "type": "react-agent",
-            "final_content": final_content,
-            "steps": history_steps,
-            "task_plan": list(_todo_list),
-            "generated_images": react_state.get("generated_images", []),
-            "sub_agents": build_subagent_history_snapshot(subagent_history),
-        },
-        ensure_ascii=False,
+    history_payload = _build_react_history_payload(
+        final_content=final_answer.content,
+        steps=history_steps,
+        task_plan=list(_todo_list),
+        generated_images=react_state.get("generated_images", []),
+        sub_agents=build_subagent_history_snapshot(subagent_history),
+        input_files=input_files_snapshot,
+        citations=[citation.to_dict() for citation in final_answer.citations],
     )
-    storage_conv.add_view_message(history_payload)
-    storage_conv.end_current_round()
-    storage_conv.save_to_storage()
-
-    # Emit final content with references appended so the frontend can render
-    # inline citations and the citation drawer panel.
-    final_with_refs = final_content + references_xml
-    yield _sse_event({"type": "final", "content": final_with_refs})
-    yield _sse_event({"type": "done"})
-
-
-# ---------------------------------------------------------------------------
-# Citation helpers for react-agent knowledge chat
-# ---------------------------------------------------------------------------
-
-
-def _strip_html_tags(text: str) -> str:
-    """Remove HTML/XML tags and unescape HTML entities from a string."""
-    import html
-
-    text = html.unescape(text or "")
-    text = re.sub(r"<[^>]+>", "", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-
-def _auto_annotate_citations(text: str, chunks: list) -> str:
-    """Insert [n] citation markers into the answer text by matching collected
-    knowledge tool observation chunks against the final answer.
-
-    Uses longest-common-substring matching (>= 10 chars) to find where each
-    chunk appears in the answer and inserts a [n] marker after it.
-    """
-    if not chunks or not text:
-        return text
-
-    # Sort by content length descending so longer (more specific) chunks
-    # are matched first.
-    indexed = sorted(
-        enumerate(chunks, start=1),
-        key=lambda x: len(x[1].get("content", "")),
-        reverse=True,
-    )
-
-    for idx, chunk_info in indexed:
-        content = (chunk_info.get("content") or "").strip()
-        if len(content) < 8:
-            continue
-        # Find longest common substring
-        match = _longest_common_substring(text, content, min_len=8, max_len=80)
-        if not match:
-            continue
-        marker = f"[{idx}]"
-        if marker not in text:
-            # Replace ALL occurrences — a single source chunk often
-            # supports multiple sentences in the answer.
-            text = text.replace(match, match + marker)
-    return text
-
-
-def _longest_common_substring(
-    text: str, chunk: str, min_len: int = 8, max_len: int = 80
-) -> str:
-    """Find the longest substring of `chunk` that appears in `text`."""
-    chunk = chunk.strip()
-    for length in range(min(max_len, len(chunk)), min_len - 1, -1):
-        for start in range(len(chunk) - length + 1):
-            sub = chunk[start : start + length]
-            if sub in text:
-                return sub
-    return ""
-
-
-def _build_references_xml(chunks: list) -> str:
-    """Build a <references> XML tag with collected chunks for the frontend
-    citation panel and inline citation hover popovers.
-
-    Uses single-quoted attribute (no HTML entity escaping) so the frontend
-    regex /<references[^>]*references='([^']*)'/ can extract and JSON.parse.
-    """
-    if not chunks:
-        return ""
-    refs = []
-    for idx, chunk_info in enumerate(chunks, start=1):
-        content = (chunk_info.get("content") or "").strip()
-        if len(content) < 10:
-            continue
-        refs.append({"index": idx, "id": idx, "content": content, "recall_score": None})
-    if not refs:
-        return ""
-    # Build with json.dumps then wrap in single quotes so the frontend can
-    # extract via regex and JSON.parse without unescaping HTML entities.
-    payload_obj = [{"name": "Knowledge Base", "chunks": refs}]
-    payload = json.dumps(payload_obj, ensure_ascii=False)
-    return (
-        '\n\n<references title="References" references=\'' + payload + "'></references>"
-    )
+    for terminal_event in _react_terminal_events(
+        storage_conv,
+        history_payload,
+        final_answer,
+    ):
+        yield terminal_event
 
 
 # ---------------------------------------------------------------------------
@@ -3384,6 +3549,25 @@ def _get_conversation_service():
     return CFG.SYSTEM_APP.get_component(SERVE_SERVICE_COMPONENT_NAME, Service)
 
 
+def _conversation_owner_user_name(conv_uid: str) -> Optional[str]:
+    """Return the recorded owner (``user_name``) of a conversation.
+
+    ``None`` means the conversation does not exist, so callers can fail
+    closed. Legacy anonymous conversations return the stored blank value and
+    keep their previous share behavior.
+    """
+    from dbgpt.storage.chat_history.chat_history_db import ChatHistoryEntity
+
+    service = _get_conversation_service()
+    with service.dao.session(commit=False) as session:
+        entity = (
+            session.query(ChatHistoryEntity)
+            .filter(ChatHistoryEntity.conv_uid == conv_uid)
+            .first()
+        )
+    return None if entity is None else (entity.user_name or "")
+
+
 @router.post("/v1/chat/share", response_model=Result)
 async def create_share_link(
     body: ShareCreateRequest = Body(),
@@ -3393,10 +3577,21 @@ async def create_share_link(
 
     The returned ``share_url`` is a relative path that the client should
     prepend with the current host to form an absolute URL.
+
+    Ownership is verified first: a conversation recorded for another user
+    cannot be shared by a foreign (or anonymous) caller, and a conversation
+    that does not exist cannot be shared at all.
     """
+    from fastapi import HTTPException
+
+    requester = user_token.user_id if user_token else None
+    owner = _conversation_owner_user_name(body.conv_uid)
+    if owner is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if owner and owner != (requester or ""):
+        raise HTTPException(status_code=403, detail="Not the conversation owner")
     dao = _get_share_dao()
-    created_by = user_token.user_id if user_token else None
-    entity = dao.create_share(conv_uid=body.conv_uid, created_by=created_by)
+    entity = dao.create_share(conv_uid=body.conv_uid, created_by=requester)
     if entity is None:
         return Result.failed(msg="Failed to create share link")
     return Result.succ(
@@ -3427,8 +3622,15 @@ async def get_share_conversation(token: str):
 
     history = service.get_history_messages(ServeRequest(conv_uid=link.conv_uid))
 
+    # Public viewers get scrubbed react history: v2 payloads have their
+    # ``input_files`` rewritten to non-resolvable public snapshots; v1
+    # payloads and plain-text messages are passed through unchanged.
     messages = [
-        {"role": m.role, "context": m.context, "order": m.order}
+        {
+            "role": m.role,
+            "context": scrub_react_history_for_share(m.context),
+            "order": m.order,
+        }
         for m in (history or [])
     ]
     return Result.succ(
@@ -3445,12 +3647,23 @@ async def delete_share_link(
     token: str,
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    """Revoke a share link.  Only the owner (or any authenticated user) may delete."""
+    """Revoke a share link.
+
+    Only the recorded creator may delete a link; legacy anonymous shares
+    (no recorded creator) remain revocable by anyone. Foreign users get a
+    403 and unknown tokens a 404 — no share is silently dropped.
+    """
+    from fastapi import HTTPException
+
     dao = _get_share_dao()
+    link = dao.get_by_token(token)
+    if link is None:
+        raise HTTPException(status_code=404, detail="Share link not found")
+    requester = user_token.user_id if user_token else None
+    if link.created_by and link.created_by != (requester or ""):
+        raise HTTPException(status_code=403, detail="Not the share owner")
     deleted = dao.delete_by_token(token)
     if not deleted:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Share link not found")
     return Result.succ({"deleted": True, "token": token})
 
@@ -3557,6 +3770,8 @@ async def chat_react_agent(
         dialogue.model_name,
     )
     dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    # Pre-flight: 400/404 surface before the stream (and agent) is built.
+    attachment_ctx = await _open_turn_attachments(dialogue, user_token)
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -3564,12 +3779,17 @@ async def chat_react_agent(
         "Transfer-Encoding": "chunked",
     }
     try:
-        return StreamingResponse(
-            _react_agent_stream(dialogue, tool_mode="full"),
+        return _AgentStreamingResponse(
+            _react_agent_stream(
+                dialogue, tool_mode="full", attachment_ctx=attachment_ctx
+            ),
             headers=headers,
             media_type="text/event-stream",
         )
     except Exception as e:
+        # The streaming generator never started, so its own cleanup never
+        # ran — drop the materialized turn files here before erroring out.
+        _close_turn_attachments_quietly(attachment_ctx)
         logger.exception("React Agent Exception!%s", dialogue, exc_info=e)
 
         async def error_text(err_msg):
@@ -3598,6 +3818,8 @@ async def chat_knowledge_agent(
         dialogue.model_name,
     )
     dialogue.user_name = user_token.user_id if user_token else dialogue.user_name
+    # Pre-flight: 400/404 surface before the stream (and agent) is built.
+    attachment_ctx = await _open_turn_attachments(dialogue, user_token)
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -3605,12 +3827,17 @@ async def chat_knowledge_agent(
         "Transfer-Encoding": "chunked",
     }
     try:
-        return StreamingResponse(
-            _react_agent_stream(dialogue, tool_mode="knowledge"),
+        return _AgentStreamingResponse(
+            _react_agent_stream(
+                dialogue, tool_mode="knowledge", attachment_ctx=attachment_ctx
+            ),
             headers=headers,
             media_type="text/event-stream",
         )
     except Exception as e:
+        # The streaming generator never started, so its own cleanup never
+        # ran — drop the materialized turn files here before erroring out.
+        _close_turn_attachments_quietly(attachment_ctx)
         logger.exception("Knowledge Agent Exception!%s", dialogue, exc_info=e)
 
         async def error_text(err_msg):

@@ -1,3 +1,4 @@
+import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
 import {
@@ -106,6 +107,8 @@ export interface ManusLeftPanelProps {
   isWorking?: boolean;
   userQuery?: string;
   assistantText?: string;
+  /** Render incremental answer text without reparsing Markdown on every frame. */
+  isAssistantStreaming?: boolean;
   modelName?: string;
   stepThoughts?: Record<string, string>;
   /** Optional slot rendered above the execution sections (sub-agent card). */
@@ -117,11 +120,11 @@ export interface ManusLeftPanelProps {
   onShare?: () => void;
   isCollapsed?: boolean;
   onExpand?: () => void;
-  attachedFile?: {
-    name: string;
-    size: number;
-    type: string;
-  };
+  /**
+   * Immutable display snapshots of every file attached to this message
+   * (session snapshots, or legacy attachments via `snapshotFromLegacyFile`).
+   */
+  attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: {
     id: number;
     name: string;
@@ -142,6 +145,10 @@ export interface ManusLeftPanelProps {
   onSkillCardClick?: (skillName: string) => void;
   onSkillDownload?: (skillName: string) => void;
   taskPlan?: TaskItem[];
+  /** Citation indexes that are valid for this answer. */
+  citationIndexes?: number[];
+  /** Open the references panel from the answer footer. */
+  onReferencesClick?: () => void;
 }
 
 // Get step icon based on type and status
@@ -230,19 +237,6 @@ const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-};
-
-const getFileTypeLabel = (fileName: string, t: any, mimeType?: string): string => {
-  const ext = fileName.toLowerCase().split('.').pop() || '';
-  if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel'))
-    return t('file_type_spreadsheet');
-  if (ext === 'csv' || mimeType?.includes('csv')) return t('file_type_spreadsheet');
-  if (ext === 'pdf' || mimeType?.includes('pdf')) return t('file_type_pdf');
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image'))
-    return t('file_type_image');
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return t('file_type_word');
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return t('file_type_text');
-  return t('file_type_generic');
 };
 
 const getFileIconElement = (fileName: string, mimeType?: string) => {
@@ -1053,6 +1047,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   isWorking,
   userQuery,
   assistantText,
+  isAssistantStreaming = false,
   modelName,
   stepThoughts,
   subAgentSlot,
@@ -1063,7 +1058,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onShare: _onShare,
   isCollapsed,
   onExpand,
-  attachedFile,
+  attachedFiles,
   attachedKnowledge,
   attachedSkill,
   attachedDb,
@@ -1072,6 +1067,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onSkillCardClick,
   onSkillDownload,
   taskPlan,
+  citationIndexes = [],
+  onReferencesClick,
 }) => {
   const { t } = useTranslation();
   const handleStepClick = useCallback(
@@ -1122,21 +1119,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {userQuery && (
           <div className='flex justify-end'>
             <div className='max-w-[85%] space-y-2'>
-              {attachedFile && (
-                <div className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'>
-                  <div className='w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0'>
-                    {getFileIconElement(attachedFile.name, attachedFile.type)}
-                  </div>
-                  <div className='min-w-0 flex-1'>
-                    <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>
-                      {attachedFile.name}
-                    </div>
-                    <div className='text-[11px] text-gray-400 dark:text-gray-500'>
-                      {getFileTypeLabel(attachedFile.name, t, attachedFile.type)} · {formatFileSize(attachedFile.size)}
-                    </div>
-                  </div>
-                </div>
-              )}
               {attachedKnowledge && (
                 <div className='flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] shadow-sm'>
                   <div className='w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0'>
@@ -1196,7 +1178,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                   </div>
                 </div>
               ))}
-              <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed'>
+              <AttachmentMessageCards files={attachedFiles} />
+              <div className='rounded-2xl bg-gray-100 dark:bg-[#2a2b2f] px-4 py-3 text-sm text-gray-800 dark:text-gray-200 leading-relaxed shadow-sm'>
                 {userQuery}
               </div>
             </div>
@@ -1258,8 +1241,22 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {assistantText && (
           <div className='mt-4 px-1'>
             <div className='prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200 leading-relaxed'>
-              <MarkdownContext>{assistantText}</MarkdownContext>
+              {isAssistantStreaming ? (
+                <span className='whitespace-pre-wrap break-words'>{assistantText}</span>
+              ) : (
+                <MarkdownContext>{assistantText}</MarkdownContext>
+              )}
             </div>
+            {citationIndexes.length > 0 && onReferencesClick && (
+              <button
+                type='button'
+                onClick={onReferencesClick}
+                className='mt-3 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
+              >
+                <BookOutlined aria-hidden />
+                查看 {citationIndexes.length} 条参考来源
+              </button>
+            )}
           </div>
         )}
 
