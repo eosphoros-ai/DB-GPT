@@ -1,5 +1,6 @@
 import { CodePreview } from '@/components/chat/chat-content/code-preview';
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
+import type { SessionFileSnapshot } from '@/modules/session-files';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
@@ -51,6 +52,8 @@ import { Collapsible } from '../tools/Collapsible';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
 import ParallelTasksPanel from './ParallelTasksPanel';
 import SubAgentStatusBadge from './SubAgentStatusBadge';
+import type { TaskFileTab, TaskFileTabNavigationKey } from './task-files-view-model';
+import { TASK_FILE_TABS, buildTaskFileView, getNextTaskFileTab, getTaskFileEmptyLabel } from './task-files-view-model';
 
 /** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
 const resolveImageUrl = (src: string): string => {
@@ -178,6 +181,7 @@ export interface ManusRightPanelProps {
   terminalTitle?: string;
   isCollapsed?: boolean;
   artifacts?: ArtifactItem[];
+  inputFiles?: readonly SessionFileSnapshot[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
   /** Controlled panel view — when provided, overrides internal state */
   panelView?: PanelView;
@@ -370,40 +374,6 @@ const getArtifactTypeLabel = (type: string): string => {
   return map[type] || '产物';
 };
 
-type FileFilterTab = 'all' | 'document' | 'image' | 'code' | 'link';
-
-const FILE_FILTER_TABS: { key: FileFilterTab; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'document', label: '文档' },
-  { key: 'image', label: '图片' },
-  { key: 'code', label: '代码文件' },
-  { key: 'link', label: '链接' },
-];
-
-const getFileFilterCategory = (artifact: ArtifactItem): FileFilterTab[] => {
-  const categories: FileFilterTab[] = ['all'];
-  const ext = artifact.name.toLowerCase().split('.').pop() || '';
-  if (artifact.type === 'image' || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) {
-    categories.push('image');
-  }
-  if (artifact.type === 'code' || ['py', 'js', 'ts', 'tsx', 'jsx', 'sql', 'sh', 'json', 'yaml', 'yml'].includes(ext)) {
-    categories.push('code');
-  }
-  if (
-    artifact.type === 'html' ||
-    artifact.type === 'markdown' ||
-    artifact.type === 'summary' ||
-    artifact.type === 'table' ||
-    ['xlsx', 'xls', 'csv', 'doc', 'docx', 'pdf', 'ppt', 'pptx', 'md', 'txt', 'html', 'htm'].includes(ext)
-  ) {
-    categories.push('document');
-  }
-  if (artifact.type === 'file' && categories.length === 1) {
-    categories.push('document');
-  }
-  return categories;
-};
-
 const formatArtifactDate = (timestamp: number): string => {
   const now = new Date();
   const date = new Date(timestamp);
@@ -419,25 +389,72 @@ const formatArtifactDate = (timestamp: number): string => {
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 };
 
+const formatPanelFileSize = (bytes?: number): string => {
+  if (!Number.isFinite(bytes ?? NaN)) return '';
+  const value = bytes ?? 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const getInputFileIcon = (file: SessionFileSnapshot) => {
+  const ext = file.name.toLowerCase().split('.').pop() || '';
+  if (['xlsx', 'xls', 'csv', 'tsv', 'json', 'parquet'].includes(ext) || file.kind === 'table') {
+    return <FileExcelOutlined className='text-emerald-600 dark:text-emerald-400' />;
+  }
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || file.media_type.startsWith('image/')) {
+    return <FileImageOutlined className='text-pink-500' />;
+  }
+  if (['ppt', 'pptx'].includes(ext)) {
+    return <FilePptOutlined className='text-orange-500' />;
+  }
+  return <FileTextOutlined className='text-indigo-500 dark:text-indigo-400' />;
+};
+
+const InputFileListItem: React.FC<{ file: SessionFileSnapshot }> = memo(({ file }) => (
+  <article className='group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-left transition-colors duration-200 hover:border-emerald-200 hover:bg-emerald-50/30 dark:border-slate-800 dark:bg-[#17181b] dark:hover:border-emerald-800/60 dark:hover:bg-emerald-900/10'>
+    <div className='flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/30'>
+      {getInputFileIcon(file)}
+    </div>
+    <div className='min-w-0 flex-1'>
+      <div className='truncate text-sm font-medium text-slate-800 dark:text-slate-100' title={file.name}>
+        {file.name}
+      </div>
+      <div className='mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500'>
+        <span>{file.kind || '资料'}</span>
+        {file.size > 0 && (
+          <>
+            <span className='text-slate-300 dark:text-slate-600'>·</span>
+            <span>{formatPanelFileSize(file.size)}</span>
+          </>
+        )}
+      </div>
+    </div>
+  </article>
+));
+
+InputFileListItem.displayName = 'InputFileListItem';
+
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
   const isImage = artifact.type === 'image' || /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(artifact.name);
   const imgSrc = isImage && typeof artifact.content === 'string' ? resolveImageUrl(artifact.content) : null;
 
   return (
-    <div
+    <button
+      type='button'
       onClick={onClick}
-      className='flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1f2025] transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0'
+      className='group flex w-full items-center gap-3 rounded-xl border border-indigo-100 bg-white px-3 py-3 text-left transition-all duration-200 hover:border-indigo-200 hover:bg-indigo-50/40 dark:border-indigo-900/40 dark:bg-[#17181b] dark:hover:border-indigo-800 dark:hover:bg-indigo-900/10'
     >
       {imgSrc ? (
         <img
           src={imgSrc}
           alt={artifact.name}
-          className='w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700'
+          className='h-9 w-9 flex-shrink-0 rounded-lg border border-gray-200 object-cover dark:border-gray-700'
         />
       ) : (
         <div
           className={classNames(
-            'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg',
             getArtifactFileBg(artifact.type),
           )}
         >
@@ -462,7 +479,10 @@ const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> =
           )}
         </div>
       </div>
-    </div>
+      <span className='rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'>
+        推理生成
+      </span>
+    </button>
   );
 });
 
@@ -2445,6 +2465,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   onSchedule,
   terminalTitle,
   artifacts,
+  inputFiles,
   onArtifactClick,
   panelView: controlledPanelView,
   onPanelViewChange,
@@ -2465,7 +2486,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const { t } = useTranslation();
   const [inputCollapsed, setInputCollapsed] = useState(false);
   const [internalPanelView, setInternalPanelView] = useState<PanelView>('execution');
-  const [fileFilter, setFileFilter] = useState<FileFilterTab>('all');
+  const [fileFilter, setFileFilter] = useState<TaskFileTab>('all');
   const htmlPreviewRef = useRef<HTMLIFrameElement>(null);
   const panelView = controlledPanelView ?? internalPanelView;
   const setPanelView = (view: PanelView) => {
@@ -2514,11 +2535,22 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   }, [citations.length, onPanelViewChange, panelView]);
   const visibleOutputs = useMemo(() => outputs.filter(o => o.output_type !== 'thought'), [outputs]);
 
-  const filteredArtifacts = useMemo(() => {
-    if (!artifacts) return [];
-    if (fileFilter === 'all') return artifacts;
-    return artifacts.filter(a => getFileFilterCategory(a).includes(fileFilter));
-  }, [artifacts, fileFilter]);
+  const {
+    counts: taskFileCounts,
+    filteredArtifacts,
+    visibleInputFiles,
+  } = useMemo(() => buildTaskFileView(inputFiles, artifacts, fileFilter), [artifacts, fileFilter, inputFiles]);
+
+  const handleTaskFileTabKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const nextTab = getNextTaskFileTab(fileFilter, event.key as TaskFileTabNavigationKey);
+      setFileFilter(nextTab);
+      window.requestAnimationFrame(() => document.getElementById(`task-file-tab-${nextTab}`)?.focus());
+    },
+    [fileFilter],
+  );
 
   const dateGroupedArtifacts = useMemo(() => {
     const groups: { label: string; items: ArtifactItem[] }[] = [];
@@ -2538,6 +2570,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const subAgentDisplayName = subAgentContext ? getSubAgentDisplayName(subAgentContext) : '';
   const subAgentDuration = formatSubAgentDuration(subAgentContext?.elapsedMs);
   const isSubAgentExecution = panelView === 'execution' && Boolean(subAgentContext);
+  const totalFileCount = taskFileCounts.all;
 
   return (
     <div className='relative flex h-full min-h-0 flex-col overflow-hidden bg-[#f8f9fc] dark:bg-[#0d0e11]'>
@@ -2680,11 +2713,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       )}
 
       {/* View Toggle Tabs */}
-      {((artifacts && artifacts.length > 0) ||
-        previewArtifact ||
-        skillName ||
-        !!summaryContent ||
-        citations.length > 0) && (
+      {(totalFileCount > 0 || previewArtifact || skillName || !!summaryContent || citations.length > 0) && (
         <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
           <button
             onClick={() => setPanelView('execution')}
@@ -2701,7 +2730,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
             )}
           </button>
-          {artifacts && artifacts.length > 0 && (
+          {totalFileCount > 0 && (
             <button
               onClick={() => setPanelView('files')}
               className={classNames(
@@ -2714,7 +2743,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               <FolderOpenOutlined className='mr-1.5' />
               {t('task_files')}
               <span className='ml-1.5 text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded-full'>
-                {artifacts.length}
+                {totalFileCount}
               </span>
               {panelView === 'files' && (
                 <div className='absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900 dark:bg-gray-100 rounded-full' />
@@ -2881,51 +2910,105 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             )}
           </div>
         ) : panelView === 'files' ? (
-          <div className='space-y-0'>
-            <div className='flex items-center gap-1 mb-4 bg-gray-100/80 dark:bg-gray-800/60 rounded-lg p-1'>
-              {FILE_FILTER_TABS.map(tab => {
-                const count =
-                  tab.key === 'all'
-                    ? artifacts?.length || 0
-                    : (artifacts || []).filter(a => getFileFilterCategory(a).includes(tab.key)).length;
-                if (tab.key !== 'all' && count === 0) return null;
+          <div className='space-y-5'>
+            <div
+              role='tablist'
+              aria-label='任务文件分类'
+              className='flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-gray-100/80 p-1 dark:bg-gray-800/60'
+            >
+              {TASK_FILE_TABS.map(tab => {
+                const count = taskFileCounts[tab.key];
                 return (
                   <button
+                    type='button'
+                    role='tab'
                     key={tab.key}
+                    id={`task-file-tab-${tab.key}`}
                     onClick={() => setFileFilter(tab.key)}
+                    onKeyDown={handleTaskFileTabKeyDown}
+                    aria-controls='task-files-tabpanel'
+                    aria-selected={fileFilter === tab.key}
+                    tabIndex={fileFilter === tab.key ? 0 : -1}
                     className={classNames(
-                      'px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                      'flex-none whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40',
                       fileFilter === tab.key
                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
                     )}
                   >
                     {tab.label}
-                    {tab.key === 'all' && count > 0 && <span className='ml-1 text-[10px] text-gray-400'>{count}</span>}
+                    {count > 0 && <span className='ml-1 text-[10px] tabular-nums text-gray-400'>{count}</span>}
                   </button>
                 );
               })}
             </div>
 
-            {dateGroupedArtifacts.length > 0 ? (
-              dateGroupedArtifacts.map(group => (
-                <div key={group.label}>
-                  <div className='px-1 py-2 text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider'>
-                    {group.label}
-                  </div>
-                  <div className='rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1b1e] overflow-hidden mb-3'>
-                    {group.items.map(artifact => (
-                      <FileListItem key={artifact.id} artifact={artifact} onClick={() => onArtifactClick?.(artifact)} />
+            <div
+              id='task-files-tabpanel'
+              role='tabpanel'
+              aria-labelledby={`task-file-tab-${fileFilter}`}
+              className='space-y-5'
+            >
+              {visibleInputFiles.length > 0 && (
+                <section className='space-y-3'>
+                  {fileFilter === 'all' && (
+                    <div className='px-1'>
+                      <div className='text-[11px] font-semibold uppercase tracking-wider text-emerald-600/80 dark:text-emerald-400/80'>
+                        上传资料 · {visibleInputFiles.length}
+                      </div>
+                      <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
+                        用户本轮带入的分析上下文
+                      </div>
+                    </div>
+                  )}
+                  <div className='space-y-2'>
+                    {visibleInputFiles.map(file => (
+                      <InputFileListItem key={file.file_id} file={file} />
                     ))}
                   </div>
+                </section>
+              )}
+
+              {filteredArtifacts.length > 0 && (
+                <section className='space-y-3'>
+                  {fileFilter === 'all' && (
+                    <div className='px-1'>
+                      <div className='text-[11px] font-semibold uppercase tracking-wider text-indigo-600/80 dark:text-indigo-400/80'>
+                        推理生成 · {filteredArtifacts.length}
+                      </div>
+                      <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
+                        Agent 在本轮推理过程中生成的文件
+                      </div>
+                    </div>
+                  )}
+                  <div className='space-y-3'>
+                    {dateGroupedArtifacts.map(group => (
+                      <div key={group.label} className='space-y-2'>
+                        <div className='px-1 text-[10px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500'>
+                          {group.label}
+                        </div>
+                        <div className='space-y-2'>
+                          {group.items.map(artifact => (
+                            <FileListItem
+                              key={artifact.id}
+                              artifact={artifact}
+                              onClick={() => onArtifactClick?.(artifact)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {visibleInputFiles.length === 0 && filteredArtifacts.length === 0 && (
+                <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
+                  <FolderOpenOutlined className='text-3xl mb-4' />
+                  <span className='text-sm'>{getTaskFileEmptyLabel(fileFilter)}</span>
                 </div>
-              ))
-            ) : (
-              <div className='flex flex-col items-center justify-center py-16 text-gray-400'>
-                <FolderOpenOutlined className='text-3xl mb-4' />
-                <span className='text-sm'>暂无文件</span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ) : isSubAgentExecution && subAgentContext ? (
           <SubAgentProcessView

@@ -6,6 +6,21 @@
  * API 响应包装请复用 web/client/api/index.ts 中的 ResponseType<T>
  */
 
+/**
+ * v2 冻结附件的展示快照(随 payload.ext_info.input_files 持久化。
+ * 仅元数据 —— 不含可用 file_id、不含 file_path。
+ */
+export type TaskFileSnapshot = {
+  /** 不可回放的展示键(如 'file-1'),不是可用 file_id。 */
+  display_key: string;
+  name: string;
+  size: number;
+  media_type: string;
+  kind: string;
+  status: string;
+  ordinal: number;
+};
+
 /** 冻结的对话快照,定时执行时用于回放对话。 */
 export type ChatReplayPayload = {
   version?: number;
@@ -15,6 +30,10 @@ export type ChatReplayPayload = {
   select_param?: string | null;
   temperature?: number | null;
   max_new_tokens?: number | null;
+  /**
+   * 扩展信息。v2 文件输入:ext_info.file_ids(任务作用域)+
+   * ext_info.input_files(TaskFileSnapshot[] 展示快照,见上)。
+   */
   ext_info?: Record<string, any> | null;
 };
 

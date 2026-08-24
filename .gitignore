@@ -207,3 +207,9 @@ test_docs
 .qoder/
 .qwencode/
 .sisyphus/
+.omc/
+.playwright-mcp/
+.superpowers/
+openspec/
+docs/superpowers/
+.gstack/
