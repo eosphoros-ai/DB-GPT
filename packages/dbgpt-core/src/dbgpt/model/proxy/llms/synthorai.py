@@ -144,42 +144,296 @@ class SynthoraiLLMClient(OpenAILLMClient):
         return synthorai_generate_stream
 
 
-# Only the four models whose context/output limits have been published with
-# supporting measurements are enumerated here. The catalog is larger, but
-# listing a model without a verified limit would be guessing at a number the
-# adapter then reports as fact; anything not listed still routes fine by id.
+# Grouped by (family, context, output) rather than by family. Families do not
+# share limits - Claude spans 200K and 1M context, DeepSeek's output ranges from
+# 8192 to 393216 - so collapsing a family onto one limit would misstate it for
+# part of the group, and these numbers are reported as fact. Generated from
+# https://synthorai.io/api/models; every chat model there carries real limits.
 register_proxy_model_adapter(
     SynthoraiLLMClient,
     supported_models=[
         ModelMetadata(
-            model=["claude-opus-5"],
-            context_length=1_000_000,
-            max_output_length=128_000,
-            description="Anthropic Claude Opus 5 via Synthorai",
+            model=[
+                "ByteDance-Seed-1.8",
+                "Dola-Seed-2.0-lite",
+                "Dola-Seed-2.0-mini",
+                "Dola-Seed-2.0-pro",
+            ],
+            context_length=262144,
+            max_output_length=4096,
+            description="ByteDance Seed models via Synthorai",
             link="https://synthorai.io/models/",
             function_calling=True,
         ),
         ModelMetadata(
-            model=["deepseek-v4-pro"],
-            context_length=1_000_000,
-            max_output_length=384_000,
-            description="DeepSeek V4 Pro via Synthorai",
+            model=[
+                "claude-fable-5",
+            ],
+            context_length=200000,
+            max_output_length=4096,
+            description="Anthropic Claude models via Synthorai",
             link="https://synthorai.io/models/",
             function_calling=True,
         ),
         ModelMetadata(
-            model=["glm-5.2"],
-            context_length=1_000_000,
-            max_output_length=131_072,
-            description="Z.ai GLM-5.2 via Synthorai",
+            model=[
+                "claude-haiku-4-5",
+                "claude-opus-4-5",
+                "claude-sonnet-4",
+                "claude-sonnet-4-5",
+            ],
+            context_length=200000,
+            max_output_length=64000,
+            description="Anthropic Claude models via Synthorai",
             link="https://synthorai.io/models/",
             function_calling=True,
         ),
         ModelMetadata(
-            model=["kimi-k3"],
-            context_length=1_048_576,
-            max_output_length=131_072,
-            description="Moonshot Kimi K3 via Synthorai",
+            model=[
+                "claude-opus-4-6",
+                "claude-opus-4-7",
+                "claude-opus-4-8",
+                "claude-opus-5",
+                "claude-sonnet-5",
+            ],
+            context_length=1000000,
+            max_output_length=128000,
+            description="Anthropic Claude models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "claude-sonnet-4-6",
+            ],
+            context_length=1000000,
+            max_output_length=64000,
+            description="Anthropic Claude models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "deepseek-3.2",
+            ],
+            context_length=128000,
+            max_output_length=64000,
+            description="DeepSeek models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "deepseek-v4-flash",
+            ],
+            context_length=1000000,
+            max_output_length=8192,
+            description="DeepSeek models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "deepseek-v4-flash-0731",
+                "deepseek-v4-pro",
+                "deepseek-v4-pro-0813",
+            ],
+            context_length=1000000,
+            max_output_length=393216,
+            description="DeepSeek models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite",
+                "gemini-2.5-pro",
+                "gemini-3-flash-preview",
+                "gemini-3.1-flash-lite-preview",
+                "gemini-3.1-pro-preview",
+                "gemini-3.5-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.6-flash",
+                "gemini-3.7-flash",
+            ],
+            context_length=1048576,
+            max_output_length=65536,
+            description="Google Gemini models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "glm-5",
+            ],
+            context_length=200000,
+            max_output_length=131072,
+            description="Z.ai GLM models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "glm-5.2",
+            ],
+            context_length=1048576,
+            max_output_length=131072,
+            description="Z.ai GLM models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gpt-5.2",
+                "gpt-5.3-codex",
+                "gpt-5.4-mini",
+                "gpt-5.4-nano",
+            ],
+            context_length=400000,
+            max_output_length=128000,
+            description="OpenAI GPT models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gpt-5.4",
+                "gpt-5.4-pro",
+            ],
+            context_length=922000,
+            max_output_length=128000,
+            description="OpenAI GPT models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "gpt-5.5",
+                "gpt-5.5-pro",
+                "gpt-5.6",
+                "gpt-5.6-luna",
+                "gpt-5.6-sol",
+                "gpt-5.6-terra",
+            ],
+            context_length=1050000,
+            max_output_length=128000,
+            description="OpenAI GPT models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "hunyuan-3",
+            ],
+            context_length=262144,
+            max_output_length=128000,
+            description="Tencent Hunyuan models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "kimi-k2.5",
+            ],
+            context_length=262144,
+            max_output_length=32768,
+            description="Moonshot Kimi models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "kimi-k2.7-code",
+            ],
+            context_length=256000,
+            max_output_length=131072,
+            description="Moonshot Kimi models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "kimi-k3",
+            ],
+            context_length=1000000,
+            max_output_length=131072,
+            description="Moonshot Kimi models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "minimax-m2.1",
+                "minimax-m2.5",
+            ],
+            context_length=204800,
+            max_output_length=64000,
+            description="MiniMax models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "qwen3-coder-next",
+            ],
+            context_length=262144,
+            max_output_length=64000,
+            description="Qwen models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "qwen3-max",
+                "qwen3-vl-flash",
+                "qwen3-vl-plus",
+            ],
+            context_length=256000,
+            max_output_length=16384,
+            description="Qwen models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "qwen3.5-flash",
+                "qwen3.5-plus",
+            ],
+            context_length=1048576,
+            max_output_length=16384,
+            description="Qwen models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "qwen3.6-flash",
+            ],
+            context_length=256000,
+            max_output_length=32768,
+            description="Qwen models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "qwen3.7-max",
+                "qwen3.7-plus",
+            ],
+            context_length=1000000,
+            max_output_length=65536,
+            description="Qwen models via Synthorai",
+            link="https://synthorai.io/models/",
+            function_calling=True,
+        ),
+        ModelMetadata(
+            model=[
+                "qwen3.8-max",
+            ],
+            context_length=983616,
+            max_output_length=131072,
+            description="Qwen models via Synthorai",
             link="https://synthorai.io/models/",
             function_calling=True,
         ),
