@@ -230,11 +230,10 @@ For Docker, local GPU models (vLLM, llama.cpp), or manual source-code setup, see
 
 - [**Install**](http://docs.dbgpt.cn/docs/installation)
   - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [Source Code](http://docs.dbgpt.cn/docs/installation/sourcecode)
-- [**Quickstart**](http://docs.dbgpt.cn/docs/quickstart)
-- [**Application**](http://docs.dbgpt.cn/docs/operation_manual)
+  - [Source Code](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
+- [**Quickstart**](http://docs.dbgpt.cn/docs/overview)
+- [**Application**](http://docs.dbgpt.cn/docs/use_cases)
   - [Development Guide](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop)
-  - [App Usage](http://docs.dbgpt.cn/docs/application/app_usage)
   - [AWEL Flow Usage](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
 - [**Debugging**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
 - [**Advanced Usage**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
@@ -408,7 +407,7 @@ For Docker, local GPU models (vLLM, llama.cpp), or manual source-code setup, see
       </tbody>
     </table>
 
-  - [More Supported LLMs](http://docs.dbgpt.site/docs/modules/smmf)
+  - [More Supported LLMs](http://docs.dbgpt.cn/docs/modules/smmf)
 
 ### Privacy and Security
 

@@ -161,18 +161,17 @@ SQLとコードを生成してデータをクエリし、データセットを�
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**使用チュートリアル**](http://docs.dbgpt.site/docs/overview)
-- [**インストール**](http://docs.dbgpt.site/docs/installation)
-  - [Docker](https://docs.dbgpt.site/docs/installation/docker)
-  - [ソースコード](https://docs.dbgpt.site/docs/installation/sourcecode)
-- [**クイックスタート**](http://docs.dbgpt.site/docs/quickstart)
-- [**アプリケーション**](http://docs.dbgpt.site/docs/operation_manual)
-  - [アプリの使用](https://docs.dbgpt.site/docs/application/app_usage)
-  - [AWELフローの使用](https://docs.dbgpt.site/docs/application/awel_flow_usage)
-- [**デバッグ**](http://docs.dbgpt.site/docs/operation_manual/advanced_tutorial/debugging)
-- [**高度な使用法**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
-  - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
-  - [ファインチューニング](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
+[**使用チュートリアル**](http://docs.dbgpt.cn/docs/overview)
+- [**インストール**](http://docs.dbgpt.cn/docs/installation)
+  - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
+  - [ソースコード](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
+- [**クイックスタート**](http://docs.dbgpt.cn/docs/overview)
+- [**アプリケーション**](http://docs.dbgpt.cn/docs/use_cases)
+  - [AWELフローの使用](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
+- [**デバッグ**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
+- [**高度な使用法**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
+  - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
+  - [ファインチューニング](http://docs.dbgpt.cn/docs/application/fine_tuning_manual/dbgpt_hub)
   - [AWEL](http://docs.dbgpt.cn/docs/awel/tutorial)
 
 ## 特徴
@@ -305,14 +304,14 @@ SQLとコードを生成してデータをクエリし、データセットを�
         </tr>
       </tbody>
     </table>
-  - [サポートされているLLMの詳細](http://docs.dbgpt.site/docs/modules/smmf)
+  - [サポートされているLLMの詳細](http://docs.dbgpt.cn/docs/modules/smmf)
 
 - **プライバシーとセキュリティ**
 
   私たちは、さまざまな技術を実装することにより、データのプライバシーとセキュリティを確保しています。これには、大規模モデルのプライベート化とプロキシの非識別化が含まれます。
 
 - サポートされているデータソース
-  - [データソース](http://docs.dbgpt.site/docs/modules/connections)
+  - [データソース](http://docs.dbgpt.cn/docs/modules/connections)
 
 ## 画像
 🌐 [AutoDLイメージ](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)

@@ -163,12 +163,11 @@ DB-GPT-യുടെ ആർക്കിടെക്ചർ ഇനിപ്പറ�
 [**ഉപയോഗ ട്യൂട്ടോറിയൽ**](http://docs.dbgpt.cn/docs/overview)
 - [**ഇൻസ്റ്റാൾ ചെയ്യുക**](http://docs.dbgpt.cn/docs/installation)
   - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [സോഴ്സ് കോഡ്](http://docs.dbgpt.cn/docs/installation/sourcecode)
-- [**ക്വിക്ക്‌സ്റ്റാർട്ട്**](http://docs.dbgpt.cn/docs/quickstart)
-- [**അപ്ലിക്കേഷൻ**](http://docs.dbgpt.cn/docs/operation_manual)
+  - [സോഴ്സ് കോഡ്](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
+- [**ക്വിക്ക്‌സ്റ്റാർട്ട്**](http://docs.dbgpt.cn/docs/overview)
+- [**അപ്ലിക്കേഷൻ**](http://docs.dbgpt.cn/docs/use_cases)
   - [ഡെവലപ്‌മെന്റ് ഗൈഡ്](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
-  - [അപ്പ് ഉപയോഗം](http://docs.dbgpt.cn/docs/application/app_usage)
-  - [AWEL ഫ്ലോ ഉപയോഗം](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
+  - [AWEL ഫ്ളോ ഉപയോഗം](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
 - [**ഡീബഗ്ഗിംഗ്**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
 - [**അഡ്വാൻസ്ഡ് ഉപയോഗം**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
   - [SMMF](http://docs.dbgpt.cn/docs/application/advanced_tutorial/smmf)
@@ -308,7 +307,7 @@ DB-GPT-യുടെ ആർക്കിടെക്ചർ ഇനിപ്പറ�
       </tbody>
     </table>
 
-- [കൂടുതൽ പിന്തുണയ്ക്കുന്ന LLMs](http://docs.dbgpt.site/docs/modules/smmf)
+- [കൂടുതൽ പിന്തുണയ്ക്കുന്ന LLMs](http://docs.dbgpt.cn/docs/modules/smmf)
 
 - **സ്വകാര്യതയും സുരക്ഷയും**
   

@@ -162,11 +162,10 @@ DB-GPT की वास्तुकला निम्नलिखित चि�
 [**उपयोग ट्यूटोरियल**](http://docs.dbgpt.cn/docs/overview)
 - [**इंस्टॉल**](http://docs.dbgpt.cn/docs/installation)
   - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [सोर्स कोड](http://docs.dbgpt.cn/docs/installation/sourcecode)
-- [**क्विकस्टार्ट**](http://docs.dbgpt.cn/docs/quickstart)
-- [**अनुप्रयोग**](http://docs.dbgpt.cn/docs/operation_manual)
+  - [सोर्स कोड](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
+- [**क्विकस्टार्ट**](http://docs.dbgpt.cn/docs/overview)
+- [**अनुप्रयोग**](http://docs.dbgpt.cn/docs/use_cases)
   - [डेवलपमेंट गाइड](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
-  - [ऐप उपयोग](http://docs.dbgpt.cn/docs/application/app_usage)
   - [AWEL फ्लो उपयोग](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
 - [**डिबगिंग**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
 - [**उन्नत उपयोग**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
@@ -306,7 +305,7 @@ DB-GPT की वास्तुकला निम्नलिखित चि�
       </tbody>
     </table>
 
-- [अधिक समर्थित LLMs](http://docs.dbgpt.site/docs/modules/smmf)
+- [अधिक समर्थित LLMs](http://docs.dbgpt.cn/docs/modules/smmf)
 
 - **गोपनीयता और सुरक्षा**
   
