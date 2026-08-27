@@ -276,6 +276,7 @@ export const CommonZh: Resources['translation'] = {
   copy_url: '单击复制分享链接',
   double_click_open: '双击钉钉打开',
   construct: '应用管理',
+  Setting: '设置',
   chat_online: '在线对话',
   recommend_apps: '热门推荐',
   all_apps: '全部应用',

@@ -123,7 +123,23 @@ class AIWrapper:
         return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
     async def create(self, verbose: bool = False, **config):
-        """Create llm client request."""
+        """Create llm client request and return the generated text."""
+        response = await self._create_raw(verbose, config)
+        return response.gen_text_with_thinking() if response else None
+
+    async def create_with_output(self, verbose: bool = False, **config):
+        """Like :meth:`create` but return the raw :class:`ModelOutput`.
+
+        Native function calling needs the ``tool_calls`` attached to the model
+        output, which :meth:`create` collapses into plain text. Call this in
+        native mode to retain ``tool_calls``.
+        """
+        return await self._create_raw(verbose, config)
+
+    async def _create_raw(
+        self, verbose: bool, config: Dict
+    ) -> Optional["ModelOutput"]:
+        """Run the LLM request and return the raw ModelOutput (or None)."""
         # merge the input config with the i-th config in the config list
         full_config = {**config}
         # separate the config into create_config and extra_kwargs
@@ -157,7 +173,8 @@ class AIWrapper:
             raise e
         else:
             pass_filter = filter_func is None or filter_func(
-                context=context, response=response
+                context=context,
+                response=response.gen_text_with_thinking() if response else None,
             )
             if pass_filter:
                 # Return the response if it passes the filter
@@ -242,6 +259,10 @@ class AIWrapper:
             "max_new_tokens": int(params.get("max_new_tokens")),
             "echo": self.llm_echo,
         }
+        if params.get("tools") is not None:
+            payload["tools"] = params["tools"]
+        if params.get("tool_choice") is not None:
+            payload["tool_choice"] = params["tool_choice"]
         logger.info(f"Request: \n{payload}")
         span = root_tracer.start_span(
             "Agent.llm_client.no_streaming_call",
@@ -321,7 +342,7 @@ class AIWrapper:
                 print(f"String Prompt[verbose]: \n{str_prompt}")
                 print(f"LLM Output[verbose]: \n{parsed_output}")
                 print("-" * 80, "\n", flush=True, sep="")
-            return parsed_output
+            return model_output
         except Exception as e:
             logger.error(
                 f"Call LLMClient error, {str(e)}, detail: {traceback.format_exc()}"

@@ -27,6 +27,8 @@ export interface ReActAgentState {
   startTime: number | null;
   endTime: number | null;
   currentStatus: string;
+  /** One-time task overview ("Plan: ...") emitted before the first tool call. */
+  taskPreview: string | null;
 }
 
 export interface UseReActAgentOptions {
@@ -55,6 +57,7 @@ const initialState: ReActAgentState = {
   startTime: null,
   endTime: null,
   currentStatus: '',
+  taskPreview: null,
 };
 
 export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgentReturn {
@@ -113,6 +116,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
       const finalContent = sseStateRef.current.getFinalContent();
       const isWorking = sseStateRef.current.isWorking();
       const currentStatus = sseStateRef.current.getCurrentStatus();
+      const taskPreview = sseStateRef.current.getTaskPreview();
 
       setState(prev => ({
         ...prev,
@@ -120,6 +124,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
         finalContent,
         isWorking,
         currentStatus,
+        taskPreview,
         endTime: sseStateRef.current?.isComplete() ? (sseStateRef.current.getEndTime() ?? null) : null,
       }));
 
@@ -156,6 +161,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
         startTime: Date.now(),
         endTime: null,
         currentStatus: 'Starting...',
+        taskPreview: null,
       });
 
       try {

@@ -1411,17 +1411,16 @@ class ConversableAgent(Role, Agent):
                     role=ModelMessageRoleType.SYSTEM,
                 )
             )
-        if historical_dialogues and not has_memories:
-            # If we can't read the memory, we need to rely on the historical dialogue
+        if historical_dialogues:
+            # Always pass the full prior Q&A dialogue to the model (multi-turn
+            # follow-ups need the earlier turns), independent of whether memory
+            # fragments were also read. Even index = user, odd index = AI.
             for i in range(len(historical_dialogues)):
                 if i % 2 == 0:
-                    # The even number starts, and the even number is the user
-                    # information
                     message = historical_dialogues[i]
                     message.role = ModelMessageRoleType.HUMAN
                     agent_messages.append(message)
                 else:
-                    # The odd number is AI information
                     message = historical_dialogues[i]
                     message.role = ModelMessageRoleType.AI
                     agent_messages.append(message)

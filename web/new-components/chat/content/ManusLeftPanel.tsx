@@ -935,14 +935,11 @@ const ThoughtBubble: React.FC<{ text: string | Record<string, unknown> }> = memo
   const reason = reasonLines.join('\n').trim();
 
   return (
-    <div className='flex min-w-0 items-start gap-2 px-1 py-1'>
-      <span className='mt-[5px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-300 dark:bg-slate-600' />
-      <div className='min-w-0 text-[12px] leading-relaxed text-slate-500 dark:text-slate-400'>
-        <p className='m-0 break-words'>
-          <StreamingText text={intention} />
-        </p>
-        {reason && <p className='m-0 mt-0.5 break-words text-slate-400 dark:text-slate-500'>{reason}</p>}
-      </div>
+    <div className='min-w-0 px-1 py-1 text-[13px] leading-relaxed text-gray-900 dark:text-gray-100'>
+      <p className='m-0 break-words'>
+        <StreamingText text={intention} />
+      </p>
+      {reason && <p className='m-0 mt-1 break-words text-gray-600 dark:text-gray-300'>{reason}</p>}
     </div>
   );
 });
@@ -1014,6 +1011,7 @@ const SectionBlock: React.FC<{
             const isParallelDispatch = step.action === 'dispatch_parallel_tasks';
             return (
               <React.Fragment key={step.id}>
+                {stepThoughts?.[step.id] && <ThoughtBubble text={stepThoughts[step.id]} />}
                 {isParallelDispatch ? (
                   <div className='space-y-2'>
                     <ParallelDispatchSummary actionInput={step.actionInput} />
@@ -1026,12 +1024,7 @@ const SectionBlock: React.FC<{
                     onClick={() => onStepClick(step.id)}
                   />
                 ) : (
-                  <StepCard
-                    step={step}
-                    isActive={step.id === activeStepId}
-                    onClick={() => onStepClick(step.id)}
-                    thought={stepThoughts?.[step.id]}
-                  />
+                  <StepCard step={step} isActive={step.id === activeStepId} onClick={() => onStepClick(step.id)} />
                 )}
                 {step.description?.includes('Observation:') && <ObservationFormatter observation={step.description} />}
               </React.Fragment>

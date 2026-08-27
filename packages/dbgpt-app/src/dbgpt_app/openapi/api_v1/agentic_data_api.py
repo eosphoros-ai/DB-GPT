@@ -991,7 +991,7 @@ async def _react_agent_stream(
         GptsMemory,
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
-    from dbgpt.agent.expand.react_agent import ReActAgent
+    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
     from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
@@ -2070,6 +2070,27 @@ print(json.dumps(summary, ensure_ascii=False))
     )
     storage_conv.save_to_storage()
     storage_conv.start_new_round()
+    # Load the full conversation history (user question + agent final answer)
+    # before appending the current round, then pass it as historical_dialogues
+    # so multi-turn follow-ups see the previous Q&A (mirrors hermes'
+    # conversation_history passed into the loop).
+    historical_dialogues: List[AgentMessage] = []
+    for _msg in storage_conv.get_history_message():
+        if _msg.type == "human":
+            historical_dialogues.append(AgentMessage(content=_msg.content))
+        elif _msg.type == "ai":
+            historical_dialogues.append(AgentMessage(content=_msg.content))
+        elif _msg.type == "view":
+            # view 消息存的是 history_payload(JSON)，提取 final_content 作为 AI 回答
+            _content = _msg.content
+            try:
+                _payload = json.loads(_content) if isinstance(_content, str) else _content
+                if isinstance(_payload, dict):
+                    _content = _payload.get("final_content") or ""
+            except Exception:
+                pass
+            if _content:
+                historical_dialogues.append(AgentMessage(content=_content))
     storage_conv.add_user_message(user_input)
     context = AgentContext(
         conv_id=conv_id,
@@ -2078,6 +2099,7 @@ print(json.dumps(summary, ensure_ascii=False))
         language="zh",
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
+        enable_native_function_calling=True,
     )
 
     file_context = ""
@@ -2658,7 +2680,7 @@ Action Input: The JSON format of tool parameters
     )
 
     agent_builder = (
-        ReActAgent(max_retry_count=30)
+        ToolCallingReActAgent(max_retry_count=30)
         .bind(context)
         .bind(agent_memory)
         .bind(llm_config)
@@ -2691,6 +2713,7 @@ Action Input: The JSON format of tool parameters
             received_message=received,
             sender=agent,
             stream_callback=stream_callback,
+            historical_dialogues=historical_dialogues,
         )
 
     agent_task = asyncio.create_task(run_agent())
@@ -2700,6 +2723,8 @@ Action Input: The JSON format of tool parameters
     ] = {}  # Buffer thinking content for delayed step creation
     pending_action_intentions: Dict[int, str] = {}
     pending_action_reasons: Dict[int, str] = {}
+    # Emit a one-time "task preview" from the model's first "Plan: ..." line.
+    task_plan_emitted = False
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
@@ -2867,6 +2892,12 @@ Action Input: The JSON format of tool parameters
                 pending_thoughts.pop(round_num, [])
                 pending_action_intentions.pop(round_num, None)
                 pending_action_reasons.pop(round_num, None)
+                # derisk 参考：terminate 是「模拟 action」，不展示为真实工具 step。
+                # 通知前端移除 terminate 这轮在 thinking_chunk 阶段提前创建的
+                # 「思考中」占位 step（前端 step.meta 里 action=terminate 会过滤）。
+                if round_num in round_step_map:
+                    _stale_id = round_step_map.pop(round_num)
+                    yield step_meta(_stale_id, None, "terminate", None, "terminate")
                 # ── Auto-complete all remaining todos on terminate ──
                 if _todo_list:
                     for t in _todo_list:
@@ -2995,13 +3026,38 @@ Action Input: The JSON format of tool parameters
                 or pending_action_intentions.pop(round_num, None)
                 or action_output.get("phase")
             )
+            # derisk-style task preview: the first action's notion/intention is a
+            # one-time "接下来要做" overview shown to the user before execution.
+            if not task_plan_emitted and action_intention:
+                task_plan_emitted = True
+                yield _sse_event(
+                    {
+                        "type": "task.preview",
+                        "content": action_intention,
+                        "round": round_num,
+                    }
+                )
             action_reason = normalize_display_text(
                 action_output.get("action_reason")
                 or pending_action_reasons.pop(round_num, None)
             )
-            display_thought = action_intention or summarize_thought(
-                thought_text or thoughts, action
+            display_thought = (
+                normalize_display_text(thoughts or thought_text) or action_intention
             )
+
+            # 解析失败轮次（如 native tool_calls 退回 XML 导致 "No valid ReAct
+            # step found"）：action 为空、无有效工具，跳过 step 展示（derisk 参考：
+            # 无效 action 不展示为噪音 step），仅清理提前创建的「思考中」占位。
+            if not action:
+                pending_thoughts.pop(round_num, [])
+                pending_action_intentions.pop(round_num, None)
+                pending_action_reasons.pop(round_num, None)
+                if round_num in round_step_map:
+                    _stale_id = round_step_map.pop(round_num)
+                    yield _sse_event(
+                        {"type": "step.done", "id": _stale_id, "status": "done"}
+                    )
+                continue
 
             # Use the actual action name as the step title (Manus-style UI)
             action_title = action or f"ReAct Round {round_num}"
@@ -3086,8 +3142,12 @@ Action Input: The JSON format of tool parameters
                 else:
                     for chunk in chunk_text(str(observation_text), max_len=600):
                         yield step_chunk(react_step_id, "text", chunk)
-                # --- History & citation: collect from observation ---
-                if current_history_step is not None:
+                # --- History & citation: only collect knowledge-retrieval chunks ---
+                is_knowledge_tool = bool(action) and (
+                    action.startswith("kb_")
+                    or action in ("knowledge_retrieve", "semantic_search")
+                )
+                if current_history_step is not None and is_knowledge_tool:
                     parsed_obs = None
                     if isinstance(observation_text, str):
                         try:
@@ -3166,7 +3226,7 @@ Action Input: The JSON format of tool parameters
 
     if reply.action_report and reply.action_report.terminate:
         raw_content = reply.action_report.content or ""
-        # The terminate ActionOutput.content is the full raw LLM text, e.g.:
+        # The terminate ActionOutput.content may be the raw ReAct text, e.g.:
         # "Thought: ...\nAction: terminate\nAction Input: {"result": "..."}"
         # We need to extract the "result" value from Action Input.
         final_content = raw_content
@@ -3184,6 +3244,22 @@ Action Input: The JSON format of tool parameters
                         final_content = parsed_input["result"]
         except Exception:
             pass
+        # native function calling 路径：terminate content 可能是 {"result":...}
+        # (JSON) 或 {'result':...} (Python dict repr)，直接提取 result。
+        if final_content == raw_content:
+            try:
+                _parsed = json.loads(raw_content)
+                if isinstance(_parsed, dict) and "result" in _parsed:
+                    final_content = _parsed["result"]
+            except Exception:
+                try:
+                    import ast
+
+                    _parsed = ast.literal_eval(raw_content)
+                    if isinstance(_parsed, dict) and "result" in _parsed:
+                        final_content = _parsed["result"]
+                except Exception:
+                    pass
     elif reply.action_report:
         # Loop ended without terminate (max retries or timeout).
         # reply.content is raw LLM output containing ReAct prefixes.

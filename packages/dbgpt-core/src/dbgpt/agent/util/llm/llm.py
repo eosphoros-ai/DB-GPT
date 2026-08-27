@@ -30,6 +30,8 @@ def _build_model_request(input_value: Dict) -> ModelRequest:
         "context_len": input_value.get("context_len", None),
         "echo": input_value.get("echo", None),
         "span_id": input_value.get("span_id", None),
+        "tools": input_value.get("tools", None),
+        "tool_choice": input_value.get("tool_choice", None),
     }
 
     return ModelRequest(**parm)
