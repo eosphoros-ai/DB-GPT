@@ -142,9 +142,7 @@ class ParallelToolAction(ReActAction):
                         name, action_input, self.resource
                     )
             else:
-                tool_args = self._fallback_parse_args(
-                    name, action_input, self.resource
-                )
+                tool_args = self._fallback_parse_args(name, action_input, self.resource)
         if not isinstance(tool_args, dict):
             tool_args = {}
         if not isinstance(action_input_str, str):
@@ -261,11 +259,7 @@ class NativeToolCallAction(ParallelToolAction):
             name = fn.get("name")
             args_raw = fn.get("arguments") or "{}"
             try:
-                args = (
-                    json.loads(args_raw)
-                    if isinstance(args_raw, str)
-                    else args_raw
-                )
+                args = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
             except (json.JSONDecodeError, ValueError):
                 args = {}
             if not isinstance(args, dict):
@@ -278,9 +272,7 @@ class NativeToolCallAction(ParallelToolAction):
             thought = args.pop("thought", None)
             if thought:
                 thoughts.append(str(thought))
-            specs.append(
-                ToolCallSpec(name=name, args=args, call_id=tc.get("id"))
-            )
+            specs.append(ToolCallSpec(name=name, args=args, call_id=tc.get("id")))
         out = await run_tools_batch(
             specs,
             self.resource,
@@ -349,7 +341,8 @@ class ToolCallingReActAgent(ReActAgent):
 
         NOTE: kept synchronous (matching the ``ConversableAgent.prepare_act_param``
         base signature) — the base ``generate_reply`` calls it WITHOUT await, so an
-        ``async def`` here returns a coroutine that then blows up ``**act_extent_param``.
+        ``async def`` here returns a coroutine that then blows up
+        ``**act_extent_param``.
         """
         ctx = self.agent_context
         return {

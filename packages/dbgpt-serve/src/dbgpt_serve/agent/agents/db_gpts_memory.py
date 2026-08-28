@@ -81,7 +81,8 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
 
     def append(self, message: GptsMessage):
         data = message.to_dict()
-        # Link this message to its observability trace (for the Observability dashboard).
+        # Link this message to its observability trace (for the Observability
+        # dashboard).
         try:
             span_id = root_tracer.get_current_span_id()
             if span_id:

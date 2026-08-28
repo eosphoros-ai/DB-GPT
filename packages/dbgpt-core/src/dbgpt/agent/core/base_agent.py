@@ -1350,7 +1350,6 @@ class ConversableAgent(Role, Agent):
             memory_list = memories
         else:
             most_recent_memories = memories
-        has_memories = True if memories else False
         reply_message_str = ""
         if context is None:
             context = {}

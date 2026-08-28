@@ -2084,7 +2084,9 @@ print(json.dumps(summary, ensure_ascii=False))
             # view 消息存的是 history_payload(JSON)，提取 final_content 作为 AI 回答
             _content = _msg.content
             try:
-                _payload = json.loads(_content) if isinstance(_content, str) else _content
+                _payload = (
+                    json.loads(_content) if isinstance(_content, str) else _content
+                )
                 if isinstance(_payload, dict):
                     _content = _payload.get("final_content") or ""
             except Exception:

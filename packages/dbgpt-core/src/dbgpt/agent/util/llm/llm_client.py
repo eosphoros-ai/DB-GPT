@@ -136,9 +136,7 @@ class AIWrapper:
         """
         return await self._create_raw(verbose, config)
 
-    async def _create_raw(
-        self, verbose: bool, config: Dict
-    ) -> Optional["ModelOutput"]:
+    async def _create_raw(self, verbose: bool, config: Dict) -> Optional["ModelOutput"]:
         """Run the LLM request and return the raw ModelOutput (or None)."""
         # merge the input config with the i-th config in the config list
         full_config = {**config}
