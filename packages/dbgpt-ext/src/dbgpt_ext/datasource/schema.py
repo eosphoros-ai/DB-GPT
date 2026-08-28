@@ -32,6 +32,7 @@ class DBType(Enum):
     Spark = DbInfo("spark", True)
     Doris = DbInfo("doris")
     Hive = DbInfo("hive")
+    MaxCompute = DbInfo("maxcompute")
     TuGraph = DbInfo("tugraph")
     Neo4j = DbInfo("neo4j")
 

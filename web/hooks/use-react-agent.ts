@@ -6,6 +6,7 @@
  */
 
 import { MessagePart, ReasoningPart, ToolPart } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import { AgentCitation, AgentFinalAnswer, decodeFinalEvent, decodeHistoryAnswer } from '@/utils/react-agent-final';
 import { ReActSSEState, SSEQuestionAskedEvent, createReActSSEState, parseSSELine } from '@/utils/react-sse-parser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -22,6 +23,8 @@ export interface ReActAgentRequest {
 export interface ReActAgentState {
   isWorking: boolean;
   parts: MessagePart[];
+  finalAnswer: AgentFinalAnswer;
+  /** @deprecated Prefer finalAnswer.content. */
   finalContent: string;
   error: string | null;
   startTime: number | null;
@@ -34,6 +37,8 @@ export interface ReActAgentState {
 export interface UseReActAgentOptions {
   baseUrl?: string;
   onPartUpdate?: (parts: MessagePart[]) => void;
+  onFinalAnswer?: (answer: AgentFinalAnswer) => void;
+  /** @deprecated Prefer onFinalAnswer. */
   onFinalContent?: (content: string) => void;
   onError?: (error: string) => void;
   onComplete?: () => void;
@@ -52,6 +57,7 @@ export interface UseReActAgentReturn {
 const initialState: ReActAgentState = {
   isWorking: false,
   parts: [],
+  finalAnswer: { content: '', citations: [] },
   finalContent: '',
   error: null,
   startTime: null,
@@ -61,20 +67,20 @@ const initialState: ReActAgentState = {
 };
 
 export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgentReturn {
-  const { baseUrl = '/api/v1/chat/react-agent', onPartUpdate, onFinalContent, onError, onComplete } = options;
+  const {
+    baseUrl = '/api/v1/chat/react-agent',
+    onPartUpdate,
+    onFinalAnswer,
+    onFinalContent,
+    onError,
+    onComplete,
+  } = options;
 
   const [state, setState] = useState<ReActAgentState>(initialState);
   const [pendingQuestion, setPendingQuestion] = useState<SSEQuestionAskedEvent | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const sseStateRef = useRef<ReActSSEState | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cancel();
-    };
-  }, []);
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -91,6 +97,13 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
       endTime: Date.now(),
     }));
   }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancel();
+    };
+  }, [cancel]);
 
   const reset = useCallback(() => {
     cancel();
@@ -113,7 +126,8 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
 
       // Update React state
       const parts = sseStateRef.current.toMessageParts();
-      const finalContent = sseStateRef.current.getFinalContent();
+      const finalAnswer = sseStateRef.current.getFinalAnswer();
+      const finalContent = finalAnswer.content;
       const isWorking = sseStateRef.current.isWorking();
       const currentStatus = sseStateRef.current.getCurrentStatus();
       const taskPreview = sseStateRef.current.getTaskPreview();
@@ -121,6 +135,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
       setState(prev => ({
         ...prev,
         parts,
+        finalAnswer,
         finalContent,
         isWorking,
         currentStatus,
@@ -133,15 +148,16 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
         onPartUpdate(parts);
       }
 
-      if (event.type === 'final' && onFinalContent) {
-        onFinalContent(finalContent);
+      if (event.type === 'final') {
+        onFinalAnswer?.(finalAnswer);
+        onFinalContent?.(finalContent);
       }
 
       if (event.type === 'done' && onComplete) {
         onComplete();
       }
     },
-    [onPartUpdate, onFinalContent, onComplete],
+    [onPartUpdate, onFinalAnswer, onFinalContent, onComplete],
   );
 
   const sendMessage = useCallback(
@@ -156,6 +172,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
       setState({
         isWorking: true,
         parts: [],
+        finalAnswer: { content: '', citations: [] },
         finalContent: '',
         error: null,
         startTime: Date.now(),
@@ -188,7 +205,7 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
+        for (;;) {
           const { done, value } = await reader.read();
 
           if (done) {
@@ -284,15 +301,16 @@ export function useReActAgent(options: UseReActAgentOptions = {}): UseReActAgent
  * Parse existing ReAct format text (non-streaming)
  * Useful for rendering historical messages that contain ReAct format
  */
-export function parseReActText(text: string): { parts: MessagePart[]; finalContent: string } {
+export function parseReActText(text: string): {
+  parts: MessagePart[];
+  finalContent: string;
+  citations: AgentCitation[];
+  finalAnswer: AgentFinalAnswer;
+} {
   const parts: MessagePart[] = [];
   let finalContent = '';
-
-  // Pattern to match ReAct format
-  const thoughtPattern = /Thought:\s*(.*?)(?=Action:|Observation:|$)/gs;
-  const actionPattern = /Action:\s*(.*?)(?=Action Input:|Observation:|$)/gs;
-  const actionInputPattern = /Action Input:\s*(.*?)(?=Observation:|Thought:|$)/gs;
-  const observationPattern = /Observation:\s*(.*?)(?=Thought:|$)/gs;
+  const decodedHistory = decodeHistoryAnswer(text);
+  const cleanText = decodedHistory.content;
 
   let stepNum = 0;
   let currentThought = '';
@@ -300,7 +318,7 @@ export function parseReActText(text: string): { parts: MessagePart[]; finalConte
   let currentActionInput: any = null;
 
   // Split by "Thought:" to get individual steps
-  const sections = text.split(/(?=Thought:)/);
+  const sections = cleanText.split(/(?=Thought:)/);
 
   for (const section of sections) {
     if (!section.trim()) continue;
@@ -378,7 +396,13 @@ export function parseReActText(text: string): { parts: MessagePart[]; finalConte
     currentActionInput = null;
   }
 
-  return { parts, finalContent };
+  const finalAnswer = decodeFinalEvent({ content: finalContent, citations: decodedHistory.citations });
+  return {
+    parts,
+    finalContent: finalAnswer.content,
+    citations: finalAnswer.citations,
+    finalAnswer,
+  };
 }
 
 /**

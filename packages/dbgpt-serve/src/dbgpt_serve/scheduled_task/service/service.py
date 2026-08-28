@@ -3,12 +3,21 @@
 Orchestrates DB writes and scheduler job management with dual-write
 consistency. If scheduler.add_job fails after DB write, the DB row
 is rolled back (deleted).
+
+Payload v2 file freezing: when ``payload.ext_info`` carries session
+``file_ids``, creation copies them into the task scope through the injected
+session file registry *before* persistence, so the stored payload only ever
+contains task-scoped IDs (never session IDs, never a ``file_path``). Any
+later DB/scheduler failure runs a compensating delete of the copied files;
+a copy failure writes neither the task row nor the scheduler job.
 """
 
 import json
 import logging
 import uuid
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from dbgpt_serve.session_file.domain import parse_file_input
 
 from ..api.schemas import (
     ChatReplayPayload,
@@ -69,6 +78,10 @@ class ScheduledTaskService:
         resource_validator: Optional callable that validates payload
             resources before creating a task. Raises ValueError on
             validation failure.
+        session_file_registry: Optional session file registry used to freeze
+            ``payload.ext_info.file_ids`` into the task scope on create.
+            Injected through the Serve layer (constructor), never looked up
+            as a global, so tests can substitute a double.
     """
 
     def __init__(
@@ -76,6 +89,7 @@ class ScheduledTaskService:
         scheduler=None,
         runner_callable: Optional[Callable] = None,
         resource_validator: Optional[Callable] = None,
+        session_file_registry: Optional[Any] = None,
     ):
         self._scheduler = scheduler
         # Use the module-level run_scheduled_task by default so that
@@ -83,6 +97,7 @@ class ScheduledTaskService:
         # The parameter is kept for backward compatibility / testing.
         self._runner = runner_callable or run_scheduled_task
         self._resource_validator = resource_validator
+        self._session_file_registry = session_file_registry
         self._task_dao = ScheduledTaskDao()
         self._run_dao = ScheduledRunDao()
 
@@ -92,26 +107,30 @@ class ScheduledTaskService:
         user_name: Optional[str] = None,
         sys_code: Optional[str] = None,
     ) -> TaskResponse:
-        """Create a scheduled task (DB + scheduler dual-write).
+        """Create a scheduled task (freeze files + DB + scheduler write).
 
         Steps:
             1. Validate cron expression
             2. Validate referenced resources (if validator injected)
-            3. Generate task_id (UUID)
-            4. Write DB row
-            5. Add scheduler job (rollback DB on failure)
-            6. Return TaskResponse
+            3. Generate task_id (UUID) — before the file freeze, since the
+               copy targets the task scope keyed by this id
+            4. Freeze payload files: copy ``ext_info.file_ids`` into the
+               task scope and keep only task-scoped IDs (copy failure =>
+               nothing is written)
+            5. Write DB row (compensate frozen files on failure)
+            6. Add scheduler job (rollback DB + frozen files on failure)
+            7. Return TaskResponse
 
         Args:
             request: The creation request.
-            user_name: Optional user name.
+            user_name: Optional user name; used as the session file owner.
             sys_code: Optional system code.
 
         Returns:
             TaskResponse: The created task.
 
         Raises:
-            ValueError: If cron or resource validation fails.
+            ValueError: If cron, resource or file freeze validation fails.
             RuntimeError: If scheduler.add_job fails (DB is rolled back).
         """
         # 1. Validate cron expression (fail-fast before any DB write)
@@ -121,24 +140,40 @@ class ScheduledTaskService:
         if self._resource_validator is not None:
             self._resource_validator(request.payload)
 
-        # 3. Generate task_id
+        # 3. Generate task_id (before the file freeze: copies target the
+        #    task scope keyed by this id)
         task_id = str(uuid.uuid4())
 
-        # 4. Write DB row
+        # 4. Freeze payload files into the task scope; persist only
+        #    task-scoped IDs (never session IDs, never file_path)
+        owner_id = (user_name or "").strip()
+        payload_data = request.payload.model_dump()
+        ext_info, copied_files = self._freeze_payload_files(
+            request.payload, owner_id=owner_id, task_id=task_id
+        )
+        payload_data["ext_info"] = ext_info
+
+        # 5. Write DB row (compensate frozen files on failure)
         entity_dict = {
             "task_id": task_id,
             "task_name": request.task_name,
             "description": request.description,
             "task_type": "chat_replay",
             "cron_expression": request.cron_expression,
-            "payload_json": request.payload.model_dump_json(),
+            "payload_json": ChatReplayPayload(**payload_data).model_dump_json(),
             "enabled": True,
             "user_name": user_name,
             "sys_code": sys_code,
         }
-        created = self._task_dao.create(entity_dict)
+        try:
+            created = self._task_dao.create(entity_dict)
+        except Exception:
+            logger.exception("DB create failed for task %s", task_id)
+            if copied_files:
+                self._delete_task_files_quietly(owner_id, task_id)
+            raise
 
-        # 5. Add scheduler job (rollback DB on failure)
+        # 6. Add scheduler job (rollback DB + frozen files on failure)
         if self._scheduler is not None:
             try:
                 await self._scheduler.add_job(
@@ -150,9 +185,11 @@ class ScheduledTaskService:
             except Exception:
                 logger.exception("add_job failed, rolling back DB for task %s", task_id)
                 self._task_dao.delete({"task_id": task_id})
+                if copied_files:
+                    self._delete_task_files_quietly(owner_id, task_id)
                 raise
 
-        # 6. Return TaskResponse
+        # 7. Return TaskResponse
         return self._to_task_response(created)
 
     async def list_tasks(self, enabled_only: bool = False) -> List[TaskResponse]:
@@ -356,11 +393,20 @@ class ScheduledTaskService:
 
         If the scheduler job is already gone (e.g. after a restart with
         MemoryJobStore), the ValueError is caught and logged so the DB
-        row can still be cleaned up.
+        row can still be cleaned up. After the DB row is removed, files
+        frozen into the task scope at creation time are also deleted
+        best-effort so they do not linger as unreachable orphans.
 
         Args:
             task_id: The task UUID.
         """
+        # Read owner_id BEFORE deleting the row (mirror the normalization used
+        # when freezing files: ``(user_name or "").strip()`` in create_task).
+        # The DB stores the raw user_name; the session_file registry matches
+        # owner_id exactly, so it must be stripped or the files won't be found.
+        existing = self._task_dao.get_one({"task_id": task_id})
+        owner_id = (existing.get("user_name") or "").strip() if existing else ""
+
         # Best-effort remove scheduler job
         if self._scheduler is not None:
             try:
@@ -374,6 +420,12 @@ class ScheduledTaskService:
 
         # Delete DB row
         self._task_dao.delete({"task_id": task_id})
+
+        # Best-effort clean up task-scope frozen files created at task
+        # creation; skip when there is no owner (pure-text tasks never freeze
+        # files). Storage failures must not block the deletion.
+        if owner_id:
+            self._delete_task_files_quietly(owner_id, task_id)
 
     async def list_runs(
         self, task_id: str, limit: int = 50, offset: int = 0
@@ -413,6 +465,70 @@ class ScheduledTaskService:
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _freeze_payload_files(
+        self, payload: ChatReplayPayload, *, owner_id: str, task_id: str
+    ) -> Tuple[Dict[str, Any], bool]:
+        """Copy ``ext_info.file_ids`` into the task scope for persistence.
+
+        Returns the ``ext_info`` dict to persist (with task-scoped IDs) and
+        whether any files were copied (so later failures can be compensated).
+        Legacy ``file_path`` / pure-text payloads are returned untouched.
+
+        Raises:
+            ValueError: On malformed file input, missing owner/session, an
+                unavailable registry, or a rejected copy (foreign or
+                wrong-session IDs surface one indistinguishable message).
+        """
+        ext_info = dict(payload.ext_info or {})
+        spec = parse_file_input(ext_info)
+        if not spec.file_ids:
+            return ext_info, False
+        if not owner_id:
+            raise ValueError(
+                "an authenticated owner is required to freeze session files"
+            )
+        if self._session_file_registry is None:
+            raise ValueError("session file storage is unavailable")
+        session_id = (
+            ext_info.get("session_id")
+            or ext_info.get("conversation_uid")
+            or ext_info.get("conv_uid")
+        )
+        if not isinstance(session_id, str) or not session_id.strip():
+            raise ValueError("ext_info.session_id is required to freeze session files")
+        try:
+            records = self._session_file_registry.copy_session_to_task(
+                owner_id=owner_id,
+                session_id=session_id.strip(),
+                file_ids=list(spec.file_ids),
+                task_id=task_id,
+            )
+        except Exception as error:
+            # Single indistinguishable message: foreign and wrong-session
+            # rejections never leak which files exist.
+            message = getattr(error, "message", None) or (
+                "could not freeze session files for the task"
+            )
+            raise ValueError(message) from error
+        ext_info["file_ids"] = [record.file_id for record in records]
+        ext_info.pop("file_path", None)
+        return ext_info, True
+
+    def _delete_task_files_quietly(self, owner_id: str, task_id: str) -> None:
+        """Best-effort compensating delete of files frozen into a task scope."""
+        if self._session_file_registry is None:
+            return
+        try:
+            task_files = self._session_file_registry.list_task_files(
+                owner_id=owner_id, task_id=task_id
+            )
+            for record in task_files:
+                self._session_file_registry.delete_task_file(
+                    owner_id=owner_id, task_id=task_id, file_id=record.file_id
+                )
+        except Exception:
+            logger.exception("Failed to compensate frozen files for task %s", task_id)
 
     def _to_task_response(
         self,

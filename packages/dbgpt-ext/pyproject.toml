@@ -1,6 +1,6 @@
 [project]
 name = "dbgpt-ext"
-version = "0.8.1"
+version = "0.8.2"
 description = "Add your description here"
 authors = [
     { name = "csunny", email = "cfqcsunny@gmail.com" }
@@ -66,6 +66,7 @@ datasource_hive = [
     "thrift_sasl",
 ]
 datasource_vertica = ["vertica-python"]
+datasource_maxcompute = ["pyodps"]
 datasource_duckdb = [
     "duckdb",
     "duckdb-engine==0.9.1",

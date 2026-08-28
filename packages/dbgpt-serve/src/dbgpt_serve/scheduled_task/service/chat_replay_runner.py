@@ -10,6 +10,17 @@ instance on every invocation so that the callable stored in the
 scheduler job store is a plain module-level function (which **can** be
 pickled by SQLAlchemyJobStore), not a bound method whose owner holds
 unpicklable SQLAlchemy sessions.
+
+For payload v2 tasks (``ext_info.file_ids`` frozen into the task scope at
+creation time) every run copies the task files into the run's fresh
+``new_conv_uid`` session and rewrites the payload with the fresh
+session-scoped IDs before ``ConversationVo`` is built. Before copying, the
+previous run's copied files (located via the run table's
+``output_conv_uid``) are deleted so run-session copies do not accumulate
+unbounded on disk. ``/from_task`` history previews do not depend on those
+files (they render from the message table and payload-embedded snapshots).
+Legacy v1 ``file_path`` payloads replay exactly as before and never touch
+the session file registry.
 """
 
 import asyncio
@@ -18,6 +29,8 @@ import logging
 import uuid
 from datetime import datetime
 from typing import List, Optional
+
+from dbgpt_serve.session_file.domain import parse_file_input
 
 from ..dao.run_dao import ScheduledRunDao
 from ..dao.task_dao import ScheduledTaskDao
@@ -40,6 +53,23 @@ async def run_scheduled_task(task_id: str) -> None:
     await runner.replay_chat_task(task_id)
 
 
+def _default_session_file_registry():
+    """Return the session file registry bound by ``SessionFileServe``.
+
+    Resolved lazily (and failing to ``None``) so ``chat_replay_runner``
+    never imports the session file API at module level and stays usable in
+    scheduler processes where the session file serve was never mounted.
+    """
+    try:
+        from dbgpt_serve.session_file.api.endpoints import (
+            get_session_file_service,
+        )
+
+        return get_session_file_service()
+    except Exception:
+        return None
+
+
 _SUMMARY_MAX = 1024
 _ERROR_MAX = 2000
 
@@ -53,10 +83,15 @@ class ChatReplayRunner:
 
     Args:
         request_timeout: Timeout in seconds for a single replay run.
+        session_file_registry: Optional registry used to copy task-frozen
+            files into each run's fresh session. When omitted, the registry
+            bound by ``SessionFileServe`` is resolved lazily at replay time
+            (no module-level cross-serve import).
     """
 
-    def __init__(self, request_timeout: float = 600.0):
+    def __init__(self, request_timeout: float = 600.0, session_file_registry=None):
         self._timeout = request_timeout
+        self._session_file_registry = session_file_registry
         self._task_dao = ScheduledTaskDao()
         self._run_dao = ScheduledRunDao()
 
@@ -100,6 +135,12 @@ class ChatReplayRunner:
             payload["conv_uid"] = new_conv_uid
             payload["user_name"] = task.get("user_name")
             payload.pop("version", None)  # internal field, not a ConversationVo key
+
+            # 3b. Payload v2: copy task-frozen files into this run's fresh
+            #     session and swap in the fresh session-scoped IDs.
+            self._freeze_task_files_for_run(
+                payload, task_id=task_id, new_conv_uid=new_conv_uid
+            )
 
             # 4. Replay in-process with a hard timeout
             final_texts, step_texts, artifact_count = await asyncio.wait_for(
@@ -178,6 +219,76 @@ class ChatReplayRunner:
             # done/react-agent) are ignored.
 
         return final_texts, step_texts, artifact_count
+
+    def _freeze_task_files_for_run(
+        self, payload: dict, *, task_id: str, new_conv_uid: str
+    ) -> None:
+        """Copy task-frozen files into the run's fresh session scope.
+
+        Rewrites ``payload["ext_info"]["file_ids"]`` with the fresh
+        session-scoped IDs. A no-op for legacy v1 ``file_path`` / pure-text
+        payloads. Any failure propagates so the run is recorded as failed
+        (``replay_chat_task`` catches it — the scheduler never sees raises).
+        """
+        ext_info = payload.get("ext_info")
+        if not isinstance(ext_info, dict) or not ext_info.get("file_ids"):
+            return
+        # Validates shape/cardinality; malformed input fails the run loudly.
+        parse_file_input(ext_info)
+        owner_id = str(payload.get("user_name") or "").strip()
+        if not owner_id:
+            raise ValueError("task has no owner for session file replay")
+        registry = self._session_file_registry or _default_session_file_registry()
+        if registry is None:
+            raise RuntimeError("session file storage unavailable during replay")
+        # Reclaim the previous run's copied files first so run-session copies
+        # do not accumulate on disk. Best-effort: failure must not abort the run.
+        self._reclaim_previous_run_session_files(
+            owner_id, task_id, new_conv_uid, registry
+        )
+        records = registry.copy_task_to_session(
+            owner_id=owner_id, task_id=task_id, session_id=new_conv_uid
+        )
+        # Fresh session-scoped IDs replace the persisted task-scoped ones;
+        # every other ext_info key passes through untouched.
+        payload["ext_info"] = {
+            **ext_info,
+            "file_ids": [record.file_id for record in records],
+        }
+
+    def _reclaim_previous_run_session_files(
+        self, owner_id: str, task_id: str, new_conv_uid: str, registry
+    ) -> None:
+        """Best-effort delete of the previous run's copied session files.
+
+        Locates the most recent prior *completed* run via the run table's
+        ``output_conv_uid`` (skipping the current run, whose record already
+        exists but has no ``output_conv_uid`` yet) and deletes that
+        session's files before freezing the current run. This keeps disk
+        usage bounded to ~one prior copy plus the current one. Any error is
+        logged and swallowed so it never aborts the current replay.
+        """
+        try:
+            prior_runs = self._run_dao.list_by_task_id(task_id, limit=3, offset=0)
+        except Exception:
+            logger.exception("list prior runs failed for task %s", task_id)
+            return
+        prev_conv_uid = ""
+        for run in prior_runs:
+            uid = (run.get("output_conv_uid") or "").strip()
+            if uid and uid != new_conv_uid:
+                prev_conv_uid = uid
+                break
+        if not prev_conv_uid:
+            return
+        try:
+            registry.delete_session_files(owner_id=owner_id, session_id=prev_conv_uid)
+        except Exception:
+            logger.exception(
+                "reclaim previous run session files failed task=%s session=%s",
+                task_id,
+                prev_conv_uid,
+            )
 
     def _fail(self, run_id: str, message: str, conv_uid: str) -> None:
         """Record a failed run with the given error message."""

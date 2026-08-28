@@ -2,7 +2,7 @@ import json
 import logging
 import re
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Body, Depends
 
@@ -42,6 +42,36 @@ def get_conversation_serve() -> ConversationServe:
 
 def get_edit_service() -> EditorService:
     return EditorService.get_instance(CFG.SYSTEM_APP)
+
+
+def resolve_editor_db_name(
+    run_param: dict, editor_service: Optional[EditorService] = None
+) -> Optional[str]:
+    """Return a non-empty database name from the request or conversation."""
+    db_name = run_param.get("db_name")
+    if isinstance(db_name, str):
+        db_name = db_name.strip()
+    if db_name:
+        return db_name
+
+    conv_uid = run_param.get("conv_uid") or run_param.get("con_uid")
+    if not conv_uid or editor_service is None:
+        return None
+    try:
+        storage_conv = editor_service.get_storage_conv(str(conv_uid))
+        value = (getattr(storage_conv, "param_value", None) or "").strip()
+        if value:
+            return value
+        for message in getattr(storage_conv, "messages", []) or []:
+            extra = getattr(message, "additional_kwargs", None) or {}
+            value = (extra.get("param_value") or "").strip()
+            if value:
+                return value
+    except Exception:
+        logger.warning(
+            "Failed to recover db_name from conversation %s", conv_uid, exc_info=True
+        )
+    return None
 
 
 @router.get("/v1/editor/db/tables", response_model=Result[DataNode])
@@ -176,13 +206,16 @@ def sanitize_sql(sql: str, db_type: str = None) -> Tuple[bool, str, dict]:
 
 
 @router.post("/v1/editor/sql/run", response_model=Result[SqlRunData])
-async def editor_sql_run(run_param: dict = Body()):
+async def editor_sql_run(
+    run_param: dict = Body(),
+    editor_service: EditorService = Depends(get_edit_service),
+):
     logger.info(f"editor_sql_run:{run_param}")
-    db_name = run_param["db_name"]
-    sql = run_param["sql"]
+    db_name = resolve_editor_db_name(run_param, editor_service)
+    sql = run_param.get("sql")
 
-    if not db_name and not sql:
-        return Result.failed(msg="SQL run param error！")
+    if not db_name or not sql:
+        return Result.failed(msg="SQL run param error: db_name and sql are required")
 
     # Get database connection
     conn = CFG.local_db_manager.get_connector(db_name)
@@ -259,11 +292,17 @@ async def get_editor_chart_info(
 
 
 @router.post("/v1/editor/chart/run", response_model=Result[ChartRunData])
-async def chart_run(run_param: dict = Body()):
+async def chart_run(
+    run_param: dict = Body(),
+    editor_service: EditorService = Depends(get_edit_service),
+):
     logger.info(f"chart_run:{run_param}")
-    db_name = run_param["db_name"]
-    sql = run_param["sql"]
-    chart_type = run_param["chart_type"]
+    db_name = resolve_editor_db_name(run_param, editor_service)
+    sql = run_param.get("sql")
+    chart_type = run_param.get("chart_type")
+
+    if not db_name or not sql:
+        return Result.failed(msg="SQL run param error: db_name and sql are required")
 
     # Get database connection
     db_conn = CFG.local_db_manager.get_connector(db_name)

@@ -15,12 +15,15 @@ from sqlalchemy import (
     desc,
     or_,
 )
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.exc import OperationalError
 
 from dbgpt.agent.util.conv_utils import parse_conv_id
 from dbgpt.storage.metadata import BaseDao, Model, ensure_column
 
 logger = logging.getLogger(__name__)
+
+_LARGE_TEXT = Text().with_variant(LONGTEXT(), "mysql")
 
 
 class GptsMessagesEntity(Model):
@@ -53,9 +56,7 @@ class GptsMessagesEntity(Model):
         nullable=False,
         comment="The message in which app name",
     )
-    content = Column(
-        Text(length=2**31 - 1), nullable=True, comment="Content of the speech"
-    )
+    content = Column(_LARGE_TEXT, nullable=True, comment="Content of the speech")
     current_goal = Column(
         Text, nullable=True, comment="The target corresponding to the current message"
     )
@@ -64,9 +65,7 @@ class GptsMessagesEntity(Model):
         Text, nullable=True, comment="Current conversation review info"
     )
     action_report = Column(
-        Text(length=2**31 - 1),
-        nullable=True,
-        comment="Current conversation action report",
+        _LARGE_TEXT, nullable=True, comment="Current conversation action report"
     )
     resource_info = Column(
         Text,

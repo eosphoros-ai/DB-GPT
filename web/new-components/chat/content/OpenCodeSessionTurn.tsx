@@ -1,18 +1,18 @@
 import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/components/chat/chat-content/config';
+import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import { STORAGE_USERINFO_KEY } from '@/utils/constants/index';
+import { AgentCitation, decodeFinalEvent } from '@/utils/react-agent-final';
 import { CheckOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
 import { GPTVis } from '@antv/gpt-vis';
 import { Spin, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import Image from 'next/image';
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToolIcon, getStatusText, getToolIconName } from '../icons/ToolIcon';
 import { BasicTool } from '../tools/BasicTool';
 import { ErrorDisplay, ReActThinking } from './ReActThinking';
 import RobotIcon from './RobotIcon';
-
-import { FileExcelOutlined, FileImageOutlined, FilePptOutlined, FileTextOutlined } from '@ant-design/icons';
 
 export type ToolStatus = 'pending' | 'running' | 'completed' | 'error';
 
@@ -45,12 +45,6 @@ export interface ReasoningPart {
 
 export type MessagePart = ToolPart | TextPart | ReasoningPart;
 
-export interface FileAttachment {
-  name: string;
-  size: number;
-  type: string;
-}
-
 export interface OpenCodeSessionTurnProps {
   userMessage: string;
   assistantMessage?: string;
@@ -66,7 +60,13 @@ export interface OpenCodeSessionTurnProps {
   currentStatus?: string;
   stepsPlacement?: 'inside' | 'outside';
   className?: string;
-  attachedFile?: FileAttachment;
+  /**
+   * Immutable display snapshots of every file attached to this message
+   * (session snapshots, or legacy attachments via `snapshotFromLegacyFile`).
+   */
+  attachedFiles?: readonly SessionFileSnapshot[];
+  citations?: AgentCitation[];
+  onCitationClick?: (citation: AgentCitation) => void;
 }
 
 function formatDuration(ms: number): string {
@@ -416,66 +416,6 @@ const PulseIndicator: React.FC = () => (
   </span>
 );
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-};
-
-const getFileTypeLabel = (fileName: string, mimeType?: string): string => {
-  const ext = fileName.toLowerCase().split('.').pop() || '';
-  if (['xlsx', 'xls'].includes(ext) || mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) {
-    return '电子表格';
-  }
-  if (ext === 'csv' || mimeType?.includes('csv')) {
-    return '电子表格';
-  }
-  if (ext === 'pdf' || mimeType?.includes('pdf')) return 'PDF';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) return '图片';
-  if (['doc', 'docx'].includes(ext) || mimeType?.includes('word')) return 'Word 文档';
-  if (['txt', 'md'].includes(ext) || mimeType?.includes('text')) return '文本文件';
-  if (['json'].includes(ext)) return 'JSON';
-  return '文件';
-};
-
-const FileIconComponent: React.FC<{ fileName: string; mimeType?: string }> = ({ fileName, mimeType }) => {
-  const ext = fileName.toLowerCase().split('.').pop() || '';
-  if (
-    ['xlsx', 'xls', 'csv'].includes(ext) ||
-    mimeType?.includes('spreadsheet') ||
-    mimeType?.includes('excel') ||
-    mimeType?.includes('csv')
-  ) {
-    return <FileExcelOutlined className='text-green-600 text-lg' />;
-  }
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || mimeType?.includes('image')) {
-    return <FileImageOutlined className='text-pink-500 text-lg' />;
-  }
-  if (['ppt', 'pptx'].includes(ext)) {
-    return <FilePptOutlined className='text-orange-500 text-lg' />;
-  }
-  return <FileTextOutlined className='text-blue-500 text-lg' />;
-};
-
-const FileAttachmentCard: React.FC<{ file: FileAttachment }> = ({ file }) => {
-  const fileTypeLabel = getFileTypeLabel(file.name, file.type);
-  const formattedSize = formatFileSize(file.size);
-
-  return (
-    <div className='inline-flex items-center gap-3 px-3 py-2 bg-white dark:bg-[#1f2024] border border-gray-200 dark:border-gray-700 rounded-xl mb-2 max-w-sm shadow-sm'>
-      <div className='w-9 h-9 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0'>
-        <FileIconComponent fileName={file.name} mimeType={file.type} />
-      </div>
-      <div className='min-w-0 flex-1'>
-        <div className='font-medium text-sm text-gray-800 dark:text-gray-200 truncate'>{file.name}</div>
-        <div className='text-xs text-gray-500 dark:text-gray-400'>
-          {fileTypeLabel} · {formattedSize}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   userMessage,
   assistantMessage,
@@ -483,7 +423,7 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   isWorking = false,
   startTime,
   endTime,
-  onCopy,
+  onCopy: _onCopy,
   showSteps = true,
   defaultStepsExpanded = false,
   modelName,
@@ -491,131 +431,19 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
   currentStatus,
   stepsPlacement = 'inside',
   className,
-  attachedFile,
+  attachedFiles,
+  citations = [],
+  onCitationClick,
 }) => {
   const { t } = useTranslation();
   const [stepsExpanded, setStepsExpanded] = useState(defaultStepsExpanded);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const msgRef = useRef<HTMLDivElement>(null);
-
-  // Parse <references> tag from assistantMessage to get citation data
-  const parsedRefs = useMemo(() => {
-    if (!assistantMessage) return null;
-    try {
-      const m = assistantMessage.match(/<references[^>]*references='([^']*?)'/);
-      if (m) {
-        const refs = JSON.parse(m[1]);
-        return Array.isArray(refs) ? refs : refs?.knowledge || null;
-      }
-    } catch {
-      // references tag not present or malformed — no citations
-    }
-    return null;
-  }, [assistantMessage]);
-
-  // Post-render: replace plain [n] text with styled <sup> badges and attach hover tooltips
-  useEffect(() => {
-    if (!msgRef.current || !assistantMessage) return;
-    const container = msgRef.current;
-
-    // Defer to next tick so GPTVis has finished rendering the markdown.
-    const timer = setTimeout(() => {
-      // 1. Collect all text nodes containing [n] markers (collect first to
-      //    avoid invalidating the TreeWalker during mutation).
-      const targets: Text[] = [];
-      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-          const parent = node.parentElement;
-          if (!parent) return NodeFilter.FILTER_REJECT;
-          const tag = parent.tagName.toLowerCase();
-          if (['sup', 'code', 'pre', 'a', 'references', 'script'].includes(tag)) return NodeFilter.FILTER_REJECT;
-          return /\[\d{1,2}\]/.test(node.textContent || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-        },
-      });
-      let n: Text | null;
-      while ((n = walker.nextNode() as Text | null)) targets.push(n);
-
-      // 2. Replace [n] in each collected text node with a styled <sup> badge
-      targets.forEach(textNode => {
-        const raw = textNode.textContent || '';
-        if (!/\[\d{1,2}\]/.test(raw)) return;
-        const fragment = document.createDocumentFragment();
-        let lastIdx = 0;
-        raw.replace(/\[(\d{1,2})\]/g, (match, idx, offset) => {
-          if (offset > lastIdx) {
-            fragment.appendChild(document.createTextNode(raw.slice(lastIdx, offset)));
-          }
-          const badge = document.createElement('sup');
-          badge.className = 'cite-badge';
-          badge.setAttribute('data-cite-idx', idx);
-          badge.style.cssText =
-            'color:#fff;background:#1677ff;border-radius:3px;padding:0 3px;margin:0 1px;' +
-            'font-size:10px;font-weight:600;cursor:pointer;line-height:1.4';
-          badge.textContent = idx;
-          fragment.appendChild(badge);
-          lastIdx = offset + match.length;
-          return '';
-        });
-        if (lastIdx < raw.length) {
-          fragment.appendChild(document.createTextNode(raw.slice(lastIdx)));
-        }
-        textNode.parentNode?.replaceChild(fragment, textNode);
-      });
-
-      // 3. Attach hover tooltips to the badges
-      const docList: any[] = Array.isArray(parsedRefs) ? parsedRefs : [];
-      const show = (e: Event) => {
-        const el = e.target as HTMLElement;
-        const idx = parseInt(el.getAttribute('data-cite-idx') || '0', 10);
-        let chunk: any = null;
-        let doc: any = null;
-        for (const d of docList) {
-          chunk = (d.chunks || []).find((c: any) => c.index === idx);
-          if (chunk) {
-            doc = d;
-            break;
-          }
-        }
-        if (!chunk) return;
-        const existing = document.querySelector('.cite-tooltip');
-        if (existing) existing.remove();
-        const tip = document.createElement('div');
-        tip.className = 'cite-tooltip';
-        tip.style.cssText =
-          'position:fixed;z-index:9999;max-width:400px;max-height:220px;overflow-y:auto;' +
-          'background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;' +
-          'box-shadow:0 4px 16px rgba(0,0,0,0.12);font-size:12px;line-height:1.5';
-        const docName = decodeURIComponent(doc?.name || 'Knowledge Base');
-        const score = chunk.recall_score != null ? ` · 召回 ${Number(chunk.recall_score).toFixed(2)}` : '';
-        const plain = (chunk.content || '').replace(/<[^>]+>/g, '').trim();
-        tip.innerHTML =
-          `<div style="font-weight:600;color:#333;margin-bottom:4px;font-size:11px">` +
-          `📄 ${docName}<span style="color:#9ca3af;font-weight:400">${score}</span></div>` +
-          `<div style="color:#555;white-space:pre-wrap;word-break:break-word">` +
-          `${plain.slice(0, 600)}${plain.length > 600 ? '...' : ''}</div>`;
-        const rect = el.getBoundingClientRect();
-        tip.style.left = `${Math.min(rect.left, window.innerWidth - 420)}px`;
-        tip.style.top = `${rect.bottom + 4}px`;
-        document.body.appendChild(tip);
-        tip.addEventListener('mouseleave', () => tip.remove());
-        el.addEventListener('mouseleave', () => setTimeout(() => tip.remove(), 200), { once: true });
-      };
-
-      const badges = container.querySelectorAll<HTMLElement>('.cite-badge');
-      badges.forEach(b => b.addEventListener('mouseenter', show));
-      // Store cleanup on container for the next run.
-      (container as any).__citeCleanup?.();
-      (container as any).__citeCleanup = () => {
-        badges.forEach(b => b.removeEventListener('mouseenter', show));
-        document.querySelectorAll('.cite-tooltip').forEach(t => t.remove());
-      };
-    }, 50);
-
-    return () => {
-      clearTimeout(timer);
-      (container as any).__citeCleanup?.();
-    };
-  }, [parsedRefs, assistantMessage]);
+  const finalAnswer = useMemo(
+    () => decodeFinalEvent({ content: assistantMessage ?? '', citations }),
+    [assistantMessage, citations],
+  );
+  const displayAssistantMessage = finalAnswer.content;
+  const displayCitations = finalAnswer.citations;
 
   useEffect(() => {
     if (!isWorking || !startTime) return;
@@ -763,9 +591,9 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
           <div className='flex-1 min-w-0'>
             <div className='flex items-start justify-between'>
               <div className='flex-1 min-w-0'>
-                {attachedFile && <FileAttachmentCard file={attachedFile} />}
-                <div className='text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed'>
-                  {userMessage}
+                <AttachmentMessageCards files={attachedFiles} className='mb-2' />
+                <div className='rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-800 shadow-sm dark:bg-[#2a2b2f] dark:text-gray-200'>
+                  <div className='whitespace-pre-wrap break-words leading-relaxed'>{userMessage}</div>
                 </div>
                 {startTime && <div className='mt-1 text-xs text-gray-400'>{formatTimestamp(startTime)}</div>}
               </div>
@@ -774,7 +602,7 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
           </div>
         </div>
 
-        {(isWorking || assistantMessage || hasSteps || thinkingContent) && (
+        {(isWorking || displayAssistantMessage || hasSteps || thinkingContent) && (
           <>
             <div data-slot='assistant-section' className='flex gap-3'>
               <div className='flex-shrink-0 mt-0.5'>
@@ -783,40 +611,66 @@ const OpenCodeSessionTurn: React.FC<OpenCodeSessionTurnProps> = ({
               <div className='flex-1 min-w-0 flex flex-col gap-2'>
                 {stepsPlacement === 'inside' && stepsBlock}
 
-                {assistantMessage && (
+                {displayAssistantMessage && (
                   <div
                     data-slot='assistant-response'
                     className='group relative bg-white dark:bg-[rgba(255,255,255,0.08)] p-4 rounded-2xl rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-800'
                   >
-                    <div ref={msgRef} className='prose prose-sm dark:prose-invert max-w-none'>
+                    <div className='prose prose-sm dark:prose-invert max-w-none'>
                       <GPTVis components={markdownComponents as any} {...(markdownPlugins as any)}>
-                        {preprocessLaTeX(
-                          formatMarkdownVal(
-                            assistantMessage
-                              .replace(/<references[^>]*>[\s\S]*?<\/references>/g, '')
-                              .replace(/<references[^>]*\/>/g, ''),
-                          ),
-                        )}
+                        {preprocessLaTeX(formatMarkdownVal(displayAssistantMessage))}
                       </GPTVis>
                     </div>
+                    {displayCitations.length > 0 && (
+                      <div
+                        data-slot='assistant-citations'
+                        className='mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-1.5'
+                      >
+                        {displayCitations.map(citation => (
+                          <Tooltip
+                            key={`${citation.index}-${citation.id}`}
+                            title={
+                              <div className='max-w-sm'>
+                                <div className='font-medium mb-1'>{citation.sourceName}</div>
+                                <div className='whitespace-pre-wrap break-words'>{citation.excerpt.slice(0, 800)}</div>
+                              </div>
+                            }
+                          >
+                            <button
+                              type='button'
+                              onClick={() => onCitationClick?.(citation)}
+                              className={classNames(
+                                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px]',
+                                'border border-blue-200 dark:border-blue-800',
+                                'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300',
+                                onCitationClick && 'hover:bg-blue-100 dark:hover:bg-blue-900/40 cursor-pointer',
+                              )}
+                            >
+                              <span className='font-semibold'>[{citation.index}]</span>
+                              <span className='max-w-40 truncate'>{citation.sourceName}</span>
+                            </button>
+                          </Tooltip>
+                        ))}
+                      </div>
+                    )}
                     {endTime && (
                       <div className='mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between'>
                         <span className='text-xs text-gray-400'>
                           {formatTimestamp(endTime)}
                           {duration && <span className='ml-2'>· {duration}</span>}
                         </span>
-                        <CopyButton text={assistantMessage} className='opacity-0 group-hover:opacity-100' />
+                        <CopyButton text={displayAssistantMessage} className='opacity-0 group-hover:opacity-100' />
                       </div>
                     )}
                     {!endTime && (
                       <div className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                        <CopyButton text={assistantMessage} />
+                        <CopyButton text={displayAssistantMessage} />
                       </div>
                     )}
                   </div>
                 )}
 
-                {isWorking && !assistantMessage && !thinkingContent && (
+                {isWorking && !displayAssistantMessage && !thinkingContent && (
                   <div
                     data-slot='loading-placeholder'
                     className='bg-white dark:bg-[rgba(255,255,255,0.08)] p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-gray-800'

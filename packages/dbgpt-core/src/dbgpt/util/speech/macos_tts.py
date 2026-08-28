@@ -1,6 +1,6 @@
 """MacOS TTS Voice."""
 
-import os
+import subprocess
 
 from dbgpt.util.speech.base import VoiceBase
 
@@ -14,9 +14,12 @@ class MacOSTTS(VoiceBase):
     def _speech(self, text: str, voice_index: int = 0) -> bool:
         """Play the given text."""
         if voice_index == 0:
-            os.system(f'say "{text}"')
+            args = ["say"]
         elif voice_index == 1:
-            os.system(f'say -v "Ava (Premium)" "{text}"')
+            args = ["say", "-v", "Ava (Premium)"]
         else:
-            os.system(f'say -v Samantha "{text}"')
+            args = ["say", "-v", "Samantha"]
+        # Pass the text as a separate argument (no shell) so it cannot be
+        # interpreted as a shell command, regardless of its content.
+        subprocess.run([*args, text], check=False)
         return True

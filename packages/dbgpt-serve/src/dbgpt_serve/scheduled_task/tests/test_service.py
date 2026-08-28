@@ -14,11 +14,13 @@ Service under test (not yet implemented -- expect ImportError on collect):
 
 import uuid
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from dbgpt.storage.metadata import db
+from dbgpt_serve.session_file.registry import SessionFileRegistryError
 
 from ..api.schemas import (
     ChatReplayPayload,
@@ -155,6 +157,38 @@ async def test_create_writes_db_and_adds_job(
     fetched = await service.get_task(result.task_id)
     assert fetched is not None
     assert fetched.task_id == result.task_id
+
+
+# ===========================================================================
+# Test 1b: delete_task cleans frozen files using the stripped owner_id
+# ===========================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_task_cleans_frozen_files_with_stripped_owner(
+    service: ScheduledTaskService,
+):
+    """delete_task should delete files frozen into the task scope, deriving
+    owner_id from the stored user_name with the same ``(user_name or
+    "").strip()`` normalization used when freezing. Leading/trailing
+    whitespace must not cause a mismatch that leaves orphan files behind.
+    """
+    mock_registry = MagicMock()
+    mock_registry.list_task_files.return_value = []
+    service._session_file_registry = mock_registry
+
+    # user_name with surrounding whitespace: the DB stores it raw, but the
+    # cleanup must strip it to match the owner_id used when freezing.
+    result = await service.create_task(
+        _make_create_request(), user_name="  test_user  "
+    )
+    task_id = result.task_id
+
+    await service.delete_task(task_id)
+
+    mock_registry.list_task_files.assert_called_once_with(
+        owner_id="test_user", task_id=task_id
+    )
 
 
 # ===========================================================================
@@ -488,3 +522,312 @@ async def test_update_cron_rollback_when_add_fails(
     fetched = await service.get_task(task_id)
     assert fetched is not None
     assert fetched.cron_expression == original_cron
+
+
+# ===========================================================================
+# Task 9: Freeze scheduled task session files by copy (payload v2)
+# ===========================================================================
+
+_OWNER = "alice"
+_SESSION = "sess-1"
+_OTHER_SESSION = "sess-2"
+
+
+class _FakeSessionFileRegistry:
+    """In-memory double for the session file registry copy/delete contract.
+
+    Mirrors ``SessionFileRegistry.copy_session_to_task`` semantics: unknown
+    (owner, session) scopes or unknown file IDs raise SESSION_FILE_NOT_FOUND
+    with one indistinguishable message; successful copies mint fresh
+    task-scoped IDs recorded under ``task_files``.
+    """
+
+    def __init__(self, session_files=None):
+        # {(owner_id, session_id): [session_scoped_file_id, ...]}
+        self._session_files = dict(session_files or {})
+        self.task_files = {}  # {task_id: [task_scoped_file_id, ...]}
+        self.copy_calls = []  # [(owner_id, session_id, file_ids, task_id)]
+        self.deleted_task_files = []
+        self.fail_copy = None
+
+    def copy_session_to_task(self, *, owner_id, session_id, file_ids, task_id):
+        self.copy_calls.append((owner_id, session_id, list(file_ids), task_id))
+        if self.fail_copy is not None:
+            raise self.fail_copy
+        known = self._session_files.get((owner_id, session_id), [])
+        missing = [fid for fid in file_ids if fid not in known]
+        if missing:
+            raise SessionFileRegistryError("SESSION_FILE_NOT_FOUND", "File not found.")
+        created = [
+            f"sf_task_{len(self.copy_calls)}_{index}"
+            for index, _ in enumerate(file_ids, start=1)
+        ]
+        self.task_files.setdefault(task_id, []).extend(created)
+        return [SimpleNamespace(file_id=fid) for fid in created]
+
+    def list_task_files(self, *, owner_id, task_id):
+        return [
+            SimpleNamespace(file_id=fid) for fid in self.task_files.get(task_id, [])
+        ]
+
+    def delete_task_file(self, *, owner_id, task_id, file_id):
+        self.deleted_task_files.append(file_id)
+        files = self.task_files.get(task_id, [])
+        if file_id in files:
+            files.remove(file_id)
+            return True
+        return False
+
+
+def _make_registry_service(scheduler_mock, runner_mock, registry):
+    """Build a service with the session file registry injected."""
+    return ScheduledTaskService(
+        scheduler=scheduler_mock,
+        runner_callable=runner_mock,
+        session_file_registry=registry,
+    )
+
+
+def _frozen_ext_info(**overrides):
+    ext_info = {"file_ids": ["sf_alpha", "sf_beta"], "session_id": _SESSION}
+    ext_info.update(overrides)
+    return ext_info
+
+
+# ---------------------------------------------------------------------------
+# Test 14: create_task copies session files into the task scope
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_freezes_session_files_into_task_scope(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """Payload v2 create must:
+    1. Call registry.copy_session_to_task with the authenticated owner
+    2. Persist only task-scoped IDs in payload_json.ext_info.file_ids
+       (never session IDs, never file_path)
+    3. Leave unrelated ext_info keys untouched
+    """
+    registry = _FakeSessionFileRegistry({(_OWNER, _SESSION): ["sf_alpha", "sf_beta"]})
+    service = _make_registry_service(scheduler_mock, runner_mock, registry)
+
+    request = _make_create_request(
+        payload=_make_payload(ext_info=_frozen_ext_info(skill_id="daily-report"))
+    )
+    result = await service.create_task(request, user_name=_OWNER)
+
+    # Registry copy used the authenticated owner and the declared session
+    assert registry.copy_calls == [
+        (_OWNER, _SESSION, ["sf_alpha", "sf_beta"], result.task_id)
+    ]
+
+    # Persisted payload carries fresh task-scoped IDs only
+    frozen_ids = registry.task_files[result.task_id]
+    assert len(frozen_ids) == 2
+    assert "sf_alpha" not in frozen_ids
+    assert "sf_beta" not in frozen_ids
+
+    fetched = await service.get_task(result.task_id)
+    persisted = fetched.payload.ext_info
+    assert persisted["file_ids"] == frozen_ids
+    assert "file_path" not in persisted
+    # Unrelated ext_info keys pass through untouched
+    assert persisted["skill_id"] == "daily-report"
+    # Response payload mirrors the persisted task-scoped IDs
+    assert result.payload.ext_info["file_ids"] == frozen_ids
+
+
+# ---------------------------------------------------------------------------
+# Test 15: create_task rejects foreign / wrong-session file IDs
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_rejects_foreign_or_wrong_session_files(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """Foreign and wrong-session file_ids fail with one indistinguishable
+    error; neither the task row, the scheduler job nor any copies survive."""
+    registry = _FakeSessionFileRegistry({(_OWNER, _SESSION): ["sf_alpha", "sf_beta"]})
+    service = _make_registry_service(scheduler_mock, runner_mock, registry)
+
+    errors = []
+    for owner, session in (
+        (_OWNER, _OTHER_SESSION),  # right owner, wrong session
+        ("bob", _SESSION),  # foreign owner
+    ):
+        request = _make_create_request(
+            payload=_make_payload(
+                ext_info={"file_ids": ["sf_alpha"], "session_id": session}
+            )
+        )
+        with pytest.raises(ValueError) as exc_info:
+            await service.create_task(request, user_name=owner)
+        errors.append(str(exc_info.value))
+
+    # Non-enumerating: identical message hides which files exist
+    assert errors[0] == errors[1] == "File not found."
+
+    # Zero side effects: no DB row, no scheduler job, no task files
+    assert await service.list_tasks() == []
+    scheduler_mock.add_job.assert_not_awaited()
+    assert all(not files for files in registry.task_files.values())
+
+
+# ---------------------------------------------------------------------------
+# Test 16: scheduler failure compensates the copied task files
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_scheduler_failure_compensates_frozen_files(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """If scheduler.add_job fails after copy + DB write, the compensating
+    delete removes every copied task file and the DB row (zero residue)."""
+    registry = _FakeSessionFileRegistry({(_OWNER, _SESSION): ["sf_alpha"]})
+    service = _make_registry_service(scheduler_mock, runner_mock, registry)
+    scheduler_mock.add_job = AsyncMock(
+        side_effect=RuntimeError("scheduler unavailable")
+    )
+
+    request = _make_create_request(
+        payload=_make_payload(
+            ext_info={"file_ids": ["sf_alpha"], "session_id": _SESSION}
+        )
+    )
+    with pytest.raises(RuntimeError, match="scheduler unavailable"):
+        await service.create_task(request, user_name=_OWNER)
+
+    # The minted task files were compensated away
+    assert registry.deleted_task_files
+    assert all(not files for files in registry.task_files.values())
+    # No residual DB row
+    assert await service.list_tasks() == []
+    assert scheduler_mock.add_job.await_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Test 17: copy failure writes neither the task row nor the scheduler job
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_copy_failure_writes_neither_task_nor_job(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """A failing registry copy surfaces an error while writing nothing:
+    no task row, no scheduler job, no task files."""
+    registry = _FakeSessionFileRegistry({(_OWNER, _SESSION): ["sf_alpha"]})
+    registry.fail_copy = SessionFileRegistryError("QUOTA_EXCEEDED", "quota")
+    service = _make_registry_service(scheduler_mock, runner_mock, registry)
+
+    request = _make_create_request(
+        payload=_make_payload(
+            ext_info={"file_ids": ["sf_alpha"], "session_id": _SESSION}
+        )
+    )
+    with pytest.raises(ValueError):
+        await service.create_task(request, user_name=_OWNER)
+
+    scheduler_mock.add_job.assert_not_awaited()
+    assert await service.list_tasks() == []
+    assert registry.task_files == {}
+    # Copy failed before minting anything, so nothing needs compensation
+    assert registry.deleted_task_files == []
+
+
+# ---------------------------------------------------------------------------
+# Test 18: editing question/model never mutates frozen task files
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_update_task_never_mutates_frozen_files(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """update_task(question/model) must not re-copy, delete or otherwise
+    mutate the frozen task files or their stored task-scoped IDs."""
+    registry = _FakeSessionFileRegistry({(_OWNER, _SESSION): ["sf_alpha"]})
+    service = _make_registry_service(scheduler_mock, runner_mock, registry)
+
+    request = _make_create_request(
+        payload=_make_payload(
+            ext_info={"file_ids": ["sf_alpha"], "session_id": _SESSION}
+        )
+    )
+    created = await service.create_task(request, user_name=_OWNER)
+    frozen_ids = list(created.payload.ext_info["file_ids"])
+    copy_call_count = len(registry.copy_calls)
+
+    updated = await service.update_task(
+        created.task_id,
+        UpdateTaskRequest(user_input="新的问题", model_name="proxyllm-2"),
+    )
+
+    # Frozen file set is untouched: no new copies, no deletions
+    assert len(registry.copy_calls) == copy_call_count
+    assert registry.deleted_task_files == []
+    assert updated.payload.ext_info["file_ids"] == frozen_ids
+    # Editable fields still update
+    assert updated.payload.user_input == "新的问题"
+    assert updated.payload.model_name == "proxyllm-2"
+
+
+# ---------------------------------------------------------------------------
+# Test 19: file_ids without an injected registry fails closed
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_file_ids_without_registry_fails_closed(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """When no session file registry is injected, a file_ids payload must
+    fail closed before any DB write (no session IDs ever persisted)."""
+    service = ScheduledTaskService(
+        scheduler=scheduler_mock, runner_callable=runner_mock
+    )
+    request = _make_create_request(
+        payload=_make_payload(
+            ext_info={"file_ids": ["sf_alpha"], "session_id": _SESSION}
+        )
+    )
+    with pytest.raises(ValueError):
+        await service.create_task(request, user_name=_OWNER)
+
+    scheduler_mock.add_job.assert_not_awaited()
+    assert await service.list_tasks() == []
+
+
+# ---------------------------------------------------------------------------
+# Test 20: file_ids without a session id fails before copying
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_file_ids_without_session_id_fails(
+    scheduler_mock: MagicMock,
+    runner_mock: MagicMock,
+):
+    """A file_ids payload without ext_info.session_id cannot be frozen and
+    must fail before touching the registry or the scheduler."""
+    registry = _FakeSessionFileRegistry({(_OWNER, _SESSION): ["sf_alpha"]})
+    service = _make_registry_service(scheduler_mock, runner_mock, registry)
+
+    request = _make_create_request(
+        payload=_make_payload(ext_info={"file_ids": ["sf_alpha"]})
+    )
+    with pytest.raises(ValueError):
+        await service.create_task(request, user_name=_OWNER)
+
+    assert registry.copy_calls == []
+    scheduler_mock.add_job.assert_not_awaited()
+    assert await service.list_tasks() == []

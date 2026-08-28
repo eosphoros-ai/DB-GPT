@@ -168,7 +168,7 @@ const Knowledge = () => {
                       ? '/models/knowledge-graph.png'
                       : space.vector_type === 'FullText'
                         ? '/models/knowledge-full-text.jpg'
-                        : '/icons/kb_icon.png'
+                        : '/icons/knowledge.png'
                 }
                 RightTop={
                   <InnerDropdown
