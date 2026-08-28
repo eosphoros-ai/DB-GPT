@@ -178,10 +178,7 @@ export const getKnowledgeSpaceStats = (spaceId: string | number) => {
 // ============ 结构化目录列表 API (v2) ============
 
 /** 获取知识空间结构化目录列表（JSON格式） */
-export const kbLsJson = (
-  spaceId: string | number,
-  data?: { path?: string; offset?: number; limit?: number },
-) => {
+export const kbLsJson = (spaceId: string | number, data?: { path?: string; offset?: number; limit?: number }) => {
   return POST<{ path?: string; offset?: number; limit?: number }, KbLsJsonResponse>(
     `${KB_V2_PREFIX}/${spaceId}/tools/ls-json`,
     data ?? {},

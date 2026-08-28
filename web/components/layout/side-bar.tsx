@@ -2,16 +2,14 @@ import { ChatContext } from '@/app/chat-context';
 import { delDialogue, getDialogueList } from '@/client/api/request';
 import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
-import UserBar from '@/new-components/layout/UserBar';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
   ApiOutlined,
-  AppstoreOutlined,
   ClockCircleOutlined,
+  DashboardOutlined,
   DeleteOutlined,
-  EditOutlined,
   GlobalOutlined,
   LineChartOutlined,
   MenuFoldOutlined,
@@ -19,6 +17,7 @@ import Icon, {
   MessageOutlined,
   PlusOutlined,
   RightOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Popover, Skeleton, Tooltip, message } from 'antd';
 import cls from 'classnames';
@@ -72,7 +71,8 @@ function SideBar() {
     pathname.startsWith('/construct/dbgpts') ||
     pathname.startsWith('/construct/models') ||
     pathname.startsWith('/construct/scheduled-tasks') ||
-    pathname === '/models_evaluation';
+    pathname === '/models_evaluation' ||
+    pathname.startsWith('/observability');
   const { t, i18n } = useTranslation();
   const [logo, setLogo] = useState<string>('/logo_zh_latest.png');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -183,21 +183,6 @@ function SideBar() {
       <div className='px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider'>{t('management')}</div>
       <div
         onClick={() => {
-          router.push('/construct/app');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/app'),
-          },
-        )}
-      >
-        <AppstoreOutlined className='text-blue-500' />
-        <span>{t('app_management')}</span>
-      </div>
-      <div
-        onClick={() => {
           router.push('/construct/models');
           setSettingsOpen(false);
         }}
@@ -225,21 +210,6 @@ function SideBar() {
       >
         <ApartmentOutlined className='text-green-500' />
         <span>{t('awel_workflow')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/prompt');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/prompt'),
-          },
-        )}
-      >
-        <EditOutlined className='text-orange-500' />
-        <span>{t('prompts')}</span>
       </div>
       <div
         onClick={() => {
@@ -275,21 +245,6 @@ function SideBar() {
       </div>
       <div
         onClick={() => {
-          router.push('/construct/dbgpts');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/dbgpts'),
-          },
-        )}
-      >
-        <GlobalOutlined className='text-purple-500' />
-        <span>{t('dbgpts_community')}</span>
-      </div>
-      <div
-        onClick={() => {
           router.push('/models_evaluation');
           setSettingsOpen(false);
         }}
@@ -302,6 +257,21 @@ function SideBar() {
       >
         <LineChartOutlined className='text-red-500' />
         <span>{t('models_evaluation')}</span>
+      </div>
+      <div
+        onClick={() => {
+          router.push('/observability');
+          setSettingsOpen(false);
+        }}
+        className={cls(
+          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+          {
+            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/observability'),
+          },
+        )}
+      >
+        <DashboardOutlined className='text-indigo-500' />
+        <span>{t('observability')}</span>
       </div>
     </div>
   );
@@ -354,32 +324,24 @@ function SideBar() {
               </Link>
             ))}
           </div>
-          {/* Settings icon */}
-          <div className='flex flex-col gap-4 items-center mt-4'>
-            <Popover
-              content={settingsContent}
-              trigger='click'
-              placement='rightTop'
-              open={settingsOpen}
-              onOpenChange={setSettingsOpen}
-              arrow={false}
-              overlayInnerStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
-            >
-              <Tooltip title={t('construct')} placement='right'>
-                <div className={smallMenuItemStyle(isSettingsActive)}>
-                  <SidebarPictureIcon
-                    src='/pictures/app.png'
-                    activeSrc='/pictures/app_active.png'
-                    active={isSettingsActive}
-                    alt='construct_icon_collapsed'
-                  />
-                </div>
-              </Tooltip>
-            </Popover>
-          </div>
         </div>
         <div className='py-4'>
-          <UserBar onlyAvatar />
+          {/* Settings */}
+          <Popover
+            content={settingsContent}
+            trigger='click'
+            placement='rightTop'
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            arrow={false}
+            overlayInnerStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
+          >
+            <Tooltip title={t('Setting')} placement='right'>
+              <div className={cls(smallMenuItemStyle(isSettingsActive), 'mb-2')}>
+                <SettingOutlined />
+              </div>
+            </Tooltip>
+          </Popover>
           <Tooltip title={t(isMenuExpand ? 'Close_Sidebar' : 'Show_Sidebar')} placement='right'>
             <div className={smallMenuItemStyle()} onClick={handleToggleMenu}>
               <MenuUnfoldOutlined />
@@ -440,33 +402,6 @@ function SideBar() {
             <span className='text-sm'>{item.name}</span>
           </Link>
         ))}
-        {/* Settings */}
-        <Popover
-          content={settingsContent}
-          trigger='click'
-          placement='rightTop'
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          arrow={false}
-          overlayInnerStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
-        >
-          <div
-            className={cls(
-              'flex items-center w-full h-12 px-4 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:rounded-xl',
-              { 'bg-blue-50 rounded-xl text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': isSettingsActive },
-            )}
-          >
-            <div className='mr-3'>
-              <SidebarPictureIcon
-                src='/pictures/app.png'
-                activeSrc='/pictures/app_active.png'
-                active={isSettingsActive}
-                alt='construct_icon'
-              />
-            </div>
-            <span className='text-sm'>{t('construct')}</span>
-          </div>
-        </Popover>
       </div>
 
       {/* All Tasks Section */}
@@ -523,13 +458,30 @@ function SideBar() {
         )}
       </div>
 
-      {/* Bottom: UserBar + toggles */}
+      {/* Bottom: Settings + toggles */}
       <div className='pt-4 pb-2'>
-        <span className={cls('flex items-center w-full h-12 px-4 bg-[#F1F5F9] dark:bg-theme-dark rounded-xl')}>
-          <div className='mr-3 w-full'>
-            <UserBar />
+        {/* Settings */}
+        <Popover
+          content={settingsContent}
+          trigger='click'
+          placement='rightTop'
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          arrow={false}
+          overlayInnerStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
+        >
+          <div
+            className={cls(
+              'flex items-center w-full h-12 px-4 mb-2 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:rounded-xl',
+              { 'bg-blue-50 rounded-xl text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': isSettingsActive },
+            )}
+          >
+            <div className='mr-3 w-8 flex justify-center'>
+              <SettingOutlined className='text-xl' />
+            </div>
+            <span className='text-sm'>{t('Setting')}</span>
           </div>
-        </span>
+        </Popover>
         <div className='flex items-center justify-around py-4 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700'>
           <Popover content={mode === 'dark' ? 'Light' : 'Dark'}>
             <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleToggleTheme}>

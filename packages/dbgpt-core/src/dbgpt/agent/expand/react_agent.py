@@ -37,7 +37,7 @@ task. For each step, you must output an Action; it cannot be empty. The maximum 
 of steps you can take is {{ max_steps }}.
 Do not output an empty string!
 {{ action_space }}
-# RESPONSE FORMAT # 
+# RESPONSE FORMAT #
 IMPORTANT:
 - You must never answer directly outside the ReAct format.
 - Every response must contain exactly one Action and one Action Input.

@@ -1,3 +1,4 @@
+import json
 import logging
 from concurrent.futures import Executor
 from dataclasses import dataclass, field
@@ -29,6 +30,51 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 logger = logging.getLogger(__name__)
+
+
+def _get_field(item: Any, name: str, default: Any = None) -> Any:
+    """Read a field from an object or dict (handles openai/litellm deltas)."""
+    if isinstance(item, dict):
+        return item.get(name, default)
+    return getattr(item, name, default)
+
+
+def merge_streaming_tool_calls(
+    accumulated: Optional[List[Dict[str, Any]]],
+    deltas: Optional[List[Any]],
+) -> List[Dict[str, Any]]:
+    """Merge OpenAI-style streaming ``tool_calls`` deltas by index.
+
+    In a streaming response, each tool call is split across multiple delta
+    chunks: ``id`` and ``function.name`` usually appear only on the first
+    fragment, while ``function.arguments`` is concatenated across fragments.
+    This merges them into stable entries ordered by ``index``.
+    """
+    result: List[Dict[str, Any]] = list(accumulated) if accumulated else []
+    for delta in deltas or []:
+        index = int(_get_field(delta, "index", 0) or 0)
+        while len(result) <= index:
+            result.append(
+                {
+                    "id": None,
+                    "type": "function",
+                    "function": {"name": "", "arguments": ""},
+                }
+            )
+        entry = result[index]
+        delta_id = _get_field(delta, "id", None)
+        if delta_id:
+            entry["id"] = delta_id
+        fn = _get_field(delta, "function", None)
+        if fn is not None:
+            name = _get_field(fn, "name", None)
+            if name:
+                entry["function"]["name"] = name
+            args = _get_field(fn, "arguments", None) or ""
+            if isinstance(args, dict):
+                args = json.dumps(args, ensure_ascii=False)
+            entry["function"]["arguments"] += args
+    return result
 
 
 @auto_register_resource(
@@ -257,6 +303,10 @@ class OpenAILLMClient(ProxyLLMClient):
             payload["stop"] = request.stop
         if request.top_p:
             payload["top_p"] = request.top_p
+        if request.tools is not None:
+            payload["tools"] = request.tools
+        if request.tool_choice is not None:
+            payload["tool_choice"] = request.tool_choice
         return payload
 
     async def generate(
@@ -304,7 +354,23 @@ class OpenAILLMClient(ProxyLLMClient):
             reasoning_content = message_obj.reasoning_content
         text = chat_completion.choices[0].message.content
         usage = chat_completion.usage.dict()
-        return ModelOutput.build(text, reasoning_content, usage=usage)
+        tool_calls = None
+        raw_tool_calls = getattr(message_obj, "tool_calls", None) or None
+        if raw_tool_calls:
+            tool_calls = [
+                {
+                    "id": tl.id,
+                    "type": getattr(tl, "type", "function"),
+                    "function": {
+                        "name": tl.function.name,
+                        "arguments": tl.function.arguments,
+                    },
+                }
+                for tl in raw_tool_calls
+            ]
+        return ModelOutput.build(
+            text, reasoning_content, usage=usage, tool_calls=tool_calls
+        )
 
     async def generate_stream_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
@@ -315,6 +381,7 @@ class OpenAILLMClient(ProxyLLMClient):
         text = ""
         reasoning_content = ""
         usage = None
+        tool_calls_acc: Optional[List[Dict[str, Any]]] = None
         async for r in chat_completion:
             if len(r.choices) == 0:
                 continue
@@ -326,10 +393,19 @@ class OpenAILLMClient(ProxyLLMClient):
                 reasoning_content += delta_obj.reasoning_content or ""
             if r.choices[0].delta.content is not None:
                 text += r.choices[0].delta.content
+            delta_tool_calls = getattr(delta_obj, "tool_calls", None) or None
+            if delta_tool_calls:
+                tool_calls_acc = merge_streaming_tool_calls(
+                    tool_calls_acc, delta_tool_calls
+                )
             if text or reasoning_content:
                 if hasattr(r, "usage") and r.usage is not None:
                     usage = r.usage.dict()
                 yield ModelOutput.build(text, reasoning_content, usage=usage)
+        if tool_calls_acc:
+            yield ModelOutput.build(
+                text, reasoning_content, usage=usage, tool_calls=tool_calls_acc
+            )
 
     async def models(self) -> List[ModelMetadata]:
         model_metadata = ModelMetadata(
