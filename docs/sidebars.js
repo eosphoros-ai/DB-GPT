@@ -132,6 +132,7 @@ const sidebars = {
         { type: "doc", id: "awel/awel", label: "What is AWEL?" },
         { type: "doc", id: "agents/introduction/introduction", label: "Agents Overview" },
         { type: "doc", id: "modules/connections", label: "Connections Overview" },
+        { type: "doc", id: "modules/observability", label: "Observability Overview" },
       ],
     },
 

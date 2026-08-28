@@ -102,7 +102,7 @@ export default function ObservabilityOverviewPage() {
   const { loading: modelUsageLoading, data: modelUsageTuple } = useRequest(async () =>
     apiInterceptors(getObservabilityModelUsage({ time_from: startIso, time_to: endIso })),
   );
-  const modelUsage = (modelUsageTuple?.[1] || []).filter(m => m.total_tokens > 0 || m.call_count > 0);
+  const modelUsage = (modelUsageTuple?.[1] || []).filter(m => m.total_tokens > 0);
   const tokenInput = modelUsage.reduce((s, m) => s + m.prompt_tokens, 0);
   const tokenOutput = modelUsage.reduce((s, m) => s + m.completion_tokens, 0);
   const tokenCacheHit = modelUsage.reduce((s, m) => s + m.cache_hit_tokens, 0);
