@@ -3413,7 +3413,7 @@ Thought/Action/Action Input format shown above.
                 else:
                     for chunk in chunk_text(str(observation_text), max_len=600):
                         yield step_chunk(react_step_id, "text", chunk)
-# --- History: collect the tool output for replay ---
+                # --- History: collect the tool output for replay ---
                 if current_history_step is not None:
                     parsed_obs = None
                     if isinstance(observation_text, str):
