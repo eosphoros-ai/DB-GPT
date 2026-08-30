@@ -72,6 +72,8 @@ export interface UseSessionFiles {
   rehydrateFromServer: (sessionId: string) => Promise<SessionFileSnapshot[]>;
   /** Clear the current turn's drafts while keeping the session scope. */
   clearTurn: () => void;
+  /** Clear task-local files and detach the current session scope. */
+  resetSession: () => void;
 }
 
 export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFiles {
@@ -102,6 +104,8 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
 
   // Monotonic attempt tokens per draft resist stale completions.
   const attemptsRef = useRef(new Map<string, number>());
+  // Scope changes (conversation switch/new task) invalidate late async work.
+  const scopeGenerationRef = useRef(0);
   const capabilitiesPromiseRef = useRef<Promise<UploadCapabilities> | null>(null);
 
   // Abort every in-flight upload when the owning component unmounts so
@@ -215,6 +219,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     async (incoming: File[] | ArrayLike<File>, sessionId: string): Promise<void> => {
       const files = Array.from(incoming as ArrayLike<File>);
       if (files.length === 0) return;
+      const generation = scopeGenerationRef.current;
       // Legacy example file staged: refuse mixing with the file_ids protocol.
       if (stateRef.current.legacyFile) return;
       if (stateRef.current.sessionId !== sessionId) {
@@ -223,6 +228,7 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
         dispatch(action);
       }
       const capabilities = await ensureCapabilities();
+      if (scopeGenerationRef.current !== generation) return;
       // Capabilities may require a network round-trip. A legacy example can
       // be staged while that request is in flight, so re-check the protocol
       // intent before planning drafts or launching any uploads.
@@ -347,10 +353,14 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
   }, []);
 
   const rehydrateFromServer = useCallback(async (sessionId: string): Promise<SessionFileSnapshot[]> => {
+    const generation = ++scopeGenerationRef.current;
     queueRef.current!.cancelAll();
     attemptsRef.current.clear();
     const snapshots = await apiRef.current.listFiles(sessionId);
-    dispatch({ type: 'rehydrate', sessionId, snapshots });
+    if (scopeGenerationRef.current !== generation) return snapshots;
+    const action = { type: 'rehydrate' as const, sessionId, snapshots };
+    stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
+    dispatch(action);
     return snapshots;
   }, []);
 
@@ -358,6 +368,15 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     queueRef.current!.cancelAll();
     attemptsRef.current.clear();
     dispatch({ type: 'clear_turn' });
+  }, []);
+
+  const resetSession = useCallback(() => {
+    scopeGenerationRef.current += 1;
+    queueRef.current!.cancelAll();
+    attemptsRef.current.clear();
+    const action = { type: 'reset_session' as const };
+    stateRef.current = reducerModule.sessionFilesReducer(stateRef.current, action);
+    dispatch(action);
   }, []);
 
   return {
@@ -377,5 +396,6 @@ export function useSessionFiles(options: UseSessionFilesOptions): UseSessionFile
     prepare,
     rehydrateFromServer,
     clearTurn,
+    resetSession,
   };
 }

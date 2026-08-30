@@ -215,6 +215,10 @@ export const CommonEn = {
   app_in_mind: "Don't have an app in mind? to",
   explore: 'Explore',
   new_task: 'New Task',
+  new_task_interrupt_title: 'Interrupt current task?',
+  new_task_interrupt_content:
+    'A task is still running. Starting a new task will interrupt it and discard the current progress.',
+  new_task_interrupt_ok: 'Interrupt & Start New',
   all_tasks: 'All Tasks',
   view_all: 'View All',
   no_tasks: 'No history tasks',

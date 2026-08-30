@@ -2,6 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
+import { useNewTaskGuard, useNewTaskOwner, useStartNewTask } from '@/modules/new-task';
 import {
   ATTACHMENT_PREVIEW_DRAWER_STYLES,
   AttachmentPreview,
@@ -566,6 +567,8 @@ const Playground: NextPage = () => {
 
   // --- Session files (Task12): rail drafts + send snapshots ---------------
   const sessionFiles = useSessionFiles({ api: sessionFilesApi });
+  const resetSessionFiles = sessionFiles.resetSession;
+  const rehydrateSessionFiles = sessionFiles.rehydrateFromServer;
   const hasSessionFileDrafts = sessionFiles.files.length > 0;
   // Legacy example file staged in the rail (legacy file_path protocol).
   const hasLegacyFile = !!sessionFiles.legacyFile;
@@ -909,6 +912,12 @@ const Playground: NextPage = () => {
   // and the conversation-switch effect can both reach it. Ownership stays
   // with the streaming loop in handleStart, which clears it in `finally`.
   const chatAbortControllerRef = useRef<AbortController | null>(null);
+  // Every task transition invalidates async work captured by an older epoch.
+  const taskEpochRef = useRef(0);
+  const historyRequestRef = useRef(0);
+  const historyAbortControllerRef = useRef<AbortController | null>(null);
+  const exampleAbortControllerRef = useRef<AbortController | null>(null);
+  const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
 
   const abortInFlightChat = useCallback(() => {
     chatAbortControllerRef.current?.abort();
@@ -938,6 +947,105 @@ const Playground: NextPage = () => {
     }>;
   } | null>(null);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
+
+  const resetTaskSession = useCallback(() => {
+    // Invalidate first: anything already awaiting network/stream/file work is
+    // no longer allowed to commit into the blank task that follows.
+    taskEpochRef.current += 1;
+    historyRequestRef.current += 1;
+    conversationIdRef.current = null;
+    sendInFlightRef.current = false;
+    exampleRunInFlightRef.current = false;
+    abortInFlightChat();
+    historyAbortControllerRef.current?.abort();
+    historyAbortControllerRef.current = null;
+    exampleAbortControllerRef.current?.abort();
+    exampleAbortControllerRef.current = null;
+    cancelSummaryPresentation();
+    message.destroy('example-loading');
+
+    resetSessionFiles();
+    closeSessionFilePreview();
+    fileDragDepthRef.current = 0;
+    terminatedStepIdsRef.current.clear();
+    lastSentPayloadRef.current = null;
+
+    setMessages([]);
+    setConversationId(null);
+    setQuery('');
+    setLoading(false);
+    setHistoryLoading(false);
+    setQueuedSendAfterUpload(false);
+    setIsFileDragActive(false);
+    setExecutionMap({});
+    setActiveMessageId(null);
+    setActiveViewMsgId(null);
+    setActiveSubAgent(null);
+    setArtifacts([]);
+    setCreatedSkillNames({});
+    setRightPanelTab('preview');
+    setRightPanelView('execution');
+    setRightPanelCollapsed(false);
+    setStreamingSummary('');
+    setSummaryComplete(false);
+    setTaskPlan([]);
+    setSelectedStepId(null);
+    setSelectedCitationIndex(null);
+    setPendingFinalization(null);
+    setPendingSummaryPresentation(null);
+    setSummaryPresentationResponseId(null);
+    setPreviewArtifact(null);
+    setContextStatus(null);
+    setPendingQuestion(null);
+    setScheduleOpen(false);
+    // Attached resources are per-task context: a fresh task must not inherit
+    // the previous task's database / knowledge / skill / connector picks.
+    setSelectedDb(null);
+    setSelectedKnowledge(null);
+    setSelectedSkill(null);
+    setSelectedConnectors([]);
+    setIsDbModalOpen(false);
+    setIsKnowledgeModalOpen(false);
+    setIsSkillPanelOpen(false);
+    setSkillSearchQuery('');
+    setIsKnowledgePanelOpen(false);
+    setKnowledgeSearchQuery('');
+    setIsDbPanelOpen(false);
+    setDbSearchQuery('');
+    setIsConnectorPanelOpen(false);
+    setConnectorSearchQuery('');
+    dismiss();
+  }, [abortInFlightChat, cancelSummaryPresentation, closeSessionFilePreview, dismiss, resetSessionFiles]);
+
+  useNewTaskOwner(resetTaskSession);
+
+  // A new-task command issued while a turn is streaming (or an example run is
+  // still preparing) is destructive — it aborts the request and discards the
+  // round — so gate it behind an explicit confirmation. Idle sessions resolve
+  // synchronously and never see the dialog.
+  const confirmInterruptRunningTask = useCallback((): boolean | Promise<boolean> => {
+    if (!sendInFlightRef.current && !exampleRunInFlightRef.current) return true;
+    return new Promise<boolean>(resolve => {
+      let settled = false;
+      const settle = (confirmed: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(confirmed);
+      };
+      Modal.confirm({
+        title: t('new_task_interrupt_title'),
+        content: t('new_task_interrupt_content'),
+        okText: t('new_task_interrupt_ok'),
+        cancelText: t('cancel'),
+        okButtonProps: { danger: true },
+        onOk: () => settle(true),
+        onCancel: () => settle(false),
+      });
+    });
+  }, [t]);
+  useNewTaskGuard(confirmInterruptRunningTask);
+
+  const startNewTask = useStartNewTask();
 
   const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
     const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
@@ -1068,36 +1176,24 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
-    cancelSummaryPresentation();
     const convId = router.query.id as string | undefined;
-    if (convId && convId !== conversationId) {
-      // Abort any in-flight turn before switching away — its stream would
-      // otherwise keep writing into global UI state (loading, right panel)
-      // of the newly opened conversation.
-      abortInFlightChat();
-      loadConversation(convId);
+    if (convId && convId !== conversationIdRef.current) {
+      resetTaskSession();
+      const transitionEpoch = taskEpochRef.current;
+      void loadConversationRef.current(convId);
       // Rebuild the composer rail from the server-owned session files so a
       // conversation switch never leaks drafts from another session scope.
-      void sessionFiles.rehydrateFromServer(convId);
-      closeSessionFilePreview();
-    } else if (!convId && conversationId) {
-      // URL 中 id 消失（如点击 new_task / 探索广场），清空当前会话状态
-      abortInFlightChat();
-      setMessages([]);
-      setConversationId(null);
-      setQuery('');
-      setExecutionMap({});
-      setActiveMessageId(null);
-      setActiveViewMsgId(null);
-      setArtifacts([]);
-      setRightPanelTab('preview');
-      setStreamingSummary('');
-      setSummaryComplete(false);
-      setTaskPlan([]);
-      sessionFiles.clearTurn();
-      closeSessionFilePreview();
+      void rehydrateSessionFiles(convId).catch(error => {
+        if (taskEpochRef.current !== transitionEpoch) return;
+        console.error('Failed to restore conversation files', error);
+      });
+    } else if (!convId && conversationIdRef.current) {
+      // Browser back / direct route changes use the same reset command as the
+      // explicit new-task affordances. The command itself already clears the
+      // ref before removing ?id, so its route completion remains idempotent.
+      resetTaskSession();
     }
-  }, [abortInFlightChat, cancelSummaryPresentation, closeSessionFilePreview, router.query.id]);
+  }, [rehydrateSessionFiles, resetTaskSession, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -1805,6 +1901,8 @@ const Playground: NextPage = () => {
     )
       return;
 
+    const taskEpoch = taskEpochRef.current;
+
     cancelSummaryPresentation();
 
     let finalQuery = inputQuery;
@@ -1844,14 +1942,27 @@ const Playground: NextPage = () => {
         setQueuedSendAfterUpload(sessionFiles.isUploading);
         sendSnapshot = await sessionFiles.prepare(currentConvId);
       } catch (prepareErr: any) {
+        if (taskEpochRef.current !== taskEpoch) return;
         message.error(prepareErr?.message || '附件校验失败，请重试');
         return;
       } finally {
-        setQueuedSendAfterUpload(false);
+        if (taskEpochRef.current === taskEpoch) setQueuedSendAfterUpload(false);
       }
       if (sendSnapshot && sendSnapshot.fileIds.length === 0 && !sendSnapshot.legacyFile) {
         sendSnapshot = null;
       }
+    }
+    if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
+    // Shallow-write the conversation id into the URL once the send is
+    // committed: every same-page affordance (sidebar logo / explore links,
+    // also pointing at '/') becomes a real transition whose id removal
+    // drives the shared reset, and the active session survives reloads and
+    // deep-links. `replace` keeps the back stack clean; the ref already
+    // equals the id being written, so the router effect no-ops here.
+    if (router.query.id !== currentConvId) {
+      router.replace({ pathname: '/', query: { ...(router.query ?? {}), id: currentConvId } }, undefined, {
+        shallow: true,
+      });
     }
     if (sendSnapshot?.legacyFile && !finalQuery.trim()) {
       // Legacy example-card default (unchanged from the preloaded flow).
@@ -1999,6 +2110,7 @@ const Playground: NextPage = () => {
       let buffer = '';
 
       const processEvent = (raw: string) => {
+        if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (!raw.startsWith('data:')) return;
         const data = raw.slice(5).trim();
         if (!data) return;
@@ -2397,7 +2509,7 @@ const Playground: NextPage = () => {
         // round in place and mark it stopped. Updates are keyed by responseId
         // and guarded by conversation ownership, so an abort triggered by
         // switching away is a safe no-op on the newly shown conversation.
-        if (conversationIdRef.current === currentConvId) {
+        if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
@@ -2421,6 +2533,7 @@ const Playground: NextPage = () => {
           setTaskPlan([]);
         }
       } else {
+        if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         message.error(err?.message || 'Failed to get response');
         setMessages(prev => {
           const newMessages = [...prev];
@@ -2436,7 +2549,9 @@ const Playground: NextPage = () => {
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
       }
-      setLoading(false);
+      if (taskEpochRef.current === taskEpoch) {
+        setLoading(false);
+      }
     }
   };
 
@@ -2445,11 +2560,14 @@ const Playground: NextPage = () => {
     // crossed an await. These refs serialize every send entry point, including
     // the composer and delayed example-card execution.
     if (sendInFlightRef.current || exampleRunInFlightRef.current) return;
+    const taskEpoch = taskEpochRef.current;
     sendInFlightRef.current = true;
     try {
       await performStart(...args);
     } finally {
-      sendInFlightRef.current = false;
+      if (taskEpochRef.current === taskEpoch) {
+        sendInFlightRef.current = false;
+      }
     }
   };
 
@@ -2459,7 +2577,9 @@ const Playground: NextPage = () => {
     const translatedQuery = (queryVal && queryVal !== queryKey ? queryVal : example.query) as string;
 
     if (loading || sendInFlightRef.current || exampleRunInFlightRef.current) return;
+    const taskEpoch = taskEpochRef.current;
     exampleRunInFlightRef.current = true;
+    let exampleController: AbortController | null = null;
 
     try {
       message.loading({ content: '正在加载示例...', key: 'example-loading', duration: 0 });
@@ -2474,9 +2594,20 @@ const Playground: NextPage = () => {
           message.warning('示例文件与本地上传的附件不能混用，请先移除已选附件');
           return;
         }
-        const res = await axios.post(`${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`, {
-          example_id: example.id,
-        });
+        exampleController = new AbortController();
+        exampleAbortControllerRef.current = exampleController;
+        const res = await axios.post(
+          `${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`,
+          {
+            example_id: example.id,
+          },
+          {
+            signal: exampleController.signal,
+          },
+        );
+        if (taskEpochRef.current !== taskEpoch) {
+          return;
+        }
 
         if (res?.success && res?.data) {
           exampleLegacyFile = {
@@ -2521,35 +2652,28 @@ const Playground: NextPage = () => {
       exampleRunInFlightRef.current = false;
       await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile);
     } catch (err: unknown) {
+      if (taskEpochRef.current !== taskEpoch) return;
       message.destroy('example-loading');
       console.error('Example click error:', err);
       const errMessage = err instanceof Error ? err.message : 'Unknown error';
       message.error('加载示例失败: ' + errMessage);
     } finally {
-      exampleRunInFlightRef.current = false;
+      if (exampleAbortControllerRef.current === exampleController) {
+        exampleAbortControllerRef.current = null;
+      }
+      if (taskEpochRef.current === taskEpoch) {
+        exampleRunInFlightRef.current = false;
+      }
     }
   };
 
   // Clear chat history
-  const handleClearChat = () => {
-    cancelSummaryPresentation();
-    setMessages([]);
-    setConversationId(null);
-    setQuery('');
-    setExecutionMap({});
-    setActiveMessageId(null);
-    setActiveViewMsgId(null);
-    setArtifacts([]);
-    setRightPanelTab('preview');
-    setStreamingSummary('');
-    setSummaryComplete(false);
-    sessionFiles.clearTurn();
-    closeSessionFilePreview();
-    setSelectedCitationIndex(null);
-    setPendingFinalization(null);
-    setPendingSummaryPresentation(null);
-    router.push('/', undefined, { shallow: true });
-  };
+  const handleClearChat = useCallback(() => {
+    void startNewTask().catch(error => {
+      console.error('Failed to clear the current task', error);
+      message.error('新建任务失败');
+    });
+  }, [startNewTask]);
 
   const restoreFromHistory = (
     historyMessages: Array<{ role: string; context: string; order?: number; model_name?: string }>,
@@ -2741,10 +2865,17 @@ const Playground: NextPage = () => {
   };
 
   const loadConversation = async (convUid: string) => {
-    if (historyLoading) return;
+    const requestVersion = ++historyRequestRef.current;
+    const taskEpoch = taskEpochRef.current;
+    historyAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    historyAbortControllerRef.current = controller;
     setHistoryLoading(true);
     try {
-      const res: any = await axios.get(`/api/v1/chat/dialogue/messages/history?con_uid=${convUid}`);
+      const res: any = await axios.get(`/api/v1/chat/dialogue/messages/history?con_uid=${convUid}`, {
+        signal: controller.signal,
+      });
+      if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       let msgList: any[] | null = null;
       if (res?.success && Array.isArray(res.data)) {
         msgList = res.data;
@@ -2755,7 +2886,8 @@ const Playground: NextPage = () => {
       } else if (Array.isArray(res)) {
         msgList = res;
       }
-      if (msgList && msgList.length > 0) {
+      if (msgList) {
+        conversationIdRef.current = convUid;
         setConversationId(convUid);
         restoreFromHistory(
           msgList.map((m: any) => ({
@@ -2767,12 +2899,19 @@ const Playground: NextPage = () => {
         );
       }
     } catch (e) {
+      if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
       console.error('Failed to load conversation', e);
       message.error('加载历史对话失败');
     } finally {
-      setHistoryLoading(false);
+      if (historyAbortControllerRef.current === controller) {
+        historyAbortControllerRef.current = null;
+      }
+      if (historyRequestRef.current === requestVersion && taskEpochRef.current === taskEpoch) {
+        setHistoryLoading(false);
+      }
     }
   };
+  loadConversationRef.current = loadConversation;
 
   // Share current conversation — create share link and copy to clipboard
   const handleShare = async () => {
