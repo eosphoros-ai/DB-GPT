@@ -27,6 +27,7 @@ def scan_serve_configs():
         "dbgpt_serve.flow",
         "dbgpt_serve.libro",
         "dbgpt_serve.model",
+        "dbgpt_serve.observability",
         "dbgpt_serve.prompt",
         "dbgpt_serve.rag",
         "dbgpt_serve.connector",  # External connectors serve
@@ -130,6 +131,22 @@ def register_serve_apps(
         ),
     )
     # ################################ Conversation Serve Register End ################
+
+    # ################################ Observability Serve Register Begin ############
+    from dbgpt_serve.observability.serve import Serve as ObservabilityServe
+
+    # Register serve app
+    system_app.register(
+        ObservabilityServe,
+        api_prefix="/api/v1/observability",
+        config=get_config(
+            serve_configs,
+            ObservabilityServe.name,
+            dbgpt_serve.observability.serve.ServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ################################ Observability Serve Register End ##############
 
     # ################################ AWEL Flow Serve Register Begin #################
     from dbgpt_serve.flow.serve import Serve as FlowServe

@@ -421,6 +421,15 @@ def initialize_tracer(
     storage_container = SpanStorageContainer(system_app)
     tracer_filename = resolve_root_path(tracer_filename)
     storage_container.append_storage(FileSpanStorage(tracer_filename))
+    # Fan spans out to the isolated observability SQLite store by default, so the
+    # /observability dashboard has data out-of-box (no external deps, no manual
+    # tracer_storage_cls config). Set tracer_storage_cls to swap/extend it.
+    try:
+        from dbgpt.util.tracer.sqlite_span_storage import SqliteSpanStorage
+
+        storage_container.append_storage(SqliteSpanStorage())
+    except Exception as e:
+        logger.warning(f"SqliteSpanStorage unavailable, observability disabled: {e}")
     if tracer_parameters and tracer_parameters.exporter == "telemetry":
         from dbgpt.util.tracer.opentelemetry import OpenTelemetrySpanStorage
 
