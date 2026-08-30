@@ -168,7 +168,7 @@ class SparkConnector(BaseConnector):
 
     def table_simple_info(self):
         """Get table simple info."""
-        return f"{self.table_name}{self.get_fields()}"
+        return f"{self.table_name}{self.get_fields(self.table_name)}"
 
     def get_table_comments(self, db_name):
         """Get table comments."""
