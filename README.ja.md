@@ -365,4 +365,4 @@ DB-GPTを使用してAgent開発に関する内容について知りたい場合
 コミュニティを構築するために取り組んでいます。コミュニティの構築に関するアイデアがあれば、お気軽にお問い合わせください。
 [![](https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat)](https://discord.gg/7uQnPuveTY)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![Star History Chart](https://star-history.dera.page/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.dera.page/#csunny/DB-GPT)

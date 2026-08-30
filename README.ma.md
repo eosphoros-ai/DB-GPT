@@ -378,5 +378,5 @@ DB-GPT-യിലേക്ക് സംഭാവന ചെയ്ത എല്ല�
 - [ട്വിറ്റർ](https://x.com/DBGPT_AI) ⭐️：ദയവായി ഞങ്ങളോട് സംസാരിക്കാൻ മടിക്കരുത്.  
 
 
-[![സ്റ്റാർ ചരിത്ര ചാർട്ട്](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![സ്റ്റാർ ചരിത്ര ചാർട്ട്](https://star-history.dera.page/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.dera.page/#csunny/DB-GPT)
 

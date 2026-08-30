@@ -488,4 +488,4 @@ We are working on building a community, if you have any ideas for building the c
 - [Twitter](https://x.com/DBGPT_AI) ⭐️：Please feel free to talk to us.  
 
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![Star History Chart](https://star-history.dera.page/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.dera.page/#csunny/DB-GPT)

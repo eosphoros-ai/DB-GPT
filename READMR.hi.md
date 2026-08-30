@@ -359,4 +359,4 @@ DB-GPT में योगदान करने वाले सभी लो�
 - [ट्विटर](https://x.com/DBGPT_AI) ⭐️: कृपया हमसे बात करने के लिए स्वतंत्र महसूस करें।  
 
 
-[![स्टार इतिहास चार्ट](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![स्टार इतिहास चार्ट](https://star-history.dera.page/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.dera.page/#csunny/DB-GPT)

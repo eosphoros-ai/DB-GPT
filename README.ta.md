@@ -372,4 +372,4 @@ DB-GPT-க்கு பங்களித்த அனைவருக்கு�
 - [Github விவாதங்கள்](https://github.com/orgs/eosphoros-ai/discussions) ⭐️: உங்கள் அனுபவத்தை அல்லது தனித்துவமான பயன்பாடுகளைப் பகிரவும். 
 - [Twitter](https://x.com/DBGPT_AI) ⭐️: தயவுசெய்து எங்களுடன் பேச தயங்க வேண்டாம். 
 
-[![நட்சத்திர வரலாற்று விளக்கப்படம்](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
+[![நட்சத்திர வரலாற்று விளக்கப்படம்](https://star-history.dera.page/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.dera.page/#csunny/DB-GPT)
