@@ -31,6 +31,7 @@ function Database() {
     dbType?: DBType;
     dbTypeData?: any[];
     description?: string;
+    displayName?: string;
   }>({ open: false });
   const [draw, setDraw] = useState<{
     open: boolean;
@@ -84,7 +85,13 @@ function Database() {
         element.default_value = item.params[element.param_name];
       }
     }
-    setModal({ open: true, info: item.id, dbType: item.type, description: item.description });
+    setModal({
+      open: true,
+      info: item.id,
+      dbType: item.type,
+      description: item.description,
+      displayName: item.display_name,
+    });
   };
 
   const onDelete = (item: DBItem) => {
@@ -204,6 +211,7 @@ function Database() {
           dbTypeList={dbTypeList}
           getFromRenderData={getFromRenderData}
           description={modal.description}
+          displayName={modal.displayName}
           choiceDBType={modal.dbType}
           editValue={modal.info}
           dbTypeData={modal.dbTypeData}
@@ -239,7 +247,7 @@ function Database() {
               {dbListByType[draw.type].map(item => (
                 <Card
                   key={item.params?.database || item.params?.path || ''}
-                  title={item.params?.database || getFileName(item.params?.path) || ''}
+                  title={item.display_name || item.params?.database || getFileName(item.params?.path) || ''}
                   extra={
                     <>
                       <RedoOutlined

@@ -12,6 +12,11 @@ class DatasourceServeRequest(BaseModel):
     id: Optional[int] = Field(None, description="The datasource id")
     db_type: str = Field(..., description="Database type, e.g. sqlite, mysql, etc.")
     db_name: str = Field(..., description="Database name.")
+    display_name: Optional[str] = Field(
+        "",
+        description="Human-friendly alias for display; falls back to db_name "
+        "when empty.",
+    )
     db_path: Optional[str] = Field("", description="File path for file-based database.")
     db_host: Optional[str] = Field("", description="Database host.")
     db_port: Optional[int] = Field(0, description="Database port.")
@@ -34,6 +39,11 @@ class DatasourceServeResponse(BaseModel):
     id: int = Field(None, description="The datasource id")
     db_type: str = Field(..., description="Database type, e.g. sqlite, mysql, etc.")
     db_name: str = Field(..., description="Database name.")
+    display_name: Optional[str] = Field(
+        "",
+        description="Human-friendly alias for display; falls back to db_name "
+        "when empty.",
+    )
     db_path: Optional[str] = Field("", description="File path for file-based database.")
     db_host: Optional[str] = Field("", description="Database host.")
     db_port: Optional[int] = Field(0, description="Database port.")
@@ -74,6 +84,11 @@ class DatasourceCreateRequest(BaseModel):
     )
     description: Optional[str] = Field(
         None, description="Optional description of the datasource."
+    )
+    display_name: Optional[str] = Field(
+        None,
+        description="Human-friendly alias for display; falls back to db_name "
+        "when empty.",
     )
     id: Optional[int] = Field(None, description="The datasource id")
 

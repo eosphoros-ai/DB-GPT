@@ -18,6 +18,7 @@ interface DatabaseFormProps {
   getFromRenderData?: ConfigurableParams[];
   dbNames?: string[];
   description?: string; // Add description prop
+  displayName?: string; // Editable alias shown in lists
 }
 
 function DatabaseForm({
@@ -29,6 +30,7 @@ function DatabaseForm({
   getFromRenderData,
   dbNames = [],
   description = '', // Default value for description
+  displayName = '', // Default value for alias
 }: DatabaseFormProps) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -50,8 +52,10 @@ function DatabaseForm({
       setParams(getFromRenderData);
       // set description
       form.setFieldValue('description', description);
+      // set alias
+      form.setFieldValue('display_name', displayName);
     }
-  }, [editValue, getFromRenderData, description, form]);
+  }, [editValue, getFromRenderData, description, displayName, form]);
 
   const handleTypeChange = (value: DBType) => {
     setSelectedType(value);
@@ -75,12 +79,13 @@ function DatabaseForm({
       //   return;
       // }
 
-      const { description, type, ...values } = formValues;
+      const { description, display_name, type, ...values } = formValues;
 
       const data = {
         type: selectedType,
         params: values,
         description: description || '',
+        display_name: display_name || '',
       };
 
       // If in edit mode, add id
@@ -131,6 +136,10 @@ function DatabaseForm({
       </FormItem>
 
       {params && <ConfigurableForm params={params} form={form} />}
+
+      <FormItem label={t('datasource_alias')} name='display_name'>
+        <Input placeholder={t('input_datasource_alias')} />
+      </FormItem>
 
       <FormItem label={t('description')} name='description'>
         <Input.TextArea rows={2} placeholder={t('input_description')} />

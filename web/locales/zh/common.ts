@@ -102,6 +102,8 @@ export const CommonZh: Resources['translation'] = {
   select_database_type: '选择数据库类型',
   description: '描述',
   input_description: '请输入描述',
+  datasource_alias: '别名',
+  input_datasource_alias: '可选。展示在数据源列表中的友好名称，为空时回退显示数据库名',
   Port: '端口',
   Username: '用户名',
   Password: '密码',

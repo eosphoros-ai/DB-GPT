@@ -35,6 +35,11 @@ class ConnectConfigEntity(Model):
 
     db_type = Column(String(255), nullable=False, comment="db type")
     db_name = Column(String(255), nullable=False, comment="db name")
+    display_name = Column(
+        String(255),
+        nullable=True,
+        comment="Human-friendly alias for display; falls back to db_name when empty",
+    )
     db_path = Column(String(255), nullable=True, comment="file db path")
     db_host = Column(String(255), nullable=True, comment="db connect host(not file db)")
     db_port = Column(String(255), nullable=True, comment="db connect port(not file db)")
@@ -298,6 +303,7 @@ class ConnectConfigDao(BaseDao):
             id=entity.id,
             db_type=entity.db_type,
             db_name=entity.db_name,
+            display_name=entity.display_name,
             db_path=entity.db_path,
             db_host=entity.db_host,
             db_port=entity.db_port,
@@ -333,6 +339,7 @@ class ConnectConfigDao(BaseDao):
             id=entity.id,
             db_type=entity.db_type,
             db_name=entity.db_name,
+            display_name=entity.display_name,
             db_path=entity.db_path,
             db_host=entity.db_host,
             db_port=entity.db_port,

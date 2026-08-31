@@ -94,6 +94,8 @@ export const CommonEn = {
   select_database_type: 'Select database type',
   description: 'Description',
   input_description: 'Please input description',
+  datasource_alias: 'Alias',
+  input_datasource_alias: 'Optional. A friendly name shown in lists; falls back to the database name when empty',
   Port: 'Port',
   Username: 'Username',
   Password: 'Password',
