@@ -177,13 +177,20 @@ class SynthoraiLLMClient(OpenAILLMClient):
 # part of the group.
 #
 # Provenance, because these numbers are reported as fact through
-# supported_models(): max_output_length is the per-model output cap Synthorai
-# enforces on the gateway, so a request above it fails there regardless of what
-# the underlying vendor allows. context_length is the context window the
-# upstream model family documents. The public catalog at
-# https://synthorai.io/models/ lists which models are available but does not
-# publish either limit, so neither column can be re-derived from it - check
-# these against the gateway's own per-model configuration when updating.
+# supported_models(): both columns are the limits Synthorai enforces per model
+# on its own side - context_length from the gateway's max_input_tokens and
+# max_output_length from its max_output_tokens - so a request over either fails
+# at the gateway whatever the underlying vendor would have allowed. They are
+# deliberately the gateway's numbers rather than the vendor's for that reason.
+#
+# The public catalog at https://synthorai.io/models/ lists which models exist
+# but publishes neither limit, so this table cannot be re-derived from it.
+#
+# One caveat when updating: a model reachable through more than one upstream can
+# carry different caps per route, and this table has one row per model. Each
+# entry below is the cap of the route that model normally serves from, so
+# re-check against the gateway's own per-model configuration rather than
+# assuming a single number covers every route.
 register_proxy_model_adapter(
     SynthoraiLLMClient,
     supported_models=[
