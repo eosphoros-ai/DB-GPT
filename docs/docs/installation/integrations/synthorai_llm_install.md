@@ -18,9 +18,13 @@ Model ids are bare rather than vendor-prefixed — `claude-opus-5`, `gpt-5.6-sol
 # Expose the port for the web server, if you want to run it directly from the Dockerfile
 EXPOSE 5670
 
-# Set the environment variable for the Synthorai API key
-ENV SYNTHORAI_API_KEY="***"
-
 # Just uncomment the following line in the `Dockerfile` to use Synthorai:
 CMD ["dbgpt", "start", "webserver", "--config", "configs/dbgpt-proxy-synthorai.toml"]
+```
+
+Pass the key in at run time rather than baking it into the image with `ENV` — a
+key set at build time stays in the image layers and travels with anyone who pulls it:
+
+```bash
+docker run -it --rm -e SYNTHORAI_API_KEY="your-key" -p 5670:5670 dbgpt:latest
 ```

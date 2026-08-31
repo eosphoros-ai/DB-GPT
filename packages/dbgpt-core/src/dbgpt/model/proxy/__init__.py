@@ -17,9 +17,9 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.nvidia import NvidiaLLMClient
     from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
     from dbgpt.model.proxy.llms.orcarouter import OrcaRouterLLMClient
-    from dbgpt.model.proxy.llms.synthorai import SynthoraiLLMClient
     from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
     from dbgpt.model.proxy.llms.spark import SparkLLMClient
+    from dbgpt.model.proxy.llms.synthorai import SynthoraiLLMClient
     from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
     from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
     from dbgpt.model.proxy.llms.yi import YiLLMClient

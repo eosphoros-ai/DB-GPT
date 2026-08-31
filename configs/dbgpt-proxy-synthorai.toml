@@ -19,5 +19,5 @@ persist_path = "pilot/data"
 [models]
 [[models.llms]]
 name = "${env:LLM_MODEL_NAME:-claude-opus-5}"
-provider = "proxy/synthorai"
+provider = "${env:LLM_MODEL_PROVIDER:-proxy/synthorai}"
 api_key = "${env:SYNTHORAI_API_KEY}"

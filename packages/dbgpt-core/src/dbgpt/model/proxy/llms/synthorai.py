@@ -134,6 +134,33 @@ class SynthoraiLLMClient(OpenAILLMClient):
         return model
 
     @classmethod
+    def new_client(
+        cls,
+        model_params: SynthoraiDeployModelParameters,
+        default_executor=None,
+    ) -> "SynthoraiLLMClient":
+        """Create a new client with the model parameters.
+
+        Overridden to pass ``context_length`` through untouched. The inherited
+        version clamps it with ``max(model_params.context_length or 8192, 8192)``,
+        so an unset window arrives as 8192 rather than ``None`` and the
+        constructor's own 128K default below stops applying - the client then
+        reports 8192 for a model whose ``supported_models()`` entry advertises
+        200K-1M. ``DeepseekLLMClient.new_client`` overrides it for the same
+        reason, passing ``model_params.context_length`` straight through.
+        """
+        return cls(
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
+            proxy=model_params.http_proxy,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
+        )
+
+    @classmethod
     def param_class(cls) -> Type[SynthoraiDeployModelParameters]:
         return SynthoraiDeployModelParameters
 
@@ -147,8 +174,16 @@ class SynthoraiLLMClient(OpenAILLMClient):
 # Grouped by (family, context, output) rather than by family. Families do not
 # share limits - Claude spans 200K and 1M context, DeepSeek's output ranges from
 # 8192 to 393216 - so collapsing a family onto one limit would misstate it for
-# part of the group, and these numbers are reported as fact. Generated from
-# https://synthorai.io/api/models; every chat model there carries real limits.
+# part of the group.
+#
+# Provenance, because these numbers are reported as fact through
+# supported_models(): max_output_length is the per-model output cap Synthorai
+# enforces on the gateway, so a request above it fails there regardless of what
+# the underlying vendor allows. context_length is the context window the
+# upstream model family documents. The public catalog at
+# https://synthorai.io/models/ lists which models are available but does not
+# publish either limit, so neither column can be re-derived from it - check
+# these against the gateway's own per-model configuration when updating.
 register_proxy_model_adapter(
     SynthoraiLLMClient,
     supported_models=[
