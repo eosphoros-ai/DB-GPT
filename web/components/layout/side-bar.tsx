@@ -2,6 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import { delDialogue, getDialogueList } from '@/client/api/request';
 import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
+import { useStartNewTask } from '@/modules/new-task';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
@@ -74,10 +75,18 @@ function SideBar() {
     pathname === '/models_evaluation' ||
     pathname.startsWith('/observability');
   const { t, i18n } = useTranslation();
+  const startNewTask = useStartNewTask();
   const [logo, setLogo] = useState<string>('/logo_zh_latest.png');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dialogueList, setDialogueList] = useState<IChatDialogueSchema[]>([]);
   const [loadingDialogues, setLoadingDialogues] = useState(false);
+
+  const handleStartNewTask = useCallback(() => {
+    void startNewTask().catch(error => {
+      console.error('Failed to start a new task', error);
+      message.error(i18n.language === 'en' ? 'Failed to start a new task' : '新建任务失败');
+    });
+  }, [i18n.language, startNewTask]);
 
   const fetchDialogueList = useCallback(async () => {
     setLoadingDialogues(true);
@@ -371,12 +380,14 @@ function SideBar() {
       </div>
 
       {/* New Task Button */}
-      <Link href='/'>
-        <div className='flex items-center justify-center gap-2 px-4 py-2.5 mb-4 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'>
-          <PlusOutlined className='text-xs' />
-          <span>{t('new_task')}</span>
-        </div>
-      </Link>
+      <button
+        type='button'
+        onClick={handleStartNewTask}
+        className='flex items-center justify-center gap-2 w-full px-4 py-2.5 mb-4 border-0 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'
+      >
+        <PlusOutlined className='text-xs' />
+        <span>{t('new_task')}</span>
+      </button>
 
       {/* Functions */}
       <div className='flex flex-col gap-1'>

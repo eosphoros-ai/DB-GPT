@@ -84,6 +84,21 @@ test('add accepts a batch in order with orthogonal initial states', () => {
   }
 });
 
+test('reset_session clears task files and detaches the session while preserving capabilities', () => {
+  const bound = sessionFilesReducer(addFiles(withCaps(initialSessionFilesState()), makeFile('a.csv', 10)), {
+    type: 'bind_session',
+    sessionId: 'sess-1',
+  });
+
+  const reset = sessionFilesReducer(bound, { type: 'reset_session' });
+
+  assert.equal(reset.sessionId, null);
+  assert.deepEqual(reset.files, []);
+  assert.equal(reset.legacyFile, null);
+  assert.equal(reset.capabilities, CAPS);
+  assert.equal(reset.capabilitiesSource, 'server');
+});
+
 test('rejects duplicate identity (name,size,lastModified) across separate adds', () => {
   const first = addFiles(withCaps(initialSessionFilesState()), makeFile('a.csv', 10, 7));
   // Same identity, different File instance.
