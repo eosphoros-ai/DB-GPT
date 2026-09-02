@@ -107,6 +107,7 @@ RUN if [ "$USE_TSINGHUA_UBUNTU" = "true" ]; then \
     apt-get update && apt-get install -y \
     python${PYTHON_VERSION} \
     python${PYTHON_VERSION}-venv \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
