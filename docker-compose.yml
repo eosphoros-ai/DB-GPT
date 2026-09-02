@@ -7,6 +7,7 @@ services:
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       MYSQL_ROOT_PASSWORD: 'aa123456'
+      TZ: "${TZ:-Asia/Shanghai}"
     ports:
       - 3306:3306
     volumes:
@@ -27,6 +28,7 @@ services:
       - MYSQL_PORT=3306
       - MYSQL_DATABASE=dbgpt
       - MYSQL_USER=root
+      - TZ=${TZ:-Asia/Shanghai}
     volumes:
       - ./configs:/app/configs
       - /data:/data
