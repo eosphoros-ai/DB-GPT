@@ -329,8 +329,8 @@ LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu மற்றும் ப
 ## உரிமம்
 MIT உரிமம் (MIT)
 
-## DISCKAIMER
-- [disckaimer](./DISCKAIMER.md)
+## DISCLAIMER
+- [disckaimer](./DISCLAIMER.md)
 
 ## மேற்கோள்
 DB-GPT இன் ஒட்டுமொத்த கட்டமைப்பைப் புரிந்து கொள்ள விரும்பினால், <a href="https://arxiv.org/abs/2312.17449" target="_blank">காகிதம்</a> மற்றும் <a href="https://arxiv.org/abs/2404.10209" target="_blank">காகிதம்</a> ஆகியவற்றை மேற்கோள் காட்டுங்கள்.
