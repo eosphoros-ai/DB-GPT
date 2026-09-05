@@ -71,6 +71,16 @@
       "read_actions": ["tavily_search", "tavily_extract", "tavily_crawl", "tavily_map"]
     },
     {
+      "type": "parallel",
+      "display_name": "Parallel Search",
+      "description": "网页搜索与内容提取，无需 Parallel 账号或 API Key，有使用限制；调用时查询、URL 和上下文会发送至 Parallel",
+      "icon": "parallel",
+      "category": "search",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": [],
+      "read_actions": ["web_search", "web_fetch"]
+    },
+    {
       "type": "deepwiki",
       "display_name": "DeepWiki",
       "description": "任意 GitHub 仓库的 AI 解读与问答",
