@@ -99,7 +99,7 @@ class SQLiteConnector(RDBMSConnector):
         _engine_args["connect_args"] = {"check_same_thread": False}
         # _engine_args["echo"] = True
         directory = os.path.dirname(file_path)
-        if not os.path.exists(directory):
+        if directory and not os.path.exists(directory):
             os.makedirs(directory)
         return cls(create_engine("sqlite:///" + file_path, **_engine_args), **kwargs)
 
