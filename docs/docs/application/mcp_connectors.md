@@ -15,7 +15,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 
 ## Highlights
 
-- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, and DeepWiki.
+- **Built-in templates**: Activate Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, Parallel Search, and DeepWiki.
 - **Custom MCP servers** — Connect any SSE or Streamable HTTP MCP endpoint with your own auth.
 - **Per-conversation selection** — Choose which connectors to attach in the composer; the agent's prompt stays focused and token-efficient.
 - **Human-in-the-loop confirmation** — Write actions (create / update / delete) pop a confirmation dialog before they run.
@@ -55,6 +55,7 @@ A connector lives in one of three states:
 | Notion | Document | Streamable HTTP | Pages and databases read / write |
 | Linear | Project | Streamable HTTP | Issues / projects collaboration |
 | Tavily | Search | Streamable HTTP | LLM-optimized web search, returns Markdown |
+| Parallel Search | Search | Streamable HTTP | Public web search and page content extraction, no Parallel API key required |
 | DeepWiki | Dev Tools | Streamable HTTP | AI reading & Q&A over any GitHub repo |
 
 ## Managing connectors
@@ -85,6 +86,17 @@ Click **Add Connector** to open the dialog:
 | **Connector description** | Optional. Shown in the agent's tool description. |
 
 For a custom server, just provide the endpoint URL, transport, and authentication. Credentials are encrypted before they are stored.
+
+### Connect Parallel Search without an API key
+
+1. Activate the **Parallel Search** template on the **Connectors** page.
+2. Enter `https://search.parallel.ai/mcp` as the server URL, select **Streamable HTTP**, and set **Auth type** to `none`. No Parallel account or API key is required.
+3. Save the connector, then inspect its `web_search` and `web_fetch` tools.
+4. Attach it to a conversation using **Select MCP** in the composer.
+
+Once attached, the agent can call these tools automatically. Queries, requested URLs, and any supplied objectives or context are sent to Parallel. Free access is rate limited. Only include information you intend to send to this service. See the [Parallel Search MCP documentation](https://docs.parallel.ai/integrations/mcp/search-mcp) for service details.
+
+Deselect the connector in the composer to stop using it in that conversation, or delete it from the **Connectors** page. Adding the template does not activate it or change existing connectors.
 
 ### Inspect the tools
 
