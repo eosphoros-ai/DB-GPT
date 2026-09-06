@@ -175,7 +175,7 @@ def _update_template(
             if isinstance(old_metadata, ViewMetadata):
                 if not isinstance(obj_type, DAGNode):
                     return None
-                obj_type.metadata
+                return obj_type.metadata
             elif isinstance(old_metadata, ResourceMetadata):
                 metadata_attr = f"_resource_metadata_{obj_type.__name__}"
                 return getattr(obj_type, metadata_attr)
