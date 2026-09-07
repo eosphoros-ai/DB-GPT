@@ -50,7 +50,14 @@ import {
   ISyncBatchResponse,
   SpaceConfig,
 } from '@/types/knowledge';
-import { BaseModelParams, IModelData, StartModelParams, SupportModel } from '@/types/model';
+import {
+  BaseModelParams,
+  IModelData,
+  ModelProvider,
+  ProviderConfig,
+  StartModelParams,
+  SupportModel,
+} from '@/types/model';
 import { AxiosRequestConfig } from 'axios';
 import { DELETE, GET, POST, PUT } from '.';
 
@@ -298,6 +305,74 @@ export const startModel = (data: BaseModelParams) => {
 
 export const getSupportModels = () => {
   return GET<null, Array<SupportModel>>('/api/v2/serve/model/model-types');
+};
+
+// List model providers and their supported models (two-level catalog)
+export const getModelProviders = (workerType?: string) => {
+  return GET<{ worker_type?: string }, Array<ModelProvider>>('/api/v2/serve/model/providers', {
+    worker_type: workerType,
+  });
+};
+
+// Provider ids contain "/" (e.g. "proxy/openai"), so pass them as query/body
+// parameters instead of path segments to avoid route-matching issues.
+
+// Get the stored provider configuration (connection state + enabled models)
+export const getProviderConfig = (provider: string) => {
+  return GET<{ provider: string }, ProviderConfig>('/api/v2/serve/model/providers/config', { provider });
+};
+
+// Save provider credentials (connect the provider)
+export const saveProviderConfig = (provider: string, data: { api_key?: string; api_base?: string }) => {
+  return PUT<{ provider: string; api_key?: string; api_base?: string }, boolean>(
+    '/api/v2/serve/model/providers/config',
+    { provider, ...data },
+  );
+};
+
+// Connect a provider and auto-enable all of its models
+export const connectModelProvider = (provider: string, data: { api_key?: string; api_base?: string }) => {
+  return POST<
+    { provider: string; api_key?: string; api_base?: string },
+    { connected: boolean; enabled_models: string[] }
+  >('/api/v2/serve/model/providers/connect', { provider, ...data });
+};
+
+// Disconnect a provider: stop its enabled models and clear its key
+export const disconnectModelProvider = (provider: string) => {
+  return POST<{ provider: string }, boolean>('/api/v2/serve/model/providers/disconnect', { provider });
+};
+
+// Create a custom OpenAI-compatible provider (no code change required)
+export const createCustomProvider = (data: { label: string; api_base: string; api_key: string; models: string[] }) => {
+  return POST<typeof data, { provider: string; label: string; enabled_models: string[] }>(
+    '/api/v2/serve/model/providers/custom',
+    data,
+  );
+};
+
+// Save the enabled model list under a provider (enable/disable models)
+export const saveProviderEnabledModels = (provider: string, enabled_models: string[]) => {
+  return PUT<{ provider: string; enabled_models: string[] }, boolean>('/api/v2/serve/model/providers/models', {
+    provider,
+    enabled_models,
+  });
+};
+
+// Enable a model: start its proxy worker so it becomes a usable model
+export const enableProviderModel = (provider: string, model: string) => {
+  return POST<{ provider: string; model: string }, boolean>('/api/v2/serve/model/providers/models/enable', {
+    provider,
+    model,
+  });
+};
+
+// Disable a model: stop its proxy worker
+export const disableProviderModel = (provider: string, model: string) => {
+  return POST<{ provider: string; model: string }, boolean>('/api/v2/serve/model/providers/models/disable', {
+    provider,
+    model,
+  });
 };
 
 /** Agent */

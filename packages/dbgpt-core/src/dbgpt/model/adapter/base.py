@@ -815,6 +815,7 @@ def get_model_adapter(
 def get_supported_models(worker_type: str) -> List[SupportedModel]:
     """Get the supported models."""
     models = []
+    from dbgpt.model.utils.models_dev import get_models_dev_models
     from dbgpt.util.parameter_utils import _get_parameter_descriptions
 
     adapters = (
@@ -831,6 +832,37 @@ def get_supported_models(worker_type: str) -> List[SupportedModel]:
             is_proxy = provider == ModelType.PROXY or provider.startswith(
                 ModelType.PROXY
             )
+            params_desc = _get_parameter_descriptions(params_cls)
+
+            # Prefer the models.dev snapshot (fresher / richer metadata) when an
+            # entry exists for this provider; fall back to the hardcoded registry.
+            # models.dev only covers LLM models, so keep embedding/reranker on
+            # the hardcoded registry.
+            models_dev_models = None
+            if worker_type == WorkerType.LLM.value:
+                models_dev_models = get_models_dev_models(provider)
+            if models_dev_models:
+                for md in models_dev_models:
+                    if not md.get("model"):
+                        continue
+                    models.append(
+                        SupportedModel(
+                            model=md["model"],
+                            worker_type=worker_type,
+                            provider=provider,
+                            proxy=is_proxy,
+                            enabled=True,
+                            params=params_desc,
+                            description=md.get("description") or "",
+                            label=md.get("name") or md["model"],
+                            context_length=md.get("context_length"),
+                            max_output_length=md.get("max_output_length"),
+                            function_calling=md.get("function_calling"),
+                            link=None,
+                        )
+                    )
+                continue
+
             for m in model_adapter.supported_models():
                 real_models = m.model if isinstance(m.model, list) else [m.model]
                 for model_name in real_models:
@@ -845,8 +877,13 @@ def get_supported_models(worker_type: str) -> List[SupportedModel]:
                         provider=provider,
                         proxy=is_proxy,
                         enabled=True,
-                        params=_get_parameter_descriptions(params_cls),
+                        params=params_desc,
                         description=description,
+                        label=m.label or model_name,
+                        context_length=getattr(m, "context_length", None),
+                        max_output_length=getattr(m, "max_output_length", None),
+                        function_calling=getattr(m, "function_calling", None),
+                        link=m.link or None,
                     )
                     models.append(sm)
         except Exception as e:

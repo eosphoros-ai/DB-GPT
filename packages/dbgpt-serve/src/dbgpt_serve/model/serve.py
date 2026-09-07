@@ -44,6 +44,7 @@ class Serve(BaseServe):
         self._db_manager: Optional[DatabaseManager] = None
         self._config = config
         self._model_storage: Optional[StorageInterface] = None
+        self._provider_config_storage: Optional[StorageInterface] = None
 
     def init_app(self, system_app: SystemApp):
         if self._app_has_initiated:
@@ -67,12 +68,18 @@ class Serve(BaseServe):
         """
         # import your own module here to ensure the module is loaded before the
         # application starts
-        from .models.models import ServeEntity as _  # noqa: F401
+        from .models.models import (  # noqa: F401
+            ModelProviderConfigEntity,
+            ServeEntity,
+        )
 
     def after_init(self):
         """Called before the start of the application."""
-        from .models.model_adapter import ModelStorageAdapter
-        from .models.models import ServeEntity
+        from .models.model_adapter import (
+            ModelProviderConfigAdapter,
+            ModelStorageAdapter,
+        )
+        from .models.models import ModelProviderConfigEntity, ServeEntity
 
         self._db_manager = self.create_or_get_db_manager()
         serializer = JsonSerializer()
@@ -88,12 +95,29 @@ class Serve(BaseServe):
         else:
             raise ValueError(f"Invalid model storage type: {self.config.model_storage}")
 
+        if self.config.model_storage == "memory":
+            self._provider_config_storage = InMemoryStorage(serializer)
+        else:
+            self._provider_config_storage = SQLAlchemyStorage(
+                self._db_manager,
+                ModelProviderConfigEntity,
+                ModelProviderConfigAdapter(),
+                serializer,
+            )
+
     @property
     def model_storage(self) -> StorageInterface:
         """Get the model storage of the serve app with db storage"""
         if not self._model_storage:
             raise ValueError("Model storage is not initialized")
         return self._model_storage
+
+    @property
+    def provider_config_storage(self) -> StorageInterface:
+        """Get the provider-level configuration storage."""
+        if not self._provider_config_storage:
+            raise ValueError("Provider config storage is not initialized")
+        return self._provider_config_storage
 
     @property
     def config(self) -> ServeConfig:

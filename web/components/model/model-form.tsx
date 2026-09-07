@@ -14,17 +14,31 @@ const FormItem = Form.Item;
 // The supported worker types
 const WORKER_TYPES = ['llm', 'text2vec', 'reranker'];
 
-function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) {
+interface ModelFormProps {
+  onCancel: () => void;
+  onSuccess: () => void;
+  // When both are provided, the form is opened with a fixed provider/worker
+  // type (e.g. from the model config page) and only asks for model name + key.
+  defaultProvider?: string;
+  defaultWorkerType?: string;
+  // Shared provider-level credentials. When present, the api key is inherited
+  // from the provider and the form no longer asks for it.
+  providerConfig?: { api_key?: string; api_base?: string };
+}
+
+function ModelForm({ onCancel, onSuccess, defaultProvider, defaultWorkerType, providerConfig }: ModelFormProps) {
   const { t } = useTranslation();
   const [_, setModels] = useState<Array<SupportModel> | null>([]);
-  const [selectedWorkerType, setSelectedWorkerType] = useState<string>();
-  const [selectedProvider, setSelectedProvider] = useState<string>();
+  const [selectedWorkerType, setSelectedWorkerType] = useState<string | undefined>(defaultWorkerType);
+  const [selectedProvider, setSelectedProvider] = useState<string | undefined>(defaultProvider);
   const [params, setParams] = useState<Array<ConfigurableParams> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [form] = Form.useForm();
 
   const [groupedModels, setGroupedModels] = useState<{ [key: string]: SupportModel[] }>({});
   const [providers, setProviders] = useState<string[]>([]);
+
+  const isPreset = Boolean(defaultWorkerType && defaultProvider);
 
   async function getModels() {
     const [, res] = await apiInterceptors(getSupportModels());
@@ -52,7 +66,19 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
 
   useEffect(() => {
     getModels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // When opened with a preset provider/worker type, apply the selection once
+  // the supported models have loaded.
+  useEffect(() => {
+    if (!defaultWorkerType || !defaultProvider || Object.keys(groupedModels).length === 0) return;
+    setSelectedWorkerType(defaultWorkerType);
+    updateProvidersByWorkerType(defaultWorkerType);
+    form.setFieldValue('worker_type', defaultWorkerType);
+    applyProvider(defaultProvider, defaultWorkerType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupedModels, defaultWorkerType, defaultProvider]);
 
   // Filter and set available providers based on worker_type
   function updateProvidersByWorkerType(workerType: string) {
@@ -73,19 +99,24 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     updateProvidersByWorkerType(value);
   }
 
-  function handleProviderChange(value: string) {
-    setSelectedProvider(value);
-    form.setFieldValue('provider', value);
+  function applyProvider(provider: string, workerType: string | undefined) {
+    setSelectedProvider(provider);
+    form.setFieldValue('provider', provider);
 
-    // Get the params of the first model that matches the selected worker_type under the current provider as the default params
-    const providerModels = groupedModels[value] || [];
-    const filteredModels = providerModels.filter(m => m.worker_type === selectedWorkerType);
+    // Get the params of the first model that matches the worker_type under the
+    // current provider as the default params.
+    const providerModels = groupedModels[provider] || [];
+    const filteredModels = providerModels.filter(m => m.worker_type === workerType);
     if (filteredModels.length > 0) {
       const firstModel = filteredModels[0];
       if (firstModel?.params) {
         setParams(Array.isArray(firstModel.params) ? firstModel.params : [firstModel.params]);
       }
     }
+  }
+
+  function handleProviderChange(value: string) {
+    applyProvider(value, selectedWorkerType);
   }
 
   async function onFinish(values: any) {
@@ -122,7 +153,14 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
 
     setLoading(true);
     try {
-      const processedValues = processFormValues(values);
+      const processedValues = {
+        ...processFormValues(values),
+        // provider is required by the backend even when it is preset and hidden
+        provider: selectedProvider,
+        // inherit shared provider credentials so the user doesn't re-enter them
+        ...(providerConfig?.api_key ? { api_key: providerConfig.api_key } : {}),
+        ...(providerConfig?.api_base ? { api_base: providerConfig.api_base } : {}),
+      };
       const selectedModel = groupedModels[selectedProvider]?.find(m => m.model === processedValues.name);
 
       const params: StartModelParams = {
@@ -146,6 +184,20 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
     }
   }
 
+  // Simplify the config form: for API (proxy) providers only surface the api key,
+  // leaving api_base / concurrency / verbosity etc. to their backend defaults.
+  // Local providers keep their full parameter set.
+  function getVisibleParams(): Array<ConfigurableParams> | null {
+    if (!params) return null;
+    const hasApiKey = params.some(p => p.param_name === 'api_key');
+    // If the provider already carries a key, don't ask for it again.
+    const apiKeySupplied = Boolean(providerConfig?.api_key);
+    return params
+      .filter(p => p.param_name !== 'name')
+      .filter(p => (hasApiKey ? p.param_name === 'api_key' && !apiKeySupplied : true))
+      .map(p => (p.param_name === 'api_key' ? { ...p, label: t('model_api_key') } : p));
+  }
+
   const renderTooltipContent = (model: SupportModel) => (
     <div className='max-w-md'>
       <div className='whitespace-pre-wrap markdown-body'>
@@ -159,30 +211,34 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
 
   return (
     <Form form={form} labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} onFinish={onFinish}>
-      <FormItem
-        label='Worker Type'
-        name='worker_type'
-        rules={[{ required: true, message: t('worker_type_select_tips') }]}
-      >
-        <Select onChange={handleWorkerTypeChange} placeholder={t('model_select_worker_type')}>
-          {WORKER_TYPES.map(type => (
-            <Option key={type} value={type}>
-              {type}
-            </Option>
-          ))}
-        </Select>
-      </FormItem>
+      {!isPreset && (
+        <>
+          <FormItem
+            label='Worker Type'
+            name='worker_type'
+            rules={[{ required: true, message: t('worker_type_select_tips') }]}
+          >
+            <Select onChange={handleWorkerTypeChange} placeholder={t('model_select_worker_type')}>
+              {WORKER_TYPES.map(type => (
+                <Option key={type} value={type}>
+                  {type}
+                </Option>
+              ))}
+            </Select>
+          </FormItem>
 
-      {selectedWorkerType && (
-        <FormItem label='Provider' name='provider' rules={[{ required: true, message: t('provider_select_tips') }]}>
-          <Select onChange={handleProviderChange} placeholder={t('model_select_provider')} value={selectedProvider}>
-            {providers.map(provider => (
-              <Option key={provider} value={provider}>
-                {provider}
-              </Option>
-            ))}
-          </Select>
-        </FormItem>
+          {selectedWorkerType && (
+            <FormItem label='Provider' name='provider' rules={[{ required: true, message: t('provider_select_tips') }]}>
+              <Select onChange={handleProviderChange} placeholder={t('model_select_provider')} value={selectedProvider}>
+                {providers.map(provider => (
+                  <Option key={provider} value={provider}>
+                    {provider}
+                  </Option>
+                ))}
+              </Select>
+            </FormItem>
+          )}
+        </>
       )}
 
       {selectedProvider && selectedWorkerType && params && (
@@ -216,7 +272,7 @@ function ModelForm({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: (
             />
           </FormItem>
 
-          <ConfigurableForm params={params.filter(p => p.param_name !== 'name')} form={form} />
+          <ConfigurableForm params={getVisibleParams()} form={form} />
         </>
       )}
 

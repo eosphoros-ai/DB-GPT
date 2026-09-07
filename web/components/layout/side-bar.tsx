@@ -183,18 +183,19 @@ function SideBar() {
       <div className='px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider'>{t('management')}</div>
       <div
         onClick={() => {
-          router.push('/construct/models');
+          router.push('/construct/models-config');
           setSettingsOpen(false);
         }}
         className={cls(
           'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
           {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/models'),
+            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
+              pathname.startsWith('/construct/models-config'),
           },
         )}
       >
         <Icon component={ModelSvg} className='text-cyan-500' />
-        <span>{t('model_manage')}</span>
+        <span>{t('model_provider_config')}</span>
       </div>
       <div
         onClick={() => {

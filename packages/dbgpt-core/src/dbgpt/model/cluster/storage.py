@@ -251,3 +251,110 @@ class ModelStorage:
             identifier (ModelStorageIdentifier): The identifier of the model.
         """
         self._storage.delete(identifier)
+
+
+@dataclass
+class ModelProviderConfigIdentifier(ResourceIdentifier):
+    """Resource identifier for a provider-level configuration."""
+
+    provider: str
+
+    @property
+    def str_identifier(self) -> str:
+        return self.provider
+
+    def to_dict(self) -> Dict:
+        return {"provider": self.provider}
+
+
+@dataclass
+class ModelProviderConfigItem(StorageItem):
+    """Persistent per-provider configuration.
+
+    Holds the connection credentials (api_key / api_base) and the list of
+    model names enabled under this provider. This is independent from the
+    running worker instances managed by ``ModelStorage``.
+    """
+
+    provider: str = field(metadata={"help": "The provider id, e.g. proxy/openai"})
+    label: Optional[str] = field(
+        default=None, metadata={"help": "Display name for custom providers"}
+    )
+    api_key: Optional[str] = field(
+        default=None, metadata={"help": "The API key of the provider"}
+    )
+    api_base: Optional[str] = field(
+        default=None, metadata={"help": "The API base url of the provider"}
+    )
+    enabled_models: List[str] = field(
+        default_factory=list,
+        metadata={"help": "The enabled model names under this provider"},
+    )
+
+    _identifier: ModelProviderConfigIdentifier = field(init=False)
+
+    def __post_init__(self):
+        self._identifier = ModelProviderConfigIdentifier(provider=self.provider)
+
+    @property
+    def identifier(self) -> ResourceIdentifier:
+        return self._identifier
+
+    @property
+    def connected(self) -> bool:
+        """Whether the provider is connected (has an api key)."""
+        return bool(self.api_key)
+
+    @property
+    def is_custom(self) -> bool:
+        """Whether this is a user-defined (OpenAI-compatible) provider."""
+        return self.provider.startswith("custom/")
+
+    def merge(self, other: "ModelProviderConfigItem") -> None:
+        if not isinstance(other, ModelProviderConfigItem):
+            raise ValueError(f"Cannot merge with {type(other)}")
+        self.label = other.label
+        self.api_key = other.api_key
+        self.api_base = other.api_base
+        self.enabled_models = other.enabled_models
+
+    def to_dict(self) -> Dict:
+        return {
+            "provider": self.provider,
+            "label": self.label,
+            "api_key": self.api_key,
+            "api_base": self.api_base,
+            "enabled_models": self.enabled_models,
+        }
+
+    def from_object(self, other: "ModelProviderConfigItem") -> None:
+        self.label = other.label
+        self.api_key = other.api_key
+        self.api_base = other.api_base
+        self.enabled_models = other.enabled_models
+
+
+class ModelProviderConfigStorage:
+    """Storage for provider-level configurations."""
+
+    def __init__(self, storage: StorageInterface):
+        self._storage = storage
+
+    def get(self, provider: str) -> Optional[ModelProviderConfigItem]:
+        """Get the provider configuration, if any."""
+        items = self._storage.query(
+            QuerySpec(conditions={"provider": provider}), ModelProviderConfigItem
+        )
+        return items[0] if items else None
+
+    def list_all(self) -> List[ModelProviderConfigItem]:
+        """List all provider configurations."""
+        return self._storage.query(QuerySpec(conditions={}), ModelProviderConfigItem)
+
+    def save_or_update(self, item: ModelProviderConfigItem) -> None:
+        """Save or update a provider configuration."""
+        self._storage.save_or_update(item)
+
+    def delete(self, provider: str) -> None:
+        """Delete a provider configuration."""
+        self._storage.delete(ModelProviderConfigIdentifier(provider=provider))
