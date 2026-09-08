@@ -153,6 +153,21 @@ def _cmd(lang):
     raise NotImplementedError(f"{lang} not recognized in code execution")
 
 
+def _resolve_work_dir_filepath(work_dir: str, filename: str) -> str:
+    """Resolve a relative filename while keeping it inside work_dir."""
+    work_dir_path = pathlib.Path(work_dir).resolve()
+    filename_path = pathlib.Path(filename)
+    if filename_path.is_absolute():
+        raise ValueError("filename must be a relative path inside work_dir")
+
+    filepath = (work_dir_path / filename_path).resolve()
+    try:
+        filepath.relative_to(work_dir_path)
+    except ValueError as exc:
+        raise ValueError("filename must stay inside work_dir") from exc
+    return str(filepath)
+
+
 def execute_code(
     code: Optional[str] = None,
     timeout: Optional[int] = None,
@@ -175,7 +190,9 @@ def execute_code(
             stored when `code` is None. If None, a file with a randomly generated name
             will be created. The randomly generated file will be deleted after
             execution. The file name must be a relative path. Relative paths are
-            relative to the working directory.
+            resolved against the working directory and must stay inside it after
+            resolving path components and symlinks. Absolute paths, path traversal,
+            and symlinks that point outside the working directory are rejected.
         work_dir (Optional, str): The working directory for the code execution.
             If None, a default working directory will be used.
             The default working directory is the "extensions" directory under
@@ -246,7 +263,7 @@ def execute_code(
         filename = f"tmp_code_{code_hash}.{'py' if lang.startswith('python') else lang}"
     if work_dir is None:
         work_dir = WORKING_DIR
-    filepath = os.path.join(work_dir, filename)
+    filepath = _resolve_work_dir_filepath(work_dir, filename)
     file_dir = os.path.dirname(filepath)
     os.makedirs(file_dir, exist_ok=True)
     if code is not None:
