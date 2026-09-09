@@ -2,6 +2,7 @@ import logging
 import ssl
 from contextlib import asynccontextmanager
 from datetime import timedelta
+from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
@@ -224,6 +225,30 @@ def _normalise_transport(transport: str | None) -> str:
     return key
 
 
+def _validate_streamable_http_url(url: str, headers: dict[str, Any] | None) -> None:
+    """Reject cleartext credentials except for explicitly local MCP endpoints.
+
+    Header names are arbitrary, so treat any supplied headers as potentially
+    sensitive. Check the literal hostname without DNS resolution; private
+    network addresses and lookalike localhost domains are not loopback.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme != "http" or (not headers and parsed.username is None):
+        return
+    host = (parsed.hostname or "").lower()
+    if host == "localhost":
+        return
+    try:
+        if ip_address(host).is_loopback:
+            return
+    except ValueError:
+        pass
+    raise ValueError(
+        "MCP Streamable HTTP endpoints with headers or URL credentials require "
+        "HTTPS, except for localhost and literal loopback addresses."
+    )
+
+
 @asynccontextmanager
 async def streamable_http_client(
     url: str,
@@ -239,11 +264,17 @@ async def streamable_http_client(
     alongside the streams; SDK 2.x yields just the streams. Both are exposed
     as ``(read, write)`` so callers do not depend on the SDK version.
 
+    Endpoints with headers or URL credentials require HTTPS unless they use
+    localhost or a literal loopback address. Since custom header names can
+    carry secrets, this applies to all supplied headers. The adapter-owned
+    modern HTTP client does not follow redirects; configure the final MCP
+    URL explicitly. Legacy clients retain their SDK's redirect behavior.
+
     Note on ``verify``: the SDK's HTTP client factory has no verify knob,
     so the argument is accepted for symmetry with :func:`sse_client` but is
-    currently a no-op. Custom CA / verify=False for streamable HTTP must be
-    configured via env (``SSL_CERT_FILE`` / ``REQUESTS_CA_BUNDLE``) for now.
+    currently a no-op. Certificate trust uses the installed SDK's defaults.
     """
+    _validate_streamable_http_url(url, headers)
     # Local import keeps the dependency lazy: if the installed mcp lib does
     # not ship the streamable_http module yet (mcp < 1.8.0), users only hit
     # this when they actually pick the streamable_http transport — not at
@@ -275,6 +306,9 @@ async def streamable_http_client(
         # Use the SDK factory: 1.x uses httpx, while 2.x uses httpx2. The
         # renamed transport accepts an HTTP client, not headers/timeouts.
         async with create_mcp_http_client(headers=headers) as http_client:
+            # Do not forward requests or custom credential headers to a
+            # redirect target, including internal services on another origin.
+            http_client.follow_redirects = False
             http_client.timeout = (timeout, sse_read_timeout, timeout, timeout)
             async with client_factory(url, http_client=http_client) as streams:
                 yield streams[0], streams[1]
