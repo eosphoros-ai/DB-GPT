@@ -26,5 +26,6 @@ Pass the key in at run time rather than baking it into the image with `ENV` — 
 key set at build time stays in the image layers and travels with anyone who pulls it:
 
 ```bash
-docker run -it --rm -e DAOXE_API_KEY="your-key" -p 5670:5670 dbgpt:latest
+docker build -t dbgpt-daoxe:latest .
+docker run -it --rm -e DAOXE_API_KEY="your-key" -p 5670:5670 dbgpt-daoxe:latest
 ```
