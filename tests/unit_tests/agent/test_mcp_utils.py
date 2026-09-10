@@ -3,7 +3,7 @@
 Requires MCP, httpx, httpx-sse, pytest and pytest-asyncio. Tests marked
 ``integration`` bind ephemeral loopback ports and need local socket access;
 they do not contact external servers. Run only unit tests with
-``pytest tests/unit_tests/agent/test_mcp_utils.py -m 'not integration'``.
+``uv run pytest tests/unit_tests/agent/test_mcp_utils.py -m 'not integration'``.
 """
 
 import builtins
