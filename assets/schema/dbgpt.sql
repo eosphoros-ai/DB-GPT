@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `connect_config`
     `id`       int          NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
     `db_type`  varchar(255) NOT NULL COMMENT 'db type',
     `db_name`  varchar(255) NOT NULL COMMENT 'db name',
+    `display_name` varchar(255) DEFAULT NULL COMMENT 'Human-friendly alias for display; falls back to db_name when empty',
     `db_path`  varchar(255) DEFAULT NULL COMMENT 'file db path',
     `db_host`  varchar(255) DEFAULT NULL COMMENT 'db connect host(not file db)',
     `db_port`  varchar(255) DEFAULT NULL COMMENT 'db cnnect port(not file db)',
