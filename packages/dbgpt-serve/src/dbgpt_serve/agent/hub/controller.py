@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from typing import List
 
-from fastapi import APIRouter, Body, File, UploadFile
+from fastapi import APIRouter, Body, Depends, File, UploadFile
 
 from dbgpt.agent.resource.tool.autogpt.plugins_util import scan_plugins
 from dbgpt.agent.resource.tool.pack import AutoGPTPluginToolPack
@@ -16,6 +16,7 @@ from dbgpt_serve.agent.model import (
     PluginHubFilter,
     PluginHubParam,
 )
+from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
 from .db.my_plugin_db import MyPluginEntity
 from .db.plugin_hub_db import PluginHubEntity
@@ -45,7 +46,10 @@ module_plugin = ModulePlugin()
 
 
 @router.post("/v1/agent/hub/update", response_model=Result[str])
-async def plugin_hub_update(update_param: PluginHubParam = Body()):
+async def plugin_hub_update(
+    update_param: PluginHubParam = Body(),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
     logger.info(f"plugin_hub_update:{update_param.__dict__}")
     try:
         branch = (

@@ -57,7 +57,7 @@ class PDFKnowledge(Knowledge):
             if content_type == "text":
                 # use regex to match the first level title
                 first_level_match = re.match(
-                    r"§(\d+)+([\u4e00-\u9fa5]+)", inside_content.strip()
+                    r"§(\d+)([\u4e00-\u9fa5]+)", inside_content.strip()
                 )
                 second_level_match = re.match(
                     r"(\d+\.\d+)([\u4e00-\u9fa5]+)", inside_content.strip()

@@ -1,5 +1,4 @@
 import json
-import re
 import time
 import uuid
 from typing import AsyncIterator, Optional
@@ -232,6 +231,24 @@ async def no_stream_wrapper(
         )
 
 
+def _extract_sse_json_payload(output: str) -> Optional[dict]:
+    data_index = output.find("data:")
+    if data_index < 0:
+        return None
+
+    payload = output[data_index + len("data:") :].lstrip()
+    if not payload or payload[0] != "{":
+        return None
+
+    try:
+        parsed, _ = json.JSONDecoder().raw_decode(payload)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    return parsed
+
+
 async def chat_app_stream_wrapper(request: ChatCompletionRequestBody = None):
     """chat app stream
     Args:
@@ -245,10 +262,8 @@ async def chat_app_stream_wrapper(request: ChatCompletionRequestBody = None):
         user_code=request.user_name,
         sys_code=request.sys_code,
     ):
-        match = re.search(r"data:\s*({.*})", output)
-        if match:
-            json_str = match.group(1)
-            vis = json.loads(json_str)
+        vis = _extract_sse_json_payload(output)
+        if vis:
             vis_content = vis.get("vis", None)
             if vis_content != "[DONE]":
                 choice_data = ChatCompletionResponseStreamChoice(
