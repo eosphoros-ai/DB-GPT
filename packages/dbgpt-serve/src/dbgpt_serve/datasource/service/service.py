@@ -309,7 +309,11 @@ class Service(
         if not db_config:
             raise HTTPException(status_code=404, detail="datasource not found")
 
-        self._db_summary_client.delete_db_profile(db_config.db_name)
+        deleted = self._db_summary_client.delete_db_profile(db_config.db_name)
+        if not deleted:
+            # Startup or a previous refresh is already indexing this database;
+            # do not block the HTTP request behind the schema/embedding job.
+            return True
         # The cached connector's reflected MetaData may be stale relative
         # to whatever caused the refresh; force a rebuild on next access.
         self.datasource_manager.invalidate_connector(db_config.db_name)
