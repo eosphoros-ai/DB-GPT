@@ -10,9 +10,12 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.deepseek import DeepseekLLMClient
     from dbgpt.model.proxy.llms.gemini import GeminiLLMClient
     from dbgpt.model.proxy.llms.gitee import GiteeLLMClient
+    from dbgpt.model.proxy.llms.github_copilot import GithubCopilotLLMClient
+    from dbgpt.model.proxy.llms.groq import GroqLLMClient
     from dbgpt.model.proxy.llms.infiniai import InfiniAILLMClient
     from dbgpt.model.proxy.llms.litellm import LiteLLMClient
     from dbgpt.model.proxy.llms.minimax import MiniMaxLLMClient
+    from dbgpt.model.proxy.llms.mistral import MistralLLMClient
     from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
     from dbgpt.model.proxy.llms.nvidia import NvidiaLLMClient
     from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
@@ -20,7 +23,9 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
     from dbgpt.model.proxy.llms.spark import SparkLLMClient
     from dbgpt.model.proxy.llms.tongyi import TongyiLLMClient
+    from dbgpt.model.proxy.llms.vercel import VercelAIGatewayLLMClient
     from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
+    from dbgpt.model.proxy.llms.xai import XaiLLMClient
     from dbgpt.model.proxy.llms.yi import YiLLMClient
     from dbgpt.model.proxy.llms.zhipu import ZhipuLLMClient
 
@@ -43,10 +48,15 @@ def __lazy_import(name):
         "OllamaLLMClient": "dbgpt.model.proxy.llms.ollama",
         "OrcaRouterLLMClient": "dbgpt.model.proxy.llms.orcarouter",
         "DeepseekLLMClient": "dbgpt.model.proxy.llms.deepseek",
+        "GithubCopilotLLMClient": "dbgpt.model.proxy.llms.github_copilot",
         "GiteeLLMClient": "dbgpt.model.proxy.llms.gitee",
         "InfiniAILLMClient": "dbgpt.model.proxy.llms.infiniai",
         "LiteLLMClient": "dbgpt.model.proxy.llms.litellm",
         "MiniMaxLLMClient": "dbgpt.model.proxy.llms.minimax",
+        "GroqLLMClient": "dbgpt.model.proxy.llms.groq",
+        "MistralLLMClient": "dbgpt.model.proxy.llms.mistral",
+        "VercelAIGatewayLLMClient": "dbgpt.model.proxy.llms.vercel",
+        "XaiLLMClient": "dbgpt.model.proxy.llms.xai",
     }
 
     if name in module_path:
@@ -77,8 +87,13 @@ __all__ = [
     "OllamaLLMClient",
     "OrcaRouterLLMClient",
     "DeepseekLLMClient",
+    "GithubCopilotLLMClient",
     "GiteeLLMClient",
     "InfiniAILLMClient",
     "LiteLLMClient",
     "MiniMaxLLMClient",
+    "GroqLLMClient",
+    "MistralLLMClient",
+    "VercelAIGatewayLLMClient",
+    "XaiLLMClient",
 ]

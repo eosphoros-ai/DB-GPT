@@ -367,6 +367,27 @@ export const enableProviderModel = (provider: string, model: string) => {
   });
 };
 
+// GitHub Copilot OAuth device flow: request a user code, then poll until the
+// user has authorized at github.com/login/device (same flow as opencode).
+export type CopilotDeviceCode = {
+  verification_uri: string;
+  user_code: string;
+  device_code: string;
+  interval: number;
+};
+
+export type CopilotPollResult = { status: 'success' | 'pending' | 'slow_down'; enabled_models?: string[] };
+
+export const copilotAuthStart = () => {
+  return POST<void, CopilotDeviceCode>('/api/v2/serve/model/providers/github_copilot/auth/start', undefined as never);
+};
+
+export const copilotAuthPoll = (deviceCode: string) => {
+  return GET<{ device_code: string }, CopilotPollResult>('/api/v2/serve/model/providers/github_copilot/auth/poll', {
+    device_code: deviceCode,
+  });
+};
+
 // Disable a model: stop its proxy worker
 export const disableProviderModel = (provider: string, model: string) => {
   return POST<{ provider: string; model: string }, boolean>('/api/v2/serve/model/providers/models/disable', {

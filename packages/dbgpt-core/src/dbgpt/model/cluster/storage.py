@@ -302,8 +302,10 @@ class ModelProviderConfigItem(StorageItem):
 
     @property
     def connected(self) -> bool:
-        """Whether the provider is connected (has an api key)."""
-        return bool(self.api_key)
+        """Whether the provider is connected (has an api key if required)."""
+        from dbgpt.model.utils.provider_test import NO_API_KEY_REQUIRED_PROVIDERS
+
+        return bool(self.api_key) or self.provider in NO_API_KEY_REQUIRED_PROVIDERS
 
     @property
     def is_custom(self) -> bool:

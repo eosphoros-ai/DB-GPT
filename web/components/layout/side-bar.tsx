@@ -36,6 +36,8 @@ type RouteItem = {
   activeIconSrc?: string;
   path: string;
   isActive?: boolean;
+  /** Antd icon fallback when no picture asset exists for the route. */
+  IconComponent?: React.ComponentType<{ className?: string }>;
 };
 
 function smallMenuItemStyle(active?: boolean) {
@@ -70,7 +72,6 @@ function SideBar() {
     pathname.startsWith('/construct/prompt') ||
     pathname.startsWith('/construct/dbgpts') ||
     pathname.startsWith('/construct/models') ||
-    pathname.startsWith('/construct/scheduled-tasks') ||
     pathname === '/models_evaluation' ||
     pathname.startsWith('/observability');
   const { t, i18n } = useTranslation();
@@ -167,12 +168,28 @@ function SideBar() {
         path: '/construct/database',
       },
       {
+        key: 'connectors',
+        name: t('connectors'),
+        isActive: pathname.startsWith('/construct/connectors'),
+        iconSrc: '',
+        IconComponent: props => <ApiOutlined className='text-violet-500' {...props} />,
+        path: '/construct/connectors',
+      },
+      {
         key: 'knowledge',
         name: t('knowledge'),
         isActive: pathname.startsWith('/construct/knowledge'),
         iconSrc: '/pictures/knowledge_sidebar.svg',
         activeIconSrc: '/pictures/knowledge_sidebar_active.svg',
         path: '/construct/knowledge',
+      },
+      {
+        key: 'scheduled-tasks',
+        name: t('scheduled_tasks'),
+        isActive: pathname.startsWith('/construct/scheduled-tasks'),
+        iconSrc: '',
+        IconComponent: props => <ClockCircleOutlined className='text-teal-500' {...props} />,
+        path: '/construct/scheduled-tasks',
       },
     ];
     return items;
@@ -211,38 +228,6 @@ function SideBar() {
       >
         <ApartmentOutlined className='text-green-500' />
         <span>{t('awel_workflow')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/connectors');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
-              pathname.startsWith('/construct/connectors'),
-          },
-        )}
-      >
-        <ApiOutlined className='text-violet-500' />
-        <span>{t('connectors')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/scheduled-tasks');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
-              pathname.startsWith('/construct/scheduled-tasks'),
-          },
-        )}
-      >
-        <ClockCircleOutlined className='text-teal-500' />
-        <span>{t('scheduled_tasks')}</span>
       </div>
       <div
         onClick={() => {
@@ -314,12 +299,16 @@ function SideBar() {
               <Link key={item.key} className='h-12 flex items-center' href={item.path}>
                 <Tooltip title={item.name} placement='right'>
                   <div className={smallMenuItemStyle(item.isActive)}>
-                    <SidebarPictureIcon
-                      src={item.iconSrc}
-                      activeSrc={item.activeIconSrc}
-                      active={item.isActive}
-                      alt={`${item.key}_icon`}
-                    />
+                    {item.IconComponent ? (
+                      <item.IconComponent />
+                    ) : (
+                      <SidebarPictureIcon
+                        src={item.iconSrc}
+                        activeSrc={item.activeIconSrc}
+                        active={item.isActive}
+                        alt={`${item.key}_icon`}
+                      />
+                    )}
                   </div>
                 </Tooltip>
               </Link>
@@ -392,13 +381,17 @@ function SideBar() {
             )}
             key={item.key}
           >
-            <div className='mr-3'>
-              <SidebarPictureIcon
-                src={item.iconSrc}
-                activeSrc={item.activeIconSrc}
-                active={item.isActive}
-                alt={`${item.key}_icon`}
-              />
+            <div className='mr-3 w-8 flex justify-center text-xl'>
+              {item.IconComponent ? (
+                <item.IconComponent />
+              ) : (
+                <SidebarPictureIcon
+                  src={item.iconSrc}
+                  activeSrc={item.activeIconSrc}
+                  active={item.isActive}
+                  alt={`${item.key}_icon`}
+                />
+              )}
             </div>
             <span className='text-sm'>{item.name}</span>
           </Link>

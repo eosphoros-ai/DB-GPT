@@ -1,6 +1,6 @@
 import logging
 from functools import cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
@@ -169,6 +169,16 @@ _PROVIDER_NAME_OVERRIDES = {
     "vllm": "vLLM",
     "mlx": "Apple MLX",
     "llama.cpp": "llama.cpp",
+    "vercel": "Vercel AI Gateway",
+    "xai": "xAI",
+    "wenxin": "Baidu Qianfan",
+    "spark": "iFlytek Spark",
+    "yi": "Yi (01.AI)",
+    "gitee": "Gitee AI",
+    "aimlapi": "AIML API",
+    "tongyi": "Tongyi Qwen",
+    "zhipu": "Zhipu AI",
+    "orcarouter": "OpenRouter",
 }
 
 
@@ -205,6 +215,12 @@ def _model_startup_params(item: ModelProviderConfigItem, model: str) -> Dict[str
         "provider": provider,
         "api_key": item.api_key,
     }
+    if provider == "proxy/wenxin" and item.api_key:
+        # Wenxin stores an "AK:SK" pair in the api_key column; the Qianfan
+        # client expects them as separate api_key / api_secret params.
+        ak, _, sk = item.api_key.partition(":")
+        params["api_key"] = ak
+        params["api_secret"] = sk
     if item.api_base:
         params["api_base"] = item.api_base
     return params
@@ -392,12 +408,12 @@ async def connect_provider(
     worker_manager: WorkerManager = Depends(get_worker_manager),
 ):
     """Connect a provider and enable its default (popular) models."""
-    from dbgpt.model.utils.provider_test import test_provider_connection
+    from dbgpt.model.utils.provider_test import NO_API_KEY_REQUIRED_PROVIDERS
 
     provider = request.provider
     existing = storage.get(provider)
     api_key = request.api_key
-    if not api_key:
+    if not api_key and provider not in NO_API_KEY_REQUIRED_PROVIDERS:
         return Result.failed(err_code="E000X", msg="api_key is required")
     api_base = (
         request.api_base
@@ -406,10 +422,84 @@ async def connect_provider(
     )
 
     # Verify the credentials against the provider before persisting anything.
-    ok, reason = await test_provider_connection(provider, api_key, api_base)
+    ok, reason, enabled = await _finish_connect(
+        storage, worker_manager, provider, api_key, api_base
+    )
     if not ok:
         return Result.failed(err_code="E000X", msg=f"connect failed: {reason}")
+    return Result.succ({"connected": True, "enabled_models": enabled})
 
+
+@router.post("/providers/github_copilot/auth/start")
+async def copilot_auth_start():
+    """Begin the GitHub OAuth device flow for GitHub Copilot.
+
+    Returns the user code to enter at github.com/login/device plus the
+    device code used when polling.
+    """
+    from dbgpt.model.utils.copilot_auth import start_device_flow
+
+    ok, msg, data = await start_device_flow()
+    if not ok:
+        return Result.failed(err_code="E000X", msg=msg)
+    return Result.succ(data)
+
+
+@router.get("/providers/github_copilot/auth/poll")
+async def copilot_auth_poll(
+    device_code: str,
+    storage: ModelProviderConfigStorage = Depends(get_provider_config_storage),
+    worker_manager: WorkerManager = Depends(get_worker_manager),
+):
+    """Poll the GitHub device flow once.
+
+    While the user has not authorized yet, returns ``{"status": "pending"}``
+    (or ``slow_down``). Once authorized, the GitHub OAuth token becomes the
+    provider api_key and the default Copilot models are started.
+    """
+    from dbgpt.model.utils.copilot_auth import poll_device_flow
+
+    status, github_token = await poll_device_flow(device_code)
+    if status == "pending":
+        return Result.succ({"status": "pending"})
+    if status == "slow_down":
+        return Result.succ({"status": "slow_down"})
+    if status != "success":
+        return Result.failed(
+            err_code="E000X",
+            msg="device flow expired or failed, please restart the login",
+        )
+    provider = "proxy/github_copilot"
+    existing = storage.get(provider)
+    ok, reason, enabled = await _finish_connect(
+        storage,
+        worker_manager,
+        provider,
+        github_token,
+        existing.api_base if existing else None,
+    )
+    if not ok:
+        return Result.failed(err_code="E000X", msg=f"connect failed: {reason}")
+    return Result.succ({"status": "success", "enabled_models": enabled})
+
+
+async def _finish_connect(
+    storage: ModelProviderConfigStorage,
+    worker_manager: WorkerManager,
+    provider: str,
+    api_key: str,
+    api_base: Optional[str],
+) -> Tuple[bool, str, List[str]]:
+    """Verify credentials, start default models and persist the provider.
+
+    Shared by the plain connect endpoint and the GitHub Copilot device flow.
+    """
+    from dbgpt.model.utils.provider_test import test_provider_connection
+
+    existing = storage.get(provider)
+    ok, reason = await test_provider_connection(provider, api_key, api_base)
+    if not ok:
+        return False, reason, []
     item = ModelProviderConfigItem(
         provider=provider,
         label=existing.label if existing else None,
@@ -421,7 +511,7 @@ async def connect_provider(
     )
     item.enabled_models = enabled
     storage.save_or_update(item)
-    return Result.succ({"connected": bool(api_key), "enabled_models": enabled})
+    return True, "", enabled
 
 
 @router.put("/providers/models")
@@ -544,7 +634,7 @@ async def disconnect_provider(
                 )
             except Exception as e:
                 logger.warning(f"shutdown model {model} on disconnect failed: {e}")
-# Remove the stored configuration entirely: the SQLAlchemy update path skips
+    # Remove the stored configuration entirely: the SQLAlchemy update path skips
     # None fields, so clearing api_key via save_or_update would not take effect.
     # No config record == not connected.
     if item:

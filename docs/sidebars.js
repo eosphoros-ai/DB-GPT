@@ -483,6 +483,7 @@ const sidebars = {
 
   sidebarStart: [
     { type: "doc", id: "overview", label: "Overview" },
+    { type: "doc", id: "getting-started/model-providers-ui", label: "Model Providers UI" },
     { type: "doc", id: "use_cases", label: "Show Cases" },
     {
       type: "category",
