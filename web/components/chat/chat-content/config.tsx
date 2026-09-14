@@ -5,6 +5,7 @@ import { Datum } from '@antv/ava';
 import { GPTVis, withDefaultChartCode } from '@antv/gpt-vis';
 import { Image, Table, Tabs, TabsProps, Tag } from 'antd';
 import 'katex/dist/katex.min.css';
+import React, { useEffect, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -26,6 +27,16 @@ import VisPlugin from './vis-plugin';
 import { VisThinking } from './vis-thinking';
 
 type MarkdownComponent = Parameters<typeof GPTVis>['0']['components'];
+
+/**
+ * Context for scoping citation click events to a single chat response.
+ * When provided, citation buttons call setActiveIndex locally instead of
+ * dispatching a global window event, preventing cross-response interference.
+ */
+export const CitationContext = React.createContext<{
+  activeIndex: number | undefined;
+  setActiveIndex: (index: number | undefined) => void;
+} | null>(null);
 
 const customeTags: (keyof JSX.IntrinsicElements)[] = ['custom-view', 'chart-view', 'references', 'summary'];
 
@@ -83,9 +94,60 @@ export function preprocessLaTeX(content: any): string {
 }
 
 /**
- * Citation markers are left as plain [1] [2] text in the markdown.
- * OpenCodeSessionTurn attaches DOM-level hover tooltips after render.
+ * Preprocess citation markers [1] [2] in the markdown text,
+ * converting them to clickable button elements.
+ * Only matches standalone [number] patterns, not markdown links [text](url).
  */
+export function preprocessCitations(content: any): string {
+  if (typeof content !== 'string') {
+    return content;
+  }
+  // Extract code blocks to avoid processing citations inside code
+  const codeBlocks: string[] = [];
+  content = content.replace(/(```[\s\S]*?```|`[^`\n]+`)/g, match => {
+    codeBlocks.push(match);
+    return `<<CODE_BLOCK_${codeBlocks.length - 1}>>`;
+  });
+
+
+  // Extract math expressions (inline $...$ and block $$...$$) to avoid
+  // replacing citation-like markers inside LaTeX (e.g. $[1]$ breaks KaTeX).
+  const mathBlocks: string[] = [];
+  content = content.replace(/(\$\$[\s\S]*?\$\$|\$[^\$\n]+\$)/g, match => {
+    mathBlocks.push(match);
+    return `<<MATH_BLOCK_${mathBlocks.length - 1}>>`;
+  });
+
+  // Collect numeric reference definitions before replacement.
+  // When Markdown contains "[1]: /document" and later "[1]", the later token
+  // is a shortcut reference link and should NOT be converted to a citation button.
+  const numericRefDefs = new Set<string>();
+  const refDefRegex = /^\s*\[(\d+)\]:\s*(?:\S+)(?:\s+["'(]?.*["')]?)?\s*$/gm;
+  let refMatch: RegExpExecArray | null;
+  while ((refMatch = refDefRegex.exec(content)) !== null) {
+    numericRefDefs.add(refMatch[1]);
+  }
+
+  // Replace [number] with citation button, but not:
+  // - [text](url) markdown inline links
+  // - [text][ref] markdown reference-style links
+  // - [text]: /path markdown link definitions
+  content = content.replace(/\[(\d+)\](?!\(|\[|:)/g, (_: any, index: string) => {
+    // Skip if this number is a defined shortcut reference link
+    if (numericRefDefs.has(index)) {
+      return `[${index}]`;
+    }
+    return `<button class="citation-ref" data-index="${index}">[${index}]</button>`;
+  });
+
+  // Recover math blocks (before code blocks since math may contain backticks)
+  content = content.replace(/<<MATH_BLOCK_(\d+)>>/g, (_: any, index: string) => mathBlocks[parseInt(index)]);
+
+  // Recover code blocks
+  content = content.replace(/<<CODE_BLOCK_(\d+)>>/g, (_: any, index: string) => codeBlocks[parseInt(index)]);
+
+  return content;
+}
 
 const codeComponents = {
   /**
@@ -339,12 +401,42 @@ const basicComponents: MarkdownComponent = {
       const msg = (restProps as any)?.['data-msg'];
       return <VisChatLink msg={msg}>{children}</VisChatLink>;
     }
+    if (className === 'citation-ref') {
+      const index = (restProps as any)?.['data-index'];
+      return <CitationRefButton index={index}>{children}</CitationRefButton>;
+    }
     return (
       <button className={className} {...restProps}>
         {children}
       </button>
     );
   },
+};
+
+/**
+ * Citation reference button component. Uses CitationContext when available
+ * to scope clicks to the current chat response; falls back to a global
+ * window event for backward compatibility when no Provider is present.
+ */
+const CitationRefButton: React.FC<{ index: string; children: React.ReactNode }> = ({ index, children }) => {
+  const citationCtx = React.useContext(CitationContext);
+  return (
+    <button
+      className='citation-ref inline-flex items-center justify-center min-w-[20px] h-5 px-1 mx-0.5 text-[10px] font-medium text-white bg-blue-500 rounded-full hover:bg-blue-600 transition-colors cursor-pointer align-super'
+      data-index={index}
+      onClick={(e: any) => {
+        e.preventDefault();
+        const idx = parseInt(index);
+        if (citationCtx) {
+          citationCtx.setActiveIndex(idx);
+        } else {
+          window.dispatchEvent(new CustomEvent('citation-click', { detail: { index: idx } }));
+        }
+      }}
+    >
+      {children}
+    </button>
+  );
 };
 
 const returnSqlVal = (val: string) => {
@@ -371,6 +463,35 @@ const returnSqlVal = (val: string) => {
   };
   const regex = new RegExp(Object.keys(punctuationMap).join('|'), 'g');
   return val.replace(regex, match => punctuationMap[match]);
+};
+
+/**
+ * Wrapper component that listens for citation-click events and passes
+ * the active citation index to ReferencesContent.
+ */
+const ReferencesWithCitationHandler: React.FC<{ references: any }> = ({ references }) => {
+  const citationCtx = React.useContext(CitationContext);
+  const [localActiveIndex, setLocalActiveIndex] = useState<number | undefined>(undefined);
+
+  // When no CitationContext Provider is present, fall back to global event
+  // listening for backward compatibility.
+  useEffect(() => {
+    if (citationCtx) return;
+    const handleCitationClick = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.index != null) {
+        setLocalActiveIndex(customEvent.detail.index);
+      }
+    };
+    window.addEventListener('citation-click', handleCitationClick);
+    return () => {
+      window.removeEventListener('citation-click', handleCitationClick);
+    };
+  }, [citationCtx]);
+
+  const activeIndex = citationCtx ? citationCtx.activeIndex : localActiveIndex;
+
+  return <ReferencesContent references={references} activeIndex={activeIndex} />;
 };
 
 const extraComponents: MarkdownComponent = {
@@ -432,10 +553,16 @@ const extraComponents: MarkdownComponent = {
         const referenceData = JSON.parse(children as string);
         // Normalize: backend sends array [{name, chunks}], but older code
         // may wrap it as {knowledge: [...]}. Accept both.
-        const refs = Array.isArray(referenceData.references)
-          ? referenceData.references
-          : referenceData.references?.knowledge || [];
-        return <ReferencesContent references={refs} />;
+        const refs = Array.isArray(referenceData)
+          ? referenceData
+          : Array.isArray(referenceData?.references)
+            ? referenceData.references
+            : referenceData?.knowledge ||
+              referenceData?.references?.knowledge ||
+              [];
+        // Re-serialize to JSON string since ReferencesContent expects
+        // a string and calls JSON.parse internally.
+        return <ReferencesWithCitationHandler references={JSON.stringify(refs)} />;
       } catch {
         return null;
       }

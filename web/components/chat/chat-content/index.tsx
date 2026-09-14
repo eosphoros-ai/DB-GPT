@@ -12,9 +12,9 @@ import {
 import { GPTVis } from '@antv/gpt-vis';
 import { Tag } from 'antd';
 import classNames from 'classnames';
-import { PropsWithChildren, ReactNode, memo, useContext, useMemo } from 'react';
+import { PropsWithChildren, ReactNode, memo, useContext, useMemo, useState } from 'react';
 import { renderModelIcon } from '../header/model-selector';
-import markdownComponents, { markdownPlugins, preprocessLaTeX } from './config';
+import markdownComponents, { CitationContext, markdownPlugins, preprocessCitations, preprocessLaTeX } from './config';
 
 interface Props {
   content: Omit<IChatDialogueMessageSchema, 'context'> & {
@@ -63,6 +63,7 @@ function formatMarkdownVal(val: string) {
 
 function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithChildren<Props>) {
   const { scene } = useContext(ChatContext);
+  const [activeCitationIndex, setActiveCitationIndex] = useState<number | undefined>(undefined);
 
   const { context, model_name, role } = content;
   const isRobot = role === 'view';
@@ -127,7 +128,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
             {result ? (
               <div className='px-4 md:px-6 py-4 text-sm'>
                 <GPTVis components={markdownComponents} {...markdownPlugins}>
-                  {preprocessLaTeX(result ?? '')}
+                  {preprocessCitations(preprocessLaTeX(result ?? ''))}
                 </GPTVis>
               </div>
             ) : (
@@ -143,6 +144,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
   if (!isRobot && !context) return <div className='h-12'></div>;
 
   return (
+    <CitationContext.Provider value={{ activeIndex: activeCitationIndex, setActiveIndex: setActiveCitationIndex }}>
     <div
       className={classNames('relative flex flex-wrap w-full p-2 md:p-4 rounded-xl break-words', {
         'bg-white dark:bg-[#232734]': isRobot,
@@ -168,7 +170,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         {/* Markdown */}
         {isRobot && typeof context === 'string' && (
           <GPTVis components={{ ...markdownComponents, ...extraMarkdownComponents }} {...markdownPlugins}>
-            {preprocessLaTeX(formatMarkdownVal(value))}
+            {preprocessCitations(preprocessLaTeX(formatMarkdownVal(value)))}
           </GPTVis>
         )}
         {!!relations?.length && (
@@ -183,6 +185,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
       </div>
       {children}
     </div>
+    </CitationContext.Provider>
   );
 }
 
