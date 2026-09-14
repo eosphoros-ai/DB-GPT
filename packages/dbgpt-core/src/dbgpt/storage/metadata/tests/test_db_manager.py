@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 from typing import Type
 
@@ -134,8 +135,11 @@ def test_set_model_db_manager(db: DatabaseManager, Model: Type[BaseModel]):
         id = Column(Integer, primary_key=True)
         name = Column(String(50))
 
-    with tempfile.NamedTemporaryFile(delete=True) as db_file:
-        filename = db_file.name
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Use a path inside a temporary directory instead of an open
+        # NamedTemporaryFile: the latter stays locked on Windows and SQLite
+        # cannot open it.
+        filename = os.path.join(tmp_dir, "test.db")
         new_db = DatabaseManager.build_from(
             f"sqlite:///{filename}", base=Model, override_query_class=True
         )
@@ -155,3 +159,7 @@ def test_set_model_db_manager(db: DatabaseManager, Model: Type[BaseModel]):
             session.query(User).filter(
                 User.name == "John Doe"
             ).first().name == "John Doe"
+
+        # Release SQLite file handles so the temporary directory can be
+        # removed on Windows.
+        new_db.engine.dispose()

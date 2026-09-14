@@ -30,8 +30,12 @@ def storage(request):
             storage_instance = FileSpanStorage(filename)
             yield storage_instance
     else:
-        with tempfile.NamedTemporaryFile(delete=True) as tmp_file:
-            filename = tmp_file.name
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Create the file without holding an open handle so that the code
+            # under test can reopen it (required on Windows).
+            filename = os.path.join(tmp_dir, "span_storage.jsonl")
+            with open(filename, "w"):
+                pass
             storage_instance = FileSpanStorage(filename)
             yield storage_instance
 
