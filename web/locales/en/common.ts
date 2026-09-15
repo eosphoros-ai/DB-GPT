@@ -172,7 +172,8 @@ export const CommonEn = {
   provider_desc_github_copilot:
     'Requires a Copilot subscription. Sign in with GitHub (device flow); credentials are managed and refreshed automatically',
   copilot_visit_prompt: 'Visit',
-  copilot_visit_prompt_suffix: 'and enter the code below to connect your account and use GitHub Copilot models in DB-GPT.',
+  copilot_visit_prompt_suffix:
+    'and enter the code below to connect your account and use GitHub Copilot models in DB-GPT.',
   copilot_code_label: 'Confirmation code',
   waiting_authorization: 'Waiting for authorization...',
   copied_code: 'Copied',
@@ -203,8 +204,8 @@ export const CommonEn = {
   provider_desc_spark: 'iFlytek Spark models. Credentials cannot be verified; model startup is the source of truth',
   provider_label_wenxin: 'Baidu Qianfan',
   provider_desc_wenxin: 'ERNIE models. Key format: AccessKey:SecretKey',
-  provider_label_orcarouter: 'OpenRouter',
-  provider_desc_orcarouter: 'Unified gateway to mainstream models worldwide',
+  provider_label_orcarouter: 'OrcaRouter',
+  provider_desc_orcarouter: 'orcarouter.ai model gateway — one key for 200+ mainstream models, OpenAI-compatible',
   provider_label_siliconflow: 'SiliconFlow',
   provider_desc_siliconflow: 'Aggregated platform for Chinese open-source models',
   provider_label_litellm: 'LiteLLM',

@@ -91,7 +91,6 @@ const PROVIDER_SPRITE_IDS: Record<string, string> = {
   'proxy/moonshot': 'moonshotai',
   'proxy/tongyi': 'alibaba',
   'proxy/minimax': 'minimax',
-  'proxy/orcarouter': 'openrouter',
   'proxy/siliconflow': 'siliconflow',
   'proxy/groq': 'groq',
   'proxy/mistral': 'mistral',
@@ -105,6 +104,8 @@ const PROVIDER_ICONS: Record<string, string> = {
   'proxy/yi': '/models/yi.svg',
   'proxy/baichuan': '/models/baichuan.png',
   'proxy/wenxin': '/models/ernie.png',
+  'proxy/litellm': '/models/litellm.jpg',
+  'proxy/orcarouter': '/models/orcarouter.png',
 };
 
 // Pastel backgrounds for providers without an icon asset (deterministic by id).

@@ -178,7 +178,7 @@ _PROVIDER_NAME_OVERRIDES = {
     "aimlapi": "AIML API",
     "tongyi": "Tongyi Qwen",
     "zhipu": "Zhipu AI",
-    "orcarouter": "OpenRouter",
+    "orcarouter": "OrcaRouter",
 }
 
 

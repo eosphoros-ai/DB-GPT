@@ -51,7 +51,9 @@ PROVIDER_MAP = {
     "minimax": "proxy/minimax",
     "minimax-io": "proxy/minimax",
     "baichuan": "proxy/baichuan",
-    "openrouter": "proxy/orcarouter",
+    # NOTE: proxy/orcarouter is the OrcaRouter service (orcarouter.ai), NOT
+    # models.dev's "openrouter" catalog — its model list is fetched directly
+    # from https://api.orcarouter.ai/v1/models and must not be overwritten.
     "siliconflow": "proxy/siliconflow",
     "nvidia": "proxy/nvidia",
     "groq": "proxy/groq",
