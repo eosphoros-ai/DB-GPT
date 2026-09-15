@@ -3,27 +3,30 @@
 import asyncio
 from typing import List, Optional
 
+import pytest
+
 from dbgpt.core import Chunk
 from dbgpt.storage.base import IndexStoreBase, IndexStoreConfig
 
 
 class _Store(IndexStoreBase):
-    def __init__(self):
+    def __init__(self, error_message="401 Unauthorized"):
         super().__init__()
         self.calls: List[int] = []
+        self.error_message = error_message
 
     def get_config(self) -> IndexStoreConfig:
         return IndexStoreConfig()
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         self.calls.append(len(chunks))
-        raise RuntimeError("401 Unauthorized")
+        raise RuntimeError(self.error_message)
 
     async def aload_document(
         self, chunks: List[Chunk], file_id: Optional[str] = None
     ) -> List[str]:
         self.calls.append(len(chunks))
-        raise RuntimeError("401 Unauthorized")
+        raise RuntimeError(self.error_message)
 
     def similar_search_with_scores(self, text, topk, score_threshold, filters=None):
         return []
@@ -73,3 +76,21 @@ def test_non_retryable_status_code_is_detected():
         status_code = 403
 
     assert IndexStoreBase._is_non_retryable_load_error(_ResponseError()) is True
+
+
+@pytest.mark.parametrize("error_message", ["401 Unauthorized", "403 Forbidden"])
+def test_non_retryable_async_load_limit_propagates_authentication_errors(
+    error_message,
+):
+    store = _Store(error_message)
+
+    async def run():
+        with pytest.raises(RuntimeError, match=error_message.split()[0]):
+            await store.aload_document_with_limit(
+                [Chunk(content="one"), Chunk(content="two")],
+                max_chunks_once_load=2,
+                max_threads=1,
+            )
+
+    asyncio.run(run())
+    assert store.calls == [2]

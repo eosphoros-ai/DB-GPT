@@ -325,6 +325,11 @@ class IndexStoreBase(ABC):
         skipped_cnt = 0
         for idx, (result, chunk_group) in enumerate(zip(results, chunk_groups)):
             if isinstance(result, Exception):
+                if self._is_non_retryable_load_error(result):
+                    # Authentication and authorization failures are systemic;
+                    # skipping those groups would report a misleading partial
+                    # success and hide the embedding backend failure.
+                    raise result
                 # _safe_aload_group already swallows per-chunk errors; an
                 # exception here would be an unexpected internal failure.
                 logger.error(
