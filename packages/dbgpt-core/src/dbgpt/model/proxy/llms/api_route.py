@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
 
-_API_ROUTE_DEFAULT_MODEL = "openai/gpt-4o"
+_API_ROUTE_DEFAULT_MODEL = "deepseek/deepseek-chat"
 
 
 @auto_register_resource(
@@ -71,10 +71,10 @@ class ApiRouteLLMClient(OpenAILLMClient):
     """API Route LLM Client using OpenAI-compatible endpoints.
 
     API Route is an AI model routing gateway that exposes 100+ models from OpenAI,
-    Anthropic, Google, DeepSeek, Qwen, GLM and others behind a single OpenAI
+    Anthropic, Google, DeepSeek, Qwen and others behind a single OpenAI
     compatible endpoint and API key. Model ids keep their provider prefix, for
-    example ``openai/gpt-4o``, ``anthropic/claude-3-5-sonnet`` or
-    ``deepseek/deepseek-chat``.
+    example ``deepseek/deepseek-chat``, ``anthropic/claude-3-7-sonnet`` or
+    ``openai/gpt-5``.
     """
 
     def __init__(
@@ -100,10 +100,7 @@ class ApiRouteLLMClient(OpenAILLMClient):
         api_key = api_key or os.getenv("API_ROUTE_API_KEY")
         model = model or _API_ROUTE_DEFAULT_MODEL
         if not context_length:
-            if "gpt-3.5" in model:
-                context_length = 16 * 1024
-            else:
-                context_length = 128 * 1024
+            context_length = 128 * 1024
 
         if not api_key:
             raise ValueError(
@@ -152,21 +149,21 @@ register_proxy_model_adapter(
     ApiRouteLLMClient,
     supported_models=[
         ModelMetadata(
-            model=["openai/gpt-4o", "openai/gpt-4o-mini"],
+            model=["openai/gpt-5", "openai/gpt-4.5", "openai/o3", "openai/o1"],
             context_length=128_000,
             max_output_length=16_384,
-            description="OpenAI GPT-4o models via API Route",
+            description="OpenAI 2025/2026 flagship and reasoning models via API Route",
             link="https://www.api-route.com/models",
             function_calling=True,
         ),
         ModelMetadata(
             model=[
-                "anthropic/claude-3-5-sonnet",
-                "anthropic/claude-3-5-haiku",
+                "anthropic/claude-3-7-sonnet",
+                "anthropic/claude-3-7-sonnet:thinking",
             ],
             context_length=200_000,
-            max_output_length=8_192,
-            description="Anthropic Claude family models via API Route",
+            max_output_length=64_000,
+            description="Anthropic Claude 3.7 family models via API Route",
             link="https://www.api-route.com/models",
             function_calling=True,
         ),
@@ -177,7 +174,7 @@ register_proxy_model_adapter(
             ],
             context_length=64_000,
             max_output_length=8_192,
-            description="DeepSeek models via API Route",
+            description="DeepSeek V3/R1 models via API Route",
             link="https://www.api-route.com/models",
             function_calling=True,
         ),
@@ -188,7 +185,7 @@ register_proxy_model_adapter(
             ],
             context_length=1_000_000,
             max_output_length=8_192,
-            description="Google Gemini family models via API Route",
+            description="Google Gemini 2.5 family models via API Route",
             link="https://www.api-route.com/models",
             function_calling=True,
         ),
@@ -196,7 +193,7 @@ register_proxy_model_adapter(
             model=["qwen/qwen-2.5-72b-instruct", "qwen/qwen-2.5-coder-32b-instruct"],
             context_length=128_000,
             max_output_length=8_192,
-            description="Qwen models via API Route",
+            description="Qwen 2.5 models via API Route",
             link="https://www.api-route.com/models",
             function_calling=True,
         ),

@@ -18,6 +18,12 @@ persist_path = "pilot/data"
 
 [models]
 [[models.llms]]
-name = "${env:LLM_MODEL_NAME:-openai/gpt-4o}"
+name = "${env:LLM_MODEL_NAME:-deepseek/deepseek-chat}"
 provider = "proxy/api_route"
+api_key = "${env:API_ROUTE_API_KEY}"
+
+[[models.embeddings]]
+name = "${env:EMBEDDING_MODEL_NAME:-text-embedding-3-small}"
+provider = "${env:EMBEDDING_MODEL_PROVIDER:-proxy/openai}"
+api_url = "${env:EMBEDDING_MODEL_API_URL:-https://global.api-route.com/v1/embeddings}"
 api_key = "${env:API_ROUTE_API_KEY}"
