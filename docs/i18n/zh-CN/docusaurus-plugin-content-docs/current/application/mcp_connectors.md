@@ -15,7 +15,7 @@ title: MCP 连接器
 
 ## 功能亮点
 
-- **内置模板**——飞书、钉钉、语雀、GitHub、Notion、Linear、Tavily、DeepWiki 一键激活。
+- **内置模板**——飞书、钉钉、语雀、GitHub、Notion、Linear、Tavily、Parallel Search、DeepWiki 一键激活。
 - **自定义 MCP Server**——接入任意 SSE 或 Streamable HTTP 的 MCP 端点,自带鉴权。
 - **按对话选择**——在提问区勾选本轮要挂载的连接器,Agent 的 prompt 保持聚焦、节省 token。
 - **人工确认(HITL)**——写操作(创建 / 更新 / 删除)执行前弹出确认框。
@@ -55,6 +55,7 @@ graph LR
 | Notion | 知识管理 | Streamable HTTP | 页面 / 数据库读写 |
 | Linear | 项目 | Streamable HTTP | Issue / Project 协作 |
 | Tavily | 搜索增强 | Streamable HTTP | 为 LLM 优化的 Web 搜索,返回 Markdown |
+| Parallel Search | 搜索增强 | Streamable HTTP | 公开网页搜索与页面内容提取,无需 Parallel API Key |
 | DeepWiki | 研发工具 | Streamable HTTP | 对任意 GitHub 仓库的 AI 解读与问答 |
 
 ## 管理连接器
@@ -85,6 +86,17 @@ graph LR
 | **连接器描述** | 可选,会展示在 Agent 的工具描述中。 |
 
 对于自定义 Server,只需提供接入地址、传输协议和鉴权信息即可。凭据会在存储前加密。
+
+### 无需 API Key 连接 Parallel Search
+
+1. 在**连接器管理**页激活 **Parallel Search** 模板。
+2. 将服务器 URL 设置为 `https://search.parallel.ai/mcp`,选择 **Streamable HTTP**,并将**认证方式**设为 `none`。无需 Parallel 账号或 API Key。
+3. 保存连接器,然后查看其 `web_search` 和 `web_fetch` 工具。
+4. 在提问区通过**选择 MCP** 将其挂载到对话中。
+
+挂载后,Agent 可以自动调用这些工具。查询、请求的 URL,以及提供的目标或上下文都会发送至 Parallel。免费访问有速率限制,请仅提供你愿意发送给该服务的信息。服务详情请参阅 [Parallel Search MCP 文档](https://docs.parallel.ai/integrations/mcp/search-mcp)。
+
+在提问区取消勾选该连接器,即可停止在当前对话中使用它;也可以在**连接器管理**页将其删除。添加模板不会自动激活它,也不会更改现有连接器。
 
 ### 查看工具
 
