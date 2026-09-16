@@ -1,0 +1,5320 @@
+{
+  "proxy/openai": {
+    "models": [
+      {
+        "model": "gpt-5.6-sol",
+        "name": "GPT-5.6 Sol",
+        "description": "Frontier GPT-5.6 model for complex professional work, coding, and agentic workflows",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-09"
+      },
+      {
+        "model": "gpt-5.6",
+        "name": "GPT-5.6",
+        "description": "Frontier GPT-5.6 model for complex professional work, coding, and agentic workflows",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-09"
+      },
+      {
+        "model": "gpt-5.6-luna",
+        "name": "GPT-5.6 Luna",
+        "description": "Cost-efficient GPT-5.6 model for fast, high-volume workloads",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-09"
+      },
+      {
+        "model": "gpt-5.6-terra",
+        "name": "GPT-5.6 Terra",
+        "description": "Balanced GPT-5.6 model for capable, cost-efficient everyday work",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-09"
+      },
+      {
+        "model": "gpt-realtime-2.1",
+        "name": "GPT-Realtime-2.1",
+        "description": "Realtime speech-to-speech model with configurable reasoning, tool use, and robust voice-agent behavior",
+        "context_length": 128000,
+        "max_output_length": 32000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-06"
+      },
+      {
+        "model": "gpt-5.5-pro",
+        "name": "GPT-5.5 Pro",
+        "description": "Highest-accuracy GPT-5.5 tier for slower, precision-heavy reasoning and coding",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-23"
+      },
+      {
+        "model": "gpt-5.5",
+        "name": "GPT-5.5",
+        "description": "Default frontier GPT for coding, computer use, research, and knowledge work",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-23"
+      },
+      {
+        "model": "gpt-image-2",
+        "name": "gpt-image-2",
+        "description": "Image model for prompt-driven generation, editing, and visual design workflows",
+        "context_length": 0,
+        "max_output_length": 0,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-04-21"
+      },
+      {
+        "model": "gpt-5.4-mini",
+        "name": "GPT-5.4 mini",
+        "description": "Strong small GPT for coding subagents, quick tool use, and high-volume work",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-17"
+      },
+      {
+        "model": "gpt-5.4-nano",
+        "name": "GPT-5.4 nano",
+        "description": "Cheapest GPT-5.4 lane for simple routing, extraction, and bulk automation",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-17"
+      },
+      {
+        "model": "gpt-5.4-pro",
+        "name": "GPT-5.4 Pro",
+        "description": "More exact GPT-5.4 tier for demanding professional reasoning and agent tasks",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-05"
+      },
+      {
+        "model": "gpt-5.4",
+        "name": "GPT-5.4",
+        "description": "Agent-ready GPT for coding and computer-use workflows at a lower cost",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-05"
+      },
+      {
+        "model": "gpt-5.3-chat-latest",
+        "name": "GPT-5.3 Chat (latest)",
+        "description": "Chat-tuned GPT model for conversational assistance, writing, and tool workflows",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-03"
+      },
+      {
+        "model": "gpt-5.3-codex",
+        "name": "GPT-5.3 Codex",
+        "description": "Coding-optimized GPT model for repository edits, reviews, and agentic software work",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-05"
+      },
+      {
+        "model": "gpt-5.3-codex-spark",
+        "name": "GPT-5.3 Codex Spark",
+        "description": "Coding-optimized GPT model for repository edits, reviews, and agentic software work",
+        "context_length": 128000,
+        "max_output_length": 32000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-05"
+      },
+      {
+        "model": "chatgpt-image-latest",
+        "name": "chatgpt-image-latest",
+        "description": "Image model for prompt-driven generation, editing, and visual design workflows",
+        "context_length": 0,
+        "max_output_length": 0,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-12-16"
+      },
+      {
+        "model": "gpt-5.2",
+        "name": "GPT-5.2",
+        "description": "Reliable GPT generation for broad coding, writing, and tool-assisted product work",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-11"
+      },
+      {
+        "model": "gpt-5.2-chat-latest",
+        "name": "GPT-5.2 Chat",
+        "description": "Chat-tuned GPT model for conversational assistance, writing, and tool workflows",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-11"
+      },
+      {
+        "model": "gpt-5.2-pro",
+        "name": "GPT-5.2 Pro",
+        "description": "Higher-accuracy GPT-5.2 variant for tougher reasoning and review workflows",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-11"
+      },
+      {
+        "model": "gpt-image-1.5",
+        "name": "gpt-image-1.5",
+        "description": "Image model for prompt-driven generation, editing, and visual design workflows",
+        "context_length": 0,
+        "max_output_length": 0,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "gpt-5.1",
+        "name": "GPT-5.1",
+        "description": "Sharper GPT-5 generation for coding, product work, and tool-assisted tasks",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-13"
+      },
+      {
+        "model": "gpt-5-pro",
+        "name": "GPT-5 Pro",
+        "description": "Higher-accuracy GPT-5 tier for tough analysis, coding reviews, and planning",
+        "context_length": 400000,
+        "max_output_length": 272000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-10-06"
+      },
+      {
+        "model": "gpt-image-1-mini",
+        "name": "gpt-image-1-mini",
+        "description": "Image model for prompt-driven generation, editing, and visual design workflows",
+        "context_length": 0,
+        "max_output_length": 0,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-09-26"
+      },
+      {
+        "model": "gpt-5-nano",
+        "name": "GPT-5 Nano",
+        "description": "Tiny GPT-5 lane for routing, extraction, classification, and bulk jobs",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-07"
+      },
+      {
+        "model": "gpt-5",
+        "name": "GPT-5",
+        "description": "Original GPT-5 workhorse for reasoning, coding, writing, and tool workflows",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-07"
+      },
+      {
+        "model": "gpt-5-mini",
+        "name": "GPT-5 Mini",
+        "description": "Small GPT-5 for responsive agents, coding help, and everyday automation",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-07"
+      },
+      {
+        "model": "o3-pro",
+        "name": "o3-pro",
+        "description": "High-effort o3 tier for difficult technical reasoning and careful answers",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-06-10"
+      },
+      {
+        "model": "gpt-image-1",
+        "name": "gpt-image-1",
+        "description": "OpenAI image model for production generation, edits, and brand-safe visual workflows",
+        "context_length": 0,
+        "max_output_length": 0,
+        "function_calling": false,
+        "status": "deprecated",
+        "last_updated": "2025-04-24"
+      },
+      {
+        "model": "o3",
+        "name": "o3",
+        "description": "Deliberate o-series reasoner for hard math, coding, and multi-step analysis",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04-16"
+      },
+      {
+        "model": "o4-mini",
+        "name": "o4-mini",
+        "description": "Fast o-series model for compact reasoning, coding, and tool use",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2025-04-16"
+      },
+      {
+        "model": "gpt-4.1-nano",
+        "name": "GPT-4.1 nano",
+        "description": "Tiny GPT-4.1 option for classification, routing, and very high-volume tasks",
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2025-04-14"
+      },
+      {
+        "model": "gpt-4.1",
+        "name": "GPT-4.1",
+        "description": "Long-lived GPT workhorse for coding, instruction following, and production apps",
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04-14"
+      },
+      {
+        "model": "gpt-4.1-mini",
+        "name": "GPT-4.1 mini",
+        "description": "Affordable GPT-4.1 lane for fast coding help and structured extraction",
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04-14"
+      },
+      {
+        "model": "o1-pro",
+        "name": "o1-pro",
+        "description": "O-series reasoning model for hard analysis, math, coding, and planning",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2025-03-19"
+      },
+      {
+        "model": "o3-mini",
+        "name": "o3-mini",
+        "description": "Smaller o-series reasoner for economical coding, math, and planning tasks",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2025-01-29"
+      },
+      {
+        "model": "o1",
+        "name": "o1",
+        "description": "O-series reasoning model for hard analysis, math, coding, and planning",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2024-12-05"
+      },
+      {
+        "model": "gpt-4o-2024-11-20",
+        "name": "GPT-4o (2024-11-20)",
+        "description": "GPT model for general reasoning, writing, coding, and tool-assisted tasks",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-11-20"
+      },
+      {
+        "model": "gpt-4o",
+        "name": "GPT-4o",
+        "description": "Omni-era GPT for multimodal chat, practical coding, and general assistants",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-08-06"
+      },
+      {
+        "model": "gpt-4o-2024-08-06",
+        "name": "GPT-4o (2024-08-06)",
+        "description": "GPT model for general reasoning, writing, coding, and tool-assisted tasks",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-08-06"
+      },
+      {
+        "model": "gpt-4o-mini",
+        "name": "GPT-4o mini",
+        "description": "Small omni GPT for cheap multimodal assistance and production-scale traffic",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-07-18"
+      },
+      {
+        "model": "gpt-4o-2024-05-13",
+        "name": "GPT-4o (2024-05-13)",
+        "description": "GPT model for general reasoning, writing, coding, and tool-assisted tasks",
+        "context_length": 128000,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2024-05-13"
+      },
+      {
+        "model": "gpt-4-turbo",
+        "name": "GPT-4 Turbo",
+        "description": "Compact GPT model for low-latency assistance and high-volume workloads",
+        "context_length": 128000,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2024-04-09"
+      },
+      {
+        "model": "gpt-4",
+        "name": "GPT-4",
+        "description": "GPT model for general reasoning, writing, coding, and tool-assisted tasks",
+        "context_length": 8192,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2024-04-09"
+      },
+      {
+        "model": "text-embedding-3-small",
+        "name": "text-embedding-3-small",
+        "description": "Embedding model for semantic search, retrieval, clustering, and ranking pipelines",
+        "context_length": 8191,
+        "max_output_length": 1536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2024-01-25"
+      },
+      {
+        "model": "text-embedding-3-large",
+        "name": "text-embedding-3-large",
+        "description": "Embedding model for semantic search, retrieval, clustering, and ranking pipelines",
+        "context_length": 8191,
+        "max_output_length": 3072,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2024-01-25"
+      },
+      {
+        "model": "gpt-3.5-turbo",
+        "name": "GPT-3.5-turbo",
+        "description": "Compact GPT model for low-latency assistance and high-volume workloads",
+        "context_length": 16385,
+        "max_output_length": 4096,
+        "function_calling": false,
+        "status": "deprecated",
+        "last_updated": "2023-11-06"
+      },
+      {
+        "model": "text-embedding-ada-002",
+        "name": "text-embedding-ada-002",
+        "description": "Embedding model for semantic search, retrieval, clustering, and ranking pipelines",
+        "context_length": 8192,
+        "max_output_length": 1536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2022-12-15"
+      }
+    ]
+  },
+  "proxy/claude": {
+    "models": [
+      {
+        "model": "claude-opus-5",
+        "name": "Claude Opus 5",
+        "description": "Strongest Claude Opus model for coding, agents, and professional work",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-24"
+      },
+      {
+        "model": "claude-sonnet-5",
+        "name": "Claude Sonnet 5",
+        "description": "Everyday Claude agent model for coding, planning, browsing, and general work",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-30"
+      },
+      {
+        "model": "claude-fable-5",
+        "name": "Claude Fable 5",
+        "description": "Claude model for creative writing, analysis, and controlled agent workflows",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-09"
+      },
+      {
+        "model": "claude-opus-4-8",
+        "name": "Claude Opus 4.8",
+        "description": "Top Claude Opus tier for the hardest reasoning, coding, and long-horizon agents",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-05-28"
+      },
+      {
+        "model": "claude-opus-4-7",
+        "name": "Claude Opus 4.7",
+        "description": "Stronger Opus tier for advanced software work and high-stakes reasoning",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-16"
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "name": "Claude Sonnet 4.6",
+        "description": "Claude workhorse for coding agents, careful analysis, and production cost control",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-13"
+      },
+      {
+        "model": "claude-opus-4-6",
+        "name": "Claude Opus 4.6",
+        "description": "High-end Claude for difficult coding, planning, and slower expert reasoning",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-13"
+      },
+      {
+        "model": "claude-opus-4-5",
+        "name": "Claude Opus 4.5 (latest)",
+        "description": "Flagship Claude model for deep reasoning, coding, and long-horizon agents",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-24"
+      },
+      {
+        "model": "claude-opus-4-5-20251101",
+        "name": "Claude Opus 4.5",
+        "description": "Flagship Claude model for deep reasoning, coding, and long-horizon agents",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-01"
+      },
+      {
+        "model": "claude-haiku-4-5-20251001",
+        "name": "Claude Haiku 4.5",
+        "description": "Fast Claude model for responsive assistance, classification, and lightweight agents",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-10-15"
+      },
+      {
+        "model": "claude-haiku-4-5",
+        "name": "Claude Haiku 4.5 (latest)",
+        "description": "Fast Claude lane for lightweight agents, office tasks, and responsive chat",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-10-15"
+      },
+      {
+        "model": "claude-sonnet-4-5-20250929",
+        "name": "Claude Sonnet 4.5",
+        "description": "Balanced Claude model for coding, analysis, agent workflows, and cost control",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-29"
+      },
+      {
+        "model": "claude-sonnet-4-5",
+        "name": "Claude Sonnet 4.5 (latest)",
+        "description": "Balanced Claude model for coding, analysis, agent workflows, and cost control",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-29"
+      }
+    ]
+  },
+  "proxy/deepseek": {
+    "models": [
+      {
+        "model": "deepseek-v4-pro",
+        "name": "DeepSeek V4 Pro",
+        "description": "DeepSeek V4 Pro snapshot with million-token context and support for thinking and non-thinking modes",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-22"
+      },
+      {
+        "model": "deepseek-v4-flash-vision-exp",
+        "name": "DeepSeek V4 Flash Vision Exp",
+        "description": "Experimental multimodal DeepSeek V4 Flash model for image understanding, coding, and agentic work",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": "beta",
+        "last_updated": "2026-08-21"
+      },
+      {
+        "model": "deepseek-v4-flash",
+        "name": "DeepSeek V4 Flash",
+        "description": "Official DeepSeek V4 Flash release with enhanced agentic capabilities and integrated DSpark speculative decoding",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-31"
+      }
+    ]
+  },
+  "proxy/zhipu": {
+    "models": [
+      {
+        "model": "glm-5.3-flash",
+        "name": "GLM-5.3-Flash",
+        "description": "Native multimodal GLM model for efficient coding and long-horizon agent tasks",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-26"
+      },
+      {
+        "model": "glm-5.3",
+        "name": "GLM-5.3",
+        "description": "Flagship GLM model for long-horizon coding, agents, and complex project delivery",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-14"
+      },
+      {
+        "model": "glm-5.2",
+        "name": "GLM-5.2",
+        "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-13"
+      },
+      {
+        "model": "glm-5v-turbo",
+        "name": "GLM-5V-Turbo",
+        "description": "Fast GLM vision model for screenshots, documents, and multimodal agent tasks",
+        "context_length": 200000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-01"
+      },
+      {
+        "model": "glm-5.1",
+        "name": "GLM-5.1",
+        "description": "Strong GLM coding model for agentic engineering, terminals, and repository generation",
+        "context_length": 200000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-27"
+      },
+      {
+        "model": "glm-5",
+        "name": "GLM-5",
+        "description": "General GLM flagship for coding, analysis, and tool-heavy engineering workflows",
+        "context_length": 204800,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-11"
+      },
+      {
+        "model": "glm-4.7-flash",
+        "name": "GLM-4.7-Flash",
+        "description": "Budget GLM lane for fast coding help, routing, and everyday automation",
+        "context_length": 200000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-01-19"
+      },
+      {
+        "model": "glm-4.7-flashx",
+        "name": "GLM-4.7-FlashX",
+        "description": "Efficient GLM model for fast reasoning, coding, and agent workflows",
+        "context_length": 200000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-01-19"
+      },
+      {
+        "model": "glm-4.7",
+        "name": "GLM-4.7",
+        "description": "Mature GLM model for dependable coding, reasoning, and structured agent tasks",
+        "context_length": 204800,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-22"
+      },
+      {
+        "model": "glm-4.6v",
+        "name": "GLM-4.6V",
+        "description": "GLM vision model for visual reasoning, documents, and multimodal agents",
+        "context_length": 128000,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-08"
+      },
+      {
+        "model": "glm-4.6",
+        "name": "GLM-4.6",
+        "description": "Late GLM-4 workhorse for coding agents, reasoning, and structured tasks",
+        "context_length": 204800,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-30"
+      },
+      {
+        "model": "glm-4.5v",
+        "name": "GLM-4.5V",
+        "description": "GLM vision model for visual reasoning, documents, and multimodal agents",
+        "context_length": 64000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-11"
+      },
+      {
+        "model": "glm-4.5",
+        "name": "GLM-4.5",
+        "description": "Hybrid-reasoning GLM release that made the 4.5 line broadly useful",
+        "context_length": 131072,
+        "max_output_length": 98304,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-28"
+      },
+      {
+        "model": "glm-4.5-air",
+        "name": "GLM-4.5-Air",
+        "description": "Lighter GLM-4.5 variant for fast coding assistance and cheaper agents",
+        "context_length": 131072,
+        "max_output_length": 98304,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-28"
+      },
+      {
+        "model": "glm-4.5-flash",
+        "name": "GLM-4.5-Flash",
+        "description": "Efficient GLM model for fast reasoning, coding, and agent workflows",
+        "context_length": 131072,
+        "max_output_length": 98304,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-28"
+      }
+    ]
+  },
+  "proxy/moonshot": {
+    "models": [
+      {
+        "model": "kimi-k3",
+        "name": "Kimi K3",
+        "description": "Multimodal Kimi model with 1M context and toggleable max-effort thinking for long-horizon agent work",
+        "context_length": 1048576,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-16"
+      },
+      {
+        "model": "kimi-k2.7-code",
+        "name": "Kimi K2.7 Code",
+        "description": "Coding-focused Kimi model, stronger on long-horizon repo work with less overthinking",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-12"
+      },
+      {
+        "model": "kimi-k2.7-code-highspeed",
+        "name": "Kimi K2.7 Code HighSpeed",
+        "description": "Coding-focused Kimi model, stronger on long-horizon repo work with less overthinking",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-12"
+      },
+      {
+        "model": "kimi-k2.6",
+        "name": "Kimi K2.6",
+        "description": "Multimodal Kimi workhorse for agent loops, coding tasks, and visual context",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-21"
+      },
+      {
+        "model": "kimi-k2.5",
+        "name": "Kimi K2.5",
+        "description": "Earlier Kimi frontier model for long-context agents, coding, and multimodal work",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-01"
+      },
+      {
+        "model": "kimi-k2-thinking-turbo",
+        "name": "Kimi K2 Thinking Turbo",
+        "description": "Kimi reasoning model for long-horizon research, planning, and tool use",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-06"
+      },
+      {
+        "model": "kimi-k2-thinking",
+        "name": "Kimi K2 Thinking",
+        "description": "Thinking Kimi model for slower research passes, planning, and hard technical questions",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-06"
+      },
+      {
+        "model": "kimi-k2-0905-preview",
+        "name": "Kimi K2 0905",
+        "description": "Kimi model for long-context chat, coding, and agentic reasoning",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-05"
+      },
+      {
+        "model": "kimi-k2-turbo-preview",
+        "name": "Kimi K2 Turbo",
+        "description": "Fast Kimi model for responsive chat, coding help, and agent loops",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-05"
+      },
+      {
+        "model": "kimi-k2-0711-preview",
+        "name": "Kimi K2 0711",
+        "description": "Kimi model for long-context chat, coding, and agentic reasoning",
+        "context_length": 131072,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-14"
+      }
+    ]
+  },
+  "proxy/orcarouter": {
+    "models": [
+      {
+        "model": "orcarouter/free",
+        "name": "orcarouter/free",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "orcarouter/fusion",
+        "name": "orcarouter/fusion",
+        "description": null,
+        "context_length": 1000000,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "orcarouter/fusion-flash",
+        "name": "orcarouter/fusion-flash",
+        "description": null,
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "orcarouter/fusion-mini",
+        "name": "orcarouter/fusion-mini",
+        "description": null,
+        "context_length": 1000000,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-fable-5",
+        "name": "Anthropic: Claude Fable 5",
+        "description": "Claude Fable 5 is Anthropic's Mythos-class model - a capability tier above the Opus class - made safe for general use. Its capabilities exceed any model Anthropic has previously released broadly, w...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-fable-5.1",
+        "name": "Anthropic: Claude Fable 5.1",
+        "description": "Claude Fable 5.1 is Anthropic's Mythos-class model — a capability tier above the Opus class — made safe for broad use, and the successor to Claude Fable 5. It improves on Fable 5 across the board,...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-haiku-4.5",
+        "name": "Anthropic: Claude Haiku 4.5",
+        "description": "Claude Haiku 4.5 is Anthropic’s fastest and most efficient model, delivering near-frontier intelligence at a fraction of the cost and latency of larger Claude models. Matching Claude Sonnet 4’s per...",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-opus-4.5",
+        "name": "Anthropic: Claude Opus 4.5",
+        "description": "Claude Opus 4.5 is Anthropic’s frontier reasoning model optimized for complex software engineering, agentic workflows, and long-horizon computer use. It offers strong multimodal capabilities, compe...",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-opus-4.6",
+        "name": "Anthropic: Claude Opus 4.6",
+        "description": "Opus 4.6 is Anthropic’s strongest model for coding and long-running professional tasks. It is built for agents that operate across entire workflows rather than single prompts, making it especially...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-opus-4.7",
+        "name": "Anthropic: Claude Opus 4.7",
+        "description": "Opus 4.7 is the next generation of Anthropic's Opus family, built for long-running, asynchronous agents. Building on the coding and agentic strengths of Opus 4.6, it delivers stronger performance o...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-opus-4.8",
+        "name": "Anthropic: Claude Opus 4.8",
+        "description": "Claude Opus 4.8 is Anthropic's most capable generally available model in the Opus family. It supports text, image, and file inputs with text output, with reasoning support and a 1M-token context",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-opus-5",
+        "name": "Anthropic: Claude Opus 5",
+        "description": "Claude Opus 5 is Anthropic's flagship model for demanding reasoning, coding, and long-horizon agentic work — the most capable model in the Opus line to date. It is especially strong at end-to-end s...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-sonnet-4.6",
+        "name": "Anthropic: Claude Sonnet 4.6",
+        "description": "Sonnet 4.6 is Anthropic's most capable Sonnet-class model yet, with frontier performance across coding, agents, and professional work. It excels at iterative development, complex codebase navigatio...",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-sonnet-5",
+        "name": "Anthropic: Claude Sonnet 5",
+        "description": "Claude Sonnet 5 is Anthropic's most capable Sonnet-class model — frontier-level performance across coding, agentic workflows, and professional knowledge work, at a fraction of the cost of the Opus...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "codex-auto-review",
+        "name": "codex-auto-review",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-chat",
+        "name": "DeepSeek: DeepSeek V3",
+        "description": "DeepSeek alias for V4 Flash non-thinking mode — 1M context, strong instruction following and coding (legacy alias, slated for deprecation).",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-reasoner",
+        "name": "deepseek/deepseek-reasoner",
+        "description": "DeepSeek alias for V4 Flash thinking mode — 1M context, open chain-of-thought reasoning (legacy alias, slated for deprecation).",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4-flash",
+        "name": "DeepSeek: DeepSeek V4 Flash",
+        "description": "DeepSeek V4 Flash efficient MoE — 284B total / 13B active params, 1M context, optimized for fast everyday workloads.",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4-flash-0731",
+        "name": "DeepSeek: DeepSeek V4 Flash 0731",
+        "description": "DeepSeek V4 Flash 0731 is the re-post-trained official release of DeepSeek's efficient V4 Flash mixture-of-experts model — 284B total / 13B active parameters, identical in architecture and size to...",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4-flash-free",
+        "name": "DeepSeek: DeepSeek V4 Flash (Free)",
+        "description": "DeepSeek V4 Flash efficient MoE — 284B total / 13B active params, 1M context, optimized for fast everyday workloads.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4-flash-vision-exp",
+        "name": "DeepSeek: DeepSeek V4 Flash Vision (Exp)",
+        "description": "Experimental vision-enabled variant of DeepSeek V4 Flash: text + image in, text out, 1M context, 384K max output, thinking and non-thinking modes. Pure-text capability on par with V4 Flash; multimo...",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4-pro",
+        "name": "DeepSeek: DeepSeek V4 Pro",
+        "description": "DeepSeek V4 Pro flagship MoE — 1.6T total / 49B active params, 1M context, top-tier reasoning + agentic tool use.",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4-pro-0813",
+        "name": "DeepSeek: DeepSeek V4 Pro 0813",
+        "description": "DeepSeek V4 Pro 0813 is the official release of DeepSeek's flagship V4 Pro model, superseding the April preview and rolled out simultaneously across the app, web, and API. It serves a 1M-token cont...",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-v4.1-flash",
+        "name": "DeepSeek: DeepSeek V4.1 Flash",
+        "description": "DeepSeek-V4.1-Flash is the smallest model in DeepSeek's new architecture family, released September 10, 2026, with native multimodal visual understanding — the production successor to both V4 Flash...",
+        "context_length": 1048576,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-flash",
+        "name": "Google: Gemini 2.5 Flash",
+        "description": "Gemini 2.5 Flash is Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities,...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-flash-image",
+        "name": "Google: Nano Banana (Gemini 2.5 Flash Image)",
+        "description": "Gemini 2.5 Flash Image, a.k.a. \"Nano Banana,\" is now generally available. It is a state of the art image generation model with contextual understanding. It is capable of image generation,...",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-flash-lite",
+        "name": "Google: Gemini 2.5 Flash Lite",
+        "description": "Gemini 2.5 Flash-Lite is a lightweight reasoning model in the Gemini 2.5 family, optimized for ultra-low latency and cost efficiency. It offers improved throughput, faster token generation, and bet...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-flash-preview-tts",
+        "name": "google/gemini-2.5-flash-preview-tts",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-pro",
+        "name": "Google: Gemini 2.5 Pro",
+        "description": "Gemini 2.5 Pro is Google’s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. It employs “thinking” capabilities, enabling it to reason through re...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-pro-preview-tts",
+        "name": "google/gemini-2.5-pro-preview-tts",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3-flash-preview",
+        "name": "Google: Gemini 3 Flash Preview",
+        "description": "Gemini 3 Flash Preview is a high speed, high value thinking model designed for agentic workflows, multi turn chat, and coding assistance. It delivers near Pro level reasoning and tool...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3-pro-image-preview",
+        "name": "Google: Nano Banana Pro (Gemini 3 Pro Image Preview)",
+        "description": "Nano Banana Pro is Google’s most advanced image-generation and editing model, built on Gemini 3 Pro. It extends the original Nano Banana with significantly improved multimodal reasoning, real-world...",
+        "context_length": 65536,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.1-flash-image-preview",
+        "name": "Google: Nano Banana 2 (Gemini 3.1 Flash Image Preview)",
+        "description": "Gemini 3.1 Flash Image Preview, a.k.a. \"Nano Banana 2,\" is Google’s latest state of the art image generation and editing model, delivering Pro-level visual quality at Flash speed. It combines...",
+        "context_length": 65536,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.1-flash-lite",
+        "name": "google/gemini-3.1-flash-lite",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.1-flash-lite-preview",
+        "name": "Google: Gemini 3.1 Flash Lite Preview",
+        "description": "Gemini 3.1 Flash Lite Preview is Google's high-efficiency model optimized for high-volume use cases. It outperforms Gemini 2.5 Flash Lite on overall quality and approaches Gemini 2.5 Flash performa...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.1-flash-tts-preview",
+        "name": "google/gemini-3.1-flash-tts-preview",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.1-pro-preview",
+        "name": "Google: Gemini 3.1 Pro Preview",
+        "description": "Gemini 3.1 Pro Preview is Google’s frontier reasoning model, delivering enhanced software engineering performance, improved agentic reliability, and more efficient token usage across complex workfl...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.1-pro-preview-customtools",
+        "name": "Google: Gemini 3.1 Pro Preview Custom Tools",
+        "description": "Gemini 3.1 Pro Preview Custom Tools is a variant of Gemini 3.1 Pro that improves tool selection behavior by preventing overuse of a general bash tool when more efficient third-party...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.5-flash",
+        "name": "Gemini 3.5 Flash",
+        "description": "Google Gemini 3.5 Flash — Google's strongest Flash-tier model, sitting just under 3.1-pro-preview on intelligence (AA Intel 55.3 vs 57.2) at Flash latency. 1M token context window (1,048,576), 64K",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.5-flash-lite",
+        "name": "Google: Gemini 3.5 Flash-Lite",
+        "description": "Gemini 3.5 Flash-Lite is Google's most cost-efficient Gemini model, purpose-built for very high-volume, latency-sensitive workloads where cost per call dominates. Despite its price point it is nati...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.6-flash",
+        "name": "Google: Gemini 3.6 Flash",
+        "description": "Gemini 3.6 Flash is Google's latest fast, cost-efficient model in the Gemini 3 family — a natively multimodal model that reads text, images, video, audio, and files and responds in text, with a 1M-...",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-3.8-flash",
+        "name": "Google: Gemini 3.8 Flash",
+        "description": "Gemini 3.8 Flash is Google's most intelligent Flash model with significant gains from 3.7 Flash across software engineering, agentic tasks, and multi-step reasoning.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-embedding-001",
+        "name": "google/gemini-embedding-001",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-embedding-2-preview",
+        "name": "google/gemini-embedding-2-preview",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-flash-latest",
+        "name": "google/gemini-flash-latest",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-flash-lite-latest",
+        "name": "google/gemini-flash-lite-latest",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-pro-latest",
+        "name": "google/gemini-pro-latest",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-robotics-er-1.6-preview",
+        "name": "google/gemini-robotics-er-1.6-preview",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemma-4-26b-a4b-it",
+        "name": "Google: Gemma 4 26B A4B ",
+        "description": "Gemma 4 26B A4B IT is an instruction-tuned Mixture-of-Experts (MoE) model from Google DeepMind. Despite 25.2B total parameters, only 3.8B activate per token during inference — delivering near-31B q...",
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemma-4-31b-it",
+        "name": "Google: Gemma 4 31B",
+        "description": "Gemma 4 31B Instruct is Google DeepMind's 30.7B dense multimodal model supporting text and image input with text output. Features a 256K token context window, configurable thinking/reasoning mode,...",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/imagen-4.0-fast-generate-001",
+        "name": "google/imagen-4.0-fast-generate-001",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/imagen-4.0-generate-001",
+        "name": "google/imagen-4.0-generate-001",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/imagen-4.0-ultra-generate-001",
+        "name": "google/imagen-4.0-ultra-generate-001",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-5.6-luna",
+        "name": "gpt-5.6-luna",
+        "description": "GPT-5.6 Luna is the fast, cost-efficient model in OpenAI's GPT-5.6 series — tuned for high-volume, latency-sensitive workloads while retaining genuinely capable reasoning. It is well suited to chat...",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok/grok-4.3",
+        "name": "grok/grok-4.3",
+        "description": null,
+        "context_length": 1000000,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok/grok-4.5",
+        "name": "xAI: Grok 4.5",
+        "description": "Grok 4.5 is xAI's flagship model — its smartest to date, with frontier performance across coding, knowledge work, and STEM. Built on the 1.5-trillion-parameter V9 foundation and trained alongside t...",
+        "context_length": 500000,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok/grok-4.6",
+        "name": "SpaceXAI: Grok 4.6",
+        "description": "Grok 4.6 is SpaceXAI's smartest model to date, with frontier performance across coding, knowledge work, and STEM. It is the current flagship of the Grok line — listed as \"Latest\" in xAI's own devel...",
+        "context_length": 500000,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok/grok-imagine-image",
+        "name": "grok/grok-imagine-image",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kimi/kimi-k2.5",
+        "name": "kimi/kimi-k2.5",
+        "description": "Moonshot Kimi K2 (0905 baseline) — 1T-param MoE chat model with 32B active per pass, 256k context, balanced performance.",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kimi/kimi-k2.6",
+        "name": "kimi/kimi-k2.6",
+        "description": "Moonshot Kimi K2 Thinking — most advanced open reasoning model in the K2 series, agentic long-horizon tasks, 256k context.",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kimi/kimi-k2.7-code",
+        "name": "MoonshotAI: Kimi K2.7 Code",
+        "description": "Kimi K2.7 Code is Moonshot AI's strongest coding model to date - a coding-focused agentic model built on Kimi K2.6, with a 1T-parameter Mixture-of-Experts architecture (32B active per pass) and a 2...",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kimi/kimi-k3",
+        "name": "MoonshotAI: Kimi K3",
+        "description": "Kimi K3 is Moonshot AI's flagship model and its most capable release to date — a 2.8-trillion-parameter Mixture-of-Experts model built for long-horizon coding and end-to-end knowledge work. It pair...",
+        "context_length": 1048576,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-3-turbo",
+        "name": "Kling: Kling 3.0 Turbo",
+        "description": "Kling 3.0 Turbo is Kuaishou's speed-optimized model in the Kling 3.0 generation, built for fast, cost-efficient video with native audio bundled in. It handles both text-to-video and image-to-video...",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-v2-1-master",
+        "name": "kling/kling-v2-1-master",
+        "description": "Kling 2.1 Master — premium text-to-video and image-to-video, 5–10s clips, 1080p, 24fps.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-v2-5-turbo",
+        "name": "kling/kling-v2-5-turbo",
+        "description": "Kling 2.5 Turbo — fast text-to-video and image-to-video with first-last-frame mode, 5–10s clips, 1080p, 24fps.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-v2-6",
+        "name": "kling/kling-v2-6",
+        "description": "Kling 2.6 — text-to-video and image-to-video with motion control + audio control (pro mode), variable duration, 1080p, 24fps.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-v2-master",
+        "name": "kling/kling-v2-master",
+        "description": "Kling 2.0 Master — early flagship text-to-video and image-to-video, 5–10s clips, 720p, 24fps.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-v3",
+        "name": "kling/kling-v3",
+        "description": "Kling 3.0 — flagship text-to-video and image-to-video, multi-shot + subject + motion control, 3–15s clips, up to native 4K.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-v3-omni",
+        "name": "kling/kling-v3-omni",
+        "description": "Kling 3.0 Omni — unified text-to-video and image-to-video API with multi-shot, subject control and video-reference, 3–15s clips, up to native 4K.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "kling/kling-video-o1",
+        "name": "kling/kling-video-o1",
+        "description": "Kling O1 — next-gen video generation with text-to-video, image-to-video, subject control and video-reference editing, 5–10s clips, std/pro modes.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "meta/muse-spark-1.1",
+        "name": "Meta: Muse Spark 1.1",
+        "description": "Muse Spark 1.1 is Meta's multimodal reasoning model, built for agentic tasks. It accepts an unusually broad range of inputs — text, images, video, audio, and PDF documents — and returns text, reaso...",
+        "context_length": 1048576,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "meta/muse-spark-1.2",
+        "name": "Meta: Muse Spark 1.2",
+        "description": "Muse Spark 1.2 is Meta's reasoning model for complex agentic tasks, and the current checkpoint of the Muse Spark family. Meta describes it as an updated checkpoint over Muse Spark 1.1 with slightly...",
+        "context_length": 1048576,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "minimax/minimax-h3",
+        "name": "MiniMax: MiniMax-H3",
+        "description": "MiniMax-H3 is MiniMax's omni-modal video generation model (the Hailuo 3 generation), released July 31, 2026. It reads text, image, video and audio references as one unified context and generates 4-...",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "minimax/minimax-m2.5",
+        "name": "MiniMax: MiniMax M2.5",
+        "description": "MiniMax M2.5 — SOTA productivity LLM with strong coding + agentic capabilities, 200k context, ~60 tps output.",
+        "context_length": 204800,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "minimax/minimax-m2.5-highspeed",
+        "name": "MiniMax M2.5 highspeed",
+        "description": "MiniMax M2.5 high-speed — same model + same 200k context as M2.5, faster output (~100 tps vs ~60 tps).",
+        "context_length": 204800,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "minimax/minimax-m2.7",
+        "name": "MiniMax: MiniMax M2.7",
+        "description": "MiniMax M2.7 — next-gen agentic LLM optimized for autonomous workflows and continuous self-improvement, 200k context, ~60 tps output.",
+        "context_length": 204800,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "minimax/minimax-m2.7-highspeed",
+        "name": "MiniMax M2.7 highspeed",
+        "description": "MiniMax M2.7 high-speed — same model + same 200k context as M2.7, faster output (~100 tps vs ~60 tps).",
+        "context_length": 204800,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "minimax/minimax-m3",
+        "name": "MiniMax: MiniMax M3",
+        "description": "MiniMax-M3 is MiniMax's flagship open-weight foundation model and the first to combine three frontier capabilities at once: frontier-level coding and agentic performance, a 1M-token context window,...",
+        "context_length": 1048576,
+        "max_output_length": 512000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "obsidian/gemma-4-26B-A4B",
+        "name": "Gemma 4 26B A4B",
+        "description": "Gemma 4 26B A4B is a mixture-of-experts build of Google's Gemma 4 family (26B total parameters, about 4B active per token) with a 262K-token context window and text + image input. Preserves the bas...",
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "obsidian/Qwen3.6-35B-A3B",
+        "name": "Qwen3.6 35B A3B",
+        "description": "Qwen3.6 35B A3B is a mixture-of-experts build of Alibaba's Qwen3.6 (35B total parameters, about 3B active per token) with a 262K-token context window and text, image, and video input. Preserves the...",
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "obsidian/Qwen3.8-27B",
+        "name": "Qwen3.8 27B",
+        "description": "Qwen3.8 27B served in block-FP8 for higher throughput and lower memory footprint, with the vision tower kept at full precision. Preserves the original model's reasoning, coding, multilingual perfor...",
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-3.5-turbo",
+        "name": "OpenAI: GPT-3.5 Turbo",
+        "description": "GPT-3.5 Turbo is OpenAI's fastest model. It can understand and generate natural language or code, and is optimized for chat and traditional completion tasks.",
+        "context_length": 16385,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-3.5-turbo-0125",
+        "name": "openai/gpt-3.5-turbo-0125",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-3.5-turbo-1106",
+        "name": "openai/gpt-3.5-turbo-1106",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-3.5-turbo-16k",
+        "name": "OpenAI: GPT-3.5 Turbo 16k",
+        "description": "This model offers four times the context length of gpt-3.5-turbo, allowing it to support approximately 20 pages of text in a single request at a higher cost. Training data: up...",
+        "context_length": 16385,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4",
+        "name": "OpenAI: GPT-4",
+        "description": "OpenAI's flagship model, GPT-4 is a large-scale multimodal language model capable of solving difficult problems with greater accuracy than previous models due to its broader general knowledge and a...",
+        "context_length": 8191,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4-0613",
+        "name": "openai/gpt-4-0613",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4-turbo",
+        "name": "OpenAI: GPT-4 Turbo",
+        "description": "The latest GPT-4 Turbo model with vision capabilities. Vision requests can now use JSON mode and function calling.",
+        "context_length": 128000,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4-turbo-2024-04-09",
+        "name": "openai/gpt-4-turbo-2024-04-09",
+        "description": null,
+        "context_length": 128000,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4.1",
+        "name": "OpenAI: GPT-4.1",
+        "description": "GPT-4.1 is a flagship large language model optimized for advanced instruction following, real-world software engineering, and long-context reasoning. It supports a 1 million token context window an...",
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4.1-2025-04-14",
+        "name": "openai/gpt-4.1-2025-04-14",
+        "description": null,
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4.1-mini",
+        "name": "OpenAI: GPT-4.1 Mini",
+        "description": "GPT-4.1 Mini is a mid-sized model delivering performance competitive with GPT-4o at substantially lower latency and cost. It retains a 1 million token context window and scores 45.1% on hard...",
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4.1-mini-2025-04-14",
+        "name": "openai/gpt-4.1-mini-2025-04-14",
+        "description": null,
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4.1-nano",
+        "name": "OpenAI: GPT-4.1 Nano",
+        "description": "For tasks that demand low latency, GPT‑4.1 nano is the fastest and cheapest model in the GPT-4.1 series. It delivers exceptional performance at a small size with its 1 million...",
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4.1-nano-2025-04-14",
+        "name": "openai/gpt-4.1-nano-2025-04-14",
+        "description": null,
+        "context_length": 1047576,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o",
+        "name": "OpenAI: GPT-4o",
+        "description": "GPT-4o (\"o\" for \"omni\") is OpenAI's latest AI model, supporting both text and image inputs with text outputs. It maintains the intelligence level of [GPT-4 Turbo](/models/openai/gpt-4-turbo) while...",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-2024-05-13",
+        "name": "OpenAI: GPT-4o (2024-05-13)",
+        "description": "GPT-4o (\"o\" for \"omni\") is OpenAI's latest AI model, supporting both text and image inputs with text outputs. It maintains the intelligence level of [GPT-4 Turbo](/models/openai/gpt-4-turbo) while...",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-2024-08-06",
+        "name": "OpenAI: GPT-4o (2024-08-06)",
+        "description": "The 2024-08-06 version of GPT-4o offers improved performance in structured outputs, with the ability to supply a JSON schema in the respone_format. Read more [here](https://openai.com/index/introdu...",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-2024-11-20",
+        "name": "OpenAI: GPT-4o (2024-11-20)",
+        "description": "The 2024-11-20 version of GPT-4o offers a leveled-up creative writing ability with more natural, engaging, and tailored writing to improve relevance & readability. It’s also better at working with...",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini",
+        "name": "OpenAI: GPT-4o-mini",
+        "description": "GPT-4o mini is OpenAI's newest model after [GPT-4 Omni](/models/openai/gpt-4o), supporting both text and image inputs with text outputs. As their most advanced small model, it is many multiples mor...",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini-2024-07-18",
+        "name": "OpenAI: GPT-4o-mini (2024-07-18)",
+        "description": "GPT-4o mini is OpenAI's newest model after [GPT-4 Omni](/models/openai/gpt-4o), supporting both text and image inputs with text outputs. As their most advanced small model, it is many multiples mor...",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini-tts",
+        "name": "openai/gpt-4o-mini-tts",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini-tts-2025-03-20",
+        "name": "openai/gpt-4o-mini-tts-2025-03-20",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini-tts-2025-12-15",
+        "name": "openai/gpt-4o-mini-tts-2025-12-15",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5",
+        "name": "OpenAI: GPT-5",
+        "description": "GPT-5 is OpenAI’s most advanced model, offering major improvements in reasoning, code quality, and user experience. It is optimized for complex tasks that require step-by-step reasoning, instructio...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-2025-08-07",
+        "name": "openai/gpt-5-2025-08-07",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-chat-latest",
+        "name": "openai/gpt-5-chat-latest",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-mini",
+        "name": "OpenAI: GPT-5 Mini",
+        "description": "GPT-5 Mini is a compact version of GPT-5, designed to handle lighter-weight reasoning tasks. It provides the same instruction-following and safety-tuning benefits as GPT-5, but with reduced latency...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-mini-2025-08-07",
+        "name": "openai/gpt-5-mini-2025-08-07",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-nano",
+        "name": "OpenAI: GPT-5 Nano",
+        "description": "GPT-5-Nano is the smallest and fastest variant in the GPT-5 system, optimized for developer tools, rapid interactions, and ultra-low latency environments. While limited in reasoning depth compared...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-nano-2025-08-07",
+        "name": "openai/gpt-5-nano-2025-08-07",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-pro",
+        "name": "OpenAI: GPT-5 Pro",
+        "description": "GPT-5 Pro is OpenAI’s most advanced model, offering major improvements in reasoning, code quality, and user experience. It is optimized for complex tasks that require step-by-step reasoning, instru...",
+        "context_length": 400000,
+        "max_output_length": 272000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-pro-2025-10-06",
+        "name": "openai/gpt-5-pro-2025-10-06",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 272000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-search-api",
+        "name": "openai/gpt-5-search-api",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5-search-api-2025-10-14",
+        "name": "openai/gpt-5-search-api-2025-10-14",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.1",
+        "name": "OpenAI: GPT-5.1",
+        "description": "GPT-5.1 is the latest frontier-grade model in the GPT-5 series, offering stronger general-purpose reasoning, improved instruction adherence, and a more natural conversational style compared to GPT-...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.1-2025-11-13",
+        "name": "openai/gpt-5.1-2025-11-13",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.1-chat-latest",
+        "name": "openai/gpt-5.1-chat-latest",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.1-codex",
+        "name": "OpenAI: GPT-5.1-Codex",
+        "description": "GPT-5.1-Codex is a specialized version of GPT-5.1 optimized for software engineering and coding workflows. It is designed for both interactive development sessions and long, independent execution o...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.1-codex-mini",
+        "name": "OpenAI: GPT-5.1-Codex-Mini",
+        "description": "GPT-5.1-Codex-Mini is a smaller and faster version of GPT-5.1-Codex",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.2",
+        "name": "OpenAI: GPT-5.2",
+        "description": "GPT-5.2 is the latest frontier-grade model in the GPT-5 series, offering stronger agentic and long context perfomance compared to GPT-5.1. It uses adaptive reasoning to allocate computation dynamic...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.2-2025-12-11",
+        "name": "openai/gpt-5.2-2025-12-11",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.2-chat-latest",
+        "name": "openai/gpt-5.2-chat-latest",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.2-codex",
+        "name": "OpenAI: GPT-5.2-Codex",
+        "description": "GPT-5.2-Codex is an upgraded version of GPT-5.1-Codex optimized for software engineering and coding workflows. It is designed for both interactive development sessions and long, independent executi...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.2-pro",
+        "name": "OpenAI: GPT-5.2 Pro",
+        "description": "GPT-5.2 Pro is OpenAI’s most advanced model, offering major improvements in agentic coding and long context performance over GPT-5 Pro. It is optimized for complex tasks that require step-by-step r...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.2-pro-2025-12-11",
+        "name": "openai/gpt-5.2-pro-2025-12-11",
+        "description": null,
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.3-codex",
+        "name": "OpenAI: GPT-5.3-Codex",
+        "description": "GPT-5.3-Codex is OpenAI’s most advanced agentic coding model, combining the frontier software engineering performance of GPT-5.2-Codex with the broader reasoning and professional knowledge capabili...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "name": "OpenAI: GPT-5.4",
+        "description": "GPT-5.4 is OpenAI’s latest frontier model, unifying the Codex and GPT lines into a single system. It features a 1M+ token context window (922K input, 128K output) with support for...",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-2026-03-05",
+        "name": "openai/gpt-5.4-2026-03-05",
+        "description": null,
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-mini",
+        "name": "OpenAI: GPT-5.4 Mini",
+        "description": "GPT-5.4 mini brings the core capabilities of GPT-5.4 to a faster, more efficient model optimized for high-throughput workloads. It supports text and image inputs with strong performance across reas...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-mini-2026-03-17",
+        "name": "openai/gpt-5.4-mini-2026-03-17",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-nano",
+        "name": "OpenAI: GPT-5.4 Nano",
+        "description": "GPT-5.4 nano is the most lightweight and cost-efficient variant of the GPT-5.4 family, optimized for speed-critical and high-volume tasks. It supports text and image inputs and is designed for low-...",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-nano-2026-03-17",
+        "name": "openai/gpt-5.4-nano-2026-03-17",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-pro",
+        "name": "OpenAI: GPT-5.4 Pro",
+        "description": "GPT-5.4 Pro is OpenAI's most advanced model, building on GPT-5.4's unified architecture with enhanced reasoning capabilities for complex, high-stakes tasks. It features a 1M+ token context window (...",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.4-pro-2026-03-05",
+        "name": "openai/gpt-5.4-pro-2026-03-05",
+        "description": null,
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.5",
+        "name": "OpenAI: GPT-5.5",
+        "description": "GPT-5.5 is OpenAI’s frontier model designed for complex professional workloads, building on GPT-5.4 with stronger reasoning, higher reliability, and improved token efficiency on hard tasks. It feat...",
+        "context_length": null,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.5-2026-04-23",
+        "name": "openai/gpt-5.5-2026-04-23",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.5-pro",
+        "name": "OpenAI: GPT-5.5 Pro",
+        "description": "GPT-5.5 Pro is OpenAI’s high-capability model optimized for deep reasoning and accuracy on complex, high-stakes workloads. It features a 1M+ token context window (922K input, 128K output) with supp...",
+        "context_length": null,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.5-pro-2026-04-23",
+        "name": "openai/gpt-5.5-pro-2026-04-23",
+        "description": null,
+        "context_length": null,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.6-luna",
+        "name": "OpenAI: GPT-5.6 Luna",
+        "description": "GPT-5.6 Luna is the fast, cost-efficient model in OpenAI's GPT-5.6 series — tuned for high-volume, latency-sensitive workloads while retaining genuinely capable reasoning. It is well suited to chat...",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.6-sol",
+        "name": "OpenAI: GPT-5.6 Sol",
+        "description": "GPT-5.6 Sol is the flagship model in OpenAI's GPT-5.6 series — the tier built for the hardest work: deep multi-step reasoning, large-scale software engineering, and long-horizon agentic workflows....",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-5.6-terra",
+        "name": "OpenAI: GPT-5.6 Terra",
+        "description": "GPT-5.6 Terra is the balanced model in OpenAI's GPT-5.6 series, sitting between the Sol flagship and the cost-efficient Luna tier to give the best quality-to-cost ratio for everyday production work...",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-6-astra",
+        "name": "OpenAI: GPT-6 Astra",
+        "description": "GPT-6 Astra is OpenAI's flagship model for demanding, long-horizon end-to-end work — advanced analysis, software engineering, deep research, scientific work, and document creation. It pairs a 1M-to...",
+        "context_length": 1050000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-image-1",
+        "name": "openai/gpt-image-1",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-image-1-mini",
+        "name": "openai/gpt-image-1-mini",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-image-1.5",
+        "name": "openai/gpt-image-1.5",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-image-2",
+        "name": "openai/gpt-image-2",
+        "description": "OpenAI's gpt-image-2 is the next generation of the gpt-image",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-oss-120b",
+        "name": "OpenAI: gpt-oss-120b",
+        "description": "gpt-oss-120b is an open-weight, 117B-parameter Mixture-of-Experts (MoE) language model from OpenAI designed for high-reasoning, agentic, and general-purpose production use cases. It activates 5.1B...",
+        "context_length": 131072,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/text-embedding-3-large",
+        "name": "openai/text-embedding-3-large",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/text-embedding-3-small",
+        "name": "openai/text-embedding-3-small",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/text-embedding-ada-002",
+        "name": "openai/text-embedding-ada-002",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/tts-1",
+        "name": "openai/tts-1",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/tts-1-1106",
+        "name": "openai/tts-1-1106",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/tts-1-hd",
+        "name": "openai/tts-1-hd",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/tts-1-hd-1106",
+        "name": "openai/tts-1-hd-1106",
+        "description": null,
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "orca/dub",
+        "name": "OrcaDub: OrcaDub 1.0",
+        "description": "OrcaDub 1.0 is an end-to-end, prosody-aware dubbing and video-translation model. Given a source video, it produces a dubbed video in a target language in the original speakers' cloned voices, prese...",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-max",
+        "name": "Qwen: Qwen3 Max",
+        "description": "Qwen3 Max — proprietary flagship chat model, 256k context, thinking mode + function calling.",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-max-preview",
+        "name": "qwen/qwen3-max-preview",
+        "description": "Qwen3 Max preview — proprietary chat preview, 256k context, thinking mode + function calling.",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-vl-235b-a22b-instruct",
+        "name": "Qwen: Qwen3 VL 235B A22B Instruct",
+        "description": "Qwen3-VL 235B-A22B Instruct — open-weight vision-language model, 235B total / 22B active params, 256k context, no thinking mode.",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-vl-235b-a22b-thinking",
+        "name": "Qwen: Qwen3 VL 235B A22B Thinking",
+        "description": "Qwen3-VL 235B-A22B Thinking — open-weight vision-language reasoning model, 235B total / 22B active params, 128k context.",
+        "context_length": 131072,
+        "max_output_length": 40960,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-vl-8b-instruct",
+        "name": "Qwen: Qwen3 VL 8B Instruct",
+        "description": "Qwen3-VL 8B Instruct — open-weight small vision-language model, 8B params, 128k context, no thinking mode.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-vl-8b-thinking",
+        "name": "Qwen: Qwen3 VL 8B Thinking",
+        "description": "Qwen3-VL 8B Thinking — open-weight small vision-language reasoning model, 8B params, 128k context.",
+        "context_length": 131072,
+        "max_output_length": 40960,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-122b-a10b",
+        "name": "Qwen: Qwen3.5-122B-A10B",
+        "description": "Qwen3.5 122B-A10B — open-weight MoE multimodal (text/image/video), 122B total / 10B active params, 32k context (vision mode).",
+        "context_length": 32768,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-27b",
+        "name": "Qwen: Qwen3.5-27B",
+        "description": "Qwen3.5 27B — open-weight dense multimodal (text/image/video), 27B params, 32k context (vision mode).",
+        "context_length": 32768,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-35b-a3b",
+        "name": "Qwen: Qwen3.5-35B-A3B",
+        "description": "Qwen3.5 35B-A3B — open-weight MoE multimodal (text/image/video), 35B total / 3B active params, 32k context (vision mode).",
+        "context_length": 32768,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-397b-a17b",
+        "name": "Qwen: Qwen3.5 397B A17B",
+        "description": "Qwen3.5 397B-A17B — open-weight MoE multimodal (text/image/video), 397B total / 17B active params, 32k context (vision mode).",
+        "context_length": 32768,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-flash",
+        "name": "qwen/qwen3.5-flash",
+        "description": "Qwen3.5 Flash — multimodal chat (text/image/video) optimized for cost, 1M context.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-flash-2026-02-23",
+        "name": "qwen/qwen3.5-flash-2026-02-23",
+        "description": "Qwen3.5 Flash snapshot 2026-02-23 — frozen version of qwen3.5-flash, same capabilities.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-plus",
+        "name": "qwen/qwen3.5-plus",
+        "description": "Qwen3.5 Plus — multimodal chat (text/image/video), 1M context, strong coding + agent capability.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.5-plus-2026-02-15",
+        "name": "qwen/qwen3.5-plus-2026-02-15",
+        "description": "Qwen3.5 Plus snapshot 2026-02-15 — frozen version of qwen3.5-plus, same capabilities.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.6-35b-a3b",
+        "name": "Qwen: Qwen3.6 35B A3B",
+        "description": "Qwen3.6 35B-A3B — open-weight MoE multimodal (text/image/video), 35B total / 3B active params, 256k context.",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.6-flash",
+        "name": "Qwen: Qwen3.6 Flash",
+        "description": "Qwen3.6 Flash — multimodal chat (text/image/video) optimized for cost, 1M context, near-flagship capability.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.6-flash-2026-04-16",
+        "name": "qwen/qwen3.6-flash-2026-04-16",
+        "description": "Qwen3.6 Flash snapshot 2026-04-16 — frozen version of qwen3.6-flash, same capabilities.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.6-plus",
+        "name": "Qwen: Qwen3.6 Plus",
+        "description": "Qwen3.6 Plus — flagship multimodal chat (text/image/video), 1M context, Vibe Coding + function calling.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.6-plus-2026-04-02",
+        "name": "qwen/qwen3.6-plus-2026-04-02",
+        "description": "Qwen3.6 Plus snapshot 2026-04-02 — frozen version of qwen3.6-plus, same capabilities.",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.7-flash",
+        "name": "Qwen: Qwen3.7 Flash",
+        "description": "Qwen3.7 Flash is Alibaba's fast, extremely cost-efficient model in the Qwen3.7 family, sitting below Qwen3.7-Plus and Qwen3.7-Max as the high-throughput tier. It is natively multimodal on the input...",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.7-max",
+        "name": "Qwen3.7 Max",
+        "description": "Qwen3.7-Max — Alibaba's flagship proprietary model, designed as a foundation for the agent era. Native 1M token context window, with an extended thinking mode (and preserve_thinking across turns)",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.7-max-2026-05-20",
+        "name": "Qwen3.7 Max (2026-05-20)",
+        "description": "Qwen3.7-Max (2026-05-20 snapshot) — Dated checkpoint of Alibaba's flagship proprietary agent-era model, pinned for reproducible production workloads. Native 1M token context window, with an",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.7-plus",
+        "name": "Qwen: Qwen3.7 Plus",
+        "description": "Qwen3.7-Plus is Alibaba's most capable multimodal agent model, unifying vision and language into a single, versatile agent foundation. Built on the Qwen3.7 text backbone, it delivers a comprehensiv...",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.8-27b",
+        "name": "Qwen: Qwen3.8 27B",
+        "description": "Qwen3.8-27B is Alibaba's open-weight 27B dense multimodal model, released under Apache-2.0 and self-hosted on OrcaRouter's own infrastructure. It accepts text, images, and video and returns text, w...",
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.8-flash",
+        "name": "Qwen: Qwen3.8 Flash",
+        "description": "Qwen3.8 Flash is a multimodal reasoning model from Alibaba. It is suited for coding assistance, agentic workflows, visual understanding, document and codebase analysis, desktop interaction, chart a...",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.8-max",
+        "name": "Qwen: Qwen3.8 Max",
+        "description": "Qwen3.8-Max is Alibaba's newest flagship model in the Qwen line and its highest-capability tier to date. Alibaba positions it directly against GPT-5.5, Claude Opus 4.7, and Gemini 3.1 Pro in its ow...",
+        "context_length": 1000000,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3.8-max-0902",
+        "name": "Qwen: Qwen3.8 Max (0902)",
+        "description": "Dated September 2, 2026 snapshot of Qwen3.8 Max, Alibaba's flagship multimodal reasoning model: text + image + video in, text out, 1M-token context. Same capabilities and pricing as the base model;...",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "tencent/hy3",
+        "name": "Tencent: Hy3",
+        "description": "Hy3 is Tencent Hunyuan's production-grade Mixture-of-Experts model — 295B total parameters with only 21B active per pass (192 experts, top-8 routing), the upgraded release built on the Hy3-preview...",
+        "context_length": 262144,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "tencent/hy3-free",
+        "name": "Tencent: Hy3 (Free)",
+        "description": "Hy3 is Tencent Hunyuan's production-grade Mixture-of-Experts model — 295B total parameters with only 21B active per pass (192 experts, top-8 routing), the upgraded release built on the Hy3-preview...",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-4.5",
+        "name": "Z.ai: GLM 4.5",
+        "description": "Zhipu (Z.ai) flagship open-source MoE: 355B total / 32B active. Hybrid reasoning (thinking / non-thinking modes), native tool calling and agentic surface, 128K context.",
+        "context_length": 128000,
+        "max_output_length": 96000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-4.5-air",
+        "name": "Z.ai: GLM 4.5 Air",
+        "description": "Compact MoE sibling of GLM-4.5: 106B total / 12B active. Same hybrid-reasoning and tool-calling stack tuned for high-throughput, low-cost inference. 128K context.",
+        "context_length": 128000,
+        "max_output_length": 96000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-4.6",
+        "name": "Z.ai: GLM 4.6",
+        "description": "Successor to GLM-4.5 with the context window extended to 200K, in-thinking tool calls, and stronger agentic / search behavior.",
+        "context_length": 200000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-4.7",
+        "name": "Z.ai: GLM 4.7",
+        "description": "Iteration on GLM-4.6 introducing retained reasoning and round-based reasoning for more stable execution on complex multi-turn tasks. 200K context.",
+        "context_length": 200000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-5",
+        "name": "Z.ai: GLM 5",
+        "description": "Next-generation Zhipu flagship with multiple thinking modes and strong tool calling. 200K context / 128K max output.",
+        "context_length": 200000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-5.1",
+        "name": "Z.ai: GLM 5.1",
+        "description": "Z.ai's strongest coding-and-agent model in the GLM-5 line; supports streaming tool calls and deep thinking. 200K context.",
+        "context_length": 200000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-5.2",
+        "name": "Z.ai: GLM 5.2",
+        "description": "GLM-5.2 is Z.ai (Zhipu AI)'s flagship model for the era of long-horizon tasks. It pairs a truly usable 1M-token context window with up to 128K output tokens, letting it hold project-level engineeri...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-5.3",
+        "name": "Z.ai: GLM 5.3",
+        "description": "GLM-5.3 is Z.ai (Zhipu AI)'s latest flagship model for complex software engineering and long-horizon agentic tasks. It delivers roughly a 50% improvement in coding experience over GLM-5.2, matches...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-5.3-flash",
+        "name": "Z.ai: GLM 5.3 Flash",
+        "description": "GLM-5.3-Flash is a native multimodal model from Z.ai. It is suited for efficient coding and long-horizon agent tasks. Its hybrid sparse and linear attention architecture maintains accurate long-con...",
+        "context_length": 1000000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "z-ai/glm-5.3-flash-free",
+        "name": "Z.ai: GLM 5.3 Flash (Free)",
+        "description": "GLM-5.3-Flash is a native multimodal model from Z.ai. It is suited for efficient coding and long-horizon agent tasks. Its hybrid sparse and linear attention architecture maintains accurate long-con...",
+        "context_length": null,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/volcengine": {
+    "models": [
+      {
+        "model": "deepseek-v4-pro-ga-260813",
+        "name": "DeepSeek V4 Pro 0813",
+        "description": "DeepSeek V4 Pro snapshot with million-token context and support for thinking and non-thinking modes",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-22"
+      },
+      {
+        "model": "deepseek-v4-flash-ga-260731",
+        "name": "DeepSeek V4 Flash 0731",
+        "description": "Official DeepSeek V4 Flash release with enhanced agentic capabilities and integrated DSpark speculative decoding",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-31"
+      },
+      {
+        "model": "doubao-seed-evolving",
+        "name": "Seed Evolving",
+        "description": "Rolling ByteDance Seed model for rapidly updated reasoning, coding, and agent capabilities",
+        "context_length": 256000,
+        "max_output_length": 256000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-23"
+      },
+      {
+        "model": "doubao-seed-2-1-pro-260628",
+        "name": "Seed 2.1 Pro",
+        "description": "Flagship ByteDance Seed 2.1 model for complex multimodal reasoning, coding, and agents",
+        "context_length": 256000,
+        "max_output_length": 256000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-23"
+      },
+      {
+        "model": "doubao-seed-2-1-turbo-260628",
+        "name": "Seed 2.1 Turbo",
+        "description": "Faster ByteDance Seed 2.1 model for multimodal reasoning and latency-sensitive agent workflows",
+        "context_length": 256000,
+        "max_output_length": 256000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-23"
+      },
+      {
+        "model": "doubao-seed-character-260628",
+        "name": "Seed Character",
+        "description": "ByteDance Seed model optimized for character-driven dialogue and consistent conversational behavior",
+        "context_length": 256000,
+        "max_output_length": 256000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-23"
+      },
+      {
+        "model": "glm-5-2-260617",
+        "name": "GLM-5.2",
+        "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-13"
+      },
+      {
+        "model": "doubao-seed-2-0-pro-260215",
+        "name": "Seed 2.0 Pro",
+        "description": "Flagship ByteDance Seed 2.0 model for complex multimodal reasoning and long-horizon agent workflows",
+        "context_length": 256000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-14"
+      },
+      {
+        "model": "doubao-seed-2-0-lite-260428",
+        "name": "Seed 2.0 Lite",
+        "description": "Cost-efficient ByteDance Seed 2.0 model for production chat, analysis, and structured generation",
+        "context_length": 256000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-14"
+      },
+      {
+        "model": "doubao-seed-2-0-code-preview-260215",
+        "name": "Seed 2.0 Code",
+        "description": "ByteDance Seed coding model for multimodal software engineering and long-running agents",
+        "context_length": 262144,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-14"
+      },
+      {
+        "model": "doubao-seed-2-0-mini-260428",
+        "name": "Seed 2.0 Mini",
+        "description": "Lightweight ByteDance Seed 2.0 model for low-latency multimodal reasoning and high-volume tasks",
+        "context_length": 256000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-14"
+      },
+      {
+        "model": "doubao-seed-1-8-251228",
+        "name": "Seed 1.8",
+        "description": "ByteDance Seed model for multimodal reasoning, long-context analysis, and agent workflows",
+        "context_length": 256000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-28"
+      },
+      {
+        "model": "doubao-seed-1-6-251015",
+        "name": "Seed 1.6",
+        "description": "ByteDance Seed model for long-context reasoning, instruction following, and tool-assisted tasks",
+        "context_length": 256000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-10-15"
+      },
+      {
+        "model": "doubao-seed-1-6-flash-250828",
+        "name": "Seed 1.6 Flash",
+        "description": "Low-latency ByteDance Seed model for high-throughput chat, extraction, and lightweight tool use",
+        "context_length": 256000,
+        "max_output_length": 32000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-28"
+      },
+      {
+        "model": "doubao-seed-1-6-vision-250815",
+        "name": "Seed 1.6 Vision",
+        "description": "ByteDance Seed multimodal model for image understanding, visual reasoning, and tool-assisted tasks",
+        "context_length": 256000,
+        "max_output_length": 32000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-15"
+      }
+    ]
+  },
+  "proxy/gemini": {
+    "models": [
+      {
+        "model": "gemini-flash-latest",
+        "name": "Gemini Flash Latest",
+        "description": "High-efficiency Gemini model for agentic workflows, coding, and multimodal reasoning",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-13"
+      },
+      {
+        "model": "gemini-3.7-flash",
+        "name": "Gemini 3.7 Flash",
+        "description": "High-efficiency Gemini model for agentic workflows, coding, and multimodal reasoning",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-13"
+      },
+      {
+        "model": "gemini-flash-lite-latest",
+        "name": "Gemini Flash-Lite Latest",
+        "description": "Fast Gemini model balancing multimodal reasoning, tool use, and cost",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-21"
+      },
+      {
+        "model": "gemini-3.5-flash-lite",
+        "name": "Gemini 3.5 Flash Lite",
+        "description": "Fast Gemini model balancing multimodal reasoning, tool use, and cost",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-21"
+      },
+      {
+        "model": "gemini-3.6-flash",
+        "name": "Gemini 3.6 Flash",
+        "description": "Fast Gemini model balancing multimodal reasoning, tool use, and cost",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-21"
+      },
+      {
+        "model": "gemini-3.1-flash-lite-image",
+        "name": "Nano Banana 2 Lite",
+        "description": "Fastest, most cost-efficient Gemini image model for high-volume 1K generation and editing",
+        "context_length": 65536,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-30"
+      },
+      {
+        "model": "gemini-omni-flash-preview",
+        "name": "Gemini Omni Flash Preview",
+        "description": "Video generation and editing model for fast, conversational text- and image-to-video workflows",
+        "context_length": 131072,
+        "max_output_length": 65536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-06-30"
+      },
+      {
+        "model": "gemini-3.5-live-translate-preview",
+        "name": "Gemini 3.5 Live Translate Preview",
+        "description": "Low-latency audio-to-audio model for real-time speech translation across 70+ languages",
+        "context_length": 16384,
+        "max_output_length": 32768,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-06-09"
+      },
+      {
+        "model": "gemini-3-pro-image",
+        "name": "Nano Banana Pro",
+        "description": "Nano Banana Pro for higher-fidelity image generation and design-heavy edits",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-05-28"
+      },
+      {
+        "model": "gemini-3.1-flash-image",
+        "name": "Nano Banana 2",
+        "description": "Image model for prompt-driven generation, editing, and visual design workflows",
+        "context_length": 65536,
+        "max_output_length": 65536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-05-28"
+      },
+      {
+        "model": "gemini-3.5-flash",
+        "name": "Gemini 3.5 Flash",
+        "description": "Fast Gemini model balancing multimodal reasoning, tool use, and cost",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-05-19"
+      },
+      {
+        "model": "gemini-3.1-flash-lite",
+        "name": "Gemini 3.1 Flash Lite",
+        "description": "Low-latency Gemini model for high-volume multimodal and agent workloads",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-05-07"
+      },
+      {
+        "model": "gemini-embedding-2",
+        "name": "Gemini Embedding 2",
+        "description": "Multimodal embedding model mapping text, images, video, audio, and PDFs into a unified embedding space",
+        "context_length": 8192,
+        "max_output_length": 1,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-04-22"
+      },
+      {
+        "model": "deep-research-preview-04-2026",
+        "name": "Deep Research Preview (Apr-21-2026)",
+        "description": "Agentic model for autonomous multi-step research, synthesis, and cited reports",
+        "context_length": 131072,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-21"
+      },
+      {
+        "model": "deep-research-max-preview-04-2026",
+        "name": "Deep Research Max Preview (Apr-21-2026)",
+        "description": "Maximum-comprehensiveness agentic researcher for multi-step investigation, synthesis, and cited reports",
+        "context_length": 131072,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-21"
+      },
+      {
+        "model": "gemini-3.1-flash-tts-preview",
+        "name": "Gemini 3.1 Flash TTS Preview",
+        "description": "Low-latency speech generation with steerable prompts and expressive audio tags",
+        "context_length": 8192,
+        "max_output_length": 16384,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-04-15"
+      },
+      {
+        "model": "gemini-robotics-er-1.6-preview",
+        "name": "Gemini Robotics-ER 1.6 Preview",
+        "description": "Vision-language model for embodied reasoning: spatial understanding, task planning, and physical-world agentic robotics",
+        "context_length": 131072,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-14"
+      },
+      {
+        "model": "gemma-4-26b-a4b-it",
+        "name": "Gemma 4 26B A4B IT",
+        "description": "Open Gemma instruction model for efficient chat and self-hosted deployments",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-02"
+      },
+      {
+        "model": "gemma-4-31b-it",
+        "name": "Gemma 4 31B IT",
+        "description": "Largest Gemma 4 instruction model for open, self-hosted chat and reasoning",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-02"
+      },
+      {
+        "model": "veo-3.1-lite-generate-preview",
+        "name": "Veo 3.1 lite",
+        "description": "Video model for prompt-guided generation, editing, and motion workflows",
+        "context_length": 480,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-03-31"
+      },
+      {
+        "model": "gemini-3.1-flash-live-preview",
+        "name": "Gemini 3.1 Flash Live Preview",
+        "description": "High-quality, low-latency Live API model for real-time dialogue and voice-first AI applications",
+        "context_length": 131072,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-03-26"
+      },
+      {
+        "model": "lyria-3-clip-preview",
+        "name": "Lyria 3 Clip Preview",
+        "description": "Music generation model for short 30-second clips, loops, and previews from text or image prompts",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-03-25"
+      },
+      {
+        "model": "lyria-3-pro-preview",
+        "name": "Lyria 3 Pro Preview",
+        "description": "Music generation model for full-length songs from text or images with vocals and structure",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-03-25"
+      },
+      {
+        "model": "gemini-3.1-flash-lite-preview",
+        "name": "Gemini 3.1 Flash Lite Preview",
+        "description": "Legacy model retained for compatibility with older integrations",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": "deprecated",
+        "last_updated": "2026-03-03"
+      },
+      {
+        "model": "gemini-3.1-flash-image-preview",
+        "name": "Nano Banana 2",
+        "description": "Image model for prompt-driven generation, editing, and visual design workflows",
+        "context_length": 65536,
+        "max_output_length": 65536,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-02-26"
+      },
+      {
+        "model": "gemini-3.1-pro-preview",
+        "name": "Gemini 3.1 Pro Preview",
+        "description": "Reasoning-first Gemini preview for agentic coding and complex problem solving",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-19"
+      },
+      {
+        "model": "gemini-3.1-pro-preview-customtools",
+        "name": "Gemini 3.1 Pro Preview Custom Tools",
+        "description": "Advanced Gemini model for complex reasoning, coding, and multimodal analysis",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-19"
+      },
+      {
+        "model": "veo-3.1-fast-generate-preview",
+        "name": "Veo 3.1 fast",
+        "description": "Video model for prompt-guided generation, editing, and motion workflows",
+        "context_length": 480,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2026-01-01"
+      },
+      {
+        "model": "veo-3.1-generate-preview",
+        "name": "Veo 3.1",
+        "description": "Video model for prompt-guided generation, editing, and motion workflows",
+        "context_length": 480,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": "beta",
+        "last_updated": "2026-01"
+      },
+      {
+        "model": "gemini-3-flash-preview",
+        "name": "Gemini 3 Flash Preview",
+        "description": "New Gemini flash lane bringing frontier-style multimodal reasoning to cheaper runs",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-17"
+      },
+      {
+        "model": "gemini-3-pro-image-preview",
+        "name": "Nano Banana Pro",
+        "description": "Nano Banana Pro for higher-fidelity image generation and design-heavy edits",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-11-20"
+      },
+      {
+        "model": "gemini-2.5-computer-use-preview-10-2025",
+        "name": "Gemini 2.5 Computer Use Preview 10-2025",
+        "description": "Specialized Gemini 2.5 model for browser-control agents that automate UI tasks",
+        "context_length": 131072,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-10-07"
+      },
+      {
+        "model": "gemini-2.5-flash-image",
+        "name": "Nano Banana",
+        "description": "Nano Banana image model for fast generation, edits, and character-consistent assets",
+        "context_length": 32768,
+        "max_output_length": 32768,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-08-26"
+      },
+      {
+        "model": "gemini-2.5-flash-lite",
+        "name": "Gemini 2.5 Flash-Lite",
+        "description": "Lean Gemini 2.5 lane for cheap multimodal traffic and quick agents",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-06-17"
+      },
+      {
+        "model": "gemini-2.5-flash",
+        "name": "Gemini 2.5 Flash",
+        "description": "Fast Gemini workhorse for multimodal apps where latency and price matter",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-06-17"
+      },
+      {
+        "model": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro",
+        "description": "Google's proven reasoning model for coding, math, and multimodal analysis",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-06-17"
+      },
+      {
+        "model": "gemini-embedding-001",
+        "name": "Gemini Embedding 001",
+        "description": "Embedding model for semantic search, retrieval, clustering, and ranking pipelines",
+        "context_length": 2048,
+        "max_output_length": 1,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-05-20"
+      },
+      {
+        "model": "gemini-2.5-pro-preview-tts",
+        "name": "Gemini 2.5 Pro Preview TTS",
+        "description": "Speech generation model for controllable voice, narration, and audio delivery",
+        "context_length": 8192,
+        "max_output_length": 16384,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-05-01"
+      },
+      {
+        "model": "gemini-2.5-flash-preview-tts",
+        "name": "Gemini 2.5 Flash Preview TTS",
+        "description": "Speech generation model for controllable voice, narration, and audio delivery",
+        "context_length": 8192,
+        "max_output_length": 16384,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-05-01"
+      }
+    ]
+  },
+  "proxy/tongyi": {
+    "models": [
+      {
+        "model": "qwen3.8-flash",
+        "name": "Qwen3.8 Flash",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-26"
+      },
+      {
+        "model": "qwen3.8-max",
+        "name": "Qwen3.8 Max",
+        "description": "2.4-trillion-parameter MoE flagship for coding, professional work, multimodal understanding, and long-horizon agentic workflows",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-08-03"
+      },
+      {
+        "model": "deepseek-v4-flash-0731",
+        "name": "DeepSeek V4 Flash 0731",
+        "description": "Official DeepSeek V4 Flash release with enhanced agentic capabilities and integrated DSpark speculative decoding",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-07-31"
+      },
+      {
+        "model": "glm-5.2",
+        "name": "GLM-5.2",
+        "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
+        "context_length": 1000000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-13"
+      },
+      {
+        "model": "qwen3.7-plus",
+        "name": "Qwen3.7 Plus",
+        "description": "Multimodal Qwen workhorse for long-context agents, visual inputs, and coding",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-04"
+      },
+      {
+        "model": "qwen3.7-max",
+        "name": "Qwen3.7 Max",
+        "description": "Qwen frontier model tuned for agent frameworks, coding assistants, and long tasks",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-05-21"
+      },
+      {
+        "model": "qwen3.6-flash",
+        "name": "Qwen3.6 Flash",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-27"
+      },
+      {
+        "model": "qwen3.6-27b",
+        "name": "Qwen3.6 27B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-22"
+      },
+      {
+        "model": "qwen3.6-max-preview",
+        "name": "Qwen3.6 Max Preview",
+        "description": "Flagship Qwen model for complex reasoning, coding, and agentic workflows",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-20"
+      },
+      {
+        "model": "qwen3.6-35b-a3b",
+        "name": "Qwen3.6 35B-A3B",
+        "description": "Open multimodal Qwen MoE for local agents that need vision, audio, and code",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-17"
+      },
+      {
+        "model": "qwen3.6-plus",
+        "name": "Qwen3.6 Plus",
+        "description": "Earlier Qwen multimodal workhorse for million-token agent and document tasks",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-02"
+      },
+      {
+        "model": "qwen3.5-35b-a3b",
+        "name": "Qwen3.5 35B-A3B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-23"
+      },
+      {
+        "model": "qwen3.5-27b",
+        "name": "Qwen3.5 27B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-23"
+      },
+      {
+        "model": "qwen3.5-122b-a10b",
+        "name": "Qwen3.5 122B-A10B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-23"
+      },
+      {
+        "model": "qwen3.5-plus",
+        "name": "Qwen3.5 Plus",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-16"
+      },
+      {
+        "model": "qwen3.5-397b-a17b",
+        "name": "Qwen3.5 397B-A17B",
+        "description": "Large open Qwen multimodal MoE for visual agents and long technical tasks",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-15"
+      },
+      {
+        "model": "qwen3-vl-plus",
+        "name": "Qwen3-VL Plus",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-23"
+      },
+      {
+        "model": "qwen3-max",
+        "name": "Qwen3 Max",
+        "description": "Flagship Qwen3 model for coding agents, complex reasoning, and tool use",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-23"
+      },
+      {
+        "model": "qwen3-livetranslate-flash-realtime",
+        "name": "Qwen3-LiveTranslate Flash Realtime",
+        "description": "Speech generation model for controllable voice, narration, and audio delivery",
+        "context_length": 53248,
+        "max_output_length": 4096,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-09-22"
+      },
+      {
+        "model": "qwen3-omni-flash",
+        "name": "Qwen3-Omni Flash",
+        "description": "Qwen omni model for text, vision, audio, and multimodal agent tasks",
+        "context_length": 65536,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-15"
+      },
+      {
+        "model": "qwen3-omni-flash-realtime",
+        "name": "Qwen3-Omni Flash Realtime",
+        "description": "Qwen omni model for text, vision, audio, and multimodal agent tasks",
+        "context_length": 65536,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-15"
+      },
+      {
+        "model": "qwen-plus",
+        "name": "Qwen Plus",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 1000000,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09-11"
+      },
+      {
+        "model": "qwen3-asr-flash",
+        "name": "Qwen3-ASR Flash",
+        "description": "Speech transcription model for accurate audio-to-text and captioning workflows",
+        "context_length": 53248,
+        "max_output_length": 4096,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-09-08"
+      },
+      {
+        "model": "qwen3-next-80b-a3b-thinking",
+        "name": "Qwen3-Next 80B-A3B (Thinking)",
+        "description": "Efficient Qwen thinking model for local reasoning, math, and coding agents",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09"
+      },
+      {
+        "model": "qwen3-next-80b-a3b-instruct",
+        "name": "Qwen3-Next 80B-A3B Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-09"
+      },
+      {
+        "model": "qwen-vl-plus",
+        "name": "Qwen-VL Plus",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-15"
+      },
+      {
+        "model": "qwen-vl-max",
+        "name": "Qwen-VL Max",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-08-13"
+      },
+      {
+        "model": "qwen3-coder-flash",
+        "name": "Qwen3 Coder Flash",
+        "description": "Qwen coding model for software agents, repository edits, and code reasoning",
+        "context_length": 1000000,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-28"
+      },
+      {
+        "model": "qwen-flash",
+        "name": "Qwen Flash",
+        "description": "Efficient Qwen model for fast chat, extraction, and high-volume workloads",
+        "context_length": 1000000,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-28"
+      },
+      {
+        "model": "qwen3-coder-plus",
+        "name": "Qwen3 Coder Plus",
+        "description": "Hosted Qwen coder for software agents, repo edits, and long-context code",
+        "context_length": 1048576,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-07-23"
+      },
+      {
+        "model": "qwen-omni-turbo-realtime",
+        "name": "Qwen-Omni Turbo Realtime",
+        "description": "Qwen omni model for text, vision, audio, and multimodal agent tasks",
+        "context_length": 32768,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-05-08"
+      },
+      {
+        "model": "qwen-turbo",
+        "name": "Qwen Turbo",
+        "description": "Efficient Qwen model for fast chat, extraction, and high-volume workloads",
+        "context_length": 1000000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04-28"
+      },
+      {
+        "model": "qwen-vl-ocr",
+        "name": "Qwen-VL OCR",
+        "description": "OCR model for extracting structured text from documents and screenshots",
+        "context_length": 34096,
+        "max_output_length": 4096,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-04-13"
+      },
+      {
+        "model": "qwen3-coder-30b-a3b-instruct",
+        "name": "Qwen3-Coder 30B-A3B Instruct",
+        "description": "Smaller Qwen coder for efficient local agents and repo-level fixes",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-32b",
+        "name": "Qwen3 32B",
+        "description": "Dense open Qwen model for self-hosted chat, reasoning, and coding",
+        "context_length": 131072,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-vl-30b-a3b",
+        "name": "Qwen3-VL 30B-A3B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-235b-a22b",
+        "name": "Qwen3 235B-A22B",
+        "description": "Large open Qwen MoE for multilingual reasoning, coding, and tool use",
+        "context_length": 131072,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-vl-235b-a22b",
+        "name": "Qwen3-VL 235B-A22B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-14b",
+        "name": "Qwen3 14B",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-coder-480b-a35b-instruct",
+        "name": "Qwen3-Coder 480B-A35B Instruct",
+        "description": "Open Qwen coding heavyweight for repository reasoning and agentic engineering",
+        "context_length": 262144,
+        "max_output_length": 65536,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen3-8b",
+        "name": "Qwen3 8B",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-04"
+      },
+      {
+        "model": "qwen-omni-turbo",
+        "name": "Qwen-Omni Turbo",
+        "description": "Qwen omni model for text, vision, audio, and multimodal agent tasks",
+        "context_length": 32768,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-03-26"
+      },
+      {
+        "model": "qvq-max",
+        "name": "QVQ Max",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-03-25"
+      },
+      {
+        "model": "qwq-plus",
+        "name": "QwQ Plus",
+        "description": "Qwen reasoning model for deliberate problem solving, math, and coding",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-03-05"
+      },
+      {
+        "model": "qwen-max",
+        "name": "Qwen Max",
+        "description": "Flagship Qwen model for complex reasoning, coding, and agentic workflows",
+        "context_length": 32768,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-01-25"
+      },
+      {
+        "model": "qwen-mt-turbo",
+        "name": "Qwen-MT Turbo",
+        "description": "Translation model for multilingual conversion, localization, and cross-language workflows",
+        "context_length": 16384,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-01"
+      },
+      {
+        "model": "qwen-mt-plus",
+        "name": "Qwen-MT Plus",
+        "description": "Translation model for multilingual conversion, localization, and cross-language workflows",
+        "context_length": 16384,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": "2025-01"
+      },
+      {
+        "model": "qwen2-5-omni-7b",
+        "name": "Qwen2.5-Omni 7B",
+        "description": "Qwen omni model for text, vision, audio, and multimodal agent tasks",
+        "context_length": 32768,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-12"
+      },
+      {
+        "model": "qwen2-5-vl-7b-instruct",
+        "name": "Qwen2.5-VL 7B Instruct",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-09"
+      },
+      {
+        "model": "qwen2-5-vl-72b-instruct",
+        "name": "Qwen2.5-VL 72B Instruct",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-09"
+      },
+      {
+        "model": "qwen2-5-72b-instruct",
+        "name": "Qwen2.5 72B Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-09"
+      },
+      {
+        "model": "qwen2-5-14b-instruct",
+        "name": "Qwen2.5 14B Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-09"
+      },
+      {
+        "model": "qwen2-5-7b-instruct",
+        "name": "Qwen2.5 7B Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-09"
+      },
+      {
+        "model": "qwen2-5-32b-instruct",
+        "name": "Qwen2.5 32B Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-09"
+      },
+      {
+        "model": "qwen-plus-character-ja",
+        "name": "Qwen Plus Character (Japanese)",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 8192,
+        "max_output_length": 512,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2024-01"
+      }
+    ]
+  },
+  "proxy/siliconflow": {
+    "models": [
+      {
+        "model": "MiniMaxAI/MiniMax-M2.5",
+        "name": "MiniMaxAI/MiniMax-M2.5",
+        "description": "MiniMax model for chat, coding, office work, and agentic tasks",
+        "context_length": 197000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-15"
+      },
+      {
+        "model": "moonshotai/Kimi-K2.6",
+        "name": "moonshotai/Kimi-K2.6",
+        "description": "Kimi multimodal agent model for visual understanding, coding, and planning",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-15"
+      },
+      {
+        "model": "zai-org/GLM-5",
+        "name": "zai-org/GLM-5",
+        "description": "Flagship GLM model for hybrid reasoning, coding, and agentic engineering",
+        "context_length": 205000,
+        "max_output_length": 205000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-15"
+      },
+      {
+        "model": "zai-org/GLM-5.2",
+        "name": "GLM-5.2",
+        "description": "Open flagship GLM for long-horizon coding agents and million-token context work",
+        "context_length": 1049000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-06-13"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V4-Pro",
+        "name": "DeepSeek V4 Pro",
+        "description": "Open MoE flagship with million-token context for coding and long agent runs",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-24"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V4-Flash",
+        "name": "DeepSeek V4 Flash",
+        "description": "Fast DeepSeek V4 lane for economical reasoning, coding, and long-context work",
+        "context_length": 1000000,
+        "max_output_length": 384000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-24"
+      },
+      {
+        "model": "Qwen/Qwen3.5-9B",
+        "name": "Qwen/Qwen3.5-9B",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-24"
+      },
+      {
+        "model": "Qwen/Qwen3.6-27B",
+        "name": "Qwen3.6 27B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-22"
+      },
+      {
+        "model": "tencent/Hy3-preview",
+        "name": "Hy3 preview",
+        "description": "Tencent Hy reasoning model for coding, instruction following, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-20"
+      },
+      {
+        "model": "Qwen/Qwen3.6-35B-A3B",
+        "name": "Qwen3.6 35B-A3B",
+        "description": "Open multimodal Qwen MoE for local agents that need vision, audio, and code",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-17"
+      },
+      {
+        "model": "zai-org/GLM-5.1",
+        "name": "zai-org/GLM-5.1",
+        "description": "Flagship GLM model for hybrid reasoning, coding, and agentic engineering",
+        "context_length": 205000,
+        "max_output_length": 205000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-08"
+      },
+      {
+        "model": "google/gemma-4-26B-A4B-it",
+        "name": "Gemma 4 26B A4B IT",
+        "description": "Open Gemma instruction model for efficient chat and self-hosted deployments",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-02"
+      },
+      {
+        "model": "google/gemma-4-31B-it",
+        "name": "Gemma 4 31B IT",
+        "description": "Largest Gemma 4 instruction model for open, self-hosted chat and reasoning",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-02"
+      },
+      {
+        "model": "zai-org/GLM-5V-Turbo",
+        "name": "zai-org/GLM-5V-Turbo",
+        "description": "GLM vision model for visual reasoning, documents, and multimodal agents",
+        "context_length": 200000,
+        "max_output_length": 131072,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-04-01"
+      },
+      {
+        "model": "Qwen/Qwen3.5-122B-A10B",
+        "name": "Qwen3.5 122B-A10B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-23"
+      },
+      {
+        "model": "Qwen/Qwen3.5-27B",
+        "name": "Qwen3.5 27B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-23"
+      },
+      {
+        "model": "Qwen/Qwen3.5-35B-A3B",
+        "name": "Qwen3.5 35B-A3B",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-23"
+      },
+      {
+        "model": "Qwen/Qwen3.5-397B-A17B",
+        "name": "Qwen3.5 397B-A17B",
+        "description": "Large open Qwen multimodal MoE for visual agents and long technical tasks",
+        "context_length": 262144,
+        "max_output_length": 262144,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-15"
+      },
+      {
+        "model": "stepfun-ai/Step-3.5-Flash",
+        "name": "stepfun-ai/Step-3.5-Flash",
+        "description": "StepFun flash model for efficient multimodal reasoning, coding, and tool use",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-02-11"
+      },
+      {
+        "model": "moonshotai/Kimi-K2.5",
+        "name": "moonshotai/Kimi-K2.5",
+        "description": "Kimi multimodal agent model for visual understanding, coding, and planning",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2026-01-27"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V3.2",
+        "name": "deepseek-ai/DeepSeek-V3.2",
+        "description": "DeepSeek chat model for instruction following, coding, and analysis",
+        "context_length": 164000,
+        "max_output_length": 164000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-12-03"
+      },
+      {
+        "model": "tencent/Hunyuan-A13B-Instruct",
+        "name": "tencent/Hunyuan-A13B-Instruct",
+        "description": "Tencent Hy reasoning model for coding, instruction following, and agent tasks",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "inclusionAI/Ling-flash-2.0",
+        "name": "inclusionAI/Ling-flash-2.0",
+        "description": "Efficient model for low-latency assistance, extraction, and routine automation",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "openai/gpt-oss-120b",
+        "name": "openai/gpt-oss-120b",
+        "description": "Open-weight GPT model for self-hosted reasoning and instruction-following workloads",
+        "context_length": 131000,
+        "max_output_length": 8000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "openai/gpt-oss-20b",
+        "name": "openai/gpt-oss-20b",
+        "description": "Open-weight GPT model for self-hosted reasoning and instruction-following workloads",
+        "context_length": 131000,
+        "max_output_length": 8000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V3.1-Terminus",
+        "name": "deepseek-ai/DeepSeek-V3.1-Terminus",
+        "description": "DeepSeek chat model for instruction following, coding, and analysis",
+        "context_length": 164000,
+        "max_output_length": 164000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-R1",
+        "name": "deepseek-ai/DeepSeek-R1",
+        "description": "DeepSeek reasoning model for multi-step analysis, math, coding, and tools",
+        "context_length": 164000,
+        "max_output_length": 164000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V3.1",
+        "name": "deepseek-ai/DeepSeek-V3.1",
+        "description": "DeepSeek chat model for instruction following, coding, and analysis",
+        "context_length": 164000,
+        "max_output_length": 164000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V3.2-Exp",
+        "name": "deepseek-ai/DeepSeek-V3.2-Exp",
+        "description": "DeepSeek chat model for instruction following, coding, and analysis",
+        "context_length": 164000,
+        "max_output_length": 164000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "deepseek-ai/DeepSeek-V3",
+        "name": "deepseek-ai/DeepSeek-V3",
+        "description": "DeepSeek chat model for instruction following, coding, and analysis",
+        "context_length": 164000,
+        "max_output_length": 164000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+        "name": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+        "description": "Tool-capable chat model for instruction following and agentic application workflows",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-235B-A22B-Thinking",
+        "name": "Qwen/Qwen3-VL-235B-A22B-Thinking",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "name": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "name": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-14B",
+        "name": "Qwen/Qwen3-14B",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-32B",
+        "name": "Qwen/Qwen3-32B",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-8B-Instruct",
+        "name": "Qwen/Qwen3-VL-8B-Instruct",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+        "name": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+        "description": "Qwen coding model for software agents, repository edits, and code reasoning",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-8B",
+        "name": "Qwen/Qwen3-8B",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+        "name": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+        "name": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "name": "Qwen/Qwen2.5-7B-Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 33000,
+        "max_output_length": 4000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+        "name": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+        "description": "Qwen reasoning model for deliberate problem solving, math, and coding",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "name": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "description": "Qwen coding model for software agents, repository edits, and code reasoning",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen2.5-72B-Instruct",
+        "name": "Qwen/Qwen2.5-72B-Instruct",
+        "description": "Qwen instruction model for multilingual chat, reasoning, and tool use",
+        "context_length": 33000,
+        "max_output_length": 4000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-32B-Instruct",
+        "name": "Qwen/Qwen3-VL-32B-Instruct",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "Qwen/Qwen3-VL-32B-Thinking",
+        "name": "Qwen/Qwen3-VL-32B-Thinking",
+        "description": "Qwen vision-language model for visual reasoning, documents, and agent tasks",
+        "context_length": 262000,
+        "max_output_length": 262000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "zai-org/GLM-4.5-Air",
+        "name": "zai-org/GLM-4.5-Air",
+        "description": "Efficient GLM model for fast reasoning, coding, and agent workflows",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      },
+      {
+        "model": "baidu/ERNIE-4.5-300B-A47B",
+        "name": "baidu/ERNIE-4.5-300B-A47B",
+        "description": "Tool-capable chat model for instruction following and agentic application workflows",
+        "context_length": 131000,
+        "max_output_length": 131000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": "2025-11-25"
+      }
+    ]
+  },
+  "proxy/minimax": {
+    "models": [
+      {
+        "model": "MiniMax-M3",
+        "name": "MiniMax M3",
+        "description": "MiniMax flagship model with enhanced reasoning, coding and tool use.",
+        "context_length": 204800,
+        "max_output_length": 192000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "MiniMax-M2.7",
+        "name": "MiniMax M2.7",
+        "description": "MiniMax flagship model with enhanced reasoning and coding.",
+        "context_length": 204800,
+        "max_output_length": 192000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "MiniMax-M2.7-highspeed",
+        "name": "MiniMax M2.7 Highspeed",
+        "description": "High-speed version of MiniMax M2.7 for low-latency scenarios.",
+        "context_length": 204800,
+        "max_output_length": 192000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/yi": {
+    "models": [
+      {
+        "model": "yi-lightning",
+        "name": "Yi Lightning",
+        "description": "Yi Lightning by Lingyiwanwu, fast and cost-effective.",
+        "context_length": 16384,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/baichuan": {
+    "models": [
+      {
+        "model": "Baichuan4-Turbo",
+        "name": "Baichuan4 Turbo",
+        "description": "Baichuan4 Turbo by Baichuan.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "Baichuan4-Air",
+        "name": "Baichuan4 Air",
+        "description": "Baichuan4 Air by Baichuan.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "Baichuan4",
+        "name": "Baichuan4",
+        "description": "Baichuan4 by Baichuan.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "Baichuan3-Turbo",
+        "name": "Baichuan3 Turbo",
+        "description": "Baichuan3 Turbo by Baichuan.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "Baichuan3-Turbo-128k",
+        "name": "Baichuan3 Turbo 128K",
+        "description": "Baichuan3 Turbo with 128K context by Baichuan.",
+        "context_length": 131072,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/spark": {
+    "models": [
+      {
+        "model": "lite",
+        "name": "Spark Lite",
+        "description": "Xunfei Spark Lite model.",
+        "context_length": 14096,
+        "max_output_length": 14096,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "generalv3",
+        "name": "Spark V3.0",
+        "description": "Xunfei Spark General V3 model.",
+        "context_length": 18192,
+        "max_output_length": 18192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "generalv3.5",
+        "name": "Spark V3.5",
+        "description": "Xunfei Spark General V3.5 model.",
+        "context_length": 18192,
+        "max_output_length": 18192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "4.0Ultra",
+        "name": "Spark 4.0 Ultra",
+        "description": "Xunfei Spark 4.0 Ultra flagship model.",
+        "context_length": 18192,
+        "max_output_length": 18192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "pro-128k",
+        "name": "Spark Pro 128K",
+        "description": "Xunfei Spark Pro with 128K context.",
+        "context_length": 131072,
+        "max_output_length": 14096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "max-32k",
+        "name": "Spark Max 32K",
+        "description": "Xunfei Spark Max with 32K context.",
+        "context_length": 32768,
+        "max_output_length": 18192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/wenxin": {
+    "models": [
+      {
+        "model": "ERNIE-Bot-4.0",
+        "name": "ERNIE 4.0",
+        "description": "Baidu ERNIE Bot 4.0 flagship model.",
+        "context_length": 8192,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "ERNIE-Bot-8K",
+        "name": "ERNIE 8K",
+        "description": "Baidu ERNIE Bot with 8K context.",
+        "context_length": 8192,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "ERNIE-Bot",
+        "name": "ERNIE Bot",
+        "description": "Baidu ERNIE Bot base model.",
+        "context_length": 8192,
+        "max_output_length": 2048,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "ERNIE-Bot-turbo",
+        "name": "ERNIE Bot Turbo",
+        "description": "Baidu ERNIE Bot Turbo, high-speed version.",
+        "context_length": 8192,
+        "max_output_length": 2048,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/ollama": {
+    "models": [
+      {
+        "model": "llama3.3",
+        "name": "Llama 3.3",
+        "description": "Meta Llama 3.3 70B, general-purpose instruction model.",
+        "context_length": 131072,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen3",
+        "name": "Qwen3",
+        "description": "Alibaba Qwen3, hybrid reasoning model.",
+        "context_length": 40960,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek-r1",
+        "name": "DeepSeek R1",
+        "description": "DeepSeek R1 reasoning model.",
+        "context_length": 163840,
+        "max_output_length": null,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gemma3",
+        "name": "Gemma 3",
+        "description": "Google Gemma 3, multimodal-capable open model.",
+        "context_length": 131072,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "phi4",
+        "name": "Phi-4",
+        "description": "Microsoft Phi-4, 14B sliding-window attention model.",
+        "context_length": 16384,
+        "max_output_length": null,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "mistral",
+        "name": "Mistral",
+        "description": "Mistral 7B instruction model.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "llama3.2",
+        "name": "Llama 3.2",
+        "description": "Meta Llama 3.2, lightweight edge model.",
+        "context_length": 131072,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen2.5",
+        "name": "Qwen2.5",
+        "description": "Alibaba Qwen2.5 instruction model.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek-v3",
+        "name": "DeepSeek V3",
+        "description": "DeepSeek V3 671B MoE model.",
+        "context_length": 163840,
+        "max_output_length": null,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-oss",
+        "name": "GPT-OSS",
+        "description": "OpenAI open-weight GPT-OSS model.",
+        "context_length": 131072,
+        "max_output_length": null,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "llava",
+        "name": "LLaVA",
+        "description": "LLaVA multimodal vision-language model.",
+        "context_length": 32768,
+        "max_output_length": null,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "nomic-embed-text",
+        "name": "Nomic Embed Text",
+        "description": "Nomic text embedding model (embedding only).",
+        "context_length": 8192,
+        "max_output_length": null,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/litellm": {
+    "models": [
+      {
+        "model": "openai/gpt-4o",
+        "name": "GPT-4o (LiteLLM)",
+        "description": "GPT-4o routed through LiteLLM.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini",
+        "name": "GPT-4o Mini (LiteLLM)",
+        "description": "GPT-4o Mini routed through LiteLLM.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-sonnet-4",
+        "name": "Claude Sonnet 4 (LiteLLM)",
+        "description": "Claude Sonnet 4 routed through LiteLLM.",
+        "context_length": 200000,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gemini/gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro (LiteLLM)",
+        "description": "Gemini 2.5 Pro routed through LiteLLM.",
+        "context_length": 1048576,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek/deepseek-chat",
+        "name": "DeepSeek Chat (LiteLLM)",
+        "description": "DeepSeek Chat routed through LiteLLM.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "mistral/mistral-large-latest",
+        "name": "Mistral Large (LiteLLM)",
+        "description": "Mistral Large routed through LiteLLM.",
+        "context_length": 131072,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/gitee": {
+    "models": [
+      {
+        "model": "DeepSeek-V3",
+        "name": "DeepSeek V3 (Gitee AI)",
+        "description": "DeepSeek V3 hosted on Gitee AI.",
+        "context_length": 65536,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "DeepSeek-R1",
+        "name": "DeepSeek R1 (Gitee AI)",
+        "description": "DeepSeek R1 hosted on Gitee AI.",
+        "context_length": 65536,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/infiniai": {
+    "models": [
+      {
+        "model": "deepseek-v3",
+        "name": "DeepSeek V3 (InfiniAI)",
+        "description": "DeepSeek V3 on Infini AI.",
+        "context_length": 65536,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek-r1",
+        "name": "DeepSeek R1 (InfiniAI)",
+        "description": "DeepSeek R1 on Infini AI.",
+        "context_length": 65536,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwq-32b",
+        "name": "QwQ 32B (InfiniAI)",
+        "description": "QwQ 32B reasoning model on Infini AI.",
+        "context_length": 65536,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/aimlapi": {
+    "models": [
+      {
+        "model": "openai/gpt-4o",
+        "name": "GPT-4o (AIML API)",
+        "description": "GPT-4o via AIML API gateway.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-4o-mini",
+        "name": "GPT-4o Mini (AIML API)",
+        "description": "GPT-4o Mini via AIML API gateway.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "claude-3-5-sonnet-20240620",
+        "name": "Claude 3.5 Sonnet (AIML API)",
+        "description": "Claude 3.5 Sonnet via AIML API gateway.",
+        "context_length": 8192,
+        "max_output_length": 2048,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek-chat",
+        "name": "DeepSeek Chat (AIML API)",
+        "description": "DeepSeek Chat via AIML API gateway.",
+        "context_length": 128000,
+        "max_output_length": 16000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2-0-flash",
+        "name": "Gemini 2.0 Flash (AIML API)",
+        "description": "Gemini 2.0 Flash via AIML API gateway.",
+        "context_length": 1000000,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        "name": "Mixtral 8x7B (AIML API)",
+        "description": "Mixtral 8x7B Instruct via AIML API gateway.",
+        "context_length": 64000,
+        "max_output_length": 8000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/burncloud": {
+    "models": [
+      {
+        "model": "claude-opus-4-1-20250805",
+        "name": "Claude Opus 4.1 (BurnCloud)",
+        "description": "Claude Opus 4.1 via BurnCloud gateway.",
+        "context_length": 200000,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "claude-sonnet-4-20250514",
+        "name": "Claude Sonnet 4 (BurnCloud)",
+        "description": "Claude Sonnet 4 via BurnCloud gateway.",
+        "context_length": 200000,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-5",
+        "name": "GPT-5 (BurnCloud)",
+        "description": "GPT-5 via BurnCloud gateway.",
+        "context_length": 200000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-4.1",
+        "name": "GPT-4.1 (BurnCloud)",
+        "description": "GPT-4.1 via BurnCloud gateway.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-4o",
+        "name": "GPT-4o (BurnCloud)",
+        "description": "GPT-4o via BurnCloud gateway.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/nvidia": {
+    "models": [
+      {
+        "model": "meta/llama-3.3-70b-instruct",
+        "name": "Llama 3.3 70B (NVIDIA NIM)",
+        "description": "Meta Llama 3.3 70B Instruct on NVIDIA NIM.",
+        "context_length": 131072,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "meta/llama-3.1-70b-instruct",
+        "name": "Llama 3.1 70B (NVIDIA NIM)",
+        "description": "Meta Llama 3.1 70B Instruct on NVIDIA NIM.",
+        "context_length": 131072,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "deepseek-ai/deepseek-r1",
+        "name": "DeepSeek R1 (NVIDIA NIM)",
+        "description": "DeepSeek R1 on NVIDIA NIM.",
+        "context_length": 65536,
+        "max_output_length": 8192,
+        "function_calling": false,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen2.5-72b-instruct",
+        "name": "Qwen2.5 72B (NVIDIA NIM)",
+        "description": "Qwen2.5 72B Instruct on NVIDIA NIM.",
+        "context_length": 32768,
+        "max_output_length": 8192,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "mistralai/mixtral-8x7b-instruct-v0.1",
+        "name": "Mixtral 8x7B (NVIDIA NIM)",
+        "description": "Mixtral 8x7B Instruct on NVIDIA NIM.",
+        "context_length": 32768,
+        "max_output_length": 4096,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/vercel": {
+    "models": [
+      {
+        "model": "openai/gpt-5.2",
+        "name": "GPT-5.2 (Vercel)",
+        "description": "GPT-5.2 via Vercel AI Gateway.",
+        "context_length": 400000,
+        "max_output_length": 128000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-4o-mini",
+        "name": "GPT-4o Mini (Vercel)",
+        "description": "GPT-4o Mini via Vercel AI Gateway.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "anthropic/claude-sonnet-4.5",
+        "name": "Claude Sonnet 4.5 (Vercel)",
+        "description": "Claude Sonnet 4.5 via Vercel AI Gateway.",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "google/gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro (Vercel)",
+        "description": "Gemini 2.5 Pro via Vercel AI Gateway.",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/xai": {
+    "models": [
+      {
+        "model": "grok-4",
+        "name": "Grok 4",
+        "description": "Grok 4 by xAI.",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok-4-fast",
+        "name": "Grok 4 Fast",
+        "description": "Grok 4 Fast by xAI.",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok-3",
+        "name": "Grok 3",
+        "description": "Grok 3 by xAI.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "grok-3-mini",
+        "name": "Grok 3 Mini",
+        "description": "Grok 3 Mini by xAI.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/groq": {
+    "models": [
+      {
+        "model": "llama-3.3-70b-versatile",
+        "name": "Llama 3.3 70B Versatile (Groq)",
+        "description": "Meta Llama 3.3 70B on Groq LPU inference.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "llama-3.1-8b-instant",
+        "name": "Llama 3.1 8B Instant (Groq)",
+        "description": "Meta Llama 3.1 8B on Groq LPU inference.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "openai/gpt-oss-120b",
+        "name": "GPT-OSS 120B (Groq)",
+        "description": "OpenAI GPT-OSS 120B on Groq LPU inference.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "qwen/qwen3-32b",
+        "name": "Qwen3 32B (Groq)",
+        "description": "Qwen3 32B on Groq LPU inference.",
+        "context_length": 131072,
+        "max_output_length": 40960,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/mistral": {
+    "models": [
+      {
+        "model": "mistral-large-latest",
+        "name": "Mistral Large",
+        "description": "Mistral Large, flagship model by Mistral AI.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "mistral-medium-latest",
+        "name": "Mistral Medium",
+        "description": "Mistral Medium by Mistral AI.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "mistral-small-latest",
+        "name": "Mistral Small",
+        "description": "Mistral Small by Mistral AI.",
+        "context_length": 131072,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "codestral-latest",
+        "name": "Codestral",
+        "description": "Codestral, coding-focused model by Mistral AI.",
+        "context_length": 262144,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  },
+  "proxy/github_copilot": {
+    "models": [
+      {
+        "model": "gpt-4o",
+        "name": "GPT-4o (Copilot)",
+        "description": "GPT-4o via GitHub Copilot.",
+        "context_length": 128000,
+        "max_output_length": 16384,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gpt-4.1",
+        "name": "GPT-4.1 (Copilot)",
+        "description": "GPT-4.1 via GitHub Copilot.",
+        "context_length": 128000,
+        "max_output_length": 32768,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "o3",
+        "name": "o3 (Copilot)",
+        "description": "OpenAI o3 reasoning model via GitHub Copilot.",
+        "context_length": 200000,
+        "max_output_length": 100000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "claude-sonnet-4",
+        "name": "Claude Sonnet 4 (Copilot)",
+        "description": "Claude Sonnet 4 via GitHub Copilot.",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "claude-3.7-sonnet",
+        "name": "Claude 3.7 Sonnet (Copilot)",
+        "description": "Claude 3.7 Sonnet via GitHub Copilot.",
+        "context_length": 200000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      },
+      {
+        "model": "gemini-2.5-pro",
+        "name": "Gemini 2.5 Pro (Copilot)",
+        "description": "Gemini 2.5 Pro via GitHub Copilot.",
+        "context_length": 1000000,
+        "max_output_length": 64000,
+        "function_calling": true,
+        "status": null,
+        "last_updated": ""
+      }
+    ]
+  }
+}

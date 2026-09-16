@@ -1,11 +1,11 @@
-import { ModelSvg } from '@/components/icons';
-import Icon, {
+import {
   ApiOutlined,
   AppstoreOutlined,
   ClockCircleOutlined,
   ConsoleSqlOutlined,
   ForkOutlined,
   PartitionOutlined,
+  SettingOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { ConfigProvider, Tabs } from 'antd';
@@ -38,10 +38,10 @@ function ConstructLayout({ children, className }: { children: React.ReactNode; c
       path: '/flow',
     },
     {
-      key: 'models',
-      name: t('model_manage'),
-      path: '/models',
-      icon: <Icon component={ModelSvg} />,
+      key: 'models-config',
+      name: t('model_provider_config'),
+      path: '/models-config',
+      icon: <SettingOutlined />,
     },
     {
       key: 'database',

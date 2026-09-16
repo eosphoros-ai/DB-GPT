@@ -5497,7 +5497,7 @@ wheels = [
 
 [[package]]
 name = "dbgpt"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5726,7 +5726,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-auto"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-auto" }
 
 [package.optional-dependencies]
@@ -5845,7 +5845,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-acc-flash-attn"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-accelerator/dbgpt-acc-flash-attn" }
 
 [package.dev-dependencies]
@@ -5875,7 +5875,7 @@ main = [{ name = "flash-attn", specifier = ">=2.5.8" }]
 
 [[package]]
 name = "dbgpt-app"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-app" }
 dependencies = [
     { name = "aiofiles" },
@@ -5932,7 +5932,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-client"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-client" }
 dependencies = [
     { name = "cloudpickle" },
@@ -5958,7 +5958,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-ext"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-ext" }
 dependencies = [
     { name = "dbgpt" },
@@ -6094,7 +6094,7 @@ dev = [{ name = "pytest", specifier = ">=8.3.4" }]
 
 [[package]]
 name = "dbgpt-mono"
-version = "0.8.1"
+version = "0.8.2"
 source = { virtual = "." }
 
 [package.dev-dependencies]
@@ -6139,7 +6139,7 @@ dev = [
 
 [[package]]
 name = "dbgpt-sandbox"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-sandbox" }
 dependencies = [
     { name = "colorama" },
@@ -6184,7 +6184,7 @@ dev = []
 
 [[package]]
 name = "dbgpt-serve"
-version = "0.8.1"
+version = "0.8.2"
 source = { editable = "packages/dbgpt-serve" }
 dependencies = [
     { name = "apscheduler" },
