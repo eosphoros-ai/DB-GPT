@@ -51,7 +51,7 @@ class SchemaLinking(BaseSchemaLinker):
         """Create the schema linking instance.
 
         Args:
-           connection (Optional[BaseConnector]): BaseConnector connection.
+           connector (BaseConnector): BaseConnector connection.
            llm (Optional[LLMClient]): base llm
         """
         self._top_k = top_k
