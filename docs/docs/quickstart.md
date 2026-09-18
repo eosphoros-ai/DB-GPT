@@ -403,7 +403,7 @@ uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/
 
 ## (Optional) More Configuration
 
-You can view the configuration in [Configuration](./config/config-reference) to learn more about 
+You can view the configuration in [Configuration](./config-reference) to learn more about 
 the configuration options.
 
 For example, if you want to configure the LLM model, you can see all available options in the [LLM Configuration](./config-reference/llm/).
