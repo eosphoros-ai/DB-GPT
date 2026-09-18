@@ -32,7 +32,7 @@ class ExcelKnowledge(Knowledge):
         Args:
             file_path(str,  optional): file path
             knowledge_type(KnowledgeType, optional): knowledge type
-            source_column(str, optional): source column
+            source_columns (str, optional): source column
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
