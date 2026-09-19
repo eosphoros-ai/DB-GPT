@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import Executor
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
@@ -138,6 +139,29 @@ class YApiLLMClient(OpenAILLMClient):
     @classmethod
     def param_class(cls) -> Type[YApiDeployModelParameters]:
         return YApiDeployModelParameters
+
+    @classmethod
+    def new_client(
+        cls,
+        model_params: YApiDeployModelParameters,
+        default_executor: Optional[Executor] = None,
+    ) -> "YApiLLMClient":
+        """Create a client from deploy parameters.
+
+        Overridden for one reason only: ``OpenAILLMClient.new_client`` sends
+        ``max(context_length or 8192, 8192)``, which is never falsy and would
+        therefore always pre-empt the 128K fallback in ``__init__``.
+        """
+        return cls(
+            api_key=model_params.api_key,
+            api_base=model_params.api_base,
+            api_type=model_params.api_type,
+            api_version=model_params.api_version,
+            model=model_params.real_provider_model_name,
+            proxy=model_params.http_proxy,
+            model_alias=model_params.real_provider_model_name,
+            context_length=model_params.context_length,
+        )
 
     @classmethod
     def generate_stream_function(
