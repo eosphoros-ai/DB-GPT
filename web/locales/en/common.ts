@@ -362,7 +362,7 @@ export const CommonEn = {
   input_tip: 'Please select the model and enter the description to start quickly',
   create_app: 'Create App',
   copy_url: 'Click the Copy Share link',
-  double_click_open: 'Double click on Nail nail to open',
+  double_click_open: 'Double click the DingTalk icon to open',
   construct: ' Construct App',
   Setting: 'Setting',
   chat_online: 'Chat',
