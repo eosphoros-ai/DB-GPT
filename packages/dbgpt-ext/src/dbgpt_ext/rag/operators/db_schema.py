@@ -63,7 +63,8 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
 
         Args:
             connector (BaseConnector): The connection.
-            vector_store_connector (VectorStoreBase): The vector store connector.
+            table_vector_store_connector (VectorStoreBase): The table vector store connector.
+            field_vector_store_connector (VectorStoreBase): The field vector store connector.
             chunk_parameters (Optional[ChunkParameters], optional): The chunk
                 parameters.
         """

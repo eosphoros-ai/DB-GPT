@@ -207,7 +207,7 @@ class ElasticDocumentStore(FullTextStoreBase):
         Args:
             text(str): text.
             top_k(int): top k.
-            min_score(float): min score.
+            score_threshold(float): min score threshold.
             filters(MetadataFilters): filters.
 
         Return:
