@@ -53,7 +53,8 @@ class DBSchemaAssembler(BaseAssembler):
                                         and retrieve table info.
             field_vector_store_connector: VectorStoreConnector to load
                                         and retrieve field info.
-            chunk_parameters: (Optional[ChunkParameters]) ChunkParameters to use for chunking.
+            chunk_parameters: (Optional[ChunkParameters]) ChunkParameters to use
+                for chunking.
             embedding_model: (Optional[str]) Embedding model to use.
             embeddings: (Optional[Embeddings]) Embeddings to use.
         """
