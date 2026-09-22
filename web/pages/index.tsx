@@ -2073,6 +2073,10 @@ const Playground: NextPage = () => {
       temperature: 0.6,
       max_new_tokens: 4000,
       ext_info: extInfo,
+      // Page-scoped binding: buildSnapshot may only replay this payload while
+      // the same conversation is open (issue: switching via /?id=... kept the
+      // previous conversation's payload alive).
+      conv_uid: currentConvId,
     };
 
     try {
@@ -2689,6 +2693,10 @@ const Playground: NextPage = () => {
     setSelectedCitationIndex(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
+    // The last-sent snapshot belongs to the conversation it was sent in;
+    // switching to a history conversation must not replay it into a new
+    // scheduled task.
+    lastSentPayloadRef.current = null;
 
     const newMessages: ChatMessage[] = [];
     const newExecutionMap: typeof executionMap = {};
@@ -2937,8 +2945,13 @@ const Playground: NextPage = () => {
     // Prefer the payload actually sent to the agent this session — it carries
     // the real execution context (file_path / file_ids / database / knowledge /
     // skill / connectors) and is immune to UI state changed after sending.
-    if (lastSentPayloadRef.current) {
-      return lastSentPayloadRef.current;
+    // Only while it still belongs to the open conversation: the ref is
+    // page-scoped, so a stale snapshot from another conversation must never
+    // be persisted into a scheduled task.
+    const sent = lastSentPayloadRef.current;
+    if (sent && sent.conv_uid && sent.conv_uid === conversationIdRef.current) {
+      const { conv_uid: _snapshotConvUid, ...payload } = sent;
+      return payload;
     }
     // Fallback (e.g. conversation restored from history, where no send
     // happened this session): reconstruct from the first question + current

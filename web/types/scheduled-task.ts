@@ -30,6 +30,8 @@ export type ChatReplayPayload = {
   select_param?: string | null;
   temperature?: number | null;
   max_new_tokens?: number | null;
+  /** 仅前端使用:标记快照所属会话,提交前会被剥离,不属于后端 schema。 */
+  conv_uid?: string | null;
   /**
    * 扩展信息。v2 文件输入:ext_info.file_ids(任务作用域)+
    * ext_info.input_files(TaskFileSnapshot[] 展示快照,见上)。
