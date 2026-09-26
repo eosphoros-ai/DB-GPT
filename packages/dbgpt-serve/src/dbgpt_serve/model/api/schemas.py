@@ -1,5 +1,5 @@
 # Define your Pydantic schemas here
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field, model_to_dict
 
@@ -53,3 +53,46 @@ class ModelResponse(BaseModel):
     check_healthy: bool = Field(True, description="Check model health status")
     prompt_template: Optional[str] = Field(None, description="Model prompt template")
     last_heartbeat: Optional[str] = Field(None, description="Model last heartbeat")
+
+
+class ProviderConfigRequest(BaseModel):
+    """Request body for saving a provider-level configuration."""
+
+    provider: str = Field(description="The provider id, e.g. proxy/openai")
+    api_key: Optional[str] = Field(None, description="The API key of the provider")
+    api_base: Optional[str] = Field(
+        None, description="The API base url of the provider"
+    )
+
+
+class ProviderModelsRequest(BaseModel):
+    """Request body for saving the enabled models of a provider."""
+
+    provider: str = Field(description="The provider id, e.g. proxy/openai")
+    enabled_models: List[str] = Field(
+        default_factory=list, description="The enabled model names under the provider"
+    )
+
+
+class ProviderModelRequest(BaseModel):
+    """Request body for enabling/disabling a single model under a provider."""
+
+    provider: str = Field(description="The provider id, e.g. proxy/openai")
+    model: str = Field(description="The model name to enable or disable")
+
+
+class ProviderRequest(BaseModel):
+    """Request body carrying only a provider id."""
+
+    provider: str = Field(description="The provider id, e.g. proxy/openai")
+
+
+class ProviderCustomRequest(BaseModel):
+    """Request body for creating a custom (OpenAI-compatible) provider."""
+
+    label: str = Field(description="The display name of the custom provider")
+    api_base: str = Field(description="The OpenAI-compatible API base url")
+    api_key: str = Field(description="The API key of the custom provider")
+    models: List[str] = Field(
+        default_factory=list, description="The model names exposed by the provider"
+    )

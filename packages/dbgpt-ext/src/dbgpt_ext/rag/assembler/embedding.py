@@ -45,9 +45,6 @@ class EmbeddingAssembler(BaseAssembler):
             index_store: (IndexStoreBase) IndexStoreBase to use.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.
-            keyword_store: (Optional[IndexStoreBase]) IndexStoreBase to use.
-            embedding_model: (Optional[str]) Embedding model to use.
-            embeddings: (Optional[Embeddings]) Embeddings to use.
         """
         if knowledge is None:
             raise ValueError("knowledge datasource must be provided.")

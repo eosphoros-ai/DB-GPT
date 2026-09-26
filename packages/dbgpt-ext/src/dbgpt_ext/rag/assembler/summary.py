@@ -43,11 +43,12 @@ class SummaryAssembler(BaseAssembler):
         language: Optional[str] = "en",
         **kwargs: Any,
     ) -> None:
-        """Initialize with Embedding Assembler arguments.
+        """Initialize with Summary Assembler arguments.
 
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            chunk_manager: (Optional[ChunkManager]) ChunkManager to use for chunking.
+            chunk_parameters: (Optional[ChunkParameters]) ChunkParameters to use
+                for chunking.
             model_name: (Optional[str]) llm model to use.
             llm_client: (Optional[LLMClient]) LLMClient to use.
             extractor: (Optional[ExtractorBase]) ExtractorBase to use for summarization.

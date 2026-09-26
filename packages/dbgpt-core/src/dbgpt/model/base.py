@@ -110,6 +110,22 @@ class SupportedModel:
     description: Optional[str] = field(
         default=None, metadata={"help": "The description of the model"}
     )
+    label: Optional[str] = field(
+        default=None, metadata={"help": "The display label of the model"}
+    )
+    context_length: Optional[int] = field(
+        default=None, metadata={"help": "The context length of the model"}
+    )
+    max_output_length: Optional[int] = field(
+        default=None, metadata={"help": "The max output length of the model"}
+    )
+    function_calling: Optional[bool] = field(
+        default=None,
+        metadata={"help": "Whether the model supports function calling"},
+    )
+    link: Optional[str] = field(
+        default=None, metadata={"help": "The link to the model documentation"}
+    )
 
     @classmethod
     def from_dict(cls, model_data: Dict) -> "SupportedModel":

@@ -7,9 +7,27 @@ from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 
 
 class FileClient:
+    def _resolve_file_path(self, file_key) -> str:
+        """Resolve a file_key and ensure it stays inside the upload root.
+
+        Prevent arbitrary file read / delete (path traversal) by requiring the
+        real path of ``file_key`` to be under KNOWLEDGE_UPLOAD_ROOT_PATH. The
+        resolution keeps the original relative/absolute semantics of ``open``,
+        so existing callers (file preview, excel chat) are unaffected.
+        """
+        allowed_root = os.path.abspath(KNOWLEDGE_UPLOAD_ROOT_PATH)
+        resolved_path = os.path.realpath(file_key)
+        if resolved_path != allowed_root and not resolved_path.startswith(
+            allowed_root + os.sep
+        ):
+            raise ValueError(
+                f"Refuse to access file outside the upload directory: {file_key}"
+            )
+        return resolved_path
+
     def read_file(self, conv_uid, file_key, is_oss: bool = False):
         # File path
-        with open(file_key, "rb") as file:
+        with open(self._resolve_file_path(file_key), "rb") as file:
             content = file.read()
         return content
 
@@ -31,5 +49,6 @@ class FileClient:
 
     async def delete_file(self, conv_uid, file_key, is_oss: bool = False):
         # File path
-        if os.path.exists(file_key):
-            os.remove(file_key)
+        file_path = self._resolve_file_path(file_key)
+        if os.path.exists(file_path):
+            os.remove(file_path)

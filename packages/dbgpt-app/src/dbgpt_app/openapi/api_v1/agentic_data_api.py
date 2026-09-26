@@ -3745,6 +3745,7 @@ async def delete_share_link(
 @router.get("/v1/agent/files/download")
 async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     """Download a file created by agent tools (shell_interpreter, code_interpreter).
 
@@ -3754,11 +3755,14 @@ async def download_agent_file(
     from fastapi import HTTPException
     from fastapi.responses import FileResponse
 
-    from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
+    from dbgpt.configs.model_config import PILOT_PATH
 
-    # If path is not absolute, resolve relative to ROOT_PATH (sandbox working dir)
+    # Agent tools write their output here, so relative paths resolve against it
+    # rather than against the installation root.
+    agent_tmp_dir = os.path.join(PILOT_PATH, "tmp")
+
     if not os.path.isabs(file_path):
-        file_path = os.path.join(ROOT_PATH, file_path)
+        file_path = os.path.join(agent_tmp_dir, file_path)
 
     # Resolve to absolute path and prevent path traversal
     try:
@@ -3769,8 +3773,7 @@ async def download_agent_file(
     # Allowed base directories for agent-created files
     allowed_dirs = [
         os.path.realpath("/tmp"),
-        os.path.realpath(os.path.join(PILOT_PATH, "tmp")),
-        os.path.realpath(ROOT_PATH),
+        os.path.realpath(agent_tmp_dir),
     ]
 
     if not any(resolved.startswith(d + os.sep) or resolved == d for d in allowed_dirs):
