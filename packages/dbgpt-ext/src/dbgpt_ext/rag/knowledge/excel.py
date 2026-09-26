@@ -126,7 +126,9 @@ class ExcelKnowledge(Knowledge):
         try:
             import openpyxl
 
-            workbook = openpyxl.load_workbook(self._path)
+            # data_only reads the result Excel saved for a formula cell, not the
+            # formula text, the same as pandas.read_excel.
+            workbook = openpyxl.load_workbook(self._path, data_only=True)
         except Exception as e:
             raise IOError(f"Could not load Excel file with openpyxl: {e}")
 
