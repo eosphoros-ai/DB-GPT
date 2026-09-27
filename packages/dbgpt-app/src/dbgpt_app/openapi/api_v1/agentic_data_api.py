@@ -778,7 +778,8 @@ def _extract_skill_from_zip(
         the top-level archive directory name.
 
     Raises:
-        ValueError: If the archive contains path-traversal sequences.
+        ValueError: If the archive contains path-traversal or absolute
+            entries.
         ValueError: If no ``SKILL.md`` is found after extraction (only when
             ``strict=True``).
         ValueError: If the archive root contains multiple sub-directories with
@@ -788,10 +789,23 @@ def _extract_skill_from_zip(
     with zipfile.ZipFile(zip_path, "r") as zf:
         all_names = zf.namelist()
 
-        # Security: reject any path-traversal entries
+        # Security: reject any path-traversal or absolute entries
         for name in all_names:
             normalized = os.path.normpath(name)
-            if normalized.startswith("..") or ".." in normalized.split(os.sep):
+            if (
+                normalized.startswith("..")
+                or ".." in normalized.split(os.sep)
+                # Absolute entry names ("/tmp/x", "C:\x"): "dest_dir / rel"
+                # discards the base entirely for absolute paths (pathlib
+                # semantics), giving an arbitrary file write.
+                or PurePosixPath(name).is_absolute()
+                or PureWindowsPath(name).is_absolute()
+                # "top//tmp/x" collapses under normpath, but the raw member is
+                # sliced on skill_prefix below, leaving a leading "/" in rel.
+                or "//" in name
+                # Windows separators must not leak into host path joins.
+                or "\\" in name
+            ):
                 raise ValueError(f"Unsafe path in archive: {name!r}")
 
         # Filter out macOS metadata artifacts before analysing structure
@@ -861,6 +875,13 @@ def _extract_skill_from_zip(
             if not rel:
                 continue
             target = dest_dir / rel
+            try:
+                # Containment guard: even if a member name slipped past the
+                # scan above, an entry whose join escapes dest_dir must be
+                # rejected before anything is written.
+                target.relative_to(dest_dir)
+            except ValueError:
+                raise ValueError(f"Unsafe path in archive: {member!r}") from None
             if member.endswith("/"):
                 target.mkdir(parents=True, exist_ok=True)
             else:
