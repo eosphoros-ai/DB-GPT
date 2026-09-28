@@ -1510,6 +1510,11 @@ async def _react_agent_stream_impl(
                 system_app=CFG.SYSTEM_APP,
             )
             knowledge_resources.append(knowledge_resource)
+            # resolve wiki visibility here (this block runs before the
+            # tool-assembly block where kb_tool_list is built)
+            from .tools.kb_tools import _wiki_enabled
+
+            wiki_available = _wiki_enabled(knowledge_space)
             codegraph_tools_desc = (
                 """
   - kb_codegraph_explore: Query code structure (classes, call chains, inheritance)
@@ -1517,6 +1522,14 @@ async def _react_agent_stream_impl(
   - kb_codegraph_class_hierarchy: Trace class inheritance and implementations
 """
                 if code_graph_available
+                else ""
+            )
+            wiki_tools_desc = (
+                """
+  - kb_wiki_search: Search this space's auto-generated LLM-Wiki pages (curated, synthesized knowledge)
+  - kb_wiki_read_page: Read one wiki page by slug (e.g. kb_wiki_read_page('index') for the catalog)
+  - kb_wiki_index: List the wiki catalog: folders and pages with one-line summaries"""
+                if wiki_available
                 else ""
             )
             knowledge_context = f"""
@@ -1528,7 +1541,7 @@ async def _react_agent_stream_impl(
   - kb_glob: Search files by name or glob pattern
   - kb_grep: Search file contents by keyword (prefer for exact matches)
   - kb_cat: Read the content of a specific file
-  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}
+  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}{wiki_tools_desc}
 """
             logger.info(
                 f"Loaded knowledge space resource: {knowledge_space} "
@@ -2105,6 +2118,12 @@ print(json.dumps(summary, ensure_ascii=False))
                     "kb_codegraph"
                 )
             ]
+        # wiki visibility for prompt sections (tools are mounted inside
+        # make_kb_tools via _make_kb_wiki_tools, gated on index_methods)
+        wiki_available = any(
+            getattr(getattr(t, "_tool", t), "name", "").startswith("kb_wiki_")
+            for t in kb_tool_list
+        )
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
@@ -2649,6 +2668,22 @@ Thought/Action/Action Input format shown above.
             if code_graph_available
             else ""
         )
+        wiki_section = (
+            "13.4. **kb_wiki_search**: Search this space's auto-generated "
+            "LLM-Wiki pages (curated, synthesized knowledge).\n"
+            'Parameters: {"query": "search keywords"}\n'
+            "13.5. **kb_wiki_read_page**: Read one wiki page by slug; use "
+            "slug 'index' for the auto-generated catalog page.\n"
+            'Parameters: {"slug": "page slug like entity/xxx or index"}\n'
+            "13.6. **kb_wiki_index**: List the wiki catalog (folders and "
+            "pages with one-line summaries).\n"
+            "Parameters: none\n"
+            "13.7. Prefer kb_wiki_* when the question is about the space's "
+            "overall knowledge structure; prefer semantic_search/kb_grep "
+            "when you need to quote raw source documents verbatim.\n"
+            if wiki_available
+            else ""
+        )
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
@@ -2758,7 +2793,7 @@ Parameters: {{"query": "search keyword", "path": "directory filter (optional)", 
 Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
 13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
 Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
-{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
+{codegraph_section}{wiki_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
 15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
 16. **execute_tool**: Execute a tool by name with JSON args.

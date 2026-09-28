@@ -12,10 +12,15 @@ import CatResultViewer from '@/components/knowledge/cat-result-viewer';
 import DocPanel from '@/components/knowledge/doc-panel';
 import EmbeddedChat from '@/components/knowledge/embedded-chat';
 import KnowledgeTree from '@/components/knowledge/knowledge-tree';
+import SourcePanel from '@/components/knowledge/source/source-panel';
+import WikiBrowser from '@/components/knowledge/wiki/wiki-browser';
+import WikiGraph from '@/components/knowledge/wiki/wiki-graph';
 import { IDocument, ISpace, KbFileEntry, KnowledgeSpaceStats } from '@/types/knowledge';
 import {
   ApartmentOutlined,
   ArrowLeftOutlined,
+  BookOutlined,
+  CloudServerOutlined,
   CodeOutlined,
   FileTextOutlined,
   GitlabOutlined,
@@ -45,7 +50,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type ViewTab = 'files' | 'chat' | 'graph';
+type ViewTab = 'files' | 'wiki' | 'wiki_graph' | 'sources' | 'chat' | 'graph';
 
 /**
  * Knowledge Space Detail Page.
@@ -579,6 +584,33 @@ export default function KnowledgeDetailPage() {
                 ),
               },
               {
+                key: 'wiki',
+                label: (
+                  <span className='flex items-center gap-1.5'>
+                    <BookOutlined />
+                    {t('wiki_tab_label')}
+                  </span>
+                ),
+              },
+              {
+                key: 'wiki_graph',
+                label: (
+                  <span className='flex items-center gap-1.5'>
+                    <PartitionOutlined />
+                    {t('wiki_graph_tab_label')}
+                  </span>
+                ),
+              },
+              {
+                key: 'sources',
+                label: (
+                  <span className='flex items-center gap-1.5'>
+                    <CloudServerOutlined />
+                    {t('ks_tab_label')}
+                  </span>
+                ),
+              },
+              {
                 key: 'chat',
                 label: (
                   <span className='flex items-center gap-1.5'>
@@ -640,6 +672,18 @@ export default function KnowledgeDetailPage() {
             </div>
           ) : viewTab === 'files' ? (
             renderFilesContent()
+          ) : viewTab === 'wiki' && currentSpace ? (
+            <div className='h-full'>
+              <WikiBrowser spaceId={currentSpace.id} spaceName={spaceName} />
+            </div>
+          ) : viewTab === 'sources' && currentSpace ? (
+            <div className='h-full'>
+              <SourcePanel spaceId={currentSpace.id} />
+            </div>
+          ) : viewTab === 'wiki_graph' && currentSpace ? (
+            <div className='h-full'>
+              <WikiGraph spaceId={currentSpace.id} />
+            </div>
           ) : viewTab === 'chat' ? (
             renderChatContent()
           ) : (
