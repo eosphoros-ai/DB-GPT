@@ -48,7 +48,7 @@ class NerdctlSandboxSession(SandboxSession):
     def __init__(self, session_id: str, config: SessionConfig):
         super().__init__(session_id, config)
         self.container_name = f"sandbox_{self.session_id}"
-        self.image_name = self._get_image_name(config.language)
+        self.image_name = config.image or self._get_image_name(config.language)
 
     def _get_image_name(self, language: str) -> str:
         language_images = {
@@ -85,7 +85,19 @@ class NerdctlSandboxSession(SandboxSession):
             for k, v in (self.config.environment_vars or {}).items():
                 args += ["-e", f"{k}={v}"]
 
-            args += ["-v", f"{tempfile.gettempdir()}:/tmp:rw"]
+            if self.config.host_working_dir:
+                args += [
+                    "-v",
+                    f"{self.config.host_working_dir}:{self.config.working_dir}:rw",
+                ]
+                for path in dict.fromkeys(self.config.input_files):
+                    if (
+                        not os.path.commonpath([self.config.host_working_dir, path])
+                        == self.config.host_working_dir
+                    ):
+                        args += ["-v", f"{path}:{path}:ro"]
+            else:
+                args += ["-v", f"{tempfile.gettempdir()}:/tmp:rw"]
 
             is_vnc = str(self.config.language).endswith("-vnc")
             if is_vnc:
@@ -158,7 +170,7 @@ class NerdctlSandboxSession(SandboxSession):
             "cpp": f"g++ -o program {filename} && ./program",
             "go": f"go run {filename}",
             "rust": f"rustc {filename} -o program && ./program",
-            "bash": f"sh {filename}",
+            "bash": f"bash {filename}",
         }
         return cmds.get(self.config.language, f"cat {filename}")
 
@@ -386,19 +398,22 @@ class NerdctlRuntime(SandboxRuntime):
         if session_id in self.sessions:
             raise ValueError(f"会话 {session_id} 已存在")
         sess = NerdctlSandboxSession(session_id, config)
-        ok = await sess.start()
-        if not ok:
-            raise RuntimeError(f"启动会话 {session_id} 失败")
-        self.sessions[session_id] = sess
-        return sess
+        try:
+            if not await sess.start():
+                raise RuntimeError(f"启动会话 {session_id} 失败")
+            self.sessions[session_id] = sess
+            return sess
+        except BaseException:
+            await sess.stop()
+            raise
 
     async def destroy_session(self, session_id: str) -> bool:
         sess = self.sessions.get(session_id)
         if not sess:
             return False
-        asyncio.create_task(sess.stop())
+        success = await sess.stop()
         del self.sessions[session_id]
-        return True
+        return success
 
     async def list_sessions(self) -> List[str]:
         return list(self.sessions.keys())
