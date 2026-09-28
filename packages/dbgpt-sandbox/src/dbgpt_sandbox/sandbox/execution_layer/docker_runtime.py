@@ -137,9 +137,9 @@ class DockerSandboxSession(SandboxSession):
                 tar.add(
                     source,
                     arcname=source.name,
-                    filter=lambda member: member
-                    if member.isfile() or member.isdir()
-                    else None,
+                    filter=lambda member: (
+                        member if member.isfile() or member.isdir() else None
+                    ),
                 )
             archive.seek(0)
             if not self.container.put_archive(str(source.parent), archive):
