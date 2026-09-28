@@ -426,12 +426,50 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         """
         return self._document_dao.get_list_page(request, page, page_size)
 
-    def get_chunk_list_page(self, request: QUERY_SPEC, page: int, page_size: int):
+    def get_chunk_list_page(
+        self,
+        request: QUERY_SPEC,
+        page: int,
+        page_size: int,
+        document_ids: List[int] = None,
+    ):
         """get document chunks with page
         Args:
             - request: QUERY_SPEC
+            - document_ids: optional list of document ids that scopes the
+              chunks to one knowledge space (the chunk table has no space
+              column of its own, so a space is its set of document ids).
+
+        Without document_ids the page query is unrestricted (kept for
+        callers that deliberately list across spaces).
         """
-        return self._chunk_dao.get_list_page(request, page, page_size)
+        if document_ids is None:
+            return self._chunk_dao.get_list_page(request, page, page_size)
+        if len(document_ids) == 0:
+            # The space exists but owns no documents.
+            return PaginationResult(
+                items=[],
+                total_count=0,
+                total_pages=0,
+                page=page,
+                page_size=page_size,
+            )
+        entity = self._chunk_dao.from_request(request)
+        items = self._chunk_dao.get_document_chunks(
+            entity, page, page_size, document_ids
+        )
+        count = self._chunk_dao.get_document_chunks_count(
+            entity, document_ids=document_ids
+        )
+        items_res = [self._chunk_dao.to_response(item) for item in items]
+        total_pages = (count + page_size - 1) // page_size
+        return PaginationResult(
+            items=items_res,
+            total_count=count,
+            total_pages=total_pages,
+            page=page,
+            page_size=page_size,
+        )
 
     def get_chunk_list(self, request: QUERY_SPEC):
         """get document chunks
@@ -444,8 +482,15 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         """update knowledge document chunk"""
         if not request.id:
             raise Exception("chunk_id is required")
-        chunk = self._chunk_dao.get_one({"id": request.id})
-        entity = self._chunk_dao.from_response(chunk)
+        # Fetch the entity directly instead of the response DTO: the
+        # get_one → from_response round-trip converts gmt_* to strings,
+        # which session.merge rejects on SQLite.
+        chunks = self._chunk_dao.get_document_chunks(
+            DocumentChunkEntity(id=request.id), 1, 1
+        )
+        if not chunks:
+            raise Exception(f"chunk {request.id} can not be found")
+        entity = chunks[0]
         if request.content:
             entity.content = request.content
         if request.questions:
@@ -453,6 +498,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 remove_trailing_punctuation(question) for question in request.questions
             ]
             entity.questions = json.dumps(questions, ensure_ascii=False)
+        entity.gmt_modified = datetime.now()
         self._chunk_dao.update_chunk(entity)
 
     async def _batch_document_sync(
