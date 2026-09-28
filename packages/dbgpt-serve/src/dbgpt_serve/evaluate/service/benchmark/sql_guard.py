@@ -61,7 +61,10 @@ def _iter_top_level(sql: str) -> Iterator[str]:
 
     Skips comments and the contents of quoted literals/identifiers
     (honoring doubled-quote escapes). Characters inside quotes therefore
-    never contribute keywords or statement separators.
+    never contribute keywords or statement separators. Removed comments
+    yield a space: SQLite treats a comment as a token boundary, so
+    ``REPLACE/**/INTO`` must tokenize as two words — not merge into
+    ``REPLACEINTO`` (which would bypass the multi-word write check).
     """
     i, n = 0, len(sql)
     while i < n:
@@ -70,11 +73,13 @@ def _iter_top_level(sql: str) -> Iterator[str]:
         if c == "-" and i + 1 < n and sql[i + 1] == "-":
             j = sql.find("\n", i)
             i = n if j == -1 else j + 1
+            yield " "
             continue
         # block comment
         if c == "/" and i + 1 < n and sql[i + 1] == "*":
             j = sql.find("*/", i + 2)
             i = n if j == -1 else j + 2
+            yield " "
             continue
         # quoted literal / quoted identifier / bracketed identifier
         if c in ("'", '"', "`", "["):

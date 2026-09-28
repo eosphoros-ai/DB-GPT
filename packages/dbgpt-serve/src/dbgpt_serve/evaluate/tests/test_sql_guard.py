@@ -59,6 +59,19 @@ def test_read_only_statements_are_accepted(sql):
         ("WITH cte AS (SELECT 1) DELETE FROM t", "with-prefixed delete"),
         ("WITH cte AS (SELECT 1) UPDATE t SET a = 1", "with-prefixed update"),
         ("WITH cte AS (SELECT 1) REPLACE INTO t VALUES (1)", "with-prefixed replace"),
+        # SQLite treats comments as token separators: REPLACE/**/INTO and
+        # REPLACE--x\nINTO still parse as DML, but a scanner that drops
+        # comments without emitting a boundary would merge them into the
+        # single token REPLACEINTO and miss the pair check
+        ("WITH c AS (SELECT 1) REPLACE/**/INTO t VALUES (1)", "block comment split"),
+        (
+            "WITH c AS (SELECT 1) REPLACE-- note\nINTO t VALUES (1)",
+            "line comment split",
+        ),
+        (
+            "WITH c AS (SELECT/**/1) INSERT/**/INTO t VALUES (1)",
+            "block comment keyword",
+        ),
     ],
 )
 def test_non_read_only_statements_are_rejected(sql, reason):
