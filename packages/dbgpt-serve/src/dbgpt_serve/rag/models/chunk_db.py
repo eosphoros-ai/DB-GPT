@@ -160,7 +160,9 @@ class DocumentChunkDao(BaseDao):
         finally:
             session.close()
 
-    def get_document_chunks_count(self, query: DocumentChunkEntity):
+    def get_document_chunks_count(
+        self, query: DocumentChunkEntity, document_ids: List[int] = None
+    ):
         session = self.get_raw_session()
         document_chunks = session.query(func.count(DocumentChunkEntity.id))
         if query.id is not None:
@@ -173,6 +175,12 @@ class DocumentChunkDao(BaseDao):
             document_chunks = document_chunks.filter(
                 DocumentChunkEntity.doc_type == query.doc_type
             )
+        if query.content is not None:
+            # Keep the same content filter as get_document_chunks so the
+            # paged items and total_count agree.
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.content.like(f"%{query.content}%")
+            )
         if query.doc_name is not None:
             document_chunks = document_chunks.filter(
                 DocumentChunkEntity.doc_name == query.doc_name
@@ -180,6 +188,10 @@ class DocumentChunkDao(BaseDao):
         if query.meta_info is not None:
             document_chunks = document_chunks.filter(
                 DocumentChunkEntity.meta_info == query.meta_info
+            )
+        if document_ids is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.document_id.in_(document_ids)
             )
         count = document_chunks.scalar()
         session.close()
