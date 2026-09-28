@@ -12,6 +12,10 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# Sentry-ish WAFs (Yuque among them) rate-limit default script UAs hard.
+# Always send a recognisable product UA unless the caller overrides it.
+DEFAULT_UA = "DB-GPT-KnowledgeSource/1.0"
+
 _warned_insecure = False
 
 

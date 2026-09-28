@@ -97,11 +97,18 @@ class YuqueConnector(BaseKnowledgeSourceConnector):
         try:
             user = await self._get(token, "/user")
         except RuntimeError as exc:
-            if "CERTIFICATE_VERIFY_FAILED" in str(exc) or "SSL" in str(exc):
+            msg = str(exc)
+            if "CERTIFICATE_VERIFY_FAILED" in msg or "SSL" in msg:
                 raise ConnectorError(
                     "HTTPS 证书校验失败（公司代理/网关拦截所致）。"
                     "设置 env DB_GPT_KS_CA_BUNDLE=企业根证书路径，"
                     "或临时 DB_GPT_KS_INSECURE=1 后重启服务重试"
+                ) from exc
+            if "HTTP 429" in msg:
+                raise ConnectorError(
+                    "语雀限流（429）：请稍等 1-2 分钟再重试；"
+                    "若持续出现，检查该 Token 是否被语雀平台限流或与"
+                    "其他脚本共用"
                 ) from exc
             raise
         if not user or not user.get("id"):

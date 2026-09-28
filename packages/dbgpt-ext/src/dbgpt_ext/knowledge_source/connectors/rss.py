@@ -105,12 +105,20 @@ class RSSConnector(BaseKnowledgeSourceConnector):
         if parent_id:
             return []
         feed_url = (config.get("feed_url") or "").strip()
+        # per-row display hides the raw URL: prefer the feed's own channel
+        # title; fallback is host+path (scheme stripped), not the full URL
+        from urllib.parse import urlparse
+
         root = await self._fetch_xml(feed_url)
-        title = (
+        channel_title = (
             _text(root, ".//channel/title")
             or _text(root, ".//atom:feed/atom:title")
-            or feed_url
         )
+        if channel_title:
+            title = f"RSS · {channel_title}"
+        else:
+            parsed = urlparse(feed_url)
+            title = f"RSS · {parsed.netloc}{parsed.path}".rstrip("/")
         return [
             ResourceInfo(
                 external_id=feed_url,

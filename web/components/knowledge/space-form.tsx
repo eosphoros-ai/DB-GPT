@@ -28,10 +28,18 @@ import {
   Upload,
   message,
 } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'react-i18next';
 
-type DataSourceType = 'DOCUMENT' | 'GIT_REPO' | 'URL' | 'TEXT' | 'YUQUE' | 'NOTION' | 'FEISHU_WIKI';
+/** Creation-wizard source type → connector type for the binding wizard */
+const SOURCE_TO_CONNECTOR: Record<string, string> = {
+  FEISHU_WIKI: 'feishu_wiki',
+  YUQUE: 'yuque',
+  RSS: 'rss',
+};
+
+type DataSourceType = 'DOCUMENT' | 'GIT_REPO' | 'URL' | 'TEXT' | 'YUQUE' | 'RSS' | 'NOTION' | 'FEISHU_WIKI';
 
 type FieldType = {
   spaceName: string;
@@ -76,8 +84,8 @@ interface IndexMethodDef {
 const INDEX_METHODS: IndexMethodDef[] = [
   { value: 'VectorStore', labelKey: 'index_vector_store', descKey: 'index_vector_store_desc' },
   { value: 'FullText', labelKey: 'index_full_text', descKey: 'index_full_text_desc' },
-  { value: 'KnowledgeGraph', labelKey: 'index_knowledge_graph', descKey: 'index_knowledge_graph_desc', onlyCode: true },
   { value: 'Wiki', labelKey: 'index_llm_wiki', descKey: 'index_llm_wiki_desc' },
+  { value: 'KnowledgeGraph', labelKey: 'index_knowledge_graph', descKey: 'index_knowledge_graph_desc', onlyCode: true },
 ];
 
 type IProps = {
@@ -96,6 +104,8 @@ interface DataSourceCardDef {
   bgLight: string;
   bgDark: string;
   disabled?: boolean;
+  /** hidden from the picker (feature superseded by binding-style sources) */
+  hidden?: boolean;
 }
 
 const DS_CARDS: DataSourceCardDef[] = [
@@ -123,6 +133,9 @@ const DS_CARDS: DataSourceCardDef[] = [
     color: '#722ED1',
     bgLight: '#F9F0FF',
     bgDark: '#1E1326',
+    // superseded by binding-style sources (Feishu/Yuque/RSS); kept here so
+    // the type + forward flow still compiles — just not offered in the UI
+    hidden: true,
   },
   {
     key: 'TEXT',
@@ -144,18 +157,35 @@ const DS_CARDS: DataSourceCardDef[] = [
   },
   {
     key: 'YUQUE',
-    icon: (
-      <img
-        src='/pictures/ks/yuque.png'
-        width='22'
-        height='22'
-        alt='yuque'
-        style={{ borderRadius: 4 }}
-      />
-    ),
+    icon: <img src='/pictures/ks/yuque.png' width='22' height='22' alt='yuque' style={{ borderRadius: 4 }} />,
     color: '#00D6B9',
     bgLight: '#E6FFF9',
     bgDark: '#0F2A26',
+  },
+  {
+    key: 'RSS',
+    icon: (
+      <svg width='22' height='22' viewBox='0 0 48 48' aria-label='RSS'>
+        <circle cx='14' cy='34' r='4' fill='#FF6600' />
+        <path
+          d='M10 22a18 18 0 0 1 18 18'
+          fill='none'
+          stroke='#FF6600'
+          strokeWidth='4'
+          strokeLinecap='round'
+        />
+        <path
+          d='M10 14a26 26 0 0 1 26 26'
+          fill='none'
+          stroke='#FF6600'
+          strokeWidth='4'
+          strokeLinecap='round'
+        />
+      </svg>
+    ),
+    color: '#FF6600',
+    bgLight: '#FFF4E5',
+    bgDark: '#2B2111',
   },
   {
     key: 'NOTION',
@@ -197,6 +227,10 @@ export default function SpaceForm(props: IProps) {
   const [files, setFiles] = useState<any[]>([]);
   const [models, setModels] = useState<Array<{ label: string; value: string }>>([]);
   const [bindStage, setBindStage] = useState(false);
+  const router = useRouter();
+  const createdNameRef = useRef<string>('');
+  const goDetail = () =>
+    router.push(`/construct/knowledge/detail?spaceName=${encodeURIComponent(createdNameRef.current)}`);
   const [bindSpaceId, setBindSpaceId] = useState<string | number | null>(null);
 
   const [form] = Form.useForm();
@@ -268,6 +302,7 @@ export default function SpaceForm(props: IProps) {
       URL: { title: t('URL'), desc: t('ds_url_desc') },
       TEXT: { title: t('Text'), desc: t('ds_text_desc') },
       YUQUE: { title: t('ds_card_yuque_title'), desc: t('ds_yuque_bind_desc') },
+      RSS: { title: 'RSS', desc: t('ds_rss_bind_desc') },
       NOTION: { title: 'Notion', desc: t('ds_notion_desc') },
     }),
     [t],
@@ -313,6 +348,7 @@ export default function SpaceForm(props: IProps) {
     }
     // addSpace v1 API returns [] — use spaceName as the identifier
     // (backend _resolve_space supports both id and name)
+    createdNameRef.current = spaceName;
     localStorage.setItem('cur_space_id', JSON.stringify(spaceName));
 
     // 2. For Git Repo, trigger sync immediately
@@ -351,6 +387,7 @@ export default function SpaceForm(props: IProps) {
       message.success(`${t('sync_completed')}: ${syncData?.indexed ?? 0} ${t('files_indexed')}`);
       onSuccess?.();
       handleStepChange({ label: 'finish' });
+      goDetail();
       return;
     }
 
@@ -412,6 +449,7 @@ export default function SpaceForm(props: IProps) {
 
       onSuccess?.();
       handleStepChange({ label: 'finish' });
+      goDetail();
       return;
     }
 
@@ -419,7 +457,7 @@ export default function SpaceForm(props: IProps) {
     // run the binding wizard (credentials → scope → strategy) right here;
     // auto first-sync fires on completion, so the user lands with content
     // already flowing.
-    if (dst === 'FEISHU_WIKI' || dst === 'YUQUE') {
+    if (dst === 'FEISHU_WIKI' || dst === 'YUQUE' || dst === 'RSS') {
       const [, spaces] = await apiInterceptors(getSpaceList({ name: spaceName }));
       const createdId = spaces?.[0]?.id;
       setSpinning(false);
@@ -456,21 +494,20 @@ export default function SpaceForm(props: IProps) {
         <BindingWizard
           open
           embedded
+          initialType={SOURCE_TO_CONNECTOR[form.getFieldValue('dataSourceType') as string]}
           spaceId={bindSpaceId}
           onClose={() => {
             // skip binding: space stays, user can bind later on detail page
             message.success(t('ks_created_go_bind'));
-            setBindStage(false);
-            setBindSpaceId(null);
             onSuccess?.();
             handleStepChange({ label: 'finish' });
+            goDetail();
           }}
           onCreated={() => {
             message.success(t('ks_bind_done'));
             onSuccess?.();
-            setBindStage(false);
-            setBindSpaceId(null);
             handleStepChange({ label: 'finish' });
+            goDetail();
           }}
         />
       </div>
@@ -530,97 +567,7 @@ export default function SpaceForm(props: IProps) {
           <Input className='h-12' placeholder={t('Please_input_the_description')} />
         </Form.Item>
 
-        {/* ── Section 1b: Index Methods ── */}
-        <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Index_Method')}</div>
-        <Form.Item<FieldType> name='index_methods' initialValue={['VectorStore', 'FullText', 'KnowledgeGraph']}>
-          <Checkbox.Group
-            className='grid grid-cols-3 gap-3 w-full'
-            onChange={(values: string[]) => {
-              // KnowledgeGraph is only available for GIT_REPO and DOCUMENT types.
-              // For other types, remove it from the selection.
-              if (dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT') {
-                const filtered = values.filter(v => v !== 'KnowledgeGraph');
-                form.setFieldValue('index_methods', filtered);
-              }
-            }}
-          >
-            {INDEX_METHODS.map(method => {
-              // KnowledgeGraph is available for GIT_REPO (code) and DOCUMENT (markdown headings)
-              const isCodeOnly = method.onlyCode && dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT';
-              const isDisabled = isCodeOnly;
-              return (
-                <Checkbox
-                  key={method.value}
-                  value={method.value}
-                  disabled={isDisabled}
-                  className={`
-                    flex items-center gap-3 p-3 rounded-lg border-2 transition-all
-                    ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-blue-400'}
-                  `}
-                >
-                  <div className='flex flex-col'>
-                    <span className='text-sm font-medium'>{t(method.labelKey as I18nKeys)}</span>
-                    <span className='text-xs text-gray-400'>{t(method.descKey as I18nKeys)}</span>
-                    {method.onlyCode && !isDisabled && (
-                      <span className='text-[10px] text-orange-500'>
-                        {dataSourceType === 'DOCUMENT' ? t('markdown_only') : t('code_only')}
-                      </span>
-                    )}
-                  </div>
-                </Checkbox>
-              );
-            })}
-          </Checkbox.Group>
-        </Form.Item>
-
-        {hasWiki && (
-          <div className='rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-5 mb-2 mt-2'>
-            <div className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>{t('wiki_cfg_title')}</div>
-            <div className='text-xs text-gray-400 mb-4'>{t('wiki_cfg_desc')}</div>
-            <div className='grid grid-cols-2 gap-4'>
-              <Form.Item<FieldType> label={t('wiki_cfg_granularity')} name='wiki_granularity' initialValue='standard'>
-                <Radio.Group className='w-full'>
-                  <div className='grid grid-cols-3 gap-2'>
-                    {(['focused', 'standard', 'exhaustive'] as const).map(g => (
-                      <Radio
-                        key={g}
-                        value={g}
-                        className='rounded-lg border border-gray-200 dark:border-gray-600 p-2.5 has-[:checked]:border-blue-400'
-                      >
-                        <span className='flex flex-col'>
-                          <span className='text-xs font-medium'>{t(`wiki_cfg_g_${g}`)}</span>
-                          <span className='text-[10px] text-gray-400'>{t(`wiki_cfg_g_${g}_desc`)}</span>
-                        </span>
-                      </Radio>
-                    ))}
-                  </div>
-                </Radio.Group>
-              </Form.Item>
-              <div className='grid grid-cols-2 gap-4'>
-                <Form.Item<FieldType> label={t('wiki_cfg_model')} name='wiki_model'>
-                  <Select
-                    className='w-full'
-                    allowClear
-                    showSearch
-                    optionFilterProp='label'
-                    placeholder={t('wiki_cfg_model_hint')}
-                    options={models}
-                  />
-                </Form.Item>
-                <Form.Item<FieldType> label={t('wiki_cfg_max_pages')} name='wiki_max_pages'>
-                  <InputNumber className='w-full' min={1} max={50} placeholder='8' />
-                </Form.Item>
-              </div>
-            </div>
-            <Form.Item<FieldType> label={t('wiki_cfg_content_instructions')} name='wiki_content_instructions'>
-              <Input.TextArea rows={2} placeholder={t('wiki_cfg_content_instructions_hint')} />
-            </Form.Item>
-          </div>
-        )}
-
-        <Divider />
-
-        {/* ── Section 2: Data Source — Card Grid ── */}
+        {/* ── Section 2: Datasource type (picked first) ── */}
         <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>
           {t('Choose_a_Datasource_type')}
         </div>
@@ -628,7 +575,7 @@ export default function SpaceForm(props: IProps) {
           <input type='hidden' />
         </Form.Item>
         <div className='grid grid-cols-3 sm:grid-cols-6 gap-3 mb-2'>
-          {DS_CARDS.map(card => {
+          {DS_CARDS.filter(card => !card.hidden).map(card => {
             const selected = dataSourceType === card.key;
             const label = dataSourceLabels[card.key];
             const isDisabled = card.disabled;
@@ -799,6 +746,96 @@ export default function SpaceForm(props: IProps) {
             </div>
             <Form.Item<FieldType> label={t('Text')} name='raw_text' rules={[{ required: true }]}>
               <Input.TextArea rows={4} placeholder={t('Fill your raw text')} />
+            </Form.Item>
+          </div>
+        )}
+
+        <Divider />
+
+        {/* ── Section 3: Index Methods ── */}
+        <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Index_Method')}</div>
+        <Form.Item<FieldType> name='index_methods' initialValue={['VectorStore', 'FullText', 'KnowledgeGraph']}>
+          <Checkbox.Group
+            className='grid grid-cols-3 gap-3 w-full'
+            onChange={(values: string[]) => {
+              // KnowledgeGraph is only available for GIT_REPO and DOCUMENT types.
+              // For other types, remove it from the selection.
+              if (dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT') {
+                const filtered = values.filter(v => v !== 'KnowledgeGraph');
+                form.setFieldValue('index_methods', filtered);
+              }
+            }}
+          >
+            {INDEX_METHODS.map(method => {
+              // KnowledgeGraph is available for GIT_REPO (code) and DOCUMENT (markdown headings)
+              const isCodeOnly = method.onlyCode && dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT';
+              const isDisabled = isCodeOnly;
+              return (
+                <Checkbox
+                  key={method.value}
+                  value={method.value}
+                  disabled={isDisabled}
+                  className={`
+                    flex items-center gap-3 p-3 rounded-lg border-2 transition-all
+                    ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-blue-400'}
+                  `}
+                >
+                  <div className='flex flex-col'>
+                    <span className='text-sm font-medium'>{t(method.labelKey as I18nKeys)}</span>
+                    <span className='text-xs text-gray-400'>{t(method.descKey as I18nKeys)}</span>
+                    {method.onlyCode && !isDisabled && (
+                      <span className='text-[10px] text-orange-500'>
+                        {dataSourceType === 'DOCUMENT' ? t('markdown_only') : t('code_only')}
+                      </span>
+                    )}
+                  </div>
+                </Checkbox>
+              );
+            })}
+          </Checkbox.Group>
+        </Form.Item>
+
+        {hasWiki && (
+          <div className='rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-5 mb-2 mt-2'>
+            <div className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>{t('wiki_cfg_title')}</div>
+            <div className='text-xs text-gray-400 mb-4'>{t('wiki_cfg_desc')}</div>
+            <div className='grid grid-cols-2 gap-4'>
+              <Form.Item<FieldType> label={t('wiki_cfg_granularity')} name='wiki_granularity' initialValue='standard'>
+                <Radio.Group className='w-full'>
+                  <div className='grid grid-cols-3 gap-2'>
+                    {(['focused', 'standard', 'exhaustive'] as const).map(g => (
+                      <Radio
+                        key={g}
+                        value={g}
+                        className='rounded-lg border border-gray-200 dark:border-gray-600 p-2.5 has-[:checked]:border-blue-400'
+                      >
+                        <span className='flex flex-col'>
+                          <span className='text-xs font-medium'>{t(`wiki_cfg_g_${g}`)}</span>
+                          <span className='text-[10px] text-gray-400'>{t(`wiki_cfg_g_${g}_desc`)}</span>
+                        </span>
+                      </Radio>
+                    ))}
+                  </div>
+                </Radio.Group>
+              </Form.Item>
+              <div className='grid grid-cols-2 gap-4'>
+                <Form.Item<FieldType> label={t('wiki_cfg_model')} name='wiki_model'>
+                  <Select
+                    className='w-full'
+                    allowClear
+                    showSearch
+                    optionFilterProp='label'
+                    placeholder={t('wiki_cfg_model_hint')}
+                    options={models}
+                  />
+                </Form.Item>
+                <Form.Item<FieldType> label={t('wiki_cfg_max_pages')} name='wiki_max_pages'>
+                  <InputNumber className='w-full' min={1} max={50} placeholder='8' />
+                </Form.Item>
+              </div>
+            </div>
+            <Form.Item<FieldType> label={t('wiki_cfg_content_instructions')} name='wiki_content_instructions'>
+              <Input.TextArea rows={2} placeholder={t('wiki_cfg_content_instructions_hint')} />
             </Form.Item>
           </div>
         )}

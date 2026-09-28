@@ -68,5 +68,6 @@ const KsEn: Resources['translation'] = {
   ks_type_name_rss: 'RSS',
   ks_type_name_dingtalk: 'DingTalk Docs',
 
+  ds_rss_bind_desc: 'Subscribe an RSS/Atom feed; articles sync automatically (binding happens inside the creation flow)',
 };
 export default KsEn;

@@ -707,16 +707,33 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             await self._maybe_build_heading_graph(space, doc)
             # LLM-Wiki: enqueue a debounced wiki ingest when the space has the
             # Wiki index method. Enqueue failures never fail the doc sync.
+            #
+            # NOTE: the wiki gate intentionally re-reads the space ENTITY via
+            # the DAO instead of trusting the ``space`` argument — the latter
+            # is a SpaceServeResponse whose shape has historically lacked
+            # index_methods/context, which silently killed auto-generation
+            # (users had to press Generate manually).
             try:
+                from ..models.models import (
+                    KnowledgeSpaceDao,
+                    KnowledgeSpaceEntity,
+                )
                 from ..service.wiki.config import wiki_enabled
                 from ..service.wiki.task_scheduler import get_wiki_scheduler
 
-                if wiki_enabled(space):
+                dao = KnowledgeSpaceDao()
+
+                _entities = dao.get_knowledge_space(
+                    KnowledgeSpaceEntity(name=space.name)
+                )
+                if _entities and wiki_enabled(_entities[0]):
                     _scheduler = get_wiki_scheduler()
                     if _scheduler is not None:
-                        _scheduler.enqueue_ingest(space.id, [doc.id])
+                        _scheduler.enqueue_ingest(_entities[0].id, [doc.id])
             except Exception as wiki_err:
-                logger.warning(f"wiki ingest enqueue failed: {wiki_err}")
+                logger.warning(
+                    f"wiki ingest enqueue failed: {wiki_err}", exc_info=True
+                )
         except Exception as e:
             import traceback
 

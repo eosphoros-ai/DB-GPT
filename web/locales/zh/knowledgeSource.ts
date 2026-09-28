@@ -67,5 +67,6 @@ const KsZh: Resources['translation'] = {
   ks_type_name_rss: 'RSS',
   ks_type_name_dingtalk: '钉钉文档',
 
+  ds_rss_bind_desc: '订阅 RSS/Atom 源，文章自动同步（在知识库…完成绑定）',
 };
 export default KsZh;
