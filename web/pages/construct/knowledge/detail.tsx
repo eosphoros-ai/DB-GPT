@@ -678,7 +678,7 @@ export default function KnowledgeDetailPage() {
             </div>
           ) : viewTab === 'sources' && currentSpace ? (
             <div className='h-full'>
-              <SourcePanel spaceId={currentSpace.id} />
+              <SourcePanel spaceId={currentSpace.id} spaceName={spaceName} />
             </div>
           ) : viewTab === 'wiki_graph' && currentSpace ? (
             <div className='h-full'>

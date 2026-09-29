@@ -24,7 +24,13 @@ const STATUS_COLORS: Record<string, string> = {
   error: 'red',
 };
 
-export default function SourcePanel({ spaceId }: { spaceId: string | number }) {
+export default function SourcePanel({
+  spaceId,
+  spaceName,
+}: {
+  spaceId: string | number;
+  spaceName?: string;
+}) {
   const { t } = useTranslation();
   const [bindings, setBindings] = useState<KsSourceBinding[]>([]);
   const [loading, setLoading] = useState(false);
@@ -151,6 +157,7 @@ export default function SourcePanel({ spaceId }: { spaceId: string | number }) {
       <BindingWizard
         open={wizardOpen}
         spaceId={spaceId}
+        spaceName={spaceName}
         onClose={() => setWizardOpen(false)}
         onCreated={() => {
           setWizardOpen(false);

@@ -496,6 +496,7 @@ export default function SpaceForm(props: IProps) {
           embedded
           initialType={SOURCE_TO_CONNECTOR[form.getFieldValue('dataSourceType') as string]}
           spaceId={bindSpaceId}
+          spaceName={form.getFieldValue('spaceName') as string}
           onClose={() => {
             // skip binding: space stays, user can bind later on detail page
             message.success(t('ks_created_go_bind'));

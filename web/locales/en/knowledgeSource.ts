@@ -69,5 +69,20 @@ const KsEn: Resources['translation'] = {
   ks_type_name_dingtalk: 'DingTalk Docs',
 
   ds_rss_bind_desc: 'Subscribe an RSS/Atom feed; articles sync automatically (binding happens inside the creation flow)',
+  ks_builtin_section: 'Built-in sources',
+  ks_external_section: 'External connectors',
+  ks_builtin_local: 'Local documents',
+  ks_builtin_local_desc: 'Upload PDF / Word / Markdown files into this knowledge space',
+  ks_builtin_text: 'Text snippet',
+  ks_builtin_text_desc: 'Paste a piece of text and create a knowledge document directly',
+  ks_builtin_content_step: 'Content',
+  ks_builtin_finish: 'Upload & sync',
+  ks_builtin_done: 'Built-in source added and syncing: {{n}} document(s)',
+  ks_local_drag: 'Click or drag files to upload',
+  ks_space_name_required: 'Missing space name (spaceName) — open this wizard from the space detail page',
+  ks_text_name_label: 'Document name',
+  ks_text_content_label: 'Text content',
+  ks_text_content_placeholder: 'Paste raw text content…',
+
 };
 export default KsEn;

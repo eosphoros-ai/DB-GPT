@@ -3,18 +3,25 @@
  * Embeddable: set `embedded` and the host decides the chrome.
  */
 import {
+  addDocument,
   apiInterceptors,
   createSourceBinding,
   listConnectorTypes,
   listSourceResources,
+  syncBatchDocument,
   triggerSourceSync,
   updateSourceBinding,
+  uploadDocument,
 } from '@/client/api';
 import { KsConnectorMeta } from '@/types/knowledgeSource';
 import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Empty, Form, Input, Modal, Radio, Select, Spin, Steps, Tree, message } from 'antd';
+import { Button, Checkbox, Empty, Form, Input, Modal, Radio, Select, Spin, Steps, Tree, Upload, message } from 'antd';
+import type { RcFile } from 'antd/es/upload/interface';
 import { useEffect, useState } from 'react';
+import { FileAddOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+
+const { Dragger } = Upload;
 
 /** Row labels never render a raw scheme:// URL (defense in depth — the
  * connector already returns friendly titles). */
@@ -76,6 +83,7 @@ export {}; // keep module shape stable when tree-shaken
 export function BindingWizard({
   open,
   spaceId,
+  spaceName,
   onClose,
   onCreated,
   embedded,
@@ -89,6 +97,8 @@ export function BindingWizard({
   embedded?: boolean;
   /** pre-selected connector (space creation already picked one) — skips step 1 */
   initialType?: string;
+  /** space name — required for the builtin (local/text) ingest flows */
+  spaceName?: string;
 }) {
   const { t } = useTranslation();
   const [metas, setMetas] = useState<Record<string, KsConnectorMeta>>({});
@@ -100,6 +110,8 @@ export function BindingWizard({
   const [form] = Form.useForm();
   const [authLoading, setAuthLoading] = useState(false);
   const [metaError, setMetaError] = useState(false);
+  const [localFiles, setLocalFiles] = useState<RcFile[]>([]);
+  const [localUploading, setLocalUploading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -177,6 +189,9 @@ export function BindingWizard({
     onCreated();
   };
 
+  const builtinNeedsSpaceName =
+    chosenType?.startsWith('builtin:') && !spaceName;
+
   const content = (
     <div>
       <div className='flex items-center mb-2'>
@@ -195,15 +210,57 @@ export function BindingWizard({
         current={step}
         items={[
           { title: t('ks_step_type') },
-          { title: t('ks_step_credentials') },
-          { title: t('ks_step_scope') },
-          { title: t('ks_step_strategy') },
+          {
+            title: chosenType?.startsWith('builtin:') ? t('ks_builtin_content_step') : t('ks_step_credentials'),
+          },
+          {
+            title: t('ks_step_scope'),
+            disabled: !!chosenType?.startsWith('builtin:'),
+          },
+          {
+            title: t('ks_step_strategy'),
+            disabled: !!chosenType?.startsWith('builtin:'),
+          },
         ]}
       />
 
-      {/* Step 0: pick connector */}
+      {/* Step 0: pick entry — builtin ingest first, then external connectors */}
       {step === 0 && (
         <div className='grid grid-cols-3 gap-3 py-2'>
+          <div className='col-span-full text-xs text-gray-400'>{t('ks_builtin_section')}</div>
+          <div
+            data-testid='builtin-local'
+            onClick={() => {
+              setChosenType('builtin:local');
+              setStep(1);
+            }}
+            className='cursor-pointer rounded-xl border-2 border-transparent p-4 hover:border-blue-400 transition-all flex items-center gap-3'
+          >
+            <div className='flex-none w-7 h-7 rounded-md bg-blue-50 dark:bg-blue-900/40 text-blue-500 flex items-center justify-center'>
+              <FileAddOutlined />
+            </div>
+            <div>
+              <div className='text-sm font-semibold'>{t('ks_builtin_local')}</div>
+              <div className='text-xs text-gray-400 mt-1 line-clamp-2'>{t('ks_builtin_local_desc')}</div>
+            </div>
+          </div>
+          <div
+            data-testid='builtin-text'
+            onClick={() => {
+              setChosenType('builtin:text');
+              setStep(1);
+            }}
+            className='cursor-pointer rounded-xl border-2 border-transparent p-4 hover:border-blue-400 transition-all flex items-center gap-3'
+          >
+            <div className='flex-none w-7 h-7 rounded-md bg-orange-50 dark:bg-orange-900/40 text-orange-500 flex items-center justify-center'>
+              <FileTextOutlined />
+            </div>
+            <div>
+              <div className='text-sm font-semibold'>{t('ks_builtin_text')}</div>
+              <div className='text-xs text-gray-400 mt-1 line-clamp-2'>{t('ks_builtin_text_desc')}</div>
+            </div>
+          </div>
+          <div className='col-span-full text-xs text-gray-400'>{t('ks_external_section')}</div>
           {Object.entries(metas).map(([type, m]) => (
             <div
               key={type}
@@ -236,6 +293,116 @@ export function BindingWizard({
             </div>
           )}
         </div>
+      )}
+
+      {builtinNeedsSpaceName && (
+        <div className='mb-3 text-xs text-red-500'>{t('ks_space_name_required')}</div>
+      )}
+
+      {/* Step 1b: builtin — local documents upload */}
+      {step === 1 && chosenType === 'builtin:local' && (
+        <div className='py-2'>
+          <Dragger
+            multiple
+            fileList={localFiles as any}
+            beforeUpload={file => {
+              setLocalFiles(prev => [...prev, file as RcFile]);
+              return false;
+            }}
+            onRemove={file => setLocalFiles(prev => prev.filter(f => f.uid !== (file as any).uid))}
+            accept='.pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md,.zip,.csv'
+          >
+            <p className='ant-upload-text text-sm text-gray-500 dark:text-gray-400'>{t('ks_local_drag')}</p>
+            <p className='ant-upload-hint text-xs text-gray-400'>PDF, PPT, Excel, Word, Text, Markdown, CSV</p>
+          </Dragger>
+          <div className='flex justify-end gap-2 mt-3'>
+            <Button onClick={() => setStep(0)}>{t('ks_back')}</Button>
+            <Button
+              type='primary'
+              disabled={localFiles.length === 0 || !spaceName}
+              loading={localUploading}
+              onClick={async () => {
+                if (!spaceName) return;
+                setLocalUploading(true);
+                const uploaded: Array<{ doc_id: number; name: string }> = [];
+                for (const file of localFiles) {
+                  const fd = new FormData();
+                  fd.append('doc_name', file.name);
+                  fd.append('doc_file', file);
+                  fd.append('doc_type', 'DOCUMENT');
+                  const [, docId] = await apiInterceptors(uploadDocument(spaceName, fd));
+                  if (docId) uploaded.push({ doc_id: Number(docId), name: file.name });
+                }
+                if (uploaded.length > 0) {
+                  await apiInterceptors(
+                    syncBatchDocument(
+                      spaceName,
+                      uploaded.map(f => ({
+                        doc_id: f.doc_id,
+                        name: f.name,
+                        chunk_parameters: { chunk_strategy: 'Automatic' },
+                      })),
+                    ),
+                  );
+                }
+                setLocalUploading(false);
+                setLocalFiles([]);
+                message.success(t('ks_builtin_done', { n: uploaded.length }));
+                onCreated();
+              }}
+            >
+              {t('ks_builtin_finish')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 1c: builtin — text snippet */}
+      {step === 1 && chosenType === 'builtin:text' && (
+        <Form form={form} layout='vertical' className='pt-2'>
+          <Form.Item label={t('ks_text_name_label')} name='text_name' rules={[{ required: true, message: t('ks_text_name_label') }]}>
+            <Input placeholder={t('ks_text_name_label')} />
+          </Form.Item>
+          <Form.Item label={t('ks_text_content_label')} name='text_content' rules={[{ required: true, message: t('ks_text_content_label') }]}>
+            <Input.TextArea rows={8} placeholder={t('ks_text_content_placeholder')} />
+          </Form.Item>
+          <div className='flex justify-end gap-2'>
+            <Button onClick={() => setStep(0)}>{t('ks_back')}</Button>
+            <Button
+              type='primary'
+              loading={authLoading}
+              onClick={async () => {
+                const values = await form.validateFields();
+                if (!spaceName) return;
+                setAuthLoading(true);
+                const [, docId] = await apiInterceptors(
+                  addDocument(spaceName, {
+                    doc_name: values.text_name,
+                    content: values.text_content,
+                    doc_type: 'TEXT',
+                    questions: [],
+                  } as any),
+                );
+                if (docId) {
+                  await apiInterceptors(
+                    syncBatchDocument(spaceName, [
+                      {
+                        doc_id: Number(docId),
+                        name: values.text_name,
+                        chunk_parameters: { chunk_strategy: 'Automatic' },
+                      },
+                    ]),
+                  );
+                }
+                setAuthLoading(false);
+                message.success(t('ks_builtin_done', { n: docId ? 1 : 0 }));
+                onCreated();
+              }}
+            >
+              {t('ks_builtin_finish')}
+            </Button>
+          </div>
+        </Form>
       )}
 
       {/* Step 1: credentials form (auth_fields) */}

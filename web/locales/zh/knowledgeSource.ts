@@ -68,5 +68,20 @@ const KsZh: Resources['translation'] = {
   ks_type_name_dingtalk: '钉钉文档',
 
   ds_rss_bind_desc: '订阅 RSS/Atom 源，文章自动同步（在知识库…完成绑定）',
+  ks_builtin_section: '内置来源',
+  ks_external_section: '外部连接器',
+  ks_builtin_local: '本地文档',
+  ks_builtin_local_desc: '上传 PDF / Word / Markdown 等本地文件到本知识空间',
+  ks_builtin_text: '文本片段',
+  ks_builtin_text_desc: '粘贴一段文本，直接创建知识文档',
+  ks_builtin_content_step: '内容输入',
+  ks_builtin_finish: '上传并同步',
+  ks_builtin_done: '内置来源已添加并开始同步：{{n}} 个文档',
+  ks_local_drag: '点击或拖拽文件上传',
+  ks_space_name_required: '缺少空间名称（spaceName），无法上传——请从空间详情页打开本向导',
+  ks_text_name_label: '文档名称',
+  ks_text_content_label: '文本内容',
+  ks_text_content_placeholder: '粘贴原始文本内容……',
+
 };
 export default KsZh;
