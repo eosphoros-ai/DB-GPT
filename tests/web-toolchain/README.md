@@ -33,7 +33,10 @@ npm test
 The Windows validation also records a separate development run started with
 `$env:NODE_OPTIONS = '--max-old-space-size=12288'`. This is a documented test
 environment adjustment after a default-heap restart, not evidence that the
-default development configuration passed. See the regression report.
+default development configuration passed. The corrected 12 GB run also
+restarted: 38/40 passed, followed by 2/2 on a separate rerun after recovery.
+Do not present the rerun as an uninterrupted 40/40 development pass. See the
+regression report for Fast Refresh results and console diagnostics.
 
 ## Evidence and limits
 

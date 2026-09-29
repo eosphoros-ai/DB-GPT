@@ -1,0 +1,1300 @@
+{
+  "recordedAt": "2026-09-29T14:24:55.247Z",
+  "applicationCommit": "ae095321f2f93d1536fdead00b1484d2637b96d9",
+  "launcherAndPortableSuiteCommit": "90b837d0a1a0a60c46fc786a42cfde50fd67b14e",
+  "baseline": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+  "environment": {
+    "os": "Windows x64",
+    "node": "20.19.6",
+    "npm": "10.8.2",
+    "next": "16.3.0",
+    "playwright": "1.62.1",
+    "browser": "Chromium"
+  },
+  "productionBuild": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "node": "20.19.6",
+    "npm": "10.8.2",
+    "head": "ae095321f2f93d1536fdead00b1484d2637b96d9",
+    "finishedAt": "2026-09-29T21:31:27.8649304+08:00"
+  },
+  "productionFixtures": {
+    "stats": {
+      "startTime": "2026-09-29T13:49:58.035Z",
+      "duration": 181803.63,
+      "expected": 40,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "name": "route: home",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2951
+          }
+        ]
+      },
+      {
+        "name": "route: conversations",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3155
+          }
+        ]
+      },
+      {
+        "name": "route: data-sources",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4019
+          }
+        ]
+      },
+      {
+        "name": "route: knowledge",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3505
+          }
+        ]
+      },
+      {
+        "name": "route: applications",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3630
+          }
+        ]
+      },
+      {
+        "name": "route: workflows",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3160
+          }
+        ]
+      },
+      {
+        "name": "route: workflow-canvas",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5157
+          }
+        ]
+      },
+      {
+        "name": "route: models",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3024
+          }
+        ]
+      },
+      {
+        "name": "route: model-providers",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3676
+          }
+        ]
+      },
+      {
+        "name": "route: agent-plugins",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2991
+          }
+        ]
+      },
+      {
+        "name": "route: dbgpts",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6163
+          }
+        ]
+      },
+      {
+        "name": "route: prompts",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2914
+          }
+        ]
+      },
+      {
+        "name": "route: prompt-editor",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3847
+          }
+        ]
+      },
+      {
+        "name": "route: connectors",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3472
+          }
+        ]
+      },
+      {
+        "name": "route: skills",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4673
+          }
+        ]
+      },
+      {
+        "name": "route: scheduled-tasks",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4687
+          }
+        ]
+      },
+      {
+        "name": "route: scheduled-task-runs",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3484
+          }
+        ]
+      },
+      {
+        "name": "route: evaluation",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4188
+          }
+        ]
+      },
+      {
+        "name": "route: model-evaluation",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4898
+          }
+        ]
+      },
+      {
+        "name": "route: model-datasets",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2962
+          }
+        ]
+      },
+      {
+        "name": "route: observability",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4809
+          }
+        ]
+      },
+      {
+        "name": "route: traces",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5829
+          }
+        ]
+      },
+      {
+        "name": "route: data-index",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2491
+          }
+        ]
+      },
+      {
+        "name": "route: chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4949
+          }
+        ]
+      },
+      {
+        "name": "route: mobile-chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2206
+          }
+        ]
+      },
+      {
+        "name": "route: rich-chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3223
+          }
+        ]
+      },
+      {
+        "name": "route: legacy-chart-chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2842
+          }
+        ]
+      },
+      {
+        "name": "route: knowledge-graph",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4052
+          }
+        ]
+      },
+      {
+        "name": "route: knowledge-detail",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4371
+          }
+        ]
+      },
+      {
+        "name": "interaction: navigation-and-search",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2654
+          }
+        ]
+      },
+      {
+        "name": "interaction: database-form-and-submit",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3287
+          }
+        ]
+      },
+      {
+        "name": "interaction: knowledge-upload",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3217
+          }
+        ]
+      },
+      {
+        "name": "interaction: application-create",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4323
+          }
+        ]
+      },
+      {
+        "name": "interaction: provider-connection-form",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5947
+          }
+        ]
+      },
+      {
+        "name": "interaction: schedule-search-edit-and-toggle",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3667
+          }
+        ]
+      },
+      {
+        "name": "interaction: skill-search-toggle-and-markdown",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4213
+          }
+        ]
+      },
+      {
+        "name": "interaction: markdown-chart-sql-data-and-download",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2338
+          }
+        ]
+      },
+      {
+        "name": "interaction: monaco-sql-run-and-save",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 32342
+          }
+        ]
+      },
+      {
+        "name": "interaction: workflow-export-and-controls",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4046
+          }
+        ]
+      },
+      {
+        "name": "interaction: evaluation-tabs-and-form",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 2933
+          }
+        ]
+      }
+    ]
+  },
+  "productionDiagnostics": {
+    "uncaughtExceptions": 0,
+    "consoleMessages": [
+      {
+        "count": 34,
+        "message": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "count": 7,
+        "message": "error: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING"
+      },
+      {
+        "count": 1,
+        "message": "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      }
+    ]
+  },
+  "developmentFixtures12GiB": {
+    "stats": {
+      "startTime": "2026-09-29T14:04:09.223Z",
+      "duration": 878403.433,
+      "expected": 38,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "name": "route: home",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 72086
+          }
+        ]
+      },
+      {
+        "name": "route: conversations",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5312
+          }
+        ]
+      },
+      {
+        "name": "route: data-sources",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8188
+          }
+        ]
+      },
+      {
+        "name": "route: knowledge",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6706
+          }
+        ]
+      },
+      {
+        "name": "route: applications",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5731
+          }
+        ]
+      },
+      {
+        "name": "route: workflows",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4451
+          }
+        ]
+      },
+      {
+        "name": "route: workflow-canvas",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 14426
+          }
+        ]
+      },
+      {
+        "name": "route: models",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8720
+          }
+        ]
+      },
+      {
+        "name": "route: model-providers",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7875
+          }
+        ]
+      },
+      {
+        "name": "route: agent-plugins",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3628
+          }
+        ]
+      },
+      {
+        "name": "route: dbgpts",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3304
+          }
+        ]
+      },
+      {
+        "name": "route: prompts",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5020
+          }
+        ]
+      },
+      {
+        "name": "route: prompt-editor",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 22861
+          }
+        ]
+      },
+      {
+        "name": "route: connectors",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8863
+          }
+        ]
+      },
+      {
+        "name": "route: skills",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 10286
+          }
+        ]
+      },
+      {
+        "name": "route: scheduled-tasks",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4692
+          }
+        ]
+      },
+      {
+        "name": "route: scheduled-task-runs",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4874
+          }
+        ]
+      },
+      {
+        "name": "route: evaluation",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5666
+          }
+        ]
+      },
+      {
+        "name": "route: model-evaluation",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7137
+          }
+        ]
+      },
+      {
+        "name": "route: model-datasets",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 4520
+          }
+        ]
+      },
+      {
+        "name": "route: observability",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8778
+          }
+        ]
+      },
+      {
+        "name": "route: traces",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7686
+          }
+        ]
+      },
+      {
+        "name": "route: data-index",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 7961
+          }
+        ]
+      },
+      {
+        "name": "route: chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 33308
+          }
+        ]
+      },
+      {
+        "name": "route: mobile-chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 28112
+          }
+        ]
+      },
+      {
+        "name": "route: rich-chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5251
+          }
+        ]
+      },
+      {
+        "name": "route: legacy-chart-chat",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 5165
+          }
+        ]
+      },
+      {
+        "name": "route: knowledge-graph",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 46806
+          }
+        ]
+      },
+      {
+        "name": "route: knowledge-detail",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 20418
+          }
+        ]
+      },
+      {
+        "name": "interaction: navigation-and-search",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 28344
+          }
+        ]
+      },
+      {
+        "name": "interaction: database-form-and-submit",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9156
+          }
+        ]
+      },
+      {
+        "name": "interaction: knowledge-upload",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 3732
+          }
+        ]
+      },
+      {
+        "name": "interaction: application-create",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 25842
+          }
+        ]
+      },
+      {
+        "name": "interaction: provider-connection-form",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 8380
+          }
+        ]
+      },
+      {
+        "name": "interaction: schedule-search-edit-and-toggle",
+        "outcome": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 165163,
+            "failure": "TimeoutError: page.goto: Timeout 120000ms exceeded."
+          }
+        ]
+      },
+      {
+        "name": "interaction: skill-search-toggle-and-markdown",
+        "outcome": "unexpected",
+        "attempts": [
+          {
+            "status": "failed",
+            "durationMs": 147157,
+            "failure": "TimeoutError: page.goto: Timeout 120000ms exceeded."
+          }
+        ]
+      },
+      {
+        "name": "interaction: markdown-chart-sql-data-and-download",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 48878
+          }
+        ]
+      },
+      {
+        "name": "interaction: monaco-sql-run-and-save",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 39171
+          }
+        ]
+      },
+      {
+        "name": "interaction: workflow-export-and-controls",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 13448
+          }
+        ]
+      },
+      {
+        "name": "interaction: evaluation-tabs-and-form",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 6358
+          }
+        ]
+      }
+    ]
+  },
+  "developmentRecheck": {
+    "stats": {
+      "startTime": "2026-09-29T14:21:36.313Z",
+      "duration": 29001.151,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "name": "interaction: schedule-search-edit-and-toggle",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 18535
+          }
+        ]
+      },
+      {
+        "name": "interaction: skill-search-toggle-and-markdown",
+        "outcome": "expected",
+        "attempts": [
+          {
+            "status": "passed",
+            "durationMs": 9518
+          }
+        ]
+      }
+    ]
+  },
+  "developmentDiagnostics": {
+    "uncaughtExceptions": 0,
+    "consoleMessages": [
+      {
+        "count": 32,
+        "message": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "count": 37,
+        "message": "warning: Image with src \"<dev>/logo_zh_latest.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio."
+      },
+      {
+        "count": 5,
+        "message": "error: Warning: Component Token `minWidth` of Popover is deprecated. Please use `titleMinWidth` instead."
+      },
+      {
+        "count": 7,
+        "message": "warning: Image with src \"<dev>/LOGO_SMALL.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio."
+      },
+      {
+        "count": 8,
+        "message": "warning: Image with src \"/logo_zh_latest.png\" was detected as the Largest Contentful Paint (LCP). Please add the `loading=\"eager\"` property if this image is above the fold."
+      },
+      {
+        "count": 4,
+        "message": "warning: [HMR] Invalid message: isrManifest; TypeError reading components"
+      },
+      {
+        "count": 4,
+        "message": "error: Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead."
+      },
+      {
+        "count": 1,
+        "message": "error: Warning: Form already set 'initialValues' with path 'index_methods'. Field can not overwrite it."
+      },
+      {
+        "count": 4,
+        "message": "warning: Image with src \"/pictures/empty.png\" was detected as the Largest Contentful Paint (LCP). Please add the `loading=\"eager\"` property if this image is above the fold."
+      },
+      {
+        "count": 1,
+        "message": "error: Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s "
+      },
+      {
+        "count": 3,
+        "message": "error: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING"
+      },
+      {
+        "count": 3,
+        "message": "error: Image is missing required \"src\" property: JSHandle@node"
+      },
+      {
+        "count": 1,
+        "message": "error: Failed to load resource: net::ERR_CONNECTION_RESET"
+      },
+      {
+        "count": 1,
+        "message": "error: Warning: Instance created by `useForm` is not connected to any Form element. Forget to pass `form` prop?"
+      },
+      {
+        "count": 1,
+        "message": "warning: Image with src \"<dev>/pictures/card_chat.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio."
+      }
+    ]
+  },
+  "developmentStabilityPassed": false,
+  "developmentRestartEvidence": "Server is approaching the used memory threshold, restarting...",
+  "developmentInterpretation": "38/40 in the uninterrupted full run. The two navigation-timeout cases passed separately after recovery. This does not make the original run green; default 8 GiB also restarted.",
+  "fastRefresh": {
+    "passed": true,
+    "updatedWithoutFullReload": true,
+    "restoredWithoutFullReload": true,
+    "sourceRestored": true,
+    "beforeHash": "d3ccc577dbefc678f1a9d8873f4fd0f38ebad8e16e98ed35ad71e5cd0488f58c",
+    "afterHash": "d3ccc577dbefc678f1a9d8873f4fd0f38ebad8e16e98ed35ad71e5cd0488f58c"
+  },
+  "livePages": [
+    {
+      "name": "home",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [],
+      "apiErrors": []
+    },
+    {
+      "name": "database",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "knowledge",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "applications",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "workflows",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "canvas",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [],
+      "apiErrors": []
+    },
+    {
+      "name": "models",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "providers",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "skills",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "schedules",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "connectors",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "plugins",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "dbgpts",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "prompt",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "evaluation",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        },
+        {
+          "path": "/api/v1/evaluate/evaluations",
+          "status": 404
+        },
+        {
+          "path": "/api/v1/evaluate/datasets",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "datasets",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "observability",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "traces",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    },
+    {
+      "name": "conversations",
+      "rendered": true,
+      "documentHttpStatus": 200,
+      "uncaughtExceptions": [],
+      "httpErrors": [
+        {
+          "path": "/images/bg.png",
+          "status": 404
+        }
+      ],
+      "apiErrors": []
+    }
+  ],
+  "liveFunctional": [
+    {
+      "name": "database-create-and-query",
+      "passed": true,
+      "mocked": false,
+      "uncaughtExceptions": [],
+      "query": {
+        "result_info": "",
+        "run_cost": 0.001000732421875,
+        "colunms": ["table_count"],
+        "values": [["1"]]
+      },
+      "recheckNote": "Used the actual db_name returned by the create API (sqlite_PR3277_Walmart)."
+    },
+    {
+      "name": "model-chat-stream-and-history",
+      "passed": true,
+      "mocked": false,
+      "uncaughtExceptions": [],
+      "streamAndHistory": true
+    },
+    {
+      "name": "knowledge-create-upload",
+      "passed": true,
+      "mocked": false,
+      "uncaughtExceptions": [],
+      "documents": [
+        {
+          "name": "pr3277-live.md",
+          "status": "FINISHED",
+          "chunks": 1
+        }
+      ]
+    },
+    {
+      "name": "home-agent-result",
+      "passed": true,
+      "mocked": false,
+      "uncaughtExceptions": [],
+      "agentReplyPersisted": true,
+      "recheckNote": "The home page creates its UUID locally and does not call the legacy new-dialogue endpoint. Its captured UI contains the assistant reply; the follow-up history request confirms persistence."
+    },
+    {
+      "name": "share-replay",
+      "passed": true,
+      "mocked": false,
+      "uncaughtExceptions": [],
+      "sharedReplyRendered": true,
+      "zeroToolStepReplay": true,
+      "sharedAnswerText": "Thought: PR3277_AGENT_OK"
+    },
+    {
+      "name": "schedule-create-pause-history-delete",
+      "passed": true,
+      "mocked": false,
+      "uncaughtExceptions": [],
+      "createdTask": true,
+      "pausePersisted": true,
+      "historyOpened": true,
+      "createdTaskCleanedUp": true
+    }
+  ],
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "provider": "proxy/openai",
+    "source": "existing test configuration",
+    "mocked": false,
+    "httpStatus": 404,
+    "embeddingReturned": false,
+    "error": "Non-JSON response"
+  },
+  "coverageLimits": [
+    "Known background-image 404 and external iconfont network failures remain visible in otherwise passing fixture cases.",
+    "Live rendering is not equivalent to live API acceptance: evaluation APIs returned 404.",
+    "Embedding endpoint returned 404; knowledge upload/index status is not semantic retrieval acceptance.",
+    "Shared zero-tool-step reply renders Thought: prefix, unlike the home page; multi-step replay not accepted.",
+    "No third-party OAuth, non-SQLite engine, connector synchronization, tool execution, scheduled execution, benchmark completion, all destructive CRUD variants, Firefox, WebKit, or real-device acceptance.",
+    "Earlier test-authoring failures are preserved locally; final records reflect corrected selectors and fixtures. Development server restarts remain actual failures.",
+    "No browser run on the old toolchain was performed; unchanged source references are not before/after runtime proof."
+  ]
+}
