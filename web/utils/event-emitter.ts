@@ -8,9 +8,14 @@ export const ee = {
     const group = listeners.get(event) ?? new Set<TaskListener>();
     group.add(listener);
     listeners.set(event, group);
+    return () => {
+      ee.off(event, listener);
+    };
   },
   off(event: TaskEvent, listener: TaskListener) {
-    listeners.get(event)?.delete(listener);
+    const group = listeners.get(event);
+    group?.delete(listener);
+    if (group?.size === 0) listeners.delete(event);
   },
   emit(event: TaskEvent, data: { taskId: string }) {
     listeners.get(event)?.forEach(listener => listener(data));

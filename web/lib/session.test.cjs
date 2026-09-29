@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { randomBytes } = require('node:crypto');
 const { readFileSync } = require('node:fs');
 const Module = require('node:module');
 const path = require('node:path');
@@ -6,7 +7,7 @@ const { test } = require('node:test');
 const ts = require('typescript');
 
 // Load the actual wrapper without adding a browser runner or opening a socket.
-process.env.SECRET_COOKIE_PASSWORD = 'toolchain-session-test-password-at-least-32-characters';
+process.env.SECRET_COOKIE_PASSWORD = randomBytes(32).toString('hex');
 const filename = path.join(__dirname, 'session.ts');
 const compiled = ts.transpileModule(readFileSync(filename, 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
