@@ -1,9 +1,9 @@
-// Queue transient EMFILE failures during the Windows production build instead
-// of failing while Next.js traces and prerenders the full 59-page application.
+// Queue transient EMFILE failures on Windows and macOS instead of failing while
+// Next.js traces and prerenders the application.
 require('graceful-fs').gracefulify(require('node:fs'));
 
 // Next's output tracer defaults to a level of file-system concurrency that can
-// exceed the Windows per-process handle limit in this repository. Keep the
+// exceed the per-process file limit on Windows and macOS in this repository. Keep the
 // tracer deterministic without disabling output tracing or hiding build errors.
 const nft = require('next/dist/compiled/@vercel/nft');
 const nodeFileTrace = nft.nodeFileTrace;

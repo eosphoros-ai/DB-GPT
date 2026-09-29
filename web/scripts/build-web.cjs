@@ -18,7 +18,7 @@ const run = (args, typeConfig) => {
       NODE_OPTIONS: [
         process.env.NODE_OPTIONS,
         '--max_old_space_size=8192',
-        process.platform === 'win32' ? `--require=${gracefulFsRegister}` : null,
+        ['win32', 'darwin'].includes(process.platform) ? `--require=${gracefulFsRegister}` : null,
       ]
         .filter(Boolean)
         .join(' '),
@@ -30,7 +30,7 @@ const run = (args, typeConfig) => {
 };
 
 // Keep compilation and static generation in one process so HTML and chunk
-// references come from the same build. Windows uses a file-system limiter.
+// references come from the same build. Windows and macOS use a file-system limiter.
 const typeConfig = prepareBuildTypes(path.join(__dirname, '..'), process.env.NEXT_DIST_DIR || '.next');
 let status;
 try {
