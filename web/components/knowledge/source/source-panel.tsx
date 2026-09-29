@@ -24,13 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
   error: 'red',
 };
 
-export default function SourcePanel({
-  spaceId,
-  spaceName,
-}: {
-  spaceId: string | number;
-  spaceName?: string;
-}) {
+export default function SourcePanel({ spaceId, spaceName }: { spaceId: string | number; spaceName?: string }) {
   const { t } = useTranslation();
   const [bindings, setBindings] = useState<KsSourceBinding[]>([]);
   const [loading, setLoading] = useState(false);

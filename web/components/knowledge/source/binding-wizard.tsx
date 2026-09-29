@@ -14,11 +14,10 @@ import {
   uploadDocument,
 } from '@/client/api';
 import { KsConnectorMeta } from '@/types/knowledgeSource';
-import { DownOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DownOutlined, FileAddOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Empty, Form, Input, Modal, Radio, Select, Spin, Steps, Tree, Upload, message } from 'antd';
 import type { RcFile } from 'antd/es/upload/interface';
 import { useEffect, useState } from 'react';
-import { FileAddOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 const { Dragger } = Upload;
@@ -26,7 +25,7 @@ const { Dragger } = Upload;
 /** Row labels never render a raw scheme:// URL (defense in depth — the
  * connector already returns friendly titles). */
 function friendlyRowTitle(raw: string): string {
-  return raw.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  return raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
 /** Brand icons per connector type, ported from WeKnora's datasource assets. */
@@ -52,28 +51,12 @@ export function KsTypeIcon({ type }: { type: string }) {
   }
   if (type === 'yuque') {
     // brand asset ported from WeKnora (datasource-yuque.ico, 96x96 png)
-    return (
-      <img
-        src='/pictures/ks/yuque.png'
-        width='28'
-        height='28'
-        className='flex-none rounded-md'
-        alt='yuque'
-      />
-    );
+    return <img src='/pictures/ks/yuque.png' width='28' height='28' className='flex-none rounded-md' alt='yuque' />;
   }
   if (type === 'dingtalk') {
     // brand asset ported from WeKnora (im/dingtalk.svg); connector ships
     // with task #13 — icon reserved here
-    return (
-      <img
-        src='/pictures/ks/dingtalk.svg'
-        width='28'
-        height='28'
-        className='flex-none'
-        alt='dingtalk'
-      />
-    );
+    return <img src='/pictures/ks/dingtalk.svg' width='28' height='28' className='flex-none' alt='dingtalk' />;
   }
   return null;
 }
@@ -189,8 +172,7 @@ export function BindingWizard({
     onCreated();
   };
 
-  const builtinNeedsSpaceName =
-    chosenType?.startsWith('builtin:') && !spaceName;
+  const builtinNeedsSpaceName = chosenType?.startsWith('builtin:') && !spaceName;
 
   const content = (
     <div>
@@ -272,9 +254,7 @@ export function BindingWizard({
             >
               <KsTypeIcon type={type} />
               <div>
-                <div className='text-sm font-semibold'>
-                  {t(`ks_type_name_${type}`, m.name)}
-                </div>
+                <div className='text-sm font-semibold'>{t(`ks_type_name_${type}`, m.name)}</div>
                 <div className='text-xs text-gray-400 mt-1 line-clamp-2'>{m.description}</div>
               </div>
             </div>
@@ -295,9 +275,7 @@ export function BindingWizard({
         </div>
       )}
 
-      {builtinNeedsSpaceName && (
-        <div className='mb-3 text-xs text-red-500'>{t('ks_space_name_required')}</div>
-      )}
+      {builtinNeedsSpaceName && <div className='mb-3 text-xs text-red-500'>{t('ks_space_name_required')}</div>}
 
       {/* Step 1b: builtin — local documents upload */}
       {step === 1 && chosenType === 'builtin:local' && (
@@ -360,10 +338,18 @@ export function BindingWizard({
       {/* Step 1c: builtin — text snippet */}
       {step === 1 && chosenType === 'builtin:text' && (
         <Form form={form} layout='vertical' className='pt-2'>
-          <Form.Item label={t('ks_text_name_label')} name='text_name' rules={[{ required: true, message: t('ks_text_name_label') }]}>
+          <Form.Item
+            label={t('ks_text_name_label')}
+            name='text_name'
+            rules={[{ required: true, message: t('ks_text_name_label') }]}
+          >
             <Input placeholder={t('ks_text_name_label')} />
           </Form.Item>
-          <Form.Item label={t('ks_text_content_label')} name='text_content' rules={[{ required: true, message: t('ks_text_content_label') }]}>
+          <Form.Item
+            label={t('ks_text_content_label')}
+            name='text_content'
+            rules={[{ required: true, message: t('ks_text_content_label') }]}
+          >
             <Input.TextArea rows={8} placeholder={t('ks_text_content_placeholder')} />
           </Form.Item>
           <div className='flex justify-end gap-2'>

@@ -28,8 +28,8 @@ import {
   Upload,
   message,
 } from 'antd';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** Creation-wizard source type → connector type for the binding wizard */
@@ -167,20 +167,8 @@ const DS_CARDS: DataSourceCardDef[] = [
     icon: (
       <svg width='22' height='22' viewBox='0 0 48 48' aria-label='RSS'>
         <circle cx='14' cy='34' r='4' fill='#FF6600' />
-        <path
-          d='M10 22a18 18 0 0 1 18 18'
-          fill='none'
-          stroke='#FF6600'
-          strokeWidth='4'
-          strokeLinecap='round'
-        />
-        <path
-          d='M10 14a26 26 0 0 1 26 26'
-          fill='none'
-          stroke='#FF6600'
-          strokeWidth='4'
-          strokeLinecap='round'
-        />
+        <path d='M10 22a18 18 0 0 1 18 18' fill='none' stroke='#FF6600' strokeWidth='4' strokeLinecap='round' />
+        <path d='M10 14a26 26 0 0 1 26 26' fill='none' stroke='#FF6600' strokeWidth='4' strokeLinecap='round' />
       </svg>
     ),
     color: '#FF6600',
