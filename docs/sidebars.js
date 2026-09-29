@@ -731,6 +731,33 @@ const sidebars = {
         { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
       ],
     },
+    {
+      type: "category",
+      label: "Usage Manual",
+      collapsed: false,
+      collapsible: true,
+      link: {
+        type: "doc",
+        id: "getting-started/web-ui/knowledge-base",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "getting-started/web-ui/knowledge-base",
+          label: "Knowledge Base",
+        },
+        {
+          type: "doc",
+          id: "getting-started/web-ui/external-datasources",
+          label: "External Data Sources",
+        },
+        {
+          type: "doc",
+          id: "getting-started/web-ui/llm-wiki",
+          label: "LLM-Wiki",
+        },
+      ],
+    },
     { type: "doc", id: "modules/rag", label: "RAG Overview" },
     { type: "doc", id: "application/graph_rag", label: "GraphRAG" },
   ],
