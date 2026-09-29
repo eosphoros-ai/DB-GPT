@@ -45,12 +45,12 @@ const STATUS_META: Record<ScheduledRunStatus, { dot: string; text: string; bg: s
 };
 
 /** 执行状态 → i18n key 映射 */
-const STATUS_LABEL_KEY: Record<ScheduledRunStatus, string> = {
+const STATUS_LABEL_KEY = {
   running: 'scheduled.runs.statusRunning',
   success: 'scheduled.runs.statusSuccess',
   failed: 'scheduled.runs.statusFailed',
   timeout: 'scheduled.runs.statusTimeout',
-};
+} as const satisfies Record<ScheduledRunStatus, string>;
 
 const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
   const router = useRouter();

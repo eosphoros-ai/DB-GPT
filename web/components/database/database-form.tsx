@@ -1,6 +1,6 @@
 import { apiInterceptors, postDbAdd, postDbEdit, postDbTestConnect } from '@/client/api';
 import { ConfigurableParams } from '@/types/common';
-import { DBOption, DBType } from '@/types/db';
+import { DBOption, DBType, PostDbParams } from '@/types/db';
 import { Button, Form, Input, Select, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,7 +77,7 @@ function DatabaseForm({
 
       const { description, type, ...values } = formValues;
 
-      const data = {
+      const data: PostDbParams = {
         type: selectedType,
         params: values,
         description: description || '',

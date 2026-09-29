@@ -269,7 +269,7 @@ const OpenCodeAgentChatContainer: React.FC = () => {
         <div ref={scrollableRef} className='flex-1 overflow-y-auto'>
           <div className='max-w-4xl mx-auto py-4 space-y-6'>
             {groupedHistory.length === 0 && !streamingTurn ? (
-              <MyEmpty description={t('Start a conversation')} />
+              <MyEmpty description={t('start_conversation')} />
             ) : (
               <>
                 {groupedHistory.map((turn, index) => renderHistoryTurn(turn, index))}

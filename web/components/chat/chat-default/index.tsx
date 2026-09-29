@@ -60,7 +60,7 @@ function Default() {
       manual: true,
       onSuccess: res => {
         const [_, data] = res;
-        if (activeKey === 'recommend') {
+        if (Array.isArray(data)) {
           return setApps({
             app_list: data,
             total_count: data?.length || 0,
@@ -137,7 +137,12 @@ function Default() {
               <span>发现更多</span>
             </span>
           </div>
-          <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
+          <TabContent
+            apps={apps?.app_list || []}
+            loading={loading}
+            refresh={refresh}
+            type={activeKey === 'used' ? 'used' : 'recommend'}
+          />
           {helps && helps.length > 0 && (
             <div>
               <h2 className='font-medium text-xl my-4'>我可以帮您：</h2>

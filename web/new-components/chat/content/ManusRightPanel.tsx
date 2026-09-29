@@ -321,7 +321,7 @@ const StatusBadge: React.FC<{ status: StepStatus }> = ({ status }) => {
 };
 
 // Copy to clipboard helper
-const copyToClipboard = (text: string, successText: string) => {
+const copyToClipboard = (text: string, successText = 'Copied to clipboard') => {
   navigator.clipboard.writeText(text);
   message.success(successText);
 };

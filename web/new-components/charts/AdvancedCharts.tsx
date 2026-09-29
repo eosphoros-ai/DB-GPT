@@ -212,7 +212,6 @@ const getTooltipConfig = (config: ChartConfig) => ({
     },
     customContent: (title: string, items: any[]) => {
       if (!items?.length) return '';
-      const xField = config.xField || 'x';
       const yField = config.yField || 'y';
 
       return `
