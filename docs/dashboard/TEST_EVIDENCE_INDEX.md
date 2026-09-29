@@ -9,6 +9,6 @@
 | [Walmart](demos/walmart.md)、[Apple](demos/apple.md) | 数据口径、核验目标和历史截图。 |
 | [历史资料说明](HISTORY.md) | 旧过程记录、私人路径与未分发原始日志的边界。 |
 
-工具链依赖的 [Ubuntu/macOS Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36543862676) 已通过，提交为 `b6f0c2ae6b4f9272f32292426317d6630767e84f`。Dashboard 的本机验证与工具链矩阵分开记录，不能用依赖的 CI 结果代替 Dashboard 的 CI。
+工具链依赖的 [Ubuntu/macOS Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36543862676) 已通过，提交为 `b6f0c2ae6b4f9272f32292426317d6630767e84f`。Dashboard 的本机验证与工具链矩阵分开记录；Dashboard 自身已在提交 `19bd81d0` 完成 [独立 Ubuntu/macOS Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36559564190)，两个平台均为组件 286 项通过、浏览器 125 项通过及 7 项显式跳过，生产构建与静态导出通过。分组范围和首次 macOS EMFILE 的修复记录见 [验证说明](VALIDATION.md)。
 
 工具链已进入 [官方 PR #3277](https://github.com/eosphoros-ai/DB-GPT/pull/3277) 评审。Dashboard 浏览器完整发现 10 套件，8 个实跑共 125 项通过、2 个 live 套件共 7 项跳过；[逐套件范围及原因](VALIDATION.md#浏览器套件覆盖)单独列示。

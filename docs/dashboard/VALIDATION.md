@@ -8,7 +8,7 @@
 
 [GitHub Actions 36543862676](https://github.com/jcsdxhe/DB-GPT/actions/runs/36543862676) 在 Ubuntu、macOS 全部成功。两者实际 Node 20.19.6 / npm 10.8.2，执行 npm ci、独立类型检查、lint、10 项构建契约、20 项既有前端测试、生产构建及静态导出。两种产物均核验 60 个 HTML 与 1,755 处本地资源引用。87 条警告的逐行基线归因不等于零警告。
 
-## Dashboard 候选
+## Dashboard 候选的 Windows 本机验证
 
 | 范围 | 结果与边界 |
 |---|---|
@@ -20,6 +20,19 @@
 | lint | 592 文件，0 错误、85 警告。按文件、规则、完整消息及去空白源码行对照工具链依赖，85 条重现、0 新增、2 消除。 |
 | 生产构建 | 使用 `npm run build` 对应的项目脚本；64 个 HTML 与 1,992 处本地资源引用通过。Windows 原始 Next CLI 绕过项目文件句柄保护时曾失败，不作为通过证据。 |
 | 浏览器 | 共 10 套件，8 套件实际执行、125 项通过；2 个 live 套件共 7 项跳过，0 失败、0 重试。逐套件范围与原因见下表。生产构建 ID 为 `QrGSuWiljHRRIVjtTJh6O`。 |
+
+## Dashboard 跨平台 CI
+
+[GitHub Actions 36559564190](https://github.com/jcsdxhe/DB-GPT/actions/runs/36559564190) 对提交 `19bd81d054a9e24ea474f213a554b4ea2262b4c6` 的 Ubuntu、macOS 前端矩阵全部通过。两套环境实际使用 Node 20.19.6 / npm 10.8.2，执行全新依赖安装、独立 TypeScript、lint、10 项构建契约、20 项既有前端测试、286 项 Dashboard 组件测试、生产构建、完整浏览器发现及静态导出。
+
+| 平台 | 组件测试 | 浏览器测试 | 生产构建及静态导出 |
+|---|---|---|---|
+| ubuntu-latest | 286 通过 | 125 通过、7 跳过 | 通过 |
+| macos-latest | 286 通过 | 125 通过、7 跳过 | 通过 |
+
+每个平台发现 10 个浏览器套件：8 个实际执行、125 项通过；2 个 live 套件共 7 项显式跳过，0 失败、0 重试。通过数量按平台单独报告，不相加。浏览器使用生产前端及固定 API/SSE 输入，外部模型、真实后端和数据库连接不在该矩阵范围内。两套产物均核验 64 个 HTML 和 1,992 处本地资源引用；lint 为 0 错误、85 警告。
+
+[首次运行](https://github.com/jcsdxhe/DB-GPT/actions/runs/36558272127) 的 macOS 构建在文件追踪收尾触发 EMFILE。提交 `19bd81d0` 将已有文件 I/O 并发保护同时用于 macOS，保留类型检查、输出追踪和资源一致性校验；上述完整矩阵验证了修复。GitHub 附件保留每个平台的 JUnit、Playwright JSON 和截图。
 
 ## 浏览器套件覆盖
 
@@ -58,6 +71,6 @@ npx playwright test --config playwright.dashboard.config.ts --workers=2 --report
 
 后端使用 Python 3.11 的既有隔离依赖环境，通过显式源码路径及模块来源断言加载拆分候选；不是全新 Python 依赖安装测试。SQLite 上游元数据在启动前显式初始化，Dashboard 迁移运行到 `20260929_dashboard_share_secrets` 后关闭启动自动 DDL。凭据为空，模型地址限定本机不可用端口，确定性验收不调用付费模型。
 
-前端依赖在候选目录执行 npm ci。Windows 使用 Node 22.23.2；工具链 Node 20.19.6 的远端矩阵结论不替代 Dashboard 的矩阵测试。常用命令：`npm run typecheck`、`npm run lint`、`npm run test:dashboard`、`npm run build`。浏览器使用 `playwright.dashboard.config.ts`，外部服务和真实模型用例需单独配置。
+前端依赖在候选目录执行 npm ci。Windows 本机验证使用 Node 22.23.2；Dashboard 独立的 Ubuntu/macOS 矩阵使用 Node 20.19.6 / npm 10.8.2，受测提交及完整结果见上文。工具链依赖的矩阵单独记录。常用命令：`npm run typecheck`、`npm run lint`、`npm run test:dashboard`、`npm run build`。浏览器使用 `playwright.dashboard.config.ts`，外部服务和真实模型用例需单独配置。
 
 原始失败记录保留：Windows 路径映射、测试入口缺少 spawn 保护、旧分页预期、缺失翻译/问答依赖、浏览器旧断言与修复后的检查分开。仅列出的范围通过；没有把历史全仓基线失败写成全部通过。具体部署、模型语义及许可边界见 [已知限制](KNOWN_LIMITATIONS.md)。

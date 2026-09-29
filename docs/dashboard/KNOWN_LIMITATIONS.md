@@ -1,7 +1,7 @@
 # 已知限制
 
 - SQLGlot 26.13.2 不识别 Vertica、MaxCompute、GaussDB、openGauss、OceanBase。Dashboard 在执行前返回不可重试的 `unsupported_data_source`，不回退到通用方言或误报 SQL 语法。SQLite 有当前真实查询证据；MySQL/Redis 保留此前集成版的独立验收记录。SQL Server/Oracle 仅有方言渲染、绑定和调用链测试，尚无原生服务器验收。解析器认识其他类型并不等于端到端支持。
-- 工具链依赖的 Ubuntu/macOS Actions 通过，不代表 Dashboard 差异也运行过该矩阵。Dashboard 候选的后端与生产浏览器证据来自 Windows 本机；Linux 后端、macOS Dashboard 和真实部署身份接入未在该候选上复测。
+- Dashboard 前端已独立通过 [Ubuntu/macOS Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36559564190)，受测提交为 `19bd81d0`；每个平台组件 286 项通过，浏览器 125 项通过、7 项跳过，生产构建和静态导出通过。该矩阵的浏览器使用固定 API/SSE 输入。候选的真实后端及数据源验收仍来自 Windows；Linux/macOS 后端、原生外部数据库和真实部署身份接入不在这个 CI 结论范围内。
 - TypeScript 独立检查和生产构建类型检查通过。Dashboard 候选全站 lint 为 0 错误、85 警告，85 条均可在工具链依赖的同配置输出中逐条对应，修复 2 条、未新增警告。不能把 scoped lint 或基线对照写成全仓无警告。
 - Dashboard/必要共享接口检查为 1,036 通过、5 跳过。其中 3 项 MySQL、1 项 Redis 需要外部服务；1 项为负值表示不限量的配置语义，测试主动跳过。不是全仓 Python 测试结论。
 - 完整集成版与官方基线此前有相同的 5 项核心 pytest 失败、1 项错误和 1,060 条 mypy 诊断。该历史对照不等于 Dashboard 拆分候选重新通过了核心 pytest 或 mypy。
