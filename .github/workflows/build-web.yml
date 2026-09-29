@@ -29,6 +29,7 @@ defaults:
 jobs:
   build-web:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -59,9 +60,40 @@ jobs:
           npm run test:build
           npm test
 
+      - name: Test Dashboard components
+        run: |
+          mkdir -p ../output/ci
+          npm run test:dashboard -- --reporter=default --reporter=junit --outputFile.junit=../output/ci/dashboard-components.xml
+
       - name: Build web application
         run: |
           npm run build
 
+      - name: Install Chromium and browser dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Test Dashboard production pages
+        env:
+          DASHBOARD_E2E_START_SERVER: '1'
+          DASHBOARD_E2E_BASE_URL: http://127.0.0.1:5670
+          DASHBOARD_E2E_DISABLE_VIDEO: '1'
+          # These two suites need existing model-generated assets and a backend.
+          # Discover them and report their seven explicit skips; do not filter them out.
+          DASHBOARD_E2E_LIVE_AGENT: '0'
+          DASHBOARD_E2E_ARTIFACTS: ../output/ci/browser-screenshots
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ../output/ci/dashboard-browser.json
+        run: npm run test:e2e:dashboard -- --workers=2 --retries=0 --reporter=list,json
+
       - name: Build static distribution
         run: npm run compile
+
+      - name: Upload Dashboard test evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-web-${{ matrix.os }}
+          path: |
+            output/ci/
+            output/playwright/test-results/
+          if-no-files-found: warn
+          retention-days: 14
