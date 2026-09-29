@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const { once } = require('node:events');
 const fs = require('node:fs');
 const Module = require('node:module');
@@ -74,7 +74,7 @@ test('repeated cleanup leaves a later subscription intact', t => {
   assert.deepEqual(received, ['new']);
 });
 
-function runnerFixture(t, childSource) {
+function runnerFixture(t, childSource, nodeOptions = '') {
   const temporaryRoot = fs.realpathSync(os.tmpdir());
   const root = fs.mkdtempSync(path.join(temporaryRoot, 'dbgpt-runner-tests-'));
   const scripts = path.join(root, 'scripts');
@@ -84,7 +84,7 @@ function runnerFixture(t, childSource) {
   fs.copyFileSync(path.join(__dirname, 'run-next.cjs'), path.join(scripts, 'run-next.cjs'));
   fs.writeFileSync(path.join(nextBin, 'next'), childSource);
   const runner = spawn(process.execPath, [path.join(scripts, 'run-next.cjs'), 'start'], {
-    env: { ...process.env, NODE_OPTIONS: '' },
+    env: { ...process.env, NODE_OPTIONS: nodeOptions },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let childPid;
@@ -108,6 +108,44 @@ function runnerFixture(t, childSource) {
       childPid = value;
     },
   };
+}
+
+for (const [options, expectedMiB] of [
+  ['--trace-warnings', 8192],
+  ['--trace-warnings --max-old-space-size=12288', 12288],
+  ['--trace-warnings --max_old_space_size=2048', 2048],
+]) {
+  test(`the Next child receives the requested heap limit: ${expectedMiB} MiB`, { timeout: 10000 }, async t => {
+    const { runner } = runnerFixture(
+      t,
+      `console.log(JSON.stringify({
+        heapLimitMiB: require('node:v8').getHeapStatistics().heap_size_limit / 1024 / 1024,
+        options: process.env.NODE_OPTIONS
+      }));`,
+      options,
+    );
+    let output = '';
+    runner.stdout.on('data', chunk => {
+      output += chunk;
+    });
+    const [code] = await once(runner, 'close');
+    assert.equal(code, 0);
+    const child = JSON.parse(output);
+    // Compare to this Node version directly: V8's young-generation allowance
+    // changes between releases, independently of the requested old-space limit.
+    const control = spawnSync(
+      process.execPath,
+      [
+        `--max-old-space-size=${expectedMiB}`,
+        '-p',
+        "require('node:v8').getHeapStatistics().heap_size_limit / 1024 / 1024",
+      ],
+      { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
+    );
+    assert.equal(control.status, 0, control.stderr);
+    assert.equal(child.heapLimitMiB, Number(control.stdout.trim()));
+    assert.match(child.options, /--trace-warnings/u);
+  });
 }
 
 test('the Next wrapper preserves the child exit status', { timeout: 10000 }, async t => {

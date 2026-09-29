@@ -9,10 +9,13 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-const withoutHeapLimit = (process.env.NODE_OPTIONS || '')
-  .replace(/--max(?:-|_)old(?:-|_)space(?:-|_)size(?:=|\s+)\d+/giu, '')
-  .trim();
-const nodeOptions = [withoutHeapLimit, '--max_old_space_size=8192'].filter(Boolean).join(' ');
+// Keep an explicitly configured heap limit. Large development compilations may
+// need a different limit; silently replacing it prevents operators from tuning it.
+const configuredOptions = (process.env.NODE_OPTIONS || '').trim();
+const hasHeapLimit = /--max(?:-|_)old(?:-|_)space(?:-|_)size(?:=|\s+)\d+/iu.test(configuredOptions);
+const nodeOptions = hasHeapLimit
+  ? configuredOptions
+  : [configuredOptions, '--max_old_space_size=8192'].filter(Boolean).join(' ');
 
 const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: path.join(__dirname, '..'),
