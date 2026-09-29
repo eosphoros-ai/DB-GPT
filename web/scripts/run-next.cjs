@@ -20,12 +20,29 @@ const child = spawn(process.execPath, [nextBin, ...args], {
   stdio: 'inherit',
 });
 
+// Supervisors may signal only this wrapper PID rather than its process group.
+// Keep the wrapper alive until Next finishes shutting down.
+const signalHandlers = new Map();
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  const forward = () => {
+    if (child.exitCode === null && child.signalCode === null) child.kill(signal);
+  };
+  signalHandlers.set(signal, forward);
+  process.on(signal, forward);
+}
+const removeSignalHandlers = () => {
+  for (const [signal, handler] of signalHandlers) process.removeListener(signal, handler);
+};
+
 child.on('error', error => {
+  removeSignalHandlers();
   console.error(error);
   process.exitCode = 1;
 });
 
 child.on('exit', (code, signal) => {
+  // Restore the default handlers before reproducing the child's exit signal.
+  removeSignalHandlers();
   if (signal) {
     process.kill(process.pid, signal);
     return;

@@ -1,5 +1,8 @@
 name: Build Web Application
 
+permissions:
+  contents: read
+
 # Triggered when the web directory or this file is changed
 on:
   workflow_dispatch:

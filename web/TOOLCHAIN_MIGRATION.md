@@ -23,6 +23,11 @@ make their actual props, response shapes and DOM APIs type-safe.
   deferred rather than expanding this migration into a rewrite of all pages.
   Formatting uses Prettier independently of ESLint.
 - The docs website has its own dependency graph and retains its package manager.
+- The Next CLI wrapper forwards shutdown signals and preserves the child's exit
+  status. Task views unsubscribe from the shared event emitter when unmounted.
+  Download errors are recognized even when a proxy omits the JSON media type;
+  successful XLSX responses are not decoded in full. Clipboard feedback uses the
+  existing translation key.
 
 ## Validation commands
 
@@ -44,7 +49,7 @@ Local validation records, including remaining lint warnings and browser or
 platform gaps, are supplied with the review snapshot. Results for the separate
 Dashboard integration candidate must not be used as results for this candidate.
 
-The source comparison against `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`
+The source comparison for `b6f0c2ae` against `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`
 uses the same ESLint 9.39.5 configuration and dependency installation on both
 revisions. Lint reports 0 errors and 87 warnings in this candidate; all 87
 also reproduce on the baseline source, with 0 added and 0 removed warnings.
@@ -59,3 +64,7 @@ The unused directives exposed by the new tooling remain a maintenance item;
 they are not counted as newly introduced application-code warnings.
 CI explicitly selects the Node 20.19 line and npm 10.8.2; local results must
 still identify their actual runtime and must not be labelled Actions results.
+
+The build-contract command now discovers 18 tests, including process shutdown,
+download error handling and subscription cleanup. Two POSIX signal-delivery
+tests intentionally skip on Windows and execute on the Ubuntu/macOS matrix.
