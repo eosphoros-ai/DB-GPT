@@ -43,7 +43,6 @@ def set_wiki_scheduler(scheduler: Optional["WikiTaskScheduler"]) -> None:
     _current_scheduler = scheduler
 
 
-
 class WikiTaskScheduler:
     """Polls the task table and dispatches to wiki pipeline handlers."""
 

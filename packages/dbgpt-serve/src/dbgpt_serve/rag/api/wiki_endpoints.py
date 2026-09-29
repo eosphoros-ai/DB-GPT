@@ -74,9 +74,7 @@ class WikiPageUpdateRequest(BaseModel):
     summary: Optional[str] = None
     aliases: Optional[List[str]] = None
     status: Optional[str] = None
-    version: Optional[int] = Field(
-        None, description="optimistic lock; 409 when stale"
-    )
+    version: Optional[int] = Field(None, description="optimistic lock; 409 when stale")
 
 
 class WikiRevertRequest(BaseModel):
@@ -158,9 +156,7 @@ async def wiki_list_pages(
         total = len(matched)
         start = (max(page, 1) - 1) * page_size
         rows = matched[start : start + page_size]
-        return Result.succ(
-            {"pages": [r.to_dict_lite() for r in rows], "total": total}
-        )
+        return Result.succ({"pages": [r.to_dict_lite() for r in rows], "total": total})
     rows, total = page_dao.list_pages(
         space_id,
         page_types=page_types,
@@ -209,10 +205,7 @@ async def wiki_get_page(space_id: int, slug_path: str) -> Result:
         raise HTTPException(status_code=404, detail=f"wiki page not found: {slug_path}")
     data = page.to_dict()
     in_links = json.loads(page.in_links) if page.in_links else []
-    data["backlinks"] = [
-        {"slug": s}
-        for s in in_links
-    ]
+    data["backlinks"] = [{"slug": s} for s in in_links]
     return Result.succ(data)
 
 
@@ -338,9 +331,7 @@ async def wiki_revisions(
     page = _get_page_dao().get_page_by_slug(space_id, slug_path)
     if page is None:
         raise HTTPException(status_code=404, detail=f"wiki page not found: {slug_path}")
-    revisions = _get_page_dao().list_revisions(
-        page.id, version=version, limit=100
-    )
+    revisions = _get_page_dao().list_revisions(page.id, version=version, limit=100)
     if version is not None:
         if not revisions:
             raise HTTPException(

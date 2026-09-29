@@ -110,9 +110,8 @@ class RSSConnector(BaseKnowledgeSourceConnector):
         from urllib.parse import urlparse
 
         root = await self._fetch_xml(feed_url)
-        channel_title = (
-            _text(root, ".//channel/title")
-            or _text(root, ".//atom:feed/atom:title")
+        channel_title = _text(root, ".//channel/title") or _text(
+            root, ".//atom:feed/atom:title"
         )
         if channel_title:
             title = f"RSS · {channel_title}"

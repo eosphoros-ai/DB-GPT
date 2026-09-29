@@ -731,9 +731,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     if _scheduler is not None:
                         _scheduler.enqueue_ingest(_entities[0].id, [doc.id])
             except Exception as wiki_err:
-                logger.warning(
-                    f"wiki ingest enqueue failed: {wiki_err}", exc_info=True
-                )
+                logger.warning(f"wiki ingest enqueue failed: {wiki_err}", exc_info=True)
         except Exception as e:
             import traceback
 

@@ -1,11 +1,7 @@
 """Contract tests for the Feishu wiki connector (fake client, no network)."""
 
 import asyncio
-import json
-from datetime import datetime
-from typing import Dict, List
-
-import pytest
+from typing import List
 
 from dbgpt_ext.knowledge_source.base import FetchedItem, SyncCursor
 from dbgpt_ext.knowledge_source.connectors.feishu_wiki import FeishuWikiConnector
@@ -27,44 +23,97 @@ class FakeFeishuClient:
     async def wiki_nodes(self, space_id, parent_node_token=""):
         if not parent_node_token:
             return [
-                {"node_token": "nod-docx", "obj_token": "docx1", "obj_type": "docx",
-                 "title": "接入指南", "has_child": True, "obj_edit_time": 1727100000},
-                {"node_token": "nod-old", "obj_token": "olddoc", "obj_type": "doc",
-                 "title": "老文档", "has_child": False, "obj_edit_time": 1727100001},
+                {
+                    "node_token": "nod-docx",
+                    "obj_token": "docx1",
+                    "obj_type": "docx",
+                    "title": "接入指南",
+                    "has_child": True,
+                    "obj_edit_time": 1727100000,
+                },
+                {
+                    "node_token": "nod-old",
+                    "obj_token": "olddoc",
+                    "obj_type": "doc",
+                    "title": "老文档",
+                    "has_child": False,
+                    "obj_edit_time": 1727100001,
+                },
             ]
         return [
-            {"node_token": "nod-docx2", "obj_token": "docx2", "obj_type": "docx",
-             "title": "子页面", "has_child": False, "obj_edit_time": 1727200000}
+            {
+                "node_token": "nod-docx2",
+                "obj_token": "docx2",
+                "obj_type": "docx",
+                "title": "子页面",
+                "has_child": False,
+                "obj_edit_time": 1727200000,
+            }
         ]
 
     async def docx_blocks(self, doc_token):
         self.block_queries += 1
         if doc_token == "docx1":
             return [
-                {"block_id": "b0", "block_type": 1, "children": ["b1", "b2", "b3", "b4"]},
-                {"block_id": "b1", "block_type": 3,
-                 "heading1": {"elements": [{"text_run": {"content": "接入指南"}}]}},
-                {"block_id": "b2", "block_type": 2,
-                 "text": {"elements": [{"text_run": {"content": "第一步，创建应用。"}}]}},
-                {"block_id": "b3", "block_type": 12,
-                 "bullet": {"elements": [{"text_run": {"content": "获取 app_id"}}]}},
-                {"block_id": "b4", "block_type": 31,
-                 "table": {"cells": ["c1", "c2", "c3", "c4"],
-                           "property": {"row_size": 2, "col_size": 2}},
-                 "children": []},
-                {"block_id": "c1", "block_type": 34,
-                 "text": {"elements": [{"text_run": {"content": "字段"}}]}},
-                {"block_id": "c2", "block_type": 34,
-                 "text": {"elements": [{"text_run": {"content": "说明"}}]}},
-                {"block_id": "c3", "block_type": 34,
-                 "text": {"elements": [{"text_run": {"content": "app_id"}}]}},
-                {"block_id": "c4", "block_type": 34,
-                 "text": {"elements": [{"text_run": {"content": "应用唯一标识"}}]}},
+                {
+                    "block_id": "b0",
+                    "block_type": 1,
+                    "children": ["b1", "b2", "b3", "b4"],
+                },
+                {
+                    "block_id": "b1",
+                    "block_type": 3,
+                    "heading1": {"elements": [{"text_run": {"content": "接入指南"}}]},
+                },
+                {
+                    "block_id": "b2",
+                    "block_type": 2,
+                    "text": {
+                        "elements": [{"text_run": {"content": "第一步，创建应用。"}}]
+                    },
+                },
+                {
+                    "block_id": "b3",
+                    "block_type": 12,
+                    "bullet": {"elements": [{"text_run": {"content": "获取 app_id"}}]},
+                },
+                {
+                    "block_id": "b4",
+                    "block_type": 31,
+                    "table": {
+                        "cells": ["c1", "c2", "c3", "c4"],
+                        "property": {"row_size": 2, "col_size": 2},
+                    },
+                    "children": [],
+                },
+                {
+                    "block_id": "c1",
+                    "block_type": 34,
+                    "text": {"elements": [{"text_run": {"content": "字段"}}]},
+                },
+                {
+                    "block_id": "c2",
+                    "block_type": 34,
+                    "text": {"elements": [{"text_run": {"content": "说明"}}]},
+                },
+                {
+                    "block_id": "c3",
+                    "block_type": 34,
+                    "text": {"elements": [{"text_run": {"content": "app_id"}}]},
+                },
+                {
+                    "block_id": "c4",
+                    "block_type": 34,
+                    "text": {"elements": [{"text_run": {"content": "应用唯一标识"}}]},
+                },
             ]
         return [
             {"block_id": "s1", "block_type": 1, "children": ["s2"]},
-            {"block_id": "s2", "block_type": 2,
-             "text": {"elements": [{"text_run": {"content": "子页面内容"}}]}},
+            {
+                "block_id": "s2",
+                "block_type": 2,
+                "text": {"elements": [{"text_run": {"content": "子页面内容"}}]},
+            },
         ]
 
     async def docx_raw_content(self, doc_token):
@@ -104,7 +153,10 @@ def test_fetch_all_walks_tree_and_converts():
     assert "# 接入指南" in guide.content
     assert "第一步，创建应用。" in guide.content
     assert "- 获取 app_id" in guide.content
-    assert "| 字段 | 说明 |" in guide.content and "| app_id | 应用唯一标识 |" in guide.content
+    assert (
+        "| 字段 | 说明 |" in guide.content
+        and "| app_id | 应用唯一标识 |" in guide.content
+    )
     # old doc / non-docx → skipped
     assert all(i.metadata.get("obj_type") != "doc" for i in items)
     # cursor records all visited docx nodes with edit times
@@ -114,7 +166,6 @@ def test_fetch_all_walks_tree_and_converts():
 
 def test_fetch_incremental_skips_unchanged_and_refetches_changed():
     conn = _connector()
-    seen_batches = []
 
     def run(cursor):
         items = []
@@ -128,8 +179,9 @@ def test_fetch_incremental_skips_unchanged_and_refetches_changed():
         return items, new_cursor
 
     # pass 1: everything unchanged
-    cursor = SyncCursor({"nod-docx": "1727100000", "nod-docx2": "1727200000",
-                         "nod-old": "1"})
+    cursor = SyncCursor(
+        {"nod-docx": "1727100000", "nod-docx2": "1727200000", "nod-old": "1"}
+    )
     items, cursor = run(cursor)
     assert items == []
 
@@ -144,9 +196,15 @@ def test_converter_table_fallback_with_missing_cells():
     from dbgpt_ext.knowledge_source.converters.feishu_docx import (
         feishu_blocks_to_markdown,
     )
-    md = feishu_blocks_to_markdown([
-        {"block_id": "p", "block_type": 1, "children": ["t1"]},
-        {"block_id": "t1", "block_type": 2, "text": {"elements": [
-            {"text_run": {"content": "plain"}}]}},
-    ])
+
+    md = feishu_blocks_to_markdown(
+        [
+            {"block_id": "p", "block_type": 1, "children": ["t1"]},
+            {
+                "block_id": "t1",
+                "block_type": 2,
+                "text": {"elements": [{"text_run": {"content": "plain"}}]},
+            },
+        ]
+    )
     assert md.strip() == "plain"

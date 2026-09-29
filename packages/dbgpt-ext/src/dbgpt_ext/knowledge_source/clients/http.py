@@ -33,7 +33,9 @@ def _verify_arg() -> Union[str, bool, ssl.SSLContext]:
     if bundle:
         return bundle
     insecure = os.environ.get("DB_GPT_KS_INSECURE", "").strip().lower() in {
-        "1", "true", "yes",
+        "1",
+        "true",
+        "yes",
     }
     if insecure:
         if not _warned_insecure:

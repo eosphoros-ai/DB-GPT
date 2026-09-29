@@ -76,9 +76,7 @@ def parse_llm_json(text: str) -> Any:
         # last resort: outermost brace/bracket slice
         for open_ch, close_ch in (("{", "}"), ("[", "]")):
             if open_ch in cleaned and close_ch in cleaned:
-                sliced = cleaned[
-                    cleaned.find(open_ch) : cleaned.rfind(close_ch) + 1
-                ]
+                sliced = cleaned[cleaned.find(open_ch) : cleaned.rfind(close_ch) + 1]
                 try:
                     return json.loads(sliced)
                 except (TypeError, ValueError):
@@ -163,11 +161,9 @@ class WikiIngestPipeline:
                 last_error = f"unsuccessful: {response.error_code} {response.text}"
             except Exception as exc:  # transient network/provider errors
                 last_error = str(exc)
-            logger.warning(
-                f"wiki llm attempt {attempt}/{retries} failed: {last_error}"
-            )
+            logger.warning(f"wiki llm attempt {attempt}/{retries} failed: {last_error}")
             if attempt < retries:
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
         raise RuntimeError(f"wiki llm failed after {retries} attempts: {last_error}")
 
     async def _llm_json(self, llm_prompt: str) -> Any:
@@ -197,17 +193,13 @@ class WikiIngestPipeline:
         chunks = []
         total_rows = rows if not isinstance(rows, tuple) else rows[0]
         for row in sorted(total_rows, key=lambda r: r.id or 0):
-            chunks.append(
-                {"chunk_id": row.id, "content": (row.content or "").strip()}
-            )
+            chunks.append({"chunk_id": row.id, "content": (row.content or "").strip()})
         text = "\n\n".join(c["content"] for c in chunks)
         return text[:MAX_CONTENT_CHARS], chunks
 
     def _existing_slugs(self) -> List[Dict[str, str]]:
         pages, _ = self._page_dao.list_pages(self._cfg.space_id, page_size=1000)
-        return [
-            {"slug": p.slug, "title": p.title, "type": p.page_type} for p in pages
-        ]
+        return [{"slug": p.slug, "title": p.title, "type": p.page_type} for p in pages]
 
     # ==================================================================
     # INGEST
@@ -229,9 +221,7 @@ class WikiIngestPipeline:
                 try:
                     return await self._map_document(document_id, existing_slugs)
                 except Exception as exc:
-                    logger.error(
-                        f"wiki map failed for document {document_id}: {exc}"
-                    )
+                    logger.error(f"wiki map failed for document {document_id}: {exc}")
                     return None
 
         map_results = await asyncio.gather(
@@ -258,9 +248,7 @@ class WikiIngestPipeline:
                     merged.document_ids.extend(
                         d for d in cand.document_ids if d not in merged.document_ids
                     )
-                    merged.aliases = list(
-                        dict.fromkeys(merged.aliases + cand.aliases)
-                    )
+                    merged.aliases = list(dict.fromkeys(merged.aliases + cand.aliases))
                     if cand.description and len(cand.description) > len(
                         merged.description
                     ):
@@ -329,9 +317,12 @@ class WikiIngestPipeline:
         granularity = prompts.WIKI_GRANULARITY_GUIDANCE.get(
             self._cfg.granularity, prompts.WIKI_GRANULARITY_GUIDANCE["standard"]
         )
-        existing_lines = "\n".join(
-            f"- {s['slug']} ({s['title']}, {s['type']})" for s in existing_slugs
-        ) or "(尚无页面)"
+        existing_lines = (
+            "\n".join(
+                f"- {s['slug']} ({s['title']}, {s['type']})" for s in existing_slugs
+            )
+            or "(尚无页面)"
+        )
 
         candidate_data = await self._llm_json(
             prompts.WIKI_CANDIDATE_SLUG_PROMPT.format(
@@ -360,9 +351,7 @@ class WikiIngestPipeline:
 
         # summary page generation (parallel with citation would be faster;
         # sequential keeps prompt budget predictable in P0)
-        candidate_links = "\n".join(
-            f"- [[{c.slug}|{c.name}]]" for c in candidates
-        )
+        candidate_links = "\n".join(f"- [[{c.slug}|{c.name}]]" for c in candidates)
         summary_text = await self._llm_text(
             prompts.WIKI_DOC_SUMMARY_PROMPT.format(
                 candidate_links=candidate_links or "（无）",
@@ -426,9 +415,7 @@ class WikiIngestPipeline:
                         if label in label_to_row
                     ]
                     if slug in cited:
-                        cited[slug].extend(
-                            r for r in row_ids if r not in cited[slug]
-                        )
+                        cited[slug].extend(r for r in row_ids if r not in cited[slug])
                     else:
                         cited[slug] = row_ids
                 for item in cited_data.get("new_slugs", []) or []:
@@ -440,9 +427,7 @@ class WikiIngestPipeline:
                             Candidate(
                                 name=str(item.get("name") or slug),
                                 slug=slug,
-                                aliases=[
-                                    a for a in item.get("aliases", []) or [] if a
-                                ],
+                                aliases=[a for a in item.get("aliases", []) or [] if a],
                                 description=str(item.get("description") or ""),
                                 document_ids=[document_id],
                             )
@@ -459,9 +444,7 @@ class WikiIngestPipeline:
     # ------------------------------------------------------------------
     # DEDUP
     # ------------------------------------------------------------------
-    async def _dedup_candidates(
-        self, candidates: List[Candidate]
-    ) -> List[Candidate]:
+    async def _dedup_candidates(self, candidates: List[Candidate]) -> List[Candidate]:
         """Surface-similarity prefilter then one LLM merge pass."""
         if len(candidates) < 2:
             return candidates
@@ -561,9 +544,7 @@ class WikiIngestPipeline:
     # ------------------------------------------------------------------
     # TAXONOMY
     # ------------------------------------------------------------------
-    async def _plan_taxonomy(
-        self, candidates: List[Candidate]
-    ) -> Dict[str, List[str]]:
+    async def _plan_taxonomy(self, candidates: List[Candidate]) -> Dict[str, List[str]]:
         pages, _ = self._page_dao.list_pages(self._cfg.space_id, page_size=1000)
         existing_paths: Set[str] = set()
         for p in pages:
@@ -776,9 +757,7 @@ class WikiIngestPipeline:
             target_page = self._page_dao.get_page_by_slug(space_id, target)
             if target_page is not None:
                 in_links = (
-                    json.loads(target_page.in_links)
-                    if target_page.in_links
-                    else []
+                    json.loads(target_page.in_links) if target_page.in_links else []
                 )
                 if slug not in in_links:
                     in_links.append(slug)
@@ -793,9 +772,7 @@ class WikiIngestPipeline:
             target_page = self._page_dao.get_page_by_slug(space_id, target)
             if target_page is not None:
                 in_links = (
-                    json.loads(target_page.in_links)
-                    if target_page.in_links
-                    else []
+                    json.loads(target_page.in_links) if target_page.in_links else []
                 )
                 if slug in in_links:
                     in_links.remove(slug)
@@ -916,9 +893,7 @@ class WikiIngestPipeline:
 
         return {"pages": len(all_pages)}
 
-    async def _inject_cross_links(
-        self, all_pages: Any, all_slugs: Set[str]
-    ) -> None:
+    async def _inject_cross_links(self, all_pages: Any, all_slugs: Set[str]) -> None:
         """Mention-scan cross-link injection (P0 heuristic).
 
         For each page, find other pages whose plain text mentions this
@@ -984,9 +959,7 @@ class WikiIngestPipeline:
                 lines.append(f"## {header}")
                 for p in tree[path]:
                     summary = (p.summary or "").strip()
-                    lines.append(
-                        f"- [[{p.slug}|{p.title}]] {summary[:60]}"
-                    )
+                    lines.append(f"- [[{p.slug}|{p.title}]] {summary[:60]}")
                 lines.append("")
             return "\n".join(lines)
 

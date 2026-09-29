@@ -217,8 +217,6 @@ def make_kb_codegraph_class_hierarchy(knowledge_id: str):
     return _kb_codegraph_class_hierarchy
 
 
-
-
 def _wiki_enabled(knowledge_id: str) -> bool:
     """Whether this space has the Wiki index method (sync check)."""
     try:
@@ -272,9 +270,7 @@ def _make_kb_wiki_tools(knowledge_id: str) -> List:
 
     @tool(
         "kb_wiki_read_page",
-        description=(
-            "Read one wiki page by slug (or slug 'index' for the catalog)."
-        ),
+        description=("Read one wiki page by slug (or slug 'index' for the catalog)."),
     )
     async def _kb_wiki_read_page(slug: str) -> str:
         return await _kb_wiki_read_page_impl(knowledge_id, slug)
@@ -292,7 +288,6 @@ def _make_kb_wiki_tools(knowledge_id: str) -> List:
 def make_kb_wiki_tools(knowledge_id: str) -> List:
     """Public alias used by other agent entry points."""
     return _make_kb_wiki_tools(knowledge_id)
-
 
 
 def make_kb_tools(knowledge_id: str) -> List:
