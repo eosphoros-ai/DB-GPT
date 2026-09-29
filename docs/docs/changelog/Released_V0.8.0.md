@@ -138,6 +138,7 @@ The official documentation has been completely revamped and now officially suppo
 
 - Add MiniMax Provider support ([#2989](https://github.com/eosphoros-ai/DB-GPT/pull/2989))
 - Fix React parser handling of vis-thinking blocks ([#2996](https://github.com/eosphoros-ai/DB-GPT/pull/2996))
+- Tighten `execute_code` filename handling so absolute paths, path traversal, and symlink escapes are rejected. This security hardening may affect callers that previously relied on files outside the configured working directory.
 - README and documentation updates ([#2991](https://github.com/eosphoros-ai/DB-GPT/pull/2991))
 
 ## How to Upgrade
