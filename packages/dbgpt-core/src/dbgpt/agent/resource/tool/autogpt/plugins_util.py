@@ -133,6 +133,18 @@ def scan_plugins(
     return loaded_plugins
 
 
+def _sanitize_branch_name(branch_name: str) -> str:
+    """Sanitize branch_name to prevent path traversal attacks."""
+    sanitized = branch_name.replace("\\", "/")
+    sanitized = "/".join(
+        part for part in sanitized.split("/") if part not in (".", "..")
+    )
+    sanitized = sanitized.strip("/")
+    if not sanitized:
+        raise ValueError(f"Invalid branch name: {branch_name}")
+    return sanitized
+
+
 def update_from_git(
     download_path: str,
     github_repo: str = "",
@@ -142,6 +154,7 @@ def update_from_git(
     """Update plugins from a git repository."""
     import requests
 
+    branch_name = _sanitize_branch_name(branch_name)
     os.makedirs(download_path, exist_ok=True)
     if github_repo:
         if github_repo.index("github.com") <= 0:
@@ -174,6 +187,9 @@ def update_from_git(
             file_name = (
                 f"{plugins_path_path}/{plugin_repo_name}-{branch_name}-{time_str}.zip"
             )
+            base_real = os.path.realpath(str(plugins_path_path))
+            if not os.path.realpath(file_name).startswith(base_real + os.sep):
+                raise ValueError(f"Path traversal detected: {file_name}")
             print(file_name)
             with open(file_name, "wb") as f:
                 f.write(response.content)
