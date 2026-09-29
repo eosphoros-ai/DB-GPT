@@ -1,12 +1,12 @@
 # Dashboard 候选验证说明
 
-验证日期：2026-09-29。候选依赖工具链提交 `b6f0c2ae6b4f9272f32292426317d6630767e84f`，以保存的源码清单与补丁标识验证对象。完整集成版的历史记录与本候选分开，重叠用例不相加。
+验证日期：2026-09-29。候选依赖工具链提交 `ae095321f2f93d1536fdead00b1484d2637b96d9`，以保存的源码清单与补丁标识验证对象。完整集成版的历史记录与本候选分开，重叠用例不相加。
 
 ## 工具链依赖
 
 工具链已提交 [官方 PR #3277](https://github.com/eosphoros-ai/DB-GPT/pull/3277)，当前开放评审，尚未合并。
 
-[GitHub Actions 36543862676](https://github.com/jcsdxhe/DB-GPT/actions/runs/36543862676) 在 Ubuntu、macOS 全部成功。两者实际 Node 20.19.6 / npm 10.8.2，执行 npm ci、独立类型检查、lint、10 项构建契约、20 项既有前端测试、生产构建及静态导出。两种产物均核验 60 个 HTML 与 1,755 处本地资源引用。87 条警告的逐行基线归因不等于零警告。
+[GitHub Actions 36565457316](https://github.com/jcsdxhe/DB-GPT/actions/runs/36565457316) 在 Ubuntu、macOS 全部成功。两者实际 Node 20.19.6 / npm 10.8.2，执行 npm ci、独立类型检查、lint、18 项构建契约及工具链回归、20 项既有前端测试、生产构建及静态导出。两种产物均核验 60 个 HTML 与 1,755 处本地资源引用。87 条警告的逐行基线归因不等于零警告。评审修复增加下载错误识别、事件退订与进程信号转发回归，其中两个 POSIX 信号测试在两个远端平台均实际执行。
 
 ## Dashboard 候选的 Windows 本机验证
 
@@ -23,7 +23,7 @@
 
 ## Dashboard 跨平台 CI
 
-[GitHub Actions 36559564190](https://github.com/jcsdxhe/DB-GPT/actions/runs/36559564190) 对提交 `19bd81d054a9e24ea474f213a554b4ea2262b4c6` 的 Ubuntu、macOS 前端矩阵全部通过。两套环境实际使用 Node 20.19.6 / npm 10.8.2，执行全新依赖安装、独立 TypeScript、lint、10 项构建契约、20 项既有前端测试、286 项 Dashboard 组件测试、生产构建、完整浏览器发现及静态导出。
+[GitHub Actions 36565508485](https://github.com/jcsdxhe/DB-GPT/actions/runs/36565508485) 对提交 `cd95575f662be08d36a14586cf5689458f8eecff` 的 Ubuntu、macOS 前端矩阵全部通过。两套环境实际使用 Node 20.19.6 / npm 10.8.2，执行全新依赖安装、独立 TypeScript、lint、18 项构建契约及工具链回归、20 项既有前端测试、286 项 Dashboard 组件测试、生产构建、完整浏览器发现及静态导出。
 
 | 平台 | 组件测试 | 浏览器测试 | 生产构建及静态导出 |
 |---|---|---|---|

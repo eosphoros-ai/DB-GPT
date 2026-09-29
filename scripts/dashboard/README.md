@@ -1,19 +1,36 @@
-# 模板与浏览器验收
+# Dashboard 检查脚本
 
-在项目根目录使用现有 Python 环境，将各 `packages/*/src` 加入 `PYTHONPATH` 后运行：
+当前安装、迁移与测试入口见 [开发指南](../../docs/dashboard/DEVELOPER_GUIDE.md)，已执行结果及跳过原因见 [验证说明](../../docs/dashboard/VALIDATION.md)。
 
-```powershell
-python scripts/dashboard/verify_template_catalog.py --environment formal
+## 不依赖服务的材料检查
+
+在仓库根目录运行：
+
+```sh
+python scripts/dashboard/verify_pr_materials.py
 ```
 
-该脚本在本机正式后端 5671 上检查模板。默认 `candidate` 对应隔离后端 5672。它会创建已保存的示例看板，执行真实 SQL，并验证保存重开、年份和业务维度筛选；不调用模型，不修改来源数据。已有相同环境的成功证据直接复用。同一证据目录中，每模板累计最多两次尝试；本轮九个模板的额度均已使用完毕。
+检查维护文档中的本地链接、浏览器与上传样例的 manifest 和 SHA-256、上传样例关联计算，以及参考数据库的相对路径。该命令不启动服务、不下载数据，也不创建看板。
 
-生产浏览器回归从 `web` 目录运行：
+## 生产浏览器回归
+
+在 web 目录按锁文件安装依赖，构建生产前端并安装 Chromium。PowerShell 示例：
 
 ```powershell
-npm run test:layout -- --base-url=http://127.0.0.1:5680 --scope=all
+npm ci
+npm run build
+npx playwright install chromium
+$env:DASHBOARD_E2E_START_SERVER = '1'
+$env:DASHBOARD_E2E_BASE_URL = 'http://127.0.0.1:5670'
+$env:DASHBOARD_E2E_DISABLE_VIDEO = '1'
+$env:DASHBOARD_E2E_LIVE_AGENT = '0'
+npm run test:e2e:dashboard -- --workers=2 --retries=0
 ```
 
-范围为 129 个基线用例和 27 个新增用例，使用受控 API 回放，不调用真实模型。每次输出新时间戳目录，可用 `--scope=historical / layout / feedback / workspace` 定向执行。对通过数量的表述必须依据每批实际报告，不能把分批结果拼成一次通过。
+该配置为测试启动生产前端。固定输入套件拦截 API/SSE；两个 live 套件需要单独配置历史模型生成资产及真实后端，未配置时会明确跳过。实际计数以报告为准，不能将回放结果写成真实模型或外部数据库验证。
 
-自有数据源的真实浏览器记录、原始执行脚本与两份明确标记为合成的 SQLite 验收数据保存在 `docs/dashboard/evidence/v9-4-template-workspace-20260908/`。`source-fixtures/actual-source-identifiers.json` 解释请求名称与实际登记标识的差异。归档脚本是当次运行记录，其中的端口、临时路径和已存在的资产 ID 需按新环境配置后才可重用。
+## 需要既有环境的历史适配器
+
+`verify_template_catalog.py` 及同目录部分脚本保留了集成开发环境的端口、资产或证据约定。运行前须阅读脚本并配置自己的隔离服务；其中的旧模板数量、历史通过数及证据目录不代表新检出已具备这些资产。可能创建数据或看板的适配器不属于上述只读材料检查。
+
+原集成版的 `test:layout` 命令与首页专用测试不属于拆分候选；当前浏览器入口为 `test:e2e:dashboard`。随库固定输入位于 [web/tests/dashboard-e2e/fixtures](../../web/tests/dashboard-e2e/fixtures/README.md)。

@@ -1,12 +1,12 @@
 # Dashboard 候选范围与依赖
 
-官方基线为 `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`。Dashboard 候选以独立工具链提交 `b6f0c2ae6b4f9272f32292426317d6630767e84f` 为依赖；评阅 Dashboard 时应比较该提交与候选差异，避免再次混入框架升级。
+官方基线为 `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`。Dashboard 候选以独立工具链提交 `ae095321f2f93d1536fdead00b1484d2637b96d9` 为依赖；评阅 Dashboard 时应比较该提交与候选差异，避免再次混入框架升级。
 
 ## 工具链依赖
 
-84 个路径覆盖 Next.js 13.4.7 → 16.3.0、TypeScript 5.9.3、ESLint 9、npm 10 锁文件、现有页面的类型/依赖兼容及构建脚本。文档网站的包管理器保持原状。独立工具链不含 Dashboard 或 Python 后端。
+87 个路径覆盖 Next.js 13.4.7 → 16.3.0、TypeScript 5.9.3、ESLint 9、npm 10 锁文件、现有页面的类型/依赖兼容及构建脚本。文档网站的包管理器保持原状。独立工具链不含 Dashboard 或 Python 后端。Dashboard 独立差异为 572 个路径；官方评审依赖 [PR #3277](https://github.com/eosphoros-ai/DB-GPT/pull/3277)，须先合入该工具链依赖。
 
-该提交的 [Fork Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36543862676) 已在 Ubuntu、macOS 使用 Node 20.19.6 / npm 10.8.2 通过安装、类型、lint、构建契约、既有测试、生产构建和静态导出。工具链 lint 为 0 错误、87 警告；同一配置下逐条在官方基线源代码重现，并不声称旧版 ESLint 输出相同。
+该提交的 [Fork Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36565457316) 已在 Ubuntu、macOS 使用 Node 20.19.6 / npm 10.8.2 通过安装、类型、lint、构建契约、既有测试、生产构建和静态导出。工具链 lint 为 0 错误、87 警告；同一配置下逐条在官方基线源代码重现，并不声称旧版 ESLint 输出相同。
 
 ## Dashboard 与必要共享接口
 
