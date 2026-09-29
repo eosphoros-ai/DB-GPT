@@ -24,7 +24,10 @@
     "test:build": "node --test next.config.test.cjs scripts/verify-next-build-assets.test.cjs scripts/prepare-build-types.test.cjs lib/session.test.cjs",
     "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
-    "typecheck": "node scripts/typecheck.cjs"
+    "typecheck": "node scripts/typecheck.cjs",
+    "test:dashboard": "vitest run --config vitest.dashboard.config.mts",
+    "verify:dashboard": "npm run test:build && npm run typecheck && npm run lint && npm run test:dashboard && npm run build",
+    "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -101,7 +104,11 @@
     "tailwindcss": "3.3.2",
     "tailwindcss-animated": "^1.0.1",
     "typescript": "5.9.3",
-    "uuid": "11.1.1"
+    "uuid": "11.1.1",
+    "ajv": "^8.20.0",
+    "react-grid-layout": "^2.2.4",
+    "react-markdown": "9.0.1",
+    "react-resizable": "3.2.0"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.2",
@@ -128,7 +135,11 @@
     "monaco-editor-webpack-plugin": "^7.1.0",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^4.0.0",
-    "prettier-plugin-packagejson": "^2.5.2"
+    "prettier-plugin-packagejson": "^2.5.2",
+    "@testing-library/react": "^16.3.0",
+    "@playwright/test": "^1.62.0",
+    "jsdom": "^26.1.0",
+    "vitest": "4.1.10"
   },
   "packageManager": "npm@10.8.2",
   "engines": {

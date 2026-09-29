@@ -895,11 +895,14 @@ class TestMaterializeLocalFile:
             # registry never picks the system temp dir on its own).
             assert resolved_root in path.resolve().parents
             assert path.read_bytes() == payload
-            assert stat.S_IMODE(os.lstat(path).st_mode) == 0o600
+            # Windows permissions are inherited ACLs, not POSIX mode bits.
+            if os.name != "nt":
+                assert stat.S_IMODE(os.lstat(path).st_mode) == 0o600
             run_dir = path.parent
             assert run_dir.name.startswith("run_")
-            mode = stat.S_IMODE(os.lstat(run_dir).st_mode)
-            assert mode & 0o777 == 0o700
+            if os.name != "nt":
+                mode = stat.S_IMODE(os.lstat(run_dir).st_mode)
+                assert mode & 0o777 == 0o700
         assert not run_dir.exists(), "run directory must be cleaned up"
         assert strict.max_read_size <= registry.config.upload_chunk_bytes
 

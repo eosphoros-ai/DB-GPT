@@ -1,7 +1,10 @@
 """Tests for workspace_provisioning module."""
 
 import os
+from types import SimpleNamespace
 
+from dbgpt_app.initialization import package_resources
+from dbgpt_app.initialization.skills_provisioning import ensure_builtin_skills
 from dbgpt_app.initialization.workspace_provisioning import _ensure_pilot_workspace
 
 
@@ -45,3 +48,53 @@ def test_ensure_pilot_workspace_creates_missing_directories(tmp_path):
     dest = tmp_path / "deep" / "nested" / "pilot"
     _ensure_pilot_workspace(str(dest))
     assert os.path.exists(dest / "meta_data" / "alembic.ini")
+
+
+def test_editable_install_provisions_shipped_migrations_and_skills(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / "source" / "dbgpt_app" / "initialization"
+    site = tmp_path / "site-packages"
+    monkeypatch.setattr(
+        package_resources, "__file__", str(source / "package_resources.py")
+    )
+    monkeypatch.setattr(
+        package_resources,
+        "distribution",
+        lambda name: SimpleNamespace(locate_file=lambda relative: site / relative),
+    )
+    migration = site / "dbgpt_app/pilot_template/meta_data/alembic/versions/kept.py"
+    migration.parent.mkdir(parents=True)
+    migration.write_text('revision = "kept"')
+    skill = site / "dbgpt_app/_builtin_skills/dashboard-builder/SKILL.md"
+    skill.parent.mkdir(parents=True)
+    skill.write_text("Dashboard workflow")
+
+    dest = tmp_path / "runtime"
+    _ensure_pilot_workspace(str(dest / "pilot"))
+    ensure_builtin_skills(str(dest / "skills"))
+    copied = dest / "pilot/meta_data/alembic/versions/kept.py"
+    assert copied.read_text() == migration.read_text()
+    assert (dest / "skills/dashboard-builder/SKILL.md").read_text() == skill.read_text()
+    copied.write_text("user revision")
+    _ensure_pilot_workspace(str(dest / "pilot"))
+    assert copied.read_text() == "user revision"
+
+
+def test_package_assets_take_precedence_over_editable_distribution(
+    tmp_path, monkeypatch
+):
+    package = tmp_path / "dbgpt_app"
+    template = package / "pilot_template"
+    template.mkdir(parents=True)
+    monkeypatch.setattr(
+        package_resources,
+        "__file__",
+        str(package / "initialization/package_resources.py"),
+    )
+
+    def unexpected_distribution(name):
+        raise AssertionError("A normal package already contains its resources")
+
+    monkeypatch.setattr(package_resources, "distribution", unexpected_distribution)
+    assert package_resources.bundled_resource_dir("pilot_template") == template

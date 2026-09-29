@@ -41,16 +41,50 @@ logger = logging.getLogger(__name__)
 # ── Module-level entry point for APScheduler ──────────────────────────
 
 
-async def run_scheduled_task(task_id: str) -> None:
-    """APScheduler job callback — creates a runner and delegates.
+async def run_scheduled_task(task_id: str, allow_disabled: bool = False) -> bool:
+    """APScheduler callback with a persistent lease and task-type dispatch.
 
     This **must** be a module-level function (not a bound method) so
     that APScheduler's SQLAlchemyJobStore can pickle the job state.
-    The runner is instantiated fresh on each invocation to avoid
-    holding stale SQLAlchemy sessions across runs.
+    The database lease prevents two scheduler instances from running the same
+    task concurrently.  The task type selects a chat or dashboard runner.
     """
-    runner = ChatReplayRunner()
-    await runner.replay_chat_task(task_id)
+    task_dao = ScheduledTaskDao()
+    task = task_dao.get_one({"task_id": task_id})
+    if task is None:
+        logger.warning("scheduled task %s no longer exists", task_id)
+        return False
+
+    lease_owner = uuid.uuid4().hex
+    try:
+        payload = json.loads(task.get("payload_json") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        payload = {}
+    timeout_seconds = int(payload.get("timeout_seconds") or 600)
+    max_attempts = int(payload.get("max_attempts") or 1)
+    retry_backoff = sum(min(2**attempt, 10) for attempt in range(max_attempts - 1))
+    lease_ttl = max(timeout_seconds * max_attempts + retry_backoff + 60, 120)
+    if not task_dao.try_acquire_lease(
+        task_id,
+        lease_owner,
+        ttl_seconds=lease_ttl,
+        require_enabled=not allow_disabled,
+    ):
+        logger.info("scheduled task %s already has an active execution lease", task_id)
+        return False
+
+    try:
+        if task.get("task_type") == "dashboard_refresh":
+            from .dashboard_refresh_runner import DashboardRefreshRunner
+
+            await DashboardRefreshRunner().refresh_dashboard_task(
+                task_id, allow_disabled=allow_disabled
+            )
+        else:
+            await ChatReplayRunner().replay_chat_task(task_id)
+        return True
+    finally:
+        task_dao.release_lease(task_id, lease_owner)
 
 
 def _default_session_file_registry():
@@ -133,8 +167,20 @@ class ChatReplayRunner:
             #    Use a fresh conv_uid so each run is its own dialog.
             payload = json.loads(task["payload_json"])
             payload["conv_uid"] = new_conv_uid
-            payload["user_name"] = task.get("user_name")
+            payload["user_name"] = task.get("owner_id") or task.get("user_name")
             payload.pop("version", None)  # internal field, not a ConversationVo key
+            if task.get("resource_type") == "uploaded_dataset":
+                ext_info = dict(payload.get("ext_info") or {})
+                ext_info["dataset_id"] = task.get("resource_id")
+                ext_info["dataset_replay_task_id"] = task_id
+                for unsafe_key in (
+                    "file_path",
+                    "file_paths",
+                    "database_name",
+                    "database_path",
+                ):
+                    ext_info.pop(unsafe_key, None)
+                payload["ext_info"] = ext_info
 
             # 3b. Payload v2: copy task-frozen files into this run's fresh
             #     session and swap in the fresh session-scoped IDs.

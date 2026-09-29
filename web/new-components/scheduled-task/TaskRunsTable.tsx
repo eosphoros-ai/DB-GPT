@@ -17,6 +17,7 @@ function fmtTime(iso?: string | null): string | null {
 
 interface TaskRunsTableProps {
   taskId: string;
+  dashboardId?: string;
 }
 
 /** 状态 → 样式映射(填充圆点芯片,与 ConnectorCard 风格统一)。
@@ -42,6 +43,11 @@ const STATUS_META: Record<ScheduledRunStatus, { dot: string; text: string; bg: s
     text: 'text-amber-600 dark:text-amber-400',
     bg: 'bg-amber-50 dark:bg-amber-900/30',
   },
+  partial_success: {
+    dot: 'bg-amber-500',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-900/30',
+  },
 };
 
 /** 执行状态 → i18n key 映射 */
@@ -50,9 +56,10 @@ const STATUS_LABEL_KEY = {
   success: 'scheduled.runs.statusSuccess',
   failed: 'scheduled.runs.statusFailed',
   timeout: 'scheduled.runs.statusTimeout',
+  partial_success: 'scheduled.runs.statusPartialSuccess',
 } as const satisfies Record<ScheduledRunStatus, string>;
 
-const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
+const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId, dashboardId }) => {
   const router = useRouter();
   const { t } = useTranslation();
   const { listRuns } = useScheduledTask();
@@ -72,18 +79,23 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
   }, [taskId, listRuns, t]);
 
   useEffect(() => {
+    // A changed task subscribes this panel to its remote execution history.
     reload();
   }, [reload]);
 
   const handleView = useCallback(
     (run: RunResponse) => {
+      if (dashboardId && (run.result?.dashboard_id === dashboardId || run.output_resource_id === dashboardId)) {
+        void router.push(`/dashboards/${encodeURIComponent(dashboardId)}/`);
+        return;
+      }
       if (!run.output_conv_uid) {
         message.warning(t('scheduled.msg.noConvToView'));
         return;
       }
       router.push(`/?id=${run.output_conv_uid}&from_task=${taskId}`);
     },
-    [router, taskId, t],
+    [router, taskId, dashboardId, t],
   );
 
   if (loading && runs.length === 0) {
@@ -98,6 +110,9 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
     return (
       <div className='flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500'>
         <p className='text-sm'>{t('scheduled.runs.empty')}</p>
+        <Button icon={<ReloadOutlined />} onClick={reload} loading={loading}>
+          {t('scheduled.runs.refresh')}
+        </Button>
       </div>
     );
   }
@@ -122,7 +137,7 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
 
         {/* 行 */}
         {runs.map(run => {
-          const meta = STATUS_META[run.status];
+          const meta = STATUS_META[run.status] || STATUS_META.failed;
           const isFailed = run.status === 'failed' || run.status === 'timeout';
           const summaryText = isFailed
             ? (run.error_message ?? '').slice(0, 80)
@@ -172,7 +187,13 @@ const TaskRunsTable: React.FC<TaskRunsTableProps> = ({ taskId }) => {
                   type='link'
                   size='small'
                   icon={<EyeOutlined />}
-                  disabled={!run.output_conv_uid}
+                  disabled={
+                    !run.output_conv_uid &&
+                    !(
+                      dashboardId &&
+                      (run.result?.dashboard_id === dashboardId || run.output_resource_id === dashboardId)
+                    )
+                  }
                   onClick={() => handleView(run)}
                   className='!text-cyan-600 dark:!text-cyan-400 disabled:!text-gray-300 dark:disabled:!text-gray-600'
                 >

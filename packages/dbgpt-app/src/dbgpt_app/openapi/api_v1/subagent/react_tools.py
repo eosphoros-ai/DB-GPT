@@ -684,9 +684,10 @@ def make_react_tools(
             session = await runtime.create_session(session_id, config)
             result = await session.execute(code)
 
-            if result.status == ExecutionStatus.SUCCESS:
+            result_status = getattr(result.status, "value", result.status)
+            if result_status == ExecutionStatus.SUCCESS.value:
                 output_text = result.output or ""
-            elif result.status == ExecutionStatus.TIMEOUT:
+            elif result_status == ExecutionStatus.TIMEOUT.value:
                 output_text = f"Execution timed out ({config.timeout}s limit)"
             else:
                 output_text = result.error or "Unknown execution error"

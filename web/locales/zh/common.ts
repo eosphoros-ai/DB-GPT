@@ -941,4 +941,7 @@ export const CommonZh: Resources['translation'] = {
   'request.error.default': '请求失败（HTTP {{status}}）。',
   'editor.please_select_database': '请先选择数据库',
   'editor.please_enter_sql': '请先输入 SQL',
+  'scheduled.kind.dashboard': '看板任务',
+  'scheduled.kind.chat': '对话任务',
+  'scheduled.runs.statusPartialSuccess': '部分成功',
 } as const;

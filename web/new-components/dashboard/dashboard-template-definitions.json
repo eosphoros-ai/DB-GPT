@@ -1,0 +1,367 @@
+[
+  {
+    "id": "retail-overview",
+    "title": "零售经营总览",
+    "category": "销售",
+    "description": "指标、面积趋势与门店排行组合，查看销售规模和主要贡献。",
+    "sourceNames": [
+      "Walmart_Sales"
+    ],
+    "prompt": "基于当前数据库规划一张零售经营总览看板，门店、月份与节假日销售结构，定位经营变化。包含年份与门店两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "holiday-sales",
+    "title": "节假日销售表现",
+    "category": "销售",
+    "description": "按每店每周均值公平比较节假日与普通周，结合堆叠趋势和门店对照。",
+    "sourceNames": [
+      "Walmart_Sales"
+    ],
+    "prompt": "基于当前数据库规划一张节假日销售表现看板，切换节假日和普通周，比较销售趋势与门店贡献。包含年份与周类型两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "store-coverage",
+    "title": "门店经营覆盖",
+    "category": "运营",
+    "description": "用门店 × 月份热力矩阵查看销售记录覆盖，辅以月份指标和排行。",
+    "sourceNames": [
+      "Walmart_Sales"
+    ],
+    "prompt": "基于当前数据库规划一张门店经营覆盖看板，按门店观察有销售记录的周数与月份覆盖。包含年份与周类型两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "olist-orders",
+    "title": "电商订单趋势",
+    "category": "电商",
+    "description": "宽幅订单趋势、地区覆盖与状态环图，结合各州月度订单热力图。",
+    "sourceNames": [
+      "olist_ecommerce_demo"
+    ],
+    "prompt": "基于当前数据库规划一张电商订单趋势看板，按州与订单状态分析订单趋势，每笔订单只计一次。包含年份与客户所在州两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "olist-delivery",
+    "title": "订单交付与状态",
+    "category": "运营",
+    "description": "对照订单状态与交付偏差，查看早到、延迟和地区分布。",
+    "sourceNames": [
+      "olist_ecommerce_demo"
+    ],
+    "prompt": "基于当前数据库规划一张订单交付与状态看板，选择交付状态，查看订单所在区域和时间分布。包含年份与订单状态两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "olist-payments",
+    "title": "支付方式与回款",
+    "category": "财务",
+    "description": "支付方式环图、回款账表与月度堆叠趋势，按支付明细计算金额。",
+    "sourceNames": [
+      "olist_ecommerce_demo"
+    ],
+    "prompt": "基于当前数据库规划一张支付方式与回款看板，比较支付方式与订单状态下的回款金额，不关联订单明细。包含年份与支付方式两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "northwind-revenue",
+    "title": "品类收入与市场",
+    "category": "销售",
+    "description": "品类排行与国家收入组合，结合月度趋势分析扣折后的商品净收入。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "基于当前数据库规划一张品类收入与市场看板，按国家和品类查看扣除折扣后的商品净收入。包含年份与收货国家两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "northwind-customers",
+    "title": "客户订购分析",
+    "category": "客户",
+    "description": "按首次购买分组查看客户复购留存，区分未来周期与零复购，并显示人数。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "基于当前数据库规划一张客户订购分析看板，按收货国家比较客户订购频次，识别重点客户。包含年份与收货国家两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "northwind-freight",
+    "title": "物流运费成本",
+    "category": "运营",
+    "description": "用订单金额与运费散点、承运商对比和月度趋势分析物流费用。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "基于当前数据库规划一张物流运费成本看板，按国家与承运商编号分析订单运费和月度成本。包含年份与收货国家两个可用全局筛选器，完整配置 SQL 参数与分享数据映射，先规划再等待确认。"
+  },
+  {
+    "id": "growth-map",
+    "title": "营收增长技能树",
+    "category": "经营",
+    "description": "从总收入展开到客户、市场和品类，沿分支逐层阅读经营结构。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "从总收入展开到客户、市场和品类，沿分支逐层阅读经营结构。",
+    "style": "skill_tree"
+  },
+  {
+    "id": "quarterly-timeline",
+    "title": "季度经营时间线",
+    "category": "销售",
+    "description": "按季度翻阅门店销售，年度总览与四季趋势采用分章布局。",
+    "sourceNames": [
+      "Walmart_Sales"
+    ],
+    "prompt": "按季度翻阅门店销售，年度总览与四季趋势采用分章布局。",
+    "style": "timeline"
+  },
+  {
+    "id": "business-dossier",
+    "title": "经营分析档案",
+    "category": "财务",
+    "description": "纸质档案与编号章节，依次核对收入、客户、品类和市场明细。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "纸质档案与编号章节，依次核对收入、客户、品类和市场明细。",
+    "style": "dossier"
+  },
+  {
+    "id": "sales-receipt",
+    "title": "销售结算小票",
+    "category": "财务",
+    "description": "窄幅小票、虚线分隔与等宽数字，将收入和分类账表汇成一张凭条。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "窄幅小票、虚线分隔与等宽数字，将收入和分类账表汇成一张凭条。",
+    "style": "receipt"
+  },
+  {
+    "id": "annual-story",
+    "title": "年度经营故事",
+    "category": "经营",
+    "description": "大标题引导的纵向长页，沿规模、节奏、品类和市场阅读数据。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "大标题引导的纵向长页，沿规模、节奏、品类和市场阅读数据。",
+    "style": "story"
+  },
+  {
+    "id": "retail-terminal",
+    "title": "零售数据终端",
+    "category": "销售",
+    "description": "深色终端、紧凑指标和密集账表，集中核查门店销售与时间变化。",
+    "sourceNames": [
+      "Walmart_Sales"
+    ],
+    "prompt": "深色终端、紧凑指标和密集账表，集中核查门店销售与时间变化。",
+    "style": "terminal"
+  },
+  {
+    "id": "executive-pulse",
+    "title": "管理层经营总览",
+    "category": "经营",
+    "description": "深蓝经营总览，以收入主指标、市场覆盖和趋势分区观察经营规模。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "深蓝经营总览，以收入主指标、市场覆盖和趋势分区观察经营规模。",
+    "style": "executive"
+  },
+  {
+    "id": "service-desk",
+    "title": "IT 服务工单总览",
+    "category": "IT 服务",
+    "description": "去重工单量、关闭比例、解决耗时及优先级分布；展示历史事件快照。",
+    "sourceNames": [
+      "sqlite_itsm"
+    ],
+    "prompt": "去重工单量、关闭比例、解决耗时及优先级分布；展示历史事件快照。",
+    "style": "monitor"
+  },
+  {
+    "id": "revenue-growth",
+    "title": "营收驱动与增长",
+    "category": "销售",
+    "description": "珊瑚色指标纵栏搭配收入趋势、品类排行与市场热力图，定位增长贡献。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "珊瑚色指标纵栏搭配收入趋势、品类排行与市场热力图，定位增长贡献。",
+    "style": "executive"
+  },
+  {
+    "id": "customer-value",
+    "title": "客户价值与复购",
+    "category": "客户",
+    "description": "按订单金额、稳定客户标识和首购月份查看客户贡献与复购留存。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "按订单金额、稳定客户标识和首购月份查看客户贡献与复购留存。",
+    "style": "editorial"
+  },
+  {
+    "id": "inventory-watch",
+    "title": "商品库存与补货",
+    "category": "供应链",
+    "description": "查看当前库存、在途商品和补货缺口，按供应商与商品分类筛选。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "查看当前库存、在途商品和补货缺口，按供应商与商品分类筛选。",
+    "style": "executive"
+  },
+  {
+    "id": "ecommerce-revenue",
+    "title": "电商收入与履约",
+    "category": "电商",
+    "description": "按订单汇总支付后计算回款，结合州分布、交付偏差与状态结构。",
+    "sourceNames": [
+      "olist_ecommerce_demo"
+    ],
+    "prompt": "按订单汇总支付后计算回款，结合州分布、交付偏差与状态结构。",
+    "style": "monitor"
+  },
+  {
+    "id": "logistics-flow",
+    "title": "物流交付追踪",
+    "category": "供应链",
+    "description": "从订单状态到地区热力矩阵，跟踪实际送达相对预计日期的偏差。",
+    "sourceNames": [
+      "olist_ecommerce_demo"
+    ],
+    "prompt": "从订单状态到地区热力矩阵，跟踪实际送达相对预计日期的偏差。",
+    "style": "monitor"
+  },
+  {
+    "id": "support-operations",
+    "title": "服务团队与 SLA 标记",
+    "category": "IT 服务",
+    "description": "比较工单团队负载、重开次数与源系统 SLA 标记，保留清晰计算口径。",
+    "sourceNames": [
+      "sqlite_itsm"
+    ],
+    "prompt": "比较工单团队负载、重开次数与源系统 SLA 标记，保留清晰计算口径。",
+    "style": "editorial"
+  },
+  {
+    "id": "energy-monitor",
+    "title": "住宅能耗监测",
+    "category": "能源",
+    "description": "电器与照明耗电、每日走势和小时分布，来自住宅每十分钟的实测数据。",
+    "sourceNames": [
+      "sqlite_energy"
+    ],
+    "prompt": "电器与照明耗电、每日走势和小时分布，来自住宅每十分钟的实测数据。",
+    "style": "executive"
+  },
+  {
+    "id": "manufacturing-quality",
+    "title": "制造故障与设备状态",
+    "category": "制造",
+    "description": "观察故障占比、刀具磨损与转速；UCI 合成工业样本，样本组不是时间轴。",
+    "sourceNames": [
+      "sqlite_maintenance"
+    ],
+    "prompt": "观察故障占比、刀具磨损与转速；UCI 合成工业样本，样本组不是时间轴。",
+    "style": "monitor"
+  },
+  {
+    "id": "student-performance",
+    "title": "学生成绩与学习投入",
+    "category": "教育",
+    "description": "两所中学的葡语课程成绩、缺课和学习时长；成绩满分 20，不推算毕业率。",
+    "sourceNames": [
+      "sqlite_students"
+    ],
+    "prompt": "两所中学的葡语课程成绩、缺课和学习时长；成绩满分 20，不推算毕业率。",
+    "style": "editorial"
+  },
+  {
+    "id": "brand-revenue",
+    "title": "品牌营收驾驶舱",
+    "category": "销售",
+    "description": "品牌侧栏与场景主视觉，结合收入指标、全球市场地图、覆盖仪表盘和品类贡献。使用 Northwind 实际订单明细；不推算缺失的转化率或同比。",
+    "sourceNames": [
+      "upload_001_3a6ee8a2d1ad4a2a"
+    ],
+    "prompt": "品牌侧栏与场景主视觉，结合收入指标、全球市场地图、覆盖仪表盘和品类贡献。使用 Northwind 实际订单明细；不推算缺失的转化率或同比。",
+    "style": "brand"
+  },
+  {
+    "id": "store-marketing",
+    "title": "门店营销沙盘",
+    "category": "营销",
+    "description": "奶油底色、橙色重点与硬边阴影；从活动核销、渠道贡献到门店表现，串联营销全貌。内置合成演示数据，可替换自己的数据源。",
+    "sourceNames": [
+      "sqlite_marketing_showcase"
+    ],
+    "prompt": "奶油底色、橙色重点与硬边阴影；从活动核销、渠道贡献到门店表现，串联营销全貌。内置合成演示数据，可替换自己的数据源。",
+    "style": "marketing"
+  },
+  {
+    "id": "national-command",
+    "title": "全国经营指挥大屏",
+    "category": "大屏",
+    "description": "蓝青科技大屏，以全国地图为中心，联动收入、交付、品类与省区排名。内置合成演示数据，支持全屏与明细放大。",
+    "sourceNames": [
+      "sqlite_operations_showcase"
+    ],
+    "prompt": "蓝青科技大屏，以全国地图为中心，联动收入、交付、品类与省区排名。内置合成演示数据，支持全屏与明细放大。",
+    "style": "command"
+  },
+  {
+    "id": "healthcare-command",
+    "title": "互联网医疗服务大屏",
+    "category": "大屏",
+    "description": "蓝紫医疗运营大屏，汇集问诊、处方、渠道和科室负载。仅使用合成汇总数据，不含患者信息；支持全屏与明细查看。",
+    "sourceNames": [
+      "sqlite_healthcare_showcase"
+    ],
+    "prompt": "蓝紫医疗运营大屏，汇集问诊、处方、渠道和科室负载。仅使用合成汇总数据，不含患者信息；支持全屏与明细查看。",
+    "style": "clinical"
+  },
+  {
+    "id": "rural-finance",
+    "title": "乡村普惠金融大屏",
+    "category": "大屏",
+    "description": "深绿普惠金融大屏，全国分布与发放趋势居中，审批和还款指标分列两侧。内置合成演示数据，可按年份、省区联动筛选。",
+    "sourceNames": [
+      "sqlite_rural_showcase"
+    ],
+    "prompt": "深绿普惠金融大屏，全国分布与发放趋势居中，审批和还款指标分列两侧。内置合成演示数据，可按年份、省区联动筛选。",
+    "style": "rural"
+  },
+  {
+    "id": "clinical-insight",
+    "title": "趋势洞察 · 健康研究总览",
+    "category": "研究分析",
+    "description": "蓝白双栏研究看板，集中查看样本构成、年龄分布与临床字段关联。内置 UCI Cleveland 公开历史研究数据。",
+    "sourceNames": [
+      "sqlite_heart_cleveland"
+    ],
+    "prompt": "蓝白双栏研究看板，集中查看样本构成、年龄分布与临床字段关联。内置 UCI Cleveland 公开历史研究数据。",
+    "style": "clinical_insight"
+  },
+  {
+    "id": "cardio-journal",
+    "title": "数据脉搏 · 健康分析长报告",
+    "category": "研究分析",
+    "description": "蓝黑分章长报告，带侧栏章节导航；从数据全貌、人口学特征，逐步阅读临床字段与胸痛分组。内置 UCI 公开研究数据。",
+    "sourceNames": [
+      "sqlite_heart_cleveland"
+    ],
+    "prompt": "蓝黑分章长报告，带侧栏章节导航；从数据全貌、人口学特征，逐步阅读临床字段与胸痛分组。内置 UCI 公开研究数据。",
+    "style": "cardio_journal"
+  },
+  {
+    "id": "voice-observatory",
+    "title": "AI 语音趋势实验室",
+    "category": "科技",
+    "description": "黑底玫红科技看板，结合响应延迟、表达评测、会话增长与交互构成。内置可查询的合成演示数据，可替换业务数据源。",
+    "sourceNames": [
+      "sqlite_voice_lab"
+    ],
+    "prompt": "黑底玫红科技看板，结合响应延迟、表达评测、会话增长与交互构成。内置可查询的合成演示数据，可替换业务数据源。",
+    "style": "voice_observatory"
+  }
+]

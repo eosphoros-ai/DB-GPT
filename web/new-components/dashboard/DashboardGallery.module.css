@@ -1,0 +1,464 @@
+.page {
+  height: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--app-background);
+  color: var(--app-text);
+  padding: 32px clamp(18px, 3vw, 48px);
+}
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.collections {
+  display: flex;
+  gap: 8px;
+  margin: -8px 0 24px;
+  padding: 0 0 12px 14px;
+  border-left: 2px solid var(--app-border);
+  flex-wrap: wrap;
+}
+.collections button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--app-muted);
+  padding: 7px 12px;
+  border-radius: 8px;
+}
+.collections button[aria-pressed='true'] {
+  color: var(--app-accent);
+  background: var(--app-accent-soft);
+  font-weight: 600;
+}
+.collections button span {
+  font-size: 12px;
+}
+.favorite {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--app-muted);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  box-shadow: 0 2px 6px #18283b12;
+}
+.favorite[aria-pressed='true'] {
+  color: #a66c16;
+  background: #fff7df;
+  border-color: #efd99f;
+}
+.favorite:focus-visible,
+.collections button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+.designCard .cover {
+  aspect-ratio: 8 / 5;
+}
+.designLabel {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  padding: 2px 7px;
+  background: var(--app-surface);
+  color: var(--app-muted);
+  font-size: 10px;
+  border-radius: 5px;
+}
+.designPreview {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--app-border);
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: 28px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+.header p {
+  color: var(--app-muted);
+  margin-top: 6px;
+  font-size: 14px;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  border-bottom: 1px solid var(--app-border);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+}
+.tabs button {
+  padding: 9px 16px;
+  border-radius: 9px;
+  color: var(--app-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.tabs button[aria-pressed='true'] {
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+  font-weight: 600;
+}
+.tabs button:hover {
+  background: var(--app-surface-muted);
+}
+.tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+.categories button {
+  padding: 7px 12px;
+  border-radius: 7px;
+  color: var(--app-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.categories button[aria-pressed='true'] {
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+}
+.search {
+  width: 220px;
+  max-width: 100%;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 30px 22px;
+}
+.carousel {
+  position: relative;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  background: var(--app-surface);
+}
+.carouselTrack {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(236px, 24%, 292px);
+  gap: 18px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 4px;
+  margin: -4px;
+  cursor: grab;
+  user-select: none;
+}
+.carouselTrack::-webkit-scrollbar {
+  display: none;
+}
+.carouselTrack:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+.carouselTrack > .card {
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+  scroll-margin-inline-start: 4px;
+}
+.carouselTrack .meta {
+  padding-top: 8px;
+  margin-top: auto;
+}
+.carouselTrack[data-dragging='true'] {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+.carouselTrack[data-dragging='true'] * {
+  cursor: grabbing;
+}
+.carouselArrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  border: 1px solid var(--app-border);
+  border-radius: 50%;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 3px 14px rgb(25 34 54 / 12%);
+  cursor: pointer;
+  transition:
+    color 0.18s,
+    box-shadow 0.18s,
+    opacity 0.18s;
+}
+.carouselPrevious {
+  left: -12px;
+}
+.carouselNext {
+  right: -12px;
+}
+.carouselArrow:hover:not(:disabled) {
+  color: var(--app-accent);
+  box-shadow: 0 4px 18px rgb(25 34 54 / 18%);
+}
+.carouselArrow:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+.carouselArrow:disabled {
+  color: var(--app-muted);
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+.card {
+  min-width: 0;
+  position: relative;
+}
+.cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.cover:hover {
+  border-color: var(--app-accent);
+}
+.cover:focus-visible,
+.tabs button:focus-visible,
+.categories button:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.cover svg {
+  width: 100%;
+  height: 100%;
+}
+.badge {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 1;
+  background: var(--app-accent);
+  color: var(--app-on-accent);
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 12px;
+}
+.coverAction {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 11px;
+  border-radius: 7px;
+  background: var(--app-accent);
+  color: var(--app-on-accent);
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.cover:hover .coverAction,
+.cover:focus-visible .coverAction {
+  opacity: 1;
+}
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 2px 5px;
+  font-size: 15px;
+  font-weight: 550;
+}
+.cardTitle button {
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.description {
+  margin: 0 2px;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 8px 2px 0;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.meta span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.preview {
+  overflow: hidden;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.preview img {
+  width: 100%;
+  height: auto;
+}
+.detail {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 24px;
+}
+.detail h3 {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.detail p {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 14px;
+  overflow-wrap: anywhere;
+}
+.assetCover {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px;
+  background: var(--app-surface-muted);
+}
+.assetCover strong {
+  font-size: 18px;
+  color: var(--app-text);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.assetCover span {
+  color: var(--app-muted);
+  font-size: 12px;
+}
+.coverStatus {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--app-surface);
+  color: var(--app-muted);
+  font-size: 12px;
+}
+.empty {
+  padding: 48px 0;
+}
+.pagination {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+}
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .detail {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .carousel {
+    padding: 12px;
+    border-radius: 16px;
+  }
+  .carouselTrack {
+    grid-auto-columns: 88%;
+    gap: 14px;
+  }
+  .carouselArrow {
+    width: 36px;
+    height: 36px;
+  }
+  .carouselPrevious {
+    left: -8px;
+  }
+  .carouselNext {
+    right: -8px;
+  }
+  .page {
+    padding: 22px 14px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .tabs {
+    gap: 0;
+  }
+  .tabs button {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .search {
+    width: 100%;
+  }
+  .header h1 {
+    font-size: 24px;
+  }
+  .coverAction {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carouselArrow,
+  .cover,
+  .coverAction {
+    transition: none;
+  }
+}

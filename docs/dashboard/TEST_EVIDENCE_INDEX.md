@@ -1,0 +1,14 @@
+# 测试记录入口
+
+当前执行状态见 [验证说明](VALIDATION.md)，可执行命令见 [开发指南](DEVELOPER_GUIDE.md)。
+
+| 材料 | 用途 |
+|---|---|
+| [浏览器固定输入和 manifest](../../web/tests/dashboard-e2e/fixtures/README.md) | 新检出可加载的回归输入，记录来源与 SHA-256；不是一次执行结果。 |
+| [上传样例](../../scripts/acceptance/fixtures/upload-samples/README.md) | 多文件关联与拒绝非表格文件的确定性输入。 |
+| [Walmart](demos/walmart.md)、[Apple](demos/apple.md) | 数据口径、核验目标和历史截图。 |
+| [历史资料说明](HISTORY.md) | 旧过程记录、私人路径与未分发原始日志的边界。 |
+
+工具链依赖的 [Ubuntu/macOS Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36543862676) 已通过，提交为 `b6f0c2ae6b4f9272f32292426317d6630767e84f`。Dashboard 的本机验证与工具链矩阵分开记录，不能用依赖的 CI 结果代替 Dashboard 的 CI。
+
+工具链已进入 [官方 PR #3277](https://github.com/eosphoros-ai/DB-GPT/pull/3277) 评审。Dashboard 浏览器完整发现 10 套件，8 个实跑共 125 项通过、2 个 live 套件共 7 项跳过；[逐套件范围及原因](VALIDATION.md#浏览器套件覆盖)单独列示。
