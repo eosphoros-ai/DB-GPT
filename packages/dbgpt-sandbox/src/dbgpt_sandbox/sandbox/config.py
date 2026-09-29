@@ -38,7 +38,7 @@ MAX_PROCESSES = 10
 
 
 # Container execution is opt-in. An unset runtime uses the local environment,
-# even when Docker is installed. Unavailable container backends fall back locally.
+# even when Docker is installed. Explicit container backends fail closed.
 SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME")
 # Agent tools need pandas/numpy/charting dependencies; see Dockerfile.agent.
 SANDBOX_AGENT_IMAGE = os.getenv("SANDBOX_AGENT_IMAGE", "dbgpt-sandbox-agent:latest")

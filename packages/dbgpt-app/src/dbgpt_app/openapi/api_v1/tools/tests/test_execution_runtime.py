@@ -88,29 +88,81 @@ async def test_actual_runtime_is_logged_before_execution_without_sensitive_data(
 
 
 @pytest.mark.asyncio
-async def test_container_start_failure_falls_back_before_execution(
-    tmp_path, monkeypatch, caplog
+@pytest.mark.parametrize("kind", ["docker", "podman", "nerdctl"])
+@pytest.mark.parametrize("language", ["python", "bash"])
+@pytest.mark.parametrize(
+    "start_error",
+    [
+        RuntimeError("image missing"),
+        FileNotFoundError("input missing"),
+        ValueError("symlink upload rejected"),
+        PermissionError("input access denied"),
+    ],
+)
+async def test_container_session_failure_does_not_execute_or_retry_locally(
+    tmp_path, monkeypatch, caplog, kind, language, start_error
 ):
+    """Setup and input-upload failures stop execution and still clean up."""
     caplog.set_level(logging.INFO, logger=_execution.__name__)
-    docker = _fake_runtime(start_error=RuntimeError("image missing"))
+    runtime = _fake_runtime(kind=kind, start_error=start_error)
     local = _fake_runtime(
         ExecutionResult(ExecutionStatus.SUCCESS, output="ok"), kind="local"
     )
-    create = Mock(side_effect=[docker, local])
+    create = Mock(side_effect=[runtime, local])
     monkeypatch.setattr(_execution.RuntimeFactory, "create", create)
-    result = await _execution.run_code(
-        "print(1)", language="python", work_dir=str(tmp_path)
+
+    with pytest.raises(type(start_error)) as exc:
+        await _execution.run_code("print(1)", language=language, work_dir=str(tmp_path))
+
+    assert exc.value is start_error
+    create.assert_called_once_with()
+    runtime.session.execute.assert_not_called()
+    runtime.session.collect_artifacts.assert_not_called()
+    runtime.destroy_session.assert_awaited_once_with(
+        runtime.create_session.call_args.args[0]
     )
-    assert result.output == "ok"
-    assert [call.args for call in create.call_args_list] == [(), ("local",)]
-    docker.session.execute.assert_not_called()
-    local.session.execute.assert_awaited_once_with("print(1)")
-    docker.destroy_session.assert_awaited_once()
-    local.destroy_session.assert_awaited_once()
-    session_id = local.create_session.call_args.args[0]
-    assert _execution_logs(caplog) == [
-        f"Sandbox execution: runtime=local language=python session_id={session_id}"
-    ]
+    if kind == "docker":
+        runtime.docker_client.close.assert_called_once_with()
+    local.create_session.assert_not_called()
+    local.session.execute.assert_not_called()
+    assert _execution_logs(caplog) == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("subagent", [False, True])
+@pytest.mark.parametrize("tool_name", ["code_interpreter", "shell_interpreter"])
+@pytest.mark.parametrize("failure_stage", ["runtime", "session"])
+async def test_agent_tools_surface_setup_failure_without_local_execution(
+    tmp_path, monkeypatch, subagent, tool_name, failure_stage
+):
+    """Main and sub-agent tools return an error instead of executing locally."""
+    error = RuntimeError("configured container unavailable")
+    runtime = _fake_runtime(start_error=error)
+    create = Mock(
+        return_value=runtime,
+        side_effect=error if failure_stage == "runtime" else None,
+    )
+    monkeypatch.setattr(_execution.RuntimeFactory, "create", create)
+    state = {"conv_id": "container-error"}
+    if subagent:
+        tool = make_react_tools(state)[tool_name]
+    else:
+        factory = (
+            make_code_interpreter
+            if tool_name == "code_interpreter"
+            else make_shell_interpreter
+        )
+        tool = factory(state)
+
+    output = json.loads(await tool(code="print(1)"))
+
+    text = "\n".join(
+        chunk["content"] for chunk in output["chunks"] if chunk["output_type"] == "text"
+    )
+    assert "configured container unavailable" in text
+    create.assert_called_once_with()
+    runtime.session.execute.assert_not_called()
+    assert not list((tmp_path / "pilot").rglob("_run_*.py"))
 
 
 @pytest.mark.asyncio

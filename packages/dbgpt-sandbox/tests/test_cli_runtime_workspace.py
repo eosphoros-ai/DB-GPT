@@ -58,7 +58,7 @@ async def test_cli_cleanup_is_awaited(backend):
 
 
 @pytest.mark.asyncio
-async def test_failed_cli_session_is_cleaned_before_fallback(backend, monkeypatch):
+async def test_failed_cli_session_is_cleaned_before_error(backend, monkeypatch):
     module, session_name, runtime_name = backend
     session = SimpleNamespace(start=AsyncMock(return_value=False), stop=AsyncMock())
     monkeypatch.setattr(module, session_name, lambda *args: session)

@@ -5,7 +5,7 @@
 - 多运行时：Docker、Podman、Nerdctl、本地进程（Local）。
 - 统一抽象：会话生命周期、代码执行、状态查询、依赖安装（可选）。
 - 有状态：同一会话内多次执行共享环境，安装的依赖后续可用。
-- 配置选择：默认 LocalRuntime；通过环境变量/创建参数显式选择容器后端，不可用时回退本地。
+- 配置选择：默认 LocalRuntime；通过环境变量/创建参数显式选择容器后端，不可用时报错，不回退本地。
 - 插件化：新增语言/依赖管理/沙箱类型时，仅需最小改动，接口清晰。
 
 ## 分层设计
@@ -13,7 +13,7 @@
 - sandbox/execution_layer（执行层）
   - base.py：统一抽象（SandboxRuntime、SandboxSession、ExecutionResult、SessionConfig）
   - docker_runtime.py / podman_runtime.py / nerdctl_runtime.py / local_runtime.py：具体运行时实现
-  - runtime_factory.py：创建参数 > SANDBOX_RUNTIME > Local；容器初始化失败时回退 Local
+  - runtime_factory.py：创建参数 > SANDBOX_RUNTIME > Local；显式配置的容器初始化失败时报错
   - utils.py：资源、路径、进程、安全、环境检测工具
 - sandbox/control_layer（控制层）
   - control_layer.py：跨任务会话管理、依赖安装、执行调度、状态查询
@@ -34,7 +34,8 @@ Local 使用当前 Python 解释器，环境变量仅传给子进程，不修改
 Agent Python 保持原先接受任意 Python 的行为，不启用与其前置代码冲突的字符串黑名单；
 其他 Local 会话的默认代码检查保持不变。本地执行不是安全隔离。
 
-回退只发生在运行时/会话创建阶段，执行失败绝不通过切换后端重试。
+Local 是默认值而非故障兜底。显式配置容器后端时，运行时/会话创建或输入传输失败
+均返回错误，不在宿主机执行代码；执行、超时、取消或产物回收失败也不会切换后端重试。
 
 ## 会话与有状态依赖
 

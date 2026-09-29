@@ -28,7 +28,7 @@ The selection order is:
 | SANDBOX_RUNTIME=docker and Docker is reachable | DockerRuntime |
 | SANDBOX_RUNTIME=podman and Podman is available | PodmanRuntime |
 | SANDBOX_RUNTIME=nerdctl and Nerdctl is available | NerdctlRuntime |
-| Configured container backend cannot be initialized | Fall back to LocalRuntime |
+| Configured container backend or session cannot be initialized | Error; no local execution |
 | Unknown runtime name | Configuration error |
 
 Installing Docker does not enable Docker execution. Docker is opt-in:
@@ -39,6 +39,11 @@ export SANDBOX_RUNTIME=docker
 
 If the variable is not set, DB-GPT uses the current application environment and
 does not need a Docker image.
+
+LocalRuntime is the default, not a fallback. Explicitly selecting docker, podman,
+or nerdctl requires that backend to work. Initialization, image pull, container
+creation, or input-file transfer failures return an error instead of running the
+code on the host. This policy does not require an additional flag.
 
 ## LocalRuntime
 
@@ -107,16 +112,20 @@ the host working directory can remain available to later calls, but packages
 installed inside a short-lived container do not persist between calls. Put
 long-lived dependencies in the agent image instead.
 
-The actual runtime is logged immediately before execution:
+The actual runtime is logged at INFO level after a session is successfully
+created, immediately before code execution:
 
 ~~~text
 Sandbox execution: runtime=docker language=python session_id=agent_...
 ~~~
 
-If Docker image creation or session initialization fails, the executor logs the
-reason and falls back to LocalRuntime before user code starts. An error,
-timeout, cancellation, or artifact-collection failure after execution starts is
-not replayed on another runtime.
+This is a per-tool-call log, not an application startup log. It is not emitted
+when runtime or session initialization fails.
+
+If the configured container runtime, image pull, session initialization, or
+input-file transfer fails, the tool returns an error without executing user code
+locally. An error, timeout, cancellation, or artifact-collection failure after
+execution starts is also not replayed on another runtime.
 
 ## Files and workspaces
 
@@ -155,6 +164,13 @@ The configured image is not present in the Docker daemon and is not available
 from the registry. Build the repository image or set SANDBOX_AGENT_IMAGE to an
 image that the daemon can access.
 
+### Configured container runtime is unavailable
+
+Check the selected backend, daemon connection, image, and reported input-file
+error. The tool deliberately stops rather than silently switching to host
+execution. If local execution is intended, explicitly set SANDBOX_RUNTIME=local
+and restart DB-GPT; local mode does not provide container isolation.
+
 ### No container appears in docker ps
 
 This is normal after a successful Agent tool call because the container is
@@ -169,5 +185,6 @@ Then trigger a longer-running tool call.
 ### Docker is installed but local execution is used
 
 Check that SANDBOX_RUNTIME=docker is exported in the same environment that
-starts DB-GPT, and restart the service after changing it. Also check the startup
-log for the actual runtime line.
+starts DB-GPT, and restart the service after changing it. Then trigger a Python
+or Shell tool call and check its INFO runtime log; this line is not printed at
+application startup.

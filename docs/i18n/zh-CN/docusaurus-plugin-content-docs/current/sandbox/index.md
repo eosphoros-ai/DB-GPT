@@ -82,7 +82,8 @@ DB-GPT 当前的 sandbox 实现位于：
 
 当前应用侧 Agent 集成默认使用 LocalRuntime。容器执行需要通过
 SANDBOX_RUNTIME=docker（或显式选择 Podman/Nerdctl）开启。如果配置的容器运行时
-无法初始化，Agent 执行器会在用户代码开始执行前回退到 LocalRuntime。
+无法初始化或会话创建失败，Agent 执行器会返回错误，不会在本地执行用户代码。
+LocalRuntime 是默认值，而不是故障兜底，且不提供容器隔离。
 
 关于配置、镜像要求、执行生命周期和验证命令，请参阅
 [Sandbox 运行时配置](./runtime)。

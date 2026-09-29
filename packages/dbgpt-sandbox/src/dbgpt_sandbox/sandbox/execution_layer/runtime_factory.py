@@ -19,8 +19,8 @@ class RuntimeFactory:
     def create(runtime_preference: str = None):
         """Explicit argument > deployment config > local.
 
-        Only runtime initialization failures cause fallback. Once user code
-        starts, an execution failure must never replay that code locally.
+        Local execution is the default, not a fallback. An explicitly selected
+        container backend must initialize successfully or raise an error.
         """
         preference = (runtime_preference or SANDBOX_RUNTIME or "local").strip().lower()
         if not preference or preference == "local":
@@ -46,9 +46,9 @@ class RuntimeFactory:
                     runtime.docker_client.close()
                 except Exception:
                     pass
-            logger.warning(
-                "Sandbox runtime %s is unavailable; using LocalRuntime: %s",
-                preference,
-                exc,
+            message = (
+                f"Configured sandbox runtime {preference} is unavailable; "
+                f"refusing local execution: {exc}"
             )
-            return LocalRuntime()
+            logger.error("%s", message)
+            raise RuntimeError(message) from exc

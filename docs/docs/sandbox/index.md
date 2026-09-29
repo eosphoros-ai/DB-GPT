@@ -88,7 +88,9 @@ options.
 The current application-side Agent integration uses LocalRuntime by default.
 Container execution is opt-in through SANDBOX_RUNTIME=docker (or an explicit
 Podman/Nerdctl selection). If a configured container backend cannot be initialized,
-the Agent executor falls back to LocalRuntime before user code starts.
+or its session cannot be created, the Agent executor returns an error without
+running user code locally. LocalRuntime is a default, not a failure fallback,
+and does not provide container isolation.
 
 See [Sandbox Runtime Configuration](./runtime) for setup, image requirements,
 execution lifecycle, and verification commands.

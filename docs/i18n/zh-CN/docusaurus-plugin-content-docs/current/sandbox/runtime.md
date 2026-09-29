@@ -27,7 +27,7 @@ Agent 共用以下执行入口：
 | SANDBOX_RUNTIME=docker 且 Docker 可连接 | DockerRuntime |
 | SANDBOX_RUNTIME=podman 且 Podman 可用 | PodmanRuntime |
 | SANDBOX_RUNTIME=nerdctl 且 Nerdctl 可用 | NerdctlRuntime |
-| 配置的容器运行时无法初始化 | 回退到 LocalRuntime |
+| 配置的容器运行时或会话无法初始化 | 报错，不在本地执行 |
 | 未知的运行时名称 | 配置错误 |
 
 即使机器已经安装 Docker，也不会自动启用 Docker。Docker 是显式选择的：
@@ -37,6 +37,10 @@ export SANDBOX_RUNTIME=docker
 ~~~
 
 如果不设置这个环境变量，DB-GPT 使用当前应用环境执行，不需要 Docker 镜像。
+
+LocalRuntime 是默认值，不是故障兜底。显式选择 docker、podman 或 nerdctl 后，
+必须使用指定的后端。初始化、镜像拉取、容器创建或输入文件传输失败时，直接返回
+错误，不会在宿主机上执行代码。该策略不需要额外的配置开关。
 
 ## LocalRuntime
 
@@ -98,15 +102,18 @@ numpy、matplotlib、Excel 依赖以及所有 Agent 工作流可能需要的系�
 调用中继续使用，但短生命周期容器中安装的依赖不会跨调用保留。需要长期存在的依赖应
 预装到 Agent 镜像中。
 
-执行前会记录实际使用的运行时：
+每次工具调用成功创建会话后、执行代码前，会以 INFO 级别记录实际使用的运行时：
 
 ~~~text
 Sandbox execution: runtime=docker language=python session_id=agent_...
 ~~~
 
-如果 Docker 镜像创建或 session 初始化失败，执行器会记录原因，并在用户代码开始执行
-前回退到 LocalRuntime。代码已经开始执行后的错误、超时、取消或产物回收失败，不会
-切换到其他运行时重跑。
+这是每次工具调用的执行日志，不是项目启动日志；运行时或会话初始化失败时不会输出
+该日志。
+
+如果配置的容器运行时、镜像拉取、session 初始化或输入文件传输失败，工具会返回
+错误，不会在本地执行用户代码。代码已经开始执行后的错误、超时、取消或产物回收
+失败，也不会切换到其他运行时重跑。
 
 ## 文件和工作目录
 
@@ -143,6 +150,12 @@ DBGPT_TEST_DOCKER_IMAGE=dbgpt-sandbox-agent:latest .venv/bin/python -m pytest pa
 说明当前 Docker daemon 找不到配置的镜像，并且公共镜像仓库中也无法拉取该镜像。请
 先构建仓库提供的镜像，或者把 SANDBOX_AGENT_IMAGE 改成 Docker daemon 可以访问的镜像。
 
+### 配置的容器运行时不可用
+
+检查选择的后端、daemon 连接、镜像和报错涉及的输入文件。工具会停止执行，不会悄悄
+切换到宿主机执行。如果确实希望在本地执行，请主动设置 SANDBOX_RUNTIME=local 并
+重启 DB-GPT；本地模式不提供容器隔离。
+
 ### docker ps 看不到容器
 
 Agent 工具调用成功后会在清理阶段删除容器，所以这是正常现象。可以用下面的命令观察
@@ -157,4 +170,5 @@ docker events --filter type=container --format '{{.Time}} {{.Status}} {{.Actor.A
 ### 已安装 Docker 但仍然使用本地运行时
 
 确认启动 DB-GPT 服务的同一个 shell 环境中设置了 SANDBOX_RUNTIME=docker，修改环境变量
-后重启服务，并检查启动后的实际 runtime 日志。
+后重启服务。然后触发一次 Python 或 Shell 工具调用，检查其 INFO runtime 日志；
+项目启动时不会打印这条日志。

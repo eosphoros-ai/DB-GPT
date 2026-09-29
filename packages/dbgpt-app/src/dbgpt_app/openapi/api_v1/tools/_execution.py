@@ -71,8 +71,9 @@ async def run_code(
 ) -> ExecutionResult:
     """Run once, collect artifacts, and clean up on success/error/cancellation.
 
-    Container creation may fall back to local execution. Execution and artifact
-    collection failures do NOT trigger fallback or a second execution.
+    An explicitly configured container must be available. Initialization,
+    session creation, execution and artifact failures never trigger a local
+    retry. Local execution is only selected by the default or explicit config.
     """
     environment = dict(env or {})
     work_dir = os.path.abspath(work_dir)
@@ -93,20 +94,7 @@ async def run_code(
     session_id = f"agent_{uuid.uuid4().hex}"
     runtime = await asyncio.to_thread(RuntimeFactory.create)
     try:
-        try:
-            session = await runtime.create_session(session_id, config)
-        except Exception as exc:
-            if runtime.runtime_id == "local":
-                raise
-            logger.warning(
-                "Cannot create %s sandbox; using LocalRuntime before execution: %s",
-                runtime.runtime_id,
-                exc,
-            )
-            await _dispose(runtime, session_id)
-            runtime = await asyncio.to_thread(RuntimeFactory.create, "local")
-            session = await runtime.create_session(session_id, config)
-
+        session = await runtime.create_session(session_id, config)
         logger.info(
             "Sandbox execution: runtime=%s language=%s session_id=%s",
             runtime.runtime_id,

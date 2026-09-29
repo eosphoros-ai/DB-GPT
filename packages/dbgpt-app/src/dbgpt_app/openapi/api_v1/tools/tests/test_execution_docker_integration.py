@@ -144,3 +144,47 @@ async def test_live_docker_execution_error_never_falls_back(tmp_path, docker_run
     assert result.status == ExecutionStatus.ERROR
     assert "test-failure" in result.error
     docker_runtime[1].assert_called_once_with()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("language", ["python", "bash"])
+@pytest.mark.parametrize("input_kind", ["missing", "symlink"])
+async def test_live_docker_rejected_input_never_executes_locally(
+    tmp_path, docker_runtime, capsys, language, input_kind
+):
+    """Real upload rejection must not turn container execution into host execution."""
+    client, create, selected = docker_runtime
+    input_path = tmp_path / "input.txt"
+    if input_kind == "symlink":
+        source = tmp_path / "source.txt"
+        source.write_text("test input")
+        input_path.symlink_to(source)
+    work_dir = tmp_path / "workspace"
+    marker = work_dir / "unexpected-execution.txt"
+    code = (
+        'from pathlib import Path; Path("unexpected-execution.txt").write_text("ran")'
+        if language == "python"
+        else "printf ran > unexpected-execution.txt"
+    )
+
+    with pytest.raises(RuntimeError):
+        await _execution.run_code(
+            code,
+            language=language,
+            work_dir=str(work_dir),
+            input_paths=[str(input_path)],
+        )
+
+    # Confirm setup reached the input upload, not an unrelated Docker failure.
+    output = capsys.readouterr().out
+    assert str(input_path) in output
+    if input_kind == "symlink":
+        assert "Sandbox input must not be a symlink" in output
+    assert not marker.exists()
+    create.assert_called_once_with()
+    assert all(not runtime.sessions for runtime in selected)
+    # Failed sessions are never registered, so also check the daemon for leaks.
+    for container in client.containers.list(
+        all=True, filters={"name": "sandbox_agent_"}
+    ):
+        assert container.attrs["Config"]["WorkingDir"] != str(work_dir)
