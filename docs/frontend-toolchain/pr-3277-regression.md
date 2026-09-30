@@ -67,6 +67,17 @@ and test suite then passed all 42 cases when run alone with a fresh output
 directory and unchanged timeouts. That controlled rerun does not erase the
 failure or establish its root cause. The evidence records both attempts.
 
+**Targeted follow-up:** both original failures are waiting/deadline failures,
+not wrong returned values. The skills page `/construct/skills/` missed its
+Axios deadline before the switch locator timed out; the SQL editor at
+`/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression` remained
+loading while waiting for the SELECT option. Twenty unchanged paired rounds,
+including four fresh dev servers, passed **40/40** without automatic retries or
+longer timeouts. This is non-reproduction evidence, not proof that Next 16 or a
+product race is excluded. See the [original errors, timestamps, repeat matrix
+and remaining uncertainty](pr-3277-flaky-investigation.md).
+
+
 ## Frontend module checklist — deterministic API fixtures
 
 “Pass” below means Chromium development and production assertions passed.

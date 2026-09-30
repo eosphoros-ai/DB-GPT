@@ -1,0 +1,1169 @@
+{
+  "recordedAt": "2026-09-30T04:55:39.594780+00:00",
+  "applicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+  "testedCheckout": "1401f85150d47852732c6aa6fc3e73f53e1cb475",
+  "noApplicationOrAssertionChanges": true,
+  "originalFailures": [
+    {
+      "case": "skill-search-toggle-and-markdown",
+      "page": "/construct/skills/",
+      "classification": "locator wait timeout following an application Axios timeout; not an incorrect returned value",
+      "error": "TimeoutError: locator.click: Timeout 15000ms exceeded; waiting for getByRole(\"switch\").last()",
+      "precedingError": "AxiosError: timeout of 10000ms exceeded",
+      "requestToFixtureFulfillStartMs": 10827.777,
+      "finding": "The intercepted fixture request remained unanswered beyond the application deadline, so the skill list was empty and no switch existed. This establishes the immediate failure chain, not why response dispatch was delayed."
+    },
+    {
+      "case": "monaco-sql-run-and-save",
+      "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+      "classification": "visibility assertion exhausted its polling timeout; no SELECT element was found, not an incorrect SQL value",
+      "error": "expect(locator).toBeVisible() failed; Timeout: 15000ms; element(s) not found",
+      "state": "SQL completion displayed Loading...",
+      "documentServerTimeMs": 16,
+      "documentBrowserRequestTimeMs": 31.394,
+      "finding": "The document was already served quickly. Plugin/worker loading or completion scheduling remained pending; the old trace does not prove which part stalled."
+    }
+  ],
+  "originalTimelines": [
+    {
+      "case": "skill-search-toggle-and-markdown",
+      "page": "/construct/skills/",
+      "startedAt": "2026-09-30T04:17:32.518Z",
+      "finishedAt": "2026-09-30T04:18:44.560Z",
+      "traceSha256": "6d18539809881c09a2d896d63cdb0b1d44b5c00425e86583d34cf2c66aa02e8a",
+      "calls": [
+        {
+          "method": "expect",
+          "params": {},
+          "startMonotonicMs": 441994.888,
+          "durationMs": 269.934,
+          "startedAt": "2026-09-30T04:18:28.889666+00:00"
+        },
+        {
+          "method": "goto",
+          "params": {
+            "url": "/construct/skills/",
+            "timeout": 120000
+          },
+          "startMonotonicMs": 385740.885,
+          "durationMs": 42569.941,
+          "startedAt": "2026-09-30T04:17:32.635814+00:00"
+        },
+        {
+          "method": "fulfill",
+          "params": {},
+          "startMonotonicMs": 440574.848,
+          "durationMs": 836.551,
+          "startedAt": "2026-09-30T04:18:27.469777+00:00"
+        },
+        {
+          "method": "expect",
+          "params": {
+            "selector": "internal:text=\"regression-skill\"s",
+            "expression": "to.be.visible",
+            "timeout": 15000
+          },
+          "startMonotonicMs": 442187.821,
+          "durationMs": 50.551,
+          "startedAt": "2026-09-30T04:18:29.082750+00:00"
+        }
+      ],
+      "requests": [
+        {
+          "path": "/construct/skills/",
+          "startedAt": "2026-09-30T04:17:32.745Z",
+          "status": 200,
+          "durationMs": 37430.486,
+          "timings": {
+            "dns": 0.867,
+            "connect": 8.64,
+            "ssl": 10.816,
+            "send": 0,
+            "wait": 37288.212,
+            "receive": 121.951
+          }
+        },
+        {
+          "path": "/api/v1/skills/list",
+          "startedAt": "2026-09-30T04:18:16.642Z",
+          "status": -1,
+          "durationMs": -1,
+          "timings": {
+            "send": -1,
+            "wait": -1,
+            "receive": -1
+          }
+        }
+      ],
+      "console": [
+        "[Skills] Failed to fetch list: AxiosError: timeout of 10000ms exceeded"
+      ]
+    },
+    {
+      "case": "monaco-sql-run-and-save",
+      "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+      "startedAt": "2026-09-30T04:19:33.109Z",
+      "finishedAt": "2026-09-30T04:20:08.284Z",
+      "traceSha256": "2d50c96d1c838296f829746f08a25b9826d39c83dbab22b66264b9fa4261c278",
+      "calls": [
+        {
+          "method": "expect",
+          "params": {},
+          "startMonotonicMs": 514303.266,
+          "durationMs": 8174.733,
+          "startedAt": "2026-09-30T04:19:41.198117+00:00"
+        },
+        {
+          "method": "expect",
+          "params": {},
+          "startMonotonicMs": 526251.119,
+          "durationMs": 15025.464,
+          "startedAt": "2026-09-30T04:19:53.145970+00:00",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed"
+        },
+        {
+          "method": "goto",
+          "params": {
+            "url": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+            "timeout": 120000
+          },
+          "startMonotonicMs": 506224.583,
+          "durationMs": 783.779,
+          "startedAt": "2026-09-30T04:19:33.119607+00:00"
+        },
+        {
+          "method": "expect",
+          "params": {
+            "selector": ".monaco-editor >> nth=0",
+            "expression": "to.be.visible",
+            "timeout": 15000
+          },
+          "startMonotonicMs": 514305.643,
+          "durationMs": 8061.592,
+          "startedAt": "2026-09-30T04:19:41.200667+00:00"
+        },
+        {
+          "method": "focus",
+          "params": {
+            "selector": ".monaco-editor >> nth=0 >> internal:role=textbox[name=/Editor content/]",
+            "timeout": 15000
+          },
+          "startMonotonicMs": 522904.609,
+          "durationMs": 531.171,
+          "startedAt": "2026-09-30T04:19:49.799633+00:00"
+        },
+        {
+          "method": "expect",
+          "params": {
+            "selector": ".monaco-editor >> nth=0 >> internal:role=option[name=\"SELECT\"s]",
+            "expression": "to.be.visible",
+            "timeout": 15000
+          },
+          "startMonotonicMs": 526251.665,
+          "durationMs": 15004.672,
+          "startedAt": "2026-09-30T04:19:53.146689+00:00",
+          "error": "Expect failed"
+        }
+      ],
+      "requests": [
+        {
+          "path": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+          "startedAt": "2026-09-30T04:19:33.128Z",
+          "status": 200,
+          "durationMs": 31.394000000000002,
+          "timings": {
+            "dns": 0.834,
+            "connect": 0.677,
+            "ssl": 3.737,
+            "send": 0,
+            "wait": 18.131,
+            "receive": 8.015
+          }
+        },
+        {
+          "path": "/_next/static/chunks/_pages-dir-browser_node_modules_oceanbase-odc_monaco-plugin-ob_dist_index_js.js",
+          "startedAt": "2026-09-30T04:19:44.500Z",
+          "status": 200,
+          "durationMs": 4219.586,
+          "timings": {
+            "dns": -1,
+            "connect": -1,
+            "ssl": -1,
+            "send": 0,
+            "wait": 9.358,
+            "receive": 4210.228
+          }
+        },
+        {
+          "path": "/_next/static/chunks/_pages-dir-browser_node_modules_oceanbase-odc_monaco-plugin-ob_dist_mysql_index_js.js",
+          "startedAt": "2026-09-30T04:19:48.754Z",
+          "status": 200,
+          "durationMs": 713.956,
+          "timings": {
+            "dns": 0.279,
+            "connect": 0.608,
+            "ssl": 2.102,
+            "send": 0,
+            "wait": 395.497,
+            "receive": 315.47
+          }
+        },
+        {
+          "path": "/_next/static/editor.worker.js",
+          "startedAt": "2026-09-30T04:19:48.516Z",
+          "status": 200,
+          "durationMs": 5465.445,
+          "timings": {
+            "dns": -1,
+            "connect": -1,
+            "ssl": -1,
+            "send": 0,
+            "wait": -1,
+            "receive": 5465.445
+          }
+        },
+        {
+          "path": "/_next/static/editor.worker.js",
+          "startedAt": "2026-09-30T04:19:46.362Z",
+          "status": -1,
+          "durationMs": -1,
+          "timings": {
+            "send": -1,
+            "wait": -1,
+            "receive": -1
+          }
+        },
+        {
+          "path": "/_next/static/ob-workers/mysql.js",
+          "startedAt": "2026-09-30T04:19:49.471Z",
+          "status": 200,
+          "durationMs": 0,
+          "timings": {
+            "dns": -1,
+            "connect": -1,
+            "ssl": -1,
+            "send": 0,
+            "wait": -1,
+            "receive": -1
+          }
+        }
+      ],
+      "console": []
+    }
+  ],
+  "repeatedVerification": {
+    "rounds": 20,
+    "casesPerRound": 2,
+    "passed": 40,
+    "failed": 0,
+    "coldServerRounds": 4,
+    "warmServerRounds": 16,
+    "workers": 1,
+    "automaticRetries": 0,
+    "timeoutsMs": {
+      "action": 15000,
+      "expect": 15000,
+      "navigation": 120000,
+      "test": 180000
+    },
+    "freshBrowserContextPerCase": true,
+    "trace": "on",
+    "design": "20 consecutive paired rounds; four fresh dev servers/output directories, five rounds per server; first round per block is cold, remaining rounds reuse its server; fresh Playwright contexts each round.",
+    "startedAt": "2026-09-30T04:44:48.067234+00:00",
+    "finishedAt": "2026-09-30T04:54:45.476795+00:00",
+    "cases": [
+      {
+        "round": 1,
+        "block": 1,
+        "coldDevOutput": true,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 38071,
+        "traceSha256": "f42d7dca0e8ba71617ad5c03ff736f6c5cef87a4b14a479462cb9283795e748c",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 534.216,
+        "skillRequestDurationMs": 541.011,
+        "documentRequestDurationMs": 33874.820999999996
+      },
+      {
+        "round": 1,
+        "block": 1,
+        "coldDevOutput": true,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 13805,
+        "traceSha256": "f20076b2d32d49868a820879d7562418bc2b8128f170b7b2ea30116db7363295",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 867.148,
+        "documentRequestDurationMs": 3249.675
+      },
+      {
+        "round": 2,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4428,
+        "traceSha256": "d5c941d264ca610340108b60d5dafcdf215714164b48a0e2d4ba17902e26305e",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 553.209,
+        "skillRequestDurationMs": 563.595,
+        "documentRequestDurationMs": 249.93
+      },
+      {
+        "round": 2,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 11131,
+        "traceSha256": "28da3d9ae36b16e17e3068f2987c21a5970654cc045b3b6232fe6d7fb1b4cb2a",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 1343.429,
+        "documentRequestDurationMs": 21.003
+      },
+      {
+        "round": 3,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4054,
+        "traceSha256": "62581611a89f2605c1e4004f0e3a3c39cbe035ca23bf037a5dab10e4c73882f1",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 563.077,
+        "skillRequestDurationMs": 567.528,
+        "documentRequestDurationMs": 26.846
+      },
+      {
+        "round": 3,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10487,
+        "traceSha256": "37e144964ca020d24507a44ea1aa4316e9bc9cc0c74a2b7b5200be16ceac5287",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 846.787,
+        "documentRequestDurationMs": 19.097
+      },
+      {
+        "round": 4,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4210,
+        "traceSha256": "174876454383af977505ded6192aa6cef86259f7532630a303c4ee33e308aef1",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 554.199,
+        "skillRequestDurationMs": 561.297,
+        "documentRequestDurationMs": 32.87
+      },
+      {
+        "round": 4,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10302,
+        "traceSha256": "22027e71b18c4e4e113070e73a10911ff9078c113548420f935c35b2ed98adbf",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 863.122,
+        "documentRequestDurationMs": 16.339
+      },
+      {
+        "round": 5,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4072,
+        "traceSha256": "cea44e151791920fb99ee945270cba4f07ce957ccb8e1852c453672e6ba843aa",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 557.499,
+        "skillRequestDurationMs": 561.448,
+        "documentRequestDurationMs": 22.109
+      },
+      {
+        "round": 5,
+        "block": 1,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10566,
+        "traceSha256": "9bbeef76a0112f68bd7a4b1ec7f90b4019266dd543f21c0ed0bab2f1a08e1eae",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 853.332,
+        "documentRequestDurationMs": 20.299000000000003
+      },
+      {
+        "round": 6,
+        "block": 2,
+        "coldDevOutput": true,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 39470,
+        "traceSha256": "4a773791671cea94bc47cd4cb64c0703d13e2e2caf87d78d43a34d6cf68abadb",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 561.698,
+        "skillRequestDurationMs": 567.855,
+        "documentRequestDurationMs": 35184.405
+      },
+      {
+        "round": 6,
+        "block": 2,
+        "coldDevOutput": true,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 13953,
+        "traceSha256": "28d6750ee11676a66c71d893dff6a97445d07e57be5543e48bc9c0167767fac4",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 852.467,
+        "documentRequestDurationMs": 3560.966
+      },
+      {
+        "round": 7,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4568,
+        "traceSha256": "8ea4cc129c8351d1d813f9326d76075bcad417567920ff29ad8d924f4e36f4ac",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 547.96,
+        "skillRequestDurationMs": 553.151,
+        "documentRequestDurationMs": 305.927
+      },
+      {
+        "round": 7,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10394,
+        "traceSha256": "218d89660c3dd4c44053eddf264c8bd09d5f118b9d5577cc8405d802c0b230ab",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 907.103,
+        "documentRequestDurationMs": 20.862000000000002
+      },
+      {
+        "round": 8,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4080,
+        "traceSha256": "15a2cb55bd3ec8a2d0bfef9ccbf81e76a46c5999c61f5113ffe4ff686e9a058e",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 522.496,
+        "skillRequestDurationMs": 528.759,
+        "documentRequestDurationMs": 22.825
+      },
+      {
+        "round": 8,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10994,
+        "traceSha256": "21d1df6143c8cf958e02f5068bf37fa5d36ed4750f19baa18ee3491e43490e54",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 1422.007,
+        "documentRequestDurationMs": 19.071
+      },
+      {
+        "round": 9,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4174,
+        "traceSha256": "5194104e66eac0fcb0822d72b7b6dc1e1b3816ccc3bdc3f42fab7aaa43c9a7c9",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 603.698,
+        "skillRequestDurationMs": 607.801,
+        "documentRequestDurationMs": 25.075000000000003
+      },
+      {
+        "round": 9,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 11275,
+        "traceSha256": "45fb55e22a5c46ea9ff3e604022b0aa1348b3a6d1d9a93fc97115d0d6a375d6f",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 1386.612,
+        "documentRequestDurationMs": 17.855
+      },
+      {
+        "round": 10,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4177,
+        "traceSha256": "a36ac7801d0710e752b0afa00c58dd6108ed7ab6a2fb4274966baaf25bb9b20d",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 523.985,
+        "skillRequestDurationMs": 528.808,
+        "documentRequestDurationMs": 23.753999999999998
+      },
+      {
+        "round": 10,
+        "block": 2,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 11448,
+        "traceSha256": "6747c82b21a24d425bec0037bc4d1c48551d962e19deb1789bb96e1181ba112d",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 1416.612,
+        "documentRequestDurationMs": 17.732
+      },
+      {
+        "round": 11,
+        "block": 3,
+        "coldDevOutput": true,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 55952,
+        "traceSha256": "17b277288f9d94114614c7268f1f76cc38dd7ed38b5817afc0f72d294585a629",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 3282.485,
+        "skillRequestDurationMs": 3296.676,
+        "documentRequestDurationMs": 46831.516
+      },
+      {
+        "round": 11,
+        "block": 3,
+        "coldDevOutput": true,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 45828,
+        "traceSha256": "6c5ab38dc5131988b43c8cbb713d4f2b2de7b40421f9e3210bc79a33bb937443",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 4251.342,
+        "documentRequestDurationMs": 18134.557
+      },
+      {
+        "round": 12,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 14098,
+        "traceSha256": "9b66afb44830efb913aa6a76e4ea4837a3036e5a65a1a50d94bbc3f5a1ef370e",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 8254.688,
+        "skillRequestDurationMs": 8268.187,
+        "documentRequestDurationMs": 746.2150000000001
+      },
+      {
+        "round": 12,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 49313,
+        "traceSha256": "d143a9d0cb2d953012071ccf998bd106a33272cb39acbbcc1678d86193e9a7d1",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 1382.641,
+        "documentRequestDurationMs": 263.199
+      },
+      {
+        "round": 13,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4348,
+        "traceSha256": "39a43ea5180569441cc53e9f8e4e28237739981e2c8ac8ad30a54f6c69c5344f",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 541.622,
+        "skillRequestDurationMs": 546.1379999999999,
+        "documentRequestDurationMs": 26.124000000000002
+      },
+      {
+        "round": 13,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10410,
+        "traceSha256": "24aa3c79fc251b9cfad909822384421c578e4f9d694daca2d7f11e1785d5c7fa",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 879.216,
+        "documentRequestDurationMs": 20.469
+      },
+      {
+        "round": 14,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4014,
+        "traceSha256": "c369997257e259fe8168e7bdd8aebd7b56ee1d5d2288425992f253f11fd55f34",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 520.161,
+        "skillRequestDurationMs": 525.5129999999999,
+        "documentRequestDurationMs": 23.683999999999997
+      },
+      {
+        "round": 14,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10360,
+        "traceSha256": "943c2bc5fec063c3742caf25d233d3bc3e37d1e21da5e29ab0b000e2fe5ad521",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 860.518,
+        "documentRequestDurationMs": 22.085
+      },
+      {
+        "round": 15,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4230,
+        "traceSha256": "27d64b5b763b72f84de818fc7cfea28bedfa332596ad45485e3eb28df932ce78",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 567.417,
+        "skillRequestDurationMs": 572.297,
+        "documentRequestDurationMs": 24.783
+      },
+      {
+        "round": 15,
+        "block": 3,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10519,
+        "traceSha256": "fb8ffd0882ee08f4792c779f07e15e1c4462374fee1af18f3a9628ed3aa7022f",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 885.335,
+        "documentRequestDurationMs": 17.776000000000003
+      },
+      {
+        "round": 16,
+        "block": 4,
+        "coldDevOutput": true,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 39582,
+        "traceSha256": "ba17277178d64be4e956b540e45ecbad6cb87dd575b65bed51a91e62033ac125",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 495.532,
+        "skillRequestDurationMs": 501.60299999999995,
+        "documentRequestDurationMs": 35458.166000000005
+      },
+      {
+        "round": 16,
+        "block": 4,
+        "coldDevOutput": true,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 13773,
+        "traceSha256": "6b042a99bb77e908677dfc2b8872adea2ef4ed66e062ee1eb367fb62c703611b",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 880.523,
+        "documentRequestDurationMs": 3270.4289999999996
+      },
+      {
+        "round": 17,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4385,
+        "traceSha256": "94af2acfd8b23af8ae9d8564e0a29fe9f8042e17ad9b2d0f9f492bec998877a2",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 518.82,
+        "skillRequestDurationMs": 522.932,
+        "documentRequestDurationMs": 288.28499999999997
+      },
+      {
+        "round": 17,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10280,
+        "traceSha256": "2cb36e83b8f1efc64ebf8085c64fc14cd296be33b445f4d3d3588ec9c81ed9a2",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 889.454,
+        "documentRequestDurationMs": 34.016000000000005
+      },
+      {
+        "round": 18,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4251,
+        "traceSha256": "80458015539ed82807edc8639a9f173e5d824cbfa2db507c9b91baea63d6b579",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 539.444,
+        "skillRequestDurationMs": 544.568,
+        "documentRequestDurationMs": 43.318
+      },
+      {
+        "round": 18,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10221,
+        "traceSha256": "2aa50b02d7d182d3ab1a487224a274546a90fe8545922143ae1a7802fe00e382",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 855.899,
+        "documentRequestDurationMs": 18.858
+      },
+      {
+        "round": 19,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4255,
+        "traceSha256": "066c74f704a5be5351399371fb57e835c48dadc84ad10171769600a684eb27ed",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 584.131,
+        "skillRequestDurationMs": 588.035,
+        "documentRequestDurationMs": 36.707
+      },
+      {
+        "round": 19,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 10480,
+        "traceSha256": "9f1a80f82bfcf4a127f020b32eada172ecaf6fa5b37c755062ef3df44abcc99e",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 868.663,
+        "documentRequestDurationMs": 18.336
+      },
+      {
+        "round": 20,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "skill-search-toggle-and-markdown",
+        "page": "/construct/skills/",
+        "status": "passed",
+        "durationMs": 4186,
+        "traceSha256": "72fe946c0b5bd4178b3900258940b17c7961104deb75ccf83fa13ea236bda034",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "skillRequestToFulfillStartMs": 516.893,
+        "skillRequestDurationMs": 521.864,
+        "documentRequestDurationMs": 24.472
+      },
+      {
+        "round": 20,
+        "block": 4,
+        "coldDevOutput": false,
+        "case": "monaco-sql-run-and-save",
+        "page": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "passed",
+        "durationMs": 11561,
+        "traceSha256": "9a6718df61369c4c5707cfe76be437bdade26770b207753f52e8bf223d2d7e61",
+        "diagnostics": {
+          "console": 0,
+          "pageErrors": 0,
+          "badResponses": 0,
+          "unknownApis": 0
+        },
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0,
+        "completionWaitMs": 1376.391,
+        "documentRequestDurationMs": 19.84
+      }
+    ]
+  },
+  "timingRangesMs": {
+    "skillRequestToFulfillStartMs": {
+      "min": 495.532,
+      "median": 550.584,
+      "max": 8254.688
+    },
+    "skillRequestDurationMs": {
+      "min": 501.603,
+      "median": 557.224,
+      "max": 8268.187
+    },
+    "completionWaitMs": {
+      "min": 846.787,
+      "median": 882.929,
+      "max": 4251.342
+    },
+    "documentRequestDurationMs": {
+      "min": 16.339,
+      "median": 24.929,
+      "max": 46831.516
+    }
+  },
+  "sampledRuntime": [
+    {
+      "block": 1,
+      "serverProcessCount": 1,
+      "peakSampledRssMiB": 2717.8,
+      "peakSampledHeapMiB": 1507.3,
+      "serverMaxEventLoopDelayMs": 3416.3,
+      "minSampledHostFreeMemoryMiB": 9959.0
+    },
+    {
+      "block": 2,
+      "serverProcessCount": 1,
+      "peakSampledRssMiB": 2649.0,
+      "peakSampledHeapMiB": 1506.1,
+      "serverMaxEventLoopDelayMs": 3399.5,
+      "minSampledHostFreeMemoryMiB": 9232.6
+    },
+    {
+      "block": 3,
+      "serverProcessCount": 1,
+      "peakSampledRssMiB": 2688.8,
+      "peakSampledHeapMiB": 1510.7,
+      "serverMaxEventLoopDelayMs": 5221.9,
+      "minSampledHostFreeMemoryMiB": 9428.9
+    },
+    {
+      "block": 4,
+      "serverProcessCount": 1,
+      "peakSampledRssMiB": 2714.2,
+      "peakSampledHeapMiB": 1505.2,
+      "serverMaxEventLoopDelayMs": 3537.9,
+      "minSampledHostFreeMemoryMiB": 9199.3
+    }
+  ],
+  "conclusions": [
+    "Both failures were deadline/availability failures; neither observed an incorrect returned business value.",
+    "The skill failure directly follows a delayed test-fixture response exceeding Axios's timeout.",
+    "Cold navigation alone is not an adequate explanation; the original SQL document was fast and fresh cold starts are included in repetition.",
+    "Repeated success is scoped evidence of non-reproduction, not proof that all product races or Next 16 regressions are excluded."
+  ],
+  "remainingUncertainty": [
+    "The underlying reason for the original fixture dispatch delay and SQL completion stall is not conclusively established.",
+    "These targeted rounds do not reproduce the entire original 35-page history or simultaneous build and production-browser workload.",
+    "No same-environment old-toolchain counterfactual was executed."
+  ],
+  "retainedLiveEvidence": {
+    "applicationCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+    "liveChecks": 9,
+    "rerunAfterReviewFixes": false
+  }
+}
