@@ -1,9 +1,11 @@
 # PR #3277 frontend regression — 2026-09-30
 
-The final source **`80d7c7035a4df69017870749665ee7e4a0a36bde`** passes the
-checks below in an independent PR checkout, without Dashboard PR #3278.
+The application source **`80d7c7035a4df69017870749665ee7e4a0a36bde`** passed the
+scoped checks below in an independent PR checkout, without Dashboard PR #3278.
 This report replaces the September 29 status. Checked boxes apply only to their
 stated scope; fixture tests and live backend checks are identified separately.
+Open review findings and coverage gaps remain listed below; passing these
+regression checks does not establish readiness to merge.
 
 Windows x64; Node **20.19.6**, npm **10.8.2**, Next **16.3.0**;
 Playwright **1.62.1**. The Python backend source is unchanged by this PR.
@@ -16,6 +18,8 @@ and [per-case evidence](evidence/pr-3277/summary.json) support these results.
 - [x] Standalone TypeScript checking; build-time type checking remains enabled.
 - [x] ESLint: **0 errors, 86 warnings**. Existing warnings remain visible; the
       Monaco dependency fix removes one of the previously reported 87.
+      Current breakdown: 63 exhaustive-deps, 11 no-img-element, 10 unused disable
+      directives, one alt-text and one no-anonymous-default-export warning.
 - [x] Existing frontend tests plus share regression: **21 passed**.
 - [x] Build/runtime contracts: **22 passed + 2 POSIX-only skips** on Windows;
       **24 passed** on each Ubuntu/macOS runner.
@@ -82,10 +86,17 @@ claimed as 60 user workflows. Rendering-only rows are not full CRUD acceptance.
 
 ## Live checks — no API fixtures
 
-These **nine final checks** use the actual PR backend, existing test model,
-isolated metadata, and test-owned records. Temporary apps, tasks, flows, spaces
-and the new SQLite connection were cleaned up. Credentials and runtime data
-are excluded from Git.
+These **nine integration checks** used the #3277 frontend at `80d7c703` with
+the existing, unchanged Python backend loaded from the same isolated checkout.
+They establish scoped frontend-to-backend compatibility; they are neither new
+backend features delivered by this PR nor results from Dashboard PR #3278.
+The recorded launcher verifies the imported backend's source directory. Runtime
+overrides isolate metadata/vector storage, initialize the test schema and let
+Next serve the frontend; they do not edit the repository's backend source.
+The checks use the existing test model and test-owned records. Temporary apps,
+tasks, flows, spaces and the new SQLite connection were cleaned up. Credentials
+and runtime data are excluded from Git. See the sanitized
+[provenance audit](evidence/pr-3277/review-audit.json).
 
 - [x] **Model conversation:** configured `deepseek-v4-flash` streams a short
       answer; persisted history returns it and browser refresh restores it.
@@ -135,6 +146,8 @@ not product regressions. No old-toolchain browser comparison was performed.
 
 ## Explicit remaining coverage limits
 
+- [ ] **Original remote embedding configuration:** still returns **404**.
+      The local-model workaround verifies only the functional retrieval path.
 - [ ] **Legacy live evaluation:** `/api/v1/evaluate/evaluations` and
       `/api/v1/evaluate/datasets` still return **404**. Their backend handlers
       are absent in this source. Those request paths/backend files are unchanged
@@ -145,9 +158,36 @@ not product regressions. No old-toolchain browser comparison was performed.
 - [ ] **Broader acceptance:** full Falcon benchmark jobs, semantic-retrieval
       quality, physical mobile/Safari devices and every destructive CRUD variant
       are not covered by this bounded frontend regression.
+- [ ] **Old-toolchain browser/build comparison:** no complete same-environment
+      run of the pre-upgrade dev/build/browser suite was performed. The earlier
+      same-ESLint source comparison establishes lint attribution only.
 
 These limits remain unchecked. This is not an assertion that every backend,
 provider or real-device combination has been accepted.
+
+## Open review and merge status — audited 2026-09-30
+
+- [ ] **Heap-option detection:** the [open review finding](https://github.com/eosphoros-ai/DB-GPT/pull/3277#discussion_r4134504964)
+      is reproducible in the current launcher. A valid title option containing
+      `--max-old-space-size=4096` is mistaken for a heap flag, so the 8192 MB
+      fallback is omitted. Existing default/explicit-heap tests do not cover
+      this misleading argument value. The fix and focused regression remain pending.
+- [ ] **Docstring coverage:** CodeRabbit's [reported warning](https://github.com/eosphoros-ai/DB-GPT/pull/3277#issuecomment-5887866559)
+      is **20.51% versus an 80% threshold**, scoped to functions touched by its
+      reviewed diff (39 functions across 79 files). It cannot be attributed to
+      the upstream baseline from this evidence. The bot's review covers `f739b0f5`
+      and is automatically paused; this is its latest published warning, not
+      a new measurement of `80d7c703`. Documentation and a renewed review remain pending.
+- [ ] **Required approvals:** the PR is **open**, its review decision is
+      **REVIEW_REQUIRED**, and no approving review was observed. GitHub displays
+      a minimum of **two approving reviews** before merge. Successful build
+      checks do not satisfy this requirement.
+
+This audit reconciled the recorded 87- and 86-warning lint logs, checked live-test
+provenance and executed a small launcher reproduction. It did not rerun the full
+browser/live suite or fix the two review findings. The
+[audit evidence](evidence/pr-3277/review-audit.json) records the inspected head,
+review snapshot, warning breakdown and sanitized backend provenance.
 
 ## Evidence and reproduction
 

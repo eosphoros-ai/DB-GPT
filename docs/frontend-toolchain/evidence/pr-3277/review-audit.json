@@ -1,0 +1,92 @@
+{
+  "auditedAt": "2026-09-30T03:12:15.757481+00:00",
+  "pr": "https://github.com/eosphoros-ai/DB-GPT/pull/3277",
+  "auditedHeadCommit": "7607bf33993f434fa8a696e776badb007aa73dd4",
+  "testedApplicationCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+  "changedFilesAtAuditedHead": 119,
+  "changedPythonFiles": 0,
+  "reviewState": {
+    "state": "open",
+    "mergeableState": "blocked",
+    "decision": "REVIEW_REQUIRED",
+    "approvalsObserved": 0,
+    "requiredApprovalsDisplayedInPrUi": 2,
+    "merged": false
+  },
+  "heapDetectionReview": {
+    "status": "unresolved; reproduced locally",
+    "url": "https://github.com/eosphoros-ai/DB-GPT/pull/3277#discussion_r4134504964",
+    "file": "web/scripts/run-next.cjs",
+    "reproduction": [
+      {
+        "input": "--trace-warnings",
+        "exitCode": 0,
+        "child": {
+          "options": "--trace-warnings --max_old_space_size=8192",
+          "heapLimitBytes": 8640266240
+        },
+        "fallbackAppended": true
+      },
+      {
+        "input": "--title=foo--max-old-space-size=4096",
+        "exitCode": 0,
+        "child": {
+          "options": "--title=foo--max-old-space-size=4096",
+          "heapLimitBytes": 4345298944
+        },
+        "fallbackAppended": false
+      }
+    ]
+  },
+  "docstringCoverageReview": {
+    "status": "warning; unresolved",
+    "url": "https://github.com/eosphoros-ai/DB-GPT/pull/3277#issuecomment-5887866559",
+    "reportedPercent": 20.51,
+    "requiredPercent": 80,
+    "functionsAnalyzed": 39,
+    "filesAnalyzed": 79,
+    "scope": "Functions touched by the diff; not established as upstream baseline debt.",
+    "botReviewCoveredCommit": "f739b0f5b5ae6677f57f82b775bc8b0bb6484de2",
+    "automaticReviewPaused": true,
+    "notARemeasurementOfCurrentHead": true
+  },
+  "eslint": {
+    "errors": 0,
+    "previousWarnings": 87,
+    "currentWarnings": 86,
+    "previousRules": {
+      "unused-disable": 10,
+      "react-hooks/exhaustive-deps": 64,
+      "@next/next/no-img-element": 11,
+      "jsx-a11y/alt-text": 1,
+      "import/no-anonymous-default-export": 1
+    },
+    "currentRules": {
+      "unused-disable": 10,
+      "react-hooks/exhaustive-deps": 63,
+      "@next/next/no-img-element": 11,
+      "jsx-a11y/alt-text": 1,
+      "import/no-anonymous-default-export": 1
+    },
+    "reason": "80d7c703 completes the Monaco useMemo dependency list; exhaustive-deps decreases from 64 to 63.",
+    "evidence": "Recorded lint-accepted.log and lint-release.log, reconciled with the committed Monaco change; full lint was not rerun for this documentation audit."
+  },
+  "liveIntegrationProvenance": {
+    "applicationCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+    "checks": 9,
+    "frontend": "Independent PR #3277 checkout; no Dashboard PR #3278 changes.",
+    "backend": "Unchanged Python source loaded from the same PR checkout.",
+    "backendEntrypoint": "packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py",
+    "backendChangesComparedToBase": false,
+    "runtimeOverrides": [
+      "Isolated metadata/vector storage and test-owned records",
+      "Existing configured test model",
+      "Existing cached roberta-base with mean pooling for functional retrieval only",
+      "Disable Python static mount while Next serves frontend; initialize isolated ORM schema"
+    ],
+    "interpretation": "Frontend-to-existing-backend integration regression; not new backend features, not Dashboard acceptance.",
+    "privateConfigurationIncluded": false
+  },
+  "regressionRerunForThisAudit": false,
+  "auditOnlyBehaviorCheck": "Actual Node launcher executed with default and misleading title options; reproduction does not start Next or a backend."
+}

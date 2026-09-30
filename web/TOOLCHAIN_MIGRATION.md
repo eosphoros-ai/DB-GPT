@@ -49,22 +49,28 @@ Local validation records, including remaining lint warnings and browser or
 platform gaps, are supplied with the review snapshot. Results for the separate
 Dashboard integration candidate must not be used as results for this candidate.
 
-The source comparison for `b6f0c2ae` against `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`
+The original source comparison for `b6f0c2ae` against `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`
 uses the same ESLint 9.39.5 configuration and dependency installation on both
-revisions. Lint reports 0 errors and 87 warnings in this candidate; all 87
-also reproduce on the baseline source, with 0 added and 0 removed warnings.
+revisions. That comparison reported 0 errors and 87 warnings; all 87
+also reproduced on the baseline source, with 0 added and 0 removed warnings.
 Matching includes the file, rule, complete diagnostic and source line text,
 allowing for formatting-only line movement. Warnings in the 16 changed files
 also match the baseline. This does not claim the old ESLint configuration
 reported the same diagnostics.
 
-The 87 warnings comprise 64 exhaustive-deps, 11 no-img-element, 10 unused
+Those 87 warnings comprised 64 exhaustive-deps, 11 no-img-element, 10 unused
 disable directives, one alt-text and one no-anonymous-default-export warning.
+The subsequent Monaco dependency fix in `80d7c703` removes one exhaustive-deps
+warning. The final recorded application run has **0 errors and 86 warnings**:
+63 exhaustive-deps, 11 no-img-element, 10 unused disable directives, one alt-text
+and one no-anonymous-default-export. See the
+[regression report](../docs/frontend-toolchain/pr-3277-regression.md) for current
+results, coverage limits and pending review findings.
 The unused directives exposed by the new tooling remain a maintenance item;
 they are not counted as newly introduced application-code warnings.
 CI explicitly selects the Node 20.19 line and npm 10.8.2; local results must
 still identify their actual runtime and must not be labelled Actions results.
 
-The build-contract command now discovers 18 tests, including process shutdown,
+The final build-contract command discovers 24 tests, including process shutdown,
 download error handling and subscription cleanup. Two POSIX signal-delivery
 tests intentionally skip on Windows and execute on the Ubuntu/macOS matrix.
