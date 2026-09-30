@@ -1,7 +1,7 @@
 import { apiInterceptors, postDbAdd, postDbEdit, postDbTestConnect } from '@/client/api';
 import { ConfigurableParams } from '@/types/common';
 import { DBOption, DBType, PostDbParams } from '@/types/db';
-import { Button, Form, Input, Select, message } from 'antd';
+import { App, Button, Form, Input, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ConfigurableForm from '../common/configurable-form';
@@ -30,6 +30,7 @@ function DatabaseForm({
   dbNames = [],
   description = '', // Default value for description
 }: DatabaseFormProps) {
+  const { message } = App.useApp();
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);

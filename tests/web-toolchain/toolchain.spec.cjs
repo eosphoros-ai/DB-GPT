@@ -135,38 +135,18 @@ async function finish(page, record, id) {
     })
     .catch(() => {});
 }
-// These two existing resource problems are retained in the evidence. The base
-// commit has the same references, and no public/images/bg.png. Passing this
-// assertion means no ADDITIONAL resource failures, not a clean console.
-const knownResource = (url) =>
-  new URL(url).pathname === "/images/bg.png" ||
-  url.includes("at.alicdn.com/t/a/font_4440880_ljyggdw605.js");
 async function checkHealth(page, record) {
   await expect(page.locator("body")).not.toContainText(
     /Application error:|Unhandled Runtime Error|Internal Server Error/,
   );
   expect(record.pageErrors, "Uncaught browser errors").toEqual([]);
   expect(record.unknownApis, "Fixture coverage gaps").toEqual([]);
+  expect(record.badResponses, "HTTP errors").toEqual([]);
   expect(
-    record.badResponses.filter((r) => !knownResource(r.url)),
-    "Additional HTTP errors",
+    record.failedRequests.filter((r) => !r.error?.includes("ERR_ABORTED")),
+    "Network failures",
   ).toEqual([]);
-  expect(
-    record.failedRequests.filter(
-      (r) => !knownResource(r.url) && !r.error?.includes("ERR_ABORTED"),
-    ),
-    "Additional network failures",
-  ).toEqual([]);
-  expect(
-    record.console.filter(
-      (r) =>
-        r.type === "error" &&
-        /ChunkLoadError|ReferenceError|SyntaxError|TypeError|Hydration failed|hydration mismatch/i.test(
-          r.text,
-        ),
-    ),
-    "Fatal console errors",
-  ).toEqual([]);
+  expect(record.console, "Browser console warnings/errors").toEqual([]);
 }
 for (const [id, route] of routes) {
   test("route: " + id, async ({ page }) => {
@@ -270,13 +250,11 @@ interaction("knowledge-upload", "/construct/knowledge/", async (page, r) => {
     .getByRole("textbox", { name: "* 知识库名称", exact: true })
     .fill("regression-doc");
   await dialog.getByPlaceholder("请输入描述").fill("Browser regression");
-  await dialog
-    .locator("#create_knowledge input[type=file]")
-    .setInputFiles({
-      name: "regression.md",
-      mimeType: "text/markdown",
-      buffer: Buffer.from("# Regression\n\nKnowledge upload test."),
-    });
+  await dialog.locator("#create_knowledge input[type=file]").setInputFiles({
+    name: "regression.md",
+    mimeType: "text/markdown",
+    buffer: Buffer.from("# Regression\n\nKnowledge upload test."),
+  });
   await expect(
     dialog.getByText("regression.md", { exact: true }),
   ).toBeVisible();
@@ -404,13 +382,31 @@ interaction(
     await page.getByText("Editor", { exact: true }).click();
     const editor = page.locator(".monaco-editor").first();
     await expect(editor).toBeVisible();
-    await editor.click();
+    const input = editor.getByRole("textbox", { name: /Editor content/ });
+    await input.focus();
     await page.keyboard.press("Control+A");
-    await page.keyboard.type("SELECT 1 AS value");
+    await page.keyboard.type("SEL");
+    await page.keyboard.press("Control+Space");
+    await expect(
+      editor.getByRole("option", { name: "SELECT", exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type("select 2 as value");
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Shift+Alt+F");
+    await expect(editor.locator(".view-lines")).toContainText(
+      /select\s+2\s+as\s+value/i,
+    );
     await page
       .getByRole("button", { name: "caret-right Run", exact: true })
       .click();
     await waitRequest(r, "/editor/chart/run", "POST");
+    const submitted = r.requests.find((request) =>
+      request.path.endsWith("/editor/chart/run"),
+    ).body;
+    expect(submitted).toContain("\\n");
+    expect(submitted).toMatch(/2.*as value/i);
     await expect(
       page.getByRole("columnheader", { name: "value", exact: true }),
     ).toBeVisible();

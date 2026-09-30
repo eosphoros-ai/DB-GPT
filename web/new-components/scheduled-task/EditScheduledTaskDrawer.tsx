@@ -2,7 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import { renderModelIcon } from '@/components/chat/header/model-selector';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
 import type { TaskResponse } from '@/types/scheduled-task';
-import { Button, Drawer, Form, Input, Select, Space, message } from 'antd';
+import { App, Button, Drawer, Form, Input, Select, Space } from 'antd';
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CronInput from './CronInput';
@@ -17,6 +17,7 @@ interface EditScheduledTaskDrawerProps {
 }
 
 const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open, onClose, task, onSaved }) => {
+  const { message } = App.useApp();
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [cron, setCron] = useState('0 9 * * *');
@@ -26,7 +27,7 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
 
   // 当 task 变化时同步表单和 cron
   useEffect(() => {
-    if (task) {
+    if (open && task) {
       form.setFieldsValue({
         task_name: task.task_name,
         description: task.description ?? '',
@@ -35,7 +36,7 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
       });
       setCron(task.cron_expression || '0 9 * * *');
     }
-  }, [task, form]);
+  }, [open, task, form]);
 
   const onSubmit = async () => {
     if (!task) return;
@@ -77,6 +78,7 @@ const EditScheduledTaskDrawer: React.FC<EditScheduledTaskDrawerProps> = ({ open,
       title={t('scheduled.edit.title')}
       open={open}
       onClose={onClose}
+      forceRender
       destroyOnClose
       width={460}
       footer={

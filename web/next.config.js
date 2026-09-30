@@ -11,6 +11,10 @@ module.exports = phase => {
     distDir: process.env.NEXT_DIST_DIR || '.next',
     ...(staticExport ? { output: 'export' } : {}),
     allowedDevOrigins: ['127.0.0.1'],
+    // Next 16's Pages Router indicator can receive isrManifest before its
+    // router is initialized. Disable only the badge; error overlays and HMR stay on.
+    devIndicators: false,
+    onDemandEntries: { maxInactiveAge: 25 * 1000, pagesBufferLength: 2 },
     ...(process.platform === 'win32' && !development ? { experimental: { cpus: 1 } } : {}),
     typescript: {
       ignoreBuildErrors: false,
@@ -42,7 +46,21 @@ module.exports = phase => {
       '@antv/graphin',
       '@antv/gpt-vis',
     ],
-    webpack: (config, { isServer, dev }) => {
+    webpack: (config, { isServer, dev, webpack }) => {
+      // Large editor/chart modules otherwise accumulate across page compilations.
+      // Keep production caching; development can recompile evicted pages on demand.
+      if (dev) config.cache = false;
+      // Replace only OB's formatting adapter. SQL completion/tokenization and
+      // its prebuilt workers remain unchanged; generated parsers stay out of pages.
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^\.\.\/format$/, resource => {
+          if (
+            /[/\\]@oceanbase-odc[/\\]monaco-plugin-ob[/\\]dist[/\\](mysql|obmysql|oboracle)$/.test(resource.context)
+          ) {
+            resource.request = path.join(__dirname, 'components/chat/ob-editor/format.ts');
+          }
+        }),
+      );
       // Use the packages' ESM entry points with Next's native transpilation.
       config.resolve.alias = {
         ...config.resolve.alias,

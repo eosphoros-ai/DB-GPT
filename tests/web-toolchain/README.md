@@ -10,8 +10,8 @@ Use Node 20.19.6 and npm 10.8.2 to match the recorded validation.
 
 1. In `web/`, install with `npm ci`. Start `npm run dev`, or run
    `npm run build` followed by `npm start` for production verification.
-2. Wait for the first requested page to finish compiling. The Windows cold
-   compilation can exceed the suite's 120-second navigation timeout.
+2. Wait for Next to report that the server is ready. The suite allows 120
+   seconds for navigation and 180 seconds per case, including cold compilation.
 3. In this directory:
 
    ```sh
@@ -30,13 +30,18 @@ $env:REGRESSION_MODE = 'dev'
 npm test
 ```
 
-The Windows validation also records a separate development run started with
-`$env:NODE_OPTIONS = '--max-old-space-size=12288'`. This is a documented test
-environment adjustment after a default-heap restart, not evidence that the
-default development configuration passed. The corrected 12 GB run also
-restarted: 38/40 passed, followed by 2/2 on a separate rerun after recovery.
-Do not present the rerun as an uninterrupted 40/40 development pass. See the
-regression report for Fast Refresh results and console diagnostics.
+Development validation uses the launcher's default 8 GB heap. An explicit
+`NODE_OPTIONS` heap setting remains supported. Development disables Webpack's
+cache to prevent retained editor/chart modules accumulating during navigation;
+production retains caching. SQL formatting uses the existing `sql-formatter`,
+and completion still uses the unchanged OB SQL workers. The SQL case exercises
+completion, formatting, execution and saving the edited query.
+
+`REGRESSION_BROWSER` selects `chromium` (default), `firefox` or `webkit` after
+installing that Playwright browser. For a portable page-entry pass, use
+`npm test -- --grep 'route:'`. The full Chromium suite additionally checks
+clipboard permissions and downloads. `REGRESSION_NAVIGATION_TIMEOUT` can override
+the navigation timeout for diagnostics; record any override with the results.
 
 ## Evidence and limits
 
@@ -45,12 +50,10 @@ exceptions, failed requests, HTTP errors, accessibility snapshot and screenshot.
 The JSON reporter saves assertion outcomes; failed cases also save traces.
 Chart and workflow exports are saved and checked for successful download.
 
-The assertions retain two explicitly disclosed resource exceptions: missing
-`/images/bg.png` and the existing external iconfont script. Neither is mocked or
-removed from the records. Passing means that the asserted UI behavior works
-and no additional HTTP/network failures or uncaught exceptions were observed;
-it does **not** mean that the console was empty. Console diagnostics still
-require review, especially development-only component deprecations.
+Assertions require zero console warnings/errors, uncaught exceptions, failed
+HTTP responses or unexpected fixture requests. Network failures are also fatal,
+apart from navigation-cancelled `ERR_ABORTED` requests. Missing images and external
+icon scripts have no allowlist. Raw observations remain in each case's record.
 
 API fixtures exercise browser rendering, forms, uploads, downloads and request
 construction. They do not prove backend persistence, model inference, database

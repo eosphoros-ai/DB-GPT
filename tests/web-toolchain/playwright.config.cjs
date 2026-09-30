@@ -18,12 +18,14 @@ module.exports = defineConfig({
   outputDir: path.join(output, "artifacts"),
   use: {
     baseURL: process.env.REGRESSION_URL || "http://127.0.0.1:3000",
-    browserName: "chromium",
+    browserName: process.env.REGRESSION_BROWSER || "chromium",
     headless: true,
     viewport: { width: 1440, height: 1000 },
     locale: "zh-CN",
     serviceWorkers: "block",
-    navigationTimeout: 120000,
+    navigationTimeout: Number(
+      process.env.REGRESSION_NAVIGATION_TIMEOUT || 120000,
+    ),
     actionTimeout: 15000,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",

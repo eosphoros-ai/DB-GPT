@@ -10,7 +10,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { Button, Input, Popconfirm, Segmented, Spin, Switch, Tooltip, message } from 'antd';
+import { App, Button, Input, Popconfirm, Segmented, Spin, Switch, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -26,6 +26,7 @@ function fmtTime(iso?: string | null): string | null {
 type StatusFilter = 'all' | 'enabled' | 'disabled';
 
 function ScheduledTasks() {
+  const { message } = App.useApp();
   const router = useRouter();
   const { t } = useTranslation();
   const { listTasks, toggleTask, deleteTask } = useScheduledTask();
@@ -47,7 +48,7 @@ function ScheduledTasks() {
     } finally {
       setLoading(false);
     }
-  }, [listTasks, t]);
+  }, [listTasks, message, t]);
 
   useEffect(() => {
     reload();

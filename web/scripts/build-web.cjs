@@ -18,7 +18,7 @@ const run = (args, typeConfig) => {
       NODE_OPTIONS: [
         process.env.NODE_OPTIONS,
         '--max_old_space_size=8192',
-        process.platform === 'win32' ? `--require=${gracefulFsRegister}` : null,
+        `--require=${JSON.stringify(gracefulFsRegister)}`,
       ]
         .filter(Boolean)
         .join(' '),
@@ -30,7 +30,8 @@ const run = (args, typeConfig) => {
 };
 
 // Keep compilation and static generation in one process so HTML and chunk
-// references come from the same build. Windows uses a file-system limiter.
+// references come from the same build. Limit file operations on every platform:
+// macOS runners can also exhaust their file descriptor limit during export.
 const typeConfig = prepareBuildTypes(path.join(__dirname, '..'), process.env.NEXT_DIST_DIR || '.next');
 let status;
 try {

@@ -21,7 +21,7 @@
     "lint:fix": "eslint . --fix",
     "start": "node scripts/run-next.cjs start",
     "test": "npm run test:react-final && npm run test:final-presentation",
-    "test:build": "node --test next.config.test.cjs scripts/verify-next-build-assets.test.cjs scripts/prepare-build-types.test.cjs scripts/toolchain-regressions.test.cjs lib/session.test.cjs",
+    "test:build": "node --test next.config.test.cjs scripts/verify-next-build-assets.test.cjs scripts/prepare-build-types.test.cjs scripts/toolchain-regressions.test.cjs scripts/build-launcher.test.cjs lib/session.test.cjs",
     "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
     "typecheck": "node scripts/typecheck.cjs"
