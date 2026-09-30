@@ -16,6 +16,7 @@ from types import SimpleNamespace
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 from dbgpt_serve.session_file.domain import FileScope
 
+from . import workflow
 from .analysis import SECTIONS, InvalidFindings, apply_findings, validate_findings
 from .exports import render_export
 from .models import FinancialExportEntity as Export
@@ -84,6 +85,21 @@ class FinancialAnalysisService:
                 self._finish_report_analysis(
                     report, "failed", "服务重启，模型分析已中断；财务数据仍可查看。"
                 )
+                row.report_json = json.dumps(
+                    report, ensure_ascii=False, allow_nan=False
+                )
+                row.stage, row.updated_at = "completed", now()
+            for row in session.query(Run).filter_by(
+                status="completed", stage="agent_topics"
+            ):
+                report = json.loads(row.report_json)
+                for item in report.get("workflow", {}).get("topics", []):
+                    if item["status"] == "running":
+                        item.update(
+                            status="needs_revision",
+                            note="服务重启，专题尚未保存；可继续分析，无需重新解析。",
+                        )
+                workflow.changed(report)
                 row.report_json = json.dumps(
                     report, ensure_ascii=False, allow_nan=False
                 )
@@ -296,7 +312,9 @@ class FinancialAnalysisService:
         finally:
             self._question_slots.release()
 
-    def create(self, owner, session_id, file_id, run_id, *, agent_model=None):
+    def create(
+        self, owner, session_id, file_id, run_id, *, agent_model=None, sectional=False
+    ):
         with self._lock:
             # Idempotent request IDs prevent a retry/double click from queuing
             # the same file twice. A new ID explicitly creates another attempt.
@@ -342,7 +360,13 @@ class FinancialAnalysisService:
                     session.flush()
                     result = self._public(row)
                 self._executor.submit(
-                    self._work, owner, session_id, file_id, run_id, agent_model
+                    self._work,
+                    owner,
+                    session_id,
+                    file_id,
+                    run_id,
+                    agent_model,
+                    sectional,
                 )
             except Exception:
                 self._slots.release()
@@ -361,7 +385,9 @@ class FinancialAnalysisService:
                 dict(values, updated_at=now()), synchronize_session=False
             )
 
-    def _work(self, owner, session_id, file_id, run_id, agent_model=None):
+    def _work(
+        self, owner, session_id, file_id, run_id, agent_model=None, sectional=False
+    ):
         try:
             started_at = now()
             read_start = time.monotonic()
@@ -454,6 +480,8 @@ class FinancialAnalysisService:
                     report["agent"]["summary"] = (
                         "财务数据已保存，智能体尚未提交分析结论。"
                     )
+                    if sectional:
+                        workflow.initialize(report)
             self._update(run_id, stage="save")
             save_start = time.monotonic()
             save_at = now()
@@ -543,6 +571,24 @@ class FinancialAnalysisService:
         """
         with self._lock:
             report = self.get(owner, session_id, run_id, report=True)
+            if report.get("workflow"):
+                if findings:
+                    raise SessionFileApiError(
+                        409,
+                        "USE_TOPIC_TOOLS",
+                        "请逐专题保存结论并复核，最终发布时省略 findings。",
+                    )
+                if report["revision"] != revision:
+                    raise SessionFileApiError(
+                        409, "REPORT_CHANGED", "报告已更新，请重新读取。"
+                    )
+                report = workflow.publish(report)
+                self._update(
+                    run_id,
+                    stage="completed",
+                    report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
+                )
+                return report
             analysis = report.get("analysis", {})
             if (
                 report["revision"] != revision
@@ -575,6 +621,33 @@ class FinancialAnalysisService:
             self._update(
                 run_id,
                 stage="completed",
+                report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
+            )
+            return report
+
+    def update_agent_workflow(
+        self, owner, session_id, run_id, revision, action, **kwargs
+    ):
+        """Revision-checked topic mutations preserve the extraction and other topics."""
+        with self._lock:
+            report = self.get(owner, session_id, run_id, report=True)
+            if report["revision"] != revision:
+                raise SessionFileApiError(
+                    409, "REPORT_CHANGED", "报告已更新，请重新读取。"
+                )
+            if not report.get("workflow"):
+                raise SessionFileApiError(
+                    409, "LEGACY_REPORT", "旧版报告请新建分析以启用专题流程。"
+                )
+            actions = {
+                "start": workflow.start_topic,
+                "save": workflow.save_topic,
+                "review": workflow.review_report,
+            }
+            report = actions[action](report, **kwargs)
+            self._update(
+                run_id,
+                stage="agent_topics",
                 report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
             )
             return report

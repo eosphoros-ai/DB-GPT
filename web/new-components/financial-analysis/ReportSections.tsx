@@ -308,6 +308,9 @@ export const CashFlowTab: React.FC<ReportSectionProps> = ({ onOpenEvidence }) =>
         />
       </section>
       {finding && <FindingCard finding={finding} onOpenEvidence={onOpenEvidence} />}
+      {data.workflow && section.findingIds.slice(1).map(id => analysisFindingMap[id] && (
+        <FindingCard key={id} finding={analysisFindingMap[id]} onOpenEvidence={onOpenEvidence} />
+      ))}
       <section className={styles.reportSection}>
         <h2>现金流驱动与待核查事项</h2>
         <dl className={styles.driverTable}>

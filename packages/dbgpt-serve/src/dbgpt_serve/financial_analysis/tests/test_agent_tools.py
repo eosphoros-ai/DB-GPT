@@ -8,12 +8,17 @@ import pytest
 from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     finalize_financial_answer,
     financial_completion_error,
-    make_financial_tools,
+    make_financial_tools as _make_financial_tools,
     publication_example,
 )
 
 from .test_analysis import draft
 from .test_runs import extraction, upload
+
+
+def make_financial_tools(*args, **kwargs):
+    """Keep regression coverage for existing single-publication reports."""
+    return _make_financial_tools(*args, sectional=False, **kwargs)
 
 
 def payload(value):

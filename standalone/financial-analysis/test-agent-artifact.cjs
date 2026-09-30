@@ -63,6 +63,13 @@ async function main() {
   assert.equal(props.embedded, true);
   assert.equal(props.questionAccess, undefined); // main agent remains the only chat
   assert.equal(props.data, data);
+  const retries = [];
+  await act(async () => view.update(React.createElement(Artifact, {
+    reference: next, onTopicRetry: (reference, topicId) => retries.push([reference, topicId]),
+  })));
+  props = view.root.findByType('report').props;
+  props.onTopicRetry('expenses');
+  assert.deepEqual(retries, [[next, 'expenses']]);
   props.sourceAccess.loadPage('doc', 7, undefined);
   assert.deepEqual(calls.pop(), ['page', 'conversation-b', ref.runId, 'doc', 7, undefined]);
   await props.exportAccess.create('json', data.revision);

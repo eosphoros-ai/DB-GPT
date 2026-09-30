@@ -24,6 +24,7 @@ import { ReportDataProvider, useReportData } from './ReportDataContext';
 import ReportExports from './ReportExports';
 import { BalanceTab, CashFlowTab, OverviewTab, ProfitabilityTab, StatementsTab } from './ReportSections';
 import SourcePreviewPanel from './SourcePreviewPanel';
+import TopicCoverage from './TopicCoverage';
 import styles from './financial-analysis.module.css';
 import { reportRunState } from './report-data';
 import {
@@ -143,13 +144,24 @@ const SkillPanel: React.FC = () => {
 };
 
 const FinancialAnalysisWorkspace: React.FC<{
+  onTopicRetry?: (topicId: string) => void;
+  busy?: boolean;
   embedded?: boolean;
   onNewReport?: () => void;
   sourceAccess?: SourcePreviewAccess;
   analysisActions?: AnalysisActions;
   questionAccess?: ReportQuestionAccess;
   exportAccess?: ReportExportAccess;
-}> = ({ embedded = false, onNewReport, sourceAccess, analysisActions, questionAccess, exportAccess }) => {
+}> = ({
+  embedded = false,
+  onNewReport,
+  sourceAccess,
+  analysisActions,
+  questionAccess,
+  exportAccess,
+  onTopicRetry,
+  busy,
+}) => {
   const { data, sourceDocumentMap } = useReportData();
   const runState = reportRunState(data);
   const router = useRouter();
@@ -267,6 +279,7 @@ const FinancialAnalysisWorkspace: React.FC<{
             {workspaceTab === 'report' && (
               <>
                 <ArtifactContext />
+                <TopicCoverage onRetry={onTopicRetry} busy={busy} />
                 <nav className={styles.reportNav} aria-label='财务分析章节'>
                   {financialTabs.map(tab => (
                     <button
@@ -338,6 +351,8 @@ const FinancialAnalysisWorkspace: React.FC<{
   );
 };
 const FinancialAnalysisPage: React.FC<{
+  onTopicRetry?: (topicId: string) => void;
+  busy?: boolean;
   embedded?: boolean;
   data: ReportData;
   onNewReport?: () => void;
@@ -345,9 +360,21 @@ const FinancialAnalysisPage: React.FC<{
   analysisActions?: AnalysisActions;
   questionAccess?: ReportQuestionAccess;
   exportAccess?: ReportExportAccess;
-}> = ({ data, embedded, onNewReport, sourceAccess, analysisActions, questionAccess, exportAccess }) => (
+}> = ({
+  data,
+  embedded,
+  onNewReport,
+  sourceAccess,
+  analysisActions,
+  questionAccess,
+  exportAccess,
+  onTopicRetry,
+  busy,
+}) => (
   <ReportDataProvider key={`${data.report.id}:${data.report.run.id}:${data.revision}`} data={data}>
     <FinancialAnalysisWorkspace
+      onTopicRetry={onTopicRetry}
+      busy={busy}
       embedded={embedded}
       onNewReport={onNewReport}
       sourceAccess={sourceAccess}

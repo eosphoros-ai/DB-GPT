@@ -20,7 +20,11 @@ export async function downloadFinancialReport(ref: FinancialReportReference) {
 }
 
 /** Render in the current agent's Computer panel; no route or second chat rail. */
-const FinancialReportArtifact: React.FC<{ reference: FinancialReportReference }> = ({ reference }) => {
+const FinancialReportArtifact: React.FC<{
+  reference: FinancialReportReference;
+  busy?: boolean;
+  onTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
+}> = ({ reference, busy, onTopicRetry }) => {
   const { sessionId, runId, revision } = reference;
   const [loaded, setLoaded] = useState<{ scope: string; data: ReportData } | null>(null);
   const [error, setError] = useState('');
@@ -28,16 +32,25 @@ const FinancialReportArtifact: React.FC<{ reference: FinancialReportReference }>
   const scope = `${sessionId}:${runId}:${revision}`;
   useEffect(() => {
     const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setError('');
-    void getReport(sessionId, runId, controller.signal)
-      .then(data => {
-        if (!controller.signal.aborted) setLoaded({ scope, data });
-      })
-      .catch(cause => {
-        if (!controller.signal.aborted) setError(requestError(cause));
-      });
-    return () => controller.abort();
-  }, [sessionId, runId, scope, retry]);
+    const refresh = () =>
+      void getReport(sessionId, runId, controller.signal)
+        .then(data => {
+          if (!controller.signal.aborted) setLoaded({ scope, data });
+        })
+        .catch(cause => {
+          if (!controller.signal.aborted) setError(requestError(cause));
+        })
+        .finally(() => {
+          if (busy && !controller.signal.aborted) timer = setTimeout(refresh, 2000);
+        });
+    refresh();
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [sessionId, runId, scope, retry, busy]);
   const sourceAccess = useMemo<SourcePreviewAccess>(
     () => ({
       loadPage: (documentId, page, signal) => getSourcePage(sessionId, runId, documentId, page, signal),
@@ -63,7 +76,16 @@ const FinancialReportArtifact: React.FC<{ reference: FinancialReportReference }>
         <Spin /> 正在读取智能体财报结果
       </div>
     );
-  return <FinancialAnalysisPage data={loaded.data} embedded sourceAccess={sourceAccess} exportAccess={exportAccess} />;
+  return (
+    <FinancialAnalysisPage
+      data={loaded.data}
+      embedded
+      sourceAccess={sourceAccess}
+      exportAccess={exportAccess}
+      busy={busy}
+      onTopicRetry={onTopicRetry ? topicId => onTopicRetry(reference, topicId) : undefined}
+    />
+  );
 };
 
 export default FinancialReportArtifact;

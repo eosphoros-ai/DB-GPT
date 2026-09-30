@@ -145,6 +145,32 @@ assert.match(demo, /2017–2019/);
 assert.match(demo, /21.14/);
 assert.match(demo, /非经常性损益/);
 console.log('Financial report regression passed: alternate/empty/demo rendering, periods, missing values, charts, independent evidence, agent state.');
+if (process.env.FINANCIAL_LAYOUT_CHILD !== 'baseline') {
+  const TopicCoverage = require(path.join(folder, 'TopicCoverage.tsx')).default;
+  const topicReport = structuredClone(alternateReportFixture);
+  topicReport.workflow = { status: 'draft', review: null, history: [], topics: [
+    { id: 'expenses', title: '费用变化', status: 'failed', findingIds: [], note: '本专题失败，其他专题已保存', history: [] },
+    { id: 'cashflow', title: '现金流', status: 'insufficient', findingIds: [], note: '缺少现金流数据', history: [] },
+  ] };
+  const retries = [];
+  captures.buttons.length = 0;
+  const output = render(TopicCoverage, topicReport, { onRetry: id => retries.push(id) });
+  assert.ok(output.includes('分析失败') && output.includes('数据或依据不足'));
+  captures.buttons.find(button => String(button.children).includes('重新分析')).onClick();
+  assert.deepEqual(retries, ['expenses']);
+  captures.buttons.length = 0;
+  render(TopicCoverage, topicReport, { onRetry: noop, busy: true });
+  assert.ok(captures.buttons.filter(button => String(button.children).includes('重新分析')).every(button => button.disabled));
+  topicReport.workflow.topics = [];
+  const cashId = topicReport.sections.cashflow.findingIds[0];
+  const cashFinding = topicReport.findings.find(finding => finding.id === cashId);
+  if (cashFinding) {
+    topicReport.findings.push({ ...cashFinding, id: 'cash-extra', title: '额外现金流专题发现' });
+    topicReport.sections.cashflow.findingIds.push('cash-extra');
+    assert.ok(render(sections.CashFlowTab, topicReport).includes('额外现金流专题发现'));
+  }
+}
+
 for (const filename of process.argv.slice(2)) {
   const data = JSON.parse(fs.readFileSync(filename, 'utf8'));
   assert.equal(data.mode, 'report');

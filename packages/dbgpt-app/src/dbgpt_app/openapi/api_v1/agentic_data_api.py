@@ -2126,7 +2126,7 @@ print(json.dumps(summary, ensure_ascii=False))
         make_financial_tools,
     )
 
-    financial_tools = make_financial_tools(react_state)
+    financial_tools = make_financial_tools(react_state, stream_callback=stream_callback)
 
     _todo_action_history: Dict[int, List[str]] = {}
 
@@ -3083,7 +3083,9 @@ Thought/Action/Action Input format shown above.
             continue
 
         event_type = event.get("type")
-        if event_type == "context.status":
+        if event_type == "financial.progress":
+            yield _sse_event({"type": "plan.update", "tasks": event["tasks"]})
+        elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
@@ -3200,7 +3202,7 @@ Thought/Action/Action Input format shown above.
                     _stale_id = round_step_map.pop(round_num)
                     yield step_meta(_stale_id, None, "terminate", None, "terminate")
                 # ── Auto-complete all remaining todos on terminate ──
-                if _todo_list:
+                if _todo_list and not react_state.get("financial_plan"):
                     for t in _todo_list:
                         if t["status"] in ("pending", "in_progress"):
                             t["status"] = "completed"
@@ -3282,7 +3284,8 @@ Thought/Action/Action Input format shown above.
                     }
                 )
 
-                yield _sse_event({"type": "plan.update", "tasks": todos_payload})
+                if not react_state.get("financial_plan"):
+                    yield _sse_event({"type": "plan.update", "tasks": todos_payload})
                 yield step_meta(
                     round_step_map[round_num],
                     None,
@@ -3494,7 +3497,7 @@ Thought/Action/Action Input format shown above.
                 )
             ):
                 updated_todos = advance_todo_list()
-                if updated_todos:
+                if updated_todos and not react_state.get("financial_plan"):
                     yield _sse_event({"type": "plan.update", "tasks": updated_todos})
             # --- History: finalize step ---
             if current_history_step is not None:
@@ -3510,7 +3513,7 @@ Thought/Action/Action Input format shown above.
         error_payload = _build_react_history_payload(
             final_content=err_msg,
             steps=history_steps,
-            task_plan=list(_todo_list),
+            task_plan=react_state.get("financial_plan") or list(_todo_list),
             generated_images=react_state.get("generated_images", []),
             sub_agents=build_subagent_history_snapshot(subagent_history),
             input_files=input_files_snapshot,
@@ -3599,7 +3602,7 @@ Thought/Action/Action Input format shown above.
     history_payload = _build_react_history_payload(
         final_content=final_answer.content,
         steps=history_steps,
-        task_plan=list(_todo_list),
+        task_plan=react_state.get("financial_plan") or list(_todo_list),
         generated_images=react_state.get("generated_images", []),
         sub_agents=build_subagent_history_snapshot(subagent_history),
         input_files=input_files_snapshot,

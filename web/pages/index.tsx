@@ -3897,6 +3897,12 @@ const Playground: NextPage = () => {
 
                     return (
                       <ManusRightPanel
+                        onFinancialTopicRetry={(reference, topicId) => {
+                          if (loading || reference.sessionId !== conversationId) return;
+                          void handleStart(
+                            `请继续报告 ${reference.runId}，只重新分析专题 ${topicId}，保留其他专题。先读取报告，再使用 get_financial_topic(retry=true)，修订后复核并发布，不重新解析 PDF。`,
+                          );
+                        }}
                         activeStep={activeStep}
                         outputs={outputs}
                         conversationId={conversationId}

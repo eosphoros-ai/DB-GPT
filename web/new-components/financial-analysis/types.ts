@@ -224,6 +224,30 @@ export interface ReportArtifact {
 
 /** A complete snapshot. Missing arrays/values must never resolve to demo data. */
 export interface ReportData {
+  workflow?: {
+    dataQuality?: { availableFacts: number; missingFacts: string[]; unavailableCalculations: Array<{ id: string; name: string; reason: string }> };
+    version: number;
+    status: 'draft' | 'published';
+    publishedAt: string | null;
+    review: {
+      at: string;
+      kind: 'agent-review';
+      items: Array<{ topic_id: string; verdict: string; note: string }>;
+    } | null;
+    topics: Array<{
+      id: string;
+      title: string;
+      section: 'overview' | 'profitability' | 'cashflow' | 'balance';
+      status: 'pending' | 'running' | 'ready' | 'reviewed' | 'insufficient' | 'failed' | 'needs_revision';
+      attempts: number;
+      failures: number;
+      findingIds: string[];
+      note: string;
+      review?: { verdict: string; note: string };
+      history: unknown[];
+    }>;
+    history: Array<{ revision: string; publishedAt: string }>;
+  };
   schemaVersion: 1;
   revision: string;
   mode: 'demo' | 'report';

@@ -10,10 +10,12 @@ description: 在当前智能体对话中分析中文上市公司文本型年度�
 ## 工作流程
 
 1. 调用 `prepare_financial_report`。仅有一份 PDF 可省略参数；有多份时指定当前附件清单的 `file_id`，不猜测路径或 ID。该工具复用页级提取器、Decimal 计算和报告存储，返回真实 facts、calculations、evidence、run_id、revision。它不调用另一个模型生成结论。
-2. 阅读返回数据并由当前智能体撰写结构化 `findings`。遵循工具返回的 `publication_instructions`：尽量覆盖 overview、profitability、cashflow、balance；引用真实 ID；年份、金额、百分比等数字必须使用工具说明中的双花括号占位符，后端替换真实显示值。缺少事实、计算或附注时明确不足，不使用示例值、不心算、不补造原因。
-3. 调用 `publish_financial_report(run_id, revision, findings)`。结论结构、数字及引用由后端验证。全部被拒绝时修正并重试；部分通过时如实保留“部分分析”。无可支持结论时可提交空数组，报告仍保留事实、计算与原 PDF 来源。
-4. 用一两句话总结实际结果并调用 `terminate`。报告已经作为当前智能体的产物显示，用户可以查看原有五个章节、证据、PDF 原页与 JSON/HTML 导出。不要再调用 `html_interpreter`、生成另一套网页，或让用户进入 `/financial-analysis`。
-5. 后续追问调用 `read_financial_report`，省略 run_id 默认读取当前对话最近报告，也可明确指定该对话的报告 ID。只依据读取到的事实、确定性计算、有效结论和摘录作答；没有的指标和原因明确说明缺少依据。需要新分析时才重新调用 prepare。
+2. 按返回的 `workflow.topics` 逐专题执行 `get_financial_topic(run_id, topic_id)` → 分析 → `save_financial_topic(run_id, revision, topic_id, findings)`。专题为 operating（经营表现）、recurring（扣非与利润构成）、margins（毛利变化）、expenses（费用变化）、cashflow（现金流）、balance（资产负债）。每个专题有依据时写两到三条互不重复的发现，不机械凑数；盈利质量三个专题分别展开。
+3. 每条发现说明判断、事实或计算依据、反向信息与待核查事项。复制数据的 `reference` 字段，数字、年份和倍数由后端替换；不得直接写数字、追加单位、心算或编造原因。每条最多六个计算引用，过多时拆成多条。只分析当前专题数据，section 使用该专题返回值。费用率变化是百分点；负财务费用不能当缺失。没有附注证据时，仅描述现象和需要核查的可能线索，不能断言因果。
+4. 保存失败时使用返回的最新 revision，只修当前专题，不重新 prepare；其他专题的已保存结论不会丢失。仅当 `missingRequiredMetrics` 非空时，可提交空 findings，并用 `missing_reason` 说明缺项。连续失败的专题会明确标为失败，保留已有数据。
+5. 全部专题处理后调用 `review_financial_report(run_id, revision, reviews)`。逐项覆盖全部专题，检查结论方向是否吻合引用数据、比较期间与口径是否一致、具体原因是否有原文依据。每项包含 topic_id、verdict（pass/revise/insufficient）、directionChecked、scopeChecked、causalityChecked（三项均为 true）和不含数字的具体 note。不要机械全部通过；需修订的专题单独修订后重新复核。失败或缺数据专题不得标记 pass。复核是当前智能体自查，不等于人工确认。
+6. 调用 `publish_financial_report(run_id, revision)` 汇总发布，不再一次提交全报告 findings。只有逐专题处理并完成复核才可发布。报告在当前对话右侧显示，保留部分分析、失败及缺项。然后简短总结并 terminate；不生成另一套 HTML，不跳转独立页面。
+7. 普通追问调用 `read_financial_report` 后依据已保存数据回答。用户要求重做某专题时，先 read，再 `get_financial_topic(retry=true)`，仅保存该专题，重新复核并发布新版本；不重新提取 PDF。新上传报告才重新 prepare。旧版无 workflow 的报告保持旧协议，需新分析才能启用专题流程。
 
 ## 数据边界
 

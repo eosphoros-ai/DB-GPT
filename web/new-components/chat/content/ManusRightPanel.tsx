@@ -3,7 +3,10 @@ import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/componen
 import type { SessionFileSnapshot } from '@/modules/session-files';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
-import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
+import {
+  FinancialReportReference,
+  isFinancialReportReference,
+} from '@/new-components/financial-analysis/agent-artifact';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
 import type { AgentCitation } from '@/utils/react-agent-final';
 import {
@@ -180,6 +183,7 @@ export interface ActiveStepInfo {
 }
 
 export interface ManusRightPanelProps {
+  onFinancialTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
   activeStep?: ActiveStepInfo | null;
   outputs: ExecutionOutput[];
   isRunning?: boolean;
@@ -2480,6 +2484,7 @@ const ReferencesPanel: React.FC<{
 
 // Main Component
 const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
+  onFinancialTopicRetry,
   activeStep,
   outputs,
   isRunning,
@@ -2899,6 +2904,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'html-preview' && previewArtifact && isFinancialReportReference(previewArtifact.content) ? (
           <FinancialReportArtifact
+            busy={isRunning}
+            onTopicRetry={onFinancialTopicRetry}
             key={`${previewArtifact.content.runId}:${previewArtifact.content.revision}`}
             reference={previewArtifact.content}
           />
