@@ -23,13 +23,21 @@ export interface AgentFinalAnswer {
 
 const MAX_CITATIONS = 10;
 
-/** Keep live answers, restored history, and shared replay presentation consistent. */
+/** Keep answer presentation consistent while preserving JSON content and its escape sequences. */
 export const cleanFinalContent = (text: string): string => {
+  const prefix = /^(Thought|Action|Action Input|Observation|Phase):\s*/gm;
+  const jsonContent = text.replace(prefix, '').trim();
+  try {
+    JSON.parse(jsonContent);
+    // A JSON answer is user-visible content; envelopes are decoded separately.
+    return jsonContent;
+  } catch {
+    // Legacy plain text still needs escaped-newline and whitespace cleanup.
+  }
   let cleaned = text.replace(/\\n/g, '\n').trim();
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-  cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
   // Strip raw ReAct prefixes that may leak from the backend.
-  cleaned = cleaned.replace(/^(Thought|Action|Action Input|Observation|Phase):\s*/gm, '').trim();
+  cleaned = cleaned.replace(prefix, '').trim();
   return cleaned;
 };
 const MAX_SOURCE_NAME_LENGTH = 512;

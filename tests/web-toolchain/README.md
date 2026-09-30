@@ -1,7 +1,7 @@
 # Frontend toolchain browser regression
 
 This suite checks the existing DB-GPT frontend with deterministic API fixtures.
-It contains 29 page-entry cases and 12 interaction cases. The application runs
+It contains 29 page-entry cases and 13 interaction cases. The application runs
 from `web/`; this separate package does not change its dependency installation.
 
 ## Run
@@ -36,7 +36,9 @@ cache to prevent retained editor/chart modules accumulating during navigation;
 production retains caching. SQL formatting uses the existing `sql-formatter`,
 and completion still uses the unchanged OB SQL workers. The SQL case exercises
 completion, formatting, execution and saving the edited query. Shared zero-step
-replay verifies final-answer formatting and restarting the replay.
+replay verifies final-answer formatting and restarting the replay. A separate
+JSON-answer case preserves closing delimiters and escape sequences across page
+reloads and replay restarts.
 
 `REGRESSION_BROWSER` selects `chromium` (default), `firefox` or `webkit` after
 installing that Playwright browser. For a portable page-entry pass, use
@@ -45,7 +47,7 @@ clipboard permissions and downloads. `REGRESSION_NAVIGATION_TIMEOUT` can overrid
 the navigation timeout for diagnostics; record any override with the results.
 
 Firefox and WebKit do not accept Chromium's clipboard permission pair. Run their
-40 portable cases with `npm test -- --grep-invert markdown-chart-sql-data-and-download`.
+41 portable cases with `npm test -- --grep-invert markdown-chart-sql-data-and-download`.
 That excluded compound case covers clipboard, chart tabs and PNG download in
 Chromium; it is not reported as passed in the other browsers. SQL editing uses
 the browser's shortcut convention, including Windows WebKit's macOS key bindings.

@@ -3,6 +3,37 @@ import test from 'node:test';
 
 import { cleanFinalContent, decodeAgentFinalAnswer, decodeAgentHistoryAnswer } from './react-agent-final';
 
+test('preserves valid JSON through live and persisted answer presentation', () => {
+  const answers = [
+    JSON.stringify({ message: 'ok' }),
+    JSON.stringify({ message: 'first\nsecond', quote: 'He said "ok".', path: 'C:\\new\\file' }),
+    JSON.stringify({ nested: { message: 'ok' } }, null, 2),
+    JSON.stringify([{ message: 'ok' }]),
+    JSON.stringify('Thought: this is a JSON string, not a protocol prefix'),
+  ];
+  for (const content of answers) {
+    const decoded = [
+      decodeAgentFinalAnswer({ content }),
+      decodeAgentHistoryAnswer({ version: 1, type: 'react-agent', final_content: content }),
+      decodeAgentHistoryAnswer(JSON.stringify({ protocol_version: 2, type: 'react-agent', final_content: content })),
+    ];
+    for (const answer of decoded) {
+      assert.equal(cleanFinalContent(answer.content), content);
+      assert.deepEqual(JSON.parse(cleanFinalContent(answer.content)), JSON.parse(content));
+    }
+  }
+});
+
+test('removes a legacy Thought prefix without changing JSON escape sequences', () => {
+  const content = JSON.stringify({ message: 'first\nsecond' });
+  assert.equal(cleanFinalContent(`Thought: ${content}`), content);
+});
+
+test('preserves legitimate trailing quotes and braces in plain answer text', () => {
+  const content = 'The closing characters are "}';
+  assert.equal(cleanFinalContent(content), content);
+});
+
 test('presents a zero-step shared legacy answer like restored history without losing citations', () => {
   const answer = decodeAgentHistoryAnswer({
     version: 1,

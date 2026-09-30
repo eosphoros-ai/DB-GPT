@@ -135,7 +135,10 @@ const history = [
 /** Resolve a known fixture endpoint; return undefined so the harness records unknown API requests. */
 function responseFor(url, method) {
   const p = url.pathname.replace(/\/$/, "");
-  if (p === "/api/v1/chat/share/regression-share")
+  if (
+    p === "/api/v1/chat/share/regression-share" ||
+    p === "/api/v1/chat/share/regression-json-share"
+  )
     return {
       messages: [
         { role: "human", context: "Replay this regression answer", order: 0 },
@@ -146,7 +149,9 @@ function responseFor(url, method) {
             version: 1,
             type: "react-agent",
             steps: [],
-            final_content: "Thought: PR3277_SHARE_OK",
+            final_content: p.endsWith("regression-json-share")
+              ? JSON.stringify({ message: "PR3277_JSON_OK", lines: "first\nsecond" })
+              : "Thought: PR3277_SHARE_OK",
           }),
         },
       ],
