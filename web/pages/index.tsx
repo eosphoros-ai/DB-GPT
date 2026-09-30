@@ -327,6 +327,7 @@ const _convertExecutionToMessageParts = (
 };
 
 // Convert execution data to Manus panel format
+/** Adapt execution steps and outputs to the thinking-panel sections, preserving the active step and per-step thoughts. */
 const convertToManusFormat = (
   execution:
     | {
@@ -541,6 +542,7 @@ const EXAMPLE_CARDS = [
   },
 ];
 
+/** Coordinate the main conversation workspace, streamed responses and the active model/knowledge/task state. */
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
@@ -1885,6 +1887,7 @@ const Playground: NextPage = () => {
     };
   }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation, rightPanelView]);
 
+  /** Start a conversation request with the selected resources while preventing duplicate sends and stale task updates. */
   const performStart = async (
     inputQuery = query,
     overrideSkill?: Skill | null,
@@ -2108,6 +2111,7 @@ const Playground: NextPage = () => {
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
 
+      /** Apply a valid SSE payload only while its originating conversation and task epoch remain current. */
       const processEvent = (raw: string) => {
         if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (!raw.startsWith('data:')) return;
@@ -2570,6 +2574,7 @@ const Playground: NextPage = () => {
     }
   };
 
+  /** Prepare a localized example and its optional resources, avoiding concurrent example requests. */
   const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
     const queryKey = `example_${example.id}_query`;
     const queryVal = t(queryKey, { defaultValue: queryKey }) as string;

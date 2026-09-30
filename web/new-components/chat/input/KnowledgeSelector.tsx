@@ -7,6 +7,7 @@ import { Select, Tooltip } from 'antd';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/** Load available knowledge spaces and report the selected space to the chat input. */
 const KnowledgeSelector: React.FC = () => {
   const { t } = useTranslation();
   const { knowledgeValue, setKnowledgeValue } = useContext(ChatContentContext);

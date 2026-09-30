@@ -3,6 +3,7 @@ import { convertKeysToCamelCase } from '@/utils/flow';
 import * as Icons from '@ant-design/icons';
 import { Input } from 'antd';
 
+/** Resolve an icon:name reference only when it identifies an exported Ant Design icon component. */
 const getIconComponent = (iconString: string) => {
   const match = iconString.match(/^icon:(\w+)$/);
   if (match) {

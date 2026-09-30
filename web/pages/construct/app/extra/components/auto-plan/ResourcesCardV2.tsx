@@ -17,6 +17,7 @@ interface ResourceTabProps extends IResource {
   name?: string;
 }
 
+/** Manage the tabbed resources attached to an automatic-planning application. */
 const ResourcesCardV2: React.FC<{
   name: string;
   updateData: (data: any) => void;
@@ -49,6 +50,7 @@ const ResourcesCardV2: React.FC<{
   const [hoverKey, setHoverKey] = useState<string>('');
 
   // Delete resource
+  /** Remove a resource, notify the parent of the new configuration and select a remaining tab when necessary. */
   const remove = (e: React.MouseEvent | undefined, item: ResourceTabProps) => {
     e?.stopPropagation();
     const findActiveIndex = resourcesTabs.findIndex(i => i.uid === activeKey);

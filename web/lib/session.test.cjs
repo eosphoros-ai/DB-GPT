@@ -17,6 +17,7 @@ loaded.paths = Module._nodeModulePaths(__dirname);
 loaded._compile(compiled, filename);
 const { withSessionRoute, withSessionSsr } = loaded.exports;
 
+/** Create an in-memory response header store for exercising real iron-session cookies without a server. */
 function response() {
   const headers = new Map();
   return {

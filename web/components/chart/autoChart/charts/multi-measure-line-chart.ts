@@ -4,6 +4,7 @@ import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } 
 import { findNominalField, findOrdinalField, getLineSize, processDateEncode, sortData } from './util';
 
 const MULTI_MEASURE_LINE_CHART = 'multi_measure_line_chart';
+/** Build a multi-measure line view with sorted x-axis data; return null when a specification cannot be constructed. */
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
     // 优先确认 x 轴，如果没有枚举类型字段，取第一个字段为 x 轴

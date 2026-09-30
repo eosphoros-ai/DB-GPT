@@ -30,6 +30,7 @@ interface MonacoEditorProps {
 monaco.editor.defineTheme('github', github as any);
 monaco.editor.defineTheme('githubDark', githubDark as any);
 
+/** Host Monaco with SQL completion; format display values only when requested, preserving controlled live edits. */
 export default function MonacoEditor({
   className,
   value,

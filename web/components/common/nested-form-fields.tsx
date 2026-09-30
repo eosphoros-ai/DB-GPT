@@ -7,6 +7,7 @@ interface NestedFormFieldsProps {
   fields: Record<string, ConfigurableParams[]>;
   form: FormInstance;
 }
+/** Render the selected variant of a nested configuration parameter within the parent form. */
 const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields, form }) => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
 
@@ -17,6 +18,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     }
   }, [form, parentName]);
 
+  /** Replace a nested parameter with the selected type and that type's default field values. */
   const handleTypeChange = (value: string) => {
     setSelectedType(value);
 

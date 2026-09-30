@@ -9,12 +9,6 @@ import { Button, Modal, Tabs } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodePreview } from './code-preview';
-/**
- * The HTML preview component is used to display HTML code and provide run, download, and full-screen functionality
- * @param {Object} props The component props
- * @param {string} props.code HTML code content
- * @param {string} props.language Code language, default is html
- */
 type FullscreenFrame = HTMLIFrameElement & {
   webkitRequestFullscreen?: () => void;
   msRequestFullscreen?: () => void;
@@ -29,6 +23,7 @@ type FullscreenDocument = Document & {
   mozCancelFullScreen?: () => void;
 };
 
+/** Displays HTML source with run, download and fullscreen controls. */
 const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -44,6 +39,7 @@ const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: str
 
   // Parse the code and extract the HTML, CSS, and JS parts
   useEffect(() => {
+    /** Split style/script content for the source tabs and wrap HTML fragments into a complete preview document. */
     const parseCode = (sourceCode: string) => {
       let html = sourceCode;
       let css = '';
@@ -107,6 +103,7 @@ const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: str
 
   // Listen for fullscreen change events
   useEffect(() => {
+    /** Synchronize the preview state with standard and vendor-prefixed fullscreen events. */
     const handleFullscreenChange = () => {
       const fullscreenDocument: FullscreenDocument = document;
       setIsFullscreen(
@@ -202,6 +199,7 @@ const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: str
   };
 
   // Exit fullscreen mode
+  /** Leave fullscreen using the browser API available on the current document. */
   const exitFullscreen = () => {
     const fullscreenDocument: FullscreenDocument = document;
     if (document.exitFullscreen) {

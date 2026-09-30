@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 // import MyPlugins from '@/components/agent/my-plugins';
 // import MarketPlugins from '@/components/agent/market-plugins';
 
+/** Browse the agent marketplace and installed plugins, with search and installation-management actions. */
 function Agent() {
   const { t } = useTranslation();
 

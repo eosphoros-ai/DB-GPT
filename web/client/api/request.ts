@@ -418,6 +418,7 @@ export const postDbgptsHubUpdate = (data?: PostAgentHubUpdateParams) => {
     data ?? { channel: '', url: '', branch: '', authorization: '' },
   );
 };
+/** Fetch installed agent plugins, optionally scoped to a user, using the backend item-list response. */
 export const postAgentMy = (user?: string) => {
   return POST<undefined, PostAgentMyPluginResponse['items']>('/api/v1/agent/my', undefined, { params: { user } });
 };
@@ -525,6 +526,7 @@ export const getSupportDBList = (db_name = '') => {
   return GET<null, Record<string, any>>(`/api/v1/permission/db/list?db_name=${db_name}`);
 };
 
+/** Fetch recommended applications as an array for the supplied recommendation filters. */
 export const recommendApps = (data: Record<string, string>) => {
   return POST<Record<string, string>, IApp[]>('/api/v1/app/hot/list', data);
 };

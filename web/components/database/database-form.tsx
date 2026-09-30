@@ -20,6 +20,7 @@ interface DatabaseFormProps {
   description?: string; // Add description prop
 }
 
+/** Collect database connection settings for creating or updating a configured data source. */
 function DatabaseForm({
   onCancel,
   onSuccess,
@@ -64,6 +65,7 @@ function DatabaseForm({
     }
   };
 
+  /** Submit the connection form as a create/update request and report its outcome through the active UI context. */
   const handleSubmit = async (formValues: any) => {
     try {
       setLoading(true);

@@ -49,6 +49,7 @@ const routes = [
     "/construct/knowledge/detail/?spaceName=Regression%20knowledge",
   ],
 ];
+/** Install deterministic API fixtures and collect console, page and network diagnostics for one page. */
 async function instrument(page) {
   const record = {
     mode,
@@ -116,6 +117,7 @@ async function instrument(page) {
   );
   return record;
 }
+/** Persist the case diagnostics and a best-effort page screenshot, including when assertions fail. */
 async function finish(page, record, id) {
   record.url = page.url();
   record.snapshot = await page
@@ -135,6 +137,7 @@ async function finish(page, record, id) {
     })
     .catch(() => {});
 }
+/** Reject browser, HTTP and fixture errors; permit only requests cancelled by navigation. */
 async function checkHealth(page, record) {
   await expect(page.locator("body")).not.toContainText(
     /Application error:|Unhandled Runtime Error|Internal Server Error/,
@@ -175,6 +178,7 @@ for (const [id, route] of routes) {
 }
 module.exports = { instrument, finish };
 
+/** Register an interaction case with shared instrumentation, health assertions and evidence capture. */
 function interaction(id, route, action) {
   test("interaction: " + id, async ({ page, context }) => {
     const record = await instrument(page);
@@ -190,6 +194,7 @@ function interaction(id, route, action) {
     }
   });
 }
+/** Wait until the frontend sends a request matching the required endpoint and optional method. */
 const waitRequest = (record, fragment, method) =>
   expect
     .poll(() =>

@@ -122,6 +122,7 @@ const BlurredCard: React.FC<{
   );
 };
 
+/** Render a card's chat action with an image or custom icon, without triggering the parent card click. */
 const ChatButton: React.FC<{
   onClick?: () => void;
   Icon?: React.ReactNode | string;

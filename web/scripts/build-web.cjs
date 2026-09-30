@@ -9,6 +9,7 @@ if (process.argv.includes('--production-env')) process.env.APP_ENV = 'prod';
 const nextBin = path.join(__dirname, '..', 'node_modules', 'next', 'dist', 'bin', 'next');
 const gracefulFsRegister = path.join(__dirname, 'graceful-fs-register.cjs');
 
+/** Run the Webpack production build with an isolated type configuration and bounded filesystem preload; return the child status. */
 const run = (args, typeConfig) => {
   const result = spawnSync(process.execPath, [nextBin, 'build', '--webpack', ...args], {
     cwd: path.join(__dirname, '..'),

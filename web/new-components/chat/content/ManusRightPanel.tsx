@@ -322,6 +322,7 @@ const StatusBadge: React.FC<{ status: StepStatus }> = ({ status }) => {
 };
 
 // Copy to clipboard helper
+/** Request a clipboard write for panel content and display the supplied feedback message. */
 const copyToClipboard = (text: string, successText = i18n.t('copy_to_clipboard_success')) => {
   navigator.clipboard.writeText(text);
   message.success(successText);

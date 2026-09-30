@@ -4,10 +4,12 @@
 export class CorsWorker {
   private worker: Worker;
 
+  /** Start a same-origin prebuilt SQL worker directly, avoiding the upstream blob-URL revocation race. */
   constructor(url: string | URL) {
     this.worker = new Worker(url);
   }
 
+  /** Expose the underlying worker through the interface expected by the OB plugin. */
   getWorker() {
     return this.worker;
   }

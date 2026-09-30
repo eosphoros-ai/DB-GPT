@@ -17,6 +17,7 @@ import cls from 'classnames';
 import moment from 'moment';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+/** Browse DBGPT packages and installed entries, adapting installed plugin responses into display cards. */
 function Agent() {
   const { t } = useTranslation();
 

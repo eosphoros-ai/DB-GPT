@@ -5,6 +5,7 @@ import { Table, Tabs, TabsProps } from 'antd';
 import { useMemo } from 'react';
 import { CodePreview } from './code-preview';
 
+/** Render structured chart content using the GPT visualization components. */
 function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType; sql: string }) {
   // SQL results need not contain a primary key and may contain duplicate values.
   // Use each row's position in this immutable result snapshot as its identity.

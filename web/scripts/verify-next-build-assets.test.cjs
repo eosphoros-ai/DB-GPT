@@ -5,6 +5,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { verifyNextBuildAssets } = require('./verify-next-build-assets.cjs');
 
+/** Create a minimal temporary Next output tree with one HTML page and its referenced chunk. */
 const makeBuild = () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'dbgpt-next-build-'));
   const pages = path.join(root, 'server', 'pages');

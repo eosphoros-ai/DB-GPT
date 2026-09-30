@@ -9,6 +9,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 const ts = require('typescript');
 
+/** Load a real TypeScript module as CommonJS for the Node regression tests without a browser bundler. */
 function loadTs(relative) {
   const filename = path.resolve(__dirname, '..', relative);
   const loaded = new Module(filename, module);
@@ -116,6 +117,7 @@ test('repeated cleanup leaves a later subscription intact', t => {
   assert.deepEqual(received, ['new']);
 });
 
+/** Spawn a copied launcher with a fake Next entrypoint and register cleanup for its process and temporary directory. */
 function runnerFixture(t, childSource, nodeOptions = '') {
   const temporaryRoot = fs.realpathSync(os.tmpdir());
   const root = fs.mkdtempSync(path.join(temporaryRoot, 'dbgpt-runner-tests-'));
@@ -153,11 +155,19 @@ function runnerFixture(t, childSource, nodeOptions = '') {
 }
 
 for (const [options, expectedMiB] of [
+  ['', 8192],
   ['--trace-warnings', 8192],
   ['--trace-warnings --max-old-space-size=12288', 12288],
   ['--trace-warnings --max_old_space_size=2048', 2048],
+  ['--trace-warnings --max-old-space-size="2048"', 2048],
+  ['--trace-warnings "--max-old-space-size=3072"', 3072],
+  ['--trace-warnings --max-old-space-size=3072 --max_old_space_size=4096', 4096],
+  ['--trace-warnings --title=foo--max-old-space-size=4096', 8192],
+  ['--trace-warnings --title="foo --max-old-space-size=4096"', 8192],
+  ['--trace-warnings --title="--max-old-space-size=4096"', 8192],
+  ['--trace-warnings --title="foo \\"--max-old-space-size=4096\\""', 8192],
 ]) {
-  test(`the Next child receives the requested heap limit: ${expectedMiB} MiB`, { timeout: 10000 }, async t => {
+  test(`the Next child applies the heap options: ${options || '(empty)'}`, { timeout: 10000 }, async t => {
     const { runner } = runnerFixture(
       t,
       `console.log(JSON.stringify({
@@ -167,11 +177,15 @@ for (const [options, expectedMiB] of [
       options,
     );
     let output = '';
+    let errors = '';
     runner.stdout.on('data', chunk => {
       output += chunk;
     });
+    runner.stderr.on('data', chunk => {
+      errors += chunk;
+    });
     const [code] = await once(runner, 'close');
-    assert.equal(code, 0);
+    assert.equal(code, 0, errors);
     const child = JSON.parse(output);
     // Compare to this Node version directly: V8's young-generation allowance
     // changes between releases, independently of the requested old-space limit.
@@ -186,7 +200,7 @@ for (const [options, expectedMiB] of [
     );
     assert.equal(control.status, 0, control.stderr);
     assert.equal(child.heapLimitMiB, Number(control.stdout.trim()));
-    assert.match(child.options, /--trace-warnings/u);
+    assert.ok(child.options.includes(options), 'Preserve all configured NODE_OPTIONS.');
   });
 }
 

@@ -8,6 +8,7 @@ interface IProps {
   className?: string;
 }
 
+/** Render the database-type icon with the image properties supplied by the caller. */
 function DBIcon({ src, label, width, height, className }: IProps) {
   return (
     <Image

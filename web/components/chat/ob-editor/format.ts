@@ -6,11 +6,13 @@ import { format } from 'sql-formatter';
 // formatting adapter imports ~129 MB of generated parsers into the page graph;
 // completion still uses OB's unchanged, prebuilt SQL workers.
 class SqlFormattingProvider {
+  /** Bind the formatter to the editor plugin metadata and selected SQL dialect. */
   constructor(
     private plugin: Plugin,
     private dialect: string,
   ) {}
 
+  /** Return a replacement for the requested SQL range, or no edits for cancellation, unsupported delimiters or incomplete SQL. */
   protected edits(
     model: editor.ITextModel,
     range: IRange,
@@ -41,6 +43,7 @@ export class DocumentFormattingEditProvider
   extends SqlFormattingProvider
   implements languages.DocumentFormattingEditProvider
 {
+  /** Format the complete model using its indentation options and cancellation token. */
   provideDocumentFormattingEdits(
     model: editor.ITextModel,
     options: languages.FormattingOptions,
@@ -54,6 +57,7 @@ export class DocumentRangeFormattingEditProvider
   extends SqlFormattingProvider
   implements languages.DocumentRangeFormattingEditProvider
 {
+  /** Format only the selected range without replacing SQL outside that range. */
   provideDocumentRangeFormattingEdits(
     model: editor.ITextModel,
     range: IRange,

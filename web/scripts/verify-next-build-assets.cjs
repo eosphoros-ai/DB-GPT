@@ -1,6 +1,7 @@
 const { existsSync, readdirSync, readFileSync, statSync } = require('node:fs');
 const path = require('node:path');
 
+/** Recursively collect generated HTML pages, returning an empty list for an absent directory. */
 const listHtmlFiles = directory => {
   if (!existsSync(directory)) return [];
   const files = [];
@@ -15,6 +16,7 @@ const listHtmlFiles = directory => {
   return files;
 };
 
+/** Verify local Next asset references in server or exported HTML; throw for missing pages/assets and return verification counts. */
 const verifyNextBuildAssets = (nextDirectory, { staticExport = false } = {}) => {
   const pagesDirectory = staticExport ? nextDirectory : path.join(nextDirectory, 'server', 'pages');
   const htmlFiles = listHtmlFiles(pagesDirectory);

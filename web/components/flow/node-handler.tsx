@@ -18,6 +18,7 @@ interface NodeHandlerProps {
 }
 
 // render react flow handle item
+/** Render an AWEL input/output handle and its connection controls, including dynamic ports. */
 const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, index }) => {
   const { t } = useTranslation();
   const reactflow = useReactFlow();
@@ -208,6 +209,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
   }
 
   // Check if this field is the last one of this type (for dynamic fields)
+  /** Identify the final port in a dynamic field group so only that port offers extension controls. */
   const isLastDynamicField = () => {
     if (!dynamic) return false;
 

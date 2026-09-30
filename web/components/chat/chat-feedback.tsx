@@ -32,6 +32,7 @@ type Props = {
   select_param?: FeedBack;
 };
 
+/** Collect and submit user feedback for an individual conversation response. */
 const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: Props) => {
   const { t } = useTranslation();
   const { chatId } = useContext(ChatContext);

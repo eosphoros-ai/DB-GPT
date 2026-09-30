@@ -20,6 +20,7 @@ const OpenCodeChatCompletion = dynamic(() => import('@/new-components/chat/conte
 });
 
 // eslint-disable-next-line no-empty-pattern
+/** Compose the current chat content area from the conversation state supplied by its parent. */
 const ChatContentContainer = ({ className }: { className?: string }, ref: React.ForwardedRef<any>) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollToTop, setIsScrollToTop] = useState<boolean>(false);

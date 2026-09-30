@@ -176,6 +176,7 @@ const getLegendConfig = (showLegend: boolean = true) => ({
 });
 
 // Enhanced tooltip configuration with crosshairs
+/** Build chart tooltip options and the custom content renderer from the selected chart configuration. */
 const getTooltipConfig = (config: ChartConfig) => ({
   tooltip: {
     showTitle: true,
@@ -210,6 +211,7 @@ const getTooltipConfig = (config: ChartConfig) => ({
         fontSize: '12px',
       },
     },
+    /** Render tooltip rows for the configured value field, returning empty content when no items are available. */
     customContent: (title: string, items: any[]) => {
       if (!items?.length) return '';
       const yField = config.yField || 'y';

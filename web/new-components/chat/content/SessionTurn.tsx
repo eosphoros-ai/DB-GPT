@@ -148,6 +148,7 @@ const UserIcon: React.FC = () => {
   );
 };
 
+/** Render one step of a session turn with its execution details and output. */
 const StepItem: React.FC<{ step: ExecutionStep; isLast: boolean }> = ({ step, isLast: _isLast }) => {
   const config = stepStatusConfig[step.status];
   const duration = step.startTime && step.endTime ? step.endTime - step.startTime : undefined;

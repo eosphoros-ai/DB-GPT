@@ -76,6 +76,7 @@ interface EvaluationItemType {
   gmt_create: string;
   gmt_modified: string;
 }
+/** Manage evaluation datasets and runs, including launching evaluations and downloading their results. */
 const Evaluation = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDataSetModalOpen, setIsDataSetModalOpen] = useState(false);
@@ -279,6 +280,7 @@ const Evaluation = () => {
     {
       title: 'Action',
       key: 'action',
+      /** Render the row actions for inspecting, deleting or downloading the associated evaluation data. */
       render: (_, record) => (
         <Space size='middle'>
           <Popconfirm
@@ -431,6 +433,7 @@ const Evaluation = () => {
     {
       title: '测评结果',
       key: 'result',
+      /** Render the row actions for inspecting, deleting or downloading the associated evaluation data. */
       render: (_, record) => (
         <>
           <Button

@@ -41,6 +41,7 @@ interface HistoryTurn {
   view?: IChatDialogueMessageSchema;
 }
 
+/** Connect the agent chat workspace to the active conversation and its execution state. */
 const OpenCodeAgentChatContainer: React.FC = () => {
   const { t } = useTranslation();
   const { scene, chatId, model, agent, setModel, history, setHistory } = useContext(ChatContext);

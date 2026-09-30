@@ -253,12 +253,15 @@ const codeComponents = {
 
 const basicComponents: MarkdownComponent = {
   ...codeComponents,
+  /** Render Markdown unordered lists with list markers applied to their direct items. */
   ul({ children }) {
     return <ul className='py-1 [&>li]:list-disc'>{children}</ul>;
   },
+  /** Render Markdown ordered lists with decimal markers on their direct items. */
   ol({ children }) {
     return <ol className='py-1 [&>li]:list-decimal'>{children}</ol>;
   },
+  /** Render Markdown list content without forwarding renderer-only node metadata to the DOM. */
   li({ children }) {
     return <li className='text-sm leading-7 ml-5 pl-2 text-gray-600 dark:text-gray-300'>{children}</li>;
   },

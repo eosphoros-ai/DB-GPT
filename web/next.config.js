@@ -1,9 +1,13 @@
-/** @type {import('next').NextConfig} */
 const CopyPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const { PHASE_DEVELOPMENT_SERVER } = require('next/constants');
 const path = require('node:path');
 
+/**
+ * Create the configuration for development, server builds or static export.
+ * @param {string} phase Next.js phase used to select development settings.
+ * @returns {import('next').NextConfig} Pages Router and Webpack configuration.
+ */
 module.exports = phase => {
   const development = phase === PHASE_DEVELOPMENT_SERVER;
   const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === '1';
@@ -22,6 +26,7 @@ module.exports = phase => {
     },
     ...(!staticExport
       ? {
+          /** Proxy API requests to the local backend for server deployments; static exports omit this hook. */
           async rewrites() {
             return [{ source: '/api/v1/:path*', destination: 'http://127.0.0.1:5670/api/v1/:path*' }];
           },
@@ -46,6 +51,7 @@ module.exports = phase => {
       '@antv/graphin',
       '@antv/gpt-vis',
     ],
+    /** Configure ESM dependencies, local Monaco workers and bounded development/build resource use. */
     webpack: (config, { isServer, dev, webpack }) => {
       // Large editor/chart modules otherwise accumulate across page compilations.
       // Keep production caching; development can recompile evicted pages on demand.

@@ -1,9 +1,11 @@
+/** Wrap fixture data in the API success envelope consumed by the frontend. */
 const envelope = (data) => ({
   success: true,
   data,
   err_code: null,
   err_msg: null,
 });
+/** Build a paginated fixture response with consistent item and total counts. */
 const paged = (items) => ({
   items,
   total_count: items.length,
@@ -130,6 +132,7 @@ const history = [
     time_stamp: 1790668800,
   },
 ];
+/** Resolve a known fixture endpoint; return undefined so the harness records unknown API requests. */
 function responseFor(url, method) {
   const p = url.pathname.replace(/\/$/, "");
   if (p === "/api/v1/chat/share/regression-share")

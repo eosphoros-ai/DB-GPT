@@ -26,6 +26,7 @@ export function withSessionRoute(handler: NextApiHandler): NextApiHandler {
   };
 }
 
+/** Attach the iron-session v8 session before invoking a Pages Router getServerSideProps handler. */
 export function withSessionSsr<P extends { [key: string]: unknown } = { [key: string]: unknown }>(
   handler: (context: GetServerSidePropsContext) => GetServerSidePropsResult<P> | Promise<GetServerSidePropsResult<P>>,
 ) {

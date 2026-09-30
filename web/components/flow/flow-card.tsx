@@ -23,6 +23,7 @@ interface FlowCardProps {
   onCopy: (flow: IFlow) => void;
 }
 
+/** Display a workflow preview and expose its conversation, configuration and removal actions. */
 const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => {
   const { model } = useContext(ChatContext);
   const { t } = useTranslation();

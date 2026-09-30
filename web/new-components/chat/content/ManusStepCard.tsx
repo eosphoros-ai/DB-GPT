@@ -94,6 +94,7 @@ const getStatusIndicator = (status: StepStatus) => {
   }
 };
 
+/** Map an execution-step type to its localized label using the provided translator. */
 const getTypeLabel = (type: StepCardProps['type'], t: TFunction): string => {
   const labels: Record<StepCardProps['type'], string> = {
     read: t('step_type_read'),

@@ -63,6 +63,7 @@ function SidebarPictureIcon({
   return <Image src={active && activeSrc ? activeSrc : src} alt={alt} width={size} height={size} />;
 }
 
+/** Render primary navigation and conversation actions for the current route. */
 function SideBar() {
   const { isMenuExpand, setIsMenuExpand, mode, setMode } = useContext(ChatContext);
   const router = useRouter();

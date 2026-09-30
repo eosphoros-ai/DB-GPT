@@ -30,6 +30,7 @@ interface SaveAsScheduledTaskDrawerProps {
   defaultName?: string;
 }
 
+/** Create a scheduled task from the current conversation and the user's scheduling choices. */
 const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
   open,
   onClose,

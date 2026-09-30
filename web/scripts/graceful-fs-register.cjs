@@ -9,6 +9,7 @@ const nodeFileTrace = nft.nodeFileTrace;
 Object.defineProperty(nft, 'nodeFileTrace', {
   configurable: true,
   enumerable: true,
+  /** Cap output tracing filesystem concurrency while preserving the caller's lower explicit limit. */
   value: (files, options = {}) =>
     nodeFileTrace(files, {
       ...options,
@@ -24,6 +25,7 @@ const maxConcurrentOperations = 64;
 let activeOperations = 0;
 const waitingOperations = [];
 
+/** Acquire a shared filesystem-operation slot, queuing callers when all slots are occupied. */
 const acquire = () =>
   new Promise(resolve => {
     if (activeOperations < maxConcurrentOperations) {
@@ -34,6 +36,7 @@ const acquire = () =>
     waitingOperations.push(resolve);
   });
 
+/** Transfer a completed operation's slot to the oldest waiter, or decrement the active-operation count. */
 const release = () => {
   const next = waitingOperations.shift();
   if (next) {

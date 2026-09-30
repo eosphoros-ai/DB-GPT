@@ -8,6 +8,7 @@ declare global {
 
 let plugin: Plugin;
 
+/** Initialize the cached MySQL Monaco plugin and point its prebuilt SQL workers at same-origin assets. */
 export async function register(): Promise<Plugin> {
   window.obMonaco = {
     getWorkerUrl: (type: string) => {

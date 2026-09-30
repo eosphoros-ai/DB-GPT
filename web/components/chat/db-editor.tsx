@@ -62,6 +62,7 @@ interface ITableTreeItem {
   children: Array<ITableTreeItem>;
 }
 
+/** Display editable SQL beside query results/charts, preserving live edits and supplying schema completion. */
 function DbEditorContent({
   layout = 'LR',
   editorValue,
@@ -166,6 +167,7 @@ function DbEditorContent({
   );
 }
 
+/** Manage SQL conversation rounds, schema navigation, query execution and saving the edited result. */
 function DbEditor() {
   const { t } = useTranslation();
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
@@ -469,6 +471,7 @@ function DbEditor() {
 
   const dataList = useMemo(() => {
     const res: { key: Key; title: string; parentKey?: Key }[] = [];
+    /** Flatten schema-tree entries with parent keys so search results can expand their ancestors. */
     const generateList = (data: DataNode[], parentKey?: Key) => {
       if (!data || data?.length <= 0) return;
       for (let i = 0; i < data.length; i++) {

@@ -8,6 +8,7 @@ const localIcons = {
   'icon-unPublish-cloud': CloudDownloadOutlined,
 };
 
+/** Draw the temperature glyph locally so it does not require a remote icon-font script. */
 function TemperatureSvg() {
   return (
     <svg viewBox='0 0 24 24' width='1em' height='1em' fill='none' stroke='currentColor' strokeWidth='1.8'>
@@ -23,6 +24,7 @@ type Props = Omit<ComponentProps<typeof Icon>, 'ref'> & {
 };
 
 // Render the app's icon set locally so a third-party script cannot break it.
+/** Resolve the supported application icon names to local Ant Design components or the temperature glyph. */
 export default function IconFont({ type, ...props }: Props) {
   if (type === 'icon-icons-temperature') return <Icon component={TemperatureSvg} {...props} />;
   const Component = localIcons[type];

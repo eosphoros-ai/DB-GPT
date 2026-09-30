@@ -9,13 +9,9 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-// Keep an explicitly configured heap limit. Large development compilations may
-// need a different limit; silently replacing it prevents operators from tuning it.
-const configuredOptions = (process.env.NODE_OPTIONS || '').trim();
-const hasHeapLimit = /--max(?:-|_)old(?:-|_)space(?:-|_)size(?:=|\s+)\d+/iu.test(configuredOptions);
-const nodeOptions = hasHeapLimit
-  ? configuredOptions
-  : [configuredOptions, '--max_old_space_size=8192'].filter(Boolean).join(' ');
+// Node uses the last value of a singleton option. Put the default first so Node
+// itself preserves explicit limits and handles quoting/option values correctly.
+const nodeOptions = ['--max_old_space_size=8192', process.env.NODE_OPTIONS].filter(Boolean).join(' ');
 
 const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: path.join(__dirname, '..'),
@@ -27,12 +23,14 @@ const child = spawn(process.execPath, [nextBin, ...args], {
 // Keep the wrapper alive until Next finishes shutting down.
 const signalHandlers = new Map();
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  /** Relay the supervisor's signal to Next while the child is still running. */
   const forward = () => {
     if (child.exitCode === null && child.signalCode === null) child.kill(signal);
   };
   signalHandlers.set(signal, forward);
   process.on(signal, forward);
 }
+/** Detach forwarding handlers before propagating child completion or a spawn error. */
 const removeSignalHandlers = () => {
   for (const [signal, handler] of signalHandlers) process.removeListener(signal, handler);
 };

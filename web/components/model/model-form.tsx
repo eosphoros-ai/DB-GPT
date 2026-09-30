@@ -26,6 +26,7 @@ interface ModelFormProps {
   providerConfig?: { api_key?: string; api_base?: string };
 }
 
+/** Configure a model worker using provider-defined parameters and submit its startup settings. */
 function ModelForm({ onCancel, onSuccess, defaultProvider, defaultWorkerType, providerConfig }: ModelFormProps) {
   const { t } = useTranslation();
   const [_, setModels] = useState<Array<SupportModel> | null>([]);
@@ -119,9 +120,11 @@ function ModelForm({ onCancel, onSuccess, defaultProvider, defaultWorkerType, pr
     applyProvider(value, selectedWorkerType);
   }
 
+  /** Normalize provider parameters and start the selected worker, reporting success or failure to the user. */
   async function onFinish(values: any) {
     if (!selectedProvider || !selectedWorkerType) return;
 
+    /** Preserve the selected nested type and its declared values in the model-start payload. */
     const processFormValues = (formValues: any) => {
       const processed = { ...formValues };
 

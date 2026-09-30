@@ -160,6 +160,7 @@ function providerIcon(
   return <ProviderAvatar label={label} seed={provider} size={size} />;
 }
 
+/** List model/provider configurations and expose their configuration actions. */
 function ModelsConfig() {
   const { message } = App.useApp();
   const { t } = useTranslation();
