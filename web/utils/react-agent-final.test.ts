@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { decodeAgentFinalAnswer, decodeAgentHistoryAnswer } from './react-agent-final';
+import { cleanFinalContent, decodeAgentFinalAnswer, decodeAgentHistoryAnswer } from './react-agent-final';
+
+test('presents a zero-step shared legacy answer like restored history without losing citations', () => {
+  const answer = decodeAgentHistoryAnswer({
+    version: 1,
+    type: 'react-agent',
+    steps: [],
+    final_content: 'Thought: PR3277_SHARE_OK [1]',
+    citations: [{ index: 1, sourceName: 'regression.md', excerpt: 'PR3277_SHARE_OK' }],
+  });
+  assert.equal(cleanFinalContent(answer.content), 'PR3277_SHARE_OK [1]');
+  assert.equal(answer.citations[0]?.sourceName, 'regression.md');
+});
 
 test('decodes protocol v2 final answer without mixing citations into content', () => {
   const answer = decodeAgentFinalAnswer({

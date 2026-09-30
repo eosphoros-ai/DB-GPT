@@ -22,6 +22,16 @@ export interface AgentFinalAnswer {
 }
 
 const MAX_CITATIONS = 10;
+
+/** Keep live answers, restored history, and shared replay presentation consistent. */
+export const cleanFinalContent = (text: string): string => {
+  let cleaned = text.replace(/\\n/g, '\n').trim();
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
+  // Strip raw ReAct prefixes that may leak from the backend.
+  cleaned = cleaned.replace(/^(Thought|Action|Action Input|Observation|Phase):\s*/gm, '').trim();
+  return cleaned;
+};
 const MAX_SOURCE_NAME_LENGTH = 512;
 const MAX_EXCERPT_LENGTH = 2_000;
 const MAX_TOTAL_EXCERPT_LENGTH = 12_000;

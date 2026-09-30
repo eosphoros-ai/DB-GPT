@@ -53,7 +53,12 @@ import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
-import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
+import {
+  cleanFinalContent,
+  decodeFinalEvent,
+  decodeHistoryAnswer,
+  type AgentCitation,
+} from '@/utils/react-agent-final';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import {
   ApiOutlined,
@@ -116,15 +121,6 @@ const generateUUID = () => {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-};
-
-const cleanFinalContent = (text: string): string => {
-  let cleaned = text.replace(/\\n/g, '\n').trim();
-  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-  cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
-  // Strip raw ReAct prefixes that may leak from the backend
-  cleaned = cleaned.replace(/^(Thought|Action|Action Input|Observation|Phase):\s*/gm, '').trim();
-  return cleaned;
 };
 
 const _formatFileSize = (bytes: number): string => {

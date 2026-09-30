@@ -50,9 +50,19 @@ module.exports = phase => {
       // Large editor/chart modules otherwise accumulate across page compilations.
       // Keep production caching; development can recompile evicted pages on demand.
       if (dev) config.cache = false;
-      // Replace only OB's formatting adapter. SQL completion/tokenization and
-      // its prebuilt workers remain unchanged; generated parsers stay out of pages.
+      // Keep OB's prebuilt completion workers, loading their same-origin URLs
+      // directly so WebKit never races a revoked blob URL. Replace the formatting
+      // adapter separately to keep generated SQL parsers out of page bundles.
       config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^\.\.\/\.\.\/corsWorker$/, resource => {
+          if (
+            /[/\\]@oceanbase-odc[/\\]monaco-plugin-ob[/\\]dist[/\\](mysql|obmysql|oboracle)[/\\]worker$/.test(
+              resource.context,
+            )
+          ) {
+            resource.request = path.join(__dirname, 'components/chat/ob-editor/worker.ts');
+          }
+        }),
         new webpack.NormalModuleReplacementPlugin(/^\.\.\/format$/, resource => {
           if (
             /[/\\]@oceanbase-odc[/\\]monaco-plugin-ob[/\\]dist[/\\](mysql|obmysql|oboracle)$/.test(resource.context)

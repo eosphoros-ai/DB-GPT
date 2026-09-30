@@ -132,6 +132,22 @@ const history = [
 ];
 function responseFor(url, method) {
   const p = url.pathname.replace(/\/$/, "");
+  if (p === "/api/v1/chat/share/regression-share")
+    return {
+      messages: [
+        { role: "human", context: "Replay this regression answer", order: 0 },
+        {
+          role: "view",
+          order: 1,
+          context: JSON.stringify({
+            version: 1,
+            type: "react-agent",
+            steps: [],
+            final_content: "Thought: PR3277_SHARE_OK",
+          }),
+        },
+      ],
+    };
   if (p === "/api/v1/model/types") return ["regression-model"];
   if (p === "/api/v1/chat/dialogue/list") return [conversation];
   if (p === "/api/v1/chat/dialogue/query_page") return paged([conversation]);

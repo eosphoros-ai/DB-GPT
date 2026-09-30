@@ -383,21 +383,26 @@ interaction(
     const editor = page.locator(".monaco-editor").first();
     await expect(editor).toBeVisible();
     const input = editor.getByRole("textbox", { name: /Editor content/ });
+    // Windows WebKit reports Win32 but uses its macOS user-agent key bindings.
+    const selectAll = await page.evaluate(() =>
+      /Mac/.test(navigator.userAgent) ? "Meta+A" : "Control+A",
+    );
     await input.focus();
-    await page.keyboard.press("Control+A");
-    await page.keyboard.type("SEL");
+    await page.keyboard.press(selectAll);
+    await page.keyboard.type("SEL", { delay: 20 });
     await page.keyboard.press("Control+Space");
     await expect(
       editor.getByRole("option", { name: "SELECT", exact: true }),
     ).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.keyboard.press("Control+A");
-    await page.keyboard.type("select 2 as value");
+    await page.keyboard.press(selectAll);
+    await page.keyboard.type("select 2 as value", { delay: 20 });
     await page.keyboard.press("Escape");
     await page.keyboard.press("Shift+Alt+F");
     await expect(editor.locator(".view-lines")).toContainText(
       /select\s+2\s+as\s+value/i,
     );
+    await expect(editor.locator(".view-line")).toHaveCount(2);
     await page
       .getByRole("button", { name: "caret-right Run", exact: true })
       .click();
@@ -405,13 +410,16 @@ interaction(
     const submitted = r.requests.find((request) =>
       request.path.endsWith("/editor/chart/run"),
     ).body;
-    expect(submitted).toContain("\\n");
-    expect(submitted).toMatch(/2.*as value/i);
+    expect(JSON.parse(submitted).sql).toBe("select\n  2 as value");
     await expect(
       page.getByRole("columnheader", { name: "value", exact: true }),
     ).toBeVisible();
     await page.getByRole("button", { name: "save Save", exact: true }).click();
     await waitRequest(r, "/chart/editor/submit", "POST");
+    const saved = r.requests.find((request) =>
+      request.path.endsWith("/chart/editor/submit"),
+    );
+    expect(JSON.parse(saved.body).new_sql).toBe("select\n  2 as value");
   },
 );
 interaction(
@@ -444,3 +452,15 @@ interaction("evaluation-tabs-and-form", "/evaluation/", async (page) => {
   await page.getByRole("button", { name: "发起评测" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 });
+
+interaction(
+  "shared-zero-step-replay",
+  "/share/regression-share/",
+  async (page) => {
+    const answer = page.getByText("PR3277_SHARE_OK", { exact: true }).first();
+    await expect(answer).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Thought:");
+    await page.getByRole("button", { name: "reload 重新回放" }).click();
+    await expect(answer).toBeVisible();
+  },
+);

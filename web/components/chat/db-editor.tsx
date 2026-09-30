@@ -29,6 +29,7 @@ type ITableData = {
 };
 
 interface EditorValueProps {
+  editorText?: string;
   sql?: string;
   thoughts?: string;
   title?: string;
@@ -43,7 +44,7 @@ interface RoundProps {
 
 interface IProps {
   editorValue?: EditorValueProps;
-  liveSql?: string;
+  liveEditorText?: string;
   chartData?: any;
   tableData?: ITableData;
   layout?: 'TB' | 'LR';
@@ -61,7 +62,15 @@ interface ITableTreeItem {
   children: Array<ITableTreeItem>;
 }
 
-function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, tableData, tables, handleChange }: IProps) {
+function DbEditorContent({
+  layout = 'LR',
+  editorValue,
+  liveEditorText,
+  chartData,
+  tableData,
+  tables,
+  handleChange,
+}: IProps) {
   const chartWrapper = useMemo(() => {
     if (!chartData) return null;
     return (
@@ -129,7 +138,8 @@ function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, table
     >
       <div className='flex-1 flex overflow-hidden rounded'>
         <MonacoEditor
-          value={liveSql ?? editorValue?.sql ?? ''}
+          value={liveEditorText ?? editorValue?.sql ?? ''}
+          formatValue={liveEditorText === undefined}
           language='mysql'
           onChange={handleChange}
           thoughts={editorValue?.thoughts || ''}
@@ -695,12 +705,13 @@ function DbEditor() {
                     <DbEditorContent
                       layout={layout}
                       editorValue={item}
-                      liveSql={index === currentTabIndex ? (newEditorValue?.sql ?? item.sql) : item.sql}
+                      liveEditorText={index === currentTabIndex ? newEditorValue?.editorText : undefined}
                       handleChange={value => {
                         const { sql, thoughts } = resolveSqlAndThoughts(value);
                         latestSqlRef.current = sql ?? '';
                         setNewEditorValue(old => {
                           return Object.assign({}, old, {
+                            editorText: value ?? '',
                             sql,
                             thoughts,
                           });
@@ -717,12 +728,13 @@ function DbEditor() {
             <DbEditorContent
               layout={layout}
               editorValue={editorValue}
-              liveSql={newEditorValue?.sql}
+              liveEditorText={newEditorValue?.editorText}
               handleChange={value => {
                 const { sql, thoughts } = resolveSqlAndThoughts(value);
                 latestSqlRef.current = sql ?? '';
                 setNewEditorValue(old => {
                   return Object.assign({}, old, {
+                    editorText: value ?? '',
                     sql,
                     thoughts,
                   });

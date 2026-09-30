@@ -23,6 +23,7 @@ interface MonacoEditorProps {
   language: string;
   onChange?: OnChange;
   thoughts?: string;
+  formatValue?: boolean;
   session?: ISession;
 }
 
@@ -35,19 +36,20 @@ export default function MonacoEditor({
   language = 'mysql',
   onChange,
   thoughts,
+  formatValue = true,
   session,
 }: MonacoEditorProps) {
   // merge value and thoughts
 
   const editorValue = useMemo(() => {
-    if (language !== 'mysql') {
+    if (language !== 'mysql' || !formatValue) {
       return value;
     }
     if (thoughts && thoughts.length > 0) {
       return formatSql(`-- ${thoughts} \n${value}`);
     }
     return formatSql(value);
-  }, [value, thoughts]);
+  }, [value, thoughts, language, formatValue]);
 
   const sessionRef = useLatest(session);
 
