@@ -65,7 +65,7 @@ fixture response was delayed beyond Axios's 10-second timeout; SQL completion
 remained loading at the 15-second assertion deadline. The unchanged application
 and test suite then passed all 42 cases when run alone with a fresh output
 directory and unchanged timeouts. That controlled rerun does not erase the
-failure or establish its root cause. The evidence records both attempts.
+earlier failures. The evidence records both attempts.
 
 **Targeted follow-up:** both original failures are waiting/deadline failures,
 not wrong returned values. The skills page `/construct/skills/` missed its
@@ -73,9 +73,12 @@ Axios deadline before the switch locator timed out; the SQL editor at
 `/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression` remained
 loading while waiting for the SELECT option. Twenty unchanged paired rounds,
 including four fresh dev servers, passed **40/40** without automatic retries or
-longer timeouts. This is non-reproduction evidence, not proof that Next 16 or a
-product race is excluded. See the [original errors, timestamps, repeat matrix
-and remaining uncertainty](pr-3277-flaky-investigation.md).
+longer timeouts. The recorded failures do not establish a product defect
+introduced by Next.js 16; their classification and targeted repetition are
+closed within the documented scope. The slowest repeated skills request,
+**8.268 seconds**, passed within the unchanged **10-second** limit; the original
+fixture response crossed that deadline. See the [original errors, measured
+distribution, slowest samples and scope of closeout](pr-3277-flaky-investigation.md).
 
 
 ## Frontend module checklist — deterministic API fixtures
@@ -112,7 +115,12 @@ claimed as 60 user workflows. Rendering-only rows are not full CRUD acceptance.
 
 ## Earlier live checks — no API fixtures; source `80d7c703`
 
-These checks were not rerun in this review follow-up.
+These checks were not rerun in this review follow-up. The review fixes concern
+`NODE_OPTIONS` handling and JSON answer/replay presentation, with accompanying
+tests and documentation; they do not change API request construction, transport,
+or backend source. That scope is the reason for retaining the nine earlier
+integration results without a rerun. Their source version remains explicitly
+`80d7c703`; they are not presented as fresh results on the review-fix commit.
 
 These **nine integration checks** used the #3277 frontend at `80d7c703` with
 the existing, unchanged Python backend loaded from the same isolated checkout.
@@ -192,9 +200,6 @@ not product regressions. No old-toolchain browser comparison was performed.
 - [ ] **Old-toolchain browser/build comparison:** no complete same-environment
       run of the pre-upgrade dev/build/browser suite was performed. The earlier
       same-ESLint source comparison establishes lint attribution only.
-- [ ] **First development attempt:** its timeout/loading failures were not
-      reproduced in the isolated rerun, but their root cause was not established.
-      Concurrent-workload stability is not claimed as accepted.
 
 These limits remain unchecked. This is not an assertion that every backend,
 provider or real-device combination has been accepted.

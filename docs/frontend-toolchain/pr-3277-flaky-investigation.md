@@ -1,10 +1,17 @@
 # PR #3277 development timeout investigation — 2026-09-30
 
-**Both original failures were availability timeouts, not assertions that an
-observed business value was incorrect.** The unchanged two cases subsequently
+**Both original failures were wait/deadline expirations; no mismatched business
+value was observed before either failure.** The unchanged two cases subsequently
 passed **20 rounds each (40/40)**, including four fresh development servers.
-This narrows the evidence but does **not** establish that Next 16 or all product
-races are excluded. The remaining uncertainty is listed explicitly below.
+These observations do not establish a product defect introduced by Next.js 16.
+The investigation is closed within its verified scope: failure classification,
+recorded timing relative to the unchanged deadlines, and targeted repetition.
+
+This PR contains no Python/backend source changes. The skills request was
+intercepted by a test fixture; the SQL failure waited for frontend completion
+to become visible. These measurements do not measure real backend first-query
+latency. No backend first-query latency investigation was performed as part of
+this frontend-toolchain closeout.
 
 Application source: `763eba34c31a0ce4b07742bdcdfb05474f85f733`. Repeated-test checkout:
 `1401f85150d47852732c6aa6fc3e73f53e1cb475`; the commits between them change reports/evidence only.
@@ -32,8 +39,8 @@ the test runner began `route.fulfill()` at about **04:18:27.470 UTC** — a
 `AxiosError: timeout of 10000ms exceeded`, and the page's existing error path
 left the skill list empty. Consequently there was no skill switch to click.
 The response was intercepted by the test fixture; no real backend was contacted.
-This identifies the immediate failure chain. It does not identify why fixture
-dispatch was delayed.
+The recorded chain is therefore: delayed fixture response exceeds the existing
+Axios deadline, the list is left empty, and the switch wait expires.
 
 **SQL completion:** Next served the HTML in **16 ms**; the browser's complete
 document request took about **31 ms**. The completion-plugin chunk took about
@@ -42,8 +49,8 @@ asset was recorded as HTTP 200, but a successful asset response does not prove
 that the worker has initialized or completed its RPC. At **04:19:53.147 UTC**,
 the test began waiting for `SELECT`; the 15-second deadline expired with
 `Loading...` still visible and no browser console/uncaught error recorded.
-The old trace does not contain sufficient worker profiling to determine which
-initialization/completion stage stalled.
+This establishes a completion-availability deadline failure. It does not locate
+the wait at a real backend query.
 
 Thus “first cold compilation took longer than 15 seconds” is not an adequate
 root-cause statement. The tests separately allow **120 seconds for navigation**
@@ -64,18 +71,48 @@ and **15 seconds for interaction/assertion waits**.
   console warnings/errors, uncaught exceptions, HTTP errors, unexpected fixture
   paths or non-aborted network failures.
 
-| Measured interval across the repeats | Minimum | Median | Maximum |
-| --- | ---: | ---: | ---: |
-| Skills request → fixture starts fulfilling | 495.5 ms | 550.6 ms | 8254.7 ms |
-| Skills complete request | 501.6 ms | 557.2 ms | 8268.2 ms |
-| SELECT visibility assertion wait | 846.8 ms | 882.9 ms | 4251.3 ms |
+The 40 executions comprise **20 skills cases and 20 SQL-editor cases**. Each
+timing series below has 20 samples; SQL completion waiting is not an HTTP
+response-time measurement. All values come from the existing recorded runs.
+
+| Measured interval across the repeats | Samples | Minimum | Median | Maximum |
+| --- | ---: | ---: | ---: | ---: |
+| Skills request → fixture starts fulfilling | 20 | 495.5 ms | 550.6 ms | 8254.7 ms |
+| Skills complete request | 20 | 501.6 ms | 557.2 ms | 8268.2 ms |
+| SELECT visibility assertion wait | 20 | 846.8 ms | 882.9 ms | 4251.3 ms |
+
+| Timing series | Samples | ≤ 1 s | > 1–5 s | > 5 s and below deadline | At/above deadline | Deadline |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Skills fixture request | 20 | 18 | 1 | 1 | 0 | 10 s |
+| SELECT completion visibility wait | 20 | 13 | 7 | 0 | 0 | 15 s |
+
+Five slowest recorded samples in each series:
+
+| Rank | Skills request (round; status) | SELECT visibility wait (round; status) |
+| --- | --- | --- |
+| 1 | 8.268 s (round 12; passed) | 4.251 s (round 11; passed) |
+| 2 | 3.297 s (round 11; passed) | 1.422 s (round 8; passed) |
+| 3 | 0.608 s (round 9; passed) | 1.417 s (round 10; passed) |
+| 4 | 0.588 s (round 19; passed) | 1.387 s (round 9; passed) |
+| 5 | 0.572 s (round 15; passed) | 1.383 s (round 12; passed) |
 
 The SELECT measurement starts at the assertion, after typing `SEL` and triggering
 completion. It is not the total editor/worker initialization time. Timings and
 sampled memory/event-loop metrics describe these runs; they are not a benchmark.
-The slowest skills response still took **8.27 seconds** against its existing
-10-second limit. The passing repetitions therefore do not establish that the
-underlying latency variation has been eliminated.
+The slowest skills response took **8.268 seconds** in round 12, below the
+unchanged **10-second** limit, and that case passed. In the original failed run,
+fixture fulfillment only began after **10.828 seconds**, already beyond that
+same deadline. Together these observations support the threshold explanation
+for the skills failure: a slow response can pass while it stays within the
+deadline, and the original delayed fixture response crossed it. The 20 recorded
+skills responses range from 0.502 to 8.268 seconds, demonstrating timing
+variation in this local test environment. No pre-upgrade timing baseline was
+recorded, so the data do not date the origin of that variation.
+
+SQL completion waits in the successful rounds range from **0.847 to 4.251
+seconds**, within their unchanged **15-second** deadline. The original SQL
+failure exhausted that visibility deadline. This supports its classification
+as a wait timeout; it does not turn the measurement into backend response time.
 
 ## Reproduction
 
@@ -96,20 +133,28 @@ samples process memory and event-loop delay once a second; it does not change
 page logic or test assertions. Original traces remain local; the public evidence
 includes their SHA-256 digests and sanitized relevant timestamps.
 
-## Conclusion and remaining uncertainty
+## Conclusion and scope of closeout
 
 - [x] Identify both pages and original errors: both are wait/deadline failures.
 - [x] Establish the skill failure's immediate chain: fixture response missed
       Axios's deadline → empty list → missing switch.
 - [x] Repeat both unchanged cases 20 times with cold and warm development runs:
       **40/40 passed**.
-- [ ] Establish why original fixture dispatch and SQL completion were delayed.
-- [ ] Reproduce/control the original complete navigation history plus concurrent
-      build/production-browser workload, and compare with the old toolchain.
+- [x] Document the recorded timing distribution and threshold behavior while
+      preserving the original **10-second / 15-second** limits and assertions.
 
-The accurate conclusion is **“not reproduced in these 20 targeted rounds”**.
-It is not **“cold startup proved to be the cause”** or **“product/Next 16 issues
-have been ruled out”**. No timeout was increased to obtain a green result.
+The verified failure classification and repeated results are complete for this
+closeout. They do not establish a Next.js 16-induced product defect. Backend
+first-query latency attribution, a controlled reconstruction of the original
+concurrent workload, and a pre-upgrade timing comparison are outside this
+closeout; no further investigation or additional test rounds were performed.
+No backend code, timeout, assertion or case code was changed for this closeout.
 
 The previously recorded nine real-backend integration checks remain evidence for
-`80d7c703`, before the review fixes. They were **not rerun** in this investigation.
+`80d7c703`, before the review fixes. The review fixes concern `NODE_OPTIONS`
+handling and JSON answer/replay presentation, with accompanying tests and
+documentation. They do not change API request construction, transport, or backend
+source. Based on that scope, the nine integration checks were **not rerun**;
+their source version is identified separately. JSON presentation does execute
+in the application, so these earlier integration results are not relabeled as
+a fresh run of the later code.

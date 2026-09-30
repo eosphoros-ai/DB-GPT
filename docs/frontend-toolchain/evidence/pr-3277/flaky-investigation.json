@@ -1151,19 +1151,112 @@
     }
   ],
   "conclusions": [
-    "Both failures were deadline/availability failures; neither observed an incorrect returned business value.",
-    "The skill failure directly follows a delayed test-fixture response exceeding Axios's timeout.",
-    "Cold navigation alone is not an adequate explanation; the original SQL document was fast and fresh cold starts are included in repetition.",
-    "Repeated success is scoped evidence of non-reproduction, not proof that all product races or Next 16 regressions are excluded."
+    "Both original failures were waiting/deadline expirations; no mismatched business value was observed before failure.",
+    "The recorded failures and unchanged 40/40 repetitions do not establish a product defect introduced by Next.js 16. Failure classification and targeted repetition are complete within the documented closeout scope.",
+    "The slowest repeated skills fixture request passed at 8268.187 ms, below the unchanged 10000 ms deadline. In the original failure, fixture fulfillment began after 10827.777 ms, already beyond that deadline. This supports the threshold explanation for that case.",
+    "The PR changes no Python/backend source. Skills timings are intercepted-fixture timings and SQL timings are completion-visibility waits; neither establishes real backend first-query latency.",
+    "The measurements show latency variation in the current local test environment. No pre-upgrade timing baseline was recorded to date its origin."
   ],
   "remainingUncertainty": [
-    "The underlying reason for the original fixture dispatch delay and SQL completion stall is not conclusively established.",
-    "These targeted rounds do not reproduce the entire original 35-page history or simultaneous build and production-browser workload.",
-    "No same-environment old-toolchain counterfactual was executed."
+    "No real backend first-query latency is measured by these fixture/completion records.",
+    "The targeted rounds do not reconstruct the complete original navigation history with concurrent build and production-browser work.",
+    "No same-environment pre-upgrade timing comparison was executed."
   ],
   "retainedLiveEvidence": {
     "applicationCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
     "liveChecks": 9,
-    "rerunAfterReviewFixes": false
+    "rerunAfterReviewFixes": false,
+    "reasonNotRerun": "The review fixes concern NODE_OPTIONS handling and JSON answer/replay presentation, with accompanying tests/documentation; they do not change API request construction, transport or backend source. The nine earlier integration results are retained at their explicitly recorded source, not relabeled as fresh results of the later code."
+  },
+  "recordedTimingDistribution": {
+    "skillRequestDurationMs": {
+      "samples": 20,
+      "deadlineMs": 10000,
+      "bins": {
+        "atMost1000ms": 18,
+        "over1000Through5000ms": 1,
+        "over5000BelowDeadline": 1,
+        "atOrAboveDeadline": 0
+      },
+      "slowestFive": [
+        {
+          "round": 12,
+          "durationMs": 8268.187,
+          "status": "passed"
+        },
+        {
+          "round": 11,
+          "durationMs": 3296.676,
+          "status": "passed"
+        },
+        {
+          "round": 9,
+          "durationMs": 607.801,
+          "status": "passed"
+        },
+        {
+          "round": 19,
+          "durationMs": 588.035,
+          "status": "passed"
+        },
+        {
+          "round": 15,
+          "durationMs": 572.297,
+          "status": "passed"
+        }
+      ]
+    },
+    "completionWaitMs": {
+      "samples": 20,
+      "deadlineMs": 15000,
+      "bins": {
+        "atMost1000ms": 13,
+        "over1000Through5000ms": 7,
+        "over5000BelowDeadline": 0,
+        "atOrAboveDeadline": 0
+      },
+      "slowestFive": [
+        {
+          "round": 11,
+          "durationMs": 4251.342,
+          "status": "passed"
+        },
+        {
+          "round": 8,
+          "durationMs": 1422.007,
+          "status": "passed"
+        },
+        {
+          "round": 10,
+          "durationMs": 1416.612,
+          "status": "passed"
+        },
+        {
+          "round": 9,
+          "durationMs": 1386.612,
+          "status": "passed"
+        },
+        {
+          "round": 12,
+          "durationMs": 1382.641,
+          "status": "passed"
+        }
+      ]
+    }
+  },
+  "scopeOfCloseout": {
+    "status": "complete_with_documented_scope",
+    "completed": [
+      "Original failure classification",
+      "Recorded threshold behavior",
+      "Twenty unchanged paired rounds: 40 passed"
+    ],
+    "excluded": [
+      "Backend first-query latency investigation",
+      "Further causal profiling or old-toolchain comparison"
+    ],
+    "additionalTestRoundsPerformedForCloseout": 0,
+    "backendOrCaseCodeChanged": false,
+    "timeoutsChanged": false
   }
 }
