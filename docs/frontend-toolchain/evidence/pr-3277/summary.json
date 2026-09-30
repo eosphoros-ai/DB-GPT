@@ -1,1300 +1,2076 @@
 {
-  "recordedAt": "2026-09-29T14:24:55.247Z",
-  "applicationCommit": "ae095321f2f93d1536fdead00b1484d2637b96d9",
-  "launcherAndPortableSuiteCommit": "90b837d0a1a0a60c46fc786a42cfde50fd67b14e",
+  "recordedAt": "2026-09-30T02:07:17.493890+00:00",
+  "applicationCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
   "baseline": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+  "independentOfDashboardPR": 3278,
   "environment": {
     "os": "Windows x64",
     "node": "20.19.6",
     "npm": "10.8.2",
     "next": "16.3.0",
     "playwright": "1.62.1",
-    "browser": "Chromium"
+    "browsers": [
+      "Chromium",
+      "Firefox",
+      "WebKit"
+    ]
   },
   "productionBuild": {
     "command": "npm run build",
     "exitCode": 0,
-    "node": "20.19.6",
-    "npm": "10.8.2",
-    "head": "ae095321f2f93d1536fdead00b1484d2637b96d9",
-    "finishedAt": "2026-09-29T21:31:27.8649304+08:00"
+    "htmlFiles": 60,
+    "localAssetReferences": 1756,
+    "typeCheckingEnabled": true
   },
-  "productionFixtures": {
-    "stats": {
-      "startTime": "2026-09-29T13:49:58.035Z",
-      "duration": 181803.63,
-      "expected": 40,
-      "skipped": 0,
-      "unexpected": 0,
-      "flaky": 0
+  "tooling": {
+    "typecheck": "passed",
+    "eslint": {
+      "errors": 0,
+      "warnings": 86
     },
-    "cases": [
-      {
-        "name": "route: home",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2951
-          }
-        ]
-      },
-      {
-        "name": "route: conversations",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3155
-          }
-        ]
-      },
-      {
-        "name": "route: data-sources",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4019
-          }
-        ]
-      },
-      {
-        "name": "route: knowledge",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3505
-          }
-        ]
-      },
-      {
-        "name": "route: applications",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3630
-          }
-        ]
-      },
-      {
-        "name": "route: workflows",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3160
-          }
-        ]
-      },
-      {
-        "name": "route: workflow-canvas",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5157
-          }
-        ]
-      },
-      {
-        "name": "route: models",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3024
-          }
-        ]
-      },
-      {
-        "name": "route: model-providers",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3676
-          }
-        ]
-      },
-      {
-        "name": "route: agent-plugins",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2991
-          }
-        ]
-      },
-      {
-        "name": "route: dbgpts",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 6163
-          }
-        ]
-      },
-      {
-        "name": "route: prompts",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2914
-          }
-        ]
-      },
-      {
-        "name": "route: prompt-editor",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3847
-          }
-        ]
-      },
-      {
-        "name": "route: connectors",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3472
-          }
-        ]
-      },
-      {
-        "name": "route: skills",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4673
-          }
-        ]
-      },
-      {
-        "name": "route: scheduled-tasks",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4687
-          }
-        ]
-      },
-      {
-        "name": "route: scheduled-task-runs",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3484
-          }
-        ]
-      },
-      {
-        "name": "route: evaluation",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4188
-          }
-        ]
-      },
-      {
-        "name": "route: model-evaluation",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4898
-          }
-        ]
-      },
-      {
-        "name": "route: model-datasets",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2962
-          }
-        ]
-      },
-      {
-        "name": "route: observability",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4809
-          }
-        ]
-      },
-      {
-        "name": "route: traces",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5829
-          }
-        ]
-      },
-      {
-        "name": "route: data-index",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2491
-          }
-        ]
-      },
-      {
-        "name": "route: chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4949
-          }
-        ]
-      },
-      {
-        "name": "route: mobile-chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2206
-          }
-        ]
-      },
-      {
-        "name": "route: rich-chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3223
-          }
-        ]
-      },
-      {
-        "name": "route: legacy-chart-chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2842
-          }
-        ]
-      },
-      {
-        "name": "route: knowledge-graph",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4052
-          }
-        ]
-      },
-      {
-        "name": "route: knowledge-detail",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4371
-          }
-        ]
-      },
-      {
-        "name": "interaction: navigation-and-search",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2654
-          }
-        ]
-      },
-      {
-        "name": "interaction: database-form-and-submit",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3287
-          }
-        ]
-      },
-      {
-        "name": "interaction: knowledge-upload",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3217
-          }
-        ]
-      },
-      {
-        "name": "interaction: application-create",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4323
-          }
-        ]
-      },
-      {
-        "name": "interaction: provider-connection-form",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5947
-          }
-        ]
-      },
-      {
-        "name": "interaction: schedule-search-edit-and-toggle",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3667
-          }
-        ]
-      },
-      {
-        "name": "interaction: skill-search-toggle-and-markdown",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4213
-          }
-        ]
-      },
-      {
-        "name": "interaction: markdown-chart-sql-data-and-download",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2338
-          }
-        ]
-      },
-      {
-        "name": "interaction: monaco-sql-run-and-save",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 32342
-          }
-        ]
-      },
-      {
-        "name": "interaction: workflow-export-and-controls",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4046
-          }
-        ]
-      },
-      {
-        "name": "interaction: evaluation-tabs-and-form",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 2933
-          }
-        ]
-      }
-    ]
-  },
-  "productionDiagnostics": {
-    "uncaughtExceptions": 0,
-    "consoleMessages": [
-      {
-        "count": 34,
-        "message": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
-      },
-      {
-        "count": 7,
-        "message": "error: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING"
-      },
-      {
-        "count": 1,
-        "message": "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
-      }
-    ]
-  },
-  "developmentFixtures12GiB": {
-    "stats": {
-      "startTime": "2026-09-29T14:04:09.223Z",
-      "duration": 878403.433,
-      "expected": 38,
-      "skipped": 0,
-      "unexpected": 2,
-      "flaky": 0
+    "frontendTests": {
+      "passed": 21,
+      "failed": 0
     },
-    "cases": [
-      {
-        "name": "route: home",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 72086
-          }
-        ]
-      },
-      {
-        "name": "route: conversations",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5312
-          }
-        ]
-      },
-      {
-        "name": "route: data-sources",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 8188
-          }
-        ]
-      },
-      {
-        "name": "route: knowledge",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 6706
-          }
-        ]
-      },
-      {
-        "name": "route: applications",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5731
-          }
-        ]
-      },
-      {
-        "name": "route: workflows",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4451
-          }
-        ]
-      },
-      {
-        "name": "route: workflow-canvas",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 14426
-          }
-        ]
-      },
-      {
-        "name": "route: models",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 8720
-          }
-        ]
-      },
-      {
-        "name": "route: model-providers",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 7875
-          }
-        ]
-      },
-      {
-        "name": "route: agent-plugins",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3628
-          }
-        ]
-      },
-      {
-        "name": "route: dbgpts",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3304
-          }
-        ]
-      },
-      {
-        "name": "route: prompts",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5020
-          }
-        ]
-      },
-      {
-        "name": "route: prompt-editor",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 22861
-          }
-        ]
-      },
-      {
-        "name": "route: connectors",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 8863
-          }
-        ]
-      },
-      {
-        "name": "route: skills",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 10286
-          }
-        ]
-      },
-      {
-        "name": "route: scheduled-tasks",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4692
-          }
-        ]
-      },
-      {
-        "name": "route: scheduled-task-runs",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4874
-          }
-        ]
-      },
-      {
-        "name": "route: evaluation",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5666
-          }
-        ]
-      },
-      {
-        "name": "route: model-evaluation",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 7137
-          }
-        ]
-      },
-      {
-        "name": "route: model-datasets",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 4520
-          }
-        ]
-      },
-      {
-        "name": "route: observability",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 8778
-          }
-        ]
-      },
-      {
-        "name": "route: traces",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 7686
-          }
-        ]
-      },
-      {
-        "name": "route: data-index",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 7961
-          }
-        ]
-      },
-      {
-        "name": "route: chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 33308
-          }
-        ]
-      },
-      {
-        "name": "route: mobile-chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 28112
-          }
-        ]
-      },
-      {
-        "name": "route: rich-chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5251
-          }
-        ]
-      },
-      {
-        "name": "route: legacy-chart-chat",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 5165
-          }
-        ]
-      },
-      {
-        "name": "route: knowledge-graph",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 46806
-          }
-        ]
-      },
-      {
-        "name": "route: knowledge-detail",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 20418
-          }
-        ]
-      },
-      {
-        "name": "interaction: navigation-and-search",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 28344
-          }
-        ]
-      },
-      {
-        "name": "interaction: database-form-and-submit",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 9156
-          }
-        ]
-      },
-      {
-        "name": "interaction: knowledge-upload",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 3732
-          }
-        ]
-      },
-      {
-        "name": "interaction: application-create",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 25842
-          }
-        ]
-      },
-      {
-        "name": "interaction: provider-connection-form",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 8380
-          }
-        ]
-      },
-      {
-        "name": "interaction: schedule-search-edit-and-toggle",
-        "outcome": "unexpected",
-        "attempts": [
-          {
-            "status": "failed",
-            "durationMs": 165163,
-            "failure": "TimeoutError: page.goto: Timeout 120000ms exceeded."
-          }
-        ]
-      },
-      {
-        "name": "interaction: skill-search-toggle-and-markdown",
-        "outcome": "unexpected",
-        "attempts": [
-          {
-            "status": "failed",
-            "durationMs": 147157,
-            "failure": "TimeoutError: page.goto: Timeout 120000ms exceeded."
-          }
-        ]
-      },
-      {
-        "name": "interaction: markdown-chart-sql-data-and-download",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 48878
-          }
-        ]
-      },
-      {
-        "name": "interaction: monaco-sql-run-and-save",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 39171
-          }
-        ]
-      },
-      {
-        "name": "interaction: workflow-export-and-controls",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 13448
-          }
-        ]
-      },
-      {
-        "name": "interaction: evaluation-tabs-and-form",
-        "outcome": "expected",
-        "attempts": [
-          {
-            "status": "passed",
-            "durationMs": 6358
-          }
-        ]
-      }
-    ]
-  },
-  "developmentRecheck": {
-    "stats": {
-      "startTime": "2026-09-29T14:21:36.313Z",
-      "duration": 29001.151,
-      "expected": 2,
-      "skipped": 0,
-      "unexpected": 0,
-      "flaky": 0
+    "windowsBuildContracts": {
+      "passed": 22,
+      "skippedPosixOnly": 2,
+      "failed": 0
     },
-    "cases": [
+    "ciBuildContractsEachRunner": {
+      "passed": 24,
+      "failed": 0
+    }
+  },
+  "ci": {
+    "conclusion": "success",
+    "created_at": "2026-09-30T01:21:21Z",
+    "head_sha": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+    "html_url": "https://github.com/jcsdxhe/DB-GPT/actions/runs/36654709561",
+    "id": 36654709561,
+    "status": "completed",
+    "updated_at": "2026-09-30T01:33:38Z",
+    "jobs": [
       {
-        "name": "interaction: schedule-search-edit-and-toggle",
-        "outcome": "expected",
-        "attempts": [
+        "name": "build-web (ubuntu-latest)",
+        "conclusion": "success",
+        "steps": [
           {
-            "status": "passed",
-            "durationMs": 18535
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up Node.js",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm used by the lockfile",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check types and build contracts",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build web application",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build static distribution",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up Node.js",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
           }
         ]
       },
       {
-        "name": "interaction: skill-search-toggle-and-markdown",
-        "outcome": "expected",
-        "attempts": [
+        "name": "build-web (macos-latest)",
+        "conclusion": "success",
+        "steps": [
           {
-            "status": "passed",
-            "durationMs": 9518
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up Node.js",
+            "conclusion": "success"
+          },
+          {
+            "name": "Pin npm used by the lockfile",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check types and build contracts",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build web application",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build static distribution",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up Node.js",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
           }
         ]
       }
     ]
   },
-  "developmentDiagnostics": {
-    "uncaughtExceptions": 0,
-    "consoleMessages": [
-      {
-        "count": 32,
-        "message": "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  "browserSuites": {
+    "dev-release": {
+      "stats": {
+        "startTime": "2026-09-30T01:19:29.220Z",
+        "duration": 256366.35,
+        "expected": 41,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
       },
-      {
-        "count": 37,
-        "message": "warning: Image with src \"<dev>/logo_zh_latest.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio."
-      },
-      {
-        "count": 5,
-        "message": "error: Warning: Component Token `minWidth` of Popover is deprecated. Please use `titleMinWidth` instead."
-      },
-      {
-        "count": 7,
-        "message": "warning: Image with src \"<dev>/LOGO_SMALL.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio."
-      },
-      {
-        "count": 8,
-        "message": "warning: Image with src \"/logo_zh_latest.png\" was detected as the Largest Contentful Paint (LCP). Please add the `loading=\"eager\"` property if this image is above the fold."
-      },
-      {
-        "count": 4,
-        "message": "warning: [HMR] Invalid message: isrManifest; TypeError reading components"
-      },
-      {
-        "count": 4,
-        "message": "error: Warning: [antd: message] Static function can not consume context like dynamic theme. Please use 'App' component instead."
-      },
-      {
-        "count": 1,
-        "message": "error: Warning: Form already set 'initialValues' with path 'index_methods'. Field can not overwrite it."
-      },
-      {
-        "count": 4,
-        "message": "warning: Image with src \"/pictures/empty.png\" was detected as the Largest Contentful Paint (LCP). Please add the `loading=\"eager\"` property if this image is above the fold."
-      },
-      {
-        "count": 1,
-        "message": "error: Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s "
-      },
-      {
-        "count": 3,
-        "message": "error: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING"
-      },
-      {
-        "count": 3,
-        "message": "error: Image is missing required \"src\" property: JSHandle@node"
-      },
-      {
-        "count": 1,
-        "message": "error: Failed to load resource: net::ERR_CONNECTION_RESET"
-      },
-      {
-        "count": 1,
-        "message": "error: Warning: Instance created by `useForm` is not connected to any Form element. Forget to pass `form` prop?"
-      },
-      {
-        "count": 1,
-        "message": "warning: Image with src \"<dev>/pictures/card_chat.png\" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: \"auto\"' or 'height: \"auto\"' to maintain the aspect ratio."
+      "cases": [
+        {
+          "name": "route: home",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 8477
+            }
+          ]
+        },
+        {
+          "name": "route: conversations",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3939
+            }
+          ]
+        },
+        {
+          "name": "route: data-sources",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4261
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4093
+            }
+          ]
+        },
+        {
+          "name": "route: applications",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4719
+            }
+          ]
+        },
+        {
+          "name": "route: workflows",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3960
+            }
+          ]
+        },
+        {
+          "name": "route: workflow-canvas",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6069
+            }
+          ]
+        },
+        {
+          "name": "route: models",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4127
+            }
+          ]
+        },
+        {
+          "name": "route: model-providers",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4077
+            }
+          ]
+        },
+        {
+          "name": "route: agent-plugins",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3958
+            }
+          ]
+        },
+        {
+          "name": "route: dbgpts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4203
+            }
+          ]
+        },
+        {
+          "name": "route: prompts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4299
+            }
+          ]
+        },
+        {
+          "name": "route: prompt-editor",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 9433
+            }
+          ]
+        },
+        {
+          "name": "route: connectors",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4328
+            }
+          ]
+        },
+        {
+          "name": "route: skills",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6692
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-tasks",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3974
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-task-runs",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4139
+            }
+          ]
+        },
+        {
+          "name": "route: evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4003
+            }
+          ]
+        },
+        {
+          "name": "route: model-evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4209
+            }
+          ]
+        },
+        {
+          "name": "route: model-datasets",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4394
+            }
+          ]
+        },
+        {
+          "name": "route: observability",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4529
+            }
+          ]
+        },
+        {
+          "name": "route: traces",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3661
+            }
+          ]
+        },
+        {
+          "name": "route: data-index",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4312
+            }
+          ]
+        },
+        {
+          "name": "route: chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 8562
+            }
+          ]
+        },
+        {
+          "name": "route: mobile-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6028
+            }
+          ]
+        },
+        {
+          "name": "route: rich-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5499
+            }
+          ]
+        },
+        {
+          "name": "route: legacy-chart-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5985
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-graph",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 25757
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-detail",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7233
+            }
+          ]
+        },
+        {
+          "name": "interaction: navigation-and-search",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 12821
+            }
+          ]
+        },
+        {
+          "name": "interaction: database-form-and-submit",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3306
+            }
+          ]
+        },
+        {
+          "name": "interaction: knowledge-upload",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3143
+            }
+          ]
+        },
+        {
+          "name": "interaction: application-create",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 10321
+            }
+          ]
+        },
+        {
+          "name": "interaction: provider-connection-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5205
+            }
+          ]
+        },
+        {
+          "name": "interaction: schedule-search-edit-and-toggle",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5930
+            }
+          ]
+        },
+        {
+          "name": "interaction: skill-search-toggle-and-markdown",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6662
+            }
+          ]
+        },
+        {
+          "name": "interaction: markdown-chart-sql-data-and-download",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 9458
+            }
+          ]
+        },
+        {
+          "name": "interaction: monaco-sql-run-and-save",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 11549
+            }
+          ]
+        },
+        {
+          "name": "interaction: workflow-export-and-controls",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6048
+            }
+          ]
+        },
+        {
+          "name": "interaction: evaluation-tabs-and-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3904
+            }
+          ]
+        },
+        {
+          "name": "interaction: shared-zero-step-replay",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 7738
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "consoleWarningsAndErrors": 0,
+        "uncaughtExceptions": 0,
+        "httpErrors": 0,
+        "unexpectedFixtureRequests": 0,
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0
       }
-    ]
+    },
+    "production-release-chromium": {
+      "stats": {
+        "startTime": "2026-09-30T01:26:32.780Z",
+        "duration": 81333.641,
+        "expected": 41,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "name": "route: home",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1276
+            }
+          ]
+        },
+        {
+          "name": "route: conversations",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1352
+            }
+          ]
+        },
+        {
+          "name": "route: data-sources",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1712
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1725
+            }
+          ]
+        },
+        {
+          "name": "route: applications",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1889
+            }
+          ]
+        },
+        {
+          "name": "route: workflows",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2050
+            }
+          ]
+        },
+        {
+          "name": "route: workflow-canvas",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1432
+            }
+          ]
+        },
+        {
+          "name": "route: models",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1871
+            }
+          ]
+        },
+        {
+          "name": "route: model-providers",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1990
+            }
+          ]
+        },
+        {
+          "name": "route: agent-plugins",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1600
+            }
+          ]
+        },
+        {
+          "name": "route: dbgpts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1787
+            }
+          ]
+        },
+        {
+          "name": "route: prompts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1922
+            }
+          ]
+        },
+        {
+          "name": "route: prompt-editor",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1485
+            }
+          ]
+        },
+        {
+          "name": "route: connectors",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1497
+            }
+          ]
+        },
+        {
+          "name": "route: skills",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1825
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-tasks",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1989
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-task-runs",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1480
+            }
+          ]
+        },
+        {
+          "name": "route: evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1882
+            }
+          ]
+        },
+        {
+          "name": "route: model-evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1530
+            }
+          ]
+        },
+        {
+          "name": "route: model-datasets",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1573
+            }
+          ]
+        },
+        {
+          "name": "route: observability",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1673
+            }
+          ]
+        },
+        {
+          "name": "route: traces",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1441
+            }
+          ]
+        },
+        {
+          "name": "route: data-index",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1769
+            }
+          ]
+        },
+        {
+          "name": "route: chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2082
+            }
+          ]
+        },
+        {
+          "name": "route: mobile-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1466
+            }
+          ]
+        },
+        {
+          "name": "route: rich-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2228
+            }
+          ]
+        },
+        {
+          "name": "route: legacy-chart-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2241
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-graph",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1474
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-detail",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1720
+            }
+          ]
+        },
+        {
+          "name": "interaction: navigation-and-search",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1821
+            }
+          ]
+        },
+        {
+          "name": "interaction: database-form-and-submit",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2720
+            }
+          ]
+        },
+        {
+          "name": "interaction: knowledge-upload",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2694
+            }
+          ]
+        },
+        {
+          "name": "interaction: application-create",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2267
+            }
+          ]
+        },
+        {
+          "name": "interaction: provider-connection-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2578
+            }
+          ]
+        },
+        {
+          "name": "interaction: schedule-search-edit-and-toggle",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3182
+            }
+          ]
+        },
+        {
+          "name": "interaction: skill-search-toggle-and-markdown",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1894
+            }
+          ]
+        },
+        {
+          "name": "interaction: markdown-chart-sql-data-and-download",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2197
+            }
+          ]
+        },
+        {
+          "name": "interaction: monaco-sql-run-and-save",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4321
+            }
+          ]
+        },
+        {
+          "name": "interaction: workflow-export-and-controls",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1827
+            }
+          ]
+        },
+        {
+          "name": "interaction: evaluation-tabs-and-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1573
+            }
+          ]
+        },
+        {
+          "name": "interaction: shared-zero-step-replay",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2591
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "consoleWarningsAndErrors": 0,
+        "uncaughtExceptions": 0,
+        "httpErrors": 0,
+        "unexpectedFixtureRequests": 0,
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0
+      }
+    },
+    "production-release-firefox": {
+      "stats": {
+        "startTime": "2026-09-30T01:26:32.924Z",
+        "duration": 111291.85299999999,
+        "expected": 40,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "name": "route: home",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4005
+            }
+          ]
+        },
+        {
+          "name": "route: conversations",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2530
+            }
+          ]
+        },
+        {
+          "name": "route: data-sources",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2977
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2654
+            }
+          ]
+        },
+        {
+          "name": "route: applications",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2585
+            }
+          ]
+        },
+        {
+          "name": "route: workflows",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2553
+            }
+          ]
+        },
+        {
+          "name": "route: workflow-canvas",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2450
+            }
+          ]
+        },
+        {
+          "name": "route: models",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2428
+            }
+          ]
+        },
+        {
+          "name": "route: model-providers",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2657
+            }
+          ]
+        },
+        {
+          "name": "route: agent-plugins",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2769
+            }
+          ]
+        },
+        {
+          "name": "route: dbgpts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2488
+            }
+          ]
+        },
+        {
+          "name": "route: prompts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2336
+            }
+          ]
+        },
+        {
+          "name": "route: prompt-editor",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2406
+            }
+          ]
+        },
+        {
+          "name": "route: connectors",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2391
+            }
+          ]
+        },
+        {
+          "name": "route: skills",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2027
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-tasks",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2534
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-task-runs",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2616
+            }
+          ]
+        },
+        {
+          "name": "route: evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2496
+            }
+          ]
+        },
+        {
+          "name": "route: model-evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2404
+            }
+          ]
+        },
+        {
+          "name": "route: model-datasets",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3289
+            }
+          ]
+        },
+        {
+          "name": "route: observability",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2349
+            }
+          ]
+        },
+        {
+          "name": "route: traces",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2383
+            }
+          ]
+        },
+        {
+          "name": "route: data-index",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2431
+            }
+          ]
+        },
+        {
+          "name": "route: chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3380
+            }
+          ]
+        },
+        {
+          "name": "route: mobile-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1847
+            }
+          ]
+        },
+        {
+          "name": "route: rich-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3356
+            }
+          ]
+        },
+        {
+          "name": "route: legacy-chart-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2948
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-graph",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2181
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-detail",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2153
+            }
+          ]
+        },
+        {
+          "name": "interaction: navigation-and-search",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3733
+            }
+          ]
+        },
+        {
+          "name": "interaction: database-form-and-submit",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3449
+            }
+          ]
+        },
+        {
+          "name": "interaction: knowledge-upload",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2862
+            }
+          ]
+        },
+        {
+          "name": "interaction: application-create",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2667
+            }
+          ]
+        },
+        {
+          "name": "interaction: provider-connection-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2411
+            }
+          ]
+        },
+        {
+          "name": "interaction: schedule-search-edit-and-toggle",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3057
+            }
+          ]
+        },
+        {
+          "name": "interaction: skill-search-toggle-and-markdown",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2060
+            }
+          ]
+        },
+        {
+          "name": "interaction: monaco-sql-run-and-save",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 5193
+            }
+          ]
+        },
+        {
+          "name": "interaction: workflow-export-and-controls",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2236
+            }
+          ]
+        },
+        {
+          "name": "interaction: evaluation-tabs-and-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2268
+            }
+          ]
+        },
+        {
+          "name": "interaction: shared-zero-step-replay",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3340
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "consoleWarningsAndErrors": 0,
+        "uncaughtExceptions": 0,
+        "httpErrors": 0,
+        "unexpectedFixtureRequests": 0,
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0
+      }
+    },
+    "production-release-webkit": {
+      "stats": {
+        "startTime": "2026-09-30T01:28:24.900Z",
+        "duration": 110347.985,
+        "expected": 40,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "name": "route: home",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2236
+            }
+          ]
+        },
+        {
+          "name": "route: conversations",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1516
+            }
+          ]
+        },
+        {
+          "name": "route: data-sources",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3032
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1891
+            }
+          ]
+        },
+        {
+          "name": "route: applications",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2129
+            }
+          ]
+        },
+        {
+          "name": "route: workflows",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1815
+            }
+          ]
+        },
+        {
+          "name": "route: workflow-canvas",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2098
+            }
+          ]
+        },
+        {
+          "name": "route: models",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1866
+            }
+          ]
+        },
+        {
+          "name": "route: model-providers",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1787
+            }
+          ]
+        },
+        {
+          "name": "route: agent-plugins",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1648
+            }
+          ]
+        },
+        {
+          "name": "route: dbgpts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1619
+            }
+          ]
+        },
+        {
+          "name": "route: prompts",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1763
+            }
+          ]
+        },
+        {
+          "name": "route: prompt-editor",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2012
+            }
+          ]
+        },
+        {
+          "name": "route: connectors",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1521
+            }
+          ]
+        },
+        {
+          "name": "route: skills",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2158
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-tasks",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1864
+            }
+          ]
+        },
+        {
+          "name": "route: scheduled-task-runs",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2182
+            }
+          ]
+        },
+        {
+          "name": "route: evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1991
+            }
+          ]
+        },
+        {
+          "name": "route: model-evaluation",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1685
+            }
+          ]
+        },
+        {
+          "name": "route: model-datasets",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1421
+            }
+          ]
+        },
+        {
+          "name": "route: observability",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1733
+            }
+          ]
+        },
+        {
+          "name": "route: traces",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1643
+            }
+          ]
+        },
+        {
+          "name": "route: data-index",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1577
+            }
+          ]
+        },
+        {
+          "name": "route: chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2583
+            }
+          ]
+        },
+        {
+          "name": "route: mobile-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1803
+            }
+          ]
+        },
+        {
+          "name": "route: rich-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2913
+            }
+          ]
+        },
+        {
+          "name": "route: legacy-chart-chat",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2736
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-graph",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1451
+            }
+          ]
+        },
+        {
+          "name": "route: knowledge-detail",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 1999
+            }
+          ]
+        },
+        {
+          "name": "interaction: navigation-and-search",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4359
+            }
+          ]
+        },
+        {
+          "name": "interaction: database-form-and-submit",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 15354
+            }
+          ]
+        },
+        {
+          "name": "interaction: knowledge-upload",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4615
+            }
+          ]
+        },
+        {
+          "name": "interaction: application-create",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3284
+            }
+          ]
+        },
+        {
+          "name": "interaction: provider-connection-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3252
+            }
+          ]
+        },
+        {
+          "name": "interaction: schedule-search-edit-and-toggle",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 4226
+            }
+          ]
+        },
+        {
+          "name": "interaction: skill-search-toggle-and-markdown",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2185
+            }
+          ]
+        },
+        {
+          "name": "interaction: monaco-sql-run-and-save",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 6502
+            }
+          ]
+        },
+        {
+          "name": "interaction: workflow-export-and-controls",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2961
+            }
+          ]
+        },
+        {
+          "name": "interaction: evaluation-tabs-and-form",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 2294
+            }
+          ]
+        },
+        {
+          "name": "interaction: shared-zero-step-replay",
+          "outcome": "expected",
+          "attempts": [
+            {
+              "status": "passed",
+              "durationMs": 3442
+            }
+          ]
+        }
+      ],
+      "diagnostics": {
+        "consoleWarningsAndErrors": 0,
+        "uncaughtExceptions": 0,
+        "httpErrors": 0,
+        "unexpectedFixtureRequests": 0,
+        "nonAbortedNetworkFailures": 0,
+        "abortedRequests": 0
+      }
+    }
   },
-  "developmentStabilityPassed": false,
-  "developmentRestartEvidence": "Server is approaching the used memory threshold, restarting...",
-  "developmentInterpretation": "38/40 in the uninterrupted full run. The two navigation-timeout cases passed separately after recovery. This does not make the original run green; default 8 GiB also restarted.",
+  "crossBrowserExcludedCase": "markdown-chart-sql-data-and-download: Firefox/WebKit do not support the Chromium clipboard permission pair; the whole compound case is excluded there and passed in Chromium.",
+  "developmentStability": {
+    "intervalSeconds": 5,
+    "scope": "samples during the final 41-case development traversal",
+    "serverProcessCount": 1,
+    "configuredHeapMiB": 8192,
+    "heapLimitBytes": 8640266240,
+    "peakSampledHeapUsedMiB": 2648.7,
+    "peakSampledRssMiB": 3833.6,
+    "note": "Sampled process memory, not a performance benchmark or an absolute peak guarantee."
+  },
   "fastRefresh": {
-    "passed": true,
+    "type": "Fast Refresh",
+    "heapMiB": 8192,
+    "errors": [],
+    "console": [],
+    "beforeHash": "d3ccc577dbefc678f1a9d8873f4fd0f38ebad8e16e98ed35ad71e5cd0488f58c",
     "updatedWithoutFullReload": true,
     "restoredWithoutFullReload": true,
-    "sourceRestored": true,
-    "beforeHash": "d3ccc577dbefc678f1a9d8873f4fd0f38ebad8e16e98ed35ad71e5cd0488f58c",
-    "afterHash": "d3ccc577dbefc678f1a9d8873f4fd0f38ebad8e16e98ed35ad71e5cd0488f58c"
+    "passed": true,
+    "afterHash": "d3ccc577dbefc678f1a9d8873f4fd0f38ebad8e16e98ed35ad71e5cd0488f58c",
+    "sourceRestored": true
   },
-  "livePages": [
-    {
-      "name": "home",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [],
-      "apiErrors": []
-    },
-    {
-      "name": "database",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "knowledge",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "applications",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "workflows",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "canvas",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [],
-      "apiErrors": []
-    },
-    {
-      "name": "models",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "providers",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "skills",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "schedules",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "connectors",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "plugins",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "dbgpts",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "prompt",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "evaluation",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        },
-        {
-          "path": "/api/v1/evaluate/evaluations",
-          "status": 404
-        },
-        {
-          "path": "/api/v1/evaluate/datasets",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "datasets",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "observability",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "traces",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    },
-    {
-      "name": "conversations",
-      "rendered": true,
-      "documentHttpStatus": 200,
-      "uncaughtExceptions": [],
-      "httpErrors": [
-        {
-          "path": "/images/bg.png",
-          "status": 404
-        }
-      ],
-      "apiErrors": []
-    }
-  ],
   "liveFunctional": [
-    {
-      "name": "database-create-and-query",
-      "passed": true,
-      "mocked": false,
-      "uncaughtExceptions": [],
-      "query": {
-        "result_info": "",
-        "run_cost": 0.001000732421875,
-        "colunms": ["table_count"],
-        "values": [["1"]]
-      },
-      "recheckNote": "Used the actual db_name returned by the create API (sqlite_PR3277_Walmart)."
-    },
     {
       "name": "model-chat-stream-and-history",
       "passed": true,
       "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T01:26:47.987Z",
+      "finishedAt": "2026-09-30T01:26:53.365Z",
       "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": null,
       "streamAndHistory": true
-    },
-    {
-      "name": "knowledge-create-upload",
-      "passed": true,
-      "mocked": false,
-      "uncaughtExceptions": [],
-      "documents": [
-        {
-          "name": "pr3277-live.md",
-          "status": "FINISHED",
-          "chunks": 1
-        }
-      ]
-    },
-    {
-      "name": "home-agent-result",
-      "passed": true,
-      "mocked": false,
-      "uncaughtExceptions": [],
-      "agentReplyPersisted": true,
-      "recheckNote": "The home page creates its UUID locally and does not call the legacy new-dialogue endpoint. Its captured UI contains the assistant reply; the follow-up history request confirms persistence."
     },
     {
       "name": "share-replay",
       "passed": true,
       "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T01:26:43.643Z",
+      "finishedAt": "2026-09-30T01:26:47.871Z",
       "uncaughtExceptions": [],
-      "sharedReplyRendered": true,
+      "consoleWarningsAndErrors": null,
+      "sharedAnswerText": "PR3277_AGENT_OK",
       "zeroToolStepReplay": true,
-      "sharedAnswerText": "Thought: PR3277_AGENT_OK"
+      "sharedReplyRendered": true
     },
     {
       "name": "schedule-create-pause-history-delete",
       "passed": true,
       "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T02:05:43.963Z",
+      "finishedAt": "2026-09-30T02:05:47.473Z",
       "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": null,
       "createdTask": true,
       "pausePersisted": true,
       "historyOpened": true,
       "createdTaskCleanedUp": true
+    },
+    {
+      "name": "real-sqlite-create-query-delete",
+      "passed": true,
+      "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T02:04:34.272Z",
+      "finishedAt": "2026-09-30T02:04:36.970Z",
+      "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": [],
+      "createdThroughUI": true,
+      "tableCount": 1,
+      "cleanedUp": true
+    },
+    {
+      "name": "real-scheduled-execution",
+      "passed": true,
+      "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T01:26:54.027Z",
+      "finishedAt": "2026-09-30T01:27:15.364Z",
+      "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": null,
+      "cleanedUp": true,
+      "execution": {
+        "status": "success",
+        "started_at": "2026-09-30T09:27:00.249070",
+        "finished_at": "2026-09-30T09:27:08.810099",
+        "result_summary": "Thought: PR3277_SCHEDULED_OK",
+        "error_message": null
+      }
+    },
+    {
+      "name": "real-nonempty-flow",
+      "passed": true,
+      "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T01:27:15.880Z",
+      "finishedAt": "2026-09-30T01:27:19.846Z",
+      "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": [],
+      "cleanedUp": true,
+      "nodes": 3,
+      "edges": 2,
+      "answer": "PR3277_FLOW_OK",
+      "streamReceived": true
+    },
+    {
+      "name": "real-knowledge-retrieval",
+      "passed": true,
+      "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T01:27:20.342Z",
+      "finishedAt": "2026-09-30T01:27:33.317Z",
+      "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": [],
+      "cleanedUp": true,
+      "agentToolAnswerVisible": true,
+      "documents": [
+        {
+          "name": "pr3277-retrieval.md",
+          "status": "FINISHED",
+          "chunk_size": 1
+        }
+      ],
+      "retrievedChunkCount": 1,
+      "retrievedScores": [
+        0.969528397771686
+      ],
+      "toolActions": [
+        "kb_cat",
+        "kb_grep",
+        "terminate"
+      ]
+    },
+    {
+      "name": "live-published-native-app",
+      "passed": true,
+      "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T01:27:33.867Z",
+      "finishedAt": "2026-09-30T01:27:37.090Z",
+      "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": [],
+      "cleanedUp": true,
+      "publishedThroughUI": true,
+      "replyVisible": true
+    },
+    {
+      "name": "real-multistep-share",
+      "passed": true,
+      "mocked": false,
+      "sourceCommit": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+      "startedAt": "2026-09-30T02:02:47.358Z",
+      "finishedAt": "2026-09-30T02:02:52.386Z",
+      "uncaughtExceptions": [],
+      "consoleWarningsAndErrors": [],
+      "historySteps": 2,
+      "toolActions": [
+        "kb_grep",
+        "kb_cat"
+      ],
+      "replayedNonemptySteps": true,
+      "answerVisible": true
+    }
+  ],
+  "liveLegacyEvaluation": [
+    {
+      "path": "/api/v1/evaluate/evaluations",
+      "status": 404
+    },
+    {
+      "path": "/api/v1/evaluate/datasets",
+      "status": 404
     }
   ],
   "embedding": {
-    "model": "text-embedding-3-small",
-    "provider": "proxy/openai",
-    "source": "existing test configuration",
-    "mocked": false,
-    "httpStatus": 404,
-    "embeddingReturned": false,
-    "error": "Non-JSON response"
+    "configuredRemoteEndpoint": "Observed 404 for the existing text-embedding-3-small configuration",
+    "testResource": "Existing local roberta-base cache, mean pooling, normalized 768-dimensional CPU embeddings",
+    "functionalRetrieval": "Passed upload, indexing, recall and real Agent tool answer",
+    "qualityAcceptance": false,
+    "note": "No credentials moved between providers; runtime-only override in isolated test launcher."
   },
+  "resolvedFindings": [
+    "Development memory-threshold restart during traversal",
+    "Missing background image and unreliable external iconfont",
+    "Image, Ant Design and Next dev-indicator browser diagnostics",
+    "macOS static-export EMFILE",
+    "WebKit SQL completion worker URL lifetime",
+    "SQL typing reformatted or replaced controlled editor text",
+    "Shared zero-step answer leaked Thought: prefix"
+  ],
+  "previousFailedAttempts": [
+    {
+      "source": "90b837d0",
+      "finding": "macOS static export EMFILE",
+      "resolvedBy": "bounded filesystem preload on all platforms; final CI green"
+    },
+    {
+      "source": "ae095321 / 90b837d0",
+      "finding": "8/12 GiB development traversal restarted and timed out",
+      "resolvedBy": "smaller module graph and development cache policy; final 41-case traversal passed without restart"
+    },
+    {
+      "finding": "WebKit SQL select-all harness used Windows shortcuts despite WebKit macOS user-agent bindings",
+      "classification": "Harness correction; not a product regression"
+    }
+  ],
   "coverageLimits": [
-    "Known background-image 404 and external iconfont network failures remain visible in otherwise passing fixture cases.",
-    "Live rendering is not equivalent to live API acceptance: evaluation APIs returned 404.",
-    "Embedding endpoint returned 404; knowledge upload/index status is not semantic retrieval acceptance.",
-    "Shared zero-tool-step reply renders Thought: prefix, unlike the home page; multi-step replay not accepted.",
-    "No third-party OAuth, non-SQLite engine, connector synchronization, tool execution, scheduled execution, benchmark completion, all destructive CRUD variants, Firefox, WebKit, or real-device acceptance.",
-    "Earlier test-authoring failures are preserved locally; final records reflect corrected selectors and fixtures. Development server restarts remain actual failures.",
-    "No browser run on the old toolchain was performed; unchanged source references are not before/after runtime proof."
-  ]
+    "Live legacy evaluation routes return 404; their unchanged backend implementation is absent. Fixture form checks are not live evaluation acceptance.",
+    "No usable third-party OAuth/connector credentials or non-SQLite database resources; external authorization/sync and those engines remain unverified.",
+    "Full Falcon benchmark jobs, real mobile devices and every destructive CRUD variant are outside this bounded regression.",
+    "Local mean-pooled roberta embeddings prove the functional retrieval path, not semantic retrieval quality.",
+    "No browser comparison on the old toolchain; source comparison alone does not establish upgrade causality.",
+    "Fixture network failures are fatal except ERR_ABORTED navigation cancellations. Live console null means it was not collected by that helper."
+  ],
+  "evidencePolicy": "Published summaries contain no credentials, private runtime paths, share tokens or raw backend logs."
 }

@@ -1,199 +1,178 @@
-# PR #3277 frontend regression — 2026-09-29
+# PR #3277 frontend regression — 2026-09-30
 
-This is an independent validation of the toolchain PR. No Dashboard changes
-from PR #3278 were included. Checked boxes refer only to the explicitly stated
-scope; fixture-backed browser checks are not backend acceptance tests.
+The final source **`80d7c7035a4df69017870749665ee7e4a0a36bde`** passes the
+checks below in an independent PR checkout, without Dashboard PR #3278.
+This report replaces the September 29 status. Checked boxes apply only to their
+stated scope; fixture tests and live backend checks are identified separately.
 
-Application and backend source: `ae095321f2f93d1536fdead00b1484d2637b96d9`.
-The regression follow-up changes the Next launcher to honor an explicit
-`NODE_OPTIONS` heap limit, and adds tests and this report. No application UI or
-Python backend source was changed by that follow-up.
-The corrected launcher and portable suite are at `90b837d0a1a0a60c46fc786a42cfde50fd67b14e`.
-The production application bundle was built before that launcher-only change;
-development and child-runtime tests exercised the corrected launcher.
+Windows x64; Node **20.19.6**, npm **10.8.2**, Next **16.3.0**;
+Playwright **1.62.1**. The Python backend source is unchanged by this PR.
+[Exact-source Ubuntu/macOS CI](https://github.com/jcsdxhe/DB-GPT/actions/runs/36654709561)
+and [per-case evidence](evidence/pr-3277/summary.json) support these results.
 
-Environment: Windows x64, Node **20.19.6**, npm **10.8.2**, Next **16.3.0**,
-Playwright **1.62.1**, Chromium. Production used `npm run build` and `npm start`;
-development used `npm run dev`. Separate build directories and an isolated PR
-checkout were used. The browser suite uses local deterministic API fixtures.
+## Build, development and browser checklist
 
-## Build and tooling
+- [x] Clean dependency installation on Ubuntu and macOS CI.
+- [x] Standalone TypeScript checking; build-time type checking remains enabled.
+- [x] ESLint: **0 errors, 86 warnings**. Existing warnings remain visible; the
+      Monaco dependency fix removes one of the previously reported 87.
+- [x] Existing frontend tests plus share regression: **21 passed**.
+- [x] Build/runtime contracts: **22 passed + 2 POSIX-only skips** on Windows;
+      **24 passed** on each Ubuntu/macOS runner.
+- [x] Windows `npm run build` and `npm start`: **60 generated HTML files and
+      1,756 local asset references** verified.
+- [x] Ubuntu and macOS: production build **and static export** both passed.
+- [x] `npm run dev`, default **8 GiB heap**: **41/41**, one server process,
+      no restart during the complete traversal.
+- [x] Fast Refresh changes and restores a visible heading without replacing the
+      document; before/after source SHA-256 is identical.
+- [x] Production Chromium: **41/41**.
+- [x] Production Firefox: **40/40 selected cases**.
+- [x] Production WebKit: **40/40 selected cases**.
+- [x] All four final suites: **zero console warnings/errors, uncaught exceptions,
+      failed HTTP responses, unexpected fixture requests or non-aborted network
+      failures**. There is no missing-asset or external-script allowlist.
 
-- [x] Windows `npm run build`: exit 0; TypeScript checking and page generation
-      completed; **60 HTML files and 1,755 local asset references** verified.
-- [x] Windows production server started and served the built application.
-- [x] Production browser suite: **40 / 40 passed**, no retries or skipped cases.
-- [x] Updated build/compatibility contracts: **21 discovered, 19 passed,
-      2 POSIX-only tests skipped on Windows**.
-- [x] Launcher tests verify the actual child V8 heap limit, preservation of other
-      Node flags, the 8 GB default, and explicit 12 GB / 2 GB settings. They pass on
-      Node 20 and Node 24.
-- [x] Earlier Linux/macOS CI on `ae095321` passed clean `npm ci`, type checking,
-      lint, 18 previous build/compatibility tests, 20 existing frontend tests,
-      production build and static export. [Actions evidence](https://github.com/jcsdxhe/DB-GPT/actions/runs/36565457316).
-- [x] Follow-up CI on `90b837d0`: Ubuntu completed installation, type/lint/test
-      checks, production build and static export. [Follow-up Actions run](https://github.com/jcsdxhe/DB-GPT/actions/runs/36580455169).
-- [ ] The macOS job in that follow-up run was still building at **22:26 China
-      time on 2026-09-29**. Its install/type/lint/test step had passed; the earlier
-      complete macOS result above must not be confused with this pending build.
-- [x] Development starts; **29 page-entry cases and 9 of 11 interaction cases**
-      passed in the full run with an explicit 12 GB heap limit (**38/40**).
-- [x] The two interrupted interaction cases (scheduled tasks and skills) passed
-      when rerun after server recovery (**2/2**). The first run remains failed.
-- [x] Fast Refresh: changing a conversation-page heading updates the browser
-      without replacing its document; restoring the source updates it again. The
-      source SHA-256 before and after the test is identical.
-- [ ] Continuous development traversal without a server restart: **not passed**,
-      including the corrected explicit 12 GB run. See the development findings.
-- [ ] Default 8 GB development configuration passes a complete cold traversal:
-      **not established**; the observed run triggered Next's memory-threshold restart.
-- [ ] Browser console is completely clean: **not passed**; see findings below.
+The suite contains **29 page-entry checks and 12 interaction checks**.
+Firefox/WebKit exclude the one compound clipboard/chart-tabs/PNG-download case
+because Chromium's clipboard permission pair is unsupported there. That complete
+case passes in Chromium; it is not counted as passed in the other browsers.
+All runs use one worker, no retries and no navigation-timeout override.
+WebKit here is Playwright on Windows, not a test on physical Safari/iOS devices.
 
-The 60 generated HTML files include framework/component routes. They are not
-claimed as 60 independently tested user workflows.
+The final dev traversal took about 4.3 minutes. Five-second samples from its
+single Next server recorded a maximum observed heap use of **2,648.7 MiB** and
+RSS of **3,833.6 MiB**. These are sampled values for this run, not a performance
+benchmark or a guarantee for larger workloads. Disabling development Webpack
+caching trades repeat-compilation time for lower retained memory; production
+caching is retained. A separately observed first share-page compilation took
+about 94 seconds.
 
-## Browser functionality checklist
+## Frontend module checklist — deterministic API fixtures
 
-All checked items below passed in the **production browser with API fixtures**.
-The suite contains **29 page-entry cases and 11 interaction cases**. It verifies
-page bodies, uncaught exceptions, HTTP/network failures, and fixture coverage;
-interactions assert visible outcomes and/or the expected request or download.
+“Pass” below means Chromium development and production assertions passed.
+The portable Firefox/WebKit cases cover the same selected behavior, except
+the explicitly excluded compound chat case described above.
 
-| Module              | Verified behavior                                                                                                   | Production |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------- |
-| Home and navigation | Home renders; sidebar navigation; construct tabs; return home                                                       | Pass       |
-| Conversations       | Conversation list page and existing chat history render                                                             | Pass       |
-| Desktop chat        | Human/assistant messages, Markdown, SQL syntax highlighting, table and math render                                  | Pass       |
-| Chat clipboard      | Copy SQL and verify clipboard contents                                                                              | Pass       |
-| Chat visualization  | AntV canvas renders; Chart / SQL / Data tabs switch; PNG download succeeds                                          | Pass       |
-| Mobile chat         | Mobile app route with valid `chat_scene` and `app_code` renders                                                     | Pass       |
-| Data sources        | List/type cards; required-field validation; select SQLite; submit connection test and create request; dialog closes | Pass       |
-| Knowledge spaces    | List, search control, detail route and graph route render                                                           | Pass       |
-| Knowledge upload    | Create form, Markdown file selection, advanced settings, upload and sync requests, completion closes dialog         | Pass       |
-| Applications        | List/filter controls render; create app; navigate to configuration with saved app name                              | Pass       |
-| AWEL workflows      | List and ReactFlow canvas render; node search and mode switch; JSON export downloads and parses                     | Pass       |
-| Models              | Model list and provider configuration render; required API-key validation; fixture connection feedback              | Pass       |
-| Plugins and DBGPTs  | Plugin and DBGPT entry pages render                                                                                 | Pass       |
-| Prompts             | Prompt list and dynamic Markdown editor load                                                                        | Pass       |
-| Connectors          | Connector management page renders                                                                                   | Pass       |
-| Skills              | Search filters the list; enable switch changes; detail Markdown renders                                             | Pass       |
-| Scheduled tasks     | List/run-history routes; search; enable toggle; name/question/frequency edit and save request                       | Pass       |
-| SQL/chart editor    | Monaco initializes; edit SQL; Run renders a result table; Save sends the updated chart-editor request               | Pass       |
-| Evaluation          | Evaluation/model-evaluation/dataset routes; switch dataset/evaluation tabs; launch form opens                       | Pass       |
-| Observability       | Overview, traces and data-index pages render                                                                        | Pass       |
+| Module | Verified behavior | Result |
+| --- | --- | --- |
+| Home/navigation | Home, sidebar, construct tabs, return home and search controls | Pass |
+| Conversations | List entry and existing chat-history rendering | Pass |
+| Desktop chat | Human/assistant messages, Markdown, SQL code, table and math | Pass |
+| Clipboard/charts | Copy SQL and verify clipboard; Chart/SQL/Data tabs; PNG download | Pass — Chromium |
+| Mobile chat | Existing mobile chat route with valid scene/app parameters renders | Pass — route only |
+| Data sources | List/type cards, required validation, SQLite selection, connection-test/create requests | Pass |
+| Knowledge | Space list/search, detail and graph routes | Pass |
+| Knowledge upload | Create form, Markdown file, advanced options, upload/sync and dialog completion | Pass |
+| Applications | List/filter, create request and configuration navigation | Pass |
+| AWEL | List/canvas, node search, mode switch, downloadable/parseable JSON export | Pass |
+| Models/providers | List/configuration, required key validation and connection feedback | Pass |
+| Plugins/DBGPTs | Management entry pages | Pass — rendering |
+| Prompts | List and dynamic Markdown editor | Pass — rendering |
+| Connectors | Management page | Pass — rendering |
+| Skills | Search, enable toggle and detail Markdown | Pass |
+| Scheduled tasks | List/history, search, enable toggle, name/question/frequency edit and save | Pass |
+| SQL/chart editor | Monaco initialization, SELECT completion, typed SQL, format, Run result table, exact edited SQL in Run/Save requests | Pass |
+| Evaluation | Evaluation/model/dataset entries, tabs and launch form | Pass — fixtures |
+| Observability | Overview, traces and data-index entries | Pass — rendering |
+| Share | Zero-step final answer without raw Thought prefix; restart replay | Pass |
 
-- [x] All 29 production page-entry assertions passed.
-- [x] All 11 production interaction assertions passed.
-- [x] No uncaught browser JavaScript exception in these 40 production cases.
-- [x] No additional asset/network failures beyond the disclosed background image
-      and external iconfont exceptions; those exceptions remain in the records.
-- [x] Browser console, request failures and failed HTTP responses were recorded.
+The 60 generated HTML files include framework/component routes; they are not
+claimed as 60 user workflows. Rendering-only rows are not full CRUD acceptance.
 
-## Checks against existing live resources
+## Live checks — no API fixtures
 
-The backend was loaded from the independent PR checkout, using the project's
-existing external test configuration and its configured model. A separate
-metadata database and a copy of the existing Walmart SQLite example were used.
-The test launcher bootstrapped ORM tables because that configuration disables
-automatic migrations; it served APIs while Next served the actual frontend.
-Credentials were not copied into the repository or this report.
+These **nine final checks** use the actual PR backend, existing test model,
+isolated metadata, and test-owned records. Temporary apps, tasks, flows, spaces
+and the new SQLite connection were cleaned up. Credentials and runtime data
+are excluded from Git.
 
-- [x] **19 live-service page entries** render without an uncaught exception.
-      This is a render check, not proof that every page's API succeeded.
-- [x] Real configured model **deepseek-v4-flash**: browser sends a short normal
-      chat prompt, receives `PR3277_OK`, and restores the response after refreshing
-      from persisted conversation history. No API fixture intercepted this test.
-- [x] Home Agent entry: a real short prompt receives `PR3277_AGENT_OK`; the
-      assistant answer is visible and persisted in conversation history. The prompt
-      explicitly requested no tool execution.
-- [x] Real SQLite: create a connection through the browser to an isolated copy
-      of the project's Walmart example; verify the saved connection; execute a
-      read-only query through the existing SQL endpoint and receive one table.
-- [x] Real knowledge space: create through the browser, upload a small Markdown
-      document, and verify the space/document in the live APIs. The document API
-      reports `FINISHED`. This does not prove semantic retrieval quality.
-- [x] Share: create a link from that real conversation, open its read-only page,
-      and replay its zero-tool-step answer. The shared answer retains a `Thought:`
-      prefix; exact formatting parity and multi-step replay are not accepted here.
-- [x] Scheduled task: create from the real conversation through the browser,
-      pause it and confirm persistence, open its execution-history page, then delete
-      that test-owned task through the API and verify cleanup. Actual scheduled
-      execution was not triggered.
-- [ ] Evaluation end-to-end: `/api/v1/evaluate/evaluations` and
-      `/api/v1/evaluate/datasets` return **404** from the current test backend.
-- [ ] Semantic knowledge retrieval: the configured `text-embedding-3-small`
-      endpoint returns **404** on a real embedding request. The isolated backend
-      therefore runs without an embedding worker.
-- [ ] Third-party OAuth, connector authorization/synchronization and non-SQLite
-      database engines: no matching usable test credentials/resources were found.
-- [ ] Agent tool execution, published-app execution, non-empty AWEL workflows,
-      scheduled execution, full benchmark jobs and all destructive CRUD variants:
-      not covered end-to-end by this frontend regression.
-- [ ] Firefox, WebKit/Safari and real mobile devices: not covered by this run.
+- [x] **Model conversation:** configured `deepseek-v4-flash` streams a short
+      answer; persisted history returns it and browser refresh restores it.
+- [x] **SQLite:** browser creates a connection to a copy of the existing Walmart
+      example; a real read-only SQL query returns one table; connection removed.
+- [x] **Knowledge and Agent tools:** browser creates/uploads a Markdown document;
+      one chunk is indexed; real vector recall returns the expected excerpt.
+      A real model invokes **kb_grep and kb_cat** and displays `ORANGE-3277`.
+- [x] **Published native app:** publish through the UI, verify persisted publish
+      state, enter its conversation and see a real model answer; remove test app.
+- [x] **Non-empty AWEL:** existing streaming-chat template, **3 nodes / 2 edges**;
+      deploy, inspect the browser canvas, execute and receive `PR3277_FLOW_OK`.
+- [x] **Scheduled-task UI:** create from a conversation, pause and verify
+      persistence, open history, delete and verify cleanup.
+- [x] **Actual scheduled execution:** scheduler runs a separate test task,
+      records **success** and the expected model result; browser history shows it;
+      task is paused and deleted.
+- [x] **Zero-step share:** create/open a real share link and replay; final text
+      is `PR3277_AGENT_OK`, matching the home page.
+- [x] **Multi-step share:** replay real **kb_grep / kb_cat** execution steps and
+      display the final knowledge answer, without an uncaught/console error.
 
-## Findings that must remain visible
+The existing remote embedding configuration returned 404. The isolated test
+launcher instead uses the project's **already cached roberta-base model** on
+CPU, with mean pooling and normalized **768-dimensional** embeddings. This
+verifies indexing, recall and the Agent workflow. It does **not** establish
+semantic-retrieval quality or validate the broken remote embedding configuration.
+No credential was transferred to another provider.
 
-1. **Development memory restart.** A cold traversal under the default 8 GB
-   launcher setting triggered Next's memory-threshold restart. The first cold
-   navigation also exceeded the browser timeout. The attempted 12 GB run initially
-   suffered the same issue because `run-next.cjs` silently replaced the supplied
-   limit. The follow-up fixes that override and adds child-process tests. It does
-   not claim a memory-use reduction or prove that 8 GB is sufficient. With the
-   corrected 12 GB setting, the complete suite recorded **38 passes and 2
-   navigation timeouts** after another threshold restart. Both cases passed on
-   the subsequent two-case rerun. This is functional recovery, not a passing
-   uninterrupted development run.
-2. **Missing background image.** `/images/bg.png` returns 404 on several pages.
-   The reference in `tailwind.config.js` and the missing public file also exist in
-   the base source `d1d398eb`. This is not a new reference introduced by the PR.
-3. **External iconfont.** The existing `at.alicdn.com` script intermittently
-   returns a network/chunked-encoding error or 503 in this environment. The script
-   reference is identical in the base source. It is not stubbed to hide the error.
-4. **Development console diagnostics.** Image sizing/LCP/missing-src warnings,
-   Ant Design form/static-context warnings and an HMR
-   `isrManifest` warning with a `TypeError` were observed. They require explicit
-   disclosure even when a page assertion passes; production cases did not show
-   this HMR diagnostic. The separate Fast Refresh behavior test passed despite
-   these diagnostics; that does not mean the development console is clean.
-5. **Evaluation backend routes.** The frontend request paths and backend source
-   are unchanged by this PR, but live evaluation APIs failed as described above.
-   No old-toolchain browser run was performed, so source comparison alone is not
-   presented as a full before/after behavioral comparison.
-6. **Share formatting.** The zero-tool-step shared answer displayed
-   `Thought: PR3277_AGENT_OK`, while the home page displayed `PR3277_AGENT_OK`.
-   Basic share/replay operation passed; this formatting difference remains
-   visible and has not been attributed to the toolchain upgrade.
+## Findings fixed in this follow-up
 
-The browser suite explicitly retains known resource exceptions in its evidence.
-A green suite therefore means the listed assertions passed, **not** that every
-feature is fully accepted or that all console/network diagnostics are absent.
+| Previously observed problem | Change and final evidence |
+| --- | --- |
+| Dev traversal exhausted retained memory and restarted | Keep generated OB SQL parsers out of page bundles, import MUI icons directly, bound page retention and disable dev Webpack caching; final 41-case traversal uses one server |
+| macOS static export failed with EMFILE | Apply bounded filesystem preload on all platforms and handle paths with spaces; both final CI export jobs pass |
+| Background 404/external iconfont failures | Correct local image path and use local icons; strict browser checks have no resource exceptions |
+| Image/Ant Design/Next dev-indicator diagnostics | Correct image dimensions/sources, form lifecycle and contextual messages; disable faulty Pages Router badge while retaining HMR/error overlay |
+| WebKit SQL completion worker failed to load | Load same-origin prebuilt workers directly instead of immediately revoking their blob URLs |
+| SQL edits were reformatted/replaced while typing | Preserve exact controlled editor text and format explicitly; all three browsers verify exact Run/Save SQL |
+| Shared answer leaked Thought prefix | Reuse the home page's final-content presentation helper; unit, fixture and live replay checks pass |
 
-## Recorded evidence
+The failed September 29 development runs and the failed macOS export on
+`90b837d0` remain historical failures; separate reruns do not change their
+outcomes. They are superseded by the complete final-source checks above.
+Fixture/selector and WebKit keyboard-convention corrections were harness fixes,
+not product regressions. No old-toolchain browser comparison was performed.
 
-[Machine-readable case results](evidence/pr-3277/summary.json) include all 40
-production outcomes, all 40 development outcomes, the two-case rerun, Fast
-Refresh checks, 19 live page entries and six scoped live functional checks.
-They preserve the development failures and disclose resource exceptions. Raw
-traces and backend logs remain local because the live environment uses private
-configuration; the committed summary contains no credentials or runtime database.
+## Explicit remaining coverage limits
 
-The first automatic scripts needed corrections to fixtures/selectors and to
-the home-page conversation-ID assumption. Those harness failures are retained
-locally and are not described as product regressions. Server restart/timeouts,
-console diagnostics and live endpoint failures are actual observations.
+- [ ] **Legacy live evaluation:** `/api/v1/evaluate/evaluations` and
+      `/api/v1/evaluate/datasets` still return **404**. Their backend handlers
+      are absent in this source. Those request paths/backend files are unchanged
+      by the upgrade; fixture form checks do not establish live acceptance.
+- [ ] **External authorization/services:** no usable third-party OAuth or
+      connector authorization/sync credentials, or non-SQLite database instances,
+      are available in the existing test resources.
+- [ ] **Broader acceptance:** full Falcon benchmark jobs, semantic-retrieval
+      quality, physical mobile/Safari devices and every destructive CRUD variant
+      are not covered by this bounded frontend regression.
 
-Screenshots below use deterministic API fixtures, not private live resources.
+These limits remain unchecked. This is not an assertion that every backend,
+provider or real-device combination has been accepted.
+
+## Evidence and reproduction
+
+[Machine-readable outcomes](evidence/pr-3277/summary.json) include all **162**
+final browser assertions, per-suite diagnostics, the dev memory samples'
+summary, HMR integrity, nine scoped live checks, current evaluation 404 probes
+and exact-source CI results. The earlier failure descriptions remain visible.
+Raw traces/logs stay local because live configuration and runtime paths are private.
+
+Use [the isolated browser test package](../../tests/web-toolchain/README.md)
+for fixture reproduction. Its Playwright dependency is separate from the
+application package. For tooling checks, run in `web/`:
+
+```sh
+npm ci
+npm run typecheck
+npm run lint
+npm run test:build
+npm test
+npm run build
+npm run compile
+```
+
+Screenshots are from the final production Chromium fixture run.
 
 ![Chat chart, SQL and data controls](evidence/pr-3277/chat-chart.png)
 
-![Monaco SQL execution and chart save](evidence/pr-3277/monaco-sql.png)
-
-## Reproduction
-
-See [the isolated browser test package](../../tests/web-toolchain/README.md).
-It has its own pinned Playwright dependency and does not alter the application
-dependency graph. The fixture suite requires no model key or backend.
-
-Live checks additionally require the existing private test configuration; that
-configuration, its credentials, runtime databases and raw backend logs are not
-committed. Preserve fixture/live distinctions when repeating the checklist.
+![Monaco edited SQL execution and save](evidence/pr-3277/monaco-sql.png)
