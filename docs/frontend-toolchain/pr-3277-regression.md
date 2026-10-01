@@ -1,5 +1,10 @@
 # PR #3277 frontend regression — 2026-09-30
 
+Documentation follow-up, 2026-10-01: the [one-page acceptance summary](pr-3277-acceptance-summary.md)
+separates recorded passes, existing issues, coverage gaps and maintainer decisions.
+It supports PR review and OSPP closeout without treating PR merge as a prerequisite
+for completing the project materials. No new regression run is represented here.
+
 The latest application source **`763eba34c31a0ce4b07742bdcdfb05474f85f733`** passed the tooling
 and browser checks below in an independent PR checkout, without Dashboard PR
 #3278. This update includes the heap-option review fix, function documentation
@@ -7,6 +12,36 @@ and preservation of valid JSON answers in shared replay.
 
 Windows x64; Node **20.19.6**, npm **10.8.2**, Next **16.3.0**;
 Playwright **1.62.1**. The Python backend source is unchanged by this PR.
+
+**Security scope:** the [official-advisory applicability review](pr-3277-security-advisories.md)
+identifies a baseline server DoS issue and two rewrite-proxy request-smuggling
+issues relevant to self-hosted Next server mode. Unused App Router, Server Action,
+Middleware and Image Optimization features are not counted as benefits. The
+review also discloses that **16.3.0 remains affected by the Windows-server RCE
+advisory, first fixed in 16.3.3**, and the September 30 SSG cache and dev MCP
+advisories applicable to the respective recorded server modes. The September
+release fixes are in **16.3.8**; no version update was made. The remote-image SSRF
+does not apply because remote image patterns are absent and Image Optimization
+is disabled. Passing functional regression is not a security clearance, and
+Python-only static serving has a different exposure scope.
+
+**Warning attribution:** with the same **ESLint 9.39.5 configuration**, all
+**86 current warnings match warnings reproduced on the official baseline
+`d1d398eb`; 0 warnings were added**. The baseline comparison had 87 warnings;
+the Monaco dependency fix removed one. This conclusion reconciles the recorded
+same-configuration comparison with the final candidate lint log; lint was not
+rerun for this documentation follow-up. It does not claim that the old ESLint 8
+configuration reported the same diagnostics, including the 10 unused-disable
+warnings surfaced by ESLint 9. See the [baseline follow-up evidence](evidence/pr-3277/baseline-followup.json).
+
+**Old-version latency comparison:** the official baseline installed with its
+original Node 18/Yarn toolchain and started dev, but both target pages timed out
+during 120-second navigation before reaching their timing checkpoints. There
+are **0 comparable old-version samples**. The separate ten-request backend probe
+does not substitute for that missing browser comparison; upgrade involvement
+cannot be excluded. See the [attempt, original errors and side-by-side timing
+table](pr-3277-baseline-comparison.md).
+
 [Latest-source Ubuntu/macOS CI](https://github.com/jcsdxhe/DB-GPT/actions/runs/36667552757) and
 [per-case follow-up evidence](evidence/pr-3277/review-followup.json) support the
 new results. The nine live integration checks and Fast Refresh evidence remain
@@ -40,6 +75,19 @@ failures and the pending maintainer approvals remain disclosed below.
 - [x] Earlier Fast Refresh check at **`80d7c703`** changes/restores a visible
       heading without replacing the document and restores the source hash.
       This check was not rerun for the review fixes.
+
+**Server modes are separate:** the three-browser results are from the
+**`npm run build` output served by `npm start`**, using the same
+`.next-pr3277-review-build` production artifact. Development was checked
+separately with Chromium only. Existing server logs and execution records
+confirm the commands below; this follow-up did not rerun these suites.
+
+| Mode | Server command | Browser | Passed / selected |
+| --- | --- | --- | --- |
+| Development | `npm run dev` | Chromium | 42 / 42 |
+| Production | `npm run build`, then `npm start` | Chromium | 42 / 42 |
+| Production | `npm run build`, then `npm start` | Firefox | 41 / 41 |
+| Production | `npm run build`, then `npm start` | WebKit | 41 / 41 |
 
 The suite contains **29 page-entry checks and 13 interaction checks**. The sum
 **166** is 42 + 42 + 41 + 41 assertion outcomes, not 166 distinct functions.
@@ -181,7 +229,9 @@ The failed September 29 development runs and the failed macOS export on
 `90b837d0` remain historical failures; separate reruns do not change their
 outcomes. They remain separate from the accepted checks above.
 Fixture/selector and WebKit keyboard-convention corrections were harness fixes,
-not product regressions. No old-toolchain browser comparison was performed.
+not product regressions. No complete old-toolchain browser suite was performed.
+The later [two-case baseline attempt](pr-3277-baseline-comparison.md) failed at
+navigation before either comparable latency checkpoint.
 
 ## Explicit remaining coverage limits
 
@@ -197,12 +247,92 @@ not product regressions. No old-toolchain browser comparison was performed.
 - [ ] **Broader acceptance:** full Falcon benchmark jobs, semantic-retrieval
       quality, physical mobile/Safari devices and every destructive CRUD variant
       are not covered by this bounded frontend regression.
+      Physical iPhone validation was cancelled for this closeout and is not a
+      pending task; Playwright WebKit does not become real-device evidence.
 - [ ] **Old-toolchain browser/build comparison:** no complete same-environment
-      run of the pre-upgrade dev/build/browser suite was performed. The earlier
-      same-ESLint source comparison establishes lint attribution only.
+      run of the pre-upgrade dev/build/browser suite was performed. The targeted
+      baseline attempt produced zero comparable latency samples after both
+      navigations timed out; its separate backend probe cannot replace them.
+      The same-ESLint source comparison establishes lint attribution only.
 
 These limits remain unchecked. This is not an assertion that every backend,
 provider or real-device combination has been accepted.
+
+## Rollback scope and limits — inspected, not executed
+
+At the inspected head `7ac93ead`, this PR contains **13 commits** on baseline
+`d1d398eb`, beginning with `b6f0c2ae`; it is **not a single-commit change**.
+The count is tied to that exact head and was reconfirmed against GitHub's live
+PR API and uncached HTML on 2026-10-01. A later documentation publication adds
+to the PR's displayed count; it does not change the tested application source.
+Earlier captured page counts are not a different merge-count convention.
+Reverting only the latest documentation commit or the initial dependency commit
+would not undo the complete migration and its follow-up compatibility fixes.
+The PR is still open, so no final merge/squash commit exists to name yet. After
+merge, identify the actual resulting commits before selecting a rollback:
+
+| Merge method | Rollback scope | Verification status |
+| --- | --- | --- |
+| Squash | Revert the resulting squash commit, subject to later overlapping changes | No final squash SHA exists; not executed |
+| Merge commit | Revert the actual merge commit using the parent representing the target branch as mainline | Parent selection and rollback not exercised |
+| Rebase | Revert the complete merged commit set in reverse order using its new post-merge SHAs | Final SHAs do not exist; not exercised |
+
+**Cross-PR limitation:** #3277 and #3278 share baseline `d1d398eb`, and neither
+inspected head is an ancestor of the other. However, #3278 at `f1977798` also pins
+Next **16.3.0** / npm **10.8.2** and changes the package/lock files, Next config,
+launchers and web CI; both PRs delete `web/yarn.lock`. Thus there is configuration
+overlap: **90 changed paths** intersect, including shared frontend compatibility
+code, types/locales, tests and toolchain documentation. This counts paths, not
+identical patches. If both are merged, reverting #3277 alone may remove build or
+compatibility fixes needed by the retained Dashboard frontend, and is not
+guaranteed to restore Next 13 or apply without conflicts. Reverting #3278 may
+also undo shared toolchain changes intended to remain from #3277, depending on
+the actual merge resolution, as well as removing Dashboard features.
+The actual combined tree must be reviewed while preserving the intended work;
+this report does not change #3278 code or claim Dashboard acceptance on Next 13.
+Both [#3277](https://github.com/eosphoros-ai/DB-GPT/pull/3277) and
+[#3278](https://github.com/eosphoros-ai/DB-GPT/pull/3278) descriptions were corrected
+on 2026-10-01 to disclose this overlap and ask maintainers to confirm ownership,
+continuation and any split. Their heads remain unchanged.
+See the [recorded commit/file comparison](evidence/pr-3277/rollback-review.json).
+
+For a complete rollback of #3277 **without overlapping later changes**, the
+contributor steps are:
+
+1. Stop the current Next processes and use a fresh installation/build directory
+   for the reverted source, retaining existing work rather than reusing the
+   Next 16 `node_modules`, `.next` or exported artifacts.
+2. Confirm the revert restores the original `web/package.json`, `web/yarn.lock`,
+   **original `web/package-lock.json` as well**, Next 13.4.7 configuration and
+   `.github/workflows/build-web.yml`. The baseline contains both lockfiles; do not
+   regenerate one from the candidate or treat this as only a version-string edit.
+3. Use Node **18** and Yarn Classic. The bounded baseline attempt used
+   **18.20.8 / 1.22.22** and successfully ran `yarn install --frozen-lockfile`
+   without changing the lockfile. Reinstall dependencies from the restored
+   files; do not use the candidate's npm 10 lockfile/install state.
+4. Rebuild with the restored `yarn build` before `yarn start`; use `yarn dev`
+   for development and `yarn compile` when an exported Python-served distribution
+   is required. Rebuild/redeploy matching assets rather than serving the previous
+   Next 16 output. On Windows, the restored inline environment-variable scripts
+   require a compatible shell; the earlier attempt used Git Bash.
+
+**CI success after rollback is unverified.** A complete isolated revert restores
+the original Ubuntu/macOS workflow: Node 18, `yarn install`, then `yarn build`.
+The new npm/type/lint/build-contract/static-export checks would no longer be that
+workflow. The prior control established installation and dev bootstrap only;
+both target navigations failed and no old-version production build/CI was run.
+The candidate's green CI cannot be relabeled as rollback CI evidence. No rollback,
+reinstallation, build or regression was performed for this documentation update.
+
+**Security consequence:** Next **13.4.7** and the current **16.3.0** both fall in
+the affected range of **CVE-2026-75604**, an unauthenticated RCE affecting Next
+Pages/App Router servers on Windows filesystems without Cache Components.
+Its 16.x fix first shipped in **16.3.3**. Returning from a future patched candidate
+to 13.4.7 would reintroduce this issue; reverting the current 16.3.0 candidate
+would leave it unresolved. The old baseline is not a security-cleared fallback.
+This concerns Next server deployments on Windows, not Python-only static-file
+serving. See the [official advisory](https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36)
+and [project applicability review](pr-3277-security-advisories.md).
 
 ## Review and merge status — 2026-09-30
 
@@ -224,6 +354,14 @@ The previous [audit snapshot](evidence/pr-3277/review-audit.json) remains unchan
 for provenance; its pending review statuses are historical. The
 [new follow-up evidence](evidence/pr-3277/review-followup.json) supersedes those
 statuses and records the latest lint, tools, browser attempts, memory and CI.
+
+**Publication check — 2026-10-01:** the heap-option thread was already resolved
+by CodeRabbit before the documentation publication. An explicit
+[author reply](https://github.com/eosphoros-ai/DB-GPT/pull/3277#discussion_r4154079773)
+now identifies `94c27d16` and the actual fix: remove regex detection and let Node
+parse user options after the prefixed default. The fix is not described as a
+word-boundary regex change. Earlier evidence JSON publication flags describe the
+state at their own `recordedAt` timestamps, before these documents were published.
 
 ## Evidence and reproduction
 

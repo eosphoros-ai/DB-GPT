@@ -1,0 +1,104 @@
+{
+  "base": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+  "pr3277Head": "7ac93ead9154ba28e1a325979b4cc73a75910e99",
+  "pr3278Head": "f1977798a96768f1fef54ee3f255c39283c1bf0d",
+  "neitherHeadIsAncestorOfOther": true,
+  "overlappingChangedPathCount": 90,
+  "selectedToolchainFiles": [
+    {
+      "path": "web/package.json",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": "625b9f64c02198f0c2ab056a788c32fe85ab7f09",
+      "pr3277Blob": "fac3cdd38357436eb42f735c7bd190cd6fa913e3",
+      "pr3278Blob": "4e14afdcf79dec3b7aae477876d463a643c9b76e"
+    },
+    {
+      "path": "web/package-lock.json",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": "9b7d61acdf98dfe07b1f29bd6e68efd5aa265d6a",
+      "pr3277Blob": "a23d008c707e0c40ecae12441c244969502842c4",
+      "pr3278Blob": "7dd0d6db0e959ae4a0a25fbbaf9b1d515253f0b9"
+    },
+    {
+      "path": "web/yarn.lock",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": "e1be4f56dcb9345ca9508913bb3bb87315182816",
+      "pr3277Blob": null,
+      "pr3278Blob": null
+    },
+    {
+      "path": "web/next.config.js",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": "0ec3853be8fd8fa93848e49b03ab13426dc1b9b4",
+      "pr3277Blob": "a842f4b90b2dea132927951d1da94499ca4bea9c",
+      "pr3278Blob": "3cb49729645f667577169deccc839b8a38320d57"
+    },
+    {
+      "path": ".github/workflows/build-web.yml",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": "2085524f6f62f64a80036bfffa43220d0915bff0",
+      "pr3277Blob": "5d115f572735b127cd9fad66c7ce265c3214b673",
+      "pr3278Blob": "f9eaede2dd8d0ad55758cfc8efa1788e89831df2"
+    },
+    {
+      "path": "web/scripts/build-web.cjs",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": null,
+      "pr3277Blob": "b142c0d8ced61163baacbab76dfc3b3af782e791",
+      "pr3278Blob": "5ca2ef762b1f324b7bf724646104d33c93303270"
+    },
+    {
+      "path": "web/scripts/run-next.cjs",
+      "changedIn3277": true,
+      "changedIn3278": true,
+      "baseBlob": null,
+      "pr3277Blob": "77504fe4ecff1ed3a9ae9d4f93b17ca7b02bfced",
+      "pr3278Blob": "0d7684ba54c1903d860d45711842a4fcef961c63"
+    }
+  ],
+  "recordedAt": "2026-09-30 07:41:54 UTC",
+  "pr3277CommitCount": 13,
+  "pr3277Commits": [
+    "7ac93ead9154ba28e1a325979b4cc73a75910e99 docs(web): close timeout investigation within measured scope",
+    "eadb6ba39590005702524036b151a0bc5add0689 docs(web): investigate dev timeouts and record twenty repeated rounds",
+    "1401f85150d47852732c6aa6fc3e73f53e1cb475 docs(web): record review fixes and latest regression evidence",
+    "763eba34c31a0ce4b07742bdcdfb05474f85f733 fix(web): preserve JSON answers in shared replay",
+    "94c27d16e96703cd698cceec8035e860cee31def fix(web): preserve Node option semantics and document touched functions",
+    "64b097a7e282421df4f4d6da1bfda1f4eeb887fa docs(web): clarify regression provenance and pending review items",
+    "7607bf33993f434fa8a696e776badb007aa73dd4 docs(web): record completed toolchain regression and live coverage",
+    "80d7c7035a4df69017870749665ee7e4a0a36bde fix(web): preserve SQL edits and align shared conversation replay",
+    "f739b0f5b5ae6677f57f82b775bc8b0bb6484de2 fix(web): stabilize development compilation and clean regression diagnostics",
+    "41af0487766f1ea49e4cdf220dde29bdacb98ae8 docs(web): record browser and live-service regression results",
+    "90b837d0a1a0a60c46fc786a42cfde50fd67b14e test(web): add standalone browser regression and honor heap configuration",
+    "ae095321f2f93d1536fdead00b1484d2637b96d9 fix(web): address toolchain review regressions",
+    "b6f0c2ae6b4f9272f32292426317d6630767e84f build(web): migrate to Next.js 16 and npm 10"
+  ],
+  "prState": "open",
+  "finalMergeCommit": null,
+  "baselineWorkflow": {
+    "os": [
+      "ubuntu-latest",
+      "macos-latest"
+    ],
+    "node": "18",
+    "install": "yarn install",
+    "build": "yarn build"
+  },
+  "boundedBaselineInstall": {
+    "node": "18.20.8",
+    "yarn": "1.22.22",
+    "command": "yarn install --frozen-lockfile --non-interactive",
+    "exitCode": 0,
+    "lockUnchanged": true
+  },
+  "rollbackPerformed": false,
+  "rollbackCiVerified": false,
+  "pr3278Modified": false,
+  "overlapConclusion": "Separate commit ancestry does not imply independent rollback of shared toolchain configuration; both heads pin Next 16.3.0/npm 10.8.2."
+}
