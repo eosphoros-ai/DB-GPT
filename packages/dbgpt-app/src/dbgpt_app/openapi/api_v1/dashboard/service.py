@@ -178,15 +178,19 @@ class DashboardService:
 
     @staticmethod
     def _schema_data_source_ids(schema: DashboardSchemaV1) -> List[str]:
+        """Include live and publish-time queries in source authorization."""
         source_ids = {schema.dashboard.data_source_id}
         for widget in schema.widgets:
-            federation = widget.query.federation
-            if federation is None:
-                source_ids.add(widget.query.data_source_id)
-            else:
-                source_ids.update(
-                    source.data_source_id for source in federation.sources
-                )
+            queries = [widget.query]
+            if widget.publication is not None:
+                queries.append(widget.publication.query)
+            for query in queries:
+                if query.federation is None:
+                    source_ids.add(query.data_source_id)
+                else:
+                    source_ids.update(
+                        source.data_source_id for source in query.federation.sources
+                    )
         return sorted(source_id for source_id in source_ids if source_id)
 
     def authorize_schema_sources(
