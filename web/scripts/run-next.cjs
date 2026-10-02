@@ -9,10 +9,8 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-const withoutHeapLimit = (process.env.NODE_OPTIONS || '')
-  .replace(/--max(?:-|_)old(?:-|_)space(?:-|_)size(?:=|\s+)\d+/giu, '')
-  .trim();
-const nodeOptions = [withoutHeapLimit, '--max_old_space_size=8192'].filter(Boolean).join(' ');
+// Node parses quoting and uses the last singleton option, so user limits win.
+const nodeOptions = ['--max_old_space_size=8192', process.env.NODE_OPTIONS].filter(Boolean).join(' ');
 
 const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: path.join(__dirname, '..'),

@@ -16,8 +16,8 @@ const run = (args, typeConfig) => {
       ...process.env,
       DBGPT_BUILD_TSCONFIG: typeConfig,
       NODE_OPTIONS: [
-        process.env.NODE_OPTIONS,
         '--max_old_space_size=8192',
+        process.env.NODE_OPTIONS,
         ['win32', 'darwin'].includes(process.platform) ? `--require=${gracefulFsRegister}` : null,
       ]
         .filter(Boolean)
