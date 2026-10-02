@@ -284,9 +284,13 @@ export default function DashboardEditor({
   const { message, modal } = App.useApp();
   const publicationErrorRef = useRef<{ destroy: () => void } | null>(null);
   const [record, setRecord] = useState(initialRecord);
-  const { schema, setSchema, resetSchema, undo, redo, canUndo, canRedo } = useDashboardSchemaHistory(
+  const { schema, setSchema, resetSchema, acknowledgeSave, undo, redo, canUndo, canRedo } = useDashboardSchemaHistory(
     initialRecord.schema,
   );
+  const schemaRef = useRef(schema);
+  useEffect(() => {
+    schemaRef.current = schema;
+  }, [schema]);
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
   const filterRequestRef = useRef(0);
   const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -752,8 +756,9 @@ export default function DashboardEditor({
     };
     const saved = await collaboration.save(schemaToSave, record.current_revision, promoteToAsset);
     setRecord(saved);
-    resetSchema(saved.schema);
-    clearDashboardLocalDraft(saved.id);
+    acknowledgeSave(schema, saved.schema);
+    // The recovery effect clears only a clean draft and rebases pending edits
+    // onto the acknowledged revision instead of deleting them here.
     return saved;
   };
 
@@ -2009,6 +2014,19 @@ export default function DashboardEditor({
     }
   };
 
+  const acceptAnnotationRecord = (next: DashboardRecord, submitted: DashboardSchemaV1) => {
+    const current = JSON.stringify(schemaRef.current);
+    if (current !== JSON.stringify(submitted) && current !== JSON.stringify(next.schema)) {
+      collaboration.deferRemoteRecord(next);
+      message.warning('方案已在服务器应用；请求期间的本地修改已保留，请确认后再加载远端版本');
+      return false;
+    }
+    setRecord(next);
+    resetSchema(next.schema);
+    clearDashboardLocalDraft(next.id);
+    return true;
+  };
+
   const applyAssistantBatch = async () => {
     if (isDirty) {
       message.info('请先保存当前手动修改，再应用 AI 方案');
@@ -2025,12 +2043,10 @@ export default function DashboardEditor({
       );
       if (!response.data.success) throw new Error(response.data.err_msg || '批量应用失败');
       const next = response.data.data.operation.dashboard;
-      setRecord(next);
-      resetSchema(next.schema);
-      clearDashboardLocalDraft(next.id);
       setAnnotations(current =>
         current.map(item => response.data.data.annotations.find(updated => updated.id === item.id) || item),
       );
+      if (!acceptAnnotationRecord(next, schema)) return;
       setAssistantSession(current => ({
         ...current,
         messages: [
@@ -2057,6 +2073,11 @@ export default function DashboardEditor({
   };
 
   const handleApplyAnnotation = async (annotation: DashboardAnnotationRecord) => {
+    if (isDirty) {
+      message.info('请先保存当前手动修改，再应用 AI 方案');
+      return;
+    }
+    if (applyingAnnotationId) return;
     setApplyingAnnotationId(annotation.id);
     try {
       const response = await applyDashboardAnnotation(record.id, annotation.id, {
@@ -2066,10 +2087,8 @@ export default function DashboardEditor({
       });
       const payload = response.data.data;
       const nextRecord = payload.operation.dashboard;
-      setRecord(nextRecord);
-      resetSchema(nextRecord.schema);
       setAnnotations(current => current.map(item => (item.id === annotation.id ? payload.annotation : item)));
-      clearDashboardLocalDraft(nextRecord.id);
+      if (!acceptAnnotationRecord(nextRecord, schema)) return;
       try {
         const refreshed = await refreshDashboard(nextRecord.id, filters);
         setSnapshot(refreshed.data.data);

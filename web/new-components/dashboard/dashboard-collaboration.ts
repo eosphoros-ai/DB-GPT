@@ -179,5 +179,10 @@ export const useDashboardCollaboration = ({
     setStatus('online');
   };
 
-  return { clientId, status, participants, pendingRemote, save, acceptRemote };
+  const deferRemoteRecord = (remote: DashboardRecord) => {
+    setPendingRemote(remote);
+    setStatus('conflict');
+  };
+
+  return { clientId, status, participants, pendingRemote, save, acceptRemote, deferRemoteRecord };
 };

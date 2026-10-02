@@ -10,6 +10,7 @@ export interface DashboardHistoryState {
 type DashboardHistoryAction =
   | { type: 'set'; update: SetStateAction<DashboardSchemaV1> }
   | { type: 'reset'; schema: DashboardSchemaV1 }
+  | { type: 'saved'; submitted: DashboardSchemaV1; schema: DashboardSchemaV1 }
   | { type: 'undo' }
   | { type: 'redo' };
 
@@ -19,6 +20,11 @@ export const dashboardHistoryReducer = (
   state: DashboardHistoryState,
   action: DashboardHistoryAction,
 ): DashboardHistoryState => {
+  // A save acknowledges its submitted snapshot, not edits made while it was pending.
+  if (action.type === 'saved') {
+    if (JSON.stringify(state.present) !== JSON.stringify(action.submitted)) return state;
+    return { past: [], present: action.schema, future: [] };
+  }
   if (action.type === 'reset') return { past: [], present: action.schema, future: [] };
   if (action.type === 'undo') {
     const previous = state.past[state.past.length - 1];
@@ -58,12 +64,17 @@ export const useDashboardSchemaHistory = (initialSchema: DashboardSchemaV1) => {
     [],
   );
   const resetSchema = useCallback((schema: DashboardSchemaV1) => dispatch({ type: 'reset', schema }), []);
+  const acknowledgeSave = useCallback(
+    (submitted: DashboardSchemaV1, schema: DashboardSchemaV1) => dispatch({ type: 'saved', submitted, schema }),
+    [],
+  );
   const undo = useCallback(() => dispatch({ type: 'undo' }), []);
   const redo = useCallback(() => dispatch({ type: 'redo' }), []);
   return {
     schema: history.present,
     setSchema,
     resetSchema,
+    acknowledgeSave,
     undo,
     redo,
     canUndo: history.past.length > 0,

@@ -199,6 +199,89 @@ const installDashboardApi = async (page: Page) => {
 test.describe('Deterministic dashboard browser lifecycle', () => {
   test.skip(!process.env.DASHBOARD_E2E_BASE_URL, 'Start the built web app and set DASHBOARD_E2E_BASE_URL.');
 
+  test('keeps newer edits when a pending save completes, then saves them at the new revision', async ({ page }) => {
+    const api = await installDashboardApi(page);
+    let release!: () => void;
+    const pending = new Promise<void>(resolve => (release = resolve));
+    let received!: () => void;
+    const submitted = new Promise<void>(resolve => (received = resolve));
+    let requests = 0;
+    await page.route(`**/api/v1/dashboards/${api.record().id}/operations`, async route => {
+      if (++requests === 1) {
+        received();
+        await pending;
+      }
+      await route.fallback();
+    });
+    await page.goto(`/dashboards/${api.record().id}/`);
+    const title = page.getByRole('textbox', { name: '看板标题' });
+    await title.fill('Submitted title');
+    await page.getByRole('button', { name: '保存看板', exact: true }).click();
+    await submitted;
+    await title.fill('Edited while saving');
+    release();
+    await expect(page.getByText('修订 2', { exact: true })).toBeVisible();
+    await expect(title).toHaveValue('Edited while saving');
+    await expect(page.getByText('未保存', { exact: true })).toBeVisible();
+    expect(api.record().schema.dashboard.title).toBe('Submitted title');
+    await page.getByRole('button', { name: '保存看板', exact: true }).click();
+    await expect(page.getByText('修订 3', { exact: true })).toBeVisible();
+    expect(api.record().schema.dashboard.title).toBe('Edited while saving');
+    await expect(page.getByText('未保存', { exact: true })).toHaveCount(0);
+    await page.reload();
+    await expect(title).toHaveValue('Edited while saving');
+  });
+
+  test('blocks single-annotation application while manual edits are unsaved', async ({ page }) => {
+    const api = await installDashboardApi(page);
+    const record = api.record();
+    const widget = record.schema.widgets[0];
+    const annotation = {
+      id: 'persistence-proposal',
+      dashboard_id: record.id,
+      base_revision: record.current_revision,
+      target: { kind: 'widget', widget_id: widget.id, datum_key: {}, row_key: {} },
+      prompt: 'Rename this widget',
+      status: 'proposed',
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+      proposal: {
+        summary: 'Rename this widget',
+        before: [widget.title],
+        after: ['Agent title'],
+        operations: [],
+        stable_operations: [],
+        validation: { valid: true, issues: [], widget_status: {} },
+      },
+    };
+    let applies = 0;
+    await page.route(
+      url => url.pathname === `/api/v1/dashboards/${record.id}/annotations`,
+      route => fulfill(route, success([annotation])),
+    );
+    await page.route(`**/api/v1/dashboards/${record.id}/annotations/${annotation.id}/apply`, route => {
+      applies++;
+      return fulfill(route, { detail: 'Unsaved edits must stop this request.' }, 409);
+    });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(`/dashboards/${record.id}/`);
+    const title = page.getByRole('textbox', { name: '看板标题' });
+    await title.fill('Unsaved manual title');
+    await page
+      .locator(`[data-dashboard-widget-id="${widget.id}"]`)
+      .getByRole('button', { name: '批注此组件', exact: true })
+      .click();
+    await page
+      .getByRole('dialog', { name: '看板批注', exact: true })
+      .getByRole('button', { name: '应用到草稿' })
+      .click();
+    await expect(page.getByText('请先保存当前手动修改，再应用 AI 方案', { exact: true })).toBeVisible();
+    expect(applies).toBe(0);
+    await expect(title).toHaveValue('Unsaved manual title');
+    await expect(page.getByText('未保存', { exact: true })).toBeVisible();
+    expect(api.record().current_revision).toBe(1);
+  });
+
   test('honors released layout controls and preserves layouts across screen sizes and publication', async ({
     page,
   }, testInfo) => {
