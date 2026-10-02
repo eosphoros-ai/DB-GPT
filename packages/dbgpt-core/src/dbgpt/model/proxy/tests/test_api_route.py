@@ -52,7 +52,9 @@ async def test_explicit_settings_override_environment(monkeypatch):
         assert str(client.client.base_url) == "https://explicit.example/v1/"
         assert client.default_model == "custom-model"
         assert client.model_names == ["custom-model"]
-        assert [metadata.model for metadata in await client.models()] == ["custom-model"]
+        assert [metadata.model for metadata in await client.models()] == [
+            "custom-model"
+        ]
         assert client.context_length == 32_000
         assert client.client.default_headers["X-Title"] == "Custom app"
         assert client.client.default_headers["X-Custom"] == "custom-value"
@@ -68,7 +70,9 @@ async def test_explicit_model_alias_is_preserved():
     try:
         assert client.default_model == "custom-model"
         assert client.model_names == ["public-alias"]
-        assert [metadata.model for metadata in await client.models()] == ["public-alias"]
+        assert [metadata.model for metadata in await client.models()] == [
+            "public-alias"
+        ]
     finally:
         await client.client.close()
 
