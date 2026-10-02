@@ -1,4 +1,4 @@
-"""code_interpreter tool — execute Python code in a subprocess.
+"""code_interpreter tool — execute Python via the configured sandbox runtime.
 
 Execution boundary: file locations (``FILE_PATH``/``FILES_JSON``/``PLOT_DIR``)
 travel only through the subprocess environment; the generated Python source
@@ -6,16 +6,19 @@ never interpolates a path literal, so adversarial display names or paths
 cannot inject code.
 """
 
-import asyncio
 import json
 import logging
 import os
 import shutil
-import sys
+import tempfile
 import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
+
+from ._execution import run_code
 
 logger = logging.getLogger(__name__)
 
@@ -29,31 +32,24 @@ async def _run_python_file(
     env: Optional[Dict[str, str]] = None,
     timeout: int = EXECUTION_TIMEOUT_SECONDS,
 ) -> Tuple[Optional[int], bytes, bytes]:
-    """Run one Python script via ``asyncio.create_subprocess_exec``.
+    """Compatibility seam shared by code_interpreter and execute_analysis.
 
-    The process is spawned with an argument list (never a shell string) and
-    inherits the parent environment; file locations reach the child only
-    through ``env``. Returns ``(returncode, stdout, stderr)``; ``returncode``
-    is ``None`` when the run timed out.
+    Select the runtime through the common executor; keep the historical
+    (returncode, stdout, stderr) result and None-on-timeout contract.
     """
-    proc = await asyncio.create_subprocess_exec(
-        sys.executable,
-        script_path,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        cwd=cwd,
+    result = await run_code(
+        Path(script_path).read_text(encoding="utf-8"),
+        language="python",
+        work_dir=cwd,
         env=env,
+        timeout=timeout,
     )
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        try:
-            proc.kill()
-            await proc.wait()
-        except Exception:
-            pass
+    if result.status == ExecutionStatus.TIMEOUT:
         return None, b"", b""
-    return proc.returncode, stdout, stderr
+    returncode = result.exit_code
+    if result.status != ExecutionStatus.SUCCESS and not returncode:
+        returncode = 1
+    return returncode, result.output.encode("utf-8"), result.error.encode("utf-8")
 
 
 def build_execution_env(
@@ -64,7 +60,7 @@ def build_execution_env(
     extra: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """Build the subprocess environment for file-aware code execution."""
-    env = dict(os.environ)
+    env = {}
     env["PLOT_DIR"] = work_dir
     if file_path:
         env["FILE_PATH"] = file_path
@@ -184,9 +180,17 @@ def make_code_interpreter(react_state: Dict[str, Any]):
                 )
 
         output_text = ""
+        tmp_path = None
         try:
-            tmp_path = os.path.join(work_dir, "_run.py")
-            with open(tmp_path, "w", encoding="utf-8") as tmp:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                prefix="_run_",
+                suffix=".py",
+                dir=work_dir,
+                delete=False,
+            ) as tmp:
+                tmp_path = tmp.name
                 tmp.write(full_code)
 
             returncode, stdout, stderr = await _run_python_file(
@@ -215,6 +219,13 @@ def make_code_interpreter(react_state: Dict[str, Any]):
                 )
         except Exception as e:
             output_text = f"Execution error: {e}"
+        finally:
+            # Cancellation must not leave the per-call bootstrap script behind.
+            try:
+                if tmp_path and os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                logger.debug("Cannot remove execution script", exc_info=True)
 
         chunks: List[Dict[str, Any]] = [
             {"output_type": "code", "content": code.strip()},
@@ -256,14 +267,6 @@ def make_code_interpreter(react_state: Dict[str, Any]):
                         img_url = f"/images/{unique_name}"
                         chunks.append({"output_type": "image", "content": img_url})
                         react_state.setdefault("generated_images", []).append(img_url)
-        except Exception:
-            pass
-
-        # Clean up temp script
-        try:
-            script_path = os.path.join(work_dir, "_run.py")
-            if os.path.exists(script_path):
-                os.remove(script_path)
         except Exception:
             pass
 

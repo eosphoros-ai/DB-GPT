@@ -2,6 +2,7 @@ import os
 
 LANGUAGE_IMAGES = {
     "python": "python:3.11-slim",
+    "bash": "python:3.11-slim",
     "python-vnc": "vnc-gui-browser:latest",
     "javascript": "node:18-slim",
     "java": "openjdk:11-jre-slim",
@@ -17,6 +18,7 @@ def get_command_by_language(language: str, filename: str) -> str:
     commands = {
         "python-vnc": f"python3 {filename}",
         "python": f"python {filename}",
+        "bash": f"bash {filename}",
         "javascript": f"node {filename}",
         "java": f"javac {filename} && java {filename[:-5]}",
         "cpp": f"g++ -o program {filename} && ./program",
@@ -35,14 +37,8 @@ MAX_DEPENDENCY_INSTALL_SIZE = 200 * 1024 * 1024  # 200MB
 MAX_PROCESSES = 10
 
 
-def _env_flag(name: str, default: bool = False) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.lower() in {"1", "true", "yes", "on"}
-
-
-# Optional values: docker, podman, nerdctl, local. When unset, RuntimeFactory
-# auto-detects container runtimes and fails closed if none are available.
+# Container execution is opt-in. An unset runtime uses the local environment,
+# even when Docker is installed. Explicit container backends fail closed.
 SANDBOX_RUNTIME = os.getenv("SANDBOX_RUNTIME")
-SANDBOX_ALLOW_LOCAL_RUNTIME = _env_flag("SANDBOX_ALLOW_LOCAL_RUNTIME")
+# Agent tools need pandas/numpy/charting dependencies; see Dockerfile.agent.
+SANDBOX_AGENT_IMAGE = os.getenv("SANDBOX_AGENT_IMAGE", "dbgpt-sandbox-agent:latest")

@@ -268,7 +268,10 @@ const sidebars = {
       label: "Sandbox",
       collapsed: true,
       collapsible: true,
-      items: [{ type: "doc", id: "sandbox/index", label: "Overview" }],
+      items: [
+        { type: "doc", id: "sandbox/index", label: "Overview" },
+        { type: "doc", id: "sandbox/runtime", label: "Runtime Configuration" },
+      ],
     },
 
 
@@ -621,7 +624,10 @@ const sidebars = {
       ],
     },
   ],
-  sidebarSandbox: [{ type: "doc", id: "sandbox/index", label: "Overview" }],
+  sidebarSandbox: [
+    { type: "doc", id: "sandbox/index", label: "Overview" },
+    { type: "doc", id: "sandbox/runtime", label: "Runtime Configuration" },
+  ],
 
 
   sidebarAwel: [

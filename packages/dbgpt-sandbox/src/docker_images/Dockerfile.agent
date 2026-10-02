@@ -1,0 +1,11 @@
+FROM python:3.11-slim
+
+# Build once for configured Docker execution; local mode uses the app's venv.
+RUN pip install --no-cache-dir \
+    "pandas>=2.0,<3" "numpy>=1.26,<3" "matplotlib>=3.8,<4" \
+    "openpyxl>=3.1,<4" "Pillow>=10,<13" "scipy>=1.11,<2" \
+    "tabulate>=0.9,<1" "requests>=2.31,<3"
+
+ENV MPLBACKEND=Agg
+WORKDIR /workspace
+CMD ["tail", "-f", "/dev/null"]
