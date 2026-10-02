@@ -1,10 +1,20 @@
 """API Route configuration and HTTP header regression tests."""
 
+import json
+
 import httpx
 import pytest
 from openai import AsyncOpenAI
 
-from dbgpt.model.proxy.llms.api_route import API_ROUTE_HEADERS, ApiRouteLLMClient
+from dbgpt.core import ModelMessage, ModelRequest
+from dbgpt.core.interface.message import ModelMessageRoleType
+from dbgpt.model.proxy.llms.api_route import (
+    API_ROUTE_HEADERS,
+    ApiRouteDeployModelParameters,
+    ApiRouteLLMClient,
+    api_route_generate_stream,
+)
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 from dbgpt.model.utils.chatgpt_utils import OpenAIParameters, _build_openai_client
 
 
@@ -116,6 +126,96 @@ async def test_attribution_headers_reach_requests_with_injected_client():
             assert requests[0].headers[key] == value
         assert requests[0].headers["X-Custom"] == "preserved"
         assert "HTTP-Referer" not in injected.default_headers
+    finally:
+        await injected.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_wrapper", [False, True], ids=["client", "wrapper"])
+async def test_provider_streaming_accumulates_model_output(use_wrapper):
+    requests = []
+    chunks = [
+        {
+            "id": "test-stream",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "custom-model",
+            "choices": [
+                {"index": 0, "delta": {"content": text}, "finish_reason": None}
+            ],
+        }
+        for text in ["hello", " world"]
+    ]
+    chunks.append(
+        {
+            "id": "test-stream",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "custom-model",
+            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+            "usage": {
+                "prompt_tokens": 3,
+                "completion_tokens": 2,
+                "total_tokens": 5,
+            },
+        }
+    )
+    events = "".join(f"data: {json.dumps(chunk)}\n\n" for chunk in chunks)
+
+    def respond(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "text/event-stream"},
+            content=(events + "data: [DONE]\n\n").encode(),
+        )
+
+    injected = AsyncOpenAI(
+        api_key="test-key",
+        base_url="https://mock.example/v1",
+        http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
+    )
+    client = ApiRouteLLMClient(
+        api_key="test-key", model="custom-model", openai_client=injected
+    )
+    messages = [ModelMessage(role=ModelMessageRoleType.HUMAN, content="hello")]
+    try:
+        if use_wrapper:
+            model = ProxyModel(
+                ApiRouteDeployModelParameters(name="custom-model"),
+                proxy_llm_client=client,
+            )
+            stream = api_route_generate_stream(
+                model, None, {"messages": messages, "max_new_tokens": 10}, "cpu"
+            )
+        else:
+            stream = client.generate_stream(
+                ModelRequest(model="custom-model", messages=messages, max_new_tokens=10)
+            )
+        outputs = [output async for output in stream]
+        assert [output.text for output in outputs] == [
+            "hello",
+            "hello world",
+            "hello world",
+        ]
+        assert all(output.error_code == 0 for output in outputs)
+        expected_usage = {
+            "prompt_tokens": 3,
+            "completion_tokens": 2,
+            "total_tokens": 5,
+        }
+        assert outputs[-1].usage is not None
+        for key, value in expected_usage.items():
+            assert outputs[-1].usage[key] == value
+        assert len(requests) == 1
+        assert requests[0].url.path == "/v1/chat/completions"
+        payload = json.loads(requests[0].content)
+        assert payload["stream"] is True
+        assert payload["model"] == "custom-model"
+        assert payload["messages"] == [{"role": "user", "content": "hello"}]
+        assert payload["max_tokens"] == 10
+        for key, value in API_ROUTE_HEADERS.items():
+            assert requests[0].headers[key] == value
     finally:
         await injected.close()
 
