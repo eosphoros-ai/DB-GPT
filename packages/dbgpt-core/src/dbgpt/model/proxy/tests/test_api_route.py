@@ -51,9 +51,24 @@ async def test_explicit_settings_override_environment(monkeypatch):
         assert client.client.api_key == "explicit-test-key"
         assert str(client.client.base_url) == "https://explicit.example/v1/"
         assert client.default_model == "custom-model"
+        assert client.model_names == ["custom-model"]
+        assert [metadata.model for metadata in await client.models()] == ["custom-model"]
         assert client.context_length == 32_000
         assert client.client.default_headers["X-Title"] == "Custom app"
         assert client.client.default_headers["X-Custom"] == "custom-value"
+    finally:
+        await client.client.close()
+
+
+@pytest.mark.asyncio
+async def test_explicit_model_alias_is_preserved():
+    client = ApiRouteLLMClient(
+        api_key="test-key", model="custom-model", model_alias="public-alias"
+    )
+    try:
+        assert client.default_model == "custom-model"
+        assert client.model_names == ["public-alias"]
+        assert [metadata.model for metadata in await client.models()] == ["public-alias"]
     finally:
         await client.client.close()
 

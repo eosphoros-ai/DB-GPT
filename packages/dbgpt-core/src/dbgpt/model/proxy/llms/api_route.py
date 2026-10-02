@@ -86,7 +86,7 @@ class ApiRouteLLMClient(OpenAILLMClient):
         model: Optional[str] = _API_ROUTE_DEFAULT_MODEL,
         proxies: Optional["ProxiesTypes"] = None,
         timeout: Optional[int] = 240,
-        model_alias: Optional[str] = _API_ROUTE_DEFAULT_MODEL,
+        model_alias: Optional[str] = None,
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
@@ -100,6 +100,7 @@ class ApiRouteLLMClient(OpenAILLMClient):
         )
         api_key = api_key or os.getenv("API_ROUTE_API_KEY")
         model = model or _API_ROUTE_DEFAULT_MODEL
+        model_alias = model_alias or model
         if not context_length:
             context_length = 64_000
 
