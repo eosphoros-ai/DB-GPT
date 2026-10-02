@@ -128,7 +128,7 @@ We created a knowledge graph with graph community summaries based on `CommunityS
 
 ```python
 from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
-from dbgpt.storage.knowledge_graph.community_summary import (
+from dbgpt_ext.storage.knowledge_graph.community_summary import (
     CommunitySummaryKnowledgeGraph,
     CommunitySummaryKnowledgeGraphConfig,
 )

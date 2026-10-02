@@ -97,8 +97,10 @@ class KnowledgeApiClient(ApiClient):
         url = f"/knowledge/{space_name}/chunk/list"
         return self._post(url, data=query_request)
 
-    def similar_query(self, vector_name: str, query_request: KnowledgeQueryRequest):
-        url = f"/knowledge/{vector_name}/query"
+    def similar_query(self, space_name: str, query_request: KnowledgeQueryRequest):
+        # The space comes from the URL path and must name an
+        # existing knowledge space.
+        url = f"/knowledge/{space_name}/query"
         return self._post(url, data=query_request)
 
 

@@ -90,6 +90,7 @@ class ApiRouteLLMClient(OpenAILLMClient):
         context_length: Optional[int] = None,
         openai_client: Optional["ClientType"] = None,
         openai_kwargs: Optional[Dict[str, Any]] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
         api_base = (
@@ -100,7 +101,7 @@ class ApiRouteLLMClient(OpenAILLMClient):
         api_key = api_key or os.getenv("API_ROUTE_API_KEY")
         model = model or _API_ROUTE_DEFAULT_MODEL
         if not context_length:
-            context_length = 128 * 1024
+            context_length = 64_000
 
         if not api_key:
             raise ValueError(
@@ -120,12 +121,9 @@ class ApiRouteLLMClient(OpenAILLMClient):
             context_length=context_length,
             openai_client=openai_client,
             openai_kwargs=openai_kwargs,
+            default_headers={**API_ROUTE_HEADERS, **(default_headers or {})},
             **kwargs,
         )
-        try:
-            self.client.default_headers.update(API_ROUTE_HEADERS)
-        except Exception:
-            pass
 
     @property
     def default_model(self) -> str:

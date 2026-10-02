@@ -25,6 +25,7 @@ const sidebars = {
       items: [
         { type: "doc", id: "modules/smmf", label: "SMMF Overview" },
         { type: "doc", id: "application/llms", label: "LLMs" },
+        { type: "doc", id: "installation/integrations/api_route_llm_install", label: "API Route" },
         {
           type: "category",
           label: "Model Service Deployment",
@@ -483,6 +484,7 @@ const sidebars = {
 
   sidebarStart: [
     { type: "doc", id: "overview", label: "Overview" },
+    { type: "doc", id: "getting-started/model-providers-ui", label: "Model Providers UI" },
     { type: "doc", id: "use_cases", label: "Show Cases" },
     {
       type: "category",

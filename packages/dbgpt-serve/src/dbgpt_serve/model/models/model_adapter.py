@@ -4,9 +4,14 @@ from typing import Type
 from sqlalchemy.orm import Session
 
 from dbgpt.core.interface.storage import StorageItemAdapter
-from dbgpt.model.cluster.storage import ModelStorageIdentifier, ModelStorageItem
+from dbgpt.model.cluster.storage import (
+    ModelProviderConfigIdentifier,
+    ModelProviderConfigItem,
+    ModelStorageIdentifier,
+    ModelStorageItem,
+)
 
-from .models import ServeEntity
+from .models import ModelProviderConfigEntity, ServeEntity
 
 
 class ModelStorageAdapter(StorageItemAdapter[ModelStorageItem, ServeEntity]):
@@ -71,3 +76,46 @@ class ModelStorageAdapter(StorageItemAdapter[ModelStorageItem, ServeEntity]):
         if resource_id.sys_code:
             query = query.filter(storage_format.sys_code == resource_id.sys_code)
         return query
+
+
+class ModelProviderConfigAdapter(
+    StorageItemAdapter[ModelProviderConfigItem, ModelProviderConfigEntity]
+):
+    """Adapter between provider config storage item and database entity."""
+
+    def to_storage_format(
+        self, item: ModelProviderConfigItem
+    ) -> ModelProviderConfigEntity:
+        return ModelProviderConfigEntity(
+            provider=item.provider,
+            label=item.label,
+            api_key=item.api_key,
+            api_base=item.api_base,
+            enabled_models=json.dumps(item.enabled_models, ensure_ascii=False),
+        )
+
+    def from_storage_format(
+        self, entity: ModelProviderConfigEntity
+    ) -> ModelProviderConfigItem:
+        return ModelProviderConfigItem(
+            provider=entity.provider,
+            label=entity.label,
+            api_key=entity.api_key,
+            api_base=entity.api_base,
+            enabled_models=json.loads(entity.enabled_models)
+            if entity.enabled_models
+            else [],
+        )
+
+    def get_query_for_identifier(
+        self,
+        storage_format: Type[ModelProviderConfigEntity],
+        resource_id: ModelProviderConfigIdentifier,
+        **kwargs,
+    ):
+        session: Session = kwargs.get("session")
+        if session is None:
+            raise Exception("session is None")
+        return session.query(storage_format).filter(
+            storage_format.provider == resource_id.provider
+        )

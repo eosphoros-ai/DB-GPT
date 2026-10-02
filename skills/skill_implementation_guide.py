@@ -8,9 +8,13 @@ This guide shows how to integrate SKILL loading mechanism into DB-GPT agents.
 # 1. Basic Skill Definition
 # ============================================================================
 
+import asyncio
+from typing import Dict, List, Optional
+
 from dbgpt.agent.skill import (
     Skill,
     SkillBuilder,
+    SkillMetadata,
     SkillType,
 )
 from dbgpt.core import PromptTemplate

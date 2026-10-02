@@ -96,3 +96,21 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         """
         # TODO implement your own logic here, transfer the entity to a response
         return ServerResponse()
+
+
+class ModelProviderConfigEntity(Model):
+    __tablename__ = "dbgpt_serve_model_provider_config"
+    __table_args__ = (UniqueConstraint("provider", name="uk_provider_config_provider"),)
+
+    id = Column(
+        Integer, primary_key=True, autoincrement=True, comment="Auto increment id"
+    )
+    provider = Column(String(255), nullable=False, comment="The provider id")
+    label = Column(String(255), nullable=True, comment="The display name")
+    api_key = Column(Text, nullable=True, comment="The API key of the provider")
+    api_base = Column(String(512), nullable=True, comment="The API base url")
+    enabled_models = Column(
+        Text, nullable=True, comment="JSON encoded list of enabled model names"
+    )
+    gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
+    gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")

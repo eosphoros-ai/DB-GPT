@@ -3,6 +3,7 @@ import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '
 import { UserInfoResponse } from '@/types/userinfo';
 import { getUserId } from '@/utils';
 import { STORAGE_THEME_KEY } from '@/utils/constants/index';
+import { MODELS_CHANGED_EVENT } from '@/utils/events';
 import { useRequest } from 'ahooks';
 import { useSearchParams } from 'next/navigation';
 import { createContext, useEffect, useState } from 'react';
@@ -97,10 +98,25 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   });
 
   // 获取model
-  const { data: modelList = [] } = useRequest(async () => {
+  const { data: modelList = [], refresh: refreshModelList } = useRequest(async () => {
     const [, res] = await apiInterceptors(getUsableModels());
     return res ?? [];
   });
+
+  // Refresh the usable model list when models are connected/disconnected or
+  // enabled/disabled elsewhere (e.g. the model config page).
+  useEffect(() => {
+    const handler = () => refreshModelList();
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === MODELS_CHANGED_EVENT) handler();
+    };
+    window.addEventListener(MODELS_CHANGED_EVENT, handler);
+    window.addEventListener('storage', storageHandler);
+    return () => {
+      window.removeEventListener(MODELS_CHANGED_EVENT, handler);
+      window.removeEventListener('storage', storageHandler);
+    };
+  }, [refreshModelList]);
 
   // 获取管理员列表
   const { run: queryAdminListRun } = useRequest(
@@ -137,8 +153,12 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   }, []);
 
   useEffect(() => {
-    setModel(modelList[0]);
-  }, [modelList, modelList?.length]);
+    if (!modelList.length) return;
+    // Keep the current selection if it is still usable; otherwise fall back to
+    // the first available model.
+    setModel(prev => (prev && modelList.includes(prev) ? prev : modelList[0]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelList]);
 
   const contextValue = {
     isContract,
