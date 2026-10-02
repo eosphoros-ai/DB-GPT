@@ -232,16 +232,17 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 )
             chunk_parameters = sync_request.chunk_parameters
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
-                space_context = self.get_space_context(space_id)
+                space_context = self.get_space_context(space_id) or {}
+                embedding_ctx = space_context.get("embedding") or {}
                 chunk_parameters.chunk_size = (
                     self._serve_config.chunk_size
-                    if space_context is None
-                    else int(space_context["embedding"]["chunk_size"])
+                    if not embedding_ctx.get("chunk_size")
+                    else int(embedding_ctx["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
                     self._serve_config.chunk_overlap
-                    if space_context is None
-                    else int(space_context["embedding"]["chunk_overlap"])
+                    if not embedding_ctx.get("chunk_overlap")
+                    else int(embedding_ctx["chunk_overlap"])
                 )
             await self._sync_knowledge_document(space_id, doc, chunk_parameters)
             doc_ids.append(doc.id)
@@ -365,6 +366,17 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
         self._chunk_dao.raw_delete(docuemnt.id)
         # delete document
         self._document_dao.raw_delete(docuemnt)
+        # LLM-Wiki: schedule reference rework for pages citing this document
+        try:
+            from ..service.wiki.config import wiki_enabled
+            from ..service.wiki.task_scheduler import get_wiki_scheduler
+
+            if wiki_enabled(space):
+                _scheduler = get_wiki_scheduler()
+                if _scheduler is not None:
+                    _scheduler.enqueue_reconcile(space.id, docuemnt.id)
+        except Exception as wiki_err:
+            logger.warning(f"wiki reconcile enqueue failed: {wiki_err}")
         return docuemnt
 
     def get_list(self, request: SpaceServeRequest) -> List[SpaceServeResponse]:
@@ -528,16 +540,17 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 )
             chunk_parameters = sync_request.chunk_parameters
             if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
-                space_context = self.get_space_context(space_id)
+                space_context = self.get_space_context(space_id) or {}
+                embedding_ctx = space_context.get("embedding") or {}
                 chunk_parameters.chunk_size = (
                     self._serve_config.chunk_size
-                    if space_context is None
-                    else int(space_context["embedding"]["chunk_size"])
+                    if not embedding_ctx.get("chunk_size")
+                    else int(embedding_ctx["chunk_size"])
                 )
                 chunk_parameters.chunk_overlap = (
                     self._serve_config.chunk_overlap
-                    if space_context is None
-                    else int(space_context["embedding"]["chunk_overlap"])
+                    if not embedding_ctx.get("chunk_overlap")
+                    else int(embedding_ctx["chunk_overlap"])
                 )
             await self._sync_knowledge_document(space_id, doc, chunk_parameters)
             doc_ids.append(doc.id)
@@ -555,6 +568,17 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             space.name, space.vector_type
         )
         knowledge_content = doc.content
+        # Self-heal: knowledge-source (external platform) docs are content-
+        # based and live in doc_type TEXT — the ingest adapter retypes them,
+        # but rows created/failing before that fix may still say DOCUMENT.
+        # Retag here so the file-view sync button heals them too, instead of
+        # dispatching from_file_path on extensionless markdown content.
+        if (
+            doc.doc_type == KnowledgeType.DOCUMENT.value
+            and not knowledge_content.startswith(_SCHEMA)
+            and (doc.result or "").startswith("knowledge-source")
+        ):
+            doc.doc_type = KnowledgeType.TEXT.value
         if (
             doc.doc_type == KnowledgeType.DOCUMENT.value
             and knowledge_content.startswith(_SCHEMA)
@@ -727,6 +751,33 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
             # method and the document is a markdown file. This runs after chunks
             # are persisted so the graph builder can reconstruct file content.
             await self._maybe_build_heading_graph(space, doc)
+            # LLM-Wiki: enqueue a debounced wiki ingest when the space has the
+            # Wiki index method. Enqueue failures never fail the doc sync.
+            #
+            # NOTE: the wiki gate intentionally re-reads the space ENTITY via
+            # the DAO instead of trusting the ``space`` argument — the latter
+            # is a SpaceServeResponse whose shape has historically lacked
+            # index_methods/context, which silently killed auto-generation
+            # (users had to press Generate manually).
+            try:
+                from ..models.models import (
+                    KnowledgeSpaceDao,
+                    KnowledgeSpaceEntity,
+                )
+                from ..service.wiki.config import wiki_enabled
+                from ..service.wiki.task_scheduler import get_wiki_scheduler
+
+                dao = KnowledgeSpaceDao()
+
+                _entities = dao.get_knowledge_space(
+                    KnowledgeSpaceEntity(name=space.name)
+                )
+                if _entities and wiki_enabled(_entities[0]):
+                    _scheduler = get_wiki_scheduler()
+                    if _scheduler is not None:
+                        _scheduler.enqueue_ingest(_entities[0].id, [doc.id])
+            except Exception as wiki_err:
+                logger.warning(f"wiki ingest enqueue failed: {wiki_err}", exc_info=True)
         except Exception as e:
             import traceback
 
