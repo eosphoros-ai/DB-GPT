@@ -4,6 +4,8 @@
 
 本轮受测源码为 `ee3c9ed18309427ad0a3a83f8a70e0e52d2de2a3`：发布权限修复 `ede509c3`、Node 参数修复 `5feb80aa`、编辑保护及回归用例 `ee3c9ed1`。随后提交仅补充说明文档。
 
+**最终 CI 已完成：** [Actions 36991047232](https://github.com/jcsdxhe/DB-GPT/actions/runs/36991047232) 在提交 `bc9b25e03df1f6a385f0b4b3cdd42a9009c12e29` 上的 Ubuntu、macOS 两个任务均成功。该提交相对受测源码 `ee3c9ed1` 只增加说明文档；本次补录结果也只修改文档，没有重跑回归。PR 仍待维护者评审，CI 成功不表示已批准或合并。
+
 ## 修复行为
 
 | 问题 | 本轮处理 | 验证入口 |
@@ -37,7 +39,14 @@
 
 浏览器首次两个套件运行 17 通过、1 失败：新增单条批注用例的测试接口拦截遗漏分页查询参数，未加载测试提案，等待按钮超时。按 URL pathname 匹配修正测试输入后，仅重跑受影响的确定性套件，6/6 通过；批注反馈套件原运行 12/12 通过。18 是不同用例数，不将重复运行相加，也不把首次失败抹去。配置中的 120 秒用例上限、15 秒断言等待及 30 秒操作等待均保持原样，自动重试为 0。
 
-本次生产构建 ID 为 `mDyONfAcrbMEg3-zVJuQH`。本机没有重跑所有浏览器套件；推送后由原有 Ubuntu/macOS CI 执行完整前端矩阵，其结果应以对应新提交的 Actions 页面为准，不能沿用历史通过状态。
+本机生产构建 ID 为 `mDyONfAcrbMEg3-zVJuQH`。本机只运行上述两个浏览器套件；推送后的完整前端矩阵由原有 CI 执行，结果如下。两平台实际使用 Node 20.19.6 / npm 10.8.2；各行分别计数，不把两个平台的重复用例相加。
+
+| 平台与原始任务 | 构建契约 / 既有前端 | 组件 | 生产页面浏览器 | 构建与静态导出 |
+|---|---|---|---|---|
+| [Ubuntu](https://github.com/jcsdxhe/DB-GPT/actions/runs/36991047232/job/110787093659) | 38 / 20 通过 | 293 通过（54 文件） | 127 通过、7 跳过 | 通过；各校验 64 个 HTML、1,992 处本地资源引用 |
+| [macOS](https://github.com/jcsdxhe/DB-GPT/actions/runs/36991047232/job/110787093873) | 38 / 20 通过 | 293 通过（54 文件） | 127 通过、7 跳过 | 通过；各校验 64 个 HTML、1,992 处本地资源引用 |
+
+两平台的独立类型检查均通过，ESLint 均为 0 错误、85 条既有警告。浏览器使用 Chromium，运行 `npm run build` 产物及 `npm start`，不是 dev server；共发现 10 个套件、134 项，8 个套件实际执行，2 个 live 套件的 7 项因测试资源未配置而跳过。通过用例使用固定 API/SSE 输入，不代表真实后端、模型或外部数据库联调；CI 也未运行 Python 后端回归。
 
 可从仓库根目录运行 `python -m pytest -c pytest.dashboard.ini -q` 验证 Dashboard 后端。在 `web/` 运行 `npm run test:dashboard`、`npm run test:build` 和 `npm run build`；浏览器设置 `DASHBOARD_E2E_START_SERVER=1`、`DASHBOARD_E2E_BASE_URL=http://127.0.0.1:5670`、`DASHBOARD_E2E_DISABLE_VIDEO=1`，执行 `npm run test:e2e:dashboard -- tests/dashboard-e2e/dashboard-deterministic.spec.ts tests/dashboard-e2e/home-annotation-feedback.spec.ts --workers=2 --retries=0`。生产服务由现有配置启动。
 
