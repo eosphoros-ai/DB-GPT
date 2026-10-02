@@ -210,6 +210,8 @@ export const CommonZh: Resources['translation'] = {
   provider_desc_wenxin: '文心一言系列，Key 格式为 AccessKey:SecretKey',
   provider_label_orcarouter: 'OrcaRouter',
   provider_desc_orcarouter: 'orcarouter.ai 模型聚合网关，一个 Key 访问 200+ 主流模型，兼容 OpenAI 协议',
+  provider_label_cheaperinference: 'Cheaper Inference',
+  provider_desc_cheaperinference: '兼容 OpenAI 协议的模型网关',
   provider_label_siliconflow: 'SiliconFlow 硅基流动',
   provider_desc_siliconflow: '国产开源模型聚合平台',
   provider_label_litellm: 'LiteLLM',
