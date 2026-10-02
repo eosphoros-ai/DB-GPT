@@ -243,6 +243,11 @@ const sidebars = {
               items: [
                 { type: "doc", id: "agents/modules/resource/resource" },
                 { type: "doc", id: "agents/modules/resource/tools" },
+                {
+                  type: "doc",
+                  id: "agents/modules/resource/knowledge-source-connector",
+                  label: "Custom Knowledge Source Connector",
+                },
                 { type: "doc", id: "agents/modules/resource/database" },
                 { type: "doc", id: "agents/modules/resource/knowledge" },
                 { type: "doc", id: "agents/modules/resource/pack" },
@@ -882,6 +887,11 @@ const sidebars = {
               items: [
                 { type: "doc", id: "agents/modules/resource/resource" },
                 { type: "doc", id: "agents/modules/resource/tools" },
+                {
+                  type: "doc",
+                  id: "agents/modules/resource/knowledge-source-connector",
+                  label: "Custom Knowledge Source Connector",
+                },
                 { type: "doc", id: "agents/modules/resource/database" },
                 { type: "doc", id: "agents/modules/resource/knowledge" },
                 { type: "doc", id: "agents/modules/resource/pack" },

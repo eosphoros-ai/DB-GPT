@@ -50,7 +50,7 @@ The **Wiki** tab shows the space's wiki:
 - **Catalog tree** — folders two levels deep, page rows carry their type
   (概念/实体/摘要…) and version pill; use the search box to find pages
   directly.
-- **Reader** — every page renders with its aliases, source documents and
+- **Reader** — every page renders with its aliase模型s, source documents and
   backlinks; `[[links]]` inside the text navigate between pages.
 
 ![Reader on a concept page](/images/web-ui/llm-wiki-en/07-wiki-reader.png)
