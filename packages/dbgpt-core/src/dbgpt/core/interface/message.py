@@ -1132,7 +1132,7 @@ class ConversationIdentifier(ResourceIdentifier):
     @property
     def str_identifier(self) -> str:
         """Return the str identifier."""
-        return f"{self.identifier_type}:{self.conv_uid}"  # noqa:
+        return f"{self.identifier_type}:{self.conv_uid}"
 
     def to_dict(self) -> Dict:
         """Convert to dict."""

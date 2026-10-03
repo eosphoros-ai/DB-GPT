@@ -470,5 +470,21 @@
   "sidebar.docsSidebar.doc.Context Management": {
     "message": "上下文管理",
     "description": "The label for the doc item Context Management in sidebar docsSidebar, linking to the doc agents/modules/context-management"
+  },
+  "sidebar.docsSidebar.category.Usage Manual": {
+    "message": "使用手册",
+    "description": "The label for category Usage Manual in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.doc.External Data Sources": {
+    "message": "外接数据源",
+    "description": "label for doc External Data Sources"
+  },
+  "sidebar.docsSidebar.doc.LLM-Wiki": {
+    "message": "LLM-Wiki",
+    "description": "label for doc LLM-Wiki"
+  },
+  "sidebar.sidebarDevelopmentGuide.doc.Custom Knowledge Source Connector": {
+    "message": "自定义知识数据源连接器",
+    "description": "The label for the doc item Custom Knowledge Source Connector in sidebar sidebarDevelopmentGuide, linking to the doc agents/modules/resource/knowledge-source-connector"
   }
 }

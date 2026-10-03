@@ -217,6 +217,79 @@ def make_kb_codegraph_class_hierarchy(knowledge_id: str):
     return _kb_codegraph_class_hierarchy
 
 
+def _wiki_enabled(knowledge_id: str) -> bool:
+    """Whether this space has the Wiki index method (sync check)."""
+    try:
+        from dbgpt_serve.rag.models.models import (
+            KnowledgeSpaceDao,
+            KnowledgeSpaceEntity,
+        )
+        from dbgpt_serve.rag.service.wiki.config import WikiSpaceConfig
+
+        dao = KnowledgeSpaceDao()
+        key = str(knowledge_id).strip()
+        if key.isdigit():
+            rows = dao.get_knowledge_space_by_ids([int(key)])
+        else:
+            rows = dao.get_knowledge_space(KnowledgeSpaceEntity(name=key))
+        return bool(rows) and WikiSpaceConfig.from_space(rows[0]).enabled
+    except Exception:
+        return False
+
+
+def _make_kb_wiki_tools(knowledge_id: str) -> List:
+    """Read-only wiki tools for wiki-enabled spaces (WeKnora parity:
+    wiki_search / wiki_read_page / wiki_index). Only mounted when the
+    space actually has the Wiki index method, so agents never see tools
+    that cannot succeed. Write tools stay out of agent scope on purpose —
+    they belong to knowledge-base chat maintenance flows (edit_source=
+    'agent' provenance lives in the wiki service).
+    """
+    if not _wiki_enabled(knowledge_id):
+        return []
+
+    from dbgpt_serve.rag.tools.wiki_tools import (
+        kb_wiki_index as _kb_wiki_index_impl,
+    )
+    from dbgpt_serve.rag.tools.wiki_tools import (
+        kb_wiki_read_page as _kb_wiki_read_page_impl,
+    )
+    from dbgpt_serve.rag.tools.wiki_tools import (
+        kb_wiki_search as _kb_wiki_search_impl,
+    )
+
+    @tool(
+        "kb_wiki_search",
+        description=(
+            "Search the knowledge space's LLM-Wiki pages (titles/aliases/"
+            "summaries). Use for the curated, synthesized view of its docs."
+        ),
+    )
+    async def _kb_wiki_search(query: str, top_k: int = 5) -> str:
+        return await _kb_wiki_search_impl(knowledge_id, query, top_k)
+
+    @tool(
+        "kb_wiki_read_page",
+        description=("Read one wiki page by slug (or slug 'index' for the catalog)."),
+    )
+    async def _kb_wiki_read_page(slug: str) -> str:
+        return await _kb_wiki_read_page_impl(knowledge_id, slug)
+
+    @tool(
+        "kb_wiki_index",
+        description="List the wiki catalog: folders and pages with summaries.",
+    )
+    async def _kb_wiki_index() -> str:
+        return await _kb_wiki_index_impl(knowledge_id)
+
+    return [_kb_wiki_search, _kb_wiki_read_page, _kb_wiki_index]
+
+
+def make_kb_wiki_tools(knowledge_id: str) -> List:
+    """Public alias used by other agent entry points."""
+    return _make_kb_wiki_tools(knowledge_id)
+
+
 def make_kb_tools(knowledge_id: str) -> List:
     """Create all knowledge base tools bound to a specific space.
 
@@ -239,6 +312,7 @@ def make_kb_tools(knowledge_id: str) -> List:
         make_kb_grep(knowledge_id),
         make_kb_cat(knowledge_id),
         make_kb_semantic_search(knowledge_id),
+        *_make_kb_wiki_tools(knowledge_id),
         make_kb_codegraph_explore(knowledge_id),
         make_kb_codegraph_call_chain(knowledge_id),
         make_kb_codegraph_class_hierarchy(knowledge_id),
