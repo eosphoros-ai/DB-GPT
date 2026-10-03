@@ -111,7 +111,7 @@ def test_load_file_legacy_file_reports_name_and_current_path(tmp_path):
     chunks = _chunks(tool())
 
     payload = json.dumps(chunks, ensure_ascii=False)
-    assert target in payload
+    assert target in _text(chunks)
     assert Path(target).name in payload
     assert "File provided by user upload" in payload
 
@@ -169,7 +169,7 @@ def test_load_file_no_args_summarizes_selected_session_files(tmp_path):
     # Materialized per-turn paths are surfaced so the model can analyze the
     # files directly with code_interpreter.
     for path in state["session_file_paths"].values():
-        assert path in payload
+        assert path in content
     # The internal child-process handoff file stays invisible.
     assert state["files_json_path"] not in payload
 

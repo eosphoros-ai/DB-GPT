@@ -6,6 +6,7 @@ import os
 import time
 import uuid
 from concurrent.futures import Executor
+from pathlib import Path
 from typing import List, Optional, cast
 
 import pandas as pd
@@ -60,6 +61,38 @@ logger = logging.getLogger(__name__)
 knowledge_service = KnowledgeService()
 
 user_recent_app_dao = UserRecentAppsDao()
+
+
+def _authorize_local_user_file(conv_uid: str, file_key: str, user_id: str) -> str:
+    """Allow local reads/deletes only below the authenticated user's upload root."""
+
+    from dbgpt.storage.chat_history.chat_history_db import ChatHistoryDao
+    from dbgpt_app.openapi.api_v1.python_upload_api import (
+        _resolve_upload_dir,
+        _resolve_user_id,
+    )
+    from dbgpt_app.openapi.api_v1.uploaded_dataset_registry import upload_work_dir
+
+    safe_user = _resolve_user_id(user_id)
+    owner_root = Path(_resolve_upload_dir(str(upload_work_dir()), safe_user)).resolve()
+    resolved = Path(file_key).resolve()
+    try:
+        resolved.relative_to(owner_root)
+    except ValueError as exc:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="File not found") from exc
+    if not resolved.is_file():
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="File not found")
+
+    conversation = ChatHistoryDao().get_by_uid(conv_uid) if conv_uid else None
+    if conversation is not None and conversation.user_name not in {None, "", safe_user}:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="File not found")
+    return str(resolved)
 
 
 def __get_conv_user_message(conversations: dict):
@@ -413,9 +446,10 @@ async def file_delete(
 ):
     logger.info(f"file_delete:{conv_uid},{file_key}")
     oss_file_client = FileClient()
+    authorized_key = _authorize_local_user_file(conv_uid, file_key, user_token.user_id)
 
     return Result.succ(
-        await oss_file_client.delete_file(conv_uid=conv_uid, file_key=file_key)
+        await oss_file_client.delete_file(conv_uid=conv_uid, file_key=authorized_key)
     )
 
 
@@ -429,8 +463,9 @@ async def file_read(
 ):
     logger.info(f"file_read:{conv_uid},{file_key}")
     file_client = FileClient()
-    res = file_client.read_file(conv_uid=conv_uid, file_key=file_key)
-    _, file_extension = os.path.splitext(file_key)
+    authorized_key = _authorize_local_user_file(conv_uid, file_key, user_token.user_id)
+    res = file_client.read_file(conv_uid=conv_uid, file_key=authorized_key)
+    _, file_extension = os.path.splitext(authorized_key)
     file_extension = file_extension.lower()
     try:
         if file_extension in [".xls", ".xlsx"]:

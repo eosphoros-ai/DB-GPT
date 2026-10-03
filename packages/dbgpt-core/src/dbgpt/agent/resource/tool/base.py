@@ -79,6 +79,9 @@ class BaseTool(Resource[ToolResourceParameters], ABC):
     def args(self) -> Dict[str, ToolParameter]:
         """Return the arguments of the tool."""
 
+    def validate_call_args(self, arguments: Dict[str, Any]) -> None:
+        """Optional pre-filter validation; legacy tools keep their behavior."""
+
     async def get_prompt(
         self,
         *,

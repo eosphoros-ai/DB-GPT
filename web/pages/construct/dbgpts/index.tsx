@@ -9,6 +9,7 @@ import {
 import BlurredCard, { ChatButton } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
+import { installedPluginCard } from '@/utils/plugin-card';
 import { ClearOutlined, DownloadOutlined, SearchOutlined, SyncOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Input, Segmented, SegmentedProps, Spin, Tag, message } from 'antd';
@@ -49,7 +50,7 @@ function Agent() {
         );
         setLoading(false);
         setIsError(!!err);
-        return res?.items ?? [];
+        return res?.items.map(installedPluginCard) ?? [];
       }
       const queryParams: PostAgentQueryParams = {
         page_index: pagination.pageNo,

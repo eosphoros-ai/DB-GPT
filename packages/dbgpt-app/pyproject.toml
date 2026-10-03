@@ -19,6 +19,7 @@ dependencies = [
     "aiofiles",
     "httpx>=0.24.0",
     "pyparsing",
+    "sqlglot>=26.13.2,<27",
 ]
 
 [project.urls]
@@ -34,6 +35,9 @@ build-backend = "hatchling.build"
 [project.optional-dependencies]
 cache = [
     "rocksdict",
+]
+collaboration = [
+    "redis==5.2.1",
 ]
 observability = [
     "opentelemetry-api",
@@ -60,6 +64,10 @@ exclude = [
     "src/dbgpt_app/**/tests/*",
     "src/dbgpt_app/tests",
     "src/dbgpt_app/tests/*",
+    # Always take workspace assets from the build hook's canonical sources,
+    # even when an editable/test install left a local materialized copy.
+    "src/dbgpt_app/pilot_template",
+    "src/dbgpt_app/pilot_template/**",
     "src/dbgpt_app/**/examples",
     "src/dbgpt_app/**/examples/*"
 ]
@@ -71,6 +79,14 @@ exclude = [
 "../../skills/financial-report-analyzer" = "skills/financial-report-analyzer"
 "../../skills/walmart-sales-analyzer" = "skills/walmart-sales-analyzer"
 "../../skills/agent-browser" = "skills/agent-browser"
+"../../skills/dashboard-builder" = "skills/dashboard-builder"
+"../../skills/antv-g2-chart" = "skills/antv-g2-chart"
+"../../skills/brutal-viz-design" = "skills/brutal-viz-design"
+"../../skills/datapulse-viz-design" = "skills/datapulse-viz-design"
+"../../skills/learnhub-viz-design" = "skills/learnhub-viz-design"
+"../../skills/nexusai-viz-design" = "skills/nexusai-viz-design"
+"../../skills/pawspa-viz-design" = "skills/pawspa-viz-design"
+"../../skills/serenityspa-viz-design" = "skills/serenityspa-viz-design"
 # Builtin example files
 "../../docker/examples/excel/Walmart_Sales.csv" = "examples/excel/Walmart_Sales.csv"
 "../../docker/examples/fin_report/pdf/2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf" = "examples/fin_report/pdf/2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf"
@@ -79,6 +95,7 @@ exclude = [
 "../../pilot/meta_data/alembic/README" = "pilot_tpl/meta_data/alembic/README"
 "../../pilot/meta_data/alembic/env.py" = "pilot_tpl/meta_data/alembic/env.py"
 "../../pilot/meta_data/alembic/script.py.mako" = "pilot_tpl/meta_data/alembic/script.py.mako"
+"../../pilot/meta_data/alembic/versions" = "pilot_tpl/meta_data/alembic/versions"
 "../../pilot/benchmark_meta_data/2025_07_27_public_500_standard_benchmark_question_list.xlsx" = "pilot_tpl/benchmark_meta_data/2025_07_27_public_500_standard_benchmark_question_list.xlsx"
 "../../pilot/examples/Walmart_Sales.db" = "pilot_tpl/examples/Walmart_Sales.db"
 

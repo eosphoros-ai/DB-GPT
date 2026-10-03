@@ -1,6 +1,4 @@
-import { Resources } from 'i18next';
-
-const WikiEn: Resources['translation'] = {
+const WikiEn = {
   wiki_tab_label: 'Wiki',
   wiki_graph_tab_label: 'Wiki Graph',
   wiki_tab_knowledge: 'Knowledge',

@@ -25,6 +25,8 @@ export const ChatEn = {
   code_preview_full_screen: 'Full Screen',
   code_preview_exit_full_screen: 'Exit Full Screen',
   code_preview_code: 'Code',
+  start_conversation: 'Start a conversation',
+  no_knowledge_spaces: 'No knowledge spaces',
   code_preview_copy: 'Copy',
   code_preview_already_copied: 'Already Copied',
   code_preview_download: 'Download',

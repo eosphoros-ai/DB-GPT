@@ -6,15 +6,53 @@ from typing import Any, Dict, Optional
 from dbgpt.agent.resource.tool.base import tool
 
 
-def make_sql_query(react_state: Dict[str, Any], database_connector: Optional[Any]):
+def make_sql_query(
+    react_state: Dict[str, Any],
+    database_connector: Optional[Any],
+    *,
+    max_calls: Optional[int] = None,
+):
+    call_count = 0
+    limit_description = (
+        f" Dashboard planning allows at most {max_calls} discovery calls; "
+        "after that, use the collected observations and call plan_dashboard."
+        if max_calls is not None
+        else ""
+    )
+
     @tool(
         description=(
             "对用户选择的数据库执行 SQL 查询（仅支持 SELECT）。"
-            '参数: {"sql": "SELECT 语句"}'
+            '参数: {"sql": "SELECT 语句"}' + limit_description
         )
     )
     def sql_query(sql: str) -> str:
         """Execute a read-only SQL query against the selected database."""
+
+        nonlocal call_count
+        if max_calls is not None and call_count >= max_calls:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "Dashboard discovery limit reached after "
+                                f"{max_calls} SQL queries. Do not call sql_query "
+                                "again in this turn. Use the observations already "
+                                "collected and call plan_dashboard now. If plan "
+                                "validation rejects a field or default, correct the "
+                                "plan from that validation feedback instead of "
+                                "restarting discovery."
+                            ),
+                        }
+                    ],
+                    "dashboard_discovery_limit_reached": True,
+                },
+                ensure_ascii=False,
+            )
+        call_count += 1
+
         if database_connector is None:
             return json.dumps(
                 {

@@ -1,4 +1,4 @@
-import { ERROR_CODE } from '@/utils/constants';
+import { ERROR_CODE } from '@/utils/constants/error-code';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 type IApiResponse<T = any> = {

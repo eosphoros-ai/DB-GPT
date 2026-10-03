@@ -241,7 +241,7 @@ export default function AppContent() {
       app_code: curApp?.app_code || '',
       admins: value,
     });
-    await initData();
+    getListFiltered();
   };
 
   useEffect(() => {

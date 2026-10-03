@@ -1,0 +1,295 @@
+{
+  "batch": "template-identities-20260922",
+  "templates": [
+    {
+      "id": "retail-overview",
+      "source": "Walmart_Sales",
+      "dashboardId": "cb4779a45a75484c90ef20e0ffecefe4",
+      "evidence": "output/ui-closeout-20260922/templates/retail-overview.json",
+      "preview": "/dashboard-templates/refresh-20260922/retail-overview.png",
+      "revision": 1
+    },
+    {
+      "id": "holiday-sales",
+      "source": "Walmart_Sales",
+      "dashboardId": "be7107b7d55b4c4a9566f0407672c89e",
+      "evidence": "output/ui-closeout-20260922/templates/holiday-sales.json",
+      "preview": "/dashboard-templates/refresh-20260922/holiday-sales.png",
+      "revision": 1
+    },
+    {
+      "id": "store-coverage",
+      "source": "Walmart_Sales",
+      "dashboardId": "348a71537a174b7a951386eda8fdc94d",
+      "evidence": "output/ui-closeout-20260922/templates/store-coverage.json",
+      "preview": "/dashboard-templates/refresh-20260922/store-coverage.png",
+      "revision": 1
+    },
+    {
+      "id": "olist-orders",
+      "source": "olist_ecommerce_demo",
+      "dashboardId": "10d98706ed944f46993dd2a2e2ac59c3",
+      "revision": 1,
+      "evidence": "docs/dashboard/evidence/v9-4-template-workspace-20260908/templates/olist-orders/attempt-2/admission.json",
+      "preview": "/dashboard-templates/v94/olist-orders.png"
+    },
+    {
+      "id": "olist-delivery",
+      "source": "olist_ecommerce_demo",
+      "dashboardId": "4ffd5c9b4b2047ea8ac710c14bad8f46",
+      "evidence": "output/ui-closeout-20260922/templates/olist-delivery.json",
+      "preview": "/dashboard-templates/refresh-20260922/olist-delivery.png",
+      "revision": 1
+    },
+    {
+      "id": "olist-payments",
+      "source": "olist_ecommerce_demo",
+      "dashboardId": "187d8b90ebdc4e1ba326f776f431e166",
+      "evidence": "output/ui-closeout-20260922/templates/olist-payments.json",
+      "preview": "/dashboard-templates/refresh-20260922/olist-payments.png",
+      "revision": 1
+    },
+    {
+      "id": "northwind-revenue",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "d47655edb4f24f72932674a3e296059c",
+      "evidence": "output/ui-closeout-20260922/templates/northwind-revenue.json",
+      "preview": "/dashboard-templates/refresh-20260922/northwind-revenue.png",
+      "revision": 1
+    },
+    {
+      "id": "northwind-customers",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "d1dd7173520f41bba9bce1a5896d5def",
+      "evidence": "output/ui-closeout-20260922/templates/northwind-customers.json",
+      "preview": "/dashboard-templates/refresh-20260922/northwind-customers.png",
+      "revision": 1
+    },
+    {
+      "id": "northwind-freight",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "3e6a807f8b544b7dab11239757a95611",
+      "evidence": "output/ui-closeout-20260922/templates/northwind-freight.json",
+      "preview": "/dashboard-templates/refresh-20260922/northwind-freight.png",
+      "revision": 1
+    },
+    {
+      "id": "annual-story",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "a0dbc78df00d4931be1c52062166dcf3",
+      "evidence": "output/ui-closeout-20260922/templates/annual-story.json",
+      "preview": "/dashboard-templates/refresh-20260922/annual-story.png",
+      "revision": 1
+    },
+    {
+      "id": "business-dossier",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "252fefb27d94477c813eb876a9179f82",
+      "evidence": "output/ui-closeout-20260922/templates/business-dossier.json",
+      "preview": "/dashboard-templates/refresh-20260922/business-dossier.png",
+      "revision": 1
+    },
+    {
+      "id": "customer-value",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "d13161577c4843fbb7067ae14112f1a0",
+      "evidence": "output/ui-closeout-20260922/templates/customer-value.json",
+      "preview": "/dashboard-templates/refresh-20260922/customer-value.png",
+      "revision": 1
+    },
+    {
+      "id": "ecommerce-revenue",
+      "source": "olist_ecommerce_demo",
+      "dashboardId": "d1b44149a27f4d12b1873b280fb72831",
+      "evidence": "output/ui-closeout-20260922/templates/ecommerce-revenue.json",
+      "preview": "/dashboard-templates/refresh-20260922/ecommerce-revenue.png",
+      "revision": 1
+    },
+    {
+      "id": "energy-monitor",
+      "source": "sqlite_energy",
+      "dashboardId": "fe25f20cf4e04a7886add94785285795",
+      "evidence": "output/ui-closeout-20260922/templates/energy-monitor.json",
+      "preview": "/dashboard-templates/refresh-20260922/energy-monitor.png",
+      "revision": 1
+    },
+    {
+      "id": "executive-pulse",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "49abf1b28df74fb487df2ab8ee57423c",
+      "evidence": "output/ui-closeout-20260922/templates/executive-pulse.json",
+      "preview": "/dashboard-templates/refresh-20260922/executive-pulse.png",
+      "revision": 2
+    },
+    {
+      "id": "growth-map",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "f926a29d307f45db9cf8b7ab2078599b",
+      "evidence": "output/ui-closeout-20260922/templates/growth-map.json",
+      "preview": "/dashboard-templates/refresh-20260922/growth-map.png",
+      "revision": 1
+    },
+    {
+      "id": "inventory-watch",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "3690eab85c4b434c9668be2f8644a1f3",
+      "evidence": "output/ui-closeout-20260922/templates/inventory-watch.json",
+      "preview": "/dashboard-templates/refresh-20260922/inventory-watch.png",
+      "revision": 1
+    },
+    {
+      "id": "logistics-flow",
+      "source": "olist_ecommerce_demo",
+      "dashboardId": "b2ab6e9dfa9b4d3eacd4d96e939b1aa1",
+      "evidence": "output/ui-closeout-20260922/templates/logistics-flow.json",
+      "preview": "/dashboard-templates/refresh-20260922/logistics-flow.png",
+      "revision": 1
+    },
+    {
+      "id": "manufacturing-quality",
+      "source": "sqlite_maintenance",
+      "dashboardId": "e839871ed87b4115bbb392ce947c8286",
+      "evidence": "output/ui-closeout-20260922/templates/manufacturing-quality.json",
+      "preview": "/dashboard-templates/refresh-20260922/manufacturing-quality.png",
+      "revision": 1
+    },
+    {
+      "id": "quarterly-timeline",
+      "source": "Walmart_Sales",
+      "dashboardId": "1658d68d8d7649e6bfaffd68bac476e2",
+      "revision": 1,
+      "evidence": "output/template-expansion-20260915/admission/quarterly-timeline.json",
+      "preview": "/dashboard-templates/reference-20260915/quarterly-timeline.png"
+    },
+    {
+      "id": "retail-terminal",
+      "source": "Walmart_Sales",
+      "dashboardId": "946f22dd2921464a99edc366915a408d",
+      "revision": 1,
+      "evidence": "output/template-expansion-20260915/admission/retail-terminal.json",
+      "preview": "/dashboard-templates/reference-20260915/retail-terminal.png"
+    },
+    {
+      "id": "revenue-growth",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "4a5d5824179945d5be347e33e872b277",
+      "evidence": "output/ui-closeout-20260922/templates/revenue-growth.json",
+      "preview": "/dashboard-templates/refresh-20260922/revenue-growth.png",
+      "revision": 2
+    },
+    {
+      "id": "sales-receipt",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "fd249206514a414486ab0e29a7a7bee5",
+      "evidence": "output/ui-closeout-20260922/templates/sales-receipt.json",
+      "preview": "/dashboard-templates/refresh-20260922/sales-receipt.png",
+      "revision": 1
+    },
+    {
+      "id": "service-desk",
+      "source": "sqlite_itsm",
+      "dashboardId": "84307d447f6348e99ee86b677f9453b5",
+      "evidence": "output/ui-closeout-20260922/templates/service-desk.json",
+      "preview": "/dashboard-templates/refresh-20260922/service-desk.png",
+      "revision": 1
+    },
+    {
+      "id": "student-performance",
+      "source": "sqlite_students",
+      "dashboardId": "4bd0264bf7c04f01a4378a04368e8373",
+      "evidence": "output/ui-closeout-20260922/templates/student-performance.json",
+      "preview": "/dashboard-templates/refresh-20260922/student-performance.png",
+      "revision": 1
+    },
+    {
+      "id": "support-operations",
+      "source": "sqlite_itsm",
+      "dashboardId": "c7e2637e87d34f7aa5c44b151cf135ed",
+      "evidence": "output/ui-closeout-20260922/templates/support-operations.json",
+      "preview": "/dashboard-templates/refresh-20260922/support-operations.png",
+      "revision": 1
+    },
+    {
+      "id": "brand-revenue",
+      "source": "upload_001_3a6ee8a2d1ad4a2a",
+      "dashboardId": "080cec2008cc420ba2b1c6b593d3ae8e",
+      "revision": 1,
+      "evidence": "output/annotation-brand-followup-20260915/brand-admission.json",
+      "preview": "/dashboard-templates/assets/brand-revenue.png"
+    },
+    {
+      "id": "store-marketing",
+      "source": "sqlite_marketing_showcase",
+      "dashboardId": "5ec3810711684343b3bf03462d03b2b2",
+      "revision": 1,
+      "evidence": "output/reference-bigscreen-20260919/admission/templates/store-marketing/attempt-1/admission.json",
+      "preview": "/dashboard-templates/showcase-20260919/store-marketing.png"
+    },
+    {
+      "id": "national-command",
+      "source": "sqlite_operations_showcase",
+      "dashboardId": "1d35c6962ef3487aa8fa91e1a350d217",
+      "revision": 1,
+      "evidence": "output/reference-bigscreen-20260919/admission/templates/national-command/attempt-1/admission.json",
+      "preview": "/dashboard-templates/showcase-20260919/national-command.png"
+    },
+    {
+      "id": "healthcare-command",
+      "source": "sqlite_healthcare_showcase",
+      "dashboardId": "0586f551019547b7a06506782f112e1c",
+      "revision": 1,
+      "evidence": "output/reference-bigscreen-20260919/admission/templates/healthcare-command/attempt-1/admission.json",
+      "preview": "/dashboard-templates/showcase-20260919/healthcare-command.png"
+    },
+    {
+      "id": "rural-finance",
+      "source": "sqlite_rural_showcase",
+      "dashboardId": "439efe0dff3c4d7a9f06beb520cccd53",
+      "revision": 1,
+      "evidence": "output/reference-bigscreen-20260919/admission/templates/rural-finance/attempt-1/admission.json",
+      "preview": "/dashboard-templates/showcase-20260919/rural-finance.png"
+    },
+    {
+      "id": "clinical-insight",
+      "source": "sqlite_heart_cleveland",
+      "dashboardId": "11e538833bb04b8ca5ff230ffba5b727",
+      "revision": 1,
+      "evidence": "output/sive-more-20260920/admission/clinical-insight/admission.json",
+      "preview": "/dashboard-templates/research-20260920/clinical-insight.png"
+    },
+    {
+      "id": "cardio-journal",
+      "source": "sqlite_heart_cleveland",
+      "dashboardId": "fea4b7f909124213aaf84195c396cc49",
+      "revision": 1,
+      "evidence": "output/sive-more-20260920/admission/cardio-journal/admission.json",
+      "preview": "/dashboard-templates/research-20260920/cardio-journal.png"
+    },
+    {
+      "id": "voice-observatory",
+      "source": "sqlite_voice_lab",
+      "dashboardId": "2b7deb927caf450f8bc28f00fb722d06",
+      "revision": 1,
+      "evidence": "output/sive-more-20260920/admission/voice-observatory/admission.json",
+      "preview": "/dashboard-templates/research-20260920/voice-observatory.png"
+    }
+  ],
+  "modes": [
+    {
+      "id": "analysis",
+      "evidence": "docs/dashboard/evidence/v9-2-layout-20260907/live/mode-analysis-attempt-1/admission.json"
+    },
+    {
+      "id": "dashboard",
+      "evidence": "docs/dashboard/evidence/v9-2-layout-20260907/live/walmart-attempt-1/admission.json"
+    },
+    {
+      "id": "files",
+      "evidence": "docs/dashboard/evidence/v9-2-layout-20260907/live/mode-files-attempt-1/admission.json"
+    },
+    {
+      "id": "skill",
+      "evidence": "docs/dashboard/evidence/v9-2-layout-20260907/live/mode-skill-attempt-1/admission.json"
+    }
+  ]
+}

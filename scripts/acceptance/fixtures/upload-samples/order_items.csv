@@ -1,0 +1,6 @@
+order_id,line_no,product,quantity,unit_price
+O001,1,键盘,2,100
+O001,2,鼠标,1,50
+O002,1,键盘,1,100
+O003,1,显示器,1,1000
+O004,1,鼠标,3,50

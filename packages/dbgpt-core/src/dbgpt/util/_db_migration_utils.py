@@ -375,11 +375,10 @@ def _ddl_init_and_upgrade(
     new_script_path = None
     try:
         latest_revision_before = _get_latest_revision(alembic_cfg, db.engine)
-        # create_new_revision_if_noting_to_update=False avoid creating a lot of empty
-        # migration scripts
-        # TODO Set create_new_revision_if_noting_to_update=False, not working now.
+        # Runtime startup must apply checked-in migrations, not manufacture a new
+        # empty revision every time an already-current database is opened.
         new_script_path = create_migration_script(
-            alembic_cfg, db.engine, create_new_revision_if_noting_to_update=True
+            alembic_cfg, db.engine, create_new_revision_if_noting_to_update=False
         )
         upgrade_database(alembic_cfg, db.engine)
     except CommandError as e:

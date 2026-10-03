@@ -1,8 +1,11 @@
 import type { CreateTaskRequest, RunResponse, TaskResponse, UpdateTaskRequest } from '@/types/scheduled-task';
+import { getUserId } from '@/utils';
+import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
 import axios from '@/utils/ctx-axios';
 import { useCallback } from 'react';
 
 const BASE = '/api/v2/serve/scheduled-tasks';
+const taskRequestConfig = () => ({ headers: { [HEADER_USER_ID_KEY]: getUserId() } });
 
 /**
  * ctx-axios 的 response interceptor 已经把 axios response 解包为
@@ -10,7 +13,8 @@ const BASE = '/api/v2/serve/scheduled-tasks';
  * 这里再取 .data 得到业务数据。
  */
 function unwrap<T>(payload: any): T {
-  return (payload?.data ?? payload) as T;
+  if (payload?.success === false) throw new Error(payload.err_msg || '定时任务操作失败');
+  return (payload && 'data' in payload ? payload.data : payload) as T;
 }
 
 /**
@@ -22,13 +26,28 @@ function unwrap<T>(payload: any): T {
 export function useScheduledTask() {
   /** POST /api/v2/serve/scheduled-tasks/ — 创建定时任务 */
   const createTask = useCallback(async (body: CreateTaskRequest): Promise<TaskResponse> => {
-    const res = await axios.post(`${BASE}/`, body);
+    if (body.task_type === 'dashboard_refresh') {
+      const { dashboard_id, version: _version, ...options } = body.payload;
+      const res = await axios.post(
+        `/api/v1/dashboards/${encodeURIComponent(dashboard_id)}/schedules`,
+        {
+          task_name: body.task_name,
+          description: body.description,
+          cron_expression: body.cron_expression,
+          ...options,
+        },
+        taskRequestConfig(),
+      );
+      return unwrap<TaskResponse>(res);
+    }
+    const res = await axios.post(`${BASE}/`, body, taskRequestConfig());
     return unwrap<TaskResponse>(res);
   }, []);
 
   /** GET /api/v2/serve/scheduled-tasks/?enabled_only=false — 任务列表 */
   const listTasks = useCallback(async (enabledOnly = false): Promise<TaskResponse[]> => {
     const res = await axios.get(`${BASE}/`, {
+      ...taskRequestConfig(),
       params: { enabled_only: enabledOnly },
     });
     return unwrap<TaskResponse[]>(res) ?? [];
@@ -36,30 +55,31 @@ export function useScheduledTask() {
 
   /** GET /api/v2/serve/scheduled-tasks/{task_id} — 任务详情 */
   const getTask = useCallback(async (taskId: string): Promise<TaskResponse> => {
-    const res = await axios.get(`${BASE}/${taskId}`);
+    const res = await axios.get(`${BASE}/${taskId}`, taskRequestConfig());
     return unwrap<TaskResponse>(res);
   }, []);
 
   /** PUT /api/v2/serve/scheduled-tasks/{task_id} — 更新任务 */
   const updateTask = useCallback(async (taskId: string, body: UpdateTaskRequest): Promise<TaskResponse> => {
-    const res = await axios.put(`${BASE}/${taskId}`, body);
+    const res = await axios.put(`${BASE}/${taskId}`, body, taskRequestConfig());
     return unwrap<TaskResponse>(res);
   }, []);
 
   /** POST /api/v2/serve/scheduled-tasks/{task_id}/toggle — 启停任务 */
   const toggleTask = useCallback(async (taskId: string, enabled: boolean): Promise<TaskResponse> => {
-    const res = await axios.post(`${BASE}/${taskId}/toggle`, { enabled });
+    const res = await axios.post(`${BASE}/${taskId}/toggle`, { enabled }, taskRequestConfig());
     return unwrap<TaskResponse>(res);
   }, []);
 
   /** DELETE /api/v2/serve/scheduled-tasks/{task_id} — 删除任务 */
   const deleteTask = useCallback(async (taskId: string): Promise<void> => {
-    await axios.delete(`${BASE}/${taskId}`);
+    unwrap(await axios.delete(`${BASE}/${taskId}`, taskRequestConfig()));
   }, []);
 
   /** GET /api/v2/serve/scheduled-tasks/{task_id}/runs?limit=&offset= — 执行历史列表 */
   const listRuns = useCallback(async (taskId: string, limit = 50, offset = 0): Promise<RunResponse[]> => {
     const res = await axios.get(`${BASE}/${taskId}/runs`, {
+      ...taskRequestConfig(),
       params: { limit, offset },
     });
     return unwrap<RunResponse[]>(res) ?? [];
@@ -67,7 +87,7 @@ export function useScheduledTask() {
 
   /** GET /api/v2/serve/scheduled-tasks/{task_id}/runs/{run_id} — 单次执行详情 */
   const getRun = useCallback(async (taskId: string, runId: string): Promise<RunResponse> => {
-    const res = await axios.get(`${BASE}/${taskId}/runs/${runId}`);
+    const res = await axios.get(`${BASE}/${taskId}/runs/${runId}`, taskRequestConfig());
     return unwrap<RunResponse>(res);
   }, []);
 

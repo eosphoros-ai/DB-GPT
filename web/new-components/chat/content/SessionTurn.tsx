@@ -148,7 +148,7 @@ const UserIcon: React.FC = () => {
   );
 };
 
-const StepItem: React.FC<{ step: ExecutionStep; isLast: boolean }> = ({ step, isLast }) => {
+const StepItem: React.FC<{ step: ExecutionStep; isLast: boolean }> = ({ step, isLast: _isLast }) => {
   const config = stepStatusConfig[step.status];
   const duration = step.startTime && step.endTime ? step.endTime - step.startTime : undefined;
 

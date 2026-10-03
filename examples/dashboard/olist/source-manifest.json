@@ -1,0 +1,40 @@
+{
+  "dataset_ref": "olistbr/brazilian-ecommerce",
+  "title": "Brazilian E-Commerce Public Dataset by Olist",
+  "description": "100,000 anonymized marketplace orders from 2016 to 2018 with customers, items, products, payments, reviews, sellers, and geolocation.",
+  "dataset_page": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+  "metadata_api": "https://www.kaggle.com/api/v1/datasets/view/olistbr/brazilian-ecommerce",
+  "download_api": "https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce",
+  "version": 2,
+  "last_updated": "2021-10-01T19:08:27.970Z",
+  "license": "CC BY-NC-SA 4.0",
+  "archive_sha256": "967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784",
+  "raw_data_committed": false,
+  "fallback_mirror": {
+    "repository": "https://github.com/xqtee-eng/Brazilian-E-Commerce-Public-Dataset-by-Olist",
+    "commit": "2c2c68156bd6563b3e93583602014807e767a7f3",
+    "base_url": "https://raw.githubusercontent.com/xqtee-eng/Brazilian-E-Commerce-Public-Dataset-by-Olist/2c2c68156bd6563b3e93583602014807e767a7f3/archive",
+    "scope": "eight core tables only; the optional geolocation file still requires the pinned Kaggle archive",
+    "files": {
+      "olist_customers_dataset.csv": {"size": 9033957, "sha256": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2"},
+      "olist_order_items_dataset.csv": {"size": 15438671, "sha256": "0bc4d068c4fe38cbb01bd90e8746e3c613fe7b4baef75fab7b0e329701c3e279"},
+      "olist_order_payments_dataset.csv": {"size": 5777138, "sha256": "4f713964f2815dbbaa40b9488268c55aac3627bfce5aa96cf58d1f3616de3cc0"},
+      "olist_order_reviews_dataset.csv": {"size": 14451670, "sha256": "012b61c7593e34f51fa614efdf802b9c7056ce6aae5307ddb93236e7cfc797d7"},
+      "olist_orders_dataset.csv": {"size": 17654914, "sha256": "8df58ef3d2d7e9944010f7beecd9b75367f5588ec6e3c91cec19ae3345ef9ecf"},
+      "olist_products_dataset.csv": {"size": 2379446, "sha256": "3e6569628a17fbc75fd206ee357b59e20364b9afa90f5b6cd5b4d624c58aa9cc"},
+      "olist_sellers_dataset.csv": {"size": 174703, "sha256": "1f643d2b950373b85735e7794b20986f528d7a000432e7c6f9bcbb44d0846a0e"},
+      "product_category_name_translation.csv": {"size": 2613, "sha256": "a81f0d1f27b27e7293f761bc79e3ce8f348ee39c4b3ed3e49bde38f478586278"}
+    }
+  },
+  "files": [
+    "olist_customers_dataset.csv",
+    "olist_geolocation_dataset.csv",
+    "olist_order_items_dataset.csv",
+    "olist_order_payments_dataset.csv",
+    "olist_order_reviews_dataset.csv",
+    "olist_orders_dataset.csv",
+    "olist_products_dataset.csv",
+    "olist_sellers_dataset.csv",
+    "product_category_name_translation.csv"
+  ]
+}

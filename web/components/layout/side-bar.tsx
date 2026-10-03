@@ -169,6 +169,14 @@ function SideBar() {
         path: '/construct/skills',
       },
       {
+        key: 'dashboards',
+        name: i18n.language === 'en' ? 'Dashboards' : '看板',
+        isActive: pathname.startsWith('/dashboards'),
+        iconSrc: '',
+        IconComponent: DashboardOutlined,
+        path: '/dashboards',
+      },
+      {
         key: 'datasources',
         name: t('datasources'),
         isActive: pathname.startsWith('/construct/database'),
@@ -202,7 +210,7 @@ function SideBar() {
       },
     ];
     return items;
-  }, [t, pathname]);
+  }, [t, pathname, i18n.language]);
 
   const settingsContent = (
     <div className='w-56 py-1'>

@@ -1,0 +1,198 @@
+.research {
+  background: var(--dashboard-theme-canvas);
+}
+.research:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+}
+.research > [data-scene-content] {
+  margin: 0 24px;
+}
+.research > [data-catalog-heading] {
+  padding: 32px 24px 22px;
+  text-align: left;
+}
+.research > [data-catalog-heading] h2 {
+  margin: 9px 0 12px;
+  font-size: clamp(25px, 2.5vw, 38px);
+  font-weight: 750;
+  line-height: 1.3;
+}
+.research > [data-catalog-heading] p {
+  max-width: 1000px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.research [data-dashboard-widget-id] {
+  box-shadow: none;
+}
+.research [data-dashboard-table-style] {
+  width: 100%;
+  min-width: 0;
+}
+.research :global(.ant-table table) {
+  display: table;
+}
+.clinical_insight > [data-catalog-heading] {
+  background: var(--dashboard-theme-card);
+  border-bottom: 2px solid var(--dashboard-theme-primary);
+  margin-bottom: 28px;
+}
+.clinical_insight [data-catalog-kind='metric'] [data-dashboard-widget-id] {
+  border-left: 4px solid var(--dashboard-theme-primary);
+}
+.clinical_insight [data-dashboard-widget-id='positive'] {
+  border-left-color: #b94e59 !important;
+}
+.clinical_insight [data-dashboard-widget-id='negative'] {
+  border-left-color: #398274 !important;
+}
+.clinical_insight [data-dashboard-widget-id='positive'] [data-dashboard-kpi-value],
+.clinical_insight [data-dashboard-widget-id='prevalence'] [data-dashboard-kpi-value] {
+  color: #b94e59 !important;
+}
+.clinical_insight [data-dashboard-widget-id='negative'] [data-dashboard-kpi-value] {
+  color: #398274 !important;
+}
+.cardio_journal {
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
+}
+.cardio_journal > [data-catalog-heading],
+.cardio_journal > [data-scene-content],
+.cardio_journal > details {
+  grid-column: 2;
+  min-width: 0;
+}
+.cardio_journal > [data-catalog-heading] {
+  padding: 44px 24px 32px;
+  border-bottom: 1px solid var(--dashboard-theme-border);
+  margin-bottom: 28px;
+}
+.cardio_journal > [data-catalog-heading] h2 {
+  font-size: clamp(30px, 3vw, 46px);
+  letter-spacing: -0.035em;
+  max-width: 780px;
+  font-weight: 800;
+}
+.cardio_journal [data-dashboard-widget-id] {
+  border-radius: 2px;
+}
+.cardio_journal [data-dashboard-widget-id='foundation'],
+.cardio_journal [data-dashboard-widget-id='gender'],
+.cardio_journal [data-dashboard-widget-id='pressure'],
+.cardio_journal [data-dashboard-widget-id='chest'],
+.cardio_journal [data-dashboard-widget-id='slope'] {
+  border-top: 3px solid var(--dashboard-theme-primary);
+}
+.rail {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  border-right: 1px solid var(--dashboard-theme-border);
+  background: var(--dashboard-theme-card);
+}
+.railContent {
+  position: sticky;
+  top: 16px;
+  padding: 28px 12px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 26px;
+  font-size: 22px;
+  color: var(--dashboard-theme-primary);
+}
+.brand strong {
+  font-size: 17px;
+  color: var(--dashboard-theme-text);
+}
+.brand small {
+  display: block;
+  font-size: 8px;
+  margin-top: 4px;
+  letter-spacing: 0.12em;
+  color: var(--dashboard-theme-muted);
+}
+.rail nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rail nav button {
+  display: flex;
+  gap: 11px;
+  border: 0;
+  padding: 12px 10px;
+  font-size: 12px;
+  color: var(--dashboard-theme-text);
+  background: transparent;
+  text-align: left;
+  white-space: nowrap;
+}
+.rail nav button span {
+  color: var(--dashboard-theme-primary);
+  font-variant-numeric: tabular-nums;
+}
+.rail nav button:hover,
+.rail nav button:focus-visible {
+  outline: 1px solid var(--dashboard-theme-primary);
+  background: var(--dashboard-theme-primary-soft);
+}
+.railCaption {
+  margin: 40px 10px 0;
+  color: var(--dashboard-theme-muted);
+  font-size: 11px;
+  line-height: 1.9;
+}
+.voice_observatory > [data-catalog-heading] h2 {
+  color: #ff388b;
+}
+.voice_observatory > [data-catalog-heading] > span {
+  color: #bcb1ca;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.13em;
+}
+.voice_observatory [data-dashboard-kpi-value] {
+  font-family: ui-monospace, 'Microsoft Yahei', monospace;
+  color: #ff388b !important;
+  font-size: clamp(26px, 2.9vw, 44px) !important;
+}
+.voice_observatory [data-dashboard-widget-id='latency'] [data-dashboard-kpi-value] {
+  color: #f1db49 !important;
+}
+.voice_observatory [data-dashboard-widget-id='sessions'] [data-dashboard-kpi-value] {
+  color: #62d698 !important;
+}
+.voice_observatory [data-dashboard-widget-id='voice_share'] [data-dashboard-kpi-value] {
+  color: #f5f0f6 !important;
+}
+.voice_observatory [data-dashboard-widget-id='latency'] {
+  border-color: #762748;
+}
+.research[data-research-compact='true'] > [data-scene-content] {
+  margin: 0 12px;
+}
+.research[data-research-compact='true'] > [data-catalog-heading] {
+  padding: 24px 16px;
+}
+.cardio_journal[data-research-compact='true'] {
+  display: block;
+}
+[data-research-compact='true'] .rail {
+  border-right: 0;
+  border-bottom: 1px solid var(--dashboard-theme-border);
+}
+[data-research-compact='true'] .railContent {
+  padding: 12px;
+}
+[data-research-compact='true'] .brand,
+[data-research-compact='true'] .railCaption {
+  display: none;
+}
+[data-research-compact='true'] .rail nav {
+  flex-direction: row;
+  overflow-x: auto;
+}

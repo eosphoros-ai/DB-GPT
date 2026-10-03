@@ -15,6 +15,7 @@ import {
   uploadDataSetsContent,
   uploadDataSetsFile,
 } from '@/client/api';
+import { readDownloadError } from '@/lib/download-error';
 import { InfoCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import type { TableProps } from 'antd';
@@ -318,20 +319,9 @@ const Evaluation = () => {
               const response = await downloadDataSet({
                 code: record?.code,
               });
-              const contentType = response.headers['content-type'];
-              if (contentType.includes('application/json')) {
-                // 如果是 JSON，解析错误信息
-                const reader = new FileReader();
-                reader.onload = () => {
-                  try {
-                    const error = JSON.parse(reader.result as string);
-                    message.error(error.err_msg);
-                    // 在页面或通知系统中展示错误信息
-                  } catch (parseError) {
-                    console.error('Failed to parse error response:', parseError);
-                  }
-                };
-                reader.readAsText(response.data as any);
+              const downloadError = await readDownloadError(response.data);
+              if (downloadError) {
+                message.error(downloadError);
               } else {
                 // 从响应头中获取文件名
                 const contentDisposition = response.headers['content-disposition'];
@@ -462,21 +452,9 @@ const Evaluation = () => {
               const response = await downloadEvaluation({
                 evaluate_code: record?.evaluate_code,
               });
-              const contentType = response.headers['content-type'];
-
-              if (contentType.includes('application/json')) {
-                // 如果是 JSON，解析错误信息
-                const reader = new FileReader();
-                reader.onload = () => {
-                  try {
-                    const error = JSON.parse(reader.result as string);
-                    message.error(error.err_msg);
-                    // 在页面或通知系统中展示错误信息
-                  } catch (parseError) {
-                    console.error('Failed to parse error response:', parseError);
-                  }
-                };
-                reader.readAsText(response.data as any);
+              const downloadError = await readDownloadError(response.data);
+              if (downloadError) {
+                message.error(downloadError);
               } else {
                 // 从响应头中获取文件名
                 const contentDisposition = response.headers['content-disposition'];

@@ -33,6 +33,8 @@ export const ChatZh: Resources['translation'] = {
   code_preview_full_screen: '全屏',
   code_preview_exit_full_screen: '退出全屏',
   code_preview_code: '代码',
+  start_conversation: '开始对话',
+  no_knowledge_spaces: '暂无知识库',
   code_preview_copy: '复制',
   code_preview_already_copied: '已复制',
   code_preview_download: '下载',

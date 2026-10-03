@@ -1,0 +1,17 @@
+@media (max-width: 640px) {
+  .panel :global(.ant-list-item) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .panel :global(.ant-list-item-meta) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .panel :global(.ant-list-item-action) {
+    margin-inline-start: 0;
+    align-self: flex-start;
+  }
+}

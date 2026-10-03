@@ -1,5 +1,11 @@
 import type Plugin from '@oceanbase-odc/monaco-plugin-ob';
 
+declare global {
+  interface Window {
+    obMonaco?: { getWorkerUrl: (type: string) => string };
+  }
+}
+
 let plugin: Plugin;
 
 export async function register(): Promise<Plugin> {
@@ -19,8 +25,8 @@ export async function register(): Promise<Plugin> {
       return '';
     },
   };
-  const module = await import('@oceanbase-odc/monaco-plugin-ob');
-  const Plugin = module.default;
+  const pluginModule = await import('@oceanbase-odc/monaco-plugin-ob');
+  const Plugin = pluginModule.default;
   if (plugin) {
     return plugin;
   }

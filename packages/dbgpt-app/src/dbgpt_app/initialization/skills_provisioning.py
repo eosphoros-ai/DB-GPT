@@ -8,6 +8,8 @@ import logging
 import os
 import shutil
 
+from .package_resources import bundled_resource_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,21 +22,15 @@ def ensure_builtin_skills(skills_dir: str) -> None:
     destination are **never** overwritten so that user modifications are
     preserved.
 
-    This function is a no-op when:
-    * ``dbgpt_app._builtin_skills`` cannot be imported (e.g. running
-      from a source checkout where the force-include hasn't been
-      triggered).
-    * The builtin skills directory inside the package is empty.
+    Assets are located in the package or the installed editable wheel.
+    If no bundled directory is available, provisioning is a no-op.
 
     Args:
         skills_dir: Absolute path to the target skills directory,
             e.g. ``~/.dbgpt/skills/``.
     """
-    try:
-        import dbgpt_app._builtin_skills as _bs
-
-        builtin_root = os.path.dirname(_bs.__file__)
-    except (ImportError, AttributeError):
+    builtin_root = bundled_resource_dir("_builtin_skills")
+    if builtin_root is None:
         logger.debug("dbgpt_app._builtin_skills not available, skipping seed.")
         return
 

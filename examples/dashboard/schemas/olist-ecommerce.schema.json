@@ -1,0 +1,446 @@
+{
+  "schema_version": "1.3",
+  "dashboard": {
+    "id": "olist-ecommerce-demo",
+    "title": "Olist 电商经营与履约看板",
+    "description": "基于 Olist 公开数据的真实多表案例，覆盖订单、客户、商品、卖家、支付和评价。",
+    "data_source_id": "olist_ecommerce_demo",
+    "status": "draft",
+    "theme": {"preset": "business_blue"}
+  },
+  "metric_context": {
+    "grain": "订单、订单项、支付和评价按各自业务粒度保存；查询时显式聚合后联表",
+    "time_range": "2016-09-04 至 2018-10-17",
+    "data_freshness": "Kaggle Olist dataset version 2, updated 2021-10-01",
+    "source_notes": [
+      "来源为 Kaggle 上 Olist 发布的 Brazilian E-Commerce Public Dataset。",
+      "许可证为 CC BY-NC-SA 4.0；原始 CSV 不提交到代码仓库。",
+      "支付先按订单聚合，避免与订单项联接时产生一对多金额重复。"
+    ],
+    "metrics": [
+      {
+        "id": "payment-total",
+        "name": "支付总额",
+        "business_definition": "筛选范围内，每笔订单的全部支付记录之和。",
+        "aggregation": "sum",
+        "unit": "BRL",
+        "grain": "订单",
+        "source_field": "olist_order_payments.payment_value",
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "delivered-rate",
+        "name": "已送达率",
+        "business_definition": "状态为 delivered 的订单数除以筛选范围内全部订单数。",
+        "aggregation": "ratio",
+        "unit": "%",
+        "grain": "订单",
+        "source_field": "olist_orders.order_status",
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "item-revenue",
+        "name": "商品成交额",
+        "business_definition": "订单项 price 之和，不包含运费。",
+        "aggregation": "sum",
+        "unit": "BRL",
+        "grain": "订单项",
+        "source_field": "olist_order_items.price",
+        "definition_source": "user_confirmed"
+      }
+    ],
+    "dimensions": [
+      {
+        "id": "purchase-month",
+        "name": "购买月份",
+        "business_definition": "订单创建时间所属自然月。",
+        "field": "olist_orders.order_purchase_timestamp",
+        "data_type": "datetime",
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "customer-state",
+        "name": "客户州",
+        "business_definition": "订单对应客户地址的巴西州缩写。",
+        "field": "olist_customers.customer_state",
+        "data_type": "string",
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "product-category",
+        "name": "商品英文品类",
+        "business_definition": "商品原始葡萄牙语品类映射后的英文名称。",
+        "field": "olist_category_translation.product_category_name_english",
+        "data_type": "string",
+        "definition_source": "user_confirmed"
+      }
+    ]
+  },
+  "filters": [
+    {
+      "id": "purchase-years",
+      "type": "multi_select",
+      "label": "购买年份",
+      "field": "purchase_year",
+      "default": ["2016", "2017", "2018"],
+      "options": [
+        {"label": "2016", "value": "2016"},
+        {"label": "2017", "value": "2017"},
+        {"label": "2018", "value": "2018"}
+      ]
+    },
+    {
+      "id": "customer-states",
+      "type": "multi_select",
+      "label": "客户州",
+      "field": "customer_state",
+      "default": ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"],
+      "options": [
+        {"label": "AC", "value": "AC"}, {"label": "AL", "value": "AL"},
+        {"label": "AM", "value": "AM"}, {"label": "AP", "value": "AP"},
+        {"label": "BA", "value": "BA"}, {"label": "CE", "value": "CE"},
+        {"label": "DF", "value": "DF"}, {"label": "ES", "value": "ES"},
+        {"label": "GO", "value": "GO"}, {"label": "MA", "value": "MA"},
+        {"label": "MG", "value": "MG"}, {"label": "MS", "value": "MS"},
+        {"label": "MT", "value": "MT"}, {"label": "PA", "value": "PA"},
+        {"label": "PB", "value": "PB"}, {"label": "PE", "value": "PE"},
+        {"label": "PI", "value": "PI"}, {"label": "PR", "value": "PR"},
+        {"label": "RJ", "value": "RJ"}, {"label": "RN", "value": "RN"},
+        {"label": "RO", "value": "RO"}, {"label": "RR", "value": "RR"},
+        {"label": "RS", "value": "RS"}, {"label": "SC", "value": "SC"},
+        {"label": "SE", "value": "SE"}, {"label": "SP", "value": "SP"},
+        {"label": "TO", "value": "TO"}
+      ]
+    },
+    {
+      "id": "order-status",
+      "type": "select",
+      "label": "订单状态",
+      "field": "order_status",
+      "default": "all",
+      "options": [
+        {"label": "全部", "value": "all"},
+        {"label": "已送达", "value": "delivered"},
+        {"label": "运输中", "value": "shipped"},
+        {"label": "已取消", "value": "canceled"},
+        {"label": "缺货", "value": "unavailable"},
+        {"label": "处理中", "value": "processing"},
+        {"label": "已开票", "value": "invoiced"},
+        {"label": "已批准", "value": "approved"},
+        {"label": "已创建", "value": "created"}
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "id": "payment-total",
+      "type": "kpi",
+      "title": "支付总额",
+      "description": "筛选范围内按订单汇总后的支付金额。",
+      "query": {
+        "data_source_id": "olist_ecommerce_demo",
+        "sql": "WITH payment_by_order AS (SELECT order_id, SUM(payment_value) AS payment_total FROM olist_order_payments GROUP BY order_id) SELECT ROUND(SUM(COALESCE(p.payment_total, 0)), 2) AS payment_total FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id LEFT JOIN payment_by_order p ON p.order_id = o.order_id WHERE SUBSTR(o.order_purchase_timestamp, 1, 4) IN (:years) AND c.customer_state IN (:states) AND (:status = 'all' OR o.order_status = :status)",
+        "filter_parameters": {"purchase-years": "years", "customer-states": "states", "order-status": "status"},
+        "default_parameters": {},
+        "output_fields": [{"name": "payment_total", "type": "number", "label": "支付总额", "nullable": true}],
+        "timeout_seconds": 30,
+        "max_rows": 10,
+        "grain": "筛选范围合计"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "olist_ecommerce_demo",
+          "sql": "WITH payment_by_order AS (SELECT order_id, SUM(payment_value) AS payment_total FROM olist_order_payments GROUP BY order_id) SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, c.customer_state, o.order_status, ROUND(SUM(COALESCE(p.payment_total, 0)), 2) AS payment_total FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id LEFT JOIN payment_by_order p ON p.order_id = o.order_id GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), c.customer_state, o.order_status ORDER BY purchase_year, c.customer_state, o.order_status",
+          "output_fields": [
+            {"name": "purchase_year", "type": "string"},
+            {"name": "customer_state", "type": "string"},
+            {"name": "order_status", "type": "string"},
+            {"name": "payment_total", "type": "number"}
+          ],
+          "max_rows": 1000
+        },
+        "filter_fields": {"purchase-years": "purchase_year", "customer-states": "customer_state", "order-status": "order_status"},
+        "group_by": [],
+        "measures": [{"source_field": "payment_total", "output_field": "payment_total", "aggregation": "sum"}],
+        "output_columns": ["payment_total"],
+        "row_mode": false,
+        "sort": [],
+        "max_output_rows": 1
+      },
+      "encoding": {"value": "payment_total", "columns": []},
+      "style": {"prefix": "R$", "precision": 2},
+      "presentation": {"visualization": "kpi", "currency": "R$", "precision": 2, "colors": ["#335CFF"]},
+      "metric_ids": ["payment-total"],
+      "dimension_ids": []
+    },
+    {
+      "id": "delivered-rate",
+      "type": "kpi",
+      "title": "已送达率",
+      "description": "筛选订单中状态为 delivered 的占比。",
+      "query": {
+        "data_source_id": "olist_ecommerce_demo",
+        "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END) / COUNT(*), 2) AS delivered_rate FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id WHERE SUBSTR(o.order_purchase_timestamp, 1, 4) IN (:years) AND c.customer_state IN (:states) AND (:status = 'all' OR o.order_status = :status)",
+        "filter_parameters": {"purchase-years": "years", "customer-states": "states", "order-status": "status"},
+        "default_parameters": {},
+        "output_fields": [{"name": "delivered_rate", "type": "number", "label": "已送达率", "nullable": true}],
+        "timeout_seconds": 30,
+        "max_rows": 10,
+        "grain": "筛选范围比率"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "olist_ecommerce_demo",
+          "sql": "SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, c.customer_state, o.order_status, SUM(CASE WHEN o.order_status = 'delivered' THEN 1 ELSE 0 END) AS delivered_count, COUNT(*) AS order_count FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), c.customer_state, o.order_status ORDER BY purchase_year, c.customer_state, o.order_status",
+          "output_fields": [
+            {"name": "purchase_year", "type": "string"},
+            {"name": "customer_state", "type": "string"},
+            {"name": "order_status", "type": "string"},
+            {"name": "delivered_count", "type": "integer"},
+            {"name": "order_count", "type": "integer"}
+          ],
+          "max_rows": 1000
+        },
+        "filter_fields": {"purchase-years": "purchase_year", "customer-states": "customer_state", "order-status": "order_status"},
+        "group_by": [],
+        "measures": [{"source_field": "delivered_count", "denominator_field": "order_count", "output_field": "delivered_rate", "aggregation": "ratio", "scale": 100}],
+        "output_columns": ["delivered_rate"],
+        "row_mode": false,
+        "sort": [],
+        "max_output_rows": 1
+      },
+      "encoding": {"value": "delivered_rate", "columns": []},
+      "style": {"suffix": "%", "precision": 2},
+      "presentation": {"visualization": "gauge", "unit": "%", "precision": 2, "percentage": true, "colors": ["#2DAA78"]},
+      "metric_ids": ["delivered-rate"],
+      "dimension_ids": []
+    },
+    {
+      "id": "monthly-payments",
+      "type": "line",
+      "title": "月度订单与支付趋势",
+      "description": "按购买月份比较订单量和支付总额。",
+      "query": {
+        "data_source_id": "olist_ecommerce_demo",
+        "sql": "WITH payment_by_order AS (SELECT order_id, SUM(payment_value) AS payment_total FROM olist_order_payments GROUP BY order_id) SELECT SUBSTR(o.order_purchase_timestamp, 1, 7) AS month, COUNT(*) AS order_count, ROUND(SUM(COALESCE(p.payment_total, 0)), 2) AS payment_total FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id LEFT JOIN payment_by_order p ON p.order_id = o.order_id WHERE SUBSTR(o.order_purchase_timestamp, 1, 4) IN (:years) AND c.customer_state IN (:states) AND (:status = 'all' OR o.order_status = :status) GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 7) ORDER BY month",
+        "filter_parameters": {"purchase-years": "years", "customer-states": "states", "order-status": "status"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "month", "type": "string", "label": "月份", "nullable": false},
+          {"name": "order_count", "type": "integer", "label": "订单数", "nullable": false},
+          {"name": "payment_total", "type": "number", "label": "支付总额", "nullable": true}
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 100,
+        "grain": "购买月"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "olist_ecommerce_demo",
+          "sql": "WITH payment_by_order AS (SELECT order_id, SUM(payment_value) AS payment_total FROM olist_order_payments GROUP BY order_id) SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, SUBSTR(o.order_purchase_timestamp, 1, 7) AS month, c.customer_state, o.order_status, COUNT(*) AS order_count, ROUND(SUM(COALESCE(p.payment_total, 0)), 2) AS payment_total FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id LEFT JOIN payment_by_order p ON p.order_id = o.order_id GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), SUBSTR(o.order_purchase_timestamp, 1, 7), c.customer_state, o.order_status ORDER BY month, c.customer_state, o.order_status",
+          "output_fields": [
+            {"name": "purchase_year", "type": "string"},
+            {"name": "month", "type": "string"},
+            {"name": "customer_state", "type": "string"},
+            {"name": "order_status", "type": "string"},
+            {"name": "order_count", "type": "integer"},
+            {"name": "payment_total", "type": "number"}
+          ],
+          "max_rows": 2000
+        },
+        "filter_fields": {"purchase-years": "purchase_year", "customer-states": "customer_state", "order-status": "order_status"},
+        "group_by": ["month"],
+        "measures": [
+          {"source_field": "order_count", "output_field": "order_count", "aggregation": "sum"},
+          {"source_field": "payment_total", "output_field": "payment_total", "aggregation": "sum"}
+        ],
+        "output_columns": ["month", "order_count", "payment_total"],
+        "row_mode": false,
+        "sort": [{"field": "month", "direction": "ascending"}],
+        "max_output_rows": 100
+      },
+      "encoding": {"x": "month", "y": "payment_total", "y2": "order_count", "columns": []},
+      "style": {},
+      "presentation": {"visualization": "dual_axis", "smooth": true, "show_grid": true, "show_legend": true, "colors": ["#335CFF", "#F0A32F"]},
+      "metric_ids": ["payment-total"],
+      "dimension_ids": ["purchase-month"]
+    },
+    {
+      "id": "category-revenue",
+      "type": "bar",
+      "title": "Top 10 商品品类成交额",
+      "description": "商品 price 之和；先按订单筛选，再联接商品与英文品类。",
+      "query": {
+        "data_source_id": "olist_ecommerce_demo",
+        "sql": "SELECT COALESCE(t.product_category_name_english, p.product_category_name, 'uncategorized') AS category, COUNT(DISTINCT i.order_id) AS order_count, ROUND(SUM(i.price), 2) AS item_revenue FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id JOIN olist_order_items i ON i.order_id = o.order_id JOIN olist_products p ON p.product_id = i.product_id LEFT JOIN olist_category_translation t ON t.product_category_name = p.product_category_name WHERE SUBSTR(o.order_purchase_timestamp, 1, 4) IN (:years) AND c.customer_state IN (:states) AND (:status = 'all' OR o.order_status = :status) GROUP BY COALESCE(t.product_category_name_english, p.product_category_name, 'uncategorized') ORDER BY item_revenue DESC LIMIT 10",
+        "filter_parameters": {"purchase-years": "years", "customer-states": "states", "order-status": "status"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "category", "type": "string", "label": "商品品类", "nullable": false},
+          {"name": "order_count", "type": "integer", "label": "订单数", "nullable": false},
+          {"name": "item_revenue", "type": "number", "label": "商品成交额", "nullable": true}
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 100,
+        "grain": "商品品类"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "olist_ecommerce_demo",
+          "sql": "SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, c.customer_state, o.order_status, COALESCE(t.product_category_name_english, p.product_category_name, 'uncategorized') AS category, COUNT(DISTINCT i.order_id) AS order_count, ROUND(SUM(i.price), 2) AS item_revenue FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id JOIN olist_order_items i ON i.order_id = o.order_id JOIN olist_products p ON p.product_id = i.product_id LEFT JOIN olist_category_translation t ON t.product_category_name = p.product_category_name GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), c.customer_state, o.order_status, COALESCE(t.product_category_name_english, p.product_category_name, 'uncategorized') ORDER BY purchase_year, c.customer_state, o.order_status, category",
+          "output_fields": [
+            {"name": "purchase_year", "type": "string"},
+            {"name": "customer_state", "type": "string"},
+            {"name": "order_status", "type": "string"},
+            {"name": "category", "type": "string"},
+            {"name": "order_count", "type": "integer"},
+            {"name": "item_revenue", "type": "number"}
+          ],
+          "max_rows": 5000
+        },
+        "filter_fields": {"purchase-years": "purchase_year", "customer-states": "customer_state", "order-status": "order_status"},
+        "group_by": ["category"],
+        "measures": [
+          {"source_field": "order_count", "output_field": "order_count", "aggregation": "sum"},
+          {"source_field": "item_revenue", "output_field": "item_revenue", "aggregation": "sum"}
+        ],
+        "output_columns": ["category", "order_count", "item_revenue"],
+        "row_mode": false,
+        "sort": [{"field": "item_revenue", "direction": "descending"}],
+        "max_output_rows": 10
+      },
+      "encoding": {"x": "category", "y": "item_revenue", "columns": []},
+      "style": {},
+      "presentation": {"visualization": "bar", "orientation": "horizontal", "top_n": 10, "currency": "R$", "precision": 2, "show_grid": true, "colors": ["#335CFF"]},
+      "metric_ids": ["item-revenue"],
+      "dimension_ids": ["product-category"]
+    },
+    {
+      "id": "review-distribution",
+      "type": "bar",
+      "title": "评价分数分布",
+      "description": "已提交评价按 1 至 5 分分组。",
+      "query": {
+        "data_source_id": "olist_ecommerce_demo",
+        "sql": "SELECT r.review_score, COUNT(*) AS review_count FROM olist_order_reviews r JOIN olist_orders o ON o.order_id = r.order_id JOIN olist_customers c ON c.customer_id = o.customer_id WHERE SUBSTR(o.order_purchase_timestamp, 1, 4) IN (:years) AND c.customer_state IN (:states) AND (:status = 'all' OR o.order_status = :status) GROUP BY r.review_score ORDER BY r.review_score",
+        "filter_parameters": {"purchase-years": "years", "customer-states": "states", "order-status": "status"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "review_score", "type": "integer", "label": "评分", "nullable": false},
+          {"name": "review_count", "type": "integer", "label": "评价数", "nullable": false}
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 10,
+        "grain": "评分"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "olist_ecommerce_demo",
+          "sql": "SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, c.customer_state, o.order_status, r.review_score, COUNT(*) AS review_count FROM olist_order_reviews r JOIN olist_orders o ON o.order_id = r.order_id JOIN olist_customers c ON c.customer_id = o.customer_id GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), c.customer_state, o.order_status, r.review_score ORDER BY purchase_year, c.customer_state, o.order_status, r.review_score",
+          "output_fields": [
+            {"name": "purchase_year", "type": "string"},
+            {"name": "customer_state", "type": "string"},
+            {"name": "order_status", "type": "string"},
+            {"name": "review_score", "type": "integer"},
+            {"name": "review_count", "type": "integer"}
+          ],
+          "max_rows": 1000
+        },
+        "filter_fields": {"purchase-years": "purchase_year", "customer-states": "customer_state", "order-status": "order_status"},
+        "group_by": ["review_score"],
+        "measures": [{"source_field": "review_count", "output_field": "review_count", "aggregation": "sum"}],
+        "output_columns": ["review_score", "review_count"],
+        "row_mode": false,
+        "sort": [{"field": "review_score", "direction": "ascending"}],
+        "max_output_rows": 5
+      },
+      "encoding": {"x": "review_score", "y": "review_count", "columns": []},
+      "style": {},
+      "presentation": {"visualization": "column", "orientation": "vertical", "show_grid": true, "colors": ["#F0A32F"]},
+      "metric_ids": [],
+      "dimension_ids": []
+    },
+    {
+      "id": "order-detail",
+      "type": "table",
+      "title": "订单分组核对表",
+      "description": "支付、商品和评价先聚合到订单粒度，再按年份、客户州和订单状态汇总核对。",
+      "query": {
+        "data_source_id": "olist_ecommerce_demo",
+        "sql": "WITH payment_by_order AS (SELECT order_id, SUM(payment_value) AS payment_total FROM olist_order_payments GROUP BY order_id), item_by_order AS (SELECT order_id, SUM(price) AS item_revenue, SUM(freight_value) AS freight_total FROM olist_order_items GROUP BY order_id), review_by_order AS (SELECT order_id, SUM(review_score) AS review_score_sum, COUNT(*) AS review_count FROM olist_order_reviews GROUP BY order_id) SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, c.customer_state, o.order_status, COUNT(*) AS order_count, ROUND(SUM(COALESCE(p.payment_total, 0)), 2) AS payment_total, ROUND(SUM(COALESCE(i.item_revenue, 0)), 2) AS item_revenue, ROUND(SUM(COALESCE(i.freight_total, 0)), 2) AS freight_total, ROUND(1.0 * SUM(COALESCE(r.review_score_sum, 0)) / NULLIF(SUM(COALESCE(r.review_count, 0)), 0), 2) AS average_review_score FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id LEFT JOIN payment_by_order p ON p.order_id = o.order_id LEFT JOIN item_by_order i ON i.order_id = o.order_id LEFT JOIN review_by_order r ON r.order_id = o.order_id WHERE SUBSTR(o.order_purchase_timestamp, 1, 4) IN (:years) AND c.customer_state IN (:states) AND (:status = 'all' OR o.order_status = :status) GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), c.customer_state, o.order_status ORDER BY purchase_year DESC, payment_total DESC",
+        "filter_parameters": {"purchase-years": "years", "customer-states": "states", "order-status": "status"},
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "purchase_year", "type": "string", "label": "购买年份", "nullable": false},
+          {"name": "customer_state", "type": "string", "label": "客户州", "nullable": false},
+          {"name": "order_status", "type": "string", "label": "订单状态", "nullable": false},
+          {"name": "order_count", "type": "integer", "label": "订单数", "nullable": false},
+          {"name": "payment_total", "type": "number", "label": "支付金额", "nullable": true},
+          {"name": "item_revenue", "type": "number", "label": "商品金额", "nullable": true},
+          {"name": "freight_total", "type": "number", "label": "运费", "nullable": true},
+          {"name": "average_review_score", "type": "number", "label": "平均评分", "nullable": true}
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 500,
+        "grain": "购买年份、客户州、订单状态"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "olist_ecommerce_demo",
+          "sql": "WITH payment_by_order AS (SELECT order_id, SUM(payment_value) AS payment_total FROM olist_order_payments GROUP BY order_id), item_by_order AS (SELECT order_id, SUM(price) AS item_revenue, SUM(freight_value) AS freight_total FROM olist_order_items GROUP BY order_id), review_by_order AS (SELECT order_id, SUM(review_score) AS review_score_sum, COUNT(*) AS review_count FROM olist_order_reviews GROUP BY order_id) SELECT SUBSTR(o.order_purchase_timestamp, 1, 4) AS purchase_year, c.customer_state, o.order_status, COUNT(*) AS order_count, ROUND(SUM(COALESCE(p.payment_total, 0)), 2) AS payment_total, ROUND(SUM(COALESCE(i.item_revenue, 0)), 2) AS item_revenue, ROUND(SUM(COALESCE(i.freight_total, 0)), 2) AS freight_total, SUM(COALESCE(r.review_score_sum, 0)) AS review_score_sum, SUM(COALESCE(r.review_count, 0)) AS review_count FROM olist_orders o JOIN olist_customers c ON c.customer_id = o.customer_id LEFT JOIN payment_by_order p ON p.order_id = o.order_id LEFT JOIN item_by_order i ON i.order_id = o.order_id LEFT JOIN review_by_order r ON r.order_id = o.order_id GROUP BY SUBSTR(o.order_purchase_timestamp, 1, 4), c.customer_state, o.order_status ORDER BY purchase_year, c.customer_state, o.order_status",
+          "output_fields": [
+            {"name": "purchase_year", "type": "string"},
+            {"name": "customer_state", "type": "string"},
+            {"name": "order_status", "type": "string"},
+            {"name": "order_count", "type": "integer"},
+            {"name": "payment_total", "type": "number"},
+            {"name": "item_revenue", "type": "number"},
+            {"name": "freight_total", "type": "number"},
+            {"name": "review_score_sum", "type": "number"},
+            {"name": "review_count", "type": "integer"}
+          ],
+          "max_rows": 1000
+        },
+        "filter_fields": {"purchase-years": "purchase_year", "customer-states": "customer_state", "order-status": "order_status"},
+        "group_by": ["purchase_year", "customer_state", "order_status"],
+        "measures": [
+          {"source_field": "order_count", "output_field": "order_count", "aggregation": "sum"},
+          {"source_field": "payment_total", "output_field": "payment_total", "aggregation": "sum"},
+          {"source_field": "item_revenue", "output_field": "item_revenue", "aggregation": "sum"},
+          {"source_field": "freight_total", "output_field": "freight_total", "aggregation": "sum"},
+          {"source_field": "review_score_sum", "denominator_field": "review_count", "output_field": "average_review_score", "aggregation": "ratio", "scale": 1}
+        ],
+        "output_columns": ["purchase_year", "customer_state", "order_status", "order_count", "payment_total", "item_revenue", "freight_total", "average_review_score"],
+        "row_mode": false,
+        "sort": [
+          {"field": "purchase_year", "direction": "descending"},
+          {"field": "payment_total", "direction": "descending"}
+        ],
+        "max_output_rows": 500
+      },
+      "encoding": {"columns": ["purchase_year", "customer_state", "order_status", "order_count", "payment_total", "item_revenue", "freight_total", "average_review_score"]},
+      "style": {"pageSize": 20},
+      "presentation": {"visualization": "table", "precision": 2, "default_sort": {"field": "purchase_year", "direction": "descending"}},
+      "metric_ids": ["payment-total", "item-revenue"],
+      "dimension_ids": ["customer-state"]
+    }
+  ],
+  "layouts": {
+    "columns": 12,
+    "desktop": [
+      {"widget_id": "payment-total", "x": 0, "y": 0, "w": 4, "h": 3},
+      {"widget_id": "delivered-rate", "x": 4, "y": 0, "w": 4, "h": 3},
+      {"widget_id": "monthly-payments", "x": 0, "y": 3, "w": 12, "h": 7},
+      {"widget_id": "category-revenue", "x": 0, "y": 10, "w": 7, "h": 7},
+      {"widget_id": "review-distribution", "x": 7, "y": 10, "w": 5, "h": 7},
+      {"widget_id": "order-detail", "x": 0, "y": 17, "w": 12, "h": 8}
+    ],
+    "mobile_strategy": "stack"
+  },
+  "metadata": {
+    "conversation_id": null,
+    "source_turn_id": null,
+    "agent": {"generated": false},
+    "compatibility": {"demo": "olist-ecommerce", "data_kind": "public-multi-table", "license": "CC BY-NC-SA 4.0"}
+  }
+}

@@ -7,6 +7,8 @@ import logging
 import os
 import shutil
 
+from .package_resources import bundled_resource_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,12 +23,14 @@ def _ensure_pilot_workspace(dest_root: str) -> None:
         dest_root (str): The destination root directory (parent of meta_data/).
             Example: ~/.dbgpt/workspace/pilot/
     """
-    template_dir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "pilot_template",
-    )
+    template_dir = bundled_resource_dir("pilot_template")
+    if template_dir is None:
+        logger.debug("Packaged pilot templates unavailable, skipping provisioning.")
+        return
     for src_dir, dirs, files in os.walk(template_dir):
-        dirs[:] = [d for d in dirs if d not in ("__pycache__", "versions")]
+        # Committed migration revisions are production assets.  Only interpreter
+        # caches are excluded; versions/ must be provisioned with the workspace.
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
         for filename in files:
             if filename in (".DS_Store",) or filename.endswith((".pyc",)):
                 continue

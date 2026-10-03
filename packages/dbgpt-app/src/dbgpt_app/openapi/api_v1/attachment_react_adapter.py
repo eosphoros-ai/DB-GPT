@@ -137,7 +137,7 @@ def resolve_legacy_chat_file_path(
         not isinstance(file_path, str)
         or not file_path.strip()
         or "\x00" in file_path
-        or "\\" in file_path
+        or ("\\" in file_path and (os.name != "nt" or not os.path.isabs(file_path)))
     ):
         raise _invalid_file_path()
     owner_root, lexical_root = _owner_roots(base_dir, owner_id)

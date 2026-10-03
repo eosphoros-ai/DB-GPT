@@ -34,6 +34,7 @@ from dbgpt_app.base import (
 # initialize_components import time cost about 0.1s
 from dbgpt_app.component_configs import initialize_components
 from dbgpt_app.config import ApplicationConfig, ServiceWebParameters, SystemParameters
+from dbgpt_app.default_datasources import default_file_datasources
 from dbgpt_serve.core import add_exception_handler
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ def mount_routers(app: FastAPI):
     from dbgpt_app.knowledge.api import router as knowledge_router
     from dbgpt_app.openapi.api_v1.agentic_data_api import router as agentic_data_api
     from dbgpt_app.openapi.api_v1.api_v1 import router as api_v1
+    from dbgpt_app.openapi.api_v1.dashboard.api import router as dashboard_router
     from dbgpt_app.openapi.api_v1.editor.api_editor_v1 import (
         router as api_editor_route_v1,
     )
@@ -78,6 +80,7 @@ def mount_routers(app: FastAPI):
     app.include_router(python_upload_router, prefix="/api", tags=["PythonUpload"])
     app.include_router(examples_router, prefix="/api", tags=["Examples"])
     app.include_router(agentic_data_api, prefix="/api", tags=["AgenticData"])
+    app.include_router(dashboard_router, prefix="/api", tags=["Dashboards"])
 
     app.include_router(knowledge_router, prefix="/api/v1", tags=["Knowledge"])
 
@@ -177,33 +180,31 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         from dbgpt_serve.datasource.manages.connect_config_db import ConnectConfigDao
 
         dao = ConnectConfigDao()
-        db_name = "Walmart_Sales"
-        if not dao.get_by_names(db_name):
-            candidate_paths = [
-                os.path.join(PILOT_PATH, "examples", "Walmart_Sales.db"),
-                os.path.join(
-                    ROOT_PATH, "docker", "examples", "dashboard", "Walmart_Sales.db"
-                ),
-            ]
+        default_sources = default_file_datasources(ROOT_PATH, PILOT_PATH)
+        for db_name, candidate_paths, comment in default_sources:
+            if dao.get_by_names(db_name):
+                continue
             db_absolute_path = next(
-                (p for p in candidate_paths if os.path.isfile(p)), None
+                (path for path in candidate_paths if os.path.isfile(path)), None
             )
             if db_absolute_path is None:
                 logger.info(
-                    f"Skipping default data source '%s': file not found in any "
-                    f"{db_name} at {candidate_paths}"
+                    "Skipping default data source '%s': file not found at %s",
+                    db_name,
+                    candidate_paths,
                 )
-            else:
-                dao.add_file_db(
-                    db_name=db_name,
-                    db_type="sqlite",
-                    db_path=db_absolute_path,
-                    comment="Default Walmart Sales example database",
-                )
-                logger.info(
-                    f"Successfully registered default data source: "
-                    f"{db_name} at {db_absolute_path}"
-                )
+                continue
+            dao.add_file_db(
+                db_name=db_name,
+                db_type="sqlite",
+                db_path=db_absolute_path,
+                comment=comment,
+            )
+            logger.info(
+                "Successfully registered default data source: %s at %s",
+                db_name,
+                db_absolute_path,
+            )
     except Exception as e:
         logger.error(f"Failed to register default data sources: {str(e)}")
 
