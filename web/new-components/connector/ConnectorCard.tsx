@@ -94,6 +94,13 @@ const BRAND_TOKENS: Record<string, BrandToken> = {
     gradient: 'from-teal-500 to-cyan-600',
     shadow: 'group-hover:ring-teal-200',
   },
+  keenable: {
+    // Keenable brand mark, contributed by Keenable for this template. White
+    // tile like the other real logos; blue ring echoes the mark's #005CFF.
+    logo: '/icons/connectors/keenable.svg',
+    gradient: 'from-blue-600 to-blue-800',
+    shadow: 'group-hover:ring-blue-200',
+  },
   deepwiki: {
     // No CC0 brand glyph available — book glyph on amber to distinguish from
     // the emerald yuque doc tile.
