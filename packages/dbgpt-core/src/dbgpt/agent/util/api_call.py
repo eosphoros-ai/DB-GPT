@@ -120,7 +120,7 @@ class ApiCall:
         raw_api_context = (
             raw_api_context.replace("\\n", " ")
             .replace("\n", " ")
-            .replace("\_", "_")
+            .replace("\\_", "_")
             .replace("\\", " ")
         )
         return raw_api_context
