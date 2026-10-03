@@ -1,6 +1,59 @@
 # Dashboard 候选验证说明
 
-## 2026-10-03 本机接续核查
+## 2026-10-03 安全补丁与独立后端 CI
+
+本轮将 Next.js / eslint-config-next 固定到 **16.3.8**，保留 React 18.3.1、
+TypeScript 5.9.3 和构建内类型检查。更新限于 Next 配套包及其 SWC/Sharp 依赖；
+锁文件的版本元数据、依赖范围、完整性哈希和官方下载地址已核对。
+
+补丁包含 [Windows Next 服务漏洞修复](https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36)
+以及 [9 月安全版本](https://nextjs.org/blog/september-2026-security-release) 中适用于
+自托管 Pages Router/SSG 和开发 MCP 的修复。Python 仅静态文件部署的暴露面不同；
+官方同时披露了延期修复，因此不声称所有漏洞都已消除。本轮没有执行漏洞利用测试。
+
+### 独立后端验证
+
+新增 [Test Dashboard Backend](../../.github/workflows/test-dashboard-backend.yml)，
+使用 Ubuntu、Python 3.11、固定 uv 0.12.22，从现有 `uv.lock` 建立新环境，执行
+`pip check` 和完整 `pytest.dashboard.ini`。每次任务启动临时 MySQL 8.0、Redis 7.2，
+具备独立并发组、只读仓库权限和 14 天 JUnit 留存；复现命令见 [开发指南](DEVELOPER_GUIDE.md#独立后端-ci)。
+
+[首轮 CI](https://github.com/jcsdxhe/DB-GPT/actions/runs/37130774532) 为 **641 通过、1 失败**：
+MySQL 测试夹具缺少分享密文表。仅补齐夹具建表和清理后，提交
+`dc61f34d466cf3e14f01d435079c658264bfd3e8` 的
+[CI 重跑](https://github.com/jcsdxhe/DB-GPT/actions/runs/37131350823) 为
+**642 通过、0 失败、0 跳过**，Python 3.11.17；已下载 JUnit 核对。
+此前跳过的 3 个 MySQL 和 1 个 Redis 测试均实际执行。分享策略没有改变。
+包含后续 Next 补丁的最终提交 CI 单独链接在 PR 正文，不用上述运行替代最终提交验收。
+
+本轮还从锁文件建立了全新 Windows Python 3.11.9 环境，`pip check` 通过；
+MySQL 夹具修复前的本机测试为 **638 通过、4 项外部服务跳过**。这与上述 CI
+属于不同运行，数量不相加。新工作流不覆盖全仓 Python、运行时 Docker 或真实模型验收。
+
+### Next.js 16.3.8 本机回归
+
+受测工作树基于 `dc61f34d466cf3e14f01d435079c658264bfd3e8`，加上本次依赖补丁。
+Windows x64，Node **20.20.2** / npm **10.8.2**，重新执行 `npm ci`。
+
+| 检查 | 本轮结果 |
+|---|---|
+| 类型检查 | 独立 TypeScript 和生产构建内 TypeScript 均通过，未关闭错误检查。 |
+| ESLint | **0 错误、88 警告**。 |
+| 构建契约 | **37 通过、2 个 POSIX 信号用例跳过**。 |
+| 既有前端测试 | **20 通过**；Wiki diff 断言也通过。 |
+| Dashboard 组件 | **304 通过**，55 个文件。 |
+| 生产构建 | 通过，核验 **64 HTML / 2,022 本地资源引用**。 |
+| 默认静态导出 | `npm run compile` 通过，核验 **64 HTML / 2,022 本地资源引用**，构建内类型检查通过。 |
+| 生产 Chromium | 发现 10 套件、135 项，**128 通过、7 跳过、0 失败、0 重试**。 |
+| 材料检查 | 26 篇 Markdown、123 条本地链接、13 个浏览器夹具、4 个上传夹具和 4 个相对数据库路径检查通过。 |
+
+浏览器使用真实生产前端与模拟 API/SSE，覆盖保存期间 Undo/Redo 等交互；7 个 live
+用例因缺少既有模型资产和对应服务而跳过。本轮没有重跑较早记录中的全仓运行时套件，
+也没有把其 **172 通过、3 失败、8 跳过**改写为通过。Firefox/WebKit、开发模式、
+全仓 `make test` / `make mypy` 和真实模型验收不在本轮完成范围。旧云环境 SIGKILL
+原因仍未知。后续最终提交的前端、后端 CI 结果分别链接在 PR 正文。
+
+## 较早的 2026-10-03 本机接续核查（Next.js 16.3.0）
 
 本轮应用源码为 `eceac9c7`，包含附件中的合并提交 `fdab9063`，并以重新获取的上游
 `5905245a6750bafa636aa36a904b7fd4ead75334` 为基线。没有依次重放三个附件：

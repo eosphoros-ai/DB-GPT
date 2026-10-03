@@ -1,12 +1,19 @@
 # Frontend tooling migration
 
-This candidate updates Next.js 13.4.7 to 16.3.0, TypeScript to 5.9.3, ESLint
+This candidate updates Next.js 13.4.7 to 16.3.8, TypeScript to 5.9.3, ESLint
 to 9.39.5 and the web dependency workflow to npm 10 / Node >=20.19. It does
 not contain the new Dashboard module. The existing UI, model choices and
 backend default address are retained. Small changes to existing components
 make their actual props, response shapes and DOM APIs type-safe.
 
 ## Compatibility changes
+
+The 2026-10-03 follow-up pins Next.js and eslint-config-next to 16.3.8.
+This includes the Windows Next-server fix first released in 16.3.3 and the
+[September security release](https://nextjs.org/blog/september-2026-security-release),
+including fixes applicable to the self-hosted prompt SSG routes and development
+MCP endpoint. Python-only static serving does not expose those Next server paths.
+This is not a claim that every announced advisory or third-party dependency is fixed.
 
 - Native `transpilePackages` replaces `next-transpile-modules`. AntV and code
   highlighting use their ESM entry points. Production still uses Webpack so
@@ -46,8 +53,9 @@ versions. Manual dispatch and `codex/**` branch pushes can run it in a fork;
 enabling those triggers does not mean an Actions run has occurred.
 
 Local validation records, including remaining lint warnings and browser or
-platform gaps, are supplied with the review snapshot. Results for the separate
-Dashboard integration candidate must not be used as results for this candidate.
+platform gaps, are supplied with each PR. The candidate described above is the
+toolchain-only PR #3277; this branch additionally integrates Dashboard PR #3278.
+Their separate validation records are not interchangeable.
 
 The source comparison for `b6f0c2ae` against `d1d398eb7ab2b2b3c9dc53fa376594a3600a7458`
 uses the same ESLint 9.39.5 configuration and dependency installation on both
