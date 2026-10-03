@@ -239,7 +239,7 @@ class ValkeyStore(VectorStoreBase):
             import glide  # noqa: F401
         except ImportError:
             raise ImportError(
-                "Please install valkey-glide: pip install 'valkey-glide>=2.3.0'"
+                "Please install valkey-glide: pip install 'valkey-glide>=2.5.2'"
             )
 
         super().__init__(
@@ -301,6 +301,7 @@ class ValkeyStore(VectorStoreBase):
                 request_timeout=config.request_timeout,
                 credentials=ServerCredentials(password=config.password),
                 client_name="dbgpt_vector_store_client",
+                client_info_tag="db-gpt",
             )
         else:
             client_config = GlideClientConfiguration(
@@ -308,6 +309,7 @@ class ValkeyStore(VectorStoreBase):
                 use_tls=config.use_ssl,
                 request_timeout=config.request_timeout,
                 client_name="dbgpt_vector_store_client",
+                client_info_tag="db-gpt",
             )
 
         # GlideClient.create() is async — run it in our dedicated loop
