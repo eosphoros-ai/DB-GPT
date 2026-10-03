@@ -27,6 +27,7 @@ from dbgpt_app.openapi.api_v1.dashboard.schemas import (
     DashboardSchemaV1,
 )
 from dbgpt_app.openapi.api_v1.dashboard.service import DashboardService
+from dbgpt_app.openapi.api_v1.dashboard.share_vault import DashboardShareSecretEntity
 from dbgpt_ext.datasource.rdbms.conn_mysql import MySQLConnector
 from dbgpt_serve.scheduled_task.dao.task_dao import ScheduledTaskDao
 from dbgpt_serve.scheduled_task.models.scheduled_task_model import ScheduledTaskEntity
@@ -152,6 +153,7 @@ def mysql_runtime():
 
     with manager.engine.begin() as connection:
         connection.execute(text("DROP TABLE IF EXISTS dbgpt_serve_scheduled_task"))
+        connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard_share_secret"))
         connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard_share"))
         connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard_revision"))
         connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard_edit_version"))
@@ -162,6 +164,7 @@ def mysql_runtime():
     DashboardEditVersionEntity.__table__.create(manager.engine)
     DashboardRevisionEntity.__table__.create(manager.engine)
     DashboardShareEntity.__table__.create(manager.engine)
+    DashboardShareSecretEntity.__table__.create(manager.engine)
     ScheduledTaskEntity.__table__.create(manager.engine)
     with manager.engine.begin() as connection:
         connection.execute(
@@ -193,8 +196,14 @@ def mysql_runtime():
         real_connector.close()
         with manager.engine.begin() as connection:
             connection.execute(text("DROP TABLE IF EXISTS dbgpt_serve_scheduled_task"))
+            connection.execute(
+                text("DROP TABLE IF EXISTS dbgpt_dashboard_share_secret")
+            )
             connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard_share"))
             connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard_revision"))
+            connection.execute(
+                text("DROP TABLE IF EXISTS dbgpt_dashboard_edit_version")
+            )
             connection.execute(text("DROP TABLE IF EXISTS dbgpt_dashboard"))
             connection.execute(text("DROP TABLE IF EXISTS sales"))
         manager.engine.dispose()
