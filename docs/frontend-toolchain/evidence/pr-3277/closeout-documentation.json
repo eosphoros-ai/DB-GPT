@@ -1,0 +1,312 @@
+{
+  "recordedAt": "2026-10-01T08:13:21.519Z",
+  "scope": "Documentation closeout only: public PR descriptions corrected; existing source/build artifacts read; no dependency update, build, regression, exploit request, disk query or cleanup.",
+  "base": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+  "pr3277Head": "7ac93ead9154ba28e1a325979b4cc73a75910e99",
+  "pr3278Head": "f1977798a96768f1fef54ee3f255c39283c1bf0d",
+  "applicationSource": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+  "earlierIntegrationSource": "80d7c7035a4df69017870749665ee7e4a0a36bde",
+  "overlap": {
+    "method": "Intersect exact-head git diff --name-only lists against the common baseline; GitHub CLI files field was incomplete and was not used for counts.",
+    "count3277": 124,
+    "count3278": 648,
+    "overlapCount": 90,
+    "overlap": [
+      ".github/workflows/build-web.yml",
+      ".gitignore",
+      "scripts/build_web_static.sh",
+      "web/.eslintrc.js",
+      "web/app/chat-context.tsx",
+      "web/client/api/request.ts",
+      "web/components/app/app-modal.tsx",
+      "web/components/chart/autoChart/charts/multi-measure-column-chart.ts",
+      "web/components/chart/autoChart/charts/multi-measure-line-chart.ts",
+      "web/components/chat/chat-content/code-preview.tsx",
+      "web/components/chat/chat-content/config.tsx",
+      "web/components/chat/chat-content/html-preview.tsx",
+      "web/components/chat/chat-content/index.tsx",
+      "web/components/chat/chat-content/svg-preview.tsx",
+      "web/components/chat/chat-content/vis-tabs.tsx",
+      "web/components/chat/chat-default/index.tsx",
+      "web/components/chat/chat-feedback.tsx",
+      "web/components/chat/db-editor.tsx",
+      "web/components/chat/ob-editor/ob-plugin.ts",
+      "web/components/chat/ob-editor/service.ts",
+      "web/components/chat/opencode-agent-chat-container.tsx",
+      "web/components/common/configurable-form.tsx",
+      "web/components/common/nested-form-fields.tsx",
+      "web/components/database/database-form.tsx",
+      "web/components/flow/flow-card.tsx",
+      "web/components/flow/node-handler.tsx",
+      "web/components/flow/node-renderer/input.tsx",
+      "web/components/layout/side-bar.tsx",
+      "web/components/model/model-card.tsx",
+      "web/components/model/model-form.tsx",
+      "web/eslint.config.mjs",
+      "web/lib/download-error.ts",
+      "web/lib/response.ts",
+      "web/lib/session.test.cjs",
+      "web/lib/session.ts",
+      "web/locales/en/chat.ts",
+      "web/locales/en/common.ts",
+      "web/locales/zh/chat.ts",
+      "web/locales/zh/common.ts",
+      "web/new-components/analysis/DataPreprocessor.tsx",
+      "web/new-components/charts/AdvancedCharts.tsx",
+      "web/new-components/chat/ChatContentContainer.tsx",
+      "web/new-components/chat/ChatMessageList.tsx",
+      "web/new-components/chat/ChatPage.tsx",
+      "web/new-components/chat/content/ChatContent.tsx",
+      "web/new-components/chat/content/ChatDefault.tsx",
+      "web/new-components/chat/content/ManusLeftPanel.tsx",
+      "web/new-components/chat/content/ManusRightPanel.tsx",
+      "web/new-components/chat/content/ManusStepCard.tsx",
+      "web/new-components/chat/content/SessionTurn.tsx",
+      "web/new-components/chat/input/KnowledgeSelector.tsx",
+      "web/new-components/connector/ConnectorForm.tsx",
+      "web/new-components/scheduled-task/CronInput.tsx",
+      "web/new-components/scheduled-task/EditScheduledTaskDrawer.tsx",
+      "web/new-components/scheduled-task/SaveAsScheduledTaskDrawer.tsx",
+      "web/new-components/scheduled-task/TaskRunsTable.tsx",
+      "web/next.config.js",
+      "web/next.config.test.cjs",
+      "web/package-lock.json",
+      "web/package.json",
+      "web/pages/construct/agent/index.tsx",
+      "web/pages/construct/app/extra/components/auto-plan/ResourcesCardV2.tsx",
+      "web/pages/construct/app/extra/components/NativeApp.tsx",
+      "web/pages/construct/app/index.tsx",
+      "web/pages/construct/database.tsx",
+      "web/pages/construct/dbgpts/index.tsx",
+      "web/pages/construct/prompt/[type]/index.tsx",
+      "web/pages/construct/scheduled-tasks/index.tsx",
+      "web/pages/data_index.tsx",
+      "web/pages/evaluation/index.tsx",
+      "web/pages/index.tsx",
+      "web/README.md",
+      "web/scripts/build-web.cjs",
+      "web/scripts/graceful-fs-register.cjs",
+      "web/scripts/prepare-build-types.cjs",
+      "web/scripts/prepare-build-types.test.cjs",
+      "web/scripts/run-next.cjs",
+      "web/scripts/toolchain-regressions.test.cjs",
+      "web/scripts/typecheck.cjs",
+      "web/scripts/verify-next-build-assets.cjs",
+      "web/scripts/verify-next-build-assets.test.cjs",
+      "web/TOOLCHAIN_MIGRATION.md",
+      "web/tsconfig.json",
+      "web/types/agent.ts",
+      "web/types/common.ts",
+      "web/types/db.ts",
+      "web/types/models.ts",
+      "web/utils/event-emitter.ts",
+      "web/utils/plugin-card.ts",
+      "web/yarn.lock"
+    ],
+    "neitherCurrentHeadContainsOther": true,
+    "identicalPatchCountNotClaimed": true,
+    "categories": [
+      "dependency manifests and lockfiles",
+      "Next/TypeScript/ESLint configuration",
+      "build/launch/static export/asset scripts and CI",
+      "shared components, session/request helpers, types and locales",
+      "related tests and toolchain documentation"
+    ]
+  },
+  "publicDescriptions": {
+    "pr3277": {
+      "url": "https://github.com/eosphoros-ai/DB-GPT/pull/3277",
+      "updated": true,
+      "readBackMatches": true
+    },
+    "pr3278": {
+      "url": "https://github.com/eosphoros-ai/DB-GPT/pull/3278",
+      "updated": true,
+      "readBackMatches": true
+    },
+    "branchHeadsChanged": false,
+    "maintainerDecisionRequested": "Shared toolchain ownership, continuation/merge sequence and any split; no branch rewrite or split performed."
+  },
+  "configuration": {
+    "nextPin": "16.3.0",
+    "packageManager": "npm@10.8.2",
+    "installedNext": "16.3.0",
+    "devScript": "node scripts/run-next.cjs dev --webpack",
+    "images": {
+      "remotePatterns": [],
+      "domains": [],
+      "unoptimized": true
+    },
+    "cacheComponents": false,
+    "mcpServer": true,
+    "ssgRoutes": {
+      "add": {
+        "routeType": "page",
+        "response": "complete",
+        "compute": "static",
+        "initialRevalidateSeconds": false,
+        "srcRoute": "/construct/prompt/[type]",
+        "dataRoute": "/_next/data/L37X-NkvVPH1xUuhPWBP3/construct/prompt/add.json",
+        "allowHeader": [
+          "host",
+          "x-matched-path",
+          "x-prerender-revalidate",
+          "x-prerender-revalidate-if-generated",
+          "x-next-revalidated-tags",
+          "x-next-revalidate-tag-token"
+        ]
+      },
+      "edit": {
+        "routeType": "page",
+        "response": "complete",
+        "compute": "static",
+        "initialRevalidateSeconds": false,
+        "srcRoute": "/construct/prompt/[type]",
+        "dataRoute": "/_next/data/L37X-NkvVPH1xUuhPWBP3/construct/prompt/edit.json",
+        "allowHeader": [
+          "host",
+          "x-matched-path",
+          "x-prerender-revalidate",
+          "x-prerender-revalidate-if-generated",
+          "x-next-revalidated-tags",
+          "x-next-revalidate-tag-token"
+        ]
+      }
+    },
+    "artifactHashes": [
+      {
+        "file": "web/next.config.js",
+        "sha256": "d65f7b9149223a83cd1e5ee4f36367fb9b39654c1286291463cb384e1187f266"
+      },
+      {
+        "file": "web/.next-pr3277-review-build/prerender-manifest.json",
+        "sha256": "6e620ec8036f996f6e4871e6f600c8ff35955236111f350ba52429fbd092c4c8"
+      },
+      {
+        "file": "web/.next-pr3277-review-build/required-server-files.json",
+        "sha256": "38812a1acbd9054db60fb0fd898dd66450d9538211005f7f950289d93a2afa96"
+      }
+    ],
+    "changedApplicationPaths": [],
+    "stagedPaths": [],
+    "rootDynamicRoutes": []
+  },
+  "configurationSearch": {
+    "scope": "Tracked web tree at 7ac93ead; local next.config.js unchanged against HEAD",
+    "gitGrepRemotePatternsOrImagesDomainsExitCode": 1,
+    "meaning": "No declarations found; existing resolved artifact separately has empty lists.",
+    "noRootCatchAllPage": true
+  },
+  "devMcpReadOnlyEvidence": {
+    "packageVersion": "16.3.0",
+    "webpackMiddleware": "next/dist/server/dev/hot-reloader-webpack.js:1226-1241 mounts getMcpMiddleware when config.experimental.mcpServer is enabled",
+    "defaultSetting": "next/dist/server/config-shared.js:281 mcpServer: true",
+    "endpoint": "next/dist/server/mcp/get-mcp-middleware.js:17 /_next/mcp",
+    "projectOverrideFound": false,
+    "exploitOrOriginBypassTested": false
+  },
+  "releaseSource": "https://nextjs.org/blog/september-2026-security-release",
+  "versionDecision": {
+    "current": "16.3.0",
+    "windowsRceFirstFix": "16.3.3",
+    "septemberFixes": "16.3.8",
+    "ifApprovedUpgradeDirectlyTo": "16.3.8",
+    "intermediateUpgradePlanned": false,
+    "upgradePerformed": false,
+    "needsSeparateUserConfirmation": true,
+    "newCandidateRegressionRun": false,
+    "releasePostNotesPostponedFixes": true
+  },
+  "septemberAdvisories": [
+    {
+      "cve": "CVE-2026-94483",
+      "ghsa": "GHSA-cjq9-62q9-8jv4",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-cjq9-62q9-8jv4",
+      "fixFromRelease": "16.3.8",
+      "classification": "unused-capability",
+      "reason": "No remote image patterns; resolved list empty and images.unoptimized true.",
+      "currentCandidateBenefit": false
+    },
+    {
+      "cve": "CVE-2026-94543",
+      "ghsa": "GHSA-4jqv-mc3x-m676",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-4jqv-mc3x-m676",
+      "fixFromRelease": "16.3.8",
+      "classification": "unresolved-self-hosted-ssg",
+      "reason": "Self-hosted Next server + Pages Router + two prompt SSG routes. Baseline 13.4.7 not included in the GHSA's listed 15.x/16.x affected lines.",
+      "currentCandidateBenefit": false
+    },
+    {
+      "cve": "CVE-2026-94484",
+      "ghsa": "GHSA-mcj8-r9mp-w47p",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-mcj8-r9mp-w47p",
+      "fixFromRelease": "16.3.8",
+      "classification": "unused-capability",
+      "reason": "No root catch-all page; nested prompt type parameter does not meet this prerequisite.",
+      "currentCandidateBenefit": false
+    },
+    {
+      "cve": "CVE-2026-94485",
+      "ghsa": "GHSA-f87g-xv8r-7p7x",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-f87g-xv8r-7p7x",
+      "fixFromRelease": "16.3.8",
+      "classification": "unused-capability",
+      "reason": "No App Router metadata image routes. Webpack alone is not an exclusion.",
+      "currentCandidateBenefit": false
+    },
+    {
+      "cve": null,
+      "ghsa": "GHSA-h694-7cp9-m8p3",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-h694-7cp9-m8p3",
+      "fixFromRelease": "16.3.8",
+      "classification": "unused-capability",
+      "reason": "Cache Components/use cache absent.",
+      "currentCandidateBenefit": false
+    },
+    {
+      "cve": "CVE-2026-94544",
+      "ghsa": "GHSA-3w37-wq28-93x7",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-3w37-wq28-93x7",
+      "fixFromRelease": "16.3.8",
+      "classification": "unused-capability",
+      "reason": "No Cache Components/experimental.useCache with Draft Mode previews.",
+      "currentCandidateBenefit": false
+    },
+    {
+      "cve": "CVE-2026-94486",
+      "ghsa": "GHSA-39w2-rjm5-chcv",
+      "source": "https://github.com/vercel/next.js/security/advisories/GHSA-39w2-rjm5-chcv",
+      "fixFromRelease": "16.3.8",
+      "classification": "unresolved-dev-mcp-configuration",
+      "reason": "Next dev with Webpack includes enabled MCP middleware; development-only advisory, not production endpoint exposure. No exploit performed.",
+      "currentCandidateBenefit": false
+    }
+  ],
+  "rollback": {
+    "inspectedOnly": true,
+    "performed": false,
+    "ciVerified": false,
+    "mergeModes": [
+      "squash commit",
+      "merge commit with verified mainline parent",
+      "complete rebase-merged commit set using post-merge SHAs"
+    ],
+    "restoreFiles": [
+      "web/package.json",
+      "web/yarn.lock",
+      "web/package-lock.json",
+      "web/next.config.js",
+      ".github/workflows/build-web.yml"
+    ],
+    "reinstall": "Fresh source installation/build directory; restored Node 18 + Yarn Classic and yarn install --frozen-lockfile; no commands executed in this follow-up.",
+    "securityConsequence": "Both baseline 13.4.7 and current 16.3.0 are affected by CVE-2026-75604 for the specified Windows Next server mode. Reverting a future patched candidate to 13.4.7 would reintroduce it.",
+    "source": "https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36"
+  },
+  "physicalIphoneValidation": "Cancelled by user; not a pending closeout task.",
+  "regressionsRun": false,
+  "sourceCodeChanged": false,
+  "testsChanged": false,
+  "thresholdsChanged": false,
+  "acceptedFlakyReportChanged": false,
+  "docsPublishedToGit": false
+}

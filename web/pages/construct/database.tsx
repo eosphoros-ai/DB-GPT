@@ -17,13 +17,14 @@ export function isFileDb(dbTypeList: DBOption[], dbType: DBType) {
   return dbTypeList.find(item => item.value === dbType)?.isFileDb;
 }
 let getFromRenderData: any = [];
+/** List configured data sources and open their creation or editing forms. */
 function Database() {
   // const { setCurrentDialogInfo } = useContext(ChatContext);  // unused
   // const router = useRouter(); // unused
   const { t } = useTranslation();
 
   const [dbList, setDbList] = useState<DbListResponse>([]);
-  const [dbSupportList, setDbSupportList] = useState<DbSupportTypeResponse>([]);
+  const [dbSupportList, setDbSupportList] = useState<DbSupportTypeResponse['types']>([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<{
     open: boolean;

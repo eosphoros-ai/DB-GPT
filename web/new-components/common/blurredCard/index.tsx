@@ -122,13 +122,22 @@ const BlurredCard: React.FC<{
   );
 };
 
+/** Render a card's chat action with an image or custom icon, without triggering the parent card click. */
 const ChatButton: React.FC<{
   onClick?: () => void;
   Icon?: React.ReactNode | string;
   text?: string;
 }> = ({ onClick, Icon = '/pictures/card_chat.png', text = t('start_chat') }) => {
   if (typeof Icon === 'string') {
-    Icon = <Image src={Icon as string} alt={Icon as string} width={17} height={15} />;
+    Icon = (
+      <Image
+        src={Icon as string}
+        alt={Icon as string}
+        width={17}
+        height={15}
+        style={{ width: 17, height: 15, objectFit: 'contain' }}
+      />
+    );
   }
 
   return (

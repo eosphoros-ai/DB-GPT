@@ -29,6 +29,7 @@ type ITableData = {
 };
 
 interface EditorValueProps {
+  editorText?: string;
   sql?: string;
   thoughts?: string;
   title?: string;
@@ -43,7 +44,7 @@ interface RoundProps {
 
 interface IProps {
   editorValue?: EditorValueProps;
-  liveSql?: string;
+  liveEditorText?: string;
   chartData?: any;
   tableData?: ITableData;
   layout?: 'TB' | 'LR';
@@ -61,7 +62,16 @@ interface ITableTreeItem {
   children: Array<ITableTreeItem>;
 }
 
-function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, tableData, tables, handleChange }: IProps) {
+/** Display editable SQL beside query results/charts, preserving live edits and supplying schema completion. */
+function DbEditorContent({
+  layout = 'LR',
+  editorValue,
+  liveEditorText,
+  chartData,
+  tableData,
+  tables,
+  handleChange,
+}: IProps) {
   const chartWrapper = useMemo(() => {
     if (!chartData) return null;
     return (
@@ -129,7 +139,8 @@ function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, table
     >
       <div className='flex-1 flex overflow-hidden rounded'>
         <MonacoEditor
-          value={liveSql ?? editorValue?.sql ?? ''}
+          value={liveEditorText ?? editorValue?.sql ?? ''}
+          formatValue={liveEditorText === undefined}
           language='mysql'
           onChange={handleChange}
           thoughts={editorValue?.thoughts || ''}
@@ -138,7 +149,13 @@ function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, table
       </div>
       <div className='flex-1 h-full overflow-auto bg-white dark:bg-theme-dark-container rounded p-4'>
         {tableData?.values.length ? (
-          <Table bordered scroll={{ x: 'auto' }} rowKey={columns[0].key} columns={columns} dataSource={dataSource} />
+          <Table
+            bordered
+            scroll={{ x: 'auto' }}
+            rowKey={typeof columns[0].key === 'bigint' ? String(columns[0].key) : columns[0].key}
+            columns={columns}
+            dataSource={dataSource}
+          />
         ) : (
           <div className='h-full flex justify-center items-center'>
             <MyEmpty />
@@ -150,6 +167,7 @@ function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, table
   );
 }
 
+/** Manage SQL conversation rounds, schema navigation, query execution and saving the edited result. */
 function DbEditor() {
   const { t } = useTranslation();
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
@@ -160,7 +178,7 @@ function DbEditor() {
   const [editorValue, setEditorValue] = useState<EditorValueProps | EditorValueProps[]>();
   const [newEditorValue, setNewEditorValue] = useState<EditorValueProps>();
   const latestSqlRef = useRef<string | undefined>(undefined);
-  const [tableData, setTableData] = useState<{ columns: string[]; values: (string | number)[] }>();
+  const [tableData, setTableData] = useState<ITableData>();
   const [currentTabIndex, setCurrentTabIndex] = useState<number>();
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
   const [layout, setLayout] = useState<'TB' | 'LR'>('TB');
@@ -293,8 +311,8 @@ function DbEditor() {
         conv_uid: id,
         db_name,
         conv_round: currentRound,
-        old_sql: editorValue?.sql,
-        old_speak: editorValue?.thoughts,
+        old_sql: Array.isArray(editorValue) ? editorValue[currentTabIndex ?? 0]?.sql : editorValue?.sql,
+        old_speak: Array.isArray(editorValue) ? editorValue[currentTabIndex ?? 0]?.thoughts : editorValue?.thoughts,
         new_sql: newEditorValue?.sql,
         new_speak: newEditorValue?.thoughts?.match(/^\n--(.*)\n\n$/)?.[1]?.trim() || newEditorValue?.thoughts,
       });
@@ -320,7 +338,7 @@ function DbEditor() {
         conv_uid: id,
         chart_title: newEditorValue?.title,
         db_name,
-        old_sql: editorValue?.[currentTabIndex ?? 0]?.sql,
+        old_sql: Array.isArray(editorValue) ? editorValue[currentTabIndex ?? 0]?.sql : editorValue?.sql,
         new_chart_type: newEditorValue?.showcase,
         new_sql: newEditorValue?.sql,
         new_comment: newEditorValue?.thoughts?.match(/^\n--(.*)\n\n$/)?.[1]?.trim() || newEditorValue?.thoughts,
@@ -452,8 +470,9 @@ function DbEditor() {
   }, [searchValue, tables]);
 
   const dataList = useMemo(() => {
-    const res: { key: string | number; title: string; parentKey?: string | number }[] = [];
-    const generateList = (data: DataNode[], parentKey?: string | number) => {
+    const res: { key: Key; title: string; parentKey?: Key }[] = [];
+    /** Flatten schema-tree entries with parent keys so search results can expand their ancestors. */
+    const generateList = (data: DataNode[], parentKey?: Key) => {
       if (!data || data?.length <= 0) return;
       for (let i = 0; i < data.length; i++) {
         const node = data[i];
@@ -689,12 +708,13 @@ function DbEditor() {
                     <DbEditorContent
                       layout={layout}
                       editorValue={item}
-                      liveSql={index === currentTabIndex ? (newEditorValue?.sql ?? item.sql) : item.sql}
+                      liveEditorText={index === currentTabIndex ? newEditorValue?.editorText : undefined}
                       handleChange={value => {
                         const { sql, thoughts } = resolveSqlAndThoughts(value);
                         latestSqlRef.current = sql ?? '';
                         setNewEditorValue(old => {
                           return Object.assign({}, old, {
+                            editorText: value ?? '',
                             sql,
                             thoughts,
                           });
@@ -711,12 +731,13 @@ function DbEditor() {
             <DbEditorContent
               layout={layout}
               editorValue={editorValue}
-              liveSql={newEditorValue?.sql}
+              liveEditorText={newEditorValue?.editorText}
               handleChange={value => {
                 const { sql, thoughts } = resolveSqlAndThoughts(value);
                 latestSqlRef.current = sql ?? '';
                 setNewEditorValue(old => {
                   return Object.assign({}, old, {
+                    editorText: value ?? '',
                     sql,
                     thoughts,
                   });

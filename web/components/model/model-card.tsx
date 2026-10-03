@@ -13,11 +13,13 @@ interface Props {
   info: IModelData;
 }
 
+/** Display a model worker and expose the action for stopping that worker. */
 function ModelCard({ info }: Props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState<boolean>(false);
 
   // TODO：unused function
+  /** Stop the selected worker without deleting its configuration, suppressing duplicate in-flight requests. */
   async function stopTheModel(info: IModelData) {
     if (loading) {
       return;
@@ -29,6 +31,7 @@ function ModelCard({ info }: Props) {
         port: info.port,
         model: info.model_name,
         worker_type: info.worker_type,
+        delete_after: false,
         params: {},
       }),
     );

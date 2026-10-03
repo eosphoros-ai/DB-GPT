@@ -1,6 +1,6 @@
-import { Resources } from 'i18next';
+import WikiEn from '../en/wiki';
 
-const WikiZh: Resources['translation'] = {
+const WikiZh: Record<keyof typeof WikiEn, string> = {
   wiki_tab_label: 'Wiki',
   wiki_graph_tab_label: 'Wiki 图谱',
   wiki_tab_knowledge: '知识',

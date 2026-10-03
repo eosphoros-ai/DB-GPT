@@ -355,7 +355,7 @@ export default function WikiGraph({ spaceId }: WikiGraphProps) {
           onClick={() => load(mode, center || undefined, 1)}
           className='w-fit'
         >
-          {t('reload')}
+          {t('refresh_list')}
         </Button>
       </div>
 

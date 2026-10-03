@@ -2,7 +2,8 @@ import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getChatFeedBackItme, postChatFeedBackForm } from '@/client/api';
 import { FeedBack } from '@/types/chat';
 import { ChatFeedBackSchema } from '@/types/db';
-import { CloseRounded, MoreHoriz } from '@mui/icons-material';
+import CloseRounded from '@mui/icons-material/CloseRounded';
+import MoreHoriz from '@mui/icons-material/MoreHoriz';
 import {
   Box,
   Button,
@@ -31,13 +32,14 @@ type Props = {
   select_param?: FeedBack;
 };
 
+/** Collect and submit user feedback for an individual conversation response. */
 const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: Props) => {
   const { t } = useTranslation();
   const { chatId } = useContext(ChatContext);
   const [ques_type, setQuesType] = useState('');
   const [score, setScore] = useState(4);
   const [text, setText] = useState('');
-  const action = useRef(null);
+  const action = useRef<{ focusVisible: () => void }>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
   const handleOpenChange = useCallback(
@@ -174,9 +176,9 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   sx={{ width: '100%' }}
                 >
                   {select_param &&
-                    Object.keys(select_param)?.map(paramItem => (
+                    Object.entries(select_param).map(([paramItem, label]) => (
                       <Option key={paramItem} value={paramItem}>
-                        {select_param[paramItem]}
+                        {label}
                       </Option>
                     ))}
                 </Select>
@@ -189,7 +191,6 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                         <div>{t('feed_back_desc')}</div>
                       </Box>
                     }
-                    variant='solid'
                     placement='left'
                   >
                     {t('Q_A_Rating')}
@@ -206,7 +207,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   valueLabelDisplay='on'
                   marks={marks}
                   sx={{ width: '90%', pt: 3, m: 2, ml: 1 }}
-                  onChange={event => setScore(event.target?.value)}
+                  onChange={(_, value) => setScore(Array.isArray(value) ? value[0] : value)}
                   value={score}
                 />
               </Grid>

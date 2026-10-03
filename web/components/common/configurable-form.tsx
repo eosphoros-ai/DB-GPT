@@ -13,6 +13,7 @@ const isComplexValidValues = (values: any[]): boolean => {
   return typeof values[0] === 'object' && values[0] !== null && 'key' in values[0] && 'label' in values[0];
 };
 
+/** Render backend-defined parameters, initialize untouched defaults and normalize nested fields on submission. */
 function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> | null; form: FormInstance<any> }) {
   // Initialize the default value of the form
   useEffect(() => {
@@ -36,6 +37,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
   }
 
   // Transform data structure before form submission
+  /** Retain the selected nested type and its declared field values when building the submission payload. */
   const normalizeFormValues = (values: any) => {
     const normalized = { ...values };
     params?.forEach(param => {
@@ -44,7 +46,7 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
         if (nestedValue.type) {
           // Keep all field values instead of just type
           const nestedFields = param.nested_fields[nestedValue.type] || [];
-          const fieldValues = {};
+          const fieldValues: Record<string, unknown> = {};
           nestedFields.forEach(field => {
             if (nestedValue[field.param_name] !== undefined) {
               fieldValues[field.param_name] = nestedValue[field.param_name];
@@ -70,15 +72,10 @@ function ConfigurableForm({ params, form }: { params: Array<ConfigurableParams> 
     originalSubmit.call(form);
   };
 
+  /** Choose a parameter control from its type, allowed values and fixed/privacy metadata. */
   function renderItem(param: ConfigurableParams) {
     if (param.nested_fields) {
-      return (
-        <NestedFormFields
-          parentName={param.param_name}
-          fields={param.nested_fields as Record<string, ConfigurableParams[]>}
-          form={form}
-        />
-      );
+      return <NestedFormFields parentName={param.param_name} fields={param.nested_fields} form={form} />;
     }
 
     const type = param.param_type.toLowerCase();

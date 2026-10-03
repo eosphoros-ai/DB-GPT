@@ -1,8 +1,9 @@
 import type { IModelOptions } from '@oceanbase-odc/monaco-plugin-ob/dist/type';
 import { ISession } from '../monaco-editor';
 
+/** Adapt the current SQL session into OB schema/table completion services, returning empty lists without a session. */
 export function getModelService(
-  { _modelId, delimiter }: { _modelId: string; delimiter: string },
+  { delimiter }: { modelId: string; delimiter: string },
   session?: () => ISession | null,
 ): IModelOptions {
   return {

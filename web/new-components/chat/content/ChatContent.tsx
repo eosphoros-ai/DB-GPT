@@ -76,6 +76,7 @@ const formatMarkdownValForAgent = (val: string) => {
   return val?.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
 };
 
+/** Render message Markdown and structured plugin output in the current chat layout. */
 const ChatContent: React.FC<{
   content: Omit<IChatDialogueMessageSchema, 'context'> & {
     context:
@@ -140,10 +141,11 @@ const ChatContent: React.FC<{
 
   const extraMarkdownComponents = useMemo<MarkdownComponent>(
     () => ({
+      /** Resolve a cached plugin-result placeholder into its status/result card, preserving unknown placeholders as text. */
       'custom-view'({ children }) {
-        const index = +children.toString();
+        const index = children == null ? -1 : Number(children.toString());
         if (!cachePluginContext[index]) {
-          return children;
+          return <>{children}</>;
         }
         const { name, status, err_msg, result } = cachePluginContext[index];
         const { bgClass, icon } = pluginViewStatusMapper[status] ?? {};

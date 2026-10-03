@@ -9,17 +9,26 @@ import { Button, Modal, Tabs } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodePreview } from './code-preview';
-/**
- * The HTML preview component is used to display HTML code and provide run, download, and full-screen functionality
- * @param {Object} props The component props
- * @param {string} props.code HTML code content
- * @param {string} props.language Code language, default is html
- */
-const HtmlPreview = ({ code, language = 'html' }) => {
+type FullscreenFrame = HTMLIFrameElement & {
+  webkitRequestFullscreen?: () => void;
+  msRequestFullscreen?: () => void;
+  mozRequestFullScreen?: () => void;
+};
+type FullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => void;
+  msExitFullscreen?: () => void;
+  mozCancelFullScreen?: () => void;
+};
+
+/** Displays HTML source with run, download and fullscreen controls. */
+const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const iframeRef = useRef(null);
+  const iframeRef = useRef<FullscreenFrame>(null);
   const { t } = useTranslation();
   const [parsedCode, setParsedCode] = useState({
     html: '',
@@ -30,7 +39,8 @@ const HtmlPreview = ({ code, language = 'html' }) => {
 
   // Parse the code and extract the HTML, CSS, and JS parts
   useEffect(() => {
-    const parseCode = sourceCode => {
+    /** Split style/script content for the source tabs and wrap HTML fragments into a complete preview document. */
+    const parseCode = (sourceCode: string) => {
       let html = sourceCode;
       let css = '';
       let js = '';
@@ -93,12 +103,16 @@ const HtmlPreview = ({ code, language = 'html' }) => {
 
   // Listen for fullscreen change events
   useEffect(() => {
+    /** Synchronize the preview state with standard and vendor-prefixed fullscreen events. */
     const handleFullscreenChange = () => {
+      const fullscreenDocument: FullscreenDocument = document;
       setIsFullscreen(
-        document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement,
+        Boolean(
+          fullscreenDocument.fullscreenElement ||
+            fullscreenDocument.webkitFullscreenElement ||
+            fullscreenDocument.mozFullScreenElement ||
+            fullscreenDocument.msFullscreenElement,
+        ),
       );
     };
 
@@ -185,18 +199,20 @@ const HtmlPreview = ({ code, language = 'html' }) => {
   };
 
   // Exit fullscreen mode
+  /** Leave fullscreen using the browser API available on the current document. */
   const exitFullscreen = () => {
+    const fullscreenDocument: FullscreenDocument = document;
     if (document.exitFullscreen) {
       document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
+    } else if (fullscreenDocument.webkitExitFullscreen) {
       /* Safari */
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
+      fullscreenDocument.webkitExitFullscreen();
+    } else if (fullscreenDocument.msExitFullscreen) {
       /* IE11 */
-      document.msExitFullscreen();
-    } else if (document.mozCancelFullScreen) {
+      fullscreenDocument.msExitFullscreen();
+    } else if (fullscreenDocument.mozCancelFullScreen) {
       /* Firefox */
-      document.mozCancelFullScreen();
+      fullscreenDocument.mozCancelFullScreen();
     }
   };
 

@@ -47,6 +47,7 @@ import {
 import { GPTVis } from '@antv/gpt-vis';
 import { Button, Table, Tooltip, message } from 'antd';
 import classNames from 'classnames';
+import i18n from 'i18next';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Collapsible } from '../tools/Collapsible';
@@ -321,7 +322,8 @@ const StatusBadge: React.FC<{ status: StepStatus }> = ({ status }) => {
 };
 
 // Copy to clipboard helper
-const copyToClipboard = (text: string, successText: string) => {
+/** Request a clipboard write for panel content and display the supplied feedback message. */
+const copyToClipboard = (text: string, successText = i18n.t('copy_to_clipboard_success')) => {
   navigator.clipboard.writeText(text);
   message.success(successText);
 };

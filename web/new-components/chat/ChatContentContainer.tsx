@@ -20,6 +20,7 @@ const OpenCodeChatCompletion = dynamic(() => import('@/new-components/chat/conte
 });
 
 // eslint-disable-next-line no-empty-pattern
+/** Compose the current chat content area from the conversation state supplied by its parent. */
 const ChatContentContainer = ({ className }: { className?: string }, ref: React.ForwardedRef<any>) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isScrollToTop, setIsScrollToTop] = useState<boolean>(false);
@@ -32,7 +33,7 @@ const ChatContentContainer = ({ className }: { className?: string }, ref: React.
 
   // Get scene from URL params to determine which completion component to render
   const searchParams = useSearchParams();
-  const scene = searchParams?.get('scene') ?? '';
+  const _scene = searchParams?.get('scene') ?? '';
   // Use OpenCode style for all scenes (chat_normal, chat_agent, chat_knowledge, etc.)
   // This provides a consistent modern UI experience
   const useOpenCodeStyle = true;

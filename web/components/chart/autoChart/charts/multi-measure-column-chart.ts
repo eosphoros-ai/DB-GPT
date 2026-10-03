@@ -3,9 +3,10 @@ import { hasSubset } from '../advisor/utils';
 import type { ChartKnowledge, CustomChart, GetChartConfigProps, Specification } from '../types';
 import { findNominalField, findOrdinalField } from './util';
 
+/** Build a column-chart view from categorical and interval fields; return null when no usable specification exists. */
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
-    const field4Y = dataProps?.filter(field => hasSubset(field.levelOfMeasurements, ['Interval']));
+    const field4Y = dataProps?.filter(field => hasSubset(field.levelOfMeasurements ?? [], ['Interval']));
     const nominalField = findNominalField(dataProps);
     const ordinalField = findOrdinalField(dataProps);
     const field4X = nominalField ?? ordinalField;

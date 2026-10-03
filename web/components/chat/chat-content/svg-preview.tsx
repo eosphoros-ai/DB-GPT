@@ -17,14 +17,15 @@ import { CodePreview } from './code-preview';
  * @param {string} props.code SVG code content
  * @param {string} props.language Code language, default is svg
  */
-const SvgPreview = ({ code, language = 'svg' }) => {
+const SvgPreview = ({ code, language = 'svg' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [zoom, setZoom] = useState(100);
   const { t } = useTranslation();
 
   // Clean up SVG code (remove XML declaration, etc.)
-  const cleanSvgCode = svgCode => {
+  /** Normalize SVG wrappers, namespace and sizing metadata for preview; this is not an HTML sanitizer. */
+  const cleanSvgCode = (svgCode: string) => {
     // Remove XML declaration
     let cleaned = svgCode.replace(/<\?xml[^>]*\?>/g, '');
 
@@ -120,10 +121,12 @@ const SvgPreview = ({ code, language = 'svg' }) => {
   };
 
   // Download PNG file
+  /** Rasterize the current SVG on a canvas and download it, releasing the temporary object URL. */
   const downloadPNG = () => {
     // Create a canvas
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     // Create an image element
     const img = new Image();
@@ -160,7 +163,8 @@ const SvgPreview = ({ code, language = 'svg' }) => {
   };
 
   // Control zoom
-  const handleZoomChange = value => {
+  /** Apply the preview zoom percentage selected by the slider. */
+  const handleZoomChange = (value: number) => {
     setZoom(value);
   };
 

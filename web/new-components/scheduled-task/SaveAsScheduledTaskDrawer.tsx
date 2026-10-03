@@ -2,7 +2,7 @@ import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
 import { AttachmentMessageGroup, scheduledTaskFiles } from '@/modules/session-files';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
-import { Button, Drawer, Form, Input, Space, Tag, Typography, message } from 'antd';
+import { App, Button, Drawer, Form, Input, Space, Tag, Typography } from 'antd';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CronInput from './CronInput';
@@ -30,12 +30,14 @@ interface SaveAsScheduledTaskDrawerProps {
   defaultName?: string;
 }
 
+/** Create a scheduled task from the current conversation and the user's scheduling choices. */
 const SaveAsScheduledTaskDrawer: React.FC<SaveAsScheduledTaskDrawerProps> = ({
   open,
   onClose,
   snapshot,
   defaultName,
 }) => {
+  const { message } = App.useApp();
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [cron, setCron] = useState('0 9 * * *');

@@ -16,7 +16,7 @@ import ConstructLayout from '@/new-components/layout/Construct';
 import { ModelProvider, ProviderConfig } from '@/types/model';
 import { notifyModelsChanged } from '@/utils/events';
 import { CopyOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Empty, Form, Input, Modal, Segmented, Spin, Switch, Tag, Tooltip, message } from 'antd';
+import { App, Button, Empty, Form, Input, Modal, Segmented, Spin, Switch, Tag, Tooltip } from 'antd';
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -160,7 +160,9 @@ function providerIcon(
   return <ProviderAvatar label={label} seed={provider} size={size} />;
 }
 
+/** List model/provider configurations and expose their configuration actions. */
 function ModelsConfig() {
+  const { message } = App.useApp();
   const { t } = useTranslation();
   const [workerType, setWorkerType] = useState<string>('llm');
   const [providers, setProviders] = useState<ModelProvider[]>([]);

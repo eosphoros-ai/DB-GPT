@@ -1,7 +1,11 @@
 name: Build Web Application
 
+permissions:
+  contents: read
+
 # Triggered when the web directory or this file is changed
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -11,6 +15,7 @@ on:
   push:
     branches:
       - main
+      - "codex/**"
     paths:
       - web/**
       - .github/workflows/build-web.yml
@@ -39,12 +44,27 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20.19'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Pin npm used by the lockfile
+        run: npm install --global npm@10.8.2
 
       - name: Install dependencies
         run: |
-          yarn install
+          npm ci
+
+      - name: Check types and build contracts
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test:build
+          npm test
 
       - name: Build web application
         run: |
-          yarn build
+          npm run build
+
+      - name: Build static distribution
+        run: npm run compile

@@ -5,7 +5,7 @@ interface ExtMetadata {
 }
 
 type NestedField = {
-  [key: string]: ConfigurableParams;
+  [key: string]: ConfigurableParams[];
 };
 
 export type ConfigurableParams = {

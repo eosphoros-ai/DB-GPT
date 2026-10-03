@@ -1,0 +1,14 @@
+{
+  "name": "dbgpt-web-toolchain-regression",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "playwright test --config playwright.config.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

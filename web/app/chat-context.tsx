@@ -76,6 +76,7 @@ const ChatContext = createContext<IChatContext>({
   refreshDialogList: () => {},
 });
 
+/** Provide shared conversation, model and application state to the chat interface. */
 const ChatContextProvider = ({ children }: { children: React.ReactElement }) => {
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
@@ -121,8 +122,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   // 获取管理员列表
   const { run: queryAdminListRun } = useRequest(
     async () => {
-      const [, res] = await apiInterceptors(queryAdminList({ role: 'admin' }));
-      return res ?? [];
+      return queryAdminList({ role: 'admin' });
     },
     {
       onSuccess: data => {
