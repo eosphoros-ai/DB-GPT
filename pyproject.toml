@@ -64,6 +64,7 @@ dev-dependencies = [
 pythonpath = ["packages"]
 addopts = ["--import-mode=importlib", ]
 python_files = ["test_*.py", "*_test.py"]
+markers = ["integration: requires local sockets or other integration resources"]
 
 [tool.ruff]
 line-length = 88
