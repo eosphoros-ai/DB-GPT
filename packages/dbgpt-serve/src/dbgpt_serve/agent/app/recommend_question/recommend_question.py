@@ -14,8 +14,8 @@ class RecommendQuestion(BaseModel):
     question: Optional[str] = Field(None, description="The question you may ask")
     user_code: Optional[str] = Field(None, description="The user code")
     sys_code: Optional[str] = Field(None, description="The system code")
-    gmt_create: datetime = datetime.now()
-    gmt_modified: datetime = datetime.now()
+    gmt_create: datetime = Field(default_factory=datetime.now)
+    gmt_modified: datetime = Field(default_factory=datetime.now)
     params: Optional[dict] = Field(default={}, description="The params of app")
     valid: Optional[Union[str, bool]] = Field(
         default=None, description="is the question valid to display, default is true"
