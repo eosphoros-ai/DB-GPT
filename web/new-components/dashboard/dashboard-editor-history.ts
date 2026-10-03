@@ -23,6 +23,9 @@ export const dashboardHistoryReducer = (
   // A save acknowledges its submitted snapshot, not edits made while it was pending.
   if (action.type === 'saved') {
     if (JSON.stringify(state.present) !== JSON.stringify(action.submitted)) return state;
+    // Editing then undoing can return to the submitted snapshot while still
+    // leaving newer work in Redo. A save acknowledgement must retain it.
+    if (state.future.length) return { ...state, present: action.schema };
     return { past: [], present: action.schema, future: [] };
   }
   if (action.type === 'reset') return { past: [], present: action.schema, future: [] };

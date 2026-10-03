@@ -86,7 +86,7 @@ import {
 } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DashboardAccessPanel from './DashboardAccessPanel';
 import DashboardAnnotationOverlay, { DashboardAnnotationSelection } from './DashboardAnnotationOverlay';
 import DashboardAnnotationTray from './DashboardAnnotationTray';
@@ -283,7 +283,16 @@ export default function DashboardEditor({
 }: DashboardEditorProps) {
   const { message, modal } = App.useApp();
   const publicationErrorRef = useRef<{ destroy: () => void } | null>(null);
-  const [record, setRecord] = useState(initialRecord);
+  const [record, updateRecord] = useState(initialRecord);
+  const recordRef = useRef(initialRecord);
+  const setRecord = useCallback((next: DashboardRecord) => {
+    // HTTP acknowledgements can arrive after a newer collaboration update,
+    // including before React commits that update to the screen.
+    if (next.current_revision < recordRef.current.current_revision) return false;
+    recordRef.current = next;
+    updateRecord(next);
+    return true;
+  }, []);
   const { schema, setSchema, resetSchema, acknowledgeSave, undo, redo, canUndo, canRedo } = useDashboardSchemaHistory(
     initialRecord.schema,
   );
@@ -531,7 +540,7 @@ export default function DashboardEditor({
     currentRecord: record,
     dirty: isDirty,
     onRemoteRecord: remote => {
-      setRecord(remote);
+      if (!setRecord(remote)) return;
       resetSchema(remote.schema);
       clearDashboardLocalDraft(remote.id);
       setSelectedWidgetId(current =>
@@ -755,7 +764,7 @@ export default function DashboardEditor({
       widgets: schema.widgets.map(normalizeUnconfiguredVisualizationWidget),
     };
     const saved = await collaboration.save(schemaToSave, record.current_revision, promoteToAsset);
-    setRecord(saved);
+    if (!setRecord(saved)) return recordRef.current;
     acknowledgeSave(schema, saved.schema);
     // The recovery effect clears only a clean draft and rebases pending edits
     // onto the acknowledged revision instead of deleting them here.
@@ -903,13 +912,23 @@ export default function DashboardEditor({
       if (!isDirty) {
         const latestResponse = await getDashboard(saved.id);
         const latest = latestResponse.data.data;
-        if (latest.current_revision !== saved.current_revision) {
+        if (latest.current_revision > saved.current_revision) {
+          const currentSchema = schemaRef.current;
+          const unchanged =
+            JSON.stringify(currentSchema) === JSON.stringify(schema) ||
+            JSON.stringify(currentSchema) === JSON.stringify(saved.schema);
           saved = latest;
-          setRecord(latest);
-          resetSchema(latest.schema);
-          clearDashboardLocalDraft(latest.id);
+          if (latest.current_revision >= recordRef.current.current_revision) {
+            if (unchanged) {
+              if (setRecord(latest)) acknowledgeSave(currentSchema, latest.schema);
+            } else {
+              collaboration.deferRemoteRecord(latest);
+              message.warning('发布期间的本地修改已保留，请确认后再加载远端版本');
+            }
+          }
         }
       }
+      if (recordRef.current.current_revision > saved.current_revision) saved = recordRef.current;
       const validation = await validateDashboard(saved.id, saved.schema, filters, true, true);
       const blockingIssues = validation.data.data.issues;
       const { missingWidgets: missingPublicationWidgets, otherIssues } = groupMissingPublicationBindings(
@@ -994,12 +1013,16 @@ export default function DashboardEditor({
       }
 
       const response = await publishDashboard(saved.id, saved.current_revision, filters, false);
-      setRecord({
-        ...saved,
-        status: 'published',
-        asset_state: 'saved',
-        saved_at: saved.saved_at || new Date().toISOString(),
-      });
+      // Publishing a deferred remote version must not rebase local edits, and
+      // a late publication response must not replace a newer revision.
+      if (recordRef.current.current_revision === saved.current_revision) {
+        setRecord({
+          ...recordRef.current,
+          status: 'published',
+          asset_state: 'saved',
+          saved_at: saved.saved_at || new Date().toISOString(),
+        });
+      }
       const snapshotUrl = `${window.location.origin}${response.data.data.share_path}`;
       if (mode === 'live') {
         try {
@@ -2015,6 +2038,7 @@ export default function DashboardEditor({
   };
 
   const acceptAnnotationRecord = (next: DashboardRecord, submitted: DashboardSchemaV1) => {
+    if (next.current_revision < recordRef.current.current_revision) return false;
     const current = JSON.stringify(schemaRef.current);
     if (current !== JSON.stringify(submitted) && current !== JSON.stringify(next.schema)) {
       collaboration.deferRemoteRecord(next);
@@ -4464,7 +4488,7 @@ export default function DashboardEditor({
             setPublishPanelOpen(true);
           }}
           onRecordChange={next => {
-            setRecord(next);
+            if (!setRecord(next)) return;
             resetSchema(next.schema);
             clearDashboardLocalDraft(next.id);
           }}

@@ -232,6 +232,32 @@ test.describe('Deterministic dashboard browser lifecycle', () => {
     await expect(title).toHaveValue('Edited while saving');
   });
 
+  test('keeps Redo after undoing an edit while a save is pending', async ({ page }) => {
+    const api = await installDashboardApi(page);
+    let release!: () => void;
+    const pending = new Promise<void>(resolve => (release = resolve));
+    let received!: () => void;
+    const submitted = new Promise<void>(resolve => (received = resolve));
+    await page.route(`**/api/v1/dashboards/${api.record().id}/operations`, async route => {
+      received();
+      await pending;
+      await route.fallback();
+    });
+    await page.goto(`/dashboards/${api.record().id}/`);
+    const title = page.getByRole('textbox', { name: '看板标题' });
+    await title.fill('Submitted title');
+    await page.getByRole('button', { name: '保存看板', exact: true }).click();
+    await submitted;
+    await title.fill('Work to redo');
+    await page.getByRole('button', { name: '撤销', exact: true }).click();
+    await expect(title).toHaveValue('Submitted title');
+    release();
+    await expect(page.getByText('修订 2', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '重做', exact: true }).click();
+    await expect(title).toHaveValue('Work to redo');
+    await expect(page.getByText('未保存', { exact: true })).toBeVisible();
+  });
+
   test('blocks single-annotation application while manual edits are unsaved', async ({ page }) => {
     const api = await installDashboardApi(page);
     const record = api.record();
