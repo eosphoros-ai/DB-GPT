@@ -47,6 +47,25 @@ def test_merge_splits() -> None:
     assert output == expected_output
 
 
+def test_md_header_text_splitter_ignores_headers_in_bare_code_fence() -> None:
+    """A "#" line inside a fence without a language tag is not a header."""
+    markdown_document = (
+        "# Install\n"
+        "Run the following:\n"
+        "```\n"
+        "# create a virtual env\n"
+        "python -m venv .venv\n"
+        "```\n"
+        "Done."
+    )
+    output = MarkdownHeaderTextSplitter().split_text(markdown_document)
+    assert [chunk.content for chunk in output] == [
+        '"Install": Run the following:\n```\n# create a virtual env\n'
+        "python -m venv .venv\n```\nDone."
+    ]
+    assert [chunk.metadata for chunk in output] == [{"Header1": "Install"}]
+
+
 def test_character_text_splitter() -> None:
     """Test splitting by character count."""
     text = "foo bar baz 123"
