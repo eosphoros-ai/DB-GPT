@@ -1,6 +1,39 @@
-# PR #3277 frontend regression — 2026-09-30
+# PR #3277 frontend regression — updated 2026-10-03
 
-## Main integration recheck — 2026-10-03
+## Next.js 16.3.8 recheck — 2026-10-03
+
+This follow-up to `1916cc7865865f2051012e15cd603ef283895a0b` pins both `next`
+and `eslint-config-next` to **16.3.8**, retaining React 18.3.1 and TypeScript 5.9.3.
+The lockfile changes only the Next package family and its required SWC/Sharp
+dependencies. Package identities, dependency ranges and integrity hashes were
+checked against the official npm registry; every resolved URL uses that registry.
+See the [current security assessment](pr-3277-security-advisories.md#current-patch-nextjs-1638).
+
+Fresh `npm ci`, Windows x64, Node **20.20.2**, npm **10.8.2**:
+
+| Check | Current patch result |
+| --- | --- |
+| TypeScript | Passed independently and inside both builds; error checking remains enabled. |
+| ESLint | **0 errors / 89 warnings**. |
+| Build contracts | **42 passed / 2 skipped**; the skipped cases require POSIX signals. |
+| Existing frontend tests | **24 passed**; Wiki diff assertions also passed. |
+| Production build | Passed; **60 HTML files / 1,782 local asset references** verified. |
+| Default static export | Passed; **60 HTML files / 1,782 local asset references** verified. |
+| Production Chromium | **42 passed / 0 failed / 0 skipped / 0 retries**, one worker, Playwright 1.62.1. |
+
+The browser run uses `tests/web-toolchain` against the production Next server,
+with fixture API responses. All 42 cases recorded zero unexpected API calls,
+page errors, console diagnostics, failed requests or bad HTTP responses. It does
+not establish real backend/model correctness. Firefox, WebKit, development/Fast
+Refresh and the earlier live integration scenarios were **not rerun** for this patch.
+No exploit test or performance comparison was performed. CI for the final pushed
+head is linked in the PR body; older CI links below retain their original scope.
+
+Reproduce with the commands in `web/TOOLCHAIN_MIGRATION.md`, then run `npm test`
+from `tests/web-toolchain` against `npm start` using `REGRESSION_URL` and
+`REGRESSION_MODE=production-chromium`. Stop the server before static export.
+
+## Earlier main integration recheck — 2026-10-03, Next.js 16.3.0
 
 The local application tree at `8bed57bf` includes merge `63264219` of upstream
 `5905245a6750bafa636aa36a904b7fd4ead75334`. It retains the upstream source-first

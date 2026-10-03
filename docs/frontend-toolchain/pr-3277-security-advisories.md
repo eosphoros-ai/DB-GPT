@@ -1,4 +1,28 @@
-# PR #3277 Next.js security applicability — checked through 2026-10-01
+# PR #3277 Next.js security applicability — updated 2026-10-03
+
+## Current patch: Next.js 16.3.8
+
+The current dependency declarations pin **Next.js and eslint-config-next 16.3.8**.
+The patch is applied separately to PRs #3277 and #3278 without deciding their merge
+order. The dependency lockfiles are regenerated with npm 10.8.2; regression results
+are recorded in the respective PR validation reports and current-head CI links.
+
+The matching Windows server advisory
+[CVE-2026-75604](https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36)
+was first fixed in 16.3.3. The
+[September release](https://nextjs.org/blog/september-2026-security-release) identifies
+16.3.8 as the patch for the self-hosted Pages Router/SSG issue (CVE-2026-94543) and
+development MCP disclosure (CVE-2026-94486). This upgrade includes those fixes.
+The server advisories are not attributed to Python-only static-file deployments;
+the MCP endpoint is a development-only feature. No exploit payload is executed.
+
+The release notes disclose postponed fixes, so this is not a blanket security
+clearance. The tables below retain the original 13.4.7/16.3.0 comparison and its
+configuration evidence. Their references to an unresolved **16.3.0 candidate** and
+the October 1 pending patch decision describe that historical review, superseded
+by this patch; their historical regression results are not reused for 16.3.8.
+
+## Historical assessment through 2026-10-01
 
 **There is a concrete security reason to leave Next.js 13.4.7 for this project's
 self-hosted Next server mode:** the baseline falls within the affected range of
