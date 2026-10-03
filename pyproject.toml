@@ -89,3 +89,4 @@ known-first-party = ["dbgpt", "dbgpt_acc_auto", "dbgpt_client", "dbgpt_ext", "db
 # at 88 cols without breaking the rendered text:
 "packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py" = ["E501"]
 "packages/dbgpt-ext/src/dbgpt_ext/rag/graph_builder/codegraph_visualizer.py" = ["E501"]
+"packages/dbgpt-serve/src/dbgpt_serve/rag/service/wiki/prompts.py" = ["E501"]

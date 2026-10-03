@@ -182,6 +182,8 @@ interface KnowledgeSpace {
   vector_type: string;
   desc?: string;
   owner?: string;
+  /** present since the LLM-Wiki upgrade; drives the picker badge */
+  index_methods?: string[];
 }
 
 // Define message type for chat
@@ -4593,6 +4595,14 @@ const Playground: NextPage = () => {
                                             <span className='font-medium text-sm text-gray-800 dark:text-gray-200'>
                                               {space.name}
                                             </span>
+                                            {space.index_methods?.includes('Wiki') && (
+                                              <span
+                                                className='text-[10px] px-1.5 py-0.5 rounded-full border leading-none flex-shrink-0 border-blue-300 text-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
+                                                title='LLM-Wiki enabled'
+                                              >
+                                                📖 Wiki
+                                              </span>
+                                            )}
                                           </div>
                                           {space.desc && (
                                             <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2'>

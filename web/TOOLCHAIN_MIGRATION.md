@@ -71,9 +71,11 @@ they are not counted as newly introduced application-code warnings.
 CI explicitly selects the Node 20.19 line and npm 10.8.2; local results must
 still identify their actual runtime and must not be labelled Actions results.
 
-The build-contract command discovers 32 tests, including process shutdown,
-download error handling and subscription cleanup. Two POSIX signal-delivery
-tests intentionally skip on Windows and execute on the Ubuntu/macOS matrix.
+The build-contract command discovers 44 tests, including the merged Wiki/source
+wizard, typed translation resources, process shutdown, download error handling
+and subscription cleanup. `npm test` also runs the Wiki diff utility assertions.
+Two POSIX signal-delivery tests intentionally skip on Windows and execute on the
+Ubuntu/macOS matrix.
 The launcher puts its default heap option before user-supplied `NODE_OPTIONS`,
 letting Node parse quotes and select the final explicit value. Eleven real-child
 heap cases include title values containing heap-option text and quoted limits.
