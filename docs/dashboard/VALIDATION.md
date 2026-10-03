@@ -5,6 +5,8 @@
 本轮将 Next.js / eslint-config-next 固定到 **16.3.8**，保留 React 18.3.1、
 TypeScript 5.9.3 和构建内类型检查。更新限于 Next 配套包及其 SWC/Sharp 依赖；
 锁文件的版本元数据、依赖范围、完整性哈希和官方下载地址已核对。
+后续仅补齐已锁定的 `detect-libc 2.1.2` 下载地址和完整性哈希，并重新通过 `npm ci`；
+依赖版本、依赖关系与应用源码不变。本机功能回归对应相同的应用和依赖版本。
 
 补丁包含 [Windows Next 服务漏洞修复](https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36)
 以及 [9 月安全版本](https://nextjs.org/blog/september-2026-security-release) 中适用于
