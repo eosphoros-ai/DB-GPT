@@ -1106,7 +1106,9 @@ def validate_dashboard(
         service.require_permission(
             dashboard_id,
             _user_id(user),
-            DashboardAction.QUERY if request.execute_queries else DashboardAction.EDIT,
+            DashboardAction.QUERY
+            if request.execute_queries or request.require_publication_bindings
+            else DashboardAction.EDIT,
             schema,
         )
         if schema.dashboard.id and schema.dashboard.id != dashboard_id:
