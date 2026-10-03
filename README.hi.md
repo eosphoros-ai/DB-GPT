@@ -333,7 +333,7 @@ DB-GPT की वास्तुकला निम्नलिखित चि�
 MIT लाइसेंस (MIT)
 
 ## डिस्क्लेमर
-- [डिस्क्लेमर](./DISCKAIMER.md)
+- [डिस्क्लेमर](./DISCLAIMER.md)
 
 ## उद्धरण
 यदि आप DB-GPT की समग्र वास्तुकला को समझना चाहते हैं, तो कृपया <a href="https://arxiv.org/abs/2312.17449" target="_blank">पेपर</a> और <a href="https://arxiv.org/abs/2404.10209" target="_blank">पेपर</a> का उद्धरण करें

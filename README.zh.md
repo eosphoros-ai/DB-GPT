@@ -481,7 +481,7 @@ The MIT License (MIT)
 
 ### 免责声明
 
-- [免责声明](./DISCKAIMER.md)
+- [免责声明](./DISCLAIMER.md)
 
 ## 引用
 如果您发现`DB-GPT`对您的研究或开发有用，请引用以下论文，其中：
