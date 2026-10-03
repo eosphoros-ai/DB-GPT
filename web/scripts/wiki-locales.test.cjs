@@ -34,7 +34,7 @@ test('Wiki and source translations retain finite keys and string return types', 
   const host = ts.createCompilerHost(options);
   const originalGetSourceFile = host.getSourceFile;
   host.getSourceFile = (file, languageVersion, onError, shouldCreateNewSourceFile) =>
-    file === filename
+    path.resolve(file) === filename
       ? ts.createSourceFile(filename, source, languageVersion, true)
       : originalGetSourceFile(file, languageVersion, onError, shouldCreateNewSourceFile);
   const program = ts.createProgram([filename], options, host);
