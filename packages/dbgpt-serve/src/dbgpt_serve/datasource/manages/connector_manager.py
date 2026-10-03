@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core.awel.flow import ResourceMetadata
 from dbgpt.datasource.base import BaseConnector, BaseDatasourceParameters
+from dbgpt.datasource.rdbms.base import RDBMSDatasourceParameters
 from dbgpt.util.annotations import Deprecated
 from dbgpt.util.configure.manager import _resolve_env_vars
 from dbgpt.util.executor_utils import ExecutorFactory
@@ -419,7 +420,13 @@ class ConnectorManager(BaseComponent):
                 request.params["password"] = _resolve_env_vars(pwd)
 
             param = self._create_parameters(request)
-            _connector = self.create_connector(param)
+            if isinstance(param, RDBMSDatasourceParameters):
+                # Connector construction reflects the complete schema. Use a
+                # lightweight probe here so large MSSQL schemas do not make the
+                # UI's test-connection request wait for metadata discovery.
+                param.test_connection()
+            else:
+                self.create_connector(param)
             return True
         except Exception as e:
             logger.error(f"Test connection Failure!{str(e)}")

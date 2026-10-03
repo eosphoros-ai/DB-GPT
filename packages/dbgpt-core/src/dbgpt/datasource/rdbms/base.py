@@ -97,6 +97,15 @@ class RDBMSDatasourceParameters(BaseDatasourceParameters):
             "pool_pre_ping": self.pool_pre_ping,
         }
 
+    def test_connection(self) -> None:
+        """Open a connection and run a lightweight probe without reflecting schema."""
+        engine = create_engine(self.db_url(), **(self.engine_args() or {}))
+        try:
+            with engine.connect() as connection:
+                connection.execute(select(1))
+        finally:
+            engine.dispose()
+
     def create_connector(self) -> "BaseConnector":
         """Create connector"""
         return RDBMSConnector.from_parameters(self)
