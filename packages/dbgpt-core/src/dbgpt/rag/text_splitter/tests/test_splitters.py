@@ -1,3 +1,5 @@
+import pytest
+
 from dbgpt.core import Chunk
 from dbgpt.rag.text_splitter.text_splitter import (
     CharacterTextSplitter,
@@ -63,3 +65,26 @@ def test_character_text_splitter_empty_doc() -> None:
     output = splitter.split_text(text)
     expected_output = ["db", "gpt"]
     assert output == expected_output
+
+
+def test_spacy_text_splitter() -> None:
+    """Smoke test SpacyTextSplitter against the installed spacy version.
+
+    Guards the spacy>=3.8 upgrade (Python 3.13 support): verifies the public
+    spacy API used by SpacyTextSplitter (spacy.load / nlp(text).sents) still
+    works. Skips when spacy or the en pipeline is unavailable so the suite
+    stays green without the optional ``rag`` extra installed.
+    """
+    pytest.importorskip("spacy", reason="spacy (rag extra) not installed")
+
+    from dbgpt.rag.text_splitter.text_splitter import SpacyTextSplitter
+
+    try:
+        splitter = SpacyTextSplitter(pipeline="en_core_web_sm", chunk_size=1000)
+    except Exception as e:  # pragma: no cover - depends on model download
+        pytest.skip(f"spacy pipeline unavailable: {e}")
+
+    text = "This is the first sentence. Here is the second one. And a third."
+    output = splitter.split_text(text)
+    assert output, "SpacyTextSplitter returned no chunks"
+    assert "first sentence" in " ".join(output)
