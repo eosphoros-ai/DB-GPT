@@ -1,5 +1,34 @@
 # PR #3277 frontend regression — 2026-09-30
 
+## Main integration recheck — 2026-10-03
+
+The local application tree at `8bed57bf` includes merge `63264219` of upstream
+`5905245a6750bafa636aa36a904b7fd4ead75334`. It retains the upstream source-first
+knowledge wizard and Wiki configuration, the App message context, and one source
+of form defaults. The Wiki translation resources retain finite keys. A follow-up
+normalizes the virtual type-test filename before comparing Windows paths.
+
+Windows x64, Node **20.20.2**, npm **10.8.2**, dependencies installed with `npm ci`:
+
+- Independent TypeScript passed; ESLint reported **0 errors / 89 warnings**.
+- Build and merge contracts: **42 passed / 2 skipped**. The skipped cases require
+  POSIX signal delivery and remain enabled for Ubuntu/macOS.
+- Existing frontend tests: **24 passed**; the Wiki diff assertions also passed.
+- Production build and default `npm run compile` static export passed. Both
+  verified **60 HTML files / 1,782 local asset references** with type checking enabled.
+- Chromium **151.0.7922.34** opened the exported frontend and exercised knowledge
+  creation, the Wiki option/configuration, and the submitted index/Wiki settings.
+  The create payload matched the selected options, with no browser page errors.
+  API responses were mocked; this is not backend or external connector acceptance.
+
+An earlier export attempt with a custom `NEXT_DIST_DIR` failed the launcher's
+artifact-path check; the documented default export command above passed. The
+earlier attempt is not counted as a pass. This local recheck does not substitute
+for CI on the pushed commit. Each PR is reconciled separately with upstream main;
+the shared paths between #3277 and #3278 still require a maintainer-selected merge
+sequence and subsequent reconciliation. Historical source IDs below describe
+their original runs.
+
 Documentation follow-up, 2026-10-01: the [one-page acceptance summary](pr-3277-acceptance-summary.md)
 separates recorded passes, existing issues, coverage gaps and maintainer decisions.
 It supports PR review and OSPP closeout without treating PR merge as a prerequisite
