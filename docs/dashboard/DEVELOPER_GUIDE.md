@@ -24,6 +24,28 @@ npm run verify:dashboard
 
 ## 全新环境安装与升级
 
+### 独立后端 CI
+
+[Test Dashboard Backend](../../.github/workflows/test-dashboard-backend.yml) 在 Ubuntu
+和 Python 3.11 上独立运行完整 `pytest.dashboard.ini` 范围。工作流固定 uv 0.12.22，
+为每个任务建立新虚拟环境，按现有 `uv.lock` 同时安装 `dbgpt-app` 的运行 extra 和
+`dbgpt-mono` 的开发测试依赖；下载缓存不替代依赖安装。
+
+本机复现同一依赖选择时，可把 `UV_PROJECT_ENVIRONMENT` 指向一个新目录，再执行：
+
+```sh
+uv sync --frozen --package dbgpt-app --package dbgpt-mono --extra base --extra collaboration
+uv run --no-sync python -m pytest -c pytest.dashboard.ini -q -ra --junitxml=output/ci/dashboard-backend.xml
+```
+
+CI 为每个任务启动临时 MySQL 8.0 和 Redis 7.2 服务，并设置测试专用连接地址，
+覆盖此前因外部服务缺失而跳过的 3 个 MySQL 用例和 1 个 Redis 用例。测试数据库随任务
+销毁；不要把 `DASHBOARD_TEST_MYSQL_URL` 或 `DASHBOARD_TEST_REDIS_URL` 指向用户数据。
+工作流使用只读仓库权限、独立并发组，并保留 JUnit 结果 14 天。它不运行模型推理、
+运行时 Docker 套件或全仓 Python 测试。
+
+### 运行环境
+
 拆分候选的本机组合为 Python 3.11.9、Node 22.23.2、npm 10.9.8；工具链依赖另有 Node 20.19.6 / npm 10.8.2 的远端矩阵。后端在仓库根目录按锁文件安装需要的运行 extra；前端在 web 目录按 npm 锁文件安装：
 
 ```sh
