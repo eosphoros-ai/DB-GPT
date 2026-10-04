@@ -66,6 +66,7 @@ class ChatWithDbAutoExecute(BaseChat):
                     user_input,
                     self.curr_config.schema_retrieve_top_k,
                 )
+            logger.info(f"[RAG-NL2SQL] Retrieved table info count: {len(table_infos)}, content: {table_infos}")
         except Exception as e:
             logger.error(f"Retrieved table info error: {str(e)}")
             table_infos = await blocking_func_to_async(
