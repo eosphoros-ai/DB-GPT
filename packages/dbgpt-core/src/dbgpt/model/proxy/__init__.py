@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
     from dbgpt.model.proxy.llms.nvidia import NvidiaLLMClient
     from dbgpt.model.proxy.llms.ollama import OllamaLLMClient
+    from dbgpt.model.proxy.llms.opper import OpperLLMClient
     from dbgpt.model.proxy.llms.orcarouter import OrcaRouterLLMClient
     from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
     from dbgpt.model.proxy.llms.spark import SparkLLMClient
@@ -49,6 +50,7 @@ def __lazy_import(name):
         "OllamaLLMClient": "dbgpt.model.proxy.llms.ollama",
         "OrcaRouterLLMClient": "dbgpt.model.proxy.llms.orcarouter",
         "SynthoraiLLMClient": "dbgpt.model.proxy.llms.synthorai",
+        "OpperLLMClient": "dbgpt.model.proxy.llms.opper",
         "DeepseekLLMClient": "dbgpt.model.proxy.llms.deepseek",
         "GithubCopilotLLMClient": "dbgpt.model.proxy.llms.github_copilot",
         "GiteeLLMClient": "dbgpt.model.proxy.llms.gitee",
@@ -89,6 +91,7 @@ __all__ = [
     "OllamaLLMClient",
     "OrcaRouterLLMClient",
     "SynthoraiLLMClient",
+    "OpperLLMClient",
     "DeepseekLLMClient",
     "GithubCopilotLLMClient",
     "GiteeLLMClient",
