@@ -103,6 +103,12 @@ def _initialize_agent(system_app: SystemApp):
 def _initialize_resource_manager(system_app: SystemApp):
     from dbgpt.agent.expand.actions.react_action import Terminate
     from dbgpt.agent.expand.resources.dbgpt_tool import list_dbgpt_support_models
+    from dbgpt.agent.expand.resources.fxmacrodata_tool import (
+        fxmacrodata_data_catalogue,
+        fxmacrodata_indicator_history,
+        fxmacrodata_latest_releases,
+        fxmacrodata_release_calendar,
+    )
     from dbgpt.agent.expand.resources.host_tool import (
         get_current_host_cpu_status,
         get_current_host_memory_status,
@@ -131,6 +137,11 @@ def _initialize_resource_manager(system_app: SystemApp):
     # Register a search tool
     rm.register_resource(resource_instance=baidu_search)
     rm.register_resource(resource_instance=serply_search)
+    # Register macroeconomic data tools
+    rm.register_resource(resource_instance=fxmacrodata_latest_releases)
+    rm.register_resource(resource_instance=fxmacrodata_indicator_history)
+    rm.register_resource(resource_instance=fxmacrodata_release_calendar)
+    rm.register_resource(resource_instance=fxmacrodata_data_catalogue)
     rm.register_resource(resource_instance=list_dbgpt_support_models)
     # Register host tools
     rm.register_resource(resource_instance=get_current_host_cpu_status)
