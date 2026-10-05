@@ -645,6 +645,8 @@ class FinancialAnalysisService:
                 "review": workflow.review_report,
             }
             report = actions[action](report, **kwargs)
+            if report["revision"] == revision:
+                return report
             self._update(
                 run_id,
                 stage="agent_topics",

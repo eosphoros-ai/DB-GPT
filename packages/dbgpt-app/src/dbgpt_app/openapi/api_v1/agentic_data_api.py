@@ -2121,6 +2121,7 @@ print(json.dumps(summary, ensure_ascii=False))
     execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
     from dbgpt_app.openapi.api_v1.tools.financial_tools import (
         FINANCIAL_AGENT_PROMPT,
+        FINANCIAL_MAX_STEPS,
         finalize_financial_answer,
         financial_completion_error,
         make_financial_tools,
@@ -2969,6 +2970,10 @@ Thought/Action/Action Input format shown above.
 
     class ReportAwareAgent(ToolCallingReActAgent):
         async def correctness_check(self, message):
+            if react_state.get("financial_report_context", {}).get("workflow"):
+                # Six reads/saves, bounded repairs, review and publication can
+                # exceed the ordinary chat budget. Keep other chats unchanged.
+                self.max_retry_count = max(self.max_retry_count, FINANCIAL_MAX_STEPS)
             if (
                 message.action_report
                 and message.action_report.terminate

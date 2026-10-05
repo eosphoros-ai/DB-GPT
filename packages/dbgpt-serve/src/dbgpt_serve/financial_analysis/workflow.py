@@ -267,10 +267,15 @@ def topic(report, topic_id):
 
 def start_topic(report, topic_id, retry=False):
     item = topic(report, topic_id)
+    # Refreshing unfinished work must not reset its repair budget or revision.
+    if item["status"] in {"running", "needs_revision"}:
+        return report
     if item["status"] in TERMINAL and not retry:
         return report
     if retry:
         item["failures"] = 0
+    item.pop("review", None)
+    item["issues"] = []
     item.update(
         status="running",
         startedAt=stamp(),
@@ -290,21 +295,22 @@ def save_topic(report, topic_id, findings, missing_reason=""):
         if not missing_reason or not scoped["missingRequiredMetrics"]:
             fail("现有数据可用于分析，不能用空结论跳过；缺项时需说明不足。")
         note = _render_text(missing_reason, {}, {}, set())
-        accepted, rejected = [], 0
+        accepted = []
     else:
         try:
-            accepted, rejected = validate_findings(
-                json.dumps({"findings": findings}, ensure_ascii=False), report
+            accepted, _ = validate_findings(
+                json.dumps({"findings": findings}, ensure_ascii=False),
+                report,
+                strict=True,
             )
             allowed = {f["id"] for f in scoped["data"]["facts"]}
             if any(
                 f["sectionKey"] != item["section"] or not set(f["factIds"]) <= allowed
                 for f in accepted
             ):
-                raise InvalidFindings(["结论必须属于当前专题并仅引用当前专题的数据"])
-            if rejected:
                 raise InvalidFindings(
-                    ["部分发现未通过校验，请拆开修正后重试"] * rejected
+                    ["结论必须属于当前专题并仅引用当前专题的数据"],
+                    [{"field": "section/factIds", "code": "cross_topic_reference"}],
                 )
         except (InvalidFindings, ValueError) as exc:
             item["failures"] += 1
@@ -312,6 +318,7 @@ def save_topic(report, topic_id, findings, missing_reason=""):
                 status="failed" if item["failures"] >= 3 else "needs_revision",
                 note="本专题结论校验失败，其他专题已保存；可单独重试。",
                 issues=getattr(exc, "details", None) or [{"code": str(exc)}],
+                completedAt=stamp() if item["failures"] >= 3 else None,
             )
             return changed(report)
         note = f"已保存 {len(accepted)} 条发现，等待复核；结论仍需人工核对。"
@@ -327,6 +334,7 @@ def save_topic(report, topic_id, findings, missing_reason=""):
     for index, finding in enumerate(accepted):
         finding["id"] = f"topic-{topic_id}-{index + 1}"
     kept = [f for f in report["findings"] if f["id"] not in item["findingIds"]]
+    item.pop("review", None)
     item.update(
         status="ready" if accepted else "insufficient",
         note=note,
@@ -336,6 +344,49 @@ def save_topic(report, topic_id, findings, missing_reason=""):
     )
     report = apply_findings(report, kept + accepted)
     return changed(report)
+
+
+def next_action(report, active_topic=None):
+    """Derive the next legal tool from persisted state, including repair results."""
+    flow = report["workflow"]
+    args = {"run_id": report["report"]["run"]["id"]}
+    if flow["status"] == "published":
+        return None
+    if active_topic:
+        item = topic(report, active_topic)
+        if item["status"] in {"running", "needs_revision"}:
+            return {
+                "tool": "save_financial_topic",
+                "arguments": dict(
+                    args, revision=report["revision"], topic_id=item["id"]
+                ),
+                "instructions": (
+                    "使用当前专题数据修正 findings 后保存；"
+                    "只有状态 ready 才表示结论已保存。"
+                ),
+            }
+    for item in flow["topics"]:
+        if item["status"] not in TERMINAL:
+            return {
+                "tool": "get_financial_topic",
+                "arguments": dict(args, topic_id=item["id"]),
+                "instructions": "继续此专题，不重做已保存专题，不重新解析 PDF。",
+            }
+    return {
+        "tool": (
+            "publish_financial_report"
+            if flow.get("review")
+            else "review_financial_report"
+        ),
+        "arguments": dict(args, revision=report["revision"]),
+        "instructions": (
+            "全部专题已处理，请逐项复核并补齐 reviews；"
+            "失败和缺数据专题使用 insufficient，"
+            "三项 Checked 表示已检查，不表示结论通过。"
+            if not flow.get("review")
+            else "各专题复核已完成，发布当前版本。"
+        ),
+    }
 
 
 def review_report(report, reviews):
@@ -371,7 +422,10 @@ def review_report(report, reviews):
         elif review["verdict"] == "pass":
             item["status"] = "reviewed"
         else:
-            item.update(status="insufficient", note=review["note"])
+            item.update(
+                status="failed" if item["status"] == "failed" else "insufficient",
+                note=review["note"],
+            )
     report["revision"] = report["report"]["run"]["id"] + "-" + uuid4().hex[:12]
     workflow["review"] = {
         "at": stamp(),

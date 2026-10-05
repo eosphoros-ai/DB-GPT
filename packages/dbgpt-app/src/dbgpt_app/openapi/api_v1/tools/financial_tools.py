@@ -16,7 +16,9 @@ from dbgpt_serve.financial_analysis.questions import (
     reference_only_answer,
     validate_answer,
 )
-from dbgpt_serve.financial_analysis.workflow import TOPICS, topic_context
+from dbgpt_serve.financial_analysis.workflow import TOPICS, next_action, topic_context
+
+FINANCIAL_MAX_STEPS = 40
 
 SECTIONAL_RULES = """本报告采用专题流程，不要一次提交整份报告的 findings。
 按 workflow.topics 逐一调用 get_financial_topic 读取当前专题的数据，
@@ -25,6 +27,10 @@ SECTIONAL_RULES = """本报告采用专题流程，不要一次提交整份报�
 每条包含判断、引用、反向信息和待核查事项，不能仅重复数字；不得编造变化原因。
 仅对 missingRequiredMetrics 非空的专题可用 missing_reason 说明缺项并提交空 findings。
 保存失败只修当前专题，使用返回的新 revision；不要重新 prepare 或重算 PDF。
+每次遵循 next_action。topic_result.saved=false 表示未保存成功，先按 issues 修正。
+反向信息和待核查事项中的引用也必须写入同一条发现的 Ids 数组。
+修正时直接 save，不重复 get，不使用 retry=true 重置失败计数。
+专题连续三次失败后继续其他专题，复核使用 insufficient；不能冒充成功。
 全部专题处理后调用 review_financial_report，逐项检查变化方向、期间/口径和原因依据。
 复核必须覆盖全部专题，每项给出 topic_id、verdict（pass/revise/insufficient）、
 directionChecked:true、scopeChecked:true、causalityChecked:true、note（不含数字的具体核对说明）。
@@ -74,7 +80,10 @@ async def financial_completion_error(state, *, service=None):
     """Require publication and a fresh scoped read before accepting a final answer."""
     if state.get("financial_pending"):
         if state.get("financial_report_context", {}).get("workflow"):
-            return SECTIONAL_RULES
+            action = next_action(state["financial_report_context"])
+            return "报告尚未发布，请执行下一步：" + json.dumps(
+                action, ensure_ascii=False
+            )
         return (
             "财务数据已提取，但你尚未发布分析。请在本轮调用 "
             "publish_financial_report 提交 findings，再完成回答。"
@@ -137,7 +146,9 @@ def publication_example(report):
     }
 
 
-def _result(report, session_id, *, include_context=False, reading=False):
+def _result(
+    report, session_id, *, include_context=False, reading=False, active_topic=None
+):
     workflow_summary = None
     if report.get("workflow"):
         flow = report["workflow"]
@@ -156,6 +167,24 @@ def _result(report, session_id, *, include_context=False, reading=False):
         "findings": report["findings"],
         "workflow": workflow_summary,
     }
+    if workflow_summary:
+        summary["next_action"] = next_action(report, active_topic)
+    if active_topic:
+        item = next(t for t in report["workflow"]["topics"] if t["id"] == active_topic)
+        summary["topic_result"] = {
+            "topic_id": active_topic,
+            "status": item["status"],
+            "saved": item["status"] in {"ready", "insufficient"},
+            "issues": item.get("issues", []),
+            "repair_instructions": (
+                "按 finding_index 和 field 修正后，"
+                "使用 next_action 中的新 revision 再保存。"
+                "invalid_tokens 列出该字段中必须全部删除或改用已有引用的数值；"
+                "未经计算工具提供的差额和数字阈值改为定性比较，不得自行补算。"
+                "所有文本字段中的引用都要声明在同一条发现的 factIds/calculationIds，"
+                "不能直接写数字或在占位符后追加单位；不得删除校验规则。"
+            ),
+        }
     if include_context:
         if reading:
             summary["answer_instructions"] = (
@@ -171,14 +200,18 @@ def _result(report, session_id, *, include_context=False, reading=False):
                 if report.get("workflow")
                 else PUBLICATION_RULES
             )
-            summary["publication_example"] = publication_example(report)
+            if not report.get("workflow"):
+                summary["publication_example"] = publication_example(report)
         # Put format instructions before the large data payload, and provide
         # copyable references so the agent does not have to reconstruct syntax.
-        context = model_context(report)
-        for kind, key in (("fact", "facts"), ("calculation", "calculations")):
-            for item in context[key]:
-                item["reference"] = "{{" + kind + ":" + item["id"] + "}}"
-        summary["data"] = context
+        # New analyses read scoped data with get_financial_topic. Avoid sending
+        # the full report twice before the first topic. Follow-up still needs it.
+        if reading or not report.get("workflow"):
+            context = model_context(report)
+            for kind, key in (("fact", "facts"), ("calculation", "calculations")):
+                for item in context[key]:
+                    item["reference"] = "{{" + kind + ":" + item["id"] + "}}"
+            summary["data"] = context
     return json.dumps(
         {
             "chunks": [
@@ -306,14 +339,15 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
         if stream_callback:
             await stream_callback("financial.progress", {"tasks": tasks})
 
-    async def remember(report, *, pending=True):
+    async def remember(report, *, pending=True, active_topic=None):
         state.update(financial_report_context=report, financial_read=False)
-        if pending:
-            state.setdefault("financial_pending", set()).add(
-                report["report"]["run"]["id"]
-            )
+        run_id = report["report"]["run"]["id"]
+        if report.get("workflow", {}).get("status") == "published":
+            state.setdefault("financial_pending", set()).discard(run_id)
+        elif pending:
+            state.setdefault("financial_pending", set()).add(run_id)
         await progress(report)
-        return _result(report, state["conv_id"])
+        return _result(report, state["conv_id"], active_topic=active_topic)
 
     @tool(
         description=(
@@ -526,7 +560,28 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
             publication_instructions=PUBLICATION_RULES.replace(
                 "publish_financial_report", "save_financial_topic"
             ).replace("通常四条", "通常两到三条"),
+            next_action=next_action(report, topic_id),
         )
+        if context["data"]["facts"]:
+            fact = context["data"]["facts"][0]
+            context["save_example"] = {
+                "run_id": run_id,
+                "revision": report["revision"],
+                "topic_id": topic_id,
+                "findings": [
+                    {
+                        "section": context["section"],
+                        "title": "披露数据与解释边界",
+                        "summary": fact["reference"] + "，变化原因需结合附注核对。",
+                        "supportStatus": "partial",
+                        "factIds": [fact["id"]],
+                        "calculationIds": [],
+                        "evidenceExcerptIds": fact["evidenceExcerptIds"],
+                        "counterEvidence": [],
+                        "unresolvedQuestions": ["需核对附注中的变化原因。"],
+                    }
+                ],
+            }
         return json.dumps(
             {
                 "chunks": [
@@ -565,7 +620,7 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
             findings=findings,
             missing_reason=missing_reason,
         )
-        return await remember(report)
+        return await remember(report, active_topic=topic_id)
 
     @tool(
         description=(
