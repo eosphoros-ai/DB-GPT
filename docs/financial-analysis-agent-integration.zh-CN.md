@@ -2,6 +2,8 @@
 
 日期：2026-09-29；收尾与提交：2026-09-30。
 
+后续六专题分析、修正反馈、复核发布和最新验证结果见[第 10 轮记录](financial-analysis-round10.zh-CN.md)。下面保留首次首页接入的验收说明和历史结果。
+
 ## 当前行为
 
 用户点击首页财报示例，或在当前对话上传 PDF 年报后要求分析，继续使用 `/api/v1/chat/react-agent`。当前智能体调用 `prepare_financial_report` 提取事实并执行 Decimal 计算，然后根据工具返回的数据撰写结论，调用 `publish_financial_report` 校验和保存。此路径不会再启动独立的 Qwen 分析器。

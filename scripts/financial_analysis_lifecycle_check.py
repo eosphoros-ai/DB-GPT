@@ -18,10 +18,11 @@ def main():
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--pdf", type=Path)
+    parser.add_argument("--user-id", default="001")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with httpx.Client(
-        base_url=args.base_url, headers={"user-id": "001"}, timeout=180
+        base_url=args.base_url, headers={"user-id": args.user_id}, timeout=180
     ) as client:
         def data(response):
             response.raise_for_status()
