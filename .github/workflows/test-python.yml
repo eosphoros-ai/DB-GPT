@@ -1,6 +1,7 @@
 name: Test Python
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -11,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - "codex/**"
     paths:
       - dbgpt/**
       - pilot/meta_data/**
@@ -88,7 +90,7 @@ jobs:
 #          curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -X POST --data "{ \"body\": \"$PR_COMMENT\" }" "$PR_COMMENTS_URL"
 #
       - name: Upload test and coverage results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-and-coverage-results-${{ matrix.python-version }}-${{ matrix.os }}

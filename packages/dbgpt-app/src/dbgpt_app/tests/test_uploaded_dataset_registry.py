@@ -113,11 +113,13 @@ def test_registry_allows_only_an_owned_bound_replay_task(tmp_path, monkeypatch):
         service,
         "_task_authorizes_dataset",
         lambda task_id, owner_id, dataset_id: (
-            task_id,
-            owner_id,
-            dataset_id,
-        )
-        == ("task-1", "alice", "dataset-1"),
+            (
+                task_id,
+                owner_id,
+                dataset_id,
+            )
+            == ("task-1", "alice", "dataset-1")
+        ),
     )
 
     resolved = service.resolve_owned(

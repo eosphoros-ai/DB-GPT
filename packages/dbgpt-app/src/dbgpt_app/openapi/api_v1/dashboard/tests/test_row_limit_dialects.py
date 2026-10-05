@@ -35,9 +35,9 @@ def test_row_cap_preserves_bindings_order_and_smaller_user_limits(dialect, inner
         original = original.limit(inner_limit)
     # The application/SQLAlchemy contract uses :name on every connector.
     original = original.transform(
-        lambda node: exp.Var(this=f":{node.this}")
-        if isinstance(node, exp.Placeholder)
-        else node
+        lambda node: (
+            exp.Var(this=f":{node.this}") if isinstance(node, exp.Placeholder) else node
+        )
     )
     limited = apply_row_limit(original.sql(dialect=dialect), 3, dialect=dialect)
     parsed = sqlglot.parse_one(limited, read=dialect)

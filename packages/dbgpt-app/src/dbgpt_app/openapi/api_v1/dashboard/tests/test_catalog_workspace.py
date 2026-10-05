@@ -61,8 +61,8 @@ def mapped_source(real_service):
             grain=required_grain(template_id),
         )
 
-    service.query_executor._connector_resolver = (
-        lambda _: SQLiteConnector.from_file_path(str(path))
+    service.query_executor._connector_resolver = lambda _: (
+        SQLiteConnector.from_file_path(str(path))
     )
     return service, path, mapping
 
