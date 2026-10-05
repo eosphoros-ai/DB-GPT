@@ -72,6 +72,13 @@ class InvalidFindings(ValueError):
         self.details = details or []
 
 
+class InvalidNarrative(ValueError):
+    def __init__(self, message, invalid_tokens):
+        super().__init__(message)
+        # Only bounded numeric tokens, never the rejected model narrative.
+        self.invalid_tokens = invalid_tokens[:10]
+
+
 def model_context(report):
     """Only current/comparison periods; no PDF paths, credentials or chat history."""
     year = report["report"]["fiscalPeriod"]
@@ -159,7 +166,15 @@ def _render_text(text, facts, calculations, used):
         r"\d|[{}]|百分之|千分之|[零〇一二三四五六七八九十百千万亿两]+(?:元|倍|个百分点)",
         remainder,
     ):
-        raise ValueError("Unreferenced number or malformed reference")
+        raise InvalidNarrative(
+            "Unreferenced number or malformed reference",
+            re.findall(
+                r"\d+(?:[.,]\d+)*|百分之|千分之|"
+                r"(?<![\d零〇一二三四五六七八九十百千万亿两])"
+                r"[零〇一二三四五六七八九十百千万亿两]+(?:元|倍|个百分点)",
+                remainder,
+            ),
+        )
 
     def replace(match):
         kind, ref = match.groups()
@@ -177,7 +192,7 @@ def _render_text(text, facts, calculations, used):
     return REFERENCE.sub(replace, text)
 
 
-def validate_findings(raw, report):
+def validate_findings(raw, report, *, strict=False):
     """Discard invalid findings individually; never publish raw model output."""
     if not isinstance(raw, str) or len(raw) > 24000:
         raise ValueError("Invalid model response")
@@ -195,6 +210,7 @@ def validate_findings(raw, report):
     accepted, issues, details = [], [], []
     for index, raw_finding in enumerate(drafts):
         field = "$"
+        invalid_tokens = None
         try:
             draft = FindingDraft.model_validate(raw_finding)
             field = "factIds"
@@ -279,12 +295,17 @@ def validate_findings(raw, report):
         except ValueError as exc:
             # All messages originate in this validator, never in model content.
             issues.append(str(exc))
+            if strict and isinstance(exc, InvalidNarrative):
+                invalid_tokens = exc.invalid_tokens
         except TypeError:
             issues.append("invalid_type")
         else:
             continue
-        details.append({"finding_index": index, "field": field, "code": issues[-1]})
-    if not accepted:
+        detail = {"finding_index": index, "field": field, "code": issues[-1]}
+        if invalid_tokens is not None:
+            detail["invalid_tokens"] = invalid_tokens
+        details.append(detail)
+    if not accepted or (strict and issues):
         raise InvalidFindings(issues, details)
     return accepted, len(issues)
 

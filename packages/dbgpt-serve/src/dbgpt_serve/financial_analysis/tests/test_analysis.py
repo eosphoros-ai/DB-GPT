@@ -113,6 +113,35 @@ def test_validation_feedback_identifies_finding_field_and_schema_limit():
     assert "低于1倍" not in json.dumps(details, ensure_ascii=False)
 
 
+def test_strict_topic_batch_reports_partial_failure_without_accepting_the_batch():
+    report = report_fixture()
+    valid = draft(report)
+    invalid = dict(valid, counterEvidence=["低于1倍"])
+    raw = json.dumps({"findings": [valid, invalid]})
+    # Standalone/legacy analysis keeps the valid finding, while topic repairs
+    # need the actual failing field even when another finding is valid.
+    assert len(validate_findings(raw, report)[0]) == 1
+    with pytest.raises(InvalidFindings) as caught:
+        validate_findings(raw, report, strict=True)
+    assert caught.value.rejected_count == 1
+    assert caught.value.details == [
+        {
+            "finding_index": 1,
+            "field": "counterEvidence[0]",
+            "code": "Unreferenced number or malformed reference",
+            "invalid_tokens": ["1"],
+        }
+    ]
+    invalid = dict(
+        valid,
+        summary=valid["summary"] + "差额为6亿元，同比22%，低于1倍。",
+    )
+    with pytest.raises(InvalidFindings) as caught:
+        validate_findings(json.dumps({"findings": [invalid]}), report, strict=True)
+    assert caught.value.details[0]["invalid_tokens"] == ["6", "22", "1"]
+    assert "差额" not in json.dumps(caught.value.details, ensure_ascii=False)
+
+
 @pytest.mark.parametrize(
     "bad",
     [
