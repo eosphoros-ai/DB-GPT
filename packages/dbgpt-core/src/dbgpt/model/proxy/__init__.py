@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from dbgpt.model.proxy.llms.vercel import VercelAIGatewayLLMClient
     from dbgpt.model.proxy.llms.wenxin import WenxinLLMClient
     from dbgpt.model.proxy.llms.xai import XaiLLMClient
+    from dbgpt.model.proxy.llms.y_api import YApiLLMClient
     from dbgpt.model.proxy.llms.yi import YiLLMClient
     from dbgpt.model.proxy.llms.zhipu import ZhipuLLMClient
 
@@ -59,6 +60,7 @@ def __lazy_import(name):
         "MistralLLMClient": "dbgpt.model.proxy.llms.mistral",
         "VercelAIGatewayLLMClient": "dbgpt.model.proxy.llms.vercel",
         "XaiLLMClient": "dbgpt.model.proxy.llms.xai",
+        "YApiLLMClient": "dbgpt.model.proxy.llms.y_api",
     }
 
     if name in module_path:
@@ -99,4 +101,5 @@ __all__ = [
     "MistralLLMClient",
     "VercelAIGatewayLLMClient",
     "XaiLLMClient",
+    "YApiLLMClient",
 ]
