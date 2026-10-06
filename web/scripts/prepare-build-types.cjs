@@ -20,12 +20,12 @@ function prepareBuildTypes(webRoot, distDir = '.next') {
   ]);
   inactive.delete(active);
   const generatedPath = /^\.next[^/]*\/(?:dev\/)?types\/\*\*\/\*\.ts$/;
-  config.include = [
-    ...(config.include || []).filter(value => !generatedPath.test(value)),
-    `${active}/types/**/*.ts`,
-    `${active}/dev/types/**/*.ts`,
+  config.include = [...(config.include || []).filter(value => !generatedPath.test(value)), `${active}/types/**/*.ts`];
+  // next dev and next build each emit a global PagesPageConfig validator.
+  // Exclude the dev output even when **/*.ts is included by the source config.
+  config.exclude = [
+    ...new Set([...(config.exclude || []).filter(value => value !== active), ...inactive, `${active}/dev`]),
   ];
-  config.exclude = [...new Set([...(config.exclude || []).filter(value => value !== active), ...inactive])];
   const name = `.tsconfig-build-${process.pid}.json`;
   const target = path.join(webRoot, name);
   fs.writeFileSync(target, JSON.stringify(config, null, 2) + '\n', { flag: 'wx' });

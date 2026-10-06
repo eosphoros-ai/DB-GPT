@@ -2,8 +2,12 @@
 
 当前执行状态见 [验证说明](VALIDATION.md)，可执行命令见 [开发指南](DEVELOPER_GUIDE.md)。
 
+最新记录为 [2026-10-07 评审前补验](REVIEW_RECHECK_20261007.md)，包含开发模式、真实后端、
+通用 Python CI 与剩余限制。下列旧 Actions 保留历史用途，当前提交结果见 PR 正文。
+
 | 材料 | 用途 |
 |---|---|
+| [2026-10-07 评审前补验](REVIEW_RECHECK_20261007.md) | 当前 dev/Fast Refresh、Python/运行时与真实 SQLite 验证，首次失败和跳过项单列。 |
 | [浏览器固定输入和 manifest](../../web/tests/dashboard-e2e/fixtures/README.md) | 新检出可加载的回归输入，记录来源与 SHA-256；不是一次执行结果。 |
 | [上传样例](../../scripts/acceptance/fixtures/upload-samples/README.md) | 多文件关联与拒绝非表格文件的确定性输入。 |
 | [Walmart](demos/walmart.md)、[Apple](demos/apple.md) | 数据口径、核验目标和历史截图。 |

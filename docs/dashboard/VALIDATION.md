@@ -1,5 +1,11 @@
 # Dashboard 候选验证说明
 
+## 2026-10-07 评审前补验
+
+最新的 dev/Fast Refresh、真实 SQLite 场景、通用 Python CI 恢复、运行时修复与未完成项，
+见 [2026-10-07 补验记录](REVIEW_RECHECK_20261007.md)。最终 SHA 与 CI 链接在 PR 正文。
+下文各节是对应日期的历史结果，不能用旧提交的绿色 CI 替代当前提交。
+
 ## 2026-10-03 安全补丁与独立后端 CI
 
 本轮将 Next.js / eslint-config-next 固定到 **16.3.8**，保留 React 18.3.1、

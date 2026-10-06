@@ -1,5 +1,11 @@
 # 已知限制
 
+**2026-10-07 更新：** 当前补验和修复见 [评审前补验](REVIEW_RECHECK_20261007.md)，
+最终提交 CI 见 PR 正文。核心 pytest 已恢复为 740 项通过，Dashboard 后端 CI 的
+642 项包含 MySQL/Redis；下列带旧日期的测试数字保留为历史范围，不能代表当前状态。
+全核心 mypy、8 项 Docker 实际容器测试和 7 项既有模型资产 live 浏览器用例仍未通过验收。
+本轮两个新建 SQLite 示例验证了真实 API 的编辑、查询和发布，不替代旧 live 用例。
+
 - SQLGlot 26.13.2 不识别 Vertica、MaxCompute、GaussDB、openGauss、OceanBase。Dashboard 在执行前返回不可重试的 `unsupported_data_source`，不回退到通用方言或误报 SQL 语法。SQLite 有当前真实查询证据；MySQL/Redis 保留此前集成版的独立验收记录。SQL Server/Oracle 仅有方言渲染、绑定和调用链测试，尚无原生服务器验收。解析器认识其他类型并不等于端到端支持。
 - Dashboard 前端已独立通过 [2026-10-02 Ubuntu/macOS Actions](https://github.com/jcsdxhe/DB-GPT/actions/runs/36991047232)，受测提交为 `bc9b25e0`；每个平台组件 293 项通过，浏览器 127 项通过、7 项跳过，生产构建和静态导出通过。该矩阵使用 Chromium 访问生产构建，接口为固定 API/SSE 输入。候选的真实后端及数据源验收仍来自 Windows；Linux/macOS 后端、原生外部数据库和真实部署身份接入不在这个 CI 结论范围内。完整版本及本轮结果见 [评审修复与验证](REVIEW_FIXES_20261002.md)。
 - TypeScript 独立检查和生产构建类型检查通过。Dashboard 候选全站 lint 为 0 错误、85 警告，85 条均可在工具链依赖的同配置输出中逐条对应，修复 2 条、未新增警告。不能把 scoped lint 或基线对照写成全仓无警告。

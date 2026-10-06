@@ -365,7 +365,14 @@ function SideBar() {
       {/* LOGO + Collapse Toggle */}
       <div className='flex items-center justify-between p-2 pb-4'>
         <Link href='/' className='flex items-center'>
-          <Image src={logo} alt='DB-GPT' width={140} height={32} />
+          <Image
+            src={logo}
+            alt='DB-GPT'
+            width={140}
+            height={32}
+            loading='eager'
+            style={{ width: 140, height: 32, objectFit: 'contain' }}
+          />
         </Link>
         <Tooltip title={t('Close_Sidebar') || '收起侧栏'}>
           <div
