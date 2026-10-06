@@ -342,3 +342,25 @@ def test_empty_catalogue_is_an_error(keyless, mock_requests_get):
 
     with pytest.raises(FXMacroDataError, match="empty"):
         fxmacrodata_data_catalogue("USD")
+
+
+@pytest.mark.parametrize(
+    "bad_time",
+    [float("nan"), float("inf"), float("-inf"), 1e20, -1e20, 10**30],
+)
+def test_unusable_timestamp_leaves_the_cell_empty(keyless, mock_requests_get, bad_time):
+    mock_requests_get.return_value = _response(
+        {
+            "data": [
+                {"date": "2026-08-31", "val": 3.4, "announcement_datetime": bad_time},
+                _history_row("2026-07-31", 3.1),
+            ],
+            "pagination": None,
+        }
+    )
+
+    view = fxmacrodata_indicator_history("USD", "inflation")
+
+    assert "| 2026-08-31 | 3.4 |" in view
+    assert "2026-09-11 12:30 UTC" in view
+    assert _data_row_count(view) == 2

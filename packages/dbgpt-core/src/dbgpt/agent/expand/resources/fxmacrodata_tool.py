@@ -235,10 +235,17 @@ def _get_rows(
 
 
 def _format_time(timestamp: Any) -> str:
-    """Format an epoch seconds timestamp as UTC."""
+    """Format an epoch seconds timestamp as UTC.
+
+    A value that is not a usable timestamp (nan, inf, out of range) is shown as
+    an empty cell so one bad row does not fail the whole tool call.
+    """
     if isinstance(timestamp, bool) or not isinstance(timestamp, (int, float)):
         return ""
-    moment = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    try:
+        moment = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    except (OverflowError, ValueError, OSError):
+        return ""
     return moment.strftime("%Y-%m-%d %H:%M UTC")
 
 
