@@ -125,6 +125,30 @@ def mount_static_files(app: FastAPI, param: ApplicationConfig):
             return FileResponse(share_html, media_type="text/html")
         raise HTTPException(status_code=404, detail="Page not found")
 
+    dashboard_html = os.path.join(static_file_path, "dashboards", "[id]", "index.html")
+    dashboard_new_html = os.path.join(
+        static_file_path, "dashboards", "new", "index.html"
+    )
+    dashboard_share_html = os.path.join(
+        static_file_path, "dashboard-share", "[token]", "index.html"
+    )
+
+    @app.get("/dashboards/{dashboard_id}")
+    @app.get("/dashboards/{dashboard_id}/")
+    async def _dashboard_page_fallback(dashboard_id: str):
+        # Keep the concrete creation page ahead of the dynamic editor route.
+        page = dashboard_new_html if dashboard_id == "new" else dashboard_html
+        if os.path.isfile(page):
+            return FileResponse(page, media_type="text/html")
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    @app.get("/dashboard-share/{token}")
+    @app.get("/dashboard-share/{token}/")
+    async def _dashboard_share_page_fallback(token: str):
+        if os.path.isfile(dashboard_share_html):
+            return FileResponse(dashboard_share_html, media_type="text/html")
+        raise HTTPException(status_code=404, detail="Page not found")
+
     app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
 
     app.mount(

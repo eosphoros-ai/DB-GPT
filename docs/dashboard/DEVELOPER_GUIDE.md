@@ -99,6 +99,18 @@ python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 
 三个旧兼容节点使用描述性文件名，但保留 `f8bd7ecc3d5f`、`cd2ea32f532b` 和 `2757edbd890f` 标识。这些标识已存在于本地数据库中，不能因为尚未合入官方而随意更换。三个旧节点到最新版本均需覆盖升级回归。
 
+## Python 托管静态导出
+
+`npm run compile` 生成 `web/out`。按上游打包流程将其内容放入
+`dbgpt_app/static/web`，并启用 `service.web.new_web_ui` 后，Python 服务直接提供 HTML 与资源。
+这条路径应独立于 `next start` 验证。
+
+导出的动态页面目录仍叫 `dashboards/[id]` 和 `dashboard-share/[token]`；
+`mount_static_files` 为实际 URL 提供固定 HTML 回退，并单独保留 `/dashboards/new`。
+直接打开和刷新详情/分享链接应正常工作，有无尾斜杠均支持；缺少导出文件仍返回 404。
+这些路由只提供页面，数据查询和分享权限继续由原有 API 校验。
+相关回归包含在完整 Dashboard pytest 范围内。
+
 ## 记录结果
 
 记录代码 SHA 或“基于某 SHA 的未提交工作区”、命令、环境、通过/失败/跳过数及日志位置。只有实际执行过的流程才记为通过。旧版验收、固定输入回放、模型生成和生产部署分别记录，见 [验证说明](VALIDATION.md)和 [历史资料说明](HISTORY.md)。
