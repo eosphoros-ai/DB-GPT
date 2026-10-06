@@ -66,6 +66,9 @@ jobs:
         run: |
           uv run --no-sync python -m pytest --pyargs dbgpt --cov=dbgpt --cov-report=xml:coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml --cov-report=html:htmlcov-${{ matrix.python-version }}-${{ matrix.os }} --junitxml=pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
 
+      - name: Test SQLite connector cleanup
+        run: uv run --no-sync python -m pytest packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/tests/test_conn_sqlite.py --junitxml=sqlite_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
+
       - name: Summarize test and coverage reports
         if: always()
         env:
@@ -91,7 +94,17 @@ jobs:
               lines.append("No JUnit report was produced; inspect earlier job steps.")
           if coverage.exists():
               rate = float(ElementTree.parse(coverage).getroot().get("line-rate", 0))
-              lines.append(f"Line coverage: {rate:.2%}")
+              lines.append(f"Core line coverage: {rate:.2%}")
+          sqlite = Path(f"sqlite_report-{suffix}.xml")
+          if sqlite.exists():
+              suites = ElementTree.parse(sqlite).getroot().iter("testsuite")
+              totals = dict.fromkeys(("tests", "failures", "errors", "skipped"), 0)
+              for suite in suites:
+                  for key in totals:
+                      totals[key] += int(suite.get(key, 0))
+              lines.append("SQLite: " + ", ".join(f"{key}: {value}" for key, value in totals.items()))
+          else:
+              lines.append("No SQLite JUnit report was produced; inspect earlier job steps.")
           summary = "\n\n".join(lines) + "\n"
           print(summary)
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as output:
@@ -104,6 +117,7 @@ jobs:
           name: test-and-coverage-results-${{ matrix.python-version }}-${{ matrix.os }}
           path: |
             pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
+            sqlite_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
             coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml
             htmlcov-${{ matrix.python-version }}-${{ matrix.os }}/*
           if-no-files-found: ignore

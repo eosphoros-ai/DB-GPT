@@ -7,7 +7,7 @@ import tempfile
 
 import pytest
 
-from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector, SQLiteTempConnector
 
 
 @pytest.fixture
@@ -15,12 +15,11 @@ def db():
     temp_db_file = tempfile.NamedTemporaryFile(delete=False)
     temp_db_file.close()
     conn = SQLiteConnector.from_file_path(temp_db_file.name)
-    yield conn
     try:
-        # TODO: Failed on windows
+        yield conn
+    finally:
+        conn.close()
         os.unlink(temp_db_file.name)
-    except Exception as e:
-        print(f"An error occurred: {e}")
 
 
 def test_get_table_names(db):
@@ -99,7 +98,17 @@ def test_query_ex(db):
 
     field_names, result = db.query_ex("select * from test", fetch="one")
     assert field_names == ["id"]
-    assert result == [1]
+    assert result == [(1,)]
+
+    field_names, result = db.query_ex(
+        "select id, id + 10 as next_id from test order by id", fetch="one"
+    )
+    assert field_names == ["id", "next_id"]
+    assert result == [(1, 11)]
+    assert db.query_ex("select id from test where id < 0", fetch="one") == (
+        ["id"],
+        [],
+    )
 
 
 def test_convert_sql_write_to_select(db):
@@ -132,13 +141,19 @@ def test_db_dir_exist_dir():
         new_dir = os.path.join(temp_dir, "new_dir")
         file_path = os.path.join(new_dir, "sqlite.db")
         db = SQLiteConnector.from_file_path(file_path)
-        assert os.path.exists(new_dir) is True
-        assert list(db.get_table_names()) == []
+        try:
+            assert os.path.exists(new_dir) is True
+            assert list(db.get_table_names()) == []
+        finally:
+            db.close()
     with tempfile.TemporaryDirectory() as existing_dir:
         file_path = os.path.join(existing_dir, "sqlite.db")
         db = SQLiteConnector.from_file_path(file_path)
-        assert os.path.exists(existing_dir) is True
-        assert list(db.get_table_names()) == []
+        try:
+            assert os.path.exists(existing_dir) is True
+            assert list(db.get_table_names()) == []
+        finally:
+            db.close()
 
 
 def test_db_file_path_without_directory(tmp_path, monkeypatch):
@@ -148,5 +163,18 @@ def test_db_file_path_without_directory(tmp_path, monkeypatch):
     try:
         assert (tmp_path / "relative.db").is_file()
         assert list(db.get_table_names()) == []
+    finally:
+        db.close()
+
+
+def test_temporary_database_is_removed_after_use(tmp_path, monkeypatch):
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    db = SQLiteTempConnector.create_temporary_db()
+    try:
+        db.run("CREATE TABLE example (id INTEGER);")
+        assert os.path.isfile(db.temp_file_path)
+        db.close()
+        assert not os.path.exists(db.temp_file_path)
+        db.close()  # Repeated cleanup must remain safe.
     finally:
         db.close()
