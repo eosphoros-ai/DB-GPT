@@ -1,5 +1,10 @@
 # PR #3277 验收总表 — 2026-10-01
 
+**2026-10-07 接续：** 已补做 Next 16.3.8 的 dev 三浏览器、Fast Refresh 和九项真实后端联调，
+修复过程中发现的类型生成、工作流控件与 Agent 生命周期问题，重新通过生产构建和静态导出。
+详见[本轮验证记录](pr-3277-regression.md#review-readiness-recheck--2026-10-07)。下面是分日期保留的历史证据，
+最终提交和 CI 结果以 PR 正文为准；维护者评审及两条 PR 的合并顺序仍待确认。
+
 **2026-10-03 接续：** 当前候选已按本轮授权升级到 Next.js / eslint-config-next
 **16.3.8**。新的回归结果以 [当前验证记录](pr-3277-regression.md) 和 PR 正文的当前
 提交 CI 为准；[安全评估](pr-3277-security-advisories.md#current-patch-nextjs-1638)

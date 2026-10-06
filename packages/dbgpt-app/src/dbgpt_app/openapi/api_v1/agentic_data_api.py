@@ -1135,19 +1135,23 @@ async def _react_agent_stream(
         attachment_ctx: Pre-resolved attachment context for this turn (or
             ``None`` for pure-text / legacy ``file_path`` requests).
     """
+    inner = _react_agent_stream_inner(dialogue, tool_mode, attachment_ctx)
     try:
-        async for event in _react_agent_stream_inner(
-            dialogue, tool_mode, attachment_ctx
-        ):
+        async for event in inner:
             yield event
     finally:
-        if attachment_ctx is not None:
-            try:
-                attachment_ctx.close()
-            except Exception:
-                logger.warning(
-                    "Failed to close session attachment context", exc_info=True
-                )
+        # Closing the outer generator must finish the agent before releasing
+        # attachment files that it may still be using.
+        try:
+            await inner.aclose()
+        finally:
+            if attachment_ctx is not None:
+                try:
+                    attachment_ctx.close()
+                except Exception:
+                    logger.warning(
+                        "Failed to close session attachment context", exc_info=True
+                    )
 
 
 def _legacy_upload_base_dir() -> str:
@@ -1253,7 +1257,10 @@ class _AgentStreamingResponse(StreamingResponse):
             close = getattr(self.body_iterator, "aclose", None)
             if callable(close):
                 try:
-                    await close()
+                    import anyio
+
+                    with anyio.CancelScope(shield=True):
+                        await close()
                 except asyncio.CancelledError:
                     raise
                 except Exception:
@@ -2146,6 +2153,7 @@ print(json.dumps(summary, ensure_ascii=False))
     execute_tool_tool = make_execute_tool(react_state)
     # Knowledge tools: use kb_tools (kb_ls, kb_glob, kb_grep, kb_cat, semantic_search)
     # when a knowledge space is connected, otherwise fall back to knowledge_retrieve
+    wiki_available = False
     if knowledge_space:
         kb_tool_list = make_kb_tools(knowledge_space)
         # Filter out codegraph tools when the space has no built code graph,

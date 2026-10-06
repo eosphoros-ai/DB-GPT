@@ -1,4 +1,49 @@
-# PR #3277 frontend regression — updated 2026-10-03
+# PR #3277 frontend regression — updated 2026-10-07
+
+## Review-readiness recheck — 2026-10-07
+
+Tested from `e7114eb47749ed445a5ae2b593a8e84103d941cf` plus the fixes committed
+with this record. Final commit IDs and CI runs are recorded in the PR body.
+Windows x64, Node **20.20.2**, npm **10.8.2**, Next.js **16.3.8**.
+
+- **dev:** Chromium **42/42**, Firefox **41/41**, WebKit **41/41**. The two
+  portable browser runs exclude the Chromium-specific clipboard/download case.
+  The first Chromium run had one 120-second home-navigation timeout during a
+  roughly three-minute cold compilation; the full rerun passed without retries.
+  This is not a cold-start performance guarantee.
+- **Fast Refresh:** changed and restored a visible heading without replacing the
+  document or losing text entered into the search field. No page errors or console
+  diagnostics; the original source hash was restored.
+- **TypeScript / lint:** standalone and in-build type checking passed; ESLint
+  **0 errors / 89 warnings**. A dev-then-build regression now excludes the
+  duplicate development validator while retaining strict application checking;
+  its regression test also proves an invalid application assignment still fails.
+- **Unit checks:** build contracts **43 passed / 2 POSIX-only skips** on Windows;
+  existing frontend tests **24 passed**, plus Wiki diff assertions. Related
+  backend API tests **21 passed**, Ruff **0.16.10** checks passed.
+- **Production build and static export:** both passed, each verifying **60 HTML
+  pages and 1,782 local asset references**. No type-check bypass was used.
+- **Real backend:** nine functional scenarios passed using an isolated database
+  and the existing configured DeepSeek test model: ordinary conversation/history,
+  SQLite create/query/delete, knowledge upload/index/recall plus tool-assisted
+  answer, native app publish/chat, nonempty AWEL execution, scheduled-task CRUD,
+  actual scheduled execution, and zero-step/multistep share replay. The knowledge
+  scenario used the existing local RoBERTa embedding cache to test indexing and
+  retrieval plumbing; it does not assess retrieval quality or the old remote
+  embedding endpoint.
+- The real AWEL run exposed a boolean-checkbox binding warning and a distorted
+  icon aspect ratio; both are fixed and the rerun recorded zero console/page
+  diagnostics. Ordinary Agent turns without a knowledge space exposed an
+  uninitialized Wiki-availability flag; it now defaults to false and connected
+  Wiki tools retain their existing gating. API tests also restored awaited
+  stream cleanup while preserving the newer attachment lifecycle.
+
+Browser fixture checks and real backend checks remain separate evidence. The
+older records below retain their original source revisions. OAuth, third-party
+connectors and non-SQLite integrations are not covered by these live scenarios.
+Maintainer review and the relationship/merge order of #3277 and #3278 remain open.
+
+
 
 ## Next.js 16.3.8 recheck — 2026-10-03
 
