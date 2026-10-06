@@ -240,7 +240,7 @@ async def test_cancellation_cleans_up_without_replay(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_files_and_workspace_reach_the_selected_runtime(tmp_path, monkeypatch):
-    file_path = tmp_path / 'quote";name.csv'
+    file_path = tmp_path / "quote';name.csv"
     file_path.write_text("x\n1\n")
     mapping = tmp_path / "files.json"
     mapping.write_text(json.dumps({"sf_1": str(file_path)}))

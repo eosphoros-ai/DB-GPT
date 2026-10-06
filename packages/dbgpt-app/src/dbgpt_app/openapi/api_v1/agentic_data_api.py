@@ -2319,6 +2319,7 @@ async def _react_agent_stream_impl(
     execute_tool_tool = make_execute_tool(react_state)
     # Knowledge tools: use kb_tools (kb_ls, kb_glob, kb_grep, kb_cat, semantic_search)
     # when a knowledge space is connected, otherwise fall back to knowledge_retrieve
+    wiki_available = False
     if knowledge_space:
         kb_tool_list = make_kb_tools(knowledge_space)
         # Filter out codegraph tools when the space has no built code graph,
