@@ -11,10 +11,13 @@ test('dev followed by build keeps one validator and still rejects application ty
   const directories = ['.next', '.next/types', '.next/dev', '.next/dev/types'];
   const files = ['tsconfig.json', 'app.ts', '.next/types/validator.ts', '.next/dev/types/validator.ts'];
   for (const directory of directories) fs.mkdirSync(path.join(root, directory));
-  fs.writeFileSync(path.join(root, 'tsconfig.json'), JSON.stringify({
-    compilerOptions: { strict: true, noEmit: true, skipLibCheck: true, types: [] },
-    include: ['**/*.ts', '.next/types/**/*.ts', '.next/dev/types/**/*.ts'],
-  }));
+  fs.writeFileSync(
+    path.join(root, 'tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: { strict: true, noEmit: true, skipLibCheck: true, types: [] },
+      include: ['**/*.ts', '.next/types/**/*.ts', '.next/dev/types/**/*.ts'],
+    }),
+  );
   for (const directory of ['.next/types', '.next/dev/types']) {
     fs.writeFileSync(path.join(root, directory, 'validator.ts'), 'type PagesPageConfig = { name: string };');
   }
@@ -24,8 +27,14 @@ test('dev followed by build keeps one validator and still rejects application ty
     const config = ts.readConfigFile(path.join(root, generated.name), ts.sys.readFile);
     const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
     const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram(parsed.fileNames, parsed.options));
-    assert.ok(diagnostics.some(diagnostic => diagnostic.code === 2322), 'application types must remain checked');
-    assert.ok(!diagnostics.some(diagnostic => diagnostic.code === 2300), 'duplicate generated validators must be excluded');
+    assert.ok(
+      diagnostics.some(diagnostic => diagnostic.code === 2322),
+      'application types must remain checked',
+    );
+    assert.ok(
+      !diagnostics.some(diagnostic => diagnostic.code === 2300),
+      'duplicate generated validators must be excluded',
+    );
     assert.ok(parsed.fileNames.some(file => file.endsWith('/.next/types/validator.ts')));
     assert.ok(!parsed.fileNames.some(file => file.endsWith('/.next/dev/types/validator.ts')));
   } finally {
@@ -35,7 +44,6 @@ test('dev followed by build keeps one validator and still rejects application ty
     fs.rmdirSync(root);
   }
 });
-
 
 for (const active of ['.next', '.next-review']) {
   test(`only ${active} supplies generated validators and the source config stays intact`, () => {
