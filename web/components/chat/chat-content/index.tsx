@@ -112,9 +112,9 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
   const extraMarkdownComponents = useMemo<MarkdownComponent>(
     () => ({
       'custom-view'({ children }) {
-        const index = +children.toString();
+        const index = children == null ? -1 : Number(children.toString());
         if (!cachePluginContext[index]) {
-          return children;
+          return <>{children}</>;
         }
         const { name, status, err_msg, result } = cachePluginContext[index];
         const { bgClass, icon } = pluginViewStatusMapper[status] ?? {};

@@ -6,6 +6,10 @@ export type PostAgentHubUpdateParams = {
 };
 
 export type PostAgentQueryParams = {
+  filter?: Pick<
+    PostAgentQueryParams,
+    'name' | 'description' | 'author' | 'email' | 'type' | 'version' | 'storage_channel' | 'storage_url'
+  >;
   page_index?: number;
   page_size?: number;
   name?: string;

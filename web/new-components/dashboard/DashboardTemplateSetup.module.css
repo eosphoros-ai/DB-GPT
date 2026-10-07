@@ -1,0 +1,135 @@
+.steps {
+  margin: 16px 0 24px;
+}
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  padding: 8px 0 16px;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--app-text);
+  font-size: 14px;
+}
+.form small,
+.form p,
+.joins p {
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.full {
+  grid-column: 1/-1;
+}
+.matchingModes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.form .matchOption {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0;
+  padding: 17px 30px 17px 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+.matchOption > :global(.ant-radio) {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+}
+.matchOption > :global(span:last-child) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+}
+.matchOption:hover,
+.matchOption:focus-within {
+  border-color: var(--app-accent);
+}
+.matchOption:global(.ant-radio-wrapper-checked) {
+  border-color: var(--app-accent);
+  background: var(--app-accent-soft);
+}
+.matchIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-surface);
+  color: var(--app-accent);
+  font-size: 17px;
+}
+.matchCopy {
+  display: grid;
+  gap: 5px;
+  line-height: 1.5;
+}
+.matchCopy strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.form .matchCopy small {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.mappingStatus {
+  flex: 1 1 100%;
+  color: var(--app-muted);
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.error {
+  margin-bottom: 16px;
+}
+.preview {
+  margin-top: 20px;
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+}
+.joins {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.join {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+}
+@media (max-width: 620px) {
+  .form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .join {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .preview {
+    max-height: 55vh;
+  }
+}

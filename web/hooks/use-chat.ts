@@ -1,22 +1,19 @@
 import { ChatContext } from '@/app/chat-context';
 import i18n from '@/app/i18n';
+import { useQuestionSession } from '@/hooks/use-question-session';
+import {
+  createDashboardGenerationEventGate,
+  type DashboardGenerationEvent,
+} from '@/new-components/dashboard/dashboard-generation-state';
 import { getUserId } from '@/utils';
 import { HEADER_USER_ID_KEY } from '@/utils/constants/index';
+import type { PendingQuestion } from '@/utils/question-session';
+import { decodeFinalEvent } from '@/utils/react-agent-final';
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useContext, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
-export interface PendingQuestionEvent {
-  request_id: string;
-  conv_id: string;
-  questions: Array<{
-    question: string;
-    header: string;
-    options: Array<{ label: string; description: string }>;
-    multiple?: boolean;
-    custom?: boolean;
-  }>;
-}
+export type PendingQuestionEvent = PendingQuestion;
 
 type Props = {
   queryAgentURL?: string;
@@ -29,6 +26,7 @@ type ChatParams = {
   data?: any;
   query?: Record<string, string>;
   onMessage: (message: string) => void;
+  onDashboardEvent?: (event: DashboardGenerationEvent) => void;
   onClose?: () => void;
   onDone?: () => void;
   onError?: (content: string, error?: Error) => void;
@@ -59,21 +57,46 @@ function mapContextState(raw: string): 'OK' | 'WARNING' | 'ERROR' {
   }
 }
 
-const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props) => {
+const useChat = ({ queryAgentURL, app_code }: Props) => {
   const [ctrl, setCtrl] = useState<AbortController>({} as AbortController);
-  const lastMessageRef = useRef<string>('');
+  const activeRequest = useRef<AbortController | null>(null);
   const { scene } = useContext(ChatContext);
   const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null);
-  const [pendingQuestion, setPendingQuestion] = useState<PendingQuestionEvent | null>(null);
+  const { pendingQuestion, handleQuestionEvent, clearQuestions, replyQuestion, rejectQuestion } = useQuestionSession();
+  useEffect(() => () => activeRequest.current?.abort(), []);
   const chat = useCallback(
-    async ({ data, chatId, onMessage, onClose, onDone, onError, ctrl }: ChatParams) => {
-      ctrl && setCtrl(ctrl);
-      lastMessageRef.current = '';
-      setContextStatus(null);
+    async ({
+      data,
+      chatId,
+      onMessage,
+      onDashboardEvent,
+      onClose,
+      onDone,
+      onError,
+      ctrl = new AbortController(),
+    }: ChatParams) => {
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
         return;
       }
+      activeRequest.current?.abort();
+      activeRequest.current = ctrl;
+      setCtrl(ctrl);
+      clearQuestions();
+      setContextStatus(null);
+      let lastMessage = '';
+      let terminal = false;
+      const isCurrent = () => activeRequest.current === ctrl && !ctrl.signal.aborted;
+      const finish = () => {
+        if (!isCurrent() || terminal) return;
+        terminal = true;
+        onDone?.();
+      };
+      const acceptGenerationEvent = createDashboardGenerationEventGate();
+      const requestScene = data.chat_mode || scene;
+      const endpoint =
+        queryAgentURL ||
+        (requestScene === 'chat_react_agent' ? '/api/v1/chat/react-agent' : '/api/v1/chat/completions');
 
       // Ensure prompt_code is preserved and not overwritten
       const params: Record<string, any> = {
@@ -89,7 +112,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
       }
 
       try {
-        await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
+        await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${endpoint}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -104,27 +127,56 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
             }
             if (response.headers.get('content-type') === 'application/json') {
               response.json().then(data => {
+                if (!isCurrent() || terminal) return;
                 onMessage?.(data);
-                onDone?.();
+                finish();
                 ctrl && ctrl.abort();
               });
             }
           },
           onclose() {
+            if (!isCurrent()) return;
+            if (!terminal) onClose?.();
+            terminal = true;
             ctrl && ctrl.abort();
-            lastMessageRef.current = '';
-            onClose?.();
           },
           onerror(err) {
             throw new Error(err);
           },
           onmessage: event => {
+            // Each callback belongs to one transport. A late terminal/question
+            // from the previous request cannot touch the next turn's state.
+            if (!isCurrent() || terminal) return;
             let message = event.data;
             let needReplaceNewline = false;
             let parsedData;
 
             try {
               parsedData = JSON.parse(message);
+
+              if (typeof parsedData?.type === 'string' && parsedData.type.startsWith('dashboard.')) {
+                if (!acceptGenerationEvent(parsedData)) return;
+                onDashboardEvent?.(parsedData);
+                if (parsedData.type === 'dashboard.generation.failed') {
+                  clearQuestions();
+                  finish();
+                }
+                return;
+              }
+              if (parsedData?.type === 'final') {
+                onMessage(decodeFinalEvent(parsedData).content);
+                return;
+              }
+              if (parsedData?.type === 'done') {
+                finish();
+                return;
+              }
+              if (parsedData?.type === 'error') {
+                terminal = true;
+                clearQuestions();
+                onError?.(parsedData.message || parsedData.content || '聊天执行失败，请重新发起本次操作。');
+                return;
+              }
 
               // Handle context status events from context management layer
               // Completions format: {"context_status": {"used": ..., "budget": ..., ...}}
@@ -153,16 +205,12 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
               }
 
               // Handle human-in-the-loop question events
-              if (parsedData.type === 'question.asked') {
-                setPendingQuestion(parsedData);
-                return;
-              }
-              if (parsedData.type === 'question.replied' || parsedData.type === 'question.rejected') {
-                setPendingQuestion(null);
-                return;
-              }
+              if (handleQuestionEvent(parsedData, chatId)) return;
 
-              if (scene === 'chat_agent') {
+              // Agent progress/tool events are not completion message text.
+              if (typeof parsedData.type === 'string') return;
+
+              if (requestScene === 'chat_agent') {
                 if (parsedData.vis) {
                   message = parsedData.vis;
                 } else {
@@ -182,15 +230,15 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
                 message = message.replaceAll('\\n', '\n');
               }
               if (message === '[DONE]') {
-                lastMessageRef.current = '';
-                onDone?.();
+                finish();
               } else if (message?.startsWith('[ERROR]')) {
+                terminal = true;
                 onError?.(message?.replace('[ERROR]', ''));
               } else {
-                if (scene === 'chat_react_agent') {
-                  const previous = lastMessageRef.current;
+                if (requestScene === 'chat_react_agent') {
+                  const previous = lastMessage;
                   const delta = message.startsWith(previous) ? message.slice(previous.length) : message;
-                  lastMessageRef.current = message;
+                  lastMessage = message;
                   if (delta) {
                     onMessage?.(delta);
                   }
@@ -198,46 +246,18 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions', app_code }: Props
                   onMessage?.(message);
                 }
               }
-            } else {
-              onMessage?.(message);
-              onDone?.();
             }
           },
         });
       } catch (err) {
+        if (!isCurrent() || terminal) return;
+        terminal = true;
         ctrl && ctrl.abort();
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },
-    [queryAgentURL, app_code, scene],
+    [queryAgentURL, app_code, scene, handleQuestionEvent, clearQuestions],
   );
-
-  const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
-    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        [HEADER_USER_ID_KEY]: getUserId() ?? '',
-      },
-      body: JSON.stringify({ answers }),
-    });
-    if (res.ok) {
-      setPendingQuestion(null);
-    }
-  }, []);
-
-  const rejectQuestion = useCallback(async (requestId: string) => {
-    const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reject`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        [HEADER_USER_ID_KEY]: getUserId() ?? '',
-      },
-    });
-    if (res.ok) {
-      setPendingQuestion(null);
-    }
-  }, []);
 
   return { chat, ctrl, contextStatus, pendingQuestion, replyQuestion, rejectQuestion };
 };

@@ -35,31 +35,29 @@ Also, it is a **LLM to Vision** solution.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 16
-- [npm](https://npmjs.com/) >= 8
-- [yarn](https://yarnpkg.com/) >= 1.22
+- [Node.js](https://nodejs.org/) >= 20.19
+- [npm](https://npmjs.com/) 10 (CI pins 10.8.2)
 - Supported OSes: Linux, macOS and Windows
 
 ### Installation
 
-Using **Yarn** is recommended for dependency management.
+Use npm with the checked-in `package-lock.json` for dependency management.
 
 ```sh
 # Install dependencies
-npm install
-yarn install
+npm ci
 ```
 
 ### Usage
 ```sh
 cp .env.template .env
 ```
-edit the `API_BASE_URL` to the real address
+The existing backend address in `next.config.js` is `http://127.0.0.1:5670`.
+Update that configuration if your backend uses a different address.
 
 ```sh
 # development model
 npm run dev
-yarn dev
 ```
 
 ## 🚀 Use In DB-GPT
@@ -67,6 +65,10 @@ yarn dev
 ```sh
 bash ../scripts/build_web_static.sh
 ```
+
+`npm run build` creates a server deployment for `npm start`. `npm run compile`
+uses Next's static export mode and writes `out/` for the Python-served UI.
+See [the tooling migration notes](TOOLCHAIN_MIGRATION.md) for checks and boundaries.
 
 ## 📚 Documentation
 

@@ -1,0 +1,96 @@
+{
+  "description": "Historical regression inputs; not new live execution evidence. Source archive paths are provenance, not runtime dependencies.",
+  "fixtures": [
+    {
+      "path": "walmart/schema.json",
+      "source": "docs/dashboard/evidence/v9-1-temporal-discovery-20260906/run-1-schema.json",
+      "source_sha256": "0f11052d744e83332017b8b3148550dba1a94a76db237c54137fe9cfa32031fc",
+      "sha256": "1dcae9ec2cc2ca2e08481e197abc9b6045bba5029775f758294be7edb6e10736",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "walmart/snapshot.json",
+      "source": "docs/dashboard/evidence/v9-1-temporal-discovery-20260906/run-1-refresh.json",
+      "source_sha256": "76e6c377dfde09efb4665b17b44b231c98946a22a5ac754a7f9c8243b3e9a5c6",
+      "sha256": "76e6c377dfde09efb4665b17b44b231c98946a22a5ac754a7f9c8243b3e9a5c6",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "tools/failure-events.json",
+      "source": "docs/dashboard/evidence/v9-1-rendering-deployment-20260907/tool-failure-events.json",
+      "source_sha256": "c24a57aed0e0efb46244f1d40aba3f894d2ea2e91ddc6d52de665ba70e8acbad",
+      "sha256": "b4a89b4add668da5201ab4f32a4e4cc44fd47eefb106147999aad79c792bf503",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "retail/record.json",
+      "source": "docs/dashboard/evidence/v9-3-feedback-20260907/templates/retail-overview/attempt-2/reopened.json",
+      "source_sha256": "8b5343c96ad781cd42e3ed287b07b8eac90562c126afb6f4a7ae9f2e4cc1248c",
+      "sha256": "1e1caa8ac7a2de430666d731245a0ba32846c27e243a56925d589dd1acd3a9ab",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "retail/snapshot.json",
+      "source": "docs/dashboard/evidence/v9-3-feedback-20260907/templates/retail-overview/attempt-2/default-snapshot.json",
+      "source_sha256": "bb5df988e28e7ca125bca072fbba0882bffbae4192b2bc266d57dadfeedfd376",
+      "sha256": "d56a1cca0c405dd16a1020b0be2c378711ac67f9a2a9aab5668d8093f4cd3c07",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "northwind/record.json",
+      "source": "docs/dashboard/evidence/v9-4-template-workspace-20260908/templates/northwind-customers/attempt-1/reopened.json",
+      "source_sha256": "23a20235aa35d0f4d02de38b5ff2e14d7214231bbd4fe1ebe4f2936d489cac8a",
+      "sha256": "8471e986e2fcf1631c70db5535f7df4c57ff30311ac5d2ad3b0fe04edd0fb4d5",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "northwind/snapshot.json",
+      "source": "docs/dashboard/evidence/v9-4-template-workspace-20260908/templates/northwind-customers/attempt-1/default-snapshot.json",
+      "source_sha256": "5422adeac65369b0b05f380ef1af5acfb5a583f431482db9ed9ba737e71cf615",
+      "sha256": "39a750b22b48beb5a710474ad2dc60e69bd2a0638feac4ab7d24a82d2999860e",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values. Extract data from API response envelope."
+    },
+    {
+      "path": "apple/record.json",
+      "source": "docs/dashboard/evidence/v9-1-rendering-deployment-20260907/apple-after-editor.json",
+      "source_sha256": "124b4f710668185756c5ed9d30e99975ae43939084375834a58a3e11c3514659",
+      "sha256": "e105837c8b3cac8e3d3af82b6d40e44e29a7eb4c4aa5c34371482d3cc1ba7ef7",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "apple/publication.json",
+      "source": "docs/dashboard/evidence/v9-1-rendering-deployment-20260907/apple-public-live.json",
+      "source_sha256": "92bbaf4d65feaef97ed61593943a33b855c1ed1a9f91271979650de7424e3beb",
+      "sha256": "723492f7b68da4b1c17e441400b22204ffcddbc3768b393b8cffafb62b1242ee",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "walmart/record.json",
+      "source": "docs/dashboard/evidence/v9-2-layout-20260907/live/walmart-attempt-1/saved-record.json",
+      "source_sha256": "d132485429aeb0dec33cd1181e1b0c69f6a9adb2c48420279f7852da64c0d7d0",
+      "sha256": "ec612a7cb13bc45ea69eb170a2344a30075f30f854dd52c37b8ff7161d7bef70",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "walmart/layout-snapshot.json",
+      "source": "docs/dashboard/evidence/v9-2-layout-20260907/live/walmart-attempt-1/reopened-snapshot.json",
+      "source_sha256": "e0e040433ea748cb7af151b51b483de669e47631124a67fb85c2bbdaf51f1ce8",
+      "sha256": "3ac858dd1e92ae03961720e0f77f12b6a1677532ee789c9951d9210fcaada66c",
+      "transform": "Normalize owner/conversation/turn/host metadata; retain dashboard IDs, schema, queries and values."
+    },
+    {
+      "path": "questions/case-04.json",
+      "source": "docs/dashboard/evidence/v9-1-model-quality-nine-20260906/case-04-events.json",
+      "source_sha256": "4f86b1ffab2f525252c9b533fbee049202ef70a07cf1b2a89332b9ac179b6d8c",
+      "sha256": "373c44ae513690bce79b45124d03b2774bc9539b9448acb5e7a2b31b44ec54d2",
+      "transform": "Keep only the first question.asked questions array; omit model logs and execution context."
+    },
+    {
+      "path": "questions/case-07.json",
+      "source": "docs/dashboard/evidence/v9-1-model-quality-nine-20260906/case-07-events.json",
+      "source_sha256": "5d1451f23c90e5d4fab12f0d1374dca0fbb11a9db4ae8a1965294a285b9c3bc6",
+      "sha256": "d2fdd804cb8c3f9360d12d8d49a28a0cdb3f2dbd9ef2e30686b0a282905afe53",
+      "transform": "Keep only the first question.asked questions array; replace the author's absolute snapshot path with a display-only fixture path; omit model logs and execution context."
+    }
+  ]
+}

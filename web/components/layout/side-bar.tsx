@@ -169,6 +169,14 @@ function SideBar() {
         path: '/construct/skills',
       },
       {
+        key: 'dashboards',
+        name: i18n.language === 'en' ? 'Dashboards' : '看板',
+        isActive: pathname.startsWith('/dashboards'),
+        iconSrc: '',
+        IconComponent: DashboardOutlined,
+        path: '/dashboards',
+      },
+      {
         key: 'datasources',
         name: t('datasources'),
         isActive: pathname.startsWith('/construct/database'),
@@ -202,7 +210,7 @@ function SideBar() {
       },
     ];
     return items;
-  }, [t, pathname]);
+  }, [t, pathname, i18n.language]);
 
   const settingsContent = (
     <div className='w-56 py-1'>
@@ -357,7 +365,14 @@ function SideBar() {
       {/* LOGO + Collapse Toggle */}
       <div className='flex items-center justify-between p-2 pb-4'>
         <Link href='/' className='flex items-center'>
-          <Image src={logo} alt='DB-GPT' width={140} height={32} />
+          <Image
+            src={logo}
+            alt='DB-GPT'
+            width={140}
+            height={32}
+            loading='eager'
+            style={{ width: 140, height: 32, objectFit: 'contain' }}
+          />
         </Link>
         <Tooltip title={t('Close_Sidebar') || '收起侧栏'}>
           <div

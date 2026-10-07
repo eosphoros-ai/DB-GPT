@@ -1,0 +1,25 @@
+{
+  "description": "Synthetic regression input files, unchanged from the archived source.",
+  "fixtures": [
+    {
+      "path": "customers.csv",
+      "sha256": "dfa34cf2ebe20a88d762c86d4446c281f836e061994f667740cbcd0a2223dd0a",
+      "source": "docs/dashboard/evidence/v9-1-manual-acceptance-20260907/input-samples/customers.csv"
+    },
+    {
+      "path": "orders.csv",
+      "sha256": "afe206869f439241133eef5d4b3f894ac490fcd1f769f481359793eedc303bf3",
+      "source": "docs/dashboard/evidence/v9-1-manual-acceptance-20260907/input-samples/orders.csv"
+    },
+    {
+      "path": "order_items.csv",
+      "sha256": "2beef1fe14d0f144419fe96e33b9a400c9aefd0509cd64ca061af3fb1c325aa9",
+      "source": "docs/dashboard/evidence/v9-1-manual-acceptance-20260907/input-samples/order_items.csv"
+    },
+    {
+      "path": "not-a-table.txt",
+      "sha256": "7a99284aa0e3a0da1e9fc7db73a99e0f931dc890871fcce34bb0f384fcd29ab5",
+      "source": "docs/dashboard/evidence/v9-1-manual-acceptance-20260907/input-samples/not-a-table.txt"
+    }
+  ]
+}

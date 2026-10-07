@@ -1,0 +1,166 @@
+name: Test Dashboard Backend
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "pilot/meta_data/**"
+      - "scripts/dashboard/**"
+      - "tests/**"
+      - "examples/dashboard/**"
+      - "skills/**"
+      - "docker/examples/**"
+      - "docs/dashboard/**"
+      - "web/new-components/dashboard/dashboard-template-definitions.json"
+      - "web/types/dashboard.ts"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "pytest.dashboard.ini"
+      - ".github/workflows/test-dashboard-backend.yml"
+  push:
+    branches: [main, "codex/**"]
+    paths:
+      - "packages/**"
+      - "pilot/meta_data/**"
+      - "scripts/dashboard/**"
+      - "tests/**"
+      - "examples/dashboard/**"
+      - "skills/**"
+      - "docker/examples/**"
+      - "docs/dashboard/**"
+      - "web/new-components/dashboard/dashboard-template-definitions.json"
+      - "web/types/dashboard.ts"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "pytest.dashboard.ini"
+      - ".github/workflows/test-dashboard-backend.yml"
+
+concurrency:
+  group: dashboard-backend-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dashboard-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv-dashboard-ci
+      PYTHONUTF8: "1"
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: dashboard_ci_test
+          MYSQL_USER: dashboard_test
+          MYSQL_PASSWORD: dashboard-ci-test
+          MYSQL_ROOT_PASSWORD: dashboard-ci-root
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pdashboard-ci-root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+      redis:
+        image: redis:7.2
+        ports:
+          - 6379/tcp
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.22"
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install locked application and test dependencies
+        # dbgpt-mono supplies the locked pytest tools; dbgpt-app supplies runtime extras.
+        # A new environment is created for every job; only download caches are reused.
+        run: uv sync --frozen --package dbgpt-app --package dbgpt-mono --extra base --extra collaboration
+
+      - name: Verify environment
+        run: |
+          uv run --no-sync python --version
+          uv run --no-sync python -m pip check
+
+      - name: Test Dashboard with disposable MySQL and Redis
+        env:
+          DASHBOARD_TEST_MYSQL_URL: mysql+pymysql://dashboard_test:dashboard-ci-test@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/dashboard_ci_test?charset=utf8mb4
+          DASHBOARD_TEST_REDIS_URL: redis://127.0.0.1:${{ job.services.redis.ports['6379'] }}/15
+        run: |
+          mkdir -p output/ci
+          uv run --no-sync python -m pytest -c pytest.dashboard.ini -q -ra --junitxml=output/ci/dashboard-backend.xml
+
+      - name: Upload Dashboard backend evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-backend-python311
+          path: output/ci/dashboard-backend.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  docker-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv-docker-ci
+      PYTHONUTF8: "1"
+      DBGPT_TEST_DOCKER_IMAGE: dbgpt-agent-test:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.22"
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install locked application and test dependencies
+        run: uv sync --frozen --package dbgpt-app --package dbgpt-mono --extra base --extra collaboration
+
+      - name: Build the actual agent execution image
+        run: |
+          docker info
+          docker build --tag "$DBGPT_TEST_DOCKER_IMAGE" packages/dbgpt-sandbox/src/docker_images --file packages/dbgpt-sandbox/src/docker_images/Dockerfile.agent
+
+      - name: Test real container execution and cleanup
+        run: |
+          mkdir -p output/ci
+          uv run --no-sync python -m pip check
+          uv run --no-sync python -m pytest -q -ra packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_docker_integration.py --junitxml=output/ci/docker-runtime.xml
+
+      - name: Require all container tests to execute
+        run: |
+          uv run --no-sync python - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          suites = list(ET.parse("output/ci/docker-runtime.xml").getroot().iter("testsuite"))
+          counts = {key: sum(int(suite.get(key, "0")) for suite in suites)
+                    for key in ("tests", "failures", "errors", "skipped")}
+          assert counts["tests"] > 0, counts
+          assert not any(counts[key] for key in ("failures", "errors", "skipped")), counts
+          print(f"All {counts['tests']} real Docker integration tests passed without skips.")
+          PY
+
+      - name: Upload Docker execution evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-runtime-python311
+          path: output/ci/docker-runtime.xml
+          if-no-files-found: warn
+          retention-days: 14

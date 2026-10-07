@@ -1,0 +1,23 @@
+[
+  {
+    "fiscal_year": 2022,
+    "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019323000106/aapl-20230930.htm",
+    "accession_number": "0000320193-23-000106",
+    "extracted_at": "2026-08-11",
+    "units": "USD millions"
+  },
+  {
+    "fiscal_year": 2023,
+    "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019323000106/aapl-20230930.htm",
+    "accession_number": "0000320193-23-000106",
+    "extracted_at": "2026-08-11",
+    "units": "USD millions"
+  },
+  {
+    "fiscal_year": 2024,
+    "filing_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/aapl-20240928.htm",
+    "accession_number": "0000320193-24-000123",
+    "extracted_at": "2026-08-11",
+    "units": "USD millions"
+  }
+]

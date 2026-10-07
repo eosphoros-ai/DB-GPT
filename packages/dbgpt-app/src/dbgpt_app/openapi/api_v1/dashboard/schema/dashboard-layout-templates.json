@@ -1,0 +1,50 @@
+[
+  {
+    "id": "trend-focus",
+    "title": "趋势聚焦",
+    "eyebrow": "01 / TREND",
+    "source": "v0 · SalesOps",
+    "source_url": "https://v0.app/templates/9q2Mfgu6cDi",
+    "description": "先看核心变化，再追踪驱动因素。主趋势占据三分之二画布，结构对比紧随其侧。",
+    "structure": "核心指标 → 8:4 主辅图 → 明细",
+    "focus": "trend",
+    "metric_columns": 4,
+    "chart_columns": 2,
+    "metric_height": 3,
+    "chart_height": 6,
+    "detail_height": 7,
+    "theme": {"preset": "graphite", "mode": "dark", "overrides": {"card_radius": 12, "density": "comfortable", "card_shadow": "none", "kpi_style": "quiet", "table_style": "plain"}}
+  },
+  {
+    "id": "metric-overview",
+    "title": "指标概览",
+    "eyebrow": "02 / OVERVIEW",
+    "source": "Tremor · Overview",
+    "source_url": "https://dashboard.tremor.so/overview",
+    "description": "让多项指标处于同一阅读节奏。等宽卡片与规则图表网格，适合经营总览和周期比较。",
+    "structure": "三列指标 → 等宽图表 → 明细",
+    "focus": "metrics",
+    "metric_columns": 3,
+    "chart_columns": 3,
+    "metric_height": 3,
+    "chart_height": 6,
+    "detail_height": 7,
+    "theme": {"preset": "clarity", "mode": "light", "overrides": {"card_radius": 8, "density": "comfortable", "card_shadow": "none", "kpi_style": "quiet", "table_style": "plain"}}
+  },
+  {
+    "id": "operations-detail",
+    "title": "运营明细",
+    "eyebrow": "03 / OPERATIONS",
+    "source": "Tabler · Admin",
+    "source_url": "https://preview.tabler.io/",
+    "description": "把需要处理的对象放到前面。紧凑指标、宽幅明细和辅助图表，便于逐项定位与行动。",
+    "structure": "紧凑指标 → 8:4 明细与图表 → 诊断",
+    "focus": "table",
+    "metric_columns": 4,
+    "chart_columns": 2,
+    "metric_height": 3,
+    "chart_height": 6,
+    "detail_height": 7,
+    "theme": {"preset": "clarity", "mode": "light", "overrides": {"card_radius": 6, "density": "compact", "card_shadow": "none", "kpi_style": "accent", "table_style": "striped"}}
+  }
+]

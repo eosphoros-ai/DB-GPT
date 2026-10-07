@@ -1,0 +1,83 @@
+{
+  "overview": [
+    {
+      "order_count": 99441,
+      "delivered_orders": 96478,
+      "unique_customers": 96096,
+      "payment_total": 16008872.12
+    }
+  ],
+  "monthly_payments": [
+    {"month": "2016-09", "order_count": 4, "payment_total": 252.24},
+    {"month": "2016-10", "order_count": 324, "payment_total": 59090.48},
+    {"month": "2016-12", "order_count": 1, "payment_total": 19.62},
+    {"month": "2017-01", "order_count": 800, "payment_total": 138488.04},
+    {"month": "2017-02", "order_count": 1780, "payment_total": 291908.01},
+    {"month": "2017-03", "order_count": 2682, "payment_total": 449863.6},
+    {"month": "2017-04", "order_count": 2404, "payment_total": 417788.03},
+    {"month": "2017-05", "order_count": 3700, "payment_total": 592918.82},
+    {"month": "2017-06", "order_count": 3245, "payment_total": 511276.38},
+    {"month": "2017-07", "order_count": 4026, "payment_total": 592382.92},
+    {"month": "2017-08", "order_count": 4331, "payment_total": 674396.32},
+    {"month": "2017-09", "order_count": 4285, "payment_total": 727762.45},
+    {"month": "2017-10", "order_count": 4631, "payment_total": 779677.88},
+    {"month": "2017-11", "order_count": 7544, "payment_total": 1194882.8},
+    {"month": "2017-12", "order_count": 5673, "payment_total": 878401.48},
+    {"month": "2018-01", "order_count": 7269, "payment_total": 1115004.18},
+    {"month": "2018-02", "order_count": 6728, "payment_total": 992463.34},
+    {"month": "2018-03", "order_count": 7211, "payment_total": 1159652.12},
+    {"month": "2018-04", "order_count": 6939, "payment_total": 1160785.48},
+    {"month": "2018-05", "order_count": 6873, "payment_total": 1153982.15},
+    {"month": "2018-06", "order_count": 6167, "payment_total": 1023880.5},
+    {"month": "2018-07", "order_count": 6292, "payment_total": 1066540.75},
+    {"month": "2018-08", "order_count": 6512, "payment_total": 1022425.32},
+    {"month": "2018-09", "order_count": 16, "payment_total": 4439.54},
+    {"month": "2018-10", "order_count": 4, "payment_total": 589.67}
+  ],
+  "top_categories": [
+    {"category": "health_beauty", "order_count": 8836, "item_revenue": 1258681.34},
+    {"category": "watches_gifts", "order_count": 5624, "item_revenue": 1205005.68},
+    {"category": "bed_bath_table", "order_count": 9417, "item_revenue": 1036988.68},
+    {"category": "sports_leisure", "order_count": 7720, "item_revenue": 988048.97},
+    {"category": "computers_accessories", "order_count": 6689, "item_revenue": 911954.32},
+    {"category": "furniture_decor", "order_count": 6449, "item_revenue": 729762.49},
+    {"category": "cool_stuff", "order_count": 3632, "item_revenue": 635290.85},
+    {"category": "housewares", "order_count": 5884, "item_revenue": 632248.66},
+    {"category": "auto", "order_count": 3897, "item_revenue": 592720.11},
+    {"category": "garden_tools", "order_count": 3518, "item_revenue": 485256.46}
+  ],
+  "top_customer_states": [
+    {"state": "SP", "order_count": 41746, "payment_total": 5998226.96},
+    {"state": "RJ", "order_count": 12852, "payment_total": 2144379.69},
+    {"state": "MG", "order_count": 11635, "payment_total": 1872257.26},
+    {"state": "RS", "order_count": 5466, "payment_total": 890898.54},
+    {"state": "PR", "order_count": 5045, "payment_total": 811156.38},
+    {"state": "SC", "order_count": 3637, "payment_total": 623086.43},
+    {"state": "BA", "order_count": 3380, "payment_total": 616645.82},
+    {"state": "DF", "order_count": 2140, "payment_total": 355141.08},
+    {"state": "GO", "order_count": 2020, "payment_total": 350092.31},
+    {"state": "ES", "order_count": 2033, "payment_total": 325967.55}
+  ],
+  "delivery_quality": [
+    {
+      "delivered_orders": 96476,
+      "avg_delivery_days": 12.5587,
+      "late_orders": 7827,
+      "late_rate_pct": 8.1129
+    }
+  ],
+  "review_delivery": [
+    {"review_score": 1, "reviewed_deliveries": 9409, "avg_delivery_days": 21.3114, "late_rate_pct": 37.7723},
+    {"review_score": 2, "reviewed_deliveries": 2941, "avg_delivery_days": 16.6606, "late_rate_pct": 20.6052},
+    {"review_score": 3, "reviewed_deliveries": 7962, "avg_delivery_days": 14.262, "late_rate_pct": 11.0023},
+    {"review_score": 4, "reviewed_deliveries": 18987, "avg_delivery_days": 12.3124, "late_rate_pct": 5.0245},
+    {"review_score": 5, "reviewed_deliveries": 57060, "avg_delivery_days": 10.6886, "late_rate_pct": 2.9986}
+  ],
+  "payment_methods": [
+    {"payment_type": "credit_card", "order_count": 76505, "payment_total": 12542084.19},
+    {"payment_type": "boleto", "order_count": 19784, "payment_total": 2869361.27},
+    {"payment_type": "voucher", "order_count": 3866, "payment_total": 379436.87},
+    {"payment_type": "debit_card", "order_count": 1528, "payment_total": 217989.79},
+    {"payment_type": "not_defined", "order_count": 3, "payment_total": 0.0}
+  ]
+}

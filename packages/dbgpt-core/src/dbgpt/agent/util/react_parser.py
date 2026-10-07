@@ -392,7 +392,7 @@ class ReActOutputParser:
 
         # Extract action
         action_match = re.search(
-            rf"{action_line}(.*?)(?={action_input_line}|{observation_line}|\Z)",
+            rf"{action_line}([^\r\n]*)",
             match_text,
             re.DOTALL | re.MULTILINE,
         )

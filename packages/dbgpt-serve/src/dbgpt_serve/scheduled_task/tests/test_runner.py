@@ -48,6 +48,9 @@ def _seed_task(
     user_name: str = "alice",
     sys_code: str = "sys-A",
     payload_overrides: dict = None,
+    owner_id: str = None,
+    resource_type: str = None,
+    resource_id: str = None,
 ) -> None:
     """Insert a task row into the in-memory DB."""
     payload = dict(_DEFAULT_PAYLOAD)
@@ -63,7 +66,10 @@ def _seed_task(
             "payload_json": json.dumps(payload),
             "enabled": enabled,
             "user_name": user_name,
+            "owner_id": owner_id,
             "sys_code": sys_code,
+            "resource_type": resource_type,
+            "resource_id": resource_id,
         }
     )
 
@@ -645,3 +651,36 @@ def test_reclaim_previous_run_swallows_errors():
     runner._reclaim_previous_run_session_files("alice", "task-1", "new-conv", registry)
 
     registry.delete_session_files.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_uploaded_dataset_replay_uses_owner_and_opaque_binding(
+    runner: ChatReplayRunner,
+):
+    _seed_task(
+        owner_id="alice-owner",
+        resource_type="uploaded_dataset",
+        resource_id="dataset-1",
+        payload_overrides={
+            "ext_info": {
+                "dataset_id": "dataset-1",
+                "file_paths": ["C:/forged.csv"],
+                "database_name": "forged-db",
+            }
+        },
+    )
+    mock_conv = _make_mock_conv_vo()
+
+    with (
+        patch(_PATCH_REACT, new=_make_fake_stream()),
+        patch(_PATCH_CONV_VO, new=mock_conv),
+    ):
+        await runner.replay_chat_task("t1")
+
+    payload = mock_conv.call_args.kwargs
+    assert payload["user_name"] == "alice-owner"
+    assert payload["ext_info"] == {
+        "dataset_id": "dataset-1",
+        "dataset_replay_task_id": "t1",
+    }
+    assert payload["conv_uid"]

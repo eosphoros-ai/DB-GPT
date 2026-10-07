@@ -4,6 +4,7 @@
 
 import asyncio
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -204,7 +205,7 @@ class LocalSandboxSession(SandboxSession):
                 f"cd {os.path.dirname(code_file)} && rustc {filename} \
                   -o program && ./program",
             ],
-            "bash": ["bash", code_file],
+            "bash": [shutil.which("bash") or "bash", filename],
         }
 
         return commands.get(self.config.language, ["cat", code_file])

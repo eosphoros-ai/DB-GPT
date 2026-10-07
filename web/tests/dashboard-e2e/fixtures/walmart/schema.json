@@ -1,0 +1,566 @@
+{
+  "schema_version": "1.4",
+  "dashboard": {
+    "id": "9a91b041da0344eea7cef9de7db33722",
+    "title": "Walmart 经营总览看板",
+    "description": "精简 Walmart 经营看板，展示总销售额、月度销售趋势与门店销售排行",
+    "data_source_id": "Walmart_Sales",
+    "status": "draft",
+    "theme": {
+      "preset": "clarity",
+      "mode": "light",
+      "overrides": {
+        "primary_color": null,
+        "font_scale": null,
+        "density": null,
+        "card_radius": null,
+        "card_shadow": null,
+        "chart_palette": null,
+        "kpi_style": null,
+        "table_style": null
+      }
+    },
+    "refresh_policy": {
+      "refresh_on_open": false,
+      "interval_seconds": null
+    },
+    "created_at": "2026-09-06T17:21:10.926112",
+    "updated_at": "2026-09-06T17:21:35.290873"
+  },
+  "metric_context": {
+    "grain": "月份, 门店",
+    "time_range": null,
+    "data_freshness": null,
+    "source_notes": [
+      "Generated from the selected DB-GPT data source."
+    ],
+    "metrics": [
+      {
+        "id": "metric-1",
+        "name": "总销售额",
+        "business_definition": "User-confirmed metric: 总销售额",
+        "aggregation": "none",
+        "unit": null,
+        "grain": null,
+        "source_field": null,
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "metric-2",
+        "name": "月度销售额",
+        "business_definition": "User-confirmed metric: 月度销售额",
+        "aggregation": "none",
+        "unit": null,
+        "grain": null,
+        "source_field": null,
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "metric-3",
+        "name": "门店销售额",
+        "business_definition": "User-confirmed metric: 门店销售额",
+        "aggregation": "none",
+        "unit": null,
+        "grain": null,
+        "source_field": null,
+        "definition_source": "user_confirmed"
+      }
+    ],
+    "dimensions": [
+      {
+        "id": "dimension-1",
+        "name": "月份",
+        "business_definition": "User-confirmed dimension: 月份",
+        "field": null,
+        "data_type": "unknown",
+        "definition_source": "user_confirmed"
+      },
+      {
+        "id": "dimension-2",
+        "name": "门店",
+        "business_definition": "User-confirmed dimension: 门店",
+        "field": null,
+        "data_type": "unknown",
+        "definition_source": "user_confirmed"
+      }
+    ]
+  },
+  "filters": [],
+  "widgets": [
+    {
+      "id": "w_total_sales",
+      "type": "kpi",
+      "title": "总销售额",
+      "description": "Walmart 全部门店的累计销售总额是多少？",
+      "query": {
+        "data_source_id": "Walmart_Sales",
+        "sql": "SELECT SUM(Weekly_Sales) AS total_sales FROM walmart_sales",
+        "federation": null,
+        "filter_parameters": {},
+        "default_parameters": {},
+        "output_fields": [
+          {
+            "name": "total_sales",
+            "type": "number",
+            "label": null,
+            "nullable": true
+          }
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 1000,
+        "grain": null,
+        "refresh_time": "2026-09-06T17:21:35.261841",
+        "last_execution": {
+          "status": "succeeded",
+          "executed_at": "2026-09-06T17:21:35.261841",
+          "duration_ms": 11,
+          "row_count": 1,
+          "error": null
+        },
+        "lineage": {
+          "sources": [
+            {
+              "data_source_id": "Walmart_Sales",
+              "tables": [
+                "walmart_sales"
+              ],
+              "columns": [
+                "Weekly_Sales"
+              ]
+            }
+          ]
+        }
+      },
+      "encoding": {
+        "x": null,
+        "y": null,
+        "value": "total_sales",
+        "series": null,
+        "category": null,
+        "angle": null,
+        "color": null,
+        "y2": null,
+        "row": null,
+        "column": null,
+        "target": null,
+        "columns": []
+      },
+      "style": {},
+      "presentation": {
+        "visualization": null,
+        "orientation": null,
+        "stacked": false,
+        "smooth": true,
+        "top_n": null,
+        "colors": [],
+        "unit": null,
+        "currency": null,
+        "precision": null,
+        "percentage": false,
+        "show_legend": null,
+        "show_grid": null,
+        "default_sort": {
+          "field": null,
+          "direction": "default"
+        }
+      },
+      "publication": null,
+      "metric_ids": [
+        "metric-1"
+      ],
+      "dimension_ids": [],
+      "anomaly_rules": [],
+      "error": null
+    },
+    {
+      "id": "w_monthly_trend",
+      "type": "line",
+      "title": "月度销售趋势",
+      "description": "各自然月的销售额如何变化？",
+      "query": {
+        "data_source_id": "Walmart_Sales",
+        "sql": "SELECT substr(Date, 7, 4) || '-' || substr(Date, 4, 2) AS month, SUM(Weekly_Sales) AS monthly_sales FROM walmart_sales GROUP BY month ORDER BY month",
+        "federation": null,
+        "filter_parameters": {},
+        "default_parameters": {},
+        "output_fields": [
+          {
+            "name": "month",
+            "type": "string",
+            "label": null,
+            "nullable": true
+          },
+          {
+            "name": "monthly_sales",
+            "type": "number",
+            "label": null,
+            "nullable": true
+          }
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 1000,
+        "grain": null,
+        "refresh_time": "2026-09-06T17:21:35.273318",
+        "last_execution": {
+          "status": "succeeded",
+          "executed_at": "2026-09-06T17:21:35.273318",
+          "duration_ms": 9,
+          "row_count": 33,
+          "error": null
+        },
+        "lineage": {
+          "sources": [
+            {
+              "data_source_id": "Walmart_Sales",
+              "tables": [
+                "walmart_sales"
+              ],
+              "columns": [
+                "Date",
+                "month",
+                "Weekly_Sales"
+              ]
+            }
+          ]
+        }
+      },
+      "encoding": {
+        "x": "month",
+        "y": "monthly_sales",
+        "value": null,
+        "series": null,
+        "category": null,
+        "angle": null,
+        "color": null,
+        "y2": null,
+        "row": null,
+        "column": null,
+        "target": null,
+        "columns": []
+      },
+      "style": {},
+      "presentation": {
+        "visualization": null,
+        "orientation": null,
+        "stacked": false,
+        "smooth": true,
+        "top_n": null,
+        "colors": [],
+        "unit": null,
+        "currency": null,
+        "precision": null,
+        "percentage": false,
+        "show_legend": null,
+        "show_grid": null,
+        "default_sort": {
+          "field": null,
+          "direction": "default"
+        }
+      },
+      "publication": null,
+      "metric_ids": [
+        "metric-2"
+      ],
+      "dimension_ids": [
+        "dimension-1"
+      ],
+      "anomaly_rules": [],
+      "error": null
+    },
+    {
+      "id": "w_store_ranking",
+      "type": "bar",
+      "title": "门店销售排行",
+      "description": "各门店的累计销售额排名如何？",
+      "query": {
+        "data_source_id": "Walmart_Sales",
+        "sql": "SELECT Store AS store, SUM(Weekly_Sales) AS store_sales FROM walmart_sales GROUP BY Store ORDER BY store_sales DESC",
+        "federation": null,
+        "filter_parameters": {},
+        "default_parameters": {},
+        "output_fields": [
+          {
+            "name": "store",
+            "type": "integer",
+            "label": null,
+            "nullable": true
+          },
+          {
+            "name": "store_sales",
+            "type": "number",
+            "label": null,
+            "nullable": true
+          }
+        ],
+        "timeout_seconds": 30,
+        "max_rows": 1000,
+        "grain": null,
+        "refresh_time": "2026-09-06T17:21:35.283412",
+        "last_execution": {
+          "status": "succeeded",
+          "executed_at": "2026-09-06T17:21:35.283412",
+          "duration_ms": 5,
+          "row_count": 45,
+          "error": null
+        },
+        "lineage": {
+          "sources": [
+            {
+              "data_source_id": "Walmart_Sales",
+              "tables": [
+                "walmart_sales"
+              ],
+              "columns": [
+                "Store",
+                "store_sales",
+                "Weekly_Sales"
+              ]
+            }
+          ]
+        }
+      },
+      "encoding": {
+        "x": "store",
+        "y": "store_sales",
+        "value": null,
+        "series": null,
+        "category": null,
+        "angle": null,
+        "color": null,
+        "y2": null,
+        "row": null,
+        "column": null,
+        "target": null,
+        "columns": []
+      },
+      "style": {},
+      "presentation": {
+        "visualization": null,
+        "orientation": null,
+        "stacked": false,
+        "smooth": true,
+        "top_n": null,
+        "colors": [],
+        "unit": null,
+        "currency": null,
+        "precision": null,
+        "percentage": false,
+        "show_legend": null,
+        "show_grid": null,
+        "default_sort": {
+          "field": null,
+          "direction": "default"
+        }
+      },
+      "publication": null,
+      "metric_ids": [
+        "metric-3"
+      ],
+      "dimension_ids": [
+        "dimension-2"
+      ],
+      "anomaly_rules": [],
+      "error": null
+    }
+  ],
+  "layouts": {
+    "columns": 12,
+    "desktop": [
+      {
+        "widget_id": "w_total_sales",
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 3,
+        "min_w": null,
+        "min_h": null,
+        "max_w": null,
+        "max_h": null
+      },
+      {
+        "widget_id": "w_monthly_trend",
+        "x": 0,
+        "y": 3,
+        "w": 12,
+        "h": 5,
+        "min_w": null,
+        "min_h": null,
+        "max_w": null,
+        "max_h": null
+      },
+      {
+        "widget_id": "w_store_ranking",
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 5,
+        "min_w": null,
+        "min_h": null,
+        "max_w": null,
+        "max_h": null
+      }
+    ],
+    "mobile_strategy": "stack"
+  },
+  "metadata": {
+    "conversation_id": "fixture-conversation",
+    "source_turn_id": "fixture-turn",
+    "agent": {
+      "generated": true,
+      "model_name": "deepseek-v4-flash",
+      "prompt": "[Database: Walmart_Sales] 生成精简 Walmart 经营看板，只包含总销售额、月度趋势和门店排行三个组件，不要创建任何筛选器。先生成规划，等待我确认后再生成 SQL。",
+      "generated_at": "2026-09-06T17:21:35.257830"
+    },
+    "compatibility": {
+      "agent_dashboard_workflow": {
+        "status": "generated",
+        "plan": {
+          "title": "Walmart 经营总览看板",
+          "description": "精简 Walmart 经营看板，展示总销售额、月度销售趋势与门店销售排行",
+          "business_theme": "Walmart 零售经营总览",
+          "audience": "经营管理者",
+          "decision_goal": "快速掌握整体销售规模、月度走势与门店贡献排名",
+          "analysis_logic": [
+            "汇总全部门店累计销售额",
+            "按自然月分析销售趋势",
+            "按门店排名销售贡献"
+          ],
+          "layout_rationale": "KPI 卡片置顶展示总量，折线图展示月度趋势，条形图展示门店排行",
+          "filter_strategy": "用户要求不创建任何筛选器",
+          "metrics": [
+            "总销售额",
+            "月度销售额",
+            "门店销售额"
+          ],
+          "dimensions": [
+            "月份",
+            "门店"
+          ],
+          "filters": [],
+          "widgets": [
+            {
+              "id": "w_total_sales",
+              "type": "kpi",
+              "title": "总销售额",
+              "business_question": "Walmart 全部门店的累计销售总额是多少？",
+              "metric": "总销售额",
+              "dimensions": [],
+              "analysis_level": 1,
+              "rationale": "以 KPI 卡片直观呈现整体销售规模",
+              "layout": {
+                "width": "third",
+                "height": "compact"
+              }
+            },
+            {
+              "id": "w_monthly_trend",
+              "type": "line",
+              "title": "月度销售趋势",
+              "business_question": "各自然月的销售额如何变化？",
+              "metric": "月度销售额",
+              "dimensions": [
+                "月份"
+              ],
+              "analysis_level": 2,
+              "rationale": "折线图展示月度销售走势",
+              "layout": {
+                "width": "full",
+                "height": "standard"
+              }
+            },
+            {
+              "id": "w_store_ranking",
+              "type": "bar",
+              "title": "门店销售排行",
+              "business_question": "各门店的累计销售额排名如何？",
+              "metric": "门店销售额",
+              "dimensions": [
+                "门店"
+              ],
+              "analysis_level": 2,
+              "rationale": "条形图按销售额展示门店排名",
+              "layout": {
+                "width": "full",
+                "height": "standard"
+              }
+            }
+          ]
+        },
+        "confirmed_revision": 1,
+        "contract_repairs": []
+      },
+      "dashboard_plan": {
+        "title": "Walmart 经营总览看板",
+        "description": "精简 Walmart 经营看板，展示总销售额、月度销售趋势与门店销售排行",
+        "business_theme": "Walmart 零售经营总览",
+        "audience": "经营管理者",
+        "decision_goal": "快速掌握整体销售规模、月度走势与门店贡献排名",
+        "analysis_logic": [
+          "汇总全部门店累计销售额",
+          "按自然月分析销售趋势",
+          "按门店排名销售贡献"
+        ],
+        "layout_rationale": "KPI 卡片置顶展示总量，折线图展示月度趋势，条形图展示门店排行",
+        "filter_strategy": "用户要求不创建任何筛选器",
+        "metrics": [
+          "总销售额",
+          "月度销售额",
+          "门店销售额"
+        ],
+        "dimensions": [
+          "月份",
+          "门店"
+        ],
+        "filters": [],
+        "widgets": [
+          {
+            "id": "w_total_sales",
+            "type": "kpi",
+            "title": "总销售额",
+            "business_question": "Walmart 全部门店的累计销售总额是多少？",
+            "metric": "总销售额",
+            "dimensions": [],
+            "analysis_level": 1,
+            "rationale": "以 KPI 卡片直观呈现整体销售规模",
+            "layout": {
+              "width": "third",
+              "height": "compact"
+            }
+          },
+          {
+            "id": "w_monthly_trend",
+            "type": "line",
+            "title": "月度销售趋势",
+            "business_question": "各自然月的销售额如何变化？",
+            "metric": "月度销售额",
+            "dimensions": [
+              "月份"
+            ],
+            "analysis_level": 2,
+            "rationale": "折线图展示月度销售走势",
+            "layout": {
+              "width": "full",
+              "height": "standard"
+            }
+          },
+          {
+            "id": "w_store_ranking",
+            "type": "bar",
+            "title": "门店销售排行",
+            "business_question": "各门店的累计销售额排名如何？",
+            "metric": "门店销售额",
+            "dimensions": [
+              "门店"
+            ],
+            "analysis_level": 2,
+            "rationale": "条形图按销售额展示门店排名",
+            "layout": {
+              "width": "full",
+              "height": "standard"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

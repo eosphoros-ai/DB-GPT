@@ -75,6 +75,82 @@ DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
+DASHBOARD_BUILDER_SKILL_NAME = "dashboard-builder"
+DASHBOARD_AGENT_MARKERS = (
+    "[[confirm-dashboard:",
+    "[[revise-dashboard-plan:",
+    "[[modify-dashboard:",
+    "[[dashboard-annotation:",
+)
+DASHBOARD_AGENT_KEYWORDS = (
+    "dashboard",
+    "看板",
+    "数据看板",
+    "经营看板",
+    "分析看板",
+    "仪表盘",
+)
+
+
+def _is_dashboard_workflow_request(
+    user_input: str, creation_mode: Optional[str] = None
+) -> bool:
+    """Return whether a message belongs to the bounded Dashboard workflow."""
+
+    # The composer explicitly offers Dashboard creation. Its selection must
+    # work for requests such as "show annual revenue", without forcing users
+    # to repeat the word "dashboard" in every prompt.
+    if creation_mode == "dashboard":
+        return True
+    normalized = (user_input or "").casefold()
+    return any(marker in normalized for marker in DASHBOARD_AGENT_MARKERS) or any(
+        keyword in normalized for keyword in DASHBOARD_AGENT_KEYWORDS
+    )
+
+
+def _is_read_only_dashboard_annotation_request(user_input: str) -> bool:
+    """Return whether an annotation turn must not receive mutation tools.
+
+    The editor can batch metric explanations and deterministic anomaly
+    explanations in one turn. Those intents are deliberately read-only: the
+    model may explain persisted schema/results/evidence, but it must not query
+    again, propose a patch, or mutate the Dashboard. Check both the structured
+    intent labels and the explicit batch guard so replayed UI prompts remain
+    safe if their prose is localized independently.
+    """
+
+    normalized = (user_input or "").casefold()
+    if "[[dashboard-annotation:" not in normalized:
+        return False
+    if "[修改组件]" in normalized:
+        return False
+    return any(
+        marker in normalized
+        for marker in (
+            "[指标解释]",
+            "[异常分析]",
+            "本批次没有修改类批注",
+            "不得调用任何看板修改工具",
+        )
+    )
+
+
+def _dashboard_id_from_workflow_marker(user_input: str) -> Optional[str]:
+    """Return the owned Dashboard id carried by a continuation marker.
+
+    Dashboard confirmations and annotation requests are commonly replayed from
+    task history.  The browser may not have restored its transient data-source
+    chip yet, but the persisted Dashboard remains the authoritative source of
+    that binding.
+    """
+
+    match = re.search(
+        r"\[\[(?:confirm-dashboard|revise-dashboard-plan|modify-dashboard|"
+        r"dashboard-annotation):([A-Za-z0-9_-]{1,64})(?::[^\]]+)?\]\]",
+        user_input or "",
+        re.IGNORECASE,
+    )
+    return match.group(1) if match else None
 
 
 def _validate_upload_filename(filename: str) -> str:
@@ -86,6 +162,8 @@ def _validate_upload_filename(filename: str) -> str:
     if (
         posix_path.is_absolute()
         or windows_path.is_absolute()
+        or "/" in filename
+        or "\\" in filename
         or len(posix_path.parts) != 1
         or len(windows_path.parts) != 1
         or filename in {"", ".", ".."}
@@ -224,6 +302,82 @@ def _parse_connector_ids(ext_info: Optional[Dict[str, Any]]) -> List[str]:
     if isinstance(legacy, str) and legacy:
         return [legacy]
     return []
+
+
+def _parse_uploaded_file_paths(ext_info: Optional[Dict[str, Any]]) -> List[str]:
+    """Extract a bounded, deduplicated upload group from ``ext_info``.
+
+    ``file_paths`` is the preferred shape. ``file_path`` remains supported so
+    old conversations, scheduled-task snapshots, and single-file clients keep
+    working unchanged.
+    """
+
+    if not ext_info or not isinstance(ext_info, dict):
+        return []
+
+    raw_paths = ext_info.get("file_paths")
+    candidates: List[Any]
+    if isinstance(raw_paths, list):
+        candidates = raw_paths
+    else:
+        legacy = ext_info.get("file_path")
+        candidates = [legacy] if isinstance(legacy, str) else []
+
+    paths: List[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            continue
+        normalized = candidate.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        paths.append(normalized)
+        if len(paths) >= 16:
+            break
+    return paths
+
+
+def _parse_uploaded_dataset_id(ext_info: Optional[Dict[str, Any]]) -> Optional[str]:
+    """Return one bounded opaque dataset id from the request context."""
+
+    if not ext_info or not isinstance(ext_info, dict):
+        return None
+    value = ext_info.get("dataset_id")
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not value or len(value) > 64:
+        return None
+    return value
+
+
+def _parse_dataset_replay_task_id(
+    ext_info: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    if not ext_info or not isinstance(ext_info, dict):
+        return None
+    value = ext_info.get("dataset_replay_task_id")
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if value and len(value) <= 64 else None
+
+
+def _require_database_access(
+    connector_manager: Any, database_name: str, owner_id: Optional[str]
+) -> Any:
+    """Authorize a datasource before its cached connector can be retrieved."""
+
+    database_record = connector_manager.storage.get_by_names(database_name)
+    if database_record is None:
+        raise ValueError("Selected database does not exist")
+    database_owner = getattr(database_record, "user_id", None) or getattr(
+        database_record, "user_name", None
+    )
+    if database_owner and database_owner != owner_id:
+        raise PermissionError("Selected database is not available")
+    return database_record
 
 
 def _select_connector_tools(
@@ -572,7 +726,7 @@ def _install_skill_from_dir(src_dir: Path, skill_name: str, user_dir: Path) -> s
         shutil.rmtree(dest)
     shutil.copytree(src_dir, dest)
     # Return path relative to skills_dir (parent of user_dir)
-    return str(dest.relative_to(user_dir.parent))
+    return dest.relative_to(user_dir.parent).as_posix()
 
 
 @router.post("/v1/skills/upload", response_model=Result)
@@ -646,7 +800,7 @@ async def skill_upload(
 
             target_file.write_bytes(content_bytes)
 
-            rel_path = str(dest.relative_to(skills_dir))
+            rel_path = dest.relative_to(skills_dir).as_posix()
 
         return Result.succ(
             {
@@ -1044,6 +1198,8 @@ def _build_react_history_payload(
     sub_agents: Any,
     input_files: List[Dict[str, Any]],
     citations: Optional[List[Dict[str, Any]]] = None,
+    dashboard_refs: Optional[List[Dict[str, Any]]] = None,
+    dashboard_generation_failure: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Serialize the persisted react-agent history payload (version 2).
 
@@ -1065,6 +1221,8 @@ def _build_react_history_payload(
             "generated_images": generated_images,
             "sub_agents": sub_agents,
             "input_files": input_files,
+            "dashboard_refs": dashboard_refs or [],
+            "dashboard_generation_failure": dashboard_generation_failure,
         },
         ensure_ascii=False,
     )
@@ -1135,19 +1293,24 @@ async def _react_agent_stream(
         attachment_ctx: Pre-resolved attachment context for this turn (or
             ``None`` for pure-text / legacy ``file_path`` requests).
     """
+    inner = _react_agent_stream_inner(dialogue, tool_mode, attachment_ctx)
     try:
-        async for event in _react_agent_stream_inner(
-            dialogue, tool_mode, attachment_ctx
-        ):
+        async for event in inner:
             yield event
     finally:
-        if attachment_ctx is not None:
-            try:
-                attachment_ctx.close()
-            except Exception:
-                logger.warning(
-                    "Failed to close session attachment context", exc_info=True
-                )
+        # Closing an outer async generator does not automatically close a
+        # nested async-for iterator. Await its agent-task cleanup before
+        # releasing the files still used by that task.
+        try:
+            await inner.aclose()
+        finally:
+            if attachment_ctx is not None:
+                try:
+                    attachment_ctx.close()
+                except Exception:
+                    logger.warning(
+                        "Failed to close session attachment context", exc_info=True
+                    )
 
 
 def _legacy_upload_base_dir() -> str:
@@ -1167,6 +1330,14 @@ async def _open_turn_attachments(
     always surface before the SSE stream (and the agent) is constructed.
     """
     owner_id = (user_token.user_id if user_token else None) or dialogue.user_name
+    ext_info = dialogue.ext_info or {}
+    if ext_info.get("file_ids") and (
+        ext_info.get("dataset_id") or ext_info.get("file_paths")
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Session files and uploaded datasets cannot be combined.",
+        )
     try:
         attachment_ctx = await prepare_react_attachments(dialogue, owner_id=owner_id)
         if attachment_ctx is None:
@@ -1253,7 +1424,10 @@ class _AgentStreamingResponse(StreamingResponse):
             close = getattr(self.body_iterator, "aclose", None)
             if callable(close):
                 try:
-                    await close()
+                    import anyio
+
+                    with anyio.CancelScope(shield=True):
+                        await close()
                 except asyncio.CancelledError:
                     raise
                 except Exception:
@@ -1297,13 +1471,20 @@ async def _react_agent_stream_impl(
     if not isinstance(user_input, str):
         user_input = str(user_input or "")
 
+    file_paths: List[str] = []
     file_path = None
+    uploaded_files: List[Dict[str, Any]] = []
     knowledge_space = None
     skill_name = None
+    creation_mode = None
     database_name = None
+    dataset_id = None
+    dataset_replay_task_id = None
     if dialogue.ext_info and isinstance(dialogue.ext_info, dict):
-        file_path = dialogue.ext_info.get("file_path")
+        dataset_id = _parse_uploaded_dataset_id(dialogue.ext_info)
+        dataset_replay_task_id = _parse_dataset_replay_task_id(dialogue.ext_info)
         skill_name = dialogue.ext_info.get("skill_name")
+        creation_mode = dialogue.ext_info.get("creation_mode")
         # Support multiple field names for knowledge space
         knowledge_space = (
             dialogue.ext_info.get("knowledge_space")
@@ -1311,6 +1492,59 @@ async def _react_agent_stream_impl(
             or dialogue.ext_info.get("knowledge_space_id")
         )
         database_name = dialogue.ext_info.get("database_name")
+
+    if dataset_id:
+        from .uploaded_dataset_registry import UploadedDatasetService
+
+        dataset = UploadedDatasetService().resolve_owned(
+            dataset_id,
+            dialogue.user_name or "",
+            dialogue.conv_uid,
+            replay_task_id=dataset_replay_task_id,
+        )
+        file_paths = dataset.file_paths
+        uploaded_files = dataset.public_dict()["files"]
+        database_name = dataset.database_name
+    else:
+        raw_file_paths = _parse_uploaded_file_paths(dialogue.ext_info)
+        if raw_file_paths:
+            from .uploaded_dataset_registry import validate_legacy_user_paths
+
+            file_paths = validate_legacy_user_paths(
+                raw_file_paths, dialogue.user_name or ""
+            )
+    file_path = file_paths[0] if file_paths else None
+
+    # A confirmation/revision/annotation may be resumed from task history after
+    # a page reload.  In that case the UI's transient data-source selection can
+    # be empty even though the authoritative Dashboard already records it.  Use
+    # only that owned record to restore the binding; never guess or switch to a
+    # different source.
+    normalized_user_input = user_input.casefold()
+    dashboard_continuation_turn = any(
+        marker in normalized_user_input for marker in DASHBOARD_AGENT_MARKERS
+    )
+    marker_dashboard_id = _dashboard_id_from_workflow_marker(user_input)
+    if marker_dashboard_id and not database_name:
+        try:
+            from .dashboard.service import DashboardService
+
+            marker_dashboard = DashboardService().get_dashboard(
+                marker_dashboard_id, dialogue.user_name
+            )
+            database_name = marker_dashboard.schema_payload.dashboard.data_source_id
+            logger.info(
+                "Restored dashboard data source '%s' from workflow marker '%s'",
+                database_name,
+                marker_dashboard_id,
+            )
+        except Exception:
+            # Keep ownership and existence private.  The bounded Dashboard tool
+            # will return the normal permission/not-found response if invoked.
+            logger.info(
+                "Could not restore a dashboard data source from workflow marker",
+                exc_info=True,
+            )
 
     # Connector selection (Task C): only inject user-selected connectors.
     connector_ids: List[str] = _parse_connector_ids(dialogue.ext_info)
@@ -1602,6 +1836,9 @@ async def _react_agent_stream_impl(
     if database_name:
         try:
             local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
+            _require_database_access(
+                local_db_manager, database_name, dialogue.user_name
+            )
             database_connector = local_db_manager.get_connector(database_name)
             table_names = list(database_connector.get_table_names())
             table_info = database_connector.get_table_info_no_throw()
@@ -1625,16 +1862,48 @@ async def _react_agent_stream_impl(
 - 警告: 加载数据库 '{database_name}' 失败。错误: {str(e)}
 """
 
+    if database_connector is not None:
+        database_context += """
+
+## Dashboard generation tools
+- The checked-in `dashboard-builder` Skill owns workflow order and stopping rules.
+- Registered Dashboard tools own persistence, validation, trial execution, and
+  revision safety. Their observations are authoritative.
+- The server injects the user-selected data source; tools cannot replace it.
+"""
+
     react_state: Dict[str, Any] = {
         "skills_loaded": True,  # Skills are pre-loaded now
         "matched": None,
         "skill_prompt": None,
         "file_path": file_path,
+        "file_paths": file_paths,
+        "uploaded_files": uploaded_files,
+        "dataset_id": dataset_id,
     }
 
-    # Pre-select skill if skill_name provided in ext_info
+    # An authoritative Dashboard continuation marker always wins over a stale
+    # skill selection restored from task history.  Otherwise an annotation for
+    # a Walmart dashboard can be misrouted into a one-off Walmart report skill
+    # instead of loading and modifying the persisted Dashboard.
     pre_matched_skill = None
-    if skill_name:
+    if dashboard_continuation_turn or (
+        database_connector is not None and creation_mode == "dashboard"
+    ):
+        pre_matched_skill = registry.get_skill(DASHBOARD_BUILDER_SKILL_NAME)
+        if pre_matched_skill:
+            react_state["matched"] = pre_matched_skill
+            react_state["skill_prompt"] = pre_matched_skill.get_prompt()
+            logger.info(
+                "Selected Dashboard orchestration skill for explicit workflow: %s",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
+        else:
+            logger.error(
+                "Dashboard workflow selected but skill '%s' is unavailable",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
+    elif skill_name:
         pre_matched_skill = registry.get_skill(skill_name)
         if not pre_matched_skill:
             # Try case-insensitive match
@@ -1646,6 +1915,22 @@ async def _react_agent_stream_impl(
             react_state["matched"] = pre_matched_skill
             react_state["skill_prompt"] = pre_matched_skill.get_prompt()
             logger.info(f"Pre-selected skill from ext_info: {skill_name}")
+    elif database_connector is not None and _is_dashboard_workflow_request(
+        user_input, creation_mode
+    ):
+        pre_matched_skill = registry.get_skill(DASHBOARD_BUILDER_SKILL_NAME)
+        if pre_matched_skill:
+            react_state["matched"] = pre_matched_skill
+            react_state["skill_prompt"] = pre_matched_skill.get_prompt()
+            logger.info(
+                "Auto-selected Dashboard orchestration skill: %s",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
+        else:
+            logger.error(
+                "Dashboard request detected but skill '%s' is unavailable",
+                DASHBOARD_BUILDER_SKILL_NAME,
+            )
 
     # Build skills_context based on whether skill is pre-selected
     if pre_matched_skill:
@@ -1692,13 +1977,13 @@ async def _react_agent_stream_impl(
     )
     def select_skill(query: str) -> str:
         match_input = query or ""
-        if react_state.get("file_path"):
+        if react_state.get("file_paths"):
             match_input = f"{match_input} excel xlsx spreadsheet file"
         matched = registry.match_skill(match_input)
         if (
             matched
             and _is_excel_skill(matched.metadata)
-            and not (_mentions_excel(query) or react_state.get("file_path"))
+            and not (_mentions_excel(query) or react_state.get("file_paths"))
         ):
             matched = None
         react_state["matched"] = matched
@@ -1788,119 +2073,6 @@ async def _react_agent_stream_impl(
             )
             chunks.append({"output_type": "markdown", "content": prompt_text})
 
-        return json.dumps({"chunks": chunks}, ensure_ascii=False)
-
-    @tool(description="Load uploaded file info if provided.")
-    def load_file() -> str:
-        if not react_state.get("file_path"):
-            return json.dumps(
-                {"chunks": [{"output_type": "text", "content": "No file uploaded"}]},
-                ensure_ascii=False,
-            )
-        return json.dumps(
-            {
-                "chunks": [
-                    {"output_type": "text", "content": react_state["file_path"]},
-                    {
-                        "output_type": "text",
-                        "content": "File path provided by user upload",
-                    },
-                ]
-            },
-            ensure_ascii=False,
-        )
-
-    @tool(description="Execute quick analysis on uploaded Excel/CSV file.")
-    async def execute_analysis() -> str:
-        from dbgpt.util.code.server import get_code_server
-
-        matched = react_state.get("matched")
-        if not react_state.get("file_path"):
-            return json.dumps(
-                {"chunks": [{"output_type": "text", "content": "No file to analyze"}]},
-                ensure_ascii=False,
-            )
-        if matched and not _is_excel_skill(matched.metadata):
-            return json.dumps(
-                {
-                    "chunks": [
-                        {
-                            "output_type": "text",
-                            "content": "Selected skill is not for Excel analysis",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
-        code_server = await get_code_server(CFG.SYSTEM_APP)
-        analysis_code = """
-import json
-import pandas as pd
-
-file_path = r"{file_path}"
-if file_path.lower().endswith((".xls", ".xlsx")):
-    df = pd.read_excel(file_path)
-else:
-    df = pd.read_csv(file_path)
-summary = {{
-    "shape": list(df.shape),
-    "columns": list(df.columns),
-    "dtypes": {{col: str(dtype) for col, dtype in df.dtypes.items()}},
-    "head": df.head(5).to_dict(orient="records"),
-}}
-print(json.dumps(summary, ensure_ascii=False))
-""".format(file_path=react_state["file_path"])
-        result = await code_server.exec(analysis_code, "python")
-        output_text = (
-            result.output.decode("utf-8") if isinstance(result.output, bytes) else ""
-        )
-        chunks: List[Dict[str, Any]] = [
-            {"output_type": "code", "content": analysis_code.strip()}
-        ]
-        if output_text:
-            try:
-                summary = json.loads(output_text)
-                chunks.append({"output_type": "json", "content": summary})
-                head_rows = summary.get("head")
-                columns = summary.get("columns")
-                if isinstance(head_rows, list) and isinstance(columns, list):
-                    chunks.append(
-                        {
-                            "output_type": "table",
-                            "content": {
-                                "columns": [
-                                    {"title": col, "dataIndex": col, "key": col}
-                                    for col in columns
-                                ],
-                                "rows": head_rows,
-                            },
-                        }
-                    )
-                numeric_columns = [
-                    col
-                    for col, dtype in (summary.get("dtypes") or {}).items()
-                    if "int" in dtype or "float" in dtype
-                ]
-                if numeric_columns and isinstance(head_rows, list):
-                    series_col = numeric_columns[0]
-                    data = [
-                        {"x": idx + 1, "y": row.get(series_col)}
-                        for idx, row in enumerate(head_rows)
-                        if row.get(series_col) is not None
-                    ]
-                    if data:
-                        chunks.append(
-                            {
-                                "output_type": "chart",
-                                "content": {
-                                    "data": data,
-                                    "xField": "x",
-                                    "yField": "y",
-                                },
-                            }
-                        )
-            except Exception:
-                chunks.append({"output_type": "text", "content": output_text})
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
     @tool(description="Resolve required tools for the selected skill.")
@@ -2109,6 +2281,7 @@ print(json.dumps(summary, ensure_ascii=False))
     # ── Import built-in tools from tools/ directory ──
     from dbgpt_app.openapi.api_v1.tools import (
         make_code_interpreter,
+        make_dashboard_planner_tools,
         make_execute_analysis,
         make_execute_skill_script_file,
         make_execute_tool,
@@ -2146,6 +2319,7 @@ print(json.dumps(summary, ensure_ascii=False))
     execute_tool_tool = make_execute_tool(react_state)
     # Knowledge tools: use kb_tools (kb_ls, kb_glob, kb_grep, kb_cat, semantic_search)
     # when a knowledge space is connected, otherwise fall back to knowledge_retrieve
+    wiki_available = False
     if knowledge_space:
         kb_tool_list = make_kb_tools(knowledge_space)
         # Filter out codegraph tools when the space has no built code graph,
@@ -2169,12 +2343,56 @@ print(json.dumps(summary, ensure_ascii=False))
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
-    sql_query_tool = make_sql_query(react_state, database_connector)
+    dashboard_skill_selected = bool(
+        pre_matched_skill
+        and pre_matched_skill.metadata.name == DASHBOARD_BUILDER_SKILL_NAME
+    )
+    dashboard_agent_mode = dashboard_continuation_turn or (
+        database_connector is not None
+        and (
+            dashboard_skill_selected
+            or _is_dashboard_workflow_request(user_input, creation_mode)
+        )
+    )
+    from .dashboard.temporal_discovery import dashboard_temporal_context
+
+    # Rehydrate source facts even when confirmation history was compressed.
+    # This is discovery evidence, not a new semantic SQL rejection condition.
+    database_context += await dashboard_temporal_context(
+        database_connector, enabled=dashboard_agent_mode, user_input=user_input
+    )
+    dashboard_non_discovery_turn = dashboard_continuation_turn
+    dashboard_sql_query_limit = (
+        (0 if dashboard_non_discovery_turn else 8) if dashboard_agent_mode else None
+    )
+    sql_query_tool = make_sql_query(
+        react_state,
+        database_connector,
+        max_calls=dashboard_sql_query_limit,
+    )
     code_interpreter_tool = make_code_interpreter(react_state)
     shell_interpreter_tool = make_shell_interpreter(react_state)
     html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
     todowrite_tool = make_todowrite(_todo_list, stream_callback)
     question_tool = make_question(react_state, stream_callback)
+    dashboard_planner_tools = make_dashboard_planner_tools(
+        react_state=react_state,
+        database_connector=database_connector,
+        database_name=database_name,
+        owner_id=dialogue.user_name,
+        user_prompt=user_input,
+        model_name=dialogue.model_name,
+        stream_callback=stream_callback,
+    )
+    from .dashboard.confirmation import (
+        DashboardConfirmationAgent,
+        generation_failure,
+        generation_start_event,
+        run_bounded_generation,
+    )
+
+    if database_connector is not None or dashboard_continuation_turn:
+        business_tools.extend(dashboard_planner_tools)
     # read_file lets the agent read back persisted tool results / snapshots
     # from disk when a <persisted-output> block references a file path.
     read_file_tool = make_read_file(react_state)
@@ -2416,6 +2634,33 @@ print(json.dumps(summary, ensure_ascii=False))
             if _content:
                 historical_dialogues.append(AgentMessage(content=_content))
     storage_conv.add_user_message(user_input)
+    if react_state.get("dashboard_confirmation_error"):
+        confirmation_error = react_state["dashboard_confirmation_error"]
+        yield _sse_event(
+            {
+                "type": "dashboard.generation.failed",
+                "dashboard_id": marker_dashboard_id,
+                "message": confirmation_error,
+            }
+        )
+        for terminal_event in _react_terminal_events(
+            storage_conv,
+            json.dumps(
+                {
+                    "version": 1,
+                    "type": "react-agent",
+                    "steps": [],
+                    "final_content": confirmation_error,
+                },
+                ensure_ascii=False,
+            ),
+            AgentFinalAnswer(content=confirmation_error),
+        ):
+            yield terminal_event
+        return
+    generation_event = generation_start_event(react_state)
+    if generation_event:
+        yield _sse_event(generation_event)
     context = AgentContext(
         conv_id=conv_id,
         gpts_app_code="react_agent",
@@ -2429,6 +2674,21 @@ print(json.dumps(summary, ensure_ascii=False))
     # file_ids requests use the public manifest block; legacy file_path and
     # pure-text requests keep their existing wording byte-for-byte.
     file_context = build_file_context(attachment_ctx, file_path)
+    if file_paths and attachment_ctx is None:
+        uploaded_file_list = "\n".join(
+            f"  {index}. {path}" for index, path in enumerate(file_paths, start=1)
+        )
+        file_context = f"""
+## User Uploaded Tabular Dataset
+- Files in this upload group:
+{uploaded_file_list}
+- The server has registered the group as one SQLite data source when a
+  database name is present above. Prefer the SQL tools for repeatable analysis.
+- Treat `__dbgpt_relationship_candidates` only as relationship hints. Before
+  joining, verify grain, key uniqueness, distinct-key overlap, unmatched rows,
+  and one-to-many fan-out. Never concatenate unrelated tables merely because
+  their columns look similar.
+"""
 
     skill_prompt_context = ""
     execution_instruction = ""
@@ -2927,6 +3187,121 @@ Thought/Action/Action Input format shown above.
                 + connector_tool_extras
             )
 
+    if dashboard_agent_mode:
+        # Dashboard generation is a bounded workflow.  Giving a text-only ReAct
+        # model the unrelated skill, file, shell, KB, connector, and report tools
+        # makes the prompt much larger and materially increases malformed tool
+        # calls.  Keep the task path focused while reusing the same registered
+        # dashboard tools and backend validation.
+        confirmation_contract = react_state.get("dashboard_confirmation_contract")
+        confirmation_contract_prompt = ""
+        if confirmation_contract:
+            confirmation_contract_prompt = f"""
+## Authoritative confirmed plan contract
+The following persisted contract is authoritative. Generate exactly one query for
+every listed widget_id across staged calls of at most two widgets each, use each id
+verbatim, and do not invent extra widgets. Pass the dashboard_id and
+expected_revision below unchanged.
+
+{json.dumps(confirmation_contract, ensure_ascii=False, indent=2)}
+"""
+
+        annotation_request = "[[dashboard-annotation:" in user_input.casefold()
+        read_only_annotation_request = _is_read_only_dashboard_annotation_request(
+            user_input
+        )
+        annotation_contract_prompt = ""
+        if read_only_annotation_request:
+            annotation_contract_prompt = """
+## Read-only annotation explanation mode
+This batch contains only metric explanations and/or deterministic anomaly
+explanations. The persisted Dashboard schema, query result, and supplied anomaly
+evidence are authoritative. You may load or resolve that persisted context, then
+explain it and call terminate. Do not run SQL, recalculate an anomaly, create a
+proposal, or change any Dashboard state. Preserve every program conclusion,
+including `indeterminate` / `无法判断` when evidence is insufficient.
+"""
+        elif annotation_request:
+            annotation_contract_prompt = """
+## Annotation proposal mode
+This message contains an authoritative `[[dashboard-annotation:ID]]` marker.
+Do not call load_skill, load_tools, plan_dashboard, create_dashboard_draft, or
+modify_dashboard_draft. Read the persisted annotation through the registered
+`propose_dashboard_change` tool. A message may contain multiple scoped markers
+`[[dashboard-annotation:dashboard_id:annotation_id]]`. Submit one minimal proposal
+for EACH modification annotation, using that marker's annotation_id; do not stop
+after the first proposal. Explanation and anomaly annotations remain read-only.
+Widget paths must use /widgets/by-id/{widget_id}/title (or another field), never
+array indexes or /widgets/{widget_id}. Filter paths use /filters/by-id/{filter_id}.
+The tool validates each proposal in memory; it must not apply it. Only after ALL
+modification proposals succeed, call terminate using the six-field ReAct format below
+and tell the user to review and apply or reject the proposal in the Dashboard UI.
+"""
+
+        from .tools.dashboard_contracts import (
+            describe_registered_tools,
+            make_dashboard_tool_pack,
+        )
+
+        tool_pack = make_dashboard_tool_pack(
+            [sql_query_tool, question_tool, Terminate()] + dashboard_planner_tools,
+            user_input,
+            read_only_annotation=read_only_annotation_request,
+        )
+        registered_tool_prompt = describe_registered_tools(tool_pack)
+
+        workflow_prompt = f"""
+You are the DB-GPT Dashboard Agent. Complete only the selected data source's
+Dashboard planning or generation workflow, in the user's language.
+
+## Output protocol
+Output exactly ONE action per response using these six plain-text fields:
+Thought: concise reasoning for the next step
+Phase: concise user-facing stage name
+Action Intention: <= 18 Chinese characters or <= 8 English words
+Action Reason: <= 30 Chinese characters or <= 12 English words
+Action: one registered tool name
+Action Input: one valid JSON object
+
+Never emit DSML, XML, `<tool_calls>`, `<invoke>`, native function-call markup,
+multiple actions, or a simulated Observation. Wait for the real Observation before
+choosing another action.
+
+## Available tools
+{registered_tool_prompt}
+
+## Workflow rules
+Respect the requested scope. If the user lists widgets or analytical topics,
+plan one widget per requested item; do not add unrequested KPI cards, duplicate
+charts or filters. Broad requests should start with 3-4 core widgets. Add global
+filters only when requested or necessary for the stated decision, with real
+distinct options discovered from data (a null/All-only option is not sufficient).
+For a requested period with no matching rows, preserve that exact period. A
+table explicitly expected to be empty must have expected_data_points: 0 in its
+plan; generate the genuine detail SELECT with its original predicate. Never
+remove the predicate, substitute another year, fabricate a NULL row, or aggregate
+the empty table merely to pass validation. Range filters use two separate start
+and end placeholders; multi-selects use IN (:items), never string matching.
+
+In a planning turn at most eight sql_query discovery calls are allowed. After
+the eighth result, submit the plan. Confirmation, revision and annotation turns
+allow zero discovery calls. Ask questions only for essential missing information;
+never request another confirmation when a confirmation marker is present.
+Follow the loaded Dashboard Builder skill below for phase selection and tool
+ordering. The registered tools and backend validation remain authoritative.
+
+{skill_prompt_context}
+
+{annotation_contract_prompt}
+{confirmation_contract_prompt}
+{database_context}
+""".strip()
+
+    if dashboard_agent_mode and annotation_request:
+        from .dashboard.assistant_skills import dashboard_collaboration_skill
+
+        workflow_prompt += "\n\n" + dashboard_collaboration_skill()
+
     # Debug: print all registered tools
     logger.info(f"ToolPack resources: {list(tool_pack._resources.keys())}")
     if "execute_skill_script" not in tool_pack._resources:
@@ -2946,7 +3321,7 @@ Thought/Action/Action Input format shown above.
         _cm = CFG.SYSTEM_APP.get_component(
             "connector_manager", _ConnectorManager, default_component=None
         )
-        if _cm is not None and connector_ids:
+        if _cm is not None and connector_ids and not dashboard_agent_mode:
             _active = _cm.list_active()
             # Only describe connectors the user explicitly selected.
             # Iterate connector_ids (not _active) so prompt order matches
@@ -3025,9 +3400,13 @@ Thought/Action/Action Input format shown above.
         template_format="jinja2",
     )
 
+    workflow_agent = (
+        DashboardConfirmationAgent(dashboard_state=react_state, max_retry_count=30)
+        if dashboard_agent_mode
+        else ToolCallingReActAgent(max_retry_count=30)
+    )
     agent_builder = (
-        ToolCallingReActAgent(max_retry_count=30)
-        .bind(context)
+        workflow_agent.bind(context)
         .bind(agent_memory)
         .bind(llm_config)
         .bind(tool_pack)
@@ -3062,7 +3441,7 @@ Thought/Action/Action Input format shown above.
             historical_dialogues=historical_dialogues,
         )
 
-    agent_task = asyncio.create_task(run_agent())
+    agent_task = asyncio.create_task(run_bounded_generation(react_state, run_agent))
     if agent_task_holder is not None:
         agent_task_holder.append(agent_task)
     round_step_map: Dict[int, str] = {}
@@ -3129,7 +3508,12 @@ Thought/Action/Action Input format shown above.
             continue
 
         event_type = event.get("type")
-        if event_type == "context.status":
+        if isinstance(event_type, str) and event_type.startswith("dashboard."):
+            # Dashboard planner events share the ordered ReAct SSE queue.  Forward
+            # them verbatim so the web client can render plan/widget progress and
+            # the final editor link without scraping tool text.
+            yield _sse_event(event)
+        elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
@@ -3233,7 +3617,9 @@ Thought/Action/Action Input format shown above.
             # Note: TerminateAction.run() sets terminate=True but does NOT
             # set the action field, so we must check the terminate boolean.
             is_terminate = action_output.get("terminate") or (
-                action and action.lower() == "terminate"
+                action
+                and action.lower() == "terminate"
+                and action_output.get("is_exe_success", True)
             )
             if is_terminate:
                 pending_thoughts.pop(round_num, [])
@@ -3552,6 +3938,16 @@ Thought/Action/Action Input format shown above.
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        incomplete = generation_failure(react_state)
+        if incomplete:
+            yield _sse_event(incomplete)
+            err_msg = incomplete["message"]
+        elif react_state.get("dashboard_generation", {}).get("status") == "completed":
+            err_msg = "看板已校验并保存；后续模型说明未完成，可直接打开看板检查。"
+        if current_history_step is not None:
+            current_history_step["status"] = "failed"
+            history_steps.append(current_history_step)
+            yield step_done(current_history_step["id"], "failed")
         fail_running_subagent_history(subagent_history)
         error_payload = _build_react_history_payload(
             final_content=err_msg,
@@ -3561,6 +3957,8 @@ Thought/Action/Action Input format shown above.
             sub_agents=build_subagent_history_snapshot(subagent_history),
             input_files=input_files_snapshot,
             citations=[],
+            dashboard_refs=react_state.get("dashboard_refs", []),
+            dashboard_generation_failure=incomplete,
         )
         for terminal_event in _react_terminal_events(
             storage_conv,
@@ -3638,6 +4036,10 @@ Thought/Action/Action Input format shown above.
     else:
         final_content = reply.content or ""
 
+    incomplete = generation_failure(react_state)
+    if incomplete:
+        yield _sse_event(incomplete)
+        final_content = incomplete["message"]
     final_answer = final_answer_assembler.finalize(final_content)
 
     # Persist AI reply with structured history payload
@@ -3649,6 +4051,8 @@ Thought/Action/Action Input format shown above.
         sub_agents=build_subagent_history_snapshot(subagent_history),
         input_files=input_files_snapshot,
         citations=[citation.to_dict() for citation in final_answer.citations],
+        dashboard_refs=react_state.get("dashboard_refs", []),
+        dashboard_generation_failure=incomplete,
     )
     for terminal_event in _react_terminal_events(
         storage_conv,
@@ -3719,6 +4123,52 @@ def _conversation_owner_user_name(conv_uid: str) -> Optional[str]:
     return None if entity is None else (entity.user_name or "")
 
 
+def _require_owned_conversation(conv_uid: str, actor_id: str) -> None:
+    """Return a uniform 404 for absent and non-owned conversations."""
+
+    from dbgpt_serve.conversation.api.schemas import ServeRequest
+
+    conversation = _get_conversation_service().get(
+        ServeRequest(conv_uid=conv_uid, user_name=actor_id)
+    )
+    if conversation is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+
+_SHARED_UPLOAD_PATH_RE = re.compile(
+    r"(?i)(?:[A-Z]:[\\/]|/)[^\"'\r\n]*?python_uploads[\\/]"
+    r"[^\"'\r\n]*?\."
+    r"(?:csv|tsv|xls|xlsx|json|jsonl|parquet|pdf|txt|md|png|jpe?g|sqlite)\b"
+)
+_SHARED_UPLOAD_DATABASE_RE = re.compile(r"\bupload_[A-Za-z0-9_-]{8,}\b")
+
+
+def _redact_shared_content(value: Any) -> Any:
+    """Remove server paths and reusable upload identifiers from public history."""
+
+    if isinstance(value, str):
+        value = _SHARED_UPLOAD_PATH_RE.sub("[uploaded file]", value)
+        return _SHARED_UPLOAD_DATABASE_RE.sub("[uploaded dataset]", value)
+    if isinstance(value, list):
+        return [_redact_shared_content(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _redact_shared_content(item)
+            for key, item in value.items()
+            if key
+            not in {
+                "file_path",
+                "file_paths",
+                "database_path",
+                "dataset_id",
+                "dataset_replay_task_id",
+            }
+        }
+    return value
+
+
 @router.post("/v1/chat/share", response_model=Result)
 async def create_share_link(
     body: ShareCreateRequest = Body(),
@@ -3735,14 +4185,15 @@ async def create_share_link(
     """
     from fastapi import HTTPException
 
-    requester = user_token.user_id if user_token else None
-    owner = _conversation_owner_user_name(body.conv_uid)
-    if owner is None:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    if owner and owner != (requester or ""):
-        raise HTTPException(status_code=403, detail="Not the conversation owner")
     dao = _get_share_dao()
-    entity = dao.create_share(conv_uid=body.conv_uid, created_by=requester)
+    created_by = user_token.user_id if user_token else None
+    if not created_by:
+        raise HTTPException(status_code=401, detail="Authenticated user is required")
+    _require_owned_conversation(body.conv_uid, created_by)
+    existing = dao.get_by_conv_uid(body.conv_uid)
+    if existing is not None and existing.created_by != created_by:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    entity = dao.create_share(conv_uid=body.conv_uid, created_by=created_by)
     if entity is None:
         return Result.failed(msg="Failed to create share link")
     return Result.succ(
@@ -3764,8 +4215,6 @@ async def get_share_conversation(token: str):
     dao = _get_share_dao()
     link = dao.get_by_token(token)
     if link is None:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Share link not found")
 
     service = _get_conversation_service()
@@ -3779,7 +4228,7 @@ async def get_share_conversation(token: str):
     messages = [
         {
             "role": m.role,
-            "context": scrub_react_history_for_share(m.context),
+            "context": _redact_shared_content(scrub_react_history_for_share(m.context)),
             "order": m.order,
         }
         for m in (history or [])
@@ -3798,21 +4247,14 @@ async def delete_share_link(
     token: str,
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    """Revoke a share link.
-
-    Only the recorded creator may delete a link; legacy anonymous shares
-    (no recorded creator) remain revocable by anyone. Foreign users get a
-    403 and unknown tokens a 404 — no share is silently dropped.
-    """
-    from fastapi import HTTPException
-
+    """Revoke a share link without revealing links owned by another user."""
     dao = _get_share_dao()
+    actor_id = user_token.user_id if user_token else None
+    if not actor_id:
+        raise HTTPException(status_code=401, detail="Authenticated user is required")
     link = dao.get_by_token(token)
-    if link is None:
+    if link is None or link.created_by != actor_id:
         raise HTTPException(status_code=404, detail="Share link not found")
-    requester = user_token.user_id if user_token else None
-    if link.created_by and link.created_by != (requester or ""):
-        raise HTTPException(status_code=403, detail="Not the share owner")
     deleted = dao.delete_by_token(token)
     if not deleted:
         raise HTTPException(status_code=404, detail="Share link not found")
@@ -3854,10 +4296,19 @@ async def download_agent_file(
     ]
 
     if not any(resolved.startswith(d + os.sep) or resolved == d for d in allowed_dirs):
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied: file is not in an allowed directory",
-        )
+        # Bundled examples are copied into the caller's upload root. Keep
+        # that owner-scoped download while retaining upstream's removal of
+        # unrestricted access to the repository and shared upload tree.
+        try:
+            resolved = resolve_legacy_chat_file_path(
+                file_path=file_path,
+                owner_id=user_token.user_id if user_token else None,
+                base_dir=_legacy_upload_base_dir(),
+            )
+        except AttachmentInputError as error:
+            raise HTTPException(
+                status_code=error.status_code, detail=error.message
+            ) from error
 
     if not os.path.isfile(resolved):
         raise HTTPException(status_code=404, detail="File not found")
@@ -4023,7 +4474,7 @@ async def question_reply(
     try:
         question_manager.reply(request_id, body.answers)
         return Result.succ({"success": True, "request_id": request_id})
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         return Result.failed(msg=str(e))
 
 
@@ -4038,5 +4489,5 @@ async def question_reject(
     try:
         question_manager.reject(request_id)
         return Result.succ({"success": True, "request_id": request_id})
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         return Result.failed(msg=str(e))

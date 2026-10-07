@@ -22,6 +22,7 @@ from dbgpt_serve.session_file.domain import parse_file_input
 from ..api.schemas import (
     ChatReplayPayload,
     CreateTaskRequest,
+    DashboardRefreshPayload,
     RunResponse,
     TaskResponse,
     UpdateTaskRequest,
@@ -82,6 +83,8 @@ class ScheduledTaskService:
             ``payload.ext_info.file_ids`` into the task scope on create.
             Injected through the Serve layer (constructor), never looked up
             as a global, so tests can substitute a double.
+        session_file_registry_provider: Lazy Serve-layer resolver, used when
+            the session file component is registered after scheduled tasks.
     """
 
     def __init__(
@@ -90,6 +93,7 @@ class ScheduledTaskService:
         runner_callable: Optional[Callable] = None,
         resource_validator: Optional[Callable] = None,
         session_file_registry: Optional[Any] = None,
+        session_file_registry_provider: Optional[Callable[[], Any]] = None,
     ):
         self._scheduler = scheduler
         # Use the module-level run_scheduled_task by default so that
@@ -98,14 +102,27 @@ class ScheduledTaskService:
         self._runner = runner_callable or run_scheduled_task
         self._resource_validator = resource_validator
         self._session_file_registry = session_file_registry
+        self._session_file_registry_provider = session_file_registry_provider
         self._task_dao = ScheduledTaskDao()
         self._run_dao = ScheduledRunDao()
+
+    def execution_status(self):
+        running = bool(self._scheduler and self._scheduler.is_running())
+        return {
+            "running": running,
+            "message": "后台调度正在运行，已启用的计划会按时执行。"
+            if running
+            else "后台调度尚未运行。计划可以保存，但不会自动执行；仍可立即运行。",
+        }
 
     async def create_task(
         self,
         request: CreateTaskRequest,
         user_name: Optional[str] = None,
         sys_code: Optional[str] = None,
+        owner_id: Optional[str] = None,
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
     ) -> TaskResponse:
         """Create a scheduled task (freeze files + DB + scheduler write).
 
@@ -136,6 +153,15 @@ class ScheduledTaskService:
         # 1. Validate cron expression (fail-fast before any DB write)
         _validate_cron(request.cron_expression)
 
+        if request.task_type == "chat_replay" and not isinstance(
+            request.payload, ChatReplayPayload
+        ):
+            raise ValueError("chat_replay requires a ChatReplayPayload")
+        if request.task_type == "dashboard_refresh" and not isinstance(
+            request.payload, DashboardRefreshPayload
+        ):
+            raise ValueError("dashboard_refresh requires a DashboardRefreshPayload")
+
         # 2. Validate referenced resources
         if self._resource_validator is not None:
             self._resource_validator(request.payload)
@@ -146,24 +172,42 @@ class ScheduledTaskService:
 
         # 4. Freeze payload files into the task scope; persist only
         #    task-scoped IDs (never session IDs, never file_path)
-        owner_id = (user_name or "").strip()
+        owner_id = owner_id if owner_id is not None else (user_name or "").strip()
         payload_data = request.payload.model_dump()
-        ext_info, copied_files = self._freeze_payload_files(
-            request.payload, owner_id=owner_id, task_id=task_id
-        )
-        payload_data["ext_info"] = ext_info
+        copied_files = False
+        if isinstance(request.payload, ChatReplayPayload):
+            ext_info, copied_files = self._freeze_payload_files(
+                request.payload, owner_id=owner_id, task_id=task_id
+            )
+            payload_data["ext_info"] = ext_info
+            payload_json = ChatReplayPayload(**payload_data).model_dump_json()
+        else:
+            payload_json = request.payload.model_dump_json()
 
         # 5. Write DB row (compensate frozen files on failure)
         entity_dict = {
             "task_id": task_id,
             "task_name": request.task_name,
             "description": request.description,
-            "task_type": "chat_replay",
+            "task_type": request.task_type,
             "cron_expression": request.cron_expression,
-            "payload_json": ChatReplayPayload(**payload_data).model_dump_json(),
+            "payload_json": payload_json,
             "enabled": True,
             "user_name": user_name,
+            "owner_id": owner_id,
             "sys_code": sys_code,
+            "resource_type": (
+                resource_type
+                or ("dashboard" if request.task_type == "dashboard_refresh" else None)
+            ),
+            "resource_id": (
+                resource_id
+                or (
+                    request.payload.dashboard_id
+                    if isinstance(request.payload, DashboardRefreshPayload)
+                    else None
+                )
+            ),
         }
         try:
             created = self._task_dao.create(entity_dict)
@@ -189,10 +233,22 @@ class ScheduledTaskService:
                     self._delete_task_files_quietly(owner_id, task_id)
                 raise
 
-        # 7. Return TaskResponse
-        return self._to_task_response(created)
+        # 6. Return TaskResponse
+        job = self._scheduler.get_job(task_id) if self._scheduler is not None else None
+        return self._to_task_response(
+            created,
+            next_run_time=job.get("next_run_time") if isinstance(job, dict) else None,
+        )
 
-    async def list_tasks(self, enabled_only: bool = False) -> List[TaskResponse]:
+    async def list_tasks(
+        self,
+        enabled_only: bool = False,
+        *,
+        owner_id: Optional[str] = None,
+        task_type: Optional[str] = None,
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
+    ) -> List[TaskResponse]:
         """List all tasks, optionally filtering by enabled status.
 
         Merges ``next_run_time`` from the scheduler for each task so that
@@ -204,7 +260,15 @@ class ScheduledTaskService:
         Returns:
             List[TaskResponse]: The list of tasks.
         """
-        if enabled_only:
+        if owner_id is not None:
+            rows = self._task_dao.list_owned(
+                owner_id,
+                task_type=task_type,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                enabled_only=enabled_only,
+            )
+        elif enabled_only:
             rows = self._task_dao.list_enabled()
         else:
             rows = self._task_dao.get_list({})
@@ -223,7 +287,9 @@ class ScheduledTaskService:
             for row in rows
         ]
 
-    async def get_task(self, task_id: str) -> Optional[TaskResponse]:
+    async def get_task(
+        self, task_id: str, *, owner_id: Optional[str] = None
+    ) -> Optional[TaskResponse]:
         """Get a single task by ID, including next_run_time from scheduler.
 
         Args:
@@ -232,7 +298,11 @@ class ScheduledTaskService:
         Returns:
             Optional[TaskResponse]: The task, or None if not found.
         """
-        row = self._task_dao.get_one({"task_id": task_id})
+        row = (
+            self._task_dao.get_owned(task_id, owner_id)
+            if owner_id is not None
+            else self._task_dao.get_one({"task_id": task_id})
+        )
         if row is None:
             return None
 
@@ -246,7 +316,11 @@ class ScheduledTaskService:
         return self._to_task_response(row, next_run_time=next_run_time)
 
     async def update_task(
-        self, task_id: str, request: UpdateTaskRequest
+        self,
+        task_id: str,
+        request: UpdateTaskRequest,
+        *,
+        owner_id: Optional[str] = None,
     ) -> TaskResponse:
         """Update task fields. If cron changes, reschedule the job.
 
@@ -271,6 +345,14 @@ class ScheduledTaskService:
             ValueError: If the new cron expression is invalid or task not found.
             RuntimeError: If scheduler.add_job fails (DB is NOT changed).
         """
+        existing = (
+            self._task_dao.get_owned(task_id, owner_id)
+            if owner_id is not None
+            else self._task_dao.get_one({"task_id": task_id})
+        )
+        if existing is None:
+            raise ValueError(f"Task not found: {task_id}")
+
         update_dict = {}
         if request.task_name is not None:
             update_dict["task_name"] = request.task_name
@@ -282,22 +364,57 @@ class ScheduledTaskService:
         # fields, then re-validate + re-serialise so every other payload field
         # (skill_id / connector_ids / chat_mode / ext_info / ...) is preserved.
         # This does NOT touch the scheduler (only cron changes reschedule).
-        payload_changed = (
-            request.user_input is not None or request.model_name is not None
+        payload_changed = any(
+            value is not None
+            for value in (
+                request.user_input,
+                request.model_name,
+                request.filters,
+                request.publish_after_refresh,
+                request.timeout_seconds,
+                request.max_attempts,
+            )
         )
         if payload_changed:
-            payload_row = self._task_dao.get_one({"task_id": task_id})
-            if payload_row is None:
-                raise ValueError(f"Task not found: {task_id}")
-            payload_json = payload_row.get("payload_json")
+            payload_json = existing.get("payload_json")
             payload_data = json.loads(payload_json) if payload_json else {}
-            if request.user_input is not None:
-                payload_data["user_input"] = request.user_input
-            if request.model_name is not None:
-                payload_data["model_name"] = request.model_name
-            update_dict["payload_json"] = ChatReplayPayload(
-                **payload_data
-            ).model_dump_json()
+            if existing.get("task_type") == "dashboard_refresh":
+                if request.user_input is not None or request.model_name is not None:
+                    raise ValueError(
+                        "Dashboard schedules do not accept chat prompt fields."
+                    )
+                for field_name in (
+                    "filters",
+                    "publish_after_refresh",
+                    "timeout_seconds",
+                    "max_attempts",
+                ):
+                    value = getattr(request, field_name)
+                    if value is not None:
+                        payload_data[field_name] = value
+                update_dict["payload_json"] = DashboardRefreshPayload(
+                    **payload_data
+                ).model_dump_json()
+            else:
+                if any(
+                    value is not None
+                    for value in (
+                        request.filters,
+                        request.publish_after_refresh,
+                        request.timeout_seconds,
+                        request.max_attempts,
+                    )
+                ):
+                    raise ValueError(
+                        "Chat replay schedules do not accept dashboard fields."
+                    )
+                if request.user_input is not None:
+                    payload_data["user_input"] = request.user_input
+                if request.model_name is not None:
+                    payload_data["model_name"] = request.model_name
+                update_dict["payload_json"] = ChatReplayPayload(
+                    **payload_data
+                ).model_dump_json()
 
         cron_changed = request.cron_expression is not None
         if cron_changed:
@@ -307,8 +424,7 @@ class ScheduledTaskService:
         # If cron changed, reschedule scheduler job BEFORE DB write
         if cron_changed and self._scheduler is not None:
             # Read old cron so we can attempt rollback on failure
-            old_row = self._task_dao.get_one({"task_id": task_id})
-            old_cron = old_row["cron_expression"] if old_row else None
+            old_cron = existing["cron_expression"]
 
             # Remove old job (best-effort: may already be gone after restart)
             try:
@@ -356,7 +472,9 @@ class ScheduledTaskService:
 
         return self._to_task_response(updated)
 
-    async def toggle_task(self, task_id: str, enabled: bool) -> TaskResponse:
+    async def toggle_task(
+        self, task_id: str, enabled: bool, *, owner_id: Optional[str] = None
+    ) -> TaskResponse:
         """Enable or disable a task (pause/resume scheduler job).
 
         DB enabled flag is always updated. If the scheduler job is missing
@@ -370,6 +488,8 @@ class ScheduledTaskService:
         Returns:
             TaskResponse: The updated task.
         """
+        if owner_id is not None and self._task_dao.get_owned(task_id, owner_id) is None:
+            raise ValueError(f"Task not found: {task_id}")
         updated = self._task_dao.update({"task_id": task_id}, {"enabled": enabled})
 
         if self._scheduler is not None:
@@ -388,7 +508,9 @@ class ScheduledTaskService:
 
         return self._to_task_response(updated)
 
-    async def delete_task(self, task_id: str) -> None:
+    async def delete_task(
+        self, task_id: str, *, owner_id: Optional[str] = None
+    ) -> None:
         """Delete a task: best-effort remove scheduler job, then delete DB row.
 
         If the scheduler job is already gone (e.g. after a restart with
@@ -400,6 +522,8 @@ class ScheduledTaskService:
         Args:
             task_id: The task UUID.
         """
+        if owner_id is not None and self._task_dao.get_owned(task_id, owner_id) is None:
+            raise ValueError(f"Task not found: {task_id}")
         # Read owner_id BEFORE deleting the row (mirror the normalization used
         # when freezing files: ``(user_name or "").strip()`` in create_task).
         # The DB stores the raw user_name; the session_file registry matches
@@ -428,7 +552,12 @@ class ScheduledTaskService:
             self._delete_task_files_quietly(owner_id, task_id)
 
     async def list_runs(
-        self, task_id: str, limit: int = 50, offset: int = 0
+        self,
+        task_id: str,
+        limit: int = 50,
+        offset: int = 0,
+        *,
+        owner_id: Optional[str] = None,
     ) -> List[RunResponse]:
         """List execution runs for a task, newest first.
 
@@ -440,10 +569,18 @@ class ScheduledTaskService:
         Returns:
             List[RunResponse]: The run records, newest first.
         """
+        if owner_id is not None and self._task_dao.get_owned(task_id, owner_id) is None:
+            raise ValueError(f"Task not found: {task_id}")
         rows = self._run_dao.list_by_task_id(task_id, limit=limit, offset=offset)
         return [self._to_run_response(row) for row in rows]
 
-    async def get_run(self, task_id: str, run_id: str) -> Optional[RunResponse]:
+    async def get_run(
+        self,
+        task_id: str,
+        run_id: str,
+        *,
+        owner_id: Optional[str] = None,
+    ) -> Optional[RunResponse]:
         """Get a single run record.
 
         Args:
@@ -454,6 +591,8 @@ class ScheduledTaskService:
             Optional[RunResponse]: The run record, or None if not found
                 or task_id mismatch.
         """
+        if owner_id is not None and self._task_dao.get_owned(task_id, owner_id) is None:
+            return None
         row = self._run_dao.get_one({"run_id": run_id})
         if row is None:
             return None
@@ -465,6 +604,13 @@ class ScheduledTaskService:
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _get_session_file_registry(self):
+        if self._session_file_registry is not None:
+            return self._session_file_registry
+        if self._session_file_registry_provider is not None:
+            return self._session_file_registry_provider()
+        return None
 
     def _freeze_payload_files(
         self, payload: ChatReplayPayload, *, owner_id: str, task_id: str
@@ -488,7 +634,8 @@ class ScheduledTaskService:
             raise ValueError(
                 "an authenticated owner is required to freeze session files"
             )
-        if self._session_file_registry is None:
+        registry = self._get_session_file_registry()
+        if registry is None:
             raise ValueError("session file storage is unavailable")
         session_id = (
             ext_info.get("session_id")
@@ -498,7 +645,7 @@ class ScheduledTaskService:
         if not isinstance(session_id, str) or not session_id.strip():
             raise ValueError("ext_info.session_id is required to freeze session files")
         try:
-            records = self._session_file_registry.copy_session_to_task(
+            records = registry.copy_session_to_task(
                 owner_id=owner_id,
                 session_id=session_id.strip(),
                 file_ids=list(spec.file_ids),
@@ -517,14 +664,13 @@ class ScheduledTaskService:
 
     def _delete_task_files_quietly(self, owner_id: str, task_id: str) -> None:
         """Best-effort compensating delete of files frozen into a task scope."""
-        if self._session_file_registry is None:
-            return
         try:
-            task_files = self._session_file_registry.list_task_files(
-                owner_id=owner_id, task_id=task_id
-            )
+            registry = self._get_session_file_registry()
+            if registry is None:
+                return
+            task_files = registry.list_task_files(owner_id=owner_id, task_id=task_id)
             for record in task_files:
-                self._session_file_registry.delete_task_file(
+                registry.delete_task_file(
                     owner_id=owner_id, task_id=task_id, file_id=record.file_id
                 )
         except Exception:
@@ -544,13 +690,18 @@ class ScheduledTaskService:
         Returns:
             TaskResponse: The response object.
         """
-        # Parse payload_json back to ChatReplayPayload
+        # Parse the frozen payload according to the persisted task type.
         payload = None
         payload_json = task_dict.get("payload_json")
         if payload_json:
             try:
                 payload_data = json.loads(payload_json)
-                payload = ChatReplayPayload(**payload_data)
+                payload_type = (
+                    DashboardRefreshPayload
+                    if task_dict.get("task_type") == "dashboard_refresh"
+                    else ChatReplayPayload
+                )
+                payload = payload_type(**payload_data)
             except (json.JSONDecodeError, Exception):
                 logger.warning(
                     "Failed to parse payload_json for task %s",
@@ -568,6 +719,7 @@ class ScheduledTaskService:
             created_at=task_dict.get("created_at"),
             updated_at=task_dict.get("updated_at"),
             user_name=task_dict.get("user_name"),
+            owner_id=task_dict.get("owner_id"),
             sys_code=task_dict.get("sys_code"),
             next_run_time=next_run_time,
         )
@@ -600,4 +752,11 @@ class ScheduledTaskService:
             result_summary=run_dict.get("result_summary"),
             error_message=run_dict.get("error_message"),
             output_conv_uid=run_dict.get("output_conv_uid"),
+            output_resource_id=run_dict.get("output_resource_id"),
+            attempt_count=run_dict.get("attempt_count") or 1,
+            result=(
+                json.loads(run_dict["result_json"])
+                if run_dict.get("result_json")
+                else None
+            ),
         )

@@ -113,8 +113,8 @@ export default function SourcePanel({ spaceId, spaceName }: { spaceId: string | 
                 <div className='mt-1 text-xs text-red-500 break-all'>{binding.error_message}</div>
               )}
               <div className='mt-2 text-xs text-gray-400 flex gap-3'>
-                <span>{t('ks_mode_' + binding.sync_mode)}</span>
-                <span>{t('ks_conflict_' + binding.conflict_strategy)}</span>
+                <span>{t(`ks_mode_${binding.sync_mode}`, binding.sync_mode)}</span>
+                <span>{t(`ks_conflict_${binding.conflict_strategy}`, binding.conflict_strategy)}</span>
                 <span>
                   {binding.interval_minutes > 0
                     ? t('ks_every_n_minutes', { n: binding.interval_minutes })

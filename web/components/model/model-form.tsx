@@ -131,7 +131,7 @@ function ModelForm({ onCancel, onSuccess, defaultProvider, defaultWorkerType, pr
           // Make sure to keep all field values
           if (nestedValue.type) {
             const typeFields = param.nested_fields[nestedValue.type] || [];
-            const fieldValues = {};
+            const fieldValues: Record<string, unknown> = {};
 
             // Collect values of all fields
             typeFields.forEach(field => {

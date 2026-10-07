@@ -1,0 +1,34 @@
+.spa {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.spa:hover .arc,
+.spa:focus-within .arc {
+  animation: revealArc 1s ease-out both;
+}
+.spa:hover .slot {
+  animation: slotReveal 0.7s ease-out both;
+}
+@keyframes revealArc {
+  from {
+    stroke-dasharray: 0 195;
+  }
+  to {
+    stroke-dasharray: 144 195;
+  }
+}
+@keyframes slotReveal {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spa:hover .arc,
+  .spa:hover .slot {
+    animation: none;
+  }
+}

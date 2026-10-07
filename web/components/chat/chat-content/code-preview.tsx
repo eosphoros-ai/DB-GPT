@@ -3,7 +3,7 @@ import { CopyOutlined } from '@ant-design/icons';
 import { Button, message } from 'antd';
 import copy from 'copy-to-clipboard';
 import { CSSProperties, useContext } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { coldarkDark, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface Props {

@@ -1,5 +1,4 @@
 from alembic import context
-from sqlalchemy import engine_from_config, pool
 
 from dbgpt.storage.metadata.db_manager import db
 
@@ -8,9 +7,7 @@ from dbgpt.storage.metadata.db_manager import db
 config = context.config
 
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
+target_metadata = config.attributes.get("target_metadata") or db.metadata
 
 
 # other values from the config, defined by the needs of env.py,
@@ -31,7 +28,6 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    target_metadata = db.metadata
     url = config.get_main_option("sqlalchemy.url")
     assert target_metadata is not None
     assert url is not None
@@ -53,20 +49,22 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    engine = db.engine
-    target_metadata = db.metadata
-    with engine.connect() as connection:
-        if engine.dialect.name == "sqlite":
-            context.configure(
-                connection=engine.connect(),
-                target_metadata=target_metadata,
-                render_as_batch=True,
-            )
-        else:
-            context.configure(connection=connection, target_metadata=target_metadata)
+    supplied_connection = config.attributes.get("connection")
 
+    def run_with_connection(connection) -> None:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=connection.dialect.name == "sqlite",
+        )
         with context.begin_transaction():
             context.run_migrations()
+
+    if supplied_connection is not None:
+        run_with_connection(supplied_connection)
+    else:
+        with db.engine.connect() as connection:
+            run_with_connection(connection)
 
 
 if context.is_offline_mode():

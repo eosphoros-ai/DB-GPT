@@ -1,6 +1,4 @@
-import { Resources } from 'i18next';
-
-const KsEn: Resources['translation'] = {
+const KsEn = {
   ks_tab_label: 'Sources',
   ks_panel_title: 'External data sources',
   ks_add_binding: 'Bind source',

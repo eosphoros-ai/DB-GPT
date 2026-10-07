@@ -127,6 +127,7 @@ def share_env(monkeypatch):
         dao=ServeDao(ServeConfig()),
         get_history_messages=lambda request: state["history"],
     )
+    service.get = lambda request: service.dao.get_one(request)
     monkeypatch.setattr(agentic_data_api, "_get_share_dao", lambda: share_dao)
     monkeypatch.setattr(agentic_data_api, "_get_conversation_service", lambda: service)
     return SimpleNamespace(module=agentic_data_api, share_dao=share_dao, state=state)
@@ -202,7 +203,7 @@ async def test_foreign_user_cannot_create_share(share_env):
             UserRequest(user_id=OTHER),
         )
 
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 404
     assert share_env.share_dao.get_by_conv_uid(CONV) is None
 
 
@@ -219,7 +220,7 @@ async def test_anonymous_caller_cannot_create_share_for_owned_conversation(
             None,
         )
 
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 401
     assert share_env.share_dao.get_by_conv_uid(CONV) is None
 
 
@@ -238,16 +239,18 @@ async def test_create_share_for_unknown_conversation_fails_closed(share_env):
 
 
 @pytest.mark.asyncio
-async def test_legacy_anonymous_conversation_remains_shareable(share_env):
+async def test_legacy_anonymous_conversation_cannot_be_claimed(share_env):
     module = share_env.module
     _create_conversation(share_env, conv_uid="conv-legacy", user_name=None)
 
-    created = await module.create_share_link(
-        module.ShareCreateRequest(conv_uid="conv-legacy"),
-        UserRequest(user_id=OTHER),
-    )
-
-    assert created.success is True
+    # Integration retains the dashboard fork's fail-closed ownership rule.
+    with pytest.raises(HTTPException) as exc_info:
+        await module.create_share_link(
+            module.ShareCreateRequest(conv_uid="conv-legacy"),
+            UserRequest(user_id=OTHER),
+        )
+    assert exc_info.value.status_code == 404
+    assert share_env.share_dao.get_by_conv_uid("conv-legacy") is None
 
 
 @pytest.mark.asyncio
@@ -259,7 +262,7 @@ async def test_foreign_user_cannot_delete_share(share_env):
     with pytest.raises(HTTPException) as exc_info:
         await module.delete_share_link(link.token, UserRequest(user_id=OTHER))
 
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 404
     assert share_env.share_dao.get_by_token(link.token) is not None
 
 
@@ -272,20 +275,20 @@ async def test_anonymous_caller_cannot_delete_owned_share(share_env):
     with pytest.raises(HTTPException) as exc_info:
         await module.delete_share_link(link.token, None)
 
-    assert exc_info.value.status_code == 403
+    assert exc_info.value.status_code == 401
     assert share_env.share_dao.get_by_token(link.token) is not None
 
 
 @pytest.mark.asyncio
-async def test_legacy_anonymous_share_remains_deletable(share_env):
+async def test_legacy_anonymous_share_cannot_be_revoked_by_another_user(share_env):
     module = share_env.module
     _create_conversation(share_env, user_name=None)
     link = share_env.share_dao.create_share(conv_uid=CONV, created_by=None)
 
-    deleted = await module.delete_share_link(link.token, UserRequest(user_id=OTHER))
-
-    assert deleted.success is True
-    assert share_env.share_dao.get_by_token(link.token) is None
+    with pytest.raises(HTTPException) as exc_info:
+        await module.delete_share_link(link.token, UserRequest(user_id=OTHER))
+    assert exc_info.value.status_code == 404
+    assert share_env.share_dao.get_by_token(link.token) is not None
 
 
 @pytest.mark.asyncio

@@ -286,9 +286,9 @@ class SQLiteTempConnector(SQLiteConnector):
     def close(self):
         """Close the connection."""
         try:
+            super().close()
             if os.path.exists(self.temp_file_path):
                 os.remove(self.temp_file_path)
-            super().close()
         except Exception as e:
             logger.error(f"Error removing temporary database file: {e}")
 

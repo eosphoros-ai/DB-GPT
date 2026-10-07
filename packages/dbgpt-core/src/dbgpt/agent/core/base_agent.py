@@ -36,6 +36,27 @@ from .role import AgentRunMode, Role
 logger = logging.getLogger(__name__)
 
 
+def _raise_for_terminal_llm_error(reply: Optional[str]) -> None:
+    """Stop an agent loop when a model gateway returned an error as text.
+
+    Some OpenAI-compatible gateways return transport failures in a normal text
+    payload instead of raising ``LLMChatError``.  Letting ReAct parse that text
+    as a tool response creates dozens of identical failed rounds and hides the
+    actual configuration problem from the user.
+    """
+
+    if not reply:
+        return
+    normalized = " ".join(reply.casefold().split())
+    if "llmserver generate error" in normalized and (
+        "connection error" in normalized or "checkerrorinfo" in normalized
+    ):
+        raise LLMChatError(
+            "模型服务连接失败（LLM model service unavailable）。"
+            "请检查当前模型、API 地址和网络连接后重试。"
+        )
+
+
 class ConversableAgent(Role, Agent):
     """ConversableAgent is an agent that can communicate with other agents."""
 
@@ -630,6 +651,7 @@ class ConversableAgent(Role, Agent):
                             )
                         else:
                             raise
+                    _raise_for_terminal_llm_error(llm_reply)
                     reply_message.model_name = model_name
                     reply_message.content = llm_reply
                     reply_message.resource_info = resource_info

@@ -46,7 +46,7 @@ async def test_start_uses_custom_image_and_explicit_archive_inputs(tmp_path):
     work = tmp_path / "work"
     work.mkdir()
     (work / "state.txt").write_text("previous result")
-    source = tmp_path / 'input";name.csv'
+    source = tmp_path / "input';name.csv"
     source.write_text("x\n1\n")
     container = _container()
     uploaded = []

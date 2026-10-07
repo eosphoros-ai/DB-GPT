@@ -1,3 +1,4 @@
+import { AttachmentMessageGroup, legacyFilePathDisplayName, scheduledTaskFiles } from '@/modules/session-files';
 import {
   ArrowLeftOutlined,
   ClockCircleOutlined,
@@ -6,16 +7,16 @@ import {
   LaptopOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import { Button, Spin, Switch, message } from 'antd';
+import { Alert, Button, Spin, Switch, message } from 'antd';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useConnectors } from '@/hooks/use-connector-api';
 import { useScheduledTask } from '@/hooks/use-scheduled-task';
-import { AttachmentMessageGroup, legacyFilePathDisplayName, scheduledTaskFiles } from '@/modules/session-files';
 import ConstructLayout from '@/new-components/layout/Construct';
+import DashboardTaskContext from '@/new-components/scheduled-task/DashboardTaskContext';
 import EditScheduledTaskDrawer from '@/new-components/scheduled-task/EditScheduledTaskDrawer';
 import TaskRunsTable from '@/new-components/scheduled-task/TaskRunsTable';
 import type { TaskResponse } from '@/types/scheduled-task';
@@ -36,6 +37,7 @@ function ScheduledTaskDetail() {
   const [task, setTask] = useState<TaskResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   /** connector id → display_name 映射 */
   const connectorNameMap = useMemo(() => {
@@ -46,18 +48,23 @@ function ScheduledTaskDetail() {
     return m;
   }, [connectors]);
 
-  const loadTask = () => {
+  const loadTask = useCallback(() => {
     if (!taskId) return;
     setLoading(true);
+    setLoadError(null);
     getTask(taskId)
       .then(setTask)
-      .catch((e: any) => message.error(e?.message ?? t('scheduled.msg.loadDetailFailed')))
+      .catch((e: any) => {
+        setTask(null);
+        setLoadError(e?.message ?? t('scheduled.msg.loadDetailFailed'));
+      })
       .finally(() => setLoading(false));
-  };
+  }, [taskId, getTask, t]);
 
   useEffect(() => {
+    // Route changes load the authoritative task and its current permissions.
     loadTask();
-  }, [taskId, getTask]);
+  }, [loadTask]);
 
   const onToggle = async (enabled: boolean) => {
     if (!task) return;
@@ -70,6 +77,17 @@ function ScheduledTaskDetail() {
     }
   };
 
+  if (loadError) {
+    return (
+      <ConstructLayout className='scrollable-tabs'>
+        <div className='p-8 space-y-4'>
+          <Alert type='error' showIcon message={loadError} />
+          <Button onClick={loadTask}>{t('scheduled.page.refresh')}</Button>
+          <Button onClick={() => router.push('/construct/scheduled-tasks/')}>{t('scheduled.detail.back')}</Button>
+        </div>
+      </ConstructLayout>
+    );
+  }
   if (loading || !task) {
     return (
       <ConstructLayout className='scrollable-tabs'>
@@ -80,9 +98,9 @@ function ScheduledTaskDetail() {
     );
   }
 
-  const ext = (task.payload?.ext_info ?? {}) as Record<string, any>;
-  /** Task-scoped v2 附件展示快照(仅元数据,不含 file_path / 可用 file_id)。 */
-  const taskFiles = scheduledTaskFiles(task.payload?.ext_info);
+  const chatPayload = task.task_type === 'chat_replay' ? task.payload : null;
+  const ext = (chatPayload?.ext_info ?? {}) as Record<string, any>;
+  const taskFiles = scheduledTaskFiles(chatPayload?.ext_info);
 
   return (
     <ConstructLayout className='scrollable-tabs'>
@@ -205,79 +223,82 @@ function ScheduledTaskDetail() {
                 {t('scheduled.detail.envReadonly')}
               </span>
             </h3>
-            <div className='grid grid-cols-1 gap-y-4'>
-              <InfoField label={t('scheduled.detail.rawQuestion')}>
-                <div className='text-[14px] text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-[#1a1f2e] rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-700/50'>
-                  {task.payload?.user_input ?? '-'}
-                </div>
-              </InfoField>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4'>
-                <InfoField label={t('scheduled.detail.modelLabel')}>
-                  <span className='text-[14px] text-gray-800 dark:text-gray-200'>
-                    {task.payload?.model_name ?? t('scheduled.detail.modelDefault')}
-                  </span>
+            {task.task_type === 'dashboard_refresh' ? (
+              <DashboardTaskContext payload={task.payload} />
+            ) : (
+              <div className='grid grid-cols-1 gap-y-4'>
+                <InfoField label={t('scheduled.detail.rawQuestion')}>
+                  <div className='text-[14px] text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-[#1a1f2e] rounded-lg px-3 py-2 border border-gray-100 dark:border-gray-700/50'>
+                    {chatPayload?.user_input ?? '-'}
+                  </div>
                 </InfoField>
-                {ext.skill_id && (
-                  <InfoField label={t('scheduled.detail.skillLabel')}>
-                    <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/40'>
-                      {String(ext.skill_name || ext.skill_id)}
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4'>
+                  <InfoField label={t('scheduled.detail.modelLabel')}>
+                    <span className='text-[14px] text-gray-800 dark:text-gray-200'>
+                      {chatPayload?.model_name ?? t('scheduled.detail.modelDefault')}
                     </span>
                   </InfoField>
-                )}
-                {ext.database_name && (
-                  <InfoField label={t('scheduled.detail.databaseLabel')}>
-                    <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800/40'>
-                      {String(ext.database_name)}
-                    </span>
-                  </InfoField>
-                )}
-                {ext.file_path && (
-                  <InfoField label={t('scheduled.detail.fileLabel')}>
-                    <span
-                      title={String(ext.file_path)}
-                      className='inline-flex items-center max-w-full truncate px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-50 text-green-600 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/40'
-                    >
-                      {legacyFilePathDisplayName(ext.file_path)}
-                    </span>
-                  </InfoField>
-                )}
-                {taskFiles.length > 0 && (
-                  <InfoField label={t('scheduled.detail.fileLabel')} className='sm:col-span-2 lg:col-span-3'>
-                    {/* v2 任务附件:仅展示名称/大小/类型元数据,不暴露 file_path 与可用 file_id。 */}
-                    <AttachmentMessageGroup files={taskFiles} />
-                  </InfoField>
-                )}
-                {ext.knowledge_space_name && (
-                  <InfoField label={t('scheduled.detail.knowledgeLabel')}>
-                    <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/40'>
-                      {String(ext.knowledge_space_name)}
-                    </span>
-                  </InfoField>
-                )}
-                {(() => {
-                  // 合并 connector_ids 和 mcp_ids，统一显示为 MCP
-                  const ids: string[] = [
-                    ...(Array.isArray(ext.connector_ids) ? ext.connector_ids : []),
-                    ...(Array.isArray(ext.mcp_ids) ? ext.mcp_ids : []),
-                  ];
-                  if (ids.length === 0) return null;
-                  return (
-                    <InfoField label={t('scheduled.detail.mcpLabel')}>
-                      <div className='flex gap-1.5 flex-wrap'>
-                        {ids.map((id: string) => (
-                          <span
-                            key={id}
-                            className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/40'
-                          >
-                            {connectorNameMap.get(id) || id}
-                          </span>
-                        ))}
-                      </div>
+                  {ext.skill_id && (
+                    <InfoField label={t('scheduled.detail.skillLabel')}>
+                      <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-600 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/40'>
+                        {String(ext.skill_name || ext.skill_id)}
+                      </span>
                     </InfoField>
-                  );
-                })()}
+                  )}
+                  {ext.database_name && (
+                    <InfoField label={t('scheduled.detail.databaseLabel')}>
+                      <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800/40'>
+                        {String(ext.database_name)}
+                      </span>
+                    </InfoField>
+                  )}
+                  {ext.file_path && (
+                    <InfoField label={t('scheduled.detail.fileLabel')}>
+                      <span
+                        title={legacyFilePathDisplayName(ext.file_path) || undefined}
+                        className='inline-flex items-center max-w-full truncate px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-50 text-green-600 border border-green-100 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/40'
+                      >
+                        {legacyFilePathDisplayName(ext.file_path)}
+                      </span>
+                    </InfoField>
+                  )}
+                  {taskFiles.length > 0 && (
+                    <InfoField label={t('scheduled.detail.fileLabel')} className='sm:col-span-2 lg:col-span-3'>
+                      <AttachmentMessageGroup files={taskFiles} />
+                    </InfoField>
+                  )}
+                  {ext.knowledge_space_name && (
+                    <InfoField label={t('scheduled.detail.knowledgeLabel')}>
+                      <span className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/40'>
+                        {String(ext.knowledge_space_name)}
+                      </span>
+                    </InfoField>
+                  )}
+                  {(() => {
+                    // 合并 connector_ids 和 mcp_ids，统一显示为 MCP
+                    const ids: string[] = [
+                      ...(Array.isArray(ext.connector_ids) ? ext.connector_ids : []),
+                      ...(Array.isArray(ext.mcp_ids) ? ext.mcp_ids : []),
+                    ];
+                    if (ids.length === 0) return null;
+                    return (
+                      <InfoField label={t('scheduled.detail.mcpLabel')}>
+                        <div className='flex gap-1.5 flex-wrap'>
+                          {ids.map((id: string) => (
+                            <span
+                              key={id}
+                              className='inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800/40'
+                            >
+                              {connectorNameMap.get(id) || id}
+                            </span>
+                          ))}
+                        </div>
+                      </InfoField>
+                    );
+                  })()}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* ── 执行历史 ── */}
@@ -291,7 +312,10 @@ function ScheduledTaskDetail() {
                 </span>
               </h3>
             </div>
-            <TaskRunsTable taskId={task.task_id} />
+            <TaskRunsTable
+              taskId={task.task_id}
+              dashboardId={task.task_type === 'dashboard_refresh' ? task.payload.dashboard_id : undefined}
+            />
           </div>
         </div>
 

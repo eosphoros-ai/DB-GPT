@@ -94,7 +94,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
     navigator.clipboard.writeText(text);
   }, []);
 
-  const handleSuggestionClick = useCallback((suggestion: { title: string }) => {
+  const handleSuggestionClick = useCallback((_suggestion: { title: string }) => {
     if (inputRef.current) {
       inputRef.current.focus();
     }

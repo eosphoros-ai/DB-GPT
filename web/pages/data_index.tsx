@@ -14,7 +14,6 @@ import { AutoSizer, Grid, InfiniteLoader } from 'react-virtualized';
 import { ChatContext } from '@/app/chat-context';
 import IconFont from '@/new-components/common/Icon';
 import BlurredCard from '@/new-components/common/blurredCard';
-import { AppListResponse } from '@/types/app';
 import moment from 'moment';
 
 const Playground: NextPage = () => {
@@ -60,7 +59,7 @@ const Playground: NextPage = () => {
       }),
     );
   // 获取应用列表
-  const { run: getAppListFn, loading } = useRequest(
+  const { runAsync: getAppListFn, loading } = useRequest(
     async (app_name = '', page_no = '1', page_size = '12') => {
       switch (activeKey) {
         case 'recommend':
@@ -89,8 +88,9 @@ const Playground: NextPage = () => {
     },
     {
       manual: true,
-      onSuccess: (res: [any, [] | AppListResponse]) => {
+      onSuccess: res => {
         const [_error, data] = res;
+        if (!data) return;
         if (activeKey === 'recommend') {
           if (Array.isArray(data)) {
             return setApps({
@@ -104,20 +104,16 @@ const Playground: NextPage = () => {
             const index = code ? apps.app_list.findIndex((item: any) => item.app_code === code) : -1;
             if (index !== -1) {
               const finallyIndex = Math.floor(index / 12) * 12;
-              setApps(
-                {
-                  app_list: apps.app_list.toSpliced(finallyIndex, 12, ...data.app_list) || [],
-                  total_count: data?.total_count || 0,
-                } || {},
-              );
+              setApps({
+                app_list: apps.app_list.toSpliced(finallyIndex, 12, ...data.app_list) || [],
+                total_count: data?.total_count || 0,
+              });
             } else {
               console.log('concat');
-              setApps(
-                {
-                  app_list: apps.app_list.concat(data?.app_list) || [],
-                  total_count: data?.total_count || 0,
-                } || {},
-              );
+              setApps({
+                app_list: apps.app_list.concat(data?.app_list) || [],
+                total_count: data?.total_count || 0,
+              });
             }
           }
         }
