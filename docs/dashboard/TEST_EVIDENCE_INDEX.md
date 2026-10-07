@@ -2,8 +2,8 @@
 
 当前执行状态见 [验证说明](VALIDATION.md)，可执行命令见 [开发指南](DEVELOPER_GUIDE.md)。
 
-最新记录为 [2026-10-07 评审前补验](REVIEW_RECHECK_20261007.md)，包含开发模式、真实后端、
-通用 Python CI 与剩余限制。下列旧 Actions 保留历史用途，当前提交结果见 PR 正文。
+最新记录为 [2026-10-07 剩余验收](REVIEW_REMAINING_20261007.md)，包含实际 Docker、历史 live 回放、精确 mypy 基线及两条 PR 的集成准备。
+此前 [评审前补验](REVIEW_RECHECK_20261007.md) 保留开发模式、真实后端和通用 Python CI 结果。下列旧 Actions 保留历史用途，当前提交结果见 PR 正文。
 
 | 材料 | 用途 |
 |---|---|

@@ -14,8 +14,8 @@ test.describe('Live dashboard acceptance evidence', () => {
     'Set the live Agent flag and the generated dashboard id.',
   );
 
-  test('captures the real model edit and naturally scheduled refresh at 1440 and 1024', async ({ page }) => {
-    const evidenceDir = path.resolve(process.cwd(), '../docs/dashboard/evidence/v9-migration');
+  test('replays the real model edit and saved scheduled refresh evidence at 1440 and 1024', async ({ page }) => {
+    const evidenceDir = test.info().outputPath('evidence');
     mkdirSync(evidenceDir, { recursive: true });
     const capture = async (name: string) => {
       await page.screenshot({ path: path.join(evidenceDir, name), fullPage: false, animations: 'disabled' });
@@ -28,8 +28,7 @@ test.describe('Live dashboard acceptance evidence', () => {
     await expect(page.getByText('月度销售趋势', { exact: true })).toBeVisible();
     await expect(page.getByText('门店销售排行', { exact: true })).toBeVisible();
     const timeSeriesResponse = page.waitForResponse(
-      response =>
-        response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/refresh'),
+      response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/refresh'),
       { timeout: 180_000 },
     );
     await page.getByRole('button', { name: '刷新看板数据', exact: true }).click();
@@ -49,20 +48,30 @@ test.describe('Live dashboard acceptance evidence', () => {
     await capture('12-real-model-lifecycle-1024.png');
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.getByRole('button', { name: '打开版本与分享' }).click();
+    await page.getByRole('button', { name: '更多看板操作', exact: true }).click();
+    await page.getByRole('menuitem', { name: '版本与分享' }).click();
     await expect(page.getByText('编辑修订 4', { exact: true })).toBeVisible();
     await expect(page.getByText('AI 提案应用', { exact: true })).toBeVisible();
     await capture('13-real-ai-edit-1440.png');
     await page.setViewportSize({ width: 1024, height: 900 });
     await capture('13-real-ai-edit-1024.png');
 
-    await page.locator('.ant-drawer:visible .ant-drawer-close').click();
+    const lifecycleDialog = page
+      .getByRole('dialog')
+      .filter({ has: page.getByText('编辑版本、发布历史与分享', { exact: true }) });
+    await lifecycleDialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(lifecycleDialog).not.toBeVisible();
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.getByRole('button', { name: '设置定时刷新' }).click();
-    await expect(page.getByText('定时刷新与运行记录', { exact: true })).toBeVisible();
-    await expect(page.getByText('Walmart 真实数据持续刷新验收', { exact: true })).toBeVisible();
-    await expect(page.getByText('已暂停', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: /运行记录/ }).click();
+    await page.getByRole('button', { name: '更多看板操作', exact: true }).click();
+    await page.getByRole('menuitem', { name: '定时任务' }).click();
+    const scheduleDialog = page.getByRole('dialog', { name: '保存为定时任务' });
+    await expect(scheduleDialog).toBeVisible();
+    await scheduleDialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(scheduleDialog).not.toBeVisible();
+    await page.goto('/construct/scheduled-tasks/');
+    await page.getByText('Walmart 真实数据持续刷新验收', { exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Walmart 真实数据持续刷新验收', exact: true })).toBeVisible();
+    await expect(page.getByRole('switch')).not.toBeChecked();
     await expect(page.getByText('成功', { exact: true }).first()).toBeVisible();
     const successfulRun = page.getByText(/refreshed 3 widgets and published/).first();
     await expect(successfulRun).toBeVisible();
@@ -74,7 +83,7 @@ test.describe('Live dashboard acceptance evidence', () => {
 
   test('captures the generalized Apple financial dashboard at 1440 and 1024', async ({ page }) => {
     test.skip(!appleDashboardId, 'Set the generated Apple dashboard id.');
-    const evidenceDir = path.resolve(process.cwd(), '../docs/dashboard/evidence/v9-migration');
+    const evidenceDir = test.info().outputPath('evidence');
     mkdirSync(evidenceDir, { recursive: true });
     const capture = async (name: string) => {
       await page.screenshot({ path: path.join(evidenceDir, name), fullPage: false, animations: 'disabled' });
@@ -127,7 +136,7 @@ test.describe('Live dashboard acceptance evidence', () => {
   ]) {
     test(`${scenario.name}: expands deterministic anomaly evidence at 1440 and 1024`, async ({ page }) => {
       test.skip(!scenario.id, `Set the generated ${scenario.name} dashboard id.`);
-      const evidenceDir = path.resolve(process.cwd(), '../docs/dashboard/evidence/v9-migration');
+      const evidenceDir = test.info().outputPath('evidence');
       mkdirSync(evidenceDir, { recursive: true });
 
       await page.setViewportSize({ width: 1440, height: 900 });

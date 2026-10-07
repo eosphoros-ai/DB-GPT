@@ -16,7 +16,7 @@ test.describe('FRED public time-series generalization', () => {
     page,
     context,
   }) => {
-    const evidenceDir = path.resolve(process.cwd(), '../docs/dashboard/evidence/v9-migration');
+    const evidenceDir = test.info().outputPath('evidence');
     mkdirSync(evidenceDir, { recursive: true });
 
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -34,8 +34,7 @@ test.describe('FRED public time-series generalization', () => {
     }
 
     const refreshResponse = page.waitForResponse(
-      response =>
-        response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/refresh'),
+      response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/refresh'),
       { timeout: 180_000 },
     );
     await page.getByRole('button', { name: '刷新看板数据', exact: true }).click();
@@ -81,7 +80,8 @@ test.describe('FRED public time-series generalization', () => {
     });
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.getByRole('button', { name: '工程文件' }).click();
+    await page.getByRole('button', { name: '更多看板操作', exact: true }).click();
+    await page.getByRole('menuitem', { name: '工程文件' }).click();
     await expect(page.getByText('看板工程文件', { exact: true })).toBeVisible();
     for (const file of ['dashboard.schema.json', 'dashboard.plan.json', 'README.md', 'manifest.json']) {
       await expect(page.getByText(file, { exact: true })).toBeVisible();
@@ -93,11 +93,11 @@ test.describe('FRED public time-series generalization', () => {
     await page.locator('.ant-drawer:visible .ant-drawer-close').last().click();
 
     const publishResponse = page.waitForResponse(
-      response =>
-        response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/publish'),
+      response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/publish'),
       { timeout: 180_000 },
     );
     await page.getByRole('button', { name: '发布看板', exact: true }).click();
+    await page.getByRole('button', { name: '发布固定快照', exact: true }).click();
     expect((await publishResponse).ok()).toBe(true);
     const shareLink = page.locator('a[href*="/dashboard-share/"]').first();
     await expect(shareLink).toBeVisible();

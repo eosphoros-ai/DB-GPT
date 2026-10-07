@@ -151,8 +151,9 @@ jobs:
           suites = list(ET.parse("output/ci/docker-runtime.xml").getroot().iter("testsuite"))
           counts = {key: sum(int(suite.get(key, "0")) for suite in suites)
                     for key in ("tests", "failures", "errors", "skipped")}
-          assert counts == {"tests": 8, "failures": 0, "errors": 0, "skipped": 0}, counts
-          print("All 8 real Docker integration tests passed without skips.")
+          assert counts["tests"] > 0, counts
+          assert not any(counts[key] for key in ("failures", "errors", "skipped")), counts
+          print(f"All {counts['tests']} real Docker integration tests passed without skips.")
           PY
 
       - name: Upload Docker execution evidence

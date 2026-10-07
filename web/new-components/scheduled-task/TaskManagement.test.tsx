@@ -1,5 +1,6 @@
 import type { TaskResponse } from '@/types/scheduled-task';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { App } from 'antd';
 import { describe, expect, it, vi } from 'vitest';
 import EditScheduledTaskDrawer from './EditScheduledTaskDrawer';
 import TaskRunsTable from './TaskRunsTable';
@@ -52,7 +53,7 @@ describe('dashboard task management', () => {
     };
     const onSaved = vi.fn();
     mocks.updateTask.mockResolvedValue(task);
-    render(<EditScheduledTaskDrawer open onClose={vi.fn()} task={task} onSaved={onSaved} />);
+    render(<EditScheduledTaskDrawer open onClose={vi.fn()} task={task} onSaved={onSaved} />, { wrapper: App });
     await waitFor(() => expect((screen.getByLabelText('Cron 表达式') as HTMLInputElement).value).toBe('* * * * *'));
     expect(screen.queryByText('scheduled.edit.rawQuestionLabel')).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'scheduled.save.nameLabel' }), {

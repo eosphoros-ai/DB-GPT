@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { App } from 'antd';
 import { describe, expect, it, vi } from 'vitest';
 import SaveAsScheduledTaskDrawer from './SaveAsScheduledTaskDrawer';
 const mocks = vi.hoisted(() => ({ createTask: vi.fn(), push: vi.fn() }));
@@ -26,6 +27,7 @@ describe('save current dashboard as an official scheduled task', () => {
           events.push('save');
         }}
       />,
+      { wrapper: App },
     );
     fireEvent.click(screen.getByText('scheduled.save.submit'));
     await screen.findByText('定时任务已创建');
@@ -53,6 +55,7 @@ describe('save current dashboard as an official scheduled task', () => {
           throw new Error('Revision conflict');
         }}
       />,
+      { wrapper: App },
     );
     fireEvent.click(screen.getByText('scheduled.save.submit'));
     await screen.findByText('Revision conflict');
@@ -63,7 +66,7 @@ describe('save current dashboard as an official scheduled task', () => {
     const onClose = vi.fn();
     const snapshot = { user_input: 'Daily sales', model_name: 'model-1', ext_info: { skill_id: 'sql' } };
     mocks.createTask.mockResolvedValue({ task_id: 'chat-1' });
-    render(<SaveAsScheduledTaskDrawer open onClose={onClose} snapshot={snapshot} />);
+    render(<SaveAsScheduledTaskDrawer open onClose={onClose} snapshot={snapshot} />, { wrapper: App });
     fireEvent.click(screen.getByText('scheduled.save.submit'));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(mocks.createTask).toHaveBeenCalledWith(

@@ -2,6 +2,8 @@
 
 ## 2026-10-07 评审前补验
 
+后续 [剩余验收记录](REVIEW_REMAINING_20261007.md) 已补齐 8 项真实 Docker CI 和 7 项历史 live 浏览器用例，并给出精确上游 mypy 对照及集成预览准备。
+
 最新的 dev/Fast Refresh、真实 SQLite 场景、通用 Python CI 恢复、运行时修复与未完成项，
 见 [2026-10-07 补验记录](REVIEW_RECHECK_20261007.md)。最终 SHA 与 CI 链接在 PR 正文。
 下文各节是对应日期的历史结果，不能用旧提交的绿色 CI 替代当前提交。
