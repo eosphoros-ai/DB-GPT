@@ -157,9 +157,12 @@ def fn_map(args: dict[str, any]) -> dict[str, any]:
         human_message = messages[0]
         
     temperature = args.get("temperature")
-    temperature = float(temperature) if temperature is not None else 0.5
+    temperature = float(temperature) if temperature not in (None, "") else 0.5
     max_new_tokens = args.get("max_new_tokens")
-    max_new_tokens = int(max_new_tokens) if max_new_tokens is not None else 2048
+    if max_new_tokens in (None, ""):
+        max_new_tokens = 2048
+    else:
+        max_new_tokens = int(max_new_tokens) or 2048
     conv_uid = args.get("conv_uid", "")
     print("Conv uid is: ", conv_uid)
     
@@ -183,7 +186,9 @@ function fn_map(args) {
     var parsedTemperature = parseFloat(args.temperature);
     var temperature = Number.isNaN(parsedTemperature) ? 0.5 : parsedTemperature;
     var parsedTokens = parseInt(args.max_new_tokens);
-    var max_new_tokens = Number.isNaN(parsedTokens) ? 2048 : parsedTokens;
+    var max_new_tokens = Number.isNaN(parsedTokens) || parsedTokens === 0
+        ? 2048
+        : parsedTokens;
     var conv_uid = args.conv_uid || "";
     console.log("Conv uid is: ", conv_uid);
     
