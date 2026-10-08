@@ -68,7 +68,7 @@ git clone https://www.modelscope.cn/models/AI-ModelScope/bge-large-zh-v1.5
 FIN_REPORT_MODEL=/app/DB-GPT/models/bge-large-zh-v1.5
 ```
 
-Step 5: create  knowledge space, choose `FinancialReport` doamin type
+Step 5: create  knowledge space, choose `FinancialReport` domain type
 <p align="left">
   <img src={'/img/chat_knowledge/fin_report/financial_space.png'} width="1000px"/>
 </p>
