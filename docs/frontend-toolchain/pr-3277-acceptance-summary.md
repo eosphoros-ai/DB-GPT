@@ -1,5 +1,12 @@
 # PR #3277 验收总表 — 2026-10-01
 
+**2026-10-10 接续：** 本轮补齐 OAuth 协议、MCP 连接器及真实非 SQLite
+数据库验证，并修复实际发现的设备授权辅助模块缺失、轮询和连接器恢复问题。
+GitHub 授权成功，但 Copilot 凭证交换返回 403，尚不能宣称完整 Copilot 可用。
+DeepWiki、MCP HTTP/SSE、DuckDB、MySQL、PostgreSQL 的受测范围及未覆盖项见
+[本轮详细记录](pr-3277-connectors-auth-validation.md)。历史测试数量不用于替代
+最终提交的验证；两条 PR 的合并顺序仍待维护者确认。
+
 **2026-10-07 接续：** 已补做 Next 16.3.8 的 dev 三浏览器、Fast Refresh 和九项真实后端联调，
 修复过程中发现的类型生成、工作流控件与 Agent 生命周期问题，重新通过生产构建和静态导出。
 详见[本轮验证记录](pr-3277-regression.md#review-readiness-recheck--2026-10-07)。下面是分日期保留的历史证据，

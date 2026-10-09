@@ -1,4 +1,14 @@
-# PR #3277 frontend regression — updated 2026-10-07
+# PR #3277 frontend regression — updated 2026-10-10
+
+## OAuth and connector follow-up — 2026-10-09/10
+
+The [new validation record](pr-3277-connectors-auth-validation.md) covers the
+missing Copilot device-flow helper, polling/expiry/error handling, MCP credential
+failure and restart recovery, real DeepWiki, DuckDB, MySQL and PostgreSQL checks.
+Real GitHub authorization succeeded, but Copilot credential exchange returned
+403 and end-to-end Copilot use remains blocked. Browser fixtures and real
+services are reported separately. The dated October 7 and earlier results below
+retain their original scope; the PR body records the final head and CI.
 
 ## Review-readiness recheck — 2026-10-07
 

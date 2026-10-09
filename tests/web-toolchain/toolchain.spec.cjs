@@ -477,7 +477,10 @@ interaction(
   "shared-json-replay",
   "/share/regression-json-share/",
   async (page) => {
-    const content = JSON.stringify({ message: "PR3277_JSON_OK", lines: "first\nsecond" });
+    const content = JSON.stringify({
+      message: "PR3277_JSON_OK",
+      lines: "first\nsecond",
+    });
     const answer = page.getByText(content, { exact: true }).first();
     await expect(answer).toBeVisible();
     await page.reload();

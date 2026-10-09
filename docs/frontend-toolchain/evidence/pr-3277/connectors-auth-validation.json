@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-10",
+  "scope": "standalone PR 3277; OAuth, connectors and database follow-up",
+  "base_sha": "f0c1d69fedb7cb6ac26acd73f1a0fb3318c42f30",
+  "application_sha": "a04e9568f4f0509439ef12561e5627dacb9be5e8",
+  "test_workflow_sha": "18a5527c2a929481bf5ac9f6a69bae863e8ed846",
+  "environment": {
+    "local": "Windows x64",
+    "node": "20.20.2",
+    "npm": "10.8.2",
+    "next": "16.3.8",
+    "python": "3.11.9",
+    "ruff": "0.16.10"
+  },
+  "local_checks": {
+    "typecheck": "passed",
+    "lint": {
+      "errors": 0,
+      "warnings": 89
+    },
+    "build_contracts": {
+      "passed": 43,
+      "skipped": 2,
+      "skip_reason": "POSIX signal cases on Windows"
+    },
+    "frontend_tests": {
+      "passed": 24,
+      "wiki_assertions": "passed"
+    },
+    "production_build": {
+      "passed": true,
+      "html": 60,
+      "asset_references": 1782
+    },
+    "static_export": {
+      "passed": true,
+      "html": 60,
+      "asset_references": 1782
+    },
+    "backend": {
+      "passed": 101,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 3
+    },
+    "changed_python_ruff": "passed",
+    "actionlint": "passed"
+  },
+  "candidate_ci": {
+    "frontend": {
+      "url": "https://github.com/jcsdxhe/DB-GPT/actions/runs/37955936648",
+      "sha": "a04e9568f4f0509439ef12561e5627dacb9be5e8",
+      "ubuntu": "passed",
+      "macos": "passed"
+    },
+    "backend": {
+      "url": "https://github.com/jcsdxhe/DB-GPT/actions/runs/37958592040",
+      "sha": "18a5527c2a929481bf5ac9f6a69bae863e8ed846",
+      "passed": 105,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "real_database_cases": 4
+    },
+    "browser": {
+      "url": "https://github.com/jcsdxhe/DB-GPT/actions/runs/37958592040",
+      "sha": "18a5527c2a929481bf5ac9f6a69bae863e8ed846",
+      "status": "passed",
+      "apis": "fixtures",
+      "production": { "passed": 46, "failed": 0, "skipped": 0, "retries": 0 },
+      "development": { "passed": 46, "failed": 0, "skipped": 0, "retries": 0 }
+    }
+  },
+  "real_oauth": {
+    "github_device_authorization": "approved by user",
+    "github_oauth_token_exchange": "succeeded",
+    "copilot_credential_exchange": {
+      "status": "blocked",
+      "http_status": 403,
+      "cause": "Account entitlement not confirmed; account/app compatibility unresolved"
+    },
+    "copilot_model_enable": "not verified",
+    "copilot_inference": "not verified",
+    "copilot_refresh": "not verified",
+    "credentials_committed": false
+  },
+  "real_mcp": {
+    "checks_passed": 15,
+    "transports": [
+      "streamable_http/no_auth",
+      "streamable_http/bearer",
+      "sse/header"
+    ],
+    "restart_recovery": "passed",
+    "create_ui": "previous production frontend; connector UI source unchanged",
+    "edit_delete_ui": "not executed",
+    "runtime_pack_revocation": "not established by API deletion"
+  },
+  "real_deepwiki": {
+    "url": "https://mcp.deepwiki.com/mcp",
+    "authentication": "public/no-auth",
+    "tools_discovered": 3,
+    "tool_called": "read_wiki_structure",
+    "repository": "eosphoros-ai/DB-GPT",
+    "passed": true
+  },
+  "real_duckdb": {
+    "checks_passed": 6,
+    "interface": "application API plus real driver",
+    "embedding": "cached local RoBERTa; plumbing only"
+  },
+  "real_ci_databases": {
+    "engines": ["MySQL 8.4", "PostgreSQL 16"],
+    "tests_per_engine": 2,
+    "interface": "real DB-GPT connectors; not browser CRUD"
+  },
+  "not_repeated": [
+    "Firefox",
+    "WebKit",
+    "Fast Refresh",
+    "prior nine model-backed scenarios",
+    "full-core mypy",
+    "Docker suite"
+  ],
+  "not_available": [
+    "confirmed Copilot entitlement",
+    "authenticated third-party service accounts",
+    "other database engines"
+  ],
+  "initial_failures": [
+    {
+      "run": 37955937020,
+      "result": "setup failure",
+      "cause": "undefined collaboration extra in standalone branch",
+      "resolution": "use the branch's locked base extra"
+    },
+    {
+      "run": 37956860262,
+      "result": "44 production browser passes, 2 failures; development not run",
+      "cause": "virtual-clock assertion crossed permitted poll time; Windows shortcut used on Linux",
+      "resolution": "correct timing bounds and platform shortcut without dropping assertions"
+    }
+  ],
+  "local_dev": {
+    "status": "not executed",
+    "reason": "automatic execution review rejected local startup with blocked by policy; no alternative local launch retried",
+    "alternative": "isolated fork CI dev run"
+  },
+  "review": {
+    "upstream_main": "ad203de5c7301c9a103caa1198d17aaee18c6647",
+    "main_merge_conflicts": 0,
+    "pr3278_sha": "80c947d3d6e0753e188d72e0444f01f1576f74a3",
+    "shared_conflicted_paths": 10,
+    "merge_order": "maintainer decision pending",
+    "old_combined_preview": "347b387a predates this follow-up"
+  },
+  "cleanup": {
+    "isolated_connections_removed": true,
+    "test_backend_and_mcp_servers_stopped": true,
+    "evidence_preserved": true
+  }
+}
