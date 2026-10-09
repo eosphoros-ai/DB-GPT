@@ -12,12 +12,18 @@ on:
       - packages/dbgpt-serve/src/dbgpt_serve/connector/**
       - tests/integration_tests/datasource/test_mysql_postgresql_live.py
       - .github/workflows/connectors-auth-validation.yml
+      - web/pages/construct/models-config/**
+      - web/client/api/request.ts
+      - tests/web-toolchain/**
   pull_request:
     paths:
       - packages/dbgpt-core/src/dbgpt/model/utils/**
       - packages/dbgpt-serve/src/dbgpt_serve/connector/**
       - tests/integration_tests/datasource/test_mysql_postgresql_live.py
       - .github/workflows/connectors-auth-validation.yml
+      - web/pages/construct/models-config/**
+      - web/client/api/request.ts
+      - tests/web-toolchain/**
 
 jobs:
   validate:
@@ -74,4 +80,65 @@ jobs:
         with:
           name: connectors-auth-validation
           path: connectors-auth-validation.xml
+          if-no-files-found: warn
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19'
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            tests/web-toolchain/package-lock.json
+      - name: Install frontend and browser runner
+        run: |
+          npm install --global npm@10.8.2
+          npm ci --prefix web
+          npm ci --prefix tests/web-toolchain
+          node tests/web-toolchain/node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Build production frontend
+        run: npm run build --prefix web
+      - name: Test production and development browser flows
+        env:
+          REGRESSION_OUTPUT: ${{ github.workspace }}/browser-results
+        run: |
+          mkdir -p browser-results
+          for mode in production development; do
+            if [ "$mode" = production ]; then
+              command=start
+              port=5790
+              export NEXT_DIST_DIR=.next
+            else
+              command=dev
+              port=5791
+              export NEXT_DIST_DIR=.next-auth-dev
+            fi
+            npm run "$command" --prefix web -- --hostname 127.0.0.1 --port "$port" >"browser-results/$mode-server.log" 2>&1 &
+            server_pid=$!
+            trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+            ready=false
+            for attempt in $(seq 1 90); do
+              if curl --fail --silent "http://127.0.0.1:$port/" >/dev/null; then
+                ready=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != true ]; then
+              cat "browser-results/$mode-server.log"
+              exit 1
+            fi
+            REGRESSION_URL="http://127.0.0.1:$port" REGRESSION_MODE="$mode" npm test --prefix tests/web-toolchain
+            kill "$server_pid" 2>/dev/null || true
+            trap - EXIT
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connectors-auth-browser
+          path: browser-results
           if-no-files-found: warn
