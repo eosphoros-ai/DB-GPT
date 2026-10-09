@@ -55,7 +55,7 @@ jobs:
           python-version: '3.11'
           enable-cache: true
       - name: Install locked workspace
-        run: uv sync --frozen --package dbgpt-app --package dbgpt --package dbgpt-mono --extra base --extra collaboration
+        run: uv sync --frozen --package dbgpt-app --package dbgpt --package dbgpt-mono --extra base
       - name: Install PostgreSQL test driver
         # Matches the optional driver's version in uv.lock.
         run: uv pip install --python .venv/bin/python psycopg2-binary==2.9.10
