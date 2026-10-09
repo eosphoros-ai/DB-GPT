@@ -159,11 +159,9 @@ class ConnectorService(
         self._system_app = system_app
         self._credential_store = CredentialStore(system_app=system_app)
 
-    def after_start(self):
+    async def async_after_start(self):
         """Rehydrate active connectors into the runtime connector manager."""
-        super_after_start = getattr(super(), "after_start", None)
-        if callable(super_after_start):
-            super_after_start()
+        await super().async_after_start()
 
         connector_manager = self.system_app.get_component(
             "connector_manager",
@@ -173,7 +171,6 @@ class ConnectorService(
         if connector_manager is None:
             return
 
-        loop = get_or_create_event_loop()
         with self._dao.session() as session:
             active_connectors = []
             for entity in (
@@ -204,14 +201,12 @@ class ConnectorService(
                     connector["encrypted_credentials"],
                     connector["encryption_salt"],
                 )
-                loop.run_until_complete(
-                    connector_manager.create_connector(
-                        connector_type=connector["connector_type"],
-                        credentials=credentials,
-                        name=connector["display_name"],
-                        extra_config=connector.get("config"),
-                        connector_id=connector["connector_id"],
-                    )
+                await connector_manager.create_connector(
+                    connector_type=connector["connector_type"],
+                    credentials=credentials,
+                    name=connector["display_name"],
+                    extra_config=connector.get("config"),
+                    connector_id=connector["connector_id"],
                 )
             except ValueError as exc:
                 # Catalog downgrade compatibility: pre-1.5 instances may lack
@@ -321,6 +316,13 @@ class ConnectorService(
                         connector_id=connector_id,
                     )
                 )
+                # The manager records handshake failures instead of raising.
+                if (
+                    connector_manager._statuses.get(connector_id)
+                    == ConnectorStatus.error
+                ):
+                    entity.status = "error"
+                    session.flush()
 
             return _entity_to_response(entity)
 
@@ -477,6 +479,11 @@ class ConnectorService(
                                 connector_id=connector_id,
                             )
                         )
+                        if (
+                            connector_manager._statuses.get(connector_id)
+                            == ConnectorStatus.error
+                        ):
+                            entity.status = "error"
                     except Exception as exc:
                         entity.status = "error"
                         logger.warning(

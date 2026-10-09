@@ -1,3 +1,4 @@
+import httpx
 import pytest
 
 from dbgpt.model.utils.provider_test import (
@@ -43,10 +44,10 @@ from dbgpt.model.utils.provider_test import (
             "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials"
             "&client_id=my-ak&client_secret=my-sk",
         ),
-        # Copilot verifies the PAT through the token exchange endpoint.
+        # Copilot verifies the OAuth token through the token exchange endpoint.
         (
             "proxy/github_copilot",
-            "ghp_x",
+            "gho_test",
             None,
             "https://api.github.com/copilot_internal/v2/token",
         ),
@@ -85,6 +86,27 @@ async def test_missing_api_key_rejected():
     ok, msg = await _test_connection("proxy/openai", None)
     assert ok is False
     assert "api_key" in msg
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [401, 403])
+async def test_copilot_access_denial_does_not_misdiagnose_oauth_token(
+    monkeypatch, status
+):
+    real_client = httpx.AsyncClient
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(status, json={"message": "private response"})
+    )
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda **kwargs: real_client(transport=transport, **kwargs),
+    )
+    ok, message = await _test_connection("proxy/github_copilot", "gho_test")
+    assert not ok
+    assert f"HTTP {status}" in message and "Copilot access" in message
+    assert "invalid api key" not in message
+    assert "private response" not in message and "gho_test" not in message
 
 
 @pytest.mark.asyncio

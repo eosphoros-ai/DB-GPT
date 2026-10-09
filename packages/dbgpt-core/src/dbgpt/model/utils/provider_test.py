@@ -35,7 +35,7 @@ _PROBE_SKIPPED_PROVIDERS = frozenset({"proxy/spark", "proxy/litellm"})
 # exchanging them for an OAuth access token.
 _WENXIN_OAUTH_URL = "https://aip.baidubce.com/oauth/2.0/token"
 
-# GitHub Copilot accepts no static key; verify the PAT by exchanging it for a
+# Verify the GitHub OAuth token by exchanging it for a
 # short-lived Copilot API token (same endpoint the client uses at runtime).
 _GITHUB_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token"
 
@@ -84,7 +84,7 @@ def _build_test_request(provider: str, api_key: str, api_base: Optional[str]):
         # Native list endpoint; requires no auth and exists on every version.
         return f"{base}/api/tags", {}
     if provider == "proxy/github_copilot":
-        # Copilot has no model-list endpoint; verify the PAT by exchanging it
+        # Verify the OAuth token by exchanging it
         # for a short-lived Copilot token.
         return _GITHUB_TOKEN_URL, {
             "Authorization": f"Bearer {api_key}",
@@ -152,8 +152,13 @@ async def test_provider_connection(
                     return True, ""
             except ValueError:
                 pass
-            return False, "invalid github pat or no active copilot subscription"
+            return False, "GitHub did not return a usable Copilot token"
         return True, ""
+    if effective_provider == "proxy/github_copilot" and resp.status_code in (401, 403):
+        return False, (
+            f"GitHub Copilot access was denied (HTTP {resp.status_code}); "
+            "check the signed-in account's Copilot access and OAuth app permissions"
+        )
     if resp.status_code in (401, 403):
         return False, "invalid api key"
     if resp.status_code == 404 and effective_provider == "proxy/github_copilot":

@@ -374,6 +374,7 @@ export type CopilotDeviceCode = {
   user_code: string;
   device_code: string;
   interval: number;
+  expires_in?: number;
 };
 
 export type CopilotPollResult = { status: 'success' | 'pending' | 'slow_down'; enabled_models?: string[] };

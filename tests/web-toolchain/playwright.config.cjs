@@ -6,7 +6,7 @@ const output = path.join(
 );
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: "toolchain.spec.cjs",
+  testMatch: ["toolchain.spec.cjs", "copilot-auth.spec.cjs"],
   timeout: 180000,
   expect: { timeout: 15000 },
   workers: 1,
