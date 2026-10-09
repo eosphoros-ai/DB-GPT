@@ -403,7 +403,10 @@ interaction(
     await page.keyboard.press(selectAll);
     await page.keyboard.type("select 2 as value", { delay: 20 });
     await page.keyboard.press("Escape");
-    await page.keyboard.press("Shift+Alt+F");
+    const formatDocument = await page.evaluate(() =>
+      /Linux/.test(navigator.userAgent) ? "Control+Shift+I" : "Shift+Alt+F",
+    );
+    await page.keyboard.press(formatDocument);
     await expect(editor.locator(".view-lines")).toContainText(
       /select\s+2\s+as\s+value/i,
     );

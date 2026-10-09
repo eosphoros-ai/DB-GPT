@@ -79,13 +79,15 @@ test("Copilot backs off on every slow_down and completes authorization", async (
   const { polls } = await openCopilot(page, {
     statuses: ["slow_down", "slow_down", "success"],
   });
-  await advance(page, 8000);
+  // Polls are due at 5s, then at least 15s and 30s. Leave margins for
+  // network delivery while keeping each negative assertion before its deadline.
+  await advance(page, 6000);
   await expect.poll(() => polls.length).toBe(1);
   await advance(page, 8000);
   expect(polls).toHaveLength(1);
-  await advance(page, 5000);
+  await advance(page, 3000);
   await expect.poll(() => polls.length).toBe(2);
-  await advance(page, 13000);
+  await advance(page, 12000);
   expect(polls).toHaveLength(2);
   await advance(page, 5000);
   await expect.poll(() => polls.length).toBe(3);
