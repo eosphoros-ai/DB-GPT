@@ -11,6 +11,7 @@ on:
       - main
     paths:
       - web/**
+      - scripts/build_web_static.sh
       - .github/workflows/build-web.yml
   push:
     branches:
@@ -18,6 +19,7 @@ on:
       - "codex/**"
     paths:
       - web/**
+      - scripts/build_web_static.sh
       - .github/workflows/build-web.yml
 
 concurrency:
@@ -66,5 +68,22 @@ jobs:
         run: |
           npm run build
 
-      - name: Build static distribution
-        run: npm run compile
+      - name: Package the Python-served UI using the README command
+        run: |
+          test ! -e .env
+          test ! -e .env.copy
+          printf 'DBGPT_PACKAGING_SENTINEL=ci-only-no-secret\n' > .env
+          cp .env ../.packaging-env.expected
+          bash ../scripts/build_web_static.sh
+          cmp .env ../.packaging-env.expected
+          test ! -e .env.copy
+          diff -qr out ../packages/dbgpt-app/src/dbgpt_app/static/web
+          node -e "console.log(JSON.stringify(require('./scripts/verify-next-build-assets.cjs').verifyNextBuildAssets('../packages/dbgpt-app/src/dbgpt_app/static/web', { staticExport: true })))"
+
+      - name: Preserve the packaged UI for backend acceptance
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-static-${{ matrix.os }}
+          path: packages/dbgpt-app/src/dbgpt_app/static/web
+          include-hidden-files: true
+          if-no-files-found: error
