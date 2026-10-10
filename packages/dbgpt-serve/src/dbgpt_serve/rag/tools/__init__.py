@@ -6,12 +6,15 @@ Provides structured search tools for agents:
 - kb_grep: Search file contents by keyword
 - kb_cat: Read file content by path
 - kb_semantic_search: Semantic search using vector retrieval
+- kb_wiki_search / kb_wiki_read_page / kb_wiki_index: wiki read tools
+- kb_wiki_write_page / kb_wiki_replace_text: wiki write tools (agent edits)
 """
 
 # Import tool modules to register them with the @tool decorator
 from . import (
     kb_file_tools,  # noqa: F401
     semantic_search_tool,  # noqa: F401
+    wiki_tools,  # noqa: F401
 )
 
-__all__ = ["kb_file_tools", "semantic_search_tool"]
+__all__ = ["kb_file_tools", "semantic_search_tool", "wiki_tools"]

@@ -5,6 +5,7 @@
 import asyncio
 import os
 import subprocess
+import sys
 import tempfile
 import time
 from typing import Any, Dict, List, Optional
@@ -61,8 +62,8 @@ class LocalSandboxSession(SandboxSession):
 
     def _setup_environment(self):
         """设置执行环境"""
-        # 设置基本环境变量
-        os.environ.update(self.config.environment_vars)
+        # Per-session variables are passed to the child process only. Mutating
+        # os.environ here would leak FILE_PATH/PLOT_DIR across concurrent agents.
 
         # 创建必要的子目录 (only for temp dirs, not custom working dirs)
         if not self._is_custom_work_dir:
@@ -101,11 +102,16 @@ class LocalSandboxSession(SandboxSession):
         self.update_last_accessed()
 
         # 安全检查
-        warnings = self.security_utils.validate_code(code, self.config.language)
+        warnings = (
+            self.security_utils.validate_code(code, self.config.language)
+            if self.config.validate_code
+            else []
+        )
         if warnings and any("危险操作" in w for w in warnings):
             return ExecutionResult(
                 status=ExecutionStatus.ERROR,
                 error=f"代码安全检查失败: {'; '.join(warnings)}",
+                exit_code=1,
             )
 
         try:
@@ -142,7 +148,8 @@ class LocalSandboxSession(SandboxSession):
             )
         finally:
             if "code_file" in locals():
-                os.unlink(code_file)
+                if os.path.exists(code_file):
+                    os.unlink(code_file)
 
     def _create_code_file(self, code: str) -> str:
         """创建临时代码文件"""
@@ -170,7 +177,7 @@ class LocalSandboxSession(SandboxSession):
         filename = os.path.basename(code_file)
 
         commands = {
-            "python": ["python", code_file],
+            "python": [sys.executable, code_file],
             "javascript": ["node", code_file],
             "java": [
                 "sh",
@@ -254,20 +261,16 @@ class LocalSandboxSession(SandboxSession):
                 "memory_usage": memory_usage,
             }
 
-        except asyncio.TimeoutError:
-            # 超时处理
-            if process and process.pid:
-                self.process_manager.kill_process_tree(process.pid)
+        finally:
+            # Also runs on cancellation; never leave a timed-out tool running.
+            if process is not None:
+                if process.returncode is None:
+                    await asyncio.to_thread(
+                        self.process_manager.kill_process_tree, process.pid
+                    )
+                    await process.wait()
                 if process.pid in self.process_pool:
                     self.process_pool.remove(process.pid)
-            raise
-        except Exception as e:
-            # 其他异常处理
-            if process and process.pid:
-                self.process_manager.kill_process_tree(process.pid)
-                if process.pid in self.process_pool:
-                    self.process_pool.remove(process.pid)
-            raise e
 
     async def get_status(self) -> Dict[str, Any]:
         """获取会话状态"""
@@ -313,7 +316,7 @@ class LocalRuntime(SandboxRuntime):
 
         # 检查常见编程语言的可用性
         language_commands = {
-            "python": ["python", "--version"],
+            "python": [sys.executable, "--version"],
             "javascript": ["node", "--version"],
             "java": ["java", "-version"],
             "cpp": ["g++", "--version"],
@@ -329,7 +332,7 @@ class LocalRuntime(SandboxRuntime):
                     cmd,
                     capture_output=True,
                     timeout=2,  # 减少超时时间
-                    shell=True,  # 在Windows上使用shell
+                    shell=False,
                 )
                 if result.returncode == 0:
                     languages.append(lang)

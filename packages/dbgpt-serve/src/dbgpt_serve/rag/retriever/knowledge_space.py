@@ -146,7 +146,9 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         candidates_with_scores = self._retriever_chain.retrieve_with_scores(
             query, score_threshold, filters
         )
-        return candidates_with_scores
+        from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
+
+        return apply_wiki_boost(candidates_with_scores)
 
     async def _aretrieve(
         self, query: str, filters: Optional[MetadataFilters] = None
@@ -181,13 +183,25 @@ class KnowledgeSpaceRetriever(BaseRetriever):
         """
         if self._retrieve_mode == RetrieverStrategy.SEMANTIC.value:
             logger.info("Starting Semantic retrieval")
-            return await self.semantic_retrieve(query, score_threshold, filters)
+            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
+
+            return apply_wiki_boost(
+                await self.semantic_retrieve(query, score_threshold, filters)
+            )
         elif self._retrieve_mode == RetrieverStrategy.KEYWORD.value:
             logger.info("Starting Full Text retrieval")
-            return await self.full_text_retrieve(query, self._top_k, filters)
+            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
+
+            return apply_wiki_boost(
+                await self.full_text_retrieve(query, self._top_k, filters)
+            )
         elif self._retrieve_mode == RetrieverStrategy.Tree.value:
             logger.info("Starting Doc Tree retrieval")
-            return await self.tree_index_retrieve(query, self._top_k, filters)
+            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
+
+            return apply_wiki_boost(
+                await self.tree_index_retrieve(query, self._top_k, filters)
+            )
         elif self._retrieve_mode == RetrieverStrategy.HYBRID.value:
             logger.info("Starting Hybrid retrieval")
             tasks = []
@@ -209,7 +223,9 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             candidates = semantic_candidates + full_text_candidates + tree_candidates
             # Remove duplicates
             unique_candidates = {chunk.content: chunk for chunk in candidates}
-            return list(unique_candidates.values())
+            from dbgpt_serve.rag.service.wiki.chunk_sync import apply_wiki_boost
+
+            return apply_wiki_boost(list(unique_candidates.values()))
 
     async def semantic_retrieve(
         self,
