@@ -240,7 +240,10 @@ async def test_cancellation_cleans_up_without_replay(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_files_and_workspace_reach_the_selected_runtime(tmp_path, monkeypatch):
-    file_path = tmp_path / 'quote";name.csv'
+    # Windows forbids double quotes in file names; an apostrophe still tests
+    # a shell-sensitive path without relying on an invalid native filename.
+    filename = "quote';name.csv" if os.name == "nt" else 'quote";name.csv'
+    file_path = tmp_path / filename
     file_path.write_text("x\n1\n")
     mapping = tmp_path / "files.json"
     mapping.write_text(json.dumps({"sf_1": str(file_path)}))
@@ -341,6 +344,9 @@ async def test_main_and_subagent_python_analyze_upload_and_return_image(
 async def test_main_and_subagent_shell_use_configured_factory(
     tmp_path, monkeypatch, subagent
 ):
+    skills_dir = tmp_path / "installed skills"
+    skills_dir.mkdir()
+    monkeypatch.setattr("dbgpt.configs.model_config.SKILLS_DIR", str(skills_dir))
     runtime = _fake_runtime(DisplayResult("success", "from container", "", 0, 0))
     create = Mock(return_value=runtime)
     monkeypatch.setattr(_execution.RuntimeFactory, "create", create)
@@ -350,9 +356,12 @@ async def test_main_and_subagent_shell_use_configured_factory(
         if subagent
         else make_shell_interpreter(state)
     )
-    output = json.loads(await tool(code="echo test"))
+    output = json.loads(await tool(code='ls "$SKILLS_DIR"'))
     assert {"output_type": "text", "content": "from container"} in output["chunks"]
     assert runtime.create_session.call_args.args[1].language == "bash"
+    config = runtime.create_session.call_args.args[1]
+    assert config.environment_vars["SKILLS_DIR"] == str(skills_dir)
+    assert str(skills_dir) in config.input_files
     create.assert_called_once_with()
 
 

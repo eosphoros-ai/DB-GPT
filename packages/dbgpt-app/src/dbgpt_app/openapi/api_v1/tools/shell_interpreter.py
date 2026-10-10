@@ -23,6 +23,8 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
             "grep, curl, apt, pip, git, or any other CLI tool. "
             "Execution has a 30s timeout. Local mode runs on the server; "
             "configure Docker for container isolation. "
+            "SKILLS_DIR is the installed skills root; the working directory "
+            "is this conversation's output workspace. "
             'Parameters: {"code": "shell command(s) to execute"}'
         )
     )
@@ -50,11 +52,12 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
                     work_dir=sandbox_work_dir,
                     file_path=react_state.get("file_path"),
                     files_json_path=react_state.get("files_json_path"),
+                    extra={"SKILLS_DIR": SKILLS_DIR},
                 ),
                 timeout=30,
                 input_paths=[SKILLS_DIR]
                 if os.path.isdir(SKILLS_DIR)
-                and ("skills/" in code or SKILLS_DIR in code)
+                and ("skills/" in code or "SKILLS_DIR" in code or SKILLS_DIR in code)
                 else [],
             )
 

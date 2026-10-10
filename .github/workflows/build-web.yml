@@ -17,6 +17,9 @@ on:
       - packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py
       - packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/local_runtime.py
       - packages/dbgpt-sandbox/tests/test_local_bash.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/shell_interpreter.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py
+      - skills/skill-creator/**
       - .github/workflows/build-web.yml
   push:
     branches:
@@ -30,6 +33,9 @@ on:
       - packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py
       - packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/local_runtime.py
       - packages/dbgpt-sandbox/tests/test_local_bash.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/shell_interpreter.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py
+      - skills/skill-creator/**
       - .github/workflows/build-web.yml
 
 concurrency:
@@ -60,6 +66,7 @@ jobs:
             packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py \
             packages/dbgpt-sandbox/tests/test_local_bash.py \
             packages/dbgpt-sandbox/tests/test_runtime_factory.py \
+            packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py \
             -q
 
   build-web:
