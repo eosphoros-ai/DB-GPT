@@ -142,38 +142,63 @@ test("report image failure shows an error without saving a broken HTML file", as
   expect(downloads).toHaveLength(0);
 });
 
-test("model failure stays incomplete during live output and after history reload", async ({
-  page,
-}) => {
-  await mockReportHistory(page, null, "failed");
-  await page.route("**/api/v1/chat/react-agent", (route) =>
-    route.fulfill({
-      contentType: "text/event-stream",
-      body: [
-        {
-          type: "final",
-          protocol_version: 2,
-          status: "failed",
-          content: "模型超时，请重试。",
-          citations: [],
-        },
-        { type: "done" },
-      ]
-        .map((event) => "data: " + JSON.stringify(event) + "\n\n")
-        .join(""),
-    }),
+for (const partial of [false, true]) {
+  test(
+    "model failure stays incomplete with partial output=" +
+      partial +
+      " and after reload",
+    async ({ page }) => {
+      await mockReportHistory(page, partial ? reportHtml : null, "failed");
+      await page.route("**/api/v1/chat/react-agent", (route) =>
+        route.fulfill({
+          contentType: "text/event-stream",
+          body: [
+            ...(partial
+              ? [
+                  {
+                    type: "step.start",
+                    id: "report",
+                    step: 1,
+                    title: "生成报告",
+                  },
+                  {
+                    type: "step.chunk",
+                    id: "report",
+                    output_type: "html",
+                    content: reportHtml,
+                  },
+                ]
+              : []),
+            {
+              type: "final",
+              protocol_version: 2,
+              status: "failed",
+              content: "模型超时，请重试。",
+              citations: [],
+            },
+            { type: "done" },
+          ]
+            .map((event) => "data: " + JSON.stringify(event) + "\n\n")
+            .join(""),
+        }),
+      );
+      await page.goto("/");
+      await page
+        .getByPlaceholder("向您的数据库提问，上传CSV，或生成报告...")
+        .fill("生成技能");
+      await page.getByRole("button", { name: "arrow-up", exact: true }).click();
+      await expect(page.getByText("任务未完成", { exact: true })).toBeVisible();
+      await expect(page.getByText("任务已完成", { exact: true })).toHaveCount(
+        0,
+      );
+      await page.goto("/?id=failed-generation");
+      await expect(page.getByText("任务未完成", { exact: true })).toBeVisible();
+      await expect(page.getByText("任务已完成", { exact: true })).toHaveCount(
+        0,
+      );
+    },
   );
-  await page.goto("/");
-  await page
-    .getByPlaceholder("向您的数据库提问，上传CSV，或生成报告...")
-    .fill("生成技能");
-  await page.getByRole("button", { name: "arrow-up", exact: true }).click();
-  await expect(page.getByText("任务未完成", { exact: true })).toBeVisible();
-  await expect(page.getByText("任务已完成", { exact: true })).toHaveCount(0);
-  await page.goto("/?id=failed-generation");
-  await expect(page.getByText("任务未完成", { exact: true })).toBeVisible();
-  await expect(page.getByText("任务已完成", { exact: true })).toHaveCount(0);
-});
+}
 
 for (const failure of [
   {
