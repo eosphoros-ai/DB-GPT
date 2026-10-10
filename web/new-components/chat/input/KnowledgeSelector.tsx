@@ -1,17 +1,13 @@
 import { apiInterceptors, getSpaceList } from '@/client/api';
 import { ChatContentContext } from '@/pages/chat';
+import { ISpace } from '@/types/knowledge';
 import { BookOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Select, Tooltip } from 'antd';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface ISpace {
-  name: string;
-  desc: string;
-  id?: string;
-}
-
+/** Load available knowledge spaces and report the selected space to the chat input. */
 const KnowledgeSelector: React.FC = () => {
   const { t } = useTranslation();
   const { knowledgeValue, setKnowledgeValue } = useContext(ChatContentContext);
@@ -47,7 +43,7 @@ const KnowledgeSelector: React.FC = () => {
   );
 
   return (
-    <Tooltip title={t('select_knowledge_base')} arrow={false} placement='bottom'>
+    <Tooltip title={t('knowledge')} arrow={false} placement='bottom'>
       <div className='flex items-center gap-2'>
         <Select
           value={knowledgeValue}

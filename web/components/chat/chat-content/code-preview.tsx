@@ -1,9 +1,9 @@
 import { ChatContext } from '@/app/chat-context';
 import { CopyOutlined } from '@ant-design/icons';
-import { Button, message } from 'antd';
+import { App, Button } from 'antd';
 import copy from 'copy-to-clipboard';
 import { CSSProperties, useContext } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { coldarkDark, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface Props {
@@ -15,7 +15,9 @@ interface Props {
   dark?: { [key: string]: CSSProperties };
 }
 
+/** Render syntax-highlighted source with the code-preview copy controls. */
 export function CodePreview({ code, light, dark, language, customStyle, codeStyle }: Props) {
+  const { message } = App.useApp();
   const { mode } = useContext(ChatContext);
 
   return (

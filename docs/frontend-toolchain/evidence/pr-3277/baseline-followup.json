@@ -1,0 +1,1443 @@
+{
+  "documentationClarification": {
+    "recordedAt": "2026-09-30 07:41:54 UTC",
+    "additionalMeasurements": false,
+    "diskSnapshot": {
+      "recordedAt": "2026-09-30T07:23:06.307902+00:00",
+      "measurement": "One read-only Win32_LogicalDisk query at the beginning of this follow-up; values copied from that output, no second disk query. Not a contemporaneous sample from the earlier browser attempt.",
+      "volumes": [
+        {
+          "drive": "C:",
+          "totalBytes": 323381170176,
+          "freeBytes": 3945861120,
+          "totalGiB": 301.172,
+          "freeGiB": 3.675,
+          "role": "Independent baseline source, dependencies, dev outputs, and probe runtime"
+        },
+        {
+          "drive": "D:",
+          "totalBytes": 671087587328,
+          "freeBytes": 8131616768,
+          "totalGiB": 624.999,
+          "freeGiB": 7.573,
+          "role": "Current project and unchanged browser harness"
+        }
+      ],
+      "baselineAttemptDate": "2026-09-30",
+      "baselineAttemptContemporaneousFreeBytes": null,
+      "baselineAttemptEvidence": "Managed worktree/export on D: failed with No space left on device; successful source/runtime export and dev attempt used a real C: directory.",
+      "cleanupAttemptedThisFollowup": false
+    },
+    "timingScope": {
+      "browserScenario": "The full workflow includes navigation, mounting and possibly serial requests; this surrounding context is not the measured 8.27-second interval.",
+      "skillsMaximumMs": 8268.187,
+      "requestToFulfillStartMs": 8254.688,
+      "skillsMetric": "Recorded fixture request start to completion; no real backend participates.",
+      "backendMedianMs": 21.766,
+      "backendMaximumMs": 1463.17,
+      "backendMetric": "Full direct real-backend HTTP response; no browser/Next/fixture; different payload and runtime state.",
+      "detailedDelayBreakdown": "Unconfirmed; coarse bounds are retained but scheduling, page workload and I/O contributions were not separated.",
+      "interpretation": "Not directly comparable. These direct measurements neither explain the 8.27-second fixture response nor support backend attribution or any conclusion about upgrade correlation."
+    }
+  },
+  "baseline": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+  "candidateApplicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+  "warningAttribution": {
+    "recordedAt": "2026-09-30T06:11:30.651825+00:00",
+    "baseline": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+    "candidateApplicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+    "eslint": "9.39.5",
+    "configSha256": "e0305d1819cc287e519a050a42d7859d3b786d0958c7d42f2018981942be0160",
+    "sameConfigConfirmed": true,
+    "historicalBaselineWarnings": 87,
+    "candidateWarnings": 86,
+    "matchedBaselineWarnings": 86,
+    "addedWarnings": 0,
+    "removedWarnings": 1,
+    "removedWarning": {
+      "path": "web/components/chat/monaco-editor.tsx",
+      "rule": "react-hooks/exhaustive-deps",
+      "dependency": "language",
+      "fixedAt": "80d7c7035a4df69017870749665ee7e4a0a36bde"
+    },
+    "method": "Reconcile existing same-config baseline JSON with final candidate stylish log by file, rule, message (stylish terminal period normalized), whitespace-normalized source line, and diff block line mapping for repeated identical lines. No lint rerun.",
+    "historicalComparisonSha256": "9e673d63153cac06bbf500f06e8cea016af9fdc2795edbaa27d4882642adafec",
+    "candidateLogSha256": "940a1cb9ef40adeb1966407290519335718258177d20ecea83063a2625efb5f1",
+    "matched": [
+      {
+        "path": "web/app/chat-context.tsx",
+        "line": 160,
+        "column": 5,
+        "message": "Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')",
+        "rule": null,
+        "baselineLine": 160,
+        "sourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps",
+        "baselineSourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps"
+      },
+      {
+        "path": "web/components/agent/my-plugins.tsx",
+        "line": 55,
+        "column": 5,
+        "message": "React Hook useCallback has a missing dependency: 'uninstall'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 55,
+        "sourceLine": "    [actionIndex],",
+        "baselineSourceLine": "    [actionIndex],"
+      },
+      {
+        "path": "web/components/app/agent-panel.tsx",
+        "line": 61,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'detail.llm_strategy'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 61,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/app/agent-panel.tsx",
+        "line": 65,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'updateAgent'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 65,
+        "sourceLine": "  }, [resources]);",
+        "baselineSourceLine": "  }, [resources]);"
+      },
+      {
+        "path": "web/components/app/app-modal.tsx",
+        "line": 152,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchAgent'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 150,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/app/app-modal.tsx",
+        "line": 156,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'initApp' and 'type'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 154,
+        "sourceLine": "  }, [resourceTypes]);",
+        "baselineSourceLine": "  }, [resourceTypes]);"
+      },
+      {
+        "path": "web/components/app/dag-layout.tsx",
+        "line": 35,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchFlows'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 35,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/app/resource-card.tsx",
+        "line": 61,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'fetchResource', 'resource.type', and 'updateResource'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 61,
+        "sourceLine": "  }, [resourceType]);",
+        "baselineSourceLine": "  }, [resourceType]);"
+      },
+      {
+        "path": "web/components/app/resource-card.tsx",
+        "line": 67,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'editResource.value', 'resource', and 'updateResource'. Either include them or remove the dependency array. You can also do a functional update 'setResource(r => ...)' if you only need 'resource' in the 'setResource' call",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 67,
+        "sourceLine": "  }, [resourceValueOptions]);",
+        "baselineSourceLine": "  }, [resourceValueOptions]);"
+      },
+      {
+        "path": "web/components/chart/autoChart/index.tsx",
+        "line": 88,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'data' and 'getMergedAdvices'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 88,
+        "sourceLine": "  }, [JSON.stringify(data), advisor, chartType]);",
+        "baselineSourceLine": "  }, [JSON.stringify(data), advisor, chartType]);"
+      },
+      {
+        "path": "web/components/chart/autoChart/index.tsx",
+        "line": 88,
+        "column": 7,
+        "message": "React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 88,
+        "sourceLine": "  }, [JSON.stringify(data), advisor, chartType]);",
+        "baselineSourceLine": "  }, [JSON.stringify(data), advisor, chartType]);"
+      },
+      {
+        "path": "web/components/chart/autoChart/index.tsx",
+        "line": 125,
+        "column": 6,
+        "message": "React Hook useMemo has missing dependencies: 'advisor?.dataAnalyzer' and 'data'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 125,
+        "sourceLine": "  }, [advices, mode, renderChartType]);",
+        "baselineSourceLine": "  }, [advices, mode, renderChartType]);"
+      },
+      {
+        "path": "web/components/chat/chat-container.tsx",
+        "line": 138,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'history' and 'setModel'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 138,
+        "sourceLine": "  }, [history.length]);",
+        "baselineSourceLine": "  }, [history.length]);"
+      },
+      {
+        "path": "web/components/chat/chat-container.tsx",
+        "line": 144,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'setHistory'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 144,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/chat/chat-container.tsx",
+        "line": 183,
+        "column": 5,
+        "message": "React Hook useCallback has a missing dependency: 'setHistory'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 183,
+        "sourceLine": "    [history, chat, chatId, model, agent, scene],",
+        "baselineSourceLine": "    [history, chat, chatId, model, agent, scene],"
+      },
+      {
+        "path": "web/components/chat/chat-content/config.tsx",
+        "line": 34,
+        "column": 5,
+        "message": "Unused eslint-disable directive (no problems were reported from 'no-useless-escape')",
+        "rule": null,
+        "baselineLine": 34,
+        "sourceLine": "    // eslint-disable-next-line no-useless-escape",
+        "baselineSourceLine": "    // eslint-disable-next-line no-useless-escape"
+      },
+      {
+        "path": "web/components/chat/chat-content/index.tsx",
+        "line": 142,
+        "column": 5,
+        "message": "React Hook useMemo has an unnecessary dependency: 'context'. Either exclude it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 140,
+        "sourceLine": "    [context, cachePluginContext],",
+        "baselineSourceLine": "    [context, cachePluginContext],"
+      },
+      {
+        "path": "web/components/chat/chat-content/vis-tabs.tsx",
+        "line": 70,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'isAutoSroll' and 'isUserActive'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 70,
+        "sourceLine": "  }, [data]);",
+        "baselineSourceLine": "  }, [data]);"
+      },
+      {
+        "path": "web/components/chat/chat-content/vis-tabs.tsx",
+        "line": 85,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'setTabActiveByUser'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 83,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/chat/chat-content/vis-tabs.tsx",
+        "line": 113,
+        "column": 13,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 111,
+        "sourceLine": "            <img",
+        "baselineSourceLine": "            <img"
+      },
+      {
+        "path": "web/components/chat/chat-content/vis-tasks.tsx",
+        "line": 58,
+        "column": 13,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 58,
+        "sourceLine": "            <img src={`/agents/${item.avatar}`} className='flex-0 rounded-2xl w-8 h-8 inline-block mr-2' />",
+        "baselineSourceLine": "            <img src={`/agents/${item.avatar}`} className='flex-0 rounded-2xl w-8 h-8 inline-block mr-2' />"
+      },
+      {
+        "path": "web/components/chat/chat-content/vis-tasks.tsx",
+        "line": 58,
+        "column": 13,
+        "message": "img elements must have an alt prop, either with meaningful text, or an empty string for decorative images",
+        "rule": "jsx-a11y/alt-text",
+        "baselineLine": 58,
+        "sourceLine": "            <img src={`/agents/${item.avatar}`} className='flex-0 rounded-2xl w-8 h-8 inline-block mr-2' />",
+        "baselineSourceLine": "            <img src={`/agents/${item.avatar}`} className='flex-0 rounded-2xl w-8 h-8 inline-block mr-2' />"
+      },
+      {
+        "path": "web/components/common/chat-dialog.tsx",
+        "line": 76,
+        "column": 5,
+        "message": "React Hook useCallback has missing dependencies: 'chatMode', 'chatParams', 'data', and 'model'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 76,
+        "sourceLine": "    [chat, list, data?.conv_uid],",
+        "baselineSourceLine": "    [chat, list, data?.conv_uid],"
+      },
+      {
+        "path": "web/components/common/completion-input.tsx",
+        "line": 37,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'fetchDocuments' and 'showUpload'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 37,
+        "sourceLine": "  }, [dbParam]);",
+        "baselineSourceLine": "  }, [dbParam]);"
+      },
+      {
+        "path": "web/components/common/gpt-card.tsx",
+        "line": 62,
+        "column": 6,
+        "message": "React Hook useMemo has missing dependencies: 'iconBorder' and 'title'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 62,
+        "sourceLine": "  }, [icon]);",
+        "baselineSourceLine": "  }, [icon]);"
+      },
+      {
+        "path": "web/components/common/nested-form-fields.tsx",
+        "line": 19,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'selectedType'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 18,
+        "sourceLine": "  }, [form, parentName]);",
+        "baselineSourceLine": "  }, [form, parentName]);"
+      },
+      {
+        "path": "web/components/flow/add-nodes-sider.tsx",
+        "line": 51,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'getNodes'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 51,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/flow/add-nodes-sider.tsx",
+        "line": 134,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 'operators'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 134,
+        "sourceLine": "  }, [operatorsGroup, searchValue]);",
+        "baselineSourceLine": "  }, [operatorsGroup, searchValue]);"
+      },
+      {
+        "path": "web/components/flow/add-nodes-sider.tsx",
+        "line": 169,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 'resources'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 169,
+        "sourceLine": "  }, [resourcesGroup, searchValue]);",
+        "baselineSourceLine": "  }, [resourcesGroup, searchValue]);"
+      },
+      {
+        "path": "web/components/flow/add-nodes.tsx",
+        "line": 24,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'getNodes'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 24,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/flow/add-nodes.tsx",
+        "line": 82,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 'operators'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 82,
+        "sourceLine": "  }, [operatorsGroup, searchValue]);",
+        "baselineSourceLine": "  }, [operatorsGroup, searchValue]);"
+      },
+      {
+        "path": "web/components/flow/add-nodes.tsx",
+        "line": 113,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 'resources'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 113,
+        "sourceLine": "  }, [resourcesGroup, searchValue]);",
+        "baselineSourceLine": "  }, [resourcesGroup, searchValue]);"
+      },
+      {
+        "path": "web/components/flow/canvas-modal/save-flow-modal.tsx",
+        "line": 146,
+        "column": 19,
+        "message": "Unused eslint-disable directive (no problems were reported from 'no-useless-escape')",
+        "rule": null,
+        "baselineLine": 146,
+        "sourceLine": "                  // eslint-disable-next-line no-useless-escape",
+        "baselineSourceLine": "                  // eslint-disable-next-line no-useless-escape"
+      },
+      {
+        "path": "web/components/flow/node-renderer/upload.tsx",
+        "line": 48,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'data.value'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 48,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/knowledge/arguments-modal.tsx",
+        "line": 42,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchArguments'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 42,
+        "sourceLine": "  }, [space.name]);",
+        "baselineSourceLine": "  }, [space.name]);"
+      },
+      {
+        "path": "web/components/knowledge/space-form.tsx",
+        "line": 169,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'form'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 168,
+        "sourceLine": "  }, [spaceConfig]);",
+        "baselineSourceLine": "  }, [spaceConfig]);"
+      },
+      {
+        "path": "web/components/knowledge/space-form.tsx",
+        "line": 202,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'form'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 201,
+        "sourceLine": "  }, [dataSourceType]);",
+        "baselineSourceLine": "  }, [dataSourceType]);"
+      },
+      {
+        "path": "web/components/model/model-form.tsx",
+        "line": 70,
+        "column": 5,
+        "message": "Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')",
+        "rule": null,
+        "baselineLine": 69,
+        "sourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps",
+        "baselineSourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps"
+      },
+      {
+        "path": "web/components/models_evaluation/EvaluationList.tsx",
+        "line": 21,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'getModelsEvaluation'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 21,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/models_evaluation/EvaluationList.tsx",
+        "line": 25,
+        "column": 6,
+        "message": "React Hook useCallback has a missing dependency: 'router'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 25,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/components/models_evaluation/components/nav-to.tsx",
+        "line": 20,
+        "column": 6,
+        "message": "React Hook useCallback has a missing dependency: 'router'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 20,
+        "sourceLine": "  }, [href]);",
+        "baselineSourceLine": "  }, [href]);"
+      },
+      {
+        "path": "web/components/prompt/prompt-form.tsx",
+        "line": 22,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'form' and 'prompt'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 22,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/hooks/use-summary.ts",
+        "line": 33,
+        "column": 5,
+        "message": "React Hook useCallback has missing dependencies: 'chat' and 'setHistory'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 33,
+        "sourceLine": "    [history, model, docId, chatId],",
+        "baselineSourceLine": "    [history, model, docId, chatId],"
+      },
+      {
+        "path": "web/new-components/analysis/DataAnalyzer.tsx",
+        "line": 640,
+        "column": 1,
+        "message": "Assign object to a variable before exporting as module default",
+        "rule": "import/no-anonymous-default-export",
+        "baselineLine": 640,
+        "sourceLine": "export default {",
+        "baselineSourceLine": "export default {"
+      },
+      {
+        "path": "web/new-components/chat/ChatContentContainer.tsx",
+        "line": 22,
+        "column": 1,
+        "message": "Unused eslint-disable directive (no problems were reported from 'no-empty-pattern')",
+        "rule": null,
+        "baselineLine": 22,
+        "sourceLine": "// eslint-disable-next-line no-empty-pattern",
+        "baselineSourceLine": "// eslint-disable-next-line no-empty-pattern"
+      },
+      {
+        "path": "web/new-components/chat/content/ChatContent.tsx",
+        "line": 192,
+        "column": 25,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 190,
+        "sourceLine": "                        <img",
+        "baselineSourceLine": "                        <img"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 460,
+        "column": 9,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 458,
+        "sourceLine": "        <img",
+        "baselineSourceLine": "        <img"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 633,
+        "column": 26,
+        "message": "The ref value 'ref.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'ref.current' to a variable inside the effect, and use that variable in the cleanup function",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 631,
+        "sourceLine": "      const iframe = ref.current as any;",
+        "baselineSourceLine": "      const iframe = ref.current as any;"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 1078,
+        "column": 13,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 1076,
+        "sourceLine": "            <img",
+        "baselineSourceLine": "            <img"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 1310,
+        "column": 13,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 1308,
+        "sourceLine": "            <img",
+        "baselineSourceLine": "            <img"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 1324,
+        "column": 13,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 1322,
+        "sourceLine": "            <img src={resolveImageUrl(url)} alt={`Generated ${idx + 1}`} className='w-full h-auto block' />",
+        "baselineSourceLine": "            <img src={resolveImageUrl(url)} alt={`Generated ${idx + 1}`} className='w-full h-auto block' />"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 1454,
+        "column": 11,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 1452,
+        "sourceLine": "          <img",
+        "baselineSourceLine": "          <img"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 2147,
+        "column": 6,
+        "message": "React Hook useCallback has a missing dependency: 't'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 2145,
+        "sourceLine": "  }, [skillName, isAdded]);",
+        "baselineSourceLine": "  }, [skillName, isAdded]);"
+      },
+      {
+        "path": "web/new-components/chat/content/ManusRightPanel.tsx",
+        "line": 2920,
+        "column": 13,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 2918,
+        "sourceLine": "            <img",
+        "baselineSourceLine": "            <img"
+      },
+      {
+        "path": "web/new-components/chat/input/EnhancedChatInput.tsx",
+        "line": 470,
+        "column": 17,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 470,
+        "sourceLine": "                <img src={img.dataUrl} alt={img.filename} className='h-16 w-16 rounded-lg object-cover' />",
+        "baselineSourceLine": "                <img src={img.dataUrl} alt={img.filename} className='h-16 w-16 rounded-lg object-cover' />"
+      },
+      {
+        "path": "web/new-components/chat/input/KnowledgeSelector.tsx",
+        "line": 28,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchSpaces'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 32,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/new-components/chat/input/Resource.tsx",
+        "line": 115,
+        "column": 6,
+        "message": "React Hook useCallback has missing dependencies: 'maxNewTokensValue' and 'temperatureValue'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 115,
+        "sourceLine": "  }, [chatId, fileList, modelValue, refreshDialogList, refreshHistory, scene, setLoading, setResourceValue]);",
+        "baselineSourceLine": "  }, [chatId, fileList, modelValue, refreshDialogList, refreshHistory, scene, setLoading, setResourceValue]);"
+      },
+      {
+        "path": "web/new-components/chat/input/ToolsBar.tsx",
+        "line": 123,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 'maxNewTokensValue'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 123,
+        "sourceLine": "  }, [",
+        "baselineSourceLine": "  }, ["
+      },
+      {
+        "path": "web/new-components/chat/input/ToolsBar.tsx",
+        "line": 200,
+        "column": 19,
+        "message": "Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element",
+        "rule": "@next/next/no-img-element",
+        "baselineLine": 200,
+        "sourceLine": "                  <img src={previewUrl} alt={fileName || 'Preview'} className='max-w-full max-h-full object-contain' />",
+        "baselineSourceLine": "                  <img src={previewUrl} alt={fileName || 'Preview'} className='max-w-full max-h-full object-contain' />"
+      },
+      {
+        "path": "web/new-components/chat/input/hooks/useFilteredList.ts",
+        "line": 82,
+        "column": 5,
+        "message": "Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')",
+        "rule": null,
+        "baselineLine": 82,
+        "sourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps",
+        "baselineSourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps"
+      },
+      {
+        "path": "web/new-components/connector/ConfirmDialog.tsx",
+        "line": 36,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'confirmation' and 'onDeny'. Either include them or remove the dependency array. If 'onDeny' changes too often, find the parent component that defines it and wrap that definition in useCallback",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 36,
+        "sourceLine": "  }, [confirmation?.confirm_id]);",
+        "baselineSourceLine": "  }, [confirmation?.confirm_id]);"
+      },
+      {
+        "path": "web/new-components/connector/ConnectorToolsModal.tsx",
+        "line": 72,
+        "column": 9,
+        "message": "The 'tools' conditional could make the dependencies of useMemo Hook (at line 83) change on every render. To fix this, wrap the initialization of 'tools' in its own useMemo() Hook",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 72,
+        "sourceLine": "  const tools: ConnectorToolSummary[] = data?.state === 'active' ? data.tools : [];",
+        "baselineSourceLine": "  const tools: ConnectorToolSummary[] = data?.state === 'active' ? data.tools : [];"
+      },
+      {
+        "path": "web/new-components/scheduled-task/CronInput.tsx",
+        "line": 119,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'onChange' and 'value'. Either include them or remove the dependency array. If 'onChange' changes too often, find the parent component that defines it and wrap that definition in useCallback",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 119,
+        "sourceLine": "  }, [preset, time, weekday, day, custom]);",
+        "baselineSourceLine": "  }, [preset, time, weekday, day, custom]);"
+      },
+      {
+        "path": "web/pages/construct/agent/index.tsx",
+        "line": 81,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'refresh'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 79,
+        "sourceLine": "  }, [activeKey]);",
+        "baselineSourceLine": "  }, [activeKey]);"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/NativeApp.tsx",
+        "line": 1,
+        "column": 1,
+        "message": "Unused eslint-disable directive (no problems were reported)",
+        "rule": null,
+        "baselineLine": 1,
+        "sourceLine": "/* eslint-disable */",
+        "baselineSourceLine": "/* eslint-disable */"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/PromptSelect.tsx",
+        "line": 1,
+        "column": 1,
+        "message": "Unused eslint-disable directive (no problems were reported)",
+        "rule": null,
+        "baselineLine": 1,
+        "sourceLine": "/* eslint-disable */",
+        "baselineSourceLine": "/* eslint-disable */"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/ResourceContentV2.tsx",
+        "line": 172,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'updateResourceData'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 172,
+        "sourceLine": "  }, [configParams, selectedType]);",
+        "baselineSourceLine": "  }, [configParams, selectedType]);"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/ResourceContentV2.tsx",
+        "line": 187,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'fetchResourceParams' and 'form'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 187,
+        "sourceLine": "  }, [resourceType, uid, setCurIcon]);",
+        "baselineSourceLine": "  }, [resourceType, uid, setCurIcon]);"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/ResourceContentV2.tsx",
+        "line": 227,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'updateResourceData'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 227,
+        "sourceLine": "  }, [configParams, initValue, form, resourceType]);",
+        "baselineSourceLine": "  }, [configParams, initValue, form, resourceType]);"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/ResourcesCardV2.tsx",
+        "line": 138,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'resourcesTabs'. Either include it or remove the dependency array. You can also do a functional update 'setResourcesTabs(r => ...)' if you only need 'resourcesTabs' in the 'setResourcesTabs' call",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 136,
+        "sourceLine": "  }, [curIcon]);",
+        "baselineSourceLine": "  }, [curIcon]);"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/index.tsx",
+        "line": 135,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 'language'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 135,
+        "sourceLine": "  }, [data]);",
+        "baselineSourceLine": "  }, [data]);"
+      },
+      {
+        "path": "web/pages/construct/app/extra/components/auto-plan/index.tsx",
+        "line": 169,
+        "column": 6,
+        "message": "React Hook useMemo has a missing dependency: 't'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 169,
+        "sourceLine": "  }, [data]);",
+        "baselineSourceLine": "  }, [data]);"
+      },
+      {
+        "path": "web/pages/construct/dbgpts/index.tsx",
+        "line": 85,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'refresh'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 83,
+        "sourceLine": "  }, [activeKey, typeStr]);",
+        "baselineSourceLine": "  }, [activeKey, typeStr]);"
+      },
+      {
+        "path": "web/pages/construct/flow/canvas/index.tsx",
+        "line": 79,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'getFlowData'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 79,
+        "sourceLine": "  }, [id]);",
+        "baselineSourceLine": "  }, [id]);"
+      },
+      {
+        "path": "web/pages/construct/flow/canvas/index.tsx",
+        "line": 162,
+        "column": 5,
+        "message": "React Hook useCallback has a missing dependency: 'setNodes'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 162,
+        "sourceLine": "    [reactFlow],",
+        "baselineSourceLine": "    [reactFlow],"
+      },
+      {
+        "path": "web/pages/construct/flow/libro/index.tsx",
+        "line": 31,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'i18n'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 31,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/pages/construct/models-config/index.tsx",
+        "line": 233,
+        "column": 5,
+        "message": "Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')",
+        "rule": null,
+        "baselineLine": 231,
+        "sourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps",
+        "baselineSourceLine": "    // eslint-disable-next-line react-hooks/exhaustive-deps"
+      },
+      {
+        "path": "web/pages/construct/prompt/index.tsx",
+        "line": 137,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'getPrompts'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 137,
+        "sourceLine": "  }, [promptType]);",
+        "baselineSourceLine": "  }, [promptType]);"
+      },
+      {
+        "path": "web/pages/construct/scheduled-tasks/[taskId].tsx",
+        "line": 60,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'loadTask'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 60,
+        "sourceLine": "  }, [taskId, getTask]);",
+        "baselineSourceLine": "  }, [taskId, getTask]);"
+      },
+      {
+        "path": "web/pages/conversations/index.tsx",
+        "line": 21,
+        "column": 24,
+        "message": "React Hook useCallback received a function whose dependencies are unknown. Pass an inline function instead",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 21,
+        "sourceLine": "  const handleSearch = useCallback(",
+        "baselineSourceLine": "  const handleSearch = useCallback("
+      },
+      {
+        "path": "web/pages/index.tsx",
+        "line": 2499,
+        "column": 7,
+        "message": "Unused eslint-disable directive (no problems were reported from 'no-constant-condition')",
+        "rule": null,
+        "baselineLine": 2496,
+        "sourceLine": "      // eslint-disable-next-line no-constant-condition",
+        "baselineSourceLine": "      // eslint-disable-next-line no-constant-condition"
+      },
+      {
+        "path": "web/pages/knowledge/graph/index.tsx",
+        "line": 52,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchGraphVis'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 52,
+        "sourceLine": "  }, [spaceName]);",
+        "baselineSourceLine": "  }, [spaceName]);"
+      },
+      {
+        "path": "web/pages/knowledge/graph/index.tsx",
+        "line": 75,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'graphData.nodes'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 75,
+        "sourceLine": "  }, [isReady]);",
+        "baselineSourceLine": "  }, [isReady]);"
+      },
+      {
+        "path": "web/pages/models_evaluation/[code].tsx",
+        "line": 87,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchBenchmarkResult'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 87,
+        "sourceLine": "  }, [code]);",
+        "baselineSourceLine": "  }, [code]);"
+      },
+      {
+        "path": "web/pages/models_evaluation/datasets/index.tsx",
+        "line": 78,
+        "column": 6,
+        "message": "React Hook useEffect has missing dependencies: 'fetchDatasets' and 't'. Either include them or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 78,
+        "sourceLine": "  }, []);",
+        "baselineSourceLine": "  }, []);"
+      },
+      {
+        "path": "web/pages/models_evaluation/datasets/index.tsx",
+        "line": 192,
+        "column": 6,
+        "message": "React Hook useEffect has a missing dependency: 'fetchTableData'. Either include it or remove the dependency array",
+        "rule": "react-hooks/exhaustive-deps",
+        "baselineLine": 192,
+        "sourceLine": "  }, [selectedDataset, selectedTable]);",
+        "baselineSourceLine": "  }, [selectedDataset, selectedTable]);"
+      }
+    ],
+    "caveat": "Does not establish that baseline ESLint 8 reported the same diagnostics; 10 unused-disable warnings are surfaced by the ESLint 9 toolchain."
+  },
+  "browserServerModes": {
+    "sourceEvidenceSha256": "9ef80e7c816b1e0836aacef24f8f74b97c59704fe666d0444254518e4fd0fd0e",
+    "suites": {
+      "dev-chromium": {
+        "applicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+        "stats": {
+          "startTime": "2026-09-30T04:25:13.973Z",
+          "duration": 585907.7,
+          "expected": 42,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "command": "npm run dev",
+        "serverLogSha256": "c8de1c620c329fa73869aeb3a38c498973cc6264d8c15703f813adac5b56f8c8",
+        "serverLogFirstLines": [
+          "",
+          "> db-gpt-web@0.1.0 dev",
+          "> node scripts/run-next.cjs dev --webpack --hostname 127.0.0.1 --port 5792",
+          "",
+          "▲ Next.js 16.3.0 (webpack)",
+          "- Local:         http://127.0.0.1:5792",
+          "- Network:       http://127.0.0.1:5792",
+          "✓ Ready in 578ms",
+          "✓ Running next.config.js took 43ms",
+          ""
+        ],
+        "rerunThisFollowup": false
+      },
+      "production-chromium": {
+        "applicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+        "stats": {
+          "startTime": "2026-09-30T04:15:57.174Z",
+          "duration": 286249.109,
+          "expected": 42,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "command": "npm run build then npm start",
+        "serverLogSha256": "91e29629d98ac42c090f88f432796b2454e7d84d2a420648438d929468fe9f0f",
+        "serverLogFirstLines": [
+          "",
+          "> db-gpt-web@0.1.0 start",
+          "> node scripts/run-next.cjs start --hostname 127.0.0.1 --port 5793",
+          "",
+          "▲ Next.js 16.3.0",
+          "- Local:         http://127.0.0.1:5793",
+          "- Network:       http://127.0.0.1:5793",
+          "✓ Ready in 185ms",
+          "✓ Running next.config.js took 41ms"
+        ],
+        "rerunThisFollowup": false
+      },
+      "production-firefox": {
+        "applicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+        "stats": {
+          "startTime": "2026-09-30T04:20:45.891Z",
+          "duration": 115203.158,
+          "expected": 41,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "command": "npm run build then npm start",
+        "serverLogSha256": "ecb2611419a5d7da70b5cf6cebb02b7f00bd8b2605a7dbc19afc3691e327c0b2",
+        "serverLogFirstLines": [
+          "",
+          "> db-gpt-web@0.1.0 start",
+          "> node scripts/run-next.cjs start --hostname 127.0.0.1 --port 5793",
+          "",
+          "▲ Next.js 16.3.0",
+          "- Local:         http://127.0.0.1:5793",
+          "- Network:       http://127.0.0.1:5793",
+          "✓ Ready in 194ms",
+          "✓ Running next.config.js took 43ms"
+        ],
+        "rerunThisFollowup": false
+      },
+      "production-webkit": {
+        "applicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+        "stats": {
+          "startTime": "2026-09-30T04:22:43.413Z",
+          "duration": 120285.293,
+          "expected": 41,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "command": "npm run build then npm start",
+        "serverLogSha256": "97a330d1bb9c5764b4f89ae01e753260f0365faaddaea1a7ea789850ec797a31",
+        "serverLogFirstLines": [
+          "",
+          "> db-gpt-web@0.1.0 start",
+          "> node scripts/run-next.cjs start --hostname 127.0.0.1 --port 5793",
+          "",
+          "▲ Next.js 16.3.0",
+          "- Local:         http://127.0.0.1:5793",
+          "- Network:       http://127.0.0.1:5793",
+          "✓ Ready in 194ms",
+          "✓ Running next.config.js took 45ms"
+        ],
+        "rerunThisFollowup": false
+      }
+    }
+  },
+  "scope": "Local documentation/evidence follow-up. Two unchanged baseline browser cases attempted and ten direct backend GETs measured. No new lint run, full browser regression, nine-check integration rerun, source/test/timeout change, commit, push or PR update.",
+  "recordedAt": "2026-09-30T06:38:34.770089+00:00",
+  "baselineComparison": {
+    "status": "No comparable baseline latency samples obtained",
+    "baseline": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+    "isolation": {
+      "kind": "Complete git archive in a separate directory on C:, not a Git worktree",
+      "reason": "Managed worktree creation on D: failed with No space left on device.",
+      "archiveSha256": "2485bc03259df61723ff3b1862f5102bbba862abbdcea7d92e9889c1d001c568",
+      "archiveBytes": 271806192,
+      "webFilesComparedToGitBlobs": 560,
+      "webContentMatchesBaseline": true,
+      "gitArchiveWindowsEolConversions": 455,
+      "comparisonNote": "560 web files match baseline Git blobs after EOL normalization; all 4670 archived files remain byte-for-byte unchanged since extraction."
+    },
+    "application": {
+      "node": "18.20.8",
+      "yarn": "1.22.22",
+      "next": "13.4.7",
+      "react": "18.3.1"
+    },
+    "runtimeDownloads": {
+      "nodeZipSha256": "1a1e40260a6facba83636e4cd0ba01eb5bd1386896824b36645afba44857384a",
+      "yarnIntegrity": "sha512-prL3kGtyG7o9Z9Sv8IPfBNrWTDmXB4Qbes8A9rEzt6wkJV8mUvoirjU0Mp3GGAU06Y0XQyA3/2/RQFVuK7MTfg=="
+    },
+    "installation": {
+      "command": "yarn install --frozen-lockfile --non-interactive --cache-folder <isolated-cache>",
+      "startedAt": "2026-09-30T06:07:32.617457+00:00",
+      "finishedAt": "2026-09-30T06:11:50.139969+00:00",
+      "exitCode": 0,
+      "frozenLockfile": true,
+      "ignoredEngines": false,
+      "ignoredPeerDependencies": false,
+      "originalLockfilesRetained": [
+        "yarn.lock",
+        "package-lock.json"
+      ],
+      "yarnLockSha256Before": "94718b8314a937e6fbe0beedd13bfa832736e9418ec833da56364752b7402a44",
+      "yarnLockSha256After": "94718b8314a937e6fbe0beedd13bfa832736e9418ec833da56364752b7402a44",
+      "logSha256": "d1fb35b7e18df9d34fdcf327cde2182beefec5334bab1c4bbd4dac3cd5cad61a",
+      "warnings": "Yarn reported existing mixed-lockfile and peer-dependency warnings; no dependency/lockfile overrides were used."
+    },
+    "devServer": {
+      "command": "yarn run dev --hostname 127.0.0.1 --port 5795",
+      "originalDevScript": "NODE_OPTIONS=--max_old_space_size=16384 next dev",
+      "scriptShell": "Git Bash (POSIX interpretation of original package.json script)",
+      "ready": true,
+      "stayedRunning": true,
+      "logSha256": "687b4bcc565d6af2b60bc9d39450b20cbbd81de944fb9fd9800a48c831a7368b",
+      "contemporaneousDiagnostics": [
+        "Attempted import error: 'medianIndex' is not exported from 'd3-array' (imported as 'medianIndex').",
+        "Error: read ECONNRESET; errno: -4077; code: ECONNRESET; syscall: read"
+      ],
+      "diagnosticLimit": "These log entries were observed during the attempt; they are not established as the cause of the navigation timeouts."
+    },
+    "testHarness": {
+      "node": "20.19.6",
+      "playwright": "1.62.1",
+      "sourceCommit": "7ac93ead9154ba28e1a325979b4cc73a75910e99",
+      "hashesBefore": {
+        "toolchain.spec.cjs": "38e13fe721c2a1f3b41e8a2e775e9d7fc881f2803536b7e7cd636eafd0774ba2",
+        "fixtures.cjs": "c079cad72c4cf0b11dd4b445082ba67973158dd450d9f4f053cfa4ae9802d276",
+        "playwright.config.cjs": "2044567e1b472a6390c480028c9a46c667504f0e1c90fcefd209a04e1f931695"
+      },
+      "hashesAfter": {
+        "toolchain.spec.cjs": "38e13fe721c2a1f3b41e8a2e775e9d7fc881f2803536b7e7cd636eafd0774ba2",
+        "fixtures.cjs": "c079cad72c4cf0b11dd4b445082ba67973158dd450d9f4f053cfa4ae9802d276",
+        "playwright.config.cjs": "2044567e1b472a6390c480028c9a46c667504f0e1c90fcefd209a04e1f931695"
+      }
+    },
+    "browserCommand": "playwright test --grep 'interaction: (skill-search-toggle-and-markdown|monaco-sql-run-and-save)$' --trace=on",
+    "plannedDesign": "One fresh baseline dev server; ten paired sequential rounds; fresh browser context per case. No simultaneous build or production tests.",
+    "requestedSamplesPerMetric": 10,
+    "attemptedRounds": 1,
+    "completedComparableSkillsSamples": 0,
+    "completedComparableSqlSamples": 0,
+    "timeoutsMs": {
+      "navigation": 120000,
+      "action": 15000,
+      "expect": 15000,
+      "test": 180000,
+      "applicationAxios": 10000
+    },
+    "automaticRetries": 0,
+    "workers": 1,
+    "startedAt": "2026-09-30T06:16:45.454379+00:00",
+    "finishedAt": "2026-09-30T06:22:12.791727+00:00",
+    "cases": [
+      {
+        "case": "skill-search-toggle-and-markdown",
+        "route": "/construct/skills/",
+        "status": "failed",
+        "stage": "page.goto, waiting until domcontentloaded; before the timing checkpoint",
+        "error": "TimeoutError: page.goto: Timeout 120000ms exceeded.\nCall log:\n  - navigating to \"http://127.0.0.1:5795/construct/skills/\", waiting until \"domcontentloaded\"",
+        "caseDurationMsIncludingCleanup": 165308,
+        "recordedApiRequests": 0,
+        "comparableTimingSamples": 0,
+        "traceSha256": "92665a822d1c2b59923bf41950f5ba26f465641bf5ff5a1c5eb0753f1f5c2111"
+      },
+      {
+        "case": "monaco-sql-run-and-save",
+        "route": "/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression",
+        "status": "failed",
+        "stage": "page.goto, waiting until domcontentloaded; before the timing checkpoint",
+        "error": "TimeoutError: page.goto: Timeout 120000ms exceeded.\nCall log:\n  - navigating to \"http://127.0.0.1:5795/chat/?scene=chat_dashboard&id=regression-editor&db_name=regression\", waiting until \"domcontentloaded\"",
+        "caseDurationMsIncludingCleanup": 145684,
+        "recordedApiRequests": 0,
+        "comparableTimingSamples": 0,
+        "traceSha256": "b293641b597545c2f98afc046ff4e44261f4221ec106ef774094031283bac154"
+      }
+    ],
+    "samplingStoppedReason": "Neither original route reached a comparable timing checkpoint; retained the startup/route errors without modifying baseline or tests.",
+    "testHarnessUnchanged": true,
+    "interpretation": "Navigation expired before either target checkpoint; these are not observations of the original 10-second fixture-response or 15-second SELECT-completion failures. No valid old-versus-new comparison exists; upgrade involvement cannot be excluded."
+  },
+  "requestChain": {
+    "skills": "The original repeated browser case intercepts /api/v1/skills/list and fulfills it from fixtures.cjs; no real backend participates.",
+    "sql": "The same browser harness intercepts all API requests, including /api/v1/editor/db/tables. db-editor.tsx supplies in-memory schema/table/column metadata to the completion service. The timed event is SELECT becoming visible after typing SEL and triggering completion, involving the frontend plugin/worker; it is not a real SQL query or a backend response interval.",
+    "normalApplicationLimit": "Normal application use loads table metadata through an API; the no-real-backend statement is limited to these recorded fixture tests.",
+    "sourceReferences": [
+      {
+        "path": "tests/web-toolchain/toolchain.spec.cjs",
+        "line": 91
+      },
+      {
+        "path": "tests/web-toolchain/toolchain.spec.cjs",
+        "line": 398
+      },
+      {
+        "path": "tests/web-toolchain/fixtures.cjs",
+        "line": 252
+      },
+      {
+        "path": "tests/web-toolchain/fixtures.cjs",
+        "line": 391
+      },
+      {
+        "path": "web/components/chat/db-editor.tsx",
+        "line": 119
+      },
+      {
+        "path": "web/components/chat/db-editor.tsx",
+        "line": 361
+      }
+    ]
+  },
+  "upgradedReference": {
+    "source": "flaky-investigation.json",
+    "sourceSha256": "e2434e6e4c4c8ee5fc37d67f9d829b8f49066f10fda38a772cd63992aba4b813",
+    "applicationCommit": "763eba34c31a0ce4b07742bdcdfb05474f85f733",
+    "testedCheckout": "1401f85150d47852732c6aa6fc3e73f53e1cb475",
+    "recordedAt": "2026-09-30T04:55:39.594780+00:00",
+    "rerunThisFollowup": false,
+    "mode": "development",
+    "runtime": {
+      "node": "20.19.6",
+      "npm": "10.8.2",
+      "next": "16.3.0",
+      "defaultHeapGiB": 8
+    },
+    "rounds": 20,
+    "passed": 40,
+    "failed": 0,
+    "coldServerRounds": 4,
+    "warmServerRounds": 16,
+    "metrics": {
+      "skillRequestDurationMs": {
+        "min": 501.603,
+        "median": 557.224,
+        "max": 8268.187,
+        "samples": 20,
+        "deadlineMs": 10000,
+        "bins": {
+          "atMost1000ms": 18,
+          "over1000Through5000ms": 1,
+          "over5000BelowDeadline": 1,
+          "atOrAboveDeadline": 0
+        },
+        "slowestFive": [
+          {
+            "round": 12,
+            "durationMs": 8268.187,
+            "status": "passed"
+          },
+          {
+            "round": 11,
+            "durationMs": 3296.676,
+            "status": "passed"
+          },
+          {
+            "round": 9,
+            "durationMs": 607.801,
+            "status": "passed"
+          },
+          {
+            "round": 19,
+            "durationMs": 588.035,
+            "status": "passed"
+          },
+          {
+            "round": 15,
+            "durationMs": 572.297,
+            "status": "passed"
+          }
+        ]
+      },
+      "completionWaitMs": {
+        "min": 846.787,
+        "median": 882.929,
+        "max": 4251.342,
+        "samples": 20,
+        "deadlineMs": 15000,
+        "bins": {
+          "atMost1000ms": 13,
+          "over1000Through5000ms": 7,
+          "over5000BelowDeadline": 0,
+          "atOrAboveDeadline": 0
+        },
+        "slowestFive": [
+          {
+            "round": 11,
+            "durationMs": 4251.342,
+            "status": "passed"
+          },
+          {
+            "round": 8,
+            "durationMs": 1422.007,
+            "status": "passed"
+          },
+          {
+            "round": 10,
+            "durationMs": 1416.612,
+            "status": "passed"
+          },
+          {
+            "round": 9,
+            "durationMs": 1386.612,
+            "status": "passed"
+          },
+          {
+            "round": 12,
+            "durationMs": 1382.641,
+            "status": "passed"
+          }
+        ]
+      }
+    },
+    "comparisonLimit": "Each series has 20 samples from the existing 40 case executions. There are zero comparable old-baseline samples. This is not a causal benchmark, and neither runtime defaults nor cold/warm design were changed to manufacture comparability."
+  },
+  "directBackendEvidence": {
+    "baseline": "d1d398eb7ab2b2b3c9dc53fa376594a3600a7458",
+    "source": "Official baseline Python source in independent export",
+    "launcher": "Unmodified copy of existing API-only regression launcher",
+    "launcherSha256": "a8ee4921f3bae932b8b836de0969a014d9d82b1835d4f6b6fc009ef884ddc24b",
+    "existingConfiguration": "Existing external test configuration, reused in memory; not copied to evidence",
+    "runtimeScope": "Isolated fresh metadata/home; original API-only launcher disables static mount, embeddings and rerankers and initializes isolated metadata. Endpoint implementation unchanged.",
+    "endpoint": "GET http://127.0.0.1:5670/api/v1/skills/list",
+    "timeoutMs": 10000,
+    "requestedSamples": 10,
+    "method": "Sequential direct HTTP requests using monotonic clock, reading each full response, 200 ms between requests; no browser, Next server or request fixture.",
+    "startedAt": "2026-09-30T06:28:08.243487+00:00",
+    "samples": [
+      {
+        "sample": 1,
+        "startedAt": "2026-09-30T06:28:32.399516+00:00",
+        "durationMs": 417.173,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 2,
+        "startedAt": "2026-09-30T06:28:33.018139+00:00",
+        "durationMs": 21.587,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 3,
+        "startedAt": "2026-09-30T06:28:33.241261+00:00",
+        "durationMs": 12.9,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 4,
+        "startedAt": "2026-09-30T06:28:33.454915+00:00",
+        "durationMs": 21.945,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 5,
+        "startedAt": "2026-09-30T06:28:33.677642+00:00",
+        "durationMs": 15.674,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 6,
+        "startedAt": "2026-09-30T06:28:33.894177+00:00",
+        "durationMs": 18.224,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 7,
+        "startedAt": "2026-09-30T06:28:34.113396+00:00",
+        "durationMs": 23.907,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 8,
+        "startedAt": "2026-09-30T06:28:34.338581+00:00",
+        "durationMs": 432.523,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 9,
+        "startedAt": "2026-09-30T06:28:34.972440+00:00",
+        "durationMs": 13.513,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      },
+      {
+        "sample": 10,
+        "startedAt": "2026-09-30T06:28:35.186685+00:00",
+        "durationMs": 1463.17,
+        "status": 200,
+        "responseBytes": 2414,
+        "responseSha256": "967b8289a8e320458c3b8b2b95cc7724d0e55566499ab1168f980716292d0462",
+        "success": true,
+        "itemCount": 5
+      }
+    ],
+    "limitations": [
+      "Not an old-frontend latency distribution.",
+      "Does not time test-fixture dispatch, Axios rendering, the Monaco worker or SELECT visibility.",
+      "Different payload and runtime state from fixed browser fixtures.",
+      "Cannot establish why the original two tests timed out or exclude upgrade involvement."
+    ],
+    "ready": true,
+    "distributionMs": {
+      "validSamples": 10,
+      "min": 12.9,
+      "median": 21.766,
+      "max": 1463.17,
+      "atMost1000": 9,
+      "over1000Through5000": 1,
+      "over5000Below10000": 0,
+      "atOrAbove10000": 0,
+      "slowestFive": [
+        1463.17,
+        432.523,
+        417.173,
+        23.907,
+        21.945
+      ]
+    },
+    "finishedAt": "2026-09-30T06:28:37.137126+00:00",
+    "logSha256": "b391dd74b2c5415f3b364fa2b0baa65e38e1478774ce5907111a1738d0423240",
+    "importedServerWithinBaselineExport": true
+  },
+  "sqlFallbackNotMeasured": {
+    "reason": "SELECT visibility is a frontend plugin/worker event. Timing a direct SQL or table-list endpoint would measure a different event, so no such result is substituted for the missing browser samples."
+  },
+  "integrity": {
+    "checkedAt": "2026-09-30T06:32:46.105544+00:00",
+    "baselineArchiveFilesVerified": 4670,
+    "baselineArchiveFilesChanged": [],
+    "candidateSourceAndTestsUnchanged": true,
+    "mainTrackedStatusMatchesBeforeTask": true,
+    "remainingTemporaryProcesses": [],
+    "projectRegressionRerun": false,
+    "baselineBrowserCasesAttempted": 2,
+    "directBackendSkillsRequests": 10,
+    "committed": false,
+    "pushed": false
+  }
+}

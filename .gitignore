@@ -213,3 +213,6 @@ test_docs
 openspec/
 docs/superpowers/
 .gstack/
+
+# Isolated frontend validation configs and incremental state
+/web/.tsconfig-build-*

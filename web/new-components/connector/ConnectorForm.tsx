@@ -44,7 +44,15 @@ type FormShape = {
 // `_normalise_transport` accepted values in `mcp_utils.py`.
 // `hintKey` is an i18n key resolved at render time (the hint text is
 // locale-dependent; displayName/label/placeholder stay literal).
-const TRANSPORT_META: Record<string, { displayName: string; label: string; placeholder: string; hintKey: string }> = {
+const TRANSPORT_META: Record<
+  string,
+  {
+    displayName: string;
+    label: string;
+    placeholder: string;
+    hintKey: 'connector.form.sseHint' | 'connector.form.streamableHint';
+  }
+> = {
   sse: {
     displayName: 'SSE',
     label: 'SSE Endpoint URL',
@@ -63,7 +71,7 @@ const TRANSPORT_META: Record<string, { displayName: string; label: string; place
 // `none`, `token`) — we only swap what the user sees, not the wire value.
 // `none` / `token` are locale-dependent so they resolve via i18n at render
 // time (see AUTH_TYPE_LABEL_KEYS); `bearer` is a brand term kept literal.
-const AUTH_TYPE_LABEL_KEYS: Record<string, string> = {
+const AUTH_TYPE_LABEL_KEYS: Record<string, 'connector.form.authNone' | 'connector.form.authTokenCustom'> = {
   none: 'connector.form.authNone',
   token: 'connector.form.authTokenCustom',
 };

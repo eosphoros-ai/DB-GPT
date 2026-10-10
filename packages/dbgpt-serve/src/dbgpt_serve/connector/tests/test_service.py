@@ -26,11 +26,60 @@ def setup_and_teardown():
 
 
 @pytest.fixture
-def service(system_app: SystemApp):
+def service(system_app: SystemApp):  # noqa: F811 - imported pytest fixture
     system_app.config.set("dbgpt.app.global.encrypt_key", "test_encrypt_key")
     instance = ConnectorService(system_app, ServeConfig())
     instance.init_app(system_app)
     return instance
+
+
+def test_handshake_failure_and_reactivation_match_persisted_status(
+    service, monkeypatch
+):
+    """The real manager catches transport failures; the service must reflect them."""
+    from dbgpt.agent.resource.connector.manager import ConnectorManager
+    from dbgpt.agent.resource.tool.pack import MCPToolPack
+
+    manager = ConnectorManager()
+    original_get = service.system_app.get_component
+
+    def get_component(name, *args, **kwargs):
+        if name == "connector_manager":
+            return manager
+        return original_get(name, *args, **kwargs)
+
+    monkeypatch.setattr(service.system_app, "get_component", get_component)
+    handshake = AsyncMock(side_effect=RuntimeError("authentication rejected"))
+    monkeypatch.setattr(MCPToolPack, "preload_resource", handshake)
+    created = service.create_connector(
+        ConnectorCreateRequest(
+            connector_type="custom_mcp",
+            display_name="Validation",
+            credentials={"token": "invalid-test-token"},
+            config={"server_uri": "http://localhost/mcp", "auth_type": "bearer"},
+        )
+    )
+    assert created.status == "error"
+    assert service.get_connector(created.connector_id).status == "error"
+    assert service.list_tools(created.connector_id).state == "inactive"
+
+    handshake.side_effect = None
+    updated = service.update_connector(
+        created.connector_id,
+        ConnectorUpdateRequest(credentials={"token": "valid-test-token"}),
+    )
+    assert updated.status == "active"
+    assert service.get_connector(created.connector_id).status == "active"
+    assert service.list_tools(created.connector_id).state == "active"
+
+    handshake.side_effect = RuntimeError("authentication rejected")
+    updated = service.update_connector(
+        created.connector_id,
+        ConnectorUpdateRequest(credentials={"token": "invalid-test-token"}),
+    )
+    assert updated.status == "error"
+    assert service.get_connector(created.connector_id).status == "error"
+    assert service.list_tools(created.connector_id).state == "inactive"
 
 
 def test_create_connector_encrypts_credentials_before_persisting(
@@ -133,7 +182,8 @@ def test_create_connector_activates_external_connector_manager(
     assert call_kwargs["connector_id"]
 
 
-def test_after_start_rehydrates_active_connectors_with_decrypted_credentials(
+@pytest.mark.asyncio
+async def test_after_start_rehydrates_active_connectors_with_decrypted_credentials(
     service: ConnectorService, monkeypatch: pytest.MonkeyPatch
 ):
     credentials = {"token": "secret-token"}
@@ -164,7 +214,7 @@ def test_after_start_rehydrates_active_connectors_with_decrypted_credentials(
 
     monkeypatch.setattr(service.system_app, "get_component", _fake_get_component)
 
-    service.after_start()
+    await service.async_after_start()
 
     fake_manager.create_connector.assert_awaited_once_with(
         connector_type="github",
@@ -175,7 +225,8 @@ def test_after_start_rehydrates_active_connectors_with_decrypted_credentials(
     )
 
 
-def test_after_start_marks_legacy_connector_needs_reactivation(
+@pytest.mark.asyncio
+async def test_after_start_marks_legacy_connector_needs_reactivation(
     service: ConnectorService, monkeypatch: pytest.MonkeyPatch
 ):
     """Phase 1 era connectors with NULL config_json should be flagged as
@@ -213,7 +264,7 @@ def test_after_start_marks_legacy_connector_needs_reactivation(
     monkeypatch.setattr(service.system_app, "get_component", _fake_get_component)
 
     # Should not raise
-    service.after_start()
+    await service.async_after_start()
 
     # manager.create_connector was called with extra_config=None (the legacy state)
     fake_manager.create_connector.assert_awaited_once()

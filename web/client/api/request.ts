@@ -374,6 +374,7 @@ export type CopilotDeviceCode = {
   user_code: string;
   device_code: string;
   interval: number;
+  expires_in?: number;
 };
 
 export type CopilotPollResult = { status: 'success' | 'pending' | 'slow_down'; enabled_models?: string[] };
@@ -418,8 +419,9 @@ export const postDbgptsHubUpdate = (data?: PostAgentHubUpdateParams) => {
     data ?? { channel: '', url: '', branch: '', authorization: '' },
   );
 };
+/** Fetch installed agent plugins, optionally scoped to a user, using the backend item-list response. */
 export const postAgentMy = (user?: string) => {
-  return POST<undefined, PostAgentMyPluginResponse>('/api/v1/agent/my', undefined, { params: { user } });
+  return POST<undefined, PostAgentMyPluginResponse['items']>('/api/v1/agent/my', undefined, { params: { user } });
 };
 export const postDbgptsMy = (data?: PostDbgptMyQueryParams) => {
   return POST<PostDbgptMyQueryParams, PostAgentMyPluginResponse>(
@@ -525,8 +527,9 @@ export const getSupportDBList = (db_name = '') => {
   return GET<null, Record<string, any>>(`/api/v1/permission/db/list?db_name=${db_name}`);
 };
 
+/** Fetch recommended applications as an array for the supplied recommendation filters. */
 export const recommendApps = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('/api/v1/app/hot/list', data);
+  return POST<Record<string, string>, IApp[]>('/api/v1/app/hot/list', data);
 };
 export const flowSearch = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/serve/awel/flows', data);

@@ -3,7 +3,9 @@
 import json
 import logging
 import os
+import re
 import uuid
+from pathlib import Path
 from typing import Any, Dict, List
 
 from dbgpt.agent.resource.tool.base import tool
@@ -23,6 +25,8 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
             "grep, curl, apt, pip, git, or any other CLI tool. "
             "Execution has a 30s timeout. Local mode runs on the server; "
             "configure Docker for container isolation. "
+            "SKILLS_DIR is the installed skills root; the working directory "
+            "is this conversation's output workspace. "
             'Parameters: {"code": "shell command(s) to execute"}'
         )
     )
@@ -50,11 +54,12 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
                     work_dir=sandbox_work_dir,
                     file_path=react_state.get("file_path"),
                     files_json_path=react_state.get("files_json_path"),
+                    extra={"SKILLS_DIR": SKILLS_DIR},
                 ),
                 timeout=30,
                 input_paths=[SKILLS_DIR]
                 if os.path.isdir(SKILLS_DIR)
-                and ("skills/" in code or SKILLS_DIR in code)
+                and ("skills/" in code or "SKILLS_DIR" in code or SKILLS_DIR in code)
                 else [],
             )
 
@@ -86,6 +91,31 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
             chunks.append({"output_type": "text", "content": output_text.strip()})
         else:
             chunks.append({"output_type": "text", "content": "(no output)"})
+
+        # The skill packager prints its output path. Publish the actual package
+        # as a file chunk so the UI can download it, including on Windows.
+        package_match = re.search(
+            r"Successfully packaged skill to: (.+\.skill)\s*$", output_text, re.M
+        )
+        if package_match:
+            try:
+                package = Path(package_match.group(1).strip()).resolve()
+                if (
+                    package.is_relative_to(Path(sandbox_work_dir).resolve())
+                    and package.is_file()
+                ):
+                    chunks.append(
+                        {
+                            "output_type": "file",
+                            "content": {
+                                "name": package.name,
+                                "file_path": str(package),
+                                "size": package.stat().st_size,
+                            },
+                        }
+                    )
+            except (OSError, ValueError):
+                logger.warning("Could not inspect the generated skill package")
 
         # Safety-net post-processing for skill script execution
         _code_lower = code.strip().lower()

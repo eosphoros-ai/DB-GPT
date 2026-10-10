@@ -53,7 +53,13 @@ import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
-import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
+import { createHtmlDownloadBlob } from '@/utils/html-download';
+import {
+  cleanFinalContent,
+  decodeFinalEvent,
+  decodeHistoryAnswer,
+  type AgentCitation,
+} from '@/utils/react-agent-final';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import {
   ApiOutlined,
@@ -103,6 +109,7 @@ import {
   Upload,
   message,
 } from 'antd';
+import type { TFunction } from 'i18next';
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
@@ -115,15 +122,6 @@ const generateUUID = () => {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-};
-
-const cleanFinalContent = (text: string): string => {
-  let cleaned = text.replace(/\\n/g, '\n').trim();
-  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-  cleaned = cleaned.replace(/"\s*\}\s*$/, '').trim();
-  // Strip raw ReAct prefixes that may leak from the backend
-  cleaned = cleaned.replace(/^(Thought|Action|Action Input|Observation|Phase):\s*/gm, '').trim();
-  return cleaned;
 };
 
 const _formatFileSize = (bytes: number): string => {
@@ -197,6 +195,7 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
+  failed?: boolean;
   /** Immutable server snapshots of every session file attached to this message. */
   attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
@@ -332,6 +331,7 @@ const _convertExecutionToMessageParts = (
 };
 
 // Convert execution data to Manus panel format
+/** Adapt execution steps and outputs to the thinking-panel sections, preserving the active step and per-step thoughts. */
 const convertToManusFormat = (
   execution:
     | {
@@ -343,7 +343,7 @@ const convertToManusFormat = (
       }
     | undefined,
   _userQuery?: string,
-  t?: (key: string) => string,
+  t?: TFunction,
 ): {
   sections: ThinkingSection[];
   activeStep: ActiveStepInfo | null;
@@ -538,7 +538,7 @@ const EXAMPLE_CARDS = [
     title: '创建SQL分析技能',
     description: '使用skill-creator创建一个实用的SQL数据分析技能',
     query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
+      '请使用 skill-creator 在当前会话工作目录中实际创建并交付一个 SQL 数据分析技能。本示例先支持 SQLite：连接本地数据库、只读查询和生成 PNG 图表。请创建临时示例数据库，运行聚合查询和绘图测试，核对 SKILL.md 中的命令与脚本一致，再用 skill-creator 的打包脚本生成可下载的 .skill 文件。请在本轮完成文件、测试和打包，不要仅给出计划；无需配置外部数据库或创建额外文档。',
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -546,6 +546,7 @@ const EXAMPLE_CARDS = [
   },
 ];
 
+/** Coordinate the main conversation workspace, streamed responses and the active model/knowledge/task state. */
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
@@ -855,6 +856,7 @@ const Playground: NextPage = () => {
   const [pendingFinalization, setPendingFinalization] = useState<{
     responseId: string;
     summaryText: string;
+    failed: boolean;
     uploadedFilePath: string | null;
   } | null>(null);
   const [pendingSummaryPresentation, setPendingSummaryPresentation] = useState<{
@@ -1091,7 +1093,7 @@ const Playground: NextPage = () => {
   });
 
   // Fetch Knowledge Bases
-  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
+  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest<KnowledgeSpace[], []>(async () => {
     try {
       const response = await sendSpacePostRequest('/api/v1/knowledge/space/list', {});
       // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
@@ -1144,7 +1146,9 @@ const Playground: NextPage = () => {
   // Fetch Skills/DBGPTs list
   const { data: skillsList, loading: _loadingSkills } = useRequest(async () => {
     try {
-      const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
+      const response = await axios.get<unknown, { success: boolean; data: unknown[] }>(
+        `${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`,
+      );
       // ctx-axios interceptor returns response.data directly
       if (response?.success && Array.isArray(response.data)) {
         return response.data.map((item: any) => ({
@@ -1413,8 +1417,12 @@ const Playground: NextPage = () => {
           typeof artifact.content === 'string'
             ? artifact.content
             : artifact.content?.content || artifact.content?.html || String(artifact.content);
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        triggerBlobDownload(blob, artifact.name || 'report.html');
+        try {
+          const blob = await createHtmlDownloadBlob(htmlContent);
+          triggerBlobDownload(blob, artifact.name || 'report.html');
+        } catch {
+          message.error(t('html_download_failed'));
+        }
         break;
       }
       case 'code': {
@@ -1761,6 +1769,23 @@ const Playground: NextPage = () => {
         }
       }
 
+      const skillPackages = deduped.filter(
+        artifact => artifact.type === 'file' && artifact.name.endsWith('.skill') && artifact.id.includes('-file-'),
+      );
+      if (skillPackages.length > 0) {
+        // A packaged conversation skill is a downloadable file, not an installed
+        // skill. Shell logs may also mention deleted template files; prefer the
+        // verified file chunks over guessed paths for this delivery.
+        return [
+          ...skillPackages,
+          ...deduped.filter(
+            artifact =>
+              !skillPackages.includes(artifact) &&
+              !artifact.id.includes('-shellfile-') &&
+              !artifact.id.includes('-fileref-'),
+          ),
+        ];
+      }
       return deduped;
     },
     [],
@@ -1794,7 +1819,7 @@ const Playground: NextPage = () => {
       targetView = 'image-preview';
     }
 
-    if (execution) {
+    if (execution && !pendingFinalization.failed && !deduped.some(artifact => artifact.name.endsWith('.skill'))) {
       const skillStep = execution.steps.find(step => {
         if (step.action !== 'shell_interpreter') return false;
         const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
@@ -1888,6 +1913,7 @@ const Playground: NextPage = () => {
     };
   }, [activeViewMsgId, cancelSummaryPresentation, pendingSummaryPresentation, rightPanelView]);
 
+  /** Start a conversation request with the selected resources while preventing duplicate sends and stale task updates. */
   const performStart = async (
     inputQuery = query,
     overrideSkill?: Skill | null,
@@ -2096,6 +2122,10 @@ const Playground: NextPage = () => {
         signal: controller.signal,
       });
 
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.err_msg || `Request failed (${response.status})`);
+      }
       if (!response.body) {
         throw new Error('No response body');
       }
@@ -2111,6 +2141,7 @@ const Playground: NextPage = () => {
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
 
+      /** Apply a valid SSE payload only while its originating conversation and task epoch remain current. */
       const processEvent = (raw: string) => {
         if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
         if (!raw.startsWith('data:')) return;
@@ -2276,13 +2307,13 @@ const Playground: NextPage = () => {
                       status: 'running' as const,
                     }
                   : step.status === 'running'
-                    ? { ...step, status: 'done' }
+                    ? { ...step, status: 'done' as const }
                     : step,
               );
             } else {
               // New step - mark running steps as done and add new step
               nextSteps = [
-                ...current.steps.map(item => (item.status === 'running' ? { ...item, status: 'done' } : item)),
+                ...current.steps.map(item => (item.status === 'running' ? { ...item, status: 'done' as const } : item)),
                 {
                   id,
                   step: payload.step,
@@ -2437,13 +2468,14 @@ const Playground: NextPage = () => {
           return;
         } else if (payload.type === 'final') {
           const finalAnswer = decodeFinalEvent(payload);
+          const failed = payload.status === 'failed';
           const summaryText = cleanFinalContent(finalAnswer.content);
           cancelSummaryPresentation();
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
             const nextSteps = current.steps.map(item =>
-              item.status === 'running' ? { ...item, status: 'done' as const } : item,
+              item.status === 'running' ? { ...item, status: failed ? ('failed' as const) : ('done' as const) } : item,
             );
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
@@ -2455,6 +2487,7 @@ const Playground: NextPage = () => {
                 context: summaryText,
                 citations: finalAnswer.citations,
                 thinking: false,
+                failed,
               };
             }),
           );
@@ -2488,6 +2521,7 @@ const Playground: NextPage = () => {
           setPendingFinalization({
             responseId,
             summaryText,
+            failed,
             uploadedFilePath: filesAttachedThisSend?.legacyFile?.file_path ?? null,
           });
         } else if (payload.type === 'done') {
@@ -2543,6 +2577,7 @@ const Playground: NextPage = () => {
           if (lastMsg && lastMsg.role === 'view') {
             lastMsg.context = err?.message || 'Error occurred';
             lastMsg.thinking = false;
+            lastMsg.failed = true;
           }
           return newMessages;
         });
@@ -2573,9 +2608,10 @@ const Playground: NextPage = () => {
     }
   };
 
+  /** Prepare a localized example and its optional resources, avoiding concurrent example requests. */
   const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
     const queryKey = `example_${example.id}_query`;
-    const queryVal = t(queryKey) as string;
+    const queryVal = t(queryKey, { defaultValue: queryKey }) as string;
     const translatedQuery = (queryVal && queryVal !== queryKey ? queryVal : example.query) as string;
 
     if (loading || sendInFlightRef.current || exampleRunInFlightRef.current) return;
@@ -2598,7 +2634,7 @@ const Playground: NextPage = () => {
         }
         exampleController = new AbortController();
         exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post(
+        const res = await axios.post<unknown, { success: boolean; data?: string; err_msg?: string }>(
           `${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`,
           {
             example_id: example.id,
@@ -2811,7 +2847,11 @@ const Playground: NextPage = () => {
             return detailHas || inputHas || outputHas;
           };
           const skillStep = steps.find(isSkillPackageStep);
-          if (skillStep) {
+          if (
+            skillStep &&
+            payload.status !== 'failed' &&
+            !restoredArtifacts.some(artifact => artifact.name.endsWith('.skill'))
+          ) {
             const allText = [
               skillStep.actionInput || '',
               skillStep.detail || '',
@@ -2830,6 +2870,7 @@ const Playground: NextPage = () => {
             citations: historyAnswer.citations,
             order: msg.order,
             thinking: false,
+            failed: payload.status === 'failed',
             taskPlan: Array.isArray(payload.task_plan)
               ? payload.task_plan
               : Array.isArray(payload.tasks)
@@ -3120,6 +3161,7 @@ const Playground: NextPage = () => {
                           }
                         }}
                         isWorking={isWorking}
+                        failed={round.viewMsg?.failed}
                         userQuery={round.humanMsg?.context}
                         attachedFiles={round.humanMsg?.attachedFiles}
                         attachedKnowledge={round.humanMsg?.attachedKnowledge}
@@ -3970,7 +4012,15 @@ const Playground: NextPage = () => {
               <div className='w-full max-w-[860px] flex flex-col items-center animate-fade-in-up'>
                 <h1 className='text-4xl md:text-5xl font-serif text-gray-900 dark:text-gray-100 mb-4 text-center flex items-center gap-4'>
                   <div className='w-12 h-12 rounded-xl bg-white dark:bg-[#1a1b1e] shadow-md flex items-center justify-center flex-shrink-0'>
-                    <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={32} height={32} className='object-contain' />
+                    <Image
+                      src='/LOGO_SMALL.png'
+                      alt='DB-GPT'
+                      width={32}
+                      height={32}
+                      loading='eager'
+                      className='object-contain'
+                      style={{ width: 32, height: 32 }}
+                    />
                   </div>
                   {t('home_title')}
                 </h1>
@@ -4784,14 +4834,14 @@ const Playground: NextPage = () => {
                             <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
                               {(() => {
                                 const key = `example_${example.id}_title`;
-                                const val = t(key) as string;
+                                const val = t(key, { defaultValue: key }) as string;
                                 return val && val !== key ? val : example.title;
                               })()}
                             </h3>
                             <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
                               {(() => {
                                 const key = `example_${example.id}_desc`;
-                                const val = t(key) as string;
+                                const val = t(key, { defaultValue: key }) as string;
                                 return val && val !== key ? val : example.description;
                               })()}
                             </p>
@@ -4812,7 +4862,15 @@ const Playground: NextPage = () => {
           {messages.length === 0 && (
             <div className='absolute bottom-6 left-0 right-0 flex justify-center'>
               <div className='bg-white/60 dark:bg-[#1e1f24]/60 backdrop-blur-sm px-5 py-2.5 rounded-full border border-gray-100 dark:border-gray-700/50 flex items-center gap-3 shadow-sm cursor-pointer hover:shadow-md hover:bg-white/90 dark:hover:bg-[#1e1f24]/90 transition-all duration-300'>
-                <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={22} height={22} className='object-contain' />
+                <Image
+                  src='/LOGO_SMALL.png'
+                  alt='DB-GPT'
+                  width={22}
+                  height={22}
+                  loading='eager'
+                  className='object-contain'
+                  style={{ width: 22, height: 22 }}
+                />
                 <span className='text-xs font-medium text-gray-600 dark:text-gray-300 tracking-wide'>
                   {t('home_subtitle')}
                 </span>

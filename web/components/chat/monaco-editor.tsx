@@ -23,31 +23,34 @@ interface MonacoEditorProps {
   language: string;
   onChange?: OnChange;
   thoughts?: string;
+  formatValue?: boolean;
   session?: ISession;
 }
 
 monaco.editor.defineTheme('github', github as any);
 monaco.editor.defineTheme('githubDark', githubDark as any);
 
+/** Host Monaco with SQL completion; format display values only when requested, preserving controlled live edits. */
 export default function MonacoEditor({
   className,
   value,
   language = 'mysql',
   onChange,
   thoughts,
+  formatValue = true,
   session,
 }: MonacoEditorProps) {
   // merge value and thoughts
 
   const editorValue = useMemo(() => {
-    if (language !== 'mysql') {
+    if (language !== 'mysql' || !formatValue) {
       return value;
     }
     if (thoughts && thoughts.length > 0) {
       return formatSql(`-- ${thoughts} \n${value}`);
     }
     return formatSql(value);
-  }, [value, thoughts]);
+  }, [value, thoughts, language, formatValue]);
 
   const sessionRef = useLatest(session);
 

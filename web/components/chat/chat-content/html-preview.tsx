@@ -1,3 +1,4 @@
+import { createHtmlDownloadBlob } from '@/utils/html-download';
 import {
   CopyOutlined,
   DownloadOutlined,
@@ -5,21 +6,31 @@ import {
   FullscreenOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons';
-import { Button, Modal, Tabs } from 'antd';
+import { Button, Modal, Tabs, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodePreview } from './code-preview';
-/**
- * The HTML preview component is used to display HTML code and provide run, download, and full-screen functionality
- * @param {Object} props The component props
- * @param {string} props.code HTML code content
- * @param {string} props.language Code language, default is html
- */
-const HtmlPreview = ({ code, language = 'html' }) => {
+type FullscreenFrame = HTMLIFrameElement & {
+  webkitRequestFullscreen?: () => void;
+  msRequestFullscreen?: () => void;
+  mozRequestFullScreen?: () => void;
+};
+type FullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  mozFullScreenElement?: Element | null;
+  msFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => void;
+  msExitFullscreen?: () => void;
+  mozCancelFullScreen?: () => void;
+};
+
+/** Displays HTML source with run, download and fullscreen controls. */
+const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const iframeRef = useRef(null);
+  const iframeRef = useRef<FullscreenFrame>(null);
   const { t } = useTranslation();
   const [parsedCode, setParsedCode] = useState({
     html: '',
@@ -30,7 +41,8 @@ const HtmlPreview = ({ code, language = 'html' }) => {
 
   // Parse the code and extract the HTML, CSS, and JS parts
   useEffect(() => {
-    const parseCode = sourceCode => {
+    /** Split style/script content for the source tabs and wrap HTML fragments into a complete preview document. */
+    const parseCode = (sourceCode: string) => {
       let html = sourceCode;
       let css = '';
       let js = '';
@@ -93,12 +105,16 @@ const HtmlPreview = ({ code, language = 'html' }) => {
 
   // Listen for fullscreen change events
   useEffect(() => {
+    /** Synchronize the preview state with standard and vendor-prefixed fullscreen events. */
     const handleFullscreenChange = () => {
+      const fullscreenDocument: FullscreenDocument = document;
       setIsFullscreen(
-        document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement,
+        Boolean(
+          fullscreenDocument.fullscreenElement ||
+            fullscreenDocument.webkitFullscreenElement ||
+            fullscreenDocument.mozFullScreenElement ||
+            fullscreenDocument.msFullscreenElement,
+        ),
       );
     };
 
@@ -135,25 +151,23 @@ const HtmlPreview = ({ code, language = 'html' }) => {
   };
 
   // Download the HTML file
-  const downloadHTML = () => {
-    // Create a Blob object
-    const blob = new Blob([parsedCode.fullCode], { type: 'text/html' });
-
-    // Create a URL object
-    const url = URL.createObjectURL(blob);
-
-    // Create an a tag
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'preview.html'; // File name
-
-    // Add to body and trigger click
-    document.body.appendChild(a);
-    a.click();
-
-    // Clean up
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const downloadHTML = async () => {
+    setIsDownloading(true);
+    try {
+      const blob = await createHtmlDownloadBlob(parsedCode.fullCode);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'preview.html';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      message.error(t('html_download_failed'));
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Toggle fullscreen mode
@@ -185,18 +199,20 @@ const HtmlPreview = ({ code, language = 'html' }) => {
   };
 
   // Exit fullscreen mode
+  /** Leave fullscreen using the browser API available on the current document. */
   const exitFullscreen = () => {
+    const fullscreenDocument: FullscreenDocument = document;
     if (document.exitFullscreen) {
       document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
+    } else if (fullscreenDocument.webkitExitFullscreen) {
       /* Safari */
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
+      fullscreenDocument.webkitExitFullscreen();
+    } else if (fullscreenDocument.msExitFullscreen) {
       /* IE11 */
-      document.msExitFullscreen();
-    } else if (document.mozCancelFullScreen) {
+      fullscreenDocument.msExitFullscreen();
+    } else if (fullscreenDocument.mozCancelFullScreen) {
       /* Firefox */
-      document.mozCancelFullScreen();
+      fullscreenDocument.mozCancelFullScreen();
     }
   };
 
@@ -282,6 +298,7 @@ const HtmlPreview = ({ code, language = 'html' }) => {
           type='text'
           icon={<DownloadOutlined />}
           onClick={downloadHTML}
+          loading={isDownloading}
           className='flex items-center justify-center bg-opacity-70 hover:bg-opacity-100 transition-all'
           size='small'
         >
@@ -304,7 +321,7 @@ const HtmlPreview = ({ code, language = 'html' }) => {
         open={isModalVisible}
         onCancel={handleCancel}
         footer={[
-          <Button key='download' icon={<DownloadOutlined />} onClick={downloadHTML}>
+          <Button key='download' icon={<DownloadOutlined />} onClick={downloadHTML} loading={isDownloading}>
             {t('code_preview_download')} HTML
           </Button>,
           <Button

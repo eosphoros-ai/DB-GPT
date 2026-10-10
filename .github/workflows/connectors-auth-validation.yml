@@ -1,0 +1,144 @@
+name: Connectors and OAuth validation
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/**']
+    paths:
+      - packages/dbgpt-core/src/dbgpt/model/utils/**
+      - packages/dbgpt-serve/src/dbgpt_serve/connector/**
+      - tests/integration_tests/datasource/test_mysql_postgresql_live.py
+      - .github/workflows/connectors-auth-validation.yml
+      - web/pages/construct/models-config/**
+      - web/client/api/request.ts
+      - tests/web-toolchain/**
+  pull_request:
+    paths:
+      - packages/dbgpt-core/src/dbgpt/model/utils/**
+      - packages/dbgpt-serve/src/dbgpt_serve/connector/**
+      - tests/integration_tests/datasource/test_mysql_postgresql_live.py
+      - .github/workflows/connectors-auth-validation.yml
+      - web/pages/construct/models-config/**
+      - web/client/api/request.ts
+      - tests/web-toolchain/**
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: validation-only
+          MYSQL_DATABASE: validation
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pvalidation-only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: validation-only
+          POSTGRES_DB: validation
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres -d validation"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      MYSQL_TEST_URL: mysql+pymysql://root:validation-only@127.0.0.1:3306/validation
+      POSTGRES_TEST_URL: postgresql+psycopg2://postgres:validation-only@127.0.0.1:5432/validation
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: '0.12.22'
+          python-version: '3.11'
+          enable-cache: true
+      - name: Install locked workspace
+        run: uv sync --frozen --package dbgpt-app --package dbgpt --package dbgpt-mono --extra base
+      - name: Install PostgreSQL test driver
+        # Matches the optional driver's version in uv.lock.
+        run: uv pip install --python .venv/bin/python psycopg2-binary==2.9.10
+      - name: Test OAuth protocol, connectors and real databases
+        run: |
+          uv run --no-sync python -m pytest \
+            packages/dbgpt-core/src/dbgpt/model/utils/tests/test_copilot_auth.py \
+            packages/dbgpt-core/src/dbgpt/model/utils/tests/test_provider_test.py \
+            packages/dbgpt-core/src/dbgpt/agent/resource/connector/tests \
+            packages/dbgpt-serve/src/dbgpt_serve/connector/tests \
+            packages/dbgpt-ext/src/dbgpt_ext/datasource/rdbms/tests/test_conn_duckdb.py \
+            tests/integration_tests/datasource/test_mysql_postgresql_live.py \
+            --junitxml=connectors-auth-validation.xml -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connectors-auth-validation
+          path: connectors-auth-validation.xml
+          if-no-files-found: warn
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19'
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            tests/web-toolchain/package-lock.json
+      - name: Install frontend and browser runner
+        run: |
+          npm install --global npm@10.8.2
+          npm ci --prefix web
+          npm ci --prefix tests/web-toolchain
+          node tests/web-toolchain/node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Build production frontend
+        run: npm run build --prefix web
+      - name: Test production and development browser flows
+        env:
+          REGRESSION_OUTPUT: ${{ github.workspace }}/browser-results
+        run: |
+          mkdir -p browser-results
+          for mode in production development; do
+            if [ "$mode" = production ]; then
+              command=start
+              port=5790
+              export NEXT_DIST_DIR=.next
+            else
+              command=dev
+              port=5791
+              export NEXT_DIST_DIR=.next-auth-dev
+            fi
+            npm run "$command" --prefix web -- --hostname 127.0.0.1 --port "$port" >"browser-results/$mode-server.log" 2>&1 &
+            server_pid=$!
+            trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+            ready=false
+            for attempt in $(seq 1 90); do
+              if curl --fail --silent "http://127.0.0.1:$port/" >/dev/null; then
+                ready=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != true ]; then
+              cat "browser-results/$mode-server.log"
+              exit 1
+            fi
+            REGRESSION_URL="http://127.0.0.1:$port" REGRESSION_MODE="$mode" npm test --prefix tests/web-toolchain
+            kill "$server_pid" 2>/dev/null || true
+            trap - EXIT
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connectors-auth-browser
+          path: browser-results
+          if-no-files-found: warn

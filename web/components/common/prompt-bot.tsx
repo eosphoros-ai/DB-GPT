@@ -55,6 +55,7 @@ type PromptBotProps = {
   chat_scene?: string;
 };
 
+/** Load and select saved prompts by category and chat scene, forwarding the chosen prompt to the caller. */
 const PromptBot: React.FC<PromptBotProps> = ({ submit, chat_scene }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -100,7 +101,7 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit, chat_scene }) => {
       theme={{
         components: {
           Popover: {
-            minWidth: 250,
+            titleMinWidth: 250,
           },
         },
       }}

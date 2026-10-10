@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { Spin, Tooltip } from 'antd';
 import classNames from 'classnames';
+import type { TFunction } from 'i18next';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -93,7 +94,8 @@ const getStatusIndicator = (status: StepStatus) => {
   }
 };
 
-const getTypeLabel = (type: StepCardProps['type'], t: (key: string) => string): string => {
+/** Map an execution-step type to its localized label using the provided translator. */
+const getTypeLabel = (type: StepCardProps['type'], t: TFunction): string => {
   const labels: Record<StepCardProps['type'], string> = {
     read: t('step_type_read'),
     edit: t('step_type_edit'),

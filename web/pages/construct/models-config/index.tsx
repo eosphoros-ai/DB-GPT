@@ -16,7 +16,7 @@ import ConstructLayout from '@/new-components/layout/Construct';
 import { ModelProvider, ProviderConfig } from '@/types/model';
 import { notifyModelsChanged } from '@/utils/events';
 import { CopyOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Empty, Form, Input, Modal, Segmented, Spin, Switch, Tag, Tooltip, message } from 'antd';
+import { App, Button, Empty, Form, Input, Modal, Segmented, Spin, Switch, Tag, Tooltip } from 'antd';
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -160,7 +160,9 @@ function providerIcon(
   return <ProviderAvatar label={label} seed={provider} size={size} />;
 }
 
+/** List model/provider configurations and expose their configuration actions. */
 function ModelsConfig() {
+  const { message } = App.useApp();
   const { t } = useTranslation();
   const [workerType, setWorkerType] = useState<string>('llm');
   const [providers, setProviders] = useState<ModelProvider[]>([]);
@@ -180,6 +182,7 @@ function ModelsConfig() {
     verificationUri?: string;
     deviceCode?: string;
     interval?: number;
+    error?: string;
   } | null>(null);
   const copilotCancelledRef = useRef(false);
 
@@ -337,10 +340,10 @@ function ModelsConfig() {
     let cancelled = false;
     (async () => {
       setCopilotAuth({ phase: 'starting' });
-      const [, res] = await apiInterceptors(copilotAuthStart());
+      const [startError, res, startResult] = await apiInterceptors(copilotAuthStart(), '*');
       if (cancelled) return;
       if (!res?.device_code) {
-        setCopilotAuth({ phase: 'error' });
+        setCopilotAuth({ phase: 'error', error: startResult?.err_msg ?? startError?.message });
         return;
       }
       setCopilotAuth({
@@ -350,11 +353,13 @@ function ModelsConfig() {
         deviceCode: res.device_code,
         interval: res.interval,
       });
-      const deadline = Date.now() + 15 * 60 * 1000;
+      const deadline = Date.now() + Math.max(1, res.expires_in ?? 900) * 1000;
+      let pollInterval = Math.max(1, res.interval ?? 5);
       while (!cancelled && Date.now() < deadline) {
-        await new Promise(r => setTimeout(r, Math.max(1, (res.interval ?? 5) + 3) * 1000));
+        await new Promise(r => setTimeout(r, Math.min(pollInterval * 1000, deadline - Date.now())));
         if (cancelled) return;
-        const [, poll] = await apiInterceptors(copilotAuthPoll(res.device_code), ['*']);
+        if (Date.now() >= deadline) break;
+        const [pollError, poll, pollResult] = await apiInterceptors(copilotAuthPoll(res.device_code), '*');
         if (cancelled) return;
         if (poll?.status === 'success') {
           const enabled = poll.enabled_models ?? [];
@@ -373,8 +378,13 @@ function ModelsConfig() {
           setConnectModalOpen(false);
           return;
         }
-        if (poll?.status === 'pending' || poll?.status === 'slow_down') continue;
-        setCopilotAuth({ phase: 'error' });
+        if (poll?.status === 'slow_down') {
+          // GitHub requires five additional seconds after every slow_down.
+          pollInterval += 5;
+          continue;
+        }
+        if (poll?.status === 'pending') continue;
+        setCopilotAuth({ phase: 'error', error: pollResult?.err_msg ?? pollError?.message });
         return;
       }
       if (!cancelled) setCopilotAuth(a => (a && a.phase === 'pending' ? { phase: 'error' } : a));
@@ -644,7 +654,7 @@ function ModelsConfig() {
             </div>
             <div className='flex items-center gap-2 text-sm text-gray-500 min-h-6'>
               {copilotAuth?.phase === 'error' ? (
-                <span className='text-red-500'>{t('copilot_auth_failed')}</span>
+                <span className='text-red-500'>{copilotAuth.error || t('copilot_auth_failed')}</span>
               ) : (
                 <>
                   {(copilotAuth?.phase === 'pending' || copilotAuth?.phase === 'starting') && <Spin size='small' />}

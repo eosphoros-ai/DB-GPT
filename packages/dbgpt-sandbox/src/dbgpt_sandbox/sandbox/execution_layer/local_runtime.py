@@ -4,6 +4,7 @@
 
 import asyncio
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -204,7 +205,9 @@ class LocalSandboxSession(SandboxSession):
                 f"cd {os.path.dirname(code_file)} && rustc {filename} \
                   -o program && ./program",
             ],
-            "bash": ["bash", code_file],
+            # Windows CreateProcess searches System32 before PATH, where its
+            # WSL bash launcher cannot open a native Windows script path.
+            "bash": [shutil.which("bash") or "bash", code_file],
         }
 
         return commands.get(self.config.language, ["cat", code_file])
@@ -323,7 +326,7 @@ class LocalRuntime(SandboxRuntime):
             "c": ["gcc", "--version"],
             "go": ["go", "version"],
             "rust": ["rustc", "--version"],
-            "bash": ["bash", "--version"],
+            "bash": [shutil.which("bash") or "bash", "--version"],
         }
 
         for lang, cmd in language_commands.items():

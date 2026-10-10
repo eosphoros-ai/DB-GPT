@@ -39,6 +39,7 @@ export interface ChatPageProps {
   className?: string;
 }
 
+/** Compose the chat page layout around the selected conversation and its input controls. */
 const ChatPage: React.FC<ChatPageProps> = ({
   turns,
   isLoading = false,
@@ -94,7 +95,7 @@ const ChatPage: React.FC<ChatPageProps> = ({
     navigator.clipboard.writeText(text);
   }, []);
 
-  const handleSuggestionClick = useCallback((suggestion: { title: string }) => {
+  const handleSuggestionClick = useCallback((_suggestion: { title: string }) => {
     if (inputRef.current) {
       inputRef.current.focus();
     }

@@ -1,6 +1,6 @@
-import { Resources } from 'i18next';
+import KsEn from '../en/knowledgeSource';
 
-const KsZh: Resources['translation'] = {
+const KsZh: Record<keyof typeof KsEn, string> = {
   ks_tab_label: '数据源',
   ks_panel_title: '外部数据源',
   ks_add_binding: '绑定数据源',

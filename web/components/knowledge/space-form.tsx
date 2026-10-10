@@ -14,6 +14,7 @@ import { IChunkStrategyResponse, IStorage, StepChangeParams } from '@/types/know
 import { IModelData } from '@/types/model';
 import { FileTextOutlined, LinkOutlined, ReadOutlined } from '@ant-design/icons';
 import {
+  App,
   Button,
   Checkbox,
   Collapse,
@@ -26,7 +27,6 @@ import {
   Spin,
   Switch,
   Upload,
-  message,
 } from 'antd';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -207,6 +207,7 @@ const DS_CARDS: DataSourceCardDef[] = [
  * On submit: creates space → (Git) triggers sync → closes.
  */
 export default function SpaceForm(props: IProps) {
+  const { message } = App.useApp();
   const { t } = useTranslation();
   const { handleStepChange, spaceConfig, onSuccess } = props;
   const [spinning, setSpinning] = useState<boolean>(false);
@@ -743,7 +744,7 @@ export default function SpaceForm(props: IProps) {
 
         {/* ── Section 3: Index Methods ── */}
         <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Index_Method')}</div>
-        <Form.Item<FieldType> name='index_methods' initialValue={['VectorStore', 'FullText', 'KnowledgeGraph']}>
+        <Form.Item<FieldType> name='index_methods'>
           <Checkbox.Group
             className='grid grid-cols-3 gap-3 w-full'
             onChange={(values: string[]) => {

@@ -89,6 +89,7 @@ export interface ThinkingSection {
 }
 
 export interface ArtifactItem {
+  stepId?: string;
   id: string;
   type: 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
   name: string;
@@ -105,6 +106,7 @@ export interface ManusLeftPanelProps {
   activeStepId?: string | null;
   onStepClick?: (stepId: string, sectionId: string) => void;
   isWorking?: boolean;
+  failed?: boolean;
   userQuery?: string;
   assistantText?: string;
   /** Render incremental answer text without reparsing Markdown on every frame. */
@@ -1038,6 +1040,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   activeStepId,
   onStepClick,
   isWorking,
+  failed = false,
   userQuery,
   assistantText,
   isAssistantStreaming = false,
@@ -1095,8 +1098,14 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             {assistantText.length > 150 ? '...' : ''}
           </div>
         )}
+        {failed && (
+          <div className='mt-2 flex items-center gap-1.5 text-xs text-red-500'>
+            <ExclamationCircleOutlined />
+            <span>{t('task_failed')}</span>
+          </div>
+        )}
         {/* Completed indicator */}
-        {!assistantText && sections.length > 0 && (
+        {!failed && !assistantText && sections.length > 0 && (
           <div className='flex items-center gap-1.5 text-xs text-gray-400'>
             <CheckCircleFilled className='text-emerald-500' />
             <span>{t('steps_completed_count', { count: sections.length })}</span>
@@ -1290,11 +1299,23 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                 </div>
               )}
             </div>
-
-            <div className='flex items-center gap-1.5 mt-5'>
-              <CheckOutlined className='text-xs text-emerald-500' />
-              <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>{t('task_completed')}</span>
-            </div>
+          </div>
+        )}
+        {!isWorking && (failed || (artifacts && artifacts.length > 0)) && (
+          <div className='flex items-center gap-1.5 mt-5 px-1 pb-4'>
+            {failed ? (
+              <>
+                <ExclamationCircleOutlined className='text-xs text-red-500' />
+                <span className='text-sm text-red-600 dark:text-red-400 font-medium'>{t('task_failed')}</span>
+              </>
+            ) : (
+              <>
+                <CheckOutlined className='text-xs text-emerald-500' />
+                <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>
+                  {t('task_completed')}
+                </span>
+              </>
+            )}
           </div>
         )}
       </div>

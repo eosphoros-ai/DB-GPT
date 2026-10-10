@@ -23,7 +23,7 @@ const WEEKDAYS = [
   { value: '5', labelKey: 'scheduled.cron.fri' },
   { value: '6', labelKey: 'scheduled.cron.sat' },
   { value: '0', labelKey: 'scheduled.cron.sun' },
-];
+] as const;
 
 /** 从 cron 表达式反推 preset 和参数，用于初始化时同步外部 value */
 function parseCron(cron: string): {

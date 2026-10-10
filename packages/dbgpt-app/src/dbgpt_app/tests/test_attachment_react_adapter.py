@@ -1204,6 +1204,11 @@ async def test_chat_react_agent_closes_attachments_when_stream_response_init_fai
             raise RuntimeError("stream init exploded")
         return real_streaming_response(*args, **kwargs)
 
+    # The owned response is constructed first; the plain response is the
+    # fallback after cleanup. Exercise both constructors with one failure.
+    monkeypatch.setattr(
+        agentic_data_api, "_AgentStreamingResponse", flaky_streaming_response
+    )
     monkeypatch.setattr(agentic_data_api, "StreamingResponse", flaky_streaming_response)
 
     response = await agentic_data_api.chat_react_agent(
@@ -1243,6 +1248,9 @@ async def test_chat_knowledge_agent_closes_attachments_exactly_once_when_stream_
             raise RuntimeError("stream init exploded")
         return real_streaming_response(*args, **kwargs)
 
+    monkeypatch.setattr(
+        agentic_data_api, "_AgentStreamingResponse", flaky_streaming_response
+    )
     monkeypatch.setattr(agentic_data_api, "StreamingResponse", flaky_streaming_response)
 
     response = await agentic_data_api.chat_knowledge_agent(

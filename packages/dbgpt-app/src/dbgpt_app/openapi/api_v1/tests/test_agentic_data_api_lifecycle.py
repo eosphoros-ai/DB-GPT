@@ -3,6 +3,7 @@
 import asyncio
 import json
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -13,6 +14,28 @@ from dbgpt_app.openapi.api_v1.react_final import AgentFinalAnswer
 def _decode_sse_event(event: str):
     assert event.startswith("data: ")
     return json.loads(event.removeprefix("data: ").strip())
+
+
+@pytest.mark.parametrize("failed", [False, True])
+def test_terminal_status_matches_saved_history(failed):
+    storage = Mock()
+    history = agentic_data_api._build_react_history_payload(
+        final_content="model result",
+        steps=[],
+        task_plan=[],
+        generated_images=[],
+        sub_agents={},
+        input_files=[],
+        failed=failed,
+    )
+    events = agentic_data_api._react_terminal_events(
+        storage, history, AgentFinalAnswer(content="model result"), failed=failed
+    )
+    stored = json.loads(storage.add_view_message.call_args.args[0])
+    final = _decode_sse_event(events[0])
+    assert stored["status"] == final["status"] == ("failed" if failed else "completed")
+    assert _decode_sse_event(events[1]) == {"type": "done"}
+    storage.save_to_storage.assert_called_once()
 
 
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
@@ -37,6 +60,7 @@ def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
             "type": "final",
             "protocol_version": 2,
             "content": "answer",
+            "status": "completed",
             "citations": [],
         },
         {"type": "done"},
@@ -57,7 +81,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)
@@ -87,7 +113,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
 async def test_runtime_failure_emits_structured_final_and_done(
     monkeypatch, caplog
 ) -> None:
-    async def _failing_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _failing_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode, agent_task_holder
         if False:
             yield ""
@@ -109,6 +137,7 @@ async def test_runtime_failure_emits_structured_final_and_done(
             "type": "final",
             "protocol_version": 2,
             "content": "抱歉，回答生成过程中发生错误，请重试。",
+            "status": "failed",
             "citations": [],
         },
         {"type": "done"},
@@ -119,7 +148,7 @@ async def test_runtime_failure_emits_structured_final_and_done(
 @pytest.mark.asyncio
 async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> None:
     async def _partially_failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
     ):
         del dialogue, tool_mode, agent_task_holder
         yield agentic_data_api._sse_event(
@@ -157,7 +186,9 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)

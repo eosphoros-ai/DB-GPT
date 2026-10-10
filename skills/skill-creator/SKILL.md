@@ -257,13 +257,13 @@ Skip this step only if the skill being developed already exists, and iteration o
 
 When creating a new skill from scratch, always run the `init_skill.py` script using `shell_interpreter`. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
 
-**Important**: All script executions in the skill-creator workflow must use the `shell_interpreter` tool. First, use `get_skill_resource` to find the skill-creator's script path, then execute via `shell_interpreter`.
+**Important**: Run these command-line scripts through `shell_interpreter`. Its `SKILLS_DIR` environment variable points to the installed skills directory; the current directory is the conversation's output workspace, not the repository root. Quote script paths, and create the new skill in the current workspace. Do not use `get_skill_resource` or `execute_skill_script_file` to invoke these CLI scripts: those tools supply a JSON argument, while these scripts require positional command-line arguments.
 
 Usage (via shell_interpreter):
 
 ```
 Action: shell_interpreter
-Action Input: {"code": "python skills/skill-creator/scripts/init_skill.py <skill-name> --path skills/"}
+Action Input: {"code": "python \"$SKILLS_DIR/skill-creator/scripts/init_skill.py\" <skill-name> --path ."}
 ```
 
 The script:
@@ -284,15 +284,14 @@ When editing the (newly-generated or existing) skill, remember that the skill is
 Consult these helpful guides based on your skill's needs:
 
 - **Multi-step processes**: See references/workflows.md for sequential workflows and conditional logic
-- **Specific output formats or quality standards**: See references/output-patterns.md for template and example patterns
 
-These files contain established best practices for effective skill design.
+This guide contains established best practices for effective skill design.
 
 #### Start with Reusable Skill Contents
 
 To begin implementation, start with the reusable resources identified above: `scripts/`, `references/`, and `assets/` files. Note that this step may require user input. For example, when implementing a `brand-guidelines` skill, the user may need to provide brand assets or templates to store in `assets/`, or documentation to store in `references/`.
 
-Added scripts must be tested by actually running them via `shell_interpreter` to ensure there are no bugs and that the output matches what is expected. For example: `shell_interpreter({"code": "python skills/<new-skill>/scripts/my_script.py --arg value"})`. If there are many similar scripts, only a representative sample needs to be tested to ensure confidence that they all work while balancing time to completion.
+Added scripts must be tested by actually running them via `shell_interpreter` to ensure there are no bugs and that the output matches what is expected. For example: `shell_interpreter({"code": "python ./<new-skill>/scripts/my_script.py --arg value"})`. If there are many similar scripts, only a representative sample needs to be tested to ensure confidence that they all work while balancing time to completion.
 
 Any example files and directories not needed for the skill should be deleted. The initialization script creates example files in `scripts/`, `references/`, and `assets/` to demonstrate structure, but most skills won't need all of them.
 
@@ -322,14 +321,14 @@ Once development of the skill is complete, it must be packaged into a distributa
 
 ```
 Action: shell_interpreter
-Action Input: {"code": "python skills/skill-creator/scripts/package_skill.py <path/to/skill-folder>"}
+Action Input: {"code": "python \"$SKILLS_DIR/skill-creator/scripts/package_skill.py\" ./<new-skill>"}
 ```
 
 Optional output directory specification:
 
 ```
 Action: shell_interpreter
-Action Input: {"code": "python skills/skill-creator/scripts/package_skill.py <path/to/skill-folder> ./dist"}
+Action Input: {"code": "python \"$SKILLS_DIR/skill-creator/scripts/package_skill.py\" ./<new-skill> ./dist"}
 ```
 
 The packaging script will:

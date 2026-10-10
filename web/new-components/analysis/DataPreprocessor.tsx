@@ -476,6 +476,7 @@ interface DataPreprocessorProps {
   initialConfig?: Partial<PreprocessingConfig>;
 }
 
+/** Configure column types and cleaning rules, preview their effects and return processed data to the caller. */
 const DataPreprocessor: React.FC<DataPreprocessorProps> = ({
   data,
   columns,
@@ -604,7 +605,8 @@ const DataPreprocessor: React.FC<DataPreprocessorProps> = ({
       title: 'Type',
       dataIndex: 'detectedType',
       key: 'type',
-      render: (type: ColumnType, record: ColumnConfig) => (
+      /** Render the editable type selector for one column in the preprocessing configuration. */
+      render: (_type: ColumnType, record: ColumnConfig) => (
         <Select
           size='small'
           value={record.selectedType}

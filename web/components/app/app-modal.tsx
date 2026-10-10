@@ -35,6 +35,7 @@ interface IProps {
 
 type TeamModals = 'awel_layout' | 'singe_agent' | 'auto_plan';
 
+/** Collect application metadata and team mode for creating or editing an application. */
 export default function AppModal(props: IProps) {
   const { handleCancel, open, updateApps, type, app } = props;
 
@@ -95,12 +96,13 @@ export default function AppModal(props: IProps) {
     }
   };
 
+  /** Load team-mode choices and prefer their Chinese display names when provided. */
   const fetchTeamModal = async () => {
     const [_, data] = await apiInterceptors(getTeamMode());
     if (!data) return null;
 
     const teamModalOptions = data.map(item => {
-      return { value: item, label: item };
+      return { value: item.value, label: item.name_cn || item.name };
     });
     setTeamModal(teamModalOptions);
   };
