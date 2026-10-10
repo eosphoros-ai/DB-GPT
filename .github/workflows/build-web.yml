@@ -14,6 +14,9 @@ on:
       - scripts/build_web_static.sh
       - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/examples_api.py
       - packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py
+      - packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py
+      - packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/local_runtime.py
+      - packages/dbgpt-sandbox/tests/test_local_bash.py
       - .github/workflows/build-web.yml
   push:
     branches:
@@ -24,6 +27,9 @@ on:
       - scripts/build_web_static.sh
       - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/examples_api.py
       - packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py
+      - packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py
+      - packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/local_runtime.py
+      - packages/dbgpt-sandbox/tests/test_local_bash.py
       - .github/workflows/build-web.yml
 
 concurrency:
@@ -52,6 +58,8 @@ jobs:
           uv run --no-sync python -m pytest \
             packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py \
             packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py \
+            packages/dbgpt-sandbox/tests/test_local_bash.py \
+            packages/dbgpt-sandbox/tests/test_runtime_factory.py \
             -q
 
   build-web:
