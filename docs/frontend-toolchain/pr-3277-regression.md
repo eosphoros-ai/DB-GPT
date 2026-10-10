@@ -1,5 +1,14 @@
 # PR #3277 frontend regression — updated 2026-10-10
 
+## Home examples and README packaging follow-up — 2026-10-10
+
+The [focused acceptance record](pr-3277-home-packaging-validation.md) now covers
+real model-backed home examples and the complete README packaging command,
+including Python-served static assets, `.env` restoration, report rendering and
+downloads, and the generated SQL skill package. It documents the Windows fixes,
+the model turn that needed continuation, exact artifact/code provenance and the
+remaining limitations. The sections below retain their original dated scope.
+
 ## OAuth and connector follow-up — 2026-10-09/10
 
 The [new validation record](pr-3277-connectors-auth-validation.md) covers the

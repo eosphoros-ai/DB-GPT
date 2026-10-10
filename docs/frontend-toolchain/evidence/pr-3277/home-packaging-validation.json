@@ -1,0 +1,193 @@
+{
+  "date": "2026-10-10",
+  "scope": [
+    "Four home example cards with real backend/model",
+    "Complete README static packaging script"
+  ],
+  "provenance": {
+    "baseline_source_commit": "7870c914c959a749e3f56e215b0ae85f4bf3f414",
+    "backend_code_commit": "a432763b175e6cfd8820577d4578e01dab5133a5",
+    "verified_changed_product_files": [
+      {
+        "path": "packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/examples_api.py",
+        "sha256": "d4acdace46d491efbc4ee7394d962816c09b17dec14ca2d37392c7d3433bad37"
+      },
+      {
+        "path": "packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/shell_interpreter.py",
+        "sha256": "3b54dae64ed5f0f36a87f0b472147427b362f2695e013d02f00829eb61048a2e"
+      },
+      {
+        "path": "packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/local_runtime.py",
+        "sha256": "1058dcee9bb73bf4d7455c22fea082f56a1ac1bdec04f2aba6f13c5360d074cd"
+      },
+      {
+        "path": "skills/skill-creator/SKILL.md",
+        "sha256": "40f5a27577812149304e0f762a2a4cb597e93c08af1f03e774da34bf0f53c463"
+      }
+    ],
+    "frontend_artifact_commit": "ce17910272f4218aff645b920cabddbdbf61c5f7",
+    "frontend_artifact_run": 38024250721,
+    "frontend_source_identical_to_backend_code_commit": true,
+    "mode": "CI static package served by actual Windows DB-GPT backend at 127.0.0.1:5670",
+    "initial_live_report_generation_frontend": "7870c914; final report reload/render/download rechecked with ce179102 packaged UI",
+    "mocked_live_backend": false,
+    "local_dev_server_started": false
+  },
+  "reports": [
+    {
+      "case": "walmart_sales_utf8",
+      "conversation": "9d199796-8906-45d6-894d-0590b3228c17",
+      "passed": true,
+      "canvases": 18,
+      "loaded_images": 0,
+      "downloaded_html_bytes": 88309,
+      "page_errors": [],
+      "console_errors": [],
+      "bad_responses": [],
+      "failed_requests": [],
+      "unfilled_placeholders": [],
+      "verified_at": "2026-10-10T04:47:19.713Z"
+    },
+    {
+      "case": "db_profile_report",
+      "conversation": "6471f73a-9f4e-4a67-8d96-3d682c7bbbe9",
+      "passed": true,
+      "canvases": 2,
+      "loaded_images": 0,
+      "downloaded_html_bytes": 6471,
+      "page_errors": [],
+      "console_errors": [],
+      "bad_responses": [],
+      "failed_requests": [],
+      "unfilled_placeholders": [],
+      "verified_at": "2026-10-10T04:47:24.668Z"
+    },
+    {
+      "case": "fin_report",
+      "conversation": "1d532ef9-2013-4cec-bd7e-eb0cc32111d7",
+      "passed": true,
+      "canvases": 0,
+      "loaded_images": 3,
+      "downloaded_html_bytes": 10833,
+      "page_errors": [],
+      "console_errors": [],
+      "bad_responses": [],
+      "failed_requests": [],
+      "unfilled_placeholders": [],
+      "verified_at": "2026-10-10T04:47:27.421Z"
+    }
+  ],
+  "skill": {
+    "conversation": "d76bad67-9ac4-4b87-af54-0b8195dee9f5",
+    "single_click_completed": false,
+    "continuation_required": "Initial model turn returned only a plan; an explicit continuation created and validated files. A further packaging-only turn exercised the repaired download handoff.",
+    "download": {
+      "pageErrors": [],
+      "badResponses": [],
+      "consoleErrors": [],
+      "filename": "sql-data-analysis.skill",
+      "bytes": 6522,
+      "sha256": "a069fca01cd024df81c8472425c2ea0e401d72b615dbbf4611a1c928847054d2",
+      "passed": true,
+      "finishedAt": "2026-10-10T04:46:35.813Z"
+    },
+    "independent_sqlite_execution": {
+      "passed": true,
+      "package_bytes": 6522,
+      "package_sha256": "a069fca01cd024df81c8472425c2ea0e401d72b615dbbf4611a1c928847054d2",
+      "package_members": [
+        "sql-data-analysis/SKILL.md",
+        "sql-data-analysis/references/db_config.md",
+        "sql-data-analysis/references/sql_patterns.md",
+        "sql-data-analysis/scripts/connect_db.py",
+        "sql-data-analysis/scripts/run_query.py",
+        "sql-data-analysis/scripts/visualize.py"
+      ],
+      "row_count": 2,
+      "chart_dimensions": [
+        1200,
+        720
+      ],
+      "limitations": [
+        "Only generated SQLite path tested",
+        "Simple DELETE rejection is not a security or comprehensive read-only guarantee",
+        "Generated MySQL and PostgreSQL code untested"
+      ]
+    }
+  },
+  "packaging": {
+    "run": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38024250721",
+    "platforms": [
+      "ubuntu-latest",
+      "macos-latest"
+    ],
+    "conclusion": "success",
+    "exact_command": "bash ../scripts/build_web_static.sh",
+    "env_restore": true,
+    "env_copy_removed": true,
+    "copied_tree_equals_out": true,
+    "html_files": 60,
+    "asset_references": 1782,
+    "actually_served_by_windows_backend": true,
+    "locally_built_on_windows": false
+  },
+  "local_checks": {
+    "examples_api_passed": 5,
+    "bash_runtime_passed": 23,
+    "execution_integration_passed": 53,
+    "focused_attachment_lifecycle_passed": 2,
+    "packaged_http_browser_passed": 2,
+    "typescript": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 89,
+    "ruff_version": "0.16.10",
+    "ruff_check_and_format": "passed",
+    "actionlint": "passed"
+  },
+  "browser_fixture_ci": {
+    "run": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38023294373",
+    "commit": "0363aa4c7ddccd7e0f4e54f04c16e8de21872cc5",
+    "conclusion": "success",
+    "production_chromium_passed": 48,
+    "development_chromium_passed": 48,
+    "backend_live_database_passed": 105,
+    "same_frontend_sources_as_product_head": true,
+    "mocks": "Browser API fixtures; separate from live model-backed cases"
+  },
+  "retained_failures": [
+    "Windows example file_path rejected; repaired",
+    "Non-2xx response left UI thinking; repaired",
+    "System32 WSL Bash selected instead of configured Git Bash; repaired",
+    "Skill CLI path and JSON/positional argument mismatch; repaired",
+    "Generated skill package missing UI download; repaired",
+    "Initial UTF-8 test launcher and report-readiness harness errors; corrected",
+    "Two stale stream-constructor test fixtures failed on CI; assertions preserved and fixture targets updated",
+    "Model returned plan without files; continuation required"
+  ],
+  "coordination": {
+    "upstream_main": "ad203de5c7301c9a103caa1198d17aaee18c6647",
+    "conflicts_with_main": 0,
+    "pr3278": "80c947d3d6e0753e188d72e0444f01f1576f74a3",
+    "conflicting_shared_paths": 15,
+    "merge_order": "Pending maintainer decision"
+  },
+  "limitations": [
+    "Model-generated analysis is not independently audited financial/statistical advice",
+    "Generated skill MySQL/PostgreSQL paths untested",
+    "Basic SQL keyword guard is not a comprehensive read-only/security guarantee",
+    "Full packaging command not executed in local Windows Git Bash",
+    "Copilot 403 unresolved",
+    "Full-core mypy and local Docker not retested",
+    "Fresh local dev startup not retried after prior policy rejection"
+  ],
+  "guide_cleanup_after_live_captures": "Removed dangling reference to absent references/output-patterns.md; no Python or frontend change after a432763b.",
+  "product_code_ci": {
+    "run": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38024843961",
+    "commit": "a432763b175e6cfd8820577d4578e01dab5133a5",
+    "backend_contract_tests_passed": 150,
+    "backend_warnings": 3,
+    "ubuntu_packaging": "success",
+    "macos_packaging": "in_progress_at_record_creation",
+    "final_status_location": "PR body"
+  }
+}
