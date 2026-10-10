@@ -2098,6 +2098,10 @@ const Playground: NextPage = () => {
         signal: controller.signal,
       });
 
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.err_msg || `Request failed (${response.status})`);
+      }
       if (!response.body) {
         throw new Error('No response body');
       }

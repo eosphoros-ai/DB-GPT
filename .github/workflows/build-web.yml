@@ -12,6 +12,8 @@ on:
     paths:
       - web/**
       - scripts/build_web_static.sh
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/examples_api.py
+      - packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py
       - .github/workflows/build-web.yml
   push:
     branches:
@@ -20,6 +22,8 @@ on:
     paths:
       - web/**
       - scripts/build_web_static.sh
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/examples_api.py
+      - packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py
       - .github/workflows/build-web.yml
 
 concurrency:
@@ -32,6 +36,24 @@ defaults:
     working-directory: ./web
 
 jobs:
+  example-file-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: '0.12.22'
+          python-version: '3.11'
+          enable-cache: true
+      - name: Test example files and legacy attachment ownership
+        working-directory: .
+        run: |
+          uv sync --frozen --package dbgpt-app --package dbgpt --package dbgpt-mono --extra base
+          uv run --no-sync python -m pytest \
+            packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py \
+            packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py \
+            -q
+
   build-web:
     runs-on: ${{ matrix.os }}
     strategy:

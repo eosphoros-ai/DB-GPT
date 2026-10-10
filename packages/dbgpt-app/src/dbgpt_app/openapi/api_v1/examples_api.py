@@ -13,7 +13,7 @@ Example files are resolved in the following order:
 import logging
 import os
 import shutil
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends
@@ -154,7 +154,9 @@ async def use_example_file(
 
         abs_path = os.path.abspath(target_path)
         logger.info(f"Example file copied: {abs_path}")
-        return Result.succ(abs_path)
+        # The legacy chat input uses forward slashes on every host. Keep the
+        # API's own Windows paths compatible without relaxing its path checks.
+        return Result.succ(Path(abs_path).as_posix())
     except Exception as e:
         logger.exception(f"Failed to use example file: {e}")
         return Result.failed(msg=f"Error: {str(e)}")
