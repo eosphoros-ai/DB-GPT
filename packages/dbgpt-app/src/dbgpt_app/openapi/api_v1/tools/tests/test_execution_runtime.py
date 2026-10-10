@@ -380,3 +380,42 @@ async def test_real_local_timeout_stops_the_child(tmp_path):
     assert result.status == ExecutionStatus.TIMEOUT
     assert pid_path.exists()
     assert not psutil.pid_exists(int(pid_path.read_text()))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("outside_workspace", [False, True])
+async def test_skill_package_is_downloadable_only_inside_the_conversation(
+    tmp_path, monkeypatch, outside_workspace
+):
+    from dbgpt_app.openapi.api_v1.tools import shell_interpreter
+
+    workspace = tmp_path / "pilot" / "tmp" / "package"
+    workspace.mkdir(parents=True)
+    package = (tmp_path if outside_workspace else workspace) / "sql-analysis.skill"
+    package.write_bytes(b"sample package")
+    monkeypatch.setattr(
+        shell_interpreter,
+        "run_code",
+        AsyncMock(
+            return_value=ExecutionResult(
+                ExecutionStatus.SUCCESS,
+                output=f"Successfully packaged skill to: {package}\n",
+            )
+        ),
+    )
+    output = json.loads(
+        await make_shell_interpreter({"conv_id": "package"})(
+            code="python package_skill.py sql-analysis"
+        )
+    )
+    files = [c["content"] for c in output["chunks"] if c["output_type"] == "file"]
+    if outside_workspace:
+        assert files == []
+    else:
+        assert files == [
+            {
+                "name": "sql-analysis.skill",
+                "file_path": str(package.resolve()),
+                "size": len(b"sample package"),
+            }
+        ]

@@ -3,7 +3,9 @@
 import json
 import logging
 import os
+import re
 import uuid
+from pathlib import Path
 from typing import Any, Dict, List
 
 from dbgpt.agent.resource.tool.base import tool
@@ -89,6 +91,31 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
             chunks.append({"output_type": "text", "content": output_text.strip()})
         else:
             chunks.append({"output_type": "text", "content": "(no output)"})
+
+        # The skill packager prints its output path. Publish the actual package
+        # as a file chunk so the UI can download it, including on Windows.
+        package_match = re.search(
+            r"Successfully packaged skill to: (.+\.skill)\s*$", output_text, re.M
+        )
+        if package_match:
+            try:
+                package = Path(package_match.group(1).strip()).resolve()
+                if (
+                    package.is_relative_to(Path(sandbox_work_dir).resolve())
+                    and package.is_file()
+                ):
+                    chunks.append(
+                        {
+                            "output_type": "file",
+                            "content": {
+                                "name": package.name,
+                                "file_path": str(package),
+                                "size": package.stat().st_size,
+                            },
+                        }
+                    )
+            except (OSError, ValueError):
+                logger.warning("Could not inspect the generated skill package")
 
         # Safety-net post-processing for skill script execution
         _code_lower = code.strip().lower()
