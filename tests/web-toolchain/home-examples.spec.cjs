@@ -4,6 +4,140 @@ const { envelope, responseFor } = require("./fixtures.cjs");
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 
+for (const mode of ["live", "history"]) {
+  test(
+    "generated skill downloads from its conversation package: " + mode,
+    async ({ page }, testInfo) => {
+      const bytes = Buffer.from("conversation package fixture"),
+        installedRequests = [];
+      const file = {
+        name: "sql-data-analysis.skill",
+        file_path: "/test/conversation/sql-data-analysis.skill",
+        size: bytes.length,
+      };
+      const outputs = [
+        {
+          output_type: "text",
+          content: "Skill 'sql-data-analysis' initialized",
+        },
+        {
+          output_type: "code",
+          content: "echo template > example.py && rm example.py",
+        },
+        { output_type: "file", content: file },
+      ];
+      await page.route("**/api/**", async (route) => {
+        const request = route.request(),
+          url = new URL(request.url());
+        if (
+          url.pathname === "/api/v1/skills/detail" ||
+          url.pathname === "/api/v1/agent/skills/download"
+        ) {
+          installedRequests.push(url.pathname);
+          return route.fulfill({
+            json: { success: false, err_msg: "Skill file not found" },
+          });
+        }
+        if (url.pathname === "/api/v1/agent/files/download") {
+          expect(url.searchParams.get("file_path")).toBe(file.file_path);
+          return route.fulfill({
+            contentType: "application/octet-stream",
+            body: bytes,
+          });
+        }
+        if (url.pathname === "/api/v1/chat/dialogue/messages/history") {
+          return route.fulfill({
+            json: envelope([
+              { role: "human", context: "创建 SQL 技能", order: 0 },
+              {
+                role: "view",
+                order: 1,
+                context: JSON.stringify({
+                  version: 2,
+                  protocol_version: 2,
+                  type: "react-agent",
+                  status: "completed",
+                  final_content: "技能包已生成",
+                  steps: [
+                    {
+                      id: "package",
+                      action: "shell_interpreter",
+                      status: "done",
+                      action_input: "init_skill.py sql-data-analysis",
+                      outputs,
+                    },
+                  ],
+                }),
+              },
+            ]),
+          });
+        }
+        if (url.pathname === "/api/v1/chat/react-agent") {
+          return route.fulfill({
+            contentType: "text/event-stream",
+            body: [
+              {
+                type: "step.start",
+                id: "package",
+                step: 1,
+                title: "打包",
+                action: "shell_interpreter",
+              },
+              ...outputs.map((output) => ({
+                type: "step.chunk",
+                id: "package",
+                ...output,
+              })),
+              { type: "step.done", id: "package", status: "done" },
+              {
+                type: "final",
+                status: "completed",
+                content: "技能包已生成",
+                citations: [],
+              },
+              { type: "done" },
+            ]
+              .map((event) => "data: " + JSON.stringify(event) + "\n\n")
+              .join(""),
+          });
+        }
+        return route.fulfill({
+          json: envelope(responseFor(url, request.method()) ?? []),
+        });
+      });
+      await page.goto(mode === "live" ? "/" : "/?id=skill-package");
+      if (mode === "live") {
+        await page
+          .getByPlaceholder("向您的数据库提问，上传CSV，或生成报告...")
+          .fill("创建 SQL 技能");
+        await page
+          .getByRole("button", { name: "arrow-up", exact: true })
+          .click();
+      }
+      const card = page
+        .getByText(file.name, { exact: true })
+        .first()
+        .locator("..")
+        .locator("..");
+      await expect(card).toBeVisible();
+      await expect(page.getByText("example.py", { exact: true })).toHaveCount(
+        0,
+      );
+      const downloadPromise = page.waitForEvent("download");
+      await card.getByRole("button", { name: "download", exact: true }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe(file.name);
+      const destination = testInfo.outputPath(file.name);
+      await download.saveAs(destination);
+      expect(fs.readFileSync(destination)).toEqual(bytes);
+      expect(installedRequests).toEqual([]);
+      await expect(
+        page.getByText("Skill file not found", { exact: true }),
+      ).toHaveCount(0);
+    },
+  );
+}
+
 const pixel =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6dWQAAAAASUVORK5CYII=";
 const reportHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>财报离线检查</title>

@@ -856,6 +856,7 @@ const Playground: NextPage = () => {
   const [pendingFinalization, setPendingFinalization] = useState<{
     responseId: string;
     summaryText: string;
+    failed: boolean;
     uploadedFilePath: string | null;
   } | null>(null);
   const [pendingSummaryPresentation, setPendingSummaryPresentation] = useState<{
@@ -1768,6 +1769,23 @@ const Playground: NextPage = () => {
         }
       }
 
+      const skillPackages = deduped.filter(
+        artifact => artifact.type === 'file' && artifact.name.endsWith('.skill') && artifact.id.includes('-file-'),
+      );
+      if (skillPackages.length > 0) {
+        // A packaged conversation skill is a downloadable file, not an installed
+        // skill. Shell logs may also mention deleted template files; prefer the
+        // verified file chunks over guessed paths for this delivery.
+        return [
+          ...skillPackages,
+          ...deduped.filter(
+            artifact =>
+              !skillPackages.includes(artifact) &&
+              !artifact.id.includes('-shellfile-') &&
+              !artifact.id.includes('-fileref-'),
+          ),
+        ];
+      }
       return deduped;
     },
     [],
@@ -1801,7 +1819,7 @@ const Playground: NextPage = () => {
       targetView = 'image-preview';
     }
 
-    if (execution) {
+    if (execution && !pendingFinalization.failed && !deduped.some(artifact => artifact.name.endsWith('.skill'))) {
       const skillStep = execution.steps.find(step => {
         if (step.action !== 'shell_interpreter') return false;
         const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
@@ -2503,6 +2521,7 @@ const Playground: NextPage = () => {
           setPendingFinalization({
             responseId,
             summaryText,
+            failed,
             uploadedFilePath: filesAttachedThisSend?.legacyFile?.file_path ?? null,
           });
         } else if (payload.type === 'done') {
@@ -2828,7 +2847,11 @@ const Playground: NextPage = () => {
             return detailHas || inputHas || outputHas;
           };
           const skillStep = steps.find(isSkillPackageStep);
-          if (skillStep) {
+          if (
+            skillStep &&
+            payload.status !== 'failed' &&
+            !restoredArtifacts.some(artifact => artifact.name.endsWith('.skill'))
+          ) {
             const allText = [
               skillStep.actionInput || '',
               skillStep.detail || '',
