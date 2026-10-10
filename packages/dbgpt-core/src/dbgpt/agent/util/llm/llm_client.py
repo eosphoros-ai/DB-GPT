@@ -292,6 +292,14 @@ class AIWrapper:
 
             async for output in self._llm_client.generate_stream(model_request.copy()):
                 model_output = output
+                # Workers return failures as ModelOutput chunks. Surface them
+                # through LLMChatError so the agent's inference retry applies;
+                # never publish an error chunk as a successful answer/tool call.
+                if output.error_code:
+                    raise ValueError(
+                        f"LLM generation failed ({output.error_code}): "
+                        f"{output.text or 'The model returned no error details.'}"
+                    )
                 delta_text = ""
                 delta_thinking = ""
                 if output.has_text:

@@ -1,3 +1,4 @@
+import { createHtmlDownloadBlob } from '@/utils/html-download';
 import {
   CopyOutlined,
   DownloadOutlined,
@@ -5,7 +6,7 @@ import {
   FullscreenOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons';
-import { Button, Modal, Tabs } from 'antd';
+import { Button, Modal, Tabs, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodePreview } from './code-preview';
@@ -27,6 +28,7 @@ type FullscreenDocument = Document & {
 const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const iframeRef = useRef<FullscreenFrame>(null);
   const { t } = useTranslation();
@@ -149,25 +151,23 @@ const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: str
   };
 
   // Download the HTML file
-  const downloadHTML = () => {
-    // Create a Blob object
-    const blob = new Blob([parsedCode.fullCode], { type: 'text/html' });
-
-    // Create a URL object
-    const url = URL.createObjectURL(blob);
-
-    // Create an a tag
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'preview.html'; // File name
-
-    // Add to body and trigger click
-    document.body.appendChild(a);
-    a.click();
-
-    // Clean up
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const downloadHTML = async () => {
+    setIsDownloading(true);
+    try {
+      const blob = await createHtmlDownloadBlob(parsedCode.fullCode);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'preview.html';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      message.error(t('html_download_failed'));
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Toggle fullscreen mode
@@ -298,6 +298,7 @@ const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: str
           type='text'
           icon={<DownloadOutlined />}
           onClick={downloadHTML}
+          loading={isDownloading}
           className='flex items-center justify-center bg-opacity-70 hover:bg-opacity-100 transition-all'
           size='small'
         >
@@ -320,7 +321,7 @@ const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: str
         open={isModalVisible}
         onCancel={handleCancel}
         footer={[
-          <Button key='download' icon={<DownloadOutlined />} onClick={downloadHTML}>
+          <Button key='download' icon={<DownloadOutlined />} onClick={downloadHTML} loading={isDownloading}>
             {t('code_preview_download')} HTML
           </Button>,
           <Button

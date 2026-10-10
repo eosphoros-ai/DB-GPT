@@ -53,6 +53,7 @@ import type { SubAgentState } from '@/types/subagent';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
+import { createHtmlDownloadBlob } from '@/utils/html-download';
 import {
   cleanFinalContent,
   decodeFinalEvent,
@@ -194,6 +195,7 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
+  failed?: boolean;
   /** Immutable server snapshots of every session file attached to this message. */
   attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
@@ -536,7 +538,7 @@ const EXAMPLE_CARDS = [
     title: '创建SQL分析技能',
     description: '使用skill-creator创建一个实用的SQL数据分析技能',
     query:
-      '请使用 skill-creator 帮我创建一个实用的SQL数据分析技能，包含连接数据库、执行SQL查询和数据可视化等核心功能。',
+      '请使用 skill-creator 在当前会话工作目录中实际创建并交付一个 SQL 数据分析技能。本示例先支持 SQLite：连接本地数据库、只读查询和生成 PNG 图表。请创建临时示例数据库，运行聚合查询和绘图测试，核对 SKILL.md 中的命令与脚本一致，再用 skill-creator 的打包脚本生成可下载的 .skill 文件。请在本轮完成文件、测试和打包，不要仅给出计划；无需配置外部数据库或创建额外文档。',
     color: 'from-amber-500/10 to-orange-500/10',
     borderColor: 'border-amber-200/60 dark:border-amber-800/40',
     iconBg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -1414,8 +1416,12 @@ const Playground: NextPage = () => {
           typeof artifact.content === 'string'
             ? artifact.content
             : artifact.content?.content || artifact.content?.html || String(artifact.content);
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        triggerBlobDownload(blob, artifact.name || 'report.html');
+        try {
+          const blob = await createHtmlDownloadBlob(htmlContent);
+          triggerBlobDownload(blob, artifact.name || 'report.html');
+        } catch {
+          message.error(t('html_download_failed'));
+        }
         break;
       }
       case 'code': {
@@ -2444,13 +2450,14 @@ const Playground: NextPage = () => {
           return;
         } else if (payload.type === 'final') {
           const finalAnswer = decodeFinalEvent(payload);
+          const failed = payload.status === 'failed';
           const summaryText = cleanFinalContent(finalAnswer.content);
           cancelSummaryPresentation();
           setExecutionMap(prev => {
             const current = prev[responseId];
             if (!current) return prev;
             const nextSteps = current.steps.map(item =>
-              item.status === 'running' ? { ...item, status: 'done' as const } : item,
+              item.status === 'running' ? { ...item, status: failed ? ('failed' as const) : ('done' as const) } : item,
             );
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
@@ -2462,6 +2469,7 @@ const Playground: NextPage = () => {
                 context: summaryText,
                 citations: finalAnswer.citations,
                 thinking: false,
+                failed,
               };
             }),
           );
@@ -2550,6 +2558,7 @@ const Playground: NextPage = () => {
           if (lastMsg && lastMsg.role === 'view') {
             lastMsg.context = err?.message || 'Error occurred';
             lastMsg.thinking = false;
+            lastMsg.failed = true;
           }
           return newMessages;
         });
@@ -2838,6 +2847,7 @@ const Playground: NextPage = () => {
             citations: historyAnswer.citations,
             order: msg.order,
             thinking: false,
+            failed: payload.status === 'failed',
             taskPlan: Array.isArray(payload.task_plan)
               ? payload.task_plan
               : Array.isArray(payload.tasks)
@@ -3128,6 +3138,7 @@ const Playground: NextPage = () => {
                           }
                         }}
                         isWorking={isWorking}
+                        failed={round.viewMsg?.failed}
                         userQuery={round.humanMsg?.context}
                         attachedFiles={round.humanMsg?.attachedFiles}
                         attachedKnowledge={round.humanMsg?.attachedKnowledge}

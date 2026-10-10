@@ -3,6 +3,7 @@
 import asyncio
 import json
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -13,6 +14,28 @@ from dbgpt_app.openapi.api_v1.react_final import AgentFinalAnswer
 def _decode_sse_event(event: str):
     assert event.startswith("data: ")
     return json.loads(event.removeprefix("data: ").strip())
+
+
+@pytest.mark.parametrize("failed", [False, True])
+def test_terminal_status_matches_saved_history(failed):
+    storage = Mock()
+    history = agentic_data_api._build_react_history_payload(
+        final_content="model result",
+        steps=[],
+        task_plan=[],
+        generated_images=[],
+        sub_agents={},
+        input_files=[],
+        failed=failed,
+    )
+    events = agentic_data_api._react_terminal_events(
+        storage, history, AgentFinalAnswer(content="model result"), failed=failed
+    )
+    stored = json.loads(storage.add_view_message.call_args.args[0])
+    final = _decode_sse_event(events[0])
+    assert stored["status"] == final["status"] == ("failed" if failed else "completed")
+    assert _decode_sse_event(events[1]) == {"type": "done"}
+    storage.save_to_storage.assert_called_once()
 
 
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
@@ -37,6 +60,7 @@ def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
             "type": "final",
             "protocol_version": 2,
             "content": "answer",
+            "status": "completed",
             "citations": [],
         },
         {"type": "done"},
@@ -113,6 +137,7 @@ async def test_runtime_failure_emits_structured_final_and_done(
             "type": "final",
             "protocol_version": 2,
             "content": "抱歉，回答生成过程中发生错误，请重试。",
+            "status": "failed",
             "citations": [],
         },
         {"type": "done"},

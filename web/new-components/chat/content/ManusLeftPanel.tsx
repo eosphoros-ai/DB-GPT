@@ -106,6 +106,7 @@ export interface ManusLeftPanelProps {
   activeStepId?: string | null;
   onStepClick?: (stepId: string, sectionId: string) => void;
   isWorking?: boolean;
+  failed?: boolean;
   userQuery?: string;
   assistantText?: string;
   /** Render incremental answer text without reparsing Markdown on every frame. */
@@ -1039,6 +1040,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   activeStepId,
   onStepClick,
   isWorking,
+  failed = false,
   userQuery,
   assistantText,
   isAssistantStreaming = false,
@@ -1293,8 +1295,19 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             </div>
 
             <div className='flex items-center gap-1.5 mt-5'>
-              <CheckOutlined className='text-xs text-emerald-500' />
-              <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>{t('task_completed')}</span>
+              {failed ? (
+                <>
+                  <ExclamationCircleOutlined className='text-xs text-red-500' />
+                  <span className='text-sm text-red-600 dark:text-red-400 font-medium'>{t('task_failed')}</span>
+                </>
+              ) : (
+                <>
+                  <CheckOutlined className='text-xs text-emerald-500' />
+                  <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>
+                    {t('task_completed')}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         )}

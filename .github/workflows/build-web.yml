@@ -20,6 +20,10 @@ on:
       - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/shell_interpreter.py
       - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py
       - skills/skill-creator/**
+      - packages/dbgpt-core/src/dbgpt/agent/util/llm/llm_client.py
+      - packages/dbgpt-core/src/dbgpt/agent/util/tests/test_llm_stream_errors.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_agentic_data_api_lifecycle.py
       - .github/workflows/build-web.yml
   push:
     branches:
@@ -36,6 +40,10 @@ on:
       - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/shell_interpreter.py
       - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py
       - skills/skill-creator/**
+      - packages/dbgpt-core/src/dbgpt/agent/util/llm/llm_client.py
+      - packages/dbgpt-core/src/dbgpt/agent/util/tests/test_llm_stream_errors.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py
+      - packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_agentic_data_api_lifecycle.py
       - .github/workflows/build-web.yml
 
 concurrency:
@@ -67,6 +75,9 @@ jobs:
             packages/dbgpt-sandbox/tests/test_local_bash.py \
             packages/dbgpt-sandbox/tests/test_runtime_factory.py \
             packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py \
+            packages/dbgpt-core/src/dbgpt/agent/util/tests/test_llm_stream_errors.py \
+            packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_agentic_data_api_lifecycle.py \
+            packages/dbgpt-app/src/dbgpt_app/tests/test_react_file_history.py \
             -q
 
   build-web:
