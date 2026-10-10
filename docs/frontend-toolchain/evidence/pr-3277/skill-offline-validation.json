@@ -1,0 +1,249 @@
+{
+  "date": "2026-10-10",
+  "product_sha": "9ccc699c8da72098dbf1c45bd68817118d2378c2",
+  "backend_source_matches_product": true,
+  "packaged_frontend_run": 38029229145,
+  "sql": [
+    {
+      "conversation": "61c4b942-1550-4ccd-bbdd-b011a02b07c0",
+      "generation_frontend": "3bb411834b00fc8aee5ef97d7d1ab760efbac33d",
+      "download_frontend": "9ccc699c8da72098dbf1c45bd68817118d2378c2",
+      "fresh_card_click": true,
+      "followup_required": false,
+      "final_status": "completed",
+      "observed_seconds": 45.108,
+      "generation_steps": 26,
+      "download": {
+        "filename": "sql-data-analysis.skill",
+        "bytes": 5368,
+        "sha256": "9fa9a93711c2cbb5d1ff3b35c2641e9ae40310764bef8f0d6ff8c7f0bf4e838f",
+        "passed": true
+      },
+      "independent_audit": {
+        "passed": true,
+        "rows": [
+          {
+            "category": "A",
+            "total": 20
+          },
+          {
+            "category": "B",
+            "total": 20
+          }
+        ],
+        "dimensions": [
+          1080,
+          600
+        ],
+        "package_bytes": 5368,
+        "sha256": "9fa9a93711c2cbb5d1ff3b35c2641e9ae40310764bef8f0d6ff8c7f0bf4e838f",
+        "members": [
+          "sql-data-analysis/SKILL.md",
+          "sql-data-analysis/scripts/chart_sqlite.py",
+          "sql-data-analysis/scripts/make_sample_db.py",
+          "sql-data-analysis/scripts/query_sqlite.py"
+        ],
+        "limits": [
+          "Basic read-only rejection tested; not a generated-code security audit",
+          "Other generated commands and database engines are not exhaustively covered"
+        ]
+      },
+      "page_errors": [],
+      "console_errors": [],
+      "failed_responses": []
+    },
+    {
+      "conversation": "8af740f7-d268-4acc-b53a-08bd83433d6a",
+      "generation_frontend": "9ccc699c8da72098dbf1c45bd68817118d2378c2",
+      "download_frontend": "9ccc699c8da72098dbf1c45bd68817118d2378c2",
+      "fresh_card_click": true,
+      "followup_required": false,
+      "final_status": "completed",
+      "observed_seconds": 51.122,
+      "generation_steps": 32,
+      "download": {
+        "filename": "sqlite-analytics.skill",
+        "bytes": 5003,
+        "sha256": "97c958fd754bb51638c13bbc2e32e061dc0192c150001cb91151c1074bd2f2f4",
+        "passed": true
+      },
+      "independent_audit": {
+        "passed": true,
+        "rows": [
+          {
+            "category": "A",
+            "total": 20
+          },
+          {
+            "category": "B",
+            "total": 20
+          }
+        ],
+        "dimensions": [
+          960,
+          600
+        ],
+        "package_bytes": 5003,
+        "sha256": "97c958fd754bb51638c13bbc2e32e061dc0192c150001cb91151c1074bd2f2f4",
+        "members": [
+          "sqlite-analytics/SKILL.md",
+          "sqlite-analytics/references/sqlite_notes.md",
+          "sqlite-analytics/scripts/make_demo_db.py",
+          "sqlite-analytics/scripts/plot_chart.py",
+          "sqlite-analytics/scripts/query_sqlite.py"
+        ],
+        "limits": [
+          "Basic read-only rejection tested; not a generated-code security audit",
+          "Other generated commands and database engines are not exhaustively covered"
+        ]
+      },
+      "page_errors": [],
+      "console_errors": [],
+      "failed_responses": []
+    }
+  ],
+  "financial_offline": {
+    "bytes": 251219,
+    "embeddedImages": 3,
+    "images": [
+      {
+        "width": 1482,
+        "height": 887,
+        "embedded": true
+      },
+      {
+        "width": 1485,
+        "height": 885,
+        "embedded": true
+      },
+      {
+        "width": 1185,
+        "height": 1184,
+        "embedded": true
+      }
+    ],
+    "passed": true
+  },
+  "backend_stopped_and_browser_offline": true,
+  "offline_http_requests": 0,
+  "financial_sha256": "19460f53ef05acd8112881733ed5d725243a18ac0d81b79984b0e9b0dbc108ef",
+  "other_downloads": {
+    "walmart_echarts": 18,
+    "database_chartjs": 2,
+    "online_rendered": true,
+    "offline_not_claimed": true
+  },
+  "local": {
+    "backend_passed": 88,
+    "backend_warnings": 4,
+    "browser_passed": 8,
+    "typescript": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 89,
+    "build_contracts_passed": 45,
+    "frontend_tests_passed": 24,
+    "wiki_assertions": "passed",
+    "ruff": "0.16.10 check and format passed",
+    "actionlint": "passed"
+  },
+  "ci": {
+    "build_run": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38029229145",
+    "browser_connectors_run": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38029229054",
+    "final_review_head_results": "Recorded in the PR body after the branch update",
+    "product_conclusions": {
+      "build": {
+        "url": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38029229145",
+        "conclusion": "success"
+      },
+      "browser": {
+        "url": "https://github.com/jcsdxhe/DB-GPT/actions/runs/38029229054",
+        "conclusion": "success"
+      }
+    },
+    "browser_stats": {
+      "production": {
+        "startTime": "2026-10-10T06:02:04.391Z",
+        "duration": 137902.885,
+        "expected": 54,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "development": {
+        "startTime": "2026-10-10T06:05:00.429Z",
+        "duration": 458498.153,
+        "expected": 54,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "connector_database": {
+      "tests": 105,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "backend_contracts": {
+      "passed": 170,
+      "warnings": 4
+    },
+    "frontend": {
+      "typecheck": "passed",
+      "lint_errors": 0,
+      "lint_warnings": 89,
+      "build_contracts": 45,
+      "frontend_units": 24,
+      "wiki": "passed"
+    },
+    "packaging": {
+      "ubuntu": "passed",
+      "macos": "passed",
+      "html_pages": 60,
+      "asset_references": 1782
+    }
+  },
+  "prior_failures": {
+    "original_llm_timeout": "Retained in the previous home/packaging record",
+    "first_candidate_browser": "50 passed / 1 failed; missing failure footer without artifacts; repaired and covered by local browser regressions",
+    "expanded_windows": "17 initial failures; two Bash environment failures passed after configuration; 15 attachment path fixture failures retained",
+    "obsolete_build_run_38028963580": "Cancelled after being superseded"
+  },
+  "limits": [
+    "No guarantee against future model-provider outages",
+    "SQLite smoke coverage, not a generated-code security audit",
+    "Financial narrative and ratios not independently audited",
+    "CDN-backed reports still need network access",
+    "Copilot 403, full-core mypy, Windows Docker and other historical integration limitations not retested"
+  ],
+  "merge": {
+    "pr3278": {
+      "exit": 1,
+      "conflicts": [
+        ".github/workflows/build-web.yml",
+        "packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py",
+        "packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_agentic_data_api_lifecycle.py",
+        "packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/tests/test_execution_runtime.py",
+        "packages/dbgpt-app/src/dbgpt_app/tests/test_attachment_react_adapter.py",
+        "packages/dbgpt-app/src/dbgpt_app/tests/test_examples_api.py",
+        "packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/local_runtime.py",
+        "web/new-components/charts/AdvancedCharts.tsx",
+        "web/new-components/scheduled-task/EditScheduledTaskDrawer.tsx",
+        "web/new-components/scheduled-task/SaveAsScheduledTaskDrawer.tsx",
+        "web/package-lock.json",
+        "web/package.json",
+        "web/scripts/build-web.cjs",
+        "web/scripts/graceful-fs-register.cjs",
+        "web/scripts/run-next.cjs",
+        "web/scripts/toolchain-regressions.test.cjs"
+      ],
+      "sha": "80c947d3d6e0753e188d72e0444f01f1576f74a3"
+    },
+    "pr3277": "6fa4bd582b627d3ea0ceb1fe9cf327f8a1d2a31d",
+    "upstream-main": {
+      "exit": 0,
+      "conflicts": [],
+      "sha": "ad203de5c7301c9a103caa1198d17aaee18c6647"
+    }
+  }
+}

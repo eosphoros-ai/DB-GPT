@@ -189,5 +189,6 @@
     "ubuntu_packaging": "success",
     "macos_packaging": "in_progress_at_record_creation",
     "final_status_location": "PR body"
-  }
+  },
+  "later_followup": "skill-offline-validation.json: two fresh SQL completions and offline financial download; previous results are retained as historical evidence."
 }

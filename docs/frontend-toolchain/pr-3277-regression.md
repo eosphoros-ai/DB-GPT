@@ -1,5 +1,9 @@
 # PR #3277 frontend regression — updated 2026-10-10
 
+**2026-10-10 SQL/离线下载更新：** 新增模型流错误与失败状态回归、技能包交付和报告图片内嵌；
+两个新会话 SQL 示例完成，财报通过停后端/断网打开验证。范围、版本与未覆盖项见
+[SQL/offline validation](pr-3277-skill-offline-validation.md)，最新 CI 结论见 PR 正文。
+
 ## Home examples and README packaging follow-up — 2026-10-10
 
 The [focused acceptance record](pr-3277-home-packaging-validation.md) now covers

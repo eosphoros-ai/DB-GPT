@@ -1,5 +1,11 @@
 # PR #3277 home examples and README packaging — 2026-10-10
 
+> **Later follow-up:** the fresh SQL timeout and backend-image download limitations below
+> are addressed and rechecked in [SQL/offline validation](pr-3277-skill-offline-validation.md).
+> Two fresh SQL clicks completed and both packages were independently audited/downloaded;
+> the financial report now opens with three embedded images while the backend is stopped.
+> The dated results below remain as the earlier baseline.
+
 This follow-up tests the four home-page example cards and the complete
 `bash ../scripts/build_web_static.sh` command documented under **Use In DB-GPT**
 in `web/README.md`. Earlier navigation checks and `npm run compile` alone did
