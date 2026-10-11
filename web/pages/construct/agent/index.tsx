@@ -41,6 +41,7 @@ function Agent() {
     loading,
     refresh,
   } = useRequest<IAgentPlugin[], []>(
+    // @ts-expect-error Installed plugins share the displayed fields; marketplace-only metadata is guarded at each use.
     async () => {
       if (activeKey === 'my') {
         const [err, res] = await apiInterceptors(postAgentMy());

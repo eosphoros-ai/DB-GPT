@@ -124,6 +124,7 @@ const SvgPreview = ({ code, language = 'svg' }: { code: string; language?: strin
     // Create a canvas
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     // Create an image element
     const img = new Image();

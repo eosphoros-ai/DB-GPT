@@ -70,16 +70,18 @@ export function VisTabs({ data }: { data: VisTabsData[] }) {
   }, [data]);
 
   useEffect(() => {
-    ee.on(EVENTS.TASK_CLICK, (data: any) => {
-      setTabActiveByUser(data.taskId);
-    });
+    const handleTaskClick = (data: { taskId: string }) => setTabActiveByUser(data.taskId);
+    ee.on(EVENTS.TASK_CLICK, handleTaskClick);
 
-    if (scrollRef.current) {
-      const scrollContainer = findParentElementByClassName(scrollRef.current, 'overflow-y-auto');
-      if (scrollContainer) {
-        scrollContainer.addEventListener('scroll', handleScroll);
-      }
-    }
+    const scrollContainer = scrollRef.current
+      ? findParentElementByClassName(scrollRef.current, 'overflow-y-auto')
+      : null;
+    scrollContainer?.addEventListener('scroll', handleScroll);
+
+    return () => {
+      ee.off(EVENTS.TASK_CLICK, handleTaskClick);
+      scrollContainer?.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   /**

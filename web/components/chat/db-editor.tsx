@@ -293,7 +293,9 @@ function DbEditor() {
         conv_uid: id,
         db_name,
         conv_round: currentRound,
+        // @ts-expect-error SQL-mode responses are objects; the shared editor state also includes chart-mode arrays.
         old_sql: editorValue?.sql,
+        // @ts-expect-error SQL-mode responses are objects; the shared editor state also includes chart-mode arrays.
         old_speak: editorValue?.thoughts,
         new_sql: newEditorValue?.sql,
         new_speak: newEditorValue?.thoughts?.match(/^\n--(.*)\n\n$/)?.[1]?.trim() || newEditorValue?.thoughts,
@@ -320,6 +322,7 @@ function DbEditor() {
         conv_uid: id,
         chart_title: newEditorValue?.title,
         db_name,
+        // @ts-expect-error Chart-mode responses are arrays; the shared editor state also includes SQL-mode objects.
         old_sql: editorValue?.[currentTabIndex ?? 0]?.sql,
         new_chart_type: newEditorValue?.showcase,
         new_sql: newEditorValue?.sql,

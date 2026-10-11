@@ -121,7 +121,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   // 获取管理员列表
   const { run: queryAdminListRun } = useRequest(
     async () => {
-      const [, res] = await apiInterceptors(queryAdminList({ role: 'admin' }));
+      const res = queryAdminList({ role: 'admin' });
       return res ?? [];
     },
     {
