@@ -89,7 +89,6 @@ export interface ThinkingSection {
 }
 
 export interface ArtifactItem {
-  stepId?: string;
   id: string;
   type: 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
   name: string;

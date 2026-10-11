@@ -1,8 +1,5 @@
-import type { I18nKeys } from '@/app/i18n';
-import type { WikiEditSource } from '@/types/wiki';
-
 /** Shared edit-source label mapping (zh-first, i18n key based). */
-export const EDIT_SOURCE_LABELS: Record<WikiEditSource, { key: I18nKeys; antdColor: string }> = {
+export const EDIT_SOURCE_LABELS: Record<string, { key: string; antdColor: string }> = {
   pipeline: { key: 'wiki_source_pipeline', antdColor: 'default' },
   agent: { key: 'wiki_source_agent', antdColor: 'purple' },
   user: { key: 'wiki_source_user', antdColor: 'cyan' },

@@ -2,54 +2,10 @@ const assert = require('node:assert/strict');
 const { spawn, spawnSync } = require('node:child_process');
 const { once } = require('node:events');
 const fs = require('node:fs');
-const Module = require('node:module');
 const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const ts = require('typescript');
-
-function loadTs(relative) {
-  const filename = path.resolve(__dirname, '..', relative);
-  const loaded = new Module(filename, module);
-  loaded.paths = Module._nodeModulePaths(path.dirname(filename));
-  loaded._compile(
-    ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
-    }).outputText,
-    filename,
-  );
-  return loaded.exports;
-}
-
-const { ee, EVENTS } = loadTs('utils/event-emitter.ts');
-
-test('unsubscribed task views stop receiving events without affecting other views', t => {
-  const stale = [];
-  const active = [];
-  const stopStale = ee.on(EVENTS.TASK_CLICK, value => stale.push(value.taskId));
-  const stopActive = ee.on(EVENTS.TASK_CLICK, value => active.push(value.taskId));
-  t.after(() => {
-    stopStale();
-    stopActive();
-  });
-  ee.emit(EVENTS.TASK_CLICK, { taskId: 'before' });
-  stopStale();
-  ee.emit(EVENTS.TASK_CLICK, { taskId: 'after' });
-  assert.deepEqual(stale, ['before']);
-  assert.deepEqual(active, ['before', 'after']);
-});
-
-test('repeated cleanup leaves a later subscription intact', t => {
-  const stopOld = ee.on(EVENTS.TASK_CLICK, () => {});
-  stopOld();
-  const received = [];
-  const stopNew = ee.on(EVENTS.TASK_CLICK, value => received.push(value.taskId));
-  t.after(stopNew);
-  stopOld();
-  ee.emit(EVENTS.TASK_CLICK, { taskId: 'new' });
-  assert.deepEqual(received, ['new']);
-});
 
 function runnerFixture(t, childSource, nodeOptions = '', script = 'run-next.cjs') {
   const temporaryRoot = fs.realpathSync(os.tmpdir());

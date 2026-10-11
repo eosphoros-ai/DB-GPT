@@ -37,7 +37,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
   const [ques_type, setQuesType] = useState('');
   const [score, setScore] = useState(4);
   const [text, setText] = useState('');
-  const action = useRef<{ focusVisible: () => void }>(null);
+  const action = useRef(null);
   const [messageApi, contextHolder] = message.useMessage();
 
   const handleOpenChange = useCallback(
@@ -174,9 +174,9 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   sx={{ width: '100%' }}
                 >
                   {select_param &&
-                    Object.entries(select_param).map(([paramItem, label]) => (
+                    Object.keys(select_param)?.map(paramItem => (
                       <Option key={paramItem} value={paramItem}>
-                        {label}
+                        {select_param[paramItem]}
                       </Option>
                     ))}
                 </Select>
@@ -189,6 +189,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                         <div>{t('feed_back_desc')}</div>
                       </Box>
                     }
+                    variant='solid'
                     placement='left'
                   >
                     {t('Q_A_Rating')}
@@ -205,7 +206,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   valueLabelDisplay='on'
                   marks={marks}
                   sx={{ width: '90%', pt: 3, m: 2, ml: 1 }}
-                  onChange={(_, value) => setScore(Array.isArray(value) ? value[0] : value)}
+                  onChange={event => setScore(event.target?.value)}
                   value={score}
                 />
               </Grid>

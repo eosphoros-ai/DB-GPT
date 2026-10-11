@@ -16,8 +16,11 @@ import { useContext, useEffect, useRef, useState } from 'react';
 type DataSource = { db_name: string; db_type: string };
 
 function dashboardSource(source: IChatDbSchema): DataSource {
+  const params: unknown = source.params;
+  const name =
+    params && typeof params === 'object' && 'name' in params && typeof params.name === 'string' ? params.name : '';
   return {
-    db_name: source.db_name || source.params?.name || '',
+    db_name: source.db_name || name,
     db_type: source.type || source.db_type || '',
   };
 }

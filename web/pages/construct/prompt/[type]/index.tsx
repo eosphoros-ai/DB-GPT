@@ -56,7 +56,6 @@ const TypeOptions = [
 ];
 
 interface BottomFormProps {
-  user_input: string;
   model: string;
   temperature: number;
   prompt_language: 'en' | 'zh';

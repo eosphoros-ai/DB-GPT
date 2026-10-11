@@ -60,7 +60,7 @@ function ChatDefault() {
       manual: true,
       onSuccess: res => {
         const [_error, data] = res;
-        if (Array.isArray(data)) {
+        if (activeKey === 'recommend') {
           return setApps({
             app_list: data,
             total_count: data?.length || 0,

@@ -23,7 +23,7 @@ function Database() {
   const { t } = useTranslation();
 
   const [dbList, setDbList] = useState<DbListResponse>([]);
-  const [dbSupportList, setDbSupportList] = useState<DbSupportTypeResponse['types']>([]);
+  const [dbSupportList, setDbSupportList] = useState<DbSupportTypeResponse>([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<{
     open: boolean;

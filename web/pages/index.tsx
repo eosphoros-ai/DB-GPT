@@ -103,7 +103,6 @@ import {
   Upload,
   message,
 } from 'antd';
-import type { TFunction } from 'i18next';
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
@@ -344,7 +343,7 @@ const convertToManusFormat = (
       }
     | undefined,
   _userQuery?: string,
-  t?: TFunction,
+  t?: (key: string) => string,
 ): {
   sections: ThinkingSection[];
   activeStep: ActiveStepInfo | null;
@@ -1092,7 +1091,7 @@ const Playground: NextPage = () => {
   });
 
   // Fetch Knowledge Bases
-  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest<KnowledgeSpace[], []>(async () => {
+  const { data: knowledgeSpaces, loading: _loadingKnowledge } = useRequest(async () => {
     try {
       const response = await sendSpacePostRequest('/api/v1/knowledge/space/list', {});
       // ctx-axios interceptor returns response.data directly, so response is {success, data, ...}
@@ -1145,9 +1144,7 @@ const Playground: NextPage = () => {
   // Fetch Skills/DBGPTs list
   const { data: skillsList, loading: _loadingSkills } = useRequest(async () => {
     try {
-      const response = await axios.get<unknown, { success: boolean; data: unknown[] }>(
-        `${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`,
-      );
+      const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
       // ctx-axios interceptor returns response.data directly
       if (response?.success && Array.isArray(response.data)) {
         return response.data.map((item: any) => ({
@@ -2279,13 +2276,13 @@ const Playground: NextPage = () => {
                       status: 'running' as const,
                     }
                   : step.status === 'running'
-                    ? { ...step, status: 'done' as const }
+                    ? { ...step, status: 'done' }
                     : step,
               );
             } else {
               // New step - mark running steps as done and add new step
               nextSteps = [
-                ...current.steps.map(item => (item.status === 'running' ? { ...item, status: 'done' as const } : item)),
+                ...current.steps.map(item => (item.status === 'running' ? { ...item, status: 'done' } : item)),
                 {
                   id,
                   step: payload.step,
@@ -2578,7 +2575,7 @@ const Playground: NextPage = () => {
 
   const handleExampleClick = async (example: (typeof EXAMPLE_CARDS)[number]) => {
     const queryKey = `example_${example.id}_query`;
-    const queryVal = t(queryKey, { defaultValue: queryKey }) as string;
+    const queryVal = t(queryKey) as string;
     const translatedQuery = (queryVal && queryVal !== queryKey ? queryVal : example.query) as string;
 
     if (loading || sendInFlightRef.current || exampleRunInFlightRef.current) return;
@@ -2601,7 +2598,7 @@ const Playground: NextPage = () => {
         }
         exampleController = new AbortController();
         exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post<unknown, { success: boolean; data?: string; err_msg?: string }>(
+        const res = await axios.post(
           `${process.env.API_BASE_URL ?? ''}/api/v1/examples/use`,
           {
             example_id: example.id,
@@ -4787,14 +4784,14 @@ const Playground: NextPage = () => {
                             <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
                               {(() => {
                                 const key = `example_${example.id}_title`;
-                                const val = t(key, { defaultValue: key }) as string;
+                                const val = t(key) as string;
                                 return val && val !== key ? val : example.title;
                               })()}
                             </h3>
                             <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
                               {(() => {
                                 const key = `example_${example.id}_desc`;
-                                const val = t(key, { defaultValue: key }) as string;
+                                const val = t(key) as string;
                                 return val && val !== key ? val : example.description;
                               })()}
                             </p>

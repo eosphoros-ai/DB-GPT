@@ -106,7 +106,7 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => 
             onClick: cardClick,
           },
           {
-            label: t('code_preview_copy'),
+            label: t('Copy'),
             children: <CopyFilled />,
             onClick: () => {
               onCopy(flow);

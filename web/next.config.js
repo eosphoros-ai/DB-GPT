@@ -1,16 +1,19 @@
-/** @type {import('next').NextConfig} */
 const CopyPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const { PHASE_DEVELOPMENT_SERVER } = require('next/constants');
 const path = require('node:path');
 
+/**
+ * Create the configuration for development, server builds or static export.
+ * @param {string} phase Next.js phase used to select development settings.
+ * @returns {import('next').NextConfig} Pages Router and Webpack configuration.
+ */
 module.exports = phase => {
   const development = phase === PHASE_DEVELOPMENT_SERVER;
   const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === '1';
   return {
     distDir: process.env.NEXT_DIST_DIR || '.next',
     ...(staticExport ? { output: 'export' } : {}),
-    allowedDevOrigins: ['127.0.0.1'],
     ...(process.platform === 'win32' && !development ? { experimental: { cpus: 1 } } : {}),
     typescript: {
       ignoreBuildErrors: false,
@@ -18,6 +21,7 @@ module.exports = phase => {
     },
     ...(!staticExport
       ? {
+          /** Proxy API requests to the local backend for server deployments; static exports omit this hook. */
           async rewrites() {
             return [{ source: '/api/v1/:path*', destination: 'http://127.0.0.1:5670/api/v1/:path*' }];
           },
@@ -42,6 +46,7 @@ module.exports = phase => {
       '@antv/graphin',
       '@antv/gpt-vis',
     ],
+    /** Retain the existing Monaco Webpack plugins with Next's native transpilation. */
     webpack: (config, { isServer, dev }) => {
       // Use the packages' ESM entry points with Next's native transpilation.
       config.resolve.alias = {
@@ -49,6 +54,7 @@ module.exports = phase => {
         '@berryv/g2-react$': path.join(__dirname, 'node_modules/@berryv/g2-react/es/index.js'),
         '@antv/gpt-vis$': path.join(__dirname, 'node_modules/@antv/gpt-vis/dist/esm/index.js'),
         '@antv/g6$': path.join(__dirname, 'node_modules/@antv/g6/esm/index.js'),
+        'react-syntax-highlighter$': path.join(__dirname, 'node_modules/react-syntax-highlighter/dist/esm/index.js'),
       };
       if (process.platform === 'win32' && !dev) config.parallelism = 2;
       config.resolve.fallback = { fs: false };
