@@ -224,6 +224,8 @@ export const CommonEn = {
   provider_desc_gitee: 'Gitee AI model services',
   provider_label_infiniai: 'Infini AI',
   provider_desc_infiniai: 'Infini AI model services',
+  provider_label_opper: 'Opper',
+  provider_desc_opper: 'EU-hosted AI gateway. One key for 700+ models from 50+ providers, OpenAI-compatible',
   provider_label_ollama: 'Ollama',
   provider_desc_ollama: 'Local models, no API key required. Make sure the local server is running',
   Plugins: 'Plugins',
