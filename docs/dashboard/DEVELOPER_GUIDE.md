@@ -83,7 +83,7 @@ python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 
 命令会重建目标目录的同名数据库，只用于独立示例目录。该生成器包含合成零售与 Apple 财务摘录。[Walmart](demos/walmart.md)和 [Apple](demos/apple.md)分别说明来源、字段和核验步骤。
 
-`data/dashboard_reference_sources/manifest.json` 的 database 字段以仓库根为基准使用相对路径。安装脚本注册数据源时仍向服务端传入本机解析后的绝对路径，不能把 manifest 的相对路径直接当作远端服务器路径。参考源安装脚本会下载及注册数据，需要连接运行中的后端。
+`data/dashboard_reference_sources/manifest.json` 的 database 字段以仓库根为基准指向默认生成目录。参考库按需生成，默认不连接后端；用 `--register --api-base` 才会显式注册，并传入后端可访问的绝对路径。下载哈希、离线缓存及运行方式见 [脚本说明](../../scripts/dashboard/README.md)。
 
 ## 合同与迁移维护
 

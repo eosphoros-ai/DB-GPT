@@ -37,7 +37,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
   const [ques_type, setQuesType] = useState('');
   const [score, setScore] = useState(4);
   const [text, setText] = useState('');
-  const action = useRef(null);
+  const action = useRef<{ focusVisible: () => void }>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
   const handleOpenChange = useCallback(
@@ -176,7 +176,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   {select_param &&
                     Object.keys(select_param)?.map(paramItem => (
                       <Option key={paramItem} value={paramItem}>
-                        {select_param[paramItem]}
+                        {select_param[paramItem as keyof FeedBack]}
                       </Option>
                     ))}
                 </Select>

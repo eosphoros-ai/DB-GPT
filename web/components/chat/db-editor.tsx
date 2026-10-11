@@ -160,7 +160,7 @@ function DbEditor() {
   const [editorValue, setEditorValue] = useState<EditorValueProps | EditorValueProps[]>();
   const [newEditorValue, setNewEditorValue] = useState<EditorValueProps>();
   const latestSqlRef = useRef<string | undefined>(undefined);
-  const [tableData, setTableData] = useState<{ columns: string[]; values: (string | number)[] }>();
+  const [tableData, setTableData] = useState<ITableData>();
   const [currentTabIndex, setCurrentTabIndex] = useState<number>();
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
   const [layout, setLayout] = useState<'TB' | 'LR'>('TB');

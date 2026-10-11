@@ -31,6 +31,7 @@ interface VerifiedTemplate {
   revision: number;
   evidence: string;
   preview?: string;
+  previewKind?: 'layout';
   previewData?: TemplatePreviewData;
 }
 interface VerifiedMode {
@@ -54,7 +55,7 @@ export const AVAILABLE_CATALOG = CATALOG_CANDIDATES.filter(
         proof.source &&
         proof.dashboardId &&
         proof.evidence &&
-        (proof.preview || proof.previewData),
+        (proof.preview || proof.previewData || proof.previewKind === 'layout'),
     ),
 );
 export const TEMPLATE_GALLERY_ENABLED = AVAILABLE_CATALOG.length >= 2;

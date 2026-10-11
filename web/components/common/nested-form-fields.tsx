@@ -24,7 +24,7 @@ const NestedFormFields: React.FC<NestedFormFieldsProps> = ({ parentName, fields,
     const typeFields = fields[value] || [];
 
     // Create an object containing default values for all fields
-    const defaultValues = {
+    const defaultValues: Record<string, string | number | boolean> = {
       type: value,
     };
 

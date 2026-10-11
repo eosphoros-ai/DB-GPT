@@ -459,7 +459,7 @@ const markdownComponents = {
   ...extraComponents,
 };
 
-export const markdownPlugins = {
+export const markdownPlugins: Pick<Parameters<typeof GPTVis>[0], 'remarkPlugins' | 'rehypePlugins'> = {
   remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: true }]],
   rehypePlugins: [rehypeRaw, [rehypeKatex, { output: 'htmlAndMathml' }]],
 };

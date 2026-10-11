@@ -419,7 +419,7 @@ export const postDbgptsHubUpdate = (data?: PostAgentHubUpdateParams) => {
   );
 };
 export const postAgentMy = (user?: string) => {
-  return POST<undefined, PostAgentMyPluginResponse>('/api/v1/agent/my', undefined, { params: { user } });
+  return POST<undefined, PostAgentMyPluginResponse['items']>('/api/v1/agent/my', undefined, { params: { user } });
 };
 export const postDbgptsMy = (data?: PostDbgptMyQueryParams) => {
   return POST<PostDbgptMyQueryParams, PostAgentMyPluginResponse>(
@@ -526,7 +526,7 @@ export const getSupportDBList = (db_name = '') => {
 };
 
 export const recommendApps = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('/api/v1/app/hot/list', data);
+  return POST<Record<string, string>, IApp[]>('/api/v1/app/hot/list', data);
 };
 export const flowSearch = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/serve/awel/flows', data);

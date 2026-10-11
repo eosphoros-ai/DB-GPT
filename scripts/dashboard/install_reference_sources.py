@@ -1,22 +1,24 @@
-"""Import attributed UCI reference data into new, isolated SQLite sources.
+"""Generate attributed UCI reference data in isolated SQLite files.
 
 Only creates attributed SQLite sources; existing data is never replaced. Raw downloads
-and a SHA-256 manifest make the transformations reproducible.
+and a SHA-256 manifest make the transformations reproducible. Backend registration
+requires --register and --api-base.
 """
 
+import argparse
 import csv
 import hashlib
 import io
 import json
 import sqlite3
 import zipfile
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
 import requests
 
 ROOT = Path(__file__).resolve().parents[2]
-DEST = ROOT / "data" / "dashboard_reference_sources"
 SOURCES = {
     "itsm": (
         498,
@@ -186,98 +188,191 @@ def derive(key, blob):
     )
 
 
-def main():
-    DEST.mkdir(parents=True, exist_ok=True)
-    session = requests.Session()
-    session.headers["User-Id"] = "001"
-    existing = {
-        r["db_name"]
-        for r in session.get(
-            "http://127.0.0.1:5671/api/v2/serve/datasources", timeout=30
-        ).json()["data"]
+def write_database(database, rows, metadata):
+    fields = list(rows[0])
+    numeric = {
+        "value",
+        "aux",
+        "sla_true",
+        "reopen",
+        "closed",
+        "temperature",
+        "wear",
+        "rpm",
+        "first_grade",
+        "second_grade",
+        "pass_score",
     }
-    manifest = []
-    for key, (number, slug, citation) in SOURCES.items():
-        raw = DEST / f"{key}.zip"
-        url = f"https://archive.ics.uci.edu/static/public/{number}/{slug}.zip"
+    expected = [tuple(row.values()) for row in rows]
+    if database.exists():
+        with closing(
+            sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
+        ) as connection:
+            actual = connection.execute("SELECT * FROM facts ORDER BY rowid").fetchall()
+            source = connection.execute("SELECT * FROM source_metadata").fetchall()
+        if actual != expected or source != [metadata]:
+            raise ValueError(
+                f"Existing database differs; preserved without changes: {database}"
+            )
+        return
+    # Exclusive creation protects an existing user's database from replacement.
+    with database.open("xb"):
+        pass
+    try:
+        with closing(sqlite3.connect(database)) as connection, connection:
+            connection.execute(
+                "CREATE TABLE facts ("
+                + ",".join(
+                    f'"{field}" ' + ("REAL" if field in numeric else "TEXT")
+                    for field in fields
+                )
+                + ")"
+            )
+            connection.executemany(
+                "INSERT INTO facts VALUES (" + ",".join("?" for _ in fields) + ")",
+                expected,
+            )
+            connection.execute("CREATE UNIQUE INDEX fact_entity ON facts(entity)")
+            connection.execute(
+                "CREATE TABLE source_metadata "
+                "(url TEXT, citation TEXT, license TEXT, notes TEXT)"
+            )
+            connection.execute("INSERT INTO source_metadata VALUES (?,?,?,?)", metadata)
+    except Exception:
+        database.unlink()
+        raise
+
+
+def generate_sources(output, cache_dir, *, offline=False, source_keys=None):
+    """Generate and verify data without contacting a DB-GPT backend."""
+    expected = {
+        item["name"].removeprefix("sqlite_"): item
+        for item in json.loads(
+            (ROOT / "data/dashboard_reference_sources/manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+    }
+    output = Path(output).resolve()
+    cache_dir = Path(cache_dir).resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    generated = []
+    for key in source_keys or SOURCES:
+        spec = expected[key]
+        raw = cache_dir / f"{key}.zip"
+        if raw.exists():
+            blob = raw.read_bytes()
+        else:
+            if offline:
+                raise FileNotFoundError(f"Offline source archive missing: {raw}")
+            response = requests.get(spec["download"], timeout=120)
+            response.raise_for_status()
+            blob = response.content
+        digest = hashlib.sha256(blob).hexdigest()
+        if digest != spec["sha256"]:
+            raise ValueError(f"SHA-256 mismatch for {key}; no database generated")
         if not raw.exists():
-            response = session.get(url, timeout=120)
-            response.raise_for_status()
-            raw.write_bytes(response.content)
-        blob = raw.read_bytes()
+            with raw.open("xb") as stream:
+                stream.write(blob)
         rows, source_rows, notes = derive(key, blob)
-        database = DEST / f"{key}.sqlite"
-        if not database.exists():
-            with sqlite3.connect(database) as connection:
-                fields = list(rows[0])
-                numeric = {
-                    "value",
-                    "aux",
-                    "sla_true",
-                    "reopen",
-                    "closed",
-                    "temperature",
-                    "wear",
-                    "rpm",
-                    "first_grade",
-                    "second_grade",
-                    "pass_score",
-                }
-                connection.execute(
-                    "CREATE TABLE facts ("
-                    + ",".join(
-                        f'"{field}" ' + ("REAL" if field in numeric else "TEXT")
-                        for field in fields
-                    )
-                    + ")"
-                )
-                connection.executemany(
-                    "INSERT INTO facts VALUES (" + ",".join("?" for _ in fields) + ")",
-                    [tuple(r.values()) for r in rows],
-                )
-                connection.execute("CREATE UNIQUE INDEX fact_entity ON facts(entity)")
-                connection.execute(
-                    (
-                        "CREATE TABLE source_metadata (url TEXT, citation TEXT,"
-                        " license TEXT, notes TEXT)"
-                    )
-                )
-                connection.execute(
-                    "INSERT INTO source_metadata VALUES (?,?,?,?)",
-                    (url, citation, "CC BY 4.0", notes),
-                )
-        name = f"sqlite_{key}"
-        if name not in existing:
-            response = session.post(
-                "http://127.0.0.1:5671/api/v2/serve/datasources",
-                json={
-                    "type": "sqlite",
-                    "params": {"path": str(database)},
-                    "description": notes + " " + citation + " CC BY 4.0",
-                },
-                timeout=90,
-            )
-            response.raise_for_status()
-            assert response.json()["success"], response.json()
-            assert response.json()["data"]["db_name"] == name, (
-                "Unexpected source identifier"
-            )
-        item = dict(
-            name=name,
-            download=url,
-            citation=citation,
-            license="CC BY 4.0",
-            sha256=hashlib.sha256(blob).hexdigest(),
-            source_rows=source_rows,
-            rows=len(rows),
-            notes=notes,
-            database=database.relative_to(ROOT).as_posix(),
+        if source_rows != spec["source_rows"] or len(rows) != spec["rows"]:
+            raise ValueError(f"Unexpected source or derived row count for {key}")
+        database = output / f"{key}.sqlite"
+        write_database(
+            database, rows, (spec["download"], spec["citation"], spec["license"], notes)
         )
-        manifest.append(item)
-        (DEST / "manifest.json").write_text(
-            json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+        generated.append(
+            {
+                **spec,
+                "database": database.name,
+                "database_sha256": hashlib.sha256(database.read_bytes()).hexdigest(),
+            }
         )
-        print(name, source_rows, "->", len(rows), flush=True)
+        print(
+            f"{key}: {source_rows} -> {len(rows)} rows; checksum verified", flush=True
+        )
+    manifest = output / "manifest.json"
+    manifest.write_text(
+        json.dumps(generated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    return generated
+
+
+def register_sources(manifest, output, api_base, user_id=None):
+    """Register only when explicitly requested against the caller's chosen server."""
+    session = requests.Session()
+    if user_id:
+        session.headers["User-Id"] = user_id
+    endpoint = api_base.rstrip("/") + "/api/v2/serve/datasources"
+    response = session.get(endpoint, timeout=30)
+    response.raise_for_status()
+    body = response.json()
+    if not body.get("success"):
+        raise RuntimeError(body.get("err_msg") or "Cannot list data sources")
+    existing = {record["db_name"] for record in body["data"]}
+    for item in manifest:
+        if item["name"] in existing:
+            print(f"{item['name']}: already registered; left unchanged")
+            continue
+        database = (Path(output) / item["database"]).resolve()
+        response = session.post(
+            endpoint,
+            json={
+                "type": "sqlite",
+                "params": {"path": str(database)},
+                "description": f"{item['notes']} {item['citation']} {item['license']}",
+            },
+            timeout=90,
+        )
+        response.raise_for_status()
+        result = response.json()
+        if not result.get("success") or result["data"]["db_name"] != item["name"]:
+            raise RuntimeError(result.get("err_msg") or "Unexpected source identifier")
+        print(f"{item['name']}: registered")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--output", type=Path, default=ROOT / "output/dashboard-reference-sources"
+    )
+    parser.add_argument(
+        "--cache-dir", type=Path, help="Directory of the four pinned UCI ZIP archives"
+    )
+    parser.add_argument(
+        "--offline", action="store_true", help="Use verified cached archives only"
+    )
+    parser.add_argument(
+        "--sources", nargs="+", choices=list(SOURCES), help="Generate a subset"
+    )
+    parser.add_argument(
+        "--register",
+        action="store_true",
+        help="Explicitly register generated files with DB-GPT",
+    )
+    parser.add_argument(
+        "--api-base",
+        help="DB-GPT origin; required with --register; "
+        "server must access the output path",
+    )
+    parser.add_argument(
+        "--user-id", help="Optional User-Id header for explicit registration"
+    )
+    args = parser.parse_args()
+    if args.register and not args.api_base:
+        parser.error("--register requires --api-base")
+    if not args.register and (args.api_base or args.user_id):
+        parser.error("--api-base and --user-id require --register")
+    output = args.output.resolve()
+    manifest = generate_sources(
+        output,
+        args.cache_dir or output / "raw",
+        offline=args.offline,
+        source_keys=args.sources,
+    )
+    if args.register:
+        register_sources(manifest, output, args.api_base, args.user_id)
 
 
 if __name__ == "__main__":

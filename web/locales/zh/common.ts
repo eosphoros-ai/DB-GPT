@@ -76,9 +76,9 @@ export const CommonZh: Resources['translation'] = {
   Automatic: '自动切片',
   Process: '切片处理',
   Automatic_desc: '自动设置分割和预处理规则。',
-  chunk_size: '块大小',
+  chunk_size: '分片大小',
   The_size_of_the_data_chunks: '处理中使用的数据块的大小',
-  chunk_overlap: '块重叠',
+  chunk_overlap: '分片重叠',
   retrieve_mode: '检索策略',
   The_amount_of_overlap: '相邻数据块之间的重叠量',
   The_strategy_of_query_retrival: '召回的检索策略',
@@ -881,7 +881,6 @@ export const CommonZh: Resources['translation'] = {
   // ── Create Knowledge Unified Form ──
   create_and_sync: '创建并同步',
   create_and_upload: '创建并上传',
-  create_failed: '创建失败',
   upload_failed: '上传失败',
   upload_sync_failed: '上传成功但同步失败',
   upload_sync_completed: '创建并同步成功',
@@ -910,8 +909,6 @@ export const CommonZh: Resources['translation'] = {
   index_knowledge_graph: '图索引',
   index_knowledge_graph_desc: '知识图谱',
   chunk_strategy: '分片策略',
-  chunk_size: '分片大小',
-  chunk_overlap: '分片重叠',
   // ── Data Source Card Descriptions ──
   ds_document_desc: '上传 PDF、Word、Excel、PPT、Markdown 等文档',
   ds_git_repo_desc: '克隆并索引 Git 仓库，代码按 AST 切分，文档按标题切分',

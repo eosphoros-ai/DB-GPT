@@ -17,14 +17,14 @@ import { CodePreview } from './code-preview';
  * @param {string} props.code SVG code content
  * @param {string} props.language Code language, default is svg
  */
-const SvgPreview = ({ code, language = 'svg' }) => {
+const SvgPreview = ({ code, language = 'svg' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [zoom, setZoom] = useState(100);
   const { t } = useTranslation();
 
   // Clean up SVG code (remove XML declaration, etc.)
-  const cleanSvgCode = svgCode => {
+  const cleanSvgCode = (svgCode: string) => {
     // Remove XML declaration
     let cleaned = svgCode.replace(/<\?xml[^>]*\?>/g, '');
 
@@ -160,7 +160,7 @@ const SvgPreview = ({ code, language = 'svg' }) => {
   };
 
   // Control zoom
-  const handleZoomChange = value => {
+  const handleZoomChange = (value: number) => {
     setZoom(value);
   };
 

@@ -91,6 +91,13 @@
       "source_sha256": "5d1451f23c90e5d4fab12f0d1374dca0fbb11a9db4ae8a1965294a285b9c3bc6",
       "sha256": "d2fdd804cb8c3f9360d12d8d49a28a0cdb3f2dbd9ef2e30686b0a282905afe53",
       "transform": "Keep only the first question.asked questions array; replace the author's absolute snapshot path with a display-only fixture path; omit model logs and execution context."
+    },
+    {
+      "path": "northwind/cover.png",
+      "source": "web/public/dashboard-templates/v94/northwind-customers.png",
+      "source_sha256": "1c749666605061f7a4ed5f2f440181a598a36c5d41748f9b4b21587a834d2027",
+      "sha256": "1c749666605061f7a4ed5f2f440181a598a36c5d41748f9b4b21587a834d2027",
+      "transform": "Relocated byte for byte from public assets; kept only as a browser-test input."
     }
   ]
 }

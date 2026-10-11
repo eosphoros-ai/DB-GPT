@@ -45,7 +45,6 @@ python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 | 资产资金来源 | 取所选财年，负债与权益合计等于资产。 |
 | 财务明细 | 显示截至所选财年的原始数值。 |
 
-![历史 Apple 固定 Schema 案例](../assets/apple-current.png)
 
 截图来自 2026-09-26 保留的开发实例，是既有固定 Schema 资产；不计为新的模型生成结果或拆分候选的浏览器验收。KPI 的 M 表示百万美元，图表轴缩放不能改变原始金额单位。
 
@@ -69,7 +68,6 @@ python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 
 真实模型流程已完成生成、编辑保存、返回来源对话和匿名发布；首次内容复核发现四个 KPI 错映射为财年，系列也有语义错误。按本文已核验的五组件定义人工修订后重新发布。页面 FY2024 → FY2022 的收入为 391,035 → 394,328；实际匿名 API 仅选 iPhone 为 201,183，总收入仍为 391,035。独立 20 组查询/冻结筛选复算通过。金额为百万美元。此记录包含人工修订，不是模型一次成功。
 
-![人工复核后实际匿名分享页](../assets/apple-reviewed-20260927.png)
 
 截图来自 2026-09-27 的隔离实例；当前候选验证见 [PR 验证记录](https://github.com/eosphoros-ai/DB-GPT/pull/3278)。
 

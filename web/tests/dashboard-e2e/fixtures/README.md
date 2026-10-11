@@ -14,6 +14,10 @@ directory to load these tests.
 | tools | Three tool failure event shapes |
 | questions | Original case 04 and 07 question arrays |
 
+`northwind/cover.png` is the template workspace's static image fixture, moved from
+`web/public/dashboard-templates/v94/northwind-customers.png`. It is loaded only by
+the browser test and is no longer shipped in the frontend's public assets.
+
 [manifest.json](manifest.json) records each input's original archive path, source
 SHA-256, current SHA-256 and extraction/sanitization step. Archive paths are
 provenance, not files needed at runtime. Owner, conversation, turn and host metadata

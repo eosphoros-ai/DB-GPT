@@ -11,6 +11,7 @@ import { AVAILABLE_CATALOG, catalogProof, type CatalogTemplate } from './dashboa
 import DashboardDesignTemplate from './DashboardDesignTemplate';
 import styles from './DashboardGallery.module.css';
 import DashboardTemplateCarousel from './DashboardTemplateCarousel';
+import DashboardTemplateLayoutPreview from './DashboardTemplateLayoutPreview';
 import DashboardTemplateSetup from './DashboardTemplateSetup';
 import { useTemplateFavorites } from './use-template-favorites';
 
@@ -130,7 +131,9 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
     return (
       <article key={item.id} className={styles.card} data-catalog-template={item.id}>
         <button type='button' className={styles.cover} aria-label={`预览模板 ${item.title}`} onClick={() => open(item)}>
-          {proof?.preview ? (
+          {proof?.previewKind === 'layout' ? (
+            <DashboardTemplateLayoutPreview template={item} />
+          ) : proof?.preview ? (
             <Image src={proof.preview} alt={`${item.title}实际生成预览`} width={640} height={400} />
           ) : (
             <div className={styles.assetCover}>

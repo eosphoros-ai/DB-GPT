@@ -8,9 +8,7 @@ const saved = readDashboardFixture('northwind/record.json');
 const snapshot = readDashboardFixture('northwind/snapshot.json');
 const image =
   'data:image/png;base64,' +
-  readFileSync(path.resolve(process.cwd(), 'public/dashboard-templates/v94/northwind-customers.png')).toString(
-    'base64',
-  );
+  readFileSync(path.resolve(process.cwd(), 'tests/dashboard-e2e/fixtures/northwind/cover.png')).toString('base64');
 const roles = [
   { id: 'date', label: '业务日期', column: 'purchased_on' },
   { id: 'segment', label: '筛选维度', column: 'country' },

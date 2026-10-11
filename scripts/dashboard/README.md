@@ -1,5 +1,28 @@
 # Dashboard 检查脚本
 
+## 按需生成参考数据库
+
+四个 UCI 参考库不随仓库分发。以下命令校验固定下载哈希和记录数，
+在忽略目录 `output/dashboard-reference-sources/` 生成 SQLite 文件及清单：
+
+```sh
+python scripts/dashboard/install_reference_sources.py
+```
+
+重复执行会核对已有数据库；数据不符时停止并保留原文件。下载缓存位于输出目录的
+`raw/` 子目录；可用 `--cache-dir <目录> --offline` 仅使用已缓存、哈希一致的 ZIP。
+`--sources energy students` 可以只生成所需数据源。
+
+默认只生成文件。如需注册到自己的 DB-GPT 服务，显式指定：
+
+```sh
+python scripts/dashboard/install_reference_sources.py --register --api-base http://127.0.0.1:5670
+```
+
+后端必须能访问生成文件的绝对路径；已有同名数据源不会被覆盖。可用 `--output`
+选择共享目录，或在数据源页面手动添加文件。来源、许可证、原始哈希和转换说明见
+`data/dashboard_reference_sources/manifest.json`。图库卡片为布局示意，查询预览使用所选数据源。
+
 当前安装、迁移与测试入口见 [开发指南](../../docs/dashboard/DEVELOPER_GUIDE.md)，已执行结果及跳过原因见 [PR 验证记录](https://github.com/eosphoros-ai/DB-GPT/pull/3278)。
 
 ## 生产浏览器回归
