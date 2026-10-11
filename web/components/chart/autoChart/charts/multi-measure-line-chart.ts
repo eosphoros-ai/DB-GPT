@@ -10,7 +10,7 @@ const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConf
     const field4Nominal = findNominalField(dataProps) ?? findOrdinalField(dataProps) ?? dataProps[0];
 
     const field4Y = dataProps?.filter(
-      field => field.name !== field4Nominal?.name && hasSubset(field.levelOfMeasurements, ['Interval']),
+      field => field.name !== field4Nominal?.name && hasSubset(field.levelOfMeasurements ?? [], ['Interval']),
     );
     if (!field4Nominal || !field4Y) return null;
 

@@ -189,7 +189,6 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                         <div>{t('feed_back_desc')}</div>
                       </Box>
                     }
-                    variant='solid'
                     placement='left'
                   >
                     {t('Q_A_Rating')}
@@ -206,7 +205,10 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   valueLabelDisplay='on'
                   marks={marks}
                   sx={{ width: '90%', pt: 3, m: 2, ml: 1 }}
-                  onChange={event => setScore(event.target?.value)}
+                  onChange={
+                    // @ts-expect-error MUI useSlider clones target with the numeric value, which EventTarget does not declare.
+                    event => setScore(event.target?.value)
+                  }
                   value={score}
                 />
               </Grid>

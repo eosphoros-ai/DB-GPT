@@ -63,6 +63,7 @@ function ChatDefault() {
         if (activeKey === 'recommend') {
           return setApps({
             app_list: data,
+            // @ts-expect-error The recommend endpoint returns an array, but useRequest combines it with the paged response type.
             total_count: data?.length || 0,
           });
         }

@@ -63,6 +63,7 @@ function Default() {
         if (activeKey === 'recommend') {
           return setApps({
             app_list: data,
+            // @ts-expect-error The recommend endpoint returns an array, but useRequest combines it with the paged response type.
             total_count: data?.length || 0,
           });
         }
@@ -137,7 +138,12 @@ function Default() {
               <span>发现更多</span>
             </span>
           </div>
-          <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
+          <TabContent
+            apps={apps?.app_list || []}
+            loading={loading}
+            refresh={refresh}
+            type={activeKey === 'used' ? 'used' : 'recommend'}
+          />
           {helps && helps.length > 0 && (
             <div>
               <h2 className='font-medium text-xl my-4'>我可以帮您：</h2>
