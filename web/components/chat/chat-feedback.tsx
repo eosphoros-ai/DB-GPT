@@ -37,7 +37,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
   const [ques_type, setQuesType] = useState('');
   const [score, setScore] = useState(4);
   const [text, setText] = useState('');
-  const action = useRef(null);
+  const action = useRef<{ focusVisible: () => void }>(null);
   const [messageApi, contextHolder] = message.useMessage();
 
   const handleOpenChange = useCallback(
@@ -176,7 +176,7 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   {select_param &&
                     Object.keys(select_param)?.map(paramItem => (
                       <Option key={paramItem} value={paramItem}>
-                        {select_param[paramItem]}
+                        {select_param[paramItem as keyof FeedBack]}
                       </Option>
                     ))}
                 </Select>
@@ -189,7 +189,6 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                         <div>{t('feed_back_desc')}</div>
                       </Box>
                     }
-                    variant='solid'
                     placement='left'
                   >
                     {t('Q_A_Rating')}
@@ -206,7 +205,10 @@ const ChatFeedback = ({ conv_index, question, knowledge_space, select_param }: P
                   valueLabelDisplay='on'
                   marks={marks}
                   sx={{ width: '90%', pt: 3, m: 2, ml: 1 }}
-                  onChange={event => setScore(event.target?.value)}
+                  onChange={
+                    // @ts-expect-error MUI useSlider clones target with the numeric value, which EventTarget does not declare.
+                    event => setScore(event.target?.value)
+                  }
                   value={score}
                 />
               </Grid>

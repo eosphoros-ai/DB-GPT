@@ -25,9 +25,9 @@ else
 fi
 
 
-yarn install
+npm ci
 rm -rf ../web/out/
-yarn compile
+npm run compile
 
 rm -rf $TARGET_DIR \
   && mkdir -p $TARGET_DIR \

@@ -49,7 +49,7 @@ const ResourcesCardV2: React.FC<{
   const [hoverKey, setHoverKey] = useState<string>('');
 
   // Delete resource
-  const remove = (e: React.MouseEvent, item: ResourceTabProps) => {
+  const remove = (e: React.MouseEvent | undefined, item: ResourceTabProps) => {
     e?.stopPropagation();
     const findActiveIndex = resourcesTabs.findIndex(i => i.uid === activeKey);
     const filteredResources = resourcesTabs?.filter(i => i.uid !== item.uid);

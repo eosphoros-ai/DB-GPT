@@ -6,7 +6,11 @@ import { Input } from 'antd';
 const getIconComponent = (iconString: string) => {
   const match = iconString.match(/^icon:(\w+)$/);
   if (match) {
-    const iconName = match[1] as keyof typeof Icons;
+    if (!/(Outlined|Filled|TwoTone)$/.test(match[1])) return null;
+    const iconName = match[1] as Extract<
+      keyof typeof Icons,
+      `${string}Outlined` | `${string}Filled` | `${string}TwoTone`
+    >;
     const IconComponent = Icons[iconName];
     return IconComponent ? <IconComponent /> : null;
   }

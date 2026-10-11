@@ -254,18 +254,14 @@ const codeComponents = {
 const basicComponents: MarkdownComponent = {
   ...codeComponents,
   ul({ children }) {
-    return <ul className='py-1'>{children}</ul>;
+    return <ul className='py-1 [&>li]:list-disc'>{children}</ul>;
   },
   ol({ children }) {
-    return <ol className='py-1'>{children}</ol>;
+    return <ol className='py-1 [&>li]:list-decimal'>{children}</ol>;
   },
-  li({ children, ordered }) {
+  li({ children }) {
     return (
-      <li
-        className={`text-sm leading-7 ml-5 pl-2 text-gray-600 dark:text-gray-300 ${
-          ordered ? 'list-decimal' : 'list-disc'
-        }`}
-      >
+      <li className='text-sm leading-7 ml-5 pl-2 text-gray-600 dark:text-gray-300'>
         {children}
       </li>
     );
@@ -459,7 +455,7 @@ const markdownComponents = {
   ...extraComponents,
 };
 
-export const markdownPlugins = {
+export const markdownPlugins: Pick<Parameters<typeof GPTVis>[0], 'remarkPlugins' | 'rehypePlugins'> = {
   remarkPlugins: [remarkGfm, [remarkMath, { singleDollarTextMath: true }]],
   rehypePlugins: [rehypeRaw, [rehypeKatex, { output: 'htmlAndMathml' }]],
 };

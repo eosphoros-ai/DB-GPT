@@ -318,7 +318,7 @@ const Evaluation = () => {
               const response = await downloadDataSet({
                 code: record?.code,
               });
-              const contentType = response.headers['content-type'];
+              const contentType = String(response.headers['content-type'] ?? '');
               if (contentType.includes('application/json')) {
                 // 如果是 JSON，解析错误信息
                 const reader = new FileReader();
@@ -462,7 +462,7 @@ const Evaluation = () => {
               const response = await downloadEvaluation({
                 evaluate_code: record?.evaluate_code,
               });
-              const contentType = response.headers['content-type'];
+              const contentType = String(response.headers['content-type'] ?? '');
 
               if (contentType.includes('application/json')) {
                 // 如果是 JSON，解析错误信息

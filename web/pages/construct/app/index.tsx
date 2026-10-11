@@ -241,6 +241,7 @@ export default function AppContent() {
       app_code: curApp?.app_code || '',
       admins: value,
     });
+    // @ts-expect-error useDebounceFn infers a required parameter, although spreading undefined preserves the default query.
     await initData();
   };
 

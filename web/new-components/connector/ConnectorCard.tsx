@@ -278,7 +278,7 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
 
             {/* Metadata row — category · transport · count (compact, like ref image) */}
             <div className='flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 leading-none'>
-              <span>{t(`connector.category.${category}`, category)}</span>
+              <span>{t(`connector.category.${category}`, category) as string}</span>
               <span className='text-gray-300 dark:text-gray-600'>·</span>
               <span>MCP / SSE</span>
               {isTemplate && (props.instanceCount ?? 0) > 0 && (

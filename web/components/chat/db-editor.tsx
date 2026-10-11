@@ -72,11 +72,11 @@ function DbEditorContent({ layout = 'LR', editorValue, liveSql, chartData, table
   }, [chartData]);
 
   const { columns, dataSource } = useMemo<{
-    columns: ColumnType<any>[];
+    columns: (ColumnType<any> & { key: string })[];
     dataSource: Record<string, string | number>[];
   }>(() => {
     const { columns: cols = [], values: vals = [] } = tableData ?? {};
-    const tbCols = cols.map<ColumnType<any>>(item => ({
+    const tbCols = cols.map<ColumnType<any> & { key: string }>(item => ({
       key: item,
       dataIndex: item,
       title: item,
@@ -160,7 +160,7 @@ function DbEditor() {
   const [editorValue, setEditorValue] = useState<EditorValueProps | EditorValueProps[]>();
   const [newEditorValue, setNewEditorValue] = useState<EditorValueProps>();
   const latestSqlRef = useRef<string | undefined>(undefined);
-  const [tableData, setTableData] = useState<{ columns: string[]; values: (string | number)[] }>();
+  const [tableData, setTableData] = useState<ITableData>();
   const [currentTabIndex, setCurrentTabIndex] = useState<number>();
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
   const [layout, setLayout] = useState<'TB' | 'LR'>('TB');
@@ -293,7 +293,9 @@ function DbEditor() {
         conv_uid: id,
         db_name,
         conv_round: currentRound,
+        // @ts-expect-error SQL-mode responses are objects; the shared editor state also includes chart-mode arrays.
         old_sql: editorValue?.sql,
+        // @ts-expect-error SQL-mode responses are objects; the shared editor state also includes chart-mode arrays.
         old_speak: editorValue?.thoughts,
         new_sql: newEditorValue?.sql,
         new_speak: newEditorValue?.thoughts?.match(/^\n--(.*)\n\n$/)?.[1]?.trim() || newEditorValue?.thoughts,
@@ -320,6 +322,7 @@ function DbEditor() {
         conv_uid: id,
         chart_title: newEditorValue?.title,
         db_name,
+        // @ts-expect-error Chart-mode responses are arrays; the shared editor state also includes SQL-mode objects.
         old_sql: editorValue?.[currentTabIndex ?? 0]?.sql,
         new_chart_type: newEditorValue?.showcase,
         new_sql: newEditorValue?.sql,
@@ -452,8 +455,8 @@ function DbEditor() {
   }, [searchValue, tables]);
 
   const dataList = useMemo(() => {
-    const res: { key: string | number; title: string; parentKey?: string | number }[] = [];
-    const generateList = (data: DataNode[], parentKey?: string | number) => {
+    const res: { key: Key; title: string; parentKey?: Key }[] = [];
+    const generateList = (data: DataNode[], parentKey?: Key) => {
       if (!data || data?.length <= 0) return;
       for (let i = 0; i < data.length; i++) {
         const node = data[i];

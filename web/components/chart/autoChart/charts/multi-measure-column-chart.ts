@@ -5,7 +5,7 @@ import { findNominalField, findOrdinalField } from './util';
 
 const getChartSpec = (data: GetChartConfigProps['data'], dataProps: GetChartConfigProps['dataProps']) => {
   try {
-    const field4Y = dataProps?.filter(field => hasSubset(field.levelOfMeasurements, ['Interval']));
+    const field4Y = dataProps?.filter(field => hasSubset(field.levelOfMeasurements ?? [], ['Interval']));
     const nominalField = findNominalField(dataProps);
     const ordinalField = findOrdinalField(dataProps);
     const field4X = nominalField ?? ordinalField;

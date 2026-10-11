@@ -15,11 +15,28 @@ import { CodePreview } from './code-preview';
  * @param {string} props.code HTML code content
  * @param {string} props.language Code language, default is html
  */
-const HtmlPreview = ({ code, language = 'html' }) => {
+declare global {
+  interface Document {
+    webkitFullscreenElement?: Element | null;
+    mozFullScreenElement?: Element | null;
+    msFullscreenElement?: Element | null;
+    webkitExitFullscreen?: () => void;
+    msExitFullscreen?: () => void;
+    mozCancelFullScreen?: () => void;
+  }
+}
+
+type FullscreenFrame = HTMLIFrameElement & {
+  webkitRequestFullscreen?: () => void;
+  msRequestFullscreen?: () => void;
+  mozRequestFullScreen?: () => void;
+};
+
+const HtmlPreview = ({ code, language = 'html' }: { code: string; language?: string }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const iframeRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState<false | Element | null | undefined>(false);
+  const iframeRef = useRef<FullscreenFrame>(null);
   const { t } = useTranslation();
   const [parsedCode, setParsedCode] = useState({
     html: '',
@@ -30,7 +47,7 @@ const HtmlPreview = ({ code, language = 'html' }) => {
 
   // Parse the code and extract the HTML, CSS, and JS parts
   useEffect(() => {
-    const parseCode = sourceCode => {
+    const parseCode = (sourceCode: string) => {
       let html = sourceCode;
       let css = '';
       let js = '';

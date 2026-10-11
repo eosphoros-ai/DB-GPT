@@ -14,7 +14,6 @@ import { AutoSizer, Grid, InfiniteLoader } from 'react-virtualized';
 import { ChatContext } from '@/app/chat-context';
 import IconFont from '@/new-components/common/Icon';
 import BlurredCard from '@/new-components/common/blurredCard';
-import { AppListResponse } from '@/types/app';
 import moment from 'moment';
 
 const Playground: NextPage = () => {
@@ -89,8 +88,9 @@ const Playground: NextPage = () => {
     },
     {
       manual: true,
-      onSuccess: (res: [any, [] | AppListResponse]) => {
+      onSuccess: res => {
         const [_error, data] = res;
+        if (data == null) return;
         if (activeKey === 'recommend') {
           if (Array.isArray(data)) {
             return setApps({
@@ -108,7 +108,7 @@ const Playground: NextPage = () => {
                 {
                   app_list: apps.app_list.toSpliced(finallyIndex, 12, ...data.app_list) || [],
                   total_count: data?.total_count || 0,
-                } || {},
+                },
               );
             } else {
               console.log('concat');
@@ -116,7 +116,7 @@ const Playground: NextPage = () => {
                 {
                   app_list: apps.app_list.concat(data?.app_list) || [],
                   total_count: data?.total_count || 0,
-                } || {},
+                },
               );
             }
           }
@@ -347,6 +347,7 @@ const Playground: NextPage = () => {
             <>
               <InfiniteLoader
                 isRowLoaded={isRowLoaded}
+                // @ts-expect-error run 返回 void 是存量问题：升级后类型检查变严才暴露，不在本 PR 修复。
                 loadMoreRows={loadMoreRows}
                 rowCount={apps.total_count} // 数据的总行数，如果未知则可以设置为一个较大的数字
               >

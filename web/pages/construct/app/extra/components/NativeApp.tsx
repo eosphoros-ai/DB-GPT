@@ -56,7 +56,7 @@ const NativeApp: React.FC<{
     form.setFieldValue('max_new_tokens', param_need?.find(param => param.type === 'max_new_tokens')?.value);
     form.setFieldValue('prompt_template', param_need?.find(param => param.type === 'prompt_template')?.value);
     await run(param_need?.find(param => param.type === 'resource')?.value || '');
-    return [types, models] ?? [];
+    return [types, models];
   });
 
   // 获取prompt提示语列表

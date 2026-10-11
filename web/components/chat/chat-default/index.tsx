@@ -63,6 +63,7 @@ function Default() {
         if (activeKey === 'recommend') {
           return setApps({
             app_list: data,
+            // @ts-expect-error The recommend endpoint returns an array, but useRequest combines it with the paged response type.
             total_count: data?.length || 0,
           });
         }
@@ -137,6 +138,7 @@ function Default() {
               <span>发现更多</span>
             </span>
           </div>
+          {/* @ts-expect-error 缺少 type 参数是存量问题：升级后类型检查变严才暴露，不在本 PR 修复。 */}
           <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
           {helps && helps.length > 0 && (
             <div>

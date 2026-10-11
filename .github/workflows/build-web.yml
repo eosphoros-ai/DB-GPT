@@ -39,12 +39,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20.19'
+
+      - name: Pin npm used by the lockfile
+        run: npm install --global npm@10.8.2
 
       - name: Install dependencies
         run: |
-          yarn install
+          npm ci
 
       - name: Build web application
         run: |
-          yarn build
+          npm run build
