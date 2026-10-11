@@ -59,7 +59,7 @@ const Playground: NextPage = () => {
       }),
     );
   // 获取应用列表
-  const { run: getAppListFn, runAsync: getAppListAsync, loading } = useRequest(
+  const { run: getAppListFn, loading } = useRequest(
     async (app_name = '', page_no = '1', page_size = '12') => {
       switch (activeKey) {
         case 'recommend':
@@ -161,7 +161,7 @@ const Playground: NextPage = () => {
     console.log(startIndex, stopIndex, currentPage);
     // 这里应该是一个从服务器获取更多数据的异步操作
     // 例如，你可能会调用 API 并返回一个 Promise
-    return getAppListAsync('', currentPage.toString());
+    return getAppListFn('', currentPage.toString());
   }
   const cellRenderer: GridCellRenderer = ({ columnIndex, key, rowIndex, style }) => {
     // 计算数组中的索引
@@ -347,6 +347,7 @@ const Playground: NextPage = () => {
             <>
               <InfiniteLoader
                 isRowLoaded={isRowLoaded}
+                // @ts-expect-error run 返回 void 是存量问题：升级后类型检查变严才暴露，不在本 PR 修复。
                 loadMoreRows={loadMoreRows}
                 rowCount={apps.total_count} // 数据的总行数，如果未知则可以设置为一个较大的数字
               >

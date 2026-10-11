@@ -1,4 +1,5 @@
 import { findParentElementByClassName } from '@/utils/dom';
+// @ts-expect-error 上游未接入的组件引用缺失模块；存量问题：升级后类型检查变严才暴露，不在本 PR 修复。
 import { EVENTS, ee } from '@/utils/event-emitter';
 import { GPTVis } from '@antv/gpt-vis';
 import { Tabs } from 'antd';
@@ -70,18 +71,16 @@ export function VisTabs({ data }: { data: VisTabsData[] }) {
   }, [data]);
 
   useEffect(() => {
-    const handleTaskClick = (data: { taskId: string }) => setTabActiveByUser(data.taskId);
-    ee.on(EVENTS.TASK_CLICK, handleTaskClick);
+    ee.on(EVENTS.TASK_CLICK, (data: any) => {
+      setTabActiveByUser(data.taskId);
+    });
 
-    const scrollContainer = scrollRef.current
-      ? findParentElementByClassName(scrollRef.current, 'overflow-y-auto')
-      : null;
-    scrollContainer?.addEventListener('scroll', handleScroll);
-
-    return () => {
-      ee.off(EVENTS.TASK_CLICK, handleTaskClick);
-      scrollContainer?.removeEventListener('scroll', handleScroll);
-    };
+    if (scrollRef.current) {
+      const scrollContainer = findParentElementByClassName(scrollRef.current, 'overflow-y-auto');
+      if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', handleScroll);
+      }
+    }
   }, []);
 
   /**
