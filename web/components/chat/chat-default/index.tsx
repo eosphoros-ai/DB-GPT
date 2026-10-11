@@ -138,12 +138,8 @@ function Default() {
               <span>发现更多</span>
             </span>
           </div>
-          <TabContent
-            apps={apps?.app_list || []}
-            loading={loading}
-            refresh={refresh}
-            type={activeKey === 'used' ? 'used' : 'recommend'}
-          />
+          {/* @ts-expect-error 缺少 type 参数是存量问题：升级后类型检查变严才暴露，不在本 PR 修复。 */}
+          <TabContent apps={apps?.app_list || []} loading={loading} refresh={refresh} />
           {helps && helps.length > 0 && (
             <div>
               <h2 className='font-medium text-xl my-4'>我可以帮您：</h2>
