@@ -9,7 +9,6 @@ import {
 import BlurredCard, { ChatButton } from '@/new-components/common/blurredCard';
 import ConstructLayout from '@/new-components/layout/Construct';
 import { IAgentPlugin, PostAgentQueryParams } from '@/types/agent';
-import { installedPluginCard } from '@/utils/plugin-card';
 import { ClearOutlined, DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Button, Segmented, SegmentedProps, Spin, Tag, message } from 'antd';
@@ -46,7 +45,7 @@ function Agent() {
       if (activeKey === 'my') {
         const [err, res] = await apiInterceptors(postAgentMy());
         setIsError(!!err);
-        return res?.map(installedPluginCard) ?? [];
+        return res ?? [];
       }
       const queryParams: PostAgentQueryParams = {
         page_index: pagination.pageNo,

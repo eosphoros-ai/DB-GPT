@@ -100,7 +100,7 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit, chat_scene }) => {
       theme={{
         components: {
           Popover: {
-            titleMinWidth: 250,
+            minWidth: 250,
           },
         },
       }}

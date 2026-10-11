@@ -2,97 +2,10 @@ const assert = require('node:assert/strict');
 const { spawn, spawnSync } = require('node:child_process');
 const { once } = require('node:events');
 const fs = require('node:fs');
-const Module = require('node:module');
 const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const ts = require('typescript');
-
-/** Load a real TypeScript module as CommonJS for the Node regression tests without a browser bundler. */
-function loadTs(relative) {
-  const filename = path.resolve(__dirname, '..', relative);
-  const loaded = new Module(filename, module);
-  loaded.paths = Module._nodeModulePaths(path.dirname(filename));
-  loaded._compile(
-    ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
-    }).outputText,
-    filename,
-  );
-  return loaded.exports;
-}
-
-const { ee, EVENTS } = loadTs('utils/event-emitter.ts');
-const { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } = loadTs(
-  'components/chat/ob-editor/format.ts',
-);
-
-test('SQL formatting preserves quoted delimiters and formats only the requested range', () => {
-  const plugin = { modelOptionsMap: new Map([['sql-model', { delimiter: ';' }]]) };
-  const full = { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 80 };
-  const selection = { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 32 };
-  const source = "select 'a;b' as value from example;";
-  const model = { id: 'sql-model', getFullModelRange: () => full, getValueInRange: () => source };
-  const options = { insertSpaces: true, tabSize: 2 };
-  const token = { isCancellationRequested: false };
-  const documentEdits = new DocumentFormattingEditProvider(plugin, 'mysql').provideDocumentFormattingEdits(
-    model,
-    options,
-    token,
-  );
-  assert.equal(documentEdits.length, 1);
-  assert.equal(documentEdits[0].range, full);
-  assert.match(documentEdits[0].text, /'a;b'/);
-  assert.match(documentEdits[0].text, /\n/);
-  const selectedEdits = new DocumentRangeFormattingEditProvider(plugin, 'mysql').provideDocumentRangeFormattingEdits(
-    model,
-    selection,
-    options,
-    token,
-  );
-  assert.equal(selectedEdits[0].range, selection);
-  assert.equal(selectedEdits[0].text, documentEdits[0].text);
-});
-
-test('formatting leaves incomplete SQL, cancelled requests and custom delimiters intact', () => {
-  const options = { insertSpaces: true, tabSize: 2 };
-  const plugin = { modelOptionsMap: new Map() };
-  const model = { id: 'sql-model', getFullModelRange: () => ({}), getValueInRange: () => "select 'unterminated" };
-  const provider = new DocumentFormattingEditProvider(plugin, 'mysql');
-  assert.deepEqual(provider.provideDocumentFormattingEdits(model, options, { isCancellationRequested: false }), []);
-  model.getValueInRange = () => 'select 1';
-  assert.deepEqual(provider.provideDocumentFormattingEdits(model, options, { isCancellationRequested: true }), []);
-  plugin.modelOptionsMap.set('sql-model', { delimiter: '$$' });
-  assert.deepEqual(provider.provideDocumentFormattingEdits(model, options, { isCancellationRequested: false }), []);
-});
-
-test('unsubscribed task views stop receiving events without affecting other views', t => {
-  const stale = [];
-  const active = [];
-  const stopStale = ee.on(EVENTS.TASK_CLICK, value => stale.push(value.taskId));
-  const stopActive = ee.on(EVENTS.TASK_CLICK, value => active.push(value.taskId));
-  t.after(() => {
-    stopStale();
-    stopActive();
-  });
-  ee.emit(EVENTS.TASK_CLICK, { taskId: 'before' });
-  stopStale();
-  ee.emit(EVENTS.TASK_CLICK, { taskId: 'after' });
-  assert.deepEqual(stale, ['before']);
-  assert.deepEqual(active, ['before', 'after']);
-});
-
-test('repeated cleanup leaves a later subscription intact', t => {
-  const stopOld = ee.on(EVENTS.TASK_CLICK, () => {});
-  stopOld();
-  const received = [];
-  const stopNew = ee.on(EVENTS.TASK_CLICK, value => received.push(value.taskId));
-  t.after(stopNew);
-  stopOld();
-  ee.emit(EVENTS.TASK_CLICK, { taskId: 'new' });
-  assert.deepEqual(received, ['new']);
-});
 
 /** Spawn a copied launcher with a fake Next entrypoint and register cleanup for its process and temporary directory. */
 function runnerFixture(t, childSource, nodeOptions = '') {

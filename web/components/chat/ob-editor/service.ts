@@ -2,7 +2,7 @@ import type { IModelOptions } from '@oceanbase-odc/monaco-plugin-ob/dist/type';
 import { ISession } from '../monaco-editor';
 
 export function getModelService(
-  { delimiter }: { modelId: string; delimiter: string },
+  { _modelId, delimiter }: { _modelId: string; delimiter: string },
   session?: () => ISession | null,
 ): IModelOptions {
   return {

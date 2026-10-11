@@ -1,6 +1,5 @@
 import { GPTVis } from '@antv/gpt-vis';
-import CheckOutlined from '@mui/icons-material/CheckOutlined';
-import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import { CheckOutlined, CloseOutlined } from '@mui/icons-material';
 import classNames from 'classnames';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

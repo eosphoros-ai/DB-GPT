@@ -68,7 +68,6 @@ bash ../scripts/build_web_static.sh
 
 `npm run build` creates a server deployment for `npm start`. `npm run compile`
 uses Next's static export mode and writes `out/` for the Python-served UI.
-See [the tooling migration notes](TOOLCHAIN_MIGRATION.md) for checks and boundaries.
 
 ## 📚 Documentation
 

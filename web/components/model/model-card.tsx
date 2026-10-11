@@ -29,7 +29,6 @@ function ModelCard({ info }: Props) {
         port: info.port,
         model: info.model_name,
         worker_type: info.worker_type,
-        delete_after: false,
         params: {},
       }),
     );

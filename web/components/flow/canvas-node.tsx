@@ -210,9 +210,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       >
         {/* icon and label */}
         <div className='flex flex-row items-center'>
-          <span className='relative h-6 w-6 shrink-0'>
-            <Image src={'/icons/node/vis.png'} fill sizes='24px' className='object-contain' alt='' />
-          </span>
+          <Image src={'/icons/node/vis.png'} width={24} height={24} alt='' />
           <p className='ml-2 text-lg font-bold text-ellipsis overflow-hidden whitespace-nowrap'>{node.label}</p>
         </div>
 
