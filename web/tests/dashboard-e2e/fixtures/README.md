@@ -39,4 +39,4 @@ remove credentials or personal metadata, then update the manifest hash and run t
 affected specs. Do not regenerate all fixtures solely to make assertions pass.
 From `web`, `npm run test:e2e:dashboard -- --list` verifies test collection without
 starting a server. Actual browser execution needs the environment described in the
-[developer guide](../../../../docs/dashboard/DEVELOPER_GUIDE.md).
+[PR description](https://github.com/eosphoros-ai/DB-GPT/pull/3278).

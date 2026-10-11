@@ -7,12 +7,12 @@ Dashboard 将自然语言分析变成可校验、可编辑、可保存和可发�
 | 目的 | 文档 |
 |---|---|
 | 理解模块及生命周期 | [设计说明与两张架构图](DESIGN.md) |
-| 创建、编辑、保存和发布 | [用户指南](USER_GUIDE.md) |
+| 创建、编辑、保存和发布 | [操作说明（PR 正文）](https://github.com/eosphoros-ai/DB-GPT/pull/3278) |
 | 演示零售经营分析 | [Walmart：数据来源、制作与发布](demos/walmart.md) |
 | 演示历史财务分析 | [Apple：数据准备、筛选与发布](demos/apple.md) |
-| 安装依赖、运行检查、维护测试输入 | [开发指南](DEVELOPER_GUIDE.md) |
-| 理解部署身份、数据源授权与公开访问 | [安全说明](SECURITY.md)、[授权接入](AUTHORIZATION_INTEGRATION.md) |
-| 查字段及接口 | [基础 Schema](SCHEMA_V1.md)、[联邦扩展](SCHEMA_1_1_FEDERATION.md)、[API](API.md) |
+| 安装依赖、运行检查、维护测试输入 | [开发说明（PR 正文）](https://github.com/eosphoros-ai/DB-GPT/pull/3278) |
+| 理解部署身份、数据源授权与公开访问 | [安全与授权接入说明（PR 正文）](https://github.com/eosphoros-ai/DB-GPT/pull/3278) |
+| 查字段及接口 | [Schema 与 API 说明（PR 正文）](https://github.com/eosphoros-ai/DB-GPT/pull/3278) |
 
 ## 代码入口
 

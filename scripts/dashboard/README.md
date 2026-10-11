@@ -23,7 +23,7 @@ python scripts/dashboard/install_reference_sources.py --register --api-base http
 选择共享目录，或在数据源页面手动添加文件。来源、许可证、原始哈希和转换说明见
 `data/dashboard_reference_sources/manifest.json`。图库卡片为布局示意，查询预览使用所选数据源。
 
-当前安装、迁移与测试入口见 [开发指南](../../docs/dashboard/DEVELOPER_GUIDE.md)，已执行结果及跳过原因见 [PR 验证记录](https://github.com/eosphoros-ai/DB-GPT/pull/3278)。
+当前安装、迁移与测试入口、已执行结果及跳过原因见 [PR 正文](https://github.com/eosphoros-ai/DB-GPT/pull/3278)。
 
 ## 生产浏览器回归
 
