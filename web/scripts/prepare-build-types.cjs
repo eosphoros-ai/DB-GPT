@@ -3,7 +3,6 @@ const path = require('node:path');
 
 // Next adds generated type paths to tsconfig. Isolated builds must not load
 // both the old and current validator modules, which declare identical names.
-/** Write an exclusive temporary tsconfig containing only the active Next type outputs; the caller must invoke cleanup. */
 function prepareBuildTypes(webRoot, distDir = '.next') {
   const source = fs.readFileSync(path.join(webRoot, 'tsconfig.json'), 'utf8').replace(/^\uFEFF/, '');
   const config = JSON.parse(source);
@@ -21,18 +20,17 @@ function prepareBuildTypes(webRoot, distDir = '.next') {
   ]);
   inactive.delete(active);
   const generatedPath = /^\.next[^/]*\/(?:dev\/)?types\/\*\*\/\*\.ts$/;
-  config.include = [
-    ...(config.include || []).filter(value => !generatedPath.test(value)),
-    `${active}/types/**/*.ts`,
-    `${active}/dev/types/**/*.ts`,
+  config.include = [...(config.include || []).filter(value => !generatedPath.test(value)), `${active}/types/**/*.ts`];
+  // next dev and next build each emit a global PagesPageConfig validator.
+  // Exclude the dev output even when **/*.ts is included by the source config.
+  config.exclude = [
+    ...new Set([...(config.exclude || []).filter(value => value !== active), ...inactive, `${active}/dev`]),
   ];
-  config.exclude = [...new Set([...(config.exclude || []).filter(value => value !== active), ...inactive])];
   const name = `.tsconfig-build-${process.pid}.json`;
   const target = path.join(webRoot, name);
   fs.writeFileSync(target, JSON.stringify(config, null, 2) + '\n', { flag: 'wx' });
   return {
     name,
-    /** Remove the temporary type configuration created by this invocation. */
     cleanup: () => fs.unlinkSync(target),
   };
 }
