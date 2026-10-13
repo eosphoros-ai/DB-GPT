@@ -39,6 +39,7 @@ export type IChatDbSchema = {
   name: string;
   label: string;
   description: string;
+  display_name?: string;
   params: any[];
   parameters: any[];
   comment: string;

@@ -59,3 +59,6 @@ CREATE TABLE IF NOT EXISTS `dbgpt_serve_scheduled_run` (
   KEY `ix_scheduled_run_task_id` (`task_id`),
   KEY `ix_scheduled_run_started_at` (`started_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Scheduled task execution history table';
+
+-- connect_config, add editable display_name alias (#2987)
+ALTER TABLE `connect_config` ADD COLUMN `display_name` varchar(255) DEFAULT NULL COMMENT 'Human-friendly alias for display; falls back to db_name when empty';
