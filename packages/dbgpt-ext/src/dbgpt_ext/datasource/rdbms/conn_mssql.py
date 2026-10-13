@@ -1,7 +1,7 @@
 """MSSQL connector."""
 
 from dataclasses import dataclass, field
-from typing import Iterable, List, Tuple, Type
+from typing import Any, Dict, Iterable, List, Tuple, Type
 
 from sqlalchemy import text
 
@@ -33,6 +33,20 @@ class MSSQLParameters(RDBMSDatasourceParameters):
             "help": _("Driver name for MSSQL, default is mssql+pymssql."),
         },
     )
+    connect_timeout: int = field(
+        default=15,
+        metadata={"help": _("Database connection timeout in seconds, default 15")},
+    )
+
+    def engine_args(self) -> Dict[str, Any]:
+        """Return SQLAlchemy engine arguments with a bounded pymssql timeout."""
+        engine_args = super().engine_args() or {}
+        if self.driver == "mssql+pymssql":
+            engine_args["connect_args"] = {
+                "timeout": self.connect_timeout,
+                "login_timeout": self.connect_timeout,
+            }
+        return engine_args
 
     def create_connector(self) -> "MSSQLConnector":
         """Create MS SQL connector."""
