@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
@@ -116,7 +117,14 @@ class ApiCall:
         if "<sql>" in raw_api_context:
             # For cases involving SQL, remove comments first—otherwise,
             # removing line breaks afterward may cause SQL statement errors.
-            raw_api_context = self._remove_sql_comments(raw_api_context)
+            # Only strip them inside <sql>, so that a trailing "--" comment
+            # cannot swallow the closing tags that follow it on the same line.
+            raw_api_context = re.sub(
+                r"<sql>(.*?)</sql>",
+                lambda m: f"<sql>{self._remove_sql_comments(m.group(1))}</sql>",
+                raw_api_context,
+                flags=re.DOTALL,
+            )
         raw_api_context = (
             raw_api_context.replace("\\n", " ")
             .replace("\n", " ")
