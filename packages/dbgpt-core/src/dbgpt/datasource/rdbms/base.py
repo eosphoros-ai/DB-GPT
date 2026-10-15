@@ -697,16 +697,19 @@ class RDBMSConnector(BaseConnector):
         Returns:
             str: SELECT command corresponding to the write command
         """
-        # Convert the SQL command to lowercase and split by space
-        parts = write_sql.lower().split()
+        # Split by space, keeping the original case of identifiers and values;
+        # only the keywords are compared case-insensitively.
+        parts = write_sql.split()
+        lower_parts = [part.lower() for part in parts]
         # Get the command type (insert, delete, update)
-        cmd_type = parts[0]
+        cmd_type = lower_parts[0]
 
         # Handle according to command type
         if cmd_type == "insert":
             match = re.match(
                 r"insert\s+into\s+(\w+)\s*\(([^)]+)\)\s*values\s*\(([^)]+)\)",
-                write_sql.lower(),
+                write_sql,
+                re.IGNORECASE,
             )
             if match:
                 # Get the table name, columns, and values
@@ -731,8 +734,8 @@ class RDBMSConnector(BaseConnector):
 
         elif cmd_type == "update":
             table_name = parts[1]
-            set_idx = parts.index("set")
-            where_idx = parts.index("where")
+            set_idx = lower_parts.index("set")
+            where_idx = lower_parts.index("where")
             # Get the field name in the `set` clause
             set_clause = parts[set_idx + 1 : where_idx][0].split("=")[0].strip()
             # Get the condition statement after the `where`
