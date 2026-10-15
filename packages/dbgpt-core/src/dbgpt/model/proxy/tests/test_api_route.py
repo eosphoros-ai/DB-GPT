@@ -47,6 +47,38 @@ async def test_environment_defaults(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "context_length,expected_context_length",
+    [(None, 64_000), (4_096, 4_096), (32_000, 32_000), (128_000, 128_000)],
+)
+async def test_deployment_factory_preserves_context_and_connection_settings(
+    context_length, expected_context_length
+):
+    params = ApiRouteDeployModelParameters(
+        name="deployment-model",
+        backend="gateway-model",
+        api_key="deployment-test-key",
+        api_base="https://deployment.example/v1",
+        context_length=context_length,
+    )
+    client = ApiRouteLLMClient.new_client(params)
+    try:
+        assert client.context_length == expected_context_length
+        metadata = await client.models()
+        assert len(metadata) == 1
+        assert metadata[0].context_length == expected_context_length
+        assert metadata[0].model == "gateway-model"
+        assert client.default_model == "gateway-model"
+        assert client.client.api_key == "deployment-test-key"
+        assert str(client.client.base_url) == "https://deployment.example/v1/"
+        assert all(
+            client.client.default_headers[k] == v for k, v in API_ROUTE_HEADERS.items()
+        )
+    finally:
+        await client.client.close()
+
+
+@pytest.mark.asyncio
 async def test_explicit_settings_override_environment(monkeypatch):
     monkeypatch.setenv("API_ROUTE_API_KEY", "environment-test-key")
     monkeypatch.setenv("API_ROUTE_API_BASE", "https://environment.example/v1")
