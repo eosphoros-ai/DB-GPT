@@ -48,6 +48,7 @@ const POPULAR_PROVIDERS: Array<{ id: string }> = [
   { id: 'proxy/spark' },
   { id: 'proxy/wenxin' },
   { id: 'proxy/orcarouter' },
+  { id: 'proxy/cheaperinference' },
   { id: 'proxy/siliconflow' },
   { id: 'proxy/litellm' },
   { id: 'proxy/groq' },
