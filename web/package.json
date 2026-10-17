@@ -151,5 +151,19 @@
   },
   "engines": {
     "node": ">=20.19.0"
+  },
+  "overrides": {
+    "fmin": {
+      "rollup": "2.80.0"
+    },
+    "react-markdown-editor-lite": {
+      "nanoid": "$nanoid"
+    },
+    "sequelize": {
+      "uuid": "$uuid"
+    },
+    "cosmiconfig": {
+      "yaml": "1.10.3"
+    }
   }
 }
