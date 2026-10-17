@@ -1,0 +1,2176 @@
+{
+  "$defs": {
+    "AgentGenerationInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "generated": {
+          "default": false,
+          "title": "Generated",
+          "type": "boolean"
+        },
+        "model_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Name"
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt"
+        },
+        "generated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Generated At"
+        }
+      },
+      "title": "AgentGenerationInfo",
+      "type": "object"
+    },
+    "ChartEncoding": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "X"
+        },
+        "y": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "series": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Series"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "angle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Angle"
+        },
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color"
+        },
+        "y2": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Y2"
+        },
+        "row": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row"
+        },
+        "column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Column"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        }
+      },
+      "title": "ChartEncoding",
+      "type": "object"
+    },
+    "DashboardAnomalyBaseline": {
+      "enum": [
+        "previous_period",
+        "rolling_average",
+        "target_value"
+      ],
+      "title": "DashboardAnomalyBaseline",
+      "type": "string"
+    },
+    "DashboardAnomalyDirection": {
+      "enum": [
+        "two_sided",
+        "above",
+        "below"
+      ],
+      "title": "DashboardAnomalyDirection",
+      "type": "string"
+    },
+    "DashboardAnomalyRule": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "baseline": {
+          "$ref": "#/$defs/DashboardAnomalyBaseline"
+        },
+        "value_field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Value Field",
+          "type": "string"
+        },
+        "time_field": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Field"
+        },
+        "direction": {
+          "$ref": "#/$defs/DashboardAnomalyDirection",
+          "default": "two_sided"
+        },
+        "threshold": {
+          "$ref": "#/$defs/DashboardAnomalyThreshold"
+        },
+        "rolling_window": {
+          "default": 3,
+          "maximum": 100,
+          "minimum": 2,
+          "title": "Rolling Window",
+          "type": "integer"
+        },
+        "target_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Value"
+        },
+        "min_samples": {
+          "default": 1,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Min Samples",
+          "type": "integer"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "baseline",
+        "value_field"
+      ],
+      "title": "DashboardAnomalyRule",
+      "type": "object"
+    },
+    "DashboardAnomalyThreshold": {
+      "additionalProperties": false,
+      "description": "Owner-configured decision threshold; no detector percentage is implicit.",
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/DashboardAnomalyThresholdMode",
+          "default": "relative_change"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "title": "DashboardAnomalyThreshold",
+      "type": "object"
+    },
+    "DashboardAnomalyThresholdMode": {
+      "enum": [
+        "relative_change",
+        "absolute_change"
+      ],
+      "title": "DashboardAnomalyThresholdMode",
+      "type": "string"
+    },
+    "DashboardDefaultSort": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "direction": {
+          "$ref": "#/$defs/DashboardSortDirection",
+          "default": "default"
+        }
+      },
+      "title": "DashboardDefaultSort",
+      "type": "object"
+    },
+    "DashboardDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "default": "",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "data_source_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Data Source Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/DashboardStatus",
+          "default": "draft"
+        },
+        "theme": {
+          "$ref": "#/$defs/DashboardVisualTheme"
+        },
+        "refresh_policy": {
+          "$ref": "#/$defs/DashboardRefreshPolicy"
+        },
+        "created_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Created At"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        }
+      },
+      "required": [
+        "title",
+        "data_source_id"
+      ],
+      "title": "DashboardDescriptor",
+      "type": "object"
+    },
+    "DashboardFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/FilterType"
+        },
+        "label": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "default": {
+          "default": null,
+          "title": "Default"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/FilterOption"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "relative_date": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RelativeDateRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "label",
+        "field"
+      ],
+      "title": "DashboardFilter",
+      "type": "object"
+    },
+    "DashboardLayouts": {
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "default": 12,
+          "maximum": 12,
+          "minimum": 12,
+          "title": "Columns",
+          "type": "integer"
+        },
+        "desktop": {
+          "items": {
+            "$ref": "#/$defs/LayoutItem"
+          },
+          "title": "Desktop",
+          "type": "array"
+        },
+        "mobile_strategy": {
+          "default": "stack",
+          "title": "Mobile Strategy",
+          "type": "string"
+        }
+      },
+      "title": "DashboardLayouts",
+      "type": "object"
+    },
+    "DashboardMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "conversation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversation Id"
+        },
+        "source_turn_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Turn Id"
+        },
+        "agent": {
+          "$ref": "#/$defs/AgentGenerationInfo"
+        },
+        "compatibility": {
+          "additionalProperties": true,
+          "title": "Compatibility",
+          "type": "object"
+        }
+      },
+      "title": "DashboardMetadata",
+      "type": "object"
+    },
+    "DashboardPresentation": {
+      "additionalProperties": false,
+      "description": "Validated visualization settings introduced by Schema 1.3.",
+      "properties": {
+        "visualization": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardVisualization"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "orientation": {
+          "anyOf": [
+            {
+              "pattern": "^(vertical|horizontal)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Orientation"
+        },
+        "stacked": {
+          "default": false,
+          "title": "Stacked",
+          "type": "boolean"
+        },
+        "smooth": {
+          "default": true,
+          "title": "Smooth",
+          "type": "boolean"
+        },
+        "top_n": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top N"
+        },
+        "colors": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Colors",
+          "type": "array"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "maxLength": 16,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency"
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Precision"
+        },
+        "percentage": {
+          "default": false,
+          "title": "Percentage",
+          "type": "boolean"
+        },
+        "show_legend": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Show Legend"
+        },
+        "show_grid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Show Grid"
+        },
+        "default_sort": {
+          "$ref": "#/$defs/DashboardDefaultSort"
+        }
+      },
+      "title": "DashboardPresentation",
+      "type": "object"
+    },
+    "DashboardPublicationAggregation": {
+      "enum": [
+        "sum",
+        "average",
+        "count",
+        "count_distinct",
+        "minimum",
+        "maximum",
+        "first",
+        "ratio"
+      ],
+      "title": "DashboardPublicationAggregation",
+      "type": "string"
+    },
+    "DashboardPublicationBinding": {
+      "additionalProperties": false,
+      "description": "Safe materialization recipe used only while the owner publishes.\n\nThe query result is frozen with the published revision.  Anonymous filtering\nlater operates only on those rows and never receives a database connector.",
+      "properties": {
+        "query": {
+          "$ref": "#/$defs/WidgetQueryBinding"
+        },
+        "filter_fields": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/DashboardPublicationFilterBinding"
+              }
+            ]
+          },
+          "title": "Filter Fields",
+          "type": "object"
+        },
+        "group_by": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Group By",
+          "type": "array"
+        },
+        "measures": {
+          "items": {
+            "$ref": "#/$defs/DashboardPublicationMeasure"
+          },
+          "maxItems": 20,
+          "title": "Measures",
+          "type": "array"
+        },
+        "output_columns": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Output Columns",
+          "type": "array"
+        },
+        "row_mode": {
+          "default": false,
+          "title": "Row Mode",
+          "type": "boolean"
+        },
+        "sort": {
+          "items": {
+            "$ref": "#/$defs/DashboardPublicationSort"
+          },
+          "maxItems": 10,
+          "title": "Sort",
+          "type": "array"
+        },
+        "max_output_rows": {
+          "default": 1000,
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Max Output Rows",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "DashboardPublicationBinding",
+      "type": "object"
+    },
+    "DashboardPublicationFilterBinding": {
+      "additionalProperties": false,
+      "description": "Map a public filter to one field in a frozen publication dataset.",
+      "properties": {
+        "field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/$defs/DashboardPublicationFilterOperator",
+          "default": "auto"
+        }
+      },
+      "required": [
+        "field"
+      ],
+      "title": "DashboardPublicationFilterBinding",
+      "type": "object"
+    },
+    "DashboardPublicationFilterOperator": {
+      "enum": [
+        "auto",
+        "equal",
+        "less_than_or_equal",
+        "greater_than_or_equal"
+      ],
+      "title": "DashboardPublicationFilterOperator",
+      "type": "string"
+    },
+    "DashboardPublicationMeasure": {
+      "additionalProperties": false,
+      "properties": {
+        "source_field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Source Field",
+          "type": "string"
+        },
+        "output_field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Output Field",
+          "type": "string"
+        },
+        "aggregation": {
+          "$ref": "#/$defs/DashboardPublicationAggregation"
+        },
+        "denominator_field": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Denominator Field"
+        },
+        "scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Scale",
+          "type": "number"
+        }
+      },
+      "required": [
+        "source_field",
+        "output_field",
+        "aggregation"
+      ],
+      "title": "DashboardPublicationMeasure",
+      "type": "object"
+    },
+    "DashboardPublicationSort": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "direction": {
+          "$ref": "#/$defs/DashboardSortDirection",
+          "default": "ascending"
+        }
+      },
+      "required": [
+        "field"
+      ],
+      "title": "DashboardPublicationSort",
+      "type": "object"
+    },
+    "DashboardRefreshPolicy": {
+      "additionalProperties": false,
+      "description": "Refresh behavior controlled by the dashboard owner.",
+      "properties": {
+        "refresh_on_open": {
+          "default": false,
+          "title": "Refresh On Open",
+          "type": "boolean"
+        },
+        "interval_seconds": {
+          "anyOf": [
+            {
+              "maximum": 86400,
+              "minimum": 60,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval Seconds"
+        }
+      },
+      "title": "DashboardRefreshPolicy",
+      "type": "object"
+    },
+    "DashboardSortDirection": {
+      "enum": [
+        "default",
+        "ascending",
+        "descending"
+      ],
+      "title": "DashboardSortDirection",
+      "type": "string"
+    },
+    "DashboardStatus": {
+      "enum": [
+        "draft",
+        "published",
+        "archived"
+      ],
+      "title": "DashboardStatus",
+      "type": "string"
+    },
+    "DashboardThemeDensity": {
+      "enum": [
+        "compact",
+        "comfortable",
+        "spacious"
+      ],
+      "title": "DashboardThemeDensity",
+      "type": "string"
+    },
+    "DashboardThemeFontScale": {
+      "enum": [
+        "compact",
+        "standard",
+        "large"
+      ],
+      "title": "DashboardThemeFontScale",
+      "type": "string"
+    },
+    "DashboardThemeKpiStyle": {
+      "enum": [
+        "quiet",
+        "accent",
+        "solid"
+      ],
+      "title": "DashboardThemeKpiStyle",
+      "type": "string"
+    },
+    "DashboardThemeMode": {
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "title": "DashboardThemeMode",
+      "type": "string"
+    },
+    "DashboardThemeOverrides": {
+      "additionalProperties": false,
+      "description": "User-authored values layered on top of a visual theme preset.",
+      "properties": {
+        "primary_color": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9A-Fa-f]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primary Color"
+        },
+        "font_scale": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemeFontScale"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "density": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemeDensity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "card_radius": {
+          "anyOf": [
+            {
+              "maximum": 28,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Card Radius"
+        },
+        "card_shadow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemeShadow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "chart_palette": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 10,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chart Palette"
+        },
+        "kpi_style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemeKpiStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "table_style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemeTableStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "DashboardThemeOverrides",
+      "type": "object"
+    },
+    "DashboardThemePreset": {
+      "description": "Visual theme ids stored with the dashboard contract.\n\n``clean`` and ``business_blue`` are accepted only for historical schemas.\nNew Schema 1.4 documents use one of the four neutral canonical names.",
+      "enum": [
+        "clarity",
+        "ocean",
+        "warm",
+        "graphite",
+        "clean",
+        "business_blue"
+      ],
+      "title": "DashboardThemePreset",
+      "type": "string"
+    },
+    "DashboardThemeShadow": {
+      "enum": [
+        "none",
+        "soft",
+        "elevated"
+      ],
+      "title": "DashboardThemeShadow",
+      "type": "string"
+    },
+    "DashboardThemeTableStyle": {
+      "enum": [
+        "plain",
+        "striped",
+        "divided"
+      ],
+      "title": "DashboardThemeTableStyle",
+      "type": "string"
+    },
+    "DashboardVisualTheme": {
+      "additionalProperties": true,
+      "description": "Persisted theme selection; empty values keep legacy schemas valid.",
+      "properties": {
+        "preset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemePreset"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardThemeMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "overrides": {
+          "$ref": "#/$defs/DashboardThemeOverrides"
+        }
+      },
+      "title": "DashboardVisualTheme",
+      "type": "object"
+    },
+    "DashboardVisualization": {
+      "description": "Presentation variants supported by the shared Dashboard renderer.\n\n``WidgetType`` remains the stable query/data contract.  This enum only\ncontrols presentation so existing Schema 1.0-1.2 documents remain valid.",
+      "enum": [
+        "kpi",
+        "line",
+        "area",
+        "column",
+        "bar",
+        "stacked_column",
+        "pie",
+        "donut",
+        "scatter",
+        "dual_axis",
+        "heatmap",
+        "cohort",
+        "gauge",
+        "funnel",
+        "treemap",
+        "radar",
+        "waterfall",
+        "geo_map",
+        "table"
+      ],
+      "title": "DashboardVisualization",
+      "type": "string"
+    },
+    "DashboardWidget": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/WidgetType"
+        },
+        "title": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Description",
+          "type": "string"
+        },
+        "query": {
+          "$ref": "#/$defs/WidgetQueryBinding"
+        },
+        "encoding": {
+          "$ref": "#/$defs/ChartEncoding"
+        },
+        "style": {
+          "additionalProperties": true,
+          "title": "Style",
+          "type": "object"
+        },
+        "presentation": {
+          "$ref": "#/$defs/DashboardPresentation"
+        },
+        "publication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DashboardPublicationBinding"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metric_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Metric Ids",
+          "type": "array"
+        },
+        "dimension_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Dimension Ids",
+          "type": "array"
+        },
+        "anomaly_rules": {
+          "items": {
+            "$ref": "#/$defs/DashboardAnomalyRule"
+          },
+          "maxItems": 20,
+          "title": "Anomaly Rules",
+          "type": "array"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WidgetError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "title",
+        "query",
+        "encoding"
+      ],
+      "title": "DashboardWidget",
+      "type": "object"
+    },
+    "DataFieldType": {
+      "enum": [
+        "string",
+        "number",
+        "integer",
+        "boolean",
+        "date",
+        "datetime",
+        "unknown"
+      ],
+      "title": "DataFieldType",
+      "type": "string"
+    },
+    "DimensionDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "business_definition": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Business Definition",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "data_type": {
+          "$ref": "#/$defs/DataFieldType",
+          "default": "unknown"
+        },
+        "definition_source": {
+          "$ref": "#/$defs/SemanticDefinitionSource",
+          "default": "model_inferred"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "business_definition"
+      ],
+      "title": "DimensionDefinition",
+      "type": "object"
+    },
+    "FederatedJoin": {
+      "additionalProperties": false,
+      "properties": {
+        "left_alias": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Left Alias",
+          "type": "string"
+        },
+        "right_alias": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Right Alias",
+          "type": "string"
+        },
+        "left_field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Left Field",
+          "type": "string"
+        },
+        "right_field": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Right Field",
+          "type": "string"
+        },
+        "join_type": {
+          "$ref": "#/$defs/FederationJoinType",
+          "default": "inner"
+        }
+      },
+      "required": [
+        "left_alias",
+        "right_alias",
+        "left_field",
+        "right_field"
+      ],
+      "title": "FederatedJoin",
+      "type": "object"
+    },
+    "FederatedQuery": {
+      "additionalProperties": false,
+      "description": "A deliberately small alternative to arbitrary cross-database SQL.",
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/FederationMode"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/FederatedSourceQuery"
+          },
+          "maxItems": 4,
+          "minItems": 2,
+          "title": "Sources",
+          "type": "array"
+        },
+        "join": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FederatedJoin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "max_output_rows": {
+          "default": 2000,
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Max Output Rows",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "mode",
+        "sources"
+      ],
+      "title": "FederatedQuery",
+      "type": "object"
+    },
+    "FederatedSourceQuery": {
+      "additionalProperties": false,
+      "description": "One independently authorized and validated query in a federation.",
+      "properties": {
+        "alias": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Alias",
+          "type": "string"
+        },
+        "data_source_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Data Source Id",
+          "type": "string"
+        },
+        "sql": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Sql",
+          "type": "string"
+        },
+        "filter_parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/FilterParameterBinding"
+              }
+            ]
+          },
+          "title": "Filter Parameters",
+          "type": "object"
+        },
+        "default_parameters": {
+          "additionalProperties": true,
+          "title": "Default Parameters",
+          "type": "object"
+        },
+        "column_mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "minProperties": 1,
+          "title": "Column Mapping",
+          "type": "object"
+        },
+        "timeout_seconds": {
+          "default": 30,
+          "maximum": 60,
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "max_rows": {
+          "default": 1000,
+          "maximum": 2000,
+          "minimum": 1,
+          "title": "Max Rows",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "alias",
+        "data_source_id",
+        "sql",
+        "column_mapping"
+      ],
+      "title": "FederatedSourceQuery",
+      "type": "object"
+    },
+    "FederationJoinType": {
+      "enum": [
+        "inner",
+        "left"
+      ],
+      "title": "FederationJoinType",
+      "type": "string"
+    },
+    "FederationMode": {
+      "description": "Bounded application-side operations supported across data sources.",
+      "enum": [
+        "union_all",
+        "join"
+      ],
+      "title": "FederationMode",
+      "type": "string"
+    },
+    "FilterOption": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "title": "FilterOption",
+      "type": "object"
+    },
+    "FilterParameterBinding": {
+      "additionalProperties": false,
+      "description": "Map one global filter to one value or a start/end parameter pair.",
+      "properties": {
+        "parameter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parameter"
+        },
+        "start_parameter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Parameter"
+        },
+        "end_parameter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Parameter"
+        }
+      },
+      "title": "FilterParameterBinding",
+      "type": "object"
+    },
+    "FilterType": {
+      "enum": [
+        "date_range",
+        "select",
+        "multi_select",
+        "text",
+        "number_range"
+      ],
+      "title": "FilterType",
+      "type": "string"
+    },
+    "LastExecution": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "default": "never",
+          "title": "Status",
+          "type": "string"
+        },
+        "executed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Executed At"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "row_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row Count"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        }
+      },
+      "title": "LastExecution",
+      "type": "object"
+    },
+    "LayoutItem": {
+      "additionalProperties": false,
+      "properties": {
+        "widget_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Widget Id",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 11,
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 12,
+          "minimum": 1,
+          "title": "W",
+          "type": "integer"
+        },
+        "h": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "H",
+          "type": "integer"
+        },
+        "min_w": {
+          "anyOf": [
+            {
+              "maximum": 12,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min W"
+        },
+        "min_h": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min H"
+        },
+        "max_w": {
+          "anyOf": [
+            {
+              "maximum": 12,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max W"
+        },
+        "max_h": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max H"
+        }
+      },
+      "required": [
+        "widget_id",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "title": "LayoutItem",
+      "type": "object"
+    },
+    "MetricAggregation": {
+      "enum": [
+        "sum",
+        "average",
+        "count",
+        "count_distinct",
+        "minimum",
+        "maximum",
+        "ratio",
+        "none"
+      ],
+      "title": "MetricAggregation",
+      "type": "string"
+    },
+    "MetricContext": {
+      "additionalProperties": false,
+      "properties": {
+        "grain": {
+          "default": "",
+          "maxLength": 255,
+          "title": "Grain",
+          "type": "string"
+        },
+        "time_range": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Range"
+        },
+        "data_freshness": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Freshness"
+        },
+        "source_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Notes",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/MetricDefinition"
+          },
+          "maxItems": 100,
+          "title": "Metrics",
+          "type": "array"
+        },
+        "dimensions": {
+          "items": {
+            "$ref": "#/$defs/DimensionDefinition"
+          },
+          "maxItems": 100,
+          "title": "Dimensions",
+          "type": "array"
+        }
+      },
+      "title": "MetricContext",
+      "type": "object"
+    },
+    "MetricDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "business_definition": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Business Definition",
+          "type": "string"
+        },
+        "aggregation": {
+          "$ref": "#/$defs/MetricAggregation",
+          "default": "none"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "grain": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grain"
+        },
+        "source_field": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Field"
+        },
+        "definition_source": {
+          "$ref": "#/$defs/SemanticDefinitionSource",
+          "default": "model_inferred"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "business_definition"
+      ],
+      "title": "MetricDefinition",
+      "type": "object"
+    },
+    "QueryLineage": {
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/QueryLineageSource"
+          },
+          "maxItems": 4,
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "title": "QueryLineage",
+      "type": "object"
+    },
+    "QueryLineageSource": {
+      "additionalProperties": false,
+      "properties": {
+        "data_source_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Data Source Id",
+          "type": "string"
+        },
+        "tables": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Tables",
+          "type": "array"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 500,
+          "title": "Columns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "data_source_id"
+      ],
+      "title": "QueryLineageSource",
+      "type": "object"
+    },
+    "QueryOutputField": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/DataFieldType",
+          "default": "unknown"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "nullable": {
+          "default": true,
+          "title": "Nullable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "QueryOutputField",
+      "type": "object"
+    },
+    "RelativeDateRange": {
+      "additionalProperties": false,
+      "description": "A date range evaluated on every refresh instead of when it is saved.",
+      "properties": {
+        "anchor": {
+          "default": "today",
+          "pattern": "^today$",
+          "title": "Anchor",
+          "type": "string"
+        },
+        "start_offset_days": {
+          "default": -6,
+          "maximum": 3650,
+          "minimum": -3650,
+          "title": "Start Offset Days",
+          "type": "integer"
+        },
+        "end_offset_days": {
+          "default": 0,
+          "maximum": 3650,
+          "minimum": -3650,
+          "title": "End Offset Days",
+          "type": "integer"
+        }
+      },
+      "title": "RelativeDateRange",
+      "type": "object"
+    },
+    "SemanticDefinitionSource": {
+      "enum": [
+        "catalog",
+        "user_confirmed",
+        "model_inferred"
+      ],
+      "title": "SemanticDefinitionSource",
+      "type": "string"
+    },
+    "WidgetError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "WidgetError",
+      "type": "object"
+    },
+    "WidgetQueryBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "data_source_id": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Data Source Id",
+          "type": "string"
+        },
+        "sql": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sql"
+        },
+        "federation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FederatedQuery"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "filter_parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/FilterParameterBinding"
+              }
+            ]
+          },
+          "title": "Filter Parameters",
+          "type": "object"
+        },
+        "default_parameters": {
+          "additionalProperties": true,
+          "title": "Default Parameters",
+          "type": "object"
+        },
+        "output_fields": {
+          "items": {
+            "$ref": "#/$defs/QueryOutputField"
+          },
+          "title": "Output Fields",
+          "type": "array"
+        },
+        "timeout_seconds": {
+          "default": 30,
+          "maximum": 120,
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "max_rows": {
+          "default": 1000,
+          "maximum": 5000,
+          "minimum": 1,
+          "title": "Max Rows",
+          "type": "integer"
+        },
+        "grain": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grain"
+        },
+        "refresh_time": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refresh Time"
+        },
+        "last_execution": {
+          "$ref": "#/$defs/LastExecution"
+        },
+        "lineage": {
+          "$ref": "#/$defs/QueryLineage"
+        }
+      },
+      "required": [
+        "data_source_id"
+      ],
+      "title": "WidgetQueryBinding",
+      "type": "object"
+    },
+    "WidgetType": {
+      "enum": [
+        "kpi",
+        "line",
+        "bar",
+        "pie",
+        "table"
+      ],
+      "title": "WidgetType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "dashboard": {
+      "$ref": "#/$defs/DashboardDescriptor"
+    },
+    "metric_context": {
+      "$ref": "#/$defs/MetricContext"
+    },
+    "filters": {
+      "items": {
+        "$ref": "#/$defs/DashboardFilter"
+      },
+      "title": "Filters",
+      "type": "array"
+    },
+    "widgets": {
+      "items": {
+        "$ref": "#/$defs/DashboardWidget"
+      },
+      "maxItems": 24,
+      "title": "Widgets",
+      "type": "array"
+    },
+    "layouts": {
+      "$ref": "#/$defs/DashboardLayouts"
+    },
+    "metadata": {
+      "$ref": "#/$defs/DashboardMetadata"
+    }
+  },
+  "required": [
+    "dashboard"
+  ],
+  "title": "DashboardSchemaV1",
+  "type": "object"
+}

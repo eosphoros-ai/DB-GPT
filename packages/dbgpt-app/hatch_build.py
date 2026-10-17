@@ -34,6 +34,10 @@ _SKILLS_MAP = {
         "financial-report-analyzer",
         "walmart-sales-analyzer",
         "agent-browser",
+        "dashboard-builder",
+        "dashboard-collaboration",
+        "dashboard-chart-configuration",
+        "dashboard-filter-configuration",
     ]
 }
 
@@ -110,6 +114,10 @@ class CustomBuildHook(BuildHookInterface):
             build_data: mutable dict; set ``force_include`` to inject
                         path mappings
         """
+        if self.target_name != "wheel":
+            # sdist has its own canonical source mappings in pyproject.toml.
+            # Wheel destinations here would break rebuilding an extracted sdist.
+            return
         pkg_root = Path(self.root)  # packages/dbgpt-app/
         all_mappings = {
             **_SKILLS_MAP,
@@ -118,8 +126,14 @@ class CustomBuildHook(BuildHookInterface):
         }
         force_include: dict[str, str] = {}
 
-        if version == "editable":
-            # Editable: resolve from repo root (../../ from packages/X/)
+        in_checkout = (
+            pkg_root.parent.name == "packages"
+            and (pkg_root.parent.parent / "pilot").is_dir()
+            and (pkg_root.parent.parent / "skills").is_dir()
+        )
+        if version == "editable" or in_checkout:
+            # Direct wheel builds from a checkout need the same bundled assets
+            # as editable builds. Only extracted sdists use remapped paths.
             repo_root = pkg_root.parent.parent
             for repo_rel, wheel_target in all_mappings.items():
                 source = str(repo_root / repo_rel)

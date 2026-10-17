@@ -19,6 +19,7 @@ dependencies = [
     "aiofiles",
     "httpx>=0.24.0",
     "pyparsing",
+    "sqlglot>=26.13.2,<27",
 ]
 
 [project.urls]
@@ -34,6 +35,9 @@ build-backend = "hatchling.build"
 [project.optional-dependencies]
 cache = [
     "rocksdict",
+]
+collaboration = [
+    "redis==5.2.1",
 ]
 observability = [
     "opentelemetry-api",
@@ -60,6 +64,10 @@ exclude = [
     "src/dbgpt_app/**/tests/*",
     "src/dbgpt_app/tests",
     "src/dbgpt_app/tests/*",
+    # Always take workspace assets from the build hook's canonical sources,
+    # even when an editable/test install left a local materialized copy.
+    "src/dbgpt_app/pilot_template",
+    "src/dbgpt_app/pilot_template/**",
     "src/dbgpt_app/**/examples",
     "src/dbgpt_app/**/examples/*"
 ]
@@ -71,6 +79,10 @@ exclude = [
 "../../skills/financial-report-analyzer" = "skills/financial-report-analyzer"
 "../../skills/walmart-sales-analyzer" = "skills/walmart-sales-analyzer"
 "../../skills/agent-browser" = "skills/agent-browser"
+"../../skills/dashboard-builder" = "skills/dashboard-builder"
+"../../skills/dashboard-collaboration" = "skills/dashboard-collaboration"
+"../../skills/dashboard-chart-configuration" = "skills/dashboard-chart-configuration"
+"../../skills/dashboard-filter-configuration" = "skills/dashboard-filter-configuration"
 # Builtin example files
 "../../docker/examples/excel/Walmart_Sales.csv" = "examples/excel/Walmart_Sales.csv"
 "../../docker/examples/fin_report/pdf/2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf" = "examples/fin_report/pdf/2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf"

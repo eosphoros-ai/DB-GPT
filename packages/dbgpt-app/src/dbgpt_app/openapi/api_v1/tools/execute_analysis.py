@@ -322,6 +322,13 @@ def _file_summary_chunk(entry: Dict[str, Any], *, include_name: bool) -> Dict[st
 
 
 def make_execute_analysis(react_state: Dict[str, Any]):
+    if not react_state.get("session_files") and (
+        react_state.get("dataset_id") or len(react_state.get("file_paths") or []) > 1
+    ):
+        from .uploaded_dataset_tools import make_execute_analysis_for_dataset
+
+        return make_execute_analysis_for_dataset(react_state)
+
     @tool(
         description=(
             "Execute quick analysis on the uploaded Excel/CSV file(s). "

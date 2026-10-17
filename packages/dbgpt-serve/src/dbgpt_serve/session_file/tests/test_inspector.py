@@ -290,6 +290,18 @@ async def test_async_inspection_times_out_deterministically(tmp_path):
     assert result.preview == {}
 
 
+def test_pid_probe_does_not_terminate_a_live_worker():
+    worker = multiprocessing.get_context("spawn").Process(target=time.sleep, args=(30,))
+    worker.start()
+    try:
+        assert inspector_module._pid_exists(worker.pid)
+        worker.join(timeout=0.1)
+        assert worker.is_alive()
+    finally:
+        worker.terminate()
+        worker.join(timeout=5)
+
+
 def test_isolated_timeout_terminates_worker_and_allows_followup(tmp_path):
     completed, pid = inspector_module._run_isolated(
         time.sleep, (5,), timeout_seconds=0.2

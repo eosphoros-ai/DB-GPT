@@ -45,7 +45,20 @@ class ScheduledTaskEntity(Model):
         comment="Record update time",
     )
     user_name = Column(String(128), nullable=True, index=True, comment="User name")
+    owner_id = Column(
+        String(255), nullable=True, index=True, comment="Stable authenticated owner id"
+    )
     sys_code = Column(String(128), nullable=True, comment="System code")
+    resource_type = Column(
+        String(64), nullable=True, index=True, comment="Bound resource type"
+    )
+    resource_id = Column(
+        String(128), nullable=True, index=True, comment="Bound resource id"
+    )
+    lease_owner = Column(String(64), nullable=True, comment="Current execution lease")
+    lease_expires_at = Column(
+        DateTime, nullable=True, index=True, comment="Execution lease expiry"
+    )
 
     def __repr__(self) -> str:
         return (
