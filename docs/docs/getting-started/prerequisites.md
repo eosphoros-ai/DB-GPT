@@ -87,7 +87,7 @@ uv --version
 | Requirement | Version | Check command |
 |---|---|---|
 | **Node.js** | 20.19 or newer (frontend development) | `node --version` |
-| **Yarn Classic** | 1.22.22; run `corepack enable` first | `yarn --version` |
+| **Yarn Classic** | 1.x (validated with 1.22.22) | `yarn --version` |
 
 ### For local model deployment
 
