@@ -189,6 +189,27 @@ class ScheduledTaskDao(BaseDao[ScheduledTaskEntity, Dict[str, Any], Dict[str, An
             )
             return count == 1
 
+    def renew_lease(self, task_id: str, lease_owner: str, *, ttl_seconds: int) -> bool:
+        """Extend a live lease without reviving an expired or replaced owner."""
+        now = datetime.now()
+        with self.session() as session:
+            count = (
+                session.query(ScheduledTaskEntity)
+                .filter(
+                    ScheduledTaskEntity.task_id == task_id,
+                    ScheduledTaskEntity.lease_owner == lease_owner,
+                    ScheduledTaskEntity.lease_expires_at >= now,
+                )
+                .update(
+                    {
+                        ScheduledTaskEntity.lease_expires_at: now
+                        + timedelta(seconds=ttl_seconds)
+                    },
+                    synchronize_session=False,
+                )
+            )
+            return count == 1
+
     def release_lease(self, task_id: str, lease_owner: str) -> None:
         with self.session() as session:
             (

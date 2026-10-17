@@ -36,6 +36,7 @@ from ..dao.run_dao import ScheduledRunDao
 from ..dao.task_dao import ScheduledTaskDao
 
 logger = logging.getLogger(__name__)
+_LEASE_RENEW_INTERVAL_SECONDS = 30
 
 
 # ── Module-level entry point for APScheduler ──────────────────────────
@@ -73,18 +74,49 @@ async def run_scheduled_task(task_id: str, allow_disabled: bool = False) -> bool
         logger.info("scheduled task %s already has an active execution lease", task_id)
         return False
 
+    async def keep_lease():
+        while True:
+            await asyncio.sleep(min(_LEASE_RENEW_INTERVAL_SECONDS, lease_ttl / 3))
+            if not task_dao.renew_lease(task_id, lease_owner, ttl_seconds=lease_ttl):
+                raise RuntimeError(f"scheduled task {task_id} lost its execution lease")
+
+    execution = None
+    heartbeat = None
     try:
         if task.get("task_type") == "dashboard_refresh":
             from .dashboard_refresh_runner import DashboardRefreshRunner
 
-            await DashboardRefreshRunner().refresh_dashboard_task(
-                task_id, allow_disabled=allow_disabled
+            execution = asyncio.create_task(
+                DashboardRefreshRunner().refresh_dashboard_task(
+                    task_id, allow_disabled=allow_disabled
+                )
             )
         else:
-            await ChatReplayRunner().replay_chat_task(task_id)
+            execution = asyncio.create_task(
+                ChatReplayRunner().replay_chat_task(task_id)
+            )
+        heartbeat = asyncio.create_task(keep_lease())
+        done, _ = await asyncio.wait(
+            {execution, heartbeat}, return_when=asyncio.FIRST_COMPLETED
+        )
+        if heartbeat in done:
+            # A renewal error must stop execution just like a lost lease.
+            await heartbeat
+        await execution
         return True
     finally:
-        task_dao.release_lease(task_id, lease_owner)
+        try:
+            if execution is not None:
+                if not execution.done():
+                    execution.cancel()
+                # Dashboard cancellation waits for its actual thread to exit.
+                # Keep renewing throughout that cleanup, including after timeout.
+                await asyncio.gather(execution, return_exceptions=True)
+        finally:
+            if heartbeat is not None:
+                heartbeat.cancel()
+                await asyncio.gather(heartbeat, return_exceptions=True)
+            task_dao.release_lease(task_id, lease_owner)
 
 
 def _default_session_file_registry():

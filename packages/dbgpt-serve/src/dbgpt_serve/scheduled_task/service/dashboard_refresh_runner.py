@@ -75,11 +75,12 @@ class DashboardRefreshRunner:
             self._fail(run_id, "unexpected task type", attempt_count=0)
             return
 
+        attempt = 0
         try:
             payload = DashboardRefreshPayload(
                 **json.loads(task.get("payload_json") or "{}")
             )
-            owner_id = task.get("owner_id") or task.get("user_name")
+            owner_id = task.get("owner_id")
             if not owner_id:
                 raise ValueError("dashboard schedule has no authenticated owner")
 
@@ -116,6 +117,11 @@ class DashboardRefreshRunner:
                 attempt_count=payload.max_attempts,
                 status="timeout" if isinstance(last_error, TimeoutError) else "failed",
             )
+        except asyncio.CancelledError:
+            self._fail(
+                run_id, "execution cancelled", attempt_count=attempt, status="failed"
+            )
+            raise
         except Exception as exc:
             logger.exception("dashboard schedule %s failed", task_id)
             self._fail(run_id, str(exc), attempt_count=1)
@@ -131,6 +137,25 @@ class DashboardRefreshRunner:
         worker = asyncio.create_task(
             asyncio.to_thread(self._run_once, payload, owner_id, check_active)
         )
+
+        async def wait_for_worker_exit():
+            interrupted = False
+            while not worker.done():
+                try:
+                    await asyncio.shield(worker)
+                except asyncio.CancelledError:
+                    # Shutdown may cancel again while a timed-out thread drains.
+                    # Never cancel the asyncio wrapper and lose track of it.
+                    interrupted = True
+                    cancelled.set()
+                except Exception:
+                    break
+            if interrupted:
+                if not worker.cancelled():
+                    worker.exception()
+                raise asyncio.CancelledError
+            return worker.result()
+
         try:
             return await asyncio.wait_for(
                 asyncio.shield(worker), timeout=payload.timeout_seconds
@@ -141,11 +166,11 @@ class DashboardRefreshRunner:
             # until it has exited; publication checks cancellation before commit.
             # If it already committed, preserve success rather than report a
             # timeout for a publication that is visible to users.
-            return await worker
+            return await wait_for_worker_exit()
         except asyncio.CancelledError:
             cancelled.set()
             try:
-                await asyncio.shield(worker)
+                await wait_for_worker_exit()
             except Exception:
                 pass
             raise

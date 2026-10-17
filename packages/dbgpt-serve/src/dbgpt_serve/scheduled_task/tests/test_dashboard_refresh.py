@@ -3,7 +3,7 @@
 import asyncio
 import json
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
@@ -279,3 +279,131 @@ async def test_paused_dashboard_schedule_can_run_once_without_becoming_enabled()
     assert task["enabled"] is False
     assert run["status"] == "success"
     assert service.refresh_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_dashboard_schedule_never_uses_display_name_as_owner():
+    task_id = _seed_dashboard_task()
+    with ScheduledTaskDao().session() as session:
+        session.query(ScheduledTaskEntity).filter_by(task_id=task_id).update(
+            {"owner_id": None}
+        )
+    service = FakeDashboardService()
+    await DashboardRefreshRunner(
+        dashboard_service_factory=lambda: service
+    ).refresh_dashboard_task(task_id)
+    run = ScheduledRunDao().list_by_task_id(task_id)[0]
+    assert run["status"] == "failed"
+    assert "authenticated owner" in run["error_message"]
+    assert service.refresh_calls == 0
+
+
+def test_lease_renewal_rejects_wrong_owner_and_expired_lease(monkeypatch):
+    task_id = _seed_dashboard_task()
+    dao = ScheduledTaskDao()
+    now = datetime.now()
+    clock = SimpleNamespace(now=lambda: now)
+    monkeypatch.setattr("dbgpt_serve.scheduled_task.dao.task_dao.datetime", clock)
+    assert dao.try_acquire_lease(task_id, "worker-a", ttl_seconds=120)
+    assert not dao.renew_lease(task_id, "worker-b", ttl_seconds=120)
+    now += timedelta(seconds=121)
+    assert not dao.renew_lease(task_id, "worker-a", ttl_seconds=120)
+    assert dao.try_acquire_lease(task_id, "worker-b", ttl_seconds=120)
+    dao.release_lease(task_id, "worker-a")
+    assert dao.get_one({"task_id": task_id})["lease_owner"] == "worker-b"
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_renews_lease_beyond_original_expiry(monkeypatch):
+    task_id = _seed_dashboard_task(max_attempts=1)
+    dao = ScheduledTaskDao()
+    start = datetime.now()
+    now = start
+    clock = SimpleNamespace(now=lambda: now)
+    monkeypatch.setattr("dbgpt_serve.scheduled_task.dao.task_dao.datetime", clock)
+    monkeypatch.setattr(
+        "dbgpt_serve.scheduled_task.service.chat_replay_runner._LEASE_RENEW_INTERVAL_SECONDS",
+        0.01,
+    )
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def slow_run(*args, **kwargs):
+        entered.set()
+        await release.wait()
+
+    monkeypatch.setattr(DashboardRefreshRunner, "refresh_dashboard_task", slow_run)
+    running = asyncio.create_task(run_scheduled_task(task_id))
+    try:
+        await asyncio.wait_for(entered.wait(), 2)
+        now = start + timedelta(seconds=110)
+        for _ in range(100):
+            if dao.get_one({"task_id": task_id})["lease_expires_at"] > (
+                start + timedelta(seconds=120)
+            ):
+                break
+            await asyncio.sleep(0.01)
+        now = start + timedelta(seconds=121)
+        assert not dao.try_acquire_lease(task_id, "other-worker", ttl_seconds=120)
+    finally:
+        release.set()
+        await running
+    assert dao.get_one({"task_id": task_id})["lease_owner"] is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stop", ["lease_lost", "cancel_after_timeout"])
+async def test_dispatcher_drains_cancelled_worker_without_late_publish(
+    monkeypatch, stop
+):
+    task_id = _seed_dashboard_task(publish_after_refresh=True, max_attempts=1)
+    entered, release = threading.Event(), threading.Event()
+
+    class SlowService(FakeDashboardService):
+        def refresh_dashboard(self, *args):
+            entered.set()
+            assert release.wait(3)
+            return super().refresh_dashboard(*args)
+
+    service = SlowService()
+    monkeypatch.setattr(
+        DashboardRefreshRunner, "_dashboard_service", lambda self: service
+    )
+    monkeypatch.setattr(
+        "dbgpt_serve.scheduled_task.service.chat_replay_runner._LEASE_RENEW_INTERVAL_SECONDS",
+        0.01,
+    )
+    if stop == "cancel_after_timeout":
+        original = DashboardRefreshRunner._run_bounded
+
+        async def bounded(self, payload, owner_id):
+            payload = payload.model_copy(update={"timeout_seconds": 0.02})
+            return await original(self, payload, owner_id)
+
+        monkeypatch.setattr(DashboardRefreshRunner, "_run_bounded", bounded)
+    running = asyncio.create_task(run_scheduled_task(task_id))
+    try:
+        assert await asyncio.to_thread(entered.wait, 2)
+        if stop == "lease_lost":
+            ScheduledTaskDao().update(
+                {"task_id": task_id}, {"lease_owner": "other-worker"}
+            )
+        else:
+            await asyncio.sleep(0.05)
+            running.cancel()
+        await asyncio.sleep(0.05)
+        assert not running.done(), "Cancellation must wait for the actual worker"
+        if stop == "cancel_after_timeout":
+            running.cancel()  # Repeated shutdown must not detach the worker either.
+            await asyncio.sleep(0.02)
+            assert not running.done()
+    finally:
+        release.set()
+    expected = RuntimeError if stop == "lease_lost" else asyncio.CancelledError
+    with pytest.raises(expected):
+        await running
+    assert service.publish_calls == 0
+    run = ScheduledRunDao().list_by_task_id(task_id)[0]
+    assert run["status"] == "failed"
+    assert run["finished_at"] is not None
+    task = ScheduledTaskDao().get_one({"task_id": task_id})
+    assert task["lease_owner"] == ("other-worker" if stop == "lease_lost" else None)
