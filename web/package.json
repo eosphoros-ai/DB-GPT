@@ -3,37 +3,28 @@
   "version": "0.1.0",
   "private": true,
   "description": "DB-GPT WebUI",
-  "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
-  "license": "ISC",
-  "author": "",
   "main": "next.config.js",
   "directories": {
     "lib": "lib"
   },
+  "author": "",
+  "license": "ISC",
+  "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
   "scripts": {
+    "start": "node scripts/run-next.cjs start",
+    "dev": "node scripts/run-next.cjs dev --webpack",
     "build": "node scripts/build-web.cjs",
     "build:prod": "node scripts/build-web.cjs --production-env",
-    "compile": "node scripts/build-web.cjs --export",
-    "dev": "node scripts/run-next.cjs dev --webpack",
-    "export": "npm run compile",
-    "format": "prettier --write '**/*.{ts,tsx}'",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "start": "node scripts/run-next.cjs start",
-    "test": "npm run test:react-final && npm run test:final-presentation",
-    "test:build": "node --test next.config.test.cjs scripts/verify-next-build-assets.test.cjs scripts/prepare-build-types.test.cjs scripts/toolchain-regressions.test.cjs scripts/build-launcher.test.cjs",
-    "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
+    "format": "prettier --write '**/*.{ts,tsx}'",
+    "export": "node scripts/build-web.cjs --export",
+    "compile": "node scripts/build-web.cjs --export",
+    "test": "yarn test:react-final && yarn test:final-presentation",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
+    "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
+    "lint:fix": "eslint . --fix",
+    "test:build": "node --test next.config.test.cjs scripts/verify-next-build-assets.test.cjs scripts/prepare-build-types.test.cjs scripts/toolchain-regressions.test.cjs scripts/build-launcher.test.cjs",
     "typecheck": "node scripts/typecheck.cjs"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",
@@ -130,23 +121,24 @@
     "prettier-plugin-organize-imports": "^4.0.0",
     "prettier-plugin-packagejson": "^2.5.2"
   },
-  "packageManager": "npm@10.8.2",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "resolutions": {
+    "**/fmin/rollup": "2.80.0",
+    "**/react-markdown-editor-lite/nanoid": "3.3.18",
+    "**/sequelize/uuid": "11.1.1",
+    "**/cosmiconfig/yaml": "1.10.3"
+  },
+  "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=20.19.0",
-    "npm": ">=10 <11"
-  },
-  "overrides": {
-    "fmin": {
-      "rollup": "2.80.0"
-    },
-    "react-markdown-editor-lite": {
-      "nanoid": "$nanoid"
-    },
-    "sequelize": {
-      "uuid": "$uuid"
-    },
-    "cosmiconfig": {
-      "yaml": "1.10.3"
-    }
+    "yarn": "1.22.x"
   }
 }

@@ -8,7 +8,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 
 /** Spawn a copied launcher with a fake Next entrypoint and register cleanup for its process and temporary directory. */
-function runnerFixture(t, childSource, nodeOptions = '') {
+function runnerFixture(t, childSource, nodeOptions = '', command = 'start') {
   const temporaryRoot = fs.realpathSync(os.tmpdir());
   const root = fs.mkdtempSync(path.join(temporaryRoot, 'dbgpt-runner-tests-'));
   const scripts = path.join(root, 'scripts');
@@ -17,7 +17,7 @@ function runnerFixture(t, childSource, nodeOptions = '') {
   fs.mkdirSync(nextBin, { recursive: true });
   fs.copyFileSync(path.join(__dirname, 'run-next.cjs'), path.join(scripts, 'run-next.cjs'));
   fs.writeFileSync(path.join(nextBin, 'next'), childSource);
-  const runner = spawn(process.execPath, [path.join(scripts, 'run-next.cjs'), 'start'], {
+  const runner = spawn(process.execPath, [path.join(scripts, 'run-next.cjs'), command], {
     env: { ...process.env, NODE_OPTIONS: nodeOptions },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -44,7 +44,9 @@ function runnerFixture(t, childSource, nodeOptions = '') {
   };
 }
 
-for (const [options, expectedMiB] of [
+for (const [options, expectedMiB, command = 'start'] of [
+  ['', 16384, 'dev'],
+  ['--max-old-space-size=4096', 4096, 'dev'],
   ['', 8192],
   ['--trace-warnings', 8192],
   ['--trace-warnings --max-old-space-size=12288', 12288],
@@ -57,7 +59,7 @@ for (const [options, expectedMiB] of [
   ['--trace-warnings --title="--max-old-space-size=4096"', 8192],
   ['--trace-warnings --title="foo \\"--max-old-space-size=4096\\""', 8192],
 ]) {
-  test(`the Next child applies the heap options: ${options || '(empty)'}`, { timeout: 10000 }, async t => {
+  test(`the Next ${command} child applies the heap options: ${options || '(empty)'}`, { timeout: 10000 }, async t => {
     const { runner } = runnerFixture(
       t,
       `console.log(JSON.stringify({
@@ -65,6 +67,7 @@ for (const [options, expectedMiB] of [
         options: process.env.NODE_OPTIONS
       }));`,
       options,
+      command,
     );
     let output = '';
     let errors = '';

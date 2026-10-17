@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 
-test('build children preload the file limiter on every OS, including paths with spaces', t => {
+test('export preloads the file limiter and checks the default output directories, including paths with spaces', t => {
   const temporaryRoot = fs.realpathSync(os.tmpdir());
   const root = fs.mkdtempSync(path.join(temporaryRoot, 'dbgpt build launcher '));
   t.after(() => {
@@ -21,11 +21,20 @@ test('build children preload the file limiter on every OS, including paths with 
   fs.writeFileSync(path.join(scripts, 'graceful-fs-register.cjs'), 'process.env.TEST_LIMITER_LOADED = "yes";');
   fs.writeFileSync(
     path.join(scripts, 'prepare-build-types.cjs'),
-    'exports.prepareBuildTypes = () => ({ name: "types.json", cleanup() {} });',
+    `exports.prepareBuildTypes = (root, distDir) => {
+      require('node:assert/strict').equal(distDir, '.next');
+      return { name: 'types.json', cleanup() {} };
+    };`,
   );
   fs.writeFileSync(
     path.join(scripts, 'verify-next-build-assets.cjs'),
-    'exports.verifyNextBuildAssets = () => ({ htmlFiles: 1, assetReferences: 1 });',
+    `let calls = 0;
+    exports.verifyNextBuildAssets = (directory, options) => {
+      const assert = require('node:assert/strict');
+      assert.equal(require('node:path').basename(directory), calls++ === 0 ? '.next' : 'out');
+      assert.equal(options?.staticExport, calls === 2 ? true : undefined);
+      return { htmlFiles: 1, assetReferences: 1 };
+    };`,
   );
   fs.writeFileSync(
     path.join(nextBin, 'next'),
@@ -37,7 +46,7 @@ test('build children preload the file limiter on every OS, including paths with 
   );
   const result = spawnSync(process.execPath, [path.join(scripts, 'build-web.cjs'), '--export'], {
     encoding: 'utf8',
-    env: { ...process.env, NODE_OPTIONS: '', TEST_LIMITER_LOADED: '' },
+    env: { ...process.env, NODE_OPTIONS: '', TEST_LIMITER_LOADED: '', NEXT_DIST_DIR: '.next-custom' },
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /preload verified/);

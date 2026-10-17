@@ -30,3 +30,15 @@ test('static bundle uses Next export mode while server builds retain API routes'
   }
   assert.equal(config(PHASE_PRODUCTION_BUILD).output, undefined);
 });
+
+test('builds retain the default output directories when NEXT_DIST_DIR is set', () => {
+  const previous = process.env.NEXT_DIST_DIR;
+  try {
+    process.env.NEXT_DIST_DIR = '.next-custom';
+    assert.equal(config(PHASE_PRODUCTION_BUILD).distDir, undefined);
+    assert.equal(config(PHASE_DEVELOPMENT_SERVER).distDir, undefined);
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_DIST_DIR;
+    else process.env.NEXT_DIST_DIR = previous;
+  }
+});

@@ -12,7 +12,6 @@ module.exports = phase => {
   const development = phase === PHASE_DEVELOPMENT_SERVER;
   const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === '1';
   return {
-    distDir: process.env.NEXT_DIST_DIR || '.next',
     ...(staticExport ? { output: 'export' } : {}),
     ...(process.platform === 'win32' && !development ? { experimental: { cpus: 1 } } : {}),
     typescript: {

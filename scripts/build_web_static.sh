@@ -25,9 +25,9 @@ else
 fi
 
 
-npm ci
+yarn install --frozen-lockfile
 rm -rf ../web/out/
-npm run compile
+yarn compile
 
 rm -rf $TARGET_DIR \
   && mkdir -p $TARGET_DIR \

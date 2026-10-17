@@ -11,7 +11,8 @@ if (args.length === 0) {
 
 // Node uses the last value of a singleton option. Put the default first so Node
 // itself preserves explicit limits and handles quoting/option values correctly.
-const nodeOptions = ['--max_old_space_size=8192', process.env.NODE_OPTIONS].filter(Boolean).join(' ');
+const heapMiB = args[0] === 'dev' ? 16384 : 8192;
+const nodeOptions = [`--max_old_space_size=${heapMiB}`, process.env.NODE_OPTIONS].filter(Boolean).join(' ');
 
 const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: path.join(__dirname, '..'),

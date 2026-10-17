@@ -3,7 +3,7 @@ const path = require('node:path');
 const { prepareBuildTypes } = require('./prepare-build-types.cjs');
 
 const webRoot = path.join(__dirname, '..');
-const config = prepareBuildTypes(webRoot, process.env.NEXT_DIST_DIR || '.next');
+const config = prepareBuildTypes(webRoot, '.next');
 let status;
 try {
   const result = spawnSync(
