@@ -87,7 +87,7 @@ uv --version
 | 依赖项 | 版本 | 检查命令 |
 |---|---|---|
 | **Node.js** | 20.19 或更高（前端开发） | `node --version` |
-| **Yarn Classic** | 1.22.22；先运行 `corepack enable` | `yarn --version` |
+| **Yarn Classic** | 1.x（已验证 1.22.22） | `yarn --version` |
 
 ### 用于本地模型部署
 

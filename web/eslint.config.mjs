@@ -1,6 +1,6 @@
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTypeScript from 'eslint-config-next/typescript';
-import prettier from 'eslint-config-prettier/flat';
+import prettier from 'eslint-plugin-prettier/recommended';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 // Preserve the two hook checks enabled by the previous configuration. Enabling
@@ -48,5 +48,12 @@ export default defineConfig([
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   prettier,
+  {
+    // Keep the original formatting contract alongside the flat-config migration.
+    rules: {
+      quotes: ['error', 'single', { allowTemplateLiterals: true, avoidEscape: true }],
+      semi: ['error', 'always'],
+    },
+  },
   globalIgnores(['.next*/**', 'out/**', 'build/**', 'dist/**', 'node_modules/**', 'next-env.d.ts']),
 ]);
