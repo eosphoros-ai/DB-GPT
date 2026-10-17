@@ -39,7 +39,7 @@ export type IChatDbSchema = {
   name: string;
   label: string;
   description: string;
-  params: Record<string, any>;
+  params: any[];
   parameters: any[];
   comment: string;
   db_host: string;
@@ -62,7 +62,7 @@ export type IChatDbSupportTypeSchema = {
   parameters: any[];
 };
 
-export type DbSupportTypeResponse = { types: IChatDbSupportTypeSchema[] };
+export type DbSupportTypeResponse = IChatDbSupportTypeSchema[];
 
 export type PostDbParams = Partial<DbListResponse[0] & { file_path: string }>;
 

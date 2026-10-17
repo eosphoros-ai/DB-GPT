@@ -264,7 +264,7 @@ export default function SearchToolsPanel(props: IProps) {
                 key={i}
                 className='flex items-center gap-2 py-1 px-2 rounded hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-colors cursor-pointer group'
                 onClick={() => openFile(entry.path)}
-                title={tt('kb_cat_desc') || `Read ${entry.name}`}
+                title={tt('kb_cat_desc' as any) || `Read ${entry.name}`}
               >
                 <ReadOutlined style={{ color: '#13C2C2', fontSize: 13 }} />
                 <span className='text-gray-800 dark:text-gray-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:underline'>
@@ -330,7 +330,7 @@ export default function SearchToolsPanel(props: IProps) {
                 key={i}
                 className='flex items-center gap-2 py-1 px-2 rounded hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-colors cursor-pointer group'
                 onClick={() => openFile(fileName)}
-                title={tt('kb_cat_desc') || `Read ${fileName}`}
+                title={tt('kb_cat_desc' as any) || `Read ${fileName}`}
               >
                 <ReadOutlined style={{ color: '#13C2C2', fontSize: 13 }} />
                 <span className='text-gray-800 dark:text-gray-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:underline'>
@@ -374,7 +374,7 @@ export default function SearchToolsPanel(props: IProps) {
                   key={i}
                   className='flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold mt-3 mb-1 px-1 text-[12px] cursor-pointer hover:underline'
                   onClick={() => openFile(filePath)}
-                  title={tt('kb_cat_desc') || `Read ${filePath}`}
+                  title={tt('kb_cat_desc' as any) || `Read ${filePath}`}
                 >
                   <ReadOutlined style={{ fontSize: 12 }} />
                   {filePath}
@@ -459,7 +459,7 @@ export default function SearchToolsPanel(props: IProps) {
         {TOOLS.map(t => {
           const active = tool === t.key;
           return (
-            <Tooltip key={t.key} title={tt(t.descKey) || t.key}>
+            <Tooltip key={t.key} title={tt(t.descKey as any) || t.key}>
               <button
                 onClick={() => {
                   setTool(t.key);
@@ -477,7 +477,7 @@ export default function SearchToolsPanel(props: IProps) {
                 style={active ? { backgroundColor: t.color } : undefined}
               >
                 <span className='text-base'>{t.icon}</span>
-                <span>{tt(t.key) || t.key}</span>
+                <span>{tt(t.key as any) || t.key}</span>
               </button>
             </Tooltip>
           );

@@ -21,7 +21,7 @@ export type BaseModelParams = {
   port: number;
   model: string;
   worker_type: string;
-  delete_after?: boolean | null;
+  delete_after: boolean | null;
   params: any;
 };
 

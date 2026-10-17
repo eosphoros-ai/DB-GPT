@@ -36,7 +36,6 @@ function Agent() {
   );
 
   const { data: agents = [], refresh } = useRequest<IAgentPlugin[], []>(
-    // @ts-expect-error Installed plugins share the displayed fields; marketplace-only metadata is guarded at each use.
     async () => {
       setLoading(true);
       if (activeKey === 'my') {

@@ -19,7 +19,7 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parents[2]
-DEST = ROOT / "data" / "dashboard_research_sources"
+DEST = ROOT / "examples" / "dashboard" / "generated" / "research-sources"
 UCI_URL = "https://archive.ics.uci.edu/static/public/45/heart%2Bdisease.zip"
 UCI_CITATION = (
     "Janosi, Steinbrunn, Pfisterer & Detrano (1989). Heart Disease. "

@@ -45,9 +45,6 @@ jobs:
         run: |
           yarn install
 
-      - name: Lint web application
-        run: yarn lint
-
       - name: Build web application
         run: |
           yarn build

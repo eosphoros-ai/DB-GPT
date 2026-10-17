@@ -100,7 +100,7 @@ export default function AppModal(props: IProps) {
     if (!data) return null;
 
     const teamModalOptions = data.map(item => {
-      return { value: item.value, label: item.name };
+      return { value: item, label: item };
     });
     setTeamModal(teamModalOptions);
   };

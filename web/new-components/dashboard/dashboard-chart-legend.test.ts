@@ -37,7 +37,7 @@ describe('dashboard series legends', () => {
     expect(result.color.position).toBe('top');
     const long = '这是一个很长很长的收入系列名称';
     expect(result.color.labelFormatter(long)).toBe(long);
-    expect(result.color.poptip.render({ label: long })).toContain(long);
+    expect(dashboardLegendPoptip({ label: long })).toContain(long);
   });
   it('does not turn untrusted names into poptip HTML', () => {
     const html = dashboardLegendPoptip({ label: '<img src=x onerror="alert(1)">&\'' });

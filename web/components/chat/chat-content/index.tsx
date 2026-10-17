@@ -111,9 +111,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
 
   const extraMarkdownComponents = useMemo<MarkdownComponent>(
     () => ({
-      // @ts-expect-error GPT-Vis's renderer return type excludes valid React 18 children such as numbers and arrays.
       'custom-view'({ children }) {
-        if (children == null) return null;
         const index = +children.toString();
         if (!cachePluginContext[index]) {
           return children;

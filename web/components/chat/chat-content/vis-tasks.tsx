@@ -1,4 +1,3 @@
-// @ts-expect-error 上游未接入的组件引用缺失模块；存量问题：升级后类型检查变严才暴露，不在本 PR 修复。
 import { ee, EVENTS } from '@/utils/event-emitter';
 import { CheckOutlined, ClockCircleOutlined, CloseOutlined, LoadingOutlined, PauseOutlined } from '@ant-design/icons';
 

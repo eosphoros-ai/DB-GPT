@@ -20,19 +20,64 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parents[2]
+# Pinned source provenance; see README.md for citations and transformations.
 SOURCES = {
-    "itsm": (
-        498,
-        "incident+management+process+enriched+event+log",
-        "https://doi.org/10.24432/C57S4H",
-    ),
-    "energy": (374, "appliances+energy+prediction", "https://doi.org/10.24432/C5VC8G"),
-    "maintenance": (
-        601,
-        "ai4i+2020+predictive+maintenance+dataset",
-        "https://doi.org/10.24432/C5HS5C",
-    ),
-    "students": (320, "student+performance", "https://doi.org/10.24432/C5TG7T"),
+    "itsm": {
+        "name": "sqlite_itsm",
+        "download": "https://archive.ics.uci.edu/static/public/498/incident+management+process+enriched+event+log.zip",
+        "citation": "https://doi.org/10.24432/C57S4H",
+        "license": "CC BY 4.0",
+        "sha256": "6294e29a311647306bfdfc85783f7df66517c197b9cd49aa5ee36ba9c525d1d6",
+        "source_rows": 141712,
+        "rows": 24918,
+        "notes": (
+            "按工单编号取最后一次更新；解决耗时=(resolved_at-opened_at)/3600，"
+            "缺失或负时长不计平均。SLA 仅展示源 made_sla 为 True 的比例，"
+            "不自行推断 SLA 阈值。"
+        ),
+    },
+    "energy": {
+        "name": "sqlite_energy",
+        "download": "https://archive.ics.uci.edu/static/public/374/appliances+energy+prediction.zip",
+        "citation": "https://doi.org/10.24432/C5VC8G",
+        "license": "CC BY 4.0",
+        "sha256": "2fccf354445d886e7917620b0195db1f3e3e34d5a067a93b844694a4c561255a",
+        "source_rows": 19735,
+        "rows": 19735,
+        "notes": (
+            "比利时一栋实验住宅，2016 年每 10 分钟采样；"
+            "Appliances 与 lights 为 Wh，分别除以 1000 后汇总为 kWh。"
+            "最后一天为部分采样日。"
+        ),
+    },
+    "maintenance": {
+        "name": "sqlite_maintenance",
+        "download": "https://archive.ics.uci.edu/static/public/601/ai4i+2020+predictive+maintenance+dataset.zip",
+        "citation": "https://doi.org/10.24432/C5HS5C",
+        "license": "CC BY 4.0",
+        "sha256": "f601f14294bcf190f9d720676b7f0aea46a26cde9ab8ebc7b4f8174d9d26b252",
+        "source_rows": 10000,
+        "rows": 10000,
+        "notes": (
+            "AI4I 2020 为 UCI 提供的合成工业数据，非真实生产记录。"
+            "样本组按 UDI 每 1000 条划分，不能解释为时间趋势。"
+            "故障比例按 Machine failure=1 统计。"
+        ),
+    },
+    "students": {
+        "name": "sqlite_students",
+        "download": "https://archive.ics.uci.edu/static/public/320/student+performance.zip",
+        "citation": "https://doi.org/10.24432/C5TG7T",
+        "license": "CC BY 4.0",
+        "sha256": "82ae9d66437b9808df42e8c89d2bb179c46e9cfbcf06f38abc1d20b3b747e177",
+        "source_rows": 649,
+        "rows": 649,
+        "notes": (
+            "只使用两所葡萄牙中学的葡语课程数据，每行一名学生，"
+            "避免与数学课程重复计人。成绩范围 0–20，达标线定义为 >=10；"
+            "缺课按原始 absences 计。数据没有逐日日期。"
+        ),
+    },
 }
 
 
@@ -246,21 +291,13 @@ def write_database(database, rows, metadata):
 
 def generate_sources(output, cache_dir, *, offline=False, source_keys=None):
     """Generate and verify data without contacting a DB-GPT backend."""
-    expected = {
-        item["name"].removeprefix("sqlite_"): item
-        for item in json.loads(
-            (ROOT / "data/dashboard_reference_sources/manifest.json").read_text(
-                encoding="utf-8"
-            )
-        )
-    }
     output = Path(output).resolve()
     cache_dir = Path(cache_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     cache_dir.mkdir(parents=True, exist_ok=True)
     generated = []
     for key in source_keys or SOURCES:
-        spec = expected[key]
+        spec = SOURCES[key]
         raw = cache_dir / f"{key}.zip"
         if raw.exists():
             blob = raw.read_bytes()
@@ -338,7 +375,9 @@ def register_sources(manifest, output, api_base, user_id=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--output", type=Path, default=ROOT / "output/dashboard-reference-sources"
+        "--output",
+        type=Path,
+        default=ROOT / "examples/dashboard/generated/reference-sources",
     )
     parser.add_argument(
         "--cache-dir", type=Path, help="Directory of the four pinned UCI ZIP archives"

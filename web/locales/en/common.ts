@@ -67,9 +67,9 @@ export const CommonEn = {
   Automatic: 'Automatic',
   Process: 'Process',
   Automatic_desc: 'Automatically set segmentation and preprocessing rules.',
-  chunk_size: 'Chunk Size',
+  chunk_size: 'chunk_size',
   The_size_of_the_data_chunks: 'The size of the data chunks used in processing',
-  chunk_overlap: 'Chunk Overlap',
+  chunk_overlap: 'chunk_overlap',
   retrieve_mode: 'retrieve_mode',
   The_amount_of_overlap: 'The amount of overlap between adjacent data chunks',
   The_strategy_of_query_retrival: 'The strategy of query data retrival in processing',
@@ -885,6 +885,7 @@ export const CommonEn = {
   // ── Create Knowledge Unified Form ──
   create_and_sync: 'Create & Sync',
   create_and_upload: 'Create & Upload',
+  create_failed: 'Create failed',
   upload_failed: 'Upload failed',
   upload_sync_failed: 'Upload succeeded but sync failed',
   upload_sync_completed: 'Created and synced successfully',
@@ -914,6 +915,8 @@ export const CommonEn = {
   index_knowledge_graph: 'Graph Index',
   index_knowledge_graph_desc: 'Knowledge graph',
   chunk_strategy: 'Chunk Strategy',
+  chunk_size: 'Chunk Size',
+  chunk_overlap: 'Chunk Overlap',
   // ── Data Source Card Descriptions ──
   ds_document_desc: 'Upload PDF, Word, Excel, PPT, Markdown and more',
   ds_git_repo_desc: 'Clone & index a repo, split by AST or markdown headers',

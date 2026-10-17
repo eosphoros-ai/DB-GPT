@@ -34,12 +34,12 @@ const readPlot = (canvas: HTMLCanvasElement) => {
         quantitativeMarks: context.views.flatMap((view: any) =>
           [...view.markState].flatMap(([mark, state]: any) =>
             ['line', 'point'].includes(mark.type)
-              ? state.data.map((datum: any) => ({
-                  type: mark.type,
-                  value: datum.data?.value,
-                  geometryY: datum.y,
-                  axisY: view.scale.y.map(datum.data?.value),
-                }))
+              ? state.data.map((datum: any) => {
+                  // G2 5.1 keeps the source row on the mark, indexed by the
+                  // rendered datum; newer releases also attach it as data.
+                  const value = (datum.data ?? mark.data[datum.index]).value;
+                  return { type: mark.type, value, geometryY: datum.y, axisY: view.scale.y.map(value) };
+                })
               : [],
           ),
         ),
@@ -116,10 +116,42 @@ for (const offset of [0, -200_000, -500_000]) {
     await expect.poll(async () => (await canvas.evaluate(readPlot)).runningMarkAnimations).toBe(0);
     const plotted = (await canvas.evaluate(readPlot)).quantitativeMarks;
     expect(plotted.filter((mark: any) => mark.type === 'point')).toHaveLength(result.rows.length);
+    expect(
+      plotted
+        .filter((mark: any) => mark.type === 'point')
+        .map((mark: any) => mark.value)
+        .sort((a: number, b: number) => a - b),
+    ).toEqual(result.rows.map((row: number[]) => row[valueColumn]).sort((a: number, b: number) => a - b));
     for (const mark of plotted) {
       expect(Number.isFinite(mark.value)).toBe(true);
       expect(mark.geometryY, `value ${mark.value} must align with the displayed axis`).toBeCloseTo(mark.axisY, 6);
     }
+  });
+}
+
+for (const chartType of ['line', 'bar']) {
+  test(`long measure units keep numeric axis labels inside the ${chartType} canvas`, async ({ page }, testInfo) => {
+    const published = structuredClone(apple);
+    const widget = published.schema.widgets.find((item: any) => item.type === chartType);
+    widget.presentation.unit = '原始数值单位';
+    widget.presentation.visualization = chartType;
+    await page.route('**/api/**', route => route.fulfill({ json: { success: true, data: published } }));
+    await page.goto('/dashboard-share/long-unit-regression/');
+    const canvas = page.locator(`[data-dashboard-widget-id="${widget.id}"] canvas`);
+    await expect(canvas).toBeVisible();
+    await expect.poll(async () => (await canvas.evaluate(readPlot)).runningMarkAnimations).toBe(0);
+    const plot = await canvas.evaluate(readPlot);
+    const ticks = plot.labels.filter(
+      (label: any) => label.visible && label.className.includes('axis-label') && label.text.includes('原始数值单位'),
+    );
+    expect(ticks.length).toBeGreaterThan(1);
+    for (const tick of ticks) {
+      expect(tick.text).toMatch(/\d/);
+      expect(tick.min[0]).toBeGreaterThanOrEqual(-1);
+      expect(tick.max[0]).toBeLessThanOrEqual(plot.width + 1);
+      expect(tick.max[1]).toBeLessThanOrEqual(plot.height + 1);
+    }
+    await testInfo.attach(`long-unit-${chartType}.png`, { body: await canvas.screenshot(), contentType: 'image/png' });
   });
 }
 
@@ -271,7 +303,7 @@ for (const width of [1440, 1024]) {
   }
 }
 
-test('long series names ellipsize and reveal the full escaped name on hover', async ({ page }) => {
+test('long series names ellipsize and reveal the full escaped name on hover', async ({ page }, testInfo) => {
   const published = structuredClone(apple);
   const longName = '收入系列非常长的完整名称-<img src=x>-2022至2024财年-'.repeat(3);
   const result = published.snapshot.widgets['profit-trend'];
@@ -295,6 +327,7 @@ test('long series names ellipsize and reveal the full escaped name on hover', as
         ).length,
     )
     .toBe(1);
+  await expect.poll(async () => (await canvas.evaluate(readPlot)).runningMarkAnimations).toBe(0);
   const label = (await canvas.evaluate(readPlot)).labels.find(
     (item: any) => /legend.*item.*label/.test(item.className) && item.text === longName,
   )!;
@@ -306,4 +339,14 @@ test('long series names ellipsize and reveal the full escaped name on hover', as
   await expect(poptip).toBeVisible();
   await expect(poptip).toHaveText(longName);
   await expect(poptip.locator('img')).toHaveCount(0);
+  const tooltip = page.getByRole('tooltip');
+  await expect(tooltip).toBeVisible();
+  const tooltipBox = (await tooltip.boundingBox())!;
+  expect(tooltipBox.x).toBeGreaterThanOrEqual(0);
+  expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(1024);
+  expect(tooltipBox.y).toBeGreaterThan(box.y);
+  expect(tooltipBox.y + tooltipBox.height).toBeLessThanOrEqual(1000);
+  await testInfo.attach('legend-full-name', { body: await tooltip.screenshot(), contentType: 'image/png' });
+  await page.mouse.move(0, 0);
+  await expect(poptip).toHaveCount(0);
 });

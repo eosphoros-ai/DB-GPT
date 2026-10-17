@@ -604,7 +604,7 @@ const DataPreprocessor: React.FC<DataPreprocessorProps> = ({
       title: 'Type',
       dataIndex: 'detectedType',
       key: 'type',
-      render: (_type: ColumnType, record: ColumnConfig) => (
+      render: (type: ColumnType, record: ColumnConfig) => (
         <Select
           size='small'
           value={record.selectedType}

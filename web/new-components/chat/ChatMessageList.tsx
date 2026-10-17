@@ -37,7 +37,7 @@ interface ChatMessageListProps {
 
 const ChatMessageList: React.FC<ChatMessageListProps> = ({
   turns,
-  isLoading: _isLoading = false,
+  isLoading = false,
   onCopy,
   showSteps = true,
   className,

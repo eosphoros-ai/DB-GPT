@@ -5,7 +5,7 @@ import { ObservabilityEn } from './observability';
 import WikiEn from './wiki';
 import KsEn from './knowledgeSource';
 
-const en: Record<string, string> = {
+const en: Record<string, unknown> = {
   ...ChatEn,
   ...FlowEn,
   ...CommonEn,

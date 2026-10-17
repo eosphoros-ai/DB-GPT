@@ -211,7 +211,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
   const isLastDynamicField = () => {
     if (!dynamic) return false;
 
-    const ioArray: (IFlowNodeInput | IFlowNodeOutput | IFlowNodeParameter)[] = node[label];
+    const ioArray = node[label];
     const dynamicFields = ioArray.filter(item => item.type_cls === data.type_cls && item.name.startsWith(data.name));
 
     return index === ioArray.indexOf(dynamicFields[dynamicFields.length - 1]);

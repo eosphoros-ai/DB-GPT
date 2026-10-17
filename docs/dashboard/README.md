@@ -34,9 +34,27 @@ MySQL 的全量建表定义位于 `assets/schema/dbgpt.sql`，已有库使用
 `assets/schema/upgrade/dashboard/upgrade.sql` 增加看板表及定时任务字段。
 执行升级前按项目部署流程备份数据库；SQL 不把任务显示名当作用户 ID 回填。
 
-仓库根目录的 `pytest.dashboard.ini` 配置 Dashboard 测试路径、包导入路径和外部服务标记，
-供本地回归使用，不新增独立 CI 工作流：
+在仓库根目录安装项目后端测试依赖后执行以下完整命令（Bash）。测试路径、包导入路径和外部服务标记都在命令中显式给出，不需要额外 pytest 配置文件：
 
 ```sh
-python -m pytest -c pytest.dashboard.ini
+python -m pytest -c pyproject.toml --rootdir=. --import-mode=importlib -p no:cacheprovider \
+  -o addopts= \
+  -o "pythonpath=packages/dbgpt-app/src packages/dbgpt-client/src packages/dbgpt-core/src packages/dbgpt-ext/src packages/dbgpt-sandbox/src packages/dbgpt-serve/src" \
+  -o "markers=mysql_integration: requires DASHBOARD_TEST_MYSQL_URL and a disposable MySQL database
+redis_integration: requires DASHBOARD_TEST_REDIS_URL and a disposable Redis database" \
+  packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/dashboard/tests \
+  packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_question_contract.py \
+  packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_share_privacy.py \
+  packages/dbgpt-serve/src/dbgpt_serve/scheduled_task/tests \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_multi_file_tools.py \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_olist_dashboard_case.py \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_uploaded_dataset.py \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_uploaded_dataset_registry.py \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_workspace_provisioning.py \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_dashboard_skill_orchestration.py \
+  examples/dashboard/tests
 ```
+
+设置 `DASHBOARD_TEST_MYSQL_URL`（数据库名必须含 `test`）和
+`DASHBOARD_TEST_REDIS_URL` 可运行真实服务集成测试；未设置时对应测试会明确跳过。
+MySQL 测试会重建测试表，应只连接可丢弃的测试库。

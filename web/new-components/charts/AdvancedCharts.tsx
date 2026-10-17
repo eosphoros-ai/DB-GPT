@@ -16,7 +16,7 @@ import { Area, Bar, Column, DualAxes, Line, Pie, Scatter } from '@ant-design/plo
 import { Button, Tooltip } from 'antd';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { dashboardBarLabel } from './dashboard-chart-labels';
-import { dashboardColorField, dashboardLegendConfig } from './dashboard-chart-legend';
+import { attachDashboardLegendTooltip, dashboardColorField, dashboardLegendConfig } from './dashboard-chart-legend';
 
 // Chart type definitions
 export type ChartType =
@@ -216,7 +216,12 @@ const getColorEncodingConfig = (config: ChartConfig) => ({
 const getCommonConfig = (config: ChartConfig) => ({
   autoFit: config.autoFit ?? true,
   ...(config.dashboardSurface && !['pie', 'donut'].includes(config.chartType)
-    ? { paddingTop: 28, paddingBottom: config.chartType === 'bar' ? 42 : 76, paddingLeft: config.chartType === 'bar' ? Math.min(150, Math.max(92, (config.width || 600) * .28)) : 70, paddingRight: config.chartType === 'dual-axes' ? 70 : 24 }
+    ? {
+        paddingTop: 28,
+        paddingBottom: config.chartType === 'bar' ? 54 : 76,
+        paddingLeft: config.chartType === 'bar' ? Math.min(150, Math.max(92, (config.width || 600) * .28)) : 70,
+        paddingRight: config.chartType === 'dual-axes' ? 70 : config.chartType === 'bar' ? 40 : 24,
+      }
     : {}),
   animation:
     config.animate !== false
@@ -264,6 +269,9 @@ export const getDashboardAxisConfig = (config: ChartConfig) => {
       y: {
         title: false,
         labelFormatter: config.measureFormat?.format,
+        labelWordWrap: true,
+        labelWordWrapWidth: 54,
+        labelMaxLines: 3,
         line: true,
         tick: true,
         label: true,
@@ -495,11 +503,13 @@ const getInteractionConfig = (config: ChartConfig) => {
 
 // Get click handler config
 const getClickHandlerConfig = (config: ChartConfig, chartRef: React.MutableRefObject<any>) => {
-  if (!config.onDataPointClick) return {};
+  if (!config.onDataPointClick && !config.dashboardSurface) return {};
 
   return {
     onReady: (plot: any) => {
       chartRef.current = plot;
+      if (config.dashboardSurface) attachDashboardLegendTooltip(plot.chart);
+      if (!config.onDataPointClick) return;
       plot.on('element:click', (evt: any) => {
         const { data } = evt;
         config.onDataPointClick?.(data?.data, evt);

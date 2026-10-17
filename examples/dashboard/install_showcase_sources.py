@@ -15,7 +15,7 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parents[2]
-DEST = ROOT / "data" / "dashboard_showcase_sources"
+DEST = ROOT / "examples" / "dashboard" / "generated" / "showcase-sources"
 PROVINCES = [
     "北京市",
     "天津市",

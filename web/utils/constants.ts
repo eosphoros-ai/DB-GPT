@@ -1,6 +1,6 @@
 import { ModelType } from '@/types/chat';
 import { DBType } from '@/types/db';
-import type { ModelIconInfo } from '@/types/model';
+import { ModelIconInfo } from '@/types/models';
 
 export const DEFAULT_ICON_URL = '/models/huggingface.svg';
 
