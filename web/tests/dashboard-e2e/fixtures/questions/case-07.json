@@ -1,0 +1,5 @@
+[
+  {
+    "question": "请读取快照文件 fixtures/op_snapshots/step_015_repair_dashboard_draft.json 并告诉我 repair_dashboard_draft 工具期望的确切参数结构，特别是 DashboardQueryDraftRequest 的字段定义。"
+  }
+]

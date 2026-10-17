@@ -1,0 +1,77 @@
+{
+  "scope": "Real registered tools and Agent, isolated in-memory services; no model call, no production mutation.",
+  "cases": [
+    {
+      "name": "remove_string",
+      "input": {
+        "operations": "remove"
+      },
+      "failure": {
+        "type": "dashboard.generation.failed",
+        "title": "看板操作失败",
+        "reason": "proposal_validation_failed",
+        "tool": "propose_dashboard_change",
+        "stage": "annotation_proposal",
+        "stage_label": "生成批注修改提案",
+        "summary": "生成批注修改提案失败：Dashboard change proposal rejected: operations: expected a JSON array, not an operation name or free text. Invalid JSON at line 1, column 1: Expecting value.",
+        "message": "停在「生成批注修改提案」（propose_dashboard_change）。\n失败原因：Dashboard change proposal rejected: operations: expected a JSON array, not an operation name or free text. Invalid JSON at line 1, column 1: Expecting value.\n本轮已停止，不会要求你解答内部技术问题。已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；如再次失败，请将上述工具名称和错误详情交给维护者排查。",
+        "retry_hint": "本轮已停止，不会要求你解答内部技术问题。已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；如再次失败，请将上述工具名称和错误详情交给维护者排查。",
+        "source_turn_id": "fixture-turn"
+      },
+      "question_asked_count": 0,
+      "late_technical_question_blocked": true,
+      "saved_revision_unchanged": true,
+      "have_retry": false
+    },
+    {
+      "name": "replace_missing_value",
+      "input": {
+        "operations": [
+          {
+            "op": "replace",
+            "path": "/widgets/by-id/value-card/title"
+          }
+        ]
+      },
+      "failure": {
+        "type": "dashboard.generation.failed",
+        "title": "看板操作失败",
+        "reason": "proposal_validation_failed",
+        "tool": "propose_dashboard_change",
+        "stage": "annotation_proposal",
+        "stage_label": "生成批注修改提案",
+        "summary": "生成批注修改提案失败：Dashboard change proposal rejected: operations.0: Value error, value is required for add and replace operations.",
+        "message": "停在「生成批注修改提案」（propose_dashboard_change）。\n失败原因：Dashboard change proposal rejected: operations.0: Value error, value is required for add and replace operations.\n本轮已停止，不会要求你解答内部技术问题。已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；如再次失败，请将上述工具名称和错误详情交给维护者排查。",
+        "retry_hint": "本轮已停止，不会要求你解答内部技术问题。已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；如再次失败，请将上述工具名称和错误详情交给维护者排查。",
+        "source_turn_id": "fixture-turn"
+      },
+      "question_asked_count": 0,
+      "late_technical_question_blocked": true,
+      "saved_revision_unchanged": true,
+      "have_retry": false
+    },
+    {
+      "name": "wrong_top_level",
+      "input": {
+        "op": "replace",
+        "path": "/widgets/by-id/value-card/title"
+      },
+      "failure": {
+        "type": "dashboard.generation.failed",
+        "title": "看板操作失败",
+        "reason": "tool_execution_failed",
+        "tool": "propose_dashboard_change",
+        "stage": "propose_dashboard_change",
+        "stage_label": "生成批注修改提案",
+        "summary": "生成批注修改提案失败：Tool [propose_dashboard_change] execute failed! Execution error: Unknown top-level arguments for propose_dashboard_change: op, path. Allowed keys: summary, operations, before, after, dashboard_id, annotation_id.",
+        "message": "停在「生成批注修改提案」（propose_dashboard_change）。\n失败原因：Tool [propose_dashboard_change] execute failed! Execution error: Unknown top-level arguments for propose_dashboard_change: op, path. Allowed keys: summary, operations, before, after, dashboard_id, annotation_id.\n本轮已停止，不会要求你解答内部技术问题。已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；如再次失败，请将上述工具名称和错误详情交给维护者排查。",
+        "retry_hint": "本轮已停止，不会要求你解答内部技术问题。已保存的看板和发布版本保持不变。请检查需求后重新发起本次操作；如再次失败，请将上述工具名称和错误详情交给维护者排查。",
+        "source_turn_id": "fixture-turn"
+      },
+      "question_asked_count": 0,
+      "late_technical_question_blocked": true,
+      "saved_revision_unchanged": true,
+      "have_retry": false
+    }
+  ]
+}

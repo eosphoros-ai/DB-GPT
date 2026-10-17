@@ -73,3 +73,15 @@ async def test_use_example_file_accepts_plain_name(tmp_path, monkeypatch):
     assert result.success is True
     assert result.data == str(target_path)
     assert target_path.read_text(encoding="utf-8") == "value\n1\n"
+
+
+@pytest.mark.asyncio
+async def test_use_example_file_rejects_traversal_user_id(tmp_path, monkeypatch):
+    examples_api = _configure_example(tmp_path, monkeypatch, "report.csv")
+
+    result = await examples_api.use_example_file(
+        "test_example", UserRequest(user_id="../../bob")
+    )
+
+    assert result.success is False
+    assert not (tmp_path.parent / "bob" / "report.csv").exists()

@@ -385,3 +385,20 @@ def test_create_task_rejects_foreign_or_wrong_session_files(
     list_resp = client.get(f"{PREFIX}/")
     assert list_resp.status_code == 200
     assert list_resp.json()["data"] == []
+
+
+def test_generic_endpoint_rejects_dashboard_schedule_bypass(client: TestClient):
+    """Dashboard schedules must pass dashboard-scoped permission checks."""
+
+    response = client.post(
+        PREFIX + "/",
+        json={
+            "task_name": "Bypass attempt",
+            "task_type": "dashboard_refresh",
+            "cron_expression": "0 6 * * *",
+            "payload": {"dashboard_id": "dashboard-private"},
+        },
+    )
+
+    assert response.status_code == 400
+    assert "dashboard API" in response.json()["detail"]

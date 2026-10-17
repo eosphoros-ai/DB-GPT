@@ -171,6 +171,7 @@ class ToolPack(ResourcePack):
 
     def _get_call_args(self, arguments: Dict[str, Any], tl: BaseTool) -> Dict[str, Any]:
         """Get the call arguments."""
+        tl.validate_call_args(arguments)
         # Delete non-defined parameters
         diff_args = list(set(arguments.keys()).difference(set(tl.args.keys())))
         for arg_name in diff_args:

@@ -2,6 +2,7 @@
 
 import logging
 import re
+import time
 import weakref
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
@@ -530,6 +531,7 @@ class RDBMSConnector(BaseConnector):
             return [], None
 
         with self.session_scope() as session:
+            sqlite_progress_handler = None
             try:
                 sql = text(query)
 
@@ -576,6 +578,28 @@ class RDBMSConnector(BaseConnector):
                                     f"Query exceeded timeout of {timeout} seconds"
                                 )
 
+                    elif self.dialect == "sqlite":
+                        # SQLite has no SQL statement_timeout setting, but its
+                        # DB-API driver exposes a progress handler that can
+                        # interrupt a long-running VM program safely.
+                        raw_connection = session.connection().connection
+                        sqlite_connection = getattr(
+                            raw_connection, "driver_connection", raw_connection
+                        )
+                        sqlite_progress_handler = getattr(
+                            sqlite_connection, "set_progress_handler", None
+                        )
+                        if not callable(sqlite_progress_handler):
+                            raise TimeoutError(
+                                "The SQLite driver cannot enforce a query timeout."
+                            )
+                        deadline = time.monotonic() + float(timeout)
+                        sqlite_progress_handler(
+                            lambda: 1 if time.monotonic() >= deadline else 0,
+                            1000,
+                        )
+                        return _execute_query(session, sql, params)
+
                     else:
                         logger.warning(
                             f"Timeout not supported for dialect: {self.dialect}, "
@@ -587,7 +611,12 @@ class RDBMSConnector(BaseConnector):
                 return _execute_query(session, sql, params)
 
             except SQLAlchemyError as e:
-                if "timeout" in str(e).lower() or "timed out" in str(e).lower():
+                error_text = str(e).lower()
+                if (
+                    "timeout" in error_text
+                    or "timed out" in error_text
+                    or (self.dialect == "sqlite" and "interrupted" in error_text)
+                ):
                     raise TimeoutError(f"Query exceeded timeout of {timeout} seconds")
                 raise
             except TimeoutError:
@@ -604,6 +633,10 @@ class RDBMSConnector(BaseConnector):
                             session.execute(
                                 text("SET SESSION ob_query_timeout = 10000000")
                             )  # Reset to default 10s
+                        elif self.dialect == "sqlite" and callable(
+                            sqlite_progress_handler
+                        ):
+                            sqlite_progress_handler(None, 0)
                         # MSSQL and DuckDB don't need reset as timeout is handled at
                         # execution level
                     except Exception as reset_error:

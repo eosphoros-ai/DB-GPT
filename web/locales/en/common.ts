@@ -946,4 +946,7 @@ export const CommonEn = {
   'request.error.default': 'Request failed (HTTP {{status}}).',
   'editor.please_select_database': 'Please select a database first',
   'editor.please_enter_sql': 'Please enter SQL first',
+  'scheduled.kind.dashboard': 'Dashboard task',
+  'scheduled.kind.chat': 'Conversation task',
+  'scheduled.runs.statusPartialSuccess': 'Partial success',
 } as const;

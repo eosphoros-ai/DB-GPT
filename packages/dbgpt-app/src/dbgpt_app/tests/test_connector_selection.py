@@ -4,11 +4,15 @@ Tests ``_parse_connector_ids`` and ``_select_connector_tools`` which are
 extracted helpers that ``_react_agent_stream`` delegates to.
 """
 
+from types import SimpleNamespace
 from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 from dbgpt_app.openapi.api_v1.agentic_data_api import (
     _parse_connector_ids,
+    _parse_uploaded_dataset_id,
+    _parse_uploaded_file_paths,
+    _require_database_access,
     _select_connector_tools,
 )
 
@@ -64,6 +68,71 @@ class TestParseConnectorIds:
         # fallback to legacy.  This matches the code: isinstance([], list)
         # is True, so the list comprehension runs and returns [].
         assert _parse_connector_ids(ext) == []
+
+
+class TestParseUploadedFilePaths:
+    """Verify bounded multi-file parsing and legacy compatibility."""
+
+    def test_none_and_invalid_ext_info(self):
+        assert _parse_uploaded_file_paths(None) == []
+        assert _parse_uploaded_file_paths("not-a-dict") == []
+
+    def test_legacy_single_file(self):
+        assert _parse_uploaded_file_paths({"file_path": " C:/orders.csv "}) == [
+            "C:/orders.csv"
+        ]
+
+    def test_preferred_group_is_trimmed_deduplicated_and_filtered(self):
+        assert _parse_uploaded_file_paths(
+            {
+                "file_paths": [
+                    " C:/orders.csv ",
+                    "C:/customers.csv",
+                    "C:/orders.csv",
+                    "",
+                    None,
+                ],
+                "file_path": "C:/legacy.csv",
+            }
+        ) == ["C:/orders.csv", "C:/customers.csv"]
+
+    def test_group_is_bounded_to_sixteen_files(self):
+        paths = [f"C:/table_{index}.csv" for index in range(20)]
+        assert _parse_uploaded_file_paths({"file_paths": paths}) == paths[:16]
+
+
+class TestParseUploadedDatasetId:
+    def test_accepts_one_bounded_opaque_id(self):
+        assert _parse_uploaded_dataset_id({"dataset_id": " dataset-1 "}) == "dataset-1"
+
+    def test_rejects_missing_non_string_and_oversized_ids(self):
+        assert _parse_uploaded_dataset_id(None) is None
+        assert _parse_uploaded_dataset_id({"dataset_id": 7}) is None
+        assert _parse_uploaded_dataset_id({"dataset_id": "x" * 65}) is None
+
+
+class TestDatabaseOwnership:
+    def test_private_datasource_is_visible_only_to_its_owner(self):
+        manager = SimpleNamespace(
+            storage=SimpleNamespace(
+                get_by_names=lambda name: SimpleNamespace(user_id="alice")
+            )
+        )
+        assert _require_database_access(manager, "upload-alice", "alice")
+        try:
+            _require_database_access(manager, "upload-alice", "bob")
+        except PermissionError:
+            pass
+        else:
+            raise AssertionError("cross-user datasource access must be rejected")
+
+    def test_global_datasource_remains_available(self):
+        manager = SimpleNamespace(
+            storage=SimpleNamespace(
+                get_by_names=lambda name: SimpleNamespace(user_id="")
+            )
+        )
+        assert _require_database_access(manager, "shared-demo", "alice")
 
 
 # ---------------------------------------------------------------------------
