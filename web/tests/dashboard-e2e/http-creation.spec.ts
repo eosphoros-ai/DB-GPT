@@ -1,11 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-test.use({
-  launchOptions: {
-    args: ['--host-resolver-rules=MAP dashboard-http.test 127.0.0.1', '--no-proxy-server'],
-  },
-});
-
 test('plain HTTP can send the first Dashboard request and continue the conversation', async ({ page, baseURL }) => {
   const requests: Record<string, any>[] = [];
   const errors: string[] = [];
@@ -26,9 +20,18 @@ test('plain HTTP can send the first Dashboard request and continue the conversat
       data = [{ db_name: 'http-fixture', type: 'sqlite', params: { name: 'http-fixture' } }];
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ success: true, data }) });
   });
-  const address = new URL(baseURL || 'http://127.0.0.1:5670');
-  address.hostname = 'dashboard-http.test';
-  await page.goto(`${address.origin}/dashboards/new/`);
+  const server = new URL(baseURL || 'http://127.0.0.1:5670');
+  const insecureOrigin = `http://dashboard-http.test:${server.port || '80'}`;
+  // Serve the actual application under an insecure origin without depending
+  // on machine DNS or proxy settings. API calls still use the fixtures above.
+  await page.route(`${insecureOrigin}/**`, async route => {
+    const target = new URL(route.request().url());
+    if (target.pathname.startsWith('/api/')) return route.fallback();
+    target.protocol = server.protocol;
+    target.host = server.host;
+    await route.fulfill({ response: await route.fetch({ url: target.href }) });
+  });
+  await page.goto(`${insecureOrigin}/dashboards/new/`);
   expect(await page.evaluate(() => window.isSecureContext)).toBe(false);
   expect(await page.evaluate(() => typeof crypto.randomUUID)).toBe('undefined');
   await page.getByRole('combobox', { name: '数据源', exact: true }).click();
