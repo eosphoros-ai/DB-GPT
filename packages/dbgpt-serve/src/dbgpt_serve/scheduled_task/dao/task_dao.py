@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 
 from dbgpt.storage.metadata import BaseDao
 
@@ -110,7 +110,7 @@ class ScheduledTaskDao(BaseDao[ScheduledTaskEntity, Dict[str, Any], Dict[str, An
         resource_id: Optional[str] = None,
         enabled_only: bool = False,
     ) -> List[Dict[str, Any]]:
-        query: Dict[str, Any] = {"owner_id": owner_id}
+        query: Dict[str, Any] = {}
         if task_type:
             query["task_type"] = task_type
         if resource_type:
@@ -119,10 +119,42 @@ class ScheduledTaskDao(BaseDao[ScheduledTaskEntity, Dict[str, Any], Dict[str, An
             query["resource_id"] = resource_id
         if enabled_only:
             query["enabled"] = True
-        return self.get_list(query)
+        with self.session() as session:
+            rows = (
+                session.query(ScheduledTaskEntity)
+                .filter(self._owner_condition(owner_id))
+                .filter_by(**query)
+                .all()
+            )
+            return [self.to_response(row) for row in rows]
 
     def get_owned(self, task_id: str, owner_id: str) -> Optional[Dict[str, Any]]:
-        return self.get_one({"task_id": task_id, "owner_id": owner_id})
+        with self.session() as session:
+            row = (
+                session.query(ScheduledTaskEntity)
+                .filter(
+                    ScheduledTaskEntity.task_id == task_id,
+                    self._owner_condition(owner_id),
+                )
+                .first()
+            )
+            return self.to_response(row) if row else None
+
+    @staticmethod
+    def _owner_condition(owner_id: str):
+        # Older chat tasks were shared and stored only a display name. Preserve
+        # that existing contract; never infer a user ID from a display name.
+        # New owner-bound tasks and all Dashboard tasks remain private.
+        return or_(
+            ScheduledTaskEntity.owner_id == owner_id,
+            and_(
+                ScheduledTaskEntity.task_type == "chat_replay",
+                or_(
+                    ScheduledTaskEntity.owner_id.is_(None),
+                    ScheduledTaskEntity.owner_id == "",
+                ),
+            ),
+        )
 
     def try_acquire_lease(
         self,

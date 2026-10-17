@@ -17,10 +17,10 @@ def sample_rows(key):
     root = next(
         p
         for p in Path(__file__).resolve().parents
-        if (p / "scripts/dashboard/install_showcase_sources.py").exists()
+        if (p / "examples/dashboard/install_showcase_sources.py").exists()
     )
     spec = importlib.util.spec_from_file_location(
-        "showcase_samples", root / "scripts/dashboard/install_showcase_sources.py"
+        "showcase_samples", root / "examples/dashboard/install_showcase_sources.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

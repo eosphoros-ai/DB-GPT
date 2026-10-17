@@ -173,6 +173,8 @@ build-backend = "hatchling.build"
 [tool.uv]
 managed = true
 dev-dependencies = []
+default-groups = ["dev"]
+
 conflicts = [
     [
         { extra = "hf_qwen_omni" },

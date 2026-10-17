@@ -41,14 +41,9 @@ jobs:
         with:
           node-version: '20.19'
 
-      - name: Set up Yarn
-        run: |
-          corepack enable
-          corepack prepare yarn@1.22.22 --activate
-
       - name: Install dependencies
         run: |
-          yarn install --frozen-lockfile
+          yarn install
 
       - name: Lint web application
         run: yarn lint

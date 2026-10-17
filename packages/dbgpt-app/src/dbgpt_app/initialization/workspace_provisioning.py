@@ -28,9 +28,7 @@ def _ensure_pilot_workspace(dest_root: str) -> None:
         logger.debug("Packaged pilot templates unavailable, skipping provisioning.")
         return
     for src_dir, dirs, files in os.walk(template_dir):
-        # Committed migration revisions are production assets.  Only interpreter
-        # caches are excluded; versions/ must be provisioned with the workspace.
-        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        dirs[:] = [d for d in dirs if d not in ("__pycache__", "versions")]
         for filename in files:
             if filename in (".DS_Store",) or filename.endswith((".pyc",)):
                 continue

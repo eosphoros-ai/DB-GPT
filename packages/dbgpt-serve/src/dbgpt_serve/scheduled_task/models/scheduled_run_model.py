@@ -40,7 +40,7 @@ class ScheduledRunEntity(Model):
     output_resource_id = Column(
         String(255), nullable=True, comment="Published path or generated resource id"
     )
-    attempt_count = Column(Integer, nullable=False, default=1)
+    attempt_count = Column(Integer, nullable=False, default=1, server_default="1")
     result_json = Column(Text().with_variant(LONGTEXT(), "mysql"), nullable=True)
     idempotency_key = Column(String(128), nullable=True)
 

@@ -28,13 +28,11 @@ Dashboard 将自然语言分析变成可校验、可编辑、可保存和可发�
 
 ## 数据库迁移与后端测试
 
-`pilot/meta_data/alembic/versions/` 中的 Dashboard 迁移用于建立看板、修订、分享、
-批注等表，并升级已有数据库。文件名中的版本号记录数据库结构的演进，
-已有部署通过修订链升级，不能只保留最后一个文件。
-
-同目录的 `env.py` 是 Alembic 的执行入口，与前端 `.env` 无关。
-Dashboard 迁移使用当前连接；SQLite 使用批量改表模式，测试也可传入临时数据库连接。
-`test_migrations.py` 覆盖空库初始化及旧修订升级。
+Dashboard 通过原有的 `db_model_initialization.py` 注册实体。SQLite 沿用项目原有的
+建表和自动迁移入口，不分发另一套 Alembic 版本链，也不改共享 `env.py` 或本地修订号。
+MySQL 的全量建表定义位于 `assets/schema/dbgpt.sql`，已有库使用
+`assets/schema/upgrade/dashboard/upgrade.sql` 增加看板表及定时任务字段。
+执行升级前按项目部署流程备份数据库；SQL 不把任务显示名当作用户 ID 回填。
 
 仓库根目录的 `pytest.dashboard.ini` 配置 Dashboard 测试路径、包导入路径和外部服务标记，
 供本地及 Dashboard 后端 CI 使用：

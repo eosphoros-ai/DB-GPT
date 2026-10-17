@@ -16,10 +16,10 @@ def source_rows(voice):
     root = next(
         p
         for p in Path(__file__).resolve().parents
-        if (p / "scripts/dashboard/install_research_sources.py").exists()
+        if (p / "examples/dashboard/install_research_sources.py").exists()
     )
     spec = importlib.util.spec_from_file_location(
-        "research_samples", root / "scripts/dashboard/install_research_sources.py"
+        "research_samples", root / "examples/dashboard/install_research_sources.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

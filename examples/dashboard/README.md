@@ -31,3 +31,18 @@ The command writes generated databases to `examples/dashboard/generated/`:
 
 The JSON schemas intentionally cover KPI, line, bar, pie, table, date range,
 single-select, and multi-select behavior.
+
+## 可选参考数据
+
+以下脚本由演示者按需手动运行，不参与服务启动、前端打包或数据库结构升级。
+`install_reference_sources.py` 下载校验过的 UCI 数据并生成 SQLite 文件；
+`install_research_sources.py` 准备研究布局示例；`install_showcase_sources.py` 生成合成展示数据。
+已有自己的数据源时无需运行这些脚本。
+
+```sh
+python examples/dashboard/install_reference_sources.py --sources energy students
+```
+
+默认只生成本地文件。需要注册到自己的后端时，显式传入 `--register --api-base`，
+或在数据源页面添加生成的数据库。来源和许可证见
+`data/dashboard_reference_sources/manifest.json`；其他两个脚本的来源说明写在文件开头。

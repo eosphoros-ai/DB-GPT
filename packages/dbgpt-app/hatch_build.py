@@ -35,6 +35,9 @@ _SKILLS_MAP = {
         "walmart-sales-analyzer",
         "agent-browser",
         "dashboard-builder",
+        "dashboard-collaboration",
+        "dashboard-chart-configuration",
+        "dashboard-filter-configuration",
         "antv-g2-chart",
         "brutal-viz-design",
         "datapulse-viz-design",
@@ -79,9 +82,6 @@ _PILOT_TPL_MAP = {
     ),
     "pilot/meta_data/alembic/script.py.mako": (
         f"{_TPL}/meta_data/alembic/script.py.mako"
-    ),
-    "pilot/meta_data/alembic/versions": (
-        f"{_TPL}/meta_data/alembic/versions"
     ),
     (
         "pilot/benchmark_meta_data/"

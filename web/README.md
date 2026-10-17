@@ -36,13 +36,12 @@ Also, it is a **LLM to Vision** solution.
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 20.19
-- [Yarn Classic](https://classic.yarnpkg.com/) 1.22.22 (pinned in `packageManager`)
+- [Yarn Classic](https://classic.yarnpkg.com/) 1.x (validated with 1.22.22)
 - Supported OSes: Linux, macOS and Windows
 
 ### Installation
 
 Use Yarn with the checked-in `yarn.lock` for dependency management.
-Enable Corepack once with `corepack enable`; it selects the pinned Yarn version.
 
 ```sh
 # Install dependencies

@@ -50,7 +50,7 @@ def test_ensure_pilot_workspace_creates_missing_directories(tmp_path):
     assert os.path.exists(dest / "meta_data" / "alembic.ini")
 
 
-def test_editable_install_provisions_shipped_migrations_and_skills(
+def test_editable_install_preserves_local_migrations_and_provisions_skills(
     tmp_path, monkeypatch
 ):
     source = tmp_path / "source" / "dbgpt_app" / "initialization"
@@ -74,8 +74,9 @@ def test_editable_install_provisions_shipped_migrations_and_skills(
     _ensure_pilot_workspace(str(dest / "pilot"))
     ensure_builtin_skills(str(dest / "skills"))
     copied = dest / "pilot/meta_data/alembic/versions/kept.py"
-    assert copied.read_text() == migration.read_text()
+    assert not copied.exists()
     assert (dest / "skills/dashboard-builder/SKILL.md").read_text() == skill.read_text()
+    copied.parent.mkdir(parents=True, exist_ok=True)
     copied.write_text("user revision")
     _ensure_pilot_workspace(str(dest / "pilot"))
     assert copied.read_text() == "user revision"

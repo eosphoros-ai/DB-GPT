@@ -12,6 +12,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useContext, useEffect, useRef, useState } from 'react';
+import { v4 as uuid } from 'uuid';
 
 type DataSource = { db_name: string; db_type: string };
 
@@ -75,12 +76,10 @@ export default function DashboardCreatePage() {
     }
     const controller = new AbortController();
     active.current = controller;
-    conversationId.current ||= crypto.randomUUID();
     setBusy(true);
     setError('');
     setAnswer('');
     setHasRun(true);
-    localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, effectiveModel);
     const complete = () => {
       if (active.current === controller) {
         active.current = null;
@@ -89,6 +88,8 @@ export default function DashboardCreatePage() {
       controller.abort();
     };
     try {
+      localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, effectiveModel);
+      conversationId.current ||= uuid();
       if (files.length && !datasetId.current) {
         const form = new FormData();
         files.forEach(file => form.append('files', file));

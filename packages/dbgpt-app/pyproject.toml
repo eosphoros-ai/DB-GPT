@@ -80,6 +80,9 @@ exclude = [
 "../../skills/walmart-sales-analyzer" = "skills/walmart-sales-analyzer"
 "../../skills/agent-browser" = "skills/agent-browser"
 "../../skills/dashboard-builder" = "skills/dashboard-builder"
+"../../skills/dashboard-collaboration" = "skills/dashboard-collaboration"
+"../../skills/dashboard-chart-configuration" = "skills/dashboard-chart-configuration"
+"../../skills/dashboard-filter-configuration" = "skills/dashboard-filter-configuration"
 "../../skills/antv-g2-chart" = "skills/antv-g2-chart"
 "../../skills/brutal-viz-design" = "skills/brutal-viz-design"
 "../../skills/datapulse-viz-design" = "skills/datapulse-viz-design"
@@ -95,7 +98,6 @@ exclude = [
 "../../pilot/meta_data/alembic/README" = "pilot_tpl/meta_data/alembic/README"
 "../../pilot/meta_data/alembic/env.py" = "pilot_tpl/meta_data/alembic/env.py"
 "../../pilot/meta_data/alembic/script.py.mako" = "pilot_tpl/meta_data/alembic/script.py.mako"
-"../../pilot/meta_data/alembic/versions" = "pilot_tpl/meta_data/alembic/versions"
 "../../pilot/benchmark_meta_data/2025_07_27_public_500_standard_benchmark_question_list.xlsx" = "pilot_tpl/benchmark_meta_data/2025_07_27_public_500_standard_benchmark_question_list.xlsx"
 "../../pilot/examples/Walmart_Sales.db" = "pilot_tpl/examples/Walmart_Sales.db"
 
