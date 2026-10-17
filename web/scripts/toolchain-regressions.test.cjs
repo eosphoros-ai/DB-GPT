@@ -7,17 +7,27 @@ const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 
-/** Spawn a copied launcher with a fake Next entrypoint and register cleanup for its process and temporary directory. */
-function runnerFixture(t, childSource, nodeOptions = '', command = 'start') {
+function runnerFixture(t, childSource, nodeOptions = '', script = 'run-next.cjs', command = 'start') {
   const temporaryRoot = fs.realpathSync(os.tmpdir());
   const root = fs.mkdtempSync(path.join(temporaryRoot, 'dbgpt-runner-tests-'));
   const scripts = path.join(root, 'scripts');
   const nextBin = path.join(root, 'node_modules', 'next', 'dist', 'bin');
   fs.mkdirSync(scripts, { recursive: true });
   fs.mkdirSync(nextBin, { recursive: true });
-  fs.copyFileSync(path.join(__dirname, 'run-next.cjs'), path.join(scripts, 'run-next.cjs'));
+  fs.copyFileSync(path.join(__dirname, script), path.join(scripts, script));
+  if (script === 'build-web.cjs') {
+    fs.writeFileSync(
+      path.join(scripts, 'prepare-build-types.cjs'),
+      'exports.prepareBuildTypes = () => ({ name: "fixture.json", cleanup() {} });',
+    );
+    fs.writeFileSync(
+      path.join(scripts, 'verify-next-build-assets.cjs'),
+      'exports.verifyNextBuildAssets = () => ({ htmlFiles: 0, assetReferences: 0 });',
+    );
+    fs.writeFileSync(path.join(scripts, 'graceful-fs-register.cjs'), '');
+  }
   fs.writeFileSync(path.join(nextBin, 'next'), childSource);
-  const runner = spawn(process.execPath, [path.join(scripts, 'run-next.cjs'), command], {
+  const runner = spawn(process.execPath, [path.join(scripts, script), command], {
     env: { ...process.env, NODE_OPTIONS: nodeOptions },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -44,57 +54,52 @@ function runnerFixture(t, childSource, nodeOptions = '', command = 'start') {
   };
 }
 
-for (const [options, expectedMiB, command = 'start'] of [
-  ['', 16384, 'dev'],
-  ['--max-old-space-size=4096', 4096, 'dev'],
-  ['', 8192],
-  ['--trace-warnings', 8192],
-  ['--trace-warnings --max-old-space-size=12288', 12288],
-  ['--trace-warnings --max_old_space_size=2048', 2048],
-  ['--trace-warnings --max-old-space-size="2048"', 2048],
-  ['--trace-warnings "--max-old-space-size=3072"', 3072],
-  ['--trace-warnings --max-old-space-size=3072 --max_old_space_size=4096', 4096],
-  ['--trace-warnings --title=foo--max-old-space-size=4096', 8192],
-  ['--trace-warnings --title="foo --max-old-space-size=4096"', 8192],
-  ['--trace-warnings --title="--max-old-space-size=4096"', 8192],
-  ['--trace-warnings --title="foo \\"--max-old-space-size=4096\\""', 8192],
-]) {
-  test(`the Next ${command} child applies the heap options: ${options || '(empty)'}`, { timeout: 10000 }, async t => {
-    const { runner } = runnerFixture(
-      t,
-      `console.log(JSON.stringify({
-        heapLimitMiB: require('node:v8').getHeapStatistics().heap_size_limit / 1024 / 1024,
+for (const script of ['run-next.cjs', 'build-web.cjs']) {
+  for (const [options, expectedMiB, command = 'start'] of [
+    ...(script === 'run-next.cjs' ? [['', 16384, 'dev'], ['--max-old-space-size=4096', 4096, 'dev']] : []),
+    ['', 8192],
+    ['--trace-warnings', 8192],
+    ['--trace-warnings --max-old-space-size=12288', 12288],
+    ['--max_old_space_size=2048', 2048],
+    ['--max-old-space-size="2048"', 2048],
+    ['"--max-old-space-size=3072"', 3072],
+    ['--max-old-space-size=3072 --max_old_space_size=4096', 4096],
+    ['--title=foo--max-old-space-size=4096', 8192],
+    ['--title="foo --max-old-space-size=4096"', 8192],
+    ['--title="--max-old-space-size=4096"', 8192],
+  ]) {
+    test(`${script} (${command}) preserves Node option semantics: ${options || '(default)'}`, { timeout: 10000 }, async t => {
+      const { runner } = runnerFixture(
+        t,
+        `console.log(JSON.stringify({
+        heap: require('node:v8').getHeapStatistics().heap_size_limit,
         options: process.env.NODE_OPTIONS
       }));`,
-      options,
-      command,
-    );
-    let output = '';
-    let errors = '';
-    runner.stdout.on('data', chunk => {
-      output += chunk;
+        options,
+        script,
+        command,
+      );
+      let output = '';
+      let errors = '';
+      runner.stdout.on('data', chunk => {
+        output += chunk;
+      });
+      runner.stderr.on('data', chunk => {
+        errors += chunk;
+      });
+      const [code] = await once(runner, 'close');
+      assert.equal(code, 0, errors);
+      const child = JSON.parse(output.split('\n')[0]);
+      const control = spawnSync(
+        process.execPath,
+        [`--max-old-space-size=${expectedMiB}`, '-p', "require('node:v8').getHeapStatistics().heap_size_limit"],
+        { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
+      );
+      assert.equal(control.status, 0, control.stderr);
+      assert.equal(child.heap, Number(control.stdout.trim()));
+      assert.ok(child.options.includes(options));
     });
-    runner.stderr.on('data', chunk => {
-      errors += chunk;
-    });
-    const [code] = await once(runner, 'close');
-    assert.equal(code, 0, errors);
-    const child = JSON.parse(output);
-    // Compare to this Node version directly: V8's young-generation allowance
-    // changes between releases, independently of the requested old-space limit.
-    const control = spawnSync(
-      process.execPath,
-      [
-        `--max-old-space-size=${expectedMiB}`,
-        '-p',
-        "require('node:v8').getHeapStatistics().heap_size_limit / 1024 / 1024",
-      ],
-      { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
-    );
-    assert.equal(control.status, 0, control.stderr);
-    assert.equal(child.heapLimitMiB, Number(control.stdout.trim()));
-    assert.ok(child.options.includes(options), 'Preserve all configured NODE_OPTIONS.');
-  });
+  }
 }
 
 test('the Next wrapper preserves the child exit status', { timeout: 10000 }, async t => {

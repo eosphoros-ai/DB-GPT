@@ -1,15 +1,15 @@
-// Queue transient EMFILE failures while Next.js traces and prerenders the app.
+// Queue transient EMFILE failures on Windows and macOS instead of failing while
+// Next.js traces and prerenders the application.
 require('graceful-fs').gracefulify(require('node:fs'));
 
 // Next's output tracer defaults to a level of file-system concurrency that can
-// exceed the OS per-process handle limit in this repository. Keep the
+// exceed the per-process file limit on Windows and macOS in this repository. Keep the
 // tracer deterministic without disabling output tracing or hiding build errors.
 const nft = require('next/dist/compiled/@vercel/nft');
 const nodeFileTrace = nft.nodeFileTrace;
 Object.defineProperty(nft, 'nodeFileTrace', {
   configurable: true,
   enumerable: true,
-  /** Cap output tracing filesystem concurrency while preserving the caller's lower explicit limit. */
   value: (files, options = {}) =>
     nodeFileTrace(files, {
       ...options,
@@ -25,7 +25,6 @@ const maxConcurrentOperations = 64;
 let activeOperations = 0;
 const waitingOperations = [];
 
-/** Acquire a shared filesystem-operation slot, queuing callers when all slots are occupied. */
 const acquire = () =>
   new Promise(resolve => {
     if (activeOperations < maxConcurrentOperations) {
@@ -36,7 +35,6 @@ const acquire = () =>
     waitingOperations.push(resolve);
   });
 
-/** Transfer a completed operation's slot to the oldest waiter, or decrement the active-operation count. */
 const release = () => {
   const next = waitingOperations.shift();
   if (next) {

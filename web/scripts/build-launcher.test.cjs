@@ -39,7 +39,7 @@ test('export preloads the file limiter and checks the default output directories
   fs.writeFileSync(
     path.join(nextBin, 'next'),
     `
-    require('node:assert/strict').equal(process.env.TEST_LIMITER_LOADED, 'yes');
+    require('node:assert/strict').equal(process.env.TEST_LIMITER_LOADED, ${JSON.stringify(['win32', 'darwin'].includes(process.platform) ? 'yes' : '')});
     require('node:assert/strict').equal(process.env.DBGPT_BUILD_TSCONFIG, 'types.json');
     console.log('preload verified');
   `,

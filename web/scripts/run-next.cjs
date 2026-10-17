@@ -9,8 +9,7 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-// Node uses the last value of a singleton option. Put the default first so Node
-// itself preserves explicit limits and handles quoting/option values correctly.
+// Node parses quoting and uses the last singleton option, so user limits win.
 const heapMiB = args[0] === 'dev' ? 16384 : 8192;
 const nodeOptions = [`--max_old_space_size=${heapMiB}`, process.env.NODE_OPTIONS].filter(Boolean).join(' ');
 
@@ -24,14 +23,12 @@ const child = spawn(process.execPath, [nextBin, ...args], {
 // Keep the wrapper alive until Next finishes shutting down.
 const signalHandlers = new Map();
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
-  /** Relay the supervisor's signal to Next while the child is still running. */
   const forward = () => {
     if (child.exitCode === null && child.signalCode === null) child.kill(signal);
   };
   signalHandlers.set(signal, forward);
   process.on(signal, forward);
 }
-/** Detach forwarding handlers before propagating child completion or a spawn error. */
 const removeSignalHandlers = () => {
   for (const [signal, handler] of signalHandlers) process.removeListener(signal, handler);
 };

@@ -9,7 +9,6 @@ if (process.argv.includes('--production-env')) process.env.APP_ENV = 'prod';
 const nextBin = path.join(__dirname, '..', 'node_modules', 'next', 'dist', 'bin', 'next');
 const gracefulFsRegister = path.join(__dirname, 'graceful-fs-register.cjs');
 
-/** Run the Webpack production build with an isolated type configuration and bounded filesystem preload; return the child status. */
 const run = (args, typeConfig) => {
   const result = spawnSync(process.execPath, [nextBin, 'build', '--webpack', ...args], {
     cwd: path.join(__dirname, '..'),
@@ -17,9 +16,9 @@ const run = (args, typeConfig) => {
       ...process.env,
       DBGPT_BUILD_TSCONFIG: typeConfig,
       NODE_OPTIONS: [
-        process.env.NODE_OPTIONS,
         '--max_old_space_size=8192',
-        `--require=${JSON.stringify(gracefulFsRegister)}`,
+        process.env.NODE_OPTIONS,
+        ['win32', 'darwin'].includes(process.platform) ? `--require=${JSON.stringify(gracefulFsRegister)}` : null,
       ]
         .filter(Boolean)
         .join(' '),
@@ -31,8 +30,7 @@ const run = (args, typeConfig) => {
 };
 
 // Keep compilation and static generation in one process so HTML and chunk
-// references come from the same build. Limit file operations on every platform:
-// macOS runners can also exhaust their file descriptor limit during export.
+// references come from the same build. Windows and macOS use a file-system limiter.
 const typeConfig = prepareBuildTypes(path.join(__dirname, '..'), '.next');
 let status;
 try {
