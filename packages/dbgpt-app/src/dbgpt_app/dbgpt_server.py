@@ -177,12 +177,19 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
         from dbgpt_serve.datasource.manages.connect_config_db import ConnectConfigDao
 
         dao = ConnectConfigDao()
-        db_name = "Walmart_Sales"
-        if not dao.get_by_names(db_name):
+        for db_name, comment in (
+            ("Walmart_Sales", "Default Walmart Sales example database"),
+            (
+                "Olist_Ecommerce",
+                "Synthetic Olist-shaped offline example (not real transactions)",
+            ),
+        ):
+            if dao.get_by_names(db_name):
+                continue
             candidate_paths = [
-                os.path.join(PILOT_PATH, "examples", "Walmart_Sales.db"),
+                os.path.join(PILOT_PATH, "examples", f"{db_name}.db"),
                 os.path.join(
-                    ROOT_PATH, "docker", "examples", "dashboard", "Walmart_Sales.db"
+                    ROOT_PATH, "docker", "examples", "dashboard", f"{db_name}.db"
                 ),
             ]
             db_absolute_path = next(
@@ -198,7 +205,7 @@ def initialize_app(param: ApplicationConfig, args: List[str] = None):
                     db_name=db_name,
                     db_type="sqlite",
                     db_path=db_absolute_path,
-                    comment="Default Walmart Sales example database",
+                    comment=comment,
                 )
                 logger.info(
                     f"Successfully registered default data source: "

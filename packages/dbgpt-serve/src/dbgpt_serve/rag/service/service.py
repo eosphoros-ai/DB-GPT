@@ -40,6 +40,7 @@ from ..api.schemas import (
     SpaceServeRequest,
     SpaceServeResponse,
 )
+from ..chunk_metadata import prepare_document_chunks
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from ..models.document_db import (
@@ -681,6 +682,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                         # ETL pipeline: extract → transform → load
                         chunks = await domain_index.extract(knowledge, chunk_parameters)
                         chunks = await domain_index.transform(chunks)
+                        prepare_document_chunks(chunks, doc)
                         chunks = await domain_index.load(
                             chunks,
                             vector_store=storage_connector,
@@ -705,6 +707,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                             chunk_parameters=chunk_parameters,
                         )
                         chunk_docs = assembler.get_chunks()
+                        prepare_document_chunks(chunk_docs, doc)
                         doc.chunk_size = len(chunk_docs)
                         vector_ids = await assembler.apersist(
                             max_chunks_once_load=max_chunks_once_load,
@@ -721,6 +724,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                     )
 
                     chunk_docs = assembler.get_chunks()
+                    prepare_document_chunks(chunk_docs, doc)
                     doc.chunk_size = len(chunk_docs)
                     # this will be the start point where file_id is added
                     vector_ids = await assembler.apersist(
@@ -734,13 +738,14 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 doc.vector_ids = ",".join(vector_ids)
             logger.info(f"async document persist index store success:{doc.doc_name}")
             # save chunk details
+            prepare_document_chunks(chunk_docs, doc, vector_ids)
             chunk_entities = [
                 DocumentChunkEntity(
                     doc_name=doc.doc_name,
                     doc_type=doc.doc_type,
                     document_id=doc.id,
                     content=chunk_doc.content,
-                    meta_info=str(chunk_doc.metadata),
+                    meta_info=json.dumps(chunk_doc.metadata, ensure_ascii=False),
                     gmt_created=datetime.now(),
                     gmt_modified=datetime.now(),
                 )

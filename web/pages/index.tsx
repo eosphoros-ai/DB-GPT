@@ -205,6 +205,8 @@ interface ChatMessage {
   taskPlan?: TaskItem[];
   attachedConnectors?: AttachedConnector[];
   citations?: AgentCitation[];
+  reportId?: string;
+  reportRunId?: string;
 }
 
 interface ExecutionStep {
@@ -256,7 +258,7 @@ interface Artifact {
   chartConfig?: Partial<ChartConfig>;
 }
 
-type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary';
+type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary' | 'report';
 
 const _convertExecutionToMessageParts = (
   execution:
@@ -491,6 +493,19 @@ const convertToManusFormat = (
 
 const EXAMPLE_CARDS = [
   {
+    id: 'olist_ecommerce_report',
+    icon: '🛍️',
+    title: 'Olist 巴西电商经营诊断',
+    description: '使用内置离线演示库分析电商经营；也可连接完整 Olist 数据',
+    query:
+      '帮我看看巴西站这段时间的生意怎么样，重点看 2017 年 1 月到 2018 年 8 月：销售额和订单量有什么变化？哪些品类、哪些地区表现比较好？送货慢会不会影响客户评分？最后给我三个最值得先做的改进建议，再整理成一份带图表的报告。',
+    dbName: 'Olist_Ecommerce',
+    knowledgeName: 'Olist_Analytics_Governance',
+    color: 'from-rose-500/10 to-orange-500/10',
+    borderColor: 'border-rose-200/60 dark:border-rose-800/40',
+    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
+  },
+  {
     id: 'walmart_sales',
     icon: '📊',
     title: '沃尔玛销售数据分析',
@@ -549,7 +564,7 @@ const EXAMPLE_CARDS = [
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { model, setModel } = useContext(ChatContext);
+  const { model, modelList, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const exampleRunInFlightRef = useRef(false);
@@ -821,7 +836,6 @@ const Playground: NextPage = () => {
   const [_rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('preview');
   const [streamingSummary, setStreamingSummary] = useState<string>('');
   const [_summaryComplete, setSummaryComplete] = useState(false);
-  const [_showProfessionalReport, _setShowProfessionalReport] = useState(false);
   const [_preprocessedData, _setPreprocessedData] = useState<PreprocessingResult | null>(null);
 
   const [isSkillPanelOpen, setIsSkillPanelOpen] = useState(false);
@@ -1660,6 +1674,7 @@ const Playground: NextPage = () => {
         for (const agent of Object.values(subAgents)) {
           const persistedArtifactUrls = new Set((agent.artifacts || []).map(artifact => artifact.url));
           (agent.artifacts || []).forEach((artifact, artifactIndex) => {
+            if (!artifact.url) return;
             const artifactType = artifact.type === 'image' ? 'image' : artifact.type === 'html' ? 'html' : 'file';
             const fallbackName = artifact.url.split('/').pop() || `subagent-artifact-${artifactIndex}`;
             const name = artifact.title || fallbackName;
@@ -1893,9 +1908,19 @@ const Playground: NextPage = () => {
     overrideSkill?: Skill | null,
     overrideDb?: DataSource | null,
     explicitLegacyFile?: LegacyServerFile | null,
+    overrideKnowledge?: KnowledgeSpace | null,
   ) => {
     const effectiveSkill = overrideSkill !== undefined ? overrideSkill : selectedSkill;
     const effectiveDb = overrideDb !== undefined ? overrideDb : selectedDb;
+    const effectiveKnowledge = overrideKnowledge !== undefined ? overrideKnowledge : selectedKnowledge;
+    // A browser tab can retain a model name from an older backend config.
+    // Only send a model currently advertised by the server. The first
+    // advertised model is also the normal ChatContext default.
+    const effectiveModel = modelList.includes(model) ? model : modelList[0];
+    if (!effectiveModel) {
+      message.error('当前服务未配置可用模型，请先在服务端配置并启动模型');
+      return;
+    }
     if (
       (!inputQuery.trim() && !hasSessionFileDrafts && !hasLegacyFile && !explicitLegacyFile) ||
       loading ||
@@ -1975,7 +2000,7 @@ const Playground: NextPage = () => {
     if (!sendSnapshot?.legacyFile) {
       const contextParts = [];
       if (effectiveDb) contextParts.push(`[Database: ${effectiveDb.db_name}]`);
-      if (selectedKnowledge) contextParts.push(`[Knowledge: ${selectedKnowledge.name}]`);
+      if (effectiveKnowledge) contextParts.push(`[Knowledge: ${effectiveKnowledge.name}]`);
       if (contextParts.length > 0) {
         finalQuery = `${contextParts.join(' ')} ${inputQuery}`;
       }
@@ -2001,7 +2026,7 @@ const Playground: NextPage = () => {
         context: inputQuery,
         order: currentOrder,
         attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
-        attachedKnowledge: selectedKnowledge ?? undefined,
+        attachedKnowledge: effectiveKnowledge ?? undefined,
         attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
         attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
         attachedConnectors:
@@ -2052,8 +2077,8 @@ const Playground: NextPage = () => {
     const baseExtInfo: Record<string, any> = {
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
-      ...(selectedKnowledge
-        ? { knowledge_space_name: selectedKnowledge.name, knowledge_space_id: selectedKnowledge.id }
+      ...(effectiveKnowledge
+        ? { knowledge_space_name: effectiveKnowledge.name, knowledge_space_id: effectiveKnowledge.id }
         : {}),
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
     };
@@ -2070,10 +2095,13 @@ const Playground: NextPage = () => {
       version: filesAttachedThisSend && filesAttachedThisSend.fileIds.length > 0 ? 2 : 1,
       user_input: finalQuery,
       chat_mode: chatMode,
-      model_name: model,
+      model_name: effectiveModel,
       select_param: selectParam,
       temperature: 0.6,
-      max_new_tokens: 4000,
+      // A report agent must emit both ReAct actions and a complete bound HTML
+      // document.  Four thousand tokens truncated the repair turn after a
+      // binding validation failure, leaving the report without a presentation.
+      max_new_tokens: 8000,
       ext_info: extInfo,
     };
 
@@ -2086,15 +2114,30 @@ const Playground: NextPage = () => {
         body: JSON.stringify({
           conv_uid: currentConvId,
           chat_mode: chatMode,
-          model_name: model,
+          model_name: effectiveModel,
           user_input: finalQuery,
           temperature: 0.6,
-          max_new_tokens: 4000,
+          max_new_tokens: 8000,
           select_param: selectParam,
           ext_info: extInfo,
         }),
         signal: controller.signal,
       });
+
+      // Error responses are JSON, not an SSE stream.  Reading them as if they
+      // were stream events leaves the placeholder in its perpetual “thinking”
+      // state and hides the actionable backend error (for example an invalid
+      // example-file path).
+      if (!response.ok) {
+        let detail = `请求失败（HTTP ${response.status}）`;
+        try {
+          const errorPayload = await response.json();
+          detail = errorPayload?.err_msg || errorPayload?.message || detail;
+        } catch {
+          // Keep the status-based fallback when a proxy returns non-JSON.
+        }
+        throw new Error(detail);
+      }
 
       if (!response.body) {
         throw new Error('No response body');
@@ -2454,6 +2497,8 @@ const Playground: NextPage = () => {
                 ...msg,
                 context: summaryText,
                 citations: finalAnswer.citations,
+                reportId: finalAnswer.reportId,
+                reportRunId: finalAnswer.reportRunId,
                 thinking: false,
               };
             }),
@@ -2469,8 +2514,8 @@ const Playground: NextPage = () => {
             setSummaryPresentationResponseId(responseId);
             setStreamingSummary(firstSummaryCharacter);
             setSummaryComplete(false);
-            setRightPanelTab('summary');
-            setRightPanelView('summary');
+            setRightPanelTab(finalAnswer.reportId && finalAnswer.reportRunId ? 'report' : 'summary');
+            setRightPanelView(finalAnswer.reportId && finalAnswer.reportRunId ? 'report' : 'summary');
             setRightPanelCollapsed(false);
           } else if (finalAnswer.citations.length > 0) {
             setStreamingSummary('');
@@ -2640,19 +2685,44 @@ const Playground: NextPage = () => {
 
       // Auto-select database if example specifies one
       let matchedDb: DataSource | null = null;
-      if (example.dbName && dataSources) {
-        const found = dataSources.find((ds: DataSource) => ds.db_name === example.dbName);
-        if (found) {
-          matchedDb = found;
-          setSelectedDb(found);
+      if (example.dbName) {
+        const found = (dataSources || []).find((ds: DataSource) => ds.db_name === example.dbName);
+        if (!found) {
+          message.error(`示例依赖的数据源“${example.dbName}”尚未创建或不可访问`);
+          return;
         }
+        matchedDb = found;
+        setSelectedDb(found);
+      }
+
+      // A business example must use the governing metric definitions that
+      // belong to it. Resolve the actual server-side space so both its name
+      // and ID travel in ext_info, rather than merely mentioning it in text.
+      let exampleKnowledge: KnowledgeSpace | null = null;
+      if (example.knowledgeName) {
+        message.loading({ content: '正在准备示例知识库...', key: 'example-loading', duration: 0 });
+        exampleController = new AbortController();
+        exampleAbortControllerRef.current = exampleController;
+        const res = await axios.post(
+          `${process.env.API_BASE_URL ?? ''}/api/v1/examples/prepare`,
+          { example_id: example.id },
+          { signal: exampleController.signal, timeout: 140000 },
+        );
+        if (taskEpochRef.current !== taskEpoch) return;
+        message.destroy('example-loading');
+        if (!res?.success || !res?.data?.id || res.data.name !== example.knowledgeName) {
+          message.error('准备示例知识库失败: ' + (res?.err_msg || '未返回知识库信息'));
+          return;
+        }
+        exampleKnowledge = res.data as KnowledgeSpace;
+        setSelectedKnowledge(exampleKnowledge);
       }
 
       // Transfer the single-flight ownership to the common send entry point.
       // No other browser event can interleave between this ref write and the
       // synchronous acquisition at the start of handleStart.
       exampleRunInFlightRef.current = false;
-      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile);
+      await handleStart(translatedQuery, exampleSkill, matchedDb, exampleLegacyFile, exampleKnowledge);
     } catch (err: unknown) {
       if (taskEpochRef.current !== taskEpoch) return;
       message.destroy('example-loading');
@@ -2828,6 +2898,8 @@ const Playground: NextPage = () => {
             role: 'view',
             context: finalContent,
             citations: historyAnswer.citations,
+            reportId: historyAnswer.reportId,
+            reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
             taskPlan: Array.isArray(payload.task_plan)
@@ -2843,6 +2915,8 @@ const Playground: NextPage = () => {
             role: 'view',
             context: cleanFinalContent(historyAnswer.content),
             citations: historyAnswer.citations,
+            reportId: historyAnswer.reportId,
+            reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
           });
@@ -3002,6 +3076,9 @@ const Playground: NextPage = () => {
     },
   };
 
+  // A report run can be demonstrated inside the data-assistant surface without
+  // changing normal chat state or the standard home-page flow.
+
   return (
     <ConfigProvider
       theme={{
@@ -3130,6 +3207,14 @@ const Playground: NextPage = () => {
                         assistantText={roundAssistantText}
                         isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
                         citationIndexes={roundCitations.map(citation => citation.index)}
+                        reportId={round.viewMsg?.reportId}
+                        reportRunId={round.viewMsg?.reportRunId}
+                        onReportClick={() => {
+                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                          setActiveSubAgent(null);
+                          setRightPanelView('report');
+                          setRightPanelCollapsed(false);
+                        }}
                         onReferencesClick={
                           roundCitations.length > 0
                             ? () => {
@@ -3950,6 +4035,21 @@ const Playground: NextPage = () => {
                             : null
                         }
                         onCitationSelect={setSelectedCitationIndex}
+                        reportId={activeViewMsg?.reportId}
+                        reportRunId={activeViewMsg?.reportRunId}
+                        onReportArtifactFocus={stepId => {
+                          if (!activeViewMsg?.id || !execution) return;
+                          setActiveSubAgent(null);
+                          setSelectedStepId(stepId);
+                          setExecutionMap(prev => ({
+                            ...prev,
+                            [activeViewMsg.id!]: {
+                              ...prev[activeViewMsg.id!],
+                              activeStepId: stepId,
+                            },
+                          }));
+                          setRightPanelView('execution');
+                        }}
                         subAgents={parallelSubAgents}
                         onSubAgentClick={agentId => {
                           if (!activeViewMsg?.id) return;

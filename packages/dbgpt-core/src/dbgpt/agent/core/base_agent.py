@@ -513,15 +513,25 @@ class ConversableAgent(Role, Agent):
             },
         )
         reply_message = None
+        started = time.monotonic()
+        deadline = started + self.max_timeout
+
+        async def within_deadline(awaitable):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                if hasattr(awaitable, "close"):
+                    awaitable.close()
+                raise asyncio.TimeoutError
+            return await asyncio.wait_for(awaitable, timeout=remaining)
 
         try:
             with root_tracer.start_span(
                 "agent.generate_reply._init_reply_message",
             ) as span:
                 # initialize reply message
-                a_reply_message: Optional[
-                    AgentMessage
-                ] = await self._a_init_reply_message(received_message=received_message)
+                a_reply_message: Optional[AgentMessage] = await within_deadline(
+                    self._a_init_reply_message(received_message=received_message)
+                )
                 if a_reply_message:
                     reply_message = a_reply_message
                 else:
@@ -532,16 +542,18 @@ class ConversableAgent(Role, Agent):
 
             fail_reason = None
             current_retry_counter = 0
-            start_time = time.time()
-            is_success = True
+            is_success = False
+            finished = False
             observation = received_message.content or ""
             while current_retry_counter < self.max_retry_count:
+                if time.monotonic() >= deadline:
+                    raise asyncio.TimeoutError
                 if current_retry_counter > 0:
-                    a_reply_message: Optional[
-                        AgentMessage
-                    ] = await self._a_init_reply_message(
-                        received_message=received_message,
-                        rely_messages=rely_messages,
+                    a_reply_message = await within_deadline(
+                        self._a_init_reply_message(
+                            received_message=received_message,
+                            rely_messages=rely_messages,
+                        )
                     )
                     if a_reply_message:
                         retry_message = a_reply_message
@@ -560,8 +572,8 @@ class ConversableAgent(Role, Agent):
                     # recorded.
                     # It is temporarily set to be initiated by the originating end to
                     # facilitate the organization of historical memory context.
-                    await sender.send(
-                        retry_message, self, reviewer, request_reply=False
+                    await within_deadline(
+                        sender.send(retry_message, self, reviewer, request_reply=False)
                     )
                     reply_message.rounds = retry_message.rounds + 1
 
@@ -569,15 +581,17 @@ class ConversableAgent(Role, Agent):
                 logger.info(
                     f"Depends on the number of historical messages:{len(rely_messages) if rely_messages else 0}！"  # noqa
                 )
-                thinking_messages, resource_info = await self._load_thinking_messages(
-                    received_message=received_message,
-                    sender=sender,
-                    observation=observation,
-                    rely_messages=rely_messages,
-                    historical_dialogues=historical_dialogues,
-                    context=reply_message.get_dict_context(),
-                    is_retry_chat=is_retry_chat,
-                    current_retry_counter=current_retry_counter,
+                thinking_messages, resource_info = await within_deadline(
+                    self._load_thinking_messages(
+                        received_message=received_message,
+                        sender=sender,
+                        observation=observation,
+                        rely_messages=rely_messages,
+                        historical_dialogues=historical_dialogues,
+                        context=reply_message.get_dict_context(),
+                        is_retry_chat=is_retry_chat,
+                        current_retry_counter=current_retry_counter,
+                    )
                 )
                 with root_tracer.start_span(
                     "agent.generate_reply.thinking",
@@ -600,10 +614,12 @@ class ConversableAgent(Role, Agent):
                         )
 
                     try:
-                        llm_reply, model_name = await self.thinking(
-                            thinking_messages,
-                            sender,
-                            stream_callback=_llm_stream_callback,
+                        llm_reply, model_name = await within_deadline(
+                            self.thinking(
+                                thinking_messages,
+                                sender,
+                                stream_callback=_llm_stream_callback,
+                            )
                         )
                     except LLMChatError as e:
                         # Layer 4: reactive compaction on context_too_long
@@ -620,13 +636,15 @@ class ConversableAgent(Role, Agent):
                                 "LLM context overflow detected — applying "
                                 "reactive compaction (Layer 4)"
                             )
-                            thinking_messages = await _ctx_mgr.reactive_compact(
-                                thinking_messages
+                            thinking_messages = await within_deadline(
+                                _ctx_mgr.reactive_compact(thinking_messages)
                             )
-                            llm_reply, model_name = await self.thinking(
-                                thinking_messages,
-                                sender,
-                                stream_callback=_llm_stream_callback,
+                            llm_reply, model_name = await within_deadline(
+                                self.thinking(
+                                    thinking_messages,
+                                    sender,
+                                    stream_callback=_llm_stream_callback,
+                                )
                             )
                         else:
                             raise
@@ -635,13 +653,15 @@ class ConversableAgent(Role, Agent):
                     reply_message.resource_info = resource_info
                     span.metadata["llm_reply"] = llm_reply
                     span.metadata["model_name"] = model_name
-                    await _emit_stream(
-                        "thinking",
-                        {
-                            "round": current_retry_counter + 1,
-                            "llm_reply": llm_reply,
-                            "model_name": model_name,
-                        },
+                    await within_deadline(
+                        _emit_stream(
+                            "thinking",
+                            {
+                                "round": current_retry_counter + 1,
+                                "llm_reply": llm_reply,
+                                "model_name": model_name,
+                            },
+                        )
                     )
 
                 with root_tracer.start_span(
@@ -649,7 +669,9 @@ class ConversableAgent(Role, Agent):
                     metadata={"llm_reply": llm_reply, "censored": self.name},
                 ) as span:
                     # 2.Review whether what is being done is legal
-                    approve, comments = await self.review(llm_reply, self)
+                    approve, comments = await within_deadline(
+                        self.review(llm_reply, self)
+                    )
                     reply_message.review_info = AgentReviewInfo(
                         approve=approve,
                         comments=comments,
@@ -673,25 +695,29 @@ class ConversableAgent(Role, Agent):
                     },
                 ) as span:
                     # 3.Act based on the results of your thinking
-                    act_out: ActionOutput = await self.act(
-                        message=reply_message,
-                        sender=sender,
-                        reviewer=reviewer,
-                        is_retry_chat=is_retry_chat,
-                        last_speaker_name=last_speaker_name,
-                        **act_extent_param,
+                    act_out: ActionOutput = await within_deadline(
+                        self.act(
+                            message=reply_message,
+                            sender=sender,
+                            reviewer=reviewer,
+                            is_retry_chat=is_retry_chat,
+                            last_speaker_name=last_speaker_name,
+                            **act_extent_param,
+                        )
                     )
                     if act_out:
                         reply_message.action_report = act_out
                     span.metadata["action_report"] = (
                         act_out.to_dict() if act_out else None
                     )
-                    await _emit_stream(
-                        "act",
-                        {
-                            "round": current_retry_counter + 1,
-                            "action_output": act_out.to_dict() if act_out else None,
-                        },
+                    await within_deadline(
+                        _emit_stream(
+                            "act",
+                            {
+                                "round": current_retry_counter + 1,
+                                "action_output": act_out.to_dict() if act_out else None,
+                            },
+                        )
                     )
 
                 with root_tracer.start_span(
@@ -703,8 +729,8 @@ class ConversableAgent(Role, Agent):
                     },
                 ) as span:
                     # 4.Reply information verification
-                    check_pass, reason = await self.verify(
-                        reply_message, sender, reviewer
+                    check_pass, reason = await within_deadline(
+                        self.verify(reply_message, sender, reviewer)
                     )
                     is_success = check_pass
                     span.metadata["check_pass"] = check_pass
@@ -719,53 +745,92 @@ class ConversableAgent(Role, Agent):
                         break
                     fail_reason = reason
                     observation = fail_reason
-                    await self.write_memories(
-                        question=question,
-                        ai_message=ai_message,
-                        action_output=act_out,
-                        check_pass=check_pass,
-                        check_fail_reason=fail_reason,
-                        current_retry_counter=current_retry_counter,
+                    await within_deadline(
+                        self.write_memories(
+                            question=question,
+                            ai_message=ai_message,
+                            action_output=act_out,
+                            check_pass=check_pass,
+                            check_fail_reason=fail_reason,
+                            current_retry_counter=current_retry_counter,
+                        )
                     )
                 else:
                     # Successful reply
-                    observation = act_out.observations
-                    await self.write_memories(
-                        question=question,
-                        ai_message=ai_message,
-                        action_output=act_out,
-                        check_pass=check_pass,
-                        current_retry_counter=current_retry_counter,
+                    observation = act_out.content or act_out.observations
+                    await within_deadline(
+                        self.write_memories(
+                            question=question,
+                            ai_message=ai_message,
+                            action_output=act_out,
+                            check_pass=check_pass,
+                            current_retry_counter=current_retry_counter,
+                        )
                     )
                     if self.run_mode != AgentRunMode.LOOP or act_out.terminate:
+                        finished = True
                         logger.debug(f"Agent {self.name} reply success!{reply_message}")
                         break
-                time_cost = time.time() - start_time
-                if time_cost > self.max_timeout:
-                    logger.warning(
-                        f"Agent {self.name} run time out!{time_cost} > "
-                        f"{self.max_timeout}"
-                    )
-                    break
+                if time.monotonic() >= deadline:
+                    raise asyncio.TimeoutError
 
                 # Continue to run the next round
                 current_retry_counter += 1
                 # Send error messages and issue new problem-solving instructions
                 if current_retry_counter < self.max_retry_count:
-                    await self.send(
-                        reply_message, sender, reviewer, request_reply=False
+                    await within_deadline(
+                        self.send(reply_message, sender, reviewer, request_reply=False)
                     )
 
+            if is_success and not finished:
+                is_success = False
+                reason = (
+                    "AGENT_STEP_LIMIT: reached "
+                    f"{self.max_retry_count}"
+                    " steps without completing the "
+                    "task"
+                )
+                reply_message.context = {
+                    **reply_message.get_dict_context(),
+                    "execution_status": "step_limit",
+                    "execution_error": reason,
+                }
+                reply_message.content = reason
             reply_message.success = is_success
             # 6.final message adjustment
-            await self.adjust_final_message(is_success, reply_message)
+            await within_deadline(self.adjust_final_message(is_success, reply_message))
             return reply_message
 
+        except asyncio.TimeoutError:
+            reason = (
+                "AGENT_TIMEOUT: execution exceeded "
+                f"{self.max_timeout}"
+                " seconds; completed artifacts are "
+                "retained"
+            )
+            logger.warning(
+                "Agent %s timed out after %.2fs", self.name, time.monotonic() - started
+            )
+            if reply_message is None:
+                reply_message = AgentMessage()
+            reply_message.success = False
+            reply_message.content = reason
+            reply_message.context = {
+                **reply_message.get_dict_context(),
+                "execution_status": "timeout",
+                "execution_error": reason,
+            }
+            if reply_message.action_report:
+                reply_message.action_report.have_retry = False
+            return reply_message
         except Exception as e:
             logger.exception("Generate reply exception!")
-            err_message = AgentMessage(content=str(e))
-            err_message.success = False
-            return err_message
+            reply_message = AgentMessage(
+                content=str(e),
+                success=False,
+                context={"execution_status": "failed", "execution_error": str(e)},
+            )
+            return reply_message
         finally:
             if reply_message:
                 root_span.metadata["reply_message"] = reply_message.to_dict()
@@ -1198,8 +1263,23 @@ class ConversableAgent(Role, Agent):
                 can_uses = self._excluded_models(all_model_names, None, excluded_models)
             if can_uses and len(can_uses) > 0:
                 return can_uses[0]
-            else:
-                return "deepseek-chat"
+            # A client can retain a model name that was removed from the
+            # server configuration.  Do not fall back to the historical
+            # hard-coded ``deepseek-chat`` name: it may not exist either.
+            # Use another healthy model advertised by the worker manager.
+            fallback_models = self._excluded_models(
+                all_model_names, None, excluded_models
+            )
+            if fallback_models:
+                logger.warning(
+                    "Requested LLM priority %s is unavailable; falling back to %s",
+                    priority
+                    if self.not_null_llm_config.llm_strategy == LLMStrategyType.Priority
+                    else None,
+                    fallback_models[0],
+                )
+                return fallback_models[0]
+            raise ValueError("No healthy LLM model is available")
         except Exception as e:
             logger.error(f"{self.role} get next llm failed!{str(e)}")
             raise ValueError(f"Failed to allocate model service,{str(e)}!")

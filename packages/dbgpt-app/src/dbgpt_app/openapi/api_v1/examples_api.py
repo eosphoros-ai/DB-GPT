@@ -10,10 +10,11 @@ Example files are resolved in the following order:
 2. ``dbgpt_app/_builtin_examples/`` inside the installed wheel (PyPI mode).
 """
 
+import asyncio
 import logging
 import os
 import shutil
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends
@@ -60,6 +61,111 @@ EXAMPLE_FILES = {
         "name": "sql_skill.txt",
     },
 }
+
+EXAMPLE_KNOWLEDGE = {
+    "olist_ecommerce_report": {
+        "source_path": "docs/knowledge/olist-analytics-metric-governance.md",
+        "builtin_path": "knowledge/olist-analytics-metric-governance.md",
+        "name": "Olist_Analytics_Governance",
+    },
+}
+_knowledge_prepare_lock = asyncio.Lock()
+
+
+@router.post("/v1/examples/prepare", response_model=Result[dict])
+async def prepare_example_knowledge(
+    example_id: str = Body(..., embed=True),
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Ensure bundled knowledge is indexed before sending an example turn."""
+    from dbgpt.rag.embedding import EmbeddingFactory
+    from dbgpt_app.knowledge.request.request import KnowledgeSpaceRequest
+    from dbgpt_app.knowledge.service import KnowledgeService
+    from dbgpt_ext.rag.chunk_manager import ChunkParameters
+    from dbgpt_serve.rag.api.schemas import (
+        DocumentServeRequest,
+        KnowledgeSyncRequest,
+    )
+    from dbgpt_serve.rag.service.service import Service
+
+    example = EXAMPLE_KNOWLEDGE.get(example_id)
+    if example is None:
+        return Result.failed(msg=f"Unknown knowledge example: {example_id}")
+    try:
+        async with _knowledge_prepare_lock:
+            service = Service.get_instance(CFG.SYSTEM_APP)
+            space = service.get({"name": example["name"]})
+            if space is None:
+                KnowledgeService().create_knowledge_space(
+                    KnowledgeSpaceRequest(
+                        name=example["name"],
+                        vector_type="VectorStore",
+                        domain_type="Normal",
+                        owner=user_token.user_id,
+                        desc="Olist 分析指标口径与数据治理",
+                    )
+                )
+                space = service.get({"name": example["name"]})
+            # Preserve an existing governing document; only seed an empty space.
+            doc = service.get_document(
+                {"space": space.name, "status": "FINISHED"}
+            ) or service.get_document({"space": space.name})
+            if doc is None:
+                source = _resolve_example_source(example)
+                if source is None:
+                    return Result.failed(
+                        msg="Bundled Olist knowledge document not found"
+                    )
+                doc_id = service.create_document(
+                    DocumentServeRequest(
+                        space_id=str(space.id),
+                        doc_name="olist-analytics-metric-governance.md",
+                        doc_type="TEXT",
+                        content=Path(source).read_text(encoding="utf-8"),
+                    )
+                )
+                doc = service.get_document({"id": int(doc_id)})
+            if doc.status in {"TODO", "FAILED"}:
+                # Worker registration can finish after HTTP startup. Check the
+                # configured embedding service before queuing persistent work.
+                embeddings = EmbeddingFactory.get_instance(CFG.SYSTEM_APP).create()
+                if not await embeddings.aembed_query("Olist 指标口径"):
+                    return Result.failed(msg="Embedding model is not ready")
+                await service.sync_document(
+                    [
+                        KnowledgeSyncRequest(
+                            space_id=str(space.id),
+                            doc_id=doc.id,
+                            chunk_parameters=ChunkParameters(
+                                chunk_strategy="CHUNK_BY_SIZE"
+                            ),
+                        )
+                    ]
+                )
+            # sync_document schedules indexing; do not mistake that for readiness.
+            for _ in range(120):
+                doc = service.get_document({"id": doc.id})
+                if doc.status == "FINISHED" and doc.chunk_size:
+                    indexed_chunks = len(
+                        [value for value in (doc.vector_ids or "").split(",") if value]
+                    )
+                    if indexed_chunks != doc.chunk_size:
+                        return Result.failed(
+                            msg="Knowledge index is incomplete; resync the document "
+                            "after the embedding model is ready"
+                        )
+                    return Result.succ({"id": space.id, "name": space.name})
+                if doc.status != "RUNNING":
+                    return Result.failed(msg=f"Knowledge indexing failed: {doc.result}")
+                await asyncio.sleep(1)
+            return Result.failed(
+                msg="Knowledge indexing is still running; try again shortly"
+            )
+    except Exception:
+        logger.exception("Failed to prepare example knowledge")
+        return Result.failed(
+            msg="Could not prepare example knowledge; check server logs"
+        )
 
 
 def _validate_example_filename(filename: str) -> str:
@@ -152,7 +258,12 @@ async def use_example_file(
         target_path = os.path.join(upload_dir, target_name)
         shutil.copy2(source_path, target_path)
 
-        abs_path = os.path.abspath(target_path)
+        # ``file_path`` is consumed by the React attachment adapter, whose
+        # transport contract intentionally rejects backslashes (they are
+        # ambiguous with escaping and traversal on Windows).  Return a
+        # platform-neutral absolute path so bundled examples work on Windows
+        # exactly like user-uploaded session files.
+        abs_path = os.path.abspath(target_path).replace("\\", "/")
         logger.info(f"Example file copied: {abs_path}")
         return Result.succ(abs_path)
     except Exception as e:

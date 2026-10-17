@@ -369,7 +369,11 @@ class OpenAILLMClient(ProxyLLMClient):
                 for tl in raw_tool_calls
             ]
         return ModelOutput.build(
-            text, reasoning_content, usage=usage, tool_calls=tool_calls
+            text,
+            reasoning_content,
+            usage=usage,
+            tool_calls=tool_calls,
+            finish_reason=chat_completion.choices[0].finish_reason,
         )
 
     async def generate_stream_v1(
@@ -381,10 +385,14 @@ class OpenAILLMClient(ProxyLLMClient):
         text = ""
         reasoning_content = ""
         usage = None
+        finish_reason = None
         tool_calls_acc: Optional[List[Dict[str, Any]]] = None
         async for r in chat_completion:
+            if getattr(r, "usage", None) is not None:
+                usage = r.usage.dict()
             if len(r.choices) == 0:
                 continue
+            finish_reason = r.choices[0].finish_reason or finish_reason
             # Check for empty 'choices' issue in Azure GPT-4o responses
             if r.choices[0] is not None and r.choices[0].delta is None:
                 continue
@@ -399,12 +407,16 @@ class OpenAILLMClient(ProxyLLMClient):
                     tool_calls_acc, delta_tool_calls
                 )
             if text or reasoning_content:
-                if hasattr(r, "usage") and r.usage is not None:
-                    usage = r.usage.dict()
-                yield ModelOutput.build(text, reasoning_content, usage=usage)
-        if tool_calls_acc:
+                yield ModelOutput.build(
+                    text, reasoning_content, usage=usage, finish_reason=finish_reason
+                )
+        if text or reasoning_content or tool_calls_acc:
             yield ModelOutput.build(
-                text, reasoning_content, usage=usage, tool_calls=tool_calls_acc
+                text,
+                reasoning_content,
+                usage=usage,
+                tool_calls=tool_calls_acc,
+                finish_reason=finish_reason,
             )
 
     async def models(self) -> List[ModelMetadata]:

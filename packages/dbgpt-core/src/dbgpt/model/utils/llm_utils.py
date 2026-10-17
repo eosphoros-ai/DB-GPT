@@ -101,5 +101,7 @@ def parse_model_request(
         max_new_tokens=params.get("max_new_tokens"),
         stop=params.get("stop"),
         top_p=params.get("top_p"),
+        tools=params.get("tools"),
+        tool_choice=params.get("tool_choice"),
     )
     return request

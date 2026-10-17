@@ -1,69 +1,126 @@
 """sql_query tool — read-only SQL query against the selected database."""
 
+import asyncio
 import json
+import re
+import time
+from threading import Event
 from typing import Any, Dict, Optional
 
+import sqlparse
+
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt.core.interface.report_capture import (
+    capture_sql_execution,
+    connector_database_name,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 
 
-def make_sql_query(react_state: Dict[str, Any], database_connector: Optional[Any]):
+def _normalize_sql_markdown_escapes(sql: str) -> str:
+    """Undo Markdown escaping that some models leak into SQL identifiers."""
+    return re.sub(r"\\([_`*])", r"\1", sql)
+
+
+def make_sql_query(
+    react_state: Dict[str, Any],
+    database_connector: Optional[Any],
+    *,
+    max_output_chars: Optional[int] = 20_000,
+    query_timeout_seconds: float = 30,
+):
     @tool(
         description=(
             "对用户选择的数据库执行 SQL 查询（仅支持 SELECT）。"
-            '参数: {"sql": "SELECT 语句"}'
+            '参数: {"sql": "SELECT 语句"}。单次查询默认最多 30 秒，超时后先查看 '
+            "EXPLAIN QUERY PLAN 与关联索引，优化查询；不要原样反复提交超时 SQL。"
         )
     )
-    def sql_query(sql: str) -> str:
+    async def sql_query(sql: str) -> str:
         """Execute a read-only SQL query against the selected database."""
+        artifact_sink = react_state.get("_report_artifact_sink")
         if database_connector is None:
             return json.dumps(
                 {
+                    "success": False,
+                    "error_code": "SQL_DATASOURCE_REQUIRED",
                     "chunks": [
                         {
                             "output_type": "text",
                             "content": "未选择数据库，请先在左侧面板选择一个数据源。",
                         }
-                    ]
+                    ],
                 },
                 ensure_ascii=False,
             )
 
-        sql_stripped = sql.strip().rstrip(";")
+        sql_stripped = _normalize_sql_markdown_escapes(sql).strip().rstrip(";")
         sql_upper = sql_stripped.upper().lstrip()
-        forbidden = [
-            "INSERT",
-            "UPDATE",
-            "DELETE",
-            "DROP",
-            "ALTER",
-            "TRUNCATE",
-            "CREATE",
-            "GRANT",
-            "REVOKE",
-        ]
-        for kw in forbidden:
-            if sql_upper.startswith(kw):
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {
-                                "output_type": "text",
-                                "content": f"安全限制: 不允许执行 {kw} 语句，"
-                                "仅支持 SELECT 查询。",
-                            }
-                        ]
-                    },
-                    ensure_ascii=False,
+        statements = sqlparse.parse(sql_stripped)
+        statement_type = statements[0].get_type() if len(statements) == 1 else "INVALID"
+        explaining_select = False
+        if len(statements) == 1 and sql_upper.startswith("EXPLAIN "):
+            explained = sqlparse.parse(
+                re.sub(
+                    r"^EXPLAIN\s+(?:QUERY\s+PLAN\s+|ANALYZE\s+)?",
+                    "",
+                    sql_stripped,
+                    flags=re.I,
                 )
-
+            )
+            explaining_select = (
+                len(explained) == 1 and explained[0].get_type() == "SELECT"
+            )
+        if statement_type != "SELECT" and not explaining_select:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error_code": "SQL_READ_ONLY_REQUIRED",
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "仅支持单条只读 SELECT / WITH 查询及其 EXPLAIN。"
+                            ),
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+            )
+        started = time.perf_counter()
+        cancel_event = Event()
         try:
-            result = database_connector.run(sql_stripped)
+            if isinstance(database_connector, RDBMSConnector):
+
+                async def execute():
+                    columns, rows = await asyncio.to_thread(
+                        database_connector.query_ex,
+                        sql_stripped,
+                        timeout=query_timeout_seconds,
+                        cancel_event=cancel_event,
+                    )
+                    return [columns, *(rows or [])]
+            else:
+
+                async def execute():
+                    return await asyncio.to_thread(database_connector.run, sql_stripped)
+
+            result = await asyncio.wait_for(execute(), timeout=query_timeout_seconds)
             if not result:
+                artifact_id = capture_sql_execution(
+                    sql=sql_stripped,
+                    database=connector_database_name(database_connector, artifact_sink),
+                    duration_ms=int((time.perf_counter() - started) * 1000),
+                    columns=[],
+                    rows=[],
+                    artifact_sink=artifact_sink,
+                )
                 return json.dumps(
                     {
+                        "artifact_id": artifact_id,
                         "chunks": [
                             {"output_type": "text", "content": "查询返回空结果。"}
-                        ]
+                        ],
                     },
                     ensure_ascii=False,
                 )
@@ -71,6 +128,15 @@ def make_sql_query(react_state: Dict[str, Any], database_connector: Optional[Any
             columns = result[0]
             col_names = [str(c[0]) if isinstance(c, tuple) else str(c) for c in columns]
             rows = result[1:]
+
+            artifact_id = capture_sql_execution(
+                sql=sql_stripped,
+                database=connector_database_name(database_connector, artifact_sink),
+                duration_ms=int((time.perf_counter() - started) * 1000),
+                columns=col_names,
+                rows=rows,
+                artifact_sink=artifact_sink,
+            )
 
             header = "| " + " | ".join(col_names) + " |"
             separator = "| " + " | ".join(["---"] * len(col_names)) + " |"
@@ -84,27 +150,66 @@ def make_sql_query(react_state: Dict[str, Any], database_connector: Optional[Any
             # Cap total output size so a single wide query can't blow out the
             # LLM context window. The full result remains available via the
             # ToolResultStorage persistence layer if it exceeds the threshold.
-            MAX_SQL_OUTPUT_CHARS = 20_000
-            if len(table) > MAX_SQL_OUTPUT_CHARS:
+            if max_output_chars is not None and len(table) > max_output_chars:
                 table = (
-                    table[:MAX_SQL_OUTPUT_CHARS]
-                    + f"\n\n... [Output truncated at {MAX_SQL_OUTPUT_CHARS} chars. "
+                    table[:max_output_chars]
+                    + f"\n\n... [Output truncated at {max_output_chars} chars. "
                     f"Total rows: {len(rows)}]"
                 )
 
             return json.dumps(
-                {"chunks": [{"output_type": "markdown", "content": table}]},
+                {
+                    "artifact_id": artifact_id,
+                    "chunks": [{"output_type": "markdown", "content": table}],
+                },
                 ensure_ascii=False,
             )
+        except asyncio.CancelledError:
+            cancel_event.set()
+            capture_sql_execution(
+                sql=sql_stripped,
+                database=connector_database_name(database_connector, artifact_sink),
+                duration_ms=int((time.perf_counter() - started) * 1000),
+                error="SQL_QUERY_CANCELLED: upper-level task cancelled the query",
+                artifact_sink=artifact_sink,
+            )
+            raise
         except Exception as e:
+            if str(e).startswith("ARTIFACT_CAPTURE_FAILED:"):
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error_code": "ARTIFACT_CAPTURE_FAILED",
+                        "chunks": [{"output_type": "text", "content": str(e)}],
+                    },
+                    ensure_ascii=False,
+                )
+            cancel_event.set()
+            timed_out = isinstance(e, TimeoutError)
+            code = "SQL_QUERY_TIMEOUT" if timed_out else "SQL_QUERY_FAILED"
+            message = (
+                f"{code}: 查询超过 {query_timeout_seconds:g} 秒，已请求中断。"
+                "先检查 EXPLAIN QUERY PLAN 与关联索引，优化查询；不要原样重试。"
+                if timed_out
+                else f"{code}: SQL 执行失败: {e}"
+            )
+            capture_sql_execution(
+                sql=sql_stripped,
+                database=connector_database_name(database_connector, artifact_sink),
+                duration_ms=int((time.perf_counter() - started) * 1000),
+                error=message,
+                artifact_sink=artifact_sink,
+            )
             return json.dumps(
                 {
                     "chunks": [
                         {
                             "output_type": "text",
-                            "content": f"SQL 执行失败: {str(e)}",
+                            "content": message,
                         }
-                    ]
+                    ],
+                    "error_code": code,
+                    "success": False,
                 },
                 ensure_ascii=False,
             )

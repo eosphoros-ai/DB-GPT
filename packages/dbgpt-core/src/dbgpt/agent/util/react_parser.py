@@ -13,6 +13,50 @@ from dbgpt.vis.tags.vis_thinking import VisThinking
 # parsing and the whole final-answer extraction chain collapses.
 _SPECIAL_TOKEN_PATTERN = re.compile(r"<\|[^|<>\n]*\|>")
 
+
+def extract_terminate_output(content: Any) -> str:
+    """Normalize native and legacy text termination without exposing controls."""
+    import ast
+
+    keys = ("output", "result", "final_answer")
+    if isinstance(content, str):
+        original = content
+        steps = ReActOutputParser().parse_current_step(content)
+        if steps:
+            step = steps[0]
+            if (step.action or "").lower() != "terminate":
+                raise ValueError("Expected a terminate action with a final answer")
+            content = step.action_input
+        else:
+            try:
+                parsed = ast.literal_eval(content)
+            except (ValueError, SyntaxError):
+                parsed = None
+            if isinstance(parsed, dict) and any(key in parsed for key in keys):
+                content = parsed
+            else:
+                content = original
+    if isinstance(content, str) and content.lstrip().startswith("{"):
+        try:
+            parsed = json.loads(content)
+        except (TypeError, ValueError):
+            parsed = None
+        if isinstance(parsed, dict) and any(key in parsed for key in keys):
+            content = parsed
+    if isinstance(content, dict):
+        content = next((content[key] for key in keys if key in content), None)
+    if (
+        not isinstance(content, str)
+        or not content.strip()
+        or content.strip() in ("...", "…")
+    ):
+        raise ValueError(
+            "terminate requires a non-empty final answer, not a placeholder. "
+            "Continue the task or explain why it could not be completed."
+        )
+    return content
+
+
 # Kimi-style native tool-calling protocol leaked as plain text by some model
 # servers: ``<|tool_calls_section_begin|><|tool_call_begin|>functions.X:0
 # <|tool_call_argument_begin|>{...}<|tool_call_end|><|tool_calls_section_end|>``.
@@ -25,6 +69,19 @@ _NATIVE_TOOL_CALL_PATTERN = re.compile(
     r"<\|tool_call_argument_begin\|>\s*"
     r"(?P<args>.*?)\s*"
     r"<\|tool_call_end\|>",
+    re.DOTALL,
+)
+
+# A few OpenAI-compatible models intermittently emit an XML-shaped tool call
+# despite being instructed to use textual ReAct, for example:
+# ``<sql_query>{"sql":"SELECT ..."}</sql_query>``. These tags are not HTML
+# report content at this stage: the payload is a JSON object/array and the tag
+# name is the intended tool. Normalize them before the line-based parser so a
+# valid, already-produced query does not consume a failed agent round.
+_XML_TOOL_CALL_PATTERN = re.compile(
+    r"<(?P<tool>[A-Za-z][\w.-]*)>\s*"
+    r"(?P<args>\{.*?\}|\[.*?\])\s*"
+    r"</(?P=tool)>",
     re.DOTALL,
 )
 
@@ -186,12 +243,45 @@ class ReActOutputParser:
 
         return _NATIVE_TOOL_CALL_PATTERN.sub(_render, text)
 
+    def _translate_xml_tool_calls(self, text: str) -> str:
+        """Translate JSON-bearing XML-shaped tool calls into ReAct lines.
+
+        Restrict the match to payloads that parse as JSON. This leaves ordinary
+        HTML/XML text untouched while recovering the malformed tool protocol.
+        """
+        if "<" not in text or "</" not in text:
+            return text
+
+        def _render(match: "re.Match[str]") -> str:
+            args = match.group("args").strip()
+            try:
+                json.loads(args)
+            except json.JSONDecodeError:
+                return match.group(0)
+            return f"\nAction: {match.group('tool')}\nAction Input: {args}\n"
+
+        return _XML_TOOL_CALL_PATTERN.sub(_render, text)
+
     def _normalize_react_text(self, text: str) -> str:
         """Normalize common wrappers before ReAct parsing."""
         if not text:
             return text
 
+        # Some OpenAI-compatible models (including DeepSeek) render the
+        # protocol labels as Markdown emphasis, e.g. ``**Thought**:``.  Those
+        # labels are still at a logical-line boundary and carry exactly the
+        # same ReAct semantics; normalize only the known labels before the
+        # line-oriented parser sees them.  Do not remove Markdown elsewhere:
+        # tool input and ordinary report content may legitimately use it.
+        label_pattern = (
+            r"(?m)^([ \t]*)\*\*"
+            "(Thought|Phase|Action Intention|Action Reason|Action|Action "
+            "Input|Observation)"
+            r"\*\*:(?=\s|$)"
+        )
+        text = re.sub(label_pattern, r"\1\2:", text)
         text = self._translate_native_tool_calls(text)
+        text = self._translate_xml_tool_calls(text)
         text = _SPECIAL_TOKEN_PATTERN.sub("", text)
         text = self._strip_vis_thinking_blocks(text)
         text = self._strip_markdown_code_fence(text)
@@ -403,8 +493,15 @@ class ReActOutputParser:
             is_terminal = action.lower() == self.terminate_action.lower()
 
         # Extract action input
+        # A few reasoning models repeat the same ``Action`` / ``Action Input``
+        # pair in one response.  DB-GPT executes one tool per round, so the
+        # first valid pair is authoritative.  Treating the next Action label as
+        # the end of this input prevents the second JSON payload from being
+        # appended to the first one and turning an otherwise valid call into an
+        # unrecoverable JSON string.
         action_input_match = re.search(
-            rf"{action_input_line}(.*?)(?={observation_line}|{thought_line}|\Z)",
+            rf"{action_input_line}(.*?)(?={action_line}|{observation_line}|"
+            rf"{thought_line}|\Z)",
             match_text,
             re.DOTALL | re.MULTILINE,
         )

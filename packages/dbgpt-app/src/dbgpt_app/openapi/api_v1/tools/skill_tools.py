@@ -1,6 +1,7 @@
 """load_skill tool — loads skill content (SKILL.md) by name."""
 
 import json
+import time
 from typing import Any, Dict
 
 from dbgpt.agent.resource.tool.base import tool
@@ -69,19 +70,33 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
 
     @tool(
         description="执行技能scripts目录下的脚本文件。参数: "
-        '{"skill_name": "技能名称", "script_file_name": "脚本文件名", "args": {参数}}'
+        '{"skill_name": "技能名称", "script_file_name": "脚本文件名", "args": {参数}}。'
+        "JSON 脚本用 args；命令行脚本用 argv 字符串列表，二者不能同时提供。"
+        '例如 init_skill.py 用 argv=["sql-data-analysis", "--path", '
+        '"技能目录的绝对路径"]。'
+        "返回真实 artifact_id。复用上一步结果时，用 input_artifact_ids 标明输入产物。"
     )
     async def execute_skill_script_file(
-        skill_name: str, script_file_name: str, args: dict | None = None
+        skill_name: str,
+        script_file_name: str,
+        args: dict | None = None,
+        input_artifact_ids: list[str] | None = None,
+        argv: list[str] | None = None,
     ) -> str:
         """Execute a script file from a skill's scripts directory."""
         import os
-        import shutil
         import uuid
 
         from dbgpt._private.config import Config
         from dbgpt.agent.skill.manage import get_skill_manager
-        from dbgpt.configs.model_config import PILOT_PATH, STATIC_MESSAGE_IMG_PATH
+        from dbgpt.configs.model_config import PILOT_PATH
+        from dbgpt.core.interface.report_capture import (
+            capture_python_execution,
+            execution_output_files,
+            publish_generated_images,
+            resolve_argument_dependencies,
+            snapshot_execution_files,
+        )
         from dbgpt_app.openapi.api_v1.tools._helpers import (
             _extract_auto_data_markers,
         )
@@ -89,9 +104,21 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
         CFG = Config()
 
         try:
+            if args and argv is not None:
+                raise ValueError("Use either args (JSON) or argv (CLI), not both")
+            sink = react_state.get("_report_artifact_sink")
+            available = (
+                {a.artifact_id for a in sink.snapshot() if a.status == "succeeded"}
+                if sink
+                else set()
+            )
+            if set(input_artifact_ids or []) - available:
+                raise ValueError("Unknown or unsuccessful input_artifact_ids")
             sm = get_skill_manager(CFG.SYSTEM_APP)
             cid = react_state.get("conv_id") or "default"
-            out_dir = os.path.join(PILOT_PATH, "tmp", cid)
+            out_dir = os.path.join(
+                PILOT_PATH, "tmp", cid, "executions", uuid.uuid4().hex
+            )
             os.makedirs(out_dir, exist_ok=True)
 
             real_file_path = react_state.get("file_path")
@@ -108,57 +135,67 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                     if key in _FILE_PATH_KEYS:
                         args[key] = real_file_path
 
+            execution_args = {"argv": argv} if argv is not None else (args or {})
+            input_artifact_ids = resolve_argument_dependencies(
+                execution_args, sink, input_artifact_ids or []
+            )
+            execution_args, file_input_ids = snapshot_execution_files(
+                execution_args,
+                sink,
+                action="execute_skill_script_file.input",
+            )
+            input_artifact_ids = list(
+                dict.fromkeys([*(input_artifact_ids or []), *file_input_ids])
+            )
+            started_at = time.perf_counter()
+            cli_kwargs = {"argv": execution_args["argv"]} if argv is not None else {}
             result_str = await sm.execute_skill_script_file(
                 skill_name,
                 script_file_name,
-                args or {},
+                {} if argv is not None else execution_args,
                 output_dir=out_dir,
+                **cli_kwargs,
             )
-
-            try:
-                _skill_path = sm._get_skill_path(skill_name)
-                _sf = script_file_name.lstrip("/\\")
-                if _sf.startswith("scripts/") or _sf.startswith("scripts\\"):
-                    _sf = _sf[8:]
-                _script_abs = os.path.join(_skill_path, "scripts", _sf)
-                with open(_script_abs, "r", encoding="utf-8") as _f:
-                    _script_source = _f.read()
-            except Exception:
-                _script_source = None
 
             try:
                 result_obj = json.loads(result_str)
                 chunks = result_obj.get("chunks", [])
+                _script_source = result_obj.get("source_code")
+                script_result = None
+                for chunk in chunks:
+                    if chunk.get("output_type") in {"text", "json"}:
+                        try:
+                            content = chunk.get("content")
+                            parsed = (
+                                json.loads(content)
+                                if isinstance(content, str)
+                                else content
+                            )
+                            if isinstance(parsed, (dict, list)):
+                                script_result = parsed
+                        except (ValueError, TypeError):
+                            pass
                 if _script_source:
                     chunks.insert(0, {"output_type": "code", "content": _script_source})
 
-                IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
-                os.makedirs(STATIC_MESSAGE_IMG_PATH, exist_ok=True)
+                captured_images = publish_generated_images(
+                    [
+                        chunk["content"]
+                        for chunk in chunks
+                        if chunk.get("output_type") == "image"
+                        and os.path.isfile(chunk.get("content", ""))
+                    ]
+                )
+                published = {image["source_path"]: image for image in captured_images}
                 for chunk in chunks:
-                    if chunk.get("output_type") == "image":
-                        abs_path = chunk["content"]
-                        if os.path.isabs(abs_path) and os.path.isfile(abs_path):
-                            ext = os.path.splitext(abs_path)[1].lower()
-                            if ext in IMAGE_EXTS:
-                                unique_name = (
-                                    f"{uuid.uuid4().hex[:8]}_"
-                                    f"{os.path.basename(abs_path)}"
-                                )
-                                dest = os.path.join(
-                                    STATIC_MESSAGE_IMG_PATH, unique_name
-                                )
-                                shutil.copy2(abs_path, dest)
-                                img_url = f"/images/{unique_name}"
-                                chunk["content"] = img_url
-                                react_state.setdefault("generated_images", []).append(
-                                    img_url
-                                )
-                                orig_stem = os.path.splitext(
-                                    os.path.basename(abs_path)
-                                )[0].lower()
-                                react_state.setdefault("image_url_map", {})[
-                                    orig_stem
-                                ] = img_url
+                    image = published.get(str(chunk.get("content")))
+                    if chunk.get("output_type") == "image" and image:
+                        chunk["content"] = image["uri"]
+                for image in captured_images:
+                    react_state.setdefault("generated_images", []).append(image["uri"])
+                    react_state.setdefault("image_url_map", {})[
+                        os.path.splitext(image["filename"])[0].lower()
+                    ] = image["uri"]
 
                 all_images = react_state.get("generated_images", [])
                 if all_images:
@@ -174,6 +211,7 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                     react_state["auto_data"] = auto_data
 
                 filtered_chunks = []
+                script_template_data = {}
                 for chunk in chunks:
                     if chunk.get("output_type") != "text":
                         filtered_chunks.append(chunk)
@@ -182,28 +220,91 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                     cleaned, extracted = _extract_auto_data_markers(content)
                     if extracted:
                         auto_data.update(extracted)
+                        script_template_data.update(extracted)
                     if cleaned:
                         chunk["content"] = cleaned
                         filtered_chunks.append(chunk)
                     elif not extracted:
                         filtered_chunks.append(chunk)
                 chunks = filtered_chunks
+                if script_template_data:
+                    script_result = {
+                        **(script_result if isinstance(script_result, dict) else {}),
+                        **script_template_data,
+                    }
+                script_error = result_obj.get("error") or (
+                    script_result.get("error")
+                    if isinstance(script_result, dict)
+                    else None
+                )
+                if result_obj.get("success") is False and not script_error:
+                    script_error = "Skill script execution failed"
 
-                if script_file_name == "calculate_ratios.py":
-                    for chunk in chunks:
-                        if chunk.get("output_type") == "text":
-                            try:
-                                ratio_data = json.loads(chunk["content"])
-                                react_state["ratio_data"] = ratio_data
-                            except Exception:
-                                pass
+                # Skill scripts are a real Python execution boundary just like
+                # code_interpreter.  Capturing them here keeps reports generated
+                # from CSV/PDF/financial skills inside the same evidence contract
+                # as database analysis, instead of producing an untraceable
+                # legacy Report.html.
+                text_output = "\n".join(
+                    str(chunk.get("content") or "")
+                    for chunk in chunks
+                    if chunk.get("output_type") in {"text", "markdown", "json"}
+                )
+                python_artifact_id = capture_python_execution(
+                    code=_script_source
+                    or f"# Skill script: {skill_name}/{script_file_name}",
+                    duration_ms=max(0, int((time.perf_counter() - started_at) * 1000)),
+                    status=result_obj.get("status", "failed")
+                    if script_error
+                    else "succeeded",
+                    exit_code=result_obj.get("exit_code", None if script_error else 0),
+                    stdout=text_output,
+                    stderr=result_obj.get("stderr", ""),
+                    error=str(script_error) if script_error else None,
+                    result_inline=script_result,
+                    input_artifact_ids=input_artifact_ids,
+                    images=captured_images,
+                    output_files=execution_output_files(out_dir),
+                    action="execute_skill_script_file",
+                    metadata={
+                        "capability_type": "skill",
+                        "skill_name": skill_name,
+                        "script_file_name": script_file_name,
+                        "arguments": result_obj.get("script_arguments", args),
+                    },
+                    artifact_sink=react_state.get("_report_artifact_sink"),
+                )
+                if not script_error and isinstance(script_result, dict):
+                    for key, value in script_result.items():
+                        if (
+                            isinstance(key, str)
+                            and key.isupper()
+                            and isinstance(value, (str, int, float))
+                            and not isinstance(value, bool)
+                        ):
+                            auto_data[key] = value
 
-                return json.dumps({"chunks": chunks}, ensure_ascii=False)
+                return json.dumps(
+                    {
+                        "chunks": chunks,
+                        "artifact_id": python_artifact_id,
+                        **(
+                            {"success": False, "error_code": "SKILL_SCRIPT_FAILED"}
+                            if script_error
+                            else {}
+                        ),
+                    },
+                    ensure_ascii=False,
+                )
             except (json.JSONDecodeError, KeyError):
                 return result_str
         except Exception as e:
             return json.dumps(
-                {"chunks": [{"output_type": "text", "content": f"Error: {str(e)}"}]},
+                {
+                    "chunks": [{"output_type": "text", "content": f"Error: {str(e)}"}],
+                    "success": False,
+                    "error_code": "SKILL_SCRIPT_FAILED",
+                },
                 ensure_ascii=False,
             )
 

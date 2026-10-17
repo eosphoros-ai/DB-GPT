@@ -5,6 +5,14 @@ export type ChartType = ChartId | string;
 export type Specification = Advice['spec'] | any;
 export type RuleConfig = AdvisorConfig['ruleCfg'];
 
+export type ChartRenderObservation = {
+  renderer: 'g2' | 'table';
+  state: 'rendered' | 'failed' | 'not_rendered';
+  duration_ms?: number;
+  options?: Record<string, unknown>;
+  error?: string;
+};
+
 export type AutoChartProps = {
   data: Datum[];
   /** Chart type which are suggestted. */
@@ -16,6 +24,9 @@ export type AutoChartProps = {
   };
   /** Customize rules. */
   ruleConfig?: RuleConfig;
+  /** Hide chat-only recommendation, chart switching and download controls. */
+  showControls?: boolean;
+  onRenderObservation?: (observation: ChartRenderObservation) => void;
 };
 
 export type ChartKnowledge = PureChartKnowledge & { toSpec?: any };

@@ -19,7 +19,9 @@
     "format": "prettier --write '**/*.{ts,tsx}'",
     "export": "next export",
     "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export",
-    "test": "npm run test:react-final && npm run test:final-presentation",
+    "test": "npm run test:react-final && npm run test:final-presentation && npm run test:report-graph && npm run test:report-html",
+    "test:report-html": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/report-html-tests new-components/report/report-html.ts new-components/report/report-html.test.ts && node node_modules/.cache/report-html-tests/report-html.test.js",
+    "test:report-graph": "tsc --project tsconfig.report-graph-test.json && node node_modules/.cache/report-graph-tests/new-components/report/report-graph-model.test.js",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
     "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js"
   },
