@@ -19,7 +19,7 @@
     "format": "prettier --write '**/*.{ts,tsx}'",
     "export": "node scripts/build-web.cjs --export",
     "compile": "node scripts/build-web.cjs --export",
-    "test": "yarn test:react-final && yarn test:final-presentation",
+    "test": "npm run test:react-final && npm run test:final-presentation",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
     "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
     "lint:fix": "eslint . --fix",
@@ -131,14 +131,25 @@
     ]
   },
   "resolutions": {
+    "d3-color": "2",
+    "d3-array": "2",
+    "d3-shape": "2",
+    "d3-path": "2",
+    "d3-dsv": "2",
+    "d3-hierarchy": "2",
+    "d3-scale-chromatic": "2",
+    "d3-format": "2",
+    "d3-timer": "2",
+    "d3-dispatch": "2",
+    "d3-quadtree": "2",
+    "d3-force": "2",
+    "d3-geo": "2",
     "**/fmin/rollup": "2.80.0",
     "**/react-markdown-editor-lite/nanoid": "3.3.18",
     "**/sequelize/uuid": "11.1.1",
     "**/cosmiconfig/yaml": "1.10.3"
   },
-  "packageManager": "yarn@1.22.22",
   "engines": {
-    "node": ">=20.19.0",
-    "yarn": "1.22.x"
+    "node": ">=20.19.0"
   }
 }

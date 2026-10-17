@@ -25,7 +25,7 @@ else
 fi
 
 
-yarn install --frozen-lockfile
+yarn install
 rm -rf ../web/out/
 yarn compile
 
