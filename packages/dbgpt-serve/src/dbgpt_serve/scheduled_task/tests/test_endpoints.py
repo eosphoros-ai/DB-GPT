@@ -15,6 +15,7 @@ Tests cover all 8 endpoints defined in ``api/endpoints.py``:
   8. GET  /{task_id}/runs/{rid} — get single run
 """
 
+import io
 import uuid
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -230,6 +231,80 @@ def test_delete_task(client: TestClient):
     # Verify gone
     get_resp = client.get(f"{PREFIX}/{task_id}")
     assert get_resp.status_code == 404
+
+
+def test_delete_chat_replay_removes_frozen_files_for_stable_owner(tmp_path):
+    from dbgpt.core.interface.file import (
+        FileStorageClient,
+        FileStorageSystem,
+        LocalFileStorage,
+    )
+    from dbgpt_serve.session_file.config import ServeConfig
+    from dbgpt_serve.session_file.inspector import SessionFileInspector
+    from dbgpt_serve.session_file.models.dao import SessionFileDao
+    from dbgpt_serve.session_file.registry import SessionFileRegistry
+    from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
+
+    from ..api.endpoints import get_service, router
+    from ..service.service import ScheduledTaskService
+
+    owner = "stable-user-id"
+    blob_root = tmp_path / "blobs"
+    backend = LocalFileStorage(base_path=str(blob_root))
+    inspector = SessionFileInspector()
+    registry = SessionFileRegistry(
+        storage_client=FileStorageClient(
+            storage_system=FileStorageSystem({backend.storage_type: backend})
+        ),
+        dao=SessionFileDao(),
+        inspector=SessionFileInspector(parsers={".txt": inspector._parse_text}),
+        config=ServeConfig(),
+        work_root=tmp_path / "work",
+    )
+    content = b"scheduled report attachment"
+    source = registry.ingest(
+        owner_id=owner,
+        session_id="source-session",
+        display_name="report.txt",
+        media_type="text/plain",
+        stream=io.BytesIO(content),
+        size_bytes=len(content),
+    )
+    service = ScheduledTaskService(
+        scheduler=_make_scheduler_mock(),
+        runner_callable=MagicMock(),
+        session_file_registry=registry,
+    )
+    app = FastAPI()
+    app.include_router(router, prefix=PREFIX)
+    app.dependency_overrides[get_service] = lambda: service
+    app.dependency_overrides[get_user_from_headers] = lambda: UserRequest(
+        user_id=owner, nick_name="Display Name"
+    )
+    with TestClient(app) as client:
+        created = _create_task(
+            client,
+            payload={
+                "version": 2,
+                "user_input": "Summarize the attached report",
+                "ext_info": {
+                    "file_ids": [source.file_id],
+                    "session_id": "source-session",
+                },
+            },
+        )
+        assert created["user_name"] == "Display Name"
+        assert created["owner_id"] == owner
+        frozen = registry.list_task_files(owner_id=owner, task_id=created["task_id"])
+        assert len(frozen) == 1
+        frozen_path = blob_root / "session-files" / frozen[0].file_id
+        assert frozen_path.read_bytes() == content
+        response = client.delete(f"{PREFIX}/{created['task_id']}")
+        assert response.status_code == 200 and response.json()["success"]
+        assert client.get(f"{PREFIX}/{created['task_id']}").status_code == 404
+    assert registry.list_task_files(owner_id=owner, task_id=created["task_id"]) == []
+    assert not frozen_path.exists()
+    assert (blob_root / "session-files" / source.file_id).read_bytes() == content
 
 
 # ---------------------------------------------------------------------------

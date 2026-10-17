@@ -142,8 +142,12 @@ export default function DashboardLifecyclePanel({
             className='mt-2'
             icon={<CopyOutlined />}
             onClick={async () => {
-              await navigator.clipboard?.writeText(url);
-              message.success('已复制');
+              try {
+                await navigator.clipboard.writeText(url);
+                message.success('已复制');
+              } catch {
+                message.info('请选中下方链接复制');
+              }
             }}
           >
             复制链接

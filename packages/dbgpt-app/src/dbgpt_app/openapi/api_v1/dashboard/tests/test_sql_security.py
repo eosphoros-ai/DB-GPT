@@ -115,6 +115,28 @@ def test_command_words_in_literals_comments_and_identifiers_are_allowed(sql):
     assert result.sql == sql.strip()
 
 
+@pytest.mark.parametrize(
+    "dialect", [None, "sqlite", "duckdb", "postgres", "mysql", "tsql"]
+)
+def test_unquoted_command_words_are_allowed_as_column_names(dialect):
+    columns = {"system", "call", "export", "import", "shell", "vacuum"}
+    sql = "SELECT system, call, export, import, shell, vacuum FROM sales"
+    result = validate_read_only_sql(
+        sql, dialect=dialect, allowed_tables={"sales"}, allowed_columns=columns
+    )
+    assert result.sql == sql
+    assert result.columns == columns
+    assert result.tables == {"sales"}
+
+
+@pytest.mark.parametrize(
+    "sql", ["COPY sales TO '/tmp/sales.csv'", "INSTALL httpfs", "LOAD httpfs"]
+)
+def test_duckdb_commands_remain_rejected(sql):
+    with pytest.raises(DashboardSQLSecurityError):
+        validate_read_only_sql(sql, dialect="duckdb", allowed_tables={"sales"})
+
+
 def test_table_and_column_allowlists_are_enforced():
     with pytest.raises(DashboardSQLSecurityError, match="tables outside"):
         validate_read_only_sql("SELECT * FROM secrets", allowed_tables={"sales"})

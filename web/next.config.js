@@ -7,6 +7,9 @@ const path = require("path");
 const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === "1";
 
 const nextConfig = {
+  experimental: {
+    esmExternals: "loose",
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

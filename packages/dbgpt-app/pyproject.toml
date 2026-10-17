@@ -83,13 +83,6 @@ exclude = [
 "../../skills/dashboard-collaboration" = "skills/dashboard-collaboration"
 "../../skills/dashboard-chart-configuration" = "skills/dashboard-chart-configuration"
 "../../skills/dashboard-filter-configuration" = "skills/dashboard-filter-configuration"
-"../../skills/antv-g2-chart" = "skills/antv-g2-chart"
-"../../skills/brutal-viz-design" = "skills/brutal-viz-design"
-"../../skills/datapulse-viz-design" = "skills/datapulse-viz-design"
-"../../skills/learnhub-viz-design" = "skills/learnhub-viz-design"
-"../../skills/nexusai-viz-design" = "skills/nexusai-viz-design"
-"../../skills/pawspa-viz-design" = "skills/pawspa-viz-design"
-"../../skills/serenityspa-viz-design" = "skills/serenityspa-viz-design"
 # Builtin example files
 "../../docker/examples/excel/Walmart_Sales.csv" = "examples/excel/Walmart_Sales.csv"
 "../../docker/examples/fin_report/pdf/2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf" = "examples/fin_report/pdf/2020-01-23__浙江海翔药业股份有限公司__002099__海翔药业__2019年__年度报告.pdf"

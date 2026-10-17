@@ -164,9 +164,9 @@ class ChatReplayRunner:
     async def replay_chat_task(self, task_id: str) -> None:
         """Replay a chat task by task_id.
 
-        This is the callback invoked by the scheduler. It must never
-        raise an exception — all errors are caught and recorded in the
-        run table.
+        Execution errors are recorded in the run table. Cancellation also
+        records a terminal state, then propagates so the dispatcher can finish
+        shutdown or lease-loss cleanup.
 
         Args:
             task_id: The UUID of the scheduled task to replay.
@@ -237,6 +237,9 @@ class ChatReplayRunner:
                     "output_conv_uid": new_conv_uid,
                 },
             )
+        except asyncio.CancelledError:
+            self._fail(run_id, "execution cancelled", new_conv_uid)
+            raise
         except asyncio.TimeoutError:
             logger.warning("scheduled task %s timed out", task_id)
             self._run_dao.update(

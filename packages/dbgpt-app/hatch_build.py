@@ -38,13 +38,6 @@ _SKILLS_MAP = {
         "dashboard-collaboration",
         "dashboard-chart-configuration",
         "dashboard-filter-configuration",
-        "antv-g2-chart",
-        "brutal-viz-design",
-        "datapulse-viz-design",
-        "learnhub-viz-design",
-        "nexusai-viz-design",
-        "pawspa-viz-design",
-        "serenityspa-viz-design",
     ]
 }
 
@@ -121,6 +114,10 @@ class CustomBuildHook(BuildHookInterface):
             build_data: mutable dict; set ``force_include`` to inject
                         path mappings
         """
+        if self.target_name != "wheel":
+            # sdist has its own canonical source mappings in pyproject.toml.
+            # Wheel destinations here would break rebuilding an extracted sdist.
+            return
         pkg_root = Path(self.root)  # packages/dbgpt-app/
         all_mappings = {
             **_SKILLS_MAP,

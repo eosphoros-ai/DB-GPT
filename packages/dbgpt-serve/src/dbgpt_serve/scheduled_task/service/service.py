@@ -140,8 +140,9 @@ class ScheduledTaskService:
 
         Args:
             request: The creation request.
-            user_name: Optional user name; used as the session file owner.
+            user_name: Optional display name; legacy fallback for the file owner.
             sys_code: Optional system code.
+            owner_id: Authenticated user ID used to own tasks and frozen files.
 
         Returns:
             TaskResponse: The created task.
@@ -524,12 +525,14 @@ class ScheduledTaskService:
         """
         if owner_id is not None and self._task_dao.get_owned(task_id, owner_id) is None:
             raise ValueError(f"Task not found: {task_id}")
-        # Read owner_id BEFORE deleting the row (mirror the normalization used
-        # when freezing files: ``(user_name or "").strip()`` in create_task).
-        # The DB stores the raw user_name; the session_file registry matches
-        # owner_id exactly, so it must be stripped or the files won't be found.
+        # Read the authenticated file owner before deleting the row. Only legacy
+        # tasks without owner_id fall back to the normalized user_name.
         existing = self._task_dao.get_one({"task_id": task_id})
-        owner_id = (existing.get("user_name") or "").strip() if existing else ""
+        owner_id = (
+            (existing.get("owner_id") or existing.get("user_name") or "").strip()
+            if existing
+            else ""
+        )
 
         # Best-effort remove scheduler job
         if self._scheduler is not None:

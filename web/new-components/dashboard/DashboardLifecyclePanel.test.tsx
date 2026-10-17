@@ -25,6 +25,43 @@ import DashboardLifecyclePanel from './DashboardLifecyclePanel';
 const response = (data: unknown) => Promise.resolve({ data: { data } });
 
 describe('DashboardLifecyclePanel', () => {
+  it.each(['unavailable', 'rejected', 'success'])('reports the actual clipboard result: %s', async state => {
+    const previous = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText =
+      state === 'rejected' ? vi.fn().mockRejectedValue(new Error('denied')) : vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: state === 'unavailable' ? undefined : { writeText },
+    });
+    api.listDashboardEditVersions.mockReturnValue(response([]));
+    api.listDashboardRevisions.mockReturnValue(response([]));
+    api.listDashboardPublications.mockReturnValue(response([{ published_revision: 1, active: true }]));
+    api.rotateDashboardPublication.mockReturnValue(response({ share_path: '/dashboard-share/rotated' }));
+    try {
+      render(
+        <App>
+          <DashboardLifecyclePanel
+            dashboardId='dashboard-1'
+            currentRevision={1}
+            open
+            onClose={vi.fn()}
+            onOpenPublish={vi.fn()}
+            onRecordChange={vi.fn()}
+          />
+        </App>,
+      );
+      fireEvent.click(await screen.findByRole('button', { name: /轮\s*换/ }));
+      fireEvent.click(await screen.findByRole('button', { name: /复制链接/ }));
+      expect(await screen.findByText(state === 'success' ? '已复制' : '请选中下方链接复制')).toBeTruthy();
+      if (state !== 'success') expect(screen.queryByText('已复制', { exact: true })).toBeNull();
+      if (state !== 'unavailable')
+        expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/dashboard-share/rotated`);
+    } finally {
+      if (previous) Object.defineProperty(navigator, 'clipboard', previous);
+      else Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
+
   it('loads immutable revisions and active share lifecycle records', async () => {
     api.listDashboardEditVersions.mockReturnValue(
       response([

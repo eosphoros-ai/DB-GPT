@@ -230,7 +230,7 @@ export const applyDashboardAnnotationBatch = (id: string, annotation_ids: string
   >(`${PREFIX}/${id}/annotations/apply-batch`, {
     annotation_ids,
     expected_revision,
-    operation_id: `annotation-batch-${crypto.randomUUID()}`,
+    operation_id: `annotation-batch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
     client_id: `dashboard-editor-${id}`,
   });
 

@@ -35,9 +35,16 @@ single-select, and multi-select behavior.
 ## 可选参考数据
 
 以下脚本由演示者按需手动运行，不参与服务启动、前端打包或数据库结构升级。
-`install_reference_sources.py` 下载校验过的 UCI 数据并生成 SQLite 文件；
-`install_research_sources.py` 准备研究布局示例；`install_showcase_sources.py` 生成合成展示数据。
-已有自己的数据源时无需运行这些脚本。
+最小演示只需上面的 `build_demo_databases.py`，无需安装以下可选数据。
+三个入口分别对应不同的模板和数据转换，保留独立入口以兼容现有演示命令：
+
+| 脚本 | 对应演示与数据源 |
+|---|---|
+| `install_reference_sources.py` | IT 工单、能源、设备维护、学生表现模板；分别生成 `sqlite_itsm`、`sqlite_energy`、`sqlite_maintenance`、`sqlite_students`，支持 `--sources` 只选需要的数据。 |
+| `install_research_sources.py` | “趋势洞察 · 健康研究总览”和“数据脉搏 · 健康分析长报告”共用 Cleveland 数据；“AI 语音趋势实验室”使用合成语音数据。对应 `sqlite_heart_cleveland`、`sqlite_voice_lab`。 |
+| `install_showcase_sources.py` | “门店营销沙盘”“全国经营指挥大屏”“互联网医疗服务大屏”“乡村普惠金融大屏”，分别生成对应的 `sqlite_*_showcase` 合成数据。 |
+
+已有自己的数据源时无需运行这些脚本；数据来源与获取地址见下文。
 
 ```sh
 python examples/dashboard/install_reference_sources.py --sources energy students

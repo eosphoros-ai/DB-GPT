@@ -112,10 +112,10 @@ def _keyword_scan_text(sqlglot: Any, sql: str, dialect: Optional[str]) -> str:
     """Return executable token text for the conservative keyword scan.
 
     sqlglot's tokenizer attaches comments to neighboring tokens instead of exposing
-    them as executable SQL tokens. Literal values and quoted identifiers are also
-    deliberately removed here. The broad keyword expression therefore remains a
-    fail-closed second signal for commands without treating documentation text or
-    data values as executable operations.
+    them as executable SQL tokens. Literal values and quoted identifiers are
+    removed here. Only opaque Command nodes use this fallback: an unquoted column
+    may otherwise tokenize as a keyword, such as VACUUM, despite being a valid
+    identifier in the parsed query.
     """
 
     tokens = sqlglot.tokenize(sql, read=dialect or None)
@@ -187,18 +187,18 @@ def validate_read_only_sql(
         lambda match: "NULL" if match.start() in positions else match.group(0), sql
     ).strip()
     try:
-        keyword_scan_text = _keyword_scan_text(sqlglot, validation_sql, dialect)
         statements = sqlglot.parse(validation_sql, read=dialect or None)
     except Exception as exc:
         raise DashboardSQLSecurityError(f"SQL cannot be parsed: {exc}") from exc
-    if _UNSAFE_TEXT.search(keyword_scan_text):
-        raise DashboardSQLSecurityError(
-            "SQL contains an operation not allowed in dashboards."
-        )
     if len(statements) != 1:
         raise DashboardSQLSecurityError("Exactly one SQL statement is allowed.")
 
     statement = statements[0]
+    if statement is not None and statement.find(exp.Command) is not None:
+        if _UNSAFE_TEXT.search(_keyword_scan_text(sqlglot, validation_sql, dialect)):
+            raise DashboardSQLSecurityError(
+                "SQL contains an operation not allowed in dashboards."
+            )
     if statement is None or not isinstance(statement, exp.Query):
         raise DashboardSQLSecurityError("Dashboard SQL must be a SELECT query or CTE.")
 
