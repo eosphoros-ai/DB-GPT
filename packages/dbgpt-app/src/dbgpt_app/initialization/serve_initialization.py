@@ -377,3 +377,20 @@ def register_serve_apps(
         ),
     )
     # ######################### Session File Serve Register End #####################
+
+    # ######################### Report Serve Register Begin #########################
+    from dbgpt_serve.report.config import ServeConfig as ReportServeConfig
+    from dbgpt_serve.report.serve import ReportServe
+
+    # Register owner-aware report persistence and evidence query APIs.
+    system_app.register(
+        ReportServe,
+        api_prefix="/api/v1/reports",
+        config=get_config(
+            serve_configs,
+            ReportServe.name,
+            ReportServeConfig,
+            api_keys=global_api_keys,
+        ),
+    )
+    # ######################### Report Serve Register End ###########################

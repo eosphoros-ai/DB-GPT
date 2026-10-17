@@ -4,6 +4,7 @@ import re
 from typing import Any, Dict, Optional
 
 from dbgpt.agent import Action, ActionOutput, AgentResource, Resource, ResourceType
+from dbgpt.core.interface.report_html import normalize_report_html
 from dbgpt.util.json_utils import parse_or_raise_error
 
 from ...resource.tool.base import BaseTool, ToolParameter
@@ -54,6 +55,10 @@ class Terminate(Action[None], BaseTool):
 
         If you want skip the action, return None.
         """
+        if kwargs.get("tool_calls"):
+            # NativeToolCallAction owns structured termination too. Parsing the
+            # accompanying prose can overwrite its actual execution result.
+            return None
         if "parser" in kwargs and isinstance(kwargs["parser"], ReActOutputParser):
             parser = kwargs["parser"]
         else:
@@ -203,6 +208,18 @@ class ReActAction(ToolAction):
             return {}
 
         raw_str = str(raw_input)
+        try:
+            parsed = json.loads(raw_str)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+        if tool_name == "html_interpreter" and re.search(
+            r'"(?:retry_saved|repair_patches)"\s*:', raw_str
+        ):
+            # Repair arrays contain nested JSON and exact HTML anchors. String
+            # heuristics lose boolean types and can decode anchors a second time.
+            return {}
 
         def _unescape(s: str) -> str:
             return (
@@ -312,6 +329,14 @@ class ReActAction(ToolAction):
 
         raw = raw_input.strip()
 
+        def decode_html(content):
+            # Both title branches receive a JSON string fragment. Decode it
+            # once when valid; malformed JSON still needs valid HTML attributes.
+            try:
+                return json.loads('"' + content + '"')
+            except json.JSONDecodeError:
+                return normalize_report_html(content)
+
         # Step 1: Find the last occurrence of a title key pattern
         # Pattern: "title" : " (with optional quotes and whitespace)
         title_key_pattern = re.compile(
@@ -334,7 +359,7 @@ class ReActAction(ToolAction):
                     html_content = html_content[:-1]
                     html_content = html_content.rstrip()
                 if html_content:
-                    return {"html": html_content, "title": "Report"}
+                    return {"html": decode_html(html_content), "title": "Report"}
             return {}
 
         # Use the last title match
@@ -373,13 +398,7 @@ class ReActAction(ToolAction):
         if html_content and html_content[-1] in "\"'":
             html_content = html_content[:-1]
 
-        # Unescape common JSON escape sequences
-        html_content = (
-            html_content.replace("\\n", "\n")
-            .replace("\\t", "\t")
-            .replace('\\"', '"')
-            .replace("\\\\", "\\")
-        )
+        html_content = decode_html(html_content)
 
         if html_content:
             return {"html": html_content, "title": title_value}
@@ -447,6 +466,34 @@ class ReActAction(ToolAction):
                 # action_input as that parameter's value.
                 tool_args = self._fallback_parse_args(name, action_input, self.resource)
             if not tool_args:
+                if name == "html_interpreter" and re.search(
+                    r'"(?:retry_saved|repair_patches)"\s*:', str(action_input)
+                ):
+                    try:
+                        json.loads(str(action_input))
+                    except json.JSONDecodeError as error:
+                        return ActionOutput(
+                            is_exe_success=False,
+                            action=name,
+                            content=(
+                                "HTML_TOOL_ARGUMENT_INVALID: repair arguments "
+                                "must be complete "
+                                "JSON; "
+                                "JSON line "
+                                f"{error.lineno}"
+                                ", column "
+                                f"{error.colno}"
+                                ", position "
+                                f"{error.pos}"
+                                ": "
+                                f"{error.msg}"
+                                ". "
+                                "Resend a smaller complete patch against saved "
+                                "HTML; do not "
+                                "rebuild the "
+                                "document."
+                            ),
+                        )
                 logger.warning(f"Failed to parse the args: {action_input}")
         # Log resolved args for html_interpreter before execution
         if name == "html_interpreter":

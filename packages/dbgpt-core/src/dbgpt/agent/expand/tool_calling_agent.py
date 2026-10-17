@@ -17,6 +17,7 @@ Stage 1 (protocol unchanged):
 import asyncio
 import json
 import logging
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from dbgpt.agent import (
@@ -63,15 +64,8 @@ def _build_openai_tools(resource) -> List[Dict[str, Any]]:
     for tool in tool_packs[0].sub_resources:
         if not isinstance(tool, BaseTool):
             continue
-        properties: Dict[str, Any] = {}
-        required: List[str] = []
-        for key, value in tool.args.items():
-            properties[key] = {
-                "type": value.type,
-                "description": value.description,
-            }
-            if value.required:
-                required.append(key)
+        parameters = tool.parameters_schema()
+        properties = parameters["properties"]
         # derisk ReActMasterAgentV3-style: inject intent + thought as first-class,
         # optional tool args so native function calling carries a user-facing
         # "意图(做什么)" + "思考(为什么/怎么想)" narration. Keep descriptions
@@ -90,11 +84,7 @@ def _build_openai_tools(resource) -> List[Dict[str, Any]]:
                 "function": {
                     "name": tool.name,
                     "description": tool.description,
-                    "parameters": {
-                        "type": "object",
-                        "properties": properties,
-                        "required": required,
-                    },
+                    "parameters": parameters,
                 },
             }
         )
@@ -260,9 +250,35 @@ class NativeToolCallAction(ParallelToolAction):
             args_raw = fn.get("arguments") or "{}"
             try:
                 args = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
-            except (json.JSONDecodeError, ValueError):
+            except (json.JSONDecodeError, ValueError) as error:
+                if name == "html_interpreter":
+                    location = (
+                        (
+                            "JSON line "
+                            f"{error.lineno}"
+                            ", column "
+                            f"{error.colno}"
+                            ", position "
+                            f"{error.pos}"
+                            ": "
+                            f"{error.msg}"
+                        )
+                        if isinstance(error, json.JSONDecodeError)
+                        else str(error)
+                    )
+                    return ActionOutput(
+                        is_exe_success=False,
+                        action=name,
+                        content="HTML_TOOL_ARGUMENT_INVALID: " + location,
+                    )
                 args = {}
             if not isinstance(args, dict):
+                if name == "html_interpreter":
+                    return ActionOutput(
+                        is_exe_success=False,
+                        action=name,
+                        content="HTML_TOOL_ARGUMENT_INVALID: expected a JSON object",
+                    )
                 args = {}
             # derisk-style meta args: strip intention/thought so they never
             # reach the tool's async_execute, but surface them on ActionOutput.
@@ -322,7 +338,9 @@ class ToolCallingReActAgent(ReActAgent):
 
     def __init__(self, **kwargs):
         """Init the enhanced ReAct agent."""
+        report_state = kwargs.pop("report_repair_state", None)
         ReActAgent.__init__(self, **kwargs)
+        object.__setattr__(self, "_report_repair_state", report_state)
         # Re-init actions with the native/parallel-capable tool action. Keeps
         # the same [tool_action, terminate] dispatch contract as ReActAgent.
         self._init_actions([NativeToolCallAction, Terminate])
@@ -366,14 +384,35 @@ class ToolCallingReActAgent(ReActAgent):
         ctx = self.agent_context
         parallel_enabled = ctx is not None and ctx.enable_parallel_tool_execution
         native_enabled = ctx is not None and ctx.enable_native_function_calling
+        report_state = getattr(self, "_report_repair_state", None) or {}
+        attempts_before = report_state.get("_report_render_attempts", 0)
+        handled_calls_before = report_state.get("_report_tool_call_count", 0)
+        if native_enabled and not getattr(self, "_pending_native_tool_calls", None):
+            steps = self.parser.parse_current_step(message.content or "")
+            if not steps or not all(step.action for step in steps):
+                output = ActionOutput(
+                    is_exe_success=False,
+                    content=(
+                        "No valid ReAct step or native tool call found. Call a "
+                        "supplied "
+                        "function with complete JSON "
+                        "arguments."
+                    ),
+                )
+                return self._apply_report_result(
+                    output, message, attempts_before, handled_calls_before
+                )
         if not (parallel_enabled or native_enabled):
-            return await super().act(
+            output = await super().act(
                 message,
                 sender,
                 reviewer=reviewer,
                 is_retry_chat=is_retry_chat,
                 last_speaker_name=last_speaker_name,
                 **kwargs,
+            )
+            return self._apply_report_result(
+                output, message, attempts_before, handled_calls_before
             )
 
         if not message.content and not native_enabled:
@@ -382,7 +421,7 @@ class ToolCallingReActAgent(ReActAgent):
         # dispatch straight to ConversableAgent.act, which drives the action
         # loop and lets NativeToolCallAction batch-execute the tool calls
         # (native mode) or multiple parsed steps (parallel text mode).
-        return await super(ReActAgent, self).act(
+        output = await super(ReActAgent, self).act(
             message,
             sender,
             reviewer=reviewer,
@@ -390,6 +429,79 @@ class ToolCallingReActAgent(ReActAgent):
             last_speaker_name=last_speaker_name,
             **kwargs,
         )
+        return self._apply_report_result(
+            output, message, attempts_before, handled_calls_before
+        )
+
+    def _apply_report_result(
+        self,
+        output: ActionOutput,
+        message: AgentMessage,
+        attempts_before: int,
+        handled_calls_before: int = 0,
+    ) -> ActionOutput:
+        state = getattr(self, "_report_repair_state", None) or {}
+        requested = (
+            output.action == "html_interpreter"
+            or bool(
+                re.search(
+                    r"Action\s*:\s*html_interpreter\b", message.content or "", re.I
+                )
+            )
+            or any(
+                call.get("function", {}).get("name") == "html_interpreter"
+                for call in getattr(self, "_pending_native_tool_calls", None) or []
+            )
+        )
+        # A reasoning-only response never reaches html_interpreter, but still
+        # consumes a repair round. Count it when a saved report is pending so
+        # the agent cannot spend the entire task budget on malformed replies.
+        format_failure = not output.is_exe_success and any(
+            marker in (output.content or "").lower()
+            for marker in (
+                ("no valid react step"),
+                ("no correct response found"),
+                ("only one action is allowed"),
+            )
+        )
+        requested = requested or bool(
+            state.get("_report_html_error") and format_failure
+        )
+        if (
+            requested
+            and state.get("_report_lock_after_completion")
+            and state.get("_report_success_response")
+            and not state.get("_report_html_error")
+        ):
+            output.is_exe_success = True
+            output.have_retry = False
+            output.terminate = True
+            return output
+        handler = state.get("_report_invalid_call_handler")
+        if (
+            requested
+            and not output.is_exe_success
+            and state.get("_report_render_attempts", 0) == attempts_before
+            and state.get("_report_tool_call_count", 0) == handled_calls_before
+            and not state.get("_report_retry_exhausted")
+            and handler
+        ):
+            native_calls = getattr(self, "_pending_native_tool_calls", None)
+            raw_call = (
+                json.dumps(native_calls, ensure_ascii=False)
+                if native_calls
+                else message.content or ""
+            )
+            result = handler(raw_call, output.content)
+            if isinstance(result, str):
+                output.content = result
+                output.observations = result
+        if state.get("_report_html_error") and (
+            requested or state.get("_report_retry_exhausted")
+        ):
+            output.is_exe_success = False
+            output.have_retry = not state.get("_report_retry_exhausted", False)
+        return output
 
     async def verify(
         self,
@@ -399,6 +511,11 @@ class ToolCallingReActAgent(ReActAgent):
         **kwargs,
     ) -> Tuple[bool, Optional[str]]:
         """Verify results, tagging failures with a classified category."""
+        state = getattr(self, "_report_repair_state", None) or {}
+        if state.get("_report_retry_exhausted"):
+            if message.action_report is not None:
+                message.action_report.have_retry = False
+            return False, state.get("_report_html_error")
         check, reason = await super().verify(
             message, sender, reviewer=reviewer, **kwargs
         )
@@ -415,6 +532,27 @@ class ToolCallingReActAgent(ReActAgent):
         return check, reason
 
     async def thinking(
+        self,
+        messages: List[AgentMessage],
+        sender: Optional[Agent] = None,
+        prompt: Optional[str] = None,
+        stream_callback: Optional[Any] = None,
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """Give report rendering enough output space without changing analysis turns."""
+        context = self.agent_context
+        previous = context.max_new_tokens if context is not None else 0
+        state = getattr(self, "_report_repair_state", None) or {}
+        if context is not None and state.get("_report_render_phase"):
+            context.max_new_tokens = max(previous or 4096, 8192)
+        try:
+            return await self._thinking_with_report_budget(
+                messages, sender=sender, prompt=prompt, stream_callback=stream_callback
+            )
+        finally:
+            if context is not None:
+                context.max_new_tokens = previous
+
+    async def _thinking_with_report_budget(
         self,
         messages: List[AgentMessage],
         sender: Optional[Agent] = None,
@@ -462,11 +600,23 @@ class ToolCallingReActAgent(ReActAgent):
         last_err = None
         retry_count = 0
         llm_messages = [message.to_llm_message() for message in messages]
+        if prompt:
+            llm_messages = _new_system_message(prompt) + llm_messages
+        if llm_messages and llm_messages[0].get("role") == "system":
+            llm_messages[0]["content"] += (
+                "\nProvider-native function calling is enabled. Use the supplied "
+                "tool_calls functions for actions, with JSON arguments. "
+                "Do not return only reasoning or describe an intended tool call. "
+                "Call terminate with the final result when the task is complete."
+            )
         while retry_count < 3:
-            llm_model = await self._a_select_llm_model(last_model)
             try:
-                if prompt:
-                    llm_messages = _new_system_message(prompt) + llm_messages
+                llm_model = await self._a_select_llm_model(last_model)
+            except ValueError as error:
+                if last_err:
+                    raise ValueError(last_err) from error
+                raise
+            try:
                 if not self.llm_client:
                     raise ValueError("LLM client is not initialized!")
                 response = await self.llm_client.create_with_output(
@@ -484,7 +634,18 @@ class ToolCallingReActAgent(ReActAgent):
                     tools=tools,
                     tool_choice="auto",
                 )
-                text = response.gen_text_with_thinking() if response else ""
+                state = getattr(self, "_report_repair_state", None)
+                if state is not None and state.get("_report_render_phase") and response:
+                    usage = getattr(response, "usage", None) or {}
+                    state["_report_model_output"] = {
+                        "model": llm_model,
+                        "max_new_tokens": self.not_null_agent_context.max_new_tokens,
+                        "finish_reason": getattr(response, "finish_reason", None),
+                        "completion_tokens": usage.get("completion_tokens"),
+                    }
+                # Thinking is streamed separately. It is never executable tool
+                # syntax and can contain examples or incomplete action names.
+                text = (response.text or "") if response and response.has_text else ""
                 tool_calls = getattr(response, "tool_calls", None) or None
                 if tool_calls:
                     object.__setattr__(self, "_pending_native_tool_calls", tool_calls)

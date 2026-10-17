@@ -1,8 +1,10 @@
 """Database resource module."""
 
+import asyncio
 import dataclasses
 import logging
 from concurrent.futures import Executor, ThreadPoolExecutor
+from threading import Event
 from typing import Any, Dict, Generic, List, Optional, Tuple, Union
 
 import cachetools
@@ -192,6 +194,29 @@ class RDBMSConnectorResource(DBResource[DBParameters]):
         columns = result_lst[0]
         values = result_lst[1:]
         return columns, values
+
+    async def query(self, sql: str, db: Optional[str] = None, timeout: float = 30):
+        """Keep native SQL/chart execution bounded and cancel SQLite at its source."""
+        cancelled = Event()
+        query_kwargs: Dict[str, Any] = {"timeout": timeout}
+        if isinstance(self.connector, RDBMSConnector):
+            query_kwargs["cancel_event"] = cancelled
+        try:
+            return await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.connector.query_ex,
+                    sql,
+                    **query_kwargs,
+                ),
+                timeout=timeout,
+            )
+        except TimeoutError as error:
+            raise TimeoutError(
+                f"SQL_QUERY_TIMEOUT: query exceeded {timeout:g} seconds; "
+                "inspect the query plan and join indexes before changing the SQL"
+            ) from error
+        finally:
+            cancelled.set()
 
 
 class SQLiteDBResource(RDBMSConnectorResource):

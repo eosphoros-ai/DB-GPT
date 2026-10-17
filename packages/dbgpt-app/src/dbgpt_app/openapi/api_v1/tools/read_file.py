@@ -9,9 +9,8 @@ so it can access the full content on demand.
 It also reads operation snapshot files written by ``Role._write_op_snapshot``,
 which previously had no corresponding read action.
 
-Security: only files under the ``persisted_results/`` or ``op_snapshots/``
-directories (within the configured ``output_dir`` or ``DBGPT_HOME/workspace``)
-may be read, preventing path traversal.
+Access is limited to persisted results, operation snapshots, and the current
+conversation's recorded report repair files.
 """
 
 import json
@@ -57,6 +56,28 @@ def _is_within_allowed(file_path: str, allowed_dirs: list) -> bool:
     return False
 
 
+def _is_report_repair_file(file_path, react_state):
+    """Allow exact repair files only after this conversation records a checkpoint."""
+    from .report_repair import _checkpoint_path
+
+    recorded = react_state.get("_report_checkpoint_path")
+    conv_uid = react_state.get("conv_id")
+    if not recorded or not conv_uid:
+        return False
+    canonical = _checkpoint_path(conv_uid)
+
+    def normalize(path):
+        return os.path.normcase(os.path.realpath(path))
+
+    if normalize(recorded) != normalize(canonical):
+        return False
+    return normalize(file_path) in {
+        normalize(canonical),
+        normalize(canonical.with_name("pending.html")),
+        normalize(canonical.with_name("last-attempt.html")),
+    }
+
+
 def make_read_file(react_state: Dict[str, Any]):
     """Create a read_file tool bound to the given react_state.
 
@@ -71,6 +92,10 @@ def make_read_file(react_state: Dict[str, Any]):
             "Read a file from disk with pagination. Use this when you see a "
             "<persisted-output> block with a file path and need to access the "
             "full content, or when you need to read an operation snapshot. "
+            "Also read the current report's saved pending.html, last-attempt.html or "
+            "checkpoint.json using the paths returned by html_interpreter. "
+            "For a repair target use offset=html_line-1; copy file text "
+            "without line prefixes. "
             "Supports offset/limit for reading specific sections of large files. "
             'Parameters: {"file_path": "absolute path from <persisted-output> block", '
             '"offset": "start line number, 0-based (optional, default 0)", '
@@ -84,7 +109,10 @@ def make_read_file(react_state: Dict[str, Any]):
     ) -> str:
         """Read a file from disk with pagination."""
         allowed_dirs = _resolve_allowed_dirs(react_state)
-        if not _is_within_allowed(file_path, allowed_dirs):
+        if not (
+            _is_within_allowed(file_path, allowed_dirs)
+            or _is_report_repair_file(file_path, react_state)
+        ):
             return json.dumps(
                 {
                     "chunks": [
@@ -92,7 +120,10 @@ def make_read_file(react_state: Dict[str, Any]):
                             "output_type": "text",
                             "content": (
                                 "Access denied: file path must be within the "
-                                "persisted_results or op_snapshots directories."
+                                "persisted_results, op_snapshots or the current "
+                                "conversation's "
+                                "recorded report repair "
+                                "files."
                             ),
                         }
                     ]

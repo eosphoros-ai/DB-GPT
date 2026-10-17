@@ -233,6 +233,7 @@ export const ChatEn = {
   subagent_status_done: 'Completed',
   subagent_status_failed: 'Failed',
   subagent_status_timeout: 'Timed out',
+  subagent_status_partial: 'Partially completed',
   subagent_goal: 'Goal',
   subagent_return_main: 'Back to parallel tasks',
   subagent_verified_steps: '{{count}} confirmed actions',

@@ -65,6 +65,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.sdist.force-include]
+"../../docs/knowledge/olist-analytics-metric-governance.md" = "examples/knowledge/olist-analytics-metric-governance.md"
 # Builtin skills
 "../../skills/csv-data-analysis" = "skills/csv-data-analysis"
 "../../skills/skill-creator" = "skills/skill-creator"
@@ -81,6 +82,7 @@ exclude = [
 "../../pilot/meta_data/alembic/script.py.mako" = "pilot_tpl/meta_data/alembic/script.py.mako"
 "../../pilot/benchmark_meta_data/2025_07_27_public_500_standard_benchmark_question_list.xlsx" = "pilot_tpl/benchmark_meta_data/2025_07_27_public_500_standard_benchmark_question_list.xlsx"
 "../../pilot/examples/Walmart_Sales.db" = "pilot_tpl/examples/Walmart_Sales.db"
+"../../pilot/examples/Olist_Ecommerce.db" = "pilot_tpl/examples/Olist_Ecommerce.db"
 
 [tool.hatch.build.hooks.custom]
 

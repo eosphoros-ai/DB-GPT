@@ -238,6 +238,7 @@ export const ChatZh: Resources['translation'] = {
   subagent_status_done: '已完成',
   subagent_status_failed: '失败',
   subagent_status_timeout: '超时',
+  subagent_status_partial: '部分完成',
   subagent_goal: '任务目标',
   subagent_return_main: '返回并行任务',
   subagent_verified_steps: '{{count}} 个已确认操作',

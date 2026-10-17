@@ -10,11 +10,13 @@ private local paths only inside the execution process.
 import json
 import os
 import re
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt.core.interface.report_capture import capture_python_execution
 
 from .code_interpreter import _run_python_file, build_execution_env
 
@@ -214,6 +216,7 @@ async def _run_analysis(
     analyze_ids: List[str],
     analyze_names: Dict[str, str],
     files_json_path: Optional[str],
+    input_artifact_ids: List[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
     """Execute the safe analysis runner and parse its JSON output.
 
@@ -251,19 +254,23 @@ async def _run_analysis(
             secrets.extend(str(value) for value in mapping.values())
         except Exception:
             pass
+    execution_env = build_execution_env(
+        work_dir=work_dir,
+        file_path=None if files_json_path else react_state.get("file_path"),
+        files_json_path=files_json_path,
+        artifact_sink=react_state.get("_report_artifact_sink"),
+        selected_file_ids=analyze_ids,
+        extra={
+            "ANALYZE_IDS": json.dumps(analyze_ids, ensure_ascii=False),
+            "ANALYZE_NAMES": json.dumps(analyze_names, ensure_ascii=False),
+        },
+    )
+    input_artifact_ids.extend(json.loads(execution_env["DBGPT_INPUT_ARTIFACT_IDS"]))
     try:
         returncode, stdout, stderr = await _run_python_file(
             script_path,
             cwd=work_dir,
-            env=build_execution_env(
-                work_dir=work_dir,
-                file_path=react_state.get("file_path"),
-                files_json_path=files_json_path,
-                extra={
-                    "ANALYZE_IDS": json.dumps(analyze_ids, ensure_ascii=False),
-                    "ANALYZE_NAMES": json.dumps(analyze_names, ensure_ascii=False),
-                },
-            ),
+            env=execution_env,
             timeout=60,
         )
     finally:
@@ -331,6 +338,25 @@ def make_execute_analysis(react_state: Dict[str, Any]):
     )
     async def execute_analysis(file_ids: Optional[List[str]] = None) -> str:
         """Analyze the selected files; partial failures stay visible."""
+        started_at = time.perf_counter()
+        input_artifact_ids: List[str] = []
+
+        def _capture(files: List[Dict[str, Any]], failure: str) -> None:
+            """Record this built-in runner as Python evidence, not just UI output."""
+            status = "succeeded" if not failure else "failed"
+            capture_python_execution(
+                code=_ANALYSIS_RUNNER.strip(),
+                duration_ms=max(0, int((time.perf_counter() - started_at) * 1000)),
+                status=status,
+                exit_code=0 if not failure else 1,
+                stdout=json.dumps({"files": files}, ensure_ascii=False, default=str),
+                stderr="",
+                error=failure or None,
+                action="execute_analysis",
+                input_artifact_ids=input_artifact_ids,
+                artifact_sink=react_state.get("_report_artifact_sink"),
+            )
+
         manifests = list(react_state.get("session_files") or [])
 
         # ── Session-file (multi-file) flow ──────────────────────────────
@@ -347,7 +373,9 @@ def make_execute_analysis(react_state: Dict[str, Any]):
                 analyze_ids=analyze_ids,
                 analyze_names=analyze_names,
                 files_json_path=react_state.get("files_json_path"),
+                input_artifact_ids=input_artifact_ids,
             )
+            _capture(files, failure)
             chunks: List[Dict[str, Any]] = [
                 {"output_type": "code", "content": _ANALYSIS_RUNNER.strip()}
             ]
@@ -406,7 +434,9 @@ def make_execute_analysis(react_state: Dict[str, Any]):
             analyze_ids=["file"],
             analyze_names={"file": Path(legacy_path).name},
             files_json_path=None,
+            input_artifact_ids=input_artifact_ids,
         )
+        _capture(files, failure)
         chunks = [{"output_type": "code", "content": _ANALYSIS_RUNNER.strip()}]
         if failure:
             chunks.append(_text_chunk(failure))

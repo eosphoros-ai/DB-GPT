@@ -41,6 +41,9 @@ _EXAMPLE_DST = "dbgpt_app/_builtin_examples"
 
 # fmt: off
 _EXAMPLES_MAP = {
+    "docs/knowledge/olist-analytics-metric-governance.md": (
+        f"{_EXAMPLE_DST}/knowledge/olist-analytics-metric-governance.md"
+    ),
     "docker/examples/excel/Walmart_Sales.csv": (
         f"{_EXAMPLE_DST}/excel/Walmart_Sales.csv"
     ),
@@ -84,6 +87,9 @@ _PILOT_TPL_MAP = {
     "pilot/examples/Walmart_Sales.db": (
         f"{_TPL}/examples/Walmart_Sales.db"
     ),
+    "pilot/examples/Olist_Ecommerce.db": (
+        f"{_TPL}/examples/Olist_Ecommerce.db"
+    ),
 }
 # fmt: on
 
@@ -92,6 +98,7 @@ _PILOT_TPL_MAP = {
 #   ../../docker/examples/X  -> examples/X
 #   ../../pilot/X            -> pilot_tpl/X
 _SDIST_REMAP = {
+    "docs/knowledge/": "examples/knowledge/",
     "skills/": "skills/",  # no change
     "docker/examples/": "examples/",  # strip "docker/"
     "pilot/": "pilot_tpl/",  # pilot -> pilot_tpl

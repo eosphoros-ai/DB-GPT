@@ -1,5 +1,6 @@
 """Built-in tools for the ReAct agent in agentic_data_api."""
 
+from .chart_query import make_chart_query
 from .code_interpreter import make_code_interpreter
 from .execute_analysis import make_execute_analysis
 from .execute_tool import make_execute_tool
@@ -10,6 +11,8 @@ from .load_file import make_load_file
 from .load_tools import make_load_tools
 from .question import make_question
 from .read_file import make_read_file
+from .report_capability import make_traceable_report_capability
+from .report_evidence import make_report_evidence_manifest
 from .select_skill import make_select_skill
 from .shell_interpreter import make_shell_interpreter
 from .skill_tools import make_execute_skill_script_file, make_load_skill
@@ -18,6 +21,7 @@ from .todowrite import make_todowrite
 
 __all__ = [
     "make_code_interpreter",
+    "make_chart_query",
     "make_execute_analysis",
     "make_execute_tool",
     "make_html_interpreter",
@@ -27,6 +31,8 @@ __all__ = [
     "make_load_tools",
     "make_question",
     "make_read_file",
+    "make_report_evidence_manifest",
+    "make_traceable_report_capability",
     "make_select_skill",
     "make_shell_interpreter",
     "make_execute_skill_script_file",

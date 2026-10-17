@@ -1,12 +1,19 @@
 """File system tools for knowledge spaces (kb_ls, kb_glob, kb_grep, kb_cat)."""
 
 import fnmatch
-import json
 import logging
 import re
+import time
 from typing import Annotated, List, Optional
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt.core.interface.report_capture import (
+    capture_reference_artifact,
+    get_current_artifact_sink,
+    sha256_text,
+)
+
+from ..chunk_metadata import document_chunk_entries, parse_chunk_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -53,17 +60,7 @@ def _get_all_file_paths(knowledge_id: str) -> List[dict]:
         return []
     results = []
     for doc in docs:
-        try:
-            # In DB-GPT, document metadata is stored in `summary` field as JSON
-            meta = (
-                json.loads(doc.summary)
-                if doc.summary and doc.summary.startswith("{")
-                else {}
-            )
-        except (json.JSONDecodeError, TypeError):
-            meta = {}
-        if not isinstance(meta, dict):
-            meta = {}
+        meta = parse_chunk_metadata(doc.summary)
         file_path = meta.get("file_path", "") or doc.doc_name or ""
         if not file_path:
             continue
@@ -74,6 +71,10 @@ def _get_all_file_paths(knowledge_id: str) -> List[dict]:
                 "language": meta.get("language", ""),
                 "doc_id": doc.id,
                 "doc_name": doc.doc_name,
+                "space_name": space_name,
+                "vector_ids": (doc.vector_ids or "").split(",")
+                if doc.vector_ids
+                else [],
             }
         )
     return results
@@ -99,7 +100,8 @@ async def kb_ls(
         return f"No files in knowledge space {knowledge_id}"
     target = path.rstrip("/")
     prefix = (target + "/") if target else ""
-    dirs, files = {}, []
+    dirs: dict[str, int] = {}
+    files = []
     for f in all_files:
         fp = f["file_path"]
         if not fp.startswith(prefix):
@@ -119,7 +121,6 @@ async def kb_ls(
         entries.append(f"  {d}/\t({c} files)")
     for n, ft, lang in sorted(files):
         entries.append(f"  {n}\t{lang or ft or ''}")
-    total = len(entries)
     paged = entries[offset : offset + limit]
     display = target or "/"
     lines = [f"Directory: {display} ({len(files)} files, {len(dirs)} dirs)"] + paged
@@ -186,7 +187,6 @@ async def kb_ls_json(
     for f in sorted(files, key=lambda x: x["name"]):
         entries.append(f)
 
-    total = len(entries)
     paged = entries[offset : offset + limit]
 
     return {
@@ -247,6 +247,8 @@ async def kb_grep(
     limit: Annotated[int, "Max files"] = 20,
     offset: Annotated[int, "Pagination offset"] = 0,
 ) -> str:
+    capture_enabled = get_current_artifact_sink() is not None
+    started = time.perf_counter() if capture_enabled else None
     limit, offset = int(limit) or 20, int(offset) or 0
     chunk_dao, ChunkEntity = _get_chunk_dao()
     all_files = _get_all_file_paths(knowledge_id)
@@ -263,31 +265,69 @@ async def kb_grep(
         target_files[f["doc_id"]] = f
     if not target_files:
         return f"No files in scope '{path or file_pattern or 'repo'}'"
-    doc_matches = {}
+    doc_matches: dict[int, list[tuple[str, int, str]]] = {}
     fetch_limit = offset + limit
     for doc_id in target_files:
         if len(doc_matches) >= fetch_limit:
             break
-        chunks = chunk_dao.get_document_chunks(
-            ChunkEntity(document_id=doc_id, content=query), page=1, page_size=200
-        )
-        for chunk in chunks:
+        chunks = _load_document_chunks(chunk_dao, ChunkEntity, doc_id)
+        for chunk, chunk_meta in document_chunk_entries(target_files[doc_id], chunks):
             # Skip summary chunks (identified by meta_info chunk_type)
-            try:
-                chunk_meta = json.loads(chunk.meta_info) if chunk.meta_info else {}
-            except (json.JSONDecodeError, TypeError):
-                chunk_meta = {}
             if chunk_meta.get("chunk_type") == "summary":
                 continue
-            if doc_id not in doc_matches:
-                if len(doc_matches) >= fetch_limit:
-                    break
-                doc_matches[doc_id] = []
             content = _CONTEXT_PREFIX_RE.sub("", chunk.content or "")
-            start_line = chunk_meta.get("start_line", 1)
+            start_line = chunk_meta.get("start_line") or 1
+            chunk_matches = []
             for i, line in enumerate(content.split("\n")):
                 if query.lower() in line.lower():
-                    doc_matches[doc_id].append((start_line + i, line.strip()[:120]))
+                    chunk_matches.append((start_line + i, line.strip()))
+            if chunk_matches:
+                doc_matches.setdefault(doc_id, []).extend(
+                    (chunk_meta["chunk_id"], line, text) for line, text in chunk_matches
+                )
+                if capture_enabled:
+                    file_info = target_files.get(doc_id) or {}
+                    chunk_id = chunk_meta["chunk_id"]
+                    page = chunk_meta.get("page")
+                    if page is None:
+                        page = chunk_meta.get("page_number")
+                    capture_reference_artifact(
+                        reference_type="knowledge",
+                        source_id=chunk_id,
+                        action="knowledge.grep",
+                        duration_ms=max(
+                            0,
+                            int((time.perf_counter() - started) * 1000)
+                            if started is not None
+                            else 0,
+                        ),
+                        source_name=file_info.get("doc_name")
+                        or file_info.get("file_path")
+                        or chunk_id,
+                        uri=f"kb://{knowledge_id}/{doc_id}/{chunk_id}",
+                        locator={
+                            "knowledge_id": str(knowledge_id),
+                            "space_name": file_info.get("space_name"),
+                            "document_id": doc_id,
+                            "chunk_id": chunk_id,
+                            "chunk_index": chunk_meta.get("chunk_index"),
+                            "chunk_db_id": chunk_meta.get("chunk_db_id"),
+                            "page": page,
+                            "path": file_info.get("file_path"),
+                            "chunk_start_line": start_line,
+                            "start_line": min(line for line, _text in chunk_matches),
+                            "end_line": max(line for line, _text in chunk_matches),
+                            "matched_lines": [line for line, _text in chunk_matches],
+                            "line_scope": "document"
+                            if chunk_meta.get("start_line")
+                            else "chunk",
+                        },
+                        excerpt=content,
+                        metadata={
+                            "query_sha256": sha256_text(query),
+                            "retrieval_query": query[:500],
+                        },
+                    )
     if not doc_matches:
         return f"No content matching '{query}' in '{path or file_pattern or 'repo'}'"
     all_doc_ids = list(doc_matches.keys())
@@ -297,8 +337,10 @@ async def kb_grep(
     for doc_id in paged_ids:
         file_info = target_files.get(doc_id) or {}
         lines.append(f"\n{file_info.get('file_path', doc_id)}:")
-        for line_no, content in doc_matches[doc_id][:10]:
-            lines.append(f"  {line_no}: {content}")
+        for source_chunk_id, line_no, content in doc_matches[doc_id][:10]:
+            lines.append(
+                f"  chunk_id={source_chunk_id} line={line_no}: {content[:120]}"
+            )
     result = "\n".join(lines)
     # Cap total output size; larger results are persisted by ToolResultStorage.
     MAX_KB_GREP_CHARS = 15_000
@@ -310,47 +352,82 @@ async def kb_grep(
     return result
 
 
-@tool("kb_cat", description="Read file content from a knowledge space by path.")
+def _load_document_chunks(dao, entity, document_id):
+    chunks = []
+    page = 1
+    while True:
+        batch = dao.get_document_chunks(
+            entity(document_id=document_id), page=page, page_size=1000
+        )
+        chunks.extend(batch)
+        if len(batch) < 1000:
+            return chunks
+        page += 1
+
+
+@tool(
+    "kb_cat", description="Read knowledge content by path and optional source chunk ID."
+)
 async def kb_cat(
     knowledge_id: Annotated[str, "Knowledge space ID"],
     path: Annotated[str, "File path like src/auth/login.py"],
     start_line: Annotated[int, "Start line (1-based)"] = 1,
     end_line: Annotated[int, "End line, 0 = to end"] = 0,
+    chunk_id: Annotated[str, "Optional source chunk ID returned by retrieval"] = "",
 ) -> str:
+    capture_enabled = get_current_artifact_sink() is not None
+    started = time.perf_counter() if capture_enabled else None
     start_line, end_line = int(start_line) or 1, int(end_line) or 0
     file_info = _find_doc_by_file_path(knowledge_id, path)
     if not file_info:
         return f"File '{path}' not found"
     chunk_dao, ChunkEntity = _get_chunk_dao()
-    chunks = chunk_dao.get_document_chunks(
-        ChunkEntity(document_id=file_info["doc_id"]), page=1, page_size=1000
-    )
+    chunks = _load_document_chunks(chunk_dao, ChunkEntity, file_info["doc_id"])
     content_chunks = []
-    for chunk in chunks:
-        try:
-            meta = json.loads(chunk.meta_info) if chunk.meta_info else {}
-        except (json.JSONDecodeError, TypeError):
-            meta = {}
+    for chunk, meta in document_chunk_entries(file_info, chunks):
         # Skip summary chunks
         if meta.get("chunk_type") == "summary":
             continue
-        content_chunks.append((meta.get("chunk_index", 0), chunk.content or ""))
-    content_chunks.sort(key=lambda x: x[0])
+        if chunk_id and str(chunk_id) not in {meta["chunk_id"], str(chunk.id)}:
+            continue
+        content_chunks.append((meta, _CONTEXT_PREFIX_RE.sub("", chunk.content or "")))
+    if chunk_id and not content_chunks:
+        return f"Chunk '{chunk_id}' not found in '{path}'"
     full_lines = []
-    for _, content in content_chunks:
-        full_lines.extend(_CONTEXT_PREFIX_RE.sub("", content).split("\n"))
+    chunk_ranges = []
+    for meta, content in content_chunks:
+        first_line = len(full_lines)
+        full_lines.extend(content.split("\n"))
+        chunk_ranges.append((first_line, len(full_lines), meta, content))
     if not full_lines:
         return f"File '{path}' is empty"
     total = len(full_lines)
     lang = file_info.get("language") or file_info.get("file_type") or ""
     start_idx = max(0, start_line - 1)
     end_idx = min(end_line or total, total)
+    visible_end = min(end_idx, start_idx + 500)
     lines = [f"{path} ({lang}, {total} lines)"]
-    for i, line in enumerate(full_lines[start_idx:end_idx]):
+    lines.append(
+        "Source chunks (line ranges refer to this read, not original document pages):"
+    )
+    for first, last, meta, _ in chunk_ranges:
+        if first < visible_end and last > start_idx:
+            lines.append(
+                (
+                    "  chunk_id="
+                    f"{meta['chunk_id']}"
+                    " chunk_index="
+                    f"{meta['chunk_index']}"
+                    " lines="
+                    f"{first + 1}"
+                    "-"
+                    f"{last}"
+                )
+            )
+    for i, line in enumerate(full_lines[start_idx:visible_end]):
         lines.append(f"  {start_idx + i + 1:>4} | {line}")
-    if len(lines) > 502:
-        lines = lines[:502]
-        lines.append(f"  ... (truncated, use start_line={start_idx + 501} to continue)")
+    if visible_end < end_idx:
+        lines.append(f"  ... (truncated, use start_line={visible_end + 1} to continue)")
     result = "\n".join(lines)
     # Cap total output size; larger results are persisted by ToolResultStorage.
     MAX_KB_CAT_CHARS = 20_000
@@ -360,4 +437,34 @@ async def kb_cat(
             + f"\n\n... [Output truncated at {MAX_KB_CAT_CHARS} chars. "
             f"Use start_line/end_line to read specific sections]"
         )
+    if capture_enabled:
+        document_id = file_info["doc_id"]
+        for first, last, meta, content in chunk_ranges:
+            if first >= end_idx or last <= start_idx:
+                continue
+            locator = {
+                "knowledge_id": str(knowledge_id),
+                "space_name": file_info.get("space_name"),
+                "document_id": document_id,
+                "path": path,
+                "chunk_id": meta["chunk_id"],
+                "chunk_db_id": meta["chunk_db_id"],
+                "chunk_index": meta["chunk_index"],
+                "page": meta.get("page", meta.get("page_number")),
+                "read_start_line": max(first, start_idx) + 1,
+                "read_end_line": min(last, end_idx),
+            }
+            for key in ("start_line", "end_line"):
+                if meta.get(key) is not None:
+                    locator[key] = meta[key]
+            capture_reference_artifact(
+                reference_type="knowledge",
+                source_id=meta["chunk_id"],
+                action="knowledge.cat",
+                duration_ms=max(0, int((time.perf_counter() - started) * 1000)),
+                source_name=file_info.get("doc_name") or path,
+                uri=f"kb://{knowledge_id}/{document_id}/{meta['chunk_id']}",
+                locator=locator,
+                excerpt=content,
+            )
     return result
