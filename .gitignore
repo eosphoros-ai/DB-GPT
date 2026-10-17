@@ -217,3 +217,9 @@ docs/superpowers/
 # Generated Dashboard demo data and local share-token encryption key
 /examples/dashboard/generated/
 /pilot/meta_data/dashboard-share.key
+/output/dashboard-reference-sources/
+/data/dashboard_reference_sources/*.sqlite
+/data/dashboard_reference_sources/raw/
+/data/dashboard_research_sources/
+/data/dashboard_showcase_sources/
+/examples/dashboard/olist/data/

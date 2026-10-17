@@ -3,6 +3,8 @@
 import asyncio
 import json
 import logging
+import threading
+import time
 import uuid
 from datetime import datetime
 from typing import Callable, Optional
@@ -85,14 +87,7 @@ class DashboardRefreshRunner:
             partial_result: Optional[dict] = None
             for attempt in range(1, payload.max_attempts + 1):
                 try:
-                    result = await asyncio.wait_for(
-                        asyncio.to_thread(
-                            self._run_once,
-                            payload,
-                            owner_id,
-                        ),
-                        timeout=payload.timeout_seconds,
-                    )
+                    result = await self._run_bounded(payload, owner_id)
                     result["attempt_count"] = attempt
                     self._complete(run_id, result, status="success")
                     return
@@ -125,16 +120,50 @@ class DashboardRefreshRunner:
             logger.exception("dashboard schedule %s failed", task_id)
             self._fail(run_id, str(exc), attempt_count=1)
 
-    def _run_once(self, payload: DashboardRefreshPayload, owner_id: str) -> dict:
+    async def _run_bounded(self, payload, owner_id) -> dict:
+        cancelled = threading.Event()
+        deadline = time.monotonic() + payload.timeout_seconds
+
+        def check_active():
+            if cancelled.is_set() or time.monotonic() >= deadline:
+                raise TimeoutError(f"execution exceeded {payload.timeout_seconds}s")
+
+        worker = asyncio.create_task(
+            asyncio.to_thread(self._run_once, payload, owner_id, check_active)
+        )
+        try:
+            return await asyncio.wait_for(
+                asyncio.shield(worker), timeout=payload.timeout_seconds
+            )
+        except asyncio.TimeoutError:
+            cancelled.set()
+            # Cancelling to_thread cannot stop its thread. Keep the task lease
+            # until it has exited; publication checks cancellation before commit.
+            # If it already committed, preserve success rather than report a
+            # timeout for a publication that is visible to users.
+            return await worker
+        except asyncio.CancelledError:
+            cancelled.set()
+            try:
+                await asyncio.shield(worker)
+            except Exception:
+                pass
+            raise
+
+    def _run_once(
+        self, payload: DashboardRefreshPayload, owner_id: str, check_active: Callable
+    ) -> dict:
         from dbgpt_app.openapi.api_v1.dashboard.schemas import DashboardAction
 
         service = self._dashboard_service()
+        check_active()
         service.require_permission(
             payload.dashboard_id, owner_id, DashboardAction.MANAGE_SCHEDULE
         )
         snapshot = service.refresh_dashboard(
             payload.dashboard_id, payload.filters, owner_id
         )
+        check_active()
         failed_widgets = [
             widget_id
             for widget_id, result in snapshot.widgets.items()
@@ -162,6 +191,7 @@ class DashboardRefreshRunner:
                 current.current_revision,
                 payload.filters,
                 owner_id,
+                check_active=check_active,
             )
             result.update(
                 {

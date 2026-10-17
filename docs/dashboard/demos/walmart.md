@@ -19,7 +19,7 @@ python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 
 该命令会重建目标目录中同名的示例数据库，使用独立目录，不要指向业务数据库。通过 DB-GPT 数据源页面注册生成的 SQLite 文件后，按其实际表结构生成看板。固定示例见 [schemas](../../../examples/dashboard/schemas/)；生成器的表与字段是独立示例合同，不能直接套用下方历史源 SQL。
 
-历史案例可以直接复现。官方基线已包含 [Walmart_Sales.csv](../../../docker/examples/excel/Walmart_Sales.csv) 和 [Walmart_Sales.db](../../../docker/examples/dashboard/Walmart_Sales.db)，注册数据库时使用名称 `Walmart_Sales`。公共匹配副本为 [Kaggle Walmart Sales](https://www.kaggle.com/datasets/mikhail1681/walmart-sales)。2026-09-27 下载的 CSV 与仓库 CSV 的 SHA-256 均为 `0846b6941217dd938ceba6ae04650ccbbd01f4877a5f88bfa4dbecda54806c8f`。这证明数据内容一致，不证明最初开发者的下载来源或新增授权；该历史源沿用官方已有文件。
+历史案例可以直接复现。官方基线已包含 [Walmart_Sales.csv](../../../docker/examples/excel/Walmart_Sales.csv) 和 [Walmart_Sales.db](../../../docker/examples/dashboard/Walmart_Sales.db)，注册数据库时使用名称 `Walmart_Sales`。公共匹配副本为 [Kaggle Walmart Sales](https://www.kaggle.com/datasets/mikhail1681/walmart-sales)。2026-09-27 下载的 CSV 与仓库 CSV 的 SHA-256 均为 `9cd52db918f0249288b8bdb35dcdaeede5ed7a55f8ed1f8b910a93a550cbf893`。这证明数据内容一致，不证明最初开发者的下载来源或新增授权；该历史源沿用官方已有文件。
 
 无需联网的复核命令如下，对照 CSV 和数据库全部 6,435 行、每行八个字段，并检查业务键、日期与销售总额。数据库以只读方式打开：
 

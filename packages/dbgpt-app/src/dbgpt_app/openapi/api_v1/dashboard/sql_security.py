@@ -218,6 +218,20 @@ def validate_read_only_sql(
             + "."
         )
 
+    # DuckDB accepts file paths and table-valued readers in FROM. They must
+    # never bypass the registered data-source table allowlist.
+    if dialect == "duckdb":
+        external = {name for name in functions if name.startswith("read_")}
+        external.update(functions.intersection({"glob", "query", "query_table"}))
+        if external or any(
+            not isinstance(table.this, exp.Identifier)
+            for table in statement.find_all(exp.Table)
+        ):
+            raise DashboardSQLSecurityError(
+                "Dashboard SQL may only query registered tables, not external "
+                "files or table functions."
+            )
+
     cte_names = {
         str(cte.alias_or_name).lower()
         for cte in statement.find_all(exp.CTE)

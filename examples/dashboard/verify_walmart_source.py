@@ -10,7 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-CSV_SHA256 = "0846b6941217dd938ceba6ae04650ccbbd01f4877a5f88bfa4dbecda54806c8f"
+CSV_SHA256 = "9cd52db918f0249288b8bdb35dcdaeede5ed7a55f8ed1f8b910a93a550cbf893"
 FIELDS = (
     "Store",
     "Date",
@@ -25,7 +25,7 @@ FIELDS = (
 
 def verify(csv_path: Path, database: Path) -> dict:
     """Compare all eight fields of every row; never write to the source database."""
-    digest = hashlib.sha256(csv_path.read_bytes()).hexdigest()
+    digest = hashlib.sha256(csv_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     if digest != CSV_SHA256:
         raise ValueError(
             "CSV fingerprint differs from the documented historical dataset"

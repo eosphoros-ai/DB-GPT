@@ -201,3 +201,29 @@ def test_server_row_limit_cannot_be_overridden_by_user_sql():
     limited = apply_row_limit("SELECT * FROM sales LIMIT 999999", 100)
     assert limited.endswith("LIMIT 101")
     assert "AS dbgpt_dashboard_query" in limited
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT * FROM read_text('/tmp/private.txt')",
+        "SELECT * FROM read_blob('/tmp/private.bin')",
+        "SELECT * FROM read_csv_auto('/tmp/private.csv')",
+        "SELECT * FROM '/tmp/private.csv'",
+        "SELECT * FROM glob('/tmp/*')",
+        "SELECT * FROM query('SELECT * FROM read_text(''/tmp/private.txt'')')",
+    ],
+)
+def test_duckdb_external_sources_cannot_bypass_table_allowlist(sql):
+    with pytest.raises(DashboardSQLSecurityError):
+        validate_read_only_sql(sql, dialect="duckdb", allowed_tables={"sales"})
+
+
+def test_duckdb_registered_table_cte_and_scalar_functions_remain_available():
+    result = validate_read_only_sql(
+        "WITH monthly AS (SELECT date_trunc('month', day) AS month, value FROM sales) "
+        "SELECT month, sum(value) FROM monthly GROUP BY month",
+        dialect="duckdb",
+        allowed_tables={"sales"},
+    )
+    assert result.tables == {"sales"}

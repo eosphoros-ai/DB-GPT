@@ -10,6 +10,7 @@ import csv
 import hashlib
 import io
 import json
+import os
 import sqlite3
 import zipfile
 from contextlib import closing
@@ -302,6 +303,8 @@ def generate_sources(output, cache_dir, *, offline=False, source_keys=None):
 def register_sources(manifest, output, api_base, user_id=None):
     """Register only when explicitly requested against the caller's chosen server."""
     session = requests.Session()
+    if os.environ.get("DBGPT_API_KEY"):
+        session.headers["Authorization"] = f"Bearer {os.environ['DBGPT_API_KEY']}"
     if user_id:
         session.headers["User-Id"] = user_id
     endpoint = api_base.rstrip("/") + "/api/v2/serve/datasources"

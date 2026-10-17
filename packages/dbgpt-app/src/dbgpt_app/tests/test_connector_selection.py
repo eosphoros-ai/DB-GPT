@@ -129,7 +129,9 @@ class TestDatabaseOwnership:
     def test_global_datasource_remains_available(self):
         manager = SimpleNamespace(
             storage=SimpleNamespace(
-                get_by_names=lambda name: SimpleNamespace(user_id="")
+                get_by_names=lambda name: SimpleNamespace(
+                    user_id="", user_name="Display Name"
+                )
             )
         )
         assert _require_database_access(manager, "shared-demo", "alice")

@@ -103,8 +103,15 @@ def _is_dashboard_workflow_request(
     if creation_mode == "dashboard":
         return True
     normalized = (user_input or "").casefold()
-    return any(marker in normalized for marker in DASHBOARD_AGENT_MARKERS) or any(
-        keyword in normalized for keyword in DASHBOARD_AGENT_KEYWORDS
+    if any(marker in normalized for marker in DASHBOARD_AGENT_MARKERS):
+        return True
+    # Mentioning a dashboard in an ordinary question does not select a creation
+    # workflow. Keep normal chat and delegated analysis tools available.
+    return any(keyword in normalized for keyword in DASHBOARD_AGENT_KEYWORDS) and bool(
+        re.search(
+            r"\b(?:create|build|generate|design)\b|生成|创建|搭建|制作|新增|做一",
+            normalized,
+        )
     )
 
 
@@ -372,9 +379,9 @@ def _require_database_access(
     database_record = connector_manager.storage.get_by_names(database_name)
     if database_record is None:
         raise ValueError("Selected database does not exist")
-    database_owner = getattr(database_record, "user_id", None) or getattr(
-        database_record, "user_name", None
-    )
+    # Match the upstream data-source listing: an empty user_id is shared.
+    # A display name is not a stable ownership identifier.
+    database_owner = getattr(database_record, "user_id", None)
     if database_owner and database_owner != owner_id:
         raise PermissionError("Selected database is not available")
     return database_record
@@ -1855,6 +1862,14 @@ async def _react_agent_stream_impl(
                 f"Loaded database connector: {database_name} "
                 f"(tables: {', '.join(table_names)})"
             )
+        except PermissionError:
+            yield _sse_event(
+                AgentFinalAnswer(
+                    content="所选数据源不可用，请选择你有权限访问的数据源。"
+                ).to_sse_payload()
+            )
+            yield _sse_event({"type": "done"})
+            return
         except Exception as e:
             logger.warning(f"Failed to load database connector: {e}", exc_info=e)
             database_context = f"""
@@ -4191,7 +4206,7 @@ async def create_share_link(
         raise HTTPException(status_code=401, detail="Authenticated user is required")
     _require_owned_conversation(body.conv_uid, created_by)
     existing = dao.get_by_conv_uid(body.conv_uid)
-    if existing is not None and existing.created_by != created_by:
+    if existing is not None and existing.created_by not in {None, "", created_by}:
         raise HTTPException(status_code=404, detail="Conversation not found")
     entity = dao.create_share(conv_uid=body.conv_uid, created_by=created_by)
     if entity is None:
@@ -4253,7 +4268,14 @@ async def delete_share_link(
     if not actor_id:
         raise HTTPException(status_code=401, detail="Authenticated user is required")
     link = dao.get_by_token(token)
-    if link is None or link.created_by != actor_id:
+    if link is None:
+        raise HTTPException(status_code=404, detail="Share link not found")
+    if not link.created_by:
+        # Older links have no creator stamp. The authenticated conversation
+        # owner can still manage them; possession of the public token is not
+        # sufficient authorization.
+        _require_owned_conversation(link.conv_uid, actor_id)
+    elif link.created_by != actor_id:
         raise HTTPException(status_code=404, detail="Share link not found")
     deleted = dao.delete_by_token(token)
     if not deleted:

@@ -1,12 +1,14 @@
 import json
-import sys
-import types
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+from dbgpt_app.openapi.api_v1.tools import _execution
 from dbgpt_app.openapi.api_v1.tools.execute_analysis import make_execute_analysis
 from dbgpt_app.openapi.api_v1.tools.load_file import make_load_file
+from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionResult, ExecutionStatus
 
 
 def test_load_file_returns_complete_upload_group():
@@ -35,13 +37,17 @@ def test_load_file_returns_complete_upload_group():
 
 
 @pytest.mark.asyncio
-async def test_execute_analysis_inspects_every_uploaded_file(monkeypatch):
+@pytest.mark.parametrize("kind", ["docker", "podman", "nerdctl"])
+async def test_execute_analysis_inspects_every_uploaded_file(
+    monkeypatch, tmp_path, kind
+):
     executions = []
 
-    class FakeCodeServer:
-        async def exec(self, code, language):
-            executions.append((code, language))
-            return SimpleNamespace(
+    class FakeSession:
+        async def execute(self, code):
+            executions.append(code)
+            return ExecutionResult(
+                status=ExecutionStatus.SUCCESS,
                 output=json.dumps(
                     {
                         "files": [
@@ -70,15 +76,17 @@ async def test_execute_analysis_inspects_every_uploaded_file(monkeypatch):
                         ]
                     },
                     ensure_ascii=False,
-                ).encode("utf-8")
+                ),
             )
 
-    async def fake_get_code_server(system_app):
-        return FakeCodeServer()
-
-    fake_code_server_module = types.ModuleType("dbgpt.util.code.server")
-    fake_code_server_module.get_code_server = fake_get_code_server
-    monkeypatch.setitem(sys.modules, "dbgpt.util.code.server", fake_code_server_module)
+    runtime = SimpleNamespace(
+        runtime_id=kind,
+        create_session=AsyncMock(return_value=FakeSession()),
+        destroy_session=AsyncMock(),
+        docker_client=Mock(),
+    )
+    monkeypatch.setattr(_execution.RuntimeFactory, "create", lambda: runtime)
+    monkeypatch.setattr("dbgpt.configs.model_config.PILOT_PATH", str(tmp_path))
     tool = make_execute_analysis(
         {
             "file_paths": ["orders.csv", "customers.csv"],
@@ -95,10 +103,20 @@ async def test_execute_analysis_inspects_every_uploaded_file(monkeypatch):
     payload = json.loads(await tool())
 
     assert len(executions) == 1
-    code, language = executions[0]
-    assert language == "python"
-    assert "orders.csv" in code
-    assert "customers.csv" in code
+    code = executions[0]
+    config = runtime.create_session.call_args.args[1]
+    assert config.language == "python"
+    assert config.timeout == 60
+    assert config.max_memory == 512 * 1024 * 1024
+    assert {Path(p).name for p in config.input_files} == {
+        "orders.csv",
+        "customers.csv",
+        "files.json",
+    }
+    assert "orders.csv" not in code
+    assert "customers.csv" not in code
+    runtime.destroy_session.assert_awaited_once()
+    assert not Path(config.working_dir).exists()
     json_chunks = [item for item in payload["chunks"] if item["output_type"] == "json"]
     assert len(json_chunks[0]["content"]["files"]) == 2
     table_chunks = [

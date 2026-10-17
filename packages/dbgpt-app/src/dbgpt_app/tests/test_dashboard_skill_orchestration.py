@@ -21,6 +21,9 @@ def test_dashboard_intent_recognizes_requests_and_confirmation_markers():
         "[[dashboard-annotation:annotation-1]] 请只修改选中的图表"
     )
     assert not _is_dashboard_workflow_request("查询本月总销售额")
+    assert not _is_dashboard_workflow_request("解释这个仪表盘里的收入为什么下降")
+    assert not _is_dashboard_workflow_request("Query sales data for the dashboard")
+    assert _is_dashboard_workflow_request("展示年度收入", creation_mode="dashboard")
 
 
 def test_read_only_annotation_intent_is_distinct_from_modification():

@@ -1,6 +1,8 @@
 """Deterministic tests for dashboard schedules and their safety boundaries."""
 
+import asyncio
 import json
+import threading
 from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -90,12 +92,54 @@ class FakeDashboardService:
     def get_dashboard(self, dashboard_id, owner_id):
         return SimpleNamespace(current_revision=3)
 
-    def publish_dashboard(self, dashboard_id, revision, filters, owner_id):
+    def publish_dashboard(
+        self, dashboard_id, revision, filters, owner_id, *, check_active=None
+    ):
+        if check_active:
+            check_active()
         self.publish_calls += 1
         return SimpleNamespace(
             published_revision=revision,
             share_path="/dashboard-share/safe-token",
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase", ["refresh", "publish"])
+async def test_timeout_waits_for_worker_exit_and_prevents_late_publication(phase):
+    entered = threading.Event()
+    release = threading.Event()
+
+    class SlowService(FakeDashboardService):
+        def refresh_dashboard(self, *args):
+            if phase == "refresh":
+                entered.set()
+                assert release.wait(3)
+            return super().refresh_dashboard(*args)
+
+        def publish_dashboard(self, *args, **kwargs):
+            if phase == "publish":
+                entered.set()
+                assert release.wait(3)
+            return super().publish_dashboard(*args, **kwargs)
+
+    service = SlowService()
+    runner = DashboardRefreshRunner(dashboard_service_factory=lambda: service)
+    payload = _payload(publish_after_refresh=True).model_copy(
+        update={"timeout_seconds": 0.05}
+    )
+    running = asyncio.create_task(runner._run_bounded(payload, "alice-id"))
+    try:
+        assert await asyncio.to_thread(entered.wait, 2)
+        await asyncio.sleep(0.1)
+        assert not running.done(), (
+            "The dispatcher must retain its lease until the worker exits"
+        )
+    finally:
+        release.set()
+    with pytest.raises(TimeoutError):
+        await running
+    assert service.publish_calls == 0
 
 
 @pytest.mark.asyncio

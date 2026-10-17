@@ -10,6 +10,7 @@ import csv
 import hashlib
 import io
 import json
+import os
 import random
 import sqlite3
 import zipfile
@@ -125,7 +126,9 @@ def install_database(key, rows, metadata):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--register", action="store_true")
-    parser.add_argument("--base", default="http://127.0.0.1:5671")
+    parser.add_argument(
+        "--base", "--api-base", dest="base", default="http://127.0.0.1:5670"
+    )
     args = parser.parse_args()
     DEST.mkdir(parents=True, exist_ok=True)
     raw_path = DEST / "processed.cleveland.data"
@@ -167,6 +170,8 @@ def main():
         ),
     ]
     session = requests.Session()
+    if os.environ.get("DBGPT_API_KEY"):
+        session.headers["Authorization"] = f"Bearer {os.environ['DBGPT_API_KEY']}"
     session.headers["User-Id"] = "001"
     existing = set()
     if args.register:

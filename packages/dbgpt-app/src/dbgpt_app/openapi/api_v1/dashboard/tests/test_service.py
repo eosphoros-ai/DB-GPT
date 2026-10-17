@@ -33,6 +33,9 @@ from dbgpt_app.openapi.api_v1.dashboard.service import (
     DashboardSchemaValidationError,
     DashboardService,
 )
+from dbgpt_app.openapi.api_v1.dashboard.share_vault import (
+    DashboardShareSecretEntity,  # noqa: F401
+)
 from dbgpt_app.openapi.api_v1.tools.dashboard import (
     _draft_validation_message,
     _normalize_model_query_payload,
@@ -482,6 +485,40 @@ def test_edit_version_history_is_immutable_and_restore_appends_new_revision():
     assert after[0].source == "edit_version_restore"
     changed_version = service.get_edit_version(created.id, 2, "alice")
     assert changed_version.schema_payload.dashboard.title == "Updated title"
+
+
+def test_cancelled_publication_rolls_back_revision_and_share_before_commit():
+    manager = DatabaseManager()
+    manager.init_db("sqlite:///:memory:", base=Model)
+    Model.metadata.create_all(manager.engine)
+    dao = DashboardDao(manager)
+    service = DashboardService(dao=dao, connector_resolver=lambda _: FakeConnector())
+    created = create_record(service)
+    checks = 0
+
+    def check_active():
+        nonlocal checks
+        checks += 1
+        if checks == 2:
+            raise TimeoutError("cancelled before commit")
+
+    with pytest.raises(TimeoutError, match="cancelled before commit"):
+        service.publish_dashboard(created.id, 1, {}, "alice", check_active=check_active)
+    assert checks == 2
+    assert service.get_dashboard(created.id, "alice").status == "draft"
+    with dao.session(commit=False) as session:
+        assert (
+            session.query(DashboardRevisionEntity)
+            .filter_by(dashboard_id=created.id)
+            .count()
+            == 0
+        )
+        assert (
+            session.query(DashboardShareEntity)
+            .filter_by(dashboard_id=created.id)
+            .count()
+            == 0
+        )
 
 
 def test_artifact_bundle_contains_schema_plan_queries_readme_and_manifest(

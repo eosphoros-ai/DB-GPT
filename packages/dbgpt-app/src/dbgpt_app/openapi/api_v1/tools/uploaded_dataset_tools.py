@@ -1,6 +1,8 @@
 """Tools for server-authorized persisted tabular upload datasets."""
 
 import json
+import tempfile
+from pathlib import Path
 from typing import Any, Dict, List
 
 from dbgpt.agent.resource.tool.base import tool
@@ -54,10 +56,10 @@ def make_load_file_for_dataset(react_state: Dict[str, Any]):
 def make_execute_analysis_for_dataset(react_state: Dict[str, Any]):
     @tool(description="Execute quick analysis on uploaded Excel/CSV file.")
     async def execute_analysis() -> str:
-        from dbgpt._private.config import Config
-        from dbgpt.util.code.server import get_code_server
+        from dbgpt.configs.model_config import PILOT_PATH
+        from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
 
-        CFG = Config()
+        from ._execution import run_code
 
         def _is_excel_skill(meta) -> bool:
             name = (meta.name or "").lower()
@@ -96,13 +98,14 @@ def make_execute_analysis_for_dataset(react_state: Dict[str, Any]):
                 },
                 ensure_ascii=False,
             )
-        code_server = await get_code_server(CFG.SYSTEM_APP)
         analysis_code = """
 import json
+import os
 from pathlib import Path
 import pandas as pd
 
-file_paths = json.loads({file_paths_json})
+with open(os.environ["FILES_JSON"], encoding="utf-8") as handle:
+    file_paths = list(json.load(handle).values())
 summaries = []
 for file_path in file_paths:
     path = Path(file_path)
@@ -110,23 +113,54 @@ for file_path in file_paths:
         frames = pd.read_excel(path, sheet_name=None)
     else:
         separator = "\\t" if path.suffix.lower() == ".tsv" else ","
-        frames = {{"": pd.read_csv(path, sep=separator)}}
+        frames = {"": pd.read_csv(path, sep=separator)}
     for sheet_name, df in frames.items():
-        summaries.append({{
+        summaries.append({
             "file_name": path.name,
             "sheet_name": sheet_name or None,
             "shape": list(df.shape),
             "columns": [str(column) for column in df.columns],
-            "dtypes": {{str(col): str(dtype) for col, dtype in df.dtypes.items()}},
+            "dtypes": {str(col): str(dtype) for col, dtype in df.dtypes.items()},
             "head": df.head(5).to_dict(orient="records"),
-        }})
-summary = {{"files": summaries}}
-print(json.dumps(summary, ensure_ascii=False))
-""".format(file_paths_json=repr(json.dumps(file_paths, ensure_ascii=False)))
-        result = await code_server.exec(analysis_code, "python")
-        output_text = (
-            result.output.decode("utf-8") if isinstance(result.output, bytes) else ""
-        )
+        })
+summary = {"files": summaries}
+print(json.dumps(summary, ensure_ascii=False, default=str))
+"""
+        # Reuse the configured runtime, input-file staging and resource limits.
+        # Paths travel through the same FILES_JSON contract as session uploads.
+        temporary_root = Path(PILOT_PATH) / "tmp"
+        temporary_root.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            prefix="dataset-analysis-", dir=temporary_root
+        ) as work_dir:
+            mapping_path = Path(work_dir) / "files.json"
+            mapping = {
+                str(i): str(Path(path).resolve()) for i, path in enumerate(file_paths)
+            }
+            mapping_path.write_text(json.dumps(mapping), encoding="utf-8")
+            result = await run_code(
+                analysis_code,
+                language="python",
+                work_dir=work_dir,
+                env={"FILES_JSON": str(mapping_path)},
+                timeout=60,
+            )
+        if result.status != ExecutionStatus.SUCCESS or result.exit_code:
+            message = result.error or result.status.value
+            for private_path in [*mapping.values(), work_dir]:
+                message = message.replace(private_path, "<file>")
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": f"Analysis failed: {message[:500]}",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+        output_text = result.output
         # Do not return the executable source: it contains server-local paths.
         # The deterministic JSON/table/chart results are sufficient evidence
         # for the user and remain safe to include in a shared conversation.

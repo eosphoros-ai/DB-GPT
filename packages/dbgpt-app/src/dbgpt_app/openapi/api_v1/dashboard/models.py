@@ -896,6 +896,7 @@ class DashboardDao(BaseDao):
         public_slug: Optional[str] = None,
         share_created_by: Optional[str] = None,
         share_expires_at: Optional[datetime] = None,
+        check_active: Optional[Callable[[], None]] = None,
     ) -> Tuple[DashboardRevisionEntity, DashboardEntity]:
         with self.session() as session:
             query = session.query(DashboardEntity).filter_by(id=dashboard_id)
@@ -945,6 +946,8 @@ class DashboardDao(BaseDao):
 
             self._prune_versions(session, dashboard_id)
             session.refresh(revision)
+            if check_active:
+                check_active()
             return _copy_revision(revision), _copy_dashboard(dashboard)
 
     def get_published_by_token_hash(

@@ -53,6 +53,7 @@ from .catalog_ai import (
 from .catalog_source import TemplateSourceMapping, inspect_source
 from .collaboration import (
     DashboardCollaborationService,
+    DashboardCollaborationUnavailable,
     DashboardPatchError,
     collaboration_hub,
     ticket_store,
@@ -962,6 +963,8 @@ def create_collaboration_ticket(
             details={"client_id": request.client_id, "expires_at": result.expires_at},
         )
         return Result.succ(result)
+    except DashboardCollaborationUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except DashboardNotFoundError as exc:
         raise _not_found(exc) from exc
     except DashboardAccessDeniedError as exc:
@@ -975,6 +978,9 @@ async def collaborate_dashboard(websocket: WebSocket, dashboard_id: str):
     ticket = websocket.query_params.get("ticket", "")
     try:
         claim = ticket_store.consume(ticket, dashboard_id)
+    except DashboardCollaborationUnavailable:
+        await websocket.close(code=1013, reason="Collaboration unavailable")
+        return
     except DashboardPatchError:
         await websocket.close(code=4401, reason="Invalid collaboration ticket")
         return

@@ -64,7 +64,7 @@ user_recent_app_dao = UserRecentAppsDao()
 
 
 def _authorize_local_user_file(conv_uid: str, file_key: str, user_id: str) -> str:
-    """Allow local reads/deletes only below the authenticated user's upload root."""
+    """Authorize current uploads and the owner's legacy conversation files."""
 
     from dbgpt.storage.chat_history.chat_history_db import ChatHistoryDao
     from dbgpt_app.openapi.api_v1.python_upload_api import (
@@ -78,17 +78,26 @@ def _authorize_local_user_file(conv_uid: str, file_key: str, user_id: str) -> st
     resolved = Path(file_key).resolve()
     try:
         resolved.relative_to(owner_root)
-    except ValueError as exc:
-        from fastapi import HTTPException
+        authorized = True
+    except ValueError:
+        authorized = False
+    if (
+        not authorized
+        and conv_uid
+        and not any(c in conv_uid for c in ("/", "\\"))
+        and conv_uid not in {".", ".."}
+    ):
+        from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 
-        raise HTTPException(status_code=404, detail="File not found") from exc
-    if not resolved.is_file():
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="File not found")
-
-    conversation = ChatHistoryDao().get_by_uid(conv_uid) if conv_uid else None
-    if conversation is not None and conversation.user_name not in {None, "", safe_user}:
+        conversation = ChatHistoryDao().get_by_uid(conv_uid)
+        if conversation is not None and conversation.user_name == safe_user:
+            legacy_root = (Path(KNOWLEDGE_UPLOAD_ROOT_PATH) / conv_uid).resolve()
+            try:
+                resolved.relative_to(legacy_root)
+                authorized = True
+            except ValueError:
+                pass
+    if not authorized or not resolved.is_file():
         from fastapi import HTTPException
 
         raise HTTPException(status_code=404, detail="File not found")

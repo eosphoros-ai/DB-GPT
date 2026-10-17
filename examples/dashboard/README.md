@@ -46,3 +46,5 @@ python examples/dashboard/install_reference_sources.py --sources energy students
 默认只生成本地文件。需要注册到自己的后端时，显式传入 `--register --api-base`，
 或在数据源页面添加生成的数据库。来源和许可证见
 `data/dashboard_reference_sources/manifest.json`；其他两个脚本的来源说明写在文件开头。
+后端启用了 API Key 时，在运行脚本的进程环境中设置 `DBGPT_API_KEY`；
+三个注册脚本都会使用 Bearer 认证，不会将密钥写入数据或清单。

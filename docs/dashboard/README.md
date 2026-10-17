@@ -35,7 +35,7 @@ MySQL 的全量建表定义位于 `assets/schema/dbgpt.sql`，已有库使用
 执行升级前按项目部署流程备份数据库；SQL 不把任务显示名当作用户 ID 回填。
 
 仓库根目录的 `pytest.dashboard.ini` 配置 Dashboard 测试路径、包导入路径和外部服务标记，
-供本地及 Dashboard 后端 CI 使用：
+供本地回归使用，不新增独立 CI 工作流：
 
 ```sh
 python -m pytest -c pytest.dashboard.ini

@@ -1079,6 +1079,7 @@ class DashboardService:
         *,
         share_expires_in_seconds: Optional[int] = None,
         allow_static_widgets: bool = False,
+        check_active: Optional[Callable[[], None]] = None,
     ) -> DashboardPublishResponse:
         record = self.get_dashboard(dashboard_id, owner_id)
         self.require_permission(dashboard_id, owner_id, DashboardAction.PUBLISH)
@@ -1187,6 +1188,8 @@ class DashboardService:
                     ],
                 )
             )
+        if check_active:
+            check_active()
         self.dao.remember_share_token(token)
         revision, published_dashboard = self.dao.publish_dashboard(
             dashboard_id,
@@ -1199,6 +1202,7 @@ class DashboardService:
             public_slug=secrets.token_urlsafe(24),
             share_created_by=self._owner(owner_id),
             share_expires_at=expires_at,
+            **({"check_active": check_active} if check_active else {}),
         )
         response = DashboardPublishResponse(
             dashboard_id=dashboard_id,

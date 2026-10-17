@@ -494,6 +494,10 @@ class RedisDashboardTicketStore:
             close()
 
 
+class DashboardCollaborationUnavailable(RuntimeError):
+    """The optional collaboration backend is not configured."""
+
+
 def create_collaboration_ticket_store(
     redis_url: Optional[str] = None, *, production_mode: Optional[bool] = None
 ) -> DashboardTicketStore:
@@ -503,7 +507,7 @@ def create_collaboration_ticket_store(
     if production_mode is None:
         production_mode = dashboard_production_mode()
     if production_mode:
-        raise RuntimeError(
+        raise DashboardCollaborationUnavailable(
             "Dashboard production collaboration requires "
             "DBGPT_DASHBOARD_COLLAB_REDIS_URL."
         )
@@ -640,7 +644,27 @@ class DashboardCollaborationHub:
             self._redis = None
 
 
-ticket_store = create_collaboration_ticket_store()
+class LazyDashboardTicketStore:
+    """Initialize optional Redis only when a collaboration request needs it."""
+
+    def __init__(self):
+        self._store = None
+        self._lock = threading.Lock()
+
+    def _get(self):
+        with self._lock:
+            if self._store is None:
+                self._store = create_collaboration_ticket_store()
+            return self._store
+
+    def issue(self, dashboard_id, actor_id, client_id):
+        return self._get().issue(dashboard_id, actor_id, client_id)
+
+    def consume(self, ticket, dashboard_id):
+        return self._get().consume(ticket, dashboard_id)
+
+
+ticket_store = LazyDashboardTicketStore()
 collaboration_hub = DashboardCollaborationHub(
     os.getenv("DBGPT_DASHBOARD_COLLAB_REDIS_URL")
 )

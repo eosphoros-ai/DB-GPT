@@ -109,3 +109,30 @@ async def test_public_share_redacts_server_paths_and_upload_identifiers(monkeypa
     assert "upload_alice_secret123" not in context
     assert "[uploaded file]" in context
     assert "[uploaded dataset]" in context
+
+
+@pytest.mark.asyncio
+async def test_owner_can_reuse_and_revoke_legacy_share_without_creator(monkeypatch):
+    from dbgpt_app.openapi.api_v1 import agentic_data_api
+
+    dao = MemoryShareDao()
+    dao.create_share("conversation-1", None)
+    monkeypatch.setattr(agentic_data_api, "_get_share_dao", lambda: dao)
+    monkeypatch.setattr(
+        agentic_data_api,
+        "_get_conversation_service",
+        lambda: MemoryConversationService(),
+    )
+    created = await agentic_data_api.create_share_link(
+        agentic_data_api.ShareCreateRequest(conv_uid="conversation-1"),
+        UserRequest(user_id="alice"),
+    )
+    assert created.data.token == "opaque-token"
+    with pytest.raises(HTTPException):
+        await agentic_data_api.delete_share_link(
+            "opaque-token", UserRequest(user_id="bob")
+        )
+    deleted = await agentic_data_api.delete_share_link(
+        "opaque-token", UserRequest(user_id="alice")
+    )
+    assert deleted.success
