@@ -41,13 +41,18 @@ jobs:
         with:
           node-version: '20.19'
 
-      - name: Pin npm used by the lockfile
-        run: npm install --global npm@10.8.2
+      - name: Set up Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@1.22.22 --activate
 
       - name: Install dependencies
         run: |
-          npm ci
+          yarn install --frozen-lockfile
+
+      - name: Lint web application
+        run: yarn lint
 
       - name: Build web application
         run: |
-          npm run build
+          yarn build

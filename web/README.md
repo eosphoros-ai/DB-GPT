@@ -36,16 +36,17 @@ Also, it is a **LLM to Vision** solution.
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 20.19
-- [npm](https://npmjs.com/) 10 (CI pins 10.8.2)
+- [Yarn Classic](https://classic.yarnpkg.com/) 1.22.22 (pinned in `packageManager`)
 - Supported OSes: Linux, macOS and Windows
 
 ### Installation
 
-Use npm with the checked-in `package-lock.json` for dependency management.
+Use Yarn with the checked-in `yarn.lock` for dependency management.
+Enable Corepack once with `corepack enable`; it selects the pinned Yarn version.
 
 ```sh
 # Install dependencies
-npm ci
+yarn install --frozen-lockfile
 ```
 
 ### Usage
@@ -57,7 +58,7 @@ Update that configuration if your backend uses a different address.
 
 ```sh
 # development model
-npm run dev
+yarn dev
 ```
 
 ## 🚀 Use In DB-GPT
@@ -66,8 +67,9 @@ npm run dev
 bash ../scripts/build_web_static.sh
 ```
 
-`npm run build` creates a server deployment for `npm start`. `npm run compile`
+`yarn build` creates a server deployment for `yarn start`. `yarn compile`
 uses Next's static export mode and writes `out/` for the Python-served UI.
+Builds use the default `.next/` directory; `NEXT_DIST_DIR` is not a supported option.
 
 ## 📚 Documentation
 

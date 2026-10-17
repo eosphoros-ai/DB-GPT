@@ -10,7 +10,8 @@ if (args.length === 0) {
 }
 
 // Node parses quoting and uses the last singleton option, so user limits win.
-const nodeOptions = ['--max_old_space_size=8192', process.env.NODE_OPTIONS].filter(Boolean).join(' ');
+const heapMiB = args[0] === 'dev' ? 16384 : 8192;
+const nodeOptions = [`--max_old_space_size=${heapMiB}`, process.env.NODE_OPTIONS].filter(Boolean).join(' ');
 
 const child = spawn(process.execPath, [nextBin, ...args], {
   cwd: path.join(__dirname, '..'),

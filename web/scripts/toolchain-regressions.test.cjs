@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 
-function runnerFixture(t, childSource, nodeOptions = '', script = 'run-next.cjs') {
+function runnerFixture(t, childSource, nodeOptions = '', script = 'run-next.cjs', command = 'start') {
   const temporaryRoot = fs.realpathSync(os.tmpdir());
   const root = fs.mkdtempSync(path.join(temporaryRoot, 'dbgpt-runner-tests-'));
   const scripts = path.join(root, 'scripts');
@@ -27,7 +27,7 @@ function runnerFixture(t, childSource, nodeOptions = '', script = 'run-next.cjs'
     fs.writeFileSync(path.join(scripts, 'graceful-fs-register.cjs'), '');
   }
   fs.writeFileSync(path.join(nextBin, 'next'), childSource);
-  const runner = spawn(process.execPath, [path.join(scripts, script), 'start'], {
+  const runner = spawn(process.execPath, [path.join(scripts, script), command], {
     env: { ...process.env, NODE_OPTIONS: nodeOptions },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -55,7 +55,8 @@ function runnerFixture(t, childSource, nodeOptions = '', script = 'run-next.cjs'
 }
 
 for (const script of ['run-next.cjs', 'build-web.cjs']) {
-  for (const [options, expectedMiB] of [
+  for (const [options, expectedMiB, command = 'start'] of [
+    ...(script === 'run-next.cjs' ? [['', 16384, 'dev'], ['--max-old-space-size=4096', 4096, 'dev']] : []),
     ['', 8192],
     ['--trace-warnings', 8192],
     ['--trace-warnings --max-old-space-size=12288', 12288],
@@ -67,7 +68,7 @@ for (const script of ['run-next.cjs', 'build-web.cjs']) {
     ['--title="foo --max-old-space-size=4096"', 8192],
     ['--title="--max-old-space-size=4096"', 8192],
   ]) {
-    test(`${script} preserves Node option semantics: ${options || '(default)'}`, { timeout: 10000 }, async t => {
+    test(`${script} (${command}) preserves Node option semantics: ${options || '(default)'}`, { timeout: 10000 }, async t => {
       const { runner } = runnerFixture(
         t,
         `console.log(JSON.stringify({
@@ -76,6 +77,7 @@ for (const script of ['run-next.cjs', 'build-web.cjs']) {
       }));`,
         options,
         script,
+        command,
       );
       let output = '';
       let errors = '';

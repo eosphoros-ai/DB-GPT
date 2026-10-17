@@ -37,6 +37,6 @@ Apple financial facts come from the repository's
 To update an input, explain the behavior being exercised, inspect its values and
 remove credentials or personal metadata, then update the manifest hash and run the
 affected specs. Do not regenerate all fixtures solely to make assertions pass.
-From `web`, `npm run test:e2e:dashboard -- --list` verifies test collection without
+From `web`, `yarn test:e2e:dashboard --list` verifies test collection without
 starting a server. Actual browser execution needs the environment described in the
 [PR description](https://github.com/eosphoros-ai/DB-GPT/pull/3278).

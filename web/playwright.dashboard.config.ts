@@ -24,7 +24,7 @@ export default defineConfig({
   webServer:
     process.env.DASHBOARD_E2E_START_SERVER === '1'
       ? {
-          command: 'npm run start -- -p 5670',
+          command: 'yarn start -p 5670',
           url: 'http://127.0.0.1:5670/dashboards/',
           reuseExistingServer: false,
           timeout: 180_000,

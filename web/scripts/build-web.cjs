@@ -18,7 +18,7 @@ const run = (args, typeConfig) => {
       NODE_OPTIONS: [
         '--max_old_space_size=8192',
         process.env.NODE_OPTIONS,
-        ['win32', 'darwin'].includes(process.platform) ? `--require=${gracefulFsRegister}` : null,
+        ['win32', 'darwin'].includes(process.platform) ? `--require=${JSON.stringify(gracefulFsRegister)}` : null,
       ]
         .filter(Boolean)
         .join(' '),
@@ -31,7 +31,7 @@ const run = (args, typeConfig) => {
 
 // Keep compilation and static generation in one process so HTML and chunk
 // references come from the same build. Windows and macOS use a file-system limiter.
-const typeConfig = prepareBuildTypes(path.join(__dirname, '..'), process.env.NEXT_DIST_DIR || '.next');
+const typeConfig = prepareBuildTypes(path.join(__dirname, '..'), '.next');
 let status;
 try {
   status = run([], typeConfig.name);
@@ -40,7 +40,7 @@ try {
 }
 if (status !== 0) process.exit(status);
 
-const verification = verifyNextBuildAssets(path.join(__dirname, '..', process.env.NEXT_DIST_DIR || '.next'));
+const verification = verifyNextBuildAssets(path.join(__dirname, '..', '.next'));
 console.log(
   `[web build] Verified ${verification.htmlFiles} HTML files and ${verification.assetReferences} local assets.`,
 );
