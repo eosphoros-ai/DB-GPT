@@ -659,6 +659,29 @@ def test_refresh_binds_date_values_and_keeps_widgets_independent(service_fixture
     assert first_call["sql"].endswith("LIMIT 11")
 
 
+def test_widget_execution_preserves_literal_parameter_text(tmp_path):
+    from dbgpt_app.openapi.api_v1.dashboard.query_executor import DashboardQueryExecutor
+    from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
+
+    connector = SQLiteConnector.from_file_path(str(tmp_path / "literal-widget.db"))
+    payload = schema_payload()
+    payload["filters"] = []
+    payload["widgets"] = [payload["widgets"][0]]
+    widget = payload["widgets"][0]
+    widget.pop("publication")
+    widget["query"]["sql"] = "SELECT LENGTH(':literal') + :offset AS total_sales"
+    widget["query"]["filter_parameters"] = {}
+    widget["query"]["default_parameters"] = {"offset": 2}
+    schema = DashboardSchemaV1.model_validate(payload)
+    try:
+        executor = DashboardQueryExecutor(connector_resolver=lambda _: connector)
+        result = executor.execute_widget(schema, "total-sales", {})
+        assert result.error is None
+        assert result.rows == [[10]]
+    finally:
+        connector.close()
+
+
 def test_parameter_resolution_uses_user_filter_component_and_all_priority(
     service_fixture,
 ):

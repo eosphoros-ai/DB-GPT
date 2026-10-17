@@ -27,6 +27,7 @@ from .sql_security import (
     DashboardUnsupportedDialectError,
     apply_row_limit,
     bind_named_parameters,
+    escape_literal_colons,
     prepare_multi_select_sql,
     resolve_sql_dialect,
     validate_read_only_sql,
@@ -545,7 +546,9 @@ class DashboardQueryExecutor:
             allowed_tables=tables,
             allowed_columns=columns or None,
         )
-        return bind_named_parameters(prepared.sql, prepared_values, prepared.parameters)
+        return bind_named_parameters(
+            prepared.sql, prepared_values, prepared.parameters, dialect=dialect
+        )
 
     def _execute_federated_source(
         self,
@@ -570,7 +573,7 @@ class DashboardQueryExecutor:
             executable_sql, source.max_rows, dialect=self._dialect(connector)
         )
         raw_columns, raw_rows = connector.query_ex(
-            limited_sql,
+            escape_literal_colons(limited_sql, dialect=self._dialect(connector)),
             params=bound,
             timeout=source.timeout_seconds,
         )
@@ -697,7 +700,9 @@ class DashboardQueryExecutor:
                     dialect=self._dialect(connector),
                 )
                 raw_columns, raw_rows = connector.query_ex(
-                    limited_sql,
+                    escape_literal_colons(
+                        limited_sql, dialect=self._dialect(connector)
+                    ),
                     params=bound,
                     timeout=widget.query.timeout_seconds,
                 )

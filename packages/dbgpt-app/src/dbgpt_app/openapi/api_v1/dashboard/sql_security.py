@@ -14,6 +14,7 @@ class DashboardUnsupportedDialectError(DashboardSQLSecurityError):
 
 
 _NAMED_PARAMETER = re.compile(r"(?<!:):([A-Za-z_][A-Za-z0-9_]*)")
+_LITERAL_COLON = re.compile(r"(?<!:):\w+")
 _UNSAFE_TEXT = re.compile(
     r"\b(PRAGMA|ATTACH|DETACH|VACUUM|COPY|LOAD\s+DATA|INTO\s+(?:OUT|DUMP)FILE|"
     r"INSTALL|EXPORT|IMPORT|SYSTEM|SHELL|EXEC(?:UTE)?|CALL)\b",
@@ -125,6 +126,34 @@ def _keyword_scan_text(sqlglot: Any, sql: str, dialect: Optional[str]) -> str:
     )
 
 
+def _parameter_positions(sql: str, dialect: Optional[str]) -> Set[int]:
+    """Find executable colons without matching strings, comments or casts."""
+    sqlglot, _ = _load_sqlglot()
+    try:
+        return {
+            token.start
+            for token in sqlglot.tokenize(sql, read=dialect or None)
+            if token.token_type.name == "COLON"
+        }
+    except Exception as exc:
+        raise DashboardSQLSecurityError(f"SQL cannot be parsed: {exc}") from exc
+
+
+def escape_literal_colons(sql: str, *, dialect: Optional[str] = None) -> str:
+    """Protect literal colons from SQLAlchemy text()'s non-lexical bind scan.
+
+    Apply only after SQLGlot rendering, immediately before connector execution.
+    SQLAlchemy removes the added escape before sending SQL to the database.
+    """
+    positions = _parameter_positions(sql, resolve_sql_dialect(dialect))
+    return _LITERAL_COLON.sub(
+        lambda match: (
+            match.group(0) if match.start() in positions else "\\" + match.group(0)
+        ),
+        sql,
+    )
+
+
 def validate_read_only_sql(
     sql: str,
     *,
@@ -148,8 +177,15 @@ def validate_read_only_sql(
 
     sqlglot, exp = _load_sqlglot()
     dialect = resolve_sql_dialect(dialect)
-    parameters = set(_NAMED_PARAMETER.findall(sql))
-    validation_sql = _NAMED_PARAMETER.sub("NULL", sql.strip())
+    positions = _parameter_positions(sql, dialect)
+    parameters = {
+        match.group(1)
+        for match in _NAMED_PARAMETER.finditer(sql)
+        if match.start() in positions
+    }
+    validation_sql = _NAMED_PARAMETER.sub(
+        lambda match: "NULL" if match.start() in positions else match.group(0), sql
+    ).strip()
     try:
         keyword_scan_text = _keyword_scan_text(sqlglot, validation_sql, dialect)
         statements = sqlglot.parse(validation_sql, read=dialect or None)
@@ -232,16 +268,23 @@ def validate_read_only_sql(
                 "files or table functions."
             )
 
-    cte_names = {
-        str(cte.alias_or_name).lower()
-        for cte in statement.find_all(exp.CTE)
-        if cte.alias_or_name
-    }
-    tables = {
-        str(table.name).lower()
-        for table in statement.find_all(exp.Table)
-        if table.name and str(table.name).lower() not in cte_names
-    }
+    from sqlglot.optimizer.scope import traverse_scope
+
+    # Resolve each reference in its actual scope. A CTE named "secret" in a
+    # different subquery must not hide a physical secret table from the allowlist.
+    # Qualified names also retain their schema/catalog; a same-named table in
+    # another database is not implicitly authorized by an unqualified entry.
+    try:
+        tables = {
+            ".".join(part.name for part in source.parts).lower()
+            for scope in traverse_scope(statement)
+            for _, source in scope.selected_sources.values()
+            if isinstance(source, exp.Table) and source.name
+        }
+    except Exception as exc:
+        raise DashboardSQLSecurityError(
+            f"SQL table scope cannot be resolved: {exc}"
+        ) from exc
     columns = {
         str(column.name).lower()
         for column in statement.find_all(exp.Column)
@@ -280,12 +323,19 @@ def validate_read_only_sql(
 
 
 def bind_named_parameters(
-    sql: str, parameters: Dict[str, Any], required: Optional[Set[str]] = None
+    sql: str,
+    parameters: Dict[str, Any],
+    required: Optional[Set[str]] = None,
+    *,
+    dialect: Optional[str] = None,
 ) -> tuple[str, Dict[str, Any]]:
     """Expand list parameters without interpolating values into SQL text."""
 
-    required_names = (
-        required if required is not None else set(_NAMED_PARAMETER.findall(sql))
+    positions = _parameter_positions(sql, resolve_sql_dialect(dialect))
+    required_names = set(required or ()).union(
+        match.group(1)
+        for match in _NAMED_PARAMETER.finditer(sql)
+        if match.start() in positions
     )
     missing = required_names.difference(parameters)
     if missing:
@@ -313,6 +363,8 @@ def bind_named_parameters(
         return candidate
 
     def replace(match: re.Match) -> str:
+        if match.start() not in positions:
+            return match.group(0)
         name = match.group(1)
         value = parameters[name]
         if isinstance(value, set):

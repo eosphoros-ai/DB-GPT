@@ -4,9 +4,52 @@ from dbgpt_app.openapi.api_v1.dashboard.sql_security import (
     DashboardSQLSecurityError,
     apply_row_limit,
     bind_named_parameters,
+    escape_literal_colons,
     prepare_multi_select_sql,
     validate_read_only_sql,
 )
+
+
+@pytest.mark.parametrize(
+    "dialect,sql",
+    [
+        ("sqlite", "SELECT ':literal', :value -- :comment\n"),
+        ("postgres", "SELECT $$:literal$$, :value::text /* :comment */"),
+        ("mysql", "SELECT ':literal', :value AS `:column`"),
+        ("tsql", "SELECT ':literal', :value AS [:column]"),
+        ("duckdb", "SELECT ':literal', :value AS \":column\""),
+    ],
+)
+def test_bindings_ignore_literals_identifiers_comments_and_casts(dialect, sql):
+    validated = validate_read_only_sql(sql, dialect=dialect)
+    assert validated.parameters == {"value"}
+    executable, bound = bind_named_parameters(sql, {"value": 7}, dialect=dialect)
+    assert executable == sql
+    assert bound == {"value": 7}
+
+
+def test_literal_colons_survive_real_connector_execution(tmp_path):
+    from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
+
+    sql = (
+        "SELECT ':literal' AS literal, '\\:escaped' AS escaped, ':123' AS digits, "
+        "':中文' AS unicode_text, :value AS \":column\" "
+        "WHERE :value IN (:values) /* :comment */"
+    )
+    validated = validate_read_only_sql(sql, dialect="sqlite")
+    executable, bound = bind_named_parameters(
+        validated.sql, {"value": 7, "values": [6, 7]}, dialect="sqlite"
+    )
+    limited = apply_row_limit(executable, 10, dialect="sqlite")
+    connector = SQLiteConnector.from_file_path(str(tmp_path / "literal-colons.db"))
+    try:
+        fields, rows = connector.query_ex(
+            escape_literal_colons(limited, dialect="sqlite"), params=bound
+        )
+        assert fields[-1] == ":column"
+        assert tuple(rows[0]) == (":literal", "\\:escaped", ":123", ":中文", 7)
+    finally:
+        connector.close()
 
 
 @pytest.mark.parametrize(
@@ -81,6 +124,34 @@ def test_table_and_column_allowlists_are_enforced():
             allowed_tables={"sales"},
             allowed_columns={"store", "sales"},
         )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "WITH secret AS (SELECT 1) SELECT * FROM main.secret",
+        "SELECT * FROM secret WHERE EXISTS "
+        "(WITH secret AS (SELECT 1) SELECT * FROM secret)",
+        "SELECT * FROM private.sales",
+    ],
+)
+def test_table_allowlist_cannot_be_bypassed_by_cte_names_or_qualifiers(sql):
+    with pytest.raises(DashboardSQLSecurityError, match="tables outside"):
+        validate_read_only_sql(sql, dialect="sqlite", allowed_tables={"sales"})
+
+
+def test_explicit_qualified_allowlist_and_recursive_cte_are_supported():
+    result = validate_read_only_sql(
+        "SELECT * FROM main.sales", dialect="sqlite", allowed_tables={"main.sales"}
+    )
+    assert result.tables == {"main.sales"}
+    result = validate_read_only_sql(
+        "WITH RECURSIVE counter(value) AS (SELECT 1 UNION ALL "
+        "SELECT value + 1 FROM counter WHERE value < 3) SELECT * FROM counter",
+        dialect="sqlite",
+        allowed_tables=set(),
+    )
+    assert result.tables == set()
 
 
 def test_named_values_are_bound_and_multi_select_is_expanded():
