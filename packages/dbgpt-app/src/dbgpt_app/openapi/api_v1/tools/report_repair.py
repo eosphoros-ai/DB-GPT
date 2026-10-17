@@ -323,11 +323,11 @@ def _record_failure(
     elif document_incomplete:
         state["_report_last_render_error"] = error
         fingerprint_key = "_report_last_document_fingerprint"
-        count = min(
-            state.get("_report_document_attempts", 0) + 1, MAX_DOCUMENT_ATTEMPTS
-        )
+        count = state.get("_report_document_attempts", 0) + 1
         state["_report_document_attempts"] = count
-        limit = MAX_DOCUMENT_ATTEMPTS
+        # Appending accepted sections is document assembly, not a failed render.
+        # Keep the existing shared call cap; repeated candidates still stop.
+        limit = MAX_REPORT_CALLS
         candidate = (
             state.get("_report_saved_arguments", arguments)
             if arguments.get("template_path")
@@ -439,7 +439,9 @@ def _record_failure(
             instruction += (
                 "Use the document assembly budget to append the missing actionable "
                 "items under sections[].recommendations, with heading containing "
-                "建议 or recommendations. Changed template HTML is progress even "
+                "建议 or recommendations. If append_report_sections is available, "
+                "call it with ONLY the new recommendation section; do not resend "
+                "accepted analysis sections. Changed template HTML is progress even "
                 "at the same length; an identical failed candidate still stops. "
             )
     elif state.get("_report_pending_html", "").strip():
@@ -488,7 +490,7 @@ def _record_failure(
             )
     message = (
         f"{error}\n{instruction}Render attempts: {attempts}/{MAX_RENDER_ATTEMPTS}; "
-        f"document assembly attempts: {document_attempts}/{MAX_DOCUMENT_ATTEMPTS}; "
+        f"document assembly attempts: {document_attempts}/{MAX_REPORT_CALLS}; "
         f"preflight attempts: {preflight_attempts}/{MAX_PREFLIGHT_ATTEMPTS}; "
         "consecutive invocation failures: "
         f"{invocation_failures}"
@@ -570,7 +572,18 @@ def record_report_invocation_failure(state, raw_call, reason):
         {"raw_call": str(raw_call)},
         error,
         reached_renderer=False,
-        instruction_hint=_truncation_hint(state),
+        instruction_hint=(
+            (_truncation_hint(state) or "")
+            + (
+                "The saved report is intact. Correct only this call's JSON. "
+                "For missing sections use append_report_sections with one small "
+                "section, not a replacement of the whole report. "
+                if state.get("_report_saved_arguments", {}).get("template_path")
+                and (state.get("_report_template_contract") or {}).get("mode", "spec")
+                == "spec"
+                else ""
+            )
+        ),
     )
     path = Path(state["_report_checkpoint_path"]).with_name("last-model-call.txt")
     path.write_text(str(raw_call), encoding="utf-8")

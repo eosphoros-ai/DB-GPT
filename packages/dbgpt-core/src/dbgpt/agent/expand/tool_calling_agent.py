@@ -251,7 +251,7 @@ class NativeToolCallAction(ParallelToolAction):
             try:
                 args = json.loads(args_raw) if isinstance(args_raw, str) else args_raw
             except (json.JSONDecodeError, ValueError) as error:
-                if name == "html_interpreter":
+                if name in {"html_interpreter", "append_report_sections"}:
                     location = (
                         (
                             "JSON line "
@@ -273,7 +273,7 @@ class NativeToolCallAction(ParallelToolAction):
                     )
                 args = {}
             if not isinstance(args, dict):
-                if name == "html_interpreter":
+                if name in {"html_interpreter", "append_report_sections"}:
                     return ActionOutput(
                         is_exe_success=False,
                         action=name,
@@ -442,14 +442,17 @@ class ToolCallingReActAgent(ReActAgent):
     ) -> ActionOutput:
         state = getattr(self, "_report_repair_state", None) or {}
         requested = (
-            output.action == "html_interpreter"
+            output.action in {"html_interpreter", "append_report_sections"}
             or bool(
                 re.search(
-                    r"Action\s*:\s*html_interpreter\b", message.content or "", re.I
+                    r"Action\s*:\s*(?:html_interpreter|append_report_sections)\b",
+                    message.content or "",
+                    re.I,
                 )
             )
             or any(
-                call.get("function", {}).get("name") == "html_interpreter"
+                call.get("function", {}).get("name")
+                in {"html_interpreter", "append_report_sections"}
                 for call in getattr(self, "_pending_native_tool_calls", None) or []
             )
         )

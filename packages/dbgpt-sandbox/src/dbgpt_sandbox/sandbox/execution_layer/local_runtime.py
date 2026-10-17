@@ -213,13 +213,28 @@ class LocalSandboxSession(SandboxSession):
         """在资源限制下运行命令"""
         process = None
         try:
+            environment = dict(os.environ, **self.config.environment_vars)
+            if (
+                self.config.language == "python"
+                and "PYTHONPATH" not in self.config.environment_vars
+            ):
+                # Source launches can prepend a worktree to sys.path without
+                # changing PYTHONPATH. Keep the child on that same installation;
+                # an editable install in another checkout has a different store.
+                environment["PYTHONPATH"] = os.pathsep.join(
+                    dict.fromkeys(
+                        os.path.abspath(path)
+                        for path in sys.path
+                        if isinstance(path, str)
+                    )
+                )
             # 启动进程
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=self.work_dir,
-                env=dict(os.environ, **self.config.environment_vars),
+                env=environment,
             )
 
             # 记录进程 PID

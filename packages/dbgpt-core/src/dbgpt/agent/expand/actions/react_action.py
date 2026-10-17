@@ -9,7 +9,11 @@ from dbgpt.util.json_utils import parse_or_raise_error
 
 from ...resource.tool.base import BaseTool, ToolParameter
 from ...resource.tool.pack import ToolPack
-from ...util.react_parser import ReActOutputParser, ReActStep
+from ...util.react_parser import (
+    ReActOutputParser,
+    ReActStep,
+    extract_terminate_output,
+)
 from .tool_action import ToolAction, run_tool
 
 logger = logging.getLogger(__name__)
@@ -30,10 +34,16 @@ class Terminate(Action[None], BaseTool):
         need_vis_render: bool = True,
         **kwargs,
     ) -> ActionOutput:
+        try:
+            content = extract_terminate_output(ai_message)
+        except ValueError as error:
+            return ActionOutput(
+                is_exe_success=False, terminate=False, content=str(error)
+            )
         return ActionOutput(
             is_exe_success=True,
             terminate=True,
-            content=ai_message,
+            content=content,
         )
 
     @classmethod
@@ -101,10 +111,12 @@ class Terminate(Action[None], BaseTool):
 
     def execute(self, *args, **kwargs):
         if "output" in kwargs:
-            return kwargs["output"]
+            return extract_terminate_output({"output": kwargs["output"]})
         if "final_answer" in kwargs:
-            return kwargs["final_answer"]
-        return args[0] if args else "terminate unknown"
+            return extract_terminate_output({"final_answer": kwargs["final_answer"]})
+        if "result" in kwargs:
+            return extract_terminate_output({"result": kwargs["result"]})
+        return extract_terminate_output({"output": args[0] if args else None})
 
     async def async_execute(self, *args, **kwargs):
         return self.execute(*args, **kwargs)

@@ -234,6 +234,36 @@ def chart_sources(spec):
     return found
 
 
+def _has_tabular_result(artifact):
+    """Include captured nested Python tables the report can actually select."""
+    paths = [[]]
+    if artifact.type == "python":
+        data = select_artifact_result(artifact, {"path": []})
+        if isinstance(data, str):
+            data = json.loads(data)
+
+        def visit(value, path):
+            if not isinstance(value, dict) or len(path) >= 6 or len(paths) >= 100:
+                return
+            for key, child in value.items():
+                if len(paths) >= 100:
+                    break
+                if isinstance(child, (dict, list)):
+                    child_path = [*path, key]
+                    paths.append(child_path)
+                    visit(child, child_path)
+
+        visit(data, [])
+    for path in paths:
+        try:
+            table = result_table(artifact, {"path": path})
+        except (ValueError, TypeError, OSError):
+            continue
+        if table and table_option(table):
+            return True
+    return False
+
+
 def analysis_groups(artifacts):
     """Use execution-owned task labels, not a hard-coded list of business topics."""
     groups = {}
@@ -246,8 +276,7 @@ def analysis_groups(artifacts):
         ):
             continue
         try:
-            table = result_table(artifact)
-            if not table or not table_option(table):
+            if not _has_tabular_result(artifact):
                 continue
         except (ValueError, TypeError, OSError):
             continue

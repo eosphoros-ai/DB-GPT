@@ -13,6 +13,50 @@ from dbgpt.vis.tags.vis_thinking import VisThinking
 # parsing and the whole final-answer extraction chain collapses.
 _SPECIAL_TOKEN_PATTERN = re.compile(r"<\|[^|<>\n]*\|>")
 
+
+def extract_terminate_output(content: Any) -> str:
+    """Normalize native and legacy text termination without exposing controls."""
+    import ast
+
+    keys = ("output", "result", "final_answer")
+    if isinstance(content, str):
+        original = content
+        steps = ReActOutputParser().parse_current_step(content)
+        if steps:
+            step = steps[0]
+            if (step.action or "").lower() != "terminate":
+                raise ValueError("Expected a terminate action with a final answer")
+            content = step.action_input
+        else:
+            try:
+                parsed = ast.literal_eval(content)
+            except (ValueError, SyntaxError):
+                parsed = None
+            if isinstance(parsed, dict) and any(key in parsed for key in keys):
+                content = parsed
+            else:
+                content = original
+    if isinstance(content, str) and content.lstrip().startswith("{"):
+        try:
+            parsed = json.loads(content)
+        except (TypeError, ValueError):
+            parsed = None
+        if isinstance(parsed, dict) and any(key in parsed for key in keys):
+            content = parsed
+    if isinstance(content, dict):
+        content = next((content[key] for key in keys if key in content), None)
+    if (
+        not isinstance(content, str)
+        or not content.strip()
+        or content.strip() in ("...", "…")
+    ):
+        raise ValueError(
+            "terminate requires a non-empty final answer, not a placeholder. "
+            "Continue the task or explain why it could not be completed."
+        )
+    return content
+
+
 # Kimi-style native tool-calling protocol leaked as plain text by some model
 # servers: ``<|tool_calls_section_begin|><|tool_call_begin|>functions.X:0
 # <|tool_call_argument_begin|>{...}<|tool_call_end|><|tool_calls_section_end|>``.

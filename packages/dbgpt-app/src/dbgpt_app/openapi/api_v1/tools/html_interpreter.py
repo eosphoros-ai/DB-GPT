@@ -1,5 +1,6 @@
 """html_interpreter tool — render HTML as an interactive report."""
 
+import ast
 import asyncio
 import hashlib
 import json
@@ -1652,13 +1653,35 @@ def report_template_contract(template: str) -> dict:
 
 def _render_placeholder_parts(value: Any) -> str:
     """Render structured prose as paragraphs, keeping each value's source."""
-    if isinstance(value, dict) and set(value) == {"text"}:
-        return validate_template_fragment(str(value["text"]))
     if isinstance(value, dict) and value.get("artifact_id") and "value" in value:
         return _result_span(
             escape_html(str(value["value"])),
             value["artifact_id"],
             source_selector=value.get("selector"),
+        )
+    if isinstance(value, dict):
+        tag = value.get("type")
+        refs = value.get("refs", [])
+        if (
+            set(value).issubset({"type", "text", "refs"})
+            and isinstance(value.get("text"), str)
+            and tag in {None, "p", "li", "span"}
+            and isinstance(refs, list)
+            and all(
+                isinstance(ref, dict) and ref.get("artifact_id") and "value" in ref
+                for ref in refs
+            )
+        ):
+            content = validate_template_fragment(value["text"]) + "".join(
+                _render_placeholder_parts(ref) for ref in refs
+            )
+            return f"<{tag}>{content}</{tag}>" if tag else content
+        # A Python repr is never a valid fallback for authored report objects.
+        # Reject unknown shapes so the repair loop can correct the input.
+        raise ValueError(
+            "REPORT_TEMPLATE_PROSE_INVALID: use strings, lists of inline parts, "
+            "or {type: p/li/span, text: string, refs: [artifact_id/field/path nodes]}; "
+            "unsupported prose fields: " + ", ".join(sorted(map(str, value)))
         )
     if isinstance(value, list):
         return "".join(
@@ -1684,8 +1707,9 @@ def _resolve_inline_report_references(html: str, artifacts: List[Any]) -> str:
         for item in artifacts
         if getattr(item, "status", "") == "succeeded"
     }
-    start = re.compile(r'\{\s*(?:"|&quot;)?artifact_id(?:"|&quot;)?\s*:')
-    reference = re.compile(start.pattern + r"[^{}]*\}")
+    quote = r"(?:[\"']|&quot;|&apos;|&#0*39;|&#x0*27;)"
+    start = re.compile(r"\{\s*" + quote + r"?artifact_id" + quote + r"?\s*:", re.I)
+    reference = re.compile(start.pattern + r"[^{}]*\}", start.flags)
     stack = []
     output = []
 
@@ -1694,8 +1718,15 @@ def _resolve_inline_report_references(html: str, artifacts: List[Any]) -> str:
         try:
             node = json.loads(raw)
         except ValueError:
+            try:
+                # Python-style dictionaries also appear in model-written prose.
+                # literal_eval accepts quoted paths without executing expressions.
+                node = ast.literal_eval(raw)
+            except (ValueError, SyntaxError):
+                node = None
+        if node is None:
             # Models also emit compact, unquoted references in HTML prose.
-            # Accept only flat key/value pairs; complex values must be JSON.
+            # Accept only flat key/value pairs; complex values must be quoted.
             node = {}
             for pair in raw[1:-1].split(","):
                 key, separator, value = pair.partition(":")
@@ -2093,7 +2124,7 @@ def _render_template_with_bindings(
             raw_value = data.get(key, "")
             if (
                 contract["mode"] == "placeholders"
-                and isinstance(raw_value, list)
+                and isinstance(raw_value, (list, dict))
                 and key != "CHART_DATA_JSON"
                 and not is_tag
                 and not set(stack).intersection({"script", "style", "title"})

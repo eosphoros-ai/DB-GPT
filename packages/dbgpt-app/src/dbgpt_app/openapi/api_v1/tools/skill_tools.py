@@ -71,6 +71,9 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
     @tool(
         description="执行技能scripts目录下的脚本文件。参数: "
         '{"skill_name": "技能名称", "script_file_name": "脚本文件名", "args": {参数}}。'
+        "JSON 脚本用 args；命令行脚本用 argv 字符串列表，二者不能同时提供。"
+        '例如 init_skill.py 用 argv=["sql-data-analysis", "--path", '
+        '"技能目录的绝对路径"]。'
         "返回真实 artifact_id。复用上一步结果时，用 input_artifact_ids 标明输入产物。"
     )
     async def execute_skill_script_file(
@@ -78,6 +81,7 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
         script_file_name: str,
         args: dict | None = None,
         input_artifact_ids: list[str] | None = None,
+        argv: list[str] | None = None,
     ) -> str:
         """Execute a script file from a skill's scripts directory."""
         import os
@@ -100,6 +104,8 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
         CFG = Config()
 
         try:
+            if args and argv is not None:
+                raise ValueError("Use either args (JSON) or argv (CLI), not both")
             sink = react_state.get("_report_artifact_sink")
             available = (
                 {a.artifact_id for a in sink.snapshot() if a.status == "succeeded"}
@@ -129,11 +135,12 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                     if key in _FILE_PATH_KEYS:
                         args[key] = real_file_path
 
+            execution_args = {"argv": argv} if argv is not None else (args or {})
             input_artifact_ids = resolve_argument_dependencies(
-                args or {}, sink, input_artifact_ids or []
+                execution_args, sink, input_artifact_ids or []
             )
-            args, file_input_ids = snapshot_execution_files(
-                args or {},
+            execution_args, file_input_ids = snapshot_execution_files(
+                execution_args,
                 sink,
                 action="execute_skill_script_file.input",
             )
@@ -141,11 +148,13 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                 dict.fromkeys([*(input_artifact_ids or []), *file_input_ids])
             )
             started_at = time.perf_counter()
+            cli_kwargs = {"argv": execution_args["argv"]} if argv is not None else {}
             result_str = await sm.execute_skill_script_file(
                 skill_name,
                 script_file_name,
-                args or {},
+                {} if argv is not None else execution_args,
                 output_dir=out_dir,
+                **cli_kwargs,
             )
 
             try:

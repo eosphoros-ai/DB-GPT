@@ -47,6 +47,7 @@ from dbgpt._private.pydantic import BaseModel as _BaseModel
 from dbgpt.agent.core.context import ContextBudgetConfig
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.agent.skill.manage import get_skill_manager
+from dbgpt.agent.util.react_parser import extract_terminate_output
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
 from dbgpt.core import PromptTemplate
@@ -64,7 +65,6 @@ from dbgpt.core.interface.report_capture import (
     sha256_text,
 )
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.util.json_utils import parse_or_raise_error
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -416,13 +416,18 @@ async def get_skill_resource(
 
     try:
         sm = get_skill_manager(CFG.SYSTEM_APP)
-        result = await sm.get_skill_resource(skill_name, resource_path, args or {})
-        return result
+        # This public tool is read-only, including scripts the agent inspects
+        # before execution. Execution belongs to execute_skill_script_file.
+        result = await sm.get_skill_resource(
+            skill_name, resource_path, args or {}, execute_scripts=False
+        )
+        payload = json.loads(result)
+        if payload.get("error"):
+            payload.update(success=False, error_code="SKILL_RESOURCE_READ_FAILED")
+        return json.dumps(payload, ensure_ascii=False)
     except Exception as e:
-        import json
-
         return json.dumps(
-            {"error": True, "message": f"Error: {str(e)}"},
+            {"success": False, "error": True, "message": f"Error: {str(e)}"},
             ensure_ascii=False,
         )
 
@@ -3145,6 +3150,10 @@ return the final result with {{"output": "final answer"}}.
 parameters {{"skill_name": "skill name", "script_file_name": "script file name",
 "args": {{parameters}}}}. This tool will automatically handle image copying and
 data recording.
+For command-line scripts use `argv` instead of `args`, e.g.
+{{"skill_name": "skill-creator", "script_file_name": "init_skill.py",
+"argv": ["sql-data-analysis", "--path", "absolute destination directory"]}}.
+Pass each CLI argument separately. Never pass both args and argv.
 - **Need to understand indicator definitions/analysis framework** -> Use
 `get_skill_resource` and specify the `references/xxx.md` path to read the
 reference document.
@@ -3154,6 +3163,15 @@ return an error prompt.
 required sections and the requested recommendation count. A dedicated report agent
 owns the template, the evidence-bound spec and every repair; do not write report HTML
 yourself, do not call `code_interpreter` for the report and do not re-run analysis.
+- **Need to create or edit skill files** -> Use `code_interpreter` with Python
+pathlib to write UTF-8 files and inspect existing directories. Skill script tools
+only run existing scripts; never invent a script name or put comments in tool names.
+Keep new skills in the persistent user-skills directory:
+{json.dumps(str(Path(DEFAULT_SKILLS_DIR).resolve() / "user"), ensure_ascii=False)}.
+Pass this absolute directory to init_skill.py --path. If a directory exists, inspect
+and finish it; do not repeatedly initialize it in per-execution temporary folders.
+Use execute_skill_script_file with argv to test scripts and package the skill.
+Do not generate an analysis report for a skill-creation task.
 
 ## Available Tools Description
 1. **execute_skill_script_file** (recommended for executing skill scripts): Execute
@@ -3165,6 +3183,8 @@ name", "args": {{parameters}}}}
    - Example: {{"skill_name": "{_skill_name}",
 "script_file_name": "calculate_ratios.py",
 "args": {{"input_data": "..."}}}}
+   - For CLI scripts replace args with argv (a list of strings). init_skill.py
+requires positional skill name followed by --path and the destination directory.
    - **Must use this tool when executing skill scripts**, do not use
 shell_interpreter.
 2. **get_skill_resource**: Read reference documents, configurations, templates, and
@@ -3246,6 +3266,8 @@ Example flow for 3 tasks:
                     execute_skill_script,
                     get_skill_resource,
                     execute_skill_script_file_tool,
+                    code_interpreter_tool,
+                    read_file_tool,
                     *report_tools,
                     sql_query_tool,
                     chart_query_tool,
@@ -3355,6 +3377,7 @@ iterative optimization in subsequent steps.
 scripts in the skill's scripts directory (this tool automatically handles images
 and data recording). Parameters are {{"skill_name": "skill name",
 "script_file_name": "script.py", "args": {{parameters}}}}.
+For CLI scripts use argv (a list of separate strings) instead of args.
 - **Need to understand indicator definitions/analysis framework** -> Use
 `get_skill_resource` and specify the `references/xxx.md` path to read the
 reference document.
@@ -4301,7 +4324,7 @@ After partial results, finish only missing requested deliverables, then report.
             "任务未完成。"
             if execution_status == "incomplete"
             else f"任务未完成：{status_label}。"
-        ) + "已完成的分析产物已保留。"
+        ) + "已有执行结果已保留。"
         if completed:
             final_content += "\n已完成：" + "；".join(completed)
         if remaining:
@@ -4326,46 +4349,18 @@ After partial results, finish only missing requested deliverables, then report.
                 logger.exception(
                     "Unable to save execution checkpoint; recorded history and artifacts remain available"
                 )
-            final_content += "\n继续时应复用现有产物，只补充缺失分析和报告。"
+            if is_skill_mode and _skill_name == "skill-creator":
+                final_content += (
+                    "\n继续时应复用已创建的技能目录，补齐文件、测试和打包。"
+                )
+            else:
+                final_content += "\n继续时应复用现有产物，只补充缺失分析和报告。"
     elif reply.action_report and reply.action_report.terminate:
         raw_content = reply.action_report.content or ""
-        # The terminate ActionOutput.content may be the raw ReAct text, e.g.:
-        # "Thought: ...\nAction: terminate\nAction Input: {"result": "..."}"
-        # We need to extract the "result" value from Action Input.
-        final_content = raw_content
         try:
-            steps = parser.parse(raw_content)
-            if steps:
-                action_input = steps[0].action_input
-                if action_input:
-                    # action_input could be a string like '{"result": "..."}';
-                    # tolerate trailing artifacts after the JSON object (the
-                    # parser already strips known special tokens, this is the
-                    # second line of defense for unknown ones).
-                    if isinstance(action_input, str):
-                        parsed_input = parse_or_raise_error(action_input)
-                    else:
-                        parsed_input = action_input
-                    if isinstance(parsed_input, dict) and "result" in parsed_input:
-                        final_content = parsed_input["result"]
-        except Exception:
-            pass
-        # native function calling 路径：terminate content 可能是 {"result":...}
-        # (JSON) 或 {'result':...} (Python dict repr)，直接提取 result。
-        if final_content == raw_content:
-            try:
-                _parsed = json.loads(raw_content)
-                if isinstance(_parsed, dict) and "result" in _parsed:
-                    final_content = _parsed["result"]
-            except Exception:
-                try:
-                    import ast
-
-                    _parsed = ast.literal_eval(raw_content)
-                    if isinstance(_parsed, dict) and "result" in _parsed:
-                        final_content = _parsed["result"]
-                except Exception:
-                    pass
+            final_content = extract_terminate_output(raw_content)
+        except ValueError:
+            final_content = "任务未完成：模型未返回有效的最终结果，请查看执行步骤。"
     else:
         final_content = reply.content or ""
 

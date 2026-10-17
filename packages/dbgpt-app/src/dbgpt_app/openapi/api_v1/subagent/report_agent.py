@@ -36,6 +36,7 @@ from ..tools.report_repair import (
     MAX_RENDER_ATTEMPTS,
     render_saved_report,
 )
+from ..tools.report_spec import ReportSection
 
 logger = logging.getLogger(__name__)
 
@@ -100,14 +101,16 @@ REPORT_AGENT_PROMPT_TEMPLATE = """\
    添加新片段用 REPORT_SPEC_APPEND。
    错误信息里已给出 artifact、selector 以及 `Available result keys`，直接用这些名字。
    若提示参数被输出上限截断，就把 spec 改小再发。
-4. 报告较长时分片构建：先 `data={"REPORT_SPEC": <第一部分>}`，再
-   `data={"REPORT_SPEC_APPEND": <更多 sections>}`（`sections`/`kpis` 追加）。
+4. 报告较长时分片构建：先 `data={"REPORT_SPEC": <第一部分>}`，再用
+   `append_report_sections(sections=[<一个新章节>])` 追加，避免重发整份报告。
    持续追加直到用户要求的每个部分都存在。
    覆盖检查会列出未写进正文的分析任务及真实产物 ID；必须补充对应解读和表格，
    不能只在建议中引用它们。先写完整分析章节，再写建议。
 5. 报告必须覆盖用户明确要求的交付物，尤其是"改进建议"：放在标题含"建议"的章节里，
    用 `recommendations`，条数不少于用户要求的数量（每条一个 `<li>`）。
    REPORT_REQUIREMENT_MISSING 使用独立的文档组装预算，继续追加缺失建议；
+   如果仅缺建议，调用 append_report_sections，提交一个标题含“建议”、包含
+   recommendations 数组的章节。每条包含 title 和 lines[].parts，不能重发分析章节。
    只有工具返回 retryable=false 时才停止修复，并准确说明未完成。
 6. 一旦某次渲染返回 HTML 就立即停止，用一行状态说明 terminate。
 7. 结果确实缺少报告所需的合计、差值或比例时，调用 request_report_calculation，
@@ -379,6 +382,39 @@ def make_request_report_calculation(react_state: Dict[str, Any]):
     return request_report_calculation
 
 
+def make_append_report_sections(react_state: Dict[str, Any], renderer: Any):
+    """Append small, validated sections through the existing evidence renderer."""
+
+    @tool(
+        description=(
+            "Append one or two NEW sections to the saved business report, then "
+            "validate/render it. Existing sections, charts and evidence are kept. "
+            "Use this instead of resending the whole REPORT_SPEC. If only "
+            "recommendations are missing, submit one section with heading "
+            "改进建议 and recommendations containing title and lines[].parts. "
+            "Parts are strings or real artifact reference objects."
+        )
+    )
+    async def append_report_sections(sections: list[dict]) -> str:
+        saved = react_state.get("_report_saved_arguments") or {}
+        if not saved.get("template_path") or not (saved.get("data") or {}).get(
+            "REPORT_SPEC"
+        ):
+            raise ValueError("Initialize the report template before appending sections")
+        if not 1 <= len(sections) <= 2:
+            raise ValueError("Append one or two new sections per call")
+        validated = [
+            ReportSection.model_validate(section).model_dump(exclude_unset=True)
+            for section in sections
+        ]
+        return await renderer(
+            retry_saved=True,
+            data={"REPORT_SPEC_APPEND": {"sections": validated}},
+        )
+
+    return append_report_sections
+
+
 async def build_report_agent(
     *,
     react_state: Dict[str, Any],
@@ -423,19 +459,21 @@ async def build_report_agent(
     sub_gpt_memory.init(sub_conv_id, enable_vis_message=False, publish_messages=False)
     sub_agent_memory = AgentMemory(gpts_memory=sub_gpt_memory)
 
+    renderer = make_html_interpreter(
+        react_state,
+        skills_dir,
+        business_spec_only=spec_mode,
+        allow_unavailable_references=True,
+    )
     tool_pack = ToolPack(
         [
-            make_html_interpreter(
-                react_state,
-                skills_dir,
-                business_spec_only=spec_mode,
-                allow_unavailable_references=True,
-            ),
+            renderer,
             make_report_evidence_manifest(react_state),
             make_read_file(react_state),
             make_request_report_calculation(react_state),
             Terminate(),
         ]
+        + ([make_append_report_sections(react_state, renderer)] if spec_mode else [])
     )
 
     if model_name:
@@ -730,15 +768,38 @@ def make_generate_report_tool(
             and (react_state.get("_report_template_contract") or {}).get("mode", "spec")
             == "spec"
         ):
+            # Revalidate in code before constructing the recovery prompt. Asking
+            # the model to submit the same empty update can exhaust the repeated
+            # candidate guard without adding any of the missing content.
+            if await render_saved_report(
+                react_state, skills_dir, allow_unavailable_references=True
+            ):
+                return _completed_report_response(react_state)
             message += (
-                "\n这是已保存 spec 的恢复。第一个渲染调用必须使用 "
-                'html_interpreter(retry_saved=true, data={"REPORT_SPEC":{}})，'
-                "先让当前引擎重新校验原始完整 spec，不能重写为部分章节。"
-                "该空根字段更新保留所有已保存章节、建议、样式和绑定。"
-                "只有这个调用返回当前错误后，才按全部错误位置修改 spec。"
+                "\n这是已保存 spec 的恢复，引擎已重新校验原始完整 spec。"
+                "直接按最新错误追加缺失内容，不要用空 REPORT_SPEC 再次提交相同候选。"
+                "保留已有章节、建议、样式和绑定，不能重写为部分章节。"
                 "先前 REPORT_REPAIR_STOPPED "
                 "属于已结束的旧轮预算；本轮以工具返回 retryable "
                 "为准。"
+            )
+            sections = saved["data"]["REPORT_SPEC"].get("sections", [])
+            message += (
+                "\n已保存章节摘要（完整内容仍保存在引擎内，不必读取 checkpoint）："
+                + json.dumps(
+                    [
+                        {
+                            "heading": section.get("heading"),
+                            "recommendations": len(
+                                section.get("recommendations") or []
+                            ),
+                        }
+                        for section in sections
+                    ],
+                    ensure_ascii=False,
+                )
+                + "。校验后仅追加缺失章节。不要读取完整 checkpoint 或重发已有章节；"
+                "建议依据可用 report_evidence_manifest 定向读取少量真实 SQL 结果。"
             )
         requirement = react_state.get("_report_required_recommendation_count")
         if requirement:

@@ -632,6 +632,7 @@ class SkillManager(BaseComponent):
         skill_name: str,
         resource_path: str,
         args: Optional[Dict[str, Any]] = None,
+        execute_scripts: bool = True,
     ) -> str:
         """Get a resource from a skill by path.
 
@@ -639,6 +640,7 @@ class SkillManager(BaseComponent):
         - If path starts with "scripts/" and ends with .py/.sh, execute the script
         - If path is an image file, return error (model doesn't support images)
         - Otherwise, read and return the file content
+        Set execute_scripts=False to inspect script source without executing it.
 
         Args:
             skill_name: The name of the skill.
@@ -714,7 +716,11 @@ class SkillManager(BaseComponent):
             )
 
         # Check if it's a script that needs execution
-        if resource_path.startswith("scripts/") and ext.lower() in {".py", ".sh"}:
+        if (
+            execute_scripts
+            and resource_path.startswith("scripts/")
+            and ext.lower() in {".py", ".sh"}
+        ):
             if self._should_reject_personal_skill_execution(skill_path):
                 return self._personal_skill_execution_denied_result(skill_name)
             return await self._execute_script_from_path(full_path, args or {})
@@ -961,6 +967,7 @@ __name__ = "__main__"
         script_file_name: str,
         args: Optional[Dict[str, Any]] = None,
         output_dir: Optional[str] = None,
+        argv: Optional[List[str]] = None,
     ) -> str:
         import asyncio
         import os
@@ -1011,12 +1018,24 @@ __name__ = "__main__"
         with open(script_path, "r", encoding="utf-8") as f:
             code = f.read()
 
-        adapted_args = self._adapt_args_for_script(code, args)
-        args_repr = repr(adapted_args)
+        # JSON-based skills keep their existing contract. CLI scripts receive
+        # separate arguments, without shell parsing (including paths with spaces).
+        if argv is not None:
+            if (
+                args
+                or not isinstance(argv, list)
+                or not all(isinstance(value, str) for value in argv)
+            ):
+                raise ValueError("Use either args (JSON) or argv (list of strings)")
+            adapted_args = {"argv": argv}
+            script_argv = [script_path, *argv]
+        else:
+            adapted_args = self._adapt_args_for_script(code, args)
+            script_argv = ["script", json.dumps(adapted_args)]
         wrapper_code = f"""import sys
 import json
 
-sys.argv = ["script", json.dumps({args_repr})]
+sys.argv = {script_argv!r}
 __name__ = "__main__"
 
 {code}
@@ -1095,6 +1114,17 @@ __name__ = "__main__"
                 chunks.append(
                     {"output_type": "text", "content": f"Exit code: {exit_code}"}
                 )
+                if argv is None and "usage:" in (output_text + error_text).lower():
+                    chunks.append(
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "This script expects command-line arguments. "
+                                "Retry execute_skill_script_file with argv as a "
+                                "list of separate arguments instead of args."
+                            ),
+                        }
+                    )
             if not chunks:
                 chunks.append(
                     {
