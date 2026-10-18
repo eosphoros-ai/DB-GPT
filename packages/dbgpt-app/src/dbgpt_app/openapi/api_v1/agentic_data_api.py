@@ -2894,10 +2894,8 @@ print(json.dumps(summary, ensure_ascii=False))
             restore_report_checkpoint,
         )
 
-        react_state["_report_invalid_call_handler"] = (
-            lambda raw_call, reason: record_report_invocation_failure(
-                react_state, raw_call, reason
-            )
+        react_state["_report_invalid_call_handler"] = lambda raw_call, reason: (
+            record_report_invocation_failure(react_state, raw_call, reason)
         )
 
         if is_report_resume_request(user_input):
