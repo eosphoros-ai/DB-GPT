@@ -11,21 +11,8 @@ import { AVAILABLE_CATALOG, catalogProof, type CatalogTemplate } from './dashboa
 import DashboardDesignTemplate from './DashboardDesignTemplate';
 import styles from './DashboardGallery.module.css';
 import DashboardTemplateCarousel from './DashboardTemplateCarousel';
-import DashboardTemplateLayoutPreview from './DashboardTemplateLayoutPreview';
 import DashboardTemplateSetup from './DashboardTemplateSetup';
 import { useTemplateFavorites } from './use-template-favorites';
-
-// Group the navigation without changing the more specific labels on each card.
-const categoryGroups: Record<string, string[]> = {
-  经营销售: ['营销', '销售', '经营', '客户', '电商'],
-  财务分析: ['财务'],
-  行业运营: ['运营', '供应链', '能源', '制造'],
-  科技服务: ['科技', 'IT 服务'],
-  研究教育: ['研究分析', '教育'],
-  数据大屏: ['大屏'],
-};
-const groupCategory = (category: string) =>
-  Object.keys(categoryGroups).find(group => categoryGroups[group].includes(category)) || category;
 
 const showcaseOrder = [
   'clinical-insight',
@@ -92,19 +79,14 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         : [],
     [sources],
   );
-  const availableCategories = new Set(available.map(item => groupCategory(item.category)));
-  const categories = [
-    '全部',
-    ...Object.keys(categoryGroups).filter(group => availableCategories.has(group)),
-    ...[...availableCategories].filter(group => !categoryGroups[group]),
-    '风格技能',
-  ];
+  const categories =
+    collection === 'design' ? ['全部', '设计'] : ['全部', ...new Set(available.map(item => item.category)), '设计'];
   const filtered = available.filter(
     item =>
-      (category === '全部' || groupCategory(item.category) === category) &&
+      (category === '全部' || item.category === category) &&
       collection !== 'design' &&
       (collection !== 'favorites' || favorites.includes(item.id)) &&
-      `${item.title} ${item.description} ${item.category}`.includes(search.trim()),
+      `${item.title} ${item.description}`.includes(search.trim()),
   );
   const featuredIds = [
     'brand-revenue',
@@ -119,7 +101,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
     ? []
     : Object.entries(ADAPTED_SKILLS).filter(
         ([name, design]) =>
-          (category === '全部' || category === '风格技能') &&
+          (category === '全部' || category === '设计') &&
           (collection !== 'favorites' || favorites.includes(`design:${name}`)) &&
           `${design.title} ${design.description}`.includes(search.trim()),
       );
@@ -131,9 +113,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
     return (
       <article key={item.id} className={styles.card} data-catalog-template={item.id}>
         <button type='button' className={styles.cover} aria-label={`预览模板 ${item.title}`} onClick={() => open(item)}>
-          {proof?.previewKind === 'layout' ? (
-            <DashboardTemplateLayoutPreview template={item} />
-          ) : proof?.preview ? (
+          {proof?.preview ? (
             <Image src={proof.preview} alt={`${item.title}实际生成预览`} width={640} height={400} />
           ) : (
             <div className={styles.assetCover}>
@@ -226,21 +206,13 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
       )}
       {!featured && (
         <div className={styles.tools}>
-          {collection !== 'design' && (
-            <nav className={styles.categories} aria-label='模板业务分类'>
-              {categories.map(item => (
-                <button
-                  key={item}
-                  type='button'
-                  title={categoryGroups[item]?.join('、')}
-                  aria-pressed={category === item}
-                  onClick={() => setCategory(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </nav>
-          )}
+          <div className={styles.categories} aria-label='模板业务分类'>
+            {categories.map(item => (
+              <button key={item} type='button' aria-pressed={category === item} onClick={() => setCategory(item)}>
+                {item}
+              </button>
+            ))}
+          </div>
           <Input
             className={styles.search}
             prefix={<SearchOutlined />}

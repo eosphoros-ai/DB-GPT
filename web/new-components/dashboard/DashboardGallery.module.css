@@ -4,6 +4,7 @@
   overflow-y: auto;
   background: var(--app-background);
   color: var(--app-text);
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   padding: 32px clamp(18px, 3vw, 48px);
 }
 .container {
@@ -137,7 +138,6 @@
   border-radius: 7px;
   color: var(--app-muted);
   font-size: 13px;
-  white-space: nowrap;
 }
 .categories button[aria-pressed='true'] {
   background: var(--app-accent-soft);
