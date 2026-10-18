@@ -134,22 +134,6 @@ MySQL 沿用历史版本目录下的全量、增量 SQL 约定：
 - 妥善保存分享加密密钥。自动原子创建密钥依赖硬链接；文件系统不支持时明确报错，也可由部署环境提供 `DBGPT_SHARE_ENCRYPTION_KEY`。
 - 文件分析沿用配置的 `SANDBOX_RUNTIME`，Dashboard 不会单独切换到 Lyric。驱动取消行为和持续负载表现需在实际部署中验证。
 
-<a id="capability-boundaries"></a>
-
-## 能力边界
-
-| 范围 | 当前边界 |
-| --- | --- |
-| SQL 方言 | 使用 SQLGlot 26.13.2 时，Vertica、MaxCompute、GaussDB、openGauss、OceanBase 在执行前返回 `unsupported_data_source`，不回退到通用方言。解析器支持不等于连接器已在目标数据库验证。 |
-| DuckDB | 只允许查询已注册表，不允许通过文件路径或表函数读取任意外部文件。 |
-| 未保存输入 | 刷新新建页会丢失仅保存在页面内存的输入与选项；已保存资产可从看板列表打开。 |
-| AI 语义 | 结构合法的结果仍可能采用错误的业务口径，需要核对指标、粒度、单位和源数据。固定题目或预置路径不能证明通用生成成功率。 |
-| 布局预设 | 仓库内的版本功能合同关闭了 `layout_templates`。它不是部署环境变量开关，与数据模板库是不同能力。 |
-| 风格卡片 | 图库保留风格示意，但已撤回的风格 skill 和首页参数接入尚未接通。卡片用于展示参考，不代表完整创建链路；创建请使用数据模板配置或专用新建页。 |
-| 筛选与刷新 | 固定发布只能筛选已物化维度；持续分享需要有权限的数据源，按周期刷新，不保证实时性。 |
-| 本地偏好 | 模板收藏保存在浏览器，不提供账户跨设备同步。 |
-| 演示数据 | 合成零售数据与历史 Walmart 数据是不同来源。合成总额不代表真实业务，来源文件一致也不等于获得再分发授权。 |
-
 <a id="validation"></a>
 
 ## 开发与验证
@@ -190,3 +174,19 @@ redis_integration: requires DASHBOARD_TEST_REDIS_URL and a disposable Redis data
 - [Agent 工具](https://github.com/eosphoros-ai/DB-GPT/blob/main/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/dashboard.py)与[前端组件](https://github.com/eosphoros-ai/DB-GPT/tree/main/web/new-components/dashboard)。
 - [可复现示例数据与 Schema](https://github.com/eosphoros-ai/DB-GPT/tree/main/examples/dashboard)及[浏览器固定输入](https://github.com/eosphoros-ai/DB-GPT/blob/main/web/tests/dashboard-e2e/fixtures/README.md)。
 - 中文业务操作案例：[Walmart](https://github.com/eosphoros-ai/DB-GPT/blob/main/docs/dashboard/demos/walmart.md)、[Apple](https://github.com/eosphoros-ai/DB-GPT/blob/main/docs/dashboard/demos/apple.md)。案例分别记录数据来源、操作步骤和历史检查，与本文的设计说明分开。
+
+<a id="capability-boundaries"></a>
+
+## 能力边界
+
+| 范围 | 当前边界 |
+| --- | --- |
+| SQL 方言 | 使用 SQLGlot 26.13.2 时，Vertica、MaxCompute、GaussDB、openGauss、OceanBase 在执行前返回 `unsupported_data_source`，不回退到通用方言。解析器支持不等于连接器已在目标数据库验证。 |
+| DuckDB | 只允许查询已注册表，不允许通过文件路径或表函数读取任意外部文件。 |
+| 未保存输入 | 刷新新建页会丢失仅保存在页面内存的输入与选项；已保存资产可从看板列表打开。 |
+| AI 语义 | 结构合法的结果仍可能采用错误的业务口径，需要核对指标、粒度、单位和源数据。固定题目或预置路径不能证明通用生成成功率。 |
+| 布局预设 | 仓库内的版本功能合同关闭了 `layout_templates`。它不是部署环境变量开关，与数据模板库是不同能力。 |
+| 风格卡片 | 图库保留风格示意，但已撤回的风格 skill 和首页参数接入尚未接通。卡片用于展示参考，不代表完整创建链路；创建请使用数据模板配置或专用新建页。 |
+| 筛选与刷新 | 固定发布只能筛选已物化维度；持续分享需要有权限的数据源，按周期刷新，不保证实时性。 |
+| 本地偏好 | 模板收藏保存在浏览器，不提供账户跨设备同步。 |
+| 演示数据 | 合成零售数据与历史 Walmart 数据是不同来源。合成总额不代表真实业务，来源文件一致也不等于获得再分发授权。 |
