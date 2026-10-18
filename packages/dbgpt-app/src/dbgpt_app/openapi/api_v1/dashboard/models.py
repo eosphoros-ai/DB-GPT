@@ -16,6 +16,7 @@ from sqlalchemy import (
     or_,
 )
 from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.orm.attributes import flag_modified
 
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -655,6 +656,8 @@ class DashboardDao(BaseDao):
             row.schema_json = schema_json
             row.current_revision += 1
             row.status = "draft"
+            # SQLite may publish after our read; include status even if it was draft.
+            flag_modified(row, "status")
             if promote_to_asset:
                 row.asset_state = "saved"
                 row.saved_at = row.saved_at or datetime.now()
@@ -737,6 +740,8 @@ class DashboardDao(BaseDao):
             dashboard.data_source_id = data_source_id
             dashboard.current_revision = applied_revision
             dashboard.status = "draft"
+            # SQLite may publish after our read; include status even if it was draft.
+            flag_modified(dashboard, "status")
             if promote_to_asset:
                 dashboard.asset_state = "saved"
                 dashboard.saved_at = dashboard.saved_at or datetime.now()

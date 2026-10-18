@@ -1,8 +1,11 @@
 import asyncio
 import json
+import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from fastapi import WebSocketDisconnect
+from sqlalchemy.orm import Query
 
 from dbgpt.storage.metadata import DatabaseManager, Model
 from dbgpt_app.openapi.api_v1.dashboard.access import DashboardAuthorizationService
@@ -21,6 +24,7 @@ from dbgpt_app.openapi.api_v1.dashboard.models import (
     DashboardAuditDao,
     DashboardConflictError,
     DashboardDao,
+    DashboardEntity,
 )
 from dbgpt_app.openapi.api_v1.dashboard.planner import DashboardPlannerService
 from dbgpt_app.openapi.api_v1.dashboard.schemas import (
@@ -33,12 +37,17 @@ from dbgpt_app.openapi.api_v1.dashboard.schemas import (
     DashboardQueryDraftRequest,
     DashboardRole,
     DashboardSchemaV1,
+    DashboardStatus,
 )
 from dbgpt_app.openapi.api_v1.dashboard.service import (
     DashboardSchemaValidationError,
     DashboardService,
 )
+from dbgpt_app.openapi.api_v1.dashboard.share_vault import (
+    DashboardShareSecretEntity,  # noqa: F401
+)
 from dbgpt_app.openapi.api_v1.tools.dashboard import make_dashboard_planner_tools
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 
 def _schema():
@@ -165,6 +174,111 @@ def test_operation_is_atomic_persisted_and_idempotent(collaboration_service):
         )
         == 2
     )
+
+
+@pytest.mark.parametrize("edit_path", ["save", "collaboration"])
+def test_sqlite_edit_keeps_draft_when_publication_commits_after_its_read(
+    tmp_path, monkeypatch, edit_path
+):
+    manager = DatabaseManager()
+    manager.init_db(f"sqlite:///{tmp_path / 'metadata.db'}", base=Model)
+    Model.metadata.create_all(manager.engine)
+    data_path = tmp_path / "sales.db"
+    with sqlite3.connect(data_path) as connection:
+        connection.execute("CREATE TABLE sales (amount INTEGER)")
+        connection.executemany("INSERT INTO sales VALUES (?)", [(10,), (20,)])
+    connector = SQLiteConnector.from_file_path(str(data_path))
+    dao = DashboardDao(manager)
+    service = DashboardService(
+        dao=dao,
+        connector_resolver=lambda _source_id: connector,
+        authorization_service=DashboardAuthorizationService(
+            dashboard_dao=dao,
+            access_dao=DashboardAccessDao(manager),
+            audit_dao=DashboardAuditDao(manager),
+        ),
+    )
+    collaboration = DashboardCollaborationService(service)
+    schema = _schema()
+    schema.widgets[0].query.sql = "SELECT SUM(amount) AS value FROM sales"
+    changed_sql = "SELECT SUM(amount) * 2 AS value FROM sales"
+    first = Query.first
+    published = False
+
+    def first_then_publish(query):
+        nonlocal published
+        row = first(query)
+        # Interleave at the DAO's edit read, after service authorization reads.
+        if (
+            isinstance(row, DashboardEntity)
+            and query._for_update_arg is not None
+            and not published
+        ):
+            published = True
+            assert (row.current_revision, row.status) == (1, "draft")
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                executor.submit(
+                    service.publish_dashboard,
+                    "collab-dashboard",
+                    1,
+                    {},
+                    "alice",
+                    allow_static_widgets=True,
+                ).result(timeout=10)
+            assert dao.get_dashboard("collab-dashboard", "alice").status == "published"
+            # The edit resumes with the original ORM instance still in memory.
+            assert row.status == "draft"
+        return row
+
+    try:
+        service.create_dashboard(DashboardCreateRequest(schema=schema), "alice")
+        assert schema.dashboard.refresh_policy.refresh_on_open is False
+        monkeypatch.setattr(Query, "first", first_then_publish)
+        if edit_path == "save":
+            schema.widgets[0].query.sql = changed_sql
+            updated = service.update_dashboard("collab-dashboard", schema, 1, "alice")
+        else:
+            request = _request(path="/widgets/0/query/sql", value=changed_sql)
+            response = collaboration.apply_operation(
+                "collab-dashboard", request, "alice"
+            )
+            updated = response.dashboard
+            assert response.operation.applied_revision == 2
+            assert response.replayed is False
+
+        assert published
+        assert (updated.current_revision, updated.status) == (2, DashboardStatus.DRAFT)
+        stored = dao.get_dashboard("collab-dashboard", "alice")
+        assert (stored.current_revision, stored.status) == (2, "draft")
+        reopened = service.get_dashboard("collab-dashboard", "alice")
+        assert (reopened.current_revision, reopened.status) == (
+            2,
+            DashboardStatus.DRAFT,
+        )
+        assert reopened.schema_payload.dashboard.status == DashboardStatus.DRAFT
+        assert reopened.schema_payload.widgets[0].query.sql == changed_sql
+        assert service.refresh_dashboard("collab-dashboard", {}, "alice").widgets[
+            "value"
+        ].rows == [[60]]
+        assert service.get_latest_published_snapshot(
+            "collab-dashboard", "alice"
+        ).widgets["value"].rows == [[30]]
+        assert len(dao.list_published_revisions("collab-dashboard")) == 1
+        assert [row.revision for row in dao.list_edit_versions("collab-dashboard")] == [
+            2,
+            1,
+        ]
+        if edit_path == "collaboration":
+            replay = collaboration.apply_operation("collab-dashboard", request, "alice")
+            assert replay.replayed is True
+            assert (replay.dashboard.current_revision, replay.dashboard.status) == (
+                2,
+                DashboardStatus.DRAFT,
+            )
+            assert len(collaboration.list_operations("collab-dashboard", "alice")) == 1
+    finally:
+        connector.close()
+        manager.engine.dispose()
 
 
 def test_generated_draft_refresh_save_does_not_promote_until_explicit_save():
