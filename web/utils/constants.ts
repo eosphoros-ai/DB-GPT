@@ -72,7 +72,7 @@ export const MODEL_ICON_INFO: Record<string, ModelIconInfo> = {
   },
   chatglm: {
     label: 'ChatGLM',
-    icon: '/models/chatglm.png',
+    icon: '/models/glm4.png',
     patterns: ['chatglm', 'glm'],
   },
   llama: {
@@ -132,7 +132,7 @@ export const MODEL_ICON_INFO: Record<string, ModelIconInfo> = {
   },
   zhipu: {
     label: 'Zhipu',
-    icon: '/models/zhipu.png',
+    icon: '/models/glm4.png',
     patterns: ['zhipu'],
   },
   falcon: {

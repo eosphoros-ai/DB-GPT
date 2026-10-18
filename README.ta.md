@@ -164,11 +164,10 @@ DB-GPT இன் கட்டமைப்பு பின்வரும் ப�
 [**Usage Tutorial**](http://docs.dbgpt.cn/docs/overview)
 - [**Install**](http://docs.dbgpt.cn/docs/installation)
   - [Docker](http://docs.dbgpt.cn/docs/installation/docker)
-  - [Source Code](http://docs.dbgpt.cn/docs/installation/sourcecode)
-- [**Quickstart**](http://docs.dbgpt.cn/docs/quickstart)
-- [**Application**](http://docs.dbgpt.cn/docs/operation_manual)
+  - [Source Code](http://docs.dbgpt.cn/docs/getting-started/deploy/source-code)
+- [**Quickstart**](http://docs.dbgpt.cn/docs/overview)
+- [**Application**](http://docs.dbgpt.cn/docs/use_cases)
   - [Development Guide](http://docs.dbgpt.cn/docs/cookbook/app/data_analysis_app_develop) 
-  - [App Usage](http://docs.dbgpt.cn/docs/application/app_usage)
   - [AWEL Flow Usage](http://docs.dbgpt.cn/docs/application/awel_flow_usage)
 - [**Debugging**](http://docs.dbgpt.cn/docs/operation_manual/advanced_tutorial/debugging)
 - [**Advanced Usage**](http://docs.dbgpt.cn/docs/application/advanced_tutorial/cli)
@@ -308,7 +307,7 @@ LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu மற்றும் ப
       </tbody>
     </table>
 
-- [மேலும் ஆதரிக்கப்படும் LLMகள்](http://docs.dbgpt.site/docs/modules/smmf)
+- [மேலும் ஆதரிக்கப்படும் LLMகள்](http://docs.dbgpt.cn/docs/modules/smmf)
 
 - **தனியுரிமை மற்றும் பாதுகாப்பு**
 

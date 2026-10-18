@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import sys
 import traceback
 from typing import Any, Callable, Dict, Optional, Union
 
@@ -122,7 +123,21 @@ class AIWrapper:
         return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
     async def create(self, verbose: bool = False, **config):
-        """Create llm client request."""
+        """Create llm client request and return the generated text."""
+        response = await self._create_raw(verbose, config)
+        return response.gen_text_with_thinking() if response else None
+
+    async def create_with_output(self, verbose: bool = False, **config):
+        """Like :meth:`create` but return the raw :class:`ModelOutput`.
+
+        Native function calling needs the ``tool_calls`` attached to the model
+        output, which :meth:`create` collapses into plain text. Call this in
+        native mode to retain ``tool_calls``.
+        """
+        return await self._create_raw(verbose, config)
+
+    async def _create_raw(self, verbose: bool, config: Dict) -> Optional["ModelOutput"]:
+        """Run the LLM request and return the raw ModelOutput (or None)."""
         # merge the input config with the i-th config in the config list
         full_config = {**config}
         # separate the config into create_config and extra_kwargs
@@ -156,7 +171,8 @@ class AIWrapper:
             raise e
         else:
             pass_filter = filter_func is None or filter_func(
-                context=context, response=response
+                context=context,
+                response=response.gen_text_with_thinking() if response else None,
             )
             if pass_filter:
                 # Return the response if it passes the filter
@@ -241,6 +257,10 @@ class AIWrapper:
             "max_new_tokens": int(params.get("max_new_tokens")),
             "echo": self.llm_echo,
         }
+        if params.get("tools") is not None:
+            payload["tools"] = params["tools"]
+        if params.get("tool_choice") is not None:
+            payload["tool_choice"] = params["tool_choice"]
         logger.info(f"Request: \n{payload}")
         span = root_tracer.start_span(
             "Agent.llm_client.no_streaming_call",
@@ -320,11 +340,39 @@ class AIWrapper:
                 print(f"String Prompt[verbose]: \n{str_prompt}")
                 print(f"LLM Output[verbose]: \n{parsed_output}")
                 print("-" * 80, "\n", flush=True, sep="")
-            return parsed_output
+            return model_output
         except Exception as e:
             logger.error(
                 f"Call LLMClient error, {str(e)}, detail: {traceback.format_exc()}"
             )
             raise LLMChatError(original_exception=e) from e
         finally:
-            span.end()
+            # Capture token/cost/latency from the model output into the
+            # observability span so the Overview dashboard shows real data.
+            #
+            # IMPORTANT: start from the span's existing metadata (which carries
+            # `messages` — the system prompt + user input sent to the model) and
+            # merge, NOT replace. `Span.end(metadata=...)` REPLACES the whole
+            # dict, so a bare `{"status": ...}` would drop the prompt/messages.
+            end_meta: Dict[str, Any] = dict(span.metadata)
+            end_meta["status"] = "OK"
+            if model_output is not None:
+                usage = model_output.usage or {}
+                end_meta["model_name"] = llm_model
+                end_meta["prompt_tokens"] = usage.get("prompt_tokens")
+                end_meta["completion_tokens"] = usage.get("completion_tokens")
+                end_meta["total_tokens"] = usage.get("total_tokens")
+                cost = usage.get("cost")
+                if cost is not None:
+                    end_meta["cost"] = cost
+                metrics = model_output.metrics
+                if metrics is not None:
+                    end_meta.setdefault("prompt_tokens", metrics.prompt_tokens)
+                    end_meta.setdefault("completion_tokens", metrics.completion_tokens)
+                    end_meta.setdefault("total_tokens", metrics.total_tokens)
+            # If an exception is in flight, record error status and re-raise path
+            # handles it; here we just mark the span.
+            if sys.exc_info()[1] is not None:
+                end_meta["status"] = "ERROR"
+                end_meta["error"] = str(sys.exc_info()[1])
+            span.end(metadata=end_meta)

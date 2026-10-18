@@ -39,6 +39,8 @@ export interface SSEStepMetaEvent {
   thought?: string;
   action?: string;
   action_input?: any;
+  action_intention?: string;
+  action_reason?: string;
 }
 
 export interface SSEStepDoneEvent {
@@ -52,6 +54,12 @@ export interface SSEFinalEvent {
   content: string;
   protocol_version?: number;
   citations?: unknown[];
+}
+
+export interface SSETaskPreviewEvent {
+  type: 'task.preview';
+  content: string;
+  round?: number;
 }
 
 export interface SSEDoneEvent {
@@ -111,6 +119,7 @@ export type SSEEvent =
   | SSEQuestionRepliedEvent
   | SSEQuestionRejectedEvent
   | SSEFinalEvent
+  | SSETaskPreviewEvent
   | SSEDoneEvent;
 
 // Internal state for tracking context budget
@@ -130,6 +139,8 @@ interface StepState {
   thought?: string;
   action?: string;
   actionInput?: any;
+  actionIntention?: string;
+  actionReason?: string;
   output: string[];
   error?: string;
 }
@@ -147,6 +158,7 @@ export class ReActSSEState {
   private endTime?: number;
   private _contextStatus: ContextStatus | null = null;
   private _pendingQuestion: SSEQuestionAskedEvent | null = null;
+  private _taskPreview: string | null = null;
 
   constructor() {
     this.startTime = Date.now();
@@ -181,6 +193,11 @@ export class ReActSSEState {
         break;
       case 'final':
         this.handleFinal(event);
+        break;
+      case 'task.preview':
+        if (!this._taskPreview) {
+          this._taskPreview = event.content;
+        }
         break;
       case 'done':
         this.handleDone();
@@ -239,6 +256,8 @@ export class ReActSSEState {
     if (event.action_input !== undefined) {
       step.actionInput = event.action_input;
     }
+    if (event.action_intention) step.actionIntention = event.action_intention;
+    if (event.action_reason) step.actionReason = event.action_reason;
   }
 
   private handleStepDone(event: SSEStepDoneEvent): void {
@@ -398,7 +417,14 @@ export class ReActSSEState {
             : undefined,
           output: step.output.length > 0 ? step.output.join('\n') : undefined,
           error: step.error,
-          metadata: step.action ? { action: step.action } : undefined,
+          metadata:
+            step.action || step.actionIntention
+              ? {
+                  action: step.action,
+                  intention: step.actionIntention,
+                  reason: step.actionReason,
+                }
+              : undefined,
         },
       };
       parts.push(toolPart);
@@ -425,6 +451,13 @@ export class ReActSSEState {
   /** Get structured citations attached to the final answer. */
   getCitations(): AgentCitation[] {
     return [...this.finalAnswer.citations];
+  }
+
+  /**
+   * Get the one-time task preview ("Plan: ...") if the model emitted one.
+   */
+  getTaskPreview(): string | null {
+    return this._taskPreview;
   }
 
   /**

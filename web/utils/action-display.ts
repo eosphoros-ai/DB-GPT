@@ -10,16 +10,22 @@ const normalizeDisplayField = (value: unknown): string | undefined => {
   return normalized || undefined;
 };
 
-export const buildActionDisplayText = ({ actionIntention, actionReason }: ActionDisplayFields): string | undefined => {
+export const buildActionDisplayText = ({
+  actionIntention,
+  actionReason,
+  thought,
+}: ActionDisplayFields): string | undefined => {
   const intention = normalizeDisplayField(actionIntention);
   const reason = normalizeDisplayField(actionReason);
-
-  if (intention) {
-    return reason ? `${intention}\n${reason}` : intention;
+  // derisk-style: `thought` now carries a user-facing narration ("thoughts to
+  // the user") which is short and safe to surface. Use it as the primary line,
+  // fall back to intention when absent, and append reason only when it adds
+  // information beyond the primary.
+  const thoughtText = normalizeDisplayField(thought);
+  const primary = thoughtText || intention;
+  const parts: string[] = primary ? [primary] : [];
+  if (reason && reason !== primary) {
+    parts.push(reason);
   }
-
-  // Raw Thought is internal model reasoning and must never be used as
-  // user-facing timeline copy. Action Reason is already constrained by the
-  // ReAct prompt to be concise and is the safe fallback when intention is absent.
-  return reason;
+  return parts.length > 0 ? parts.join('\n') : undefined;
 };

@@ -41,6 +41,10 @@ class KnowledgeSpaceDao(BaseDao):
         index_methods_json = None
         if space.index_methods:
             index_methods_json = json.dumps(space.index_methods)
+        # Serialize the space context (embedding params, wiki_config, ...)
+        context_json = None
+        if space.context:
+            context_json = json.dumps(space.context, ensure_ascii=False)
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=space.vector_type,
@@ -48,6 +52,7 @@ class KnowledgeSpaceDao(BaseDao):
             domain_type=space.domain_type,
             desc=space.desc,
             owner=space.owner,
+            context=context_json,
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
         )

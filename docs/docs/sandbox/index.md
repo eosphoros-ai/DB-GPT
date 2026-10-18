@@ -85,19 +85,23 @@ options.
 
 ### Runtime backends
 
-The runtime factory automatically chooses the best available backend in this order:
+The current application-side Agent integration uses LocalRuntime by default.
+Container execution is opt-in through SANDBOX_RUNTIME=docker (or an explicit
+Podman/Nerdctl selection). If a configured container backend cannot be initialized,
+or its session cannot be created, the Agent executor returns an error without
+running user code locally. LocalRuntime is a default, not a failure fallback,
+and does not provide container isolation.
 
-- Docker
-- Podman
-- Nerdctl
-- Local runtime
+See [Sandbox Runtime Configuration](./runtime) for setup, image requirements,
+execution lifecycle, and verification commands.
 
 Implementation anchor:
 
 - `packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/runtime_factory.py`
 
-This allows DB-GPT to prefer container isolation when available and fall back to a
-local execution mode for development or environments without container support.
+Docker is not selected merely because Docker is installed. This keeps the default
+installation usable without a pre-built Agent image while allowing deployments to
+opt into container execution explicitly.
 
 ## Layered architecture in `dbgpt-sandbox`
 

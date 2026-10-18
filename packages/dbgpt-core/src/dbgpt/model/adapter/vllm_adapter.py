@@ -462,7 +462,7 @@ class VLLMModelAdapterWrapper(LLMModelAdapter):
         convert_to_compatible_format: bool = False,
     ) -> Optional[str]:
         if not tokenizer:
-            raise ValueError("tokenizer is is None")
+            raise ValueError("tokenizer is None")
         if hasattr(tokenizer, "apply_chat_template"):
             messages = self.transform_model_messages(
                 messages, convert_to_compatible_format

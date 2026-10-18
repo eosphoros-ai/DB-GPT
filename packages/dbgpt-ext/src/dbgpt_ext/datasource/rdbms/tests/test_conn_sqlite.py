@@ -139,3 +139,14 @@ def test_db_dir_exist_dir():
         db = SQLiteConnector.from_file_path(file_path)
         assert os.path.exists(existing_dir) is True
         assert list(db.get_table_names()) == []
+
+
+def test_db_file_path_without_directory(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    db = SQLiteConnector.from_file_path("relative.db")
+    try:
+        assert (tmp_path / "relative.db").is_file()
+        assert list(db.get_table_names()) == []
+    finally:
+        db.close()

@@ -229,7 +229,8 @@ interface ToolPartDisplayProps {
 const ToolPartDisplay: React.FC<ToolPartDisplayProps> = ({ part, defaultOpen = false }) => {
   const iconName = getToolIconName(part.tool);
   const title = getToolTitle(part.tool);
-  const subtitle = getToolSubtitle(part.tool, part.state.input);
+  const intention = (part.state.metadata as any)?.intention;
+  const subtitle = intention || getToolSubtitle(part.tool, part.state.input);
   const isRunning = part.state.status === 'running';
   const hasError = part.state.status === 'error';
   const hasOutput = !!part.state.output;

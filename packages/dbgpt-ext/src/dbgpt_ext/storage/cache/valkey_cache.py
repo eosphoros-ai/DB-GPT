@@ -56,7 +56,7 @@ class ValkeyCacheStorage(CacheStorage):
             import glide  # noqa: F401
         except ImportError:
             raise ImportError(
-                "Please install valkey-glide: pip install 'valkey-glide>=2.3.0'"
+                "Please install valkey-glide: pip install 'valkey-glide>=2.5.2'"
             )
 
         self._host = host or os.getenv("VALKEY_HOST", "localhost")
@@ -89,6 +89,7 @@ class ValkeyCacheStorage(CacheStorage):
         kwargs = {
             "addresses": [node],
             "use_tls": self._use_ssl,
+            "client_info_tag": "db-gpt",
         }
         if self._request_timeout is not None:
             kwargs["request_timeout"] = self._request_timeout

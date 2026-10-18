@@ -29,6 +29,7 @@ from .models import (
     ReasoningResponse,
     RoundAnswerConfirmModel,
 )
+from .sql_guard import validate_read_only_sql
 
 logger = logging.getLogger(__name__)
 
@@ -329,6 +330,10 @@ class UserInputExecuteService:
                 f"question:{input.question}"
             )
             try:
+                # `sql` is extracted from an LLM/agent HTTP response, which
+                # in AGENT mode is fully attacker-controlled — only
+                # single read-only statements may reach the query sink.
+                validate_read_only_sql(sql)
                 result: List[Dict] = await get_benchmark_manager().query(
                     sql, timeout=self.query_timeout
                 )

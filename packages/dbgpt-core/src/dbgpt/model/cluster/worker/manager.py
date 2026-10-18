@@ -1396,7 +1396,7 @@ def _parse_config(config_file: str):
                 )
             return config_dict[0]
         else:
-            config_dict
+            return config_dict
 
     scan_model_providers()
 

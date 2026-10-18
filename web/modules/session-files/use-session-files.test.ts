@@ -464,6 +464,83 @@ test('clearTurn empties the draft list and aborts in-flight uploads', async () =
   assert.deepEqual([...snapshot.fileIds], []);
 });
 
+test('resetSession aborts in-flight uploads and detaches the session scope', async () => {
+  const { api, result } = setup();
+
+  await result.current.addFiles([makeFile('a.csv')], 'sess-1');
+  result.current.resetSession();
+
+  assert.equal(result.current.files.length, 0);
+  assert.equal(result.current.sessionId, null);
+  assert.equal(api.uploads[0].signal?.aborted, true);
+
+  api.uploads[0].gate.reject(new Error('aborted'));
+  await flush();
+  assert.equal(result.current.files.length, 0);
+  assert.equal(result.current.sessionId, null);
+});
+
+test('a late rehydrate cannot restore files after resetSession', async () => {
+  const listGate = deferred<SessionFileSnapshot[]>();
+  const { result } = setup(
+    makeFakeApi({
+      listFiles: () => listGate.promise,
+    }),
+  );
+
+  const rehydrate = result.current.rehydrateFromServer('sess-old');
+  result.current.resetSession();
+  listGate.resolve([snapOf('sf_old', 'old.csv', 1)]);
+  await rehydrate;
+  await flush();
+
+  assert.equal(result.current.sessionId, null);
+  assert.equal(result.current.files.length, 0);
+});
+
+test('overlapping rehydrates are latest-wins across conversation switches', async () => {
+  const firstList = deferred<SessionFileSnapshot[]>();
+  const secondList = deferred<SessionFileSnapshot[]>();
+  const { result } = setup(
+    makeFakeApi({
+      listFiles: sessionId => (sessionId === 'sess-first' ? firstList.promise : secondList.promise),
+    }),
+  );
+
+  const first = result.current.rehydrateFromServer('sess-first');
+  const second = result.current.rehydrateFromServer('sess-second');
+  secondList.resolve([snapOf('sf_second', 'second.csv', 1)]);
+  await second;
+  firstList.resolve([snapOf('sf_first', 'first.csv', 1)]);
+  await first;
+  await flush();
+
+  assert.equal(result.current.sessionId, 'sess-second');
+  assert.deepEqual(
+    result.current.files.map(file => file.snapshot?.file_id),
+    ['sf_second'],
+  );
+});
+
+test('resetSession prevents a pending addFiles call from launching an old-session upload', async () => {
+  const capabilitiesGate = deferred<{ capabilities: UploadCapabilities; source: 'server' }>();
+  const { api, result } = setup(
+    makeFakeApi({
+      fetchCapabilities: () => capabilitiesGate.promise,
+    }),
+  );
+
+  const add = result.current.addFiles([makeFile('old.csv')], 'sess-old');
+  result.current.resetSession();
+  capabilitiesGate.resolve({ capabilities: CAPS, source: 'server' });
+  await add;
+  await flush();
+
+  assert.equal(api.uploads.length, 0);
+  assert.equal(result.current.sessionId, null);
+  assert.equal(result.current.files.length, 0);
+});
+
 // ---------------------------------------------------------------------------
 // Legacy example-file staging (Task12 gap)
 // ---------------------------------------------------------------------------

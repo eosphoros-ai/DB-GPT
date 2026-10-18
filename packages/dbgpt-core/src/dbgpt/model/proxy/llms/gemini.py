@@ -61,7 +61,7 @@ class GeminiDeployModelParameters(OpenAICompatibleDeployModelParameters):
     provider: str = "proxy/gemini"
 
     api_base: Optional[str] = field(
-        default="${env:GEMINI_PROXY_API_BASE}",
+        default="${env:GEMINI_PROXY_API_BASE:-https://generativelanguage.googleapis.com}",
         metadata={
             "help": _("The base url of the gemini API."),
         },
@@ -148,7 +148,12 @@ class GeminiLLMClient(ProxyLLMClient):
         if not model:
             model = GEMINI_DEFAULT_MODEL
         api_key = api_key if api_key else os.getenv("GEMINI_PROXY_API_KEY")
-        api_base = api_base if api_base else os.getenv("GEMINI_PROXY_API_BASE")
+        api_base = (
+            api_base
+            if api_base
+            else os.getenv("GEMINI_PROXY_API_BASE")
+            or "https://generativelanguage.googleapis.com"
+        )
         self._api_key = self._resolve_env_vars(api_key)
         self._api_base = self._resolve_env_vars(api_base)
         self._model = model

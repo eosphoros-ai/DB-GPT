@@ -3,17 +3,43 @@ import {
   addSpace,
   apiInterceptors,
   getChunkStrategies,
+  getModelList,
+  getSpaceList,
   syncBatchDocument,
   syncGitRepo,
   uploadDocument,
 } from '@/client/api';
+import { BindingWizard } from '@/components/knowledge/source/binding-wizard';
 import { IChunkStrategyResponse, IStorage, StepChangeParams } from '@/types/knowledge';
+import { IModelData } from '@/types/model';
 import { FileTextOutlined, LinkOutlined, ReadOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Collapse, Divider, Form, Input, Select, Spin, Switch, Upload, message } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  Checkbox,
+  Collapse,
+  Divider,
+  Form,
+  Input,
+  InputNumber,
+  Radio,
+  Select,
+  Spin,
+  Switch,
+  Upload,
+  message,
+} from 'antd';
+import { useRouter } from 'next/router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type DataSourceType = 'DOCUMENT' | 'GIT_REPO' | 'URL' | 'TEXT' | 'YUQUEURL' | 'NOTION';
+/** Creation-wizard source type → connector type for the binding wizard */
+const SOURCE_TO_CONNECTOR: Record<string, string> = {
+  FEISHU_WIKI: 'feishu_wiki',
+  YUQUE: 'yuque',
+  RSS: 'rss',
+};
+
+type DataSourceType = 'DOCUMENT' | 'GIT_REPO' | 'URL' | 'TEXT' | 'YUQUE' | 'RSS' | 'NOTION' | 'FEISHU_WIKI';
 
 type FieldType = {
   spaceName: string;
@@ -41,6 +67,11 @@ type FieldType = {
   chunk_strategy: string;
   chunk_size?: number;
   chunk_overlap?: number;
+  // LLM-Wiki config
+  wiki_granularity?: string;
+  wiki_model?: string;
+  wiki_max_pages?: number;
+  wiki_content_instructions?: string;
 };
 
 // Index method options — labels/descs are i18n keys resolved at render time
@@ -53,6 +84,7 @@ interface IndexMethodDef {
 const INDEX_METHODS: IndexMethodDef[] = [
   { value: 'VectorStore', labelKey: 'index_vector_store', descKey: 'index_vector_store_desc' },
   { value: 'FullText', labelKey: 'index_full_text', descKey: 'index_full_text_desc' },
+  { value: 'Wiki', labelKey: 'index_llm_wiki', descKey: 'index_llm_wiki_desc' },
   { value: 'KnowledgeGraph', labelKey: 'index_knowledge_graph', descKey: 'index_knowledge_graph_desc', onlyCode: true },
 ];
 
@@ -72,6 +104,8 @@ interface DataSourceCardDef {
   bgLight: string;
   bgDark: string;
   disabled?: boolean;
+  /** hidden from the picker (feature superseded by binding-style sources) */
+  hidden?: boolean;
 }
 
 const DS_CARDS: DataSourceCardDef[] = [
@@ -99,6 +133,9 @@ const DS_CARDS: DataSourceCardDef[] = [
     color: '#722ED1',
     bgLight: '#F9F0FF',
     bgDark: '#1E1326',
+    // superseded by binding-style sources (Feishu/Yuque/RSS); kept here so
+    // the type + forward flow still compiles — just not offered in the UI
+    hidden: true,
   },
   {
     key: 'TEXT',
@@ -108,16 +145,35 @@ const DS_CARDS: DataSourceCardDef[] = [
     bgDark: '#2B2111',
   },
   {
-    key: 'YUQUEURL',
+    key: 'FEISHU_WIKI',
     icon: (
-      <svg width='22' height='22' viewBox='64 64 896 896' fill='currentColor'>
-        <path d='M854.6 370.6c-9.9-39.4 9.9-102.2 73.4-124.4l-67.9-3.6s-25.7-90-143.6-98c-117.9-8.1-195-3-195-3s87.4 55.6 52.4 154.7c-25.6 52.5-65.8 95.6-108.8 144.7-1.3 1.3-2.5 2.6-3.5 3.7C319.4 605 96 860 96 860c245.9 64.4 410.7-6.3 508.2-91.1 20.5-.2 35.9-.3 46.3-.3 135.8 0 250.6-117.6 245.9-248.4-3.2-89.9-31.9-110.2-41.8-149.6z' />
+      <svg width='22' height='22' viewBox='0 0 48 48' fill='currentColor'>
+        <path d='M41.0716 5.99409L3.31071 16.5187L12.3856 25.8126L20.7998 25.9594L30.4827 16.5187C30.2266 15.9943 30.0985 15.5552 30.0985 15.2013C30.0985 14.4074 30.4104 13.7786 30.8947 13.333C31.7241 12.57 32.7222 12.4558 33.8889 12.9905L41.0716 5.99409ZM42.1021 6.72842L31.5775 44.4893L22.2836 35.4144L22.1367 27.0002L31.5115 17.4816C32.0195 17.8454 32.5743 18.0105 33.1759 17.9769C34.0784 17.9264 34.6614 17.3813 34.9349 17.0602C35.2083 16.7392 35.5293 16.2051 35.5025 15.4113C35.4847 14.8821 35.3109 14.3941 34.9812 13.9472L42.1021 6.72842Z' />
       </svg>
     ),
-    color: '#13C2C2',
-    bgLight: '#E6FFFB',
-    bgDark: '#112123',
-    disabled: true,
+    color: '#3370FF',
+    bgLight: '#EBF2FF',
+    bgDark: '#14213D',
+  },
+  {
+    key: 'YUQUE',
+    icon: <img src='/pictures/ks/yuque.png' width='22' height='22' alt='yuque' style={{ borderRadius: 4 }} />,
+    color: '#00D6B9',
+    bgLight: '#E6FFF9',
+    bgDark: '#0F2A26',
+  },
+  {
+    key: 'RSS',
+    icon: (
+      <svg width='22' height='22' viewBox='0 0 48 48' aria-label='RSS'>
+        <circle cx='14' cy='34' r='4' fill='#FF6600' />
+        <path d='M10 22a18 18 0 0 1 18 18' fill='none' stroke='#FF6600' strokeWidth='4' strokeLinecap='round' />
+        <path d='M10 14a26 26 0 0 1 26 26' fill='none' stroke='#FF6600' strokeWidth='4' strokeLinecap='round' />
+      </svg>
+    ),
+    color: '#FF6600',
+    bgLight: '#FFF4E5',
+    bgDark: '#2B2111',
   },
   {
     key: 'NOTION',
@@ -157,11 +213,19 @@ export default function SpaceForm(props: IProps) {
   const [dataSourceType, setDataSourceType] = useState<DataSourceType>('DOCUMENT');
   const [strategies, setStrategies] = useState<Array<IChunkStrategyResponse>>([]);
   const [files, setFiles] = useState<any[]>([]);
+  const [models, setModels] = useState<Array<{ label: string; value: string }>>([]);
+  const [bindStage, setBindStage] = useState(false);
+  const router = useRouter();
+  const createdNameRef = useRef<string>('');
+  const goDetail = () =>
+    router.push(`/construct/knowledge/detail?spaceName=${encodeURIComponent(createdNameRef.current)}`);
+  const [bindSpaceId, setBindSpaceId] = useState<string | number | null>(null);
 
   const [form] = Form.useForm();
   // Reactive watch of index_methods so the build_graph switch shows/hides live
   const indexMethods = Form.useWatch('index_methods', form) as string[] | undefined;
   const hasKnowledgeGraph = !!indexMethods?.includes('KnowledgeGraph');
+  const hasWiki = !!indexMethods?.includes('Wiki');
 
   useEffect(() => {
     form.setFieldValue('storage', spaceConfig?.[0].name);
@@ -176,6 +240,24 @@ export default function SpaceForm(props: IProps) {
       if (data) {
         setStrategies(data);
       }
+    })();
+  }, []);
+
+  // Available LLM models for the wiki synthesis model select
+  useEffect(() => {
+    (async () => {
+      const [err, data] = await apiInterceptors(getModelList());
+      if (err || !data) return;
+      const seen = new Set<string>();
+      const options: Array<{ label: string; value: string }> = [];
+      for (const m of data as IModelData[]) {
+        const name = m.model_name;
+        if (name && !seen.has(name)) {
+          seen.add(name);
+          options.push({ label: name, value: name });
+        }
+      }
+      setModels(options);
     })();
   }, []);
 
@@ -203,10 +285,12 @@ export default function SpaceForm(props: IProps) {
   const dataSourceLabels: Record<DataSourceType, { title: string; desc: string }> = useMemo(
     () => ({
       DOCUMENT: { title: t('Document'), desc: t('ds_document_desc') },
+      FEISHU_WIKI: { title: t('ds_card_feishu_wiki_title'), desc: t('ds_feishu_wiki_desc') },
       GIT_REPO: { title: 'Git Repository', desc: t('ds_git_repo_desc') },
       URL: { title: t('URL'), desc: t('ds_url_desc') },
       TEXT: { title: t('Text'), desc: t('ds_text_desc') },
-      YUQUEURL: { title: t('yuque'), desc: t('ds_yuque_desc') },
+      YUQUE: { title: t('ds_card_yuque_title'), desc: t('ds_yuque_bind_desc') },
+      RSS: { title: 'RSS', desc: t('ds_rss_bind_desc') },
       NOTION: { title: 'Notion', desc: t('ds_notion_desc') },
     }),
     [t],
@@ -215,6 +299,18 @@ export default function SpaceForm(props: IProps) {
   const handleFinish = async (fieldsValue: FieldType) => {
     const { spaceName, owner, description, storage, dataSourceType: dst, index_methods } = fieldsValue;
     setSpinning(true);
+
+    // LLM-Wiki: pass space-level wiki_config through the space context
+    const wiki_config = index_methods?.includes('Wiki')
+      ? {
+          granularity: fieldsValue.wiki_granularity || 'standard',
+          ...(fieldsValue.wiki_model ? { synthesis_model: fieldsValue.wiki_model } : {}),
+          ...(fieldsValue.wiki_max_pages ? { max_pages_per_ingest: fieldsValue.wiki_max_pages } : {}),
+          ...(fieldsValue.wiki_content_instructions
+            ? { content_instructions: fieldsValue.wiki_content_instructions }
+            : {}),
+        }
+      : undefined;
 
     // 1. Create knowledge space
     // Use first selected index method as primary vector_type
@@ -230,6 +326,7 @@ export default function SpaceForm(props: IProps) {
         desc: description,
         domain_type,
         index_methods: index_methods,
+        ...(wiki_config ? { context: { wiki_config } } : {}),
       }),
     );
     if (err || !res?.success) {
@@ -239,6 +336,7 @@ export default function SpaceForm(props: IProps) {
     }
     // addSpace v1 API returns [] — use spaceName as the identifier
     // (backend _resolve_space supports both id and name)
+    createdNameRef.current = spaceName;
     localStorage.setItem('cur_space_id', JSON.stringify(spaceName));
 
     // 2. For Git Repo, trigger sync immediately
@@ -277,6 +375,7 @@ export default function SpaceForm(props: IProps) {
       message.success(`${t('sync_completed')}: ${syncData?.indexed ?? 0} ${t('files_indexed')}`);
       onSuccess?.();
       handleStepChange({ label: 'finish' });
+      goDetail();
       return;
     }
 
@@ -338,10 +437,30 @@ export default function SpaceForm(props: IProps) {
 
       onSuccess?.();
       handleStepChange({ label: 'finish' });
+      goDetail();
       return;
     }
 
-    // 4. For other types (URL, TEXT, YUQUEURL), forward to upload step
+    // 4. Binding-style sources (feishu / yuque): create the space, then
+    // run the binding wizard (credentials → scope → strategy) right here;
+    // auto first-sync fires on completion, so the user lands with content
+    // already flowing.
+    if (dst === 'FEISHU_WIKI' || dst === 'YUQUE' || dst === 'RSS') {
+      const [, spaces] = await apiInterceptors(getSpaceList({ name: spaceName }));
+      const createdId = spaces?.[0]?.id;
+      setSpinning(false);
+      if (!createdId) {
+        message.warning(t('ks_created_go_bind'));
+        onSuccess?.();
+        handleStepChange({ label: 'finish' });
+        return;
+      }
+      setBindSpaceId(createdId);
+      setBindStage(true);
+      return;
+    }
+
+    // 5. For other types (URL, TEXT), forward to upload step
     setSpinning(false);
     handleStepChange({
       label: 'forward',
@@ -351,6 +470,38 @@ export default function SpaceForm(props: IProps) {
       files,
     });
   };
+
+  if (bindStage && bindSpaceId !== null) {
+    const spaceNameAtBind = form.getFieldValue('spaceName') as string | undefined;
+    return (
+      <div>
+        <div className='text-base font-semibold text-gray-800 dark:text-gray-200 mb-3'>
+          {t('ks_wizard_title')}
+          {spaceNameAtBind ? <span className='text-gray-400'> · {spaceNameAtBind}</span> : null}
+        </div>
+        <BindingWizard
+          open
+          embedded
+          initialType={SOURCE_TO_CONNECTOR[form.getFieldValue('dataSourceType') as string]}
+          spaceId={bindSpaceId}
+          spaceName={form.getFieldValue('spaceName') as string}
+          onClose={() => {
+            // skip binding: space stays, user can bind later on detail page
+            message.success(t('ks_created_go_bind'));
+            onSuccess?.();
+            handleStepChange({ label: 'finish' });
+            goDetail();
+          }}
+          onCreated={() => {
+            message.success(t('ks_bind_done'));
+            onSuccess?.();
+            handleStepChange({ label: 'finish' });
+            goDetail();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <Spin spinning={spinning}>
@@ -405,52 +556,7 @@ export default function SpaceForm(props: IProps) {
           <Input className='h-12' placeholder={t('Please_input_the_description')} />
         </Form.Item>
 
-        {/* ── Section 1b: Index Methods ── */}
-        <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Index_Method')}</div>
-        <Form.Item<FieldType> name='index_methods' initialValue={['VectorStore', 'FullText', 'KnowledgeGraph']}>
-          <Checkbox.Group
-            className='grid grid-cols-3 gap-3 w-full'
-            onChange={(values: string[]) => {
-              // KnowledgeGraph is only available for GIT_REPO and DOCUMENT types.
-              // For other types, remove it from the selection.
-              if (dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT') {
-                const filtered = values.filter(v => v !== 'KnowledgeGraph');
-                form.setFieldValue('index_methods', filtered);
-              }
-            }}
-          >
-            {INDEX_METHODS.map(method => {
-              // KnowledgeGraph is available for GIT_REPO (code) and DOCUMENT (markdown headings)
-              const isCodeOnly = method.onlyCode && dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT';
-              const isDisabled = isCodeOnly;
-              return (
-                <Checkbox
-                  key={method.value}
-                  value={method.value}
-                  disabled={isDisabled}
-                  className={`
-                    flex items-center gap-3 p-3 rounded-lg border-2 transition-all
-                    ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-blue-400'}
-                  `}
-                >
-                  <div className='flex flex-col'>
-                    <span className='text-sm font-medium'>{t(method.labelKey as I18nKeys)}</span>
-                    <span className='text-xs text-gray-400'>{t(method.descKey as I18nKeys)}</span>
-                    {method.onlyCode && !isDisabled && (
-                      <span className='text-[10px] text-orange-500'>
-                        {dataSourceType === 'DOCUMENT' ? t('markdown_only') : t('code_only')}
-                      </span>
-                    )}
-                  </div>
-                </Checkbox>
-              );
-            })}
-          </Checkbox.Group>
-        </Form.Item>
-
-        <Divider />
-
-        {/* ── Section 2: Data Source — Card Grid ── */}
+        {/* ── Section 2: Datasource type (picked first) ── */}
         <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>
           {t('Choose_a_Datasource_type')}
         </div>
@@ -458,7 +564,7 @@ export default function SpaceForm(props: IProps) {
           <input type='hidden' />
         </Form.Item>
         <div className='grid grid-cols-3 sm:grid-cols-6 gap-3 mb-2'>
-          {DS_CARDS.map(card => {
+          {DS_CARDS.filter(card => !card.hidden).map(card => {
             const selected = dataSourceType === card.key;
             const label = dataSourceLabels[card.key];
             const isDisabled = card.disabled;
@@ -633,20 +739,92 @@ export default function SpaceForm(props: IProps) {
           </div>
         )}
 
-        {dataSourceType === 'YUQUEURL' && (
-          <div className='rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50/60 dark:bg-gray-800/40 p-5 mb-2 mt-3'>
-            <div className='flex items-center gap-2 mb-4'>
-              <svg width='16' height='16' viewBox='64 64 896 896' fill='#13C2C2' className='dark:fill-teal-400'>
-                <path d='M854.6 370.6c-9.9-39.4 9.9-102.2 73.4-124.4l-67.9-3.6s-25.7-90-143.6-98c-117.9-8.1-195-3-195-3s87.4 55.6 52.4 154.7c-25.6 52.5-65.8 95.6-108.8 144.7-1.3 1.3-2.5 2.6-3.5 3.7C319.4 605 96 860 96 860c245.9 64.4 410.7-6.3 508.2-91.1 20.5-.2 35.9-.3 46.3-.3 135.8 0 250.6-117.6 245.9-248.4-3.2-89.9-31.9-110.2-41.8-149.6z' />
-              </svg>
-              <span className='text-sm font-semibold text-gray-800 dark:text-gray-200'>{t('yuque')}</span>
-              <span className='text-xs text-gray-400 dark:text-gray-500'>— {t('ds_yuque_desc')}</span>
+        <Divider />
+
+        {/* ── Section 3: Index Methods ── */}
+        <div className='mb-3 text-base font-semibold text-gray-700 dark:text-gray-300'>{t('Index_Method')}</div>
+        <Form.Item<FieldType> name='index_methods' initialValue={['VectorStore', 'FullText', 'KnowledgeGraph']}>
+          <Checkbox.Group
+            className='grid grid-cols-3 gap-3 w-full'
+            onChange={(values: string[]) => {
+              // KnowledgeGraph is only available for GIT_REPO and DOCUMENT types.
+              // For other types, remove it from the selection.
+              if (dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT') {
+                const filtered = values.filter(v => v !== 'KnowledgeGraph');
+                form.setFieldValue('index_methods', filtered);
+              }
+            }}
+          >
+            {INDEX_METHODS.map(method => {
+              // KnowledgeGraph is available for GIT_REPO (code) and DOCUMENT (markdown headings)
+              const isCodeOnly = method.onlyCode && dataSourceType !== 'GIT_REPO' && dataSourceType !== 'DOCUMENT';
+              const isDisabled = isCodeOnly;
+              return (
+                <Checkbox
+                  key={method.value}
+                  value={method.value}
+                  disabled={isDisabled}
+                  className={`
+                    flex items-center gap-3 p-3 rounded-lg border-2 transition-all
+                    ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-blue-400'}
+                  `}
+                >
+                  <div className='flex flex-col'>
+                    <span className='text-sm font-medium'>{t(method.labelKey as I18nKeys)}</span>
+                    <span className='text-xs text-gray-400'>{t(method.descKey as I18nKeys)}</span>
+                    {method.onlyCode && !isDisabled && (
+                      <span className='text-[10px] text-orange-500'>
+                        {dataSourceType === 'DOCUMENT' ? t('markdown_only') : t('code_only')}
+                      </span>
+                    )}
+                  </div>
+                </Checkbox>
+              );
+            })}
+          </Checkbox.Group>
+        </Form.Item>
+
+        {hasWiki && (
+          <div className='rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-5 mb-2 mt-2'>
+            <div className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>{t('wiki_cfg_title')}</div>
+            <div className='text-xs text-gray-400 mb-4'>{t('wiki_cfg_desc')}</div>
+            <div className='grid grid-cols-2 gap-4'>
+              <Form.Item<FieldType> label={t('wiki_cfg_granularity')} name='wiki_granularity' initialValue='standard'>
+                <Radio.Group className='w-full'>
+                  <div className='grid grid-cols-3 gap-2'>
+                    {(['focused', 'standard', 'exhaustive'] as const).map(g => (
+                      <Radio
+                        key={g}
+                        value={g}
+                        className='rounded-lg border border-gray-200 dark:border-gray-600 p-2.5 has-[:checked]:border-blue-400'
+                      >
+                        <span className='flex flex-col'>
+                          <span className='text-xs font-medium'>{t(`wiki_cfg_g_${g}`)}</span>
+                          <span className='text-[10px] text-gray-400'>{t(`wiki_cfg_g_${g}_desc`)}</span>
+                        </span>
+                      </Radio>
+                    ))}
+                  </div>
+                </Radio.Group>
+              </Form.Item>
+              <div className='grid grid-cols-2 gap-4'>
+                <Form.Item<FieldType> label={t('wiki_cfg_model')} name='wiki_model'>
+                  <Select
+                    className='w-full'
+                    allowClear
+                    showSearch
+                    optionFilterProp='label'
+                    placeholder={t('wiki_cfg_model_hint')}
+                    options={models}
+                  />
+                </Form.Item>
+                <Form.Item<FieldType> label={t('wiki_cfg_max_pages')} name='wiki_max_pages'>
+                  <InputNumber className='w-full' min={1} max={50} placeholder='8' />
+                </Form.Item>
+              </div>
             </div>
-            <Form.Item<FieldType> label={t('yuque')} name='yuque_url' rules={[{ required: true }]}>
-              <Input className='h-11' placeholder='https://yuque.antfin.com/group/book/doc' />
-            </Form.Item>
-            <Form.Item<FieldType> label='Token' name='doc_token'>
-              <Input className='h-11' placeholder='yuque token' />
+            <Form.Item<FieldType> label={t('wiki_cfg_content_instructions')} name='wiki_content_instructions'>
+              <Input.TextArea rows={2} placeholder={t('wiki_cfg_content_instructions_hint')} />
             </Form.Item>
           </div>
         )}

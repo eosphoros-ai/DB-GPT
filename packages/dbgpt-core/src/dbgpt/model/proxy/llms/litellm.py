@@ -28,7 +28,7 @@ from ..base import (
     ProxyLLMClient,
     register_proxy_model_adapter,
 )
-from .chatgpt import OpenAICompatibleDeployModelParameters
+from .chatgpt import OpenAICompatibleDeployModelParameters, merge_streaming_tool_calls
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -217,6 +217,10 @@ class LiteLLMClient(ProxyLLMClient):
             payload["stop"] = request.stop
         if request.top_p is not None:
             payload["top_p"] = request.top_p
+        if request.tools is not None:
+            payload["tools"] = request.tools
+        if request.tool_choice is not None:
+            payload["tool_choice"] = request.tool_choice
         if self._timeout:
             payload.setdefault("timeout", self._timeout)
         if stream:
@@ -243,7 +247,23 @@ class LiteLLMClient(ProxyLLMClient):
             text = message_obj.content
             reasoning_content = getattr(message_obj, "reasoning_content", "") or ""
             usage = response.usage.model_dump() if response.usage else None
-            return ModelOutput.build(text, reasoning_content, usage=usage)
+            tool_calls = None
+            raw_tool_calls = getattr(message_obj, "tool_calls", None) or None
+            if raw_tool_calls:
+                tool_calls = [
+                    {
+                        "id": getattr(tl, "id", None),
+                        "type": getattr(tl, "type", "function"),
+                        "function": {
+                            "name": tl.function.name,
+                            "arguments": tl.function.arguments,
+                        },
+                    }
+                    for tl in raw_tool_calls
+                ]
+            return ModelOutput.build(
+                text, reasoning_content, usage=usage, tool_calls=tool_calls
+            )
         except Exception as e:
             return ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
@@ -269,6 +289,7 @@ class LiteLLMClient(ProxyLLMClient):
             text = ""
             reasoning_content = ""
             usage: Optional[Dict[str, Any]] = None
+            tool_calls_acc: Optional[List[Dict[str, Any]]] = None
             async for chunk in response:
                 # Some providers (Anthropic, Bedrock via LiteLLM) attach usage on
                 # the final content chunk; OpenAI / Azure with
@@ -294,10 +315,19 @@ class LiteLLMClient(ProxyLLMClient):
                 new_content = delta_obj.content if delta_obj.content is not None else ""
                 if new_content:
                     text += new_content
+                delta_tool_calls = getattr(delta_obj, "tool_calls", None) or None
+                if delta_tool_calls:
+                    tool_calls_acc = merge_streaming_tool_calls(
+                        tool_calls_acc, delta_tool_calls
+                    )
                 # Only yield when this chunk carried new content/reasoning so we
                 # don't emit duplicate frames on finish-only chunks.
                 if new_content or new_reasoning:
                     yield ModelOutput.build(text, reasoning_content, usage=usage)
+            if tool_calls_acc:
+                yield ModelOutput.build(
+                    text, reasoning_content, usage=usage, tool_calls=tool_calls_acc
+                )
         except Exception as e:
             yield ModelOutput(
                 text=(

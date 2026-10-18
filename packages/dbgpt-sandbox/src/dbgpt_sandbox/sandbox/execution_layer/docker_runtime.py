@@ -6,9 +6,11 @@ import asyncio
 import base64
 import io
 import os
+import shutil
 import tarfile
 import tempfile
 import time
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Optional
 
 try:
@@ -35,7 +37,7 @@ class DockerSandboxSession(SandboxSession):
         super().__init__(session_id, config)
         self.docker_client = docker_client
         self.container = None
-        self.image_name = self._get_image_name(config.language)
+        self.image_name = config.image or self._get_image_name(config.language)
 
     def _get_image_name(self, language: str) -> str:
         return LANGUAGE_IMAGES.get(language, "python:3.11-slim")
@@ -48,11 +50,10 @@ class DockerSandboxSession(SandboxSession):
                 "command": "tail -f /dev/null",
                 "detach": True,
                 "mem_limit": self.config.max_memory,
-                "cpuset_cpus": str(self.config.max_cpus),
+                "nano_cpus": int(self.config.max_cpus * 1_000_000_000),
                 "working_dir": self.config.working_dir,
                 "environment": self.config.environment_vars,
                 "network_disabled": self.config.network_disabled,
-                "volumes": {tempfile.gettempdir(): {"bind": "/tmp", "mode": "rw"}},
                 "name": f"sandbox_{self.session_id}",
             }
 
@@ -61,20 +62,26 @@ class DockerSandboxSession(SandboxSession):
                 container_config["command"] = "/startup.sh"
                 print_log("INFO", f"使用 VNC/noVNC 容器: {self.image_name}")
 
-            self.container = await asyncio.to_thread(
-                self.docker_client.containers.run, **container_config
+            creation = asyncio.create_task(
+                asyncio.to_thread(self.docker_client.containers.run, **container_config)
             )
+            try:
+                self.container = await asyncio.shield(creation)
+            except asyncio.CancelledError:
+                # The SDK call cannot be cancelled. Recover its container handle
+                # so create_session can remove it instead of leaking it.
+                self.container = await creation
+                raise
             self._is_active = True
 
-            # ✅ 确认 startup.sh 存在并有执行权限
-            check = self.container.exec_run("ls -l /startup.sh")
-            print_log("DEBUG", f"startup.sh 状态: {check.output}")
-
-            # ✅ 查看容器启动日志
-            logs = self.container.logs(stdout=True, stderr=True, tail=50)
-            print_log("DEBUG", f"容器日志: {logs.decode('utf-8', errors='ignore')}")
-
             await self._setup_environment()
+            if self.config.host_working_dir:
+                # Archive transfer also works with a remote Docker daemon;
+                # never bind-mount the server's entire temporary directory.
+                for path in dict.fromkeys(
+                    [self.config.host_working_dir, *self.config.input_files]
+                ):
+                    await asyncio.to_thread(self._upload_path, path)
             return True
         except Exception as e:
             print(f"启动 Docker 容器失败: {e}")
@@ -86,7 +93,9 @@ class DockerSandboxSession(SandboxSession):
             return
 
         await asyncio.to_thread(
-            self.container.exec_run, f"mkdir -p {self.config.working_dir}"
+            self.container.exec_run,
+            ["mkdir", "-p", "--", self.config.working_dir],
+            workdir="/",
         )
 
         if self.config.language.startswith("python"):
@@ -103,14 +112,80 @@ class DockerSandboxSession(SandboxSession):
         """停止并删除容器"""
         try:
             if self.container:
-                await asyncio.to_thread(self.container.stop)
-                await asyncio.to_thread(self.container.remove)
+                await asyncio.to_thread(self.container.remove, force=True)
                 self.container = None
             self._is_active = False
             return True
         except Exception as e:
             print(f"停止 Docker 容器失败: {e}")
             return False
+
+    def _upload_path(self, path: str) -> None:
+        """Copy an explicit input, preserving the path used by tool code."""
+        source = Path(path).absolute()
+        if not source.exists():
+            raise FileNotFoundError(source)
+        if source.is_symlink():
+            raise ValueError(f"Sandbox input must not be a symlink: {source}")
+        result = self.container.exec_run(
+            ["mkdir", "-p", "--", str(source.parent)], workdir="/"
+        )
+        if result.exit_code:
+            raise RuntimeError(f"Cannot prepare sandbox input dir: {source.parent}")
+        with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as archive:
+            with tarfile.open(fileobj=archive, mode="w") as tar:
+                tar.add(
+                    source,
+                    arcname=source.name,
+                    filter=lambda member: (
+                        member if member.isfile() or member.isdir() else None
+                    ),
+                )
+            archive.seek(0)
+            if not self.container.put_archive(str(source.parent), archive):
+                raise RuntimeError(f"Cannot upload sandbox input: {source}")
+
+    async def collect_artifacts(self) -> None:
+        """Copy workspace files back without extracting links or escaping cwd."""
+        if self.config.host_working_dir and self.container:
+            await asyncio.to_thread(self._collect_artifacts)
+
+    def _collect_artifacts(self) -> None:
+        destination = Path(self.config.host_working_dir).resolve()
+        prefix = PurePosixPath(self.config.working_dir).name
+        stream, _ = self.container.get_archive(self.config.working_dir)
+        with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as archive:
+            for chunk in stream:
+                archive.write(chunk)
+            archive.seek(0)
+            with tarfile.open(fileobj=archive) as tar:
+                for member in tar:
+                    name = PurePosixPath(member.name)
+                    if name.is_absolute() or ".." in name.parts:
+                        raise ValueError("Invalid sandbox artifact path")
+                    if not name.parts or name.parts[0] != prefix:
+                        raise ValueError("Unexpected sandbox archive root")
+                    if not member.isfile():
+                        continue
+                    relative = Path(*name.parts[1:])
+                    if relative.name.startswith(f"{self.session_id}_"):
+                        continue
+                    target = destination / relative
+                    if not target.resolve().is_relative_to(destination):
+                        raise ValueError("Sandbox artifact escapes workspace")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    temporary = None
+                    try:
+                        with tempfile.NamedTemporaryFile(
+                            dir=target.parent, delete=False
+                        ) as out:
+                            temporary = out.name
+                            with tar.extractfile(member) as source:
+                                shutil.copyfileobj(source, out)
+                        os.replace(temporary, target)
+                    finally:
+                        if temporary and os.path.exists(temporary):
+                            os.unlink(temporary)
 
     async def install_dependencies(self, dependencies: List[str]) -> ExecutionResult:
         """在容器内安装依赖，支持 python/npm。"""
@@ -182,7 +257,7 @@ class DockerSandboxSession(SandboxSession):
             )
 
     async def execute(self, code: str, shell=False) -> DisplayResult:
-        """在容器中执行代码，并封装 DisplayResult"""
+        """Execute off the event loop and stop timed-out/cancelled code."""
         if not self.container or not self._is_active:
             return DisplayResult(
                 status="error",
@@ -192,74 +267,72 @@ class DockerSandboxSession(SandboxSession):
                 exit_code=-1,
             )
 
-        if shell:
-            try:
-                self.update_last_accessed()
-                start_time = time.time()
-                result = self.container.exec_run(
-                    code, workdir=self.config.working_dir, demux=True
-                )
-                execution_time = time.time() - start_time
-
-                stdout, stderr = result.output
-                output_text = stdout.decode("utf-8") if stdout else ""
-                error_text = stderr.decode("utf-8") if stderr else ""
-
-                return DisplayResult(
-                    status="success" if result.exit_code == 0 else "error",
-                    output=output_text,
-                    error=error_text,
-                    execution_time=execution_time,
-                    exit_code=result.exit_code,
-                    files=[],
-                )
-            except Exception as e:
-                return DisplayResult(
-                    status="error",
-                    output="",
-                    error=f"执行失败: {str(e)}",
-                    execution_time=0,
-                    exit_code=-1,
-                )
-
         self.update_last_accessed()
-        code_file = self._create_code_file(code)
-        tar_data = self._create_tar_from_file(code_file)
-
-        self.container.put_archive(self.config.working_dir, tar_data)
-
+        start_time = time.time()
+        code_file = None
         try:
-            exec_command = self._get_exec_command(os.path.basename(code_file))
-            start_time = time.time()
-            result = self.container.exec_run(
-                exec_command, workdir=self.config.working_dir, demux=True
+            if shell:
+                command = ["bash", "-c", code]
+            else:
+                code_file = self._create_code_file(code)
+                await asyncio.to_thread(
+                    self.container.put_archive,
+                    self.config.working_dir,
+                    self._create_tar_from_file(code_file),
+                )
+                command = self._get_exec_command(os.path.basename(code_file))
+            result = await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.container.exec_run,
+                    command,
+                    workdir=self.config.working_dir,
+                    demux=True,
+                ),
+                timeout=self.config.timeout,
             )
-
-            execution_time = time.time() - start_time
-
             stdout, stderr = result.output
-            output_text = stdout.decode("utf-8") if stdout else ""
-            error_text = stderr.decode("utf-8") if stderr else ""
-
             return DisplayResult(
                 status="success" if result.exit_code == 0 else "error",
-                output=output_text,
-                error=error_text,
-                execution_time=execution_time,
+                output=stdout.decode("utf-8", errors="replace") if stdout else "",
+                error=stderr.decode("utf-8", errors="replace") if stderr else "",
+                execution_time=time.time() - start_time,
                 exit_code=result.exit_code,
-                files=[os.path.basename(code_file)],
             )
-        except Exception as e:
+        except asyncio.TimeoutError:
+            await self._kill_running_code()
+            return DisplayResult(
+                status="timeout",
+                output="",
+                error=f"Execution timed out ({self.config.timeout}s limit)",
+                execution_time=time.time() - start_time,
+                exit_code=-1,
+            )
+        except asyncio.CancelledError:
+            await self._kill_running_code()
+            raise
+        except Exception as exc:
             return DisplayResult(
                 status="error",
                 output="",
-                error=f"执行失败: {str(e)}",
-                execution_time=0,
+                error=f"执行失败: {exc}",
+                execution_time=time.time() - start_time,
                 exit_code=-1,
             )
         finally:
-            if "code_file" in locals():
+            if code_file:
                 os.unlink(code_file)
+                if self._is_active:
+                    await asyncio.to_thread(
+                        self.container.exec_run,
+                        ["rm", "-f", "--", os.path.basename(code_file)],
+                        workdir=self.config.working_dir,
+                    )
+
+    async def _kill_running_code(self) -> None:
+        try:
+            await asyncio.to_thread(self.container.kill)
+        finally:
+            self._is_active = False
 
     async def get_file_content(self, filename: str) -> Optional[DisplayResult]:
         """从容器内获取文件内容"""
@@ -340,6 +413,7 @@ class DockerSandboxSession(SandboxSession):
     def _create_code_file(self, code: str) -> str:
         extensions = {
             "python": ".py",
+            "bash": ".sh",
             "javascript": ".js",
             "java": ".java",
             "cpp": ".cpp",
@@ -384,7 +458,9 @@ class DockerRuntime(SandboxRuntime):
 
     def __init__(self, runtime_id: str = "docker"):
         super().__init__(runtime_id)
-        self.docker_client = docker.from_env()
+        if docker is None:
+            raise ImportError("The Docker Python SDK is not installed")
+        self.docker_client = docker.from_env(timeout=10)
         self.supported_languages = list(LANGUAGE_IMAGES.keys())
 
     async def create_session(
@@ -395,20 +471,22 @@ class DockerRuntime(SandboxRuntime):
 
         session = DockerSandboxSession(session_id, config, self.docker_client)
 
-        if await session.start():
+        try:
+            if not await session.start():
+                raise RuntimeError(f"启动会话 {session_id} 失败")
             self.sessions[session_id] = session
             return session
-        else:
-            raise RuntimeError(f"启动会话 {session_id} 失败")
+        except BaseException:
+            await session.stop()
+            raise
 
     async def destroy_session(self, session_id: str) -> bool:
         if session_id not in self.sessions:
             return False
 
         session = self.sessions[session_id]
-        asyncio.create_task(session.stop())
+        success = await session.stop()
         del self.sessions[session_id]
-        success = True
 
         return success
 

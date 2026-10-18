@@ -78,13 +78,13 @@ class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
     """Operator that reduces inputs using a custom reduce function."""
 
     def __init__(self, reduce_function: Optional[ReduceFunc] = None, **kwargs):
-        """Create a ReduceStreamOperator with a combine function.
+        """Create a ReduceStreamOperator with a reduce function.
 
         Args:
-            combine_function: A function that defines how to combine inputs.
+            reduce_function: A function that defines how to reduce inputs.
 
         Raises:
-            ValueError: If the combine_function is not callable.
+            ValueError: If the reduce_function is not callable.
         """
         super().__init__(**kwargs)
         if reduce_function and not callable(reduce_function):

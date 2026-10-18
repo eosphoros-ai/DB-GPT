@@ -277,7 +277,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         from transformers import AutoTokenizer
 
         if not tokenizer:
-            raise ValueError("tokenizer is is None")
+            raise ValueError("tokenizer is None")
         tokenizer: AutoTokenizer = tokenizer
 
         messages = self.transform_model_messages(messages, convert_to_compatible_format)
@@ -651,7 +651,7 @@ class Qwen3Adapter(QwenAdapter):
         from transformers import AutoTokenizer
 
         if not tokenizer:
-            raise ValueError("tokenizer is is None")
+            raise ValueError("tokenizer is None")
         tokenizer: AutoTokenizer = tokenizer
 
         is_reasoning_model = params.get("is_reasoning_model", True)
@@ -1113,7 +1113,7 @@ class GLM41VAdapter(GLM40414Adapter):
         from transformers import AutoTokenizer
 
         if not tokenizer:
-            raise ValueError("tokenizer is is None")
+            raise ValueError("tokenizer is None")
         tokenizer: AutoTokenizer = tokenizer
         type_mapping = {
             "image_url": "image",

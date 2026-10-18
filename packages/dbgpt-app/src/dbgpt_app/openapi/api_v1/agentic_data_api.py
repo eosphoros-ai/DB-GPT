@@ -8,7 +8,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -75,6 +75,23 @@ DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
+
+
+def _validate_upload_filename(filename: str) -> str:
+    if "\x00" in filename:
+        raise ValueError("filename must not contain null bytes")
+
+    posix_path = PurePosixPath(filename)
+    windows_path = PureWindowsPath(filename)
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or len(posix_path.parts) != 1
+        or len(windows_path.parts) != 1
+        or filename in {"", ".", ".."}
+    ):
+        raise ValueError("filename must be a plain file name")
+    return filename
 
 
 async def _resolve_model_context_tokens(
@@ -574,7 +591,11 @@ async def skill_upload(
     user_dir = skills_dir / "user"
     user_dir.mkdir(parents=True, exist_ok=True)
 
-    filename = file.filename
+    try:
+        filename = _validate_upload_filename(file.filename)
+    except ValueError as exc:
+        return Result.failed(code="E4002", msg=str(exc))
+
     suffix = Path(filename).suffix.lower()
     stem = Path(filename).stem
 
@@ -757,7 +778,8 @@ def _extract_skill_from_zip(
         the top-level archive directory name.
 
     Raises:
-        ValueError: If the archive contains path-traversal sequences.
+        ValueError: If the archive contains path-traversal or absolute
+            entries.
         ValueError: If no ``SKILL.md`` is found after extraction (only when
             ``strict=True``).
         ValueError: If the archive root contains multiple sub-directories with
@@ -767,10 +789,23 @@ def _extract_skill_from_zip(
     with zipfile.ZipFile(zip_path, "r") as zf:
         all_names = zf.namelist()
 
-        # Security: reject any path-traversal entries
+        # Security: reject any path-traversal or absolute entries
         for name in all_names:
             normalized = os.path.normpath(name)
-            if normalized.startswith("..") or ".." in normalized.split(os.sep):
+            if (
+                normalized.startswith("..")
+                or ".." in normalized.split(os.sep)
+                # Absolute entry names ("/tmp/x", "C:\x"): "dest_dir / rel"
+                # discards the base entirely for absolute paths (pathlib
+                # semantics), giving an arbitrary file write.
+                or PurePosixPath(name).is_absolute()
+                or PureWindowsPath(name).is_absolute()
+                # "top//tmp/x" collapses under normpath, but the raw member is
+                # sliced on skill_prefix below, leaving a leading "/" in rel.
+                or "//" in name
+                # Windows separators must not leak into host path joins.
+                or "\\" in name
+            ):
                 raise ValueError(f"Unsafe path in archive: {name!r}")
 
         # Filter out macOS metadata artifacts before analysing structure
@@ -840,6 +875,13 @@ def _extract_skill_from_zip(
             if not rel:
                 continue
             target = dest_dir / rel
+            try:
+                # Containment guard: even if a member name slipped past the
+                # scan above, an entry whose join escapes dest_dir must be
+                # rejected before anything is written.
+                target.relative_to(dest_dir)
+            except ValueError:
+                raise ValueError(f"Unsafe path in archive: {member!r}") from None
             if member.endswith("/"):
                 target.mkdir(parents=True, exist_ok=True)
             else:
@@ -1240,7 +1282,7 @@ async def _react_agent_stream_impl(
         GptsMemory,
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
-    from dbgpt.agent.expand.react_agent import ReActAgent
+    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
     from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
@@ -1510,6 +1552,11 @@ async def _react_agent_stream_impl(
                 system_app=CFG.SYSTEM_APP,
             )
             knowledge_resources.append(knowledge_resource)
+            # resolve wiki visibility here (this block runs before the
+            # tool-assembly block where kb_tool_list is built)
+            from .tools.kb_tools import _wiki_enabled
+
+            wiki_available = _wiki_enabled(knowledge_space)
             codegraph_tools_desc = (
                 """
   - kb_codegraph_explore: Query code structure (classes, call chains, inheritance)
@@ -1517,6 +1564,14 @@ async def _react_agent_stream_impl(
   - kb_codegraph_class_hierarchy: Trace class inheritance and implementations
 """
                 if code_graph_available
+                else ""
+            )
+            wiki_tools_desc = (
+                """
+  - kb_wiki_search: Search this space's auto-generated LLM-Wiki pages (curated, synthesized knowledge)
+  - kb_wiki_read_page: Read one wiki page by slug (e.g. kb_wiki_read_page('index') for the catalog)
+  - kb_wiki_index: List the wiki catalog: folders and pages with one-line summaries"""
+                if wiki_available
                 else ""
             )
             knowledge_context = f"""
@@ -1528,7 +1583,7 @@ async def _react_agent_stream_impl(
   - kb_glob: Search files by name or glob pattern
   - kb_grep: Search file contents by keyword (prefer for exact matches)
   - kb_cat: Read the content of a specific file
-  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}
+  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}{wiki_tools_desc}
 """
             logger.info(
                 f"Loaded knowledge space resource: {knowledge_space} "
@@ -2105,6 +2160,12 @@ print(json.dumps(summary, ensure_ascii=False))
                     "kb_codegraph"
                 )
             ]
+        # wiki visibility for prompt sections (tools are mounted inside
+        # make_kb_tools via _make_kb_wiki_tools, gated on index_methods)
+        wiki_available = any(
+            getattr(getattr(t, "_tool", t), "name", "").startswith("kb_wiki_")
+            for t in kb_tool_list
+        )
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
@@ -2331,6 +2392,29 @@ print(json.dumps(summary, ensure_ascii=False))
     )
     storage_conv.save_to_storage()
     storage_conv.start_new_round()
+    # Load the full conversation history (user question + agent final answer)
+    # before appending the current round, then pass it as historical_dialogues
+    # so multi-turn follow-ups see the previous Q&A (mirrors hermes'
+    # conversation_history passed into the loop).
+    historical_dialogues: List[AgentMessage] = []
+    for _msg in storage_conv.get_history_message():
+        if _msg.type == "human":
+            historical_dialogues.append(AgentMessage(content=_msg.content))
+        elif _msg.type == "ai":
+            historical_dialogues.append(AgentMessage(content=_msg.content))
+        elif _msg.type == "view":
+            # view 消息存的是 history_payload(JSON)，提取 final_content 作为 AI 回答
+            _content = _msg.content
+            try:
+                _payload = (
+                    json.loads(_content) if isinstance(_content, str) else _content
+                )
+                if isinstance(_payload, dict):
+                    _content = _payload.get("final_content") or ""
+            except Exception:
+                pass
+            if _content:
+                historical_dialogues.append(AgentMessage(content=_content))
     storage_conv.add_user_message(user_input)
     context = AgentContext(
         conv_id=conv_id,
@@ -2339,6 +2423,7 @@ print(json.dumps(summary, ensure_ascii=False))
         language="zh",
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
+        enable_native_function_calling=True,
     )
 
     # file_ids requests use the public manifest block; legacy file_path and
@@ -2625,6 +2710,22 @@ Thought/Action/Action Input format shown above.
             if code_graph_available
             else ""
         )
+        wiki_section = (
+            "13.4. **kb_wiki_search**: Search this space's auto-generated "
+            "LLM-Wiki pages (curated, synthesized knowledge).\n"
+            'Parameters: {"query": "search keywords"}\n'
+            "13.5. **kb_wiki_read_page**: Read one wiki page by slug; use "
+            "slug 'index' for the auto-generated catalog page.\n"
+            'Parameters: {"slug": "page slug like entity/xxx or index"}\n'
+            "13.6. **kb_wiki_index**: List the wiki catalog (folders and "
+            "pages with one-line summaries).\n"
+            "Parameters: none\n"
+            "13.7. Prefer kb_wiki_* when the question is about the space's "
+            "overall knowledge structure; prefer semantic_search/kb_grep "
+            "when you need to quote raw source documents verbatim.\n"
+            if wiki_available
+            else ""
+        )
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
@@ -2734,7 +2835,7 @@ Parameters: {{"query": "search keyword", "path": "directory filter (optional)", 
 Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
 13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
 Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
-{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
+{codegraph_section}{wiki_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
 15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
 16. **execute_tool**: Execute a tool by name with JSON args.
@@ -2925,7 +3026,7 @@ Thought/Action/Action Input format shown above.
     )
 
     agent_builder = (
-        ReActAgent(max_retry_count=30)
+        ToolCallingReActAgent(max_retry_count=30)
         .bind(context)
         .bind(agent_memory)
         .bind(llm_config)
@@ -2958,6 +3059,7 @@ Thought/Action/Action Input format shown above.
             received_message=received,
             sender=agent,
             stream_callback=stream_callback,
+            historical_dialogues=historical_dialogues,
         )
 
     agent_task = asyncio.create_task(run_agent())
@@ -2969,6 +3071,8 @@ Thought/Action/Action Input format shown above.
     ] = {}  # Buffer thinking content for delayed step creation
     pending_action_intentions: Dict[int, str] = {}
     pending_action_reasons: Dict[int, str] = {}
+    # Emit a one-time "task preview" from the model's first "Plan: ..." line.
+    task_plan_emitted = False
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
@@ -3135,6 +3239,12 @@ Thought/Action/Action Input format shown above.
                 pending_thoughts.pop(round_num, [])
                 pending_action_intentions.pop(round_num, None)
                 pending_action_reasons.pop(round_num, None)
+                # derisk 参考：terminate 是「模拟 action」，不展示为真实工具 step。
+                # 通知前端移除 terminate 这轮在 thinking_chunk 阶段提前创建的
+                # 「思考中」占位 step（前端 step.meta 里 action=terminate 会过滤）。
+                if round_num in round_step_map:
+                    _stale_id = round_step_map.pop(round_num)
+                    yield step_meta(_stale_id, None, "terminate", None, "terminate")
                 # ── Auto-complete all remaining todos on terminate ──
                 if _todo_list:
                     for t in _todo_list:
@@ -3263,13 +3373,38 @@ Thought/Action/Action Input format shown above.
                 or pending_action_intentions.pop(round_num, None)
                 or action_output.get("phase")
             )
+            # derisk-style task preview: the first action's notion/intention is a
+            # one-time "接下来要做" overview shown to the user before execution.
+            if not task_plan_emitted and action_intention:
+                task_plan_emitted = True
+                yield _sse_event(
+                    {
+                        "type": "task.preview",
+                        "content": action_intention,
+                        "round": round_num,
+                    }
+                )
             action_reason = normalize_display_text(
                 action_output.get("action_reason")
                 or pending_action_reasons.pop(round_num, None)
             )
-            display_thought = action_intention or summarize_thought(
-                thought_text or thoughts, action
+            display_thought = (
+                normalize_display_text(thoughts or thought_text) or action_intention
             )
+
+            # 解析失败轮次（如 native tool_calls 退回 XML 导致 "No valid ReAct
+            # step found"）：action 为空、无有效工具，跳过 step 展示（derisk 参考：
+            # 无效 action 不展示为噪音 step），仅清理提前创建的「思考中」占位。
+            if not action:
+                pending_thoughts.pop(round_num, [])
+                pending_action_intentions.pop(round_num, None)
+                pending_action_reasons.pop(round_num, None)
+                if round_num in round_step_map:
+                    _stale_id = round_step_map.pop(round_num)
+                    yield _sse_event(
+                        {"type": "step.done", "id": _stale_id, "status": "done"}
+                    )
+                continue
 
             # Use the actual action name as the step title (Manus-style UI)
             action_title = action or f"ReAct Round {round_num}"
@@ -3437,7 +3572,7 @@ Thought/Action/Action Input format shown above.
 
     if reply.action_report and reply.action_report.terminate:
         raw_content = reply.action_report.content or ""
-        # The terminate ActionOutput.content is the full raw LLM text, e.g.:
+        # The terminate ActionOutput.content may be the raw ReAct text, e.g.:
         # "Thought: ...\nAction: terminate\nAction Input: {"result": "..."}"
         # We need to extract the "result" value from Action Input.
         final_content = raw_content
@@ -3458,6 +3593,22 @@ Thought/Action/Action Input format shown above.
                         final_content = parsed_input["result"]
         except Exception:
             pass
+        # native function calling 路径：terminate content 可能是 {"result":...}
+        # (JSON) 或 {'result':...} (Python dict repr)，直接提取 result。
+        if final_content == raw_content:
+            try:
+                _parsed = json.loads(raw_content)
+                if isinstance(_parsed, dict) and "result" in _parsed:
+                    final_content = _parsed["result"]
+            except Exception:
+                try:
+                    import ast
+
+                    _parsed = ast.literal_eval(raw_content)
+                    if isinstance(_parsed, dict) and "result" in _parsed:
+                        final_content = _parsed["result"]
+                except Exception:
+                    pass
     elif reply.action_report:
         # Loop ended without terminate (max retries or timeout).
         # reply.content is raw LLM output containing ReAct prefixes.
@@ -3671,6 +3822,7 @@ async def delete_share_link(
 @router.get("/v1/agent/files/download")
 async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     """Download a file created by agent tools (shell_interpreter, code_interpreter).
 
@@ -3680,11 +3832,14 @@ async def download_agent_file(
     from fastapi import HTTPException
     from fastapi.responses import FileResponse
 
-    from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
+    from dbgpt.configs.model_config import PILOT_PATH
 
-    # If path is not absolute, resolve relative to ROOT_PATH (sandbox working dir)
+    # Agent tools write their output here, so relative paths resolve against it
+    # rather than against the installation root.
+    agent_tmp_dir = os.path.join(PILOT_PATH, "tmp")
+
     if not os.path.isabs(file_path):
-        file_path = os.path.join(ROOT_PATH, file_path)
+        file_path = os.path.join(agent_tmp_dir, file_path)
 
     # Resolve to absolute path and prevent path traversal
     try:
@@ -3695,8 +3850,7 @@ async def download_agent_file(
     # Allowed base directories for agent-created files
     allowed_dirs = [
         os.path.realpath("/tmp"),
-        os.path.realpath(os.path.join(PILOT_PATH, "tmp")),
-        os.path.realpath(ROOT_PATH),
+        os.path.realpath(agent_tmp_dir),
     ]
 
     if not any(resolved.startswith(d + os.sep) or resolved == d for d in allowed_dirs):

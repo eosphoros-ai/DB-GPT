@@ -68,7 +68,8 @@ export type SessionFilesAction =
   | { type: 'rehydrate'; sessionId: string; snapshots: SessionFileSnapshot[] }
   | { type: 'set_legacy'; file: LegacyServerFile }
   | { type: 'clear_legacy' }
-  | { type: 'clear_turn' };
+  | { type: 'clear_turn' }
+  | { type: 'reset_session' };
 
 export const identityOf = (file: File): { name: string; size: number; lastModified: number } => ({
   name: file.name,
@@ -292,6 +293,9 @@ export function sessionFilesReducer(state: SessionFilesState, action: SessionFil
 
     case 'clear_turn':
       return { ...state, files: [], legacyFile: null };
+
+    case 'reset_session':
+      return { ...state, sessionId: null, files: [], legacyFile: null };
 
     default:
       return state;

@@ -84,10 +84,58 @@ class StorageConfig(BaseParameters):
 
 
 @dataclass
+class KnowledgeSourceParameters(BaseParameters):
+    """External knowledge source framework configuration."""
+
+    encrypt_key: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "AES-256 master key for encrypting knowledge source "
+                "credentials at rest (falls back to env "
+                "DB_GPT_KS_ENCRYPT_KEY)"
+            )
+        },
+    )
+    extra_connector_modules: Optional[List[str]] = field(
+        default_factory=list,
+        metadata={
+            "help": _(
+                "Python modules to import at startup for self-registering "
+                "community knowledge-source connectors"
+            )
+        },
+    )
+    ca_bundle: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": _(
+                "CA bundle path for platform HTTP calls (corporate TLS-"
+                "intercepting proxies; env DB_GPT_KS_CA_BUNDLE)"
+            )
+        },
+    )
+    insecure_tls: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": _(
+                "DISABLE TLS verification for platform calls (env "
+                "DB_GPT_KS_INSECURE). Last resort only."
+            )
+        },
+    )
+
+
+@dataclass
 class RagParameters(BaseParameters):
     """Rag configuration."""
 
     __cfg_type__ = "app"
+
+    knowledge_source: KnowledgeSourceParameters = field(
+        default_factory=lambda: KnowledgeSourceParameters(),
+        metadata={"help": _("External knowledge source configuration")},
+    )
 
     chunk_size: Optional[int] = field(
         default=500,

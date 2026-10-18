@@ -1,3 +1,6 @@
+import io
+import zipfile
+
 import pytest
 
 from dbgpt_serve.utils.auth import UserRequest
@@ -11,6 +14,15 @@ class FakeUploadFile:
 
     async def read(self) -> bytes:
         return self._content
+
+
+def _zip_bytes(members: dict) -> bytes:
+    """Build an in-memory zip archive from {entry_name: content}."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        for name, content in members.items():
+            zf.writestr(name, content)
+    return buf.getvalue()
 
 
 def _configure_skill_paths(tmp_path, monkeypatch):
@@ -87,3 +99,94 @@ async def test_skill_upload_accepts_plain_filename(tmp_path, monkeypatch):
     assert (
         skills_dir / "user" / "hello" / "hello.py"
     ).read_bytes() == b"print('hello')"
+
+
+@pytest.mark.asyncio
+async def test_skill_upload_accepts_valid_zip_package(tmp_path, monkeypatch):
+    agentic_data_api, _, skills_dir = _configure_skill_paths(tmp_path, monkeypatch)
+
+    result = await agentic_data_api.skill_upload(
+        FakeUploadFile(
+            "demo.zip",
+            _zip_bytes(
+                {
+                    "demo/SKILL.md": "# demo skill",
+                    "demo/notes/usage.md": "usage notes",
+                }
+            ),
+        ),
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is True
+    assert result.data["file_path"] == "user/demo"
+    assert (skills_dir / "user" / "demo" / "SKILL.md").exists()
+    assert (skills_dir / "user" / "demo" / "notes" / "usage.md").exists()
+
+
+@pytest.mark.asyncio
+async def test_skill_upload_rejects_absolute_zip_entry(tmp_path, monkeypatch):
+    agentic_data_api, _, _ = _configure_skill_paths(tmp_path, monkeypatch)
+    outside_path = tmp_path / "pwned.py"
+
+    result = await agentic_data_api.skill_upload(
+        FakeUploadFile(
+            "evil.zip",
+            _zip_bytes(
+                {
+                    "demo/SKILL.md": "# demo skill",
+                    str(outside_path): "PWNED",  # absolute entry name
+                }
+            ),
+        ),
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert not outside_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_skill_upload_rejects_double_slash_zip_entry(tmp_path, monkeypatch):
+    agentic_data_api, _, _ = _configure_skill_paths(tmp_path, monkeypatch)
+    outside_path = tmp_path / "pwned.py"
+
+    result = await agentic_data_api.skill_upload(
+        FakeUploadFile(
+            "evil.zip",
+            _zip_bytes(
+                {
+                    "demo/SKILL.md": "# demo skill",
+                    # "demo//<abs path>" passes normpath (".."-free) but the
+                    # raw member sliced at "demo/" leaves a leading "/".
+                    f"demo//{outside_path}": "PWNED",
+                }
+            ),
+        ),
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert not outside_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_skill_upload_rejects_windows_sep_zip_entry(tmp_path, monkeypatch):
+    agentic_data_api, _, _ = _configure_skill_paths(tmp_path, monkeypatch)
+    outside_path = tmp_path / "pwned.py"
+
+    result = await agentic_data_api.skill_upload(
+        FakeUploadFile(
+            "evil.zip",
+            _zip_bytes(
+                {
+                    "demo/SKILL.md": "# demo skill",
+                    f"demo/..\\..\\{outside_path.name}": "PWNED",  # win separators
+                }
+            ),
+        ),
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert not outside_path.exists()

@@ -6,7 +6,7 @@
 
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -55,6 +55,14 @@ class SessionConfig:
     working_dir: str = "/workspace"
     environment_vars: Dict[str, str] = None
     network_disabled: bool = False  # 是否禁用网络
+    image: Optional[str] = None
+    # Agent tools synchronize a workspace and explicit input paths. Container
+    # paths stay identical to host paths, including paths inside files.json.
+    host_working_dir: Optional[str] = None
+    input_files: List[str] = field(default_factory=list)
+    # Legacy sessions keep their checks. Agent Python explicitly opts out:
+    # it already accepts arbitrary code and its preamble imports os.
+    validate_code: bool = True
 
     def __post_init__(self):
         if self.environment_vars is None:

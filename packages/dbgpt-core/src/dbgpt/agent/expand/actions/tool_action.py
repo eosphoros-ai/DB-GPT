@@ -1,8 +1,10 @@
 """Plugin Action Module."""
 
+import asyncio
+import dataclasses
 import json
 import logging
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
@@ -254,3 +256,140 @@ async def run_tool(
             content=f"Tool action run failed!{str(e)}",
             terminate=is_terminal,
         )
+
+
+@dataclasses.dataclass
+class ToolCallSpec:
+    """A single tool invocation for batch (parallel) execution.
+
+    Attributes:
+        name: The tool name, looked up in the agent's ``ToolPack``.
+        args: The tool arguments (already resolved to a dict).
+        call_id: Optional provider-native tool call id. Only populated in the
+            stage-2 native-function-calling path; ``None`` for the text path.
+        raw_tool_input: The raw model-produced argument string, used by
+            :func:`run_tool` to re-parse arguments when ``args`` is empty.
+    """
+
+    name: str
+    args: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    call_id: Optional[str] = None
+    raw_tool_input: Optional[str] = None
+
+
+async def run_tools_batch(
+    specs: List[ToolCallSpec],
+    resource: Resource,
+    render_protocol: Optional[Vis] = None,
+    need_vis_render: bool = False,
+) -> ActionOutput:
+    """Execute multiple tool calls concurrently and aggregate into one output.
+
+    A one-element batch is forwarded verbatim to :func:`run_tool`, so batch
+    mode is a strict superset of the legacy single-tool behaviour (no change to
+    the existing per-tool path).
+
+    Aggregation contract (mapping onto :class:`ActionOutput`):
+      - is_exe_success: ``all`` — a failed tool surfaces to the model on the
+        next retry round via the joined ``content``.
+      - content: per-tool in-context previews joined by blank lines.
+      - observations: JSON array of per-tool result dicts (round-trippable by
+        the structured memory fragment / read_memories).
+      - terminate: ``any`` terminal tool.
+      - have_retry: ``any`` (defaults True for every tool).
+      - view: concatenated vis-plugin blocks when rendering was requested.
+    """
+    if not specs:
+        return ActionOutput(
+            is_exe_success=False,
+            content="No tool calls to execute.",
+            observations="[]",
+        )
+    if len(specs) == 1:
+        spec = specs[0]
+        out = await run_tool(
+            name=spec.name,
+            args=spec.args,
+            resource=resource,
+            render_protocol=render_protocol,
+            need_vis_render=need_vis_render,
+            raw_tool_input=spec.raw_tool_input,
+        )
+        # run_tool omits `action` (unlike the multi-branch below) — backfill it
+        # so native single-tool turns still carry the tool name on ActionOutput.
+        if not getattr(out, "action", None):
+            out.action = spec.name
+        return out
+
+    async def _run_one(spec: ToolCallSpec) -> ActionOutput:
+        try:
+            out: ActionOutput = await run_tool(
+                name=spec.name,
+                args=spec.args,
+                resource=resource,
+                render_protocol=render_protocol,
+                need_vis_render=need_vis_render,
+                raw_tool_input=spec.raw_tool_input,
+            )
+        except Exception as e:  # pragma: no cover - run_tool already guards
+            out = ActionOutput(
+                is_exe_success=False,
+                content=f"Tool [{spec.name}] execute failed! {str(e)}",
+                observations=f"Tool [{spec.name}] execute failed! {str(e)}",
+            )
+        if not out.action:
+            out.action = spec.name
+        return out
+
+    outputs: List[ActionOutput] = list(
+        await asyncio.gather(
+            *(_run_one(spec) for spec in specs), return_exceptions=True
+        )
+    )
+
+    # Normalise exceptions returned by gather (defensive; _run_one already
+    # converts its own failures into a failure ActionOutput).
+    normalized: List[ActionOutput] = []
+    for spec, out in zip(specs, outputs):
+        if isinstance(out, BaseException):
+            normalized.append(
+                ActionOutput(
+                    is_exe_success=False,
+                    content=f"Tool [{spec.name}] execute failed! {out}",
+                    observations=f"Tool [{spec.name}] execute failed! {out}",
+                    action=spec.name,
+                )
+            )
+        else:
+            normalized.append(out)
+
+    is_exe_success = all(o.is_exe_success for o in normalized)
+    terminate = any(o.terminate is True for o in normalized)
+    have_retry = any(o.have_retry for o in normalized)
+
+    content = "\n\n".join(o.content for o in normalized)
+    views = [o.view for o in normalized if o.view]
+
+    tool_results: List[Dict[str, Any]] = [
+        {
+            "name": spec.name,
+            "call_id": spec.call_id,
+            "success": out.is_exe_success,
+            "content": out.content,
+            "observation": out.observations,
+            "terminate": out.terminate,
+            "persisted_path": out.persisted_path,
+        }
+        for spec, out in zip(specs, normalized)
+    ]
+
+    return ActionOutput(
+        is_exe_success=is_exe_success,
+        content=content,
+        view="\n".join(views) if views else None,
+        action=", ".join(spec.name for spec in specs),
+        action_input=json.dumps([spec.args for spec in specs], ensure_ascii=False),
+        observations=json.dumps(tool_results, ensure_ascii=False),
+        have_retry=have_retry,
+        terminate=terminate if terminate else None,
+    )

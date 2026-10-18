@@ -222,6 +222,18 @@ class AgentContext:
     context_warning_threshold: float = 0.70
     context_error_threshold: float = 0.90
 
+    # ReAct agent enhancement switches (opt-in, default off so the legacy
+    # ReActAgent and its text protocol behave exactly as before).
+    # Stage 1: execute multiple tool calls from a single model turn in
+    # parallel instead of enforcing one action per round.
+    enable_parallel_tool_execution: bool = False
+    # Stage 1: classify errors and drive retry / model failover on categories
+    # instead of the coarse fail_reason feedback loop.
+    enable_agent_error_classification: bool = False
+    # Stage 2: use provider-native function calling (tools= array) instead of
+    # the text Thought:/Action: protocol. Requires model-layer support.
+    enable_native_function_calling: bool = False
+
     def to_dict(self) -> Dict[str, Any]:
         """Return a dictionary representation of the AgentContext."""
         return dataclasses.asdict(self)
