@@ -28,7 +28,7 @@ CFG = Config()
 logger = logging.getLogger(__name__)
 
 # Map of example IDs to their file info.
-# - ``source_path``: path relative to source-repo root (``docker/examples/…``).
+# - ``source_path``: path relative to source-repo root.
 # - ``builtin_path``: path relative to ``_builtin_examples/`` inside the wheel.
 # - ``name``: the user-visible filename.
 EXAMPLE_FILES = {
@@ -64,7 +64,7 @@ EXAMPLE_FILES = {
 
 EXAMPLE_KNOWLEDGE = {
     "olist_ecommerce_report": {
-        "source_path": "docs/knowledge/olist-analytics-metric-governance.md",
+        "source_path": "examples/olist/olist-analytics-metric-governance.md",
         "builtin_path": "knowledge/olist-analytics-metric-governance.md",
         "name": "Olist_Analytics_Governance",
     },
@@ -189,7 +189,7 @@ def _resolve_example_source(example: dict) -> Optional[str]:
     """Return the absolute path to an example file, or *None* if not found.
 
     Resolution order:
-    1. ``docker/examples/…`` under ``SYSTEM_APP.work_dir`` or cwd (source-code
+    1. Source-repo path under ``SYSTEM_APP.work_dir`` or cwd (source-code
        development mode).
     2. ``_builtin_examples/…`` inside the installed ``dbgpt_app`` package
        (PyPI install mode).

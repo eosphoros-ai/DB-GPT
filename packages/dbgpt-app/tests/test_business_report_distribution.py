@@ -27,6 +27,11 @@ SKILLS = (
     "walmart-sales-analyzer",
     "agent-browser",
 )
+OLIST_SOURCE = "examples/olist/olist-analytics-metric-governance.md"
+OLIST_SDIST = "examples/knowledge/olist-analytics-metric-governance.md"
+OLIST_WHEEL = (
+    "dbgpt_app/_builtin_examples/knowledge/olist-analytics-metric-governance.md"
+)
 
 
 @pytest.fixture(scope="module")
@@ -162,6 +167,10 @@ def test_sdist_contains_all_builtin_skills_and_default_template(distributions):
         path = "skills/business-report/templates/business_report.html"
         expected = (distributions["repository"] / path).read_bytes()
         assert archive.extractfile(f"{prefix}/{path}").read() == expected
+        assert (
+            archive.extractfile(f"{prefix}/{OLIST_SDIST}").read()
+            == (distributions["repository"] / OLIST_SOURCE).read_bytes()
+        )
 
 
 @pytest.mark.parametrize("artifact", ["wheel", "direct_wheel"])
@@ -180,6 +189,10 @@ def test_wheels_contain_all_builtin_skills_and_default_template(
                 "dbgpt_app/_builtin_skills/business-report/templates/business_report.html"
             )
             == source.read_bytes()
+        )
+        assert (
+            archive.read(OLIST_WHEEL)
+            == (distributions["repository"] / OLIST_SOURCE).read_bytes()
         )
 
 

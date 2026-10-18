@@ -22,7 +22,7 @@ table shapes and includes canceled orders, multiple items and payments, missing
 reviews, repeat customers, states, categories and delivery delays. Report
 conclusions describe this demonstration only. `dataset_metadata` records its
 origin; `metric_definitions` also contains the governing document. The same
-document, `docs/knowledge/olist-analytics-metric-governance.md`, is bundled in
+document, `examples/olist/olist-analytics-metric-governance.md`, is bundled in
 the application package. Clicking the card prepares the
 `Olist_Analytics_Governance` knowledge space with the configured embedding
 service and waits for indexing before sending the question, datasource and

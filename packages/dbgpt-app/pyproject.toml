@@ -65,7 +65,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.sdist.force-include]
-"../../docs/knowledge/olist-analytics-metric-governance.md" = "examples/knowledge/olist-analytics-metric-governance.md"
+"../../examples/olist/olist-analytics-metric-governance.md" = "examples/knowledge/olist-analytics-metric-governance.md"
 # Builtin skills
 "../../skills/business-report" = "skills/business-report"
 "../../skills/csv-data-analysis" = "skills/csv-data-analysis"

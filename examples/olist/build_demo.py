@@ -123,10 +123,7 @@ def build_demo(output: Path) -> None:
                 writer.writerow(spec.columns)
                 writer.writerows(rows[spec.table_name])
         build_database(csv_dir, output)
-    governance = (
-        Path(__file__).parents[2]
-        / "docs/knowledge/olist-analytics-metric-governance.md"
-    )
+    governance = Path(__file__).with_name("olist-analytics-metric-governance.md")
     with sqlite3.connect(output) as connection:
         connection.execute(
             "CREATE TABLE dataset_metadata (key TEXT PRIMARY KEY, value TEXT)"
