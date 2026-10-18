@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from dbgpt._private.config import Config
 from dbgpt_app.openapi.api_v1.uploaded_dataset import materialize_uploaded_dataset
@@ -425,7 +426,8 @@ async def python_files_upload(
         )
 
         database_path = batch_dir / "dataset.sqlite"
-        tables, relationship_candidates = materialize_uploaded_dataset(
+        tables, relationship_candidates = await run_in_threadpool(
+            materialize_uploaded_dataset,
             uploaded_paths,
             database_path,
         )

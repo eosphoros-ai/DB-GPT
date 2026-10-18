@@ -1143,6 +1143,8 @@ def validate_dashboard(
                     )
                 ]
             )
+        # Static SQL validation also resolves connectors and inspects metadata.
+        service.authorize_schema_sources(_user_id(user), schema)
         return Result.succ(
             service.validate_schema(
                 schema,

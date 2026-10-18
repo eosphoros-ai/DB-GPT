@@ -72,13 +72,19 @@ vi.mock('./DashboardRenderer', () => ({
     schema,
     onLayoutChange,
     onOpenWidgetQueryEditor,
+    snapshot,
+    loadingWidgetIds,
   }: {
     schema: DashboardSchemaV1;
     onLayoutChange: (layout: DashboardSchemaV1['layouts']['desktop']) => void;
     onOpenWidgetQueryEditor: (id: string) => void;
+    snapshot?: unknown;
+    loadingWidgetIds?: Set<string>;
   }) => (
     <div>
       <output data-testid='current-schema'>{JSON.stringify(schema)}</output>
+      <output data-testid='current-snapshot'>{JSON.stringify(snapshot)}</output>
+      <output data-testid='loading-widgets'>{[...(loadingWidgetIds || [])].join(',')}</output>
       <button onClick={() => onLayoutChange([{ ...schema.layouts.desktop[0], x: 3 }])}>Move widget</button>
       <button onClick={() => onOpenWidgetQueryEditor('sales')}>Edit SQL</button>
     </div>
@@ -105,7 +111,24 @@ vi.mock('./DashboardAnnotationTray', () => ({ default: () => null }));
 vi.mock('./DashboardAnomalyRuleEditor', () => ({ default: () => null }));
 vi.mock('./DashboardArtifactPanel', () => ({ default: () => null }));
 vi.mock('./DashboardCoverCapture', () => ({ default: () => null }));
-vi.mock('./DashboardFilters', () => ({ default: () => null }));
+vi.mock('./DashboardFilters', () => ({
+  default: ({
+    values,
+    onChange,
+    onReset,
+  }: {
+    values: Record<string, unknown>;
+    onChange: (values: Record<string, unknown>, changedId?: string) => void;
+    onReset: (values: Record<string, unknown>) => void;
+  }) => (
+    <div>
+      <button onClick={() => onChange({ ...values, dates: ['2026-09-01', '2026-09-30'] }, 'dates')}>
+        Select September
+      </button>
+      <button onClick={() => onReset({ ...values, dates: undefined })}>Reset dates</button>
+    </div>
+  ),
+}));
 vi.mock('./DashboardLifecyclePanel', () => ({ default: () => null }));
 vi.mock('./DashboardPublishDialog', () => ({
   default: ({ onPublish }: { onPublish: (mode: 'snapshot') => void }) => (
@@ -174,6 +197,57 @@ async function openEditor(record = initial) {
 }
 
 describe('DashboardEditor persistence races', () => {
+  it('keeps manually selected dates through filtering and refresh, until reset', async () => {
+    const configured = structuredClone(initial);
+    configured.schema.widgets[0].query.sql = 'SELECT amount FROM sales';
+    configured.schema.filters = [
+      {
+        id: 'dates',
+        type: 'date_range',
+        label: 'Date',
+        field: 'date',
+        options: [],
+        default: ['2020-01-01', '2020-01-31'],
+        relative_date: { anchor: 'today', start_offset_days: -6, end_offset_days: 0 },
+      },
+    ];
+    state.refresh.mockImplementation((_id, filters) => Promise.resolve(response({ widgets: {}, filters })));
+    await openEditor(configured);
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByText('Select September'));
+    await waitFor(() =>
+      expect(state.refresh).toHaveBeenLastCalledWith(initial.id, { dates: ['2026-09-01', '2026-09-30'] }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: '刷新看板数据' }));
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(3));
+    expect(state.refresh).toHaveBeenLastCalledWith(initial.id, { dates: ['2026-09-01', '2026-09-30'] });
+    fireEvent.click(screen.getByText('Reset dates'));
+    await waitFor(() => expect(state.refresh).toHaveBeenCalledTimes(4));
+    expect(state.refresh.mock.calls[3][1].dates).not.toEqual(['2026-09-01', '2026-09-30']);
+  });
+
+  it('finishes loading the saved schema when a real save replaces arrays during initial fetch', async () => {
+    const configured = structuredClone(initial);
+    configured.schema.widgets[0].query.sql = 'SELECT amount FROM sales';
+    const oldRequest = deferred<ReturnType<typeof response>>();
+    state.refresh.mockReturnValueOnce(oldRequest.promise);
+    state.refresh.mockResolvedValue(response({ widgets: { sales: { rows: [[2]] } }, filters: {} }));
+    state.save.mockImplementation(async schema => ({
+      ...structuredClone(configured),
+      schema: structuredClone(schema),
+      current_revision: 4,
+    }));
+    await openEditor(configured);
+    await waitFor(() => expect(screen.getByTestId('loading-widgets').textContent).toBe('sales'));
+    title('Saved while loading');
+    fireEvent.click(screen.getByRole('button', { name: '保存看板' }));
+    await waitFor(() => expect(screen.getByText('修订 4')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('loading-widgets').textContent).toBe(''));
+    expect(screen.getByTestId('current-snapshot').textContent).toContain('[[2]]');
+    await act(async () => oldRequest.resolve(response({ widgets: { sales: { rows: [[1]] } }, filters: {} })));
+    expect(screen.getByTestId('current-snapshot').textContent).toContain('[[2]]');
+  });
+
   it('preserves edit made during generated promotion instead of overwriting with latest', async () => {
     const generated = structuredClone(initial);
     generated.asset_state = 'generated';

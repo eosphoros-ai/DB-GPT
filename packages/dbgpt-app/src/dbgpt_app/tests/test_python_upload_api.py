@@ -1,4 +1,6 @@
+import asyncio
 import io
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -456,6 +458,26 @@ async def test_python_files_upload_keeps_batch_together(tmp_path, monkeypatch):
         lambda: FakeDatasetService(),
     )
 
+    # A second coroutine must advance while real parsing/materialization runs.
+    materialize = python_upload_api.materialize_uploaded_dataset
+    started = threading.Event()
+    heartbeat = threading.Event()
+
+    def materialize_with_heartbeat(*args, **kwargs):
+        started.set()
+        assert heartbeat.wait(2), "Materialization blocked the event loop"
+        return materialize(*args, **kwargs)
+
+    async def serve_another_request():
+        while not started.is_set():
+            await asyncio.sleep(0)
+        heartbeat.set()
+
+    monkeypatch.setattr(
+        python_upload_api, "materialize_uploaded_dataset", materialize_with_heartbeat
+    )
+    concurrent_request = asyncio.create_task(serve_another_request())
+
     result = await python_upload_api.python_files_upload(
         [
             FakeUploadFile("orders.csv", b"order_id,customer_id\n1,10\n"),
@@ -465,6 +487,7 @@ async def test_python_files_upload_keeps_batch_together(tmp_path, monkeypatch):
         UserRequest(user_id="alice"),
     )
 
+    await concurrent_request
     assert result.success is True
     paths = [Path(item["stored_path"]) for item in registered_datasets[0]["files"]]
     assert [path.name for path in paths] == ["orders.csv", "customers.csv"]

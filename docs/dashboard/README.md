@@ -30,9 +30,19 @@ Dashboard 将自然语言分析变成可校验、可编辑、可保存和可发�
 
 Dashboard 通过原有的 `db_model_initialization.py` 注册实体。SQLite 沿用项目原有的
 建表和自动迁移入口，不分发另一套 Alembic 版本链，也不改共享 `env.py` 或本地修订号。
-MySQL 的全量建表定义位于 `assets/schema/dbgpt.sql`，已有库使用
-`assets/schema/upgrade/dashboard/upgrade.sql` 增加看板表及定时任务字段。
-执行升级前按项目部署流程备份数据库；SQL 不把任务显示名当作用户 ID 回填。
+MySQL 沿用历史升级目录的全量、增量交付方式，入口集中在
+[`assets/schema/upgrade/dashboard/`](../../assets/schema/upgrade/dashboard/)：
+
+| 场景 | SQL | 执行方式 |
+|---|---|---|
+| 全新数据库 | [`dashboard.sql`](../../assets/schema/upgrade/dashboard/dashboard.sql) | 全量建库，与 `assets/schema/dbgpt.sql` 一致；不再执行增量脚本。 |
+| 已有 v0.8.2 数据库 | [`upgrade_to_dashboard.sql`](../../assets/schema/upgrade/dashboard/upgrade_to_dashboard.sql) | 停止服务并备份后执行一次，再启动服务。更早版本先按历史目录升级到 v0.8.2。 |
+
+增量脚本使用 `ALTER TABLE ... ADD COLUMN`、`ADD INDEX` / `ADD UNIQUE INDEX`
+修改聊天记录及定时任务旧表，使用 `CREATE TABLE` 新建看板表；不删除业务数据，也不把任务显示名当作用户 ID 回填。
+数据库名不是 `dbgpt` 时先调整脚本中的建库和 `USE` 语句。
+增量脚本不是可重复执行的初始化器；已执行旧版 Dashboard 升级脚本或部分手工 DDL 的库，
+应核对已有列和索引，仅执行缺失项，避免重复列或索引错误。
 
 在仓库根目录安装项目后端测试依赖后执行以下完整命令（Bash）。测试路径、包导入路径和外部服务标记都在命令中显式给出，不需要额外 pytest 配置文件：
 
@@ -50,6 +60,7 @@ redis_integration: requires DASHBOARD_TEST_REDIS_URL and a disposable Redis data
   packages/dbgpt-app/src/dbgpt_app/tests/test_olist_dashboard_case.py \
   packages/dbgpt-app/src/dbgpt_app/tests/test_uploaded_dataset.py \
   packages/dbgpt-app/src/dbgpt_app/tests/test_uploaded_dataset_registry.py \
+  packages/dbgpt-app/src/dbgpt_app/tests/test_python_upload_api.py \
   packages/dbgpt-app/src/dbgpt_app/tests/test_workspace_provisioning.py \
   packages/dbgpt-app/src/dbgpt_app/tests/test_dashboard_skill_orchestration.py \
   examples/dashboard/tests

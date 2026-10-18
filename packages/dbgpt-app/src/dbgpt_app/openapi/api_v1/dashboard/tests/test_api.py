@@ -202,6 +202,9 @@ class ApiServiceStub:
         self.created_request = request
         return _record(request.schema_payload)
 
+    def authorize_schema_sources(self, actor_id, schema):
+        assert actor_id == "alice"
+
     def record_audit(self, dashboard_id, actor_id, action, **kwargs):
         self.audit_events.append((dashboard_id, actor_id, action, kwargs))
 

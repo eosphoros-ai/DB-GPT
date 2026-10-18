@@ -15,8 +15,7 @@ export function useQuestionSession(apiBaseUrl = process.env.API_BASE_URL ?? '') 
   }, []);
 
   const clearQuestions = useCallback(() => {
-    const current = session.current.current;
-    if (current) session.current.resolve(current.request_id);
+    session.current.clear();
     setPendingQuestion(null);
   }, []);
 

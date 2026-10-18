@@ -282,6 +282,7 @@ export default function DashboardEditor({
   onSubmitAnnotation,
 }: DashboardEditorProps) {
   const { message, modal } = App.useApp();
+  const { warning: warnInitialDataLoad } = message;
   const publicationErrorRef = useRef<{ destroy: () => void } | null>(null);
   const [record, updateRecord] = useState(initialRecord);
   const recordRef = useRef(initialRecord);
@@ -383,6 +384,7 @@ export default function DashboardEditor({
   };
   const recoveryCheckedRef = useRef(false);
   const initialDataLoadRecordRef = useRef<string | null>(null);
+  const manualFilterIdsRef = useRef(new Set<string>());
   const queryEditorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -570,6 +572,7 @@ export default function DashboardEditor({
     if (initialDataLoadRecordRef.current === record.id) return;
     initialDataLoadRecordRef.current = record.id;
     let active = true;
+    let settled = false;
     const initialFilters = initialDashboardFilterValues(record.schema.filters);
 
     const hasConfiguredWidgets = hasConfiguredDashboardWidgets(record.schema.widgets);
@@ -611,9 +614,10 @@ export default function DashboardEditor({
         setSnapshot(response.data.data);
         setFilters(response.data.data.filters);
       } catch (error) {
-        if (active) message.warning(describeDashboardError(error, '看板数据加载失败，请点击刷新重试'));
+        if (active) warnInitialDataLoad(describeDashboardError(error, '看板数据加载失败，请点击刷新重试'));
       } finally {
         if (active) {
+          settled = true;
           setRefreshing(false);
           setLoadingWidgetIds(new Set());
         }
@@ -622,9 +626,12 @@ export default function DashboardEditor({
     void loadInitialData();
     return () => {
       active = false;
+      // A save can replace the schema while this first request is pending.
+      // Let the next effect load that saved schema instead of keeping a stale guard.
+      if (!settled) initialDataLoadRecordRef.current = null;
     };
   }, [
-    message,
+    warnInitialDataLoad,
     record.id,
     record.schema.dashboard.refresh_policy?.refresh_on_open,
     record.schema.filters,
@@ -810,7 +817,12 @@ export default function DashboardEditor({
     setRefreshing(true);
     try {
       const saved = await persistDraft(false);
-      const resolvedFilters = refreshDashboardFilterValues(saved.schema.filters, activeFilters);
+      const resolvedFilters = refreshDashboardFilterValues(
+        saved.schema.filters,
+        activeFilters,
+        undefined,
+        manualFilterIdsRef.current,
+      );
       setFilters(resolvedFilters);
       const response = await refreshDashboard(saved.id, resolvedFilters);
       if (sequence !== filterRequestRef.current) return;
@@ -831,19 +843,27 @@ export default function DashboardEditor({
   useEffect(
     () => () => {
       filterRequestRef.current += 1;
+      manualFilterIdsRef.current.clear();
       if (filterTimerRef.current) clearTimeout(filterTimerRef.current);
     },
     [record.id],
   );
 
-  const handleChangeFilters = (nextFilters: Record<string, unknown>) => {
+  const handleChangeFilters = (nextFilters: Record<string, unknown>, changedFilterId?: string) => {
+    if (changedFilterId) manualFilterIdsRef.current.add(changedFilterId);
     setFilters(nextFilters);
     const sequence = ++filterRequestRef.current;
     if (filterTimerRef.current) clearTimeout(filterTimerRef.current);
     filterTimerRef.current = setTimeout(async () => {
       setRefreshing(true);
       try {
-        const resolved = refreshDashboardFilterValues(schema.filters, nextFilters);
+        const resolved = refreshDashboardFilterValues(
+          schema.filters,
+          nextFilters,
+          undefined,
+          manualFilterIdsRef.current,
+        );
+        setFilters(resolved);
         // Filtering an unsaved layout previews its current queries without saving unrelated edits.
         const nextSnapshot: DashboardSnapshot = isDirty
           ? {
@@ -873,6 +893,7 @@ export default function DashboardEditor({
   };
 
   const handleResetFilters = (nextFilters: Record<string, unknown>) => {
+    manualFilterIdsRef.current.clear();
     setFilters(nextFilters);
     void refreshWithFilters(nextFilters, true);
   };
@@ -4039,6 +4060,7 @@ export default function DashboardEditor({
                               size='small'
                               checked={Boolean(selectedFilter.relative_date)}
                               onChange={enabled => {
+                                manualFilterIdsRef.current.delete(selectedFilter.id);
                                 const relativeDate = enabled
                                   ? { anchor: 'today' as const, start_offset_days: -6, end_offset_days: 0 }
                                   : null;

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from 'antd';
+import { AxiosError } from 'axios';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -43,7 +44,7 @@ const schedule = {
 
 const renderPanel = (children?: ReactNode) =>
   render(
-    <App>
+    <App message={{ duration: 0 }}>
       <DashboardSchedulePanel
         dashboardId='dashboard-1'
         filters={{ region: 'east' }}
@@ -56,6 +57,36 @@ const renderPanel = (children?: ReactNode) =>
   );
 
 describe('DashboardSchedulePanel', () => {
+  it('opens run history when waiting times out without reporting task failure or retrying', async () => {
+    api.getDashboardSchedulerStatus.mockReturnValue(response({ running: true, message: '后台调度正在运行' }));
+    api.listDashboardSchedules.mockReturnValue(response([schedule]));
+    api.listDashboardScheduleRuns.mockReturnValue(
+      response([{ run_id: 'slow-run', task_id: schedule.task_id, status: 'running', attempt_count: 1 }]),
+    );
+    api.runDashboardSchedule.mockRejectedValueOnce(new AxiosError('timeout', 'ECONNABORTED'));
+    renderPanel();
+    await screen.findByText(schedule.task_name);
+    fireEvent.click(screen.getByRole('button', { name: /立即运行/ }));
+    expect(
+      await screen.findByText('等待响应超时，任务可能仍在执行，请查看运行记录', {}, { timeout: 10_000 }),
+    ).toBeTruthy();
+    expect(await screen.findByText(`“${schedule.task_name}”的运行记录`)).toBeTruthy();
+    expect(api.runDashboardSchedule).toHaveBeenCalledOnce();
+    expect(screen.queryByText('立即刷新失败')).toBeNull();
+  });
+
+  it.each(['failed', 'timeout'])('does not report success for a terminal %s run', async status => {
+    api.getDashboardSchedulerStatus.mockReturnValue(response({ running: true, message: '后台调度正在运行' }));
+    api.listDashboardSchedules.mockReturnValue(response([schedule]));
+    api.listDashboardScheduleRuns.mockReturnValue(response([]));
+    api.runDashboardSchedule.mockReturnValue(response({ run_id: 'failed-run', status, error_message: 'Query failed' }));
+    renderPanel();
+    await screen.findByText(schedule.task_name);
+    fireEvent.click(screen.getByRole('button', { name: /立即运行/ }));
+    expect(await screen.findByText('Query failed')).toBeTruthy();
+    expect(screen.queryByText('刷新已完成')).toBeNull();
+  });
+
   it('loads scoped schedules and exposes partial-success history', async () => {
     api.getDashboardSchedulerStatus.mockReturnValue(response({ running: true, message: '后台调度正在运行' }));
     api.listDashboardSchedules.mockReturnValue(response([schedule]));

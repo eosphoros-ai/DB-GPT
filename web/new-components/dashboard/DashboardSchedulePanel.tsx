@@ -41,6 +41,7 @@ import {
   Tag,
   Typography,
 } from 'antd';
+import { isAxiosError } from 'axios';
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { describeDashboardError } from './dashboard-errors';
 import { scheduleDashboardFilterValues } from './dashboard-relative-date';
@@ -213,12 +214,21 @@ export default function DashboardSchedulePanel({
       const run = response.data.data;
       if (run.status === 'partial_success') {
         message.warning('刷新已完成，但部分组件失败，请查看运行记录');
-      } else {
+      } else if (run.status === 'success') {
         message.success('刷新已完成');
+      } else if (run.status === 'running') {
+        message.info('任务仍在执行，请查看运行记录');
+      } else {
+        message.error(run.error_message || '任务执行未成功，请查看运行记录');
       }
       if (runsFor?.task_id === schedule.task_id) await showRuns(schedule);
     } catch (error) {
-      message.error(describeDashboardError(error, '立即刷新失败'));
+      if (isAxiosError(error) && ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code || '')) {
+        message.warning('等待响应超时，任务可能仍在执行，请查看运行记录');
+        await showRuns(schedule);
+      } else {
+        message.error(describeDashboardError(error, '立即刷新失败'));
+      }
     } finally {
       setRunningId(null);
     }

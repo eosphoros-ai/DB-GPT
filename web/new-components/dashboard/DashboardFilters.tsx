@@ -1,7 +1,8 @@
 import { DashboardFilter } from '@/types/dashboard';
 import { EditOutlined, UndoOutlined } from '@ant-design/icons';
 import { Button, DatePicker, Input, InputNumber, Select, Tooltip } from 'antd';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
+import { useMemo } from 'react';
 import styles from './DashboardWorkspace.module.css';
 
 interface DashboardFiltersProps {
@@ -14,7 +15,7 @@ interface DashboardFiltersProps {
   variant?: 'bar' | 'card';
   className?: string;
   onEditFilter?: (filterId: string) => void;
-  onChange?: (values: Record<string, unknown>) => void;
+  onChange?: (values: Record<string, unknown>, changedFilterId?: string) => void;
   onReset?: (values: Record<string, unknown>) => void;
 }
 
@@ -31,9 +32,21 @@ export default function DashboardFilters({
   onChange,
   onReset,
 }: DashboardFiltersProps) {
+  // RangePicker resets pending input when its controlled value changes identity.
+  // Unrelated editor updates must not discard a half-entered date range.
+  const dateRanges = useMemo(() => {
+    const result: Record<string, [Dayjs, Dayjs] | undefined> = {};
+    for (const filter of filters) {
+      if (filter.type !== 'date_range') continue;
+      const value = values[filter.id] ?? filter.default;
+      result[filter.id] =
+        Array.isArray(value) && value.length === 2 ? [dayjs(String(value[0])), dayjs(String(value[1]))] : undefined;
+    }
+    return result;
+  }, [filters, values]);
   if (!filters.length) return null;
 
-  const update = (filterId: string, value: unknown) => onChange?.({ ...values, [filterId]: value });
+  const update = (filterId: string, value: unknown) => onChange?.({ ...values, [filterId]: value }, filterId);
   const resetValues = {
     ...values,
     ...Object.fromEntries(filters.map(filter => [filter.id, filter.default])),
@@ -89,11 +102,7 @@ export default function DashboardFilters({
                   aria-label={`${filter.label}筛选`}
                   allowClear
                   disabled={disabled}
-                  value={
-                    Array.isArray(value) && value.length === 2
-                      ? [dayjs(String(value[0])), dayjs(String(value[1]))]
-                      : undefined
-                  }
+                  value={dateRanges[filter.id]}
                   onChange={dates =>
                     update(filter.id, dates ? [dates[0]?.format('YYYY-MM-DD'), dates[1]?.format('YYYY-MM-DD')] : null)
                   }

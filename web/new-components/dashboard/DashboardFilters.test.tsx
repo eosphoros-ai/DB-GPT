@@ -146,34 +146,54 @@ describe('DashboardFilters', () => {
     render(<DashboardFilters filters={filters} values={{ untouched: 'keep-me' }} onChange={onChange} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Date range筛选' }));
-    expect(onChange).toHaveBeenNthCalledWith(1, {
-      untouched: 'keep-me',
-      dates: ['2024-01-01', '2024-12-31'],
-    });
+    expect(onChange).toHaveBeenNthCalledWith(
+      1,
+      {
+        untouched: 'keep-me',
+        dates: ['2024-01-01', '2024-12-31'],
+      },
+      'dates',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Region筛选' }));
-    expect(onChange).toHaveBeenNthCalledWith(2, {
-      untouched: 'keep-me',
-      region: 'north',
-    });
+    expect(onChange).toHaveBeenNthCalledWith(
+      2,
+      {
+        untouched: 'keep-me',
+        region: 'north',
+      },
+      'region',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Stores筛选' }));
-    expect(onChange).toHaveBeenNthCalledWith(3, {
-      untouched: 'keep-me',
-      stores: ['north', 'south'],
-    });
+    expect(onChange).toHaveBeenNthCalledWith(
+      3,
+      {
+        untouched: 'keep-me',
+        stores: ['north', 'south'],
+      },
+      'stores',
+    );
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Keyword筛选' }), { target: { value: 'phone' } });
-    expect(onChange).toHaveBeenNthCalledWith(4, {
-      untouched: 'keep-me',
-      keyword: 'phone',
-    });
+    expect(onChange).toHaveBeenNthCalledWith(
+      4,
+      {
+        untouched: 'keep-me',
+        keyword: 'phone',
+      },
+      'keyword',
+    );
 
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Amount range最小值' }), { target: { value: '15' } });
-    expect(onChange).toHaveBeenNthCalledWith(5, {
-      untouched: 'keep-me',
-      amount: [15, 20],
-    });
+    expect(onChange).toHaveBeenNthCalledWith(
+      5,
+      {
+        untouched: 'keep-me',
+        amount: [15, 20],
+      },
+      'amount',
+    );
   });
 
   it('explains filter scope and restores every filter default in one action', () => {

@@ -121,8 +121,15 @@ def test_publish_allows_authorized_sources_and_public_reads_do_not_query(
 
 @pytest.mark.parametrize("federated", [False, True], ids=["single", "federated"])
 @pytest.mark.parametrize("execute_queries", [False, True])
+@pytest.mark.parametrize("require_publication_bindings", [False, True])
+@pytest.mark.parametrize("query_kind", ["query", "publication"])
 def test_publication_validation_authorizes_unsaved_sources_before_query(
-    service_fixture, monkeypatch, federated, execute_queries
+    service_fixture,
+    monkeypatch,
+    federated,
+    execute_queries,
+    require_publication_bindings,
+    query_kind,
 ):
     """Publication materialization requires query access even without widget runs."""
     from dbgpt_app.openapi.api_v1.dashboard.api import validate_dashboard
@@ -131,7 +138,11 @@ def test_publication_validation_authorizes_unsaved_sources_before_query(
     service, dao, connector = service_fixture
     record = create_record(service)
     payload = record.schema_payload.model_dump(mode="json", by_alias=True)
-    query = payload["widgets"][0]["publication"]["query"]
+    query = (
+        payload["widgets"][0]["query"]
+        if query_kind == "query"
+        else payload["widgets"][0]["publication"]["query"]
+    )
     if federated:
         query["federation"] = {
             "mode": "union_all",
@@ -168,7 +179,7 @@ def test_publication_validation_authorizes_unsaved_sources_before_query(
             DashboardValidateRequest(
                 schema=DashboardSchemaV1.model_validate(payload),
                 execute_queries=execute_queries,
-                require_publication_bindings=True,
+                require_publication_bindings=require_publication_bindings,
             ),
             UserRequest(user_id="alice"),
             service,

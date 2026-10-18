@@ -26,11 +26,16 @@ export const refreshDashboardFilterValues = (
   filters: DashboardFilter[],
   current: Record<string, unknown>,
   now: Dayjs = dayjs(),
+  manualFilterIds: ReadonlySet<string> = new Set(),
 ): Record<string, unknown> =>
   Object.fromEntries(
     filters.map(filter => [
       filter.id,
-      resolveDashboardFilterValue(filter, filter.relative_date ? undefined : current[filter.id], now),
+      resolveDashboardFilterValue(
+        filter,
+        filter.relative_date && !manualFilterIds.has(filter.id) ? undefined : current[filter.id],
+        now,
+      ),
     ]),
   );
 

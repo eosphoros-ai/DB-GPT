@@ -88,6 +88,13 @@ export class QuestionSession {
     if (this.current?.request_id === requestId) this.current = null;
     return this.current;
   }
+
+  clear(): void {
+    if (this.current) this.resolve(this.current.request_id);
+    // Sequence numbers belong to a server process, not a durable conversation.
+    // Keep request-ID replay protection, but start ordering afresh each turn.
+    this.latestSequence.clear();
+  }
 }
 
 export async function checkQuestionResponse(response: Response, requestId: string): Promise<void> {

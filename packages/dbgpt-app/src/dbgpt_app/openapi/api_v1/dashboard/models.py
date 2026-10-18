@@ -910,6 +910,29 @@ class DashboardDao(BaseDao):
                     f"Dashboard revision changed from {expected_revision} "
                     f"to {dashboard.current_revision}."
                 )
+            # SQLite ignores FOR UPDATE. Compare and write in one statement
+            # before creating a publication, so a concurrently saved draft
+            # cannot inherit the stale publication's status.
+            now = datetime.now()
+            changed = query.filter_by(current_revision=expected_revision).update(
+                {
+                    DashboardEntity.status: "published",
+                    DashboardEntity.public_slug: func.coalesce(
+                        DashboardEntity.public_slug, public_slug
+                    ),
+                    DashboardEntity.asset_state: "saved",
+                    DashboardEntity.saved_at: func.coalesce(
+                        DashboardEntity.saved_at, now
+                    ),
+                    DashboardEntity.gmt_modified: now,
+                },
+                synchronize_session=False,
+            )
+            if changed != 1:
+                raise DashboardConflictError(
+                    "Dashboard revision changed before publication."
+                )
+            session.refresh(dashboard)
             latest = (
                 session.query(func.max(DashboardRevisionEntity.revision))
                 .filter_by(dashboard_id=dashboard_id)
@@ -936,12 +959,6 @@ class DashboardDao(BaseDao):
                     gmt_created=revision.gmt_published,
                 )
             )
-            dashboard.status = "published"
-            if dashboard.public_slug is None and public_slug:
-                dashboard.public_slug = public_slug
-            dashboard.asset_state = "saved"
-            dashboard.saved_at = dashboard.saved_at or datetime.now()
-            dashboard.gmt_modified = datetime.now()
             session.flush()
 
             self._prune_versions(session, dashboard_id)

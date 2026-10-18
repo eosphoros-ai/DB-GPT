@@ -47,4 +47,14 @@ describe('dashboard relative date values', () => {
       region: 'south',
     });
   });
+
+  it('preserves an explicit fixed range while untouched relative filters keep rolling', () => {
+    const values = { dates: ['2026-09-01', '2026-09-30'], region: 'north' };
+    expect(refreshDashboardFilterValues(filters, values, dayjs('2026-10-18'), new Set(['dates']))).toEqual(values);
+    expect(refreshDashboardFilterValues(filters, values, dayjs('2026-10-19'), new Set(['dates']))).toEqual(values);
+    expect(refreshDashboardFilterValues(filters, values, dayjs('2026-10-19'))).toEqual({
+      dates: ['2026-10-13', '2026-10-19'],
+      region: 'north',
+    });
+  });
 });

@@ -1,7 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 import pytest
 from sqlalchemy.dialects import mysql, sqlite
+from sqlalchemy.orm import Query
 from sqlalchemy.schema import CreateTable
 
 from dbgpt.storage.metadata import DatabaseManager, Model
@@ -38,6 +40,60 @@ def entity():
         gmt_created=now,
         gmt_modified=now,
     )
+
+
+def test_sqlite_publish_rejects_a_save_committed_after_its_revision_read(
+    tmp_path, monkeypatch
+):
+    manager = DatabaseManager()
+    manager.init_db(f"sqlite:///{tmp_path / 'concurrent.db'}", base=Model)
+    Model.metadata.create_all(manager.engine)
+    dao = DashboardDao(manager)
+    dao.create_dashboard(entity())
+    first = Query.first
+    saved = False
+
+    def first_then_save(query):
+        nonlocal saved
+        row = first(query)
+        if isinstance(row, DashboardEntity) and not saved:
+            saved = True
+            # Pause publication after reading v1; another connection commits v2.
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                executor.submit(
+                    dao.update_dashboard,
+                    "dashboard-1",
+                    "alice",
+                    1,
+                    title="New draft",
+                    description="",
+                    data_source_id="walmart",
+                    schema_json='{"title":"v2"}',
+                ).result(timeout=5)
+        return row
+
+    monkeypatch.setattr(Query, "first", first_then_save)
+    try:
+        with pytest.raises(DashboardConflictError):
+            dao.publish_dashboard(
+                "dashboard-1",
+                "alice",
+                1,
+                schema_json='{"title":"v1"}',
+                snapshot_json='{"widgets":{}}',
+                validation_json='{"valid":true}',
+                share_token_hash="a" * 64,
+            )
+        current = dao.get_dashboard("dashboard-1", "alice")
+        assert (current.current_revision, current.status, current.schema_json) == (
+            2,
+            "draft",
+            '{"title":"v2"}',
+        )
+        assert dao.list_published_revisions("dashboard-1") == []
+        assert dao.list_shares("dashboard-1") == []
+    finally:
+        manager.engine.dispose()
 
 
 def test_sqlite_crud_and_owner_isolation(dao):

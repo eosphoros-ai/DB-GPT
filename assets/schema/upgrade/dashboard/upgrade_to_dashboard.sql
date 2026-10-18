@@ -1,5 +1,24 @@
--- Dashboard additions for an existing DB-GPT MySQL database.
--- Select the metadata database before running; no DROP or identity backfill.
+-- One-time upgrade from the upstream v0.8.2 schema to Dashboard.
+-- Back up first; for a fresh database use dashboard.sql instead.
+-- Change dbgpt below if your metadata database has another name.
+USE dbgpt;
+
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `owner_id` varchar(255) DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `resource_type` varchar(64) DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `resource_id` varchar(128) DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `lease_owner` varchar(64) DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `lease_expires_at` datetime DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_owner_id` (`owner_id`);
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_resource_type` (`resource_type`);
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_resource_id` (`resource_id`);
+ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_lease_expires_at` (`lease_expires_at`);
+ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `output_resource_id` varchar(255) DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `attempt_count` int NOT NULL DEFAULT 1;
+ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `result_json` longtext DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `idempotency_key` varchar(128) DEFAULT NULL;
+ALTER TABLE `dbgpt_serve_scheduled_run` ADD UNIQUE INDEX `uk_scheduled_run_idempotency` (`task_id`, `idempotency_key`);
+ALTER TABLE `chat_history_message` ADD COLUMN `trace_id` varchar(128) DEFAULT NULL;
+ALTER TABLE `chat_history_message` ADD INDEX `ix_chat_history_message_trace_id` (`trace_id`);
 
 CREATE TABLE IF NOT EXISTS dbgpt_dashboard (
 	id VARCHAR(64) NOT NULL,
@@ -224,83 +243,3 @@ CREATE TABLE IF NOT EXISTS dbgpt_uploaded_dataset (
 	KEY `ix_dbgpt_uploaded_dataset_owner_id` (`owner_id`),
 	KEY `ix_dbgpt_uploaded_dataset_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND COLUMN_NAME = 'owner_id'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `owner_id` varchar(255) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND COLUMN_NAME = 'resource_type'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `resource_type` varchar(64) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND COLUMN_NAME = 'resource_id'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `resource_id` varchar(128) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND COLUMN_NAME = 'lease_owner'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `lease_owner` varchar(64) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND COLUMN_NAME = 'lease_expires_at'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD COLUMN `lease_expires_at` datetime DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND INDEX_NAME = 'ix_dbgpt_serve_scheduled_task_owner_id'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_owner_id` (`owner_id`)');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND INDEX_NAME = 'ix_dbgpt_serve_scheduled_task_resource_type'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_resource_type` (`resource_type`)');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND INDEX_NAME = 'ix_dbgpt_serve_scheduled_task_resource_id'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_resource_id` (`resource_id`)');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_task' AND INDEX_NAME = 'ix_dbgpt_serve_scheduled_task_lease_expires_at'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_task` ADD INDEX `ix_dbgpt_serve_scheduled_task_lease_expires_at` (`lease_expires_at`)');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_run' AND COLUMN_NAME = 'output_resource_id'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `output_resource_id` varchar(255) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_run' AND COLUMN_NAME = 'attempt_count'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `attempt_count` int NOT NULL DEFAULT 1');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_run' AND COLUMN_NAME = 'result_json'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `result_json` longtext DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_run' AND COLUMN_NAME = 'idempotency_key'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_run` ADD COLUMN `idempotency_key` varchar(128) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dbgpt_serve_scheduled_run' AND INDEX_NAME = 'uk_scheduled_run_idempotency'), 'SELECT 1', 'ALTER TABLE `dbgpt_serve_scheduled_run` ADD UNIQUE INDEX `uk_scheduled_run_idempotency` (`task_id`, `idempotency_key`)');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_history_message' AND COLUMN_NAME = 'trace_id'), 'SELECT 1', 'ALTER TABLE `chat_history_message` ADD COLUMN `trace_id` varchar(128) DEFAULT NULL');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
-
-SET @dashboard_sql = IF(EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_history_message' AND INDEX_NAME = 'ix_chat_history_message_trace_id'), 'SELECT 1', 'ALTER TABLE `chat_history_message` ADD INDEX `ix_chat_history_message_trace_id` (`trace_id`)');
-PREPARE dashboard_stmt FROM @dashboard_sql;
-EXECUTE dashboard_stmt;
-DEALLOCATE PREPARE dashboard_stmt;
