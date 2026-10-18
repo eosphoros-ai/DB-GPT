@@ -7,7 +7,7 @@
       "dashboardId": "cb4779a45a75484c90ef20e0ffecefe4",
       "evidence": "output/ui-closeout-20260922/templates/retail-overview.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/retail-overview.png"
+      "previewKind": "layout"
     },
     {
       "id": "holiday-sales",
@@ -15,7 +15,7 @@
       "dashboardId": "be7107b7d55b4c4a9566f0407672c89e",
       "evidence": "output/ui-closeout-20260922/templates/holiday-sales.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/holiday-sales.png"
+      "previewKind": "layout"
     },
     {
       "id": "store-coverage",
@@ -23,7 +23,7 @@
       "dashboardId": "348a71537a174b7a951386eda8fdc94d",
       "evidence": "output/ui-closeout-20260922/templates/store-coverage.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/store-coverage.png"
+      "previewKind": "layout"
     },
     {
       "id": "olist-orders",
@@ -39,7 +39,7 @@
       "dashboardId": "4ffd5c9b4b2047ea8ac710c14bad8f46",
       "evidence": "output/ui-closeout-20260922/templates/olist-delivery.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/olist-delivery.png"
+      "previewKind": "layout"
     },
     {
       "id": "olist-payments",
@@ -47,7 +47,7 @@
       "dashboardId": "187d8b90ebdc4e1ba326f776f431e166",
       "evidence": "output/ui-closeout-20260922/templates/olist-payments.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/olist-payments.png"
+      "previewKind": "layout"
     },
     {
       "id": "northwind-revenue",
@@ -55,7 +55,7 @@
       "dashboardId": "d47655edb4f24f72932674a3e296059c",
       "evidence": "output/ui-closeout-20260922/templates/northwind-revenue.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/northwind-revenue.png"
+      "previewKind": "layout"
     },
     {
       "id": "northwind-customers",
@@ -63,7 +63,7 @@
       "dashboardId": "d1dd7173520f41bba9bce1a5896d5def",
       "evidence": "output/ui-closeout-20260922/templates/northwind-customers.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/northwind-customers.png"
+      "previewKind": "layout"
     },
     {
       "id": "northwind-freight",
@@ -71,7 +71,7 @@
       "dashboardId": "3e6a807f8b544b7dab11239757a95611",
       "evidence": "output/ui-closeout-20260922/templates/northwind-freight.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/northwind-freight.png"
+      "previewKind": "layout"
     },
     {
       "id": "annual-story",
@@ -79,7 +79,7 @@
       "dashboardId": "a0dbc78df00d4931be1c52062166dcf3",
       "evidence": "output/ui-closeout-20260922/templates/annual-story.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/annual-story.png"
+      "previewKind": "layout"
     },
     {
       "id": "business-dossier",
@@ -87,7 +87,7 @@
       "dashboardId": "252fefb27d94477c813eb876a9179f82",
       "evidence": "output/ui-closeout-20260922/templates/business-dossier.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/business-dossier.png"
+      "previewKind": "layout"
     },
     {
       "id": "customer-value",
@@ -95,7 +95,7 @@
       "dashboardId": "d13161577c4843fbb7067ae14112f1a0",
       "evidence": "output/ui-closeout-20260922/templates/customer-value.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/customer-value.png"
+      "previewKind": "layout"
     },
     {
       "id": "ecommerce-revenue",
@@ -103,7 +103,7 @@
       "dashboardId": "d1b44149a27f4d12b1873b280fb72831",
       "evidence": "output/ui-closeout-20260922/templates/ecommerce-revenue.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/ecommerce-revenue.png"
+      "previewKind": "layout"
     },
     {
       "id": "energy-monitor",
@@ -111,7 +111,7 @@
       "dashboardId": "fe25f20cf4e04a7886add94785285795",
       "evidence": "output/ui-closeout-20260922/templates/energy-monitor.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/energy-monitor.png"
+      "previewKind": "layout"
     },
     {
       "id": "executive-pulse",
@@ -119,7 +119,7 @@
       "dashboardId": "49abf1b28df74fb487df2ab8ee57423c",
       "evidence": "output/ui-closeout-20260922/templates/executive-pulse.json",
       "revision": 2,
-      "preview": "/dashboard-templates/refresh-20260922/executive-pulse.png"
+      "previewKind": "layout"
     },
     {
       "id": "growth-map",
@@ -127,7 +127,7 @@
       "dashboardId": "f926a29d307f45db9cf8b7ab2078599b",
       "evidence": "output/ui-closeout-20260922/templates/growth-map.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/growth-map.png"
+      "previewKind": "layout"
     },
     {
       "id": "inventory-watch",
@@ -135,7 +135,7 @@
       "dashboardId": "3690eab85c4b434c9668be2f8644a1f3",
       "evidence": "output/ui-closeout-20260922/templates/inventory-watch.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/inventory-watch.png"
+      "previewKind": "layout"
     },
     {
       "id": "logistics-flow",
@@ -143,7 +143,7 @@
       "dashboardId": "b2ab6e9dfa9b4d3eacd4d96e939b1aa1",
       "evidence": "output/ui-closeout-20260922/templates/logistics-flow.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/logistics-flow.png"
+      "previewKind": "layout"
     },
     {
       "id": "manufacturing-quality",
@@ -151,7 +151,7 @@
       "dashboardId": "e839871ed87b4115bbb392ce947c8286",
       "evidence": "output/ui-closeout-20260922/templates/manufacturing-quality.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/manufacturing-quality.png"
+      "previewKind": "layout"
     },
     {
       "id": "quarterly-timeline",
@@ -159,7 +159,7 @@
       "dashboardId": "1658d68d8d7649e6bfaffd68bac476e2",
       "revision": 1,
       "evidence": "output/template-expansion-20260915/admission/quarterly-timeline.json",
-      "preview": "/dashboard-templates/reference-20260915/quarterly-timeline.png"
+      "previewKind": "layout"
     },
     {
       "id": "retail-terminal",
@@ -167,7 +167,7 @@
       "dashboardId": "946f22dd2921464a99edc366915a408d",
       "revision": 1,
       "evidence": "output/template-expansion-20260915/admission/retail-terminal.json",
-      "preview": "/dashboard-templates/reference-20260915/retail-terminal.png"
+      "previewKind": "layout"
     },
     {
       "id": "revenue-growth",
@@ -175,7 +175,7 @@
       "dashboardId": "4a5d5824179945d5be347e33e872b277",
       "evidence": "output/ui-closeout-20260922/templates/revenue-growth.json",
       "revision": 2,
-      "preview": "/dashboard-templates/refresh-20260922/revenue-growth.png"
+      "previewKind": "layout"
     },
     {
       "id": "sales-receipt",
@@ -183,7 +183,7 @@
       "dashboardId": "fd249206514a414486ab0e29a7a7bee5",
       "evidence": "output/ui-closeout-20260922/templates/sales-receipt.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/sales-receipt.png"
+      "previewKind": "layout"
     },
     {
       "id": "service-desk",
@@ -191,7 +191,7 @@
       "dashboardId": "84307d447f6348e99ee86b677f9453b5",
       "evidence": "output/ui-closeout-20260922/templates/service-desk.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/service-desk.png"
+      "previewKind": "layout"
     },
     {
       "id": "student-performance",
@@ -199,7 +199,7 @@
       "dashboardId": "4bd0264bf7c04f01a4378a04368e8373",
       "evidence": "output/ui-closeout-20260922/templates/student-performance.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/student-performance.png"
+      "previewKind": "layout"
     },
     {
       "id": "support-operations",
@@ -207,7 +207,7 @@
       "dashboardId": "c7e2637e87d34f7aa5c44b151cf135ed",
       "evidence": "output/ui-closeout-20260922/templates/support-operations.json",
       "revision": 1,
-      "preview": "/dashboard-templates/refresh-20260922/support-operations.png"
+      "previewKind": "layout"
     },
     {
       "id": "brand-revenue",
@@ -215,7 +215,7 @@
       "dashboardId": "080cec2008cc420ba2b1c6b593d3ae8e",
       "revision": 1,
       "evidence": "output/annotation-brand-followup-20260915/brand-admission.json",
-      "preview": "/dashboard-templates/assets/brand-revenue.png"
+      "previewKind": "layout"
     },
     {
       "id": "store-marketing",
@@ -223,7 +223,7 @@
       "dashboardId": "5ec3810711684343b3bf03462d03b2b2",
       "revision": 1,
       "evidence": "output/reference-bigscreen-20260919/admission/templates/store-marketing/attempt-1/admission.json",
-      "preview": "/dashboard-templates/showcase-20260919/store-marketing.png"
+      "previewKind": "layout"
     },
     {
       "id": "national-command",
@@ -231,7 +231,7 @@
       "dashboardId": "1d35c6962ef3487aa8fa91e1a350d217",
       "revision": 1,
       "evidence": "output/reference-bigscreen-20260919/admission/templates/national-command/attempt-1/admission.json",
-      "preview": "/dashboard-templates/showcase-20260919/national-command.png"
+      "previewKind": "layout"
     },
     {
       "id": "healthcare-command",
@@ -239,7 +239,7 @@
       "dashboardId": "0586f551019547b7a06506782f112e1c",
       "revision": 1,
       "evidence": "output/reference-bigscreen-20260919/admission/templates/healthcare-command/attempt-1/admission.json",
-      "preview": "/dashboard-templates/showcase-20260919/healthcare-command.png"
+      "previewKind": "layout"
     },
     {
       "id": "rural-finance",
@@ -247,7 +247,7 @@
       "dashboardId": "439efe0dff3c4d7a9f06beb520cccd53",
       "revision": 1,
       "evidence": "output/reference-bigscreen-20260919/admission/templates/rural-finance/attempt-1/admission.json",
-      "preview": "/dashboard-templates/showcase-20260919/rural-finance.png"
+      "previewKind": "layout"
     },
     {
       "id": "clinical-insight",
@@ -255,7 +255,7 @@
       "dashboardId": "11e538833bb04b8ca5ff230ffba5b727",
       "revision": 1,
       "evidence": "output/sive-more-20260920/admission/clinical-insight/admission.json",
-      "preview": "/dashboard-templates/research-20260920/clinical-insight.png"
+      "previewKind": "layout"
     },
     {
       "id": "cardio-journal",
@@ -271,7 +271,7 @@
       "dashboardId": "2b7deb927caf450f8bc28f00fb722d06",
       "revision": 1,
       "evidence": "output/sive-more-20260920/admission/voice-observatory/admission.json",
-      "preview": "/dashboard-templates/research-20260920/voice-observatory.png"
+      "previewKind": "layout"
     }
   ],
   "modes": [
