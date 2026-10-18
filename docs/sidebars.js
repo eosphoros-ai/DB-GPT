@@ -836,6 +836,7 @@ const sidebars = {
   ],
 
   sidebarDevelopmentGuide: [
+    { type: "doc", id: "design/dashboard" },
     {
       type: "category",
       label: "Agents",
