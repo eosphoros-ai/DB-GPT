@@ -48,9 +48,17 @@ test('template gallery renders all retained layouts and opens a query preview wi
   await page.goto('/dashboards/?tab=templates');
   await expect(page.locator('[data-catalog-template]')).toHaveCount(32);
   await expect(page.locator('svg[data-template-layout]')).toHaveCount(32);
-  await expect(page.locator('[data-design-template]')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '风格技能', exact: true })).toHaveCount(0);
-  await expect(page.getByText('风格技能 · 连接数据后生成', { exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-design-template]')).toHaveCount(7);
+  await expect(page.getByText('风格技能 · 连接数据后生成', { exact: true })).toHaveCount(7);
+  for (const name of ['learnhub', 'brutal', 'pawspa', 'serenityspa', 'datapulse', 'nexusai']) {
+    const design = page.locator(`[data-design-template="${name}-viz-design"]`);
+    await expect(design.getByRole('button', { name: /^使用模板 / })).toHaveCount(1);
+  }
+  await page.getByRole('button', { name: '风格技能', exact: true }).first().click();
+  await expect(page.locator('[data-design-template]')).toHaveCount(7);
+  await expect(page.locator('[data-catalog-template]')).toHaveCount(0);
+  await page.getByRole('button', { name: '全部模板', exact: true }).click();
+  await expect(page.locator('[data-catalog-template]')).toHaveCount(32);
   await page.screenshot({ path: testInfo.outputPath('retained-template-gallery.png') });
   const cover = page.locator('[data-catalog-template="retail-overview"]');
   await expect(cover.getByRole('img', { name: /布局示意/ })).toBeVisible();
@@ -108,7 +116,7 @@ test('template gallery renders all retained layouts and opens a query preview wi
     .screenshot({ path: testInfo.outputPath('chart-canvas.png') });
 });
 
-test('favorites ignore retired styles and still open retained templates', async ({ page }) => {
+test('favorites retain restored styles and still open data templates', async ({ page }) => {
   const { errors } = await fixture(page);
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -117,9 +125,12 @@ test('favorites ignore retired styles and still open retained templates', async 
     );
   });
   await page.goto('/dashboards/?tab=templates');
-  await page.getByRole('button', { name: /收藏夹\s*1/ }).click();
+  await page.getByRole('button', { name: /收藏夹\s*3/ }).click();
   await expect(page.locator('[data-catalog-template]')).toHaveCount(1);
-  await expect(page.locator('[data-design-template]')).toHaveCount(0);
+  await expect(page.locator('[data-design-template]')).toHaveCount(2);
+  await page.getByRole('button', { name: '预览模板 学习成长', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('img', { name: /学习成长风格示意/ })).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: '预览模板 零售经营总览', exact: true }).click();
   await expect(page.getByRole('dialog').getByText('使用哪个数据源生成看板')).toBeVisible();
   expect(errors).toEqual([]);
