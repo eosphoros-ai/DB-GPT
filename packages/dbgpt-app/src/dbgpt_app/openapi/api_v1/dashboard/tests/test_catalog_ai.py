@@ -15,6 +15,7 @@ from dbgpt_app.openapi.api_v1.dashboard.catalog_ai import (
     validate_adapted_schema,
 )
 from dbgpt_app.openapi.api_v1.dashboard.schemas import DashboardSchemaV1
+from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 from .test_catalog_workspace import mapped_source  # noqa: F401
 from .test_feedback import real_service  # noqa: F401
@@ -40,6 +41,69 @@ def plan(preview):
         "widgets": preview["schema"]["widgets"],
         "filters": preview["schema"]["filters"],
     }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("prompt_kind", ["empty", "default", "custom"])
+async def test_builtin_northwind_reuses_verified_queries_unless_prompt_changes(
+    real_service, prompt_kind
+):
+    service, _, path = real_service
+    with sqlite3.connect(path) as conn:
+        conn.executescript(
+            "CREATE TABLE customers (customerID TEXT, companyName TEXT);"
+            "CREATE TABLE orders (orderID INTEGER, customerID TEXT, "
+            "orderDate TEXT, shipCountry TEXT);"
+            "CREATE TABLE products (productID INTEGER, categoryID INTEGER);"
+            "CREATE TABLE categories (categoryID INTEGER, categoryName TEXT);"
+            "CREATE TABLE order_details (orderID INTEGER, productID INTEGER, "
+            "unitPrice REAL, quantity INTEGER, discount REAL);"
+            "INSERT INTO customers VALUES ('A', 'Customer A');"
+            "INSERT INTO products VALUES (1, 1);"
+            "INSERT INTO categories VALUES (1, 'Beverages');"
+        )
+        conn.executemany(
+            "INSERT INTO orders VALUES (?, 'A', ?, ?)",
+            [
+                (i, f"2025-{i % 3 + 1:02d}-01", "UK" if i % 2 else "US")
+                for i in range(600)
+            ],
+        )
+        conn.executemany(
+            "INSERT INTO order_details VALUES (?, 1, 10, 2, 0.1)",
+            [(i,) for i in range(600)],
+        )
+    service.query_executor._connector_resolver = lambda _: (
+        SQLiteConnector.from_file_path(str(path))
+    )
+    preview = preview_template(service, "northwind-revenue", "test", "alice")
+    prompt = template_features("northwind-revenue")["prompt"]
+    if prompt_kind == "empty":
+        prompt = ""
+    elif prompt_kind == "custom":
+        prompt += "\n将标题改为已适配的交易看板。"
+    model = Model([plan(preview)])
+    result = await adapt_template(
+        service,
+        "northwind-revenue",
+        "alice",
+        TemplateAdaptRequest(data_source_id="test", prompt=prompt, model="test"),
+        model,
+    )
+    assert len(model.calls) == (1 if prompt_kind == "custom" else 0)
+    assert result["snapshot"]["widgets"]["total"]["rows"][0][0] == pytest.approx(10800)
+    assert all(
+        not widget["error"] and not widget["truncated"]
+        for widget in result["snapshot"]["widgets"].values()
+    )
+    if prompt_kind == "custom":
+        assert result["schema"]["dashboard"]["title"] == "已适配的交易看板"
+        assert result["adaptation"]["model"] == "test"
+    else:
+        assert result["validation"]["records"] == 600
+        assert result["validation"]["filter_checks"] == 3
+        assert result["validation"]["publication_equivalent"]
+        assert result["adaptation"]["model"] is None
 
 
 @pytest.mark.asyncio

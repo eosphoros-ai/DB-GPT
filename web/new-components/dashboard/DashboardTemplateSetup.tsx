@@ -226,7 +226,8 @@ export default function DashboardTemplateSetup({
                       template.id,
                       source,
                       aiAssisted ? undefined : manual ? mapping : undefined,
-                      aiAssisted ? preview.schema : undefined,
+                      // Model-free previews reuse the verified preset creation path.
+                      aiAssisted && preview.adaptation?.model !== null ? preview.schema : undefined,
                     );
                     if (!r.data.success) throw new Error(r.data.err_msg || '生成失败');
                     await router.push(`/dashboards/${r.data.data.id}`);

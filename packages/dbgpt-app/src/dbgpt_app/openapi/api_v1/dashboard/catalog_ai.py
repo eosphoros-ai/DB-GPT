@@ -334,15 +334,10 @@ async def adapt_template(service, template_id, actor, request, llm_client=None):
         _source_context, service, request.data_source_id, actor, template_id
     )
     from .catalog import preview_template
-    from .catalog_extended import get_recipe
 
-    # Known reference schemas have verified queries. Avoid asking a model to
-    # regenerate correct SQL when the user has made no additional request.
-    if (
-        get_recipe(template_id)
-        and info["builtin_available"]
-        and request.prompt in ("", features["prompt"])
-    ):
+    # Base and extended reference templates have verified queries. Avoid model
+    # regeneration when the user has made no additional request.
+    if info["builtin_available"] and request.prompt in ("", features["prompt"]):
         preview = await asyncio.to_thread(
             preview_template, service, template_id, request.data_source_id, actor
         )

@@ -8,7 +8,7 @@ const snapshot = JSON.parse(
 );
 const success = (data: unknown) => ({ success: true, data, err_code: null, err_msg: null });
 
-async function fixture(page: Page) {
+async function fixture(page: Page, model?: string | null) {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => {
@@ -37,10 +37,35 @@ async function fixture(page: Page) {
         schema: snapshot.schema,
         snapshot: snapshot.snapshot,
         validation: { records: 10, widgets: snapshot.schema.widgets.length },
+        adaptation: model === undefined ? undefined : { model, changes: [] },
       };
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify(success(data)) });
   });
   return { imageErrors, errors };
+}
+
+for (const model of [null, 'test-model', undefined]) {
+  test(`template creation preserves ${model === null ? 'preset' : model ? 'AI' : 'legacy AI'} preview routing`, async ({
+    page,
+  }) => {
+    await fixture(page, model);
+    await page.route('**/api/v1/dashboard-catalog/retail-overview/generate', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, err_msg: 'Creation request captured before persistence.' }),
+      }),
+    );
+    await page.goto('/dashboards/?tab=templates');
+    await page.getByRole('button', { name: '预览模板 零售经营总览', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'AI 适配并预览', exact: true }).click();
+    const request = page.waitForRequest('**/api/v1/dashboard-catalog/retail-overview/generate');
+    await dialog.getByRole('button', { name: '创建看板', exact: true }).click();
+    const body = (await request).postDataJSON();
+    expect(body.data_source_id).toBe('Walmart_Sales');
+    if (model === null) expect(body).not.toHaveProperty('schema');
+    else expect(body.schema).toEqual(snapshot.schema);
+  });
 }
 
 test('template gallery loads distinct preview images and opens a query preview', async ({ page }, testInfo) => {
