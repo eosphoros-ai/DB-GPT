@@ -1167,6 +1167,7 @@ def _build_react_history_payload(
     citations: Optional[List[Dict[str, Any]]] = None,
     report_id: Optional[str] = None,
     report_run_id: Optional[str] = None,
+    report_status: Optional[str] = None,
 ) -> str:
     """Serialize the persisted react-agent history payload (version 2).
 
@@ -1191,6 +1192,8 @@ def _build_react_history_payload(
     if report_id and report_run_id:
         value["report_id"] = report_id
         value["report_run_id"] = report_run_id
+    if report_status:
+        value["report_status"] = report_status
     return json.dumps(value, ensure_ascii=False)
 
 
@@ -1557,9 +1560,10 @@ async def _assemble_and_persist_turn_report(
                 assemble_kwargs["presentation"] = presentation
             return service.assemble_and_save(**assemble_kwargs)
 
-        if not _REPORT_PERSIST_SLOTS.acquire(blocking=False):
-            logger.warning("Report persistence capacity is saturated; skipping turn")
-            return None
+        # Wait cooperatively within the caller's persistence deadline instead of
+        # silently dropping turns while both database workers are occupied.
+        while not _REPORT_PERSIST_SLOTS.acquire(blocking=False):
+            await asyncio.sleep(0.05)
         try:
             future = _REPORT_PERSIST_EXECUTOR.submit(assemble_and_save)
         except Exception:
@@ -1581,7 +1585,7 @@ def _schedule_turn_report_persistence(
     artifact_sink: Optional[InMemoryArtifactSink],
     react_state: Dict[str, Any],
 ) -> "asyncio.Task[None]":
-    """Start bounded report persistence without delaying history or terminal SSE."""
+    """Track bounded persistence; publication must await its confirmed result."""
 
     async def persist() -> None:
         try:
@@ -1611,6 +1615,46 @@ def _schedule_turn_report_persistence(
     _REPORT_PERSIST_TASKS.add(task)
     task.add_done_callback(_REPORT_PERSIST_TASKS.discard)
     return task
+
+
+async def _finalize_turn_report_persistence(
+    *,
+    dialogue: ConversationVo,
+    conv_id: str,
+    user_input: str,
+    final_answer: AgentFinalAnswer,
+    artifact_sink: Optional[InMemoryArtifactSink],
+    react_state: Dict[str, Any],
+) -> AgentFinalAnswer:
+    """Publish immutable coordinates only after the save transaction commits.
+
+    A timeout cannot stop an already-running database thread: its transaction
+    may commit later. In that case unconfirmed means no readable run has been
+    confirmed for this response, not a claim that the save was rolled back.
+    """
+    answer = replace(
+        final_answer, report_id=None, report_run_id=None, report_status=None
+    )
+    react_state.pop("_report_run", None)
+    if not _has_rendered_html_presentation(react_state.get("_report_presentation")):
+        return answer
+    await _schedule_turn_report_persistence(
+        dialogue=dialogue,
+        conv_id=conv_id,
+        user_input=user_input,
+        final_answer=answer,
+        artifact_sink=artifact_sink,
+        react_state=react_state,
+    )
+    report_run = react_state.get("_report_run")
+    if report_run is None:
+        return replace(answer, report_status="unconfirmed")
+    return replace(
+        answer,
+        report_id=report_run.report_id,
+        report_run_id=report_run.run_id,
+        report_status="ready",
+    )
 
 
 async def _react_agent_stream(
@@ -4222,22 +4266,14 @@ After partial results, finish only missing requested deliverables, then report.
             )
         fail_running_subagent_history(subagent_history)
         error_answer = AgentFinalAnswer(content=err_msg)
-        coordinates = (
-            _turn_report_coordinates(
-                dialogue,
-                conv_id,
-                error_answer,
-                artifact_sink,
-                react_state.get("_report_presentation"),
-            )
-            if _has_rendered_html_presentation(react_state.get("_report_presentation"))
-            else None
+        error_answer = await _finalize_turn_report_persistence(
+            dialogue=dialogue,
+            conv_id=conv_id,
+            user_input=user_input,
+            final_answer=error_answer,
+            artifact_sink=artifact_sink,
+            react_state=react_state,
         )
-        report_id, report_run_id = coordinates or (None, None)
-        if report_id and report_run_id:
-            error_answer = replace(
-                error_answer, report_id=report_id, report_run_id=report_run_id
-            )
         error_payload = _build_react_history_payload(
             final_content=err_msg,
             steps=history_steps,
@@ -4246,21 +4282,14 @@ After partial results, finish only missing requested deliverables, then report.
             sub_agents=build_subagent_history_snapshot(subagent_history),
             input_files=input_files_snapshot,
             citations=[],
-            report_id=report_id,
-            report_run_id=report_run_id,
+            report_id=error_answer.report_id,
+            report_run_id=error_answer.report_run_id,
+            report_status=error_answer.report_status,
         )
         terminal_events = _react_terminal_events(
             storage_conv,
             error_payload,
             error_answer,
-        )
-        _schedule_turn_report_persistence(
-            dialogue=dialogue,
-            conv_id=conv_id,
-            user_input=user_input,
-            final_answer=error_answer,
-            artifact_sink=artifact_sink,
-            react_state=react_state,
         )
         for terminal_event in terminal_events:
             yield terminal_event
@@ -4387,18 +4416,14 @@ After partial results, finish only missing requested deliverables, then report.
             ],
         )
     final_answer = final_answer_assembler.finalize(final_content)
-    coordinates = (
-        _turn_report_coordinates(
-            dialogue, conv_id, final_answer, artifact_sink, presentation
-        )
-        if _has_rendered_html_presentation(presentation)
-        else None
+    final_answer = await _finalize_turn_report_persistence(
+        dialogue=dialogue,
+        conv_id=conv_id,
+        user_input=user_input,
+        final_answer=final_answer,
+        artifact_sink=artifact_sink,
+        react_state=react_state,
     )
-    report_id, report_run_id = coordinates or (None, None)
-    if report_id and report_run_id:
-        final_answer = replace(
-            final_answer, report_id=report_id, report_run_id=report_run_id
-        )
 
     # Persist AI reply with structured history payload
     history_payload = _build_react_history_payload(
@@ -4409,21 +4434,14 @@ After partial results, finish only missing requested deliverables, then report.
         sub_agents=build_subagent_history_snapshot(subagent_history),
         input_files=input_files_snapshot,
         citations=[citation.to_dict() for citation in final_answer.citations],
-        report_id=report_id,
-        report_run_id=report_run_id,
+        report_id=final_answer.report_id,
+        report_run_id=final_answer.report_run_id,
+        report_status=final_answer.report_status,
     )
     terminal_events = _react_terminal_events(
         storage_conv,
         history_payload,
         final_answer,
-    )
-    _schedule_turn_report_persistence(
-        dialogue=dialogue,
-        conv_id=conv_id,
-        user_input=user_input,
-        final_answer=final_answer,
-        artifact_sink=artifact_sink,
-        react_state=react_state,
     )
     for terminal_event in terminal_events:
         yield terminal_event

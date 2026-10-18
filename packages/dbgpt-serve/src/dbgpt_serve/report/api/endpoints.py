@@ -5,6 +5,7 @@ from typing import Callable, List, Literal, Optional
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.routing import APIRoute
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 
@@ -12,6 +13,7 @@ from dbgpt.component import SystemApp
 from dbgpt_serve.core import Result
 from dbgpt_serve.utils.auth import UserRequest, get_user_from_headers
 
+from ..config import ServeConfig
 from ..domain import ReportWriteConflictError
 from ..models.models import MAX_OWNER_ID_LENGTH
 from ..rendering import REPORT_PREVIEW_CSP, render_report_html
@@ -57,23 +59,29 @@ class _ReportApiRoute(APIRoute):
         return handler
 
 
-router = APIRouter(route_class=_ReportApiRoute)
 global_system_app: Optional[SystemApp] = None
 _service_instance: Optional[ReportService] = None
+_config_instance: Optional[ServeConfig] = None
 
 
-def init_endpoints(system_app: SystemApp, service: ReportService) -> None:
+def init_endpoints(
+    system_app: SystemApp,
+    service: ReportService,
+    config: Optional[ServeConfig] = None,
+) -> None:
     """Bind the lifecycle-owned service used by FastAPI dependencies."""
-    global global_system_app, _service_instance
+    global global_system_app, _service_instance, _config_instance
     global_system_app = system_app
     _service_instance = service
+    _config_instance = config or ServeConfig()
 
 
 def _reset_endpoints() -> None:
     """Fail closed after lifecycle shutdown and isolate endpoint tests."""
-    global global_system_app, _service_instance
+    global global_system_app, _service_instance, _config_instance
     global_system_app = None
     _service_instance = None
+    _config_instance = None
 
 
 def get_report_service() -> ReportService:
@@ -84,6 +92,33 @@ def get_report_service() -> ReportService:
             "Report persistence is not available.",
         )
     return _service_instance
+
+
+def get_report_config() -> ServeConfig:
+    if _config_instance is None:
+        raise ReportApiError(
+            503, "REPORT_SERVICE_UNAVAILABLE", "Report persistence is not available."
+        )
+    return _config_instance
+
+
+_get_bearer_token = HTTPBearer(auto_error=False)
+
+
+async def check_api_key(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(_get_bearer_token),
+    config: ServeConfig = Depends(get_report_config),
+) -> Optional[str]:
+    """Enforce configured keys with the same Bearer policy as other serves."""
+    if config.api_keys:
+        api_keys = [key.strip() for key in config.api_keys.split(",")]
+        if auth is None or auth.credentials not in api_keys:
+            raise ReportApiError(401, "invalid_api_key", "A valid API key is required.")
+        return auth.credentials
+    return None
+
+
+router = APIRouter(route_class=_ReportApiRoute, dependencies=[Depends(check_api_key)])
 
 
 def get_authenticated_owner(

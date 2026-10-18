@@ -75,14 +75,10 @@ _NATIVE_TOOL_CALL_PATTERN = re.compile(
 # A few OpenAI-compatible models intermittently emit an XML-shaped tool call
 # despite being instructed to use textual ReAct, for example:
 # ``<sql_query>{"sql":"SELECT ..."}</sql_query>``. These tags are not HTML
-# report content at this stage: the payload is a JSON object/array and the tag
-# name is the intended tool. Normalize them before the line-based parser so a
-# valid, already-produced query does not consume a failed agent round.
+# report content when they form a top-level JSON-bearing tool envelope. The
+# decoder below finds the JSON boundary without matching HTML inside strings.
 _XML_TOOL_CALL_PATTERN = re.compile(
-    r"<(?P<tool>[A-Za-z][\w.-]*)>\s*"
-    r"(?P<args>\{.*?\}|\[.*?\])\s*"
-    r"</(?P=tool)>",
-    re.DOTALL,
+    r"^[ \t]*<(?P<tool>[A-Za-z][\w.-]*)>\s*", re.MULTILINE
 )
 
 
@@ -244,23 +240,42 @@ class ReActOutputParser:
         return _NATIVE_TOOL_CALL_PATTERN.sub(_render, text)
 
     def _translate_xml_tool_calls(self, text: str) -> str:
-        """Translate JSON-bearing XML-shaped tool calls into ReAct lines.
-
-        Restrict the match to payloads that parse as JSON. This leaves ordinary
-        HTML/XML text untouched while recovering the malformed tool protocol.
-        """
+        """Recover top-level XML calls without rewriting existing ReAct frames."""
         if "<" not in text or "</" not in text:
             return text
-
-        def _render(match: "re.Match[str]") -> str:
-            args = match.group("args").strip()
+        candidate = self._strip_markdown_code_fence(text)
+        if self._find_prefix_matches(candidate, self.action_prefix_escaped):
+            # JSON arguments can contain HTML or even tool-shaped examples.
+            # An existing Action frame takes precedence over XML recovery.
+            return text
+        fences = self._markdown_fence_spans(candidate)
+        decoder = json.JSONDecoder()
+        pieces = []
+        cursor = 0
+        for match in _XML_TOOL_CALL_PATTERN.finditer(candidate):
+            if match.start() < cursor or self._is_in_spans(match.start(), fences):
+                continue
             try:
-                json.loads(args)
+                value, json_end = decoder.raw_decode(candidate, match.end())
             except json.JSONDecodeError:
-                return match.group(0)
-            return f"\nAction: {match.group('tool')}\nAction Input: {args}\n"
-
-        return _XML_TOOL_CALL_PATTERN.sub(_render, text)
+                continue
+            if not isinstance(value, (dict, list)):
+                continue
+            tool = match.group("tool")
+            closing = re.compile(
+                rf"\s*</{re.escape(tool)}>[ \t]*(?=\r?$)", re.MULTILINE
+            ).match(candidate, json_end)
+            if closing is None:
+                continue
+            pieces.append(candidate[cursor : match.start()])
+            args = candidate[match.end() : json_end]
+            pieces.append(
+                f"\n{self.action_prefix} {tool}\n{self.action_input_prefix} {args}\n"
+            )
+            cursor = closing.end()
+        if not pieces:
+            return text
+        return "".join(pieces) + candidate[cursor:]
 
     def _normalize_react_text(self, text: str) -> str:
         """Normalize common wrappers before ReAct parsing."""

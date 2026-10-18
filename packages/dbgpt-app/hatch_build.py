@@ -29,6 +29,7 @@ _SKILL_DST = "dbgpt_app/_builtin_skills"
 _SKILLS_MAP = {
     f"{_SKILL_SRC}/{name}": f"{_SKILL_DST}/{name}"
     for name in [
+        "business-report",
         "csv-data-analysis",
         "skill-creator",
         "financial-report-analyzer",
@@ -117,6 +118,10 @@ class CustomBuildHook(BuildHookInterface):
             build_data: mutable dict; set ``force_include`` to inject
                         path mappings
         """
+        # The sdist already has its own force-include layout in pyproject.toml.
+        # Wheel destinations here must not override those archive paths.
+        if self.target_name != "wheel":
+            return
         pkg_root = Path(self.root)  # packages/dbgpt-app/
         all_mappings = {
             **_SKILLS_MAP,
@@ -142,6 +147,10 @@ class CustomBuildHook(BuildHookInterface):
                         sdist_path = replacement + repo_rel[len(prefix) :]
                         break
                 source = str(pkg_root / sdist_path)
+                if not os.path.exists(source):
+                    # Direct wheel builds from a checkout have the same source
+                    # layout as editable builds, not the extracted sdist layout.
+                    source = str(pkg_root.parent.parent / repo_rel)
                 if os.path.exists(source):
                     force_include[source] = wheel_target
 

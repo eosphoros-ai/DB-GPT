@@ -393,6 +393,11 @@ async def kb_cat(
         content_chunks.append((meta, _CONTEXT_PREFIX_RE.sub("", chunk.content or "")))
     if chunk_id and not content_chunks:
         return f"Chunk '{chunk_id}' not found in '{path}'"
+    if chunk_id and len(content_chunks) > 1:
+        return (
+            f"Chunk '{chunk_id}' has ambiguous source identities in '{path}'; "
+            "reindex this document before reading by chunk ID."
+        )
     full_lines = []
     chunk_ranges = []
     for meta, content in content_chunks:

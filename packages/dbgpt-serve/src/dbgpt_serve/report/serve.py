@@ -76,7 +76,7 @@ class ReportServe(BaseServe):
             self._db_manager = self.create_or_get_db_manager()
         if self._service is None:
             self._service = ReportService(ReportDao(self._db_manager))
-            init_endpoints(self._system_app, self._service)
+            init_endpoints(self._system_app, self._service, self._config)
 
     async def async_before_stop(self):
         _reset_endpoints()

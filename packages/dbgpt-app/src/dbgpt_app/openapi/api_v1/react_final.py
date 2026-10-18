@@ -5,7 +5,7 @@ import json
 import math
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 FINAL_PROTOCOL_VERSION = 2
 MAX_CITATIONS = 50
@@ -80,6 +80,7 @@ class AgentFinalAnswer:
     citations: Tuple[AgentCitation, ...] = ()
     report_id: Optional[str] = None
     report_run_id: Optional[str] = None
+    report_status: Optional[Literal["ready", "unconfirmed"]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize fields shared by SSE and conversation history."""
@@ -90,6 +91,8 @@ class AgentFinalAnswer:
         if self.report_id and self.report_run_id:
             value["report_id"] = self.report_id
             value["report_run_id"] = self.report_run_id
+        if self.report_status:
+            value["report_status"] = self.report_status
         return value
 
     def to_sse_payload(self) -> Dict[str, Any]:

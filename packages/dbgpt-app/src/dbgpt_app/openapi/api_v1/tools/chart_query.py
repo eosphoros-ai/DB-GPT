@@ -1,7 +1,6 @@
 """Thin ReAct adapter for DB-GPT's native SQL chart action."""
 
 import json
-import re
 from typing import Any, Dict, Optional
 
 from dbgpt.agent.expand.actions.chart_action import ChartAction
@@ -11,6 +10,8 @@ from dbgpt.core.interface.report_capture import (
     bind_artifact_sink,
     connector_database_name,
 )
+
+from .sql_read_only import ReadOnlySqlError, read_only_sql
 
 _DISPLAY_TYPES = {
     "response_line_chart",
@@ -28,26 +29,6 @@ _DISPLAY_TYPE_ALIASES = {
     # canonical artifact type, while continuing to accept old agent output.
     "response_heatmap": "response_heatmap_chart",
 }
-_FORBIDDEN_SQL_PREFIXES = {
-    "INSERT",
-    "UPDATE",
-    "DELETE",
-    "DROP",
-    "ALTER",
-    "TRUNCATE",
-    "CREATE",
-    "GRANT",
-    "REVOKE",
-}
-
-
-def _read_only_sql(sql: str) -> str:
-    """Normalize leaked Markdown escapes and enforce the normal query boundary."""
-    value = re.sub(r"\\([_`*])", r"\1", sql).strip().rstrip(";")
-    prefix = value.upper().lstrip().split(None, 1)[0] if value else ""
-    if prefix in _FORBIDDEN_SQL_PREFIXES or prefix not in {"SELECT", "WITH", "EXPLAIN"}:
-        raise ValueError("仅支持只读 SELECT / WITH / EXPLAIN 查询")
-    return value
 
 
 def make_chart_query(react_state: Dict[str, Any], database_connector: Optional[Any]):
@@ -91,7 +72,17 @@ def make_chart_query(react_state: Dict[str, Any], database_connector: Optional[A
                 ensure_ascii=False,
             )
         try:
-            normalized_sql = _read_only_sql(sql)
+            normalized_sql = read_only_sql(sql)
+        except ReadOnlySqlError as error:
+            return json.dumps(
+                {
+                    "success": False,
+                    "error_code": "SQL_READ_ONLY_REQUIRED",
+                    "chunks": [{"output_type": "text", "content": str(error)}],
+                },
+                ensure_ascii=False,
+            )
+        try:
             artifact_sink = react_state.get("_report_artifact_sink")
             database_name = connector_database_name(database_connector, artifact_sink)
             resource = RDBMSConnectorResource(

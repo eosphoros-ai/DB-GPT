@@ -27,20 +27,35 @@ def parse_chunk_metadata(value: Any) -> Dict[str, Any]:
     return dict(parsed)
 
 
+def chunk_vector_id_map(chunks, vector_ids):
+    """Match known identities; positional remapping requires a complete result."""
+    source_ids = {chunk.chunk_id for chunk in chunks}
+    ids = list(vector_ids or [])
+    if all(vector_id in source_ids for vector_id in ids):
+        return {vector_id: vector_id for vector_id in ids}
+    if len(ids) == len(chunks):
+        # Some stores replace IDs, but their complete result preserves order.
+        return {
+            chunk.chunk_id: vector_id
+            for chunk, vector_id in zip(chunks, ids)
+            if vector_id
+        }
+    # A short result cannot identify which input failed. Keep only identities
+    # that are explicitly present; never assign a neighbor's successful ID.
+    return {vector_id: vector_id for vector_id in ids if vector_id in source_ids}
+
+
 def prepare_document_chunks(chunks, document, vector_ids=None):
     """Attach document identity and source order before indexing/persistence."""
     summary = parse_chunk_metadata(document.summary)
+    identities = chunk_vector_id_map(chunks, vector_ids)
     for index, chunk in enumerate(chunks):
         metadata = parse_chunk_metadata(chunk.metadata)
         metadata.update(
             document_id=document.id,
             doc_name=document.doc_name,
             chunk_index=index,
-            chunk_id=(
-                vector_ids[index]
-                if vector_ids and index < len(vector_ids)
-                else chunk.chunk_id
-            ),
+            chunk_id=identities.get(chunk.chunk_id, chunk.chunk_id),
         )
         metadata.setdefault("file_path", summary.get("file_path") or document.doc_name)
         chunk.metadata = metadata

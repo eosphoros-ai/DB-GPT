@@ -2,12 +2,9 @@
 
 import asyncio
 import json
-import re
 import time
 from threading import Event
 from typing import Any, Dict, Optional
-
-import sqlparse
 
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.core.interface.report_capture import (
@@ -16,10 +13,7 @@ from dbgpt.core.interface.report_capture import (
 )
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 
-
-def _normalize_sql_markdown_escapes(sql: str) -> str:
-    """Undo Markdown escaping that some models leak into SQL identifiers."""
-    return re.sub(r"\\([_`*])", r"\1", sql)
+from .sql_read_only import ReadOnlySqlError, read_only_sql
 
 
 def make_sql_query(
@@ -54,24 +48,9 @@ def make_sql_query(
                 ensure_ascii=False,
             )
 
-        sql_stripped = _normalize_sql_markdown_escapes(sql).strip().rstrip(";")
-        sql_upper = sql_stripped.upper().lstrip()
-        statements = sqlparse.parse(sql_stripped)
-        statement_type = statements[0].get_type() if len(statements) == 1 else "INVALID"
-        explaining_select = False
-        if len(statements) == 1 and sql_upper.startswith("EXPLAIN "):
-            explained = sqlparse.parse(
-                re.sub(
-                    r"^EXPLAIN\s+(?:QUERY\s+PLAN\s+|ANALYZE\s+)?",
-                    "",
-                    sql_stripped,
-                    flags=re.I,
-                )
-            )
-            explaining_select = (
-                len(explained) == 1 and explained[0].get_type() == "SELECT"
-            )
-        if statement_type != "SELECT" and not explaining_select:
+        try:
+            sql_stripped = read_only_sql(sql)
+        except ReadOnlySqlError:
             return json.dumps(
                 {
                     "success": False,

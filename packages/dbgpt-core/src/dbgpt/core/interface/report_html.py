@@ -61,31 +61,33 @@ def _repair_unescaped_attribute_json(value: str) -> str:
     binding writer already produces. Everything else keeps its original bytes.
     """
     output = []
-    index = 0
+    search_index = 0
+    output_index = 0
     repaired = False
     while True:
-        match = _SELECTOR_JSON_ATTRIBUTE.search(value, index)
+        match = _SELECTOR_JSON_ATTRIBUTE.search(value, search_index)
         if match is None:
             break
         start = value.index("{", match.end() - 1)
         end = _json_object_end(value, start)
         if end is None or end >= len(value) or value[end] != '"':
-            index = match.end()
+            search_index = match.end()
             continue
         raw = value[start:end]
         try:
             _json.loads(raw)
         except ValueError:
-            index = match.end()
+            search_index = match.end()
             continue
-        output.append(value[index : match.end()])
+        output.append(value[output_index : match.end()])
         output.append(_escape(raw, quote=True))
         output.append('"')
-        index = end + 1
+        search_index = end + 1
+        output_index = end + 1
         repaired = True
     if not repaired:
         return value
-    output.append(value[index:])
+    output.append(value[output_index:])
     return "".join(output)
 
 

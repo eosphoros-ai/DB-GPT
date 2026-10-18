@@ -29,10 +29,26 @@ from dbgpt.core.interface.report_capture import (
 from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
 
 from ._execution import run_code
+from ._sandbox_capture import capture_helper_source
 
 logger = logging.getLogger(__name__)
 
 EXECUTION_TIMEOUT_SECONDS = 60
+
+
+def _workspace_files(directory: str) -> Dict[str, Tuple[int, int]]:
+    """Snapshot user outputs without treating capture controls as user files."""
+    root = Path(directory)
+    files = {}
+    for path in root.rglob("*"):
+        if ".report-executions" in path.relative_to(root).parts or not path.is_file():
+            continue
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            continue
+        files[str(path)] = (stat.st_mtime_ns, stat.st_size)
+    return files
 
 
 async def _run_python_file(
@@ -173,6 +189,7 @@ def make_code_interpreter(
         CRITICAL: Each call is completely independent — variables do NOT
         persist between calls. Every code snippet MUST include all necessary
         data loading and processing. Always print() results you want to see.
+        Files in the same conversation's working directory persist across calls.
         """
         from dbgpt.configs.model_config import PILOT_PATH
 
@@ -205,15 +222,19 @@ def make_code_interpreter(
             )
 
         cid = react_state.get("conv_id") or "default"
-        work_dir = os.path.join(PILOT_PATH, "tmp", cid, "executions", uuid.uuid4().hex)
-        os.makedirs(work_dir, exist_ok=True)
+        work_dir = os.path.join(PILOT_PATH, "tmp", cid, "python")
+        capture_dir = os.path.join(work_dir, ".report-executions", uuid.uuid4().hex)
+        os.makedirs(capture_dir, exist_ok=True)
+        files_before = _workspace_files(work_dir)
 
         preamble_lines = [
             "import json",
             "import os",
             "import pandas as pd",
             "import numpy as np",
-            "from dbgpt.core.interface.report_capture import TrackedSQLResults",
+            "import types as _capture_types",
+            '_report_capture = _capture_types.ModuleType("_sandbox_capture")',
+            f"exec({capture_helper_source()!r}, _report_capture.__dict__)",
             'PLOT_DIR = os.environ["PLOT_DIR"]',
             "os.makedirs(PLOT_DIR, exist_ok=True)",
             'FILE_PATH = os.environ.get("FILE_PATH") or None',
@@ -222,7 +243,7 @@ def make_code_interpreter(
             "SQL_RESULTS = []",
             "if SQL_RESULTS_PATH:",
             '    with open(SQL_RESULTS_PATH, encoding="utf-8") as _sql_results_file:',
-            "        SQL_RESULTS = TrackedSQLResults(",
+            "        SQL_RESULTS = _report_capture.TrackedSQLResults(",
             "            json.load(_sql_results_file),",
             '            os.environ["SQL_INPUT_TRACE_PATH"])',
             "def sql_result_frame(index=-1):",
@@ -230,11 +251,10 @@ def make_code_interpreter(
             '    return pd.DataFrame(dataset["rows"], columns=dataset["columns"])',
         ]
         preamble = "\n".join(preamble_lines) + "\n"
-        result_path = os.path.join(work_dir, "_report_result.json")
+        result_path = os.path.join(capture_dir, "_report_result.json")
         postamble = (
             '\nif "REPORT_RESULT" in globals():\n'
-            "    from dbgpt.core.interface import report_capture as _report_capture\n"
-            '    with open(os.path.join(PLOT_DIR, "_report_result.json"), "w", '
+            '    with open(os.environ["REPORT_RESULT_PATH"], "w", '
             'encoding="utf-8") as _report_result_file:\n'
             "        json.dump(\n"
             "            _report_capture.normalize_artifact_value(REPORT_RESULT), "
@@ -299,9 +319,20 @@ def make_code_interpreter(
                 react_state.get("_report_artifact_sink") or get_current_artifact_sink()
             )
             sql_results = sql_execution_context(artifact_sink)
-            sql_trace_path = os.path.join(work_dir, "_sql_inputs.json")
+            # Containers have neither the host artifact store nor DB-GPT. Ship
+            # complete normalized snapshots inside the uploaded working folder.
+            for dataset in sql_results:
+                content_uri = dataset.pop("content_uri", None)
+                if content_uri:
+                    data = json.loads(
+                        artifact_content_path(content_uri).read_text(encoding="utf-8")
+                    )
+                    dataset.update(data)
+                    dataset["truncated"] = False
+                    dataset["row_count"] = len(data["rows"])
+            sql_trace_path = os.path.join(capture_dir, "_sql_inputs.json")
             if isinstance(sql_results, list) and sql_results:
-                sql_results_path = os.path.join(work_dir, "_report_sql_results.json")
+                sql_results_path = os.path.join(capture_dir, "_report_sql_results.json")
                 with open(sql_results_path, "w", encoding="utf-8") as context_file:
                     json.dump(
                         sql_results, context_file, ensure_ascii=False, allow_nan=False
@@ -311,7 +342,7 @@ def make_code_interpreter(
                 encoding="utf-8",
                 prefix="_run_",
                 suffix=".py",
-                dir=work_dir,
+                dir=capture_dir,
                 delete=False,
             ) as tmp:
                 tmp_path = tmp.name
@@ -323,6 +354,7 @@ def make_code_interpreter(
                 files_json_path=react_state.get("files_json_path"),
                 artifact_sink=artifact_sink,
                 extra={
+                    "REPORT_RESULT_PATH": result_path,
                     "SQL_RESULTS_PATH": sql_results_path,
                     "SQL_INPUT_TRACE_PATH": sql_trace_path,
                     "REPORT_CALCULATION_INPUTS": (
@@ -401,7 +433,16 @@ def make_code_interpreter(
                 }
             )
 
-        image_paths = execution_output_files(work_dir, images=True)
+        changed_files = {
+            path
+            for path, signature in _workspace_files(work_dir).items()
+            if files_before.get(path) != signature
+        }
+        image_paths = [
+            path
+            for path in execution_output_files(work_dir, images=True)
+            if path in changed_files
+        ]
 
         if execution_error is not None:
             status = "failed"
@@ -447,7 +488,9 @@ def make_code_interpreter(
             error=artifact_error,
             images=captured_images,
             output_files=[
-                path for path in execution_output_files(work_dir) if path != result_path
+                path
+                for path in execution_output_files(work_dir)
+                if path in changed_files
             ],
             input_artifact_ids=list(dict.fromkeys(sql_input_artifact_ids)),
             artifact_sink=react_state.get("_report_artifact_sink"),
