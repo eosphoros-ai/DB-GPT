@@ -72,6 +72,7 @@ describe('DashboardSchedulePanel', () => {
     ).toBeTruthy();
     expect(await screen.findByText(`“${schedule.task_name}”的运行记录`)).toBeTruthy();
     expect(api.runDashboardSchedule).toHaveBeenCalledOnce();
+    expect(api.runDashboardSchedule).toHaveBeenCalledWith('dashboard-1', schedule.task_id, schedule.payload);
     expect(screen.queryByText('立即刷新失败')).toBeNull();
   });
 
@@ -117,7 +118,9 @@ describe('DashboardSchedulePanel', () => {
     expect(api.listDashboardSchedules).toHaveBeenCalledWith('dashboard-1');
 
     fireEvent.click(screen.getByRole('button', { name: /立即运行/ }));
-    await waitFor(() => expect(api.runDashboardSchedule).toHaveBeenCalledWith('dashboard-1', 'schedule-1'));
+    await waitFor(() =>
+      expect(api.runDashboardSchedule).toHaveBeenCalledWith('dashboard-1', 'schedule-1', schedule.payload),
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /运行记录/ }));
     expect((await screen.findAllByText('部分成功')).length).toBeGreaterThan(0);

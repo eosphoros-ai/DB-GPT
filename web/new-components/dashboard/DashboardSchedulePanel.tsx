@@ -210,7 +210,7 @@ export default function DashboardSchedulePanel({
   const runNow = async (schedule: DashboardSchedule) => {
     setRunningId(schedule.task_id);
     try {
-      const response = await runDashboardSchedule(dashboardId, schedule.task_id);
+      const response = await runDashboardSchedule(dashboardId, schedule.task_id, schedule.payload);
       const run = response.data.data;
       if (run.status === 'partial_success') {
         message.warning('刷新已完成，但部分组件失败，请查看运行记录');

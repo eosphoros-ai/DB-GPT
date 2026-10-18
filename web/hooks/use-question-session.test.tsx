@@ -12,10 +12,10 @@ const ask = (request_id: string, questions: unknown[] = [`${request_id} question
 });
 const ok = (request_id: string) => new Response(JSON.stringify({ success: true, data: { success: true, request_id } }));
 
-it('accepts a restarted server sequence on the next turn while keeping old IDs closed', () => {
+it.each([false, true])('accepts a restarted server sequence (new turn: %s) while ignoring old IDs', newTurn => {
   const view = renderHook(() => useQuestionSession());
   act(() => view.result.current.handleQuestionEvent({ ...ask('before-restart'), sequence: 42 }));
-  act(() => view.result.current.clearQuestions());
+  if (newTurn) act(() => view.result.current.clearQuestions());
   act(() => view.result.current.handleQuestionEvent({ ...ask('after-restart'), sequence: 1 }));
   expect(view.result.current.pendingQuestion?.request_id).toBe('after-restart');
   act(() => view.result.current.handleQuestionEvent({ ...ask('before-restart'), sequence: 42 }));

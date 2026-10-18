@@ -1,5 +1,5 @@
--- One-time upgrade from the upstream v0.8.2 schema to Dashboard.
--- Back up first; for a fresh database use dashboard.sql instead.
+-- One-time upgrade from the upstream v0.8.2 schema to v0.8.3.
+-- Back up first; for a fresh database use v0.8.3.sql instead.
 -- Change dbgpt below if your metadata database has another name.
 USE dbgpt;
 

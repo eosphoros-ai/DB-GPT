@@ -31,15 +31,16 @@ Dashboard 将自然语言分析变成可校验、可编辑、可保存和可发�
 Dashboard 通过原有的 `db_model_initialization.py` 注册实体。SQLite 沿用项目原有的
 建表和自动迁移入口，不分发另一套 Alembic 版本链，也不改共享 `env.py` 或本地修订号。
 MySQL 沿用历史升级目录的全量、增量交付方式，入口集中在
-[`assets/schema/upgrade/dashboard/`](../../assets/schema/upgrade/dashboard/)：
+[`assets/schema/upgrade/v0_8_3/`](../../assets/schema/upgrade/v0_8_3/)：
 
 | 场景 | SQL | 执行方式 |
 |---|---|---|
-| 全新数据库 | [`dashboard.sql`](../../assets/schema/upgrade/dashboard/dashboard.sql) | 全量建库，与 `assets/schema/dbgpt.sql` 一致；不再执行增量脚本。 |
-| 已有 v0.8.2 数据库 | [`upgrade_to_dashboard.sql`](../../assets/schema/upgrade/dashboard/upgrade_to_dashboard.sql) | 停止服务并备份后执行一次，再启动服务。更早版本先按历史目录升级到 v0.8.2。 |
+| 全新数据库 | [`v0.8.3.sql`](../../assets/schema/upgrade/v0_8_3/v0.8.3.sql) | 全量建库，与 `assets/schema/dbgpt.sql` 一致；不再执行增量脚本。 |
+| 已有 v0.8.2 数据库 | [`upgrade_to_v0.8.3.sql`](../../assets/schema/upgrade/v0_8_3/upgrade_to_v0.8.3.sql) | 停止服务并备份后执行一次，再启动服务。更早版本先按历史目录升级到 v0.8.2。 |
 
 增量脚本使用 `ALTER TABLE ... ADD COLUMN`、`ADD INDEX` / `ADD UNIQUE INDEX`
-修改聊天记录及定时任务旧表，使用 `CREATE TABLE` 新建看板表；不删除业务数据，也不把任务显示名当作用户 ID 回填。
+修改聊天记录及定时任务旧表，使用 `CREATE TABLE IF NOT EXISTS` 新建看板表；不删除业务数据，也不把任务显示名当作用户 ID 回填。
+**已有 MySQL 部署必须在启动新版前完成增量升级**：漏跑会缺少定时任务的 `owner_id`、`resource_*`、`lease_*` 等列和执行记录的幂等索引，造成 `Unknown column` 等数据库错误，影响存量定时任务及看板功能。
 数据库名不是 `dbgpt` 时先调整脚本中的建库和 `USE` 语句。
 增量脚本不是可重复执行的初始化器；已执行旧版 Dashboard 升级脚本或部分手工 DDL 的库，
 应核对已有列和索引，仅执行缺失项，避免重复列或索引错误。

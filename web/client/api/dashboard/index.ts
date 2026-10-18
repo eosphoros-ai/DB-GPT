@@ -353,8 +353,18 @@ export const toggleDashboardSchedule = (dashboardId: string, scheduleId: string,
 export const deleteDashboardSchedule = (dashboardId: string, scheduleId: string) =>
   DELETE<null, boolean>(`${PREFIX}/${dashboardId}/schedules/${scheduleId}`);
 
-export const runDashboardSchedule = (dashboardId: string, scheduleId: string) =>
-  POST<null, DashboardScheduleRun>(`${PREFIX}/${dashboardId}/schedules/${scheduleId}/run`);
+export const runDashboardSchedule = (
+  dashboardId: string,
+  scheduleId: string,
+  budget: Pick<DashboardSchedule['payload'], 'timeout_seconds' | 'max_attempts'> = {
+    timeout_seconds: 180,
+    max_attempts: 2,
+  },
+) =>
+  POST<null, DashboardScheduleRun>(`${PREFIX}/${dashboardId}/schedules/${scheduleId}/run`, undefined, {
+    // Cover every attempt plus retry backoff (at most 15s) and response overhead.
+    timeout: (budget.timeout_seconds * budget.max_attempts + 60) * 1000,
+  });
 
 export const listDashboardScheduleRuns = (dashboardId: string, scheduleId: string, limit = 50, offset = 0) =>
   GET<{ limit: number; offset: number }, DashboardScheduleRun[]>(

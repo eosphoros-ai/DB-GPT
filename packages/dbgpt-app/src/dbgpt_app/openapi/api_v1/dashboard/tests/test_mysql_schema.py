@@ -16,8 +16,8 @@ from dbgpt_app.initialization.db_model_initialization import _MODELS  # noqa: F4
 pytestmark = pytest.mark.mysql_integration
 ROOT = Path(__file__).parents[8]
 SCHEMA = ROOT / "assets/schema/dbgpt.sql"
-FULL = ROOT / "assets/schema/upgrade/dashboard/dashboard.sql"
-UPGRADE = ROOT / "assets/schema/upgrade/dashboard/upgrade_to_dashboard.sql"
+FULL = ROOT / "assets/schema/upgrade/v0_8_3/v0.8.3.sql"
+UPGRADE = ROOT / "assets/schema/upgrade/v0_8_3/upgrade_to_v0.8.3.sql"
 LEGACY = ROOT / "assets/schema/upgrade/v0_8_2/v0.8.2.sql"
 
 

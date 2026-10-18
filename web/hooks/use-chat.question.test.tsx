@@ -16,7 +16,10 @@ vi.mock('@microsoft/fetch-event-source', () => ({
 }));
 afterEach(() => vi.unstubAllGlobals());
 
-it('chat transport routes original shapes and reordered events to the right reply', async () => {
+it.each([
+  [1, 2],
+  [42, 1],
+])('chat transport routes sequences %s → %s and late replies by request ID', async (first, second) => {
   const fetch = vi
     .fn()
     .mockResolvedValue(new Response(JSON.stringify({ success: true, data: { success: true, request_id: 'B' } })));
@@ -27,8 +30,14 @@ it('chat transport routes original shapes and reordered events to the right repl
   });
   act(() => {
     for (const payload of [
-      { type: 'question.asked', request_id: 'A', conv_id: 'conversation', questions: ['First'], sequence: 1 },
-      { type: 'question.asked', request_id: 'B', conv_id: 'conversation', questions: [null, 'Second'], sequence: 2 },
+      { type: 'question.asked', request_id: 'A', conv_id: 'conversation', questions: ['First'], sequence: first },
+      {
+        type: 'question.asked',
+        request_id: 'B',
+        conv_id: 'conversation',
+        questions: [null, 'Second'],
+        sequence: second,
+      },
       { type: 'question.replied', request_id: 'A' },
       { type: 'question.rejected', request_id: 'A' },
     ])

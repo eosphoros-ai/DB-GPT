@@ -1,11 +1,13 @@
 import asyncio
 import io
+import sqlite3
 import threading
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
+from httpx import ASGITransport, AsyncClient
 
 from dbgpt_serve.utils.auth import UserRequest
 
@@ -518,6 +520,97 @@ async def test_python_files_upload_keeps_batch_together(tmp_path, monkeypatch):
     assert "file_paths" not in result.data
     assert "database_path" not in result.data
     assert all("stored_path" not in item for item in result.data["files"])
+
+
+@pytest.mark.asyncio
+async def test_large_batch_upload_keeps_http_heartbeat_responsive(
+    tmp_path, monkeypatch
+):
+    from dbgpt_app.openapi.api_v1 import python_upload_api
+
+    monkeypatch.setattr(
+        python_upload_api.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
+    )
+    registered = []
+
+    def register_ready(**values):
+        registered.append(values)
+        return SimpleNamespace(public_dict=lambda: {"dataset_id": values["dataset_id"]})
+
+    monkeypatch.setattr(
+        python_upload_api, "_register_uploaded_dataset", lambda *args: None
+    )
+    monkeypatch.setattr(
+        python_upload_api,
+        "_get_uploaded_dataset_service",
+        lambda: SimpleNamespace(register_ready=register_ready),
+    )
+    app = FastAPI()
+    app.include_router(python_upload_api.router)
+    app.dependency_overrides[python_upload_api.get_user_from_headers] = lambda: (
+        UserRequest(user_id="alice")
+    )
+
+    @app.get("/heartbeat")
+    async def heartbeat():
+        return {"ok": True}
+
+    row_count = 99_510
+    payload = b"order_id,customer_id,note\n" + b"".join(
+        f"{index:06d},10,{'x' * 89}\n".encode() for index in range(row_count)
+    )
+    assert 9.48 < len(payload) / (1024 * 1024) < 9.50
+    loop = asyncio.get_running_loop()
+    ticks = []
+    finished = asyncio.Event()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+
+        async def poll_heartbeat():
+            while not finished.is_set():
+                response = await client.get("/heartbeat")
+                assert response.json() == {"ok": True}
+                ticks.append(loop.time())
+                await asyncio.sleep(0.025)
+
+        polling = asyncio.create_task(poll_heartbeat())
+        await asyncio.sleep(0)
+        try:
+            response = await client.post(
+                "/v1/python/files/upload",
+                data={"conv_uid": "heartbeat-conversation"},
+                files=[
+                    ("files", ("orders.csv", payload, "text/csv")),
+                    (
+                        "files",
+                        (
+                            "customers.csv",
+                            b"customer_id,city\n10,Hangzhou\n",
+                            "text/csv",
+                        ),
+                    ),
+                ],
+            )
+        finally:
+            ticks.append(loop.time())
+            finished.set()
+            await polling
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert len(ticks) >= 3
+    max_gap = max(later - earlier for earlier, later in zip(ticks, ticks[1:]))
+    print(
+        f"CSV bytes={len(payload)}, heartbeat samples={len(ticks)}, "
+        f"max gap={max_gap:.3f}s"
+    )
+    assert max_gap < 1.0, f"Upload stalled the shared event loop for {max_gap:.3f}s"
+    with sqlite3.connect(registered[0]["database_path"]) as connection:
+        assert (
+            connection.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == row_count
+        )
+    assert registered[0]["relationships"][0]["column"] == "customer_id"
 
 
 @pytest.mark.asyncio

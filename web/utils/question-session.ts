@@ -54,7 +54,6 @@ export class QuestionSession {
   current: PendingQuestion | null = null;
   private seen = new Set<string>();
   private closed = new Set<string>();
-  private latestSequence = new Map<string, number>();
 
   apply(event: unknown, conversationId?: string): PendingQuestion | null {
     if (!isQuestionEvent(event) || typeof event.request_id !== 'string' || !event.request_id) return this.current;
@@ -70,10 +69,7 @@ export class QuestionSession {
     this.seen.add(event.request_id);
     const sequence =
       typeof event.sequence === 'number' && Number.isSafeInteger(event.sequence) ? event.sequence : undefined;
-    if (sequence !== undefined) {
-      if (sequence <= (this.latestSequence.get(event.conv_id) ?? -1)) return this.current;
-      this.latestSequence.set(event.conv_id, sequence);
-    }
+    // Sequences restart with the backend process; only request IDs are durable.
     this.current = {
       request_id: event.request_id,
       conv_id: event.conv_id,
@@ -91,9 +87,6 @@ export class QuestionSession {
 
   clear(): void {
     if (this.current) this.resolve(this.current.request_id);
-    // Sequence numbers belong to a server process, not a durable conversation.
-    // Keep request-ID replay protection, but start ordering afresh each turn.
-    this.latestSequence.clear();
   }
 }
 

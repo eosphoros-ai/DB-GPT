@@ -23,11 +23,13 @@ describe('request-bound event ordering', () => {
     expect(session.current).toBeNull();
   });
 
-  it('ignores a first-seen older ask using the server sequence', () => {
+  it('accepts a new request ID after the server sequence restarts', () => {
     const session = new QuestionSession();
     session.apply(ask('B', 2));
     session.apply(ask('A', 1));
-    expect(session.current?.request_id).toBe('B');
+    expect(session.current?.request_id).toBe('A');
+    session.apply(ask('B', 2));
+    expect(session.current?.request_id).toBe('A');
   });
 
   it('does not resurrect an ask delivered after its own terminal event', () => {
@@ -60,6 +62,8 @@ describe('request-bound event ordering', () => {
     parser.processEvent({ type: 'question.rejected', request_id: 'A' });
     parser.processEvent(ask('A', 1));
     expect(parser.getPendingQuestion()?.request_id).toBe('B');
+    parser.processEvent(ask('after-restart', 1));
+    expect(parser.getPendingQuestion()?.request_id).toBe('after-restart');
   });
 });
 
