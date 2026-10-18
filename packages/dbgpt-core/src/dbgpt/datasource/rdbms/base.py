@@ -590,9 +590,11 @@ class RDBMSConnector(BaseConnector):
                             sqlite_connection, "set_progress_handler", None
                         )
                         if not callable(sqlite_progress_handler):
-                            raise TimeoutError(
-                                "The SQLite driver cannot enforce a query timeout."
+                            logger.warning(
+                                "The SQLite driver cannot enforce a query timeout, "
+                                "proceeding without timeout"
                             )
+                            return _execute_query(session, sql, params)
                         deadline = time.monotonic() + float(timeout)
                         sqlite_progress_handler(
                             lambda: 1 if time.monotonic() >= deadline else 0,

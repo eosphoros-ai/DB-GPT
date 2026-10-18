@@ -1,8 +1,36 @@
+import logging
+import sqlite3
 import time
 
 import pytest
 
 from dbgpt_ext.datasource.rdbms.conn_sqlite import SQLiteConnector
+
+
+@pytest.mark.parametrize("fetch", ["all", "one"])
+def test_sqlite_query_without_progress_handler_executes_with_warning(caplog, fetch):
+    class ConnectionWithoutProgressHandler(sqlite3.Connection):
+        @property
+        def set_progress_handler(self):
+            raise AttributeError("set_progress_handler")
+
+    connector = SQLiteConnector.from_uri(
+        "sqlite://",
+        engine_args={"connect_args": {"factory": ConnectionWithoutProgressHandler}},
+    )
+    try:
+        with caplog.at_level(logging.WARNING, logger="dbgpt.datasource.rdbms.base"):
+            fields, rows = connector.query_ex(
+                "SELECT :first AS value UNION ALL SELECT :second AS value",
+                params={"first": 7, "second": 9},
+                fetch=fetch,
+                timeout=0.001,
+            )
+        assert fields == ["value"]
+        assert [row[0] for row in rows] == ([7, 9] if fetch == "all" else [7])
+        assert "proceeding without timeout" in caplog.text
+    finally:
+        connector.close()
 
 
 def test_sqlite_query_timeout_interrupts_and_resets(tmp_path):
