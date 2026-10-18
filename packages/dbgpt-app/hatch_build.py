@@ -38,6 +38,13 @@ _SKILLS_MAP = {
         "dashboard-collaboration",
         "dashboard-chart-configuration",
         "dashboard-filter-configuration",
+        "antv-g2-chart",
+        "datapulse-viz-design",
+        "nexusai-viz-design",
+        "learnhub-viz-design",
+        "brutal-viz-design",
+        "pawspa-viz-design",
+        "serenityspa-viz-design",
     ]
 }
 
