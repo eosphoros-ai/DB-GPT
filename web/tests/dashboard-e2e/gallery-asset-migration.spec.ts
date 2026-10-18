@@ -48,6 +48,10 @@ test('template gallery renders all retained layouts and opens a query preview wi
   await page.goto('/dashboards/?tab=templates');
   await expect(page.locator('[data-catalog-template]')).toHaveCount(32);
   await expect(page.locator('svg[data-template-layout]')).toHaveCount(32);
+  await expect(page.locator('[data-design-template]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '风格技能', exact: true })).toHaveCount(0);
+  await expect(page.getByText('风格技能 · 连接数据后生成', { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('retained-template-gallery.png') });
   const cover = page.locator('[data-catalog-template="retail-overview"]');
   await expect(cover.getByRole('img', { name: /布局示意/ })).toBeVisible();
   await cover.screenshot({ path: testInfo.outputPath('layout-cover.png') });
@@ -102,6 +106,23 @@ test('template gallery renders all retained layouts and opens a query preview wi
     .locator('canvas')
     .first()
     .screenshot({ path: testInfo.outputPath('chart-canvas.png') });
+});
+
+test('favorites ignore retired styles and still open retained templates', async ({ page }) => {
+  const { errors } = await fixture(page);
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'dbgpt.template.favorites.v1',
+      JSON.stringify(['design:learnhub-viz-design', 'design:brutal-viz-design', 'retail-overview']),
+    );
+  });
+  await page.goto('/dashboards/?tab=templates');
+  await page.getByRole('button', { name: /收藏夹\s*1/ }).click();
+  await expect(page.locator('[data-catalog-template]')).toHaveCount(1);
+  await expect(page.locator('[data-design-template]')).toHaveCount(0);
+  await page.getByRole('button', { name: '预览模板 零售经营总览', exact: true }).click();
+  await expect(page.getByRole('dialog').getByText('使用哪个数据源生成看板')).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test('template layout covers remain visible on a narrow screen', async ({ page }, testInfo) => {

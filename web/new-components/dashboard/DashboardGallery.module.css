@@ -59,24 +59,6 @@
   outline: 2px solid var(--app-accent);
   outline-offset: 3px;
 }
-.designCard .cover {
-  aspect-ratio: 8 / 5;
-}
-.designLabel {
-  position: absolute;
-  bottom: 8px;
-  left: 10px;
-  padding: 2px 7px;
-  background: var(--app-surface);
-  color: var(--app-muted);
-  font-size: 10px;
-  border-radius: 5px;
-}
-.designPreview {
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--app-border);
-}
 .header {
   display: flex;
   justify-content: space-between;

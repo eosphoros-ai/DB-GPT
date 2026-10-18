@@ -1,6 +1,5 @@
 import { getDbList } from '@/client/api';
 import { dashboardSourceLabel } from '@/new-components/dashboard/dashboard-source-label';
-import { ADAPTED_SKILLS } from '@/new-components/skills/skill-catalog';
 import { FolderOutlined, SearchOutlined, StarFilled, StarOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { Alert, Button, Empty, Input, Spin } from 'antd';
@@ -8,7 +7,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useMemo, useState } from 'react';
 import { AVAILABLE_CATALOG, catalogProof, type CatalogTemplate } from './dashboard-catalog';
-import DashboardDesignTemplate from './DashboardDesignTemplate';
 import styles from './DashboardGallery.module.css';
 import DashboardTemplateCarousel from './DashboardTemplateCarousel';
 import DashboardTemplateLayoutPreview from './DashboardTemplateLayoutPreview';
@@ -42,12 +40,8 @@ const catalogPriority = (id: string) => {
   return index < 0 ? showcaseOrder.length : index;
 };
 
-// The user's selected styles and data templates share one display order.
+// Keep the preferred data templates first.
 const preferredTemplates = [
-  'design:learnhub-viz-design',
-  'design:brutal-viz-design',
-  'design:pawspa-viz-design',
-  'design:serenityspa-viz-design',
   'voice-observatory',
   'store-marketing',
   'national-command',
@@ -67,7 +61,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
   const [category, setCategory] = useState('全部');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<CatalogTemplate | null>(null);
-  const [collection, setCollection] = useState<'all' | 'design' | 'favorites'>('all');
+  const [collection, setCollection] = useState<'all' | 'favorites'>('all');
   const { favorites, toggle } = useTemplateFavorites();
   const {
     data: sources = [],
@@ -97,12 +91,10 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
     '全部',
     ...Object.keys(categoryGroups).filter(group => availableCategories.has(group)),
     ...[...availableCategories].filter(group => !categoryGroups[group]),
-    '风格技能',
   ];
   const filtered = available.filter(
     item =>
       (category === '全部' || groupCategory(item.category) === category) &&
-      collection !== 'design' &&
       (collection !== 'favorites' || favorites.includes(item.id)) &&
       `${item.title} ${item.description} ${item.category}`.includes(search.trim()),
   );
@@ -115,14 +107,6 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
     'sales-receipt',
   ];
   const matches = featured ? featuredIds.flatMap(id => filtered.filter(item => item.id === id)) : filtered;
-  const designs = featured
-    ? []
-    : Object.entries(ADAPTED_SKILLS).filter(
-        ([name, design]) =>
-          (category === '全部' || category === '风格技能') &&
-          (collection !== 'favorites' || favorites.includes(`design:${name}`)) &&
-          `${design.title} ${design.description}`.includes(search.trim()),
-      );
   const open = (item: CatalogTemplate) => {
     setSelected(item);
   };
@@ -165,20 +149,9 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
       </article>
     );
   });
-  const orderedCards = [
-    ...cards.map((card, index) => ({ id: matches[index].id, card })),
-    ...designs.map(([name]) => ({
-      id: `design:${name}`,
-      card: (
-        <DashboardDesignTemplate
-          key={`design:${name}`}
-          name={name}
-          favorite={favorites.includes(`design:${name}`)}
-          onFavorite={() => toggle(`design:${name}`)}
-        />
-      ),
-    })),
-  ].sort((a, b) => preferredPriority(a.id) - preferredPriority(b.id));
+  const orderedCards = cards
+    .map((card, index) => ({ id: matches[index].id, card }))
+    .sort((a, b) => preferredPriority(a.id) - preferredPriority(b.id));
   return (
     <>
       {!featured && (
@@ -195,16 +168,6 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
           </button>
           <button
             type='button'
-            aria-pressed={collection === 'design'}
-            onClick={() => {
-              setCollection('design');
-              setCategory('全部');
-            }}
-          >
-            风格技能
-          </button>
-          <button
-            type='button'
             aria-pressed={collection === 'favorites'}
             onClick={() => {
               setCollection('favorites');
@@ -212,35 +175,25 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
             }}
           >
             <FolderOutlined /> 收藏夹{' '}
-            <span>
-              {
-                favorites.filter(
-                  id =>
-                    AVAILABLE_CATALOG.some(item => item.id === id) ||
-                    (id.startsWith('design:') && ADAPTED_SKILLS[id.slice(7)]),
-                ).length
-              }
-            </span>
+            <span>{favorites.filter(id => AVAILABLE_CATALOG.some(item => item.id === id)).length}</span>
           </button>
         </nav>
       )}
       {!featured && (
         <div className={styles.tools}>
-          {collection !== 'design' && (
-            <nav className={styles.categories} aria-label='模板业务分类'>
-              {categories.map(item => (
-                <button
-                  key={item}
-                  type='button'
-                  title={categoryGroups[item]?.join('、')}
-                  aria-pressed={category === item}
-                  onClick={() => setCategory(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </nav>
-          )}
+          <nav className={styles.categories} aria-label='模板业务分类'>
+            {categories.map(item => (
+              <button
+                key={item}
+                type='button'
+                title={categoryGroups[item]?.join('、')}
+                aria-pressed={category === item}
+                onClick={() => setCategory(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
           <Input
             className={styles.search}
             prefix={<SearchOutlined />}
@@ -269,7 +222,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
         />
       ) : loading ? (
         <Spin />
-      ) : available.length < 2 && !designs.length ? (
+      ) : available.length < 2 ? (
         <Alert
           type='info'
           showIcon
@@ -277,7 +230,7 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
           description='请先恢复模板数据源，或继续编辑已有看板。'
           action={<Button onClick={() => router.push('/dashboards/?tab=all')}>全部看板</Button>}
         />
-      ) : matches.length || designs.length ? (
+      ) : matches.length ? (
         featured ? (
           <DashboardTemplateCarousel>{cards}</DashboardTemplateCarousel>
         ) : (
