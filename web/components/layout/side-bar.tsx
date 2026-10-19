@@ -1,4 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
+import { getHarnessEngines, saveHarnessEngine } from '@/client/api/chat';
 import { delDialogue, getDialogueList } from '@/client/api/request';
 import { apiInterceptors } from '@/client/api/tools/interceptors';
 import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
@@ -8,6 +9,7 @@ import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
   ApiOutlined,
+  CheckOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
   DeleteOutlined,
@@ -81,6 +83,10 @@ function SideBar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dialogueList, setDialogueList] = useState<IChatDialogueSchema[]>([]);
   const [loadingDialogues, setLoadingDialogues] = useState(false);
+  const [harnessEngine, setHarnessEngine] = useState<string>('dbgpt');
+  const [harnessEngines, setHarnessEngines] = useState<
+    { engine: string; name: string; available: boolean; detail: string }[]
+  >([]);
 
   const handleStartNewTask = useCallback(() => {
     void startNewTask().catch(error => {
@@ -135,6 +141,47 @@ function SideBar() {
   const handleToggleMenu = useCallback(() => {
     setIsMenuExpand(!isMenuExpand);
   }, [isMenuExpand, setIsMenuExpand]);
+
+  const loadHarnessEngines = useCallback(async () => {
+    try {
+      const [, data] = await apiInterceptors(getHarnessEngines());
+      if (data && Array.isArray(data.engines)) {
+        setHarnessEngines(data.engines);
+        setHarnessEngine(data.current || 'dbgpt');
+      }
+    } catch (e) {
+      console.warn('Failed to fetch harness engines', e);
+    }
+  }, []);
+
+  const handleSelectHarnessEngine = useCallback(
+    (engine: string, available: boolean) => {
+      if (!available) {
+        message.warning(
+          i18n.language === 'en'
+            ? `${engine} engine is unavailable on this deployment`
+            : `引擎 ${engine} 在当前部署上不可用`,
+        );
+        return;
+      }
+      // The server persists the preference; the next
+      // turn (any tab/page) picks it up server-side.
+      apiInterceptors(saveHarnessEngine(engine)).then(([err]) => {
+        if (err) return;
+        setHarnessEngine(engine);
+        message.success(
+          engine === 'dbgpt'
+            ? i18n.language === 'en'
+              ? 'Agent engine: DB-GPT (built-in)'
+              : 'Agent 引擎：DB-GPT（内置）'
+            : i18n.language === 'en'
+              ? `Agent engine: ${engine}`
+              : `Agent 引擎：${engine}`,
+        );
+      });
+    },
+    [i18n.language],
+  );
 
   const handleToggleTheme = useCallback(() => {
     const theme = mode === 'light' ? 'dark' : 'light';
@@ -268,6 +315,46 @@ function SideBar() {
         <DashboardOutlined className='text-indigo-500' />
         <span>{t('observability')}</span>
       </div>
+      {/* Agent engine (harness) */}
+      <div className='px-3 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider'>
+        {t('agent_engine')}
+      </div>
+      <div className='px-1 pb-2'>
+        {(harnessEngines.length > 0
+          ? harnessEngines
+          : [{ engine: 'dbgpt', name: 'DB-GPT', available: true, detail: '' }]
+        ).map(engine => {
+          const selected = harnessEngine === engine.engine;
+          return (
+            <div
+              key={engine.engine}
+              onClick={() => handleSelectHarnessEngine(engine.engine, engine.available)}
+              className={cls(
+                'flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors',
+                {
+                  'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': selected,
+                  'text-gray-400 dark:text-gray-600 cursor-not-allowed': !engine.available,
+                  'hover:bg-gray-100 dark:hover:bg-gray-800': engine.available && !selected,
+                },
+              )}
+            >
+              <div className='flex items-center gap-2 min-w-0'>
+                <span className='truncate'>
+                  {engine.name}
+                  {!engine.available && engine.detail ? (
+                    <span className='ml-2 text-[11px] text-gray-400'>{engine.detail}</span>
+                  ) : null}
+                </span>
+                {!engine.available && !engine.detail ? (
+                  <span className='text-[11px] text-gray-400'>{t('agent_engine_unavailable')}</span>
+                ) : null}
+              </div>
+              {selected && <CheckOutlined className='text-blue-500 flex-shrink-0' />}
+            </div>
+          );
+        })}
+        <div className='px-3 pt-1 text-[11px] text-gray-400 leading-4'>{t('agent_engine_hint')}</div>
+      </div>
     </div>
   );
 
@@ -284,6 +371,12 @@ function SideBar() {
   useEffect(() => {
     fetchDialogueList();
   }, [fetchDialogueList]);
+
+  useEffect(() => {
+    if (settingsOpen) {
+      loadHarnessEngines();
+    }
+  }, [settingsOpen, loadHarnessEngines]);
 
   // ============ COLLAPSED SIDEBAR ============
   if (!isMenuExpand) {

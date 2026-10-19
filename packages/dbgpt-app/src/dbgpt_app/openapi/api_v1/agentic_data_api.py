@@ -1214,6 +1214,19 @@ async def _react_agent_stream_inner(
     attachment_ctx: Optional[SessionAttachmentContext] = None,
 ) -> AsyncGenerator[str, None]:
     """Stream ReAct events while owning the lifetime of its background task."""
+    # Harness engine dispatch: an external engine (pi, later dsh)
+    # runs the whole turn and reuses the same step.* SSE
+    # vocabulary, so the frontend stays engine-unaware.
+    # Lazy import avoids an import cycle with this module.
+    from .harness_pi_stream import (
+        resolve_harness_engine,
+        run_pi_harness_turn,
+    )
+
+    if resolve_harness_engine(dialogue) == "pi":
+        async for event in run_pi_harness_turn(dialogue):
+            yield event
+        return
     agent_task_holder: List["asyncio.Task[Any]"] = []
     final_emitted = False
     done_emitted = False
@@ -4040,3 +4053,11 @@ async def question_reject(
         return Result.succ({"success": True, "request_id": request_id})
     except KeyError as e:
         return Result.failed(msg=str(e))
+
+
+# Harness engine endpoints (engine availability for the settings UI).
+from .harness_pi_stream import (  # noqa: E402
+    register_harness_endpoints,
+)
+
+register_harness_endpoints(router)
