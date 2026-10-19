@@ -3684,7 +3684,12 @@ const Playground: NextPage = () => {
                           sections={useTimelineView ? [] : sections}
                           answerSeparated={useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0)}
                           timelineSlot={
-                            useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0) ? (
+                            // Flow rounds render their own node chain + node
+                            // cards via FlowRunView; the generic agent timeline
+                            // would duplicate the DSL-node steps.
+                            useTimelineView &&
+                            !round.viewMsg?.flowRun &&
+                            (timelineBlocks.length > 0 || roundArtifacts.length > 0) ? (
                               <div className='flex flex-col'>
                                 {roundIntent && (
                                   <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>

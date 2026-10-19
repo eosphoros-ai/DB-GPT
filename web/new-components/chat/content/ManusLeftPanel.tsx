@@ -1,8 +1,8 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
+import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
-import type { ITaskflowAgentStep } from '@/types/taskflow';
-import { parseTaskflowStream, stripVisBlocks } from '@/utils/taskflow';
+import { parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
 import {
   ApartmentOutlined,
   ApiOutlined,
@@ -771,160 +771,6 @@ const StepCard: React.FC<{
 
 StepCard.displayName = 'StepCard';
 
-interface FlowStepRowData {
-  id: string;
-  title: string;
-  subtitle?: string;
-  status: StepStatus;
-  durationMs?: number;
-  summary?: string;
-  content: string;
-  kind?: string;
-  steps?: ITaskflowAgentStep[];
-}
-
-/** Icon for an agent action row, keyed by tool name. */
-function agentActionIcon(tool: string): string {
-  const t = (tool || '').toLowerCase();
-  if (t.includes('shell') || t.includes('code')) return '>_';
-  if (t.includes('kb_cat') || t.includes('read')) return '📄';
-  if (t.includes('kb_ls') || t.includes('kb_glob')) return '📁';
-  if (t.includes('kb_grep') || t.includes('search') || t.includes('retrieve')) return '🔍';
-  if (t.includes('sql')) return '🗄';
-  return '🔧';
-}
-
-/**
- * Compact one-line rows for an agent node's internal ReAct trace
- * (thinking / tool call / observation), aligned with the agent trace UX in
- * docs/design/taskflow-mockups/06-agent-flow-run.html.
- */
-const AgentTraceRows: React.FC<{ steps: ITaskflowAgentStep[]; running: boolean }> = ({ steps, running }) => {
-  const { t } = useTranslation();
-  return (
-    <div className='flex flex-col gap-1 py-1'>
-      {steps.map((step, i) => {
-        const detail = (step.detail ?? '').replace(/\s+/g, ' ').trim();
-        if (step.kind === 'thinking') {
-          return (
-            <div key={i} className='flex items-start gap-1.5 text-[12px] text-gray-500 dark:text-gray-400 leading-snug'>
-              <span className='flex-none'>💭</span>
-              <span className='min-w-0 truncate' title={detail}>
-                {detail || step.title}
-              </span>
-            </div>
-          );
-        }
-        if (step.kind === 'observation') {
-          return (
-            <div key={i} className='flex items-start gap-1.5 text-[11.5px] text-gray-400 leading-snug pl-6'>
-              <span className='flex-none'>└</span>
-              <span className='min-w-0 truncate' title={detail}>
-                {detail}
-              </span>
-            </div>
-          );
-        }
-        return (
-          <div key={i} className='flex items-center gap-1.5 text-[12px] leading-snug'>
-            <span className='font-mono text-[11px] text-gray-500 dark:text-gray-400 flex-none w-4 text-center'>
-              {agentActionIcon(step.title)}
-            </span>
-            <span className='font-semibold text-gray-700 dark:text-gray-200 flex-none'>{step.title}</span>
-            {detail && (
-              <span className='font-mono text-[11px] text-gray-400 truncate' title={detail}>
-                · {detail}
-              </span>
-            )}
-          </div>
-        );
-      })}
-      {running && steps.length > 0 && (
-        <div className='flex items-center gap-1.5 text-[11.5px] text-blue-600 dark:text-blue-400 mt-0.5'>
-          <LoadingOutlined spin className='text-[11px]' />
-          {t('taskflow_agent_round', { n: (steps[steps.length - 1]?.round ?? 0) + 1 })}
-        </div>
-      )}
-      {running && steps.length === 0 && (
-        <div className='flex items-center gap-1.5 text-[11.5px] text-blue-600 dark:text-blue-400 mt-0.5'>
-          <LoadingOutlined spin className='text-[11px]' />
-          {t('taskflow_agent_starting')}
-        </div>
-      )}
-    </div>
-  );
-};
-AgentTraceRows.displayName = 'AgentTraceRows';
-
-/**
- * One row of the TaskFlow run card: status icon, node title, duration, summary
- * badge, and an expandable content area (SQL / result table / conclusions)
- * rendered with the standard markdown+vis pipeline. Aligned with
- * docs/design/taskflow-mockups/04-flow-run.html.
- */
-const FlowStepRow: React.FC<{ row: FlowStepRowData }> = memo(({ row }) => {
-  const hasSteps = !!row.steps?.length;
-  const [expanded, setExpanded] = useState(
-    (row.status === 'completed' && !!row.content?.trim()) || (row.status === 'running' && hasSteps),
-  );
-  const hasContent = !!row.content?.trim() || hasSteps;
-  const durationText = row.durationMs != null && row.durationMs > 0 ? `${(row.durationMs / 1000).toFixed(1)}s` : null;
-  return (
-    <div
-      className={classNames('rounded-xl border mb-1.5 overflow-hidden transition-colors', {
-        'border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1f2126]': row.status !== 'running',
-        'border-blue-300 dark:border-blue-700 bg-blue-50/40 dark:bg-blue-900/10': row.status === 'running',
-        'opacity-60': row.status === 'pending',
-      })}
-    >
-      <div
-        className={classNames('flex items-center gap-2 px-3 py-2', { 'cursor-pointer': hasContent })}
-        onClick={() => hasContent && setExpanded(value => !value)}
-      >
-        {row.status === 'completed' ? (
-          <span className='w-[18px] h-[18px] rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 flex items-center justify-center text-[10px] flex-none'>
-            ✓
-          </span>
-        ) : row.status === 'running' ? (
-          <LoadingOutlined spin className='text-blue-500 text-sm flex-none' />
-        ) : row.status === 'error' ? (
-          <ExclamationCircleOutlined className='text-red-500 text-sm flex-none' />
-        ) : (
-          <ClockCircleOutlined className='text-gray-300 text-sm flex-none' />
-        )}
-        <span className='text-[13px] font-semibold text-gray-800 dark:text-gray-100 truncate'>{row.title}</span>
-        {durationText && <span className='text-[10.5px] text-gray-300 font-mono flex-none'>{durationText}</span>}
-        {row.summary && (
-          <span className='text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-300 flex-none'>
-            {row.summary}
-          </span>
-        )}
-        <span className='flex-1' />
-        {hasContent &&
-          (expanded ? (
-            <CaretDownOutlined className='text-[9px] text-gray-400 flex-none' />
-          ) : (
-            <CaretRightOutlined className='text-[9px] text-gray-400 flex-none' />
-          ))}
-      </div>
-      {row.subtitle && !expanded && (
-        <div className='px-3 pb-2 -mt-1 text-[11px] text-gray-400 truncate'>{row.subtitle}</div>
-      )}
-      {expanded && hasContent && (
-        <div className='mx-2 mb-2 rounded-lg border border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/5 px-3 py-2 text-[13px] overflow-x-auto'>
-          {hasSteps && <AgentTraceRows steps={row.steps!} running={row.status === 'running'} />}
-          {/* While running the body text duplicates the structured rows;
-              after completion it holds the clean answer. */}
-          {!!row.content?.trim() && (row.status !== 'running' || !hasSteps) && (
-            <MarkdownContext>{row.content}</MarkdownContext>
-          )}
-        </div>
-      )}
-    </div>
-  );
-});
-FlowStepRow.displayName = 'FlowStepRow';
-
 interface ParallelDispatchTask {
   title: string;
 }
@@ -1256,7 +1102,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     () => new Map((flowParsed?.sections ?? []).map(sec => [sec.marker.step_id, sec])),
     [flowParsed],
   );
-  const flowRows = useMemo<FlowStepRowData[]>(() => {
+  const flowRows = useMemo<FlowRunRow[]>(() => {
     const execSteps = sections[0]?.steps ?? [];
     if (execSteps.length > 0) {
       return execSteps.map(step => {
@@ -1295,13 +1141,17 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   // final text.
   const displayAssistantText = useMemo(() => {
     if (!isFlowRun) return assistantText;
+    // While the DAG runs, the live frames carry the agent's emoji trace
+    // narration as section content — the node cards already show that trace
+    // structurally, so the answer area stays empty until the run settles.
+    if (flowRunning) return '';
     const sections = flowParsed?.sections ?? [];
     for (let i = sections.length - 1; i >= 0; i--) {
-      const text = stripVisBlocks(sections[i].content ?? '');
+      const text = stripFlowNarration(stripVisBlocks(sections[i].content ?? ''));
       if (text) return text;
     }
-    return stripVisBlocks(flowParsed?.cleanText ?? '');
-  }, [isFlowRun, flowParsed, assistantText]);
+    return stripFlowNarration(stripVisBlocks(flowParsed?.cleanText ?? ''));
+  }, [isFlowRun, flowRunning, flowParsed, assistantText]);
 
   const handleStepClick = useCallback(
     (stepId: string, sectionId: string) => {
@@ -1425,42 +1275,15 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
         {sections.length > 0 || isFlowRun ? (
           <div className='pt-1'>
             {isFlowRun ? (
-              /* TaskFlow run card: flow name + progress wrapping the steps,
-                 aligned with docs/design/taskflow-mockups/04-flow-run.html */
-              <div className='rounded-2xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] overflow-hidden shadow-sm'>
-                <div className='flex items-center gap-2.5 px-3.5 py-2.5 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10'>
-                  <span className='w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-[13px] flex-none'>
-                    <ApartmentOutlined />
-                  </span>
-                  <div className='flex-1 min-w-0'>
-                    <div className='text-[13px] font-semibold text-gray-800 dark:text-gray-100 truncate'>
-                      {flowRun?.label ?? t('taskflow')}
-                    </div>
-                    <div className='text-[10.5px] text-gray-400'>
-                      {flowRunning ? t('taskflow_step_running') : t('taskflow_flow_completed')} · {flowDoneCount}/
-                      {flowRun?.total || flowRows.length}
-                    </div>
-                  </div>
-                  {flowRunning && <LoadingOutlined spin className='text-blue-500 text-xs flex-none' />}
-                  <div className='w-24 h-1.5 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden flex-none'>
-                    <div
-                      className='h-full bg-blue-600 rounded-full transition-all duration-500'
-                      style={{
-                        width: `${
-                          (flowRun?.total || flowRows.length) > 0
-                            ? Math.round((flowDoneCount / (flowRun?.total || flowRows.length)) * 100)
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className='p-2'>
-                  {flowRows.map(row => (
-                    <FlowStepRow key={row.id} row={row} />
-                  ))}
-                </div>
-              </div>
+              /* TaskFlow run view: header + node chain + node cards,
+                 aligned with docs/design/workflow-display-redesign-mockup.html */
+              <FlowRunView
+                label={flowRun?.label ?? t('taskflow')}
+                rows={flowRows}
+                running={flowRunning}
+                doneCount={flowDoneCount}
+                totalCount={flowRun?.total || flowRows.length}
+              />
             ) : (
               sections.map((section, index) => (
                 <SectionBlock

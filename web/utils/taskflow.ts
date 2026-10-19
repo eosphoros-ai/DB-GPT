@@ -197,6 +197,23 @@ export function stripVisBlocks(text: string): string {
   return text.replace(VIS_BLOCK_RE, '').trim();
 }
 
+/**
+ * Remove the agent-node live trace narration (``💭 **Thinking** …``,
+ * ``🔧 **tool** …``, ``👁 **Observation** …`` plus the collapsed-prefix line)
+ * that TFAgentOperator appends to live frames. The structured trace lives in
+ * the node card; the answer area must never show it.
+ */
+const NARRATION_LINE_RE = /^\s*(\u{1F4AD}|\u{1F527}|\u{1F441}|\u2705|\u2022|\u2026)/u;
+
+export function stripFlowNarration(text: string): string {
+  if (!text) return '';
+  return text
+    .split('\n')
+    .filter(line => !NARRATION_LINE_RE.test(line))
+    .join('\n')
+    .trim();
+}
+
 // ---------------------------------------------------------------------------
 // Template instantiation: a built-in template becomes a real flow on first use
 // ---------------------------------------------------------------------------
