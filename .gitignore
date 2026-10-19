@@ -236,3 +236,7 @@ docs/superpowers/
 /docker/examples/test_files/
 /docker/examples/txt/
 /examples/pdf/
+# Generated Dashboard demo data and local share-token encryption key
+/examples/dashboard/generated/
+/pilot/meta_data/dashboard-share.key
+/examples/dashboard/olist/data/

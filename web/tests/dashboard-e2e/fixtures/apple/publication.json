@@ -1,0 +1,1129 @@
+{
+  "dashboard_id": "f29cbeb8d6014d8f9ee5dc5ead4951a8",
+  "published_revision": 1,
+  "schema": {
+    "schema_version": "1.4",
+    "dashboard": {
+      "id": "f29cbeb8d6014d8f9ee5dc5ead4951a8",
+      "title": "Apple 三财年财务分析（渲染修复后重拍）",
+      "description": "基于 Apple_Financial 数据源，分析 2022-2024 三个财年的收入、利润、产品结构与资产负债构成，用于渲染修复验收。金额单位均为百万美元。",
+      "data_source_id": "apple_financial_demo",
+      "status": "published",
+      "theme": {
+        "preset": "clarity",
+        "mode": "light",
+        "overrides": {
+          "primary_color": null,
+          "font_scale": null,
+          "density": null,
+          "card_radius": null,
+          "card_shadow": null,
+          "chart_palette": null,
+          "kpi_style": null,
+          "table_style": null
+        }
+      },
+      "refresh_policy": {
+        "refresh_on_open": false,
+        "interval_seconds": null
+      },
+      "created_at": "2026-09-07T01:48:49.665748",
+      "updated_at": "2026-09-07T11:02:55.449969"
+    },
+    "metric_context": {
+      "grain": "财年 fiscal_year（2022-2024）, 产品类别 product（iPhone/Services/Wearables/Home/Accessories/Mac/iPad）, 资产负债构成项（负债/权益）",
+      "time_range": null,
+      "data_freshness": null,
+      "source_notes": [
+        "Generated from the selected DB-GPT data source."
+      ],
+      "metrics": [
+        {
+          "id": "metric-1",
+          "name": "营业收入（百万美元）",
+          "business_definition": "User-confirmed metric: 营业收入（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "metric-2",
+          "name": "营业利润（百万美元）",
+          "business_definition": "User-confirmed metric: 营业利润（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "metric-3",
+          "name": "净利润（百万美元）",
+          "business_definition": "User-confirmed metric: 净利润（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "metric-4",
+          "name": "总资产（百万美元）",
+          "business_definition": "User-confirmed metric: 总资产（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "metric-5",
+          "name": "总负债（百万美元）",
+          "business_definition": "User-confirmed metric: 总负债（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "metric-6",
+          "name": "股东权益（百万美元）",
+          "business_definition": "User-confirmed metric: 股东权益（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "metric-7",
+          "name": "各产品收入（百万美元）",
+          "business_definition": "User-confirmed metric: 各产品收入（百万美元）",
+          "aggregation": "none",
+          "unit": null,
+          "grain": null,
+          "source_field": null,
+          "definition_source": "user_confirmed"
+        }
+      ],
+      "dimensions": [
+        {
+          "id": "dimension-fiscal-year-2022-2024",
+          "name": "财年 fiscal_year（2022-2024）",
+          "business_definition": "User-confirmed dimension: 财年 fiscal_year（2022-2024）",
+          "field": null,
+          "data_type": "unknown",
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "dimension-product-iphone-services-wearables-home-accessories-mac-ipad",
+          "name": "产品类别 product（iPhone/Services/Wearables/Home/Accessories/Mac/iPad）",
+          "business_definition": "User-confirmed dimension: 产品类别 product（iPhone/Services/Wearables/Home/Accessories/Mac/iPad）",
+          "field": null,
+          "data_type": "unknown",
+          "definition_source": "user_confirmed"
+        },
+        {
+          "id": "dimension-3",
+          "name": "资产负债构成项（负债/权益）",
+          "business_definition": "User-confirmed dimension: 资产负债构成项（负债/权益）",
+          "field": null,
+          "data_type": "unknown",
+          "definition_source": "user_confirmed"
+        }
+      ]
+    },
+    "filters": [],
+    "widgets": [
+      {
+        "id": "w_kpi_2024_revenue",
+        "type": "kpi",
+        "title": "2024 年营业收入",
+        "description": "Apple 2024 财年（FY2024）的营业收入是多少百万美元？",
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, revenue_usd_millions AS revenue FROM annual_financials WHERE fiscal_year = 2024",
+          "federation": null,
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "fiscal_year",
+              "type": "integer",
+              "label": "财年",
+              "nullable": true
+            },
+            {
+              "name": "revenue",
+              "type": "number",
+              "label": "营业收入（百万美元）",
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 10,
+          "grain": null,
+          "refresh_time": "2026-09-07T01:49:02.617741",
+          "last_execution": {
+            "status": "succeeded",
+            "executed_at": "2026-09-07T01:49:02.617741",
+            "duration_ms": 54,
+            "row_count": 1,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "apple_financial_demo",
+                "tables": [
+                  "annual_financials"
+                ],
+                "columns": [
+                  "fiscal_year",
+                  "revenue_usd_millions"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": "revenue",
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": null,
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": null,
+          "currency": null,
+          "precision": null,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": null,
+        "metric_ids": [
+          "metric-1"
+        ],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "w_2024_capital_structure",
+        "type": "pie",
+        "title": "2024 年负债与权益构成",
+        "description": "2024 财年总负债与股东权益在总资产中的构成比例如何？",
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT '总负债' AS component, liabilities_usd_millions AS value FROM annual_financials WHERE fiscal_year = 2024 UNION ALL SELECT '股东权益' AS component, equity_usd_millions AS value FROM annual_financials WHERE fiscal_year = 2024",
+          "federation": null,
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "component",
+              "type": "string",
+              "label": "资产负债构成项",
+              "nullable": true
+            },
+            {
+              "name": "value",
+              "type": "number",
+              "label": "金额（百万美元）",
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 10,
+          "grain": null,
+          "refresh_time": "2026-09-07T01:49:02.677366",
+          "last_execution": {
+            "status": "succeeded",
+            "executed_at": "2026-09-07T01:49:02.677366",
+            "duration_ms": 14,
+            "row_count": 2,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "apple_financial_demo",
+                "tables": [
+                  "annual_financials"
+                ],
+                "columns": [
+                  "equity_usd_millions",
+                  "fiscal_year",
+                  "liabilities_usd_millions"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": null,
+          "series": null,
+          "category": "component",
+          "angle": "value",
+          "color": "component",
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": null,
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": null,
+          "currency": null,
+          "precision": null,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": null,
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "w_3yr_profit_trend",
+        "type": "bar",
+        "title": "三财年收入、营业利润、净利润比较",
+        "description": "2022-2024 三个财年营业收入、营业利润、净利润如何变化？",
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, 'Revenue' AS metric, revenue_usd_millions AS value FROM annual_financials WHERE fiscal_year BETWEEN 2022 AND 2024 UNION ALL SELECT fiscal_year, 'Operating income' AS metric, operating_income_usd_millions AS value FROM annual_financials WHERE fiscal_year BETWEEN 2022 AND 2024 UNION ALL SELECT fiscal_year, 'Net income' AS metric, net_income_usd_millions AS value FROM annual_financials WHERE fiscal_year BETWEEN 2022 AND 2024 ORDER BY fiscal_year, metric",
+          "federation": null,
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "fiscal_year",
+              "type": "integer",
+              "label": "财年",
+              "nullable": true
+            },
+            {
+              "name": "metric",
+              "type": "unknown",
+              "label": null,
+              "nullable": true
+            },
+            {
+              "name": "value",
+              "type": "unknown",
+              "label": null,
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 10,
+          "grain": null,
+          "refresh_time": "2026-09-07T01:49:02.698299",
+          "last_execution": {
+            "status": "succeeded",
+            "executed_at": "2026-09-07T01:49:02.698299",
+            "duration_ms": 24,
+            "row_count": 3,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "apple_financial_demo",
+                "tables": [
+                  "annual_financials"
+                ],
+                "columns": [
+                  "fiscal_year",
+                  "metric",
+                  "net_income_usd_millions",
+                  "operating_income_usd_millions",
+                  "revenue_usd_millions"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": "fiscal_year",
+          "y": "value",
+          "value": null,
+          "series": "metric",
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": null,
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": null,
+          "currency": null,
+          "precision": null,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": null,
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "w_2024_product_revenue",
+        "type": "bar",
+        "title": "2024 年五类产品收入对比",
+        "description": "2024 财年 iPhone、Mac、iPad、Wearables/Home/Accessories、Services 五类产品的收入分别是多少？",
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT product, revenue_usd_millions AS revenue FROM product_revenue WHERE fiscal_year = 2024 ORDER BY revenue DESC",
+          "federation": null,
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "product",
+              "type": "string",
+              "label": "产品类别",
+              "nullable": true
+            },
+            {
+              "name": "revenue",
+              "type": "number",
+              "label": "收入（百万美元）",
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 10,
+          "grain": null,
+          "refresh_time": "2026-09-07T01:49:02.723335",
+          "last_execution": {
+            "status": "succeeded",
+            "executed_at": "2026-09-07T01:49:02.723335",
+            "duration_ms": 8,
+            "row_count": 5,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "apple_financial_demo",
+                "tables": [
+                  "product_revenue"
+                ],
+                "columns": [
+                  "fiscal_year",
+                  "product",
+                  "revenue",
+                  "revenue_usd_millions"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": "product",
+          "y": "revenue",
+          "value": null,
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": null,
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": null,
+          "currency": null,
+          "precision": null,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": null,
+        "metric_ids": [
+          "metric-7"
+        ],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "w_3yr_financial_table",
+        "type": "table",
+        "title": "三年财务明细表",
+        "description": "2022-2024 三个财年的营业收入、营业利润、净利润、总资产、总负债、股东权益明细各是多少？",
+        "query": {
+          "data_source_id": "apple_financial_demo",
+          "sql": "SELECT fiscal_year, revenue_usd_millions AS revenue, operating_income_usd_millions AS operating_income, net_income_usd_millions AS net_income, assets_usd_millions AS assets, liabilities_usd_millions AS liabilities, equity_usd_millions AS equity FROM annual_financials ORDER BY fiscal_year",
+          "federation": null,
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "fiscal_year",
+              "type": "integer",
+              "label": "财年",
+              "nullable": true
+            },
+            {
+              "name": "revenue",
+              "type": "number",
+              "label": "营业收入（百万美元）",
+              "nullable": true
+            },
+            {
+              "name": "operating_income",
+              "type": "number",
+              "label": "营业利润（百万美元）",
+              "nullable": true
+            },
+            {
+              "name": "net_income",
+              "type": "number",
+              "label": "净利润（百万美元）",
+              "nullable": true
+            },
+            {
+              "name": "assets",
+              "type": "number",
+              "label": "总资产（百万美元）",
+              "nullable": true
+            },
+            {
+              "name": "liabilities",
+              "type": "number",
+              "label": "总负债（百万美元）",
+              "nullable": true
+            },
+            {
+              "name": "equity",
+              "type": "number",
+              "label": "股东权益（百万美元）",
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 10,
+          "grain": null,
+          "refresh_time": "2026-09-07T01:49:02.735088",
+          "last_execution": {
+            "status": "succeeded",
+            "executed_at": "2026-09-07T01:49:02.735088",
+            "duration_ms": 17,
+            "row_count": 3,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "apple_financial_demo",
+                "tables": [
+                  "annual_financials"
+                ],
+                "columns": [
+                  "assets_usd_millions",
+                  "equity_usd_millions",
+                  "fiscal_year",
+                  "liabilities_usd_millions",
+                  "net_income_usd_millions",
+                  "operating_income_usd_millions",
+                  "revenue_usd_millions"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": null,
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": [
+            "fiscal_year",
+            "revenue",
+            "operating_income",
+            "net_income",
+            "assets",
+            "liabilities",
+            "equity"
+          ]
+        },
+        "style": {},
+        "presentation": {
+          "visualization": null,
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": null,
+          "currency": null,
+          "precision": null,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": null,
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      }
+    ],
+    "layouts": {
+      "columns": 12,
+      "desktop": [
+        {
+          "widget_id": "w_kpi_2024_revenue",
+          "x": 0,
+          "y": 0,
+          "w": 3,
+          "h": 3,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "w_2024_capital_structure",
+          "x": 3,
+          "y": 0,
+          "w": 6,
+          "h": 5,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "w_3yr_profit_trend",
+          "x": 0,
+          "y": 5,
+          "w": 6,
+          "h": 5,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "w_2024_product_revenue",
+          "x": 6,
+          "y": 5,
+          "w": 6,
+          "h": 5,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "w_3yr_financial_table",
+          "x": 0,
+          "y": 10,
+          "w": 12,
+          "h": 6,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        }
+      ],
+      "mobile_strategy": "stack"
+    },
+    "metadata": {
+      "conversation_id": "fixture-conversation",
+      "source_turn_id": "fixture-turn",
+      "agent": {
+        "generated": true,
+        "model_name": "deepseek-v4-flash",
+        "prompt": "[Database: Apple_Financial] 请用当前 Apple_Financial 数据源新建“Apple 三财年财务分析（渲染修复验收）”看板，面向经营负责人。仅使用源数据中的 2022、2023、2024 三个财年，金额单位是百万美元，不是美元原值。需要五个组件：2024 年营业收入 KPI；三财年收入、营业利润、净利润比较；2024 年五类产品收入对比；2024 年负债与权益构成；三年财务明细表。不要增加筛选器或虚构数据。请先探索真实表结构和基数，保存无 SQL 的规划，等待确认后再生成。",
+        "generated_at": "2026-09-07T01:49:02.600411"
+      },
+      "compatibility": {
+        "agent_dashboard_workflow": {
+          "status": "generated",
+          "plan": {
+            "title": "Apple 三财年财务分析（渲染修复验收）",
+            "description": "基于 Apple_Financial 数据源，分析 2022-2024 三个财年的收入、利润、产品结构与资产负债构成，用于渲染修复验收。金额单位均为百万美元。",
+            "business_theme": "Apple 公司 2022-2024 三个财年（FY2022-FY2024）的财务表现分析，包括整体营收与盈利趋势、2024 财年产品收入结构、资产负债构成及三年财务明细，面向经营负责人进行经营复盘与验收。",
+            "audience": "经营负责人",
+            "decision_goal": "评估 Apple 近三财年营收与盈利趋势，审视 2024 财年产品收入结构与资本结构，支持经营复盘与渲染修复验收。",
+            "analysis_logic": [
+              "总收入与产品收入对账：各财年 product_revenue 汇总等于 annual_financials.revenue_usd_millions",
+              "趋势分析：比较 2022-2024 财年营业收入、营业利润、净利润的变化",
+              "结构分析：2024 财年五类产品收入占比，负债与权益构成占比",
+              "明细核对：三年财务指标明细表便于逐项验收"
+            ],
+            "layout_rationale": "KPI 置顶展示 2024 年营业收入，随后为三年趋势图与 2024 年产品结构图，再为负债权益构成与明细表，自上而下由总览到明细。",
+            "filter_strategy": "按用户要求不设置任何筛选器，使用全部三个财年数据。",
+            "metrics": [
+              "营业收入（百万美元）",
+              "营业利润（百万美元）",
+              "净利润（百万美元）",
+              "总资产（百万美元）",
+              "总负债（百万美元）",
+              "股东权益（百万美元）",
+              "各产品收入（百万美元）"
+            ],
+            "dimensions": [
+              "财年 fiscal_year（2022-2024）",
+              "产品类别 product（iPhone/Services/Wearables/Home/Accessories/Mac/iPad）",
+              "资产负债构成项（负债/权益）"
+            ],
+            "filters": [],
+            "widgets": [
+              {
+                "id": "w_kpi_2024_revenue",
+                "type": "kpi",
+                "title": "2024 年营业收入",
+                "business_question": "Apple 2024 财年（FY2024）的营业收入是多少百万美元？",
+                "metric": "营业收入（百万美元）",
+                "dimensions": [
+                  "财年 fiscal_year"
+                ],
+                "expected_data_points": 1,
+                "analysis_level": 2,
+                "rationale": "单一 KPI 展示 2024 财年营业收入 391035 百万美元，作为验收核心指标。",
+                "layout": null
+              },
+              {
+                "id": "w_3yr_profit_trend",
+                "type": "bar",
+                "title": "三财年收入、营业利润、净利润比较",
+                "business_question": "2022-2024 三个财年营业收入、营业利润、净利润如何变化？",
+                "metric": "营业收入/营业利润/净利润（百万美元）",
+                "dimensions": [
+                  "财年 fiscal_year"
+                ],
+                "expected_data_points": 3,
+                "analysis_level": 3,
+                "rationale": "折线图展示三财年三项盈利指标趋势，X 轴为财年（3 个点），三条序列。\n[small-series] 规划探索数量：3 个数据点，不超过 3；改用 bar，避免误示连续趋势。",
+                "layout": null
+              },
+              {
+                "id": "w_2024_product_revenue",
+                "type": "bar",
+                "title": "2024 年五类产品收入对比",
+                "business_question": "2024 财年 iPhone、Mac、iPad、Wearables/Home/Accessories、Services 五类产品的收入分别是多少？",
+                "metric": "各产品收入（百万美元）",
+                "dimensions": [
+                  "产品类别 product"
+                ],
+                "expected_data_points": 5,
+                "analysis_level": 3,
+                "rationale": "柱状图对比 2024 财年五类产品收入，X 轴为 5 个产品类别。",
+                "layout": null
+              },
+              {
+                "id": "w_2024_capital_structure",
+                "type": "pie",
+                "title": "2024 年负债与权益构成",
+                "business_question": "2024 财年总负债与股东权益在总资产中的构成比例如何？",
+                "metric": "总负债/股东权益（百万美元）",
+                "dimensions": [
+                  "资产负债构成项"
+                ],
+                "expected_data_points": 2,
+                "analysis_level": 2,
+                "rationale": "饼图展示 2024 财年负债（308030）与权益（56950）的构成占比。",
+                "layout": null
+              },
+              {
+                "id": "w_3yr_financial_table",
+                "type": "table",
+                "title": "三年财务明细表",
+                "business_question": "2022-2024 三个财年的营业收入、营业利润、净利润、总资产、总负债、股东权益明细各是多少？",
+                "metric": "营业收入/营业利润/净利润/总资产/总负债/股东权益（百万美元）",
+                "dimensions": [
+                  "财年 fiscal_year"
+                ],
+                "expected_data_points": 3,
+                "analysis_level": 3,
+                "rationale": "明细表逐行展示三年各项财务指标，便于逐项验收与核对。",
+                "layout": null
+              }
+            ]
+          },
+          "confirmed_revision": 1,
+          "contract_repairs": []
+        },
+        "dashboard_plan": {
+          "title": "Apple 三财年财务分析（渲染修复验收）",
+          "description": "基于 Apple_Financial 数据源，分析 2022-2024 三个财年的收入、利润、产品结构与资产负债构成，用于渲染修复验收。金额单位均为百万美元。",
+          "business_theme": "Apple 公司 2022-2024 三个财年（FY2022-FY2024）的财务表现分析，包括整体营收与盈利趋势、2024 财年产品收入结构、资产负债构成及三年财务明细，面向经营负责人进行经营复盘与验收。",
+          "audience": "经营负责人",
+          "decision_goal": "评估 Apple 近三财年营收与盈利趋势，审视 2024 财年产品收入结构与资本结构，支持经营复盘与渲染修复验收。",
+          "analysis_logic": [
+            "总收入与产品收入对账：各财年 product_revenue 汇总等于 annual_financials.revenue_usd_millions",
+            "趋势分析：比较 2022-2024 财年营业收入、营业利润、净利润的变化",
+            "结构分析：2024 财年五类产品收入占比，负债与权益构成占比",
+            "明细核对：三年财务指标明细表便于逐项验收"
+          ],
+          "layout_rationale": "KPI 置顶展示 2024 年营业收入，随后为三年趋势图与 2024 年产品结构图，再为负债权益构成与明细表，自上而下由总览到明细。",
+          "filter_strategy": "按用户要求不设置任何筛选器，使用全部三个财年数据。",
+          "metrics": [
+            "营业收入（百万美元）",
+            "营业利润（百万美元）",
+            "净利润（百万美元）",
+            "总资产（百万美元）",
+            "总负债（百万美元）",
+            "股东权益（百万美元）",
+            "各产品收入（百万美元）"
+          ],
+          "dimensions": [
+            "财年 fiscal_year（2022-2024）",
+            "产品类别 product（iPhone/Services/Wearables/Home/Accessories/Mac/iPad）",
+            "资产负债构成项（负债/权益）"
+          ],
+          "filters": [],
+          "widgets": [
+            {
+              "id": "w_kpi_2024_revenue",
+              "type": "kpi",
+              "title": "2024 年营业收入",
+              "business_question": "Apple 2024 财年（FY2024）的营业收入是多少百万美元？",
+              "metric": "营业收入（百万美元）",
+              "dimensions": [
+                "财年 fiscal_year"
+              ],
+              "expected_data_points": 1,
+              "analysis_level": 2,
+              "rationale": "单一 KPI 展示 2024 财年营业收入 391035 百万美元，作为验收核心指标。",
+              "layout": null
+            },
+            {
+              "id": "w_3yr_profit_trend",
+              "type": "bar",
+              "title": "三财年收入、营业利润、净利润比较",
+              "business_question": "2022-2024 三个财年营业收入、营业利润、净利润如何变化？",
+              "metric": "营业收入/营业利润/净利润（百万美元）",
+              "dimensions": [
+                "财年 fiscal_year"
+              ],
+              "expected_data_points": 3,
+              "analysis_level": 3,
+              "rationale": "折线图展示三财年三项盈利指标趋势，X 轴为财年（3 个点），三条序列。\n[small-series] 规划探索数量：3 个数据点，不超过 3；改用 bar，避免误示连续趋势。",
+              "layout": null
+            },
+            {
+              "id": "w_2024_product_revenue",
+              "type": "bar",
+              "title": "2024 年五类产品收入对比",
+              "business_question": "2024 财年 iPhone、Mac、iPad、Wearables/Home/Accessories、Services 五类产品的收入分别是多少？",
+              "metric": "各产品收入（百万美元）",
+              "dimensions": [
+                "产品类别 product"
+              ],
+              "expected_data_points": 5,
+              "analysis_level": 3,
+              "rationale": "柱状图对比 2024 财年五类产品收入，X 轴为 5 个产品类别。",
+              "layout": null
+            },
+            {
+              "id": "w_2024_capital_structure",
+              "type": "pie",
+              "title": "2024 年负债与权益构成",
+              "business_question": "2024 财年总负债与股东权益在总资产中的构成比例如何？",
+              "metric": "总负债/股东权益（百万美元）",
+              "dimensions": [
+                "资产负债构成项"
+              ],
+              "expected_data_points": 2,
+              "analysis_level": 2,
+              "rationale": "饼图展示 2024 财年负债（308030）与权益（56950）的构成占比。",
+              "layout": null
+            },
+            {
+              "id": "w_3yr_financial_table",
+              "type": "table",
+              "title": "三年财务明细表",
+              "business_question": "2022-2024 三个财年的营业收入、营业利润、净利润、总资产、总负债、股东权益明细各是多少？",
+              "metric": "营业收入/营业利润/净利润/总资产/总负债/股东权益（百万美元）",
+              "dimensions": [
+                "财年 fiscal_year"
+              ],
+              "expected_data_points": 3,
+              "analysis_level": 3,
+              "rationale": "明细表逐行展示三年各项财务指标，便于逐项验收与核对。",
+              "layout": null
+            }
+          ]
+        }
+      }
+    }
+  },
+  "snapshot": {
+    "dashboard_id": "f29cbeb8d6014d8f9ee5dc5ead4951a8",
+    "refreshed_at": "2026-09-07T11:03:47.910986",
+    "filters": {},
+    "widgets": {
+      "w_kpi_2024_revenue": {
+        "widget_id": "w_kpi_2024_revenue",
+        "columns": [
+          "fiscal_year",
+          "revenue"
+        ],
+        "rows": [
+          [
+            2024,
+            391035.0
+          ]
+        ],
+        "row_count": 1,
+        "truncated": false,
+        "duration_ms": 11,
+        "refreshed_at": "2026-09-07T11:03:47.884682",
+        "anomalies": [],
+        "error": null
+      },
+      "w_2024_capital_structure": {
+        "widget_id": "w_2024_capital_structure",
+        "columns": [
+          "component",
+          "value"
+        ],
+        "rows": [
+          [
+            "总负债",
+            308030.0
+          ],
+          [
+            "股东权益",
+            56950.0
+          ]
+        ],
+        "row_count": 2,
+        "truncated": false,
+        "duration_ms": 21,
+        "refreshed_at": "2026-09-07T11:03:47.885681",
+        "anomalies": [],
+        "error": null
+      },
+      "w_3yr_profit_trend": {
+        "widget_id": "w_3yr_profit_trend",
+        "columns": [
+          "fiscal_year",
+          "metric",
+          "value"
+        ],
+        "rows": [
+          [
+            2022,
+            "Net income",
+            99803.0
+          ],
+          [
+            2022,
+            "Operating income",
+            119437.0
+          ],
+          [
+            2022,
+            "Revenue",
+            394328.0
+          ],
+          [
+            2023,
+            "Net income",
+            96995.0
+          ],
+          [
+            2023,
+            "Operating income",
+            114301.0
+          ],
+          [
+            2023,
+            "Revenue",
+            383285.0
+          ],
+          [
+            2024,
+            "Net income",
+            93736.0
+          ],
+          [
+            2024,
+            "Operating income",
+            123216.0
+          ],
+          [
+            2024,
+            "Revenue",
+            391035.0
+          ]
+        ],
+        "row_count": 9,
+        "truncated": false,
+        "duration_ms": 19,
+        "refreshed_at": "2026-09-07T11:03:47.887681",
+        "anomalies": [],
+        "error": null
+      },
+      "w_2024_product_revenue": {
+        "widget_id": "w_2024_product_revenue",
+        "columns": [
+          "product",
+          "revenue"
+        ],
+        "rows": [
+          [
+            "iPhone",
+            201183.0
+          ],
+          [
+            "Services",
+            96169.0
+          ],
+          [
+            "Wearables/Home/Accessories",
+            37005.0
+          ],
+          [
+            "Mac",
+            29984.0
+          ],
+          [
+            "iPad",
+            26694.0
+          ]
+        ],
+        "row_count": 5,
+        "truncated": false,
+        "duration_ms": 18,
+        "refreshed_at": "2026-09-07T11:03:47.888681",
+        "anomalies": [],
+        "error": null
+      },
+      "w_3yr_financial_table": {
+        "widget_id": "w_3yr_financial_table",
+        "columns": [
+          "fiscal_year",
+          "revenue",
+          "operating_income",
+          "net_income",
+          "assets",
+          "liabilities",
+          "equity"
+        ],
+        "rows": [
+          [
+            2022,
+            394328.0,
+            119437.0,
+            99803.0,
+            352755.0,
+            302083.0,
+            50672.0
+          ],
+          [
+            2023,
+            383285.0,
+            114301.0,
+            96995.0,
+            352583.0,
+            290437.0,
+            62146.0
+          ],
+          [
+            2024,
+            391035.0,
+            123216.0,
+            93736.0,
+            364980.0,
+            308030.0,
+            56950.0
+          ]
+        ],
+        "row_count": 3,
+        "truncated": false,
+        "duration_ms": 14,
+        "refreshed_at": "2026-09-07T11:03:47.895757",
+        "anomalies": [],
+        "error": null
+      }
+    },
+    "publication_datasets": {}
+  },
+  "published_at": "2026-09-07T11:03:47.924263",
+  "is_latest_link": true
+}

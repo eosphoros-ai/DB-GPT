@@ -5,7 +5,25 @@ from dbgpt.storage.chat_history.chat_history_db import (
     ChatHistoryEntity,
     ChatHistoryMessageEntity,
 )
+from dbgpt_app.openapi.api_v1.dashboard.covers import DashboardCoverEntity
+from dbgpt_app.openapi.api_v1.dashboard.folders import (
+    DashboardFolderEntity,
+    DashboardFolderItemEntity,
+)
+from dbgpt_app.openapi.api_v1.dashboard.live_share import DashboardLiveShareEntity
+from dbgpt_app.openapi.api_v1.dashboard.models import (
+    DashboardAnnotationEntity,
+    DashboardAuditEntity,
+    DashboardEditVersionEntity,
+    DashboardEntity,
+    DashboardMemberEntity,
+    DashboardOperationEntity,
+    DashboardRevisionEntity,
+    DashboardShareEntity,
+)
+from dbgpt_app.openapi.api_v1.dashboard.share_vault import DashboardShareSecretEntity
 from dbgpt_app.openapi.api_v1.feedback.feed_back_db import ChatFeedBackEntity
+from dbgpt_app.openapi.api_v1.uploaded_dataset_registry import UploadedDatasetEntity
 from dbgpt_app.share.models import ShareLinkEntity
 from dbgpt_serve.agent.app.recommend_question.recommend_question import (
     RecommendQuestionEntity,
@@ -21,6 +39,8 @@ from dbgpt_serve.prompt.models.models import ServeEntity as PromptManageEntity
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
+from dbgpt_serve.scheduled_task.models.scheduled_run_model import ScheduledRunEntity
+from dbgpt_serve.scheduled_task.models.scheduled_task_model import ScheduledTaskEntity
 from dbgpt_serve.session_file.models.models import SessionFileEntity
 
 _MODELS = [
@@ -42,4 +62,20 @@ _MODELS = [
     BenchmarkSummaryEntity,
     ShareLinkEntity,
     SessionFileEntity,
+    DashboardEntity,
+    DashboardEditVersionEntity,
+    DashboardRevisionEntity,
+    DashboardMemberEntity,
+    DashboardAuditEntity,
+    DashboardOperationEntity,
+    DashboardAnnotationEntity,
+    DashboardShareEntity,
+    DashboardShareSecretEntity,
+    DashboardCoverEntity,
+    DashboardFolderEntity,
+    DashboardFolderItemEntity,
+    DashboardLiveShareEntity,
+    ScheduledTaskEntity,
+    ScheduledRunEntity,
+    UploadedDatasetEntity,
 ]

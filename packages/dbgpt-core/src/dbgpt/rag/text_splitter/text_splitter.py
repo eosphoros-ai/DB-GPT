@@ -585,11 +585,9 @@ class MarkdownHeaderTextSplitter(TextSplitter):
         in_code_block = False
         for line in lines:
             stripped_line = line.strip()
-            # A code frame starts with "```"
-            with_code_frame = stripped_line.startswith("```") and (
-                stripped_line != "```"
-            )
-            if (not in_code_block) and with_code_frame:
+            # A code frame starts with "```", with or without a language tag
+            opens_code_block = (not in_code_block) and stripped_line.startswith("```")
+            if opens_code_block:
                 in_code_block = True
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
@@ -656,7 +654,7 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                     current_content.clear()
 
             # Code block ends
-            if in_code_block and stripped_line == "```":
+            if in_code_block and not opens_code_block and stripped_line == "```":
                 in_code_block = False
 
             current_metadata = initial_metadata.copy()

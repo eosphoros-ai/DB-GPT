@@ -1,0 +1,53 @@
+.chart {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.plot {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+}
+.plot svg {
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  flex-shrink: 0;
+  margin-block: auto;
+  overflow: visible;
+}
+.plot text {
+  fill: currentColor;
+  font-family: inherit;
+}
+.plot [tabindex]:focus {
+  outline: 2px solid var(--plot-muted);
+  outline-offset: 2px;
+}
+.map {
+  min-height: 180px;
+}
+.hover {
+  min-height: 22px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.note {
+  font-size: 10px;
+  color: var(--plot-muted);
+  line-height: 1.6;
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+.explanation {
+  margin: auto;
+  padding: 20px;
+  font-size: 13px;
+  color: var(--app-muted);
+}

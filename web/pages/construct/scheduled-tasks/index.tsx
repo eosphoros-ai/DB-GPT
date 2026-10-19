@@ -50,6 +50,7 @@ function ScheduledTasks() {
   }, [listTasks, t]);
 
   useEffect(() => {
+    // Start the remote task-list request when this page opens.
     reload();
   }, [reload]);
 
@@ -282,6 +283,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
       role='button'
       tabIndex={0}
       onKeyDown={e => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onClick();
@@ -299,6 +301,9 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
         </div>
         <div className='min-w-0'>
           <div className='text-[14px] font-medium text-gray-900 dark:text-gray-100 truncate'>{task.task_name}</div>
+          <div className='text-[11px] text-gray-500 dark:text-gray-400'>
+            {task.task_type === 'dashboard_refresh' ? t('scheduled.kind.dashboard') : t('scheduled.kind.chat')}
+          </div>
           {task.description && (
             <div className='text-[11px] text-gray-400 dark:text-gray-500 truncate'>{task.description}</div>
           )}
@@ -342,6 +347,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
       {/* 启用开关 */}
       <div className='flex justify-center' onClick={e => e.stopPropagation()}>
         <Switch
+          aria-label={`${t('scheduled.col.enable')} ${task.task_name}`}
           checked={task.enabled}
           size='small'
           className='scheduled-switch'
@@ -356,6 +362,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
             type='text'
             size='small'
             icon={<EditOutlined />}
+            aria-label={`${t('scheduled.row.editTooltip')} ${task.task_name}`}
             className='text-gray-400 hover:!text-cyan-600 hover:!bg-cyan-50 dark:hover:!bg-cyan-900/30'
             onClick={e => onEdit(task, e as unknown as React.MouseEvent)}
           />
@@ -365,6 +372,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
             type='text'
             size='small'
             icon={<HistoryOutlined />}
+            aria-label={`${t('scheduled.row.historyTooltip')} ${task.task_name}`}
             className='text-gray-400 hover:!text-cyan-600 hover:!bg-cyan-50 dark:hover:!bg-cyan-900/30'
             onClick={onClick}
           />
@@ -382,6 +390,7 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onEdit, onDelete, onC
               size='small'
               danger
               icon={<DeleteOutlined />}
+              aria-label={`${t('scheduled.row.deleteTooltip')} ${task.task_name}`}
               className='hover:!bg-red-50 dark:hover:!bg-red-900/30'
             />
           </Tooltip>

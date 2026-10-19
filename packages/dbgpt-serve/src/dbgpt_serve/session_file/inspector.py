@@ -6,7 +6,6 @@ import importlib
 import io
 import json
 import multiprocessing
-import os
 import queue
 import re
 import threading
@@ -644,11 +643,10 @@ def _run_isolated(
 
 
 def _pid_exists(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    return True
+    # os.kill(pid, 0) terminates the process on Windows; it is not a probe.
+    import psutil
+
+    return psutil.pid_exists(pid)
 
 
 def _run_trusted_thread(

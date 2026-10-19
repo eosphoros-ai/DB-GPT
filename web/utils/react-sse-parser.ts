@@ -16,6 +16,7 @@
  */
 
 import { MessagePart, ReasoningPart, ToolPart, ToolStatus } from '@/new-components/chat/content/OpenCodeSessionTurn';
+import { PendingQuestion, QuestionSession } from '@/utils/question-session';
 import { AgentCitation, AgentFinalAnswer, decodeFinalEvent } from '@/utils/react-agent-final';
 
 // SSE Event Types
@@ -98,11 +99,8 @@ export interface QuestionInfo {
   custom?: boolean;
 }
 
-export interface SSEQuestionAskedEvent {
+export interface SSEQuestionAskedEvent extends PendingQuestion {
   type: 'question.asked';
-  request_id: string;
-  conv_id: string;
-  questions: QuestionInfo[];
 }
 
 export interface SSEQuestionRepliedEvent {
@@ -164,7 +162,7 @@ export class ReActSSEState {
   private startTime: number;
   private endTime?: number;
   private _contextStatus: ContextStatus | null = null;
-  private _pendingQuestion: SSEQuestionAskedEvent | null = null;
+  private questionSession = new QuestionSession();
   private _taskPreview: string | null = null;
 
   constructor() {
@@ -192,11 +190,9 @@ export class ReActSSEState {
         this.handleContextStatus(event);
         break;
       case 'question.asked':
-        this._pendingQuestion = event;
-        break;
       case 'question.replied':
       case 'question.rejected':
-        this._pendingQuestion = null;
+        this.questionSession.apply(event);
         break;
       case 'final':
         this.handleFinal(event);
@@ -219,7 +215,8 @@ export class ReActSSEState {
    * Get the current pending question (null if none)
    */
   getPendingQuestion(): SSEQuestionAskedEvent | null {
-    return this._pendingQuestion;
+    const current = this.questionSession.current;
+    return current ? { type: 'question.asked', ...current } : null;
   }
 
   private handleStepStart(event: SSEStepStartEvent): void {
