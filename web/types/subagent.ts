@@ -6,7 +6,7 @@
 // agent.start / agent.step / agent.done / subagent.artifacts (design spec §4.7
 // "关键进展行 + 可下钻" — aligned with Claude Code / Devin / Manus).
 
-export type SubAgentStatus = 'running' | 'done' | 'timeout' | 'failed';
+export type SubAgentStatus = 'running' | 'done' | 'partial' | 'timeout' | 'failed';
 
 /** A structured output chunk of a sub-agent step (markdown table / code / …). */
 export interface SubAgentOutputChunk {
@@ -17,7 +17,8 @@ export interface SubAgentOutputChunk {
 
 export interface SubAgentArtifactRef {
   type: string;
-  url: string;
+  url?: string;
+  artifact_id?: string;
   title?: string;
 }
 
@@ -81,6 +82,8 @@ export interface SubAgentPartial {
 
 /** One artifact produced by a sub-agent, as carried by subagent.artifacts. */
 export interface SubAgentArtifactItem {
+  artifact_id?: string;
+  name?: string;
   type: string; // 'image' | 'html' | 'file' | ...
   url?: string;
   content?: string;

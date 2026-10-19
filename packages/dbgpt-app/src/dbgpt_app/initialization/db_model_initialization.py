@@ -39,6 +39,13 @@ from dbgpt_serve.prompt.models.models import ServeEntity as PromptManageEntity
 from dbgpt_serve.rag.models.chunk_db import DocumentChunkEntity
 from dbgpt_serve.rag.models.document_db import KnowledgeDocumentEntity
 from dbgpt_serve.rag.models.models import KnowledgeSpaceEntity
+from dbgpt_serve.report.models.models import (
+    ReportArtifactDependencyEntity,
+    ReportArtifactEntity,
+    ReportEntity,
+    ReportEvidenceEntity,
+    ReportRunEntity,
+)
 from dbgpt_serve.scheduled_task.models.scheduled_run_model import ScheduledRunEntity
 from dbgpt_serve.scheduled_task.models.scheduled_task_model import ScheduledTaskEntity
 from dbgpt_serve.session_file.models.models import SessionFileEntity
@@ -62,6 +69,11 @@ _MODELS = [
     BenchmarkSummaryEntity,
     ShareLinkEntity,
     SessionFileEntity,
+    ReportEntity,
+    ReportRunEntity,
+    ReportArtifactEntity,
+    ReportArtifactDependencyEntity,
+    ReportEvidenceEntity,
     DashboardEntity,
     DashboardEditVersionEntity,
     DashboardRevisionEntity,

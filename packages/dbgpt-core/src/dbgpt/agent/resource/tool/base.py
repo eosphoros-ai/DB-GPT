@@ -6,10 +6,23 @@ import functools
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union, cast
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+    get_type_hints,
+)
+
+from pydantic import TypeAdapter
 
 from dbgpt._private.pydantic import BaseModel, Field, model_validator
-from dbgpt.util.configure.base import _MISSING, _MISSING_TYPE
+from dbgpt.util.configure.base import _MISSING
 from dbgpt.util.function_utils import parse_param_description, type_to_string
 
 from ..base import (
@@ -47,6 +60,27 @@ class ToolParameter(BaseModel):
     default: Optional[Any] = Field(
         _MISSING, description="Default value for the parameter"
     )
+    json_schema: Optional[Dict[str, Any]] = None
+
+    def to_json_schema(self) -> Dict[str, Any]:
+        """Use a JSON Schema type, preserving unions and array item types."""
+        if self.json_schema is not None:
+            schema = dict(self.json_schema)
+        elif self.type.startswith("{"):
+            schema = json.loads(self.type)
+        else:
+            types = [part.strip() for part in self.type.split(",")]
+            types = [
+                kind
+                for kind in types
+                if kind
+                in {"string", "number", "integer", "boolean", "object", "array", "null"}
+            ]
+            schema = {"type": types[0] if len(types) == 1 else types} if types else {}
+            if "array" in types:
+                schema["items"] = {}
+        schema["description"] = self.description
+        return schema
 
     @model_validator(mode="before")
     @classmethod
@@ -79,6 +113,30 @@ class BaseTool(Resource[ToolResourceParameters], ABC):
     def args(self) -> Dict[str, ToolParameter]:
         """Return the arguments of the tool."""
 
+    def parameters_schema(self) -> Dict[str, Any]:
+        """Share one parameter schema between prompts and native tool calls."""
+        properties = {}
+        required = []
+        for name, parameter in self.args.items():
+            schema = parameter.to_json_schema()
+            # TypeAdapter references are relative to its own schema root. Each
+            # parameter becomes a property of the function's parameter object.
+            prefix = name.replace("~", "~0").replace("/", "~1")
+
+            def relocate(value):
+                if isinstance(value, dict):
+                    return {key: relocate(item) for key, item in value.items()}
+                if isinstance(value, list):
+                    return [relocate(item) for item in value]
+                if isinstance(value, str) and value.startswith("#/$defs/"):
+                    return f"#/properties/{prefix}/$defs/" + value[len("#/$defs/") :]
+                return value
+
+            properties[name] = relocate(schema)
+            if parameter.required:
+                required.append(name)
+        return {"type": "object", "properties": properties, "required": required}
+
     def validate_call_args(self, arguments: Dict[str, Any]) -> None:
         """Optional pre-filter validation; legacy tools keep their behavior."""
 
@@ -103,20 +161,7 @@ class BaseTool(Resource[ToolResourceParameters], ABC):
         )
         template = prompt_template if lang == "en" else prompt_template_zh
         if prompt_type == "openai":
-            properties = {}
-            required_list = []
-            for key, value in self.args.items():
-                properties[key] = {
-                    "type": value.type,
-                    "description": value.description,
-                }
-                if value.required:
-                    required_list.append(key)
-            parameters_dict = {
-                "type": "object",
-                "properties": properties,
-                "required": required_list,
-            }
+            parameters_dict = self.parameters_schema()
             parameters_string = json.dumps(parameters_dict, ensure_ascii=False)
         else:
             parameters = []
@@ -328,9 +373,13 @@ def _parse_args(
     if args_schema is not None:
         return _parse_args_from_schema(args_schema)
     signature = inspect.signature(func)
+    try:
+        type_hints = get_type_hints(func, include_extras=True)
+    except (NameError, TypeError):
+        type_hints = {}
 
     for param in signature.parameters.values():
-        real_type = param.annotation
+        real_type = type_hints.get(param.name, param.annotation)
         param_name = param.name
         param_title = param_name.replace("_", " ").title()
 
@@ -342,6 +391,10 @@ def _parse_args(
             param_required = True
         param_type, _ = type_to_string(real_type, "unknown")
         param_description = parse_param_description(param_name, real_type)
+        try:
+            parameter_schema = TypeAdapter(real_type).json_schema()
+        except (TypeError, ValueError):
+            parameter_schema = None
         parsed_args[param_name] = ToolParameter(
             name=param_name,
             title=param_title,
@@ -349,13 +402,15 @@ def _parse_args(
             description=param_description,
             default=param_default,
             required=param_required,
+            json_schema=parameter_schema,
         )
     return parsed_args
 
 
 def _parse_args_from_schema(args_schema: Type[BaseModel]) -> Dict[str, ToolParameter]:
     """Parse the arguments from a Pydantic schema."""
-    pydantic_args = args_schema.schema()["properties"]
+    full_schema = args_schema.model_json_schema()
+    pydantic_args = full_schema["properties"]
     parsed_args = {}
     for key, value in pydantic_args.items():
         param_name = key
@@ -365,17 +420,20 @@ def _parse_args_from_schema(args_schema: Type[BaseModel]) -> Dict[str, ToolParam
         elif "anyOf" in value:
             # {"anyOf": [{"type": "string"}, {"type": "null"}]}
             any_of: List[Dict[str, Any]] = value["anyOf"]
-            if len(any_of) == 2 and any("null" in t["type"] for t in any_of):
-                param_type = next(t["type"] for t in any_of if "null" not in t["type"])
+            if len(any_of) == 2 and any(t.get("type") == "null" for t in any_of):
+                non_null = next(t for t in any_of if t.get("type") != "null")
+                param_type = non_null.get("type", json.dumps(non_null))
             else:
                 param_type = json.dumps({"anyOf": value["anyOf"]}, ensure_ascii=False)
+        elif "$ref" in value:
+            param_type = "object"
         else:
             raise ValueError(f"Invalid schema for {key}")
         param_description = value.get("description", param_title)
         param_default = value.get("default", _MISSING)
-        param_required = False
-        if isinstance(param_default, _MISSING_TYPE) and param_default == _MISSING:
-            param_required = True
+        param_required = key in full_schema.get("required", [])
+        if "$defs" in full_schema:
+            value = dict(value, **{"$defs": full_schema["$defs"]})
 
         parsed_args[key] = ToolParameter(
             name=param_name,
@@ -384,5 +442,6 @@ def _parse_args_from_schema(args_schema: Type[BaseModel]) -> Dict[str, ToolParam
             description=param_description,
             default=param_default,
             required=param_required,
+            json_schema=value,
         )
     return parsed_args

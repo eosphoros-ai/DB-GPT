@@ -11,6 +11,7 @@ from dbgpt.storage.vector_store.base import VectorStoreBase
 from dbgpt_ext.rag import ChunkParameters
 from dbgpt_ext.rag.chunk_manager import ChunkManager
 
+from ..chunk_metadata import chunk_vector_id_map
 from .base import DomainKnowledgeIndex
 
 logger = logging.getLogger(__name__)
@@ -103,7 +104,9 @@ class DomainGeneralIndex(DomainKnowledgeIndex):
                 chunks, max_chunks_once_load, max_threads
             )
             # DB-GPT's Chunk has no vector_id field; store in metadata instead
-            for chunk, vector_id in zip(chunks, vector_ids):
+            identities = chunk_vector_id_map(chunks, vector_ids)
+            for chunk in chunks:
+                vector_id = identities.get(chunk.chunk_id)
                 if vector_id:
                     chunk.metadata["vector_id"] = vector_id
         if full_text_store:

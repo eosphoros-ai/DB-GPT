@@ -29,6 +29,7 @@ _SKILL_DST = "dbgpt_app/_builtin_skills"
 _SKILLS_MAP = {
     f"{_SKILL_SRC}/{name}": f"{_SKILL_DST}/{name}"
     for name in [
+        "business-report",
         "csv-data-analysis",
         "skill-creator",
         "financial-report-analyzer",
@@ -52,6 +53,9 @@ _EXAMPLE_DST = "dbgpt_app/_builtin_examples"
 
 # fmt: off
 _EXAMPLES_MAP = {
+    "examples/olist/olist-analytics-metric-governance.md": (
+        f"{_EXAMPLE_DST}/knowledge/olist-analytics-metric-governance.md"
+    ),
     "docker/examples/excel/Walmart_Sales.csv": (
         f"{_EXAMPLE_DST}/excel/Walmart_Sales.csv"
     ),
@@ -95,6 +99,9 @@ _PILOT_TPL_MAP = {
     "pilot/examples/Walmart_Sales.db": (
         f"{_TPL}/examples/Walmart_Sales.db"
     ),
+    "pilot/examples/Olist_Ecommerce.db": (
+        f"{_TPL}/examples/Olist_Ecommerce.db"
+    ),
 }
 # fmt: on
 
@@ -103,6 +110,7 @@ _PILOT_TPL_MAP = {
 #   ../../docker/examples/X  -> examples/X
 #   ../../pilot/X            -> pilot_tpl/X
 _SDIST_REMAP = {
+    "examples/olist/": "examples/knowledge/",
     "skills/": "skills/",  # no change
     "docker/examples/": "examples/",  # strip "docker/"
     "pilot/": "pilot_tpl/",  # pilot -> pilot_tpl
@@ -121,9 +129,9 @@ class CustomBuildHook(BuildHookInterface):
             build_data: mutable dict; set ``force_include`` to inject
                         path mappings
         """
+        # The sdist already has its own force-include layout in pyproject.toml.
+        # Wheel destinations here must not override those archive paths.
         if self.target_name != "wheel":
-            # sdist has its own canonical source mappings in pyproject.toml.
-            # Wheel destinations here would break rebuilding an extracted sdist.
             return
         pkg_root = Path(self.root)  # packages/dbgpt-app/
         all_mappings = {
@@ -156,6 +164,10 @@ class CustomBuildHook(BuildHookInterface):
                         sdist_path = replacement + repo_rel[len(prefix) :]
                         break
                 source = str(pkg_root / sdist_path)
+                if not os.path.exists(source):
+                    # Direct wheel builds from a checkout have the same source
+                    # layout as editable builds, not the extracted sdist layout.
+                    source = str(pkg_root.parent.parent / repo_rel)
                 if os.path.exists(source):
                     force_include[source] = wheel_target
 

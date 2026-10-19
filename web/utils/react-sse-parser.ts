@@ -55,6 +55,8 @@ export interface SSEFinalEvent {
   content: string;
   protocol_version?: number;
   citations?: unknown[];
+  report_id?: string;
+  report_run_id?: string;
 }
 
 export interface SSETaskPreviewEvent {
@@ -442,6 +444,8 @@ export class ReActSSEState {
     return {
       content: this.finalAnswer.content,
       citations: [...this.finalAnswer.citations],
+      ...(this.finalAnswer.reportId && { reportId: this.finalAnswer.reportId }),
+      ...(this.finalAnswer.reportRunId && { reportRunId: this.finalAnswer.reportRunId }),
     };
   }
 

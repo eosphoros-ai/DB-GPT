@@ -1,5 +1,6 @@
 """Tool resource pack module."""
 
+import asyncio
 import logging
 import os
 import ssl
@@ -238,8 +239,9 @@ class ToolPack(ResourcePack):
             if tl.is_async:
                 return await tl.async_execute(**arguments)
             else:
-                # TODO: Execute in a separate executor
-                return tl.execute(**arguments)
+                # Preserve ContextVars (including evidence capture) while keeping
+                # blocking tools off the event loop shared by concurrent agents.
+                return await asyncio.to_thread(tl.execute, **arguments)
         except Exception as e:
             raise ToolExecutionException(f"Execution error: {str(e)}")
 
