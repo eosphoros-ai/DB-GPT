@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt_serve.session_file.domain import SessionFileStatus
 
 
 def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
@@ -12,9 +13,18 @@ def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
     manifests = react_state.get("session_files") or []
     if not manifests:
         # Legacy uploads are validated by agentic_data_api before entering
-        # react_state. This value is not a model-facing tool parameter.
-        path = react_state.get("file_path")
-        return [path] if isinstance(path, str) and path else []
+        # react_state. Include the complete validated multi-file selection;
+        # file_path is only its legacy single-file/primary-file alias.
+        paths = react_state.get("file_paths") or []
+        if not isinstance(paths, (list, tuple)):
+            paths = []
+        return list(
+            dict.fromkeys(
+                path
+                for path in [*paths, react_state.get("file_path")]
+                if isinstance(path, str) and path
+            )
+        )
     paths = react_state.get("session_file_paths") or {}
     allowed = []
     for manifest in manifests:
@@ -28,7 +38,9 @@ def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
             if isinstance(manifest, dict)
             else getattr(manifest, "status", None)
         )
-        if getattr(status, "value", status) != "ready":
+        # Match the attachment adapter's readable terminal states. Preview
+        # failure does not revoke the already-checked owner/session grant.
+        if status not in (SessionFileStatus.READY, SessionFileStatus.PREVIEW_FAILED):
             continue
         path = paths.get(file_id)
         if isinstance(path, str) and path:

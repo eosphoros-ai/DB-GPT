@@ -1,10 +1,12 @@
 """Real skill execution, snapshot persistence and authenticated download regressions."""
 
 import hashlib
+import io
 import json
 import os
 import subprocess
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
@@ -16,6 +18,11 @@ from dbgpt.agent.resource.tool.pack import ToolPack
 from dbgpt.agent.skill import manage
 from dbgpt.component import SystemApp
 from dbgpt.configs import model_config
+from dbgpt.core.interface.file import (
+    FileStorageClient,
+    FileStorageSystem,
+    LocalFileStorage,
+)
 from dbgpt.core.interface.report_capture import (
     ArtifactCaptureContext,
     InMemoryArtifactSink,
@@ -25,14 +32,28 @@ from dbgpt.core.interface.report_capture import (
     snapshot_execution_files,
 )
 from dbgpt.storage.metadata.db_manager import DatabaseManager
+from dbgpt_app.openapi.api_v1.attachment_react_adapter import (
+    AttachmentInputError,
+    open_session_attachments,
+)
 from dbgpt_app.openapi.api_v1.tools.code_interpreter import build_execution_env
 from dbgpt_app.openapi.api_v1.tools.read_file import make_read_file
 from dbgpt_app.openapi.api_v1.tools.skill_tools import make_execute_skill_script_file
+from dbgpt_app.openapi.api_v1.uploaded_dataset_registry import (
+    UploadedDatasetAccessError,
+    validate_legacy_user_paths,
+)
 from dbgpt_serve.report.api import endpoints
 from dbgpt_serve.report.config import ServeConfig
 from dbgpt_serve.report.models import models
 from dbgpt_serve.report.models.dao import ReportDao
 from dbgpt_serve.report.service import ReportService
+from dbgpt_serve.session_file.config import ServeConfig as SessionFileConfig
+from dbgpt_serve.session_file.domain import SessionFileStatus
+from dbgpt_serve.session_file.inspector import InspectionLimits, SessionFileInspector
+from dbgpt_serve.session_file.models.dao import SessionFileDao
+from dbgpt_serve.session_file.models.models import SessionFileEntity
+from dbgpt_serve.session_file.registry import SessionFileRegistry
 
 
 @pytest.fixture
@@ -45,12 +66,218 @@ def runtime(tmp_path, monkeypatch):
         "import sys\nfrom pathlib import Path\nprint(Path(sys.argv[1]).read_text())\n",
         encoding="utf-8",
     )
+    (script_dir / "read_inputs.py").write_text(
+        "import json,sys\nfrom pathlib import Path\n"
+        "sources=sys.argv[1:]\n"
+        "if len(sources)==1 and sources[0].startswith('{'):\n"
+        "    sources=json.loads(sources[0])['sources']\n"
+        "print(json.dumps([Path(p).read_text() for p in sources]))\n",
+        encoding="utf-8",
+    )
     app = SystemApp()
     monkeypatch.setattr(Config(), "SYSTEM_APP", app)
     monkeypatch.setattr(manage, "_SYSTEM_APP", None)
     manage.initialize_skill(app)
     yield tmp_path
     endpoints._reset_endpoints()
+
+
+@pytest.fixture
+def registry(runtime):
+    manager = DatabaseManager()
+    manager.init_db("sqlite:///" + (runtime / "attachments.sqlite").as_posix())
+    SessionFileEntity.__table__.create(manager.engine)
+    backend = LocalFileStorage(base_path=str(runtime / "blobs"))
+    client = FileStorageClient(
+        storage_system=FileStorageSystem({backend.storage_type: backend})
+    )
+    service = SessionFileRegistry(
+        storage_client=client,
+        dao=SessionFileDao(db_manager=manager),
+        inspector=SessionFileInspector(InspectionLimits(max_parse_bytes=32)),
+        config=SessionFileConfig(),
+        work_root=runtime / "materialized",
+    )
+    yield service
+    manager.engine.dispose()
+
+
+async def _execute_reader(state, paths, mode):
+    execute = make_execute_skill_script_file(state)
+    arguments = {"argv": paths} if mode == "argv" else {"args": {"sources": paths}}
+    return json.loads(
+        await ToolPack([execute._tool]).async_execute(
+            resource_name="execute_skill_script_file",
+            skill_name="safe-reader",
+            script_file_name="read_inputs.py",
+            **arguments,
+        )
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["args", "argv"])
+@pytest.mark.parametrize("capture", [False, True])
+@pytest.mark.parametrize("serialized", [False, True])
+async def test_preview_failed_upload_is_authorized_for_skill(
+    runtime, registry, mode, capture, serialized
+):
+    content = b"uploaded text canary beyond the bounded preview budget\n"
+    record = registry.ingest(
+        owner_id="owner",
+        session_id="preview-session",
+        display_name="large.txt",
+        media_type="text/plain",
+        stream=io.BytesIO(content),
+        size_bytes=len(content),
+    )
+    assert record.status == SessionFileStatus.PREVIEW_FAILED
+    assert record.error_code == "PREVIEW_TOO_LARGE"
+    assert registry.config.max_file_bytes > len(content)
+    context = open_session_attachments(
+        registry,
+        owner_id="owner",
+        session_id="preview-session",
+        file_ids=(record.file_id,),
+    )
+    try:
+        path = context.local_paths[record.file_id]
+        assert Path(path).read_bytes() == content
+        sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="preview-session"))
+        state = {
+            "conv_id": "preview-session",
+            "file_path": context.primary_local_path,
+            "session_files": context.manifests,
+            "session_file_paths": context.local_paths,
+        }
+        if serialized:
+            state["session_files"] = [
+                {**asdict(item), "status": item.status.value}
+                for item in context.manifests
+            ]
+        if capture:
+            state["_report_artifact_sink"] = sink
+        result = await _execute_reader(state, [path], mode)
+        assert result.get("success") is not False, result
+        if capture:
+            python = next(a for a in sink.snapshot() if a.type == "python")
+            assert python.status == "succeeded", python.error
+            assert json.loads(python.stdout) == [content.decode()]
+            reference = next(
+                a
+                for a in sink.snapshot()
+                if getattr(a, "reference_type", None) == "file"
+            )
+            assert artifact_content_path(reference.uri).read_bytes() == content
+        else:
+            assert "uploaded text canary" in json.dumps(result)
+            assert not sink.snapshot()
+    finally:
+        context.close()
+    assert not Path(path).exists()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["args", "argv"])
+@pytest.mark.parametrize("joint", [False, True])
+async def test_validated_legacy_later_files_are_authorized(
+    runtime, monkeypatch, mode, joint
+):
+    monkeypatch.setattr(Config().SYSTEM_APP, "work_dir", str(runtime), raising=False)
+    owner_root = runtime / "python_uploads" / "owner"
+    owner_root.mkdir(parents=True)
+    paths = []
+    for index in range(3):
+        path = owner_root / f"part-{index}.txt"
+        path.write_text(f"legacy canary {index}")
+        paths.append(str(path))
+    validated = validate_legacy_user_paths(paths, "owner")
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="legacy-multiple"))
+    state = {
+        "conv_id": "legacy-multiple",
+        "file_path": validated[0],
+        "file_paths": validated,
+        "_report_artifact_sink": sink,
+    }
+    selected = validated if joint else validated[1:]
+    result = await _execute_reader(state, selected, mode)
+    assert result.get("success") is not False, result
+    python = next(a for a in sink.snapshot() if a.type == "python")
+    assert python.status == "succeeded", python.error
+    assert json.loads(python.stdout) == [Path(p).read_text() for p in selected]
+    references = [
+        a for a in sink.snapshot() if getattr(a, "reference_type", None) == "file"
+    ]
+    assert {a.locator["path"] for a in references} == set(selected)
+
+
+@pytest.mark.parametrize(
+    "owner,session", [("foreign", "preview-session"), ("owner", "other-session")]
+)
+def test_preview_failed_upload_keeps_owner_and_session_checks(registry, owner, session):
+    content = b"private text longer than the bounded preview budget\n"
+    record = registry.ingest(
+        owner_id="owner",
+        session_id="preview-session",
+        display_name="large.txt",
+        media_type="text/plain",
+        stream=io.BytesIO(content),
+        size_bytes=len(content),
+    )
+    assert record.status == SessionFileStatus.PREVIEW_FAILED
+    with pytest.raises(AttachmentInputError) as exc:
+        open_session_attachments(
+            registry, owner_id=owner, session_id=session, file_ids=(record.file_id,)
+        )
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["args", "argv"])
+async def test_preview_failed_manifest_needs_materialized_id_binding(runtime, mode):
+    source = runtime / "unbound.txt"
+    source.write_text("unbound host canary")
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="unbound"))
+    state = {
+        "conv_id": "unbound",
+        "file_path": str(source),
+        "session_files": [{"file_id": "file-1", "status": "preview_failed"}],
+        "session_file_paths": {"different-id": str(source)},
+        "_report_artifact_sink": sink,
+    }
+    result = await _execute_reader(state, [str(source)], mode)
+    assert result["success"] is False
+    assert "FILE_INPUT_NOT_AUTHORIZED" in str(result)
+    assert not sink.snapshot()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["args", "argv"])
+async def test_legacy_argument_cannot_expand_validated_selection(
+    runtime, monkeypatch, mode
+):
+    monkeypatch.setattr(Config().SYSTEM_APP, "work_dir", str(runtime), raising=False)
+    owner_root = runtime / "python_uploads" / "owner"
+    owner_root.mkdir(parents=True)
+    allowed, unselected = owner_root / "allowed.txt", owner_root / "unselected.txt"
+    allowed.write_text("allowed input")
+    unselected.write_text("unselected canary")
+    foreign = runtime / "foreign.txt"
+    foreign.write_text("foreign canary")
+    with pytest.raises(UploadedDatasetAccessError):
+        validate_legacy_user_paths([str(allowed), str(foreign)], "owner")
+    validated = validate_legacy_user_paths([str(allowed)], "owner")
+    sink = InMemoryArtifactSink(ArtifactCaptureContext(conv_uid="legacy-selection"))
+    state = {
+        "conv_id": "legacy-selection",
+        "file_path": validated[0],
+        "file_paths": validated,
+        "_report_artifact_sink": sink,
+    }
+    result = await _execute_reader(state, [str(unselected)], mode)
+    assert result["success"] is False
+    assert "FILE_INPUT_NOT_AUTHORIZED" in str(result)
+    assert not sink.snapshot()
 
 
 def report_client(tmp_path, sink):
@@ -173,7 +400,9 @@ async def test_authorized_upload_runs_and_remains_owner_scoped(runtime, legacy):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("status", ["pending", "deleted"])
+@pytest.mark.parametrize(
+    "status", ["pending", "uploading", "inspecting", "failed", "deleted"]
+)
 async def test_unready_attachment_and_stale_legacy_path_are_denied(runtime, status):
     source = runtime / "stale.txt"
     source.write_text("must not archive")
