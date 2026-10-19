@@ -740,6 +740,7 @@ const sidebars = {
       items: [
         { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
         { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
+        { type: "doc", id: "design/traceable_analysis_report" },
       ],
     },
     {
