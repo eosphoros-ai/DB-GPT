@@ -175,7 +175,7 @@ export default function SearchToolsPanel(props: IProps) {
         if (!err && data) {
           setLsEntries(data.entries || []);
           setLsPath(data.path || path);
-        }
+
       } else if (tool === 'glob') {
         [err, data] = await apiInterceptors(kbGlob(spaceId, { query, limit }));
       } else if (tool === 'grep') {

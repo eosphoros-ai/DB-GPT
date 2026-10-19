@@ -213,3 +213,26 @@ test_docs
 openspec/
 docs/superpowers/
 .gstack/
+
+# --- local runtime state & generated artifacts (dev machine) ---
+/harness_engine.json
+/pi_workspace/
+/python_uploads/
+/upload/
+/packages/dbgpt-app/src/dbgpt_app/python_uploads/
+/packages/dbgpt-app/src/dbgpt_app/*.png
+/*.png
+/*.csv
+/*.html
+/*.skill
+/fix_*.py
+/fix_*.js
+/patch_*.py
+/test_fstring*.py
+/test_script.js
+/screenshot.png
+/web/screenshot-*.png
+/web/public/icons/kb_icon.png
+/docker/examples/test_files/
+/docker/examples/txt/
+/examples/pdf/
