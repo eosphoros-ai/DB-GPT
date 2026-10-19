@@ -16,6 +16,13 @@ from dbgpt_serve.financial_analysis.questions import (
     reference_only_answer,
     validate_answer,
 )
+from dbgpt_serve.financial_analysis.summary import (
+    SUMMARY_INSTRUCTIONS,
+    is_published,
+    render_summary,
+    report_summary,
+    summary_context,
+)
 from dbgpt_serve.financial_analysis.workflow import next_action, topic_context
 
 FINANCIAL_MAX_STEPS = 40
@@ -43,7 +50,8 @@ directionChecked:true、scopeChecked:true、causalityChecked:true、note（不�
 三项 Checked 记录该维度及其缺口已检查，不表示结论通过；
 失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient，并在 note 说明限制。
 需要修订就修正对应专题，然后重新复核。明确复核通过后后端原子发布，
-workflow.status=published 即可 terminate，无需再调用 publish。不得在未发布时 terminate。
+workflow.status=published 后按 completion_instructions 撰写整体总结并 terminate，
+无需再调用 publish。不得在未发布时 terminate。
 用户只要求重做某专题时，先 read 当前报告，再 get_financial_topic(retry=true)，
 保留其他专题，修订后复核、发布；不重新解析 PDF。普通追问仍直接 read 后回答。
 """
@@ -87,7 +95,9 @@ code_interpreter、shell_interpreter 或知识库搜索替代财报提取、计�
 不能抄 displayValue、金额、年份或页码，也不能复制含数字的原文片段或追加单位。
 按 read 返回的 answer_format_example 将引用放进 terminate 的 output 字符串；
 服务端会替换真实数值并补齐原 PDF 来源页码。
-发布后用简短摘要完成回答，保留“部分分析”和待核对信息。
+发布后按 completion_instructions 写一段有业务判断的整体总结，数字复制
+completion_context 中的 reference，与右侧报告保持同一期间、指标与单位。
+不要用保存条数、失败数量或“部分分析”等流程统计代替总结；具体限制由后端补充。
 """
 
 
@@ -386,13 +396,18 @@ def _result(
                         + "。原文依据可在右侧报告中核对。"
                     },
                 }
+    if not reading and is_published(report):
+        summary["completion_instructions"] = SUMMARY_INSTRUCTIONS
+        summary["completion_context"] = summary_context(report)
     return json.dumps(
         {
             "chunks": [
                 _artifact(report, session_id),
                 {
                     "output_type": "text",
-                    "content": report["agent"]["summary"],
+                    "content": report_summary(report)
+                    if is_published(report)
+                    else report["agent"]["summary"],
                 },
             ],
             "model_context": summary,
@@ -407,13 +422,13 @@ def finalize_financial_answer(content, state):
     if not report:
         return content
     if not state.get("financial_read"):
-        # The narrative lives in validated findings. Completion text reflects
-        # persisted status, rather than an unvalidated claim of full coverage.
-        partial = report.get("analysis", {}).get("status") != "completed"
         return (
-            ("当前为部分分析。" if partial else "分析已完成。")
-            + report["agent"]["summary"]
-            + "\n\n报告已在当前对话右侧展示，可查看数据、原文依据与下载。"
+            render_summary(content, report)
+            + (
+                "\n\n详细数据、计算口径与原文依据见右侧报告，可下载完整报告。"
+                if is_published(report)
+                else "\n\n阶段性数据与分析进度可在右侧查看。"
+            )
         )
     references = set(REFERENCE.findall(content))
     raw = json.dumps(

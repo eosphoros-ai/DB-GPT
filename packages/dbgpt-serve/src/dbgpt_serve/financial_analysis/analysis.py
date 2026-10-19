@@ -290,6 +290,12 @@ def _validate_fact_wording(text, facts):
         if match[1] != "fact" or match[2] not in facts:
             continue
         prefix = text[: match.start()]
+        if facts[match[2]]["unit"] == "元" and re.search(
+            r"(?:增速|增长率|费用率|毛利率|净利率|占比|比例|比率)"
+            r"(?:为|是|达|达到)?\s*$",
+            prefix,
+        ):
+            raise ValueError("fact_dimension_mismatch")
         if re.search(
             r"(?:增加|减少|增长|下降|上升|降低|提升)(?:了|约|近|达|达到)?\s*$", prefix
         ):
@@ -453,6 +459,10 @@ def validate_findings(
                                 "引用是某期指标金额，不是增加额或减少额。"
                                 "改为本期金额与上期金额的比较，或使用已提供的变化计算；"
                                 "不能把本期余额当差额，也不能自行补算。"
+                            ),
+                            "fact_dimension_mismatch": (
+                                "此引用为金额，不能称为增长率、费用率或占比；"
+                                "保留金额原有名称，或使用已提供的对应比率计算。"
                             ),
                             "unsupported_causal_claim": (
                                 "当前表格没有业务原因证据。"

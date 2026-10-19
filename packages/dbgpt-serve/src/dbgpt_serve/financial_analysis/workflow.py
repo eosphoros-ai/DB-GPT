@@ -15,6 +15,7 @@ from .analysis import (
     model_context,
     validate_findings,
 )
+from .summary import report_summary
 
 TOPICS = {
     "operating": (
@@ -232,21 +233,7 @@ def sync(report):
             + ["review", "publish"],
         }
     ]
-    counts = {
-        s: sum(t["status"] == s for t in workflow["topics"])
-        for s in {t["status"] for t in workflow["topics"]}
-    }
-    report["agent"]["summary"] = (
-        f"已保存 {len(report['findings'])} 条专题发现；"
-        f"{counts.get('ready', 0) + counts.get('reviewed', 0)} 个专题有分析，"
-        f"{counts.get('insufficient', 0)} 个专题缺数据，"
-        f"{counts.get('failed', 0)} 个专题失败。"
-        + (
-            "报告已发布，结论仍需人工核对。"
-            if workflow["status"] == "published"
-            else "报告尚未完成复核发布，可继续当前任务。"
-        )
-    )
+    report["agent"]["summary"] = report_summary(report)
 
 
 def changed(report):
