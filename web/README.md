@@ -35,30 +35,28 @@ Also, it is a **LLM to Vision** solution.
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 16
-- [npm](https://npmjs.com/) >= 8
-- [yarn](https://yarnpkg.com/) >= 1.22
+- [Node.js](https://nodejs.org/) >= 20.19
+- [Yarn Classic](https://classic.yarnpkg.com/) 1.x (validated with 1.22.22)
 - Supported OSes: Linux, macOS and Windows
 
 ### Installation
 
-Using **Yarn** is recommended for dependency management.
+Use Yarn with the checked-in `yarn.lock` for dependency management.
 
 ```sh
 # Install dependencies
-npm install
-yarn install
+yarn install --frozen-lockfile
 ```
 
 ### Usage
 ```sh
 cp .env.template .env
 ```
-edit the `API_BASE_URL` to the real address
+The existing backend address in `next.config.js` is `http://127.0.0.1:5670`.
+Update that configuration if your backend uses a different address.
 
 ```sh
 # development model
-npm run dev
 yarn dev
 ```
 
@@ -67,6 +65,10 @@ yarn dev
 ```sh
 bash ../scripts/build_web_static.sh
 ```
+
+`yarn build` creates a server deployment for `yarn start`. `yarn compile`
+uses Next's static export mode and writes `out/` for the Python-served UI.
+Builds use the default `.next/` directory; `NEXT_DIST_DIR` is not a supported option.
 
 ## 📚 Documentation
 

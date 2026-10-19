@@ -111,6 +111,13 @@ def _validate_selection(
 
 
 def make_load_file(react_state: Dict[str, Any]):
+    if not react_state.get("session_files") and (
+        react_state.get("dataset_id") or len(react_state.get("file_paths") or []) > 1
+    ):
+        from .uploaded_dataset_tools import make_load_file_for_dataset
+
+        return make_load_file_for_dataset(react_state)
+
     @tool(
         description=(
             "Inspect files attached to this conversation. Returns public file "

@@ -1,6 +1,6 @@
 """Pydantic schemas for the scheduled task REST API."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, ConfigDict, Field
 
@@ -35,13 +35,29 @@ class ChatReplayPayload(BaseModel):
     )
 
 
+class DashboardRefreshPayload(BaseModel):
+    """Frozen, bounded input for a scheduled dashboard refresh."""
+
+    version: int = Field(default=1, ge=1)
+    dashboard_id: str = Field(..., min_length=1, max_length=64)
+    filters: Dict[str, Any] = Field(default_factory=dict)
+    publish_after_refresh: bool = False
+    timeout_seconds: int = Field(default=180, ge=5, le=600)
+    max_attempts: int = Field(default=2, ge=1, le=5)
+
+
 class CreateTaskRequest(BaseModel):
     """创建定时任务请求。"""
 
     task_name: str = Field(..., description="任务名称")
     description: Optional[str] = Field(default=None, description="任务描述")
+    task_type: str = Field(
+        default="chat_replay", pattern="^(chat_replay|dashboard_refresh)$"
+    )
     cron_expression: str = Field(..., description="cron 表达式")
-    payload: ChatReplayPayload = Field(..., description="对话快照")
+    payload: Union[ChatReplayPayload, DashboardRefreshPayload] = Field(
+        ..., description="Frozen task payload"
+    )
     creator_name: Optional[str] = Field(
         default=None, description="创建人显示名称(优先于鉴权 user_id)"
     )
@@ -62,6 +78,10 @@ class UpdateTaskRequest(BaseModel):
     # preserved as-is). See ScheduledTaskService.update_task.
     user_input: Optional[str] = Field(default=None, description="原始问题")
     model_name: Optional[str] = Field(default=None, description="执行模型")
+    filters: Optional[Dict[str, Any]] = None
+    publish_after_refresh: Optional[bool] = None
+    timeout_seconds: Optional[int] = Field(default=None, ge=5, le=600)
+    max_attempts: Optional[int] = Field(default=None, ge=1, le=5)
 
 
 class ToggleTaskRequest(BaseModel):
@@ -80,11 +100,12 @@ class TaskResponse(BaseModel):
     description: Optional[str] = None
     task_type: str = "chat_replay"
     cron_expression: str
-    payload: Optional[ChatReplayPayload] = None
+    payload: Optional[Union[ChatReplayPayload, DashboardRefreshPayload]] = None
     enabled: bool = True
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     user_name: Optional[str] = None
+    owner_id: Optional[str] = None
     sys_code: Optional[str] = None
     next_run_time: Optional[str] = None
 
@@ -100,3 +121,6 @@ class RunResponse(BaseModel):
     result_summary: Optional[str] = None
     error_message: Optional[str] = None
     output_conv_uid: Optional[str] = None
+    output_resource_id: Optional[str] = None
+    attempt_count: int = 1
+    result: Optional[Dict[str, Any]] = None

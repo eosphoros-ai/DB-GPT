@@ -2,6 +2,10 @@
 const CopyPlugin = require("copy-webpack-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const path = require("path");
+
+// Next.js 16 uses a config option for static export instead of `next export`.
+const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === "1";
+
 const nextConfig = {
   experimental: {
     esmExternals: "loose",
@@ -9,14 +13,30 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: 'http://127.0.0.1:5670/api/v1/:path*',
-      },
-    ];
-  },
+  // `next-transpile-modules` is unmaintained and does not support Next.js 16.
+  // Next has had the same capability built in since 13.1.
+  transpilePackages: [
+    "@berryv/g2-react",
+    "@antv/g2",
+    "react-syntax-highlighter",
+    "@antv/g6",
+    "@antv/graphin",
+    "@antv/gpt-vis",
+  ],
+  ...(staticExport ? { output: "export" } : {}),
+  // Rewrites are not supported in static export mode.
+  ...(staticExport
+    ? {}
+    : {
+        async rewrites() {
+          return [
+            {
+              source: '/api/v1/:path*',
+              destination: 'http://127.0.0.1:5670/api/v1/:path*',
+            },
+          ];
+        },
+      }),
   env: {
     API_BASE_URL: "http://127.0.0.1:5670",
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
@@ -29,6 +49,14 @@ const nextConfig = {
   images: { unoptimized: true },
   skipTrailingSlashRedirect: true,
   webpack: (config, { isServer }) => {
+    // transpilePackages still selects CommonJS entries that require ESM-only dependencies.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@berryv/g2-react$': path.join(__dirname, 'node_modules/@berryv/g2-react/es/index.js'),
+      '@antv/gpt-vis$': path.join(__dirname, 'node_modules/@antv/gpt-vis/dist/esm/index.js'),
+      '@antv/g6$': path.join(__dirname, 'node_modules/@antv/g6/esm/index.js'),
+      'react-syntax-highlighter$': path.join(__dirname, 'node_modules/react-syntax-highlighter/dist/esm/index.js'),
+    };
     config.resolve.fallback = { fs: false };
     if (!isServer) {
       config.plugins.push(
@@ -57,15 +85,4 @@ const nextConfig = {
   },
 };
 
-const withTM = require("next-transpile-modules")([
-  "@berryv/g2-react",
-  "@antv/g2",
-  "react-syntax-highlighter",
-  "@antv/g6",
-  "@antv/graphin",
-  "@antv/gpt-vis",
-]);
-
-module.exports = withTM({
-  ...nextConfig,
-});
+module.exports = nextConfig;

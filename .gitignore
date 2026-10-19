@@ -213,3 +213,8 @@ test_docs
 openspec/
 docs/superpowers/
 .gstack/
+
+# Generated Dashboard demo data and local share-token encryption key
+/examples/dashboard/generated/
+/pilot/meta_data/dashboard-share.key
+/examples/dashboard/olist/data/
