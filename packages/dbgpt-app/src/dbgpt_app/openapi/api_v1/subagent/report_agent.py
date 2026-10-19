@@ -159,8 +159,20 @@ def report_agent_prompt(
     template_path: str = REPORT_TEMPLATE_PATH,
     template_text: str | None = None,
     injected_fields: Sequence[str] = (),
+    language: str = "zh",
 ) -> str:
     """Fill the fixed procedure with the template this turn renders from."""
+    language_instruction = (
+        "\nThe user requested English. Write every user-facing report title, subtitle, "
+        "scope, KPI label, section heading, chart caption, note, recommendation, "
+        "and narrative in English. Keep source quotations in their original "
+        "language. When using REPORT_SPEC, set its language to 'en'. "
+        "Write your terminate output and every status message in English too. "
+        "Do not translate SQL field "
+        "names, artifact IDs, or knowledge-base names.\n"
+        if language == "en"
+        else "\n报告标题、章节、指标标签、图注、建议和正文使用中文。\n"
+    )
     if template_text is not None:
         contract = report_template_contract(template_text)
         if contract["mode"] == "placeholders":
@@ -226,9 +238,13 @@ def report_agent_prompt(
                 "业务影响和建议，区分相关性与因果推断。保留已有内容，建议满足用户要求。\n"
                 "禁止调用 sql_query、技能脚本或分析工具，禁止传 html/file_path，"
                 "只修改模板 data；停止条件为正式 HTML 已返回或 retryable=false。"
+                + language_instruction
             )
-    return REPORT_AGENT_PROMPT_TEMPLATE.replace(
-        "__TEMPLATE_PATH__", template_path or REPORT_TEMPLATE_PATH
+    return (
+        REPORT_AGENT_PROMPT_TEMPLATE.replace(
+            "__TEMPLATE_PATH__", template_path or REPORT_TEMPLATE_PATH
+        )
+        + language_instruction
     )
 
 
@@ -489,7 +505,7 @@ async def build_report_agent(
         conv_id=sub_conv_id,
         gpts_app_code="react_agent_report",
         gpts_app_name="ReAct-Report",
-        language="zh",
+        language=react_state.get("_report_language", "zh"),
         enable_context_management=True,
         enable_native_function_calling=True,
         temperature=0.1,
@@ -507,7 +523,10 @@ async def build_report_agent(
         .bind(
             PromptTemplate(
                 template=report_agent_prompt(
-                    template_path, template_text, injected_fields
+                    template_path,
+                    template_text,
+                    injected_fields,
+                    language=react_state.get("_report_language", "zh"),
                 ),
                 input_variables=[],
                 template_format="jinja2",
@@ -816,6 +835,12 @@ def make_generate_report_tool(
             message += (
                 "\n最新引擎错误（优先修复，复用已完成产物）：\n"
                 + str(latest_error)[:REPORT_AGENT_RESULT_MAX_CHARS]
+            )
+        if react_state.get("_report_language") == "en":
+            message += (
+                "\nThe user's report language is English. Write the entire report "
+                "in English, including headings, KPI labels, captions, "
+                "and recommendations."
             )
         try:
             agent = await build_report_agent(

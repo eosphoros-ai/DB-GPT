@@ -104,6 +104,7 @@ class ReportSection(_SpecNode):
 
 
 class BusinessReportSpec(_SpecNode):
+    language: Literal["en", "zh"] = "zh"
     title: str | None = None
     subtitle: str | None = None
     scope: str | None = None

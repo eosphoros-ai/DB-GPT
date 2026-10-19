@@ -78,9 +78,9 @@ const resolveImageUrl = (src: string): string => {
 };
 
 /** Replace `/images/...` references inside HTML content with full backend URLs */
-const resolveHtmlImageUrls = (html: string): string => {
+const resolveHtmlImageUrls = (html: string, allowScripts = false): string => {
   if (!html) return html;
-  return resolveReportAssetUrls(sanitizeEmbeddedReportHtml(html));
+  return resolveReportAssetUrls(sanitizeEmbeddedReportHtml(html, allowScripts));
 };
 
 export interface ExecutionOutput {
@@ -460,10 +460,12 @@ const InputFileListItem: React.FC<{ file: SessionFileSnapshot }> = memo(({ file 
 InputFileListItem.displayName = 'InputFileListItem';
 
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
+  const { t } = useTranslation();
   const isImage = artifact.type === 'image' || /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(artifact.name);
   // A persisted ReportRun is the report itself; exposing its implementation
   // filename makes it look like a second, unrelated deliverable.
-  const displayName = artifact.type === 'html' && /^report\.html$/i.test(artifact.name) ? '分析报告' : artifact.name;
+  const displayName =
+    artifact.type === 'html' && /^report\.html$/i.test(artifact.name) ? t('traceable_report_tab') : artifact.name;
   const imgSrc = isImage && typeof artifact.content === 'string' ? resolveImageUrl(artifact.content) : null;
 
   return (
@@ -587,7 +589,7 @@ const AutoHeightIframe: React.FC<{
   minHeight?: number;
   maxHeight?: number;
 }> = memo(({ srcDoc, title, minHeight = 500, maxHeight = 6000 }) => (
-  <ReportIframe srcDoc={srcDoc} title={title || 'html-report'} minHeight={minHeight} maxHeight={maxHeight} />
+  <ReportIframe isolated srcDoc={srcDoc} title={title || 'html-report'} minHeight={minHeight} maxHeight={maxHeight} />
 ));
 
 AutoHeightIframe.displayName = 'AutoHeightIframe';
@@ -1006,12 +1008,11 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number; action?
                 <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>{content.title}</span>
               </div>
             )}
-            <AutoHeightIframe
-              srcDoc={resolveHtmlImageUrls(
-                typeof content === 'string' ? content : content?.html || content?.content || String(content),
-              )}
-              title={content?.title}
-            />
+            {(() => {
+              const rawHtml =
+                typeof content === 'string' ? content : content?.html || content?.content || String(content);
+              return <AutoHeightIframe srcDoc={resolveHtmlImageUrls(rawHtml, true)} title={content?.title} />;
+            })()}
           </div>
         )}
 
@@ -1289,7 +1290,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
   const htmlContent = html.content;
   const rawHtml =
     typeof htmlContent === 'string' ? htmlContent : htmlContent?.html || htmlContent?.content || String(htmlContent);
-  const htmlString = resolveHtmlImageUrls(rawHtml);
+  const htmlString = resolveHtmlImageUrls(rawHtml, true);
   const sourceCode = code ? String(code.content) : rawHtml;
 
   return (
@@ -2460,47 +2461,32 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     try {
       const iframe = htmlPreviewRef.current;
       if (iframe?.contentWindow) {
+        if (!iframe.sandbox.contains('allow-same-origin')) {
+          iframe.contentWindow.postMessage({ type: 'dbgpt-preview-print' }, '*');
+          return;
+        }
         if (await printRenderedReport(iframe)) return;
       }
     } catch {
       /* fallback below */
     }
-    if (previewArtifact) {
-      const htmlStr =
-        typeof previewArtifact.content === 'string'
-          ? previewArtifact.content
-          : previewArtifact.content?.html || previewArtifact.content?.content || String(previewArtifact.content);
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(cleanReportHtmlForExport(resolveHtmlImageUrls(htmlStr)));
-        win.document.close();
-        win.focus();
-        win.print();
-      } else {
-        message.error('浏览器阻止了弹出窗口，请允许后重试');
-      }
-    } else {
-      message.error('当前报告尚未完成渲染，无法导出 PDF');
-    }
+    message.error(t('report_export_not_ready'));
   };
 
   const handleExportHtml = async () => {
     const iframe = htmlPreviewRef.current;
-    const fallback = previewArtifact
-      ? cleanReportHtmlForExport(
-          resolveHtmlImageUrls(
-            typeof previewArtifact.content === 'string'
-              ? previewArtifact.content
-              : previewArtifact.content?.html || previewArtifact.content?.content || String(previewArtifact.content),
-          ),
-        )
+    const fallbackHtml = previewArtifact
+      ? typeof previewArtifact.content === 'string'
+        ? previewArtifact.content
+        : previewArtifact.content?.html || previewArtifact.content?.content || String(previewArtifact.content)
       : undefined;
+    const fallback = fallbackHtml ? cleanReportHtmlForExport(resolveHtmlImageUrls(fallbackHtml, true)) : undefined;
     const exported = (iframe ? await exportRenderedReportHtml(iframe) : undefined) || fallback;
     if (!exported) {
-      message.error('当前报告尚未完成渲染，无法导出 HTML');
+      message.error(t('report_export_not_ready'));
       return;
     }
-    const basename = (previewArtifact?.name || '分析报告').replace(/\.(?:html?|pdf)$/i, '');
+    const basename = (previewArtifact?.name || t('traceable_report_tab')).replace(/\.(?:html?|pdf)$/i, '');
     const blob = new Blob([exported], { type: 'text/html;charset=utf-8' });
     const href = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -2588,13 +2574,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               trigger={['click']}
               menu={{
                 items: [
-                  { key: 'pdf', label: '导出为 PDF', onClick: handleExportPdf },
-                  { key: 'html', label: '导出为 HTML', onClick: handleExportHtml },
+                  { key: 'pdf', label: t('export_pdf'), onClick: handleExportPdf },
+                  { key: 'html', label: t('export_html'), onClick: handleExportHtml },
                 ],
               }}
             >
               <Button type='text' size='small' icon={<ExportOutlined />} className='text-gray-500 hover:text-blue-500'>
-                导出 <DownOutlined className='ml-1 text-[10px]' />
+                {t('export')} <DownOutlined className='ml-1 text-[10px]' />
               </Button>
             </Dropdown>
           )}
@@ -2812,7 +2798,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             >
               <BarChartOutlined className='mr-1.5' />
-              分析报告
+              {t('traceable_report_tab')}
               {panelView === 'report' && (
                 <div className='absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-gray-900 dark:bg-gray-100' />
               )}
@@ -2829,7 +2815,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             >
               <ApartmentOutlined className='mr-1.5' />
-              证据图谱
+              {t('evidence_graph_tab')}
               {panelView === 'evidence-graph' && (
                 <div className='absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-gray-900 dark:bg-gray-100' />
               )}
@@ -2846,7 +2832,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             >
               <BookOutlined className='mr-1.5' />
-              参考来源
+              {t('reference_sources_tab')}
               <span className='ml-1.5 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-600 dark:bg-blue-500/10 dark:text-blue-300'>
                 {citations.length}
               </span>
@@ -2897,13 +2883,15 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           <HtmlReportEvidence
             html={
               previewArtifact?.type === 'html'
-                ? resolveHtmlImageUrls(
-                    typeof previewArtifact.content === 'string'
-                      ? previewArtifact.content
-                      : previewArtifact.content?.html ||
+                ? (() => {
+                    const raw =
+                      typeof previewArtifact.content === 'string'
+                        ? previewArtifact.content
+                        : previewArtifact.content?.html ||
                           previewArtifact.content?.content ||
-                          String(previewArtifact.content),
-                  )
+                          String(previewArtifact.content);
+                    return resolveReportAssetUrls(raw);
+                  })()
                 : ''
             }
             reportId={reportId}
@@ -2934,22 +2922,25 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         ) : panelView === 'html-preview' && previewArtifact ? (
           <div className='w-full h-full flex flex-col'>
             {(() => {
-              const srcDoc = resolveHtmlImageUrls(
+              const rawHtml =
                 typeof previewArtifact.content === 'string'
                   ? previewArtifact.content
                   : previewArtifact.content?.html ||
-                      previewArtifact.content?.content ||
-                      String(previewArtifact.content),
-              );
+                    previewArtifact.content?.content ||
+                    String(previewArtifact.content);
+              const srcDoc = resolveHtmlImageUrls(rawHtml, true);
               return (
-                <ReportIframe
-                  key={previewArtifact.id || 'html-preview'}
-                  iframeRef={htmlPreviewRef}
-                  srcDoc={srcDoc}
-                  title={previewArtifact.name || 'HTML 预览'}
-                  minHeight={600}
-                  className='flex-1'
-                />
+                <>
+                  <ReportIframe
+                    isolated
+                    key={previewArtifact.id || 'html-preview'}
+                    iframeRef={htmlPreviewRef}
+                    srcDoc={srcDoc}
+                    title={previewArtifact.name || 'HTML 预览'}
+                    minHeight={600}
+                    className='flex-1'
+                  />
+                </>
               );
             })()}
           </div>

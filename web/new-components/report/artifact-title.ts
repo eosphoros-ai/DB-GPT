@@ -1,4 +1,5 @@
 import type { ReportArtifact } from '@/types/report';
+import { reportText } from './report-i18n';
 
 /** Internal artifact identifiers are for linking, not drawer headings. */
 export function artifactTitle(artifact: ReportArtifact): string {
@@ -13,8 +14,10 @@ export function artifactTitle(artifact: ReportArtifact): string {
     );
   });
   if (title) return title.trim();
-  if (artifact.type === 'python') return '数据计算';
-  if (artifact.type === 'sql') return '数据查询';
-  if (artifact.type === 'chart') return '分析图表';
-  return artifact.reference_type === 'knowledge' ? '知识库资料' : '引用资料';
+  if (artifact.type === 'python') return reportText('evidence_title_python');
+  if (artifact.type === 'sql') return reportText('evidence_title_sql');
+  if (artifact.type === 'chart') return reportText('evidence_title_chart');
+  return artifact.reference_type === 'knowledge'
+    ? reportText('evidence_title_knowledge')
+    : reportText('evidence_title_reference');
 }

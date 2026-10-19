@@ -295,15 +295,31 @@ def _filter_readonly_connector_tools(
     return readonly
 
 
-def _build_sub_prompt(goal: str, extra_context: Optional[str]) -> PromptTemplate:
+def _build_sub_prompt(
+    goal: str, extra_context: Optional[str], language: str = "zh"
+) -> PromptTemplate:
     """Build the sub-agent system prompt from goal + optional context."""
     ctx_block = ""
     if extra_context and extra_context.strip():
         ctx_block = f"\n## Shared context from the lead agent\n{extra_context}\n"
     text = _SUB_AGENT_PROMPT_TEMPLATE.format(goal=goal, extra_context=ctx_block)
+    if language == "en":
+        text += (
+            "\n## Language\n"
+            "The user's interface and question are English. Write every user-visible "
+            "text in English: thought, action intention, step titles, status messages, "
+            "and the final result. Do not switch to Chinese because SQL results or "
+            "knowledge-base text are Chinese. Keep SQL identifiers, field names, and "
+            "quoted source text unchanged.\n"
+        )
+    status_prefix = (
+        "Status: completed / partially completed / failed"
+        if language == "en"
+        else "状态: 完成 / 部分完成 / 失败"
+    )
     text += (
         "\n## Result handoff\n"
-        "Terminate with a concise result beginning with 状态: 完成 / 部分完成 / 失败. "
+        f"Terminate with a concise result beginning with {status_prefix}. "
         "Summarize every requested deliverable, completed findings and missing work. "
         "Use the injected database dialect and schema; do not guess tables or query "
         "information_schema on SQLite. Never return raw reasoning or "
@@ -324,6 +340,7 @@ async def build_sub_react_agent(
     sub_index: int,
     *,
     parent_conv_id: str,
+    language: str = "zh",
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
@@ -407,7 +424,7 @@ async def build_sub_react_agent(
         conv_id=sub_conv_id,
         gpts_app_code="react_agent_sub",
         gpts_app_name="ReAct-Sub",
-        language="zh",
+        language=language,
         enable_context_management=True,
     )
 
@@ -417,7 +434,7 @@ async def build_sub_react_agent(
         .bind(sub_agent_memory)
         .bind(sub_llm_config)
         .bind(sub_tool_pack)
-        .bind(_build_sub_prompt(sub_goal, extra_context))
+        .bind(_build_sub_prompt(sub_goal, extra_context, language))
         .build()
     )
     return sub_agent, sub_conv_id, sub_state
@@ -511,6 +528,7 @@ an execution mechanism after decomposition, not a decomposition tool.
 def make_dispatch_tool(
     *,
     parent_conv_id: str,
+    language: str = "zh",
     llm_client: Any,
     sub_model_name: Optional[str] = None,
     database_connector: Any = None,
@@ -637,6 +655,7 @@ def make_dispatch_tool(
                     goal,
                     idx,
                     parent_conv_id=parent_conv_id,
+                    language=language,
                     llm_client=llm_client,
                     sub_model_name=sub_model_name,
                     database_connector=database_connector,

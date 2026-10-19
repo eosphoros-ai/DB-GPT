@@ -428,7 +428,7 @@ def _chart_covers(artifact, source, table):
     return source.artifact_id in artifact.input_artifact_ids
 
 
-def prepare_report_charts(spec: Any, artifacts, sink):
+def prepare_report_charts(spec: Any, artifacts, sink, language: str = "zh"):
     """Add executable, immutable charts for selected tabular evidence."""
     if (
         sink is None
@@ -458,12 +458,21 @@ def prepare_report_charts(spec: Any, artifacts, sink):
             continue
         started = perf_counter()
         option = table_option(table)
-        title = (
-            artifact.metadata.get("agent_name")
-            or (section or {}).get("heading")
-            or artifact.name
-            or "分析图表"
-        )
+        heading = (section or {}).get("heading")
+        if language == "en":
+            # Prefer the report's own (English) heading over the analysis
+            # sub-agent's title, which follows the analysis language. Never
+            # leak a Chinese artifact label into an English report.
+            title = heading or artifact.name or artifact.metadata.get("agent_name")
+            if not title or re.search(r"[\u3400-\u9fff]", str(title)):
+                title = "Analysis chart"
+        else:
+            title = (
+                artifact.metadata.get("agent_name")
+                or heading
+                or artifact.name
+                or "分析图表"
+            )
         chart_spec = {
             "renderer": "echarts",
             "source_artifact_id": artifact.artifact_id,
@@ -486,7 +495,8 @@ def prepare_report_charts(spec: Any, artifacts, sink):
         ):
             section["chart"] = node
         else:
-            additions.append({"heading": title + " · 数据图表", "chart": node})
+            suffix = " · Charts" if language == "en" else " · 数据图表"
+            additions.append({"heading": title + suffix, "chart": node})
         prepared[identity] = node
     return {**spec, "sections": [*sections, *additions]}
 

@@ -1883,6 +1883,7 @@ def _render_template_with_bindings(
                     data["REPORT_SPEC"],
                     artifacts,
                     draft_state.get("_report_artifact_sink"),
+                    language=draft_state.get("_report_language", "zh"),
                 )
             except (ValueError, TypeError, OSError, KeyError) as error:
                 errors.append(
@@ -3044,6 +3045,11 @@ def make_html_interpreter(
 
             sink = react_state.get("_report_artifact_sink")
             replacements = _merge_report_spec(replacements, react_state)
+            spec = replacements.get("REPORT_SPEC")
+            if isinstance(spec, dict):
+                spec["language"] = (
+                    "en" if react_state.get("_report_language") == "en" else "zh"
+                )
             html = _render_template_with_bindings(
                 raw_template,
                 replacements,
@@ -3378,25 +3384,43 @@ def make_html_interpreter(
                     ensure_ascii=False,
                 )
             if warnings:
-                source_note = "来源说明：本报告展示已完成的分析结果。"
+                english = react_state.get("_report_language") == "en"
+                source_note = (
+                    "Source note: This report presents completed analysis results. "
+                    if english
+                    else "来源说明：本报告展示已完成的分析结果。"
+                )
                 if any(
                     "chart" not in item and "citation" not in item
                     for item in unavailable
                 ):
                     source_note += (
-                        "部分文字数值的来源路径无法核验，已标为 --，相关结论需复核。"
+                        "Some numeric claims could not be verified and are marked --. "
+                        if english
+                        else "部分文字数值的来源路径无法核验，已标为 --，"
+                        "相关结论需复核。"
                     )
                 if any("chart" in item for item in unavailable):
                     source_note += (
-                        "部分图表未生成或无法绑定，已省略；对应分析及已核验表格保留。"
+                        "Some charts were unavailable; verified analysis "
+                        "and tables remain. "
+                        if english
+                        else "部分图表未生成或无法绑定，已省略；"
+                        "对应分析及已核验表格保留。"
                     )
                 if any("citation" in item for item in unavailable):
                     source_note += (
-                        "部分引文与原文不一致，已使用捕获原文并保留对应来源链接。"
+                        "Some quotations differed from their sources; captured text "
+                        "and source links were retained. "
+                        if english
+                        else "部分引文与原文不一致，已使用捕获原文并保留对应来源链接。"
                     )
                 if any(error.startswith(("KNOWLEDGE_", "KB_")) for error in warnings):
                     source_note += (
-                        "知识库口径的检索或逐项引用尚不完整，相关口径请复核。"
+                        "Knowledge-base definitions or citations remain incomplete; "
+                        "please review them. "
+                        if english
+                        else "知识库口径的检索或逐项引用尚不完整，相关口径请复核。"
                     )
                 notice = (
                     '<aside class="report-source-notice" style="padding:12px 16px;'

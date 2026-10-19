@@ -270,64 +270,86 @@ async def kb_grep(
     for doc_id in target_files:
         if len(doc_matches) >= fetch_limit:
             break
-        chunks = _load_document_chunks(chunk_dao, ChunkEntity, doc_id)
-        for chunk, chunk_meta in document_chunk_entries(target_files[doc_id], chunks):
-            # Skip summary chunks (identified by meta_info chunk_type)
-            if chunk_meta.get("chunk_type") == "summary":
-                continue
-            content = _CONTEXT_PREFIX_RE.sub("", chunk.content or "")
-            start_line = chunk_meta.get("start_line") or 1
-            chunk_matches = []
-            for i, line in enumerate(content.split("\n")):
-                if query.lower() in line.lower():
-                    chunk_matches.append((start_line + i, line.strip()))
-            if chunk_matches:
-                doc_matches.setdefault(doc_id, []).extend(
-                    (chunk_meta["chunk_id"], line, text) for line, text in chunk_matches
-                )
-                if capture_enabled:
-                    file_info = target_files.get(doc_id) or {}
-                    chunk_id = chunk_meta["chunk_id"]
-                    page = chunk_meta.get("page")
-                    if page is None:
-                        page = chunk_meta.get("page_number")
-                    capture_reference_artifact(
-                        reference_type="knowledge",
-                        source_id=chunk_id,
-                        action="knowledge.grep",
-                        duration_ms=max(
-                            0,
-                            int((time.perf_counter() - started) * 1000)
-                            if started is not None
-                            else 0,
-                        ),
-                        source_name=file_info.get("doc_name")
-                        or file_info.get("file_path")
-                        or chunk_id,
-                        uri=f"kb://{knowledge_id}/{doc_id}/{chunk_id}",
-                        locator={
-                            "knowledge_id": str(knowledge_id),
-                            "space_name": file_info.get("space_name"),
-                            "document_id": doc_id,
-                            "chunk_id": chunk_id,
-                            "chunk_index": chunk_meta.get("chunk_index"),
-                            "chunk_db_id": chunk_meta.get("chunk_db_id"),
-                            "page": page,
-                            "path": file_info.get("file_path"),
-                            "chunk_start_line": start_line,
-                            "start_line": min(line for line, _text in chunk_matches),
-                            "end_line": max(line for line, _text in chunk_matches),
-                            "matched_lines": [line for line, _text in chunk_matches],
-                            "line_scope": "document"
-                            if chunk_meta.get("start_line")
-                            else "chunk",
-                        },
-                        excerpt=content,
-                        metadata={
-                            "query_sha256": sha256_text(query),
-                            "retrieval_query": query[:500],
-                        },
+        chunk_page = 1
+        identities = None
+        while True:
+            chunks = chunk_dao.search_document_chunks(
+                doc_id, query, page=chunk_page, page_size=1000
+            )
+            if chunks and identities is None:
+                identities = {
+                    row.id: metadata
+                    for row, metadata in document_chunk_entries(
+                        target_files[doc_id],
+                        chunk_dao.get_document_chunk_identities(doc_id),
                     )
+                }
+            for chunk in chunks:
+                chunk_meta = identities[chunk.id]
+                # Skip summary chunks (identified by meta_info chunk_type)
+                if chunk_meta.get("chunk_type") == "summary":
+                    continue
+                content = _CONTEXT_PREFIX_RE.sub("", chunk.content or "")
+                start_line = chunk_meta.get("start_line") or 1
+                chunk_matches = []
+                for i, line in enumerate(content.split("\n")):
+                    if query.lower() in line.lower():
+                        chunk_matches.append((start_line + i, line.strip()))
+                if chunk_matches:
+                    doc_matches.setdefault(doc_id, []).extend(
+                        (chunk_meta["chunk_id"], line, text)
+                        for line, text in chunk_matches
+                    )
+                    if capture_enabled:
+                        file_info = target_files.get(doc_id) or {}
+                        chunk_id = chunk_meta["chunk_id"]
+                        page = chunk_meta.get("page")
+                        if page is None:
+                            page = chunk_meta.get("page_number")
+                        capture_reference_artifact(
+                            reference_type="knowledge",
+                            source_id=chunk_id,
+                            action="knowledge.grep",
+                            duration_ms=max(
+                                0,
+                                int((time.perf_counter() - started) * 1000)
+                                if started is not None
+                                else 0,
+                            ),
+                            source_name=file_info.get("doc_name")
+                            or file_info.get("file_path")
+                            or chunk_id,
+                            uri=f"kb://{knowledge_id}/{doc_id}/{chunk_id}",
+                            locator={
+                                "knowledge_id": str(knowledge_id),
+                                "space_name": file_info.get("space_name"),
+                                "document_id": doc_id,
+                                "chunk_id": chunk_id,
+                                "chunk_index": chunk_meta.get("chunk_index"),
+                                "chunk_db_id": chunk_meta.get("chunk_db_id"),
+                                "page": page,
+                                "path": file_info.get("file_path"),
+                                "chunk_start_line": start_line,
+                                "start_line": min(
+                                    line for line, _text in chunk_matches
+                                ),
+                                "end_line": max(line for line, _text in chunk_matches),
+                                "matched_lines": [
+                                    line for line, _text in chunk_matches
+                                ],
+                                "line_scope": "document"
+                                if chunk_meta.get("start_line")
+                                else "chunk",
+                            },
+                            excerpt=content,
+                            metadata={
+                                "query_sha256": sha256_text(query),
+                                "retrieval_query": query[:500],
+                            },
+                        )
+            if len(chunks) < 1000:
+                break
+            chunk_page += 1
     if not doc_matches:
         return f"No content matching '{query}' in '{path or file_pattern or 'repo'}'"
     all_doc_ids = list(doc_matches.keys())

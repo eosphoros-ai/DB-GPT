@@ -136,7 +136,11 @@ if TYPE_CHECKING:
 
 REACT_AGENT_MEMORY_CACHE: Dict[str, "GptsMemory"] = {}
 _CaptureResult = TypeVar("_CaptureResult")
-_REPORT_PERSIST_TIMEOUT_SECONDS = 5.0
+# Large traceable reports (100+ artifacts, multi-hundred-KB HTML) can take
+# longer than five seconds to assemble and commit. Publishing `unconfirmed`
+# without coordinates drops the report tab and every evidence link from the
+# saved conversation, so allow the save enough time to finish.
+_REPORT_PERSIST_TIMEOUT_SECONDS = 30.0
 _REPORT_PERSIST_MAX_IN_FLIGHT = 2
 _REPORT_PERSIST_EXECUTOR = ThreadPoolExecutor(
     max_workers=_REPORT_PERSIST_MAX_IN_FLIGHT,
@@ -2184,8 +2188,20 @@ async def _react_agent_stream_impl(
 - 警告: 加载数据库 '{database_name}' 失败。错误: {str(e)}
 """
 
+    requested_locale = (
+        str(dialogue.ext_info.get("locale", "")).lower()
+        if isinstance(dialogue.ext_info, dict)
+        else ""
+    )
+    if requested_locale.startswith("en"):
+        report_language = "en"
+    elif requested_locale.startswith("zh"):
+        report_language = "zh"
+    else:
+        report_language = "zh" if re.search(r"[\u3400-\u9fff]", user_input) else "en"
     react_state: Dict[str, Any] = {
         "_report_original_request": user_input,
+        "_report_language": report_language,
         "skills_loaded": True,  # Skills are pre-loaded now
         "matched": None,
         "skill_prompt": None,
@@ -2956,6 +2972,11 @@ print(json.dumps(summary, ensure_ascii=False))
                 raise ValueError(
                     "REPORT_CHECKPOINT_INVALID: saved report recovery failed; keep completed artifacts and report this error"
                 )
+            if not requested_locale.startswith(("en", "zh")):
+                original_request = react_state.get("_report_original_request") or ""
+                react_state["_report_language"] = (
+                    "zh" if re.search(r"[\u3400-\u9fff]", original_request) else "en"
+                )
         artifact_sink = artifact_sink or InMemoryArtifactSink(
             ArtifactCaptureContext(
                 conv_uid=conv_id,
@@ -3055,7 +3076,7 @@ print(json.dumps(summary, ensure_ascii=False))
         conv_id=conv_id,
         gpts_app_code="react_agent",
         gpts_app_name="ReAct",
-        language="zh",
+        language=react_state["_report_language"],
         temperature=dialogue.temperature or 0.2,
         enable_context_management=True,
         enable_native_function_calling=True,
@@ -3149,6 +3170,7 @@ print(json.dumps(summary, ensure_ascii=False))
 
     dispatch_parallel_tasks = make_dispatch_tool(
         parent_conv_id=conv_id,
+        language=react_state["_report_language"],
         llm_client=llm_client,
         sub_model_name=dialogue.model_name,
         database_connector=database_connector,
@@ -3168,12 +3190,25 @@ For report repairs, each renderer result replaces the previous error list.
 Once a patch is accepted, do not submit it again. Fix the latest reported targets.
 When all requested deliverables are complete, call terminate with output.
 """
+    if react_state["_report_language"] == "en":
+        language_instruction = (
+            "The user's interface and question are English. Write ALL user-visible "
+            "text in English: intention, thought, todo items, step titles, status "
+            "messages, and the final answer. Do not switch to Chinese because tool "
+            "outputs or knowledge-base text are Chinese. Keep SQL identifiers, field "
+            "names, and quoted source text unchanged."
+        )
+    else:
+        language_instruction = (
+            "Please always response in the same language as the user's input language."
+        )
+
     if is_skill_mode:
         # Simplified prompt for skill mode - only skill-related tools +
         # html_interpreter
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, executing the skill task selected by the user.
-Please always response in the same language as the user's input language.
+{language_instruction}
 
 ## Autonomous Decision Principles
 1. Strictly follow the instructions of the loaded skill.
@@ -3354,7 +3389,7 @@ Example flow for 3 tasks:
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
-Please always response in the same language as the user's input language.
+{language_instruction}
 
 ## Autonomous Decision Principles
 1. Carefully analyze the user's task requirements.
@@ -3880,7 +3915,9 @@ After partial results, finish only missing requested deliverables, then report.
                     pending_thoughts[round_num].append(clean_chunk)
                     if round_num not in round_step_map:
                         pending_step_id, pending_step_event = build_step(
-                            "思考中",
+                            "Thinking"
+                            if react_state.get("_report_language") == "en"
+                            else "思考中",
                             "Thought/Action/Observation",
                         )
                         round_step_map[round_num] = pending_step_id
@@ -4244,8 +4281,12 @@ After partial results, finish only missing requested deliverables, then report.
             history_steps.append(
                 {
                     "id": pending_id,
-                    "title": "思考中",
-                    "detail": "执行提前结束，未收到工具完成结果",
+                    "title": "Thinking"
+                    if react_state.get("_report_language") == "en"
+                    else "思考中",
+                    "detail": "Execution ended before the tool reported a result"
+                    if react_state.get("_report_language") == "en"
+                    else "执行提前结束，未收到工具完成结果",
                     "outputs": [],
                     "status": "failed",
                 }

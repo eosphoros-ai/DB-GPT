@@ -1,9 +1,11 @@
+import i18n from '@/app/i18n';
 import { getStandaloneReportRun } from '@/client/api/report/standalone';
 import type { BackEndChartType } from '@/components/chart/autoChart/helpers';
 import ChartView from '@/components/chat/chat-content/chart-view';
 import type { EvidenceReference, ReportArtifact, ReportBlock, ReportRun } from '@/types/report';
 import type { Datum } from '@antv/ava';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format as formatSql } from 'sql-formatter';
 import ClaimEvidenceGraph from './ClaimEvidenceGraph';
 import { artifactTitle } from './artifact-title';
@@ -35,7 +37,7 @@ const display = (value: unknown) => {
 };
 
 const formatMilliseconds = (duration?: number) => {
-  if (duration === undefined || duration === null) return '未采集';
+  if (duration === undefined || duration === null) return i18n.t('evidence_not_captured');
   return duration === 0 ? '< 1 ms' : `${duration} ms`;
 };
 
@@ -57,12 +59,13 @@ const artifactKind = (artifact: ReportArtifact) => {
   return artifact.reference_type?.toUpperCase() || 'SOURCE';
 };
 const sourceCategory = (artifact: ReportArtifact) => {
-  if (artifact.reference_type === 'knowledge') return '知识库';
-  if (artifact.reference_type === 'web') return '网页资料';
-  if (artifact.reference_type === 'memory') return '会话记忆';
-  if (artifact.reference_type === 'model') return '模型推理';
-  if (artifact.database || ['sql', 'python', 'chart'].includes(artifact.type)) return '数据库';
-  return '任务输入';
+  if (artifact.reference_type === 'knowledge') return i18n.t('evidence_source_knowledge');
+  if (artifact.reference_type === 'web') return i18n.t('evidence_source_web');
+  if (artifact.reference_type === 'memory') return i18n.t('evidence_source_memory');
+  if (artifact.reference_type === 'model') return i18n.t('evidence_source_model');
+  if (artifact.database || ['sql', 'python', 'chart'].includes(artifact.type))
+    return i18n.t('evidence_source_database');
+  return i18n.t('evidence_source_task_input');
 };
 
 const formatSqlForDisplay = (sql: string) => {
@@ -78,6 +81,7 @@ const CollapsibleCode: React.FC<{ title: string; content: string; sql?: boolean 
   content,
   sql = false,
 }) => {
+  const { t } = useTranslation();
   const rendered = sql ? formatSqlForDisplay(content) : content;
   const isLong = rendered.length > 480 || rendered.split('\n').length > 8;
   if (!isLong)
@@ -92,7 +96,8 @@ const CollapsibleCode: React.FC<{ title: string; content: string; sql?: boolean 
   return (
     <details className='rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-white/[0.04]'>
       <summary className='cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300'>
-        {title}（点击展开）
+        {title}
+        {t('evidence_click_to_expand')}
       </summary>
       <pre className='mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-3 text-[11px] leading-5 text-slate-100'>
         {rendered}
@@ -103,16 +108,16 @@ const CollapsibleCode: React.FC<{ title: string; content: string; sql?: boolean 
 
 const artifactDisplayName = (artifact: ReportArtifact) => {
   const text = `${artifact.name || ''}\n${artifact.sql || ''}`.toLowerCase();
-  if (artifact.type === 'chart') return '分析图表';
-  if (artifact.type === 'python') return '数据计算';
-  if (/payment.*(sum|amount)|sum.*payment/.test(text)) return '支付方式金额统计';
-  if (/count\s*\(.*order|total_orders/.test(text)) return '订单总量统计';
-  if (/installment|分期/.test(text)) return '分期情况统计';
-  if (/avg|average|客单价/.test(text)) return '平均值与客单价计算';
-  if (/date|month|月度|trend/.test(text)) return '经营趋势统计';
-  if (artifact.type === 'sql') return '业务数据查询';
-  if (artifact.reference_type === 'knowledge') return '知识库依据';
-  return artifactKind(artifact) === 'AI' ? '模型分析依据' : '分析执行产物';
+  if (artifact.type === 'chart') return i18n.t('evidence_artifact_chart');
+  if (artifact.type === 'python') return i18n.t('evidence_artifact_python');
+  if (/payment.*(sum|amount)|sum.*payment/.test(text)) return i18n.t('evidence_artifact_payment');
+  if (/count\s*\(.*order|total_orders/.test(text)) return i18n.t('evidence_artifact_orders');
+  if (/installment|分期/.test(text)) return i18n.t('evidence_artifact_installments');
+  if (/avg|average|客单价/.test(text)) return i18n.t('evidence_artifact_averages');
+  if (/date|month|月度|trend/.test(text)) return i18n.t('evidence_artifact_trend');
+  if (artifact.type === 'sql') return i18n.t('evidence_artifact_sql');
+  if (artifact.reference_type === 'knowledge') return i18n.t('evidence_artifact_knowledge');
+  return artifactKind(artifact) === 'AI' ? i18n.t('evidence_artifact_model') : i18n.t('evidence_artifact_default');
 };
 
 const tableData = (artifact?: ReportArtifact): { columns: string[]; rows: unknown[][] } => {
@@ -156,15 +161,21 @@ const EvidenceDrawer: React.FC<{
   onClose: () => void;
   knowledgeNames: KnowledgeSpaceNames;
 }> = ({ artifact, block, onClose, knowledgeNames }) => {
+  const { t } = useTranslation();
   if (!artifact) return null;
   const result = tableData(artifact);
   const code = artifact.sql || artifact.code || artifact.excerpt;
   const timing = artifactTiming(artifact);
   return (
-    <div className='fixed inset-0 z-50 flex justify-end' role='dialog' aria-modal='true' aria-label='证据详情'>
+    <div
+      className='fixed inset-0 z-50 flex justify-end'
+      role='dialog'
+      aria-modal='true'
+      aria-label={t('report_evidence_details')}
+    >
       <button
         type='button'
-        aria-label='关闭证据详情'
+        aria-label={t('evidence_close_details')}
         onClick={onClose}
         className='absolute inset-0 cursor-default bg-slate-950/40 backdrop-blur-[1px]'
       />
@@ -174,13 +185,13 @@ const EvidenceDrawer: React.FC<{
             <div className='min-w-0'>
               <span className='rounded bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'>
                 {artifact.type.toUpperCase()} ·{' '}
-                {artifact.status === 'succeeded' ? '执行成功' : artifact.status || '已捕获'}
+                {artifact.status === 'succeeded' ? t('evidence_succeeded') : artifact.status || t('evidence_captured')}
               </span>
               <h2 className='mt-3 break-words text-lg font-semibold text-slate-900 dark:text-slate-100'>
                 {artifactTitle(artifact)}
               </h2>
               <p className='mt-1 text-xs text-slate-500'>
-                {block ? `报告块：${block.title || block.type}` : '真实执行产物'}
+                {block ? t('evidence_report_block', { name: block.title || block.type }) : t('evidence_real_artifact')}
               </p>
             </div>
             <button
@@ -188,26 +199,26 @@ const EvidenceDrawer: React.FC<{
               onClick={onClose}
               className='rounded px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10'
             >
-              关闭
+              {t('evidence_close')}
             </button>
           </div>
         </header>
         <div className='flex-1 space-y-5 overflow-y-auto p-5'>
           <div className='grid grid-cols-1 gap-3 text-xs'>
             <div className='rounded-lg border border-slate-200 p-3 dark:border-slate-700'>
-              <p className='text-slate-400'>执行耗时</p>
+              <p className='text-slate-400'>{t('evidence_duration')}</p>
               <strong className='mt-1 block text-slate-800 dark:text-slate-100'>{timing.server}</strong>
             </div>
           </div>
           <section>
-            <p className='mb-2 text-xs font-semibold text-slate-500'>来源类型</p>
+            <p className='mb-2 text-xs font-semibold text-slate-500'>{t('evidence_source_type')}</p>
             <div className='rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-white/[0.04] dark:text-slate-200'>
               {sourceCategory(artifact)}
             </div>
           </section>
           {artifact.type !== 'python' && artifact.type !== 'chart' && (
             <section>
-              <p className='mb-2 text-xs font-semibold text-slate-500'>具体来源</p>
+              <p className='mb-2 text-xs font-semibold text-slate-500'>{t('evidence_specific_source')}</p>
               <div className='rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-white/[0.04] dark:text-slate-200'>
                 {artifactSourceName(artifact, knowledgeNames)}
               </div>
@@ -215,14 +226,20 @@ const EvidenceDrawer: React.FC<{
           )}
           {code && (
             <CollapsibleCode
-              title={artifact.sql ? '执行 SQL' : artifact.code ? `执行 ${artifact.language || 'Python'}` : '引用内容'}
+              title={
+                artifact.sql
+                  ? t('evidence_execute_sql')
+                  : artifact.code
+                    ? t('evidence_execute_language', { language: artifact.language || 'Python' })
+                    : t('evidence_citation_content')
+              }
               content={display(code)}
               sql={Boolean(artifact.sql)}
             />
           )}
           {result.columns.length > 0 && (
             <section>
-              <p className='mb-2 text-xs font-semibold text-slate-500'>结果快照</p>
+              <p className='mb-2 text-xs font-semibold text-slate-500'>{t('evidence_result_snapshot')}</p>
               <div className='overflow-auto rounded-lg border border-emerald-100'>
                 <p className='bg-emerald-50 px-3 py-2 text-xs text-emerald-800'>
                   {artifact.row_count ?? result.rows.length} rows
@@ -285,33 +302,32 @@ const NativeChartBlock: React.FC<{ artifact?: ReportArtifact; onEvidence: () => 
   artifact,
   onEvidence,
 }) => {
+  const { t } = useTranslation();
   const spec = nativeChartSpec(artifact);
   if (!spec)
     return (
       <div className='mt-4 rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-5 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200'>
-        <strong>图表规格不可重放</strong>
-        <p className='mt-1 text-xs opacity-75'>
-          该历史图表没有保存原生 vis-db-chart 数据。可打开证据查看原始执行产物。
-        </p>
+        <strong>{t('evidence_chart_not_replayable')}</strong>
+        <p className='mt-1 text-xs opacity-75'>{t('evidence_chart_not_replayable_detail')}</p>
         <button
           type='button'
           onClick={onEvidence}
           className='mt-3 rounded-md border border-blue-200 bg-white px-2 py-1 text-xs font-semibold text-blue-700'
         >
-          查看证据
+          {t('evidence_view')}
         </button>
       </div>
     );
   return (
     <div className='mt-4 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-[#191a1f]'>
       <div className='mb-2 flex items-center justify-between gap-3'>
-        <p className='text-xs text-slate-500'>DB-GPT 原生图表</p>
+        <p className='text-xs text-slate-500'>{t('evidence_native_chart_label')}</p>
         <button
           type='button'
           onClick={onEvidence}
           className='rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100'
         >
-          查看图表证据
+          {t('evidence_view_chart')}
         </button>
       </div>
       <ChartView data={spec.data} type={spec.type} sql={spec.sql} />
@@ -324,6 +340,7 @@ const ReportBlockCard: React.FC<{
   artifacts: Map<string, ReportArtifact>;
   onSelect: (artifact: ReportArtifact, reference: EvidenceReference, block: ReportBlock) => void;
 }> = ({ block, artifacts, onSelect }) => {
+  const { t } = useTranslation();
   const resultArtifact =
     block.type === 'table'
       ? artifacts.get(block.data_artifact_id || '')
@@ -387,7 +404,7 @@ const ReportBlockCard: React.FC<{
             </table>
           </div>
         ) : (
-          <p className='mt-4 text-sm text-slate-500'>暂无可展示的结果快照</p>
+          <p className='mt-4 text-sm text-slate-500'>{t('evidence_no_snapshot')}</p>
         ))}
       {block.type === 'chart' && (
         <NativeChartBlock
@@ -410,6 +427,7 @@ const ReportDashboard: React.FC<{ run: ReportRun; knowledgeNames: KnowledgeSpace
   run,
   knowledgeNames,
 }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<{
     artifact: ReportArtifact;
     reference: EvidenceReference;
@@ -423,8 +441,7 @@ const ReportDashboard: React.FC<{ run: ReportRun; knowledgeNames: KnowledgeSpace
   if (!sections.length)
     return (
       <div className='rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900'>
-        这是旧版未绑定摘要 Run：已保存 {run.document.artifacts.length}{' '}
-        个执行产物，但报告块尚未建立证据关联。请重新执行任务以生成可追溯分析报告。
+        {t('evidence_legacy_unbound', { count: run.document.artifacts.length })}
       </div>
     );
   return (
@@ -435,7 +452,10 @@ const ReportDashboard: React.FC<{ run: ReportRun; knowledgeNames: KnowledgeSpace
         </p>
         <h1 className='mt-3 text-2xl font-bold leading-9'>{run.document.title}</h1>
         <p className='mt-3 text-sm text-blue-100'>
-          真实执行产物 {run.document.artifacts.length} 个 · ReportRun Revision {run.revision}
+          {t('evidence_artifacts_revision', {
+            count: run.document.artifacts.length,
+            revision: run.revision,
+          })}
         </p>
       </header>
       {sections.map(section => (
@@ -444,7 +464,9 @@ const ReportDashboard: React.FC<{ run: ReportRun; knowledgeNames: KnowledgeSpace
             <h2 className='border-l-4 border-blue-600 pl-3 text-lg font-bold text-slate-900 dark:text-white'>
               {section.title}
             </h2>
-            <span className='text-xs text-slate-400'>{section.blocks.length} 个报告块</span>
+            <span className='text-xs text-slate-400'>
+              {t('evidence_block_count', { count: section.blocks.length })}
+            </span>
           </div>
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3'>
             {section.blocks.map(block => (
@@ -478,6 +500,7 @@ export const TraceableReportWorkspace: React.FC<TraceableReportWorkspaceProps> =
   generatedFiles,
   onFileOpen,
 }) => {
+  const { t } = useTranslation();
   const [run, setRun] = useState<ReportRun>();
   const knowledgeNames = useKnowledgeSpaceNames(run?.document.artifacts || []);
   const [loading, setLoading] = useState(true);
@@ -490,26 +513,27 @@ export const TraceableReportWorkspace: React.FC<TraceableReportWorkspaceProps> =
       if (!response.success) throw new Error(response.err_msg || 'Report not available');
       setRun(response.data);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '无法加载本轮可追溯报告');
+      setError(reason instanceof Error ? reason.message : t('evidence_load_failed'));
     } finally {
       setLoading(false);
     }
-  }, [reportId, reportRunId]);
+  }, [reportId, reportRunId, t]);
   useEffect(() => {
     load();
   }, [load]);
   if (loading)
     return (
       <div className='grid h-full min-h-[240px] place-items-center text-sm text-slate-500'>
-        正在加载本轮分析产物与证据…
+        {t('evidence_loading_run')}
       </div>
     );
   if (error || !run)
     return (
       <div className='m-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800'>
-        报告暂不可用：{error || '未知错误'}{' '}
+        {t('evidence_report_unavailable')}
+        {error || t('evidence_unknown_error')}{' '}
         <button type='button' onClick={load} className='ml-2 underline'>
-          重试
+          {t('evidence_retry')}
         </button>
       </div>
     );

@@ -6,6 +6,7 @@ never interpolates a path literal, so adversarial display names or paths
 cannot inject code.
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -36,8 +37,29 @@ logger = logging.getLogger(__name__)
 EXECUTION_TIMEOUT_SECONDS = 60
 
 
-def _workspace_files(directory: str) -> Dict[str, Tuple[int, int]]:
-    """Snapshot user outputs without treating capture controls as user files."""
+def conversation_work_dir(react_state: Dict[str, Any]) -> str:
+    """Return the shared data workspace for Python and shell in one conversation.
+
+    Keeping both tools in the same directory restores cross-tool file handoff;
+    only bootstrap/capture controls live under ``.report-executions``.
+    """
+    from dbgpt.configs.model_config import PILOT_PATH
+
+    conv_id = react_state.get("conv_id") or "default"
+    return os.path.join(PILOT_PATH, "tmp", conv_id)
+
+
+def _file_digest(path: Path) -> str:
+    """Hash file content so container copies do not look like fresh outputs."""
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _workspace_files(directory: str) -> Dict[str, Tuple[int, str]]:
+    """Snapshot user outputs by content, not by container-copy mtime."""
     root = Path(directory)
     files = {}
     for path in root.rglob("*"):
@@ -45,9 +67,9 @@ def _workspace_files(directory: str) -> Dict[str, Tuple[int, int]]:
             continue
         try:
             stat = path.stat()
-        except FileNotFoundError:
+            files[str(path)] = (stat.st_size, _file_digest(path))
+        except (FileNotFoundError, OSError):
             continue
-        files[str(path)] = (stat.st_mtime_ns, stat.st_size)
     return files
 
 
@@ -191,8 +213,6 @@ def make_code_interpreter(
         data loading and processing. Always print() results you want to see.
         Files in the same conversation's working directory persist across calls.
         """
-        from dbgpt.configs.model_config import PILOT_PATH
-
         missing = react_state.get("_report_missing_calculation")
         if missing and not missing.get("result_artifact_id"):
             if missing.get("execution_attempts", 0) >= 3:
@@ -221,8 +241,7 @@ def make_code_interpreter(
                 ensure_ascii=False,
             )
 
-        cid = react_state.get("conv_id") or "default"
-        work_dir = os.path.join(PILOT_PATH, "tmp", cid, "python")
+        work_dir = conversation_work_dir(react_state)
         capture_dir = os.path.join(work_dir, ".report-executions", uuid.uuid4().hex)
         os.makedirs(capture_dir, exist_ok=True)
         files_before = _workspace_files(work_dir)

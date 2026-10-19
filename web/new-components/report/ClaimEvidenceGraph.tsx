@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import type { BackEndChartType } from '@/components/chart/autoChart/helpers';
 import ChartView from '@/components/chat/chat-content/chart-view';
 import type { ReportArtifact, ReportRun } from '@/types/report';
@@ -22,29 +23,43 @@ import { artifactSourceName, referenceFileName, type KnowledgeSpaceNames } from 
 
 type PointEdge = GraphEdge & { d: string; labelX: number; labelY: number };
 const EMPTY_KNOWLEDGE_NAMES: KnowledgeSpaceNames = {};
-const SOURCE_GROUP_LABEL: Record<SourceGroup, string> = {
-  DATABASE: '数据库',
-  'KNOWLEDGE BASE': '知识库',
-  FILE: '上传文件',
-  MEMORY: '会话记忆',
-  WEB: '网页资料',
+const sourceGroupLabel = (group: SourceGroup) => {
+  if (group === 'DATABASE') return i18n.t('evidence_graph_source_database');
+  if (group === 'KNOWLEDGE BASE') return i18n.t('evidence_graph_source_knowledge');
+  if (group === 'FILE') return i18n.t('evidence_graph_source_file');
+  if (group === 'MEMORY') return i18n.t('evidence_graph_source_memory');
+  return i18n.t('evidence_graph_source_web');
 };
-const META: Record<NodeType, { icon: string; label: string; color: string }> = {
-  database: { icon: '库', label: '数据库', color: 'text-cyan-700 border-cyan-200 bg-cyan-50' },
-  knowledge: { icon: 'KB', label: '知识库', color: 'text-violet-700 border-violet-200 bg-violet-50' },
-  memory: { icon: '忆', label: '记忆', color: 'text-fuchsia-700 border-fuchsia-200 bg-fuchsia-50' },
-  step: { icon: '步骤', label: '执行步骤', color: 'text-slate-700 border-slate-300 bg-white' },
-  sql: { icon: 'SQL', label: 'SQL', color: 'text-blue-700 border-blue-200 bg-blue-50' },
-  python: { icon: 'PY', label: 'Python', color: 'text-emerald-700 border-emerald-200 bg-emerald-50' },
-  chart: { icon: '图', label: '图表', color: 'text-indigo-700 border-indigo-200 bg-indigo-50' },
-  file: { icon: '文件', label: '文件', color: 'text-orange-700 border-orange-200 bg-orange-50' },
-  tool: { icon: '工具', label: '工具', color: 'text-slate-700 border-slate-200 bg-slate-50' },
-  skill: { icon: '技能', label: '技能', color: 'text-pink-700 border-pink-200 bg-pink-50' },
-  report: { icon: '报告', label: '分析报告', color: 'text-blue-800 border-blue-300 bg-blue-50' },
+const nodeLabel = (type: NodeType) => {
+  if (type === 'database') return i18n.t('evidence_graph_node_database');
+  if (type === 'knowledge') return i18n.t('evidence_graph_node_knowledge');
+  if (type === 'memory') return i18n.t('evidence_graph_node_memory');
+  if (type === 'step') return i18n.t('evidence_graph_node_step');
+  if (type === 'chart') return i18n.t('evidence_graph_node_chart');
+  if (type === 'file') return i18n.t('evidence_graph_node_file');
+  if (type === 'tool') return i18n.t('evidence_graph_node_tool');
+  if (type === 'skill') return i18n.t('evidence_graph_node_skill');
+  if (type === 'report') return i18n.t('evidence_graph_node_report');
+  if (type === 'sql') return 'SQL';
+  if (type === 'python') return 'Python';
+  return String(type);
+};
+const META: Record<NodeType, { icon: string; color: string }> = {
+  database: { icon: 'DB', color: 'text-cyan-700 border-cyan-200 bg-cyan-50' },
+  knowledge: { icon: 'KB', color: 'text-violet-700 border-violet-200 bg-violet-50' },
+  memory: { icon: 'MEM', color: 'text-fuchsia-700 border-fuchsia-200 bg-fuchsia-50' },
+  step: { icon: 'STEP', color: 'text-slate-700 border-slate-300 bg-white' },
+  sql: { icon: 'SQL', color: 'text-blue-700 border-blue-200 bg-blue-50' },
+  python: { icon: 'PY', color: 'text-emerald-700 border-emerald-200 bg-emerald-50' },
+  chart: { icon: 'Chart', color: 'text-indigo-700 border-indigo-200 bg-indigo-50' },
+  file: { icon: 'FILE', color: 'text-orange-700 border-orange-200 bg-orange-50' },
+  tool: { icon: 'TOOL', color: 'text-slate-700 border-slate-200 bg-slate-50' },
+  skill: { icon: 'SKILL', color: 'text-pink-700 border-pink-200 bg-pink-50' },
+  report: { icon: 'RPT', color: 'text-blue-800 border-blue-300 bg-blue-50' },
 };
 const duration = (artifact?: ReportArtifact) => {
   const ms = artifact?.timing?.server_execution_ms ?? artifact?.duration_ms;
-  return typeof ms === 'number' ? ms.toLocaleString() + ' ms' : '未记录';
+  return typeof ms === 'number' ? ms.toLocaleString() + ' ms' : i18n.t('evidence_graph_not_recorded');
 };
 const nativeChart = (artifact: any): { data: Datum[]; type: BackEndChartType; sql: string } | undefined => {
   const spec = artifact?.spec;
@@ -100,16 +115,16 @@ function NodeCard({
           <span className='truncate text-xs font-semibold'>{node.title}</span>
           {referenceCount > 1 ? (
             <span className='ml-auto shrink-0 rounded bg-white/80 px-1 py-0.5 text-[9px] font-medium text-slate-500'>
-              关联 {referenceCount}
+              {i18n.t('evidence_graph_related', { count: referenceCount })}
             </span>
           ) : null}
         </div>
-        <div className='mt-1 truncate text-[10px] opacity-70'>{node.subtitle || meta.label}</div>
+        <div className='mt-1 truncate text-[10px] opacity-70'>{node.subtitle || nodeLabel(node.type)}</div>
       </button>
       {onToggle ? (
         <button
           type='button'
-          aria-label={expanded ? '收起引用文件' : '展开引用文件'}
+          aria-label={expanded ? i18n.t('evidence_graph_collapse_refs') : i18n.t('evidence_graph_expand_refs')}
           onClick={event => {
             event.stopPropagation();
             onToggle();
@@ -172,9 +187,7 @@ function SourceNodes(props: StageProps & { forceExpanded?: boolean }) {
         if (!roots.length) return null;
         return (
           <div key={group} className='border-l border-slate-200 pl-3'>
-            <div className='mb-2 text-[10px] font-bold tracking-[0.14em] text-slate-400'>
-              {SOURCE_GROUP_LABEL[group]}
-            </div>
+            <div className='mb-2 text-[10px] font-bold tracking-[0.14em] text-slate-400'>{sourceGroupLabel(group)}</div>
             <div className='space-y-2'>
               {roots.map(root => {
                 const children = props.nodes.filter(node => node.parentId === root.id && props.visible.has(node.id));
@@ -256,10 +269,10 @@ function Details({
           .map(edge => nodes.find(item => item.id === (side === 'input' ? edge.from : edge.to))?.title)
           .filter(Boolean),
       ),
-    ].join(' · ') || '无';
+    ].join(' · ') || i18n.t('evidence_graph_none');
   return (
     <aside className='h-full overflow-y-auto border-l border-slate-200 bg-white p-5 text-sm'>
-      <p className='text-[10px] font-bold text-slate-400'>{META[node.type].label}</p>
+      <p className='text-[10px] font-bold text-slate-400'>{nodeLabel(node.type)}</p>
       <h3 className='mt-1 break-words text-base font-semibold text-slate-800'>{node.title}</h3>
       {node.file && onFileOpen ? (
         <button
@@ -267,12 +280,16 @@ function Details({
           onClick={() => onFileOpen(node.file!)}
           className='mt-3 rounded border border-blue-200 px-3 py-1.5 text-xs text-blue-700'
         >
-          打开文件
+          {i18n.t('evidence_graph_open_file')}
         </button>
       ) : null}
       {node.file?.filePath ? <p className='mt-3 break-all text-xs text-slate-500'>{node.file.filePath}</p> : null}
       {node.stage === 'execution' ? <p className='mt-3 text-xs text-slate-600'>{executionStatus(artifacts)}</p> : null}
-      {node.tables?.length ? <p className='mt-3 text-xs text-slate-600'>输入表：{node.tables.join('、')}</p> : null}
+      {node.tables?.length ? (
+        <p className='mt-3 text-xs text-slate-600'>
+          {i18n.t('evidence_graph_input_tables', { tables: node.tables.join(', ') })}
+        </p>
+      ) : null}
       <div className='mt-4 space-y-3'>
         {artifacts.map(artifact => {
           const code = artifact.sql || artifact.code;
@@ -288,27 +305,30 @@ function Details({
                 {isReference ? referenceFileName(artifact) : artifactTitle(artifact)}
               </summary>
               <dl className='mt-3 grid grid-cols-[80px_1fr] gap-y-2 text-xs text-slate-600'>
-                <dt>执行耗时</dt>
+                <dt>{i18n.t('evidence_graph_duration')}</dt>
                 <dd>{duration(artifact)}</dd>
-                <dt>状态</dt>
+                <dt>{i18n.t('evidence_graph_status')}</dt>
                 <dd>{executionStatus([artifact])}</dd>
-                <dt>工具</dt>
-                <dd className='break-all'>{artifact.execution?.action || '未记录'}</dd>
+                <dt>{i18n.t('evidence_graph_tool')}</dt>
+                <dd className='break-all'>{artifact.execution?.action || i18n.t('evidence_graph_not_recorded')}</dd>
                 {artifact.metadata?.skill_name ? (
                   <>
-                    <dt>技能</dt>
+                    <dt>{i18n.t('evidence_graph_skill')}</dt>
                     <dd>{String(artifact.metadata.skill_name)}</dd>
                   </>
                 ) : null}
                 {isReference || artifact.database ? (
                   <>
-                    <dt>具体来源</dt>
+                    <dt>{i18n.t('evidence_graph_specific_source')}</dt>
                     <dd className='break-all'>{artifactSourceName(artifact, knowledgeNames)}</dd>
                   </>
                 ) : null}
               </dl>
               {artifact.locator ? (
-                <p className='mt-3 break-all text-xs text-teal-700'>引用位置：{referenceLocation(artifact.locator)}</p>
+                <p className='mt-3 break-all text-xs text-teal-700'>
+                  {i18n.t('evidence_graph_location')}
+                  {referenceLocation(artifact.locator)}
+                </p>
               ) : null}
               {artifact.excerpt ? (
                 <blockquote className='mt-3 whitespace-pre-wrap border-l-2 border-teal-400 pl-2 text-xs leading-5 text-slate-600'>
@@ -322,7 +342,7 @@ function Details({
               ) : null}
               {artifact.result?.inline !== undefined ? (
                 <details className='mt-3 text-xs'>
-                  <summary className='cursor-pointer'>结果快照</summary>
+                  <summary className='cursor-pointer'>{i18n.t('evidence_graph_result_snapshot')}</summary>
                   <pre className='mt-2 max-h-60 overflow-auto whitespace-pre-wrap'>
                     {JSON.stringify(artifact.result.inline, null, 2)}
                   </pre>
@@ -335,7 +355,7 @@ function Details({
               ) : null}
               {artifact.spec ? (
                 <details className='mt-3 text-xs'>
-                  <summary className='cursor-pointer'>图表规格与数据选择器</summary>
+                  <summary className='cursor-pointer'>{i18n.t('evidence_graph_chart_spec')}</summary>
                   <pre className='mt-2 max-h-60 overflow-auto whitespace-pre-wrap'>
                     {JSON.stringify(artifact.spec, null, 2)}
                   </pre>
@@ -347,11 +367,11 @@ function Details({
         })}
       </div>
       <section className='mt-5'>
-        <h4 className='mb-2 font-medium'>上游</h4>
+        <h4 className='mb-2 font-medium'>{i18n.t('evidence_graph_upstream')}</h4>
         <p className='text-xs text-slate-600'>{names('input')}</p>
       </section>
       <section className='mt-4'>
-        <h4 className='mb-2 font-medium'>下游</h4>
+        <h4 className='mb-2 font-medium'>{i18n.t('evidence_graph_downstream')}</h4>
         <p className='text-xs text-slate-600'>{names('output')}</p>
       </section>
     </aside>
@@ -466,8 +486,7 @@ export default function ClaimEvidenceGraph({
     window.addEventListener('keydown', exitOnEscape);
     return () => window.removeEventListener('keydown', exitOnEscape);
   }, [focus]);
-  if (!graph.nodes.length)
-    return <div className='p-8 text-sm text-slate-500'>本次运行尚无可用于构建证据图谱的分析产物。</div>;
+  if (!graph.nodes.length) return <div className='p-8 text-sm text-slate-500'>{i18n.t('evidence_graph_empty')}</div>;
   const focusedNode = graph.nodes.find(node => node.id === focus);
   const isFocus = Boolean(focus);
   const isFullscreen = fullscreen || isFocus;
@@ -495,11 +514,9 @@ export default function ClaimEvidenceGraph({
       <div className={isFullscreen ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'w-full'}>
         <div className='flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-3'>
           <div>
-            <h2 className='text-sm font-semibold text-slate-800'>分析溯源图谱</h2>
-            <p className='mt-0.5 text-xs text-slate-500'>数据来源 → 实际执行步骤 → 生成文件</p>
-            {!isFullscreen ? (
-              <p className='mt-1 text-[11px] text-slate-400'>树状主干 · 悬停节点查看跨分支引用 · 点击进入聚焦模式</p>
-            ) : null}
+            <h2 className='text-sm font-semibold text-slate-800'>{i18n.t('evidence_graph_title')}</h2>
+            <p className='mt-0.5 text-xs text-slate-500'>{i18n.t('evidence_graph_subtitle')}</p>
+            {!isFullscreen ? <p className='mt-1 text-[11px] text-slate-400'>{i18n.t('evidence_graph_hint')}</p> : null}
           </div>
           <div className='flex items-center gap-2'>
             {isFocus ? (
@@ -508,12 +525,14 @@ export default function ClaimEvidenceGraph({
                 onClick={() => setFocus(undefined)}
                 className='rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50'
               >
-                ← 返回完整图谱
+                {i18n.t('evidence_graph_back')}
               </button>
             ) : null}
             <button
               type='button'
-              aria-label={isFullscreen ? '退出全屏图谱' : '全屏查看图谱'}
+              aria-label={
+                isFullscreen ? i18n.t('evidence_graph_exit_fullscreen') : i18n.t('evidence_graph_enter_fullscreen')
+              }
               onClick={() => {
                 if (isFullscreen) {
                   setFocus(undefined);
@@ -522,7 +541,7 @@ export default function ClaimEvidenceGraph({
               }}
               className='rounded border border-slate-300 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50'
             >
-              {isFullscreen ? '↙ 退出全屏' : '⛶ 全屏查看'}
+              {isFullscreen ? i18n.t('evidence_graph_exit_fullscreen_label') : i18n.t('evidence_graph_fullscreen')}
             </button>
           </div>
         </div>
@@ -557,7 +576,7 @@ export default function ClaimEvidenceGraph({
                       className='fill-blue-600 text-[9px] font-medium'
                     >
                       {edge.relation}
-                      {(edge.count || 1) > 1 ? ` · ${edge.count} 条` : ''}
+                      {(edge.count || 1) > 1 ? i18n.t('evidence_graph_edge_count', { count: edge.count }) : ''}
                     </text>
                   ) : null}
                 </g>
@@ -565,8 +584,8 @@ export default function ClaimEvidenceGraph({
             </svg>
             <div className='relative z-10 grid grid-cols-[minmax(230px,0.82fr)_minmax(380px,1.4fr)_minmax(250px,0.9fr)] divide-x divide-slate-200'>
               {stage(
-                '1. 数据来源',
-                '数据库 · 知识库 · 上传文件',
+                i18n.t('evidence_graph_legend_sources'),
+                i18n.t('evidence_graph_legend_sources_detail'),
                 <SourceNodes
                   nodes={graph.nodes.filter(node => node.stage === 'source')}
                   visible={visible}
@@ -580,8 +599,8 @@ export default function ClaimEvidenceGraph({
                 />,
               )}
               {stage(
-                '2. 分析与执行',
-                '每个步骤展示一次，点击查看执行详情',
+                i18n.t('evidence_graph_legend_steps'),
+                i18n.t('evidence_graph_legend_steps_detail'),
                 <ExecutionNodes
                   nodes={graph.nodes.filter(node => node.stage === 'execution')}
                   visible={visible}
@@ -594,8 +613,8 @@ export default function ClaimEvidenceGraph({
                 />,
               )}
               {stage(
-                '3. 最终产物',
-                '与任务文件中的实际生成文件对应',
+                i18n.t('evidence_graph_legend_outputs'),
+                i18n.t('evidence_graph_legend_outputs_detail'),
                 <OutputNodes
                   nodes={graph.nodes.filter(node => node.stage === 'output')}
                   visible={visible}

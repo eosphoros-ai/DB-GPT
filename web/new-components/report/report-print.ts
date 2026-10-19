@@ -1,4 +1,4 @@
-import { sanitizeEmbeddedReportHtml } from './ReportIframe';
+import { exportIsolatedReportHtml, sanitizeEmbeddedReportHtml } from './ReportIframe';
 
 const nextFrame = (source: Document) =>
   new Promise<void>(resolve => {
@@ -121,6 +121,10 @@ const renderedReportSnapshot = async (iframe: HTMLIFrameElement): Promise<string
 /** Serialize the current rendered report as a standalone, presentation-only HTML file. */
 export const exportRenderedReportHtml = async (iframe: HTMLIFrameElement): Promise<string | undefined> => {
   try {
+    if (!iframe.sandbox.contains('allow-same-origin')) {
+      const snapshot = await exportIsolatedReportHtml(iframe);
+      return snapshot ? cleanReportHtmlForExport(snapshot) : undefined;
+    }
     return await renderedReportSnapshot(iframe);
   } catch {
     return undefined;

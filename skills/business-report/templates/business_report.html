@@ -1,5 +1,6 @@
 {%- set spec = template_data.get('REPORT_SPEC', {}) -%}
 {%- set sections = spec.get('sections', []) -%}
+{%- set chart_error_prefix = 'Chart rendering failed: ' if spec.get('language') == 'en' else '图表绘制失败：' -%}
 {%- macro ref(node, cls='') -%}
 {%- if node is mapping and node.get('artifact_id') -%}
 <span{% if cls %} class="{{ cls }}"{% endif %} data-dbgpt-artifacts="{{ node.artifact_id }}"{% if node.selectors %} data-dbgpt-artifact-selectors='{{ node.selectors|tojson }}'{% endif %}{% if node.get('proposal') %} data-dbgpt-value-role="proposal"{% endif %} data-dbgpt-evidence-label="{{ node.value }}">{{ node.value }}</span>
@@ -18,7 +19,7 @@
 {%- endif -%}
 {%- endmacro -%}
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ 'en' if spec.get('language') == 'en' else 'zh-CN' }}">
 <head>
 <meta charset="utf-8">
 <title>{{ spec.get('title', 'Analysis Report') }}</title>
@@ -129,7 +130,7 @@ document.querySelectorAll('[data-dbgpt-chart-option]').forEach(function(host) {
         window.addEventListener('resize', function() { chart.resize(); });
     } catch (error) {
         host.setAttribute('data-dbgpt-chart-error', String(error.message || error));
-        host.textContent = '图表绘制失败：' + (error.message || error);
+        host.textContent = {{ chart_error_prefix|tojson }} + (error.message || error);
         console.error(error);
     }
 });

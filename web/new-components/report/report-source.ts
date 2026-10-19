@@ -1,4 +1,5 @@
 import type { ReportArtifact } from '../../types/report';
+import { reportText } from './report-i18n';
 
 export type KnowledgeSpaceNames = Record<string, string>;
 const text = (value: unknown) => (typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '');
@@ -19,14 +20,22 @@ export function knowledgeSpaceName(artifact: ReportArtifact, names: KnowledgeSpa
     locator.space_name || locator.knowledge_name || artifact.metadata?.space_name || artifact.metadata?.knowledge_name,
   );
   const id = knowledgeSpaceId(artifact);
-  return name || names[id] || (id && !/^\d+$/.test(id) ? id : id ? `知识库（${id}）` : '知识库名称未记录');
+  return (
+    name ||
+    names[id] ||
+    (id && !/^\d+$/.test(id)
+      ? id
+      : id
+        ? reportText('evidence_source_knowledge_id', { id })
+        : reportText('evidence_source_knowledge_missing'))
+  );
 }
 
 export function referenceFileName(artifact: ReportArtifact): string {
   return (
     text(
       artifact.source_name || artifact.locator?.doc_name || artifact.locator?.document_name || artifact.locator?.path,
-    ) || '引用文件名称未记录'
+    ) || reportText('evidence_source_reference_missing')
   );
 }
 

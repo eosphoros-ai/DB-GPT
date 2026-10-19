@@ -16,6 +16,21 @@ from dbgpt.datasource.rdbms.base import RDBMSConnector
 from .sql_read_only import ReadOnlySqlError, read_only_sql
 
 
+def _supports_cooperative_query(connector: Any) -> bool:
+    """Return whether ``query_ex`` is the connector's real SQLite adapter.
+
+    ``ClickhouseConnector`` and other dedicated-client subclasses inherit
+    ``query_ex`` from ``RDBMSConnector`` but do not own its SQLAlchemy session
+    pool.  They must use their own ``run`` implementation instead.
+    """
+    return (
+        isinstance(connector, RDBMSConnector)
+        and type(connector).run is RDBMSConnector.run
+        and type(connector).query_ex is RDBMSConnector.query_ex
+        and connector.dialect == "sqlite"
+    )
+
+
 def make_sql_query(
     react_state: Dict[str, Any],
     database_connector: Optional[Any],
@@ -69,7 +84,7 @@ def make_sql_query(
         started = time.perf_counter()
         cancel_event = Event()
         try:
-            if isinstance(database_connector, RDBMSConnector):
+            if _supports_cooperative_query(database_connector):
 
                 async def execute():
                     columns, rows = await asyncio.to_thread(

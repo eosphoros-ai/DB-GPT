@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import sys
 import time
 from concurrent.futures import Executor, ThreadPoolExecutor
 from datetime import datetime
@@ -1111,22 +1112,29 @@ class ConversableAgent(Role, Agent):
             return True
 
     def _print_received_message(self, message: AgentMessage, sender: Agent):
+        # Console logging is observational: a Windows GBK terminal must not
+        # abort an agent turn when a tool result contains an emoji.
+        stream = getattr(sys.stdout, "wrapped", sys.stdout)
+        encoding = getattr(stream, "encoding", None) or "utf-8"
+
+        def console_text(value: str) -> str:
+            return value.encode(encoding, errors="backslashreplace").decode(encoding)
+
         # print the message received
         print("\n", "-" * 80, flush=True, sep="")
         _print_name = self.name if self.name else self.role
         print(
-            colored(
-                sender.name if sender.name else sender.role,
-                "yellow",
+            console_text(
+                colored(sender.name if sender.name else sender.role, "yellow")
             ),
             "(to",
-            f"{_print_name})-[{message.model_name or ''}]:\n",
+            console_text(f"{_print_name})-[{message.model_name or ''}]:\n"),
             flush=True,
         )
 
         content = json.dumps(message.content, ensure_ascii=False)
         if content is not None:
-            print(content, flush=True)
+            print(console_text(content), flush=True)
 
         review_info = message.review_info
         if review_info:
@@ -1134,7 +1142,7 @@ class ConversableAgent(Role, Agent):
             pass_msg = "Pass" if review_info.approve else "Reject"
             review_msg = f"{pass_msg}({review_info.comments})"
             approve_print = f">>>>>>>>{name} Review info: \n{review_msg}"
-            print(colored(approve_print, "green"), flush=True)
+            print(console_text(colored(approve_print, "green")), flush=True)
 
         action_report = message.action_report
         if action_report:
@@ -1146,7 +1154,7 @@ class ConversableAgent(Role, Agent):
             )
             action_report_msg = f"{action_msg},\n{action_report.content}"
             action_print = f">>>>>>>>{name} Action report: \n{action_report_msg}"
-            print(colored(action_print, "blue"), flush=True)
+            print(console_text(colored(action_print, "blue")), flush=True)
 
         print("\n", "-" * 80, flush=True, sep="")
 

@@ -1,5 +1,6 @@
 import type { ReportArtifact, ReportRun } from '../../types/report';
 import { artifactTitle } from './artifact-title';
+import { reportText } from './report-i18n';
 import {
   artifactSourceName,
   isKnowledgeReference,
@@ -51,27 +52,28 @@ const pathKey = (value: unknown) =>
     .replace(/\\/g, '/')
     .replace(/[?#].*$/, '');
 const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
-const actionTitle: Record<string, string> = {
-  sql_query: '执行 SQL 查询',
-  code_interpreter: '执行 Python 分析',
-  execute_analysis: '执行数据分析',
-  'knowledge.semantic_search': '检索知识库',
-  knowledge_retrieve: '检索知识库',
-  'knowledge.cat': '读取知识库文件',
-  'knowledge.grep': '搜索知识库文件',
+const actionTitle = (action: string) => {
+  if (action === 'sql_query') return reportText('evidence_graph_action_sql');
+  if (action === 'code_interpreter') return reportText('evidence_graph_action_python');
+  if (action === 'execute_analysis') return reportText('evidence_graph_action_analysis');
+  if (action === 'knowledge.semantic_search' || action === 'knowledge_retrieve')
+    return reportText('evidence_graph_action_knowledge_search');
+  if (action === 'knowledge.cat') return reportText('evidence_graph_action_knowledge_read');
+  if (action === 'knowledge.grep') return reportText('evidence_graph_action_knowledge_grep');
+  return action;
 };
 export function executionStatus(artifacts: readonly ReportArtifact[]): string {
   const states = unique(artifacts.map(artifact => artifact.status || ''));
-  if (!states.length) return '状态未记录';
-  if (states.length > 1) return states.includes('failed') ? '部分执行失败' : '执行状态不一致';
-  return (
-    (
-      { succeeded: '执行成功', failed: '执行失败', cancelled: '已取消', timed_out: '执行超时' } as Record<
-        string,
-        string
-      >
-    )[states[0]] || '状态未记录'
-  );
+  if (!states.length) return reportText('evidence_graph_status_unrecorded');
+  if (states.length > 1)
+    return states.includes('failed')
+      ? reportText('evidence_graph_partial_failed')
+      : reportText('evidence_graph_inconsistent');
+  if (states[0] === 'succeeded') return reportText('evidence_graph_status_succeeded');
+  if (states[0] === 'failed') return reportText('evidence_graph_status_failed');
+  if (states[0] === 'cancelled') return reportText('evidence_graph_status_cancelled');
+  if (states[0] === 'timed_out') return reportText('evidence_graph_status_timed_out');
+  return reportText('evidence_graph_status_unrecorded');
 }
 const artifactPaths = (artifact: ReportArtifact) =>
   unique(
@@ -151,7 +153,7 @@ export function buildGraph(
       );
       execution.set(artifact.artifact_id, stepId);
       if (step.artifacts!.length === 1 && (isKnowledgeReference(artifact) || !artifact.name)) {
-        step.title = actionTitle[context.action || ''] || context.action || artifactTitle(artifact);
+        step.title = actionTitle(context.action || '') || context.action || artifactTitle(artifact);
       }
       step.subtitle = `${unique(step.artifacts!.map(item => item.execution?.action || '')).join(' · ')} · ${executionStatus(step.artifacts!)}`;
       step.tables = unique(
@@ -173,7 +175,7 @@ export function buildGraph(
           type: 'knowledge',
           sourceGroup: 'KNOWLEDGE BASE',
           title: knowledgeSpaceName(artifact, names),
-          subtitle: '知识库',
+          subtitle: reportText('evidence_graph_knowledge_subtitle'),
         },
         artifact,
       );
@@ -193,7 +195,7 @@ export function buildGraph(
         },
         artifact,
       );
-      node.subtitle = `${node.artifacts!.length} 段引用依据`;
+      node.subtitle = reportText('evidence_graph_cited_references', { count: node.artifacts!.length });
       edge(rootId, fileId, 'INCLUDED_IN');
       sourceReferences.set(artifact.artifact_id, fileId);
       edge(fileId, stepId, 'READS');
@@ -206,8 +208,8 @@ export function buildGraph(
           stage: 'source',
           type: 'database',
           sourceGroup: 'DATABASE',
-          title: name === '-' ? '数据库名称未记录' : name,
-          subtitle: '数据库',
+          title: name === '-' ? reportText('evidence_graph_database_name_missing') : name,
+          subtitle: reportText('evidence_graph_database_subtitle'),
         },
         artifact,
       );
@@ -226,7 +228,12 @@ export function buildGraph(
           type: kind === 'memory' ? 'memory' : 'file',
           sourceGroup: kind === 'memory' ? 'MEMORY' : kind === 'web' ? 'WEB' : 'FILE',
           title: artifactSourceName(artifact),
-          subtitle: kind === 'file' ? '上传文件快照' : kind === 'web' ? '网页资料' : '会话记忆',
+          subtitle:
+            kind === 'file'
+              ? reportText('evidence_graph_uploaded_snapshot')
+              : kind === 'web'
+                ? reportText('evidence_graph_web_source')
+                : reportText('evidence_graph_memory_subtitle'),
         },
         artifact,
       );
@@ -297,7 +304,7 @@ export function buildGraph(
       stage: 'output',
       type: isReport ? 'report' : 'file',
       title: file.name,
-      subtitle: isReport ? '分析报告文件' : '生成文件',
+      subtitle: isReport ? reportText('evidence_graph_report_file') : reportText('evidence_graph_generated_file'),
       file,
     });
     matches.forEach(artifact => {

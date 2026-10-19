@@ -1,4 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
+import type { ResponseType } from '@/client/api';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
@@ -563,7 +564,7 @@ const EXAMPLE_CARDS = [
 
 const Playground: NextPage = () => {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { model, modelList, setModel } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -2075,6 +2076,7 @@ const Playground: NextPage = () => {
     // snapshot captured for "保存定时任务", so a saved task replays the exact
     // same context (files / database / knowledge / skill / connectors).
     const baseExtInfo: Record<string, any> = {
+      locale: i18n.resolvedLanguage || i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
       ...(effectiveKnowledge
@@ -2703,7 +2705,11 @@ const Playground: NextPage = () => {
         message.loading({ content: '正在准备示例知识库...', key: 'example-loading', duration: 0 });
         exampleController = new AbortController();
         exampleAbortControllerRef.current = exampleController;
-        const res = await axios.post(
+        const res = await axios.post<
+          ResponseType<KnowledgeSpace | null>,
+          ResponseType<KnowledgeSpace | null>,
+          { example_id: string }
+        >(
           `${process.env.API_BASE_URL ?? ''}/api/v1/examples/prepare`,
           { example_id: example.id },
           { signal: exampleController.signal, timeout: 140000 },
@@ -2714,7 +2720,7 @@ const Playground: NextPage = () => {
           message.error('准备示例知识库失败: ' + (res?.err_msg || '未返回知识库信息'));
           return;
         }
-        exampleKnowledge = res.data as KnowledgeSpace;
+        exampleKnowledge = res.data;
         setSelectedKnowledge(exampleKnowledge);
       }
 
@@ -3027,6 +3033,7 @@ const Playground: NextPage = () => {
       model_name: model,
       select_param: '',
       ext_info: {
+        locale: i18n.resolvedLanguage || i18n.language,
         ...(selectedSkill ? { skill_id: selectedSkill.id, skill_name: selectedSkill.name } : {}),
         ...(selectedDb ? { database_name: selectedDb.db_name, database_type: selectedDb.db_type } : {}),
         ...(selectedKnowledge

@@ -1,9 +1,11 @@
+import i18n from '@/app/i18n';
 import { getRenderObservations, getStandaloneReportRun, saveRenderObservation } from '@/client/api/report/standalone';
 import { AutoChart, BackEndChartType, getChartType } from '@/components/chart';
 import type { BrowserRenderObservation, ReportArtifact, ReportRun } from '@/types/report';
 import type { Datum } from '@antv/ava';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { format as formatSql } from 'sql-formatter';
 import ReportIframe, { resolveReportAssetUrls, sanitizeEmbeddedReportHtml } from './ReportIframe';
 import { artifactTitle } from './artifact-title';
@@ -85,13 +87,14 @@ const nativeChartSpec = (
 };
 
 const NativeReportTable: React.FC<{ data: Datum[]; sourceIds: string[] }> = ({ data, sourceIds }) => {
+  const { t } = useTranslation();
   const columns = Array.from(new Set(data.flatMap(row => Object.keys(row))));
-  if (!columns.length) return <div className='p-4 text-sm text-slate-500'>暂无可展示的查询结果</div>;
+  if (!columns.length) return <div className='p-4 text-sm text-slate-500'>{t('evidence_empty_query')}</div>;
   return (
     <div className='max-w-full overflow-auto'>
       <table
         data-dbgpt-artifacts={sourceIds.join(',')}
-        data-dbgpt-evidence-label='查询结果表'
+        data-dbgpt-evidence-label={t('evidence_query_result_table')}
         className='min-w-full border-collapse text-left text-sm'
       >
         <thead>
@@ -164,7 +167,8 @@ const text = (value: unknown) => {
   }
 };
 
-const bridgeHtml = (html: string) => {
+const bridgeHtml = (html: string, labels: Record<string, string>) => {
+  const evidenceLabels = JSON.stringify(labels).replace(/</g, '\\u003c');
   const bridge = `<style>
     [data-dbgpt-artifacts]{cursor:pointer!important;outline:2px solid transparent;outline-offset:3px;transition:outline-color .15s,box-shadow .15s}
     [data-dbgpt-artifacts]:hover,[data-dbgpt-artifacts]:focus{outline-color:#2563eb!important;box-shadow:0 0 0 5px rgba(37,99,235,.12)!important}
@@ -192,6 +196,7 @@ const bridgeHtml = (html: string) => {
     }
   </style><script>
     (function () {
+      var L = ${evidenceLabels};
       var renderObservations = {};
       function observeChart(artifactId, renderer, state, started, options, error) {
         if (!artifactId || renderObservations[artifactId]) return;
@@ -334,7 +339,7 @@ const bridgeHtml = (html: string) => {
             var title = option && option.title && option.title[0] && option.title[0].text;
             var figure = document.createElement('figure');
             figure.style.margin = '0'; figure.style.minWidth = '0';
-            figure.setAttribute('data-dbgpt-evidence-label', title || node.id || '图表');
+            figure.setAttribute('data-dbgpt-evidence-label', title || node.id || L.chartLabel);
             node.setAttribute('data-dbgpt-evidence-decorated', 'true');
             node.before(figure); figure.appendChild(node); node = figure;
           }
@@ -365,11 +370,11 @@ const bridgeHtml = (html: string) => {
           if (bindingNode.getAttribute('data-dbgpt-block-id')) control.setAttribute('data-dbgpt-block-id', bindingNode.getAttribute('data-dbgpt-block-id'));
           if (bindingNode.getAttribute('data-dbgpt-claim-id')) control.setAttribute('data-dbgpt-claim-id', bindingNode.getAttribute('data-dbgpt-claim-id'));
           if (chartBound) control.setAttribute('data-dbgpt-evidence-chart', 'true');
-          control.setAttribute('data-dbgpt-evidence-label', node.getAttribute('data-dbgpt-evidence-label') || node.textContent || '报告内容');
+          control.setAttribute('data-dbgpt-evidence-label', node.getAttribute('data-dbgpt-evidence-label') || node.textContent || L.reportContent);
           control.setAttribute('data-dbgpt-evidence-element-tag', node.tagName || '');
-          control.setAttribute('aria-label', '查看该内容的执行证据');
-          control.title = '查看执行证据'; control.className = 'dbgpt-evidence-trigger ' + (tableBound ? 'dbgpt-evidence-trigger--table' : ((inline || textBlock) ? 'dbgpt-evidence-trigger--inline' : 'dbgpt-evidence-trigger--corner'));
-          if (bindingNode !== node) control.title = '查看图表所在章节的数据来源';
+          control.setAttribute('aria-label', L.viewContentSource);
+          control.title = L.viewExecution; control.className = 'dbgpt-evidence-trigger ' + (tableBound ? 'dbgpt-evidence-trigger--table' : ((inline || textBlock) ? 'dbgpt-evidence-trigger--inline' : 'dbgpt-evidence-trigger--corner'));
+          if (bindingNode !== node) control.title = L.viewChartSection;
           control.textContent = '⌁';
           control.addEventListener('click', function (event) { event.preventDefault(); event.stopPropagation(); emitEvidence(control); });
           if (inline) node.insertAdjacentElement('afterend', control); else host.appendChild(control);
@@ -398,17 +403,17 @@ const bridgeHtml = (html: string) => {
           var hasChartArtifact = artifactIds.some(function (id) { return id.indexOf('chart-') === 0; });
           var hasKnowledgeArtifact = artifactIds.some(function (id) { return artifactTypes[id] === 'KB'; });
           var labels = artifactIds.map(function (id) { return artifactTypes[id]; }).filter(Boolean);
-          if (control.getAttribute('data-dbgpt-evidence-element-tag') === 'TABLE') labels = labels.filter(function (value) { return value !== '图'; });
+          if (control.getAttribute('data-dbgpt-evidence-element-tag') === 'TABLE') labels = labels.filter(function (value) { return value !== L.chartBadge; });
           labels = labels.filter(function (value, index) { return labels.indexOf(value) === index; });
           // The chart, governing KB rule, and calculated number have separate
           // visual targets even when their parent container shares evidence.
           var elementTag = control.getAttribute('data-dbgpt-evidence-element-tag') || '';
           var isChart = /^(FIGURE|IMG|CANVAS|SVG)$/i.test(elementTag);
           var isInlineClaim = /^(STRONG|B|SPAN|EM|MARK|A)$/i.test(elementTag);
-          if (isChart && hasChartArtifact) labels = ['图'];
+          if (isChart && hasChartArtifact) labels = [L.chartBadge];
           else if (hasKnowledgeArtifact && !isInlineClaim) labels = ['KB'];
           else if (hasSqlArtifact || labels.indexOf('SQL') !== -1) labels = ['SQL'];
-          if (control.getAttribute('data-dbgpt-evidence-chart') === 'true' && labels.indexOf('图') === -1) labels.unshift('图');
+          if (control.getAttribute('data-dbgpt-evidence-chart') === 'true' && labels.indexOf(L.chartBadge) === -1) labels.unshift(L.chartBadge);
           var targetId = control.getAttribute('data-dbgpt-claim-id') || control.getAttribute('data-dbgpt-block-id') || '';
           if (inferenceTargets[targetId] && labels.indexOf('Agent') === -1) labels.push('Agent');
           if (labels.length) control.textContent = labels.slice(0, 3).join('·');
@@ -442,34 +447,34 @@ const bridgeHtml = (html: string) => {
 };
 
 const formatMilliseconds = (duration?: number) => {
-  if (duration === undefined || duration === null) return '未采集';
+  if (duration === undefined || duration === null) return i18n.t('evidence_not_captured');
   return duration === 0 ? '< 1 ms' : `${duration} ms`;
 };
 
 function formatArtifactDuration(artifact: ReportArtifact) {
-  if (artifact.metadata?.duration_ms_is_recovery_placeholder === true) return '原始执行耗时未保存';
+  if (artifact.metadata?.duration_ms_is_recovery_placeholder === true) return i18n.t('evidence_duration_missing');
   const duration = artifact.timing?.server_execution_ms ?? artifact.duration_ms;
   if (
     ['chart_action.render', 'template_chart.prepare', 'report_chart.prepare'].includes(artifact.execution.action || '')
   ) {
-    return `${formatMilliseconds(duration)}（服务端图表规格准备）`;
+    return `${formatMilliseconds(duration)}${i18n.t('evidence_server_chart_prep')}`;
   }
   if (artifact.execution.action === 'code_interpreter.image' && duration === 0) {
-    return '由上游 Python 生成；本图像产物未单独计时';
+    return i18n.t('evidence_image_not_timed');
   }
   return duration === undefined || duration === null ? '-' : `${duration} ms`;
 }
 
 const sourceCategory = (artifact: ReportArtifact) => {
-  if (artifact.reference_type === 'knowledge') return '知识库';
-  if (artifact.reference_type === 'web') return '网页资料';
-  if (artifact.reference_type === 'memory') return '会话记忆';
-  if (artifact.reference_type === 'model') return '模型推理';
-  if (artifact.reference_type === 'file') return '文件快照';
-  if (artifact.database || artifact.type === 'sql') return '数据库';
-  if (artifact.type === 'python') return 'Python 计算';
-  if (artifact.type === 'chart') return '图表渲染';
-  return '任务输入';
+  if (artifact.reference_type === 'knowledge') return i18n.t('evidence_source_knowledge');
+  if (artifact.reference_type === 'web') return i18n.t('evidence_source_web');
+  if (artifact.reference_type === 'memory') return i18n.t('evidence_source_memory');
+  if (artifact.reference_type === 'model') return i18n.t('evidence_source_model');
+  if (artifact.reference_type === 'file') return i18n.t('evidence_source_file');
+  if (artifact.database || artifact.type === 'sql') return i18n.t('evidence_source_database');
+  if (artifact.type === 'python') return i18n.t('evidence_source_python');
+  if (artifact.type === 'chart') return i18n.t('evidence_source_chart');
+  return i18n.t('evidence_source_task_input');
 };
 
 const referenceLocation = (artifact: ReportArtifact) => formatReferenceLocation(artifact.locator);
@@ -487,6 +492,7 @@ const CollapsibleCode: React.FC<{ title: string; content: string; format?: (cont
   content,
   format,
 }) => {
+  const { t } = useTranslation();
   const rendered = format ? format(content) : content;
   const isLong = rendered.length > 480 || rendered.split('\n').length > 8;
   if (!isLong)
@@ -501,7 +507,8 @@ const CollapsibleCode: React.FC<{ title: string; content: string; format?: (cont
   return (
     <details className='mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-white/[0.04]'>
       <summary className='cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-200'>
-        {title}（点击展开）
+        {title}
+        {t('evidence_click_to_expand')}
       </summary>
       <pre className='mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-3 text-xs leading-5 text-slate-50'>
         {rendered}
@@ -515,76 +522,105 @@ const ArtifactDetail: React.FC<{
   citationQuote?: string;
   observation?: BrowserRenderObservation;
   knowledgeNames: KnowledgeSpaceNames;
-}> = ({ artifact, citationQuote, observation, knowledgeNames }) => (
-  <article className='rounded-xl border border-slate-200 p-4 dark:border-slate-700'>
-    <div className='flex items-start justify-between gap-3'>
-      <div>
-        <p className='text-[11px] font-bold uppercase text-blue-600'>{artifact.type}</p>
-        <h3 className='mt-1 break-all text-sm font-semibold text-slate-900 dark:text-white'>
-          {artifactTitle(artifact)}
-        </h3>
+}> = ({ artifact, citationQuote, observation, knowledgeNames }) => {
+  const { t } = useTranslation();
+  return (
+    <article className='rounded-xl border border-slate-200 p-4 dark:border-slate-700'>
+      <div className='flex items-start justify-between gap-3'>
+        <div>
+          <p className='text-[11px] font-bold uppercase text-blue-600'>{artifact.type}</p>
+          <h3 className='mt-1 break-all text-sm font-semibold text-slate-900 dark:text-white'>
+            {artifactTitle(artifact)}
+          </h3>
+        </div>
+        <span className='rounded-full bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700'>
+          {artifact.status || 'captured'}
+        </span>
       </div>
-      <span className='rounded-full bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700'>
-        {artifact.status || 'captured'}
-      </span>
-    </div>
-    <dl className='mt-4 grid grid-cols-[104px_1fr] gap-y-2 text-xs text-slate-600 dark:text-slate-300'>
-      <dt>执行耗时</dt>
-      <dd>{formatArtifactDuration(artifact)}</dd>
-      <dt>来源类型</dt>
-      <dd>{sourceCategory(artifact)}</dd>
-      {artifact.type !== 'python' && artifact.type !== 'chart' && (
+      <dl className='mt-4 grid grid-cols-[104px_1fr] gap-y-2 text-xs text-slate-600 dark:text-slate-300'>
+        <dt>{t('evidence_duration')}</dt>
+        <dd>{formatArtifactDuration(artifact)}</dd>
+        <dt>{t('evidence_source_type')}</dt>
+        <dd>{sourceCategory(artifact)}</dd>
+        {artifact.type !== 'python' && artifact.type !== 'chart' && (
+          <>
+            <dt>{t('evidence_specific_source')}</dt>
+            <dd className='break-all'>{artifactSourceName(artifact, knowledgeNames)}</dd>
+          </>
+        )}
+      </dl>
+      {artifact.sql && (
+        <CollapsibleCode title={t('evidence_execute_sql')} content={text(artifact.sql)} format={formatSqlForDisplay} />
+      )}
+      {artifact.sql && citationQuote && <CollapsibleCode title={t('evidence_bound_sql')} content={citationQuote} />}
+      {artifact.code && (
+        <CollapsibleCode
+          title={t('evidence_execute_language', { language: artifact.language || 'Python' })}
+          content={text(artifact.code)}
+        />
+      )}
+      {artifact.reference_type && (
         <>
-          <dt>具体来源</dt>
-          <dd className='break-all'>{artifactSourceName(artifact, knowledgeNames)}</dd>
+          <h4 className='mt-4 text-xs font-semibold text-slate-700 dark:text-slate-200'>{t('evidence_citations')}</h4>
+          <div className='mt-2 rounded-lg bg-teal-50 p-3 text-xs text-teal-950 dark:bg-teal-500/10 dark:text-teal-100'>
+            <p className='font-semibold'>{artifact.source_name || artifact.source_id || artifact.reference_type}</p>
+            <p className='mt-1 break-all text-teal-800 dark:text-teal-200'>
+              {t('evidence_location')}
+              {referenceLocation(artifact)}
+            </p>
+            {artifact.uri && <p className='mt-1 break-all text-teal-800 dark:text-teal-200'>{artifact.uri}</p>}
+            {citationQuote && (
+              <>
+                <p className='mt-3 font-semibold'>{t('evidence_quoted_text')}</p>
+                <blockquote className='mt-1 border-l-2 border-teal-500 pl-2 whitespace-pre-wrap leading-5'>
+                  {text(citationQuote)}
+                </blockquote>
+              </>
+            )}
+            {artifact.excerpt && (
+              <details className='mt-2'>
+                <summary className='cursor-pointer text-teal-800 dark:text-teal-200'>
+                  {artifact.locator?.chunk_id ? t('evidence_view_cited_chunk') : t('evidence_view_cited_document')}
+                </summary>
+                <p className='mt-2 whitespace-pre-wrap leading-5'>{text(artifact.excerpt)}</p>
+              </details>
+            )}
+          </div>
         </>
       )}
-    </dl>
-    {artifact.sql && <CollapsibleCode title='执行 SQL' content={text(artifact.sql)} format={formatSqlForDisplay} />}
-    {artifact.sql && citationQuote && <CollapsibleCode title='此数值绑定的 SQL 条件' content={citationQuote} />}
-    {artifact.code && <CollapsibleCode title={`执行 ${artifact.language || 'Python'}`} content={text(artifact.code)} />}
-    {artifact.reference_type && (
-      <>
-        <h4 className='mt-4 text-xs font-semibold text-slate-700 dark:text-slate-200'>引用来源</h4>
-        <div className='mt-2 rounded-lg bg-teal-50 p-3 text-xs text-teal-950 dark:bg-teal-500/10 dark:text-teal-100'>
-          <p className='font-semibold'>{artifact.source_name || artifact.source_id || artifact.reference_type}</p>
-          <p className='mt-1 break-all text-teal-800 dark:text-teal-200'>引用位置：{referenceLocation(artifact)}</p>
-          {artifact.uri && <p className='mt-1 break-all text-teal-800 dark:text-teal-200'>{artifact.uri}</p>}
-          {citationQuote && (
-            <>
-              <p className='mt-3 font-semibold'>报告引用原文</p>
-              <blockquote className='mt-1 border-l-2 border-teal-500 pl-2 whitespace-pre-wrap leading-5'>
-                {text(citationQuote)}
-              </blockquote>
-            </>
-          )}
-          {artifact.excerpt && (
-            <details className='mt-2'>
-              <summary className='cursor-pointer text-teal-800 dark:text-teal-200'>
-                {artifact.locator?.chunk_id ? '查看引用切片内容' : '查看引用文档内容'}
-              </summary>
-              <p className='mt-2 whitespace-pre-wrap leading-5'>{text(artifact.excerpt)}</p>
-            </details>
-          )}
-        </div>
-      </>
-    )}
-    {artifact.result?.inline !== undefined && (
-      <>
-        <h4 className='mt-4 text-xs font-semibold text-slate-700 dark:text-slate-200'>结果快照</h4>
-        <pre className='mt-2 max-h-36 overflow-auto rounded-lg bg-emerald-50 p-3 text-xs text-emerald-950 dark:bg-emerald-500/10 dark:text-emerald-100'>
-          {text(artifact.result.inline)}
-        </pre>
-      </>
-    )}
-    {artifact.type === 'chart' && artifact.spec && (
-      <CollapsibleCode title='图表规格与数据选择器' content={text(artifact.spec)} />
-    )}
-    {observation?.error && <p className='mt-3 text-xs text-red-600'>{observation.error}</p>}
-  </article>
-);
+      {artifact.result?.inline !== undefined && (
+        <>
+          <h4 className='mt-4 text-xs font-semibold text-slate-700 dark:text-slate-200'>
+            {t('evidence_result_snapshot')}
+          </h4>
+          <pre className='mt-2 max-h-36 overflow-auto rounded-lg bg-emerald-50 p-3 text-xs text-emerald-950 dark:bg-emerald-500/10 dark:text-emerald-100'>
+            {text(artifact.result.inline)}
+          </pre>
+        </>
+      )}
+      {artifact.type === 'chart' && artifact.spec && (
+        <CollapsibleCode title={t('evidence_chart_spec')} content={text(artifact.spec)} />
+      )}
+      {observation?.error && <p className='mt-3 text-xs text-red-600'>{observation.error}</p>}
+    </article>
+  );
+};
 
 export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunId, iframeRef }) => {
+  const { t } = useTranslation();
+  const evidenceLabels = useMemo(
+    () => ({
+      chartLabel: t('evidence_chart_label'),
+      chartBadge: t('evidence_badge_chart'),
+      reportContent: t('report_content'),
+      viewContentSource: t('evidence_view_content_source'),
+      viewExecution: t('evidence_view_execution'),
+      viewChartSection: t('evidence_view_chart_section'),
+      viewChartData: t('evidence_view_chart_data'),
+      nativeChart: t('evidence_native_chart'),
+    }),
+    [t],
+  );
   const ownedIframeRef = useRef<HTMLIFrameElement>(null);
   const reportIframeRef = iframeRef || ownedIframeRef;
   const [run, setRun] = useState<ReportRun>();
@@ -615,7 +651,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
       const value = { ...observation, artifact_id: artifactId, observation_id: observationSession.current };
       void saveRenderObservation(reportId, reportRunId, value)
         .then(result => {
-          if (!result.success) throw new Error(result.err_msg || '浏览器观测保存失败');
+          if (!result.success) throw new Error(result.err_msg || t('evidence_browser_observation_failed'));
           setObservations(previous => ({ ...previous, [artifactId]: result.data }));
         })
         .catch(reason => {
@@ -623,7 +659,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
           setObservationError(String(reason));
         });
     },
-    [run, runReady, reportId, reportRunId],
+    [run, runReady, reportId, reportRunId, t],
   );
   useEffect(() => {
     let alive = true;
@@ -670,7 +706,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
   useEffect(() => {
     let alive = true;
     const load = async () => {
-      let lastError = '报告证据暂不可用';
+      let lastError = t('evidence_unavailable');
       for (let attempt = 0; attempt < 5 && alive; attempt += 1) {
         try {
           const result = await getStandaloneReportRun(reportId, reportRunId);
@@ -691,22 +727,26 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
     return () => {
       alive = false;
     };
-  }, [reportId, reportRunId]);
+  }, [reportId, reportRunId, t]);
   const sendArtifactTypes = useCallback(() => {
     if (!run) return;
-    const labels: Record<string, string> = { sql: 'SQL', python: 'PY', chart: '图' };
+    const labels: Record<string, string> = {
+      sql: 'SQL',
+      python: 'PY',
+      chart: t('evidence_badge_chart'),
+    };
     const referenceLabels: Record<string, string> = {
       knowledge: 'KB',
       web: 'WEB',
-      memory: '记忆',
-      model: '模型',
-      file: '文件',
+      memory: t('evidence_badge_memory'),
+      model: t('evidence_badge_model'),
+      file: t('evidence_badge_file'),
     };
     const types = Object.fromEntries(
       run.document.artifacts.map(artifact => [
         artifact.artifact_id,
         artifact.type === 'reference'
-          ? referenceLabels[artifact.reference_type || ''] || '来源'
+          ? referenceLabels[artifact.reference_type || ''] || t('evidence_badge_source')
           : labels[artifact.type] || artifact.type.toUpperCase(),
       ]),
     );
@@ -733,9 +773,9 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
     );
     reportIframeRef.current?.contentWindow?.postMessage(
       { type: 'dbgpt-report-artifact-types', types, inferenceTargets, renderers },
-      window.location.origin,
+      reportIframeRef.current?.sandbox.contains('allow-same-origin') ? window.location.origin : '*',
     );
-  }, [reportIframeRef, run]);
+  }, [reportIframeRef, run, t]);
   useEffect(() => {
     sendArtifactTypes();
   }, [sendArtifactTypes]);
@@ -748,12 +788,12 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
         elementTag: String(event.data.elementTag || '') || undefined,
         blockId: String(event.data.blockId || '') || undefined,
         claimId: String(event.data.claimId || '') || undefined,
-        label: String(event.data.label || '报告内容'),
+        label: String(event.data.label || t('report_content')),
       });
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [reportIframeRef]);
+  }, [reportIframeRef, t]);
   const selectedBlock = useMemo(
     () =>
       run?.document.sections
@@ -801,21 +841,14 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
   }, [run]);
   const persistedPresentation = run?.document.metadata?.presentation as
     { format?: string; content?: string; trusted_template_scripts?: boolean } | undefined;
-  // Reports generated before `trusted_template_scripts` was persisted still
-  // exist in users' history.  Migrate only the narrow, server-observable case:
-  // an executed skill script produced an ECharts template report.  This is not
-  // inferred from a user prompt or arbitrary model HTML, and new reports use
-  // the explicit backend flag above.
-  const legacyTrustedSkillTemplate = Boolean(
-    persistedPresentation?.format === 'html' &&
-    (run?.document.artifacts || []).some(artifact => artifact.execution.action === 'execute_skill_script_file') &&
-    /<script\b[^>]*https:\/\/cdn\.jsdelivr\.net\/npm\/echarts@|\becharts\.init\s*\(/i.test(
-      persistedPresentation?.content || html,
-    ),
-  );
+  const rawReportHtml =
+    persistedPresentation?.format === 'html' && persistedPresentation.content ? persistedPresentation.content : html;
+  // Historical/model HTML keeps its interactive behavior in an opaque origin.
+  // Only explicit server template provenance allows access to the report DOM.
+  const isolatedPreview = persistedPresentation?.trusted_template_scripts !== true && /<script\b/i.test(rawReportHtml);
   const reportHtml = sanitizeEmbeddedReportHtml(
-    persistedPresentation?.format === 'html' && persistedPresentation.content ? persistedPresentation.content : html,
-    persistedPresentation?.trusted_template_scripts === true || legacyTrustedSkillTemplate,
+    rawReportHtml,
+    persistedPresentation?.trusted_template_scripts === true || isolatedPreview,
   );
   useEffect(() => {
     setIframeDocument(undefined);
@@ -823,9 +856,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
   }, [reportHtml]);
   const presentationStatus = String(run?.document.metadata?.presentation_status || '');
   const noPresentationMessage =
-    presentationStatus === 'not_generated'
-      ? '本轮仅保存了执行证据，未完成 HTML 报告生成。请重新执行或从最后一个失败步骤继续。'
-      : '本轮尚未生成 HTML 报告时，不会以执行产物卡片替代报告。';
+    presentationStatus === 'not_generated' ? t('report_only_evidence_saved') : t('report_no_presentation');
   const onIframeDocumentReady = useCallback(
     (document: Document) => {
       sendArtifactTypes();
@@ -877,7 +908,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
           const figure = iframeDocument.createElement('figure');
           figure.setAttribute('data-dbgpt-auto-native-chart-container', 'true');
           figure.setAttribute('data-dbgpt-artifacts', [...new Set([...sourceIds, artifact.artifact_id])].join(','));
-          figure.setAttribute('data-dbgpt-evidence-label', artifact.name || '原生分析图表');
+          figure.setAttribute('data-dbgpt-evidence-label', artifact.name || t('evidence_native_chart'));
           sourceTable.before(figure);
           target = figure;
         }
@@ -952,10 +983,10 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
         control.setAttribute('data-dbgpt-evidence-element-tag', 'FIGURE');
         control.setAttribute(
           'data-dbgpt-evidence-label',
-          target.getAttribute('data-dbgpt-evidence-label') || artifact.name || '原生分析图表',
+          target.getAttribute('data-dbgpt-evidence-label') || artifact.name || t('evidence_native_chart'),
         );
-        control.title = '查看图表及其数据证据';
-        control.setAttribute('aria-label', '查看图表及其数据证据');
+        control.title = t('evidence_view_chart_data');
+        control.setAttribute('aria-label', t('evidence_view_chart_data'));
         control.addEventListener('click', event => {
           event.preventDefault();
           event.stopPropagation();
@@ -968,7 +999,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
               type: 'dbgpt-report-evidence',
               artifactIds,
               elementTag: 'FIGURE',
-              label: control.getAttribute('data-dbgpt-evidence-label') || '原生分析图表',
+              label: control.getAttribute('data-dbgpt-evidence-label') || t('evidence_native_chart'),
             },
             '*',
           );
@@ -985,28 +1016,30 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
           artifactIds.push(artifact.artifact_id);
           control.setAttribute('data-dbgpt-artifacts', artifactIds.join(','));
         }
-        control.textContent = '图';
-        control.title = '查看图表及其数据证据';
-        control.setAttribute('aria-label', '查看图表及其数据证据');
+        control.textContent = t('evidence_badge_chart');
+        control.title = t('evidence_view_chart_data');
+        control.setAttribute('aria-label', t('evidence_view_chart_data'));
       });
     });
     setNativeChartMounts(mounts);
-  }, [iframeDocument, nativeCharts]);
+  }, [iframeDocument, nativeCharts, t]);
   return (
     <div className='flex h-full min-h-0 bg-slate-100 dark:bg-[#111217]'>
       <div className='min-w-0 flex-1 overflow-auto'>
         {reportHtml.trim() ? (
           <ReportIframe
+            isolated={isolatedPreview}
             iframeRef={reportIframeRef}
+            onFrameReady={sendArtifactTypes}
             onDocumentReady={onIframeDocumentReady}
-            title='分析报告'
-            srcDoc={bridgeHtml(resolveReportAssetUrls(reportHtml))}
+            title={t('traceable_report_tab')}
+            srcDoc={bridgeHtml(resolveReportAssetUrls(reportHtml), evidenceLabels)}
             minHeight={320}
           />
         ) : (
           <div className='grid h-full min-h-[360px] place-items-center p-8 text-center'>
             <div>
-              <p className='text-sm font-medium text-slate-700 dark:text-white'>本轮未生成 HTML 分析报告</p>
+              <p className='text-sm font-medium text-slate-700 dark:text-white'>{t('report_not_generated')}</p>
               <p className='mt-2 text-xs text-slate-500'>{error || noPresentationMessage}</p>
             </div>
           </div>
@@ -1033,9 +1066,9 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
           <header className='sticky top-0 border-b border-slate-100 bg-white px-5 py-4 dark:border-slate-800 dark:bg-[#191a1f]'>
             <div className='flex items-start justify-between gap-3'>
               <div>
-                <p className='text-xs font-bold text-blue-600'>证据详情</p>
+                <p className='text-xs font-bold text-blue-600'>{t('report_evidence_details')}</p>
                 <h2 className='mt-1 text-base font-semibold text-slate-900 dark:text-white'>
-                  {selection.label || '报告内容'}
+                  {selection.label || t('report_content')}
                 </h2>
               </div>
               <button
@@ -1048,12 +1081,15 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
             </div>
           </header>
           <div className='space-y-4 p-5'>
-            {observationError && <p className='text-xs text-amber-700'>图表观测失败：{observationError}</p>}
-            {!run && <p className='text-sm text-slate-500'>{error || '正在加载证据…'}</p>}
-            {run && !artifacts.length && (
-              <p className='rounded-lg bg-amber-50 p-3 text-sm text-amber-800'>
-                该报告元素引用的证据不存在于本次运行中。
+            {observationError && (
+              <p className='text-xs text-amber-700'>
+                {t('report_observation_failed')}
+                {observationError}
               </p>
+            )}
+            {!run && <p className='text-sm text-slate-500'>{error || t('report_loading_evidence')}</p>}
+            {run && !artifacts.length && (
+              <p className='rounded-lg bg-amber-50 p-3 text-sm text-amber-800'>{t('report_reference_missing')}</p>
             )}
             {artifacts.map(artifact => (
               <ArtifactDetail
@@ -1069,7 +1105,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
       )}
       {!selection && (
         <div className='pointer-events-none absolute bottom-5 right-5 max-w-xs rounded-xl border border-blue-100 bg-white/95 p-3 text-xs leading-5 text-slate-600 shadow-lg dark:border-blue-500/30 dark:bg-[#191a1f]/95 dark:text-slate-300'>
-          {error ? '当前报告证据尚不可用。' : '带“证据”标记的指标、图表和结论可点击查看其执行依据。'}
+          {error ? t('report_evidence_unavailable') : t('report_click_for_evidence')}
         </div>
       )}
     </div>
