@@ -8,7 +8,7 @@ import shutil
 import tempfile
 import uuid
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -79,6 +79,23 @@ DEFAULT_SKILLS_DIR = SKILLS_DIR
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
+
+
+def _validate_upload_filename(filename: str) -> str:
+    if "\x00" in filename:
+        raise ValueError("filename must not contain null bytes")
+
+    posix_path = PurePosixPath(filename)
+    windows_path = PureWindowsPath(filename)
+    if (
+        posix_path.is_absolute()
+        or windows_path.is_absolute()
+        or len(posix_path.parts) != 1
+        or len(windows_path.parts) != 1
+        or filename in {"", ".", ".."}
+    ):
+        raise ValueError("filename must be a plain file name")
+    return filename
 
 
 async def _resolve_model_context_tokens(
@@ -578,7 +595,11 @@ async def skill_upload(
     user_dir = skills_dir / "user"
     user_dir.mkdir(parents=True, exist_ok=True)
 
-    filename = file.filename
+    try:
+        filename = _validate_upload_filename(file.filename)
+    except ValueError as exc:
+        return Result.failed(code="E4002", msg=str(exc))
+
     suffix = Path(filename).suffix.lower()
     stem = Path(filename).stem
 
@@ -761,7 +782,8 @@ def _extract_skill_from_zip(
         the top-level archive directory name.
 
     Raises:
-        ValueError: If the archive contains path-traversal sequences.
+        ValueError: If the archive contains path-traversal or absolute
+            entries.
         ValueError: If no ``SKILL.md`` is found after extraction (only when
             ``strict=True``).
         ValueError: If the archive root contains multiple sub-directories with
@@ -771,10 +793,23 @@ def _extract_skill_from_zip(
     with zipfile.ZipFile(zip_path, "r") as zf:
         all_names = zf.namelist()
 
-        # Security: reject any path-traversal entries
+        # Security: reject any path-traversal or absolute entries
         for name in all_names:
             normalized = os.path.normpath(name)
-            if normalized.startswith("..") or ".." in normalized.split(os.sep):
+            if (
+                normalized.startswith("..")
+                or ".." in normalized.split(os.sep)
+                # Absolute entry names ("/tmp/x", "C:\x"): "dest_dir / rel"
+                # discards the base entirely for absolute paths (pathlib
+                # semantics), giving an arbitrary file write.
+                or PurePosixPath(name).is_absolute()
+                or PureWindowsPath(name).is_absolute()
+                # "top//tmp/x" collapses under normpath, but the raw member is
+                # sliced on skill_prefix below, leaving a leading "/" in rel.
+                or "//" in name
+                # Windows separators must not leak into host path joins.
+                or "\\" in name
+            ):
                 raise ValueError(f"Unsafe path in archive: {name!r}")
 
         # Filter out macOS metadata artifacts before analysing structure
@@ -844,6 +879,13 @@ def _extract_skill_from_zip(
             if not rel:
                 continue
             target = dest_dir / rel
+            try:
+                # Containment guard: even if a member name slipped past the
+                # scan above, an entry whose join escapes dest_dir must be
+                # rejected before anything is written.
+                target.relative_to(dest_dir)
+            except ValueError:
+                raise ValueError(f"Unsafe path in archive: {member!r}") from None
             if member.endswith("/"):
                 target.mkdir(parents=True, exist_ok=True)
             else:
@@ -1514,6 +1556,11 @@ async def _react_agent_stream_impl(
                 system_app=CFG.SYSTEM_APP,
             )
             knowledge_resources.append(knowledge_resource)
+            # resolve wiki visibility here (this block runs before the
+            # tool-assembly block where kb_tool_list is built)
+            from .tools.kb_tools import _wiki_enabled
+
+            wiki_available = _wiki_enabled(knowledge_space)
             codegraph_tools_desc = (
                 """
   - kb_codegraph_explore: Query code structure (classes, call chains, inheritance)
@@ -1521,6 +1568,14 @@ async def _react_agent_stream_impl(
   - kb_codegraph_class_hierarchy: Trace class inheritance and implementations
 """
                 if code_graph_available
+                else ""
+            )
+            wiki_tools_desc = (
+                """
+  - kb_wiki_search: Search this space's auto-generated LLM-Wiki pages (curated, synthesized knowledge)
+  - kb_wiki_read_page: Read one wiki page by slug (e.g. kb_wiki_read_page('index') for the catalog)
+  - kb_wiki_index: List the wiki catalog: folders and pages with one-line summaries"""
+                if wiki_available
                 else ""
             )
             knowledge_context = f"""
@@ -1532,7 +1587,7 @@ async def _react_agent_stream_impl(
   - kb_glob: Search files by name or glob pattern
   - kb_grep: Search file contents by keyword (prefer for exact matches)
   - kb_cat: Read the content of a specific file
-  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}
+  - semantic_search: Semantic search (use when kb_grep returns insufficient results){codegraph_tools_desc}{wiki_tools_desc}
 """
             logger.info(
                 f"Loaded knowledge space resource: {knowledge_space} "
@@ -2116,6 +2171,12 @@ print(json.dumps(summary, ensure_ascii=False))
                     "kb_codegraph"
                 )
             ]
+        # wiki visibility for prompt sections (tools are mounted inside
+        # make_kb_tools via _make_kb_wiki_tools, gated on index_methods)
+        wiki_available = any(
+            getattr(getattr(t, "_tool", t), "name", "").startswith("kb_wiki_")
+            for t in kb_tool_list
+        )
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
@@ -2592,6 +2653,13 @@ Thought/Action/Action Input format shown above.
             )
     else:
         # Full prompt with all tools when no skill is pre-selected
+        wiki_section = (
+            "Prefer kb_wiki_* when the question is about the space's "
+            "overall knowledge structure; prefer semantic_search/kb_grep "
+            "when you need to quote raw source documents verbatim.\n"
+            if wiki_available
+            else ""
+        )
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
@@ -2676,6 +2744,8 @@ calls in the same step.
 ### 4. Special Scenarios
 - For NON-financial report generation, call `html_interpreter` to render.
 Financial annual reports use the registered financial tools and built-in component.
+
+{wiki_section}
 
 {file_context}
 {knowledge_context}
@@ -3646,6 +3716,7 @@ async def delete_share_link(
 @router.get("/v1/agent/files/download")
 async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
+    user_token: UserRequest = Depends(get_user_from_headers),
 ):
     """Download a file created by agent tools (shell_interpreter, code_interpreter).
 
@@ -3655,11 +3726,14 @@ async def download_agent_file(
     from fastapi import HTTPException
     from fastapi.responses import FileResponse
 
-    from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
+    from dbgpt.configs.model_config import PILOT_PATH
 
-    # If path is not absolute, resolve relative to ROOT_PATH (sandbox working dir)
+    # Agent tools write their output here, so relative paths resolve against it
+    # rather than against the installation root.
+    agent_tmp_dir = os.path.join(PILOT_PATH, "tmp")
+
     if not os.path.isabs(file_path):
-        file_path = os.path.join(ROOT_PATH, file_path)
+        file_path = os.path.join(agent_tmp_dir, file_path)
 
     # Resolve to absolute path and prevent path traversal
     try:
@@ -3670,8 +3744,7 @@ async def download_agent_file(
     # Allowed base directories for agent-created files
     allowed_dirs = [
         os.path.realpath("/tmp"),
-        os.path.realpath(os.path.join(PILOT_PATH, "tmp")),
-        os.path.realpath(ROOT_PATH),
+        os.path.realpath(agent_tmp_dir),
     ]
 
     if not any(resolved.startswith(d + os.sep) or resolved == d for d in allowed_dirs):

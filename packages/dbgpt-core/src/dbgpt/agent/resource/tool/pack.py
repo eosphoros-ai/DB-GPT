@@ -122,8 +122,8 @@ class ToolPack(ResourcePack):
               values. Defaults to None.
             function (callable, optional): A callable function to be called when
                 the command is executed. Defaults to None.
-            parse_execute_args (callable, optional): A callable function to parse the
-                execute arguments. Defaults to None.
+            parse_execute_args_func (callable, optional): A callable function to parse
+                the execute arguments. Defaults to None.
             overwrite (bool, optional): Whether to overwrite the command if it already
                 exists. Defaults to False.
         """

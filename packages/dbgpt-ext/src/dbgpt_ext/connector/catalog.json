@@ -71,6 +71,16 @@
       "read_actions": ["tavily_search", "tavily_extract", "tavily_crawl", "tavily_map"]
     },
     {
+      "type": "keenable",
+      "display_name": "Keenable Search",
+      "description": "网页搜索与网页正文抓取,无需账号或 API Key 即可使用,可选 API Key 提升限额",
+      "icon": "keenable",
+      "category": "search",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": [],
+      "read_actions": ["search_web_pages", "fetch_page_content"]
+    },
+    {
       "type": "deepwiki",
       "display_name": "DeepWiki",
       "description": "任意 GitHub 仓库的 AI 解读与问答",

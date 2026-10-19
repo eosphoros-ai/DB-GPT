@@ -80,18 +80,20 @@ DB-GPT 当前的 sandbox 实现位于：
 
 ### Runtime backends
 
-运行时工厂会按以下优先级自动选择 backend：
+当前应用侧 Agent 集成默认使用 LocalRuntime。容器执行需要通过
+SANDBOX_RUNTIME=docker（或显式选择 Podman/Nerdctl）开启。如果配置的容器运行时
+无法初始化或会话创建失败，Agent 执行器会返回错误，不会在本地执行用户代码。
+LocalRuntime 是默认值，而不是故障兜底，且不提供容器隔离。
 
-- Docker
-- Podman
-- Nerdctl
-- Local runtime
+关于配置、镜像要求、执行生命周期和验证命令，请参阅
+[Sandbox 运行时配置](./runtime)。
 
 实现锚点：
 
 - `packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/runtime_factory.py`
 
-这意味着 DB-GPT 会优先使用容器隔离；如果部署环境没有容器支持，也可以退化到本地运行时用于开发或调试。
+Docker 不会因为已经安装在机器上就自动启用。这样默认安装无需预先构建 Agent 镜像，
+同时允许部署方显式选择容器执行。
 
 ## `dbgpt-sandbox` 的分层架构
 

@@ -1,4 +1,4 @@
-"""shell_interpreter tool — run bash commands in a sandboxed environment."""
+"""shell_interpreter tool — run bash using the configured execution runtime."""
 
 import json
 import logging
@@ -7,6 +7,10 @@ import uuid
 from typing import Any, Dict, List
 
 from dbgpt.agent.resource.tool.base import tool
+from dbgpt_sandbox.sandbox.execution_layer.base import ExecutionStatus
+
+from ._execution import run_code
+from .code_interpreter import build_execution_env
 
 logger = logging.getLogger(__name__)
 
@@ -14,80 +18,56 @@ logger = logging.getLogger(__name__)
 def make_shell_interpreter(react_state: Dict[str, Any]):
     @tool(
         description=(
-            "Execute shell/bash commands in a sandboxed environment. "
+            "Execute shell/bash commands using the configured runtime. "
             "Use this tool when you need to run shell commands such as ls, cat, "
             "grep, curl, apt, pip, git, or any other CLI tool. "
-            "The sandbox provides resource limits (256MB memory, 30s timeout) "
-            "and process isolation. "
+            "Execution has a 30s timeout. Local mode runs on the server; "
+            "configure Docker for container isolation. "
             'Parameters: {"code": "shell command(s) to execute"}'
         )
     )
     async def shell_interpreter(code: str) -> str:
-        """Execute shell/bash commands in a sandboxed environment."""
+        """Execute shell/bash commands with the selected runtime."""
         if not code or not code.strip():
             return json.dumps(
                 {"chunks": [{"output_type": "text", "content": "No command provided"}]},
                 ensure_ascii=False,
             )
 
-        try:
-            from dbgpt_sandbox.sandbox.execution_layer.base import (
-                ExecutionStatus,
-                SessionConfig,
-            )
-            from dbgpt_sandbox.sandbox.execution_layer.local_runtime import LocalRuntime
-        except ImportError:
-            return json.dumps(
-                {
-                    "chunks": [
-                        {"output_type": "code", "content": code.strip()},
-                        {
-                            "output_type": "text",
-                            "content": (
-                                "Error: dbgpt-sandbox package is not installed. "
-                                "Please install it with: pip install dbgpt-sandbox"
-                            ),
-                        },
-                    ]
-                },
-                ensure_ascii=False,
-            )
+        from dbgpt.configs.model_config import PILOT_PATH, SKILLS_DIR
 
-        from dbgpt.configs.model_config import PILOT_PATH
-
-        session_id = f"bash_{uuid.uuid4().hex[:12]}"
-        runtime = LocalRuntime()
         cid = react_state.get("conv_id") or "default"
         sandbox_work_dir = os.path.join(PILOT_PATH, "tmp", cid)
         os.makedirs(sandbox_work_dir, exist_ok=True)
 
-        config = SessionConfig(
-            language="bash",
-            working_dir=sandbox_work_dir,
-            max_memory=256 * 1024 * 1024,  # 256MB
-            timeout=30,
-        )
-
         output_text = ""
         try:
-            session = await runtime.create_session(session_id, config)
-            result = await session.execute(code)
+            result = await run_code(
+                code,
+                language="bash",
+                work_dir=sandbox_work_dir,
+                env=build_execution_env(
+                    work_dir=sandbox_work_dir,
+                    file_path=react_state.get("file_path"),
+                    files_json_path=react_state.get("files_json_path"),
+                ),
+                timeout=30,
+                input_paths=[SKILLS_DIR]
+                if os.path.isdir(SKILLS_DIR)
+                and ("skills/" in code or SKILLS_DIR in code)
+                else [],
+            )
 
             if result.status == ExecutionStatus.SUCCESS:
                 output_text = result.output or ""
             elif result.status == ExecutionStatus.TIMEOUT:
-                output_text = f"Execution timed out ({config.timeout}s limit)"
+                output_text = "Execution timed out (30s limit)"
             else:
                 output_text = result.error or "Unknown execution error"
                 if result.output:
                     output_text = result.output + "\n[ERROR]\n" + output_text
         except Exception as e:
             output_text = f"Sandbox execution error: {e}"
-        finally:
-            try:
-                await runtime.destroy_session(session_id)
-            except Exception:
-                pass
 
         # Cap shell output size so a verbose command (e.g. `find /`, huge log
         # dumps) can't overflow the LLM context window. Larger outputs are

@@ -31,6 +31,8 @@ class KnowledgeSpaceRequest(BaseModel):
     desc: str = None
     """owner: owner"""
     owner: Optional[str] = None
+    """context: space-level JSON config (embedding params, wiki_config, ...)"""
+    context: Optional[dict] = None
 
     space_id: Optional[Union[int, str]] = None
 

@@ -15,7 +15,7 @@ title: MCP 连接器
 
 ## 功能亮点
 
-- **内置模板**——飞书、钉钉、语雀、GitHub、Notion、Linear、Tavily、DeepWiki 一键激活。
+- **内置模板**——飞书、钉钉、语雀、GitHub、Notion、Linear、Tavily、Keenable Search、DeepWiki 一键激活。
 - **自定义 MCP Server**——接入任意 SSE 或 Streamable HTTP 的 MCP 端点,自带鉴权。
 - **按对话选择**——在提问区勾选本轮要挂载的连接器,Agent 的 prompt 保持聚焦、节省 token。
 - **人工确认(HITL)**——写操作(创建 / 更新 / 删除)执行前弹出确认框。
@@ -55,6 +55,7 @@ graph LR
 | Notion | 知识管理 | Streamable HTTP | 页面 / 数据库读写 |
 | Linear | 项目 | Streamable HTTP | Issue / Project 协作 |
 | Tavily | 搜索增强 | Streamable HTTP | 为 LLM 优化的 Web 搜索,返回 Markdown |
+| Keenable Search | 搜索增强 | Streamable HTTP | 网页搜索与网页正文抓取,无需账号或 API Key |
 | DeepWiki | 研发工具 | Streamable HTTP | 对任意 GitHub 仓库的 AI 解读与问答 |
 
 ## 管理连接器
@@ -85,6 +86,15 @@ graph LR
 | **连接器描述** | 可选,会展示在 Agent 的工具描述中。 |
 
 对于自定义 Server,只需提供接入地址、传输协议和鉴权信息即可。凭据会在存储前加密。
+
+### 示例:激活 Keenable Search
+
+Keenable Search 是一个托管的 MCP Server,提供网页搜索与网页正文抓取。无需注册账号或申请 API Key 即可使用:公共通道有速率限制,可选的 `KEENABLE_API_KEY` 可提升限额。搜索词和 URL 会发送给 Keenable。
+
+1. 在 **Keenable Search** 卡片上点击**激活**。
+2. 将 **Streamable HTTP Endpoint URL** 填为 `https://api.keenable.ai/mcp`。
+3. **认证方式**保持 `none`。若要使用 API Key,改选 `bearer` 并把 Key 填入 Token 字段(将以 `Authorization: Bearer <key>` 发送)。
+4. 保存。该连接器暴露两个只读工具 `search_web_pages` 和 `fetch_page_content`,不会触发确认框。
 
 ### 查看工具
 

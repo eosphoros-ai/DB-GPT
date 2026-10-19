@@ -243,6 +243,11 @@ const sidebars = {
               items: [
                 { type: "doc", id: "agents/modules/resource/resource" },
                 { type: "doc", id: "agents/modules/resource/tools" },
+                {
+                  type: "doc",
+                  id: "agents/modules/resource/knowledge-source-connector",
+                  label: "Custom Knowledge Source Connector",
+                },
                 { type: "doc", id: "agents/modules/resource/database" },
                 { type: "doc", id: "agents/modules/resource/knowledge" },
                 { type: "doc", id: "agents/modules/resource/pack" },
@@ -268,7 +273,10 @@ const sidebars = {
       label: "Sandbox",
       collapsed: true,
       collapsible: true,
-      items: [{ type: "doc", id: "sandbox/index", label: "Overview" }],
+      items: [
+        { type: "doc", id: "sandbox/index", label: "Overview" },
+        { type: "doc", id: "sandbox/runtime", label: "Runtime Configuration" },
+      ],
     },
 
 
@@ -621,7 +629,10 @@ const sidebars = {
       ],
     },
   ],
-  sidebarSandbox: [{ type: "doc", id: "sandbox/index", label: "Overview" }],
+  sidebarSandbox: [
+    { type: "doc", id: "sandbox/index", label: "Overview" },
+    { type: "doc", id: "sandbox/runtime", label: "Runtime Configuration" },
+  ],
 
 
   sidebarAwel: [
@@ -729,6 +740,33 @@ const sidebars = {
       items: [
         { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
         { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Usage Manual",
+      collapsed: false,
+      collapsible: true,
+      link: {
+        type: "doc",
+        id: "getting-started/web-ui/knowledge-base",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "getting-started/web-ui/knowledge-base",
+          label: "Knowledge Base",
+        },
+        {
+          type: "doc",
+          id: "getting-started/web-ui/external-datasources",
+          label: "External Data Sources",
+        },
+        {
+          type: "doc",
+          id: "getting-started/web-ui/llm-wiki",
+          label: "LLM-Wiki",
+        },
       ],
     },
     { type: "doc", id: "modules/rag", label: "RAG Overview" },
@@ -855,6 +893,11 @@ const sidebars = {
               items: [
                 { type: "doc", id: "agents/modules/resource/resource" },
                 { type: "doc", id: "agents/modules/resource/tools" },
+                {
+                  type: "doc",
+                  id: "agents/modules/resource/knowledge-source-connector",
+                  label: "Custom Knowledge Source Connector",
+                },
                 { type: "doc", id: "agents/modules/resource/database" },
                 { type: "doc", id: "agents/modules/resource/knowledge" },
                 { type: "doc", id: "agents/modules/resource/pack" },

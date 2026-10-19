@@ -1,9 +1,11 @@
 """REST API endpoints for connector management."""
 
 import logging
+from functools import cache
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from dbgpt.component import SystemApp
@@ -30,6 +32,69 @@ def get_service() -> ConnectorService:
     return global_system_app.get_component(
         SERVE_SERVICE_COMPONENT_NAME, ConnectorService
     )
+
+
+get_bearer_token = HTTPBearer(auto_error=False)
+
+
+@cache
+def _parse_api_keys(api_keys: str) -> List[str]:
+    """Parse the string api keys to a list
+
+    Args:
+        api_keys (str): The string api keys
+
+    Returns:
+        List[str]: The list of api keys
+    """
+    if not api_keys:
+        return []
+    return [key.strip() for key in api_keys.split(",")]
+
+
+async def check_api_key(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+    request: Request = None,
+    service: ConnectorService = Depends(get_service),
+) -> Optional[str]:
+    """Check the api key
+
+    If the api key is not set, allow all.
+
+    Your can pass the token in you request header like this:
+
+    .. code-block:: python
+
+        import requests
+
+        client_api_key = "your_api_key"
+        headers = {"Authorization": "Bearer " + client_api_key}
+        res = requests.get("http://test/hello", headers=headers)
+        assert res.status_code == 200
+
+    """
+    if request.url.path.startswith("/api/v1"):
+        return None
+
+    # for api_version in serve.serve_versions():
+    if service.config.api_keys:
+        api_keys = _parse_api_keys(service.config.api_keys)
+        if auth is None or (token := auth.credentials) not in api_keys:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": {
+                        "message": "",
+                        "type": "invalid_request_error",
+                        "param": None,
+                        "code": "invalid_api_key",
+                    }
+                },
+            )
+        return token
+    else:
+        # api_keys not set; allow all
+        return None
 
 
 # Synthetic catalog entry for user-defined custom MCP servers.
@@ -166,14 +231,14 @@ class ConfirmRequest(BaseModel):
 # IMPORTANT: keep these fixed-path routes BEFORE any "/{connector_id}" routes,
 # otherwise FastAPI matches /{connector_id} first and treats "pending-confirms" /
 # "confirm" as a connector_id value.
-@router.get("/pending-confirms")
+@router.get("/pending-confirms", dependencies=[Depends(check_api_key)])
 async def list_pending_confirms() -> List[dict]:
     from dbgpt.agent.resource.connector.confirmation import _PENDING_CONFIRMATIONS
 
     return list(_PENDING_CONFIRMATIONS.values())
 
 
-@router.post("/confirm")
+@router.post("/confirm", dependencies=[Depends(check_api_key)])
 async def confirm_action(request: ConfirmRequest) -> Dict[str, str]:
     from dbgpt.agent.resource.connector.manager import ConnectorManager as _CM
 

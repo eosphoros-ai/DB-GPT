@@ -66,6 +66,50 @@ STANDARD_BENCHMARK_FILE_PATH = "https://github.com/eosphoros-ai/Falcon"
 BENCHMARK_OUTPUT_RESULT_PATH = os.path.join(BENCHMARK_DATA_ROOT_PATH, "result")
 
 
+def generate_confined_output_path(
+    output_file_path: str,
+    evaluate_code: str,
+    root: Optional[str] = None,
+) -> str:
+    """Build the benchmark result path, confined under ``root``.
+
+    ``output_file_path`` and ``evaluate_code`` both come from the HTTP
+    request; unconfined they flow into ``mkdir(parents=True)`` +
+    ``workbook.save`` and give an arbitrary directory writer (VULN
+    5515). The final path must therefore resolve strictly under the
+    benchmark result root, and ``evaluate_code`` may only contribute a
+    single path component.
+
+    Raises:
+        ValueError: when either input is empty, ``evaluate_code`` is a
+            path-escape token, or the joined path resolves outside
+            ``root`` (``root`` defaults to
+            ``BENCHMARK_OUTPUT_RESULT_PATH``).
+    """
+    if not (output_file_path and output_file_path.strip()) or not (
+        evaluate_code and evaluate_code.strip()
+    ):
+        raise ValueError("output_file_path and evaluate_code must be non-empty")
+
+    safe_evaluate_code = os.path.basename(evaluate_code.strip())
+    if safe_evaluate_code in ("", ".", ".."):
+        raise ValueError(
+            f"evaluate_code is not a usable path component: {evaluate_code!r}"
+        )
+
+    confine_root = Path(root or BENCHMARK_OUTPUT_RESULT_PATH).resolve()
+    output_base_file_name = (
+        f"{datetime.now().strftime('%Y%m%d%H%M')}_multi_round_benchmark_result.xlsx"
+    )
+    candidate = Path(output_file_path) / safe_evaluate_code / output_base_file_name
+    resolved = candidate.resolve()
+    if confine_root not in resolved.parents:
+        raise ValueError(
+            f"benchmark output path must stay under {confine_root}, got: {resolved}"
+        )
+    return str(resolved)
+
+
 def get_rag_service(system_app) -> RagService:
     return system_app.get_component("dbgpt_rag_service", RagService)
 
@@ -199,7 +243,11 @@ class BenchmarkService(
     ) -> str:
         """
         Generate the complete output file path,
-        including the evaluate_code subfolder and default filename
+        including the evaluate_code subfolder and default filename.
+
+        Both parameters originate from the HTTP request, so the result
+        is confined under BENCHMARK_OUTPUT_RESULT_PATH by
+        generate_confined_output_path.
 
         Args:
             output_file_path: Base path of the output file
@@ -211,12 +259,7 @@ class BenchmarkService(
         if not output_file_path or not evaluate_code:
             return output_file_path
 
-        base_path = Path(output_file_path)
-        output_base_file_name = (
-            f"{datetime.now().strftime('%Y%m%d%H%M')}_multi_round_benchmark_result.xlsx"
-        )
-        new_path = base_path / evaluate_code / output_base_file_name
-        return str(new_path)
+        return generate_confined_output_path(output_file_path, evaluate_code)
 
     async def run_dataset_benchmark(
         self,

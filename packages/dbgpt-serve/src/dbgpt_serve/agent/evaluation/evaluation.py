@@ -27,8 +27,7 @@ class AgentOutputOperator(MapOperator):
     def __init__(self, app_code: str, **kwargs):
         """
         Args:
-            space_name (str): The space name.
-            recall_score (Optional[float], optional): The recall score. Defaults to 0.3.
+            app_code (str): The app code of the agent to evaluate.
         """
         self.app_code = app_code
         super().__init__(**kwargs)
@@ -94,7 +93,7 @@ class AgentEvaluatorOperator(JoinOperator[List[EvaluationResult]]):
 
         Args:
             query(str): The query string.
-            prediction(List[str]): The retrieved chunks from the retriever.
+            prediction_result(dict): The prediction result returned by the agent.
             contexts(List[str]): The contexts from dataset.
             raw_dataset(Any): The raw data(single row) from dataset.
         """

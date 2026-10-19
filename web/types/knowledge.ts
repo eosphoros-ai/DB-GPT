@@ -18,6 +18,8 @@ export type AddKnowledgeParams = {
   desc: string;
   domain_type: string;
   index_methods?: string[];
+  /** space-level config, e.g. { wiki_config: {...} } */
+  context?: Record<string, any>;
 };
 
 export type BaseDocumentParams = {
