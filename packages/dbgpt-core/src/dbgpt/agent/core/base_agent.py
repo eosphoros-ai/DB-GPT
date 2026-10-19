@@ -596,6 +596,8 @@ class ConversableAgent(Role, Agent):
                                 "round": current_retry_counter + 1,
                                 "delta_text": payload.get("delta_text", ""),
                                 "delta_thinking": payload.get("delta_thinking", ""),
+                                "delta_tool_calls": payload.get("delta_tool_calls")
+                                or [],
                             },
                         )
 

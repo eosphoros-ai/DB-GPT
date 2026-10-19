@@ -40,6 +40,7 @@ interface IChatContext {
   setCurrentDialogInfo: (val: { chat_scene: string; app_code: string }) => void;
   adminList: UserInfoResponse[];
   refreshDialogList?: any;
+  refreshModelList?: () => void;
 }
 
 function getDefaultTheme(): ThemeMode {
@@ -98,10 +99,15 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   });
 
   // 获取model
-  const { data: modelList = [], refresh: refreshModelList } = useRequest(async () => {
-    const [, res] = await apiInterceptors(getUsableModels());
-    return res ?? [];
-  });
+  const { data: modelList = [], refresh: refreshModelList } = useRequest(
+    async () => {
+      const [, res] = await apiInterceptors(getUsableModels());
+      return res ?? [];
+    },
+    // Model workers register asynchronously after the server starts accepting
+    // requests; retry so an early page load still picks up the usable models.
+    { retryCount: 5, retryInterval: 3000 },
+  );
 
   // Refresh the usable model list when models are connected/disconnected or
   // enabled/disabled elsewhere (e.g. the model config page).
@@ -183,6 +189,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     currentDialogInfo,
     setCurrentDialogInfo,
     adminList,
+    refreshModelList,
   };
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;
 };
