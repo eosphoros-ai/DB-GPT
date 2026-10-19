@@ -1,5 +1,6 @@
 """Structured final-answer and citation handling for ReAct agent streams."""
 
+import ast
 import hashlib
 import json
 import math
@@ -104,6 +105,46 @@ def strip_legacy_references(content: Any) -> str:
     """
     text = content if isinstance(content, str) else str(content or "")
     return _LEGACY_REFERENCES_PATTERN.sub("", text).rstrip()
+
+
+def extract_terminate_content(raw_content: str, parser: Any) -> str:
+    """Extract the answer from registered or legacy terminate arguments.
+
+    Terminate declares ``output``; older text prompts used ``result``. Both
+    text ReAct and native tool execution may leave an argument object here.
+    Preserve plain or malformed content for the downstream answer validator.
+    """
+    candidates = []
+    try:
+        steps = parser.parse(raw_content)
+        if (
+            len(steps) == 1
+            and not steps[0].action
+            and not steps[0].action_input
+            and not steps[0].observation
+            and steps[0].thought
+        ):
+            # ReActAction also terminates a thought-only model response.
+            return steps[0].thought
+        if steps and (steps[0].action or "").lower() == "terminate":
+            candidates.append(steps[0].action_input)
+    except (TypeError, ValueError):
+        pass
+    candidates.append(raw_content)
+    for candidate in candidates:
+        if isinstance(candidate, str):
+            try:
+                candidate = json.loads(candidate)
+            except (TypeError, ValueError):
+                try:
+                    candidate = ast.literal_eval(candidate)
+                except (SyntaxError, TypeError, ValueError):
+                    continue
+        if isinstance(candidate, dict):
+            for key in ("output", "result", "final_answer"):
+                if isinstance(candidate.get(key), str):
+                    return candidate[key]
+    return raw_content
 
 
 class FinalAnswerAssembler:

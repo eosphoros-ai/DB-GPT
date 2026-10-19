@@ -1,5 +1,6 @@
 """Bounded local background runs. No uploaded code or client paths are executed."""
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -9,9 +10,11 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
+from uuid import uuid4
 
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 from dbgpt_serve.session_file.domain import FileScope
@@ -54,6 +57,8 @@ class FinancialAnalysisService:
         self.answerer = answerer
         self.export_runtime = export_runtime
         self._question_slots = threading.BoundedSemaphore(2)
+        # Bound aggregate topic generation/validation across conversations too.
+        self.parallel_topic_slots = asyncio.Semaphore(6)
         self._lock = threading.Lock()
         self._slots = threading.BoundedSemaphore(4)
         self._preview_slots = threading.BoundedSemaphore(2)
@@ -93,6 +98,9 @@ class FinancialAnalysisService:
                 status="completed", stage="agent_topics"
             ):
                 report = json.loads(row.report_json)
+                batch = report.get("workflow", {}).get("parallelBatch")
+                if batch and batch["status"] == "running":
+                    batch.update(status="interrupted", completedAt=now())
                 for item in report.get("workflow", {}).get("topics", []):
                     if item["status"] == "running":
                         item.update(
@@ -625,12 +633,135 @@ class FinancialAnalysisService:
             )
             return report
 
+    def begin_parallel_topics(self, owner, session_id, run_id, revision, concurrency):
+        with self._lock:
+            report = self.get(owner, session_id, run_id, report=True)
+            if report["revision"] != revision:
+                raise SessionFileApiError(
+                    409, "REPORT_CHANGED", "报告已更新，请重新读取。"
+                )
+            topics = report.get("workflow", {}).get("topics", [])
+            if len(topics) != len(workflow.TOPICS) or any(
+                t["status"] != "pending" for t in topics
+            ):
+                raise SessionFileApiError(
+                    409,
+                    "PARALLEL_NOT_FRESH",
+                    "仅新报告可批量生成；已有专题请读取或单独重做。",
+                )
+            for item in topics:
+                report = workflow.start_topic(report, item["id"])
+            report["workflow"]["parallelBatch"] = {
+                "id": uuid4().hex,
+                "baseRevision": revision,
+                "status": "running",
+                "concurrency": concurrency,
+                "pending": list(workflow.TOPICS),
+                "startedAt": now(),
+                "metrics": {},
+            }
+            self._update(
+                run_id,
+                stage="agent_topics",
+                report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
+            )
+            return report
+
+    @staticmethod
+    def _check_parallel_idle(report):
+        if (
+            report.get("workflow", {}).get("parallelBatch", {}).get("status")
+            == "running"
+        ):
+            raise SessionFileApiError(
+                409, "PARALLEL_BUSY", "专题正在并发生成，请待合并完成后再重做或复核。"
+            )
+
+    def merge_parallel_topic(self, owner, session_id, run_id, result):
+        """Commit an internally validated topic; no model/validation under lock."""
+        from .parallel import ValidatedTopic
+
+        if not isinstance(result, ValidatedTopic):
+            raise TypeError("Expected an internal validated topic")
+        topic_id, error = result.topic_id, result.error
+        with self._lock:
+            report = self.get(owner, session_id, run_id, report=True)
+            batch = report["workflow"].get("parallelBatch", {})
+            if (
+                batch.get("id") != result.batch_id
+                or batch.get("status") != "running"
+                or topic_id not in batch["pending"]
+            ):
+                raise SessionFileApiError(
+                    409, "STALE_TOPIC_RESULT", "专题结果已过期或已合并。"
+                )
+            item = workflow.topic(report, topic_id)
+            previous_ids = set(item["findingIds"])
+            item.update(deepcopy(result.topic))
+            report["findings"] = [
+                f for f in report["findings"] if f["id"] not in previous_ids
+            ] + deepcopy(result.findings)
+            if error or item["status"] not in workflow.TERMINAL:
+                code = error or "FINDING_VALIDATION_FAILED"
+                item.update(
+                    status="failed",
+                    errorCode=code,
+                    completedAt=now(),
+                    note={
+                        "MODEL_TIMEOUT": "专题模型生成超时，可单独重试。",
+                        "MODEL_REQUEST_FAILED": "专题模型请求失败，可单独重试。",
+                        "INVALID_TOPIC_RESPONSE": "专题输出结构校验失败，可单独重试。",
+                    }.get(code, "专题结论未通过完整校验，可单独重试。"),
+                )
+                item.setdefault("issues", []).append({"code": code})
+            batch["pending"].remove(topic_id)
+            batch["metrics"][topic_id] = deepcopy(result.metrics)
+            if not batch["pending"]:
+                batch.update(status="completed", completedAt=now())
+            # Completion order must not affect presentation or review ordering.
+            order = {key: i for i, key in enumerate(workflow.TOPICS)}
+            report["findings"].sort(
+                key=lambda f: (
+                    order[f["id"].split("-")[1]],
+                    int(f["id"].rsplit("-", 1)[1]),
+                )
+            )
+            report = apply_findings(report, report["findings"])
+            report = workflow.changed(report)
+            self._update(
+                run_id,
+                stage="agent_topics",
+                report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
+            )
+            return report
+
+    def abort_parallel_topics(self, owner, session_id, run_id, batch_id):
+        with self._lock:
+            report = self.get(owner, session_id, run_id, report=True)
+            batch = report.get("workflow", {}).get("parallelBatch", {})
+            if batch.get("id") != batch_id or batch.get("status") != "running":
+                return
+            for topic_id in batch["pending"]:
+                workflow.topic(report, topic_id).update(
+                    status="needs_revision",
+                    errorCode="GENERATION_CANCELLED",
+                    note="专题生成已中断，可继续或单独重试；已保存专题保留。",
+                )
+            batch.update(status="interrupted", completedAt=now())
+            report = workflow.changed(report)
+            self._update(
+                run_id,
+                stage="agent_topics",
+                report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
+            )
+
     def update_agent_workflow(
         self, owner, session_id, run_id, revision, action, **kwargs
     ):
         """Revision-checked topic mutations preserve the extraction and other topics."""
         with self._lock:
             report = self.get(owner, session_id, run_id, report=True)
+            self._check_parallel_idle(report)
             if report["revision"] != revision:
                 raise SessionFileApiError(
                     409, "REPORT_CHANGED", "报告已更新，请重新读取。"
@@ -641,15 +772,27 @@ class FinancialAnalysisService:
                 )
             actions = {
                 "start": workflow.start_topic,
+                "advance": workflow.advance_topic,
                 "save": workflow.save_topic,
                 "review": workflow.review_report,
             }
             report = actions[action](report, **kwargs)
+            if action == "save":
+                report = workflow.advance_topic(report)
+            # Publish atomically under the same revision lock only after explicit
+            # complete review. A revise verdict must remain an unpublished draft.
+            if action == "review" and all(
+                t["status"] in {"reviewed", "insufficient", "failed"}
+                for t in report["workflow"]["topics"]
+            ):
+                report = workflow.publish(report)
             if report["revision"] == revision:
                 return report
             self._update(
                 run_id,
-                stage="agent_topics",
+                stage="completed"
+                if report["workflow"]["status"] == "published"
+                else "agent_topics",
                 report_json=json.dumps(report, ensure_ascii=False, allow_nan=False),
             )
             return report

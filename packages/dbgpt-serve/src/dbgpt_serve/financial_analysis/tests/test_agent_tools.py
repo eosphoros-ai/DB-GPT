@@ -5,11 +5,15 @@ from types import SimpleNamespace
 
 import pytest
 
+from dbgpt.agent.util.react_parser import ReActOutputParser
+from dbgpt_app.openapi.api_v1.react_final import extract_terminate_content
 from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     finalize_financial_answer,
     financial_completion_error,
-    make_financial_tools as _make_financial_tools,
     publication_example,
+)
+from dbgpt_app.openapi.api_v1.tools.financial_tools import (
+    make_financial_tools as _make_financial_tools,
 )
 
 from .test_analysis import draft
@@ -22,7 +26,8 @@ def make_financial_tools(*args, **kwargs):
 
 
 def payload(value):
-    return json.loads(json.loads(value)["chunks"][-1]["content"])
+    result = json.loads(value)
+    return result["model_context"]
 
 
 @pytest.mark.asyncio
@@ -88,6 +93,17 @@ async def test_agent_prepares_publishes_and_reopens_with_scoped_artifact(stack):
     assert payload(await read())["run_id"] == run_id
     assert payload(await read(run_id))["findings"] == final["findings"]
     assert "publication_instructions" not in payload(await read())
+    reading = payload(await read())
+    example = reading["answer_format_example"]
+    assert example["Action"] == "terminate"
+    raw = "Thought: 数据为999元。\nAction: terminate\nAction Input: " + json.dumps(
+        example["Action Input"]
+    )
+    example_answer = finalize_financial_answer(
+        extract_terminate_content(raw, ReActOutputParser()), state
+    )
+    assert "999" not in example_answer and "Thought:" not in example_answer
+    assert "来源：原 PDF" in example_answer
     fact = next(f for f in report["facts"] if f["metricCode"] == "revenue")
     answer = finalize_financial_answer("本期情况：{{fact:" + fact["id"] + "}}。", state)
     assert fact["displayValue"] in answer and "{{" not in answer

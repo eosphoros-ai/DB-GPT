@@ -44,6 +44,51 @@ def draft(report, section="overview"):
     }
 
 
+def test_level_as_change_and_suffix_reported_together_then_strictly_rechecked():
+    report = report_fixture()
+    finding = draft(report)
+    ref = "{{fact:" + finding["factIds"][0] + "}}"
+    finding["summary"] = "本期收入较上期增加" + ref + "元。"
+    with pytest.raises(InvalidFindings) as exc:
+        validate_findings(json.dumps({"findings": [finding]}), report, strict=True)
+    errors = {e["code"]: e for e in exc.value.details}
+    assert {"fact_level_used_as_change", "Model supplied unit suffix"} <= set(errors)
+    assert errors["Model supplied unit suffix"]["offending_fragments"] == [ref + "元"]
+    assert all(e["field"] == "summary" and e.get("hint") for e in errors.values())
+    # Deleting the unit alone cannot disguise an unsupported delta.
+    finding["summary"] = "本期收入较上期增加" + ref + "。"
+    with pytest.raises(InvalidFindings):
+        validate_findings(json.dumps({"findings": [finding]}), report, strict=True)
+    finding["summary"] = "本期收入增加到" + ref + "，原因需结合附注核对。"
+    accepted, rejected = validate_findings(
+        json.dumps({"findings": [finding]}), report, strict=True
+    )
+    assert len(accepted) == 1 and rejected == 0
+
+
+def test_causal_question_can_move_to_questions_without_weakening_claim_validation():
+    report = report_fixture()
+    finding = draft(report)
+    question = "利润增长是否源于主业尚待附注验证。"
+    observation = finding["summary"]
+    finding["summary"] += question
+    with pytest.raises(InvalidFindings) as exc:
+        validate_findings(json.dumps({"findings": [finding]}), report, strict=True)
+    error = next(
+        e for e in exc.value.details if e["code"] == "unsupported_causal_claim"
+    )
+    assert "unresolvedQuestions" in error["hint"]
+    finding["summary"] = observation
+    finding["unresolvedQuestions"] = [question]
+    accepted, _ = validate_findings(
+        json.dumps({"findings": [finding]}), report, strict=True
+    )
+    assert accepted[0]["unresolvedQuestions"] == [question]
+    finding["summary"] = observation + "增长源于主营业务。"
+    with pytest.raises(InvalidFindings):
+        validate_findings(json.dumps({"findings": [finding]}), report, strict=True)
+
+
 def output(report):
     return json.dumps(
         {
@@ -412,3 +457,129 @@ def test_model_gets_at_most_one_correction_when_all_findings_are_invalid(monkeyp
             validate_findings(raw, report_fixture())
 
     asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("period", ["2024", "2023"])
+def test_extracted_period_labels_without_relaxing_numeric_validation(period):
+    report = report_fixture()
+    item = draft(report)
+    item["summary"] += "核对{{period:" + period + "}}与" + period + "年披露。"
+    assert validate_findings(json.dumps({"findings": [item]}), report, strict=True)[0]
+    for invalid in [
+        "9999年",
+        "2024元",
+        "2024%",
+        "2024",
+        "{{period:1900}}",
+        "12024年",
+        "1.2024年",
+    ]:
+        bad = dict(item, unresolvedQuestions=[invalid])
+        with pytest.raises(InvalidFindings):
+            validate_findings(json.dumps({"findings": [bad]}), report, strict=True)
+
+
+def test_reports_all_invalid_text_fields_in_a_finding():
+    report = report_fixture()
+    item = dict(
+        draft(report),
+        title="金额999元",
+        summary="888元",
+        counterEvidence=["777倍"],
+        unresolvedQuestions=["666元"],
+    )
+    with pytest.raises(InvalidFindings) as error:
+        validate_findings(json.dumps({"findings": [item]}), report, strict=True)
+    assert {d["field"] for d in error.value.details} == {
+        "title",
+        "summary",
+        "counterEvidence[0]",
+        "unresolvedQuestions[0]",
+    }
+
+
+def test_scope_evidence_and_text_errors_are_returned_together():
+    report = report_fixture()
+    item = dict(draft(report), summary="999元", evidenceExcerptIds=["unrelated"])
+    with pytest.raises(InvalidFindings) as error:
+        validate_findings(
+            json.dumps({"findings": [item]}),
+            report,
+            strict=True,
+            section="balance",
+            allowed_fact_ids=set(),
+        )
+    assert {d["field"] for d in error.value.details} == {
+        "summary",
+        "evidenceExcerptIds",
+        "section",
+        "factIds/calculationIds",
+    }
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "低于行业平均水平。",
+        "资产负债结构稳健。",
+        "长期偿债风险较低。",
+        "财务费用为负，说明资金充裕。",
+        "利润增长源于主营业务。",
+    ],
+)
+def test_table_context_rejects_unsupported_interpretation(text):
+    report = report_fixture()
+    item = draft(report)
+    item["summary"] += text
+    with pytest.raises(InvalidFindings) as error:
+        validate_findings(json.dumps({"findings": [item]}), report, strict=True)
+    assert any(d["code"].startswith("unsupported_") for d in error.value.details)
+    item["summary"] = (
+        draft(report)["summary"] + "缺少债务期限和受限资金数据，不能判断偿债安全。"
+    )
+    item["unresolvedQuestions"] = ["需要核对行业平均水平及债务期限。"]
+    assert validate_findings(json.dumps({"findings": [item]}), report, strict=True)[0]
+
+
+def test_amount_cannot_be_described_as_rate_difference_or_redefined_ratio():
+    from dbgpt_serve.financial_analysis.analysis import _validate_reference_wording
+
+    calculations = {"amount": {"unit": "元"}, "rate": {"unit": "%"}}
+    with pytest.raises(ValueError, match="dimension_mismatch"):
+        _validate_reference_wording("增速差异为{{calculation:amount}}", calculations)
+    with pytest.raises(ValueError, match="ambiguous_ratio"):
+        _validate_reference_wording("占其他指标的{{calculation:rate}}", calculations)
+    _validate_reference_wording(
+        "本期变动为{{calculation:amount}}，同比{{calculation:rate}}", calculations
+    )
+
+
+@pytest.mark.parametrize("separator", ["-", "–", "—", "至", "～"])
+def test_only_extracted_ordered_year_ranges_are_allowed(separator):
+    report = report_fixture()
+    item = draft(report)
+    item["summary"] += f"对比2023{separator}2024年。"
+    assert validate_findings(json.dumps({"findings": [item]}), report, strict=True)[0]
+    for text in [
+        f"2022{separator}2024年",
+        f"2024{separator}2023年",
+        f"2023{separator}2024元",
+        f"12023{separator}2024年",
+    ]:
+        with pytest.raises(InvalidFindings):
+            validate_findings(
+                json.dumps({"findings": [dict(item, counterEvidence=[text])]}),
+                report,
+                strict=True,
+            )
+
+
+def test_unrelated_evidence_feedback_has_scoped_replacement():
+    report = report_fixture()
+    item = dict(draft(report), evidenceExcerptIds=["foreign-evidence"])
+    with pytest.raises(InvalidFindings) as error:
+        validate_findings(json.dumps({"findings": [item]}), report, strict=True)
+    detail = next(d for d in error.value.details if d["code"] == "Unrelated evidence")
+    assert detail["allowed_evidence_ids"] == draft(report)["evidenceExcerptIds"]
+    item.update(detail["suggested_changes"])
+    assert validate_findings(json.dumps({"findings": [item]}), report, strict=True)[0]

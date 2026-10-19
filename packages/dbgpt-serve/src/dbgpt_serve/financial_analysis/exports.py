@@ -6,11 +6,15 @@ from pathlib import Path
 
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
+from .workflow import public_snapshot
+
 DATA_MARKER = "<!--FINANCIAL_REPORT_JSON-->"
 
 
 def render_export(report, kind, runtime=None):
-    payload = json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2)
+    payload = json.dumps(
+        public_snapshot(report), ensure_ascii=False, allow_nan=False, indent=2
+    )
     if kind == "json":
         return payload
     if runtime is None:

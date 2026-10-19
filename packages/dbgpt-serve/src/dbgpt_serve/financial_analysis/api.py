@@ -15,6 +15,8 @@ from dbgpt_serve.session_file.api.endpoints import (
     get_authenticated_owner,
 )
 
+from .workflow import public_snapshot
+
 
 class CreateRun(BaseModel):
     session_id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$")
@@ -77,7 +79,9 @@ def make_router(service):
         session_id: str = Query(min_length=1, max_length=255),
         owner: str = Depends(get_authenticated_owner),
     ):
-        return Result.succ(service.get(owner, session_id, str(run_id), report=True))
+        return Result.succ(
+            public_snapshot(service.get(owner, session_id, str(run_id), report=True))
+        )
 
     @router.get("/runs/{run_id}/exports")
     def list_exports(

@@ -40,9 +40,16 @@ counterEvidence、unresolvedQuestions。
 占位符将由服务端替换成完整的“期间+指标名称+值+单位”；不要在占位符后再添加单位，
 不要自行书写数字或中文数值，不要换算万元/亿元。title 不需要数字。
 所有文本字段都遵守占位符规则，包括 counterEvidence 和 unresolvedQuestions。
-年份写“本期”“上期”，不要写数字年份；阈值写“低于归母净利润”，不要写数字倍数。
+期间优先写“本期”“上期”；也可引用输入 periods 中的 {{period:年份}}，不能编造期间。
+实际披露的年份仅可作为“年份+年”的期间标签，不可作为金额或阈值；阈值写“低于归母净利润”，不要写数字倍数。
 摘录中披露的同比也不能直接抄入结论，必须已有对应 calculation 才能引用。
 不得自行计算或输出总资产同比、净资产同比、流动资产同比等未提供的计算。
+引用的指标名称必须与句中主语、分子分母对应；不要将差额占比解释为另一指标占比。
+计算占位符本身包含完整指标名，直接作为完整短语；不要加“占某指标的”前缀重新定义分母。
+金额差额不能描述为增速差异。费用专题需分析当前可用的各类费用，不遗漏已提供的费用科目。
+当前没有行业基准、债务期限、受限资金或业务原因证据；不能作行业比较或断言资金充裕、
+偿债安全。扣非利润不等同主营业务利润，不能据此断言主业驱动。缺口放入待核查事项。
+所有保留的发现都必须有数值引用；纯粹的数据缺口不要单独凑成无依据发现。
 summary 至少使用一个上述占位符，简短解释观察到的变化及限制。每条最多两百字。
 使用同一条发现引用事实的 evidenceExcerptIds，不得引用无关摘录；不要自行创建引用 ID。
 财务费用为负数时保留其含义，不把负费用当成缺失；费率变动是百分点，不是百分比同比。
@@ -80,9 +87,9 @@ class InvalidNarrative(ValueError):
 
 
 def model_context(report):
-    """Only current/comparison periods; no PDF paths, credentials or chat history."""
+    """Only extracted periods; no PDF paths, credentials or chat history."""
     year = report["report"]["fiscalPeriod"]
-    periods = {year, str(int(year) - 1)}
+    periods = {f["fiscalPeriod"] for f in report["facts"]}
     facts = [
         {
             k: f[k]
@@ -136,6 +143,7 @@ def model_context(report):
     result = {
         "company": report["report"]["companyName"],
         "year": year,
+        "periods": sorted({f["fiscalPeriod"] for f in facts}),
         "facts": facts,
         "calculations": calculations,
         "evidence": evidence,
@@ -146,7 +154,7 @@ def model_context(report):
     return result
 
 
-def _render_text(text, facts, calculations, used):
+def _render_text(text, facts, calculations, used, periods=()):
     if len(text) > 2500:
         raise ValueError("Text too long")
     # Accept an unambiguous shorthand only for an already declared calculation.
@@ -161,7 +169,36 @@ def _render_text(text, facts, calculations, used):
     # Units are already included in the canonical replacement.
     if re.search(r"\}\}\s*(?:[%％×倍]|百分点|[千万亿]?元)", text):
         raise ValueError("Model supplied unit suffix")
+    # A period is metadata, never a financial value. Only exact extracted year
+    # labels are accepted; bare numbers and numeric amounts remain forbidden.
+    periods = {str(p) for p in periods} | {
+        str(f["fiscalPeriod"]) for f in facts.values()
+    }
+
+    def period_reference(match):
+        if match[1] not in periods:
+            raise ValueError("Unknown report period")
+        return match[1] + "年"
+
+    text = re.sub(r"\{\{period:([^{}]+)\}\}", period_reference, text)
     remainder = REFERENCE.sub("", text)
+
+    def period_range(match):
+        first, last = match.groups()
+        if first not in periods or last not in periods or first > last:
+            raise ValueError("Unknown report period range")
+        return "期间范围"
+
+    remainder = re.sub(
+        r"(?<![\d.,+％%])([12]\d{3})\s*(?:年\s*)?[-–—~～至到]\s*([12]\d{3})\s*年",
+        period_range,
+        remainder,
+    )
+    for period in periods:
+        if re.fullmatch(r"[12]\d{3}", period):
+            remainder = re.sub(
+                r"(?<![\d.,+％%])" + re.escape(period) + r"\s*年", "期间", remainder
+            )
     if re.search(
         r"\d|[{}]|百分之|千分之|[零〇一二三四五六七八九十百千万亿两]+(?:元|倍|个百分点)",
         remainder,
@@ -192,7 +229,76 @@ def _render_text(text, facts, calculations, used):
     return REFERENCE.sub(replace, text)
 
 
-def validate_findings(raw, report, *, strict=False):
+def _validate_interpretation(text):
+    """Conservative boundaries of the table-only context, independent of issuer.
+
+    This is not semantic verification. No peer benchmark, debt maturity, cash
+    restrictions or business-cause evidence is supplied by this extractor.
+    Questions/explicit limitations belong in unresolvedQuestions; supported
+    observations can still compare the available facts and calculations.
+    """
+    text = REFERENCE.sub("指标引用", text)
+    for clause in re.split(r"[。；;！!?？]", text):
+        if re.search(
+            r"(?:缺少|缺乏|未提供|没有|无法|不能|尚不能|不足以|不代表|不等于)", clause
+        ):
+            continue
+        if re.search(
+            r"(?:行业|同业|同类企业|竞争对手).{0,12}(?:平均|水平|领先|比较)|(?:高于|低于|超过|优于|领先).{0,12}(?:行业|同业|同类企业)",
+            clause,
+        ):
+            raise ValueError("unsupported_peer_comparison")
+        if re.search(
+            r"(?:偿债|流动性|资产负债结构|财务结构|财务状况).{0,16}(?:安全|充足|无忧|稳健|良好|较强|强劲|风险较低)|偿债风险.{0,6}(?:较低|很低|低)|(?:资金|现金).{0,6}(?:充裕|充足)",
+            clause,
+        ):
+            raise ValueError("unsupported_solvency_claim")
+        if re.search(
+            r"(?:主业|主营业务).{0,12}(?:驱动|导致|带来|贡献|拉动)|(?:源于|归因于|得益于).{0,12}(?:主业|主营业务|客户|策略|需求|汇兑)",
+            clause,
+        ):
+            if not re.search(r"(?:可能|待核|需核|需结合|尚需)", clause):
+                raise ValueError("unsupported_causal_claim")
+
+
+def _validate_reference_wording(text, calculations):
+    """Check dimension conflicts without calculating or rewriting model claims.
+
+    Canonical references already include the metric/formula name. Prefixing them
+    with a new numerator/denominator can silently turn a valid value into a false
+    assertion. Ask for a standalone canonical reference instead.
+    """
+    for match in REFERENCE.finditer(text):
+        if match[1] != "calculation" or match[2] not in calculations:
+            continue
+        prefix = re.split(r"[，。；;！？{}]", text[: match.start()])[-1]
+        item = calculations[match[2]]
+        if re.search(r"占.{0,24}(?:的|比例为|比重为|比率为)$", prefix):
+            raise ValueError("ambiguous_ratio_wording_use_canonical_reference")
+        if re.search(r"(?:增速|增长率|同比|百分比|百分点).{0,14}$", prefix):
+            if item["unit"] not in {"%", "％", "百分点"}:
+                raise ValueError("calculation_dimension_mismatch")
+
+
+def _validate_fact_wording(text, facts):
+    """A disclosed level cannot serve as a model-computed increase/decrease.
+
+    '降至/增加到' describes a level and remains valid. '减少/增加了' followed
+    immediately by a level reference asserts an unsupported change amount.
+    """
+    for match in REFERENCE.finditer(text):
+        if match[1] != "fact" or match[2] not in facts:
+            continue
+        prefix = text[: match.start()]
+        if re.search(
+            r"(?:增加|减少|增长|下降|上升|降低|提升)(?:了|约|近|达|达到)?\s*$", prefix
+        ):
+            raise ValueError("fact_level_used_as_change")
+
+
+def validate_findings(
+    raw, report, *, strict=False, section=None, allowed_fact_ids=None
+):
     """Discard invalid findings individually; never publish raw model output."""
     if not isinstance(raw, str) or len(raw) > 24000:
         raise ValueError("Invalid model response")
@@ -213,36 +319,202 @@ def validate_findings(raw, report, *, strict=False):
         invalid_tokens = None
         try:
             draft = FindingDraft.model_validate(raw_finding)
-            field = "factIds"
-            selected_facts = {i: facts[i] for i in draft.factIds}
-            field = "calculationIds"
-            selected_calcs = {i: calculations[i] for i in draft.calculationIds}
-            if not selected_facts and not selected_calcs:
-                raise ValueError("No numeric support")
+            field_errors = []
+            selected_facts = {i: facts[i] for i in draft.factIds if i in facts}
+            selected_calcs = {
+                i: calculations[i] for i in draft.calculationIds if i in calculations
+            }
+            for name, known in (("factIds", facts), ("calculationIds", calculations)):
+                for pos, ref in enumerate(getattr(draft, name)):
+                    if ref not in known:
+                        field_errors.append(
+                            {
+                                "finding_index": index,
+                                "field": f"{name}[{pos}]",
+                                "code": "unknown_or_unavailable_reference",
+                            }
+                        )
             all_facts = dict(selected_facts)
             for calc in selected_calcs.values():
-                for i in calc["inputFactIds"]:
-                    all_facts[i] = facts[i]
+                for ref in calc["inputFactIds"]:
+                    all_facts[ref] = facts[ref]
             allowed_evidence = {
-                i for f in all_facts.values() for i in f["evidenceExcerptIds"]
+                ref for fact in all_facts.values() for ref in fact["evidenceExcerptIds"]
             }
-            field = "evidenceExcerptIds"
+            if section is not None and draft.section != section:
+                field_errors.append(
+                    {
+                        "finding_index": index,
+                        "field": "section",
+                        "code": "cross_topic_reference",
+                    }
+                )
+            if allowed_fact_ids is not None and not set(all_facts) <= allowed_fact_ids:
+                field_errors.append(
+                    {
+                        "finding_index": index,
+                        "field": "factIds/calculationIds",
+                        "code": "cross_topic_reference",
+                    }
+                )
+            if not selected_facts and not selected_calcs:
+                field_errors.append(
+                    {
+                        "finding_index": index,
+                        "field": "factIds/calculationIds",
+                        "code": "No numeric support",
+                    }
+                )
             if not set(draft.evidenceExcerptIds) <= allowed_evidence:
-                raise ValueError("Unrelated evidence")
-            if not allowed_evidence or any(
-                i not in evidence or evidence[i]["sourceDocumentId"] not in document_ids
-                for i in allowed_evidence
+                field_errors.append(
+                    {
+                        "finding_index": index,
+                        "field": "evidenceExcerptIds",
+                        "code": "Unrelated evidence",
+                        "allowed_evidence_ids": sorted(allowed_evidence),
+                        "suggested_changes": {
+                            "evidenceExcerptIds": sorted(allowed_evidence)
+                        },
+                        "hint": (
+                            "仅替换本发现的 evidenceExcerptIds；"
+                            "值从本发现声明的事实/计算推导，"
+                            "不能复制其他发现的证据。"
+                        ),
+                    }
+                )
+            if all_facts and (
+                not allowed_evidence
+                or any(
+                    ref not in evidence
+                    or evidence[ref]["sourceDocumentId"] not in document_ids
+                    for ref in allowed_evidence
+                )
             ):
-                raise ValueError("Missing source")
+                field_errors.append(
+                    {
+                        "finding_index": index,
+                        "field": "evidenceExcerptIds",
+                        "code": "Missing source",
+                    }
+                )
+            texts_to_check = [("summary", draft.summary), ("title", draft.title)]
+            texts_to_check += [
+                (f"{name}[{pos}]", text)
+                for name in ("counterEvidence", "unresolvedQuestions")
+                for pos, text in enumerate(getattr(draft, name))
+            ]
+            for name, text in texts_to_check:
+                referenced = set()
+                checks = [
+                    lambda: _validate_reference_wording(text, selected_calcs),
+                    lambda: _validate_fact_wording(text, selected_facts),
+                    lambda: _render_text(
+                        text,
+                        selected_facts,
+                        selected_calcs,
+                        referenced,
+                        context["periods"],
+                    ),
+                ]
+                if not name.startswith("unresolvedQuestions"):
+                    checks.append(lambda: _validate_interpretation(text))
+                for check in checks:
+                    try:
+                        check()
+                    except ValueError as exc:
+                        error = {
+                            "finding_index": index,
+                            "field": name,
+                            "code": str(exc),
+                        }
+                        if isinstance(exc, InvalidNarrative):
+                            error["invalid_tokens"] = exc.invalid_tokens
+                        hints = {
+                            "Summary has no numeric reference": (
+                                "只修改此 summary，"
+                                "补充本发现已声明事实或计算的 reference，"
+                                "并保留具体判断及限制；不要改写已通过的其他发现。"
+                            ),
+                            "ambiguous_ratio_wording_use_canonical_reference": (
+                                "计算占位符含完整名称。删除它前面重新定义分母的‘占…的’等前缀，"
+                                "直接写‘{{calculation:原ID}}，解释…’，保留原计算ID。"
+                            ),
+                            "calculation_dimension_mismatch": (
+                                "此处引用为金额等非比率指标，不能称为增速或百分点差异；"
+                                "改为该计算原有名称，不自行计算。"
+                            ),
+                            "Model supplied unit suffix": (
+                                "占位符已渲染完整名称、数值和单位。"
+                                "只删占位符后自行追加的元、%、倍、百分点等单位，保留引用。"
+                                "同时修正该字段的其他 issues，"
+                                "不能仅删除单位就认定内容正确。"
+                            ),
+                            "fact_level_used_as_change": (
+                                "引用是某期指标金额，不是增加额或减少额。"
+                                "改为本期金额与上期金额的比较，或使用已提供的变化计算；"
+                                "不能把本期余额当差额，也不能自行补算。"
+                            ),
+                            "unsupported_causal_claim": (
+                                "当前表格没有业务原因证据。"
+                                "summary 只保留有依据的数值观察；"
+                                "原因假设应作为明确问题写入 unresolvedQuestions。"
+                                "若原句已是‘是否…尚待验证’，也移至该问题数组，"
+                                "保留其他问题和引用，不要删除核查事项或只加免责声明。"
+                            ),
+                            "unsupported_peer_comparison": (
+                                "没有行业比较证据。保留公司自身的观察，"
+                                "把需要同行数据核对的事项放入 unresolvedQuestions。"
+                            ),
+                            "unsupported_solvency_claim": (
+                                "缺少债务期限和受限资产依据。"
+                                "summary 描述已提供的结构指标，"
+                                "将偿债能力判断所需资料放入 unresolvedQuestions。"
+                            ),
+                        }
+                        if str(exc) in hints:
+                            error["hint"] = hints[str(exc)]
+                        if str(exc) == "Model supplied unit suffix":
+                            error["offending_fragments"] = re.findall(
+                                r"\{\{(?:fact|calculation):[A-Za-z0-9_-]+\}\}"
+                                r"\s*(?:百分点|[%％×倍]|[千万亿]?元)",
+                                text,
+                            )
+                        field_errors.append(error)
+                if (
+                    name == "summary"
+                    and not referenced
+                    and not any(e["field"] == name for e in field_errors)
+                ):
+                    field_errors.append(
+                        {
+                            "finding_index": index,
+                            "field": name,
+                            "code": "Summary has no numeric reference",
+                            "hint": (
+                                "只修改 summary，补充已声明事实或计算的 reference，"
+                                "保留判断及限制。"
+                            ),
+                        }
+                    )
+            if field_errors:
+                issues.append("invalid_fields")
+                details.extend(field_errors)
+                continue
             used = set()
             field = "summary"
-            summary = _render_text(draft.summary, selected_facts, selected_calcs, used)
+            summary = _render_text(
+                draft.summary, selected_facts, selected_calcs, used, context["periods"]
+            )
             if not used:
                 raise ValueError("Summary has no numeric reference")
             field = "title"
             texts = {
                 "title": _render_text(
-                    draft.title, selected_facts, selected_calcs, used
+                    draft.title,
+                    selected_facts,
+                    selected_calcs,
+                    used,
+                    context["periods"],
                 ),
                 "summary": summary,
             }
@@ -251,7 +523,13 @@ def validate_findings(raw, report, *, strict=False):
                 for item_index, text in enumerate(getattr(draft, name)):
                     field = f"{name}[{item_index}]"
                     texts[name].append(
-                        _render_text(text, selected_facts, selected_calcs, used)
+                        _render_text(
+                            text,
+                            selected_facts,
+                            selected_calcs,
+                            used,
+                            context["periods"],
+                        )
                     )
             if not texts["unresolvedQuestions"]:
                 texts["unresolvedQuestions"] = [LIMITATION]

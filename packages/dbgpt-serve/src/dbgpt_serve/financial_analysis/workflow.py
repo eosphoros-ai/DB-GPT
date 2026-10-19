@@ -1,4 +1,4 @@
-"""Sectional analysis over one saved extraction; no additional model or PDF run."""
+"""Sectional state transitions and validation over one saved extraction."""
 
 import json
 from copy import deepcopy
@@ -8,6 +8,7 @@ from uuid import uuid4
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
 from .analysis import (
+    REFERENCE,
     InvalidFindings,
     _render_text,
     apply_findings,
@@ -286,11 +287,50 @@ def start_topic(report, topic_id, retry=False):
     return changed(report)
 
 
-def save_topic(report, topic_id, findings, missing_reason=""):
+def save_topic(
+    report,
+    topic_id,
+    findings=None,
+    missing_reason="",
+    patches=None,
+    append_findings=None,
+):
     item = topic(report, topic_id)
     if item["status"] not in {"running", "needs_revision"}:
         fail("请先读取该专题；重做已完成专题时显式指定 retry=true。")
     scoped = topic_context(report, topic_id)
+    if patches is not None or append_findings is not None:
+        if findings is not None or not item.get("draftFindings"):
+            fail("局部修订需已有草稿，仅传 patches，不同时传 findings。")
+        if patches is not None and not isinstance(patches, list):
+            fail("patches 必须为字段修订对象数组。")
+        if append_findings is not None and (
+            not isinstance(append_findings, list)
+            or not append_findings
+            or any(not isinstance(f, dict) for f in append_findings)
+        ):
+            fail("append_findings 必须为非空发现对象数组。")
+        findings = deepcopy(item["draftFindings"])
+        seen = set()
+        for patch in patches or []:
+            if not isinstance(patch, dict):
+                fail("patches 必须为字段修订对象数组。")
+            index = patch.get("finding_index")
+            changes = patch.get("changes")
+            if (
+                type(index) is not int
+                or not 0 <= index < len(findings)
+                or index in seen
+                or not isinstance(changes, dict)
+            ):
+                fail("patches 需唯一、有效的 finding_index 和 changes 字段对象。")
+            seen.add(index)
+            findings[index].update(changes)
+        findings.extend(deepcopy(append_findings or []))
+    # Raw drafts are repair-only. Display/publication uses validated findings.
+    if findings:
+        item["draftFindings"] = deepcopy(findings)
+    item["saveAttempts"] = item.get("saveAttempts", 0) + 1
     if not findings:
         if not missing_reason or not scoped["missingRequiredMetrics"]:
             fail("现有数据可用于分析，不能用空结论跳过；缺项时需说明不足。")
@@ -302,23 +342,89 @@ def save_topic(report, topic_id, findings, missing_reason=""):
                 json.dumps({"findings": findings}, ensure_ascii=False),
                 report,
                 strict=True,
+                section=item["section"],
+                allowed_fact_ids={f["id"] for f in scoped["data"]["facts"]},
             )
-            allowed = {f["id"] for f in scoped["data"]["facts"]}
-            if any(
-                f["sectionKey"] != item["section"] or not set(f["factIds"]) <= allowed
-                for f in accepted
-            ):
-                raise InvalidFindings(
-                    ["结论必须属于当前专题并仅引用当前专题的数据"],
-                    [{"field": "section/factIds", "code": "cross_topic_reference"}],
-                )
+            if topic_id == "expenses":
+                # Coverage needs narrative support, not unused IDs attached merely
+                # to satisfy a checklist. Calculations contribute their inputs.
+                used = {
+                    ref
+                    for f in findings
+                    for ref in REFERENCE.findall(
+                        f["summary"].replace("{{calc-", "{{calculation:calc-")
+                    )
+                }
+                referenced = {ref for kind, ref in used if kind == "fact"}
+                for calculation in report["calculations"]:
+                    if ("calculation", calculation["id"]) in used:
+                        referenced.update(calculation["inputFactIds"])
+                available = {
+                    f["metricCode"]
+                    for f in report["facts"]
+                    if f["id"] in {x["id"] for x in scoped["data"]["facts"]}
+                }
+                covered = {
+                    f["metricCode"] for f in report["facts"] if f["id"] in referenced
+                }
+                missing = sorted(available - covered - {"revenue"})
+                if missing:
+                    metric_codes = {f["id"]: f["metricCode"] for f in report["facts"]}
+                    raise InvalidFindings(
+                        ["incomplete_topic_coverage"],
+                        [
+                            {
+                                "field": "findings",
+                                "code": "incomplete_topic_coverage",
+                                "missing_metrics": missing,
+                                "missing_facts": [
+                                    {**f, "metricCode": metric_codes[f["id"]]}
+                                    for f in scoped["data"]["facts"]
+                                    if metric_codes[f["id"]] in missing
+                                ],
+                                "hint": (
+                                    "已有发现字段校验通过，但遗漏所列费用科目。"
+                                    "仅用 append_findings 补充缺失科目的实质分析，"
+                                    "保留已有草稿；或 patches 在已有发现中补充。"
+                                    "不能只在 factIds 中挂引用而不分析该科目。"
+                                ),
+                            }
+                        ],
+                    )
         except (InvalidFindings, ValueError) as exc:
             item["failures"] += 1
+            errors = getattr(exc, "details", None) or [{"code": str(exc)}]
+            boundary_error = any(e["code"].startswith("unsupported_") for e in errors)
+            coverage_error = any(
+                e["code"] == "incomplete_topic_coverage" for e in errors
+            )
             item.update(
                 status="failed" if item["failures"] >= 3 else "needs_revision",
-                note="本专题结论校验失败，其他专题已保存；可单独重试。",
-                issues=getattr(exc, "details", None) or [{"code": str(exc)}],
+                note=(
+                    "本专题尚未覆盖已提供的费用科目，请补充分析。"
+                    if coverage_error
+                    else "本专题结论超出当前证据的解释边界，需修订相关判断。"
+                    if boundary_error
+                    else (
+                        "本专题结论格式或引用校验失败；不代表历史数据缺失。"
+                        "可在执行过程中查看错误并单独重试。"
+                    )
+                ),
+                errorCode="TOPIC_COVERAGE_INCOMPLETE"
+                if coverage_error
+                else "EXPLANATION_BOUNDARY_FAILED"
+                if boundary_error
+                else "FINDING_VALIDATION_FAILED",
+                issues=errors,
                 completedAt=stamp() if item["failures"] >= 3 else None,
+            )
+            item.setdefault("validationHistory", []).append(
+                {
+                    "at": stamp(),
+                    "revision": report["revision"],
+                    "issues": deepcopy(item["issues"]),
+                    "errorCode": item["errorCode"],
+                }
             )
             return changed(report)
         note = f"已保存 {len(accepted)} 条发现，等待复核；结论仍需人工核对。"
@@ -341,9 +447,19 @@ def save_topic(report, topic_id, findings, missing_reason=""):
         findingIds=[f["id"] for f in accepted],
         completedAt=stamp(),
         issues=[],
+        errorCode=None if accepted else "MISSING_REQUIRED_METRICS",
     )
     report = apply_findings(report, kept + accepted)
     return changed(report)
+
+
+def advance_topic(report):
+    """Hand off sequentially; never concurrently mutate a shared revision."""
+    if report["workflow"]["status"] != "published":
+        for item in report["workflow"]["topics"]:
+            if item["status"] not in TERMINAL:
+                return start_topic(report, item["id"])
+    return report
 
 
 def next_action(report, active_topic=None):
@@ -403,17 +519,33 @@ def review_report(report, reviews):
     # Validate every record before changing anything. Review is the agent's
     # explicit assessment, never proof of semantic correctness or human review.
     for review in reviews:
-        if review.get("verdict") not in {"pass", "revise", "insufficient"} or not all(
-            review.get(k) is True
+        topic_id = review["topic_id"]
+        if review.get("verdict") not in {"pass", "revise", "insufficient"}:
+            fail(f"专题 {topic_id} 的 verdict 必须为 pass、revise 或 insufficient。")
+        unchecked = [
+            k
             for k in ("directionChecked", "scopeChecked", "causalityChecked")
-        ):
-            fail("每项复核需检查变化方向、期间口径和原因依据，并给出结论。")
+            if review.get(k) is not True
+        ]
+        if unchecked:
+            fail(
+                f"专题 {topic_id} 的复核字段 {', '.join(unchecked)} 必须为布尔 true。"
+                "这些字段记录该维度及其缺口已检查，不代表结论通过。"
+                "失败或缺数据专题检查缺口后也应设为 true，使用 verdict=insufficient，"
+                "并在 note 说明限制；不要只修改 note 的格式。"
+            )
         item = topic(report, review["topic_id"])
         if review["verdict"] == "pass" and item["status"] in {"failed", "insufficient"}:
             fail("失败或缺数据专题不能标记复核通过。")
         if not isinstance(review.get("note"), str) or not review["note"].strip():
             fail("请说明每个专题的复核依据或需要修订的问题。")
-        _render_text(review["note"], {}, {}, set())
+        try:
+            _render_text(review["note"], {}, {}, set())
+        except ValueError as exc:
+            fail(
+                f"专题 {topic_id} 的 note 校验失败：{exc}。"
+                "note 只写不含数字或占位符的具体复核依据。"
+            )
     for review in reviews:
         item = topic(report, review["topic_id"])
         item["review"] = deepcopy(review)
@@ -422,10 +554,13 @@ def review_report(report, reviews):
         elif review["verdict"] == "pass":
             item["status"] = "reviewed"
         else:
-            item.update(
-                status="failed" if item["status"] == "failed" else "insufficient",
-                note=review["note"],
-            )
+            if item["status"] not in {"failed", "insufficient"}:
+                item.update(
+                    status="insufficient",
+                    errorCode="REVIEW_INSUFFICIENT",
+                    note="智能体复核认为依据不足，详见独立复核意见。",
+                )
+            # Preserve backend failure codes/details. Model opinion is not cause.
     report["revision"] = report["report"]["run"]["id"] + "-" + uuid4().hex[:12]
     workflow["review"] = {
         "at": stamp(),
@@ -467,3 +602,11 @@ def publish(report):
     )
     sync(report)
     return report
+
+
+def public_snapshot(report):
+    """Keep repair drafts private to storage/model tools, including JSON exports."""
+    result = deepcopy(report)
+    for item in result.get("workflow", {}).get("topics", []):
+        item.pop("draftFindings", None)
+    return result

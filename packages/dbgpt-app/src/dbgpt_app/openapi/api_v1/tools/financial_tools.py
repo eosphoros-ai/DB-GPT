@@ -16,26 +16,34 @@ from dbgpt_serve.financial_analysis.questions import (
     reference_only_answer,
     validate_answer,
 )
-from dbgpt_serve.financial_analysis.workflow import TOPICS, next_action, topic_context
+from dbgpt_serve.financial_analysis.workflow import next_action, topic_context
 
 FINANCIAL_MAX_STEPS = 40
 
 SECTIONAL_RULES = """本报告采用专题流程，不要一次提交整份报告的 findings。
-按 workflow.topics 逐一调用 get_financial_topic 读取当前专题的数据，
+prepare 默认有界并发生成六专题，返回完整 review_context 时直接逐项复核。
+若返回 topic_context 则按串行恢复流程分析；保存成功自动返回下一专题，无需额外 get。
+仅显式读取或重做专题时调用 get_financial_topic，
 由你分析后调用 save_financial_topic 保存两到三条有依据的发现（数据有限可以减少）。
 经营表现、扣非与利润构成、毛利变化、费用变化、现金流、资产负债都要处理。
 每条包含判断、引用、反向信息和待核查事项，不能仅重复数字；不得编造变化原因。
 仅对 missingRequiredMetrics 非空的专题可用 missing_reason 说明缺项并提交空 findings。
 保存失败只修当前专题，使用返回的新 revision；不要重新 prepare 或重算 PDF。
-每次遵循 next_action。topic_result.saved=false 表示未保存成功，先按 issues 修正。
+工具的 model_context 是模型专用数据，chunks 仅供界面展示。每次遵循 next_action。
+topic_result.saved=false 表示未保存成功，一次处理 issues 中所有 finding_index 和字段。
 反向信息和待核查事项中的引用也必须写入同一条发现的 Ids 数组。
-修正时直接 save，不重复 get，不使用 retry=true 重置失败计数。
+修正时直接 save，仅传 patches，格式：
+[{"finding_index":错误索引,"changes":{"错误字段":"修正值"}}]，
+保留已通过校验的草稿；也支持完整 findings。不要重复 get 或用 retry=true 重置失败计数。
+覆盖不全时可仅传 append_findings 追加缺失科目的发现，不重写已有草稿；仍完整校验。
 专题连续三次失败后继续其他专题，复核使用 insufficient；不能冒充成功。
 全部专题处理后调用 review_financial_report，逐项检查变化方向、期间/口径和原因依据。
 复核必须覆盖全部专题，每项给出 topic_id、verdict（pass/revise/insufficient）、
 directionChecked:true、scopeChecked:true、causalityChecked:true、note（不含数字的具体核对说明）。
-需要修订就再次读取/保存对应专题，然后重新复核。最后调用 publish_financial_report，
-只传 run_id、最新 revision，不传 findings。不得在未发布时 terminate。
+三项 Checked 记录该维度及其缺口已检查，不表示结论通过；
+失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient，并在 note 说明限制。
+需要修订就修正对应专题，然后重新复核。明确复核通过后后端原子发布，
+workflow.status=published 即可 terminate，无需再调用 publish。不得在未发布时 terminate。
 用户只要求重做某专题时，先 read 当前报告，再 get_financial_topic(retry=true)，
 保留其他专题，修订后复核、发布；不重新解析 PDF。普通追问仍直接 read 后回答。
 """
@@ -55,13 +63,30 @@ PUBLICATION_RULES = (
 
 FINANCIAL_AGENT_PROMPT = """
 ## 财报分析与当前对话中的报告
-分析年度报告时，先加载 financial-report-analyzer 技能，并使用
-prepare_financial_report 提取和计算，然后由你根据返回的事实与计算撰写结论，
-按工具返回的专题流程逐一分析、保存、复核，最后调用 publish_financial_report。
+分析年度报告时，先加载 financial-report-analyzer 技能（已预加载则不重复加载），并使用
+prepare_financial_report 提取、计算并有界并发生成专题草稿，
+你根据返回的 review_context 逐项复核；复核通过自动发布。
+若 next_action 要求修订则仅修指定专题；不要重新生成已保存专题。
+prepare_financial_report、get_financial_topic、save_financial_topic、
+review_financial_report、publish_financial_report、read_financial_report
+都是已注册的后端工具，不是 Skill 脚本或 .py 文件。直接使用它们作为 Action，
+不需要 load_tools，不通过 execute_skill_script、execute_skill_script_file
+或 execute_tool。
+仅有一份 PDF 附件时，准备步骤直接输出：
+Action: prepare_financial_report
+Action Input: {}
+有多份 PDF 时在 Action Input 中指定附件清单里的 file_id。
+不能猜测 prepare.py、prepare_financial_report.py 等脚本名，也不使用
+code_interpreter、shell_interpreter 或知识库搜索替代财报提取、计算和发布。
+如专用工具返回错误，根据实际错误处理；不把工具错误解释成缺少 Skill 脚本。
 不使用 html_interpreter、旧 HTML 模板或自行编写网页来替代财报组件。
 工具返回的财报已显示在当前对话右侧，不要让用户跳转 /financial-analysis。
 后续追问先调用 read_financial_report 读取当前对话的报告，不重复提取 PDF，
 只引用已有事实、计算及原文，缺少数据就明确说明，不自行计算新指标或补造原因。
+追问的最终回答必须直接复制 data.facts/data.calculations 中的 reference 字段，
+不能抄 displayValue、金额、年份或页码，也不能复制含数字的原文片段或追加单位。
+按 read 返回的 answer_format_example 将引用放进 terminate 的 output 字符串；
+服务端会替换真实数值并补齐原 PDF 来源页码。
 发布后用简短摘要完成回答，保留“部分分析”和待核对信息。
 """
 
@@ -146,6 +171,52 @@ def publication_example(report):
     }
 
 
+def _topic_payload(report, topic_id):
+    run_id = report["report"]["run"]["id"]
+    context = topic_context(report, topic_id)
+    context.update(
+        run_id=run_id,
+        revision=report["revision"],
+        publication_instructions=PUBLICATION_RULES.replace(
+            "publish_financial_report", "save_financial_topic"
+        ).replace("通常四条", "通常两到三条"),
+        next_action=next_action(report, topic_id),
+    )
+    if context["data"]["facts"]:
+        fact = context["data"]["facts"][0]
+        example_facts = (
+            [
+                f
+                for f in context["data"]["facts"]
+                if f["fiscalPeriod"] == context["data"]["year"]
+            ]
+            if topic_id == "expenses"
+            else [fact]
+        )
+        context["save_example"] = {
+            "run_id": run_id,
+            "revision": report["revision"],
+            "topic_id": topic_id,
+            "findings": [
+                {
+                    "section": context["section"],
+                    "title": "披露数据与解释边界",
+                    "summary": "、".join(f["reference"] for f in example_facts)
+                    + "，变化原因需结合附注核对。",
+                    "supportStatus": "partial",
+                    "factIds": [f["id"] for f in example_facts],
+                    "calculationIds": [],
+                    "evidenceExcerptIds": sorted(
+                        {e for f in example_facts for e in f["evidenceExcerptIds"]}
+                    ),
+                    "counterEvidence": [],
+                    "unresolvedQuestions": ["需核对附注中的变化原因。"],
+                }
+            ],
+        }
+    return context
+
+
 def _result(
     report, session_id, *, include_context=False, reading=False, active_topic=None
 ):
@@ -153,22 +224,110 @@ def _result(
     if report.get("workflow"):
         flow = report["workflow"]
         workflow_summary = {
-            key: flow.get(key)
-            for key in ("version", "status", "publishedAt", "review", "dataQuality")
+            key: flow.get(key) for key in ("version", "status", "publishedAt")
         }
         workflow_summary["topics"] = [
-            {key: value for key, value in topic.items() if key != "history"}
+            {
+                key: value
+                for key, value in topic.items()
+                if key
+                in {
+                    "id",
+                    "title",
+                    "section",
+                    "status",
+                    "findingIds",
+                    "errorCode",
+                    "failures",
+                    "saveAttempts",
+                }
+            }
             for topic in flow["topics"]
         ]
     summary = {
         "run_id": report["report"]["run"]["id"],
         "revision": report["revision"],
         "analysis": report.get("analysis"),
-        "findings": report["findings"],
+        "finding_count": len(report["findings"]),
         "workflow": workflow_summary,
     }
+    if reading or not workflow_summary:
+        summary["findings"] = report["findings"]
     if workflow_summary:
-        summary["next_action"] = next_action(report, active_topic)
+        current = next(
+            (
+                t
+                for t in report["workflow"]["topics"]
+                if t["status"] in {"running", "needs_revision"}
+            ),
+            None,
+        )
+        summary["next_action"] = next_action(
+            report, current["id"] if current else active_topic
+        )
+        if current:
+            if current["status"] == "needs_revision" and current.get("draftFindings"):
+                scoped = topic_context(report, current["id"])["data"]
+                summary["repair"] = {
+                    "topic_id": current["id"],
+                    "draftFindings": current["draftFindings"],
+                    "issues": current.get("issues", []),
+                    "available_references": {
+                        key: [{k: entry[k] for k in fields} for entry in scoped[key]]
+                        for key, fields in (
+                            (
+                                "facts",
+                                (
+                                    "id",
+                                    "reference",
+                                    "metricName",
+                                    "fiscalPeriod",
+                                    "evidenceExcerptIds",
+                                ),
+                            ),
+                            (
+                                "calculations",
+                                ("id", "reference", "name", "unit", "inputFactIds"),
+                            ),
+                        )
+                    },
+                    "instructions": (
+                        "逐项处理所有 issues，优先采用各项 hint / suggested_changes，"
+                        "合并为一次 patches 提交；不要遗漏后面的 finding_index。"
+                    ),
+                }
+            else:
+                summary["topic_context"] = _topic_payload(report, current["id"])
+        elif (
+            summary["next_action"]
+            and summary["next_action"]["tool"] == "review_financial_report"
+        ):
+            # Only the explicit review stage needs all narratives and evidence.
+            summary["review_context"] = {
+                "instructions": (
+                    "逐条核对引用名称和句子主语、分子分母是否对应，不能只确认引用存在。"
+                    "差额占比不能写为扣非利润占比；扣非利润不等于主营业务利润。"
+                    "本上下文没有行业基准、债务期限、受限资金或业务原因证据，"
+                    "不能通过行业比较、资金充裕或偿债安全等断言。"
+                    "发现错误用 revise 并说明待改字段，不能以通用免责声明代替修订。"
+                ),
+                "findings": report["findings"],
+                "data": model_context(report),
+                "topics": [
+                    {
+                        k: t.get(k)
+                        for k in (
+                            "id",
+                            "status",
+                            "note",
+                            "errorCode",
+                            "issues",
+                            "findingIds",
+                        )
+                    }
+                    for t in report["workflow"]["topics"]
+                ],
+            }
     if active_topic:
         item = next(t for t in report["workflow"]["topics"] if t["id"] == active_topic)
         summary["topic_result"] = {
@@ -177,14 +336,20 @@ def _result(
             "saved": item["status"] in {"ready", "insufficient"},
             "issues": item.get("issues", []),
             "repair_instructions": (
-                "按 finding_index 和 field 修正后，"
+                "优先仅传 patches=[{finding_index:索引,changes:{字段:修正值}}]，"
+                "不传 findings；"
+                "服务端保留其他草稿并完整重验。按 finding_index 和 field 修正后，"
                 "使用 next_action 中的新 revision 再保存。"
                 "invalid_tokens 列出该字段中必须全部删除或改用已有引用的数值；"
                 "未经计算工具提供的差额和数字阈值改为定性比较，不得自行补算。"
                 "所有文本字段中的引用都要声明在同一条发现的 factIds/calculationIds，"
                 "不能直接写数字或在占位符后追加单位；不得删除校验规则。"
+                "unsupported_* 表示超出表格证据的解释：改为有依据的观察，"
+                "将原因/行业/偿债判断改为待核查问题，不能追加免责声明保留断言。"
             ),
         }
+        if not item.get("issues"):
+            summary["topic_result"].pop("repair_instructions")
     if include_context:
         if reading:
             summary["answer_instructions"] = (
@@ -212,15 +377,25 @@ def _result(
                 for item in context[key]:
                     item["reference"] = "{{" + kind + ":" + item["id"] + "}}"
             summary["data"] = context
+            if reading and context["facts"]:
+                summary["answer_format_example"] = {
+                    "Action": "terminate",
+                    "Action Input": {
+                        "output": "披露数据显示"
+                        + context["facts"][0]["reference"]
+                        + "。原文依据可在右侧报告中核对。"
+                    },
+                }
     return json.dumps(
         {
             "chunks": [
                 _artifact(report, session_id),
                 {
                     "output_type": "text",
-                    "content": json.dumps(summary, ensure_ascii=False),
+                    "content": report["agent"]["summary"],
                 },
-            ]
+            ],
+            "model_context": summary,
         },
         ensure_ascii=False,
     )
@@ -280,7 +455,9 @@ def finalize_financial_answer(content, state):
     return answer["answer"] + suffix
 
 
-def make_financial_tools(state, *, service=None, stream_callback=None, sectional=True):
+def make_financial_tools(
+    state, *, service=None, stream_callback=None, sectional=True, topic_generator=None
+):
     """Bind owner/session to trusted turn state, never to model arguments."""
 
     def scope():
@@ -289,55 +466,71 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
             raise ValueError("当前对话身份尚未就绪。")
         return service or _service(), owner, session_id
 
-    async def progress(report=None, stage=None):
+    latest_progress_report = None
+    activity = {}
+    observed_findings = set()
+    observed_runs = set()
+
+    async def execution_started(action, action_input, message):
+        if sectional and stream_callback:
+            await stream_callback(
+                "financial.execution",
+                {
+                    "action": action,
+                    "action_input": action_input,
+                    "message": message,
+                },
+            )
+
+    async def progress(report=None, stage=None, error=False):
+        nonlocal latest_progress_report
         if not sectional:
             return
-        tasks = []
-        if report:
-            for step in report["steps"]:
-                status = step["status"]
-                tasks.append(
-                    {
-                        "content": step["title"]
-                        + ("：" + step["detail"] if status == "failed" else ""),
-                        "status": {
-                            "completed": "completed",
-                            "failed": "cancelled",
-                            "running": "in_progress",
-                        }.get(status, "pending"),
-                        "priority": "high",
-                    }
-                )
-        else:
-            names = [
-                ("extract", "读取并提取 PDF 财务数据"),
-                ("calculate", "核对口径并计算指标"),
-                ("save", "保存财务数据"),
-            ]
-            current = next((i for i, (key, _) in enumerate(names) if key == stage), 0)
-            tasks = [
-                {
-                    "content": title,
-                    "status": "completed"
-                    if i < current
-                    else "in_progress"
-                    if i == current
-                    else "pending",
-                    "priority": "high",
-                }
-                for i, (_, title) in enumerate(names)
-            ]
-            tasks += [
-                {"content": values[0], "status": "pending", "priority": "high"}
-                for values in TOPICS.values()
-            ]
-            tasks += [
-                {"content": title, "status": "pending", "priority": "high"}
-                for title in ("复核方向、口径与解释依据", "汇总发布报告")
-            ]
+        from dbgpt_serve.financial_analysis.progress import public_progress
+
+        latest_progress_report = report
+        tasks = public_progress(
+            report,
+            stage=stage,
+            previous=state.get("financial_plan", []),
+            activity=activity,
+            error=error,
+        )
         state["financial_plan"] = tasks
         if stream_callback:
-            await stream_callback("financial.progress", {"tasks": tasks})
+            observations = []
+            if report:
+                run_id = report["report"]["run"]["id"]
+                if run_id not in observed_runs:
+                    observed_runs.add(run_id)
+                    names = list(
+                        dict.fromkeys(
+                            f["metricName"]
+                            for f in report.get("facts", [])
+                            if f.get("normalizedValue") is not None
+                            and f.get("metricName")
+                        )
+                    )
+                    if names:
+                        observations.append(
+                            "已读取财务科目：" + "、".join(names[:12]) + "。"
+                        )
+                for finding in report.get("findings", []):
+                    summary = finding.get("summary", "")
+                    key = (run_id, finding.get("id"), summary)
+                    if summary and key not in observed_findings:
+                        observed_findings.add(key)
+                        observations.append(
+                            "已校验的分析发现（待最终复核）：" + summary
+                        )
+            await stream_callback(
+                "financial.progress", {"tasks": tasks, "observations": observations}
+            )
+
+    async def activity_progress(value):
+        nonlocal activity
+        activity = value
+        await progress(latest_progress_report)
 
     async def remember(report, *, pending=True, active_topic=None):
         state.update(financial_report_context=report, financial_read=False)
@@ -353,11 +546,26 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
         description=(
             "提取当前对话 PDF 年报并执行确定性财务计算。"
             "返回原文引用、数字和待分析报告。"
-            "你必须随后用 publish_financial_report 提交自己的结构化结论。"
+            "默认并发生成六专题并完整校验，返回 review_context 后直接 review；"
+            "恢复任务时按 next_action 继续；"
+            "六专题完成并显式 review 后自动发布。"
             "file_id 可省略（仅一个 PDF 时）；多文件时必须指定当前附件的 file_id。"
         )
     )
     async def prepare_financial_report(file_id: str = "") -> str:
+        await execution_started(
+            "prepare_financial_report",
+            {"file_id": file_id},
+            "开始读取财报，提取财务数据和原文依据。",
+        )
+        await progress(stage="extract")
+        try:
+            return await prepare(file_id)
+        except (Exception, asyncio.CancelledError):
+            await progress(latest_progress_report, error=True)
+            raise
+
+    async def prepare(file_id):
         backend, owner, session_id = scope()
         manifests = state.get("session_files", [])
         if manifests:
@@ -436,6 +644,45 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
                 )
                 if report.get("analysis", {}).get("completedAt") is None:
                     state.setdefault("financial_pending", set()).add(run_id)
+                if report.get("workflow"):
+                    from dbgpt_serve.financial_analysis.parallel import (
+                        TopicGenerator,
+                        analyze_topics,
+                    )
+
+                    generator = topic_generator
+                    if (
+                        generator is None
+                        and state.get("financial_llm_client")
+                        and state.get("model_name")
+                    ):
+                        generator = TopicGenerator(
+                            state["financial_llm_client"],
+                            state["model_name"],
+                            owner,
+                            session_id,
+                        )
+                    if generator and all(
+                        t["status"] == "pending" for t in report["workflow"]["topics"]
+                    ):
+                        report = await analyze_topics(
+                            backend,
+                            owner,
+                            session_id,
+                            report,
+                            generator,
+                            progress,
+                            activity=activity_progress,
+                        )
+                    else:
+                        report = await asyncio.to_thread(
+                            backend.update_agent_workflow,
+                            owner,
+                            session_id,
+                            run_id,
+                            report["revision"],
+                            "advance",
+                        )
                 state.update(financial_report_context=report, financial_read=False)
                 await progress(report)
                 return _result(report, session_id, include_context=True)
@@ -457,6 +704,11 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
     async def publish_financial_report(
         run_id: str, revision: str, findings: list[dict] = None
     ) -> str:
+        await execution_started(
+            "publish_financial_report",
+            {"run_id": run_id, "revision": revision},
+            "正在核对已保存版本并生成报告。",
+        )
         backend, owner, session_id = scope()
         try:
             report = await asyncio.to_thread(
@@ -514,9 +766,16 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
         description=(
             "读取当前对话已保存的财报、真实数据及原文引用，用于继续追问或重新展示。"
             "run_id 可省略以读取当前对话最近报告；不能读取其他对话。"
+            "最终回答按 answer_format_example 复制数据的 reference 字段，"
+            "不直接写数字、年份、页码或带数字的原文；服务端会补齐数值和来源。"
         )
     )
     async def read_financial_report(run_id: str = "") -> str:
+        await execution_started(
+            "read_financial_report",
+            {"run_id": run_id},
+            "正在读取已保存报告、财务数据和原文引用。",
+        )
         backend, owner, session_id = scope()
         if run_id:
             report = await asyncio.to_thread(
@@ -538,6 +797,11 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
     async def get_financial_topic(
         run_id: str, topic_id: str, retry: bool = False
     ) -> str:
+        await execution_started(
+            "get_financial_topic",
+            {"run_id": run_id, "topic_id": topic_id, "retry": retry},
+            "正在读取本次分析所需的数据与原文依据。",
+        )
         backend, owner, session_id = scope()
         report = await asyncio.to_thread(
             backend.get, owner, session_id, run_id, report=True
@@ -553,43 +817,16 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
             retry=retry,
         )
         await remember(report)
-        context = topic_context(report, topic_id)
-        context.update(
-            run_id=run_id,
-            revision=report["revision"],
-            publication_instructions=PUBLICATION_RULES.replace(
-                "publish_financial_report", "save_financial_topic"
-            ).replace("通常四条", "通常两到三条"),
-            next_action=next_action(report, topic_id),
-        )
-        if context["data"]["facts"]:
-            fact = context["data"]["facts"][0]
-            context["save_example"] = {
-                "run_id": run_id,
-                "revision": report["revision"],
-                "topic_id": topic_id,
-                "findings": [
-                    {
-                        "section": context["section"],
-                        "title": "披露数据与解释边界",
-                        "summary": fact["reference"] + "，变化原因需结合附注核对。",
-                        "supportStatus": "partial",
-                        "factIds": [fact["id"]],
-                        "calculationIds": [],
-                        "evidenceExcerptIds": fact["evidenceExcerptIds"],
-                        "counterEvidence": [],
-                        "unresolvedQuestions": ["需核对附注中的变化原因。"],
-                    }
-                ],
-            }
+        context = _topic_payload(report, topic_id)
         return json.dumps(
             {
                 "chunks": [
                     {
                         "output_type": "text",
-                        "content": json.dumps(context, ensure_ascii=False),
+                        "content": "已读取专题：" + context["title"],
                     }
-                ]
+                ],
+                "model_context": context,
             },
             ensure_ascii=False,
         )
@@ -597,7 +834,10 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
     @tool(
         description=(
             "保存当前专题的分析 findings，字段及占位符规则与 prepare 相同。"
-            "只修改该专题；失败反馈带新 revision，仅重试该专题。"
+            "成功后直接返回下一专题数据；失败带新 revision，"
+            "优先只传 patches 修正错误字段。"
+            "patches=[{finding_index:索引,changes:{字段:修正值}}]，不同时传 findings。"
+            "覆盖不全可用 append_findings 追加缺少的发现，可与 patches 合用。"
             "仅缺少必要数据时允许 findings=[] 并提供 missing_reason。"
         )
     )
@@ -605,9 +845,16 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
         run_id: str,
         revision: str,
         topic_id: str,
-        findings: list[dict],
+        findings: list[dict] = None,
         missing_reason: str = "",
+        patches: list[dict] = None,
+        append_findings: list[dict] = None,
     ) -> str:
+        await execution_started(
+            "save_financial_topic",
+            {"run_id": run_id, "topic_id": topic_id, "revision": revision},
+            "正在校验分析中的数字、引用和解释边界，保存通过校验的内容。",
+        )
         backend, owner, session_id = scope()
         report = await asyncio.to_thread(
             backend.update_agent_workflow,
@@ -619,6 +866,8 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
             topic_id=topic_id,
             findings=findings,
             missing_reason=missing_reason,
+            patches=patches,
+            append_findings=append_findings,
         )
         return await remember(report, active_topic=topic_id)
 
@@ -627,13 +876,21 @@ def make_financial_tools(state, *, service=None, stream_callback=None, sectional
             "所有专题保存后逐项复核。reviews 是数组，每项含 topic_id、"
             "verdict(pass/revise/insufficient)、directionChecked、scopeChecked、"
             "causalityChecked（三项均为 true）、note（无数字的具体核对说明）。"
+            "Checked 表示该维度及缺口已检查，不代表结论通过；"
+            "失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient。"
             "检查方向是否吻合数据、期间和口径是否一致、因果解释是否有原文支持；"
-            "有问题用 revise，不得机械通过。复核通过仍待人工核对。"
+            "有问题用 revise，不得机械通过。所有专题复核通过/明确不足后后端自动发布，"
+            "无需再调用 publish；仍待人工核对。"
         )
     )
     async def review_financial_report(
         run_id: str, revision: str, reviews: list[dict]
     ) -> str:
+        await execution_started(
+            "review_financial_report",
+            {"run_id": run_id, "revision": revision},
+            "正在核对结论方向、期间口径与解释依据；完成后汇总发布。",
+        )
         backend, owner, session_id = scope()
         report = await asyncio.to_thread(
             backend.update_agent_workflow,

@@ -22,7 +22,7 @@ def data(response):
     return body["data"]
 
 
-def chat(client, conversation, model, question, extra, output):
+def chat(client, conversation, model, question, extra, output, *, preselect_skill=True):
     events = []
     actions = []
     final = None
@@ -35,7 +35,11 @@ def chat(client, conversation, model, question, extra, output):
                 "model_name": model,
                 "chat_mode": "chat_react_agent",
                 "user_input": question,
-                "ext_info": dict(extra, skill_name="financial-report-analyzer"),
+                "ext_info": (
+                    dict(extra, skill_name="financial-report-analyzer")
+                    if preselect_skill
+                    else extra
+                ),
             },
         ) as response:
             response.raise_for_status()
@@ -80,6 +84,16 @@ def main():
     parser.add_argument("--pdf", type=Path, help="Defaults to the homepage PDF example")
     parser.add_argument("--model", default="qwen-plus")
     parser.add_argument("--user-id", default="financial-round10")
+    parser.add_argument(
+        "--no-skill",
+        action="store_true",
+        help="Use the homepage's automatic skill selection, without a selected skill",
+    )
+    parser.add_argument(
+        "--question",
+        default="请分析这份年报，逐项完成财报专题分析、复核和发布，明确缺项与解释边界。",
+        help="Initial analysis request",
+    )
     parser.add_argument("--retry-topic", action="store_true")
     parser.add_argument(
         "--resume",
@@ -122,10 +136,12 @@ def main():
                 client,
                 conversation,
                 args.model,
-                "请分析这份年报，逐项完成财报专题分析、复核和发布，明确缺项与解释边界。",
+                args.question,
                 extra,
                 args.output_dir / "analysis-events.json",
+                preselect_skill=not args.no_skill,
             )
+        analysis_elapsed = time.monotonic() - started
         refs = [
             e["content"]
             for e in events
@@ -148,8 +164,16 @@ def main():
             for t in report["workflow"]["topics"]
         )
         assert "prepare_financial_report" in actions
+        assert not {
+            "execute_skill_script",
+            "execute_skill_script_file",
+            "code_interpreter",
+            "shell_interpreter",
+            "html_interpreter",
+            "semantic_search",
+        }.intersection(actions), "Financial analysis bypassed the registered tools"
         assert {item["runId"] for item in refs} == {ref["runId"]}
-        assert "publish_financial_report" in actions and actions[-1] == "terminate"
+        assert "review_financial_report" in actions and actions[-1] == "terminate"
         history = data(
             client.get(
                 "/api/v1/chat/dialogue/messages/history",
@@ -166,6 +190,7 @@ def main():
             "本期营业收入是多少？请提供它的原文依据。",
             {},
             args.output_dir / "followup-events.json",
+            preselect_skill=not args.no_skill,
         )
         assert "read_financial_report" in followup_actions
         assert "prepare_financial_report" not in followup_actions
@@ -185,6 +210,7 @@ def main():
                 "只重新分析费用变化专题，保留其他专题，完成复核并发布新版本。",
                 {},
                 args.output_dir / "retry-events.json",
+                preselect_skill=not args.no_skill,
             )
             assert "get_financial_topic" in retry_actions
             assert "prepare_financial_report" not in retry_actions
@@ -213,6 +239,25 @@ def main():
                 t["id"]: t["status"] for t in report["workflow"]["topics"]
             },
             "actions": actions,
+            "analysisElapsedSeconds": round(analysis_elapsed, 1),
+            "extractionMs": next(
+                s.get("elapsedMs") for s in report["steps"] if s["id"] == "extract"
+            ),
+            "saveAttempts": sum(
+                t.get("saveAttempts", len(t["history"]) + t["failures"])
+                for t in report["workflow"]["topics"]
+            ),
+            "validationFailures": sum(
+                t["failures"] for t in report["workflow"]["topics"]
+            ),
+            "parallelBatch": report["workflow"].get("parallelBatch"),
+            "topicModelCalls": sum(
+                m["modelCalls"]
+                for m in report["workflow"]
+                .get("parallelBatch", {})
+                .get("metrics", {})
+                .values()
+            ),
             "elapsedSeconds": round(time.monotonic() - started, 1),
             "final": final,
         }
