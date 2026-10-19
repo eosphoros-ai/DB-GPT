@@ -10,7 +10,7 @@ This document describes the design of the data analysis report capability: how r
 
 The system is organized around one principle: capture execution artifacts first, then generate the report from references. The task agent plans the analysis and invokes tools; the capture layer persists real execution results; the dedicated report agent selects evidence and composes content; the template engine resolves values and validates bindings; the report service stores documents and indexes, which the frontend uses for display and source lookup. Modules exchange artifact identifiers and selectors, as shown in Figure 1.
 
-![figure-01](traceable-report-en-assets/figure-01.png)
+![figure-01](/img/traceable-report/en/figure-01.png)
 
 *Figure 1. Collaboration design for execution capture and the report service*
 
@@ -20,7 +20,7 @@ The main task and its parallel subtasks write results to the same conversation-l
 
 The model records two distinct kinds of relationships. Production dependencies answer which inputs produced a given result; body citations answer which result is used at a given place in the report. The former links artifacts through input_artifact_ids; the latter links a report target to a source location through EvidenceReference. A report revision freezes both relationships together with their content snapshots, as shown in Figure 2.
 
-![figure-02](traceable-report-en-assets/figure-02.png)
+![figure-02](/img/traceable-report/en/figure-02.png)
 
 *Figure 2. Independent modeling of production dependencies and body citations*
 
@@ -39,7 +39,7 @@ For example, a GMV value reference can be declared as artifact_id = sql_A, path 
 
 Report construction starts from completed artifacts and proceeds through spec construction, reference resolution, binding validation, rendering, and persistence. Errors return to the relevant stage through checkpoints instead of restarting the entire analysis; a completed report and an unfinished task return distinct statuses. The flow is shown in Figure 3.
 
-![figure-03](traceable-report-en-assets/figure-03.png)
+![figure-03](/img/traceable-report/en/figure-03.png)
 
 *Figure 3. Report generation validation and failure recovery flow*
 
@@ -71,7 +71,7 @@ For export, the system waits for fonts and charts to finish rendering, clones th
 
 On the home page, the user selects the Olist_Ecommerce database and the Olist_Analytics_Governance knowledge base and asks a business review question covering GMV, order volume, average order value, category and regional performance, and the relationship between delivery and ratings. After submission, the user follows task progress on the left and reads the report's definitions, core metrics, and improvement recommendations on the right, then decides which questions to verify next, as shown in Figure 4.
 
-![figure-04](traceable-report-en-assets/figure-04.png)
+![figure-04](/img/traceable-report/en/figure-04.png)
 
 *Figure 4. Selecting data, running the analysis, and generating the business report*
 
@@ -79,7 +79,7 @@ On the home page, the user selects the Olist_Ecommerce database and the Olist_An
 
 The user first checks GMV in the report and clicks the SQL badge next to the value to open its source details, including execution status, duration, database, query statement, and result snapshot. By comparing the displayed value with the query result, the user can confirm which field the metric used and inspect the query conditions when the definition is in doubt, without searching the full conversation for the execution record. See Figure 5.
 
-![figure-05](traceable-report-en-assets/figure-05.png)
+![figure-05](/img/traceable-report/en/figure-05.png)
 
 *Figure 5. Opening execution evidence through the GMV SQL badge*
 
@@ -87,7 +87,7 @@ The user first checks GMV in the report and clicks the SQL badge next to the val
 
 The user then clicks the KB badge next to the methodology note to inspect the knowledge file, source excerpt, and read location used by this analysis, confirming the order filter, deduplication, currency unit, and delivery grouping rules. When a metric name is ambiguous, the user can compare this rule with the query conditions to judge whether the report answers the original business question. See Figure 6.
 
-![figure-06](traceable-report-en-assets/figure-06.jpeg)
+![figure-06](/img/traceable-report/en/figure-06.jpeg)
 
 *Figure 6. Following a methodology note to the knowledge-base source*
 
@@ -95,7 +95,7 @@ The user then clicks the KB badge next to the methodology note to inspect the kn
 
 The user continues to the category analysis, first identifying the main sales categories from the bar chart and then reviewing the detail table below it. To verify the visualization, the user clicks the chart badge, and the source panel shows the SQL result and chart artifact behind the chart. The user can then check that categories, values, ordering, and units agree before deciding which categories merit deeper analysis or operational priority. See Figure 7.
 
-![figure-07](traceable-report-en-assets/figure-07.png)
+![figure-07](/img/traceable-report/en/figure-07.png)
 
 *Figure 7. Inspecting query results and chart artifacts from a category chart*
 
@@ -103,7 +103,7 @@ The user continues to the category analysis, first identifying the main sales ca
 
 For statistics computed in Python, the user clicks the PY badge next to the body value to inspect the executed code, result snapshot, and input files. Verification starts with the referenced field, then checks grouping, quantiles, or other computation steps, and opens the input file when the data source needs confirmation. This lets the user trace a specific value in the report back to its calculation basis, as shown in Figure 8.
 
-![figure-08](traceable-report-en-assets/figure-08.png)
+![figure-08](/img/traceable-report/en/figure-08.png)
 
 *Figure 8. Tracing a body value back to Python computation and input files*
 
@@ -111,9 +111,9 @@ For statistics computed in Python, the user clicks the PY badge next to the body
 
 For important metrics, the user expands both the SQL result and the knowledge-base source and reviews the computed value together with the rule that should apply. For example, the user checks the result field used for GMV, whether orders are deduplicated, and whether multi-table joins aggregate at the correct grain. When a value is unexpected, these details help the user decide whether to adjust the query, the metric definition, or the report wording. See Figure 9.
 
-![figure-09a](traceable-report-en-assets/figure-09a.png)
+![figure-09a](/img/traceable-report/en/figure-09a.png)
 
-![figure-09b](traceable-report-en-assets/figure-09b.png)
+![figure-09b](/img/traceable-report/en/figure-09b.png)
 
 *Figure 9. Comparing a SQL result snapshot with the knowledge-base source*
 
@@ -121,7 +121,7 @@ For important metrics, the user expands both the SQL result and the knowledge-ba
 
 After local verification, the user switches to Evidence Graph, reviews databases and knowledge files in the left column, follows the execution steps in the middle to understand the analysis, and checks report and chart files on the right. Clicking a node opens details with execution status, results, or file information. This shows which materials the report depends on and helps locate failed or still-questionable steps. See Figure 10.
 
-![figure-10](traceable-report-en-assets/figure-10.png)
+![figure-10](/img/traceable-report/en/figure-10.png)
 
 *Figure 10. Inspecting the complete chain from sources to execution and output files*
 
@@ -129,7 +129,7 @@ After local verification, the user switches to Evidence Graph, reviews databases
 
 When verification is complete, the user returns to Analysis Report and opens the Export menu in the upper-right corner, choosing HTML or PDF for the intended audience. Choose HTML for an offline-readable web page, or PDF for printing or archiving. Work that still needs interactive charts and source details should continue in the online report. See Figure 11.
 
-![figure-11](traceable-report-en-assets/figure-11.png)
+![figure-11](/img/traceable-report/en/figure-11.png)
 
 *Figure 11. Choosing HTML or PDF from the report export menu*
 
@@ -137,6 +137,6 @@ When verification is complete, the user returns to Analysis Report and opens the
 
 After choosing Export as PDF, the user enters the browser print preview and checks pagination, table width, charts, and font rendering, adjusting orientation, scale, and background graphics as needed. Once key content is confirmed not to be clipped, the user saves the PDF and completes delivery. The preview step lets the user verify the final reading experience before sending the file. See Figure 12.
 
-![figure-12](traceable-report-en-assets/figure-12.png)
+![figure-12](/img/traceable-report/en/figure-12.png)
 
 *Figure 12. Checking pagination in print preview and saving as PDF*
