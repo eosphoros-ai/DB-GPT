@@ -190,16 +190,48 @@ async def run_tool(
             except Exception:
                 pass
 
-        try:
-            tool_result = await tool_pack.async_execute(resource_name=name, **args)
-            status = Status.COMPLETE.value
-            is_terminal = tool_pack.is_terminal(name)
-        except Exception as e:
+        # Guard: a truncated ReAct turn can emit ``Action: <tool>`` with no
+        # ``Action Input:`` (or native tool_calls with empty arguments).
+        # Executing then raises a confusing ``missing 1 required positional
+        # argument`` TypeError; fail fast with an observation the model can
+        # act on instead.
+        missing_required: List[str] = []
+        if not args:
+            tool_obj = next(
+                (
+                    r
+                    for r in (tool_pack.sub_resources or [])
+                    if getattr(r, "name", None) == name
+                ),
+                None,
+            )
+            arg_spec = getattr(tool_obj, "args", None) or {}
+            missing_required = [
+                k for k, v in arg_spec.items() if getattr(v, "required", False)
+            ]
+        if missing_required:
             response_success = False
-            logger.exception(f"Tool [{name}] execute failed!")
             status = Status.FAILED.value
-            err_msg = f"Tool [{name}] execute failed! {str(e)}"
+            err_msg = (
+                f"Tool [{name}] was called with no arguments (the Action Input "
+                f"was missing or the output was truncated). Required "
+                f"parameters: {missing_required}. Retry the call with a "
+                f"complete JSON Action Input; keep the payload short enough "
+                f"to fit the output limit."
+            )
+            logger.warning(err_msg)
             tool_result = err_msg
+        else:
+            try:
+                tool_result = await tool_pack.async_execute(resource_name=name, **args)
+                status = Status.COMPLETE.value
+                is_terminal = tool_pack.is_terminal(name)
+            except Exception as e:
+                response_success = False
+                logger.exception(f"Tool [{name}] execute failed!")
+                status = Status.FAILED.value
+                err_msg = f"Tool [{name}] execute failed! {str(e)}"
+                tool_result = err_msg
 
         result_str = str(tool_result)
 
