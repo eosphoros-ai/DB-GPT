@@ -1035,6 +1035,149 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+# Cut points where streamed ReAct text stops being user-facing thought:
+# labelled Action Input / Action markers, and bare line-start JSON objects
+# (glm-style text ReAct writes ``{"todos": ...}`` / ``{"sql": ...}`` blobs
+# without any label, which per-chunk regexes cannot strip).
+_THOUGHT_CUT_RE = re.compile(
+    r"\n\s*Action\s*Input\s*:|\n\s*Action\s*:\s*\w+|^\s*\{", re.MULTILINE
+)
+# Trailing partial Action markers withheld from emission until they either
+# complete (and become a cut point) or prove to be ordinary text. The
+# alternation enumerates every prefix of ``\n Action Input:`` / ``\n Action:``
+# so partial words never leak into the visible thought stream.
+_THOUGHT_HOLDBACK_RE = re.compile(
+    r"\n\s*(?:A|Ac|Act|Acti|Actio|Action\s*(?::|\s*(?:I|In|Inp|Inpu|Input\s*:?))?)?\s*$"
+)
+
+
+def _thought_safe_prefix(buffer: str) -> str:
+    """Return the leading part of ``buffer`` safe to show as thought text."""
+    match = _THOUGHT_CUT_RE.search(buffer)
+    safe = buffer[: match.start()] if match else buffer
+    holdback = _THOUGHT_HOLDBACK_RE.search(safe)
+    return safe[: holdback.start()] if holdback else safe
+
+
+def _extract_partial_json_string_value(buffer: str, key: str) -> str:
+    """Incrementally decode ``key``'s string value from a partial JSON object.
+
+    Native function calling streams the terminate tool's ``arguments`` as a
+    growing JSON string (``{"output": "...", ...``).  This walks ``buffer``
+    with a minimal escape-aware JSON lexer so the decodable prefix of the
+    target string value can be streamed before the closing quote arrives.
+
+    The scan is stateless (full rescan per call), which makes incomplete
+    trailing escapes and split surrogate pairs self-healing: they are simply
+    withheld until the next chunk completes them.
+    """
+    i, n = 0, len(buffer)
+    in_string = False
+    escaped = False
+    in_value = False
+    out: List[str] = []
+    while i < n:
+        ch = buffer[i]
+        if in_value:
+            if escaped:
+                if ch == "u":
+                    hx = buffer[i + 1 : i + 5]
+                    if len(hx) < 4 or any(
+                        c not in "0123456789abcdefABCDEF" for c in hx
+                    ):
+                        break  # incomplete \u escape; wait for more data
+                    cp = int(hx, 16)
+                    # Combine surrogate pairs into a single code point; lone
+                    # surrogates in a str cannot be UTF-8 encoded for SSE.
+                    if (
+                        out
+                        and 0xDC00 <= cp <= 0xDFFF
+                        and 0xD800 <= ord(out[-1]) <= 0xDBFF
+                    ):
+                        high = ord(out[-1])
+                        out[-1] = chr(0x10000 + (high - 0xD800) * 0x400 + (cp - 0xDC00))
+                    else:
+                        out.append(chr(cp))
+                    i += 5
+                    escaped = False
+                    continue
+                mapping = {
+                    "n": "\n",
+                    "t": "\t",
+                    "r": "\r",
+                    "b": "\b",
+                    "f": "\f",
+                    '"': '"',
+                    "\\": "\\",
+                    "/": "/",
+                }
+                out.append(mapping.get(ch, ch))
+                escaped = False
+                i += 1
+                continue
+            if ch == "\\":
+                escaped = True
+                i += 1
+                continue
+            if ch == '"':
+                break  # value complete
+            out.append(ch)
+            i += 1
+            continue
+        if in_string:
+            # Inside a non-target string value: consume it opaquely so keys
+            # mentioned inside other values never false-anchor the search.
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            # Structural string token: scan to its (escape-aware) close quote.
+            j = i + 1
+            while j < n:
+                if buffer[j] == "\\":
+                    j += 2
+                    continue
+                if buffer[j] == '"':
+                    break
+                j += 1
+            if j >= n:
+                break  # unterminated token; wait for more data
+            token = buffer[i + 1 : j]
+            if token == key:
+                k = j + 1
+                while k < n and buffer[k] in " \t\r\n":
+                    k += 1
+                if k >= n:
+                    break  # colon not arrived yet
+                if buffer[k] != ":":
+                    i = j + 1
+                    continue
+                k += 1
+                while k < n and buffer[k] in " \t\r\n":
+                    k += 1
+                if k >= n:
+                    break  # value not arrived yet
+                if buffer[k] != '"':
+                    break  # non-string value; nothing to stream
+                in_value = True
+                i = k + 1
+                continue
+            i = j + 1
+            continue
+        i += 1
+    text = "".join(out)
+    # Withhold a trailing lone high surrogate (split \uD83D\uDE00 pair); the
+    # stateless rescan re-decodes it paired on the next chunk.
+    if text and 0xD800 <= ord(text[-1]) <= 0xDBFF:
+        text = text[:-1]
+    return text
+
+
 def _build_react_history_payload(
     *,
     final_content: str,
@@ -2182,6 +2325,8 @@ print(json.dumps(summary, ensure_ascii=False))
     else:
         # No knowledge space connected — use legacy knowledge_retrieve (no-op without resources)
         kb_tool_list = [make_knowledge_retrieve(react_state, knowledge_resources)]
+        # No wiki tools are mounted without a knowledge space.
+        wiki_available = False
     sql_query_tool = make_sql_query(react_state, database_connector)
     code_interpreter_tool = make_code_interpreter(react_state)
     shell_interpreter_tool = make_shell_interpreter(react_state)
@@ -3091,6 +3236,18 @@ Thought/Action/Action Input format shown above.
     current_history_step: Optional[Dict[str, Any]] = None
     subagent_history: Dict[str, Dict[str, Any]] = {}
     final_answer_assembler = FinalAnswerAssembler()
+    # Native function-calling streaming: accumulate per-(round, tool index)
+    # ``function.arguments`` fragments so the terminate tool's ``output``
+    # value can be streamed to the client as incremental ``final.chunk``
+    # events instead of waiting for the single-shot ``final`` event.
+    native_args_buffers: Dict[Tuple[int, int], str] = {}
+    native_args_names: Dict[Tuple[int, int], str] = {}
+    streamed_final_text: Dict[int, str] = {}
+    # Text-mode ReAct: per-round raw model text buffer (for cross-chunk
+    # thought cleaning) and incremental terminate-answer streaming state.
+    round_text_buffers: Dict[int, str] = {}
+    emitted_thought_len: Dict[int, int] = {}
+    text_terminate_emitted: Dict[int, str] = {}
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -3200,17 +3357,31 @@ Thought/Action/Action Input format shown above.
 
             chunk = delta_thinking or delta_text
             if chunk:
-                # Clean chunk: remove Action Input JSON to keep thought pure
-                # Split on Action Input pattern and keep only thought part
-                clean_chunk = re.split(
-                    r"\n\s*Action\s*Input\s*:\s*\{", chunk, maxsplit=1
-                )[0]
-                # Also remove Action: lines
-                clean_chunk = re.sub(r"\n\s*Action\s*:\s*\w+", "", clean_chunk)
-                # Remove Thought: prefix if present
-                if clean_chunk.startswith("Thought:"):
-                    clean_chunk = clean_chunk[len("Thought:") :].strip()
+                # Accumulate raw model text per round: glm-style text ReAct
+                # writes bare Action-Input JSON blobs (no ``Action Input:``
+                # label) that per-chunk regexes cannot strip, so cleaning
+                # must see across chunk boundaries. The safe prefix is
+                # monotonic, so diffing it yields clean thought deltas.
+                buffer = round_text_buffers.get(round_num, "") + chunk
+                round_text_buffers[round_num] = buffer
+                # Wait until it is decided whether the round opens with a
+                # "Thought:" marker; emitting raw marker characters before
+                # the strip kicks in would corrupt the diff offsets.
+                if (
+                    buffer
+                    and not buffer.startswith("Thought:")
+                    and "Thought:".startswith(buffer)
+                ):
+                    safe = ""
+                else:
+                    start_off = 0
+                    if buffer.startswith("Thought:"):
+                        start_off = re.match(r"Thought:\s*", buffer).end()
+                    safe = _thought_safe_prefix(buffer[start_off:])
+                prev_len = emitted_thought_len.get(round_num, 0)
+                clean_chunk = safe[prev_len:]
                 if clean_chunk:
+                    emitted_thought_len[round_num] = len(safe)
                     if round_num not in pending_thoughts:
                         pending_thoughts[round_num] = []
                     pending_thoughts[round_num].append(clean_chunk)
@@ -3221,6 +3392,67 @@ Thought/Action/Action Input format shown above.
                         )
                         round_step_map[round_num] = pending_step_id
                         yield pending_step_event
+                    # Stream EVERY thinking delta (not just the one
+                    # that created the step) so the step card grows
+                    # live — matches the pi branch's behavior.
+                    yield step_chunk(round_step_map[round_num], "thought", clean_chunk)
+
+            # ── Native function calling: stream the terminate answer ──
+            # The final answer travels inside tool_calls[].function.arguments
+            # (terminate tool's ``output`` key), which the thought pipeline
+            # above never sees. Decode its JSON string value incrementally
+            # and forward it as ``final.chunk`` so the UI renders the answer
+            # token-by-token instead of waiting for the single-shot final.
+            if round_num not in text_terminate_emitted:
+                for tc_delta in event.get("delta_tool_calls") or []:
+                    tc_index = tc_delta.get("index", 0) or 0
+                    tc_name = (tc_delta.get("name") or "").strip().lower()
+                    delta_args = tc_delta.get("delta_arguments") or ""
+                    buf_key = (round_num, tc_index)
+                    if tc_name:
+                        native_args_names[buf_key] = tc_name
+                    if delta_args:
+                        native_args_buffers[buf_key] = (
+                            native_args_buffers.get(buf_key, "") + delta_args
+                        )
+                    if native_args_names.get(buf_key) != "terminate":
+                        continue
+                    decoded = _extract_partial_json_string_value(
+                        native_args_buffers.get(buf_key, ""), "output"
+                    )
+                    prev_decoded = streamed_final_text.get(round_num, "")
+                    if decoded.startswith(prev_decoded):
+                        new_text = decoded[len(prev_decoded) :]
+                    else:
+                        new_text = decoded
+                    if new_text:
+                        streamed_final_text[round_num] = decoded
+                        yield _sse_event({"type": "final.chunk", "content": new_text})
+
+            # ── Text-mode ReAct: stream the terminate Action Input ──
+            # Models that ignore native tools write ``Action: terminate`` +
+            # ``Action Input: <answer>`` in plain text; stream the input
+            # suffix incrementally so these models get real streaming too.
+            if round_num not in streamed_final_text:
+                buffer = round_text_buffers.get(round_num, "")
+                marker = re.search(r"Action\s*:\s*terminate\b", buffer, re.IGNORECASE)
+                if marker:
+                    input_marker = re.search(
+                        r"Action\s*Input\s*:\s*", buffer[marker.end() :]
+                    )
+                    if input_marker:
+                        start = marker.end() + input_marker.end()
+                        decoded = buffer[start:]
+                        prev_text = text_terminate_emitted.get(round_num, "")
+                        if decoded.startswith(prev_text):
+                            new_text = decoded[len(prev_text) :]
+                        else:
+                            new_text = decoded
+                        if new_text:
+                            text_terminate_emitted[round_num] = decoded
+                            yield _sse_event(
+                                {"type": "final.chunk", "content": new_text}
+                            )
 
         elif event_type == "act":
             # Create step ONLY when action is confirmed
