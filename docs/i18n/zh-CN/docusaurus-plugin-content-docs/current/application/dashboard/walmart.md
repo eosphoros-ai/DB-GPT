@@ -1,6 +1,15 @@
+---
+id: walmart
+title: Walmart 零售经营看板
+sidebar_label: Walmart 零售案例
+displayed_sidebar: docsSidebar
+---
+
 # Walmart 零售经营看板
 
 本案例按“整体规模 → 时间变化 → 门店贡献”组织经营复盘，分别使用总销售额 KPI、月度趋势和门店排行。查看查询、编辑布局、保存和发布都使用公共 Dashboard 模块。
+
+架构、部署与升级见[数据看板工作区设计](../../design/dashboard.md)；另一个业务案例见 [Apple 财务看板](apple.md)。
 
 ## 数据来源与复现边界
 
@@ -17,9 +26,9 @@
 python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 ```
 
-该命令会重建目标目录中同名的示例数据库，使用独立目录，不要指向业务数据库。通过 DB-GPT 数据源页面注册生成的 SQLite 文件后，按其实际表结构生成看板。固定示例见 [schemas](../../../examples/dashboard/schemas/)；生成器的表与字段是独立示例合同，不能直接套用下方历史源 SQL。
+该命令会重建目标目录中同名的示例数据库，使用独立目录，不要指向业务数据库。通过 DB-GPT 数据源页面注册生成的 SQLite 文件后，按其实际表结构生成看板。固定示例见 [schemas](https://github.com/eosphoros-ai/DB-GPT/tree/main/examples/dashboard/schemas)；生成器的表与字段是独立示例合同，不能直接套用下方历史源 SQL。
 
-历史案例可以直接复现。官方基线已包含 [Walmart_Sales.csv](../../../docker/examples/excel/Walmart_Sales.csv) 和 [Walmart_Sales.db](../../../docker/examples/dashboard/Walmart_Sales.db)，注册数据库时使用名称 `Walmart_Sales`。公共匹配副本为 [Kaggle Walmart Sales](https://www.kaggle.com/datasets/mikhail1681/walmart-sales)。2026-09-27 下载的 CSV 与仓库 CSV 的 SHA-256 均为 `9cd52db918f0249288b8bdb35dcdaeede5ed7a55f8ed1f8b910a93a550cbf893`。这证明数据内容一致，不证明最初开发者的下载来源或新增授权；该历史源沿用官方已有文件。
+历史案例可以直接复现。官方基线已包含 [Walmart_Sales.csv](https://github.com/eosphoros-ai/DB-GPT/blob/main/docker/examples/excel/Walmart_Sales.csv) 和 [Walmart_Sales.db](https://github.com/eosphoros-ai/DB-GPT/blob/main/docker/examples/dashboard/Walmart_Sales.db)，注册数据库时使用名称 `Walmart_Sales`。公共匹配副本为 [Kaggle Walmart Sales](https://www.kaggle.com/datasets/mikhail1681/walmart-sales)。2026-09-27 下载的 CSV 与仓库 CSV 的 SHA-256 均为 `9cd52db918f0249288b8bdb35dcdaeede5ed7a55f8ed1f8b910a93a550cbf893`。这证明数据内容一致，不证明最初开发者的下载来源或新增授权；该历史源沿用官方已有文件。
 
 无需联网的复核命令如下，对照 CSV 和数据库全部 6,435 行、每行八个字段，并检查业务键、日期与销售总额。数据库以只读方式打开：
 
@@ -89,4 +98,4 @@ ORDER BY month;
 
 合成零售示例采用随库五组件 Schema，经真实后端接口完成保存、重开、刷新、固定发布及匿名桌面/手机访问。独立查询总销售额为 746,113,337.36，页面金额一致；这与前述真实历史 Walmart 总额是两个数据源。页面运行错误为空，截图连续三张指纹一致后保存。该验收未调用外部模型。
 
-![合成零售示例的匿名桌面页面](../assets/walmart-core-desktop-20260929.png)
+![合成零售示例的匿名桌面页面（历史中文界面）](/img/dashboard/walmart-core-desktop-20260929.png)

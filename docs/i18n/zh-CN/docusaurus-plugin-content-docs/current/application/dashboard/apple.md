@@ -1,6 +1,15 @@
+---
+id: apple
+title: Apple 历史财务看板
+sidebar_label: Apple 财务案例
+displayed_sidebar: docsSidebar
+---
+
 # Apple 历史财务看板
 
 使用 Apple FY2022—FY2024 公开财报精简摘录，展示年度总览、跨年趋势、产品结构和资产资金来源。财年与产品筛选共用 Dashboard 的查询、编辑和发布能力。
+
+架构、部署与升级见[数据看板工作区设计](../../design/dashboard.md)；另一个业务案例见 [Walmart 零售看板](walmart.md)。
 
 ## 数据准备
 
@@ -10,7 +19,7 @@
 python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 ```
 
-生成器重建目标目录中的同名示例库。通过数据源页面注册 `output/dashboard-demo/apple_financial_demo.db`。固定定义见 [apple-financial.schema.json](../../../examples/dashboard/schemas/apple-financial.schema.json)，来源与提取信息见 [apple-sec-sources.json](../../../examples/dashboard/sources/apple-sec-sources.json)。配置中的数据源标识须与实际注册结果一致。
+生成器重建目标目录中的同名示例库。通过数据源页面注册 `output/dashboard-demo/apple_financial_demo.db`。固定定义见 [apple-financial.schema.json](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/dashboard/schemas/apple-financial.schema.json)，来源与提取信息见 [apple-sec-sources.json](https://github.com/eosphoros-ai/DB-GPT/blob/main/examples/dashboard/sources/apple-sec-sources.json)。配置中的数据源标识须与实际注册结果一致。
 
 | 表 | 粒度 | 行数 |
 |---|---|---:|
@@ -75,4 +84,4 @@ python examples/dashboard/build_demo_databases.py --output output/dashboard-demo
 
 随库五组件 Schema 经真实后端接口完成保存、重开、刷新、固定发布及匿名桌面/手机访问。FY2024 收入的独立查询与页面值均为 391,035 百万美元；页面运行错误为空，截图连续三张指纹一致后保存。该验收未调用外部模型，不能替代上文筛选矩阵或模型语义评估。
 
-![Apple 财务示例的匿名桌面页面](../assets/apple-core-desktop-20260929.png)
+![Apple 财务示例的匿名桌面页面（历史中文界面）](/img/dashboard/apple-core-desktop-20260929.png)

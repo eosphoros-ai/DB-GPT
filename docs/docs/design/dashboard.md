@@ -173,7 +173,7 @@ Validate the behavior being changed: manual dates must reach the query, save/pub
 - [Schema contract](https://github.com/eosphoros-ai/DB-GPT/tree/main/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/dashboard/schema) and [REST implementation](https://github.com/eosphoros-ai/DB-GPT/blob/main/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/dashboard/api.py).
 - [Agent tools](https://github.com/eosphoros-ai/DB-GPT/blob/main/packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tools/dashboard.py) and [frontend components](https://github.com/eosphoros-ai/DB-GPT/tree/main/web/new-components/dashboard).
 - [Reproducible example data and Schemas](https://github.com/eosphoros-ai/DB-GPT/tree/main/examples/dashboard) and [browser fixtures](https://github.com/eosphoros-ai/DB-GPT/blob/main/web/tests/dashboard-e2e/fixtures/README.md).
-- Chinese business walkthroughs: [Walmart](https://github.com/eosphoros-ai/DB-GPT/blob/main/docs/dashboard/demos/walmart.md) and [Apple](https://github.com/eosphoros-ai/DB-GPT/blob/main/docs/dashboard/demos/apple.md). They document data provenance, operating steps and historical checks separately from this design.
+- Business walkthroughs: [Walmart](../application/dashboard/walmart.md) and [Apple](../application/dashboard/apple.md). Both are available in English and Chinese and document data provenance, operating steps and historical checks separately from this design.
 
 <a id="capability-boundaries"></a>
 
@@ -186,7 +186,7 @@ Validate the behavior being changed: manual dates must reach the query, save/pub
 | Unsaved inputs | Reloading the new-dashboard page loses inputs/options kept only in page memory. Saved assets remain accessible from the dashboard list. |
 | AI semantics | A structurally valid result can still use the wrong business definition. Review metrics, grain, units and source values. Fixed prompts or preset runs do not establish a general generation success rate. |
 | Layout presets | `layout_templates` is disabled in the checked-in release feature contract. It is not a deployment environment switch and is separate from the data-template gallery. |
-| Style cards | The gallery retains style illustrations, but the retired style skills and the home-page parameter handoff are not connected. Treat these cards as presentation references, not a completed creation flow. Use the data-template setup or the dedicated creation page. |
+| Style cards | The style skills are bundled, but the home-page parameter handoff from the gallery is not connected. Treat these cards as presentation references, not a completed creation flow. Use the data-template setup or the dedicated creation page. |
 | Filters and refresh | Fixed publications can only filter materialized dimensions. Live sharing needs an authorized source and offers periodic refresh, not a real-time guarantee. |
 | Local preferences | Template favorites persist in the browser; account-wide, cross-device synchronization is not provided. |
 | Demo data | Synthetic retail data and historical Walmart data are different sources. Synthetic totals are not real business totals; matching source files does not establish redistribution rights. |

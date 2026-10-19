@@ -583,6 +583,8 @@ const sidebars = {
   ],
 
   sidebarApplication: [
+    { type: "doc", id: "application/dashboard/walmart" },
+    { type: "doc", id: "application/dashboard/apple" },
     {
       type: "category",
       label: "MCP Connectors",
