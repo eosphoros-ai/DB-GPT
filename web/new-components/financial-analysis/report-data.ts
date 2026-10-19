@@ -53,14 +53,40 @@ export function periodRange(points: Array<{ year: string }>) {
 export const runStatusLabels = { pending: 'Pending', running: 'Running', completed: 'Completed', failed: 'Failed' };
 
 export function reportRunState(data: ReportData) {
+  if (data.mode === 'report' && data.workflow) {
+    // Publication is independent of how much analysis the source supports.
+    const complete = data.workflow.status === 'published';
+    return { label: complete ? '报告已生成' : '分析中', working: !complete, complete };
+  }
   if (data.mode === 'report' && data.analysis) {
     if (data.analysis.status === 'running') return { label: '分析中', working: true, complete: false };
-    if (data.analysis.status === 'partial') return { label: '部分分析', working: false, complete: false };
+    if (data.analysis.status === 'completed') return { label: '报告已生成', working: false, complete: true };
+    if (data.analysis.status === 'partial') {
+      const complete = !!data.analysis.completedAt;
+      return { label: complete ? '报告已生成' : '分析中', working: !complete, complete };
+    }
     if (data.analysis.status === 'failed') return { label: '数据可用 · 分析未完成', working: false, complete: false };
   }
   return {
-    label: runStatusLabels[data.report.run.status],
+    label:
+      data.mode === 'report' && data.report.run.status === 'completed'
+        ? '报告已生成'
+        : runStatusLabels[data.report.run.status],
     working: data.report.run.status === 'running',
     complete: data.report.run.status === 'completed',
   };
+}
+
+/** Old snapshots may have a model note that contradicts their validator errors. */
+export function topicStatusNote(topic: NonNullable<ReportData['workflow']>['topics'][number]): string {
+  if (['failed', 'needs_revision'].includes(topic.status) && topic.errorCode === 'EXPLANATION_BOUNDARY_FAILED') {
+    return '本专题结论超出当前证据的解释边界，需修订相关判断。详情及重试请查看执行过程。';
+  }
+  if (
+    ['failed', 'needs_revision'].includes(topic.status) &&
+    (topic.errorCode === 'FINDING_VALIDATION_FAILED' || (!topic.errorCode && topic.issues?.length))
+  ) {
+    return '本专题结论格式或引用校验失败；不代表历史数据缺失。错误详情及重试请查看执行过程。';
+  }
+  return topic.note;
 }

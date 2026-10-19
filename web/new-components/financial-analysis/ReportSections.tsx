@@ -7,7 +7,7 @@ import React from 'react';
 import FindingCard from './FindingCard';
 import { useReportData } from './ReportDataContext';
 import styles from './financial-analysis.module.css';
-import { isDefined, periodRange } from './report-data';
+import { isDefined, periodRange, topicStatusNote } from './report-data';
 import type { FinancialFact, OpenEvidence, ReportSectionData } from './types';
 
 const FinancialChart = dynamic(() => import('./FinancialChart'), {
@@ -18,6 +18,27 @@ export interface ReportSectionProps {
   onOpenEvidence: OpenEvidence;
 }
 const Missing: React.FC = () => <p className={styles.sectionDescription}>暂无可用数据</p>;
+const TopicLimitations: React.FC<{ section: string }> = ({ section }) => {
+  const { data } = useReportData();
+  const topics = data.workflow?.topics.filter(
+    topic =>
+      topic.section === section &&
+      ['failed', 'insufficient', 'needs_revision', 'running', 'pending'].includes(topic.status),
+  );
+  if (!topics?.length) return null;
+  return (
+    <div aria-label='本章节分析状态'>
+      {topics.map(topic => (
+        <p className={styles.sectionDescription} key={topic.id}>
+          {topic.title}：{topicStatusNote(topic)}
+          {!!topic.findingIds.length &&
+            ['failed', 'needs_revision', 'running'].includes(topic.status) &&
+            ' 以下保留上次已校验结果，当前修订尚未完成。'}
+        </p>
+      ))}
+    </div>
+  );
+};
 const Figure: React.FC<{ title: string; caption: string; config: ChartConfig }> = ({ title, caption, config }) => (
   <figure className={styles.figure}>
     <figcaption>
@@ -70,6 +91,7 @@ export const OverviewTab: React.FC<ReportSectionProps> = ({ onOpenEvidence }) =>
   const findings = data.sections.overview.findingIds.map(id => analysisFindingMap[id]).filter(isDefined);
   return (
     <div className={styles.reportFlow}>
+      <TopicLimitations section='overview' />
       <section aria-label='财务快照' className={styles.snapshot}>
         {!data.metrics.length && <Missing />}
         {data.metrics.map(metric => {
@@ -198,6 +220,7 @@ export const ProfitabilityTab: React.FC<ReportSectionProps> = ({ onOpenEvidence 
   ];
   return (
     <div className={styles.reportFlow}>
+      <TopicLimitations section='profitability' />
       <section>
         <h2>{section.title || '盈利质量'}</h2>
         <p className={styles.sectionDescription}>{section.description || '暂无分析结论'}</p>
@@ -286,6 +309,7 @@ export const CashFlowTab: React.FC<ReportSectionProps> = ({ onOpenEvidence }) =>
   const calculation = calculationTraceMap[section.calculationIds?.[0] || ''];
   return (
     <div className={styles.reportFlow}>
+      <TopicLimitations section='cashflow' />
       <section>
         <h2>{section.title || '现金创造能否支撑账面利润？'}</h2>
         <div className={styles.cashHeadline}>
@@ -308,9 +332,12 @@ export const CashFlowTab: React.FC<ReportSectionProps> = ({ onOpenEvidence }) =>
         />
       </section>
       {finding && <FindingCard finding={finding} onOpenEvidence={onOpenEvidence} />}
-      {data.workflow && section.findingIds.slice(1).map(id => analysisFindingMap[id] && (
-        <FindingCard key={id} finding={analysisFindingMap[id]} onOpenEvidence={onOpenEvidence} />
-      ))}
+      {data.workflow &&
+        section.findingIds
+          .slice(1)
+          .map(id => analysisFindingMap[id])
+          .filter(isDefined)
+          .map(item => <FindingCard key={item.id} finding={item} onOpenEvidence={onOpenEvidence} />)}
       <section className={styles.reportSection}>
         <h2>现金流驱动与待核查事项</h2>
         <dl className={styles.driverTable}>
@@ -332,6 +359,7 @@ export const BalanceTab: React.FC<ReportSectionProps> = ({ onOpenEvidence }) => 
   const section = data.sections.balance;
   return (
     <div className={styles.reportFlow}>
+      <TopicLimitations section='balance' />
       <section>
         <h2>资本结构</h2>
         <p className={styles.sectionDescription}>

@@ -74,3 +74,21 @@ node standalone/financial-analysis/test-history-exports.cjs <react-test-renderer
 ```
 
 These checks and the existing SSR/layout checks do not replace browser acceptance.
+
+
+## Workflow layout and browser regression
+
+The workflow test uses real saved report data with six topics. It checks successful,
+running and partial-failure states in full-page and embedded modes. Retry details
+belong to the existing execution page; the company heading remains adjacent to the
+section navigation. It saves screenshots for visual inspection and does not call a
+model. Install `playwright-core` in an isolated test directory and use local Chrome:
+
+```powershell
+node standalone/financial-analysis/build.cjs .work/financial-analysis/workflow-preview.html --export-runtime --workflow-preview
+node standalone/financial-analysis/test-workflow-browser.cjs <playwright-core-path> .work/financial-analysis/workflow-preview.html <saved-report.json> <screenshot-directory>
+```
+
+`test-data.cjs` additionally checks these states without a browser; the existing
+`test-layout.cjs 5eb7ac42` still protects the original mock markup. The preview
+entry is an acceptance harness only and is never used in normal HTML exports.

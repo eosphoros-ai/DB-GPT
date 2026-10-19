@@ -24,7 +24,6 @@ import { ReportDataProvider, useReportData } from './ReportDataContext';
 import ReportExports from './ReportExports';
 import { BalanceTab, CashFlowTab, OverviewTab, ProfitabilityTab, StatementsTab } from './ReportSections';
 import SourcePreviewPanel from './SourcePreviewPanel';
-import TopicCoverage from './TopicCoverage';
 import styles from './financial-analysis.module.css';
 import { reportRunState } from './report-data';
 import {
@@ -215,7 +214,7 @@ const FinancialAnalysisWorkspace: React.FC<{
               分析另一份报告
             </button>
           )}
-          <span className={styles.completed}>
+          <span className={styles.completed} aria-label='报告状态'>
             {runState.complete && <CheckCircleFilled />} {runState.label}
           </span>
         </header>
@@ -260,7 +259,11 @@ const FinancialAnalysisWorkspace: React.FC<{
             </div>
           )}
           <nav className={styles.workspaceNav} aria-label='Computer 工作区'>
-            {embedded && <span className={styles.completed}>{runState.label}</span>}
+            {embedded && (
+              <span className={styles.completed} aria-label='报告状态'>
+                {runState.label}
+              </span>
+            )}
             {workspaceTabs
               .filter(tab => !embedded || tab.key !== 'skill')
               .map(tab => (
@@ -279,7 +282,6 @@ const FinancialAnalysisWorkspace: React.FC<{
             {workspaceTab === 'report' && (
               <>
                 <ArtifactContext />
-                <TopicCoverage onRetry={onTopicRetry} busy={busy} />
                 <nav className={styles.reportNav} aria-label='财务分析章节'>
                   {financialTabs.map(tab => (
                     <button
@@ -304,6 +306,8 @@ const FinancialAnalysisWorkspace: React.FC<{
                 activeStepId={activeStepId}
                 onStepSelect={setActiveStepId}
                 analysisActions={analysisActions}
+                onTopicRetry={onTopicRetry}
+                busy={busy}
               />
             )}
             {workspaceTab === 'files' && (

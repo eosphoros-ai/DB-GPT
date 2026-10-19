@@ -93,11 +93,17 @@ async function main() {
   assert.ok(button('导出 JSON').props.disabled);
   assert.ok(button('导出 HTML').props.disabled);
   act(() => view.unmount());
-  for (const [status, label, working] of [['running', '分析中', true], ['partial', '部分分析', false], ['failed', '数据可用 · 分析未完成', false]]) {
+  for (const [status, label, working] of [['running', '分析中', true], ['partial', '分析中', true], ['failed', '数据可用 · 分析未完成', false]]) {
     const state = reportRunState({ ...report, analysis: { status } });
     assert.equal(state.label, label);
     assert.equal(state.working, working);
     assert.equal(state.complete, false);
+  }
+  for (const status of ['partial', 'completed']) {
+    const analysis = {status, completedAt:'2026-10-18T00:00:00Z'};
+    assert.deepEqual(reportRunState({...report, analysis}), {label:'报告已生成', working:false, complete:true});
+    assert.deepEqual(reportRunState({...report, analysis, workflow:{status:'draft'}}), {label:'分析中', working:true, complete:false});
+    assert.deepEqual(reportRunState({...report, analysis, workflow:{status:'published'}}), {label:'报告已生成', working:false, complete:true});
   }
   console.log('PASS history pagination/reopen/retry/cancel; export duplicate guard, persistence, slow list, failure and analysis status.');
 }

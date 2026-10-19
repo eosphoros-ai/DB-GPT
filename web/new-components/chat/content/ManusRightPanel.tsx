@@ -1013,8 +1013,13 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number; action?
         )}
 
         {output.output_type === 'text' && (
-          <div className='rounded-lg bg-gray-900 px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
-            {String(content)}
+          <div
+            className={classNames(
+              'rounded-lg bg-gray-900 px-4 py-3 text-sm text-green-400 font-mono leading-relaxed overflow-x-auto',
+              action?.includes('_financial_') ? 'whitespace-pre-wrap break-words' : 'whitespace-pre',
+            )}
+          >
+            {action?.includes('_financial_') ? String(content).replace(/\n{3,}/g, '\n\n') : String(content)}
           </div>
         )}
 
@@ -1350,7 +1355,12 @@ const SkillScriptRenderer: React.FC<{
 
 SkillScriptRenderer.displayName = 'SkillScriptRenderer';
 
-const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutput }> = memo(({ code, html }) => {
+const HtmlTabbedRenderer: React.FC<{
+  code?: ExecutionOutput;
+  html: ExecutionOutput;
+  busy?: boolean;
+  onFinancialTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
+}> = memo(({ code, html, busy, onFinancialTopicRetry }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
   const htmlContent = html.content;
   const rawHtml =
@@ -1361,7 +1371,7 @@ const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutp
   if (isFinancialReportReference(htmlContent)) {
     return (
       <div className='h-[75vh] min-h-[500px]'>
-        <FinancialReportArtifact reference={htmlContent} />
+        <FinancialReportArtifact reference={htmlContent} busy={busy} onTopicRetry={onFinancialTopicRetry} />
       </div>
     );
   }
@@ -2517,6 +2527,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const [internalPanelView, setInternalPanelView] = useState<PanelView>('execution');
   const [fileFilter, setFileFilter] = useState<TaskFileTab>('all');
   const htmlPreviewRef = useRef<HTMLIFrameElement>(null);
+  const executionOutputRef = useRef<HTMLDivElement>(null);
+  const followOutputRef = useRef(true);
   const panelView = controlledPanelView ?? internalPanelView;
   const setPanelView = (view: PanelView) => {
     setInternalPanelView(view);
@@ -2563,6 +2575,20 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     }
   }, [citations.length, onPanelViewChange, panelView]);
   const visibleOutputs = useMemo(() => outputs.filter(o => o.output_type !== 'thought'), [outputs]);
+  useEffect(() => {
+    followOutputRef.current = true;
+  }, [activeStep?.id]);
+  useEffect(() => {
+    const container = executionOutputRef.current;
+    if (
+      container &&
+      followOutputRef.current &&
+      activeStep?.status === 'running' &&
+      activeStep.action?.includes('_financial_')
+    ) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [visibleOutputs, activeStep?.id, activeStep?.status, activeStep?.action]);
 
   const {
     counts: taskFileCounts,
@@ -3439,6 +3465,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                   <div
                     className='min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4'
                     data-testid='execution-output-scroll'
+                    ref={executionOutputRef}
+                    onScroll={event => {
+                      const container = event.currentTarget;
+                      followOutputRef.current =
+                        container.scrollHeight - container.scrollTop - container.clientHeight < 48;
+                    }}
                   >
                     {outputGroups.map((group, gIdx) => {
                       // For skill-type steps, skip the "Skill: name — description" text output (shown in YAML card above)
@@ -3450,7 +3482,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                       return group.type === 'code-execution' ? (
                         <CodeExecutionRenderer key={`group-${gIdx}`} group={group} />
                       ) : group.type === 'html-tabbed' ? (
-                        <HtmlTabbedRenderer key={`html-tabbed-${gIdx}`} code={group.code} html={group.html} />
+                        <HtmlTabbedRenderer
+                          key={`html-tabbed-${gIdx}`}
+                          code={group.code}
+                          html={group.html}
+                          busy={isRunning}
+                          onFinancialTopicRetry={onFinancialTopicRetry}
+                        />
                       ) : (
                         <OutputRenderer
                           key={`output-${gIdx}`}

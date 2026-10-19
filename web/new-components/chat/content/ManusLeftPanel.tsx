@@ -38,6 +38,7 @@ import { Button, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import FinancialProgressPanel, { financialTasksForStep } from './FinancialProgressPanel';
 import ObservationFormatter from './ObservationFormatter';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 
@@ -1064,6 +1065,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onReferencesClick,
 }) => {
   const { t } = useTranslation();
+  const financialTasks = financialTasksForStep(taskPlan || []);
   const handleStepClick = useCallback(
     (stepId: string, sectionId: string) => {
       onStepClick?.(stepId, sectionId);
@@ -1179,7 +1181,25 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
 
-        {sections.length > 0 ? (
+        {financialTasks.length > 0 ? (
+          <div className='pt-1' data-testid='financial-left-execution'>
+            <FinancialProgressPanel tasks={financialTasks} isRunning={!!isWorking} compact />
+            {sections.length > 0 && (
+              <details className='mt-3 text-sm text-slate-500'>
+                <summary className='cursor-pointer px-2 py-1'>工具调用详情</summary>
+                {sections.map(section => (
+                  <SectionBlock
+                    key={section.id}
+                    section={section}
+                    activeStepId={activeStepId}
+                    onStepClick={stepId => handleStepClick(stepId, section.id)}
+                    defaultExpanded={true}
+                  />
+                ))}
+              </details>
+            )}
+          </div>
+        ) : sections.length > 0 ? (
           <div className='pt-1'>
             {sections.map((section, index) => (
               <SectionBlock
@@ -1208,7 +1228,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
           </div>
         )}
 
-        {isWorking && sections.length > 0 && (
+        {isWorking && sections.length > 0 && financialTasks.length === 0 && (
           <div className='px-4 py-3 mt-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 space-y-2'>
             <div className='flex items-center gap-2'>
               <LoadingOutlined spin className='text-blue-500' />
@@ -1225,7 +1245,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
             (its original position). */}
         {subAgentSlot}
 
-        {taskPlan && taskPlan.length > 0 && (
+        {taskPlan && taskPlan.length > 0 && financialTasks.length === 0 && (
           <div className='mt-3 px-1'>
             <TaskPlanCard tasks={taskPlan} defaultCollapsed={false} />
           </div>

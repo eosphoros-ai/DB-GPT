@@ -860,32 +860,8 @@
     font-size: 11px;
   }
 }
-.topicCoverage {
-  padding: 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
-}
-.topicGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-.topicCard {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 12px;
-}
-.topicCard p {
-  margin: 0;
-}
-.topicCard small {
-  color: #64748b;
-}
-.topicCard button:disabled {
-  opacity: 0.5;
-  cursor: wait;
+.topicIssues {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
 }

@@ -12,40 +12,63 @@ const labels = {
   needs_revision: '待修订',
 };
 
-const TopicCoverage: React.FC<{ onRetry?: (topicId: string) => void; busy?: boolean }> = ({ onRetry, busy }) => {
+/** Detail of the selected execution step; never a second report card grid. */
+const TopicCoverage: React.FC<{
+  topicId: string;
+  onRetry?: (topicId: string) => void;
+  busy?: boolean;
+}> = ({ topicId, onRetry, busy }) => {
   const { data } = useReportData();
-  if (!data.workflow) return null;
+  const topic = data.workflow?.topics.find(item => item.id === topicId);
+  if (!topic) return null;
   return (
-    <section className={styles.topicCoverage} aria-label='专题分析进度'>
-      {data.workflow.dataQuality && <p className={styles.meta}>
-        已提取 {data.workflow.dataQuality.availableFacts} 个可用值，
-        {data.workflow.dataQuality.unavailableCalculations.length} 项不可计算。
-        这表示当前提取范围，不代表整份年报覆盖率。
-      </p>}
-      <div className={styles.meta}>
-        {data.workflow.status === 'published' ? '已发布' : '分析草稿，可继续当前任务'} · 已保存 {data.findings.length}{' '}
-        条发现 · 智能体复核不等于人工确认
-      </div>
-      <div className={styles.topicGrid}>
-        {data.workflow.topics.map(topic => (
-          <article key={topic.id} className={styles.topicCard}>
-            <strong>{topic.title}</strong>
-            <span>{topic.status === 'running' && !busy ? '尚未完成，可继续' : labels[topic.status]}</span>
-            <p>{topic.note}</p>
-            {topic.review && <p>复核：{topic.review.note}</p>}
-            <small>
-              {topic.findingIds.length} 条发现 · {topic.history.length} 次保存
-            </small>
-            {onRetry && (
-              <button type='button' className={styles.textLink} disabled={busy} onClick={() => onRetry(topic.id)}>
-                {topic.status === 'pending' ? '分析此专题' : '重新分析此专题'}
-              </button>
-            )}
-          </article>
-        ))}
-      </div>
-    </section>
+    <div aria-label='专题执行详情'>
+      <p>
+        {labels[topic.status]} · {topic.findingIds.length} 条发现 ·{' '}
+        {topic.saveAttempts ?? topic.history.length + topic.failures} 次保存尝试 · {topic.failures} 次校验失败
+      </p>
+      {topic.errorCode && <p>后端状态：{topic.errorCode}</p>}
+      {!!topic.issues?.length && (
+        <ul className={styles.topicIssues} aria-label='校验错误'>
+          {topic.issues.map((issue, index) => (
+            <li key={index}>
+              {issue.finding_index !== undefined ? `发现 ${issue.finding_index + 1} · ` : ''}
+              {issue.field ? `${issue.field}：` : ''}
+              {issue.code}
+              {issue.invalid_tokens?.length ? `（${issue.invalid_tokens.join('、')}）` : ''}
+              {issue.missing_metrics?.length ? `；未覆盖科目：${issue.missing_metrics.join('、')}` : ''}
+              {issue.hint && <div>{issue.hint}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!!topic.validationHistory?.length && (
+        <details>
+          <summary>历史校验记录</summary>
+          {topic.validationHistory.map((entry, index) => (
+            <div key={index}>
+              <p>
+                {entry.at} · {entry.errorCode}
+              </p>
+              <ul className={styles.topicIssues}>
+                {entry.issues.map((issue, pos) => (
+                  <li key={pos}>
+                    {issue.finding_index !== undefined ? `发现 ${issue.finding_index + 1} · ` : ''}
+                    {issue.field}：{issue.code}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </details>
+      )}
+      {topic.review && <p>智能体复核意见：{topic.review.note}</p>}
+      {onRetry && (
+        <button type='button' className={styles.textLink} disabled={busy} onClick={() => onRetry(topic.id)}>
+          {topic.status === 'pending' ? '分析此专题' : '重新分析此专题'}
+        </button>
+      )}
+    </div>
   );
 };
-
 export default TopicCoverage;

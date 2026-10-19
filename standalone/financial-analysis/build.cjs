@@ -15,17 +15,23 @@ const financial = path.join(web, 'new-components/financial-analysis');
 const hashes = () => Object.fromEntries(fs.readdirSync(financial).map(name => [name, crypto.createHash('sha256').update(fs.readFileSync(path.join(financial, name))).digest('hex')]));
 const original = hashes();
 const exportRuntime = process.argv.includes('--export-runtime');
+const progressPreview = process.argv.includes('--progress-preview');
 
 async function build() {
   fs.mkdirSync(out, { recursive: true });
   const config = {
     mode: 'production', target: ['web', 'es2020'], context: dir,
-    entry: path.join(dir, exportRuntime ? 'export-entry.tsx' : 'entry.tsx'), devtool: false,
+    entry: path.join(dir, progressPreview ? 'progress-preview.tsx' : process.argv.includes('--workflow-preview') ? 'workflow-preview.tsx' : exportRuntime ? 'export-entry.tsx' : 'entry.tsx'), devtool: false,
     output: { path: out, filename: 'demo.js', iife: true, publicPath: '', chunkLoading: false },
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.mjs', '.json'],
       modules: ['node_modules', path.join(web, 'node_modules')],
       alias: {
+        ...(progressPreview ? Object.fromEntries([
+          '@/components/chat/chat-content/code-preview$', '@/components/chat/chat-content/config$',
+          '@/new-components/charts$', '@antv/gpt-vis$', './ConversationTracePanel$',
+          './ParallelTasksPanel$', '@/new-components/financial-analysis/FinancialReportArtifact$',
+        ].map(name => [name, path.join(dir, 'adapters/progress-unused.tsx')])) : {}),
         'next/dynamic$': path.join(dir, 'adapters/dynamic.tsx'),
         'next/router$': path.join(dir, 'adapters/router.ts'),
         '@/app/chat-context$': path.join(dir, 'adapters/chat-context.tsx'),
@@ -61,6 +67,8 @@ async function build() {
     path.join(financial, '**/*.tsx'), path.join(dir, '**/*.tsx'),
     path.join(web, 'new-components/chat/content/ManusLeftPanel.tsx'),
     path.join(web, 'new-components/chat/content/TaskPlanCard.tsx'),
+    ...(progressPreview ? [path.join(web, 'new-components/chat/content/ManusRightPanel.tsx'),
+      path.join(web, 'new-components/chat/content/FinancialProgressPanel.tsx')] : []),
     path.join(web, 'new-components/chat/content/ObservationFormatter.tsx'),
   ].map(name => name.replace(/\\/g, '/'));
   const nativeTailwind = require(path.join(web, 'tailwind.config.js'));

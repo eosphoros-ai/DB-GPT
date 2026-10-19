@@ -225,7 +225,11 @@ export interface ReportArtifact {
 /** A complete snapshot. Missing arrays/values must never resolve to demo data. */
 export interface ReportData {
   workflow?: {
-    dataQuality?: { availableFacts: number; missingFacts: string[]; unavailableCalculations: Array<{ id: string; name: string; reason: string }> };
+    dataQuality?: {
+      availableFacts: number;
+      missingFacts: string[];
+      unavailableCalculations: Array<{ id: string; name: string; reason: string }>;
+    };
     version: number;
     status: 'draft' | 'published';
     publishedAt: string | null;
@@ -241,6 +245,22 @@ export interface ReportData {
       status: 'pending' | 'running' | 'ready' | 'reviewed' | 'insufficient' | 'failed' | 'needs_revision';
       attempts: number;
       failures: number;
+      saveAttempts?: number;
+      validationHistory?: Array<{
+        at: string;
+        revision: string;
+        errorCode: string;
+        issues: Array<{ finding_index?: number; field?: string; code: string }>;
+      }>;
+      errorCode?: string | null;
+      issues?: Array<{
+        finding_index?: number;
+        field?: string;
+        code: string;
+        invalid_tokens?: string[];
+        missing_metrics?: string[];
+        hint?: string;
+      }>;
       findingIds: string[];
       note: string;
       review?: { verdict: string; note: string };

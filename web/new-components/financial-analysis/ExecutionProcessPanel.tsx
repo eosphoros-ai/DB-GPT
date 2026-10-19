@@ -1,8 +1,9 @@
 import { CheckCircleFilled } from '@ant-design/icons';
 import React from 'react';
 import { useReportData } from './ReportDataContext';
+import TopicCoverage from './TopicCoverage';
 import styles from './financial-analysis.module.css';
-import { runStatusLabels } from './report-data';
+import { runStatusLabels, topicStatusNote } from './report-data';
 export interface AnalysisActions {
   retry: () => void;
   refresh: () => void;
@@ -21,11 +22,14 @@ const ExecutionProcessPanel: React.FC<{
   activeStepId?: string;
   onStepSelect: (stepId: string) => void;
   analysisActions?: AnalysisActions;
-}> = ({ activeStepId, onStepSelect, analysisActions }) => {
+  onTopicRetry?: (topicId: string) => void;
+  busy?: boolean;
+}> = ({ activeStepId, onStepSelect, analysisActions, onTopicRetry, busy }) => {
   const { data } = useReportData();
   const agentExecutionSteps = data.steps;
   const activeStep = agentExecutionSteps.find(step => step.id === activeStepId) || agentExecutionSteps[0];
   if (!activeStep) return <div className={styles.executionPanel}>暂无执行记录</div>;
+  const activeTopic = data.workflow?.topics.find(topic => activeStep.id === `topic-${topic.id}`);
   const analysis = data.mode === 'report' && activeStep.id === 'analyze' ? data.analysis : undefined;
   return (
     <div className={styles.executionPanel}>
@@ -48,7 +52,26 @@ const ExecutionProcessPanel: React.FC<{
           {analysis ? analysisStatusLabels[analysis.status] : runStatusLabels[activeStep.status]}
         </div>
         <h2>{activeStep.title}</h2>
-        <p>{activeStep.detail}</p>
+        <p>{activeTopic ? topicStatusNote(activeTopic) : activeStep.detail}</p>
+        {activeStep.id.startsWith('topic-') && (
+          <TopicCoverage topicId={activeStep.id.slice(6)} onRetry={onTopicRetry} busy={busy} />
+        )}
+        {activeStep.id === 'review' && data.workflow?.review && (
+          <ul>
+            {data.workflow.review.items.map(item => (
+              <li key={item.topic_id}>
+                {data.workflow?.topics.find(topic => topic.id === item.topic_id)?.title}：{item.note}
+              </li>
+            ))}
+          </ul>
+        )}
+        {activeStep.id === 'quality' && data.workflow?.dataQuality && (
+          <p>
+            已提取 {data.workflow.dataQuality.availableFacts} 个可用值，
+            {data.workflow.dataQuality.unavailableCalculations.length} 项不可计算。
+            这表示当前提取范围，不代表整份年报覆盖率。
+          </p>
+        )}
         {data.mode === 'report' && activeStep.elapsedMs !== undefined && (
           <p className={styles.meta}>耗时 {(activeStep.elapsedMs / 1000).toFixed(2)} 秒</p>
         )}

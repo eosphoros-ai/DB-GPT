@@ -154,12 +154,13 @@ if (process.env.FINANCIAL_LAYOUT_CHILD !== 'baseline') {
   ] };
   const retries = [];
   captures.buttons.length = 0;
-  const output = render(TopicCoverage, topicReport, { onRetry: id => retries.push(id) });
-  assert.ok(output.includes('分析失败') && output.includes('数据或依据不足'));
+  const output = render(TopicCoverage, topicReport, { topicId: 'expenses', onRetry: id => retries.push(id) });
+  assert.ok(output.includes('分析失败'));
+  assert.ok(render(TopicCoverage, topicReport, { topicId: 'cashflow' }).includes('数据或依据不足'));
   captures.buttons.find(button => String(button.children).includes('重新分析')).onClick();
   assert.deepEqual(retries, ['expenses']);
   captures.buttons.length = 0;
-  render(TopicCoverage, topicReport, { onRetry: noop, busy: true });
+  render(TopicCoverage, topicReport, { topicId: 'expenses', onRetry: noop, busy: true });
   assert.ok(captures.buttons.filter(button => String(button.children).includes('重新分析')).every(button => button.disabled));
   topicReport.workflow.topics = [];
   const cashId = topicReport.sections.cashflow.findingIds[0];
@@ -225,4 +226,26 @@ for (const filename of process.argv.slice(2)) {
     for (const id of finding.factIds) assert.ok(resolved.facts.some(fact => fact.id === id));
   }
   console.log(`Real report rendering and metric-to-evidence navigation passed: ${path.basename(filename)}`);
+}
+
+if (process.env.FINANCIAL_LAYOUT_CHILD !== 'baseline') {
+  // Real workflow must preserve the original header -> section navigation order.
+  for (const status of ['running', 'reviewed', 'failed']) for (const embedded of [false, true]) {
+    const data = structuredClone(alternateReportFixture);
+    data.workflow = { version: 1, status: status === 'running' ? 'draft' : 'published', review: null, history: [], topics:
+      ['operating', 'recurring', 'margins', 'expenses', 'cashflow', 'balance'].map((id, i) => ({ id, title: `专题${i}`, section: ['overview', 'profitability', 'profitability', 'profitability', 'cashflow', 'balance'][i], status, findingIds: [], history: [], failures: status === 'failed' ? 3 : 0, saveAttempts: 3, note: status === 'failed' ? '引用校验失败' : '当前专题状态', errorCode: status === 'failed' ? 'FINDING_VALIDATION_FAILED' : null, issues: status === 'failed' ? [{ field: 'summary', code: 'invalid_fields' }] : [] })) };
+    data.steps = data.workflow.topics.map((topic, i) => ({ id: `topic-${topic.id}`, order: i + 1, title: topic.title, detail: topic.note, status: status === 'reviewed' ? 'completed' : status }));
+    const output = renderToStaticMarkup(React.createElement(Page, { data, embedded, onTopicRetry: noop }));
+    assert.ok(output.includes('财务分析章节'));
+    assert.ok(!output.includes('topicGrid') && !output.includes('topicCard') && !output.includes('专题执行详情'));
+    assert.ok(!output.includes('重新分析此专题'));
+    const heading = output.indexOf(data.report.companyName);
+    const nav = output.indexOf('aria-label="财务分析章节"');
+    assert.ok(heading < nav && !output.slice(heading, nav).includes('专题0'));
+    if (status === 'failed') assert.ok(output.includes('引用校验失败'));
+    const execution = render(Execution, data, { activeStepId: 'topic-operating', onStepSelect: noop, onTopicRetry: noop });
+    assert.ok(execution.includes('专题执行详情') && execution.includes('重新分析此专题'));
+    if (status === 'failed') assert.ok(execution.includes('FINDING_VALIDATION_FAILED') && execution.includes('summary'));
+  }
+  console.log('PASS workflow running/success/partial failure, standalone/embedded layout and execution details.');
 }
