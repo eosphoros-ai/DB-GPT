@@ -26,6 +26,7 @@
     "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
     "test:dashboard": "vitest run --config vitest.dashboard.config.mts",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
+    "test:e2e:report": "playwright test --config playwright.report.config.ts",
     "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build"
   },
   "dependencies": {
