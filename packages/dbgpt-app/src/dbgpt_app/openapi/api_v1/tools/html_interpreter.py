@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 def make_html_interpreter(react_state: Dict[str, Any], skills_dir: str):
     @tool(
         description=(
-            "将 HTML 渲染为可交互的网页报告，这是向用户展示网页报告的唯一方式。"
+            "将非财报场景的 HTML 渲染为可交互的网页报告。"
+            "年度财报分析使用 prepare_financial_report 和 publish_financial_report"
+            "展示内置财报组件，不调用本工具。"
             "【一次性】一次调用即可把【完整】报告渲染出来；同一份报告【禁止】"
             "重复调用本工具，渲染成功后若目标已达成请直接 terminate。"
             "【默认用法】直接传入完整的 HTML 字符串："

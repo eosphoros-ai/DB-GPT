@@ -32,9 +32,7 @@ from dbgpt.agent.resource.tool.base import tool
 from dbgpt.agent.skill.manage import get_skill_manager
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
-from dbgpt.core import PromptTemplate
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt.util.json_utils import parse_or_raise_error
 from dbgpt_app.openapi.api_view_model import (
     ConversationVo,
     Result,
@@ -52,7 +50,13 @@ from .attachment_react_adapter import (
     resolve_legacy_chat_file_path,
     scrub_react_history_for_share,
 )
-from .react_final import AgentFinalAnswer, FinalAnswerAssembler
+from .financial_execution import FinancialExecutionStream
+from .react_final import (
+    AgentFinalAnswer,
+    FinalAnswerAssembler,
+    extract_terminate_content,
+)
+from .react_prompt import build_react_prompt_template
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
     build_subagent_history_snapshot,
@@ -2076,7 +2080,14 @@ print(json.dumps(summary, ensure_ascii=False))
     # ── Stream queue (created early so question tool can use it) ────────
     stream_queue: asyncio.Queue = asyncio.Queue()
 
+    active_react_round = 1
+
     async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
+        nonlocal active_react_round
+        if event_type in {"thinking", "thinking_chunk"} and payload.get("round"):
+            active_react_round = int(payload["round"])
+        if event_type in {"financial.execution", "financial.progress"}:
+            payload = {**payload, "round": active_react_round}
         await stream_queue.put({"type": event_type, **payload})
 
     # ── Build tool instances from tools/ directory ───────────────────────
@@ -2120,7 +2131,6 @@ print(json.dumps(summary, ensure_ascii=False))
     # Keep local aliases for backward compatibility (SSE loop references these names)
     execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
     from dbgpt_app.openapi.api_v1.tools.financial_tools import (
-        FINANCIAL_AGENT_PROMPT,
         FINANCIAL_MAX_STEPS,
         finalize_financial_answer,
         financial_completion_error,
@@ -2306,6 +2316,8 @@ print(json.dumps(summary, ensure_ascii=False))
     react_state["conv_id"] = conv_id
     react_state["owner_id"] = dialogue.user_name
     react_state["model_name"] = dialogue.model_name
+    # Trusted runtime client, never a tool argument or prompt payload.
+    react_state["financial_llm_client"] = llm_client
     if attachment_ctx is not None:
         # Public manifests for runtime tools plus the internal primary
         # materialized path / files_json mapping (execution-only values —
@@ -2403,17 +2415,8 @@ print(json.dumps(summary, ensure_ascii=False))
 4. 按顺序执行工具调用，完成技能目标
 """
 
-    # Build a hint listing all images currently available in
-    # STATIC_MESSAGE_IMG_PATH so the LLM can reference them correctly in
-    # html_interpreter.
-    # NOTE: This is the initial hint at prompt build time. Images generated
-    # during the session are tracked in react_state["generated_images"] and
-    # appended to html_interpreter output dynamically.
-    available_images_hint = ""
-
     # Check if skill is pre-selected to use simplified prompt
     is_skill_mode = pre_matched_skill is not None
-    _skill_name = pre_matched_skill.metadata.name if pre_matched_skill else "skill"
 
     # Inject connector tools — only the ones the user explicitly selected.
     connector_tool_extras: List[Any] = []
@@ -2486,8 +2489,8 @@ Please always response in the same language as the user's input language.
 2. For each step, output Thought -> Action Intention -> Action Reason -> Action
    -> Action Input.
 3. Wait for the system to return Observation before deciding on the next step.
-4. Financial annual reports use prepare_financial_report and publish_financial_report
-to render the built-in report component. For OTHER analysis reports, you MUST
+4. Financial annual reports use prepare_financial_report, save_financial_topic and
+review_financial_report; explicit review automatically publishes the built-in report. For OTHER analysis reports, you MUST
 call `html_interpreter` for HTML rendering. By default, generate complete HTML
 code yourself and pass it via the `html` parameter (include DOCTYPE, html, head,
 body, styles, and all content). Only use `template_path` mode if the skill
@@ -2496,15 +2499,15 @@ documentation references them. When using template mode, provide ALL required
 placeholders in the `data` dictionary.
 5. For financial report follow-ups, call read_financial_report before answering.
 For other tasks that do not require a report, call terminate when complete.
-The Action Input format must be
-{{"result": "final answer"}}.
+The Action Input format must be {{"output": "final answer"}}, matching the
+registered terminate tool schema.
 
 {skill_prompt_context}
 {execution_instruction}
 
 ## Skill Execution Norms
 ### Resource Usage
-- **Need to execute skill script** -> Use `execute_skill_script_file` with
+- **Skill explicitly provides a script** -> Use `execute_skill_script_file` with
 parameters {{"skill_name": "skill name", "script_file_name": "script file name",
 "args": {{parameters}}}}. This tool will automatically handle image copying and
 data recording.
@@ -2513,75 +2516,14 @@ data recording.
 reference document.
 - **Encounter image file** -> If the model does not support image input, it will
 return an error prompt.
-- **Need to generate report** -> Call `html_interpreter`. **Default: directly pass
+- **Need to generate a NON-financial report** -> Call `html_interpreter`.
+**Default: directly pass
 complete HTML via the `html` parameter** — you generate the full HTML code
 yourself (including `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`, styles,
 content). The HTML can be as long as needed. **Only use `template_path` if the
 skill explicitly provides HTML templates in its `templates/` directory and its
 documentation tells you to use them.** Do not use `code_interpreter` to generate
 the report.
-
-## Available Tools Description
-1. **execute_skill_script_file** (recommended for executing skill scripts): Execute
-script files in the skills scripts directory, automatically handling
-post-processing such as copying images to the static directory and recording
-calculation results.
-   Parameters: {{"skill_name": "skill name", "script_file_name": "script file
-name", "args": {{parameters}}}}
-   - Example: {{"skill_name": "{_skill_name}",
-"script_file_name": "calculate_ratios.py",
-"args": {{"input_data": "..."}}}}
-   - **Must use this tool when executing skill scripts**, do not use
-shell_interpreter.
-2. **get_skill_resource**: Read reference documents, configurations, templates, and
-other non-script resource files in the skill.
-   Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
-   - Read reference document: {{"skill_name": "{_skill_name}",
-"resource_path": "references/analysis_framework.md"}}
-   - Note: For generating reports, prefer using html_interpreter directly with the
-`html` parameter. Only use template_path if the skill explicitly provides
-templates.
-3. **execute_skill_script**: Execute the inline script defined in the skill
-(backup). Parameters: {{"skill_name": "skill name", "script_name": "script name",
-"args": {{"parameter name": "parameter value"}}}}
-4. **shell_interpreter**: Execute shell/bash commands (only for non-skill script
-system commands, such as ls, cat, etc.).
-   Parameters: {{"code": "shell command"}}
-   - Each call is independent and does not retain state. If multi-step operations
-are needed, use `&&` or `;` to connect commands.
-   - **Note: Do not use this tool to execute skill scripts**, as it will not
-automatically handle images and data recording.
-5. **html_interpreter**: Render HTML as an interactive web report. This is the ONLY
-way to display reports on the right panel.
-   **Default usage (recommended)**: {{"html": "<html>your complete HTML code</html>",
-"title": "report title"}}
-   - Generate complete HTML yourself (DOCTYPE, html, head, body, CSS styles,
-content). No length limit.
-   - **Do not** use code_interpreter to write HTML. Directly pass the HTML string
-to this tool.
-   **Template mode (only when skill has templates/)**: {{"template_path":
-"skill-name/templates/template.html", "data": {{"KEY": "value"}}, "title": "title"}}
-   - Only use this if the skill's documentation explicitly provides template paths.
-If template_path returns "Template not found", immediately switch to the default
-`html` parameter usage.
-   {available_images_hint}
-6. **sql_query**: Execute a read-only SQL query against the selected database.
-Parameters: {{"sql": "SELECT statement"}}
-7. **todowrite**: Create and manage a structured task list. Use for complex tasks
-(3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
-{{"content": "description", "status": "pending|in_progress|completed|cancelled",
-"priority": "high|medium|low"}}. Only ONE task in_progress at a time.
-IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
-The user sees progress in real time — never skip an update.
-Parameters: {{"todos": [{{...}}]}}
-8. **question**: Ask the user a question and wait for their response. Use this tool
-   when you need user input, clarification, or a decision to proceed. The tool blocks
-   until the user answers.
-   Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
-   {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
-   multiple selections. The tool returns the user's selected answers.
-9. **terminate**: Return the final answer when the task is completed. Action Input
-must be {{"result": "your final answer content"}}.
 
 ## Task Management
 For complex tasks that require 3 or more steps, use the `todowrite` tool to create
@@ -2650,19 +2592,6 @@ Thought/Action/Action Input format shown above.
             )
     else:
         # Full prompt with all tools when no skill is pre-selected
-        codegraph_section = (
-            "13.1. **kb_codegraph_explore**: Query the code knowledge graph for "
-            "structural info (classes, call chains, inheritance).\n"
-            'Parameters: {"query": "class/function name or \'who calls X\'"}\n'
-            "13.2. **kb_codegraph_call_chain**: Trace callers/callees of a function.\n"
-            'Parameters: {"function_name": "function name", "depth": 2, '
-            '"direction": "callers or callees"}\n'
-            "13.3. **kb_codegraph_class_hierarchy**: Trace class inheritance and "
-            "implementations.\n"
-            'Parameters: {"class_name": "class or interface name"}\n'
-            if code_graph_available
-            else ""
-        )
         workflow_prompt = f"""
 You are the DB-GPT intelligent assistant, capable of autonomously selecting tools
 to solve problems based on user tasks.
@@ -2676,12 +2605,14 @@ order, select as needed).
    -> Action Input.
 4. Wait for the system to return Observation before deciding on the next step.
 5. When the task is completed, call the terminate tool to return the final result.
-The Action Input format must be {{"result": "final answer"}}.
-6. Financial annual reports use prepare_financial_report and publish_financial_report
-to render the built-in report component; follow-ups use read_financial_report.
+The Action Input format must be {{"output": "final answer"}}, matching the
+registered terminate tool schema.
+6. Financial annual reports use prepare_financial_report, save_financial_topic and
+review_financial_report; explicit review automatically publishes the built-in report.
+Follow-ups use read_financial_report.
 For OTHER analysis reports, you MUST call
-`html_interpreter` for HTML rendering. When the user requests generating a webpage,
-HTML report, or interactive report, the final presentation step must call
+`html_interpreter` for HTML rendering. When the user requests generating a
+NON-financial webpage, HTML report, or interactive report, the final step must call
 `html_interpreter` to render it. It is forbidden to output HTML using only
 `code_interpreter` and then directly terminate. Correct process: code_interpreter
 writes to .html file -> html_interpreter(file_path=...) renders -> terminate.
@@ -2728,8 +2659,8 @@ execution of every step. Prioritize producing results quickly, and perform
 iterative optimization in subsequent steps.
 
 ### 2. Resource Usage Timing
-- **Need to calculate/process data** -> Use `execute_skill_script_file` to execute
-scripts in the skill's scripts directory (this tool automatically handles images
+- **Skill explicitly provides a calculation/data script** -> Use
+`execute_skill_script_file` to execute that script (automatically handles images
 and data recording). Parameters are {{"skill_name": "skill name",
 "script_file_name": "script.py", "args": {{parameters}}}}.
 - **Need to understand indicator definitions/analysis framework** -> Use
@@ -2743,65 +2674,8 @@ Complete each workflow step before moving to the next. Do not mix multiple tool
 calls in the same step.
 
 ### 4. Special Scenarios
-- For report generation: Same as the principle above, must finally call
-`html_interpreter` to render.
-
-## Available Tools Description
-1. **load_skill**: Load skill content by skill name and file path.
-Parameters: {{"skill_name": "skill name", "file_path": "skill file path"}}
-2. **execute_skill_script_file**: Execute script files in the skill's scripts
-directory. Parameters: {{"skill_name": "skill name",
-"script_file_name": "script file name", "args": {{parameters}}}}
-3. **get_skill_resource**: Read reference documents in the skill.
-Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
-4. **execute_skill_script**: Execute the inline script defined in the skill.
-Parameters: {{"skill_name": "skill name", "script_name": "script name",
-"args": {{parameters}}}}
-5. **shell_interpreter**: Execute shell/bash commands.
-Parameters: {{"code": "shell command"}}
-6. **code_interpreter**: Execute arbitrary Python code.
-Parameters: {{"code": "python code string"}}
-7. **load_file**: Load uploaded file info. Parameters: none.
-8. **execute_analysis**: Execute quick analysis on uploaded Excel/CSV file.
-Parameters: none.
-9. **kb_ls**: List files and directories in the knowledge base.
-Parameters: {{"path": "directory path (optional)"}}
-10. **kb_glob**: Search files by name or glob pattern in the knowledge base.
-Parameters: {{"pattern": "file name keyword or glob pattern"}}
-11. **kb_grep**: Search file contents by keyword in the knowledge base. Prefer for exact matches.
-Parameters: {{"query": "search keyword", "path": "directory filter (optional)", "file_pattern": "file pattern like *.py (optional)"}}
-12. **kb_cat**: Read the content of a specific file in the knowledge base.
-Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
-13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
-Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
-{codegraph_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
-Parameters: {{"sql": "SELECT statement"}}
-15. **load_tools**: Resolve required tools for the selected skill. Parameters: none.
-16. **execute_tool**: Execute a tool by name with JSON args.
-Parameters: {{"tool_name": "tool name", "args": {{parameters}}}}
-17. **html_interpreter**: Render HTML as an interactive web report (the ONLY way
-to display reports on the right panel). Default usage:
-{{"html": "<html>complete HTML code</html>", "title": "title"}}. Template mode:
-{{"template_path": "skill/templates/xxx.html", "data": {{...}}, "title": "title"}}.
-File mode: {{"file_path": "/path/to/report.html"}}
-14. **todowrite**: Create and manage a structured task list. Use for complex tasks
-(3+ steps) to plan and track progress. Pass the FULL list every time. Each item:
-{{"content": "description", "status": "pending|in_progress|completed|cancelled",
-"priority": "high|medium|low"}}. Only ONE task in_progress at a time.
-IMPORTANT: You MUST call todowrite again after EACH task completes to update status.
-The user sees progress in real time — never skip an update.
-Parameters: {{"todos": [{{...}}]}}
-15. **dispatch_parallel_tasks**: Execute 2 or more mutually independent todo
-items concurrently with isolated sub-agents. Each task needs a self-contained
-goal and may include shared context and a display title.
-Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
-16. **question**: Ask the user a question and wait for their response. Use this tool
-   when you need user input, clarification, or a decision to proceed. The tool blocks
-   until the user answers.
-   Parameters: {{"questions": [{{"question": "...", "header": "...", "options": [
-   {{"label": "...", "description": "..."}}, ...]}}]}}. Set multiple=true to allow
-   multiple selections. The tool returns the user's selected answers.
-17. **terminate**: Finish the task. Parameters: {{"result": "final answer"}}
+- For NON-financial report generation, call `html_interpreter` to render.
+Financial annual reports use the registered financial tools and built-in component.
 
 {file_context}
 {knowledge_context}
@@ -2957,21 +2831,14 @@ Thought/Action/Action Input format shown above.
         pass  # graceful degradation
     # --- End connector system prompt injection ---
 
-    if tool_mode != "knowledge":
-        workflow_prompt += "\n" + FINANCIAL_AGENT_PROMPT
-
-    # Convert workflow_prompt to PromptTemplate so it is used as system prompt
-    # Use jinja2 format to avoid issues with JSON braces { } in the prompt
-    workflow_prompt_template = PromptTemplate(
-        template=workflow_prompt,
-        input_variables=[],
-        template_format="jinja2",
+    workflow_prompt_template = build_react_prompt_template(
+        workflow_prompt, financial_enabled=tool_mode != "knowledge"
     )
 
     class ReportAwareAgent(ToolCallingReActAgent):
         async def correctness_check(self, message):
             if react_state.get("financial_report_context", {}).get("workflow"):
-                # Six reads/saves, bounded repairs, review and publication can
+                # Six saves, optional reads and bounded repairs/reviews can
                 # exceed the ordinary chat budget. Keep other chats unchanged.
                 self.max_retry_count = max(self.max_retry_count, FINANCIAL_MAX_STEPS)
             if (
@@ -3035,6 +2902,7 @@ Thought/Action/Action Input format shown above.
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
+    financial_execution = FinancialExecutionStream(history_steps)
     subagent_history: Dict[str, Dict[str, Any]] = {}
     final_answer_assembler = FinalAnswerAssembler()
 
@@ -3085,11 +2953,31 @@ Thought/Action/Action Input format shown above.
         try:
             event = await asyncio.wait_for(stream_queue.get(), timeout=0.1)
         except asyncio.TimeoutError:
+            for waiting_event in financial_execution.waiting():
+                yield _sse_event(waiting_event)
             continue
 
         event_type = event.get("type")
-        if event_type == "financial.progress":
+        if event_type == "financial.execution":
+            round_num = event["round"]
+            action = event["action"]
+            if round_num in round_step_map:
+                live_id = round_step_map[round_num]
+            else:
+                live_id, live_start = build_step(action, "Action: " + action)
+                round_step_map[round_num] = live_id
+                yield live_start
+            yield step_meta(live_id, None, action, event["action_input"], action)
+            for chunk in financial_execution.start(
+                round_num, live_id, action, event["action_input"], event["message"]
+            ):
+                yield _sse_event(chunk)
+        elif event_type == "financial.progress":
             yield _sse_event({"type": "plan.update", "tasks": event["tasks"]})
+            for chunk in financial_execution.progress(
+                event["round"], event["tasks"], event.get("observations", [])
+            ):
+                yield _sse_event(chunk)
         elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
@@ -3412,6 +3300,11 @@ Thought/Action/Action Input format shown above.
                 "status": "running",
             }
 
+            # Keep streamed observations on the same step in live view and history.
+            current_history_step, was_live = financial_execution.finish(
+                round_num, current_history_step
+            )
+
             # Stream action code to frontend for right panel
             # (code_interpreter)
             code_payload = None
@@ -3507,8 +3400,12 @@ Thought/Action/Action Input format shown above.
             # --- History: finalize step ---
             if current_history_step is not None:
                 current_history_step["status"] = status
-                history_steps.append(current_history_step)
+                if not was_live:
+                    history_steps.append(current_history_step)
                 current_history_step = None
+
+    for failure_event in financial_execution.fail_unfinished():
+        yield _sse_event(failure_event)
 
     try:
         reply = await agent_task
@@ -3534,43 +3431,7 @@ Thought/Action/Action Input format shown above.
 
     if reply.action_report and reply.action_report.terminate:
         raw_content = reply.action_report.content or ""
-        # The terminate ActionOutput.content may be the raw ReAct text, e.g.:
-        # "Thought: ...\nAction: terminate\nAction Input: {"result": "..."}"
-        # We need to extract the "result" value from Action Input.
-        final_content = raw_content
-        try:
-            steps = parser.parse(raw_content)
-            if steps:
-                action_input = steps[0].action_input
-                if action_input:
-                    # action_input could be a string like '{"result": "..."}';
-                    # tolerate trailing artifacts after the JSON object (the
-                    # parser already strips known special tokens, this is the
-                    # second line of defense for unknown ones).
-                    if isinstance(action_input, str):
-                        parsed_input = parse_or_raise_error(action_input)
-                    else:
-                        parsed_input = action_input
-                    if isinstance(parsed_input, dict) and "result" in parsed_input:
-                        final_content = parsed_input["result"]
-        except Exception:
-            pass
-        # native function calling 路径：terminate content 可能是 {"result":...}
-        # (JSON) 或 {'result':...} (Python dict repr)，直接提取 result。
-        if final_content == raw_content:
-            try:
-                _parsed = json.loads(raw_content)
-                if isinstance(_parsed, dict) and "result" in _parsed:
-                    final_content = _parsed["result"]
-            except Exception:
-                try:
-                    import ast
-
-                    _parsed = ast.literal_eval(raw_content)
-                    if isinstance(_parsed, dict) and "result" in _parsed:
-                        final_content = _parsed["result"]
-                except Exception:
-                    pass
+        final_content = extract_terminate_content(raw_content, parser)
     elif reply.action_report:
         # Loop ended without terminate (max retries or timeout).
         # reply.content is raw LLM output containing ReAct prefixes.
