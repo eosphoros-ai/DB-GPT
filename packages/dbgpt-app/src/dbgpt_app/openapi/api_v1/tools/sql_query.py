@@ -3,6 +3,7 @@
 import asyncio
 import json
 import time
+from functools import wraps
 from threading import Event
 from typing import Any, Dict, Optional
 
@@ -37,16 +38,51 @@ def make_sql_query(
     *,
     max_output_chars: Optional[int] = 20_000,
     query_timeout_seconds: float = 30,
+    max_calls: Optional[int] = None,
 ):
+    call_count = 0
+    limit_description = (
+        f" Dashboard planning allows at most {max_calls} discovery calls; "
+        "after that, use the collected observations and call plan_dashboard."
+        if max_calls is not None
+        else ""
+    )
+
     @tool(
         description=(
             "对用户选择的数据库执行 SQL 查询（仅支持 SELECT）。"
             '参数: {"sql": "SELECT 语句"}。单次查询默认最多 30 秒，超时后先查看 '
             "EXPLAIN QUERY PLAN 与关联索引，优化查询；不要原样反复提交超时 SQL。"
+            + limit_description
         )
     )
     async def sql_query(sql: str) -> str:
         """Execute a read-only SQL query against the selected database."""
+
+        nonlocal call_count
+        if max_calls is not None and call_count >= max_calls:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": (
+                                "Dashboard discovery limit reached after "
+                                f"{max_calls} SQL queries. Do not call sql_query "
+                                "again in this turn. Use the observations already "
+                                "collected and call plan_dashboard now. If plan "
+                                "validation rejects a field or default, correct the "
+                                "plan from that validation feedback instead of "
+                                "restarting discovery."
+                            ),
+                        }
+                    ],
+                    "dashboard_discovery_limit_reached": True,
+                },
+                ensure_ascii=False,
+            )
+        call_count += 1
+
         artifact_sink = react_state.get("_report_artifact_sink")
         if database_connector is None:
             return json.dumps(
@@ -208,4 +244,14 @@ def make_sql_query(
                 ensure_ascii=False,
             )
 
-    return sql_query
+    @wraps(sql_query)
+    def invoke_sql_query(*args, **kwargs):
+        # Preserve direct synchronous callers while agents use the asynchronous
+        # FunctionTool copied by wraps. Its coroutine keeps timeout/cancellation.
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(sql_query(*args, **kwargs))
+        return sql_query(*args, **kwargs)
+
+    return invoke_sql_query

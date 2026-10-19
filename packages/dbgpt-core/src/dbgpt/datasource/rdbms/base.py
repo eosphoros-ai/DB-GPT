@@ -535,6 +535,7 @@ class RDBMSConnector(BaseConnector):
 
         with self.session_scope() as session:
             sqlite_connection: Any = None
+            sqlite_progress_handler = None
             sqlite_busy_timeout = None
             deadline = time.monotonic() + timeout if timeout is not None else None
 
@@ -550,9 +551,19 @@ class RDBMSConnector(BaseConnector):
                 if self.dialect == "sqlite" and (
                     timeout is not None or cancel_event is not None
                 ):
-                    sqlite_connection = (
-                        session.connection().connection.driver_connection
+                    raw_connection = session.connection().connection
+                    sqlite_connection = getattr(
+                        raw_connection, "driver_connection", raw_connection
                     )
+                    sqlite_progress_handler = getattr(
+                        sqlite_connection, "set_progress_handler", None
+                    )
+                    if not callable(sqlite_progress_handler):
+                        logger.warning(
+                            "The SQLite driver cannot enforce a query timeout, "
+                            "proceeding without timeout"
+                        )
+                        return _execute_query(session, sql, params)
                     if interrupted():
                         raise TimeoutError(
                             "SQL_QUERY_CANCELLED: query cancelled before execution"
@@ -560,7 +571,7 @@ class RDBMSConnector(BaseConnector):
                     # Interrupt the SQLite VM during both execution and fetching.
                     # Handlers belong to this checked-out connection, never the
                     # shared connector or another concurrent agent's connection.
-                    sqlite_connection.set_progress_handler(interrupted, 1000)
+                    sqlite_progress_handler(interrupted, 1000)
                     if timeout is not None:
                         sqlite_busy_timeout = sqlite_connection.execute(
                             "PRAGMA busy_timeout"
@@ -631,7 +642,10 @@ class RDBMSConnector(BaseConnector):
                     raise TimeoutError(
                         "SQL_QUERY_CANCELLED: query interrupted"
                         if cancel_event is not None and cancel_event.is_set()
-                        else f"SQL_QUERY_TIMEOUT: query exceeded {timeout} seconds"
+                        else (
+                            "SQL_QUERY_TIMEOUT: query exceeded timeout of "
+                            f"{timeout} seconds"
+                        )
                     ) from e
                 if "timeout" in str(e).lower() or "timed out" in str(e).lower():
                     raise TimeoutError(f"Query exceeded timeout of {timeout} seconds")
@@ -639,8 +653,8 @@ class RDBMSConnector(BaseConnector):
             except TimeoutError:
                 raise
             finally:
-                if sqlite_connection is not None:
-                    sqlite_connection.set_progress_handler(None, 0)
+                if callable(sqlite_progress_handler):
+                    sqlite_progress_handler(None, 0)
                     if sqlite_busy_timeout is not None:
                         sqlite_connection.execute(
                             f"PRAGMA busy_timeout={sqlite_busy_timeout}"

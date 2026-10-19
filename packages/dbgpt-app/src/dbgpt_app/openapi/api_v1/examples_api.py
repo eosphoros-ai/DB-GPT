@@ -232,7 +232,13 @@ async def use_example_file(
             return Result.failed(msg=f"Unknown example: {example_id}")
 
         example = EXAMPLE_FILES[example_id]
-        user_id = user_token.user_id or "default"
+        from dbgpt_app.openapi.api_v1.python_upload_api import (
+            _resolve_upload_dir,
+            _resolve_upload_path,
+            _resolve_user_id,
+        )
+
+        user_id = _resolve_user_id(user_token.user_id)
 
         source_path = _resolve_example_source(example)
         if source_path is None:
@@ -247,7 +253,7 @@ async def use_example_file(
         ):
             base_dir = CFG.SYSTEM_APP.work_dir
 
-        upload_dir = os.path.join(base_dir, "python_uploads", user_id)
+        upload_dir = _resolve_upload_dir(base_dir, user_id)
         os.makedirs(upload_dir, exist_ok=True)
 
         try:
@@ -255,7 +261,7 @@ async def use_example_file(
         except ValueError as exc:
             return Result.failed(msg=str(exc))
 
-        target_path = os.path.join(upload_dir, target_name)
+        target_path = _resolve_upload_path(upload_dir, target_name)
         shutil.copy2(source_path, target_path)
 
         # ``file_path`` is consumed by the React attachment adapter, whose

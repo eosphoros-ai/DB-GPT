@@ -15,6 +15,45 @@ def _decode_sse_event(event: str):
     return json.loads(event.removeprefix("data: ").strip())
 
 
+@pytest.mark.parametrize(
+    ("prompt", "expected"),
+    [
+        ("[[confirm-dashboard:dash_123]] confirm", "dash_123"),
+        ("[[revise-dashboard-plan:dash-456]] revise", "dash-456"),
+        ("[[modify-dashboard:dash789]] update", "dash789"),
+        (
+            "[[dashboard-annotation:dash_123:annotation_9]] propose",
+            "dash_123",
+        ),
+        ("please build a dashboard", None),
+    ],
+)
+def test_dashboard_workflow_marker_recovers_dashboard_id(prompt, expected) -> None:
+    assert agentic_data_api._dashboard_id_from_workflow_marker(prompt) == expected
+
+
+@pytest.mark.parametrize(
+    ("prompt", "creation_mode", "expected"),
+    [
+        ("只做一个年度收入表", "dashboard", True),
+        ("Show annual revenue", "dashboard", True),
+        ("Show annual revenue", "skill", False),
+        ("Show annual revenue", None, False),
+        ("Show annual revenue", "dashboards", False),
+        ("制作销售看板", None, True),
+        ("[[confirm-dashboard:dash_123]] confirm", "skill", True),
+        ("[[dashboard-annotation:dash_123:ann_9]] explain", None, True),
+    ],
+)
+def test_composer_mode_routes_implicit_dashboard_requests(
+    prompt, creation_mode, expected
+) -> None:
+    assert (
+        agentic_data_api._is_dashboard_workflow_request(prompt, creation_mode)
+        is expected
+    )
+
+
 def test_history_failure_does_not_drop_final_or_done(caplog) -> None:
     class _FailingStorageConversation:
         def add_view_message(self, payload: str) -> None:

@@ -137,6 +137,9 @@ class BaseTool(Resource[ToolResourceParameters], ABC):
                 required.append(name)
         return {"type": "object", "properties": properties, "required": required}
 
+    def validate_call_args(self, arguments: Dict[str, Any]) -> None:
+        """Optional pre-filter validation; legacy tools keep their behavior."""
+
     async def get_prompt(
         self,
         *,

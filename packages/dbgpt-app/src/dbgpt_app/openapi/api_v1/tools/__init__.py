@@ -2,6 +2,7 @@
 
 from .chart_query import make_chart_query
 from .code_interpreter import make_code_interpreter
+from .dashboard import make_dashboard_planner_tools
 from .execute_analysis import make_execute_analysis
 from .execute_tool import make_execute_tool
 from .html_interpreter import make_html_interpreter
@@ -22,6 +23,7 @@ from .todowrite import make_todowrite
 __all__ = [
     "make_code_interpreter",
     "make_chart_query",
+    "make_dashboard_planner_tools",
     "make_execute_analysis",
     "make_execute_tool",
     "make_html_interpreter",

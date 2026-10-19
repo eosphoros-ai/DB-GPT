@@ -832,7 +832,7 @@ class SessionFileRegistry:
         for _ in range(5):
             candidate = run_dir / f"f_{secrets.token_hex(8)}{safe_suffix}"
             try:
-                fd = os.open(candidate, flags, 0o600)
+                fd = self._open_materialized_file(candidate, flags)
                 break
             except FileExistsError:
                 continue
@@ -854,6 +854,46 @@ class SessionFileRegistry:
         except Exception:
             with contextlib.suppress(OSError):
                 os.unlink(candidate)
+            raise
+
+    @staticmethod
+    def _open_materialized_file(path: Path, flags: int) -> int:
+        if os.name != "nt":
+            return os.open(path, flags, 0o600)
+
+        # The Windows CRT can follow a dangling symlink even with O_EXCL.
+        # CREATE_NEW + OPEN_REPARSE_POINT refuses an existing leaf atomically,
+        # without creating or truncating its target. The work root's ACL applies.
+        import ctypes
+        import errno
+        import msvcrt
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        create_file = kernel32.CreateFileW
+        create_file.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
+        create_file.restype = wintypes.HANDLE
+        close_handle = kernel32.CloseHandle
+        close_handle.argtypes = [wintypes.HANDLE]
+        close_handle.restype = wintypes.BOOL
+        handle = create_file(str(path), 0x40000000, 0, None, 1, 0x00200080, None)
+        if handle == ctypes.c_void_p(-1).value:
+            error = ctypes.get_last_error()
+            if error in (80, 183):  # ERROR_FILE_EXISTS / ERROR_ALREADY_EXISTS
+                raise FileExistsError(errno.EEXIST, "File already exists", str(path))
+            raise ctypes.WinError(error)
+        try:
+            return msvcrt.open_osfhandle(handle, os.O_WRONLY | os.O_BINARY)
+        except BaseException:
+            close_handle(handle)
             raise
 
     @staticmethod

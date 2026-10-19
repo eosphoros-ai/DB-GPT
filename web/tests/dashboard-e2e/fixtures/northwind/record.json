@@ -1,0 +1,1059 @@
+{
+  "id": "452a1561b88d46b4a221ddc4261a6c67",
+  "owner_id": "fixture-owner",
+  "conversation_id": "fixture-conversation",
+  "source_turn_id": "fixture-turn",
+  "origin": "manual",
+  "asset_state": "saved",
+  "saved_at": "2026-09-08T17:26:17.255115",
+  "current_revision": 1,
+  "status": "draft",
+  "schema": {
+    "schema_version": "1.4",
+    "dashboard": {
+      "id": "452a1561b88d46b4a221ddc4261a6c67",
+      "title": "客户订购分析",
+      "description": "按收货国家比较客户订购频次，识别重点客户。",
+      "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+      "status": "draft",
+      "theme": {
+        "preset": "clarity",
+        "mode": "light",
+        "overrides": {
+          "primary_color": null,
+          "font_scale": null,
+          "density": null,
+          "card_radius": null,
+          "card_shadow": null,
+          "chart_palette": null,
+          "kpi_style": null,
+          "table_style": null
+        }
+      },
+      "refresh_policy": {
+        "refresh_on_open": false,
+        "interval_seconds": null
+      },
+      "created_at": "2026-09-08T17:26:17.255115",
+      "updated_at": "2026-09-08T17:26:17.255115"
+    },
+    "metric_context": {
+      "grain": "模板按业务明细计算，关联表仅作唯一键匹配；客户留存按稳定客户标识去重",
+      "time_range": null,
+      "data_freshness": "查询时读取当前数据源",
+      "source_notes": [
+        "按收货国家比较客户订购频次，识别重点客户。"
+      ],
+      "metrics": [],
+      "dimensions": []
+    },
+    "filters": [
+      {
+        "id": "year",
+        "type": "select",
+        "label": "年份",
+        "field": "year",
+        "default": "all",
+        "options": [
+          {
+            "label": "全部年份",
+            "value": "all"
+          },
+          {
+            "label": "1996",
+            "value": "1996"
+          },
+          {
+            "label": "1997",
+            "value": "1997"
+          },
+          {
+            "label": "1998",
+            "value": "1998"
+          }
+        ],
+        "relative_date": null
+      },
+      {
+        "id": "segment",
+        "type": "select",
+        "label": "收货国家",
+        "field": "segment",
+        "default": "all",
+        "options": [
+          {
+            "label": "全部",
+            "value": "all"
+          },
+          {
+            "label": "Argentina",
+            "value": "Argentina"
+          },
+          {
+            "label": "Austria",
+            "value": "Austria"
+          },
+          {
+            "label": "Belgium",
+            "value": "Belgium"
+          },
+          {
+            "label": "Brazil",
+            "value": "Brazil"
+          },
+          {
+            "label": "Canada",
+            "value": "Canada"
+          },
+          {
+            "label": "Denmark",
+            "value": "Denmark"
+          },
+          {
+            "label": "Finland",
+            "value": "Finland"
+          },
+          {
+            "label": "France",
+            "value": "France"
+          },
+          {
+            "label": "Germany",
+            "value": "Germany"
+          },
+          {
+            "label": "Ireland",
+            "value": "Ireland"
+          },
+          {
+            "label": "Italy",
+            "value": "Italy"
+          },
+          {
+            "label": "Mexico",
+            "value": "Mexico"
+          },
+          {
+            "label": "Norway",
+            "value": "Norway"
+          },
+          {
+            "label": "Poland",
+            "value": "Poland"
+          },
+          {
+            "label": "Portugal",
+            "value": "Portugal"
+          },
+          {
+            "label": "Spain",
+            "value": "Spain"
+          },
+          {
+            "label": "Sweden",
+            "value": "Sweden"
+          },
+          {
+            "label": "Switzerland",
+            "value": "Switzerland"
+          },
+          {
+            "label": "UK",
+            "value": "UK"
+          },
+          {
+            "label": "USA",
+            "value": "USA"
+          },
+          {
+            "label": "Venezuela",
+            "value": "Venezuela"
+          }
+        ],
+        "relative_date": null
+      }
+    ],
+    "widgets": [
+      {
+        "id": "retention",
+        "type": "bar",
+        "title": "客户首购与复购留存",
+        "description": "按首购年份及首次购买地区筛选；人数去重。未观察到的后续周期显示为未到期。数据观察截止于源数据最后一笔订单。",
+        "query": {
+          "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+          "sql": "SELECT cohort,age,SUM(retained) AS retained,SUM(cohort_size) AS cohort_size,MIN(observed) AS observed FROM (WITH facts AS (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts),\n      events AS (SELECT entity,segment,event_date,substr(event_date,1,7)||'-01' AS period FROM facts),\n      first_dates AS (SELECT entity,MIN(event_date) AS first_date FROM events GROUP BY entity),\n      members AS (SELECT e.entity,MIN(e.segment) AS segment,MIN(e.period) AS cohort FROM events e JOIN first_dates f ON e.entity=f.entity AND e.event_date=f.first_date GROUP BY e.entity),\n      sizes AS (SELECT cohort,segment,COUNT(*) AS cohort_size FROM members GROUP BY cohort,segment),\n      active AS (SELECT m.cohort,m.segment,(CAST(substr(e.period,1,4) AS INTEGER)-CAST(substr(m.cohort,1,4) AS INTEGER))*12+CAST(substr(e.period,6,2) AS INTEGER)-CAST(substr(m.cohort,6,2) AS INTEGER) AS age,COUNT(DISTINCT e.entity) AS retained FROM members m JOIN events e ON m.entity=e.entity GROUP BY m.cohort,m.segment,age),\n      ages AS (SELECT 0 AS age UNION ALL SELECT 1 AS age UNION ALL SELECT 2 AS age UNION ALL SELECT 3 AS age UNION ALL SELECT 4 AS age UNION ALL SELECT 5 AS age UNION ALL SELECT 6 AS age UNION ALL SELECT 7 AS age UNION ALL SELECT 8 AS age UNION ALL SELECT 9 AS age UNION ALL SELECT 10 AS age UNION ALL SELECT 11 AS age UNION ALL SELECT 12 AS age), horizon AS (SELECT MAX(period) AS last_period FROM events)\n      SELECT s.cohort,substr(s.cohort,1,4) AS year,s.segment,a.age,s.cohort_size,\n        COALESCE(r.retained,0) AS retained,CASE WHEN a.age<=(CAST(substr(h.last_period,1,4) AS INTEGER)-CAST(substr(s.cohort,1,4) AS INTEGER))*12+CAST(substr(h.last_period,6,2) AS INTEGER)-CAST(substr(s.cohort,6,2) AS INTEGER) THEN 1 ELSE 0 END AS observed\n      FROM sizes s CROSS JOIN ages a CROSS JOIN horizon h\n      LEFT JOIN active r ON r.cohort=s.cohort AND r.segment=s.segment AND r.age=a.age) cohort_data WHERE (:year='all' OR year=:year) AND (:segment='all' OR segment=:segment) GROUP BY cohort,age ORDER BY cohort,age",
+          "federation": null,
+          "filter_parameters": {
+            "year": {
+              "parameter": "year",
+              "start_parameter": null,
+              "end_parameter": null
+            },
+            "segment": {
+              "parameter": "segment",
+              "start_parameter": null,
+              "end_parameter": null
+            }
+          },
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "cohort",
+              "type": "string",
+              "label": null,
+              "nullable": true
+            },
+            {
+              "name": "age",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            },
+            {
+              "name": "retained",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            },
+            {
+              "name": "cohort_size",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            },
+            {
+              "name": "observed",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 5000,
+          "grain": null,
+          "refresh_time": null,
+          "last_execution": {
+            "status": "never",
+            "executed_at": null,
+            "duration_ms": null,
+            "row_count": null,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+                "tables": [
+                  "customers",
+                  "orders"
+                ],
+                "columns": [
+                  "a.age",
+                  "age",
+                  "aux",
+                  "c.companyName",
+                  "c.customerID",
+                  "category",
+                  "cohort",
+                  "cohort_size",
+                  "e.entity",
+                  "e.event_date",
+                  "e.period",
+                  "e.segment",
+                  "entity",
+                  "event_date",
+                  "f.entity",
+                  "f.first_date",
+                  "h.last_period",
+                  "m.cohort",
+                  "m.entity",
+                  "m.segment",
+                  "o.customerID",
+                  "o.orderDate",
+                  "o.shipCountry",
+                  "observed",
+                  "period",
+                  "r.age",
+                  "r.cohort",
+                  "r.retained",
+                  "r.segment",
+                  "retained",
+                  "s.cohort",
+                  "s.cohort_size",
+                  "s.segment",
+                  "segment",
+                  "value",
+                  "year"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": "retained",
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": "observed",
+          "y2": null,
+          "row": "cohort",
+          "column": "age",
+          "target": "cohort_size",
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": "cohort",
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": "月",
+          "currency": null,
+          "precision": 0,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": {
+          "query": {
+            "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+            "sql": "WITH facts AS (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts),\n      events AS (SELECT entity,segment,event_date,substr(event_date,1,7)||'-01' AS period FROM facts),\n      first_dates AS (SELECT entity,MIN(event_date) AS first_date FROM events GROUP BY entity),\n      members AS (SELECT e.entity,MIN(e.segment) AS segment,MIN(e.period) AS cohort FROM events e JOIN first_dates f ON e.entity=f.entity AND e.event_date=f.first_date GROUP BY e.entity),\n      sizes AS (SELECT cohort,segment,COUNT(*) AS cohort_size FROM members GROUP BY cohort,segment),\n      active AS (SELECT m.cohort,m.segment,(CAST(substr(e.period,1,4) AS INTEGER)-CAST(substr(m.cohort,1,4) AS INTEGER))*12+CAST(substr(e.period,6,2) AS INTEGER)-CAST(substr(m.cohort,6,2) AS INTEGER) AS age,COUNT(DISTINCT e.entity) AS retained FROM members m JOIN events e ON m.entity=e.entity GROUP BY m.cohort,m.segment,age),\n      ages AS (SELECT 0 AS age UNION ALL SELECT 1 AS age UNION ALL SELECT 2 AS age UNION ALL SELECT 3 AS age UNION ALL SELECT 4 AS age UNION ALL SELECT 5 AS age UNION ALL SELECT 6 AS age UNION ALL SELECT 7 AS age UNION ALL SELECT 8 AS age UNION ALL SELECT 9 AS age UNION ALL SELECT 10 AS age UNION ALL SELECT 11 AS age UNION ALL SELECT 12 AS age), horizon AS (SELECT MAX(period) AS last_period FROM events)\n      SELECT s.cohort,substr(s.cohort,1,4) AS year,s.segment,a.age,s.cohort_size,\n        COALESCE(r.retained,0) AS retained,CASE WHEN a.age<=(CAST(substr(h.last_period,1,4) AS INTEGER)-CAST(substr(s.cohort,1,4) AS INTEGER))*12+CAST(substr(h.last_period,6,2) AS INTEGER)-CAST(substr(s.cohort,6,2) AS INTEGER) THEN 1 ELSE 0 END AS observed\n      FROM sizes s CROSS JOIN ages a CROSS JOIN horizon h\n      LEFT JOIN active r ON r.cohort=s.cohort AND r.segment=s.segment AND r.age=a.age",
+            "federation": null,
+            "filter_parameters": {},
+            "default_parameters": {},
+            "output_fields": [
+              {
+                "name": "cohort",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "year",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "segment",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "age",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "cohort_size",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "retained",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "observed",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              }
+            ],
+            "timeout_seconds": 30,
+            "max_rows": 5000,
+            "grain": null,
+            "refresh_time": null,
+            "last_execution": {
+              "status": "never",
+              "executed_at": null,
+              "duration_ms": null,
+              "row_count": null,
+              "error": null
+            },
+            "lineage": {
+              "sources": []
+            }
+          },
+          "filter_fields": {
+            "year": "year",
+            "segment": "segment"
+          },
+          "group_by": [
+            "cohort",
+            "age"
+          ],
+          "measures": [
+            {
+              "source_field": "retained",
+              "output_field": "retained",
+              "aggregation": "sum",
+              "denominator_field": null,
+              "scale": 1.0
+            },
+            {
+              "source_field": "cohort_size",
+              "output_field": "cohort_size",
+              "aggregation": "sum",
+              "denominator_field": null,
+              "scale": 1.0
+            },
+            {
+              "source_field": "observed",
+              "output_field": "observed",
+              "aggregation": "minimum",
+              "denominator_field": null,
+              "scale": 1.0
+            }
+          ],
+          "output_columns": [
+            "cohort",
+            "age",
+            "retained",
+            "cohort_size",
+            "observed"
+          ],
+          "row_mode": false,
+          "sort": [
+            {
+              "field": "cohort",
+              "direction": "ascending"
+            },
+            {
+              "field": "age",
+              "direction": "ascending"
+            }
+          ],
+          "max_output_rows": 5000
+        },
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "total",
+        "type": "kpi",
+        "title": "订单数",
+        "description": "",
+        "query": {
+          "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+          "sql": "SELECT SUM(amount) AS value FROM (SELECT year,segment,SUM(value) AS amount,COUNT(value) AS n FROM (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts) facts GROUP BY year,segment) dataset WHERE (:year='all' OR year=:year) AND (:segment='all' OR segment=:segment)",
+          "federation": null,
+          "filter_parameters": {
+            "year": {
+              "parameter": "year",
+              "start_parameter": null,
+              "end_parameter": null
+            },
+            "segment": {
+              "parameter": "segment",
+              "start_parameter": null,
+              "end_parameter": null
+            }
+          },
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "value",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 120,
+          "grain": null,
+          "refresh_time": null,
+          "last_execution": {
+            "status": "never",
+            "executed_at": null,
+            "duration_ms": null,
+            "row_count": null,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+                "tables": [
+                  "customers",
+                  "orders"
+                ],
+                "columns": [
+                  "amount",
+                  "aux",
+                  "c.companyName",
+                  "c.customerID",
+                  "category",
+                  "entity",
+                  "event_date",
+                  "o.customerID",
+                  "o.orderDate",
+                  "o.shipCountry",
+                  "segment",
+                  "value",
+                  "year"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": "value",
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": "kpi",
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": "单",
+          "currency": null,
+          "precision": 0,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": {
+          "query": {
+            "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+            "sql": "SELECT year,segment,SUM(value) AS amount,COUNT(value) AS n FROM (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts) facts GROUP BY year,segment",
+            "federation": null,
+            "filter_parameters": {},
+            "default_parameters": {},
+            "output_fields": [
+              {
+                "name": "year",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "segment",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "amount",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "n",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              }
+            ],
+            "timeout_seconds": 30,
+            "max_rows": 5000,
+            "grain": null,
+            "refresh_time": null,
+            "last_execution": {
+              "status": "never",
+              "executed_at": null,
+              "duration_ms": null,
+              "row_count": null,
+              "error": null
+            },
+            "lineage": {
+              "sources": []
+            }
+          },
+          "filter_fields": {
+            "year": "year",
+            "segment": "segment"
+          },
+          "group_by": [],
+          "measures": [
+            {
+              "source_field": "amount",
+              "output_field": "value",
+              "aggregation": "sum",
+              "denominator_field": null,
+              "scale": 1.0
+            }
+          ],
+          "output_columns": [
+            "value"
+          ],
+          "row_mode": false,
+          "sort": [],
+          "max_output_rows": 120
+        },
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "customers",
+        "type": "kpi",
+        "title": "下单客户数",
+        "description": "",
+        "query": {
+          "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+          "sql": "SELECT COUNT(DISTINCT entity) AS value FROM (SELECT DISTINCT year,segment,entity FROM (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts) facts) dataset WHERE (:year='all' OR year=:year) AND (:segment='all' OR segment=:segment)",
+          "federation": null,
+          "filter_parameters": {
+            "year": {
+              "parameter": "year",
+              "start_parameter": null,
+              "end_parameter": null
+            },
+            "segment": {
+              "parameter": "segment",
+              "start_parameter": null,
+              "end_parameter": null
+            }
+          },
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "value",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 120,
+          "grain": null,
+          "refresh_time": null,
+          "last_execution": {
+            "status": "never",
+            "executed_at": null,
+            "duration_ms": null,
+            "row_count": null,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+                "tables": [
+                  "customers",
+                  "orders"
+                ],
+                "columns": [
+                  "aux",
+                  "c.companyName",
+                  "c.customerID",
+                  "category",
+                  "entity",
+                  "event_date",
+                  "o.customerID",
+                  "o.orderDate",
+                  "o.shipCountry",
+                  "segment",
+                  "value",
+                  "year"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": "value",
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": []
+        },
+        "style": {},
+        "presentation": {
+          "visualization": "kpi",
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": "位",
+          "currency": null,
+          "precision": 0,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": {
+          "query": {
+            "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+            "sql": "SELECT DISTINCT year,segment,entity FROM (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts) facts",
+            "federation": null,
+            "filter_parameters": {},
+            "default_parameters": {},
+            "output_fields": [
+              {
+                "name": "year",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "segment",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "entity",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              }
+            ],
+            "timeout_seconds": 30,
+            "max_rows": 5000,
+            "grain": null,
+            "refresh_time": null,
+            "last_execution": {
+              "status": "never",
+              "executed_at": null,
+              "duration_ms": null,
+              "row_count": null,
+              "error": null
+            },
+            "lineage": {
+              "sources": []
+            }
+          },
+          "filter_fields": {
+            "year": "year",
+            "segment": "segment"
+          },
+          "group_by": [],
+          "measures": [
+            {
+              "source_field": "entity",
+              "output_field": "value",
+              "aggregation": "count_distinct",
+              "denominator_field": null,
+              "scale": 1.0
+            }
+          ],
+          "output_columns": [
+            "value"
+          ],
+          "row_mode": false,
+          "sort": [],
+          "max_output_rows": 120
+        },
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      },
+      {
+        "id": "ranking",
+        "type": "table",
+        "title": "客户订购次数",
+        "description": "",
+        "query": {
+          "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+          "sql": "SELECT category,SUM(amount) AS value FROM (SELECT year,segment,category,SUM(value) AS amount,COUNT(value) AS n FROM (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts) facts GROUP BY year,segment,category) dataset WHERE (:year='all' OR year=:year) AND (:segment='all' OR segment=:segment) GROUP BY category ORDER BY value DESC,category ASC LIMIT 30",
+          "federation": null,
+          "filter_parameters": {
+            "year": {
+              "parameter": "year",
+              "start_parameter": null,
+              "end_parameter": null
+            },
+            "segment": {
+              "parameter": "segment",
+              "start_parameter": null,
+              "end_parameter": null
+            }
+          },
+          "default_parameters": {},
+          "output_fields": [
+            {
+              "name": "category",
+              "type": "string",
+              "label": null,
+              "nullable": true
+            },
+            {
+              "name": "value",
+              "type": "number",
+              "label": null,
+              "nullable": true
+            }
+          ],
+          "timeout_seconds": 30,
+          "max_rows": 30,
+          "grain": null,
+          "refresh_time": null,
+          "last_execution": {
+            "status": "never",
+            "executed_at": null,
+            "duration_ms": null,
+            "row_count": null,
+            "error": null
+          },
+          "lineage": {
+            "sources": [
+              {
+                "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+                "tables": [
+                  "customers",
+                  "orders"
+                ],
+                "columns": [
+                  "amount",
+                  "aux",
+                  "c.companyName",
+                  "c.customerID",
+                  "category",
+                  "entity",
+                  "event_date",
+                  "o.customerID",
+                  "o.orderDate",
+                  "o.shipCountry",
+                  "segment",
+                  "value",
+                  "year"
+                ]
+              }
+            ]
+          }
+        },
+        "encoding": {
+          "x": null,
+          "y": null,
+          "value": null,
+          "series": null,
+          "category": null,
+          "angle": null,
+          "color": null,
+          "y2": null,
+          "row": null,
+          "column": null,
+          "target": null,
+          "columns": [
+            "category",
+            "value"
+          ]
+        },
+        "style": {},
+        "presentation": {
+          "visualization": "table",
+          "orientation": null,
+          "stacked": false,
+          "smooth": true,
+          "top_n": null,
+          "colors": [],
+          "unit": "单",
+          "currency": null,
+          "precision": 0,
+          "percentage": false,
+          "show_legend": null,
+          "show_grid": null,
+          "default_sort": {
+            "field": null,
+            "direction": "default"
+          }
+        },
+        "publication": {
+          "query": {
+            "data_source_id": "upload_001_3a6ee8a2d1ad4a2a",
+            "sql": "SELECT year,segment,category,SUM(value) AS amount,COUNT(value) AS n FROM (SELECT event_date,substr(event_date,1,7) AS period,substr(event_date,1,4) AS year,COALESCE(segment,'未分类') AS segment,COALESCE(category,'未分类') AS category,value,entity,aux FROM (SELECT date(o.orderDate) AS event_date,o.shipCountry AS segment,c.companyName AS category,1.0 AS value,CAST(o.customerID AS TEXT) AS entity,NULL AS aux FROM orders o JOIN customers c ON o.customerID=c.customerID) source_facts) facts GROUP BY year,segment,category",
+            "federation": null,
+            "filter_parameters": {},
+            "default_parameters": {},
+            "output_fields": [
+              {
+                "name": "year",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "segment",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "category",
+                "type": "string",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "amount",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              },
+              {
+                "name": "n",
+                "type": "number",
+                "label": null,
+                "nullable": true
+              }
+            ],
+            "timeout_seconds": 30,
+            "max_rows": 5000,
+            "grain": null,
+            "refresh_time": null,
+            "last_execution": {
+              "status": "never",
+              "executed_at": null,
+              "duration_ms": null,
+              "row_count": null,
+              "error": null
+            },
+            "lineage": {
+              "sources": []
+            }
+          },
+          "filter_fields": {
+            "year": "year",
+            "segment": "segment"
+          },
+          "group_by": [
+            "category"
+          ],
+          "measures": [
+            {
+              "source_field": "amount",
+              "output_field": "value",
+              "aggregation": "sum",
+              "denominator_field": null,
+              "scale": 1.0
+            }
+          ],
+          "output_columns": [
+            "category",
+            "value"
+          ],
+          "row_mode": false,
+          "sort": [
+            {
+              "field": "value",
+              "direction": "descending"
+            },
+            {
+              "field": "category",
+              "direction": "ascending"
+            }
+          ],
+          "max_output_rows": 30
+        },
+        "metric_ids": [],
+        "dimension_ids": [],
+        "anomaly_rules": [],
+        "error": null
+      }
+    ],
+    "layouts": {
+      "columns": 12,
+      "desktop": [
+        {
+          "widget_id": "retention",
+          "x": 0,
+          "y": 0,
+          "w": 12,
+          "h": 13,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "total",
+          "x": 0,
+          "y": 13,
+          "w": 3,
+          "h": 3,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "customers",
+          "x": 3,
+          "y": 13,
+          "w": 3,
+          "h": 3,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        },
+        {
+          "widget_id": "ranking",
+          "x": 6,
+          "y": 13,
+          "w": 6,
+          "h": 7,
+          "min_w": null,
+          "min_h": null,
+          "max_w": null,
+          "max_h": null
+        }
+      ],
+      "mobile_strategy": "stack"
+    },
+    "metadata": {
+      "conversation_id": "fixture-conversation",
+      "source_turn_id": "fixture-turn",
+      "agent": {
+        "generated": false,
+        "model_name": null,
+        "prompt": null,
+        "generated_at": null
+      },
+      "compatibility": {
+        "catalog_template_id": "northwind-customers"
+      }
+    }
+  },
+  "created_at": "2026-09-08T17:26:17.255115",
+  "updated_at": "2026-09-08T17:26:17.255115"
+}
