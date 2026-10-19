@@ -323,14 +323,15 @@ export default function ArtifactRail({
             type='button'
             title={t('observability_trace_tab') || 'Trace'}
             onClick={onTrace}
-            className='w-7 h-7 rounded-md flex items-center justify-center text-[#8b8b84] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06]'
+            className='h-7 px-2 rounded-md flex items-center gap-1.5 text-xs text-[#55554f] dark:text-[#a8a59e] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06]'
           >
-            <svg width='14' height='14' viewBox='0 0 16 16' fill='none' stroke='currentColor' strokeWidth='1.4'>
+            <svg width='13' height='13' viewBox='0 0 16 16' fill='none' stroke='currentColor' strokeWidth='1.4'>
               <circle cx='3.5' cy='8' r='1.8' />
               <circle cx='12.5' cy='3.5' r='1.8' />
               <circle cx='12.5' cy='12.5' r='1.8' />
               <path d='M5.2 7.2l5.6-2.9M5.2 8.8l5.6 2.9' />
             </svg>
+            {t('observability_trace_tab') || 'Trace'}
           </button>
         )}
         <button
