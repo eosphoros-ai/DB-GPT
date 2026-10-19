@@ -10,6 +10,7 @@
  * - step.meta: Step metadata { type, id, thought, action, action_input }
  * - step.done: Step completed { type, id, status }
  * - context.status: Context budget status { type, used, budget, ratio, state, compact_layer }
+ * - final.chunk: Incremental final-answer text { type, content }
  * - final: Final answer { type, protocol_version, content, citations }
  * - done: Stream completed { type }
  */
@@ -54,6 +55,11 @@ export interface SSEFinalEvent {
   content: string;
   protocol_version?: number;
   citations?: unknown[];
+}
+
+export interface SSEFinalChunkEvent {
+  type: 'final.chunk';
+  content: string;
 }
 
 export interface SSETaskPreviewEvent {
@@ -118,6 +124,7 @@ export type SSEEvent =
   | SSEQuestionAskedEvent
   | SSEQuestionRepliedEvent
   | SSEQuestionRejectedEvent
+  | SSEFinalChunkEvent
   | SSEFinalEvent
   | SSETaskPreviewEvent
   | SSEDoneEvent;
@@ -193,6 +200,9 @@ export class ReActSSEState {
         break;
       case 'final':
         this.handleFinal(event);
+        break;
+      case 'final.chunk':
+        this.handleFinalChunk(event);
         break;
       case 'task.preview':
         if (!this._taskPreview) {
@@ -272,6 +282,16 @@ export class ReActSSEState {
 
   private handleFinal(event: SSEFinalEvent): void {
     this.finalAnswer = decodeFinalEvent(event);
+  }
+
+  private handleFinalChunk(event: SSEFinalChunkEvent): void {
+    // Incremental final-answer text (native function calling streams the
+    // terminate tool's output). The authoritative `final` event later
+    // replaces this accumulated content wholesale.
+    this.finalAnswer = {
+      ...this.finalAnswer,
+      content: (this.finalAnswer.content || '') + (event.content || ''),
+    };
   }
 
   private handleDone(): void {

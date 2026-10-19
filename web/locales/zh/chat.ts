@@ -276,4 +276,12 @@ export const ChatZh: Resources['translation'] = {
   picker_skill_official: '官方',
   picker_skill_personal: '个人',
   picker_connector_active: '已激活',
+  rail_artifacts_title: '会话产物',
+  rail_artifacts_count: '{{count}} 项',
+  rail_no_artifacts: '暂无产物',
+  rail_back_gallery: '返回画廊',
+  rail_debug_view: '调试视图（Execution Steps / Trace / Summary）',
+  rail_type_image: '图片',
+  rail_type_code: '代码',
+  rail_type_file: '文件',
 } as const;

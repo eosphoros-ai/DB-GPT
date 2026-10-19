@@ -271,4 +271,12 @@ export const ChatEn = {
   picker_skill_official: 'Official',
   picker_skill_personal: 'Personal',
   picker_connector_active: 'Active',
+  rail_artifacts_title: 'Session artifacts',
+  rail_artifacts_count: '{{count}} items',
+  rail_no_artifacts: 'No artifacts yet',
+  rail_back_gallery: 'Back to gallery',
+  rail_debug_view: 'Debug view (Execution Steps / Trace / Summary)',
+  rail_type_image: 'Image',
+  rail_type_code: 'Code',
+  rail_type_file: 'File',
 };

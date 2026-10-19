@@ -1,4 +1,6 @@
 import { ChatContext } from '@/app/chat-context';
+import { apiInterceptors } from '@/client/api';
+import { getChatFlows, getFlowById, getFlowTemplates } from '@/client/api/flow';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
 import { buildSubAgentArtifacts, parseSubAgentEvent, restoreSubAgentStates } from '@/hooks/use-subagent-stream';
@@ -28,6 +30,9 @@ import {
 } from '@/modules/session-files';
 import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
+import AgentTimeline, { stepsToTimelineBlocks } from '@/new-components/chat/content/AgentTimeline';
+import ArtifactCards, { StreamArtifact } from '@/new-components/chat/content/ArtifactCards';
+import ArtifactRail from '@/new-components/chat/content/ArtifactRail';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
 import ManusLeftPanel, {
   ExecutionStep as ManusExecutionStep,
@@ -48,14 +53,20 @@ import { AttachedConnector, ConnectorInstance } from '@/new-components/connector
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
+import type { IFlow } from '@/types/flow';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
+import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
+import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
+import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
 import {
+  AimOutlined,
+  ApartmentOutlined,
   ApiOutlined,
   ArrowUpOutlined,
   AudioOutlined,
@@ -73,7 +84,9 @@ import {
   FileOutlined,
   FilePptOutlined,
   FileTextOutlined,
+  InboxOutlined,
   LeftOutlined,
+  LoadingOutlined,
   PaperClipOutlined,
   PieChartOutlined,
   PlusOutlined,
@@ -106,7 +119,7 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const generateUUID = () => {
@@ -167,6 +180,28 @@ const _getFileIcon = (fileName: string, mimeType?: string) => {
   return <FileTextOutlined className='text-blue-500 text-lg' />;
 };
 
+/** Image extensions that can be rendered as thumbnails. */
+const SERVE_IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
+
+/**
+ * Map a file artifact's on-disk path to a URL the browser can load, or
+ * null when the backend cannot serve it. Generated images live either in
+ * the static ``/images`` mount (``pilot/message/img``) or under the
+ * generated-work roots (``pilot/tmp``, ``pi_workspace``) exposed via the
+ * scoped ``/v1/chat/harness/artifact-file`` endpoint.
+ */
+const servableImageUrl = (filePath?: string): string | null => {
+  if (!filePath) return null;
+  const p = filePath.replace(/\\/g, '/');
+  const base = p.split('/').pop() || '';
+  if (!SERVE_IMAGE_EXT_RE.test(base)) return null;
+  if (p.includes('/message/img/')) return `/images/${base}`;
+  if (p.includes('/pilot/') || p.includes('/pi_workspace/')) {
+    return `/api/v1/chat/harness/artifact-file?path=${encodeURIComponent(filePath)}`;
+  }
+  return null;
+};
+
 interface DataSource {
   id: number;
   type: string;
@@ -197,6 +232,8 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
+  /** TaskFlow run metadata (set when this answer was produced by a task flow). */
+  flowRun?: { label: string };
   /** Immutable server snapshots of every session file attached to this message. */
   attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
@@ -212,9 +249,14 @@ interface ExecutionStep {
   step: number;
   title?: string;
   detail: string;
-  status: 'running' | 'done' | 'failed';
+  status: 'running' | 'done' | 'failed' | 'pending';
   action?: string;
   actionInput?: any;
+  /** Wall-clock ms when the step started / finished (timeline durations). */
+  startedAt?: number;
+  endedAt?: number;
+  /** User-facing intent line from step.meta (action_intention). */
+  actionIntention?: string;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -235,7 +277,7 @@ interface Skill {
   icon?: string;
 }
 
-type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
+type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html' | 'skill';
 
 interface Artifact {
   id: string;
@@ -255,6 +297,20 @@ interface Artifact {
   chartType?: ChartType;
   chartConfig?: Partial<ChartConfig>;
 }
+
+/** Output types that materialize as stream artifact cards. */
+const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code']);
+const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutput[]> }): boolean =>
+  Object.values(execution?.outputs || {}).some(arr =>
+    arr.some(
+      o =>
+        ARTIFACT_OUTPUT_TYPES.has(o.output_type) ||
+        ((o.output_type === 'text' || o.output_type === 'markdown') &&
+          typeof o.content === 'string' &&
+          o.content.includes('"chunks"') &&
+          envelopeEmbeddedOutputs(o.content).length > 0),
+    ),
+  );
 
 type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary';
 
@@ -358,6 +414,8 @@ const convertToManusFormat = (
   const getStepType = (title?: string, action?: string): StepType => {
     // Check action name first — it's the most reliable indicator
     const actionLower = (action || '').toLowerCase();
+    // TaskFlow product node (from the taskflow chat channel)
+    if (actionLower === 'taskflow_node') return 'flow_node';
     if (
       actionLower.includes('skill') ||
       actionLower === 'execute_skill_script_file' ||
@@ -837,6 +895,90 @@ const Playground: NextPage = () => {
   const [isConnectorPanelOpen, setIsConnectorPanelOpen] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<ConnectorInstance[]>([]);
   const [connectorSearchQuery, setConnectorSearchQuery] = useState('');
+
+  // ------------------------------------------------------------------
+  // TaskFlow: the flow selected from the "+" menu runs via chat_flow
+  // ------------------------------------------------------------------
+  const [selectedFlow, setSelectedFlow] = useState<ITaskflowRef | null>(null);
+  const selectedFlowRef = useRef<ITaskflowRef | null>(null);
+  selectedFlowRef.current = selectedFlow;
+  const [flowOptions, setFlowOptions] = useState<ITaskflowRef[]>([]);
+
+  // Load built-in templates + my taskflow flows for the "+" menu cascade.
+  useEffect(() => {
+    (async () => {
+      try {
+        const [, templatesRes] = await apiInterceptors(getFlowTemplates());
+        const templates = (((templatesRes as any)?.items ?? []) as any[])
+          .map(templateToRef)
+          .filter(Boolean) as ITaskflowRef[];
+        const [, flowsRes] = await apiInterceptors(getChatFlows({ page: 1, page_size: 50 }));
+        const mine = (((flowsRes as any)?.items ?? []) as IFlow[]).map(flowToRef).filter(Boolean) as ITaskflowRef[];
+        // De-duplicate: template instances already created appear in both.
+        const templateNames = new Set(templates.map(item => item.name));
+        setFlowOptions([...templates, ...mine.filter(item => !templateNames.has(item.name.replace(/_instance$/, '')))]);
+      } catch {
+        /* flow menu is best-effort */
+      }
+    })();
+  }, []);
+
+  // Deep link: /?flow=<uid> selects the flow chip (from the TaskFlow list "Run").
+  useEffect(() => {
+    if (!router.isReady) return;
+    const flowUid = router.query.flow as string | undefined;
+    if (!flowUid || selectedFlowRef.current?.uid === flowUid) return;
+    (async () => {
+      const [, flow] = await apiInterceptors(getFlowById(flowUid));
+      const ref = flow ? flowToRef(flow as IFlow) : null;
+      if (ref) {
+        setSelectedFlow(ref);
+        // Consume the query param so a later manual send is unaffected.
+        const { flow: _omit, ...rest } = router.query;
+        router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+      } else {
+        message.warning(t('taskflow_not_taskflow_flow') as string);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.flow]);
+
+  const flowMenuItems = useMemo(() => {
+    const items = flowOptions.map(ref => ({
+      key: `flow_${ref.isTemplate ? 'tpl' : 'flow'}_${ref.name}`,
+      label: (
+        <div className='flex items-center gap-2 py-0.5 max-w-[300px]'>
+          <ApartmentOutlined className='text-blue-500 flex-none' />
+          <div className='flex-1 min-w-0'>
+            <div className='flex items-center gap-1.5 text-[13px] font-medium text-gray-800 dark:text-gray-100'>
+              <span className='truncate'>{ref.label}</span>
+              {ref.isTemplate && (
+                <span className='text-[9px] px-1 rounded bg-blue-50 text-blue-600 flex-none'>
+                  {t('taskflow_builtin')}
+                </span>
+              )}
+            </div>
+            {ref.description && <div className='text-[10.5px] text-gray-400 truncate'>{ref.description}</div>}
+          </div>
+          <span className='text-[10px] text-gray-300 flex-none'>
+            {t('taskflow_nodes_count', { count: ref.nodeCount })}
+          </span>
+        </div>
+      ),
+      onClick: () => setSelectedFlow(ref),
+    }));
+    return [
+      ...items,
+      ...(items.length > 0 ? [{ type: 'divider' as const }] : []),
+      {
+        key: 'taskflow_manage',
+        icon: <ApartmentOutlined />,
+        label: t('taskflow_manage'),
+        onClick: () => router.push('/construct/taskflow'),
+      },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowOptions, t]);
   const [isScheduleOpen, setScheduleOpen] = useState(false);
   const { connectors: connectorsList } = useConnectors();
 
@@ -849,7 +991,9 @@ const Playground: NextPage = () => {
   });
 
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  // Right rail is a contextual viewer (artifact previews / debug trace):
+  // collapsed by default so the conversation stream gets full width.
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [rightPanelView, setRightPanelView] = useState<PanelView>('execution');
   const [selectedCitationIndex, setSelectedCitationIndex] = useState<number | null>(null);
   const [pendingFinalization, setPendingFinalization] = useState<{
@@ -866,7 +1010,67 @@ const Playground: NextPage = () => {
   const summaryPresentationRef = useRef<SummaryPresentation | null>(null);
   const summaryPresentationResponseIdRef = useRef<string | null>(null);
   const summaryPresentationFullTextRef = useRef('');
+  // Response ids that received server-streamed `final.chunk` events. When
+  // set, the `final` event skips the client-side typewriter presentation
+  // because the panel already grew in real time.
+  const finalChunkStreamedRef = useRef<Record<string, boolean>>({});
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+
+  // Rail mode: viewer (mockup form: artifact preview / gallery) by default;
+  // legacy Execution Steps / Trace / Summary panel behind the debug toggle
+  // or whenever a legacy view (references, sub-agent, step detail) is needed.
+  const [railDebug, setRailDebug] = useState(false);
+
+  // Contextual rail behavior: slide open while an artifact preview is
+  // active, slide closed when it clears — but only when the preview itself
+  // opened the rail (manual expansion / gallery stays open).
+  const previewOpenedRailRef = useRef(false);
+  useEffect(() => {
+    if (previewArtifact) {
+      previewOpenedRailRef.current = true;
+      setRightPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview');
+      setRightPanelCollapsed(false);
+    } else if (previewOpenedRailRef.current) {
+      previewOpenedRailRef.current = false;
+      setRightPanelCollapsed(true);
+    }
+  }, [previewArtifact]);
+
+  const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
+    setPreviewArtifact(artifact as Artifact);
+  }, []);
+
+  // Global turn status line (Codex-style): one summary line at the end
+  // of the stream instead of per-panel spinners/badges.
+  const streamStatus = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'view') continue;
+      const exec = executionMap[msg.id];
+      if (!exec || exec.steps.length === 0) continue;
+      const toolCalls = exec.steps.filter(s => s.action && s.action.toLowerCase() !== 'terminate').length;
+      const rounds = exec.steps.reduce((m, s) => Math.max(m, s.step || 0), 0);
+      const running = exec.steps.some(s => s.status === 'running') || Boolean(msg.thinking);
+      const starts = exec.steps.map(s => s.startedAt).filter((v): v is number => typeof v === 'number');
+      const ends = exec.steps.map(s => s.endedAt).filter((v): v is number => typeof v === 'number');
+      let dur = '';
+      if (starts.length) {
+        const end = running || !ends.length ? Date.now() : Math.max(...ends);
+        const elapsed = end - Math.min(...starts);
+        dur =
+          elapsed >= 60000
+            ? `${Math.floor(elapsed / 60000)}m ${Math.round((elapsed % 60000) / 1000)}s`
+            : `${Math.max(1, Math.round(elapsed / 1000))}s`;
+      }
+      return {
+        running,
+        text: running
+          ? `运行中 · 第 ${rounds} 轮 · 已执行 ${toolCalls} 次工具调用${dur ? ` · ${dur}` : ''}`
+          : `已完成 · ${rounds} 轮 · ${toolCalls} 次工具调用${dur ? ` · ${dur}` : ''}`,
+      };
+    }
+    return null;
+  }, [messages, executionMap]);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -987,7 +1191,9 @@ const Playground: NextPage = () => {
     setCreatedSkillNames({});
     setRightPanelTab('preview');
     setRightPanelView('execution');
-    setRightPanelCollapsed(false);
+    // Viewer paradigm: rail stays collapsed across conversation switches;
+    // it slides open only for artifact previews / explicit user actions.
+    setRightPanelCollapsed(true);
     setStreamingSummary('');
     setSummaryComplete(false);
     setTaskPlan([]);
@@ -1527,7 +1733,20 @@ const Playground: NextPage = () => {
       if (execution) {
         const allSteps = execution.steps || [];
         allSteps.forEach(step => {
-          const stepOutputs = execution.outputs[step.id] || [];
+          const rawOutputs = execution.outputs[step.id] || [];
+          // Harness engines embed html/image payloads inside plain-text
+          // ``{"chunks": [...]}`` envelopes; surface them as first-class
+          // outputs so artifact cards and previews work there too.
+          const stepOutputs: ExecutionOutput[] = [];
+          rawOutputs.forEach(output => {
+            stepOutputs.push(output);
+            if (output.output_type !== 'text' && output.output_type !== 'markdown') return;
+            const content = typeof output.content === 'string' ? output.content : '';
+            if (!content.includes('"chunks"')) return;
+            for (const embedded of envelopeEmbeddedOutputs(content)) {
+              stepOutputs.push({ output_type: embedded.type, content: embedded.content });
+            }
+          });
           stepOutputs.forEach((output, oIdx) => {
             if (output.output_type === 'code') {
               const codeStr = String(output.content || '').trim();
@@ -1557,6 +1776,7 @@ const Playground: NextPage = () => {
                 stepId: step.id,
                 downloadable: true,
                 size: output.content?.size,
+                filePath: output.content?.file_path || output.content?.path,
               });
             } else if (output.output_type === 'html') {
               const htmlContent =
@@ -1596,7 +1816,7 @@ const Playground: NextPage = () => {
 
           // For shell_interpreter steps, extract file paths from code/text outputs
           // and create downloadable file artifacts
-          if (step.action === 'shell_interpreter') {
+          if (step.action === 'shell_interpreter' || step.action === 'code_interpreter') {
             // Match both absolute paths and relative filenames with extensions
             const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
             const relFilePattern = /(?:>|>>|\btee\b|\btouch\b)\s+([\w\-./ ]+\.\w{1,10})/g;
@@ -1750,6 +1970,18 @@ const Playground: NextPage = () => {
         }
       }
 
+      // Promote image-extension file artifacts whose bytes the backend can
+      // serve (static /images mount or the scoped artifact-file endpoint)
+      // to first-class image artifacts, so stream cards and the rail
+      // gallery render real thumbnails instead of a generic file glyph.
+      for (const a of finalArtifacts) {
+        if (a.type !== 'file' || !a.filePath) continue;
+        const url = servableImageUrl(a.filePath);
+        if (!url) continue;
+        a.type = 'image';
+        a.content = url;
+      }
+
       // Deduplicate: for artifacts with the same name+type, keep only the last one
       const deduped: Artifact[] = [];
       const seen = new Map<string, number>();
@@ -1761,10 +1993,72 @@ const Playground: NextPage = () => {
         }
       }
 
-      return deduped;
+      // Directory-level aggregation: >=3 files under one root that
+      // includes SKILL.md collapse into a single skill-package artifact
+      // (folder card + tree preview), matching mockup v2.
+      // Skill roots = directories that directly contain a SKILL.md file;
+      // every descendant file joins the package (scripts/, references/...).
+      const skillRoots = deduped
+        .filter(a => a.type === 'file' && (a.name || '').toUpperCase() === 'SKILL.MD' && a.filePath)
+        .map(a => a.filePath!.split('/').slice(0, -1).join('/'));
+      const collapsedIds = new Set<string>();
+      for (const root of skillRoots) {
+        const members = deduped.filter(
+          a =>
+            (a.type === 'file' || (a.type === 'image' && !!a.filePath)) &&
+            !!a.filePath &&
+            !collapsedIds.has(a.id) &&
+            (a.filePath === `${root}/SKILL.md` || a.filePath.startsWith(`${root}/`)),
+        );
+        if (members.length < 3) continue;
+        deduped.push({
+          id: `${messageId}-skill-${root}`,
+          type: 'skill',
+          name: `${root.split('/').pop() || root}/`,
+          content: {
+            files: members.map(i => ({
+              name: i.name,
+              filePath: i.filePath,
+              size: i.size,
+              content: i.content?.content,
+            })),
+          },
+          createdAt: now,
+          messageId,
+          filePath: root,
+          size: members.reduce((sum, i) => sum + (i.size || 0), 0),
+        });
+        members.forEach(i => collapsedIds.add(i.id));
+      }
+      return collapsedIds.size ? deduped.filter(a => !collapsedIds.has(a.id)) : deduped;
     },
     [],
   );
+
+  // Conversation-level artifact list (rail gallery + header capsule).
+  // Includes the fallback summary artifact of the latest answer so every
+  // conversation has artifacts even when no files were produced.
+  const convArtifacts = useMemo(() => {
+    const list: Artifact[] = [];
+    for (const msg of messages) {
+      if (msg.role !== 'view') continue;
+      const exec = executionMap[msg.id];
+      if (!exec || !hasArtifactOutputs(exec)) continue;
+      list.push(...buildArtifactsFromExecution(msg.id, exec));
+    }
+    const lastView = [...messages].reverse().find(m => m.role === 'view' && m.context);
+    if (lastView?.id && lastView.context) {
+      list.push({
+        id: `summary-${lastView.id}`,
+        type: 'summary',
+        name: '本回答摘要',
+        content: lastView.context,
+        createdAt: Date.now(),
+        messageId: lastView.id,
+      });
+    }
+    return list;
+  }, [messages, executionMap, buildArtifactsFromExecution]);
 
   useEffect(() => {
     if (!pendingFinalization) return;
@@ -1798,7 +2092,10 @@ const Playground: NextPage = () => {
       const skillStep = execution.steps.find(step => {
         if (step.action !== 'shell_interpreter') return false;
         const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
-        const inputHas = step.actionInput?.includes('package_skill') || step.actionInput?.includes('init_skill');
+        // actionInput may be a string (dbgpt) or an args object (pi bridge).
+        const inputText =
+          typeof step.actionInput === 'string' ? step.actionInput : JSON.stringify(step.actionInput ?? '');
+        const inputHas = inputText.includes('package_skill') || inputText.includes('init_skill');
         const outputTexts = (execution.outputs[step.id] || []).map(output => String(output.content)).join(' ');
         const outputHas =
           outputTexts.includes('package_skill') ||
@@ -1902,6 +2199,14 @@ const Playground: NextPage = () => {
       queuedSendAfterUpload
     )
       return;
+
+    // TaskFlow: a selected flow takes over the send — it runs the compiled
+    // AWEL DAG via the chat_flow channel instead of the ReAct agent.
+    const activeFlow = selectedFlowRef.current;
+    if (activeFlow && inputQuery.trim()) {
+      await performFlowStart(activeFlow, inputQuery.trim());
+      return;
+    }
 
     const taskEpoch = taskEpochRef.current;
 
@@ -2049,6 +2354,9 @@ const Playground: NextPage = () => {
     // Build ext_info once and reuse it for both the live request and the
     // snapshot captured for "保存定时任务", so a saved task replays the exact
     // same context (files / database / knowledge / skill / connectors).
+    // NOTE: the harness engine is now a server-side
+    // preference (Setting → Agent Engine); it is NOT sent
+    // per request to avoid stale client states.
     const baseExtInfo: Record<string, any> = {
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
@@ -2292,6 +2600,7 @@ const Playground: NextPage = () => {
                   todoMeta: payload.todo_meta,
                   status: 'running' as const,
                   action: payload.action,
+                  startedAt: Date.now(),
                 },
               ];
             }
@@ -2309,7 +2618,6 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          setRightPanelCollapsed(false);
         } else if (payload.type === 'step.meta') {
           if (payload.action && payload.action.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
@@ -2357,6 +2665,7 @@ const Playground: NextPage = () => {
                 action: payload.action || item.action,
                 actionInput: payload.action_input || item.actionInput,
                 todoMeta: payload.todo_meta || item.todoMeta,
+                actionIntention: payload.action_intention || item.actionIntention,
               };
             });
             // Route model-provided action display fields to the subtle status row.
@@ -2426,7 +2735,9 @@ const Playground: NextPage = () => {
             const targetId = id || current.activeStepId;
             if (!targetId) return prev;
             const nextSteps = current.steps.map(item =>
-              item.id === targetId ? { ...item, status: payload.status || 'done' } : item,
+              item.id === targetId
+                ? { ...item, status: payload.status || 'done', endedAt: item.endedAt || Date.now() }
+                : item,
             );
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
@@ -2435,6 +2746,22 @@ const Playground: NextPage = () => {
           // timeline. Display copy must come from step.meta action_intention or
           // action_reason, which are constrained to concise, readable text.
           return;
+        } else if (payload.type === 'final.chunk') {
+          const chunkText = typeof payload.content === 'string' ? payload.content : '';
+          if (!chunkText) return;
+          const isFirstFinalChunk = !finalChunkStreamedRef.current[responseId];
+          finalChunkStreamedRef.current[responseId] = true;
+          setMessages(prev =>
+            prev.map(msg => {
+              if (msg.id !== responseId || msg.role !== 'view') return msg;
+              return { ...msg, context: (msg.context || '') + chunkText };
+            }),
+          );
+          if (isFirstFinalChunk) {
+            // The answer streams into the left bubble; the right rail
+            // stays a contextual viewer (artifact previews only).
+            setActiveMessageId(responseId);
+          }
         } else if (payload.type === 'final') {
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
@@ -2462,7 +2789,8 @@ const Playground: NextPage = () => {
           setActiveMessageId(responseId);
           setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
-          if (summaryText) {
+          const hadStreamedFinalChunks = !!finalChunkStreamedRef.current[responseId];
+          if (summaryText && !hadStreamedFinalChunks) {
             const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
             summaryPresentationResponseIdRef.current = responseId;
             summaryPresentationFullTextRef.current = summaryText;
@@ -2471,15 +2799,18 @@ const Playground: NextPage = () => {
             setSummaryComplete(false);
             setRightPanelTab('summary');
             setRightPanelView('summary');
-            setRightPanelCollapsed(false);
-          } else if (finalAnswer.citations.length > 0) {
+          } else if (!summaryText && finalAnswer.citations.length > 0) {
             setStreamingSummary('');
             setSummaryComplete(true);
+            setRailDebug(true);
             setRightPanelView('references');
           } else {
+            // Server-streamed chunks already filled the panel (or there is
+            // nothing to present): skip the client-side typewriter.
             setStreamingSummary('');
             setSummaryComplete(true);
           }
+          delete finalChunkStreamedRef.current[responseId];
 
           // Final is already a complete server event. Build artifacts now;
           // the bounded summary presentation controls only visible navigation.
@@ -2546,6 +2877,233 @@ const Playground: NextPage = () => {
           }
           return newMessages;
         });
+      }
+    } finally {
+      if (chatAbortControllerRef.current === controller) {
+        chatAbortControllerRef.current = null;
+      }
+      if (taskEpochRef.current === taskEpoch) {
+        setLoading(false);
+      }
+    }
+  };
+
+  /**
+   * TaskFlow send path: resolve the runnable flow uid (templates are
+   * instantiated on first use), then stream the chat_flow SSE channel. Step
+   * progress is parsed from `vis-flow-step` markers embedded in the answer
+   * text and projected onto the existing Manus execution-step UI.
+   */
+  const performFlowStart = async (flow: ITaskflowRef, flowQuery: string): Promise<void> => {
+    const taskEpoch = taskEpochRef.current;
+    const flowUid = await resolveFlowUid(flow);
+    if (!flowUid) {
+      message.error(t('error_occurred') as string);
+      return;
+    }
+    const currentConvId = conversationIdRef.current || generateUUID();
+    if (!conversationIdRef.current) {
+      conversationIdRef.current = currentConvId;
+      setConversationId(currentConvId);
+    }
+    if (router.query.id !== currentConvId) {
+      router.replace({ pathname: '/', query: { ...(router.query ?? {}), id: currentConvId } }, undefined, {
+        shallow: true,
+      });
+    }
+
+    const currentOrder = Math.floor(messages.length / 2) + 1;
+    const humanId = generateUUID();
+    const responseId = generateUUID();
+    setMessages(prev => [
+      ...prev,
+      {
+        id: humanId,
+        role: 'human',
+        context: flowQuery,
+        order: currentOrder,
+        attachedDb: selectedDb ? { db_name: selectedDb.db_name, db_type: selectedDb.db_type } : undefined,
+      },
+      {
+        id: responseId,
+        role: 'view',
+        context: '',
+        order: currentOrder,
+        thinking: true,
+        flowRun: { label: flow.label },
+      },
+    ]);
+    setQuery('');
+    setLoading(true);
+    setActiveViewMsgId(responseId);
+
+    // Seed the step list from the DSL so the run card shows the full plan
+    // while the DAG executes server-side. Titles use product kind labels
+    // (localized), details show the node's key config summary.
+    const dslNodes = flow.taskflow_source?.nodes ?? [];
+    const flowNodeSummary = (node: (typeof dslNodes)[number]): string => {
+      const config = node.config ?? {};
+      switch (node.kind) {
+        case 'db_query':
+          return config.datasource ? `${config.datasource} · ≤${config.max_rows ?? 1000}` : '';
+        case 'file_data':
+          return config.file_name ?? '';
+        case 'agent': {
+          const goal = (config.goal || '').trim();
+          const short = goal.length > 24 ? `${goal.slice(0, 24)}…` : goal;
+          const toolCount =
+            (config.tools?.length ?? 0) +
+            (config.skills?.length ?? 0) +
+            (config.mcp ? String(config.mcp).split('\n').filter(Boolean).length : 0);
+          return [short, toolCount > 0 ? `${toolCount} tools` : ''].filter(Boolean).join(' · ');
+        }
+        case 'visualize':
+          return `≤${config.max_charts ?? 4}`;
+        case 'human_confirm':
+          return config.message ?? '';
+        default:
+          return '';
+      }
+    };
+    const initialSteps: ExecutionStep[] = dslNodes.map((node, idx) => ({
+      id: node.id,
+      step: idx + 1,
+      title: node.label || (t(`taskflow_kind_${node.kind}`) as string),
+      detail: flowNodeSummary(node),
+      status: (idx === 0 ? 'running' : 'pending') as ExecutionStep['status'],
+      action: 'taskflow_node',
+    }));
+    setExecutionMap(prev => ({
+      ...prev,
+      [responseId]: { steps: initialSteps, outputs: {}, activeStepId: null, collapsed: false, stepThoughts: {} },
+    }));
+
+    const syncSteps = (markers: ReturnType<typeof parseTaskflowStream>['markers'], done: boolean) => {
+      const markerMap = new Map(markers.map(m => [m.step_id, m]));
+      const kindById = new Map(dslNodes.map(n => [n.id, n.kind]));
+      const isBoundary = (id: string) => {
+        const kind = kindById.get(id);
+        return kind === 'start' || kind === 'output';
+      };
+      // A successful run produces a marker for every content node; an unmarked
+      // content node at stream end means the run failed (or was skipped)
+      // before reaching it — don't paint it as done.
+      let runningSet = false;
+      // A live running marker (e.g. an agent node mid-loop) already marks the
+      // current step — don't let the heuristic mark the NEXT one running too.
+      const hasLiveRunning = markers.some(m => m.status === 'running');
+      setExecutionMap(prev => {
+        const exec = prev[responseId];
+        if (!exec) return prev;
+        const completedRun = done && exec.steps.every(s => isBoundary(s.id) || markerMap.has(s.id));
+        const steps = exec.steps.map((step, idx) => {
+          const marker = markerMap.get(step.id);
+          if (marker) {
+            return {
+              ...step,
+              status: (marker.status === 'failed'
+                ? 'failed'
+                : marker.status === 'running'
+                  ? 'running'
+                  : 'done') as ExecutionStep['status'],
+              // Keep the config-summary subtitle; marker.summary (e.g. row
+              // count) renders as its own badge in the flow step row.
+              detail: step.detail,
+            };
+          }
+          if (!done && kindById.get(step.id) === 'start') {
+            // Start has no marker; it completes the moment the trigger fires,
+            // i.e. as soon as any stream reaches the client.
+            return { ...step, status: 'done' as ExecutionStep['status'] };
+          }
+          if (!done && !hasLiveRunning && !runningSet && idx > 0) {
+            runningSet = true;
+            return { ...step, status: 'running' as ExecutionStep['status'] };
+          }
+          if (done) {
+            if (completedRun || kindById.get(step.id) === 'start') {
+              // Start is instant and always ran; other steps (output included)
+              // only count as done when the whole run completed.
+              return { ...step, status: 'done' as ExecutionStep['status'] };
+            }
+            return { ...step, status: 'failed' as ExecutionStep['status'] };
+          }
+          return step;
+        });
+        return { ...prev, [responseId]: { ...exec, steps } };
+      });
+    };
+
+    const controller = new AbortController();
+    chatAbortControllerRef.current = controller;
+    let accumulated = '';
+    try {
+      const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conv_uid: currentConvId,
+          chat_mode: 'chat_flow',
+          select_param: flowUid,
+          user_input: flowQuery,
+          model_name: model,
+          temperature: 0.6,
+          max_new_tokens: 4000,
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          let content = '';
+          try {
+            const parsed = JSON.parse(payload);
+            content = parsed?.choices?.[0]?.message?.content ?? parsed?.vis ?? '';
+            // The chat_flow channel escapes newlines in the wire format
+            // (server-side text.replace("\n", "\\n")); restore them so both
+            // markdown and the vis-flow-step markers parse correctly. Use a
+            // negative lookbehind so escaped backslashes inside the marker
+            // JSON (e.g. code like print('\n')) survive intact.
+            if (typeof content === 'string') content = content.replace(/(?<!\\)\\n/g, '\n');
+          } catch {
+            content = payload.replace(/(?<!\\)\\n/g, '\n');
+          }
+          if (!content) continue;
+          accumulated += content;
+          const parsedStream = parseTaskflowStream(accumulated);
+          if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
+          syncSteps(parsedStream.markers, false);
+          // Keep the RAW text (markers included) in the message: the flow run
+          // card parses per-node sections from it; markers never render as-is.
+          setMessages(prev =>
+            prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: true } : m)),
+          );
+        }
+      }
+      const parsedStream = parseTaskflowStream(accumulated);
+      syncSteps(parsedStream.markers, true);
+      setMessages(prev => prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: false } : m)));
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === responseId ? { ...m, context: `${t('error_occurred')}: ${e?.message ?? e}`, thinking: false } : m,
+          ),
+        );
       }
     } finally {
       if (chatAbortControllerRef.current === controller) {
@@ -2802,7 +3360,13 @@ const Playground: NextPage = () => {
           const isSkillPackageStep = (s: ExecutionStep) => {
             if (s.action !== 'shell_interpreter') return false;
             const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-            const inputHas = s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
+            const inputHas =
+              (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
+                'package_skill',
+              ) ||
+              (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
+                'init_skill',
+              );
             const outputTexts = (outputs[s.id] || []).map(o => String(o.content)).join(' ');
             const outputHas =
               outputTexts.includes('package_skill') ||
@@ -3024,6 +3588,22 @@ const Playground: NextPage = () => {
                   {getDbIcon(selectedDb.type)} <span className='font-medium ml-1'>{selectedDb.db_name}</span>
                 </Tag>
               )}
+              {convArtifacts.length > 0 && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setRailDebug(false);
+                    previewOpenedRailRef.current = false;
+                    setPreviewArtifact(null);
+                    setRightPanelCollapsed(false);
+                  }}
+                  className='flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[.06]'
+                >
+                  <InboxOutlined />
+                  <span>{t('rail_artifacts_title')}</span>
+                  <b className='text-gray-800 dark:text-gray-200 font-semibold'>{convArtifacts.length}</b>
+                </button>
+              )}
               {messages.length > 0 && (
                 <Button type='text' size='small' onClick={handleClearChat} className='text-gray-500'>
                   Clear Chat
@@ -3075,166 +3655,276 @@ const Playground: NextPage = () => {
                       : round.viewMsg?.context || undefined;
                     const roundCitations = round.viewMsg?.citations || [];
 
+                    // DSH-style timeline view (default on; set
+                    // __db_gpt_timeline_view=off to fall back to the
+                    // card list inside ManusLeftPanel).
+                    const useTimelineView =
+                      typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off';
+                    const timelineBlocks = useTimelineView
+                      ? stepsToTimelineBlocks(execution?.steps ?? [], stepThoughts, execution?.outputs)
+                      : [];
+                    const roundArtifacts: StreamArtifact[] =
+                      useTimelineView && execution && hasArtifactOutputs(execution)
+                        ? buildArtifactsFromExecution(round.viewMsg!.id, execution).map(a => ({
+                            id: a.id,
+                            type: a.type,
+                            name: a.name,
+                            size: a.size,
+                            content: a.content,
+                            stepId: a.stepId,
+                          }))
+                        : [];
+                    const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
+                    const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
+
                     return (
-                      <ManusLeftPanel
-                        key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
-                        sections={sections}
-                        subAgentSlot={
-                          execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
-                            <SubAgentSection
-                              subAgents={execution.subAgents}
-                              artifactCount={execution.subAgentArtifacts}
-                              activeSubAgentId={
-                                isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
-                                  ? activeSubAgent.agentId
-                                  : null
-                              }
-                              onSubAgentClick={agentId => {
-                                if (round.viewMsg?.id) {
-                                  setActiveViewMsgId(round.viewMsg.id);
-                                  setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
-                                }
-                                setRightPanelView('execution');
-                                setRightPanelCollapsed(false);
-                              }}
-                            />
-                          ) : undefined
-                        }
-                        activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
-                        onStepClick={(stepId, _sectionId) => {
-                          if (round.viewMsg?.id) {
-                            setActiveViewMsgId(round.viewMsg.id);
-                            setSelectedStepId(stepId);
-                            // Clicking a main-agent step exits the sub-agent
-                            // process view, so the right panel shows this step.
-                            setActiveSubAgent(null);
-                            setRightPanelView('execution');
-                            setRightPanelCollapsed(false);
-                            setExecutionMap(prev => ({
-                              ...prev,
-                              [round.viewMsg!.id!]: {
-                                ...prev[round.viewMsg!.id!],
-                                activeStepId: stepId,
-                              },
-                            }));
+                      <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
+                        <ManusLeftPanel
+                          key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
+                          sections={useTimelineView ? [] : sections}
+                          answerSeparated={useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0)}
+                          timelineSlot={
+                            useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0) ? (
+                              <div className='flex flex-col'>
+                                {roundIntent && (
+                                  <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+                                    <AimOutlined className='text-[#8b8b84] flex-none' />
+                                    <span className='truncate'>{roundIntent}</span>
+                                    {roundCount > 0 && (
+                                      <span className='flex-none text-xs font-normal text-[#8b8b84] dark:text-[#7c7972]'>
+                                        · {roundCount} 轮
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {timelineBlocks.length > 0 && (
+                                  <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
+                                )}
+                                <ArtifactCards artifacts={roundArtifacts} onPreview={handlePreviewStreamArtifact} />
+                              </div>
+                            ) : undefined
                           }
-                        }}
-                        isWorking={isWorking}
-                        userQuery={round.humanMsg?.context}
-                        attachedFiles={round.humanMsg?.attachedFiles}
-                        attachedKnowledge={round.humanMsg?.attachedKnowledge}
-                        attachedSkill={round.humanMsg?.attachedSkill}
-                        attachedDb={round.humanMsg?.attachedDb}
-                        taskPlan={round.viewMsg?.taskPlan}
-                        attachedConnectors={round.humanMsg?.attachedConnectors}
-                        assistantText={roundAssistantText}
-                        isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
-                        citationIndexes={roundCitations.map(citation => citation.index)}
-                        onReferencesClick={
-                          roundCitations.length > 0
-                            ? () => {
-                                if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                                setSelectedCitationIndex(roundCitations[0].index);
-                                setRightPanelView('references');
-                                setRightPanelCollapsed(false);
+                          flowRun={
+                            round.viewMsg?.flowRun
+                              ? {
+                                  label: round.viewMsg.flowRun.label,
+                                  running: !!round.viewMsg.thinking,
+                                  done: execution?.steps.filter(s => s.status === 'done').length ?? 0,
+                                  total: execution?.steps.length ?? 0,
+                                }
+                              : undefined
+                          }
+                          subAgentSlot={
+                            execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                              <SubAgentSection
+                                subAgents={execution.subAgents}
+                                artifactCount={execution.subAgentArtifacts}
+                                activeSubAgentId={
+                                  isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                    ? activeSubAgent.agentId
+                                    : null
+                                }
+                                onSubAgentClick={agentId => {
+                                  if (round.viewMsg?.id) {
+                                    setActiveViewMsgId(round.viewMsg.id);
+                                    setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                  }
+                                  setRailDebug(true);
+                                  setRightPanelView('execution');
+                                  setRightPanelCollapsed(false);
+                                }}
+                              />
+                            ) : undefined
+                          }
+                          activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
+                          onStepClick={(stepId, _sectionId) => {
+                            if (round.viewMsg?.id) {
+                              setActiveViewMsgId(round.viewMsg.id);
+                              setSelectedStepId(stepId);
+                              // Timeline view expands step details inline in
+                              // the stream; the rail stays an artifact viewer.
+                              if (useTimelineView) {
+                                setExecutionMap(prev => ({
+                                  ...prev,
+                                  [round.viewMsg!.id!]: {
+                                    ...prev[round.viewMsg!.id!],
+                                    activeStepId: stepId,
+                                  },
+                                }));
+                                return;
                               }
-                            : undefined
-                        }
-                        modelName={round.viewMsg?.model_name || model}
-                        stepThoughts={stepThoughts}
-                        artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
-                        onArtifactClick={artifact => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          if (artifact.type === 'html') {
-                            setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
-                          } else if (artifact.type === 'code' && artifact.stepId) {
-                            setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
-                            if (round.viewMsg?.id && execution) {
+                              // Clicking a main-agent step exits the sub-agent
+                              // process view, so the right panel shows this step.
+                              setActiveSubAgent(null);
+                              setRailDebug(true);
+                              setRightPanelView('execution');
+                              setRightPanelCollapsed(false);
                               setExecutionMap(prev => ({
                                 ...prev,
                                 [round.viewMsg!.id!]: {
                                   ...prev[round.viewMsg!.id!],
-                                  activeStepId: artifact.stepId!,
+                                  activeStepId: stepId,
                                 },
                               }));
                             }
-                          } else if (artifact.type === 'file') {
-                            // Image file artifacts: preview instead of download
-                            if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                          }}
+                          isWorking={isWorking}
+                          userQuery={round.humanMsg?.context}
+                          attachedFiles={round.humanMsg?.attachedFiles}
+                          attachedKnowledge={round.humanMsg?.attachedKnowledge}
+                          attachedSkill={round.humanMsg?.attachedSkill}
+                          attachedDb={round.humanMsg?.attachedDb}
+                          taskPlan={round.viewMsg?.taskPlan}
+                          attachedConnectors={round.humanMsg?.attachedConnectors}
+                          assistantText={roundAssistantText}
+                          isAssistantStreaming={
+                            (isPresentingThisRound && !_summaryComplete) ||
+                            (!!round.viewMsg?.thinking && !!roundAssistantText)
+                          }
+                          citationIndexes={roundCitations.map(citation => citation.index)}
+                          onReferencesClick={
+                            roundCitations.length > 0
+                              ? () => {
+                                  if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                  setSelectedCitationIndex(roundCitations[0].index);
+                                  setRailDebug(true);
+                                  setRightPanelView('references');
+                                  setRightPanelCollapsed(false);
+                                }
+                              : undefined
+                          }
+                          stepThoughts={stepThoughts}
+                          artifacts={useTimelineView ? [] : artifacts.filter(a => a.messageId === round.viewMsg?.id)}
+                          onArtifactClick={artifact => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setRightPanelCollapsed(false);
+                            if (artifact.type === 'html') {
+                              setPreviewArtifact(artifact as Artifact);
+                              setRightPanelView('html-preview');
+                            } else if (artifact.type === 'code' && artifact.stepId) {
+                              setSelectedStepId(artifact.stepId);
+                              setRailDebug(true);
+                              setRightPanelView('execution');
+                              if (round.viewMsg?.id && execution) {
+                                setExecutionMap(prev => ({
+                                  ...prev,
+                                  [round.viewMsg!.id!]: {
+                                    ...prev[round.viewMsg!.id!],
+                                    activeStepId: artifact.stepId!,
+                                  },
+                                }));
+                              }
+                            } else if (artifact.type === 'file') {
+                              // Image file artifacts: preview instead of download
+                              if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                                setPreviewArtifact(artifact as Artifact);
+                                setRightPanelView('image-preview');
+                              } else {
+                                downloadArtifact(artifact as Artifact);
+                              }
+                            } else if (artifact.type === 'image') {
                               setPreviewArtifact(artifact as Artifact);
                               setRightPanelView('image-preview');
-                            } else {
-                              downloadArtifact(artifact as Artifact);
                             }
-                          } else if (artifact.type === 'image') {
-                            setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
-                          }
-                        }}
-                        onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
-                        onViewAllFiles={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          setRightPanelView('files');
-                        }}
-                        isCollapsed={isCurrentRoundCollapsed}
-                        onExpand={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                        }}
-                        createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
-                        onSkillCardClick={_skillName => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          setRightPanelView('skill-preview');
-                          // Find the package_skill step and select it so right panel shows SkillCardRenderer
-                          if (execution) {
-                            const skillStep = execution.steps.find((s: ExecutionStep) => {
-                              if (s.action !== 'shell_interpreter') return false;
-                              const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-                              const inputHas =
-                                s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
-                              const outputTexts = (execution.outputs[s.id] || []).map(o => String(o.content)).join(' ');
-                              const outputHas =
-                                outputTexts.includes('package_skill') ||
-                                outputTexts.includes('init_skill') ||
-                                outputTexts.includes('Successfully packaged');
-                              return detailHas || inputHas || outputHas;
-                            });
-                            if (skillStep) {
-                              setSelectedStepId(skillStep.id);
-                              setExecutionMap(prev => ({
-                                ...prev,
-                                [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
-                              }));
+                          }}
+                          onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
+                          onViewAllFiles={() => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setRightPanelCollapsed(false);
+                            setRightPanelView('files');
+                          }}
+                          isCollapsed={isCurrentRoundCollapsed}
+                          onExpand={() => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                          }}
+                          createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
+                          onSkillCardClick={_skillName => {
+                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            setRightPanelCollapsed(false);
+                            setRightPanelView('skill-preview');
+                            // Find the package_skill step and select it so right panel shows SkillCardRenderer
+                            if (execution) {
+                              const skillStep = execution.steps.find((s: ExecutionStep) => {
+                                if (s.action !== 'shell_interpreter') return false;
+                                const detailHas =
+                                  s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
+                                const inputHas =
+                                  (typeof s.actionInput === 'string'
+                                    ? s.actionInput
+                                    : JSON.stringify(s.actionInput ?? '')
+                                  ).includes('package_skill') ||
+                                  (typeof s.actionInput === 'string'
+                                    ? s.actionInput
+                                    : JSON.stringify(s.actionInput ?? '')
+                                  ).includes('init_skill');
+                                const outputTexts = (execution.outputs[s.id] || [])
+                                  .map(o => String(o.content))
+                                  .join(' ');
+                                const outputHas =
+                                  outputTexts.includes('package_skill') ||
+                                  outputTexts.includes('init_skill') ||
+                                  outputTexts.includes('Successfully packaged');
+                                return detailHas || inputHas || outputHas;
+                              });
+                              if (skillStep) {
+                                setSelectedStepId(skillStep.id);
+                                setExecutionMap(prev => ({
+                                  ...prev,
+                                  [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
+                                }));
+                              }
                             }
-                          }
-                        }}
-                        onSkillDownload={async skillName => {
-                          try {
-                            const base = process.env.API_BASE_URL || '';
-                            const res = await fetch(
-                              `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
-                            );
-                            if (!res.ok) throw new Error('Download failed');
-                            const blob = await res.blob();
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${skillName}.zip`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          } catch {
-                            // Download failed silently
-                          }
-                        }}
-                      />
+                          }}
+                          onSkillDownload={async skillName => {
+                            try {
+                              const base = process.env.API_BASE_URL || '';
+                              const res = await fetch(
+                                `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
+                              );
+                              if (!res.ok) throw new Error('Download failed');
+                              const blob = await res.blob();
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `${skillName}.zip`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                            } catch {
+                              // Download failed silently
+                            }
+                          }}
+                        />
+                      </React.Fragment>
                     );
                   })}
+                  {streamStatus && (
+                    <div className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'>
+                      {streamStatus.running ? (
+                        <LoadingOutlined spin className='text-blue-500' />
+                      ) : (
+                        <CheckCircleFilled className='text-emerald-500' />
+                      )}
+                      <span className='tabular-nums'>{streamStatus.text}</span>
+                    </div>
+                  )}
+                  {/* Conversation-completion artifact summary: everything
+                      produced across all rounds, surfaced again at the end
+                      so finished conversations keep a visible deliverable
+                      list (mid-stream cards stay where they were made). */}
+                  {convArtifacts.some(a => a.type !== 'summary') && (
+                    <div className='mt-4 mb-2'>
+                      <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
+                        <InboxOutlined />
+                        <span>对话产物 · {convArtifacts.filter(a => a.type !== 'summary').length}</span>
+                      </div>
+                      <ArtifactCards
+                        artifacts={convArtifacts.filter(a => a.type !== 'summary')}
+                        onPreview={handlePreviewStreamArtifact}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Input Area at Bottom for Chat Mode - Hidden in read-only task replay mode */}
@@ -3243,6 +3933,21 @@ const Playground: NextPage = () => {
                     <div className='max-w-[720px] mx-auto'>
                       {/* Context Tags Area */}
                       <div className='flex flex-wrap gap-2 mb-2'>
+                        {selectedFlow && (
+                          <Tag
+                            closable
+                            onClose={() => setSelectedFlow(null)}
+                            className='flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-lg'
+                          >
+                            <ApartmentOutlined />
+                            <span className='font-semibold'>
+                              {t('taskflow_flow_chip')} · {selectedFlow.label}
+                            </span>
+                            <span className='text-blue-400 text-[10px]'>
+                              {t('taskflow_nodes_count', { count: selectedFlow.nodeCount })}
+                            </span>
+                          </Tag>
+                        )}
                         {selectedDb && (
                           <Tag
                             closable
@@ -3380,6 +4085,12 @@ const Playground: NextPage = () => {
                                       label: t('use_connector'),
                                       icon: <ApiOutlined />,
                                       onClick: () => setIsConnectorPanelOpen(true),
+                                    },
+                                    {
+                                      key: 'taskflow',
+                                      label: t('taskflow'),
+                                      icon: <ApartmentOutlined />,
+                                      children: flowMenuItems,
                                     },
                                   ],
                                 }}
@@ -3887,7 +4598,7 @@ const Playground: NextPage = () => {
                       isRunning = activeSub.status === 'running';
                     }
 
-                    return (
+                    return railDebug ? (
                       <ManusRightPanel
                         activeStep={activeStep}
                         outputs={outputs}
@@ -3942,7 +4653,10 @@ const Playground: NextPage = () => {
                             ? streamingSummary
                             : activeViewMsg?.context || ''
                         }
-                        isSummaryStreaming={summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete}
+                        isSummaryStreaming={
+                          (summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete) ||
+                          (!!activeViewMsg?.thinking && !!activeViewMsg?.context)
+                        }
                         citations={activeViewMsg?.citations || []}
                         selectedCitationIndex={
                           activeViewMsg?.citations?.some(citation => citation.index === selectedCitationIndex)
@@ -3958,6 +4672,19 @@ const Playground: NextPage = () => {
                         }}
                         subAgentContext={activeSub || null}
                         onExitSubAgentView={() => setActiveSubAgent(null)}
+                      />
+                    ) : (
+                      <ArtifactRail
+                        artifacts={convArtifacts}
+                        previewArtifact={previewArtifact}
+                        onPreview={artifact => setPreviewArtifact(artifact as Artifact | null)}
+                        onDebug={() => setRailDebug(true)}
+                        onClose={() => setRightPanelCollapsed(true)}
+                        onTrace={() => {
+                          setRailDebug(true);
+                          setRightPanelView('trace');
+                          setRightPanelCollapsed(false);
+                        }}
                       />
                     );
                   })()
@@ -4007,8 +4734,23 @@ const Playground: NextPage = () => {
                         className='mb-2'
                       />
                       {/* Database, Knowledge, Connector Tags */}
-                      {(selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
+                      {(selectedFlow || selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
                         <div className='flex flex-wrap gap-2 mb-2'>
+                          {selectedFlow && (
+                            <Tag
+                              closable
+                              onClose={() => setSelectedFlow(null)}
+                              className='flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-lg'
+                            >
+                              <ApartmentOutlined />
+                              <span className='font-semibold'>
+                                {t('taskflow_flow_chip')} · {selectedFlow.label}
+                              </span>
+                              <span className='text-blue-400 text-[10px]'>
+                                {t('taskflow_nodes_count', { count: selectedFlow.nodeCount })}
+                              </span>
+                            </Tag>
+                          )}
                           {selectedDb && (
                             <Tag
                               closable
@@ -4108,6 +4850,12 @@ const Playground: NextPage = () => {
                                   label: t('use_connector'),
                                   icon: <ApiOutlined />,
                                   onClick: () => setIsConnectorPanelOpen(true),
+                                },
+                                {
+                                  key: 'taskflow',
+                                  label: t('taskflow'),
+                                  icon: <ApartmentOutlined />,
+                                  children: flowMenuItems,
                                 },
                               ],
                             }}

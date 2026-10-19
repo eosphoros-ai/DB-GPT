@@ -54,26 +54,9 @@ import ConversationTracePanel from './ConversationTracePanel';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
 import ParallelTasksPanel from './ParallelTasksPanel';
 import SubAgentStatusBadge from './SubAgentStatusBadge';
+import { resolveHtmlImageUrls, resolveImageUrl } from './image-url';
 import type { TaskFileTab, TaskFileTabNavigationKey } from './task-files-view-model';
 import { TASK_FILE_TABS, buildTaskFileView, getNextTaskFileTab, getTaskFileEmptyLabel } from './task-files-view-model';
-
-/** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
-const resolveImageUrl = (src: string): string => {
-  if (!src) return src;
-  if (/^https?:\/\//.test(src)) return src;
-  if (src.startsWith('/images/')) {
-    const base = process.env.API_BASE_URL || '';
-    return base ? `${base}${src}` : src;
-  }
-  return src;
-};
-
-/** Replace `/images/...` references inside HTML content with full backend URLs */
-const resolveHtmlImageUrls = (html: string): string => {
-  const base = process.env.API_BASE_URL || '';
-  if (!base || !html) return html;
-  return html.replace(/(src\s*=\s*["'])\/images\//gi, `$1${base}/images/`);
-};
 
 export interface ExecutionOutput {
   output_type: 'code' | 'text' | 'markdown' | 'table' | 'chart' | 'json' | 'error' | 'thought' | 'html' | 'image';
