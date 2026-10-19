@@ -104,8 +104,18 @@ class KnowledgeChunkResolver:
 
     def resolve(self, chunk):
         metadata = parse_chunk_metadata(getattr(chunk, "metadata", None))
-        chunk_id = str(
-            metadata.get("chunk_id") or getattr(chunk, "chunk_id", None) or ""
+        # A vector store may replace the IDs after persisting its metadata.
+        # Its returned primary key is authoritative once matched against the
+        # persisted source rows. Do not let stale metadata hide that identity.
+        candidate_ids = list(
+            dict.fromkeys(
+                str(value)
+                for value in (
+                    getattr(chunk, "chunk_id", None),
+                    metadata.get("chunk_id"),
+                )
+                if value
+            )
         )
         document_id = (
             metadata.get("document_id")
@@ -116,7 +126,12 @@ class KnowledgeChunkResolver:
 
         if self._files is None:
             self._files = _get_all_file_paths(self.space_name)
-        files = [f for f in self._files if chunk_id in f.get("vector_ids", [])]
+        files = [
+            f
+            for candidate_id in candidate_ids
+            for f in self._files
+            if candidate_id in f.get("vector_ids", [])
+        ]
         if not files:
             files = [f for f in self._files if str(f["doc_id"]) == str(document_id)]
         for file_info in files:
@@ -135,12 +150,19 @@ class KnowledgeChunkResolver:
                     page += 1
                 self._entries[doc_id] = document_chunk_entries(file_info, chunks)
             entries = self._entries[doc_id]
-            matches = [
-                entry
-                for entry in entries
-                if entry[1]["chunk_id"] == chunk_id
-                or entry[1]["chunk_db_id"] == metadata.get("chunk_db_id")
-            ]
+            matches = []
+            for candidate_id in candidate_ids:
+                matches = [
+                    entry for entry in entries if entry[1]["chunk_id"] == candidate_id
+                ]
+                if matches:
+                    break
+            if not matches and metadata.get("chunk_db_id") is not None:
+                matches = [
+                    entry
+                    for entry in entries
+                    if entry[1]["chunk_db_id"] == metadata["chunk_db_id"]
+                ]
             if not matches:
                 # Some retrievers create a fresh Chunk UUID. Only accept a unique
                 # exact content match within the identified document.

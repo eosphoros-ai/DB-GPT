@@ -125,6 +125,9 @@ def build_execution_env(
         {"file_path": file_path, "files_json_path": files_json_path},
         sink,
         action="execution.input",
+        # These paths are supplied by the server's materialized session state,
+        # not by the model's Python source or skill arguments.
+        allowed_paths=[path for path in (file_path, files_json_path) if path],
     )
     file_path, files_json_path = inputs["file_path"], inputs["files_json_path"]
     if files_json_path:
@@ -137,7 +140,10 @@ def build_execution_env(
                 if key in selected_file_ids
             }
         manifest, manifest_ids = snapshot_execution_files(
-            manifest, sink, action="execution.input"
+            manifest,
+            sink,
+            action="execution.input",
+            allowed_paths=[path for path in manifest.values() if isinstance(path, str)],
         )
         input_ids.extend(manifest_ids)
         if sink:

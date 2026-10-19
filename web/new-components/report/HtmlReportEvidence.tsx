@@ -853,7 +853,7 @@ export const HtmlReportEvidence: React.FC<Props> = ({ html, reportId, reportRunI
   useEffect(() => {
     setIframeDocument(undefined);
     setNativeChartMounts([]);
-  }, [reportHtml]);
+  }, [reportHtml, isolatedPreview]);
   const presentationStatus = String(run?.document.metadata?.presentation_status || '');
   const noPresentationMessage =
     presentationStatus === 'not_generated' ? t('report_only_evidence_saved') : t('report_no_presentation');

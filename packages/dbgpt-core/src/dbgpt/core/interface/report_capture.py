@@ -908,13 +908,57 @@ def snapshot_execution_files(
     sink: Optional[ArtifactSink],
     *,
     action: str,
+    allowed_paths: Sequence[str | Path] = (),
 ) -> tuple[Any, List[str]]:
-    """Freeze supplied input files and link exact snapshots to their consumers."""
+    """Freeze only server-authorized inputs or this sink's verified artifacts.
+
+    Tool arguments are untrusted data, not a grant to read host files. The
+    caller supplies exact paths from its validated session state, never from
+    the arguments being scanned. Directory grants are deliberately unsupported.
+    """
     if sink is None:
         return arguments, []
     ids: List[str] = []
     execution_inputs = None
     prepared = {}
+    allowed = {
+        os.path.normcase(os.path.abspath(path)) for path in allowed_paths if path
+    }
+
+    def authorized_source(source: Path) -> Path:
+        resolved = source.resolve(strict=True)
+        canonical = os.path.normcase(str(resolved))
+        # Do not allow a symlink/junction at any component to turn a trusted
+        # materialized filename into a grant for a different host file.
+        if canonical != os.path.normcase(os.path.abspath(source)):
+            raise ValueError("FILE_INPUT_NOT_AUTHORIZED: symbolic file input")
+        if canonical in allowed:
+            return resolved
+        for item in sink.snapshot():
+            if (
+                not isinstance(item, ReferenceArtifact)
+                or item.reference_type != "file"
+                or item.status != "succeeded"
+                or item.execution.conv_uid != sink.context.conv_uid
+                or not item.uri
+                or not item.uri.startswith("artifact://")
+            ):
+                continue
+            archived = artifact_storage_root() / item.uri.removeprefix("artifact://")
+            original = item.locator.get("path")
+            if canonical != os.path.normcase(str(archived)) and (
+                not original or canonical != os.path.normcase(os.path.abspath(original))
+            ):
+                continue
+            # Verify both the archived reference and any reusable original
+            # before promoting a prior output into an input of this execution.
+            verified = artifact_content_path(item.uri)
+            if _sha256_file(str(resolved)) == _sha256_file(str(verified)):
+                return resolved
+        raise ValueError(
+            "FILE_INPUT_NOT_AUTHORIZED: "
+            "input is not a session file or verified artifact"
+        )
 
     def visit(value: Any, key: str = "") -> Any:
         nonlocal execution_inputs
@@ -930,6 +974,7 @@ def snapshot_execution_files(
                 return value
         except OSError:
             return value
+        source = authorized_source(source)
         artifact = capture_file_artifact(source, sink, action=action)
         ids.append(artifact.artifact_id)
         if artifact.artifact_id not in prepared:

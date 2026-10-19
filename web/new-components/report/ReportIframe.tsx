@@ -163,7 +163,7 @@ export const ReportIframe: React.FC<ReportIframeProps> = ({
       cleanupRef.current?.();
       cleanupRef.current = undefined;
     };
-  }, [content]);
+  }, [content, isolated]);
 
   useEffect(() => {
     if (!isolated) return;
@@ -176,8 +176,11 @@ export const ReportIframe: React.FC<ReportIframeProps> = ({
     return () => window.removeEventListener('message', receive);
   }, [isolated, minHeight, maxHeight, ref]);
 
+  // Sandbox origin flags belong to the loaded document. A fresh iframe makes
+  // every trust transition apply its flags before the new srcdoc can execute.
   return (
     <iframe
+      key={isolated ? 'opaque-origin' : 'same-origin'}
       ref={ref}
       title={title}
       srcDoc={content}

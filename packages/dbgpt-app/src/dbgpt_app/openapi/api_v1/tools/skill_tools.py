@@ -7,6 +7,35 @@ from typing import Any, Dict
 from dbgpt.agent.resource.tool.base import tool
 
 
+def _authorized_skill_input_paths(react_state: Dict[str, Any]) -> list[str]:
+    """Use server-materialized attachments, not paths supplied in tool args."""
+    manifests = react_state.get("session_files") or []
+    if not manifests:
+        # Legacy uploads are validated by agentic_data_api before entering
+        # react_state. This value is not a model-facing tool parameter.
+        path = react_state.get("file_path")
+        return [path] if isinstance(path, str) and path else []
+    paths = react_state.get("session_file_paths") or {}
+    allowed = []
+    for manifest in manifests:
+        file_id = (
+            manifest.get("file_id")
+            if isinstance(manifest, dict)
+            else getattr(manifest, "file_id", None)
+        )
+        status = (
+            manifest.get("status")
+            if isinstance(manifest, dict)
+            else getattr(manifest, "status", None)
+        )
+        if getattr(status, "value", status) != "ready":
+            continue
+        path = paths.get(file_id)
+        if isinstance(path, str) and path:
+            allowed.append(path)
+    return allowed
+
+
 def make_load_skill(react_state: Dict[str, Any]):
     """Return a ``load_skill`` FunctionTool bound to the given react_state."""
 
@@ -143,6 +172,7 @@ def make_execute_skill_script_file(react_state: Dict[str, Any]):
                 execution_args,
                 sink,
                 action="execute_skill_script_file.input",
+                allowed_paths=_authorized_skill_input_paths(react_state),
             )
             input_artifact_ids = list(
                 dict.fromkeys([*(input_artifact_ids or []), *file_input_ids])
