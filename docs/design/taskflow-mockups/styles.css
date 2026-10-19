@@ -1,0 +1,168 @@
+/* ============================================================
+   DB-GPT · 任务流程（TaskFlow）设计稿共享样式
+   对齐 web 首页（pages/index.tsx）Manus 浅色设计语言：
+   白底 + 浅灰侧栏 + 蓝色主色 + 黑色主按钮
+   ============================================================ */
+:root {
+  /* surfaces */
+  --bg-0: #ffffff;
+  --bg-1: #fafafa;
+  --bg-2: #f5f5f4;
+  --bg-3: #efefed;
+  --bg-4: #e7e5e4;
+  --border-1: #e7e5e4;
+  --border-2: #d6d3d1;
+
+  /* text */
+  --tx-1: #1c1917;
+  --tx-2: #57534e;
+  --tx-3: #a8a29e;
+  --tx-4: #c4c0bc;
+
+  /* primary (home blue) */
+  --pri: #2563eb;
+  --pri-hover: #1d4ed8;
+  --pri-soft: #eff6ff;
+  --pri-tint: #dbeafe;
+
+  /* dark action (home new_task button) */
+  --dark: #1c1917;
+
+  /* status */
+  --ok: #16a34a;
+  --ok-soft: #f0fdf4;
+  --warn: #d97706;
+  --warn-soft: #fffbeb;
+  --err: #dc2626;
+  --err-soft: #fef2f2;
+  --violet: #7c3aed;
+  --violet-soft: #f5f3ff;
+  --cyan: #0891b2;
+  --cyan-soft: #ecfeff;
+  --pink: #db2777;
+  --pink-soft: #fdf2f8;
+
+  /* node category colors */
+  --c-source: #2563eb;   /* 数据来源 - blue */
+  --c-analysis: #7c3aed; /* 分析计算 - violet */
+  --c-viz: #0891b2;      /* 可视化 - cyan */
+  --c-control: #d97706;  /* 流程控制 - amber */
+  --c-output: #16a34a;   /* 输出 - green */
+  --c-start: #16a34a;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --sidebar-w: 232px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+    monospace;
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+  --shadow-md: 0 4px 16px rgba(28, 25, 23, 0.08);
+  --shadow-lg: 0 12px 40px rgba(28, 25, 23, 0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg-0);
+  color: var(--tx-1);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--pri); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+.mono { font-family: var(--mono); }
+
+/* ---------- app shell ---------- */
+.app { display: flex; height: 100vh; overflow: hidden; }
+.app-side {
+  width: var(--sidebar-w);
+  flex: none;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border-1);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+}
+.logo { display: flex; align-items: center; gap: 8px; padding: 2px 8px 14px; }
+.logo-mark {
+  width: 26px; height: 26px; border-radius: 7px; background: var(--dark);
+  color: #fff; font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-name { font-weight: 700; letter-spacing: 0.2px; font-size: 15px; }
+.new-task-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--dark); color: #fff; border-radius: 10px;
+  padding: 9px 0; font-size: 13.5px; font-weight: 500; margin-bottom: 12px;
+}
+.side-tabs {
+  display: flex; background: var(--bg-3); border-radius: 10px; padding: 3px;
+  margin-bottom: 12px;
+}
+.side-tab {
+  flex: 1; text-align: center; font-size: 12.5px; color: var(--tx-2);
+  padding: 5px 0; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; gap: 5px;
+}
+.side-tab.active { background: #fff; color: var(--tx-1); font-weight: 600; box-shadow: var(--shadow-sm); }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 7px 10px;
+  border-radius: 8px; color: var(--tx-2); font-size: 13.5px; margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--bg-3); color: var(--tx-1); }
+.nav-item.active { background: var(--bg-3); color: var(--tx-1); font-weight: 600; }
+.nav-item .ico { width: 17px; text-align: center; }
+.side-bottom { margin-top: auto; }
+
+.app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  height: 52px; flex: none; display: flex; align-items: center; gap: 12px;
+  padding: 0 20px; border-bottom: 1px solid var(--border-1); background: var(--bg-0);
+}
+.topbar .ver { color: var(--tx-2); font-size: 13.5px; }
+.topbar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 9px;
+  font-size: 13px; padding: 7px 14px; color: var(--tx-2);
+  border: 1px solid var(--border-2); background: #fff; font-weight: 500;
+}
+.btn:hover { background: var(--bg-2); }
+.btn.primary { background: var(--dark); border-color: var(--dark); color: #fff; }
+.btn.primary:hover { background: #292524; }
+.btn.blue { background: var(--pri); border-color: var(--pri); color: #fff; }
+.btn.blue:hover { background: var(--pri-hover); }
+.btn.ghost { border-color: transparent; }
+.btn.sm { padding: 4px 10px; font-size: 12.5px; border-radius: 7px; }
+
+/* ---------- chips / tags ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px; border-radius: 999px;
+  padding: 3px 10px; font-size: 12px; background: var(--bg-2); color: var(--tx-2);
+  border: 1px solid var(--border-1);
+}
+.tag {
+  display: inline-flex; align-items: center; border-radius: 5px; padding: 1px 7px;
+  font-size: 11.5px; font-weight: 500;
+}
+.tag.blue { background: var(--pri-soft); color: var(--pri); }
+.tag.green { background: var(--ok-soft); color: var(--ok); }
+.tag.amber { background: var(--warn-soft); color: var(--warn); }
+.tag.gray { background: var(--bg-3); color: var(--tx-2); }
+.tag.violet { background: var(--violet-soft); color: var(--violet); }
+.tag.cyan { background: var(--cyan-soft); color: var(--cyan); }
+.tag.pink { background: var(--pink-soft); color: var(--pink); }
+
+/* ---------- icons (inline svg fallback: emoji-ish glyphs) ---------- */
+.ico-box {
+  width: 30px; height: 30px; border-radius: 8px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.ico-box.sm { width: 24px; height: 24px; border-radius: 6px; font-size: 12.5px; }

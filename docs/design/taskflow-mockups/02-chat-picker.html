@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>首页对话 · 选择任务流程</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .home-main { flex: 1; display: flex; flex-direction: column; align-items: center; overflow-y: auto; position: relative; }
+  .hero { margin-top: 54px; text-align: center; }
+  .hero .badge {
+    display: inline-block; background: var(--pri-soft); color: var(--pri);
+    font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 4px 14px;
+    margin-bottom: 18px;
+  }
+  .hero h1 { font-size: 44px; font-weight: 750; letter-spacing: -0.5px; display: flex; align-items: center; gap: 14px; justify-content: center; }
+  .hero .planet {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #22d3ee, var(--pri));
+    display: inline-flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+
+  /* ============ 输入框 ============ */
+  .composer {
+    width: 720px; margin-top: 44px; background: #fff; border: 1px solid var(--border-1);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 18px 20px 12px;
+    position: relative;
+  }
+  .composer .ph { color: var(--tx-3); font-size: 15px; }
+  .composer-bar { display: flex; align-items: center; gap: 6px; margin-top: 30px; }
+  .cbtn {
+    width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center;
+    justify-content: center; color: var(--tx-2); font-size: 16px;
+  }
+  .cbtn:hover { background: var(--bg-2); }
+  .model-pill {
+    display: flex; align-items: center; gap: 7px; border: 1px solid var(--border-1);
+    border-radius: 999px; padding: 5px 12px; font-size: 13px; margin-left: 6px;
+  }
+  .model-pill .dot { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg,#22d3ee,var(--pri)); }
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--bg-3);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .quick-chips { display: flex; gap: 10px; margin-top: 12px; }
+  .qchip {
+    display: flex; align-items: center; gap: 6px; border: 1px solid var(--border-1);
+    border-radius: 999px; padding: 5px 13px; font-size: 12.5px; color: var(--tx-2);
+  }
+
+  /* ============ + 菜单 ============ */
+  .menu {
+    position: absolute; left: 14px; bottom: 118px; width: 232px; background: #fff;
+    border: 1px solid var(--border-1); border-radius: 14px; box-shadow: var(--shadow-lg);
+    padding: 6px; z-index: 20;
+  }
+  .menu .m-title { font-size: 11.5px; color: var(--tx-3); padding: 7px 10px 4px; }
+  .mi {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px;
+    font-size: 13.5px; color: var(--tx-1); cursor: pointer;
+  }
+  .mi:hover, .mi.hover { background: var(--bg-2); }
+  .mi .m-ico { width: 17px; text-align: center; color: var(--tx-2); }
+  .mi .arrow { margin-left: auto; color: var(--tx-3); font-size: 11px; }
+  .mi.hl { background: var(--pri-soft); }
+  .m-divider { height: 1px; background: var(--border-1); margin: 5px 4px; }
+
+  .submenu {
+    position: absolute; left: 252px; bottom: 60px; width: 322px; background: #fff;
+    border: 1px solid var(--border-1); border-radius: 14px; box-shadow: var(--shadow-lg);
+    padding: 6px; z-index: 21;
+  }
+  .sub-item { display: flex; gap: 11px; padding: 9px 10px; border-radius: 10px; cursor: pointer; align-items: flex-start; }
+  .sub-item:hover { background: var(--bg-2); }
+  .sub-item.picked { background: var(--pri-soft); }
+  .sub-item .tx { flex: 1; min-width: 0; }
+  .sub-item .nm { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .sub-item .ds { font-size: 11.5px; color: var(--tx-3); line-height: 1.45; margin-top: 1px; }
+  .sub-item .run-count { font-size: 10.5px; color: var(--tx-4); flex: none; margin-top: 2px; }
+  .sub-manage {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px;
+    font-size: 13px; color: var(--tx-2); cursor: pointer;
+  }
+  .sub-manage:hover { background: var(--bg-2); }
+
+  /* ============ 选中态（下半屏） ============ */
+  .picked-zone { width: 720px; margin-top: 60px; position: relative; }
+  .picked-zone .cap { font-size: 11.5px; color: var(--tx-3); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .cap .n { background: var(--dark); color: #fff; border-radius: 5px; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; }
+  .composer2 {
+    background: #fff; border: 1.5px solid var(--pri); border-radius: var(--radius-lg);
+    box-shadow: 0 0 0 4px var(--pri-soft), var(--shadow-md); padding: 12px 20px 12px;
+  }
+  .flow-chip {
+    display: inline-flex; align-items: center; gap: 8px; background: var(--pri-soft);
+    border: 1px solid var(--pri-tint); border-radius: 10px; padding: 6px 10px;
+    margin-bottom: 10px;
+  }
+  .flow-chip .f-ico {
+    width: 22px; height: 22px; border-radius: 6px; background: var(--pri); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .flow-chip .f-nm { font-size: 12.5px; font-weight: 650; color: var(--pri); }
+  .flow-chip .f-meta { font-size: 11px; color: var(--pri); opacity: 0.75; }
+  .flow-chip .f-x { color: var(--pri); font-size: 12px; margin-left: 2px; cursor: pointer; }
+  .composer2 .ph2 { color: var(--tx-2); font-size: 14.5px; }
+  .composer2 .ph2 b { color: var(--tx-1); }
+  .ctx-row { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+
+  .suggest { display: flex; gap: 12px; margin-top: 26px; }
+  .sg {
+    display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-1);
+    border-radius: 999px; padding: 8px 18px; font-size: 13.5px; color: var(--tx-1);
+    background: #fff;
+  }
+  .sg:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 侧栏 ============ -->
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">DB</div><div class="logo-name">DB-GPT</div></div>
+    <button class="new-task-btn">＋ new_task</button>
+    <div class="side-tabs">
+      <div class="side-tab active">🕘 tasks</div>
+      <div class="side-tab">⚡ skills</div>
+      <div class="side-tab">🗄 datasources</div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="side-bottom"><div class="nav-item"><span class="ico">⚙</span> settings</div></div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <main class="app-main">
+    <div class="topbar">
+      <span class="ver">DB-GPT 0.6.0 Data Edition</span>
+      <div class="right"><span style="color:var(--tx-3)">🔔</span><span class="chip">⚡ 300</span><span class="ico-box sm" style="background:var(--pri);color:#fff">A</span></div>
+    </div>
+
+    <div class="home-main">
+      <div class="hero">
+        <div class="badge">Intelligent Data Analysis Agent</div>
+        <h1><span class="planet">🪐</span> analyze_your_data</h1>
+      </div>
+
+      <!-- ========== 状态 ①：+ 菜单展开，选择任务流程 ========== -->
+      <div class="composer">
+        <div class="ph">ask_data_question</div>
+        <div class="composer-bar">
+          <button class="cbtn" style="background:var(--bg-2)">＋</button>
+          <button class="cbtn">⚡</button>
+          <button class="cbtn">📑</button>
+          <div class="model-pill"><span class="dot"></span> DeepSeek <span style="color:var(--tx-3)">▾</span></div>
+          <div style="flex:1"></div>
+          <button class="cbtn">🎙</button>
+          <div class="send-btn">↑</div>
+        </div>
+        <div class="quick-chips">
+          <div class="qchip">🗄 数据库</div>
+          <div class="qchip">📚 知识库</div>
+        </div>
+
+        <!-- + 一级菜单 -->
+        <div class="menu">
+          <div class="m-title">添加</div>
+          <div class="mi"><span class="m-ico">📎</span> 添加图片或文件</div>
+          <div class="mi"><span class="m-ico">🗄</span> 数据库 <span class="arrow">›</span></div>
+          <div class="mi"><span class="m-ico">📚</span> 知识库 <span class="arrow">›</span></div>
+          <div class="mi hl"><span class="m-ico">🧩</span> <b>任务流程</b> <span class="arrow">›</span></div>
+          <div class="m-divider"></div>
+          <div class="mi"><span class="m-ico">⚡</span> 技能 <span class="arrow">›</span></div>
+        </div>
+
+        <!-- 任务流程 二级菜单 -->
+        <div class="submenu">
+          <div class="sub-item picked">
+            <div class="ico-box sm" style="background:var(--pri-soft);color:var(--pri)">🧬</div>
+            <div class="tx">
+              <div class="nm">数据分析流 <span class="tag blue">内置</span></div>
+              <div class="ds">执行数据读取、分析计算、可视化与报告生成的完整分析流程</div>
+            </div>
+            <div class="run-count">7 节点</div>
+          </div>
+          <div class="sub-item">
+            <div class="ico-box sm" style="background:var(--cyan-soft);color:var(--cyan)">⚡</div>
+            <div class="tx">
+              <div class="nm">通用快速取数 <span class="tag blue">内置</span></div>
+              <div class="ds">按业务口径快速定位数据并执行有界只读查询，直接返回答案</div>
+            </div>
+            <div class="run-count">3 节点</div>
+          </div>
+          <div class="sub-item">
+            <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">📈</div>
+            <div class="tx">
+              <div class="nm">Excel 透视分析 <span class="tag blue">内置</span></div>
+              <div class="ds">上传表格后自动完成清洗、透视与图表解读</div>
+            </div>
+            <div class="run-count">6 节点</div>
+          </div>
+          <div class="sub-item">
+            <div class="ico-box sm" style="background:var(--pink-soft);color:var(--pink)">🧪</div>
+            <div class="tx">
+              <div class="nm">AB 实验复盘 <span class="tag gray">我的</span></div>
+              <div class="ds">自定义流程 · 拉取实验分组数据并对比核心指标</div>
+            </div>
+            <div class="run-count">8 节点</div>
+          </div>
+          <div class="m-divider"></div>
+          <div class="sub-manage"><span class="m-ico">🗂</span> 管理任务流程 <span style="margin-left:auto;color:var(--tx-4);font-size:11px">新建 / 编辑 / 导入</span></div>
+        </div>
+      </div>
+
+      <!-- ========== 状态 ②：选中流程后的输入态 ========== -->
+      <div class="picked-zone">
+        <div class="cap"><span class="n">2</span> 选中「数据分析流」之后 —— 流程以 chip 形式挂在输入框上，对话即按该流程执行</div>
+        <div class="composer2">
+          <div class="flow-chip">
+            <div class="f-ico">🧬</div>
+            <span class="f-nm">任务流程 · 数据分析流</span>
+            <span class="f-meta">7 节点 · 含人工确认</span>
+            <span class="f-x">✕</span>
+          </div>
+          <div class="ph2">描述你的分析目标，例如：<b>分析近 30 天各区域销售额趋势，找出异常波动</b></div>
+          <div class="ctx-row">
+            <div class="qchip" style="border-color:var(--pri-tint);background:var(--pri-soft);color:var(--pri)">🗄 mysql_prod（流程默认）</div>
+            <div class="qchip">📎 sales_q3.xlsx</div>
+          </div>
+          <div class="composer-bar" style="margin-top:16px">
+            <button class="cbtn">＋</button>
+            <button class="cbtn">⚡</button>
+            <button class="cbtn">📑</button>
+            <div class="model-pill"><span class="dot"></span> DeepSeek <span style="color:var(--tx-3)">▾</span></div>
+            <div style="flex:1"></div>
+            <button class="cbtn">🎙</button>
+            <div class="send-btn" style="background:var(--dark)">↑</div>
+          </div>
+        </div>
+        <div class="suggest">
+          <div class="sg">📊 生成月度经营分析</div>
+          <div class="sg">🔍 对比两个产品线留存</div>
+          <div class="sg">⚡ 快速取数：昨日 DAU</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

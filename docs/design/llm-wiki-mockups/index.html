@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>DB-GPT · LLM-Wiki 前端设计稿</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .cover { max-width: 1080px; margin: 0 auto; padding: 48px 32px; }
+  .cover h1 { font-size: 30px; letter-spacing: 0.3px; }
+  .cover .sub { color: var(--tx-3); margin: 10px 0 30px; line-height: 1.7; }
+  .shot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .shot { background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+  .shot:hover { border-color: var(--border-2); }
+  .shot .thumb { height: 210px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border-1); background: var(--bg-0); }
+  .shot .thumb iframe { width: 200%; height: 200%; border: 0; transform: scale(0.5); transform-origin: 0 0; pointer-events: none; }
+  .shot .info { padding: 14px 18px; }
+  .shot .no { color: var(--pri); font-weight: 800; font-size: 12px; letter-spacing: 1px; }
+  .shot .nm { font-size: 16px; font-weight: 700; margin: 3px 0 6px; }
+  .shot .ds { color: var(--tx-3); font-size: 12.5px; line-height: 1.65; }
+  .notes { margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .note { background: var(--bg-1); border: 1px solid var(--border-1); border-radius: 14px; padding: 18px 20px; }
+  .note h3 { font-size: 14px; margin-bottom: 10px; color: var(--tx-1); }
+  .note li { color: var(--tx-3); font-size: 12.5px; margin: 5px 0 5px 16px; }
+  .note b { color: var(--tx-2); }
+</style>
+</head>
+<body>
+<div class="cover">
+  <h1>DB-GPT · <span style="color:var(--pri)">LLM-Wiki</span> 前端设计稿</h1>
+  <p class="sub">
+    对标 WeKnora「Wiki 模式」的交互设计，采用 DB-GPT 本分支 OpenCode 设计语言（smoke 暖灰面板 + cobalt 蓝主色）。<br/>
+    配套方案文档：<span class="mono" style="color:var(--tx-2)">docs/design/llm-wiki-upgrade-plan.md</span>
+    · 示例语料沿用 WeKnora 演示数据（星云科技员工手册），便于与原版逐屏对比。
+  </p>
+
+  <div class="shot-grid">
+    <a class="shot" href="./01-wiki-browser.html" target="_blank">
+      <div class="thumb"><iframe src="./01-wiki-browser.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 01</div>
+        <div class="nm">Wiki 浏览器</div>
+        <div class="ds">知识库详情页「文档 / Wiki / 图谱」三 Tab。左侧目录树（懒加载 + 类型徽标 + 计数），右侧阅读器渲染 [[双向链接]]，底部展示被链接与来源文档；顶部常驻生成进度与问题量。</div>
+      </div>
+    </a>
+    <a class="shot" href="./02-wiki-graph.html" target="_blank">
+      <div class="thumb"><iframe src="./02-wiki-graph.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 02</div>
+        <div class="nm">知识图谱</div>
+        <div class="ds">力导向链接图（overview top-N / ego 邻域两种模式）。图例可点选过滤页面类型；搜索定位 flyTo；右抽屉预览页面 + 展开邻居 / Bloom 前沿渐进加载，保持既有布局不跳动。</div>
+      </div>
+    </a>
+    <a class="shot" href="./03-wiki-revisions.html" target="_blank">
+      <div class="thumb"><iframe src="./03-wiki-revisions.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 03</div>
+        <div class="nm">版本历史与回滚</div>
+        <div class="ds">右抽屉双栏：版本列表（自动生成 / Agent / 手动编辑来源可辨）+ 行级 diff（增量 vN-1→vN / 对比当前 / 原文三视图，字段级分块，无变更自动隐藏）。回滚以新编辑落地，可再回滚。</div>
+      </div>
+    </a>
+    <a class="shot" href="./04-wiki-generate.html" target="_blank">
+      <div class="thumb"><iframe src="./04-wiki-generate.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 04</div>
+        <div class="nm">开启与生成配置</div>
+        <div class="ds">KB 编辑弹窗内嵌 Wiki 配置区：启用开关、抽取粒度（聚焦/标准/穷举）、生成模型、单次入库页数上限、内容/抽取自定义指令与成本提示；KB 列表卡片的 Wiki / 生成中 徽标态。</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h3>🎨 视觉规范</h3>
+      <ul>
+        <li><b>面板</b>：smoke 暖灰 #131010 / #1b1818 / #252121，描边 #343030</li>
+        <li><b>主色</b>：cobalt #034cff（对齐 opencode-theme.css / tailwind primary #0069fe）</li>
+        <li><b>页面类型色</b>：摘要 #4da3ff · 实体 #34d399 · 概念 #f5a623 · 综合 #a78bfa · 对比 #f87171 · 索引 #8e8b8b</li>
+        <li><b>编辑来源</b>：✦自动生成（灰紫） / ✎手动编辑（中性） / Agent（紫） / revert（黑名单色）</li>
+        <li>设计稿所有 token 收敛在 <span class="mono">styles.css :root</span>，切浅色主题仅需替换 surface/text 两组变量</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>🧩 与 WeKnora 的复用对照</h3>
+      <ul>
+        <li><b>直接移植</b>：LCS 行 diff、字段 diff 组装、目录展开状态机、状态刷新判定（4 个纯 TS 文件）</li>
+        <li><b>范式沿用</b>：三层轮询（stats 5s × 父子两级 + 文档解析联动）、409 冲突提示、请求序号防竞态</li>
+        <li><b>结构优化</b>：WeKnora WikiBrowser 单体 6593 行 → 拆分为 browser/sidebar/tree/reader/markdown/graph/drawer 8 个组件，graph 渲染器独立成纯 DOM 模块</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>
