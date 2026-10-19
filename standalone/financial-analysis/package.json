@@ -1,5 +1,5 @@
 {
   "name": "dbgpt-financial-analysis-standalone",
   "private": true,
-  "scripts": { "build": "node build.cjs", "verify:static": "node verify-static.cjs" }
+  "scripts": { "build": "node build.cjs" }
 }

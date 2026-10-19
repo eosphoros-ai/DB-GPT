@@ -732,20 +732,6 @@
   border-top: 1px solid var(--line);
   padding: 16px 24px;
 }
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-bottom: 8px;
-}
-.suggestions button {
-  color: var(--muted);
-  font-size: 11px;
-  padding: 4px 0;
-}
-.suggestions button:hover {
-  color: var(--blue);
-}
 .composerInput {
   border-radius: 8px;
   padding: 12px;

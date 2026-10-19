@@ -43,10 +43,7 @@ const workspaceTabs: Array<{ key: WorkspaceTab; label: string; icon: React.React
   { key: 'skill', label: 'financial-report-analyzer', icon: <AppstoreOutlined /> },
   { key: 'evidence', label: '证据', icon: <FileSearchOutlined /> },
 ];
-const capabilityNote = (mode: ReportData['mode']) =>
-  mode === 'demo'
-    ? '当前页面使用本地示例数据。结构化证据链、来源预览和问答为交互演示，未连接 Skill 后端或调用模型。'
-    : '当前页面展示所选报告数据。追问仅依据当前报告，缺少的指标与来源会明确标记。';
+const capabilityNote = '当前页面展示所选报告数据。追问仅依据当前报告，缺少的指标与来源会明确标记。';
 
 const ArtifactContext: React.FC = () => {
   const {
@@ -93,7 +90,7 @@ const FilesPanel: React.FC<{
     <div className={styles.utilityPanel}>
       <h2>任务文件</h2>
       <p className={styles.sectionDescription}>本轮输入资料与分析交付物</p>
-      {data.mode === 'report' && exportAccess && <ReportExports access={exportAccess} />}
+      {exportAccess && <ReportExports access={exportAccess} />}
       {!files.length && <p className={styles.meta}>暂无文件</p>}
       {files.map(file => (
         <div className={styles.fileRow} key={file.name}>
@@ -135,7 +132,7 @@ const SkillPanel: React.FC = () => {
       </dl>
       <details className={styles.developerNote}>
         <summary>关于此工作区</summary>
-        <p>{capabilityNote(data.mode)}</p>
+        <p>{capabilityNote}</p>
         <p>Run #{data.report.run.id}</p>
       </details>
     </div>
@@ -251,7 +248,7 @@ const FinancialAnalysisWorkspace: React.FC<{
                 <DesktopOutlined />
                 <span>DB-GPT Computer</span>
               </div>
-              <Tooltip title={capabilityNote(data.mode)}>
+              <Tooltip title={capabilityNote}>
                 <button type='button' aria-label='关于此工作区'>
                   <InfoCircleOutlined />
                 </button>
@@ -328,7 +325,7 @@ const FinancialAnalysisWorkspace: React.FC<{
                 </div>
                 {previewEvidence && previewDocument ? (
                   <SourcePreviewPanel
-                    sourceAccess={data.mode === 'report' ? sourceAccess : undefined}
+                    sourceAccess={sourceAccess}
                     evidence={previewEvidence}
                     document={previewDocument}
                     onBack={() => {

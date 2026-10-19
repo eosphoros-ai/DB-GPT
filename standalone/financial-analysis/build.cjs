@@ -1,6 +1,5 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
 const { createRequire } = require('node:module');
 const dir = __dirname;
 const repo = path.resolve(dir, '../..');
@@ -12,26 +11,22 @@ const tailwind = requireWeb('tailwindcss');
 const TerserPlugin = requireWeb('terser-webpack-plugin');
 const out = path.join(dir, '.work');
 const financial = path.join(web, 'new-components/financial-analysis');
-const hashes = () => Object.fromEntries(fs.readdirSync(financial).map(name => [name, crypto.createHash('sha256').update(fs.readFileSync(path.join(financial, name))).digest('hex')]));
-const original = hashes();
-const exportRuntime = process.argv.includes('--export-runtime');
-const progressPreview = process.argv.includes('--progress-preview');
+const args = process.argv.slice(2).filter(argument => argument !== '--export-runtime');
+if (args.length > 1 || args.some(argument => argument.startsWith('--'))) {
+  throw new Error('Usage: node build.cjs [output.html]');
+}
+const output = args.length ? path.resolve(args[0]) : path.join(out, 'export-runtime.html');
 
 async function build() {
   fs.mkdirSync(out, { recursive: true });
   const config = {
     mode: 'production', target: ['web', 'es2020'], context: dir,
-    entry: path.join(dir, progressPreview ? 'progress-preview.tsx' : process.argv.includes('--workflow-preview') ? 'workflow-preview.tsx' : exportRuntime ? 'export-entry.tsx' : 'entry.tsx'), devtool: false,
-    output: { path: out, filename: 'demo.js', iife: true, publicPath: '', chunkLoading: false },
+    entry: path.join(dir, 'export-entry.tsx'), devtool: false,
+    output: { path: out, filename: 'report.js', iife: true, publicPath: '', chunkLoading: false },
     resolve: {
       extensions: ['.tsx', '.ts', '.js', '.mjs', '.json'],
       modules: ['node_modules', path.join(web, 'node_modules')],
       alias: {
-        ...(progressPreview ? Object.fromEntries([
-          '@/components/chat/chat-content/code-preview$', '@/components/chat/chat-content/config$',
-          '@/new-components/charts$', '@antv/gpt-vis$', './ConversationTracePanel$',
-          './ParallelTasksPanel$', '@/new-components/financial-analysis/FinancialReportArtifact$',
-        ].map(name => [name, path.join(dir, 'adapters/progress-unused.tsx')])) : {}),
         'next/dynamic$': path.join(dir, 'adapters/dynamic.tsx'),
         'next/router$': path.join(dir, 'adapters/router.ts'),
         '@/app/chat-context$': path.join(dir, 'adapters/chat-context.tsx'),
@@ -59,31 +54,25 @@ async function build() {
   if (stats.hasErrors()) throw new Error(stats.toString({ all: false, errors: true }));
   if (stats.hasWarnings()) console.warn(stats.toString({ all: false, warnings: true }));
   const assets = stats.toJson({ all: false, assets: true }).assets.map(asset => asset.name);
-  if (assets.some(name => name !== 'demo.js' && !name.endsWith('.css'))) throw new Error(`Unexpected external assets: ${assets}`);
+  if (assets.some(name => name !== 'report.js' && !name.endsWith('.css'))) throw new Error(`Unexpected external assets: ${assets}`);
   const sources = stats.compilation.modules;
   const forbidden = [...sources].map(module => module.resource || '').filter(name => /[\\/]web[\\/](client|app)[\\/]|[\\/]node_modules[\\/]next[\\/]/.test(name));
-  if (forbidden.length) throw new Error(`Server/app runtime leaked into standalone: ${forbidden.join(', ')}`);
+  if (forbidden.length) throw new Error(`Server/app runtime leaked into offline report: ${forbidden.join(', ')}`);
   const content = [
     path.join(financial, '**/*.tsx'), path.join(dir, '**/*.tsx'),
-    path.join(web, 'new-components/chat/content/ManusLeftPanel.tsx'),
-    path.join(web, 'new-components/chat/content/TaskPlanCard.tsx'),
-    ...(progressPreview ? [path.join(web, 'new-components/chat/content/ManusRightPanel.tsx'),
-      path.join(web, 'new-components/chat/content/FinancialProgressPanel.tsx')] : []),
-    path.join(web, 'new-components/chat/content/ObservationFormatter.tsx'),
+    ...['ManusLeftPanel', 'TaskPlanCard', 'FinancialProgressPanel', 'ObservationFormatter']
+      .map(name => path.join(web, `new-components/chat/content/${name}.tsx`)),
   ].map(name => name.replace(/\\/g, '/'));
   const nativeTailwind = require(path.join(web, 'tailwind.config.js'));
   const utilities = await postcss([tailwind({ ...nativeTailwind, content, theme: { ...nativeTailwind.theme, fontFamily: { sans: ['Segoe UI', 'Microsoft YaHei', 'system-ui', 'sans-serif'] } } })]).process('@tailwind base;\n@tailwind components;\n@tailwind utilities;', { from: undefined });
-  const css = utilities.css + '\n' + fs.readFileSync(path.join(dir, 'shell.css'), 'utf8') + '\n' + assets.filter(name => name.endsWith('.css')).map(name => fs.readFileSync(path.join(out, name), 'utf8')).join('\n');
+  const shell = "html,body,#root{margin:0;width:100%;height:100%;font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif}body{overflow:hidden}";
+  const css = utilities.css + '\n' + shell + '\n' + assets.filter(name => name.endsWith('.css')).map(name => fs.readFileSync(path.join(out, name), 'utf8')).join('\n');
   if (/@import\b|url\(\s*['"]?(?!data:)[^)'"\s]/i.test(css)) throw new Error('External CSS dependency detected');
-  const js = fs.readFileSync(path.join(out, 'demo.js'), 'utf8');
-  const diagnostics = `window.__DEMO_DIAGNOSTICS__={errors:[],violations:[],resources:[]};addEventListener('error',e=>window.__DEMO_DIAGNOSTICS__.errors.push(e.message||'Asset error'));addEventListener('unhandledrejection',e=>window.__DEMO_DIAGNOSTICS__.errors.push(String(e.reason)));addEventListener('securitypolicyviolation',e=>window.__DEMO_DIAGNOSTICS__.violations.push(e.violatedDirective+': '+e.blockedURI));new PerformanceObserver(list=>{for(const e of list.getEntries())if(!e.name.startsWith('data:'))window.__DEMO_DIAGNOSTICS__.resources.push(e.name)}).observe({type:'resource',buffered:true});{const original=console.error;console.error=function(...args){window.__DEMO_DIAGNOSTICS__.errors.push(args.map(String).join(' '));original.apply(console,args)}};`;
-  const reportDataNode = exportRuntime ? '<script type="application/json" id="financial-report-data"><!--FINANCIAL_REPORT_JSON--></script>' : '';
-  const html = `<!doctype html>\n<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><link rel="icon" href="data:,"><title>DB-GPT Financial Analysis ${exportRuntime ? 'Report' : 'Demo'}</title><style>${css.replace(/<\/style/gi, '<\\/style')}</style></head><body><div id="root"></div>${reportDataNode}<noscript>请启用 JavaScript 以使用交互式财务分析报告。</noscript><script>${diagnostics}${js.replace(/<\/script/gi, '<\\/script')}</script></body></html>`;
-  // Optional output path lets regression builds preserve the delivered demo.
-  const output = process.argv[2] ? path.resolve(process.argv[2]) : path.join(repo, 'DB-GPT-Financial-Analysis-Demo.html');
+  const js = fs.readFileSync(path.join(out, 'report.js'), 'utf8');
+  const reportDataNode = '<script type="application/json" id="financial-report-data"><!--FINANCIAL_REPORT_JSON--></script>';
+  const html = `<!doctype html>\n<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><link rel="icon" href="data:,"><title>DB-GPT Financial Analysis Report</title><style>${css.replace(/<\/style/gi, '<\\/style')}</style></head><body><div id="root"></div>${reportDataNode}<noscript>请启用 JavaScript 以使用交互式财务分析报告。</noscript><script>${js.replace(/<\/script/gi, '<\\/script')}</script></body></html>`;
+  fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, html, 'utf8');
-  if (JSON.stringify(original) !== JSON.stringify(hashes())) throw new Error('Development source changed during build');
-  fs.writeFileSync(path.join(out, 'build-report.json'), JSON.stringify({ output, bytes: Buffer.byteLength(html), assets, originalSourceHashes: original, modules: [...sources].map(module => module.resource).filter(Boolean) }, null, 2));
-  console.log(`Built ${output}\n${Buffer.byteLength(html).toLocaleString()} bytes; one inline script, all CSS/assets inline; development sources unchanged.`);
+  console.log(`Built ${output}\n${Buffer.byteLength(html).toLocaleString()} bytes; all scripts, styles and assets inline.`);
 }
 build().catch(error => { console.error(error); process.exitCode = 1; });

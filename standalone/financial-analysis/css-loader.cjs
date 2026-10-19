@@ -7,7 +7,7 @@ module.exports = function (source) {
   const name = path.basename(this.resourcePath).replace(/\W/g, '_');
   postcss([
     local(),
-    scope({ generateScopedName: value => `demo_${name}_${value}` }),
+    scope({ generateScopedName: value => `report_${name}_${value}` }),
   ]).process(source, { from: this.resourcePath }).then(result => {
     const names = {};
     result.root.walkRules(':export', rule => {

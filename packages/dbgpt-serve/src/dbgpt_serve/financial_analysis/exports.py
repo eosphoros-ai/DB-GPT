@@ -21,7 +21,8 @@ def render_export(report, kind, runtime=None):
         from dbgpt.configs.model_config import SKILLS_DIR
 
         runtime = os.getenv("DBGPT_FINANCIAL_EXPORT_RUNTIME") or (
-            Path(SKILLS_DIR).parent / ".work/financial-analysis/export-runtime.html"
+            Path(SKILLS_DIR).parent
+            / "standalone/financial-analysis/.work/export-runtime.html"
         )
     path = Path(runtime)
     if not path.is_file():

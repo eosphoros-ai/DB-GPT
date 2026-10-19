@@ -1,6 +1,5 @@
 import React from 'react';
-// The mock answer uses only paragraphs, bullet points and emphasis. Avoid pulling
-// the app's network-capable rich-artifact renderer into the offline attachment.
+// Render report text without the app's network-capable rich-artifact renderer.
 function inline(text: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => part.startsWith('**') ? <strong key={index}>{part.slice(2, -2)}</strong> : part);
 }

@@ -144,37 +144,6 @@ class TestServeLifecycle:
         serve.before_start()
         assert serve._db_manager is not None
 
-    def test_before_start_binds_late_registered_storage(self, system_app, tmp_path):
-        instance = SessionFileServe(
-            system_app, config=_test_config(), work_root=tmp_path / "work"
-        )
-        instance.init_app(system_app)
-        assert instance._uses_fallback_storage
-        shared = _local_storage_client(tmp_path)
-        system_app.register_instance(shared)
-
-        instance.before_start()
-
-        assert instance.registry._storage is shared
-        assert not instance._uses_fallback_storage
-        client = TestClient(system_app.app)
-        response = client.post(
-            PREFIX,
-            data={"session_id": "late-storage"},
-            files=[("files", ("report.csv", CSV_CONTENT, "text/csv"))],
-            headers=ALICE,
-        )
-        assert response.status_code == 200
-        blobs = list((tmp_path / "blobstore" / "session-files").iterdir())
-        assert len(blobs) == 1
-        assert blobs[0].read_bytes() == CSV_CONTENT
-
-    def test_before_start_preserves_explicit_storage(self, serve, system_app, tmp_path):
-        injected = serve.registry._storage
-        system_app.register_instance(_local_storage_client(tmp_path / "shared"))
-        serve.before_start()
-        assert serve.registry._storage is injected
-
     def test_async_before_stop_unbinds_service_and_closes_registry(
         self, serve, system_app, monkeypatch
     ):

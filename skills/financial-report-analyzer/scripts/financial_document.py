@@ -367,7 +367,7 @@ def table_candidates(pages, document_id):
                     re.search(r"调整前|调整后|调整数|重述", compact(c)) for c in cells
                 ):
                     # Only coordinate-mapped subheaders can qualify a merged
-                    # year. Index-only legacy fixtures remain conservative.
+                    # year. Index-only legacy extraction records remain conservative.
                     if (
                         geometry
                         and header

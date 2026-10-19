@@ -423,7 +423,7 @@ export const StatementsTab: React.FC<ReportSectionProps> = ({ onOpenEvidence }) 
       render: (_: unknown, row: StatementRow) =>
         (() => {
           const fact = row.facts.find(item => item.fiscalPeriod === period.period);
-          return data.mode === 'demo' ? fact?.rawValue || '未披露' : fact?.displayValue || '未识别';
+          return fact?.displayValue || '未识别';
         })(),
     })),
     {

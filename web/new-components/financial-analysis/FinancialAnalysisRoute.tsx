@@ -18,7 +18,6 @@ import {
   listRuns,
   requestError,
 } from './api';
-import { mockReportData } from './mock-report';
 import type { ReportData, ReportExportAccess, ReportQuestionAccess, SourcePreviewAccess } from './types';
 
 const stageLabels: Record<string, string> = {
@@ -34,7 +33,6 @@ const FinancialAnalysisRoute: React.FC = () => {
   const router = useRouter();
   const runId = typeof router.query.run_id === 'string' ? router.query.run_id : '';
   const sessionId = typeof router.query.session_id === 'string' ? router.query.session_id : '';
-  const demo = router.query.demo === '1';
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -73,7 +71,7 @@ const FinancialAnalysisRoute: React.FC = () => {
   useEffect(() => {
     setRun(null);
     setError('');
-    if (!router.isReady || demo || !runId || !sessionId) return;
+    if (!router.isReady || !runId || !sessionId) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
@@ -101,7 +99,7 @@ const FinancialAnalysisRoute: React.FC = () => {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [router.isReady, demo, runId, sessionId, retry]);
+  }, [router.isReady, runId, sessionId, retry]);
 
   const submit = async (previous?: FinancialRunStatus) => {
     if (busyRef.current || (!file && !previous)) return;
@@ -139,7 +137,6 @@ const FinancialAnalysisRoute: React.FC = () => {
     void router.push('/financial-analysis');
   };
   const activeRun = run?.id === runId && run.session_id === sessionId ? run : null;
-  if (demo) return <FinancialAnalysisPage data={mockReportData} />;
   if (data && loadedScope === `${sessionId}:${runId}` && data.report.run.id === runId)
     return (
       <FinancialAnalysisPage
@@ -217,9 +214,6 @@ const FinancialAnalysisRoute: React.FC = () => {
               </label>
               <Button type='primary' loading={busy} disabled={!file} onClick={() => void submit()}>
                 {busy ? '正在上传并创建任务' : '开始分析'}
-              </Button>
-              <Button type='link' onClick={() => void router.push('/financial-analysis?demo=1')}>
-                查看原有演示
               </Button>
               <ReportHistory
                 load={listRuns}

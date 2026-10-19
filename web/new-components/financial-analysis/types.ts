@@ -153,19 +153,13 @@ export interface AgentExecutionStep {
   script?: string;
   detail: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  capability: 'existing' | 'mock-extension';
+  capability: 'existing';
 }
 
 export interface TrendPoint {
   year: string;
   metric: string;
   value: number;
-}
-
-export interface MockAnswer {
-  question: string;
-  answer: string;
-  findingId: string;
 }
 
 export interface EvidenceSelection {
@@ -222,7 +216,7 @@ export interface ReportArtifact {
   sizeBytes?: number;
 }
 
-/** A complete snapshot. Missing arrays/values must never resolve to demo data. */
+/** A complete snapshot of a saved report. */
 export interface ReportData {
   workflow?: {
     dataQuality?: {
@@ -270,7 +264,7 @@ export interface ReportData {
   };
   schemaVersion: 1;
   revision: string;
-  mode: 'demo' | 'report';
+  mode: 'report';
   analysis?: {
     status: 'running' | 'completed' | 'partial' | 'failed';
     modelName: string;
@@ -308,6 +302,4 @@ export interface ReportData {
     summary: string;
     groups: Array<{ id: string; title: string; content: string; stepIds: string[] }>;
   };
-  /** Canned answers belong exclusively to the demo. */
-  demoQuestions?: Array<MockAnswer & { label: string; keywords: string[]; priority: number }>;
 }

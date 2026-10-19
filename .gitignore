@@ -214,8 +214,6 @@ openspec/
 docs/superpowers/
 .gstack/
 
-# Local PDFs and runtime scratch for financial-analysis smoke checks
-/.work/financial-analysis/
-/.work/financial-agent/
+# Uploaded files and generated runtime assets
+/.work/
 /python_uploads/
-/testpdf/*.pdf

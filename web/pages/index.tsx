@@ -532,7 +532,6 @@ const EXAMPLE_CARDS = [
     borderColor: 'border-violet-200/60 dark:border-violet-800/40',
     iconBg: 'bg-violet-100 dark:bg-violet-900/40',
     skillName: 'financial-report-analyzer',
-    previewPath: '/financial-analysis?demo=1',
   },
   {
     id: 'create_sql_skill',
@@ -4811,19 +4810,6 @@ const Playground: NextPage = () => {
                                 return val && val !== key ? val : example.description;
                               })()}
                             </p>
-                            {'previewPath' in example && example.previewPath && (
-                              <button
-                                type='button'
-                                onClick={event => {
-                                  event.stopPropagation();
-                                  router.push(example.previewPath);
-                                }}
-                                className='mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300'
-                              >
-                                查看可追溯分析 Mock
-                                <RightOutlined className='text-[9px]' />
-                              </button>
-                            )}
                           </div>
                         </div>
                         <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>

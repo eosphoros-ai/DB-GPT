@@ -53,12 +53,12 @@ export function periodRange(points: Array<{ year: string }>) {
 export const runStatusLabels = { pending: 'Pending', running: 'Running', completed: 'Completed', failed: 'Failed' };
 
 export function reportRunState(data: ReportData) {
-  if (data.mode === 'report' && data.workflow) {
+  if (data.workflow) {
     // Publication is independent of how much analysis the source supports.
     const complete = data.workflow.status === 'published';
     return { label: complete ? '报告已生成' : '分析中', working: !complete, complete };
   }
-  if (data.mode === 'report' && data.analysis) {
+  if (data.analysis) {
     if (data.analysis.status === 'running') return { label: '分析中', working: true, complete: false };
     if (data.analysis.status === 'completed') return { label: '报告已生成', working: false, complete: true };
     if (data.analysis.status === 'partial') {
@@ -68,10 +68,7 @@ export function reportRunState(data: ReportData) {
     if (data.analysis.status === 'failed') return { label: '数据可用 · 分析未完成', working: false, complete: false };
   }
   return {
-    label:
-      data.mode === 'report' && data.report.run.status === 'completed'
-        ? '报告已生成'
-        : runStatusLabels[data.report.run.status],
+    label: data.report.run.status === 'completed' ? '报告已生成' : runStatusLabels[data.report.run.status],
     working: data.report.run.status === 'running',
     complete: data.report.run.status === 'completed',
   };
