@@ -1,0 +1,67 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "Agent QA Flow",
+    "name": "taskflow_agent_qa_template",
+    "flow_category": "chat_flow",
+    "description": "Three agents in a chain: draft an answer, expert review, then compose the final message — for QA scenarios needing verification.",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "Think and Reply",
+          "config": {
+            "agent_profile": "react_knowledge",
+            "goal": "Answer the user's question. Answer directly when confident; retrieve from the knowledge base to verify uncertain facts first, and cite sources. Keep it under 300 words.",
+            "tools": ["knowledge_retrieve"],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "Expert Review",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Review the previous agent's conclusion: verify every key number and caliber with SQL or code; correct any inconsistency. Output a 'confirmed / corrected' verdict in under 150 words.",
+            "tools": ["sql_query", "code_interpreter"],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "Compose Final Message",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "Compose the final user-facing message from the conclusions and review notes above: answer first, then key evidence, in natural language, under 250 words.",
+            "tools": [],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        ["n1", "n2"],
+        ["n2", "n3"],
+        ["n3", "n4"],
+        ["n4", "n5"]
+      ]
+    }
+  }
+}

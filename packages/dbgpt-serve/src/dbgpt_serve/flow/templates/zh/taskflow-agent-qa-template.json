@@ -1,0 +1,67 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "Agent 答疑流",
+    "name": "taskflow_agent_qa_template",
+    "flow_category": "chat_flow",
+    "description": "三个 Agent 串联:思考并回复 → 专家审核 → 发送最终消息,适合需要核实与复核的答疑场景。",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "思考并回复",
+          "config": {
+            "agent_profile": "react_knowledge",
+            "goal": "回答用户的问题。能直接答就直接答;拿不准的事实先调用知识库检索核实再答,结论标注来源。输出不超过 300 字。",
+            "tools": ["knowledge_retrieve"],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "专家审核",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "复核上一个 Agent 的结论:关键数字与口径必须核实,可用 SQL 或代码重算;发现不一致给出修正。输出「确认 / 修正」结论,不超过 150 字。",
+            "tools": ["sql_query", "code_interpreter"],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "发送最终消息",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "把前面 Agent 的结论与审核意见汇总为一段面向用户的终稿:先给答案,再列要点依据,语言自然,不超过 250 字。",
+            "tools": [],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        ["n1", "n2"],
+        ["n2", "n3"],
+        ["n3", "n4"],
+        ["n4", "n5"]
+      ]
+    }
+  }
+}

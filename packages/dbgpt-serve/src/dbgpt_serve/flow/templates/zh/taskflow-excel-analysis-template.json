@@ -1,0 +1,39 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "Excel 透视分析",
+    "name": "taskflow_excel_analysis_template",
+    "flow_category": "chat_flow",
+    "description": "上传表格后自动完成清洗、透视与图表解读，输出分析结论与建议。",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        { "id": "n1", "kind": "start", "config": {} },
+        {
+          "id": "n2",
+          "kind": "file_data",
+          "config": { "file_name": "upload_your_data.xlsx", "max_rows": 1000 }
+        },
+        {
+          "id": "n3",
+          "kind": "ai_analysis",
+          "config": {
+            "analysis_prompt": "先完成必要的数据清洗与口径统一，再做透视分析，识别关键趋势与异常。"
+          }
+        },
+        { "id": "n4", "kind": "visualize", "config": { "max_charts": 4 } },
+        { "id": "n5", "kind": "output", "config": {} }
+      ],
+      "edges": [
+        ["n1", "n2"],
+        ["n2", "n3"],
+        ["n3", "n4"],
+        ["n4", "n5"]
+      ]
+    }
+  }
+}

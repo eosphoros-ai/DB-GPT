@@ -1,0 +1,51 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "Data Analysis Flow",
+    "name": "taskflow_data_analysis_template",
+    "flow_category": "chat_flow",
+    "description": "A complete analysis pipeline: data retrieval, AI analysis, visualization and report generation.",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        { "id": "n1", "kind": "start", "config": {} },
+        {
+          "id": "n2",
+          "kind": "db_query",
+          "config": { "datasource": "case_1_student_manager", "max_rows": 1000 }
+        },
+        {
+          "id": "n3",
+          "kind": "ai_analysis",
+          "config": {
+            "analysis_prompt": "Focus on trends, YoY/MoM changes, identify anomalies and infer possible causes."
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "visualize",
+          "config": { "datasource": "case_1_student_manager", "max_charts": 4 }
+        },
+        {
+          "id": "n5",
+          "kind": "human_confirm",
+          "config": { "message": "Please confirm the analysis conclusions before generating the report" }
+        },
+        { "id": "n6", "kind": "report", "config": {} },
+        { "id": "n7", "kind": "output", "config": {} }
+      ],
+      "edges": [
+        ["n1", "n2"],
+        ["n2", "n3"],
+        ["n3", "n4"],
+        ["n4", "n5"],
+        ["n5", "n6"],
+        ["n6", "n7"]
+      ]
+    }
+  }
+}
