@@ -300,6 +300,42 @@ async def get_nodes(
     return Result.succ(metadata_list)
 
 
+@router.get("/taskflow/node-kinds", dependencies=[Depends(check_api_key)])
+async def get_taskflow_node_kinds():
+    """Get the TaskFlow product node kind manifest.
+
+    Drives the TaskFlow editor's node palette and property panel. Each entry
+    contains bilingual labels, palette group, icon, business-level config
+    fields and IO descriptions.
+    """
+    from ..taskflow import get_node_kind_manifest
+
+    return Result.succ(get_node_kind_manifest())
+
+
+@router.get("/taskflow/agent-options", dependencies=[Depends(check_api_key)])
+async def get_taskflow_agent_options():
+    """Get the options driving the TaskFlow agent node's property panel.
+
+    Returns the builtin agent profiles, selectable builtin tools and the
+    installed skill packages. Datasources and knowledge spaces reuse the
+    frontend's existing endpoints and are intentionally not included.
+    """
+    from dbgpt_app.operators.agent_runner import (
+        list_agent_profiles,
+        list_available_skills,
+        list_builtin_tools,
+    )
+
+    return Result.succ(
+        {
+            "profiles": list_agent_profiles(),
+            "tools": list_builtin_tools(),
+            "skills": list_available_skills(),
+        }
+    )
+
+
 @router.post("/nodes/refresh", dependencies=[Depends(check_api_key)])
 async def refresh_nodes(refresh_request: RefreshNodeRequest):
     """Refresh the operator or resource nodes

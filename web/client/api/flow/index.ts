@@ -13,6 +13,7 @@ import {
   IUploadFileRequestParams,
   IUploadFileResponse,
 } from '@/types/flow';
+import { ITaskflowAgentOptions, ITaskflowNodeKind } from '@/types/taskflow';
 import { DELETE, GET, POST, PUT } from '../index';
 
 /** AWEL Flow */
@@ -73,6 +74,21 @@ export const getFlowTemplateById = (id: string) => {
 
 export const getFlowTemplates = () => {
   return GET<null, any>(`/api/v2/serve/awel/flow/templates`);
+};
+
+/** TaskFlow: product node kind manifest (drives palette + property panel) */
+export const getTaskflowNodeKinds = () => {
+  return GET<null, ITaskflowNodeKind[]>('/api/v2/serve/awel/taskflow/node-kinds');
+};
+
+/** TaskFlow: agent node options (profiles / builtin tools / installed skills) */
+export const getTaskflowAgentOptions = () => {
+  return GET<null, ITaskflowAgentOptions>('/api/v2/serve/awel/taskflow/agent-options');
+};
+
+/** TaskFlow: chat-selectable flows (category chat_flow/chat_agent) */
+export const getChatFlows = (params?: { page?: number; page_size?: number }) => {
+  return GET<any, IFlowResponse>('/api/v2/serve/awel/chat/flows', params);
 };
 
 export const getKeys = (data?: IGetKeysRequestParams) => {

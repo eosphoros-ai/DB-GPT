@@ -1,9 +1,9 @@
 import {
+  ApartmentOutlined,
   ApiOutlined,
   AppstoreOutlined,
   ClockCircleOutlined,
   ConsoleSqlOutlined,
-  ForkOutlined,
   PartitionOutlined,
   SettingOutlined,
   ThunderboltOutlined,
@@ -32,10 +32,10 @@ function ConstructLayout({ children, className }: { children: React.ReactNode; c
       // ),
     },
     {
-      key: 'flow',
-      name: t('awel_flow'),
-      icon: <ForkOutlined />,
-      path: '/flow',
+      key: 'taskflow',
+      name: t('taskflow'),
+      icon: <ApartmentOutlined />,
+      path: '/taskflow',
     },
     {
       key: 'models-config',

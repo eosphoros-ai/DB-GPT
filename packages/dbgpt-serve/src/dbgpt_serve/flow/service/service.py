@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -38,12 +39,88 @@ from dbgpt_serve.core import BaseService, blocking_func_to_async
 
 from ..api.schemas import FlowDebugRequest, FlowInfo, ServeRequest, ServerResponse
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
-from ..models.models import ServeDao, ServeEntity
+from ..models.models import ServeDao, ServeEntity, migrate_flow_table_columns
 from .compat_service import register_compat_flow
 
 logger = logging.getLogger(__name__)
 
 CFG = Config()
+
+
+async def _merge_step_events(
+    dag_stream: AsyncIterator[ModelOutput],
+    queue: "Optional[asyncio.Queue[str]]",
+    incremental: bool,
+) -> AsyncIterator[ModelOutput]:
+    """Interleave live TaskFlow step events with the DAG output stream.
+
+    The AWEL runner completes every upstream node before the final join runs,
+    so step markers would otherwise reach the client in one burst at the end.
+    Step markers push their payloads to ``queue`` as each node completes; this
+    generator yields those events as they arrive and flushes any remainder
+    before each DAG output so execution order is preserved. The final join
+    output still carries every marker (history persistence unchanged); the
+    chat UI deduplicates sections by step_id.
+    """
+    if queue is None:
+        async for output in dag_stream:
+            yield output
+        return
+
+    def _drain() -> List[ModelOutput]:
+        drained: List[ModelOutput] = []
+        while True:
+            try:
+                event = queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            if event:
+                drained.append(
+                    ModelOutput(error_code=0, text=event, incremental=incremental)
+                )
+        return drained
+
+    dag_iter = dag_stream.__aiter__()
+    dag_task: "Optional[asyncio.Task]" = asyncio.ensure_future(dag_iter.__anext__())
+    dag_exhausted = False
+    try:
+        while True:
+            if dag_exhausted:
+                for event_output in _drain():
+                    yield event_output
+                return
+            queue_task = asyncio.ensure_future(queue.get())
+            done, _ = await asyncio.wait(
+                {dag_task, queue_task}, return_when=asyncio.FIRST_COMPLETED
+            )
+            if queue_task in done:
+                event = queue_task.result()
+                if event:
+                    yield ModelOutput(error_code=0, text=event, incremental=incremental)
+                for event_output in _drain():
+                    yield event_output
+            else:
+                queue_task.cancel()
+                try:
+                    await queue_task
+                except asyncio.CancelledError:
+                    pass
+            if dag_task in done:
+                try:
+                    output = dag_task.result()
+                except StopAsyncIteration:
+                    dag_exhausted = True
+                    dag_task = None
+                    continue
+                # Flush queued step events before the DAG output so the live
+                # steps keep execution order relative to the final answer.
+                for event_output in _drain():
+                    yield event_output
+                yield output
+                dag_task = asyncio.ensure_future(dag_iter.__anext__())
+    finally:
+        if dag_task is not None and not dag_task.done():
+            dag_task.cancel()
 
 
 class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
@@ -82,6 +159,11 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def before_start(self):
         """Execute before the application starts"""
         super().before_start()
+        # Best-effort auto migration for newly added flow columns
+        try:
+            migrate_flow_table_columns()
+        except Exception as e:
+            logger.warning(f"Migrate flow table columns error: {e}")
         # Register the compat flow at the beginning
         register_compat_flow()
         self._pre_load_dag_from_db()
@@ -122,6 +204,21 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             ServerResponse: The response
         """
 
+    def _maybe_compile_taskflow(self, request: ServeRequest) -> None:
+        """Compile the TaskFlow DSL into flow_data when flow_format is taskflow.
+
+        The compiled AWEL FlowData is what FlowFactory builds the DAG from; the
+        DSL source itself is only used by the TaskFlow editor.
+        """
+        if getattr(request, "flow_format", "awel") != "taskflow":
+            return
+        if not request.taskflow_source:
+            raise ValueError("flow_format is 'taskflow' but taskflow_source is empty")
+        from ..taskflow import compile_taskflow
+
+        request.flow_data = compile_taskflow(request.taskflow_source)
+        request.define_type = "json"
+
     def create_and_save_dag(
         self, request: ServeRequest, save_failed_flow: bool = False
     ) -> ServerResponse:
@@ -135,6 +232,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             ServerResponse: The response
         """
         try:
+            self._maybe_compile_taskflow(request)
             # Build DAG from request
             if request.define_type == "json":
                 dag = self._flow_factory.build(request)
@@ -194,6 +292,46 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     f"from db error: {str(e)}"
                 )
 
+    def _maybe_recompile_taskflow_entity(self, entity) -> None:
+        """Recompile a taskflow entity from its DSL source.
+
+        flow_data is a derived artifact of the TaskFlow compiler; when the
+        compiler is upgraded (new operators/edges), rows saved earlier must be
+        recompiled or the deployed DAG keeps the old structure.
+        """
+        if (
+            getattr(entity, "flow_format", "awel") != "taskflow"
+            or not getattr(entity, "taskflow_source", None)
+            or not entity.flow_data
+        ):
+            return
+        from ..taskflow import compile_taskflow
+
+        source = entity.taskflow_source
+        if isinstance(source, str):
+            source = json.loads(source)
+        flow_data = compile_taskflow(source)
+        flow_data_dict = (
+            flow_data.to_dict() if hasattr(flow_data, "to_dict") else flow_data
+        )
+        new_flow_data = json.dumps(flow_data_dict, ensure_ascii=False)
+        existing = entity.flow_data
+        existing_str = (
+            json.dumps(existing.to_dict(), ensure_ascii=False)
+            if hasattr(existing, "to_dict")
+            else existing
+        )
+        if new_flow_data != existing_str:
+            # In-memory only, and keep the FlowData pydantic object (the DAO
+            # returns FlowPanel/ServerResponse objects whose flow_data is a
+            # parsed FlowData — FlowFactory.build reads .nodes off it). The
+            # stored row is left untouched (updated through the normal
+            # edit/update path).
+            entity.flow_data = flow_data
+            logger.info(
+                f"Recompiled taskflow flow {entity.name}({entity.uid}) in memory"
+            )
+
     def load_dag_from_db(self):
         """Load DAG from db"""
         entities = self.dao.get_list({})
@@ -201,6 +339,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             try:
                 if entity.define_type != "json":
                     continue
+                self._maybe_recompile_taskflow_entity(entity)
                 dag = self._flow_factory.build(entity)
                 if entity.state in [State.DEPLOYED, State.RUNNING] or (
                     entity.version == "0.1.0" and entity.state == State.INITIALIZING
@@ -271,6 +410,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         new_state = State.DEPLOYED
         try:
+            self._maybe_compile_taskflow(request)
             # Try to build the dag from the request
             if request.define_type == "json":
                 dag = self._flow_factory.build(request)
@@ -535,16 +675,32 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             AsyncIterator[ModelOutput]: The output
         """
         incremental = request.incremental
+        queue = None
+        conv_uid = getattr(request, "conv_uid", None)
+        try:
+            from dbgpt_app.operators.taskflow import register_step_events
+
+            if conv_uid:
+                queue = register_step_events(conv_uid)
+        except Exception:
+            queue = None
         try:
             task = await self._get_callable_task(flow_uid)
-            async for output in safe_chat_stream_with_dag_task(
-                task, request, incremental
-            ):
+            dag_stream = safe_chat_stream_with_dag_task(task, request, incremental)
+            async for output in _merge_step_events(dag_stream, queue, incremental):
                 yield output
         except HTTPException as e:
             yield ModelOutput(error_code=1, text=e.detail, incremental=incremental)
         except Exception as e:
             yield ModelOutput(error_code=1, text=str(e), incremental=incremental)
+        finally:
+            if conv_uid:
+                try:
+                    from dbgpt_app.operators.taskflow import unregister_step_events
+
+                    unregister_step_events(conv_uid)
+                except Exception:
+                    pass
 
     async def _get_callable_task(
         self,
@@ -638,6 +794,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         from dbgpt.core.awel.dag.dag_manager import _parse_metadata
 
+        self._maybe_compile_taskflow(request.flow)
         dag = await blocking_func_to_async(
             self._system_app,
             self._flow_factory.build,
@@ -662,15 +819,36 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         if default_incremental is not None:
             incremental = default_incremental
 
+        conv_uid: Optional[str] = None
+        if isinstance(request.request, CommonLLMHttpRequestBody):
+            conv_uid = request.request.conv_uid
+        elif isinstance(request.request, dict):
+            conv_uid = request.request.get("conv_uid")
+        queue = None
+        if conv_uid:
+            try:
+                from dbgpt_app.operators.taskflow import register_step_events
+
+                queue = register_step_events(conv_uid)
+            except Exception:
+                queue = None
+
         try:
-            async for output in safe_chat_stream_with_dag_task(
-                task, dag_request, incremental
-            ):
+            dag_stream = safe_chat_stream_with_dag_task(task, dag_request, incremental)
+            async for output in _merge_step_events(dag_stream, queue, incremental):
                 yield output
         except HTTPException as e:
             yield ModelOutput(error_code=1, text=e.detail, incremental=incremental)
         except Exception as e:
             yield ModelOutput(error_code=1, text=str(e), incremental=incremental)
+        finally:
+            if conv_uid:
+                try:
+                    from dbgpt_app.operators.taskflow import unregister_step_events
+
+                    unregister_step_events(conv_uid)
+                except Exception:
+                    pass
 
     async def _wrapper_chat_stream_flow_str(
         self, stream_iter: AsyncIterator[ModelOutput]
