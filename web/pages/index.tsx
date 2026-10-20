@@ -283,6 +283,95 @@ const classifyFileTier = (
   return { tier: 'process', referenced };
 };
 
+/**
+ * Synthesize a user-facing intention line for engines whose models do not
+ * emit one (pi): derive it from the tool name + primary argument so the
+ * round header / status row show what the step is doing, localized.
+ */
+const synthesizeIntention = (
+  action: string | undefined,
+  input: any,
+  t: (key: string, options?: any) => string,
+): string | undefined => {
+  if (!action) return undefined;
+  const pick = (keys: string[]): string => {
+    if (input && typeof input === 'object') {
+      for (const k of keys) {
+        if (typeof input[k] === 'string' && input[k]) return input[k] as string;
+      }
+      return '';
+    }
+    if (typeof input === 'string' && input.trim()) {
+      const src = input.trim();
+      try {
+        const obj = JSON.parse(src);
+        if (obj && typeof obj === 'object') {
+          for (const k of keys) {
+            if (typeof obj[k] === 'string' && obj[k]) return obj[k] as string;
+          }
+          return '';
+        }
+      } catch {
+        // python-repr style: {'query': '...', 'max_results': 8}
+        if (src.startsWith('{')) {
+          for (const k of keys) {
+            const m = src.match(new RegExp(`['"]?${k}['"]?\\s*:\\s*(['"])([^'"]*)\\1`));
+            if (m && m[2]) return m[2];
+          }
+          return '';
+        }
+        return src;
+      }
+    }
+    return '';
+  };
+  const clip = (v: string, n = 48) => (v.length > n ? `${v.slice(0, n)}…` : v);
+  const param = (keys: string[]) => clip(pick(keys));
+  switch (action) {
+    case 'web_search': {
+      const q = param(['query', 'q']);
+      return q ? t('intent_web_search', { q }) : (t('intent_web_search_plain') as string);
+    }
+    case 'web_fetch': {
+      const url = param(['url']);
+      return url ? t('intent_web_fetch', { url: clip(url, 64) }) : (t('intent_web_fetch_plain') as string);
+    }
+    case 'sql_query': {
+      const q = param(['sql', 'query']);
+      return q ? t('intent_sql', { q }) : (t('intent_sql_plain') as string);
+    }
+    case 'code_interpreter':
+      return t('intent_code');
+    case 'shell_interpreter':
+      return t('intent_shell');
+    case 'html_interpreter':
+      return t('intent_html');
+    case 'read': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_read', { p: pth }) : (t('intent_read_plain') as string);
+    }
+    case 'write': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_write', { p: pth }) : (t('intent_write_plain') as string);
+    }
+    case 'edit': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_edit', { p: pth }) : (t('intent_edit_plain') as string);
+    }
+    case 'todowrite':
+      return t('intent_todo');
+    case 'question':
+      return t('intent_question');
+    default:
+      if (action.startsWith('kb_') || action === 'knowledge_retrieve') return t('intent_kb');
+      if (/^(load_skill|get_skill|execute_skill)/.test(action)) {
+        const n = param(['skill_name', 'name', 'package']);
+        return n ? t('intent_skill', { n }) : (t('intent_skill_plain') as string);
+      }
+      return action;
+  }
+};
+
 interface DataSource {
   id: number;
   type: string;
@@ -2872,12 +2961,15 @@ const Playground: NextPage = () => {
                 action: payload.action || item.action,
                 actionInput: payload.action_input || item.actionInput,
                 todoMeta: payload.todo_meta || item.todoMeta,
-                actionIntention: payload.action_intention || item.actionIntention,
+                actionIntention:
+                  payload.action_intention ||
+                  item.actionIntention ||
+                  synthesizeIntention(payload.action || item.action, payload.action_input || item.actionInput, t),
               };
             });
             // Route model-provided action display fields to the subtle status row.
             const displayThought = buildActionDisplayText({
-              actionIntention: payload.action_intention,
+              actionIntention: payload.action_intention || synthesizeIntention(payload.action, payload.action_input, t),
               actionReason: payload.action_reason,
               thought: payload.thought,
             });
@@ -3484,6 +3576,7 @@ const Playground: NextPage = () => {
             action: s.action,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
+            actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
           }));
 
           const outputs: Record<string, ExecutionOutput[]> = {};
@@ -3513,7 +3606,7 @@ const Playground: NextPage = () => {
               }
             }
             const historyThought = buildActionDisplayText({
-              actionIntention: s.action_intention,
+              actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
               actionReason: s.action_reason,
               thought: s.thought,
             });
