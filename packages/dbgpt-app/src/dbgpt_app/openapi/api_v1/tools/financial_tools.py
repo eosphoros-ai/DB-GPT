@@ -12,16 +12,15 @@ from dbgpt_serve.financial_analysis.analysis import (
     InvalidFindings,
     model_context,
 )
-from dbgpt_serve.financial_analysis.questions import (
-    reference_only_answer,
-    validate_answer,
-)
 from dbgpt_serve.financial_analysis.summary import (
     SUMMARY_INSTRUCTIONS,
     is_published,
+    render_cited_answer,
     render_summary,
     report_summary,
     summary_context,
+    validate_answer_presentation,
+    wants_detailed_answer,
 )
 from dbgpt_serve.financial_analysis.workflow import next_action, topic_context
 
@@ -50,7 +49,7 @@ directionChecked:true、scopeChecked:true、causalityChecked:true、note（不�
 三项 Checked 记录该维度及其缺口已检查，不表示结论通过；
 失败或缺数据专题检查缺口后也填 true，verdict 使用 insufficient，并在 note 说明限制。
 需要修订就修正对应专题，然后重新复核。明确复核通过后后端原子发布，
-workflow.status=published 后按 completion_instructions 撰写整体总结并 terminate，
+workflow.status=published 后按 completion_instructions 分段正常作答并 terminate，
 无需再调用 publish。不得在未发布时 terminate。
 用户只要求重做某专题时，先 read 当前报告，再 get_financial_topic(retry=true)，
 保留其他专题，修订后复核、发布；不重新解析 PDF。普通追问仍直接 read 后回答。
@@ -94,10 +93,13 @@ code_interpreter、shell_interpreter 或知识库搜索替代财报提取、计�
 追问的最终回答必须直接复制 data.facts/data.calculations 中的 reference 字段，
 不能抄 displayValue、金额、年份或页码，也不能复制含数字的原文片段或追加单位。
 按 read 返回的 answer_format_example 将引用放进 terminate 的 output 字符串；
-服务端会替换真实数值并补齐原 PDF 来源页码。
-发布后按 completion_instructions 写一段有业务判断的整体总结，数字复制
+服务端会替换报告中的真实数值，并添加定位到报告依据的引用。
+发布后按 completion_instructions 正常回答用户的问题，按内容分段，不写固定总结。数字复制
 completion_context 中的 reference，与右侧报告保持同一期间、指标与单位。
-不要用保存条数、失败数量或“部分分析”等流程统计代替总结；具体限制由后端补充。
+默认选择两三个最值得关注的发现，先解释变化意味着什么，再给少量数字。
+不要按内部专题逐栏报数，不重复罗列本期、上期和同比；明细留在报告中。
+占位符只显示数值及单位，按语境写清指标名称，后端在数值旁添加可点击的报告引用。
+不要用保存条数、失败数量或“部分分析”等流程统计代替回答。
 """
 
 
@@ -366,7 +368,10 @@ def _result(
                 "直接回答当前追问，无需重新发布报告。数字使用 {{fact:真实ID}} 或 "
                 "{{calculation:真实ID}} 占位符，服务端会替换真实值。"
                 "不要直接写年份、金额、比率或页码，也不要追加单位。"
-                "可提示用户在右侧报告查看依据；来源页码由服务端补齐。"
+                "占位符只显示数值和单位，请按语境写清指标名称和期间。"
+                "按内容分段，段落间留空行；数值旁的报告引用由服务端添加。"
+                "优先回答当前问题，默认用少量关键数字解释，不列整套财务数据；"
+                "用户明确要求逐项明细时再展开。"
                 "资料不足明确说明，不补造原因。"
             )
         else:
@@ -391,7 +396,9 @@ def _result(
                 summary["answer_format_example"] = {
                     "Action": "terminate",
                     "Action Input": {
-                        "output": "披露数据显示"
+                        "output": "本期"
+                        + context["facts"][0]["metricName"]
+                        + "为"
                         + context["facts"][0]["reference"]
                         + "。原文依据可在右侧报告中核对。"
                     },
@@ -416,58 +423,87 @@ def _result(
     )
 
 
+def financial_answer_error(content, state):
+    """Give the agent bounded feedback before replacing an invalid final answer."""
+    report = state.get("financial_report_context")
+    if not report or not is_published(report):
+        return None
+    if not summary_context(report)["facts"]:
+        return None
+    try:
+        detailed = wants_detailed_answer(state.get("financial_user_query"))
+        if state.get("financial_read"):
+            if not REFERENCE.search(content):
+                return None
+            render_cited_answer(content, report)
+            validate_answer_presentation(content, detailed=detailed)
+        else:
+            render_summary(content, report, strict=True, detailed=detailed)
+    except (ValueError, TypeError) as exc:
+        attempts = state.get("financial_answer_repairs", 0)
+        if attempts >= 2:
+            return None
+        state["financial_answer_repairs"] = attempts + 1
+        details = str(exc)
+        tokens = getattr(exc, "invalid_tokens", None)
+        if tokens:
+            details += ": " + json.dumps(tokens, ensure_ascii=False)
+        style = (
+            "按用户要求详细展开。"
+            if detailed
+            else "默认选两三个重要发现，每段先讲变化意味着什么，再用关键数字支撑；"
+            "财务数字控制在四到六处，不重复罗列本期、上期和同比，"
+            "不要把经营表现、盈利质量、现金流、资产负债当四个固定栏目。"
+        )
+        return (
+            "最终回答尚未通过校验：" + details + "。只修正 terminate 的 output，"
+            "无需读取、重算或重新发布报告。按内容分段，段间留空行。"
+            + style
+            + "所有财务数字及再次提及的数值都必须复制 completion_context 的 reference；"
+            "删除自行计算的数值、裸数字与阈值，不得用中文数词绕过。"
+            "占位符只显示数值和单位；比率前使用 calculations.name + 为，"
+            "不要以‘占…的’重写分子分母。只保留已有依据的判断，"
+            "删除新增的原因、主业利润或偿债能力断言。"
+        )
+    return None
+
+
 def finalize_financial_answer(content, state):
     """Render/validate agent references before both SSE final and history save."""
     report = state.get("financial_report_context")
     if not report:
         return content
+    detailed = wants_detailed_answer(state.get("financial_user_query"))
     if not state.get("financial_read"):
-        return (
-            render_summary(content, report)
-            + (
-                "\n\n详细数据、计算口径与原文依据见右侧报告，可下载完整报告。"
-                if is_published(report)
-                else "\n\n阶段性数据与分析进度可在右侧查看。"
-            )
-        )
+        return render_summary(content, report, detailed=detailed)
     references = set(REFERENCE.findall(content))
-    raw = json.dumps(
-        {
-            "answer": content,
-            "factIds": [ref for kind, ref in references if kind == "fact"],
-            "calculationIds": [
-                ref for kind, ref in references if kind == "calculation"
-            ],
-            "evidenceExcerptIds": [],
-            "insufficientEvidence": not references,
-        },
-        ensure_ascii=False,
-    )
+    if not references:
+        return "当前报告已提取的数据不足以回答这个问题。请结合原文或补充相关资料核对。"
     context = model_context(report)
     try:
-        answer = validate_answer(raw, context, report)
+        validate_answer_presentation(content, detailed=detailed)
+    except ValueError:
+        if is_published(report):
+            return report_summary(report)
+    try:
+        text = render_cited_answer(content, report, context=context)
     except ValueError:
         try:
-            answer = reference_only_answer(raw, context, report)
+            # Degraded prose is rebuilt from validated references, never from
+            # the rejected explanation or its numbers.
+            text = render_cited_answer(
+                "以下仅列出可核对的已保存数据：\n\n"
+                + "\n\n".join(
+                    "{{" + kind + ":" + ref + "}}"
+                    for kind, ref in sorted(references)[:6]
+                ),
+                report,
+                context=context,
+                include_labels=True,
+            )
         except ValueError:
             return "回答未通过数字或引用校验，请在右侧报告查看依据或重新提问。"
-    pages = sorted(
-        {
-            e["page"]
-            for e in report["evidence"]
-            if e["id"] in answer["evidenceExcerptIds"]
-        }
-    )
-    suffix = (
-        (
-            "\n\n来源：原 PDF 物理第 "
-            + "、".join(map(str, pages))
-            + " 页，可在右侧报告的证据中查看原文。"
-        )
-        if pages
-        else ""
-    )
-    return answer["answer"] + suffix
+    return text
 
 
 def make_financial_tools(

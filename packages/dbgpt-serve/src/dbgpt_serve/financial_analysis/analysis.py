@@ -154,7 +154,16 @@ def model_context(report):
     return result
 
 
-def _render_text(text, facts, calculations, used, periods=()):
+def _render_text(
+    text,
+    facts,
+    calculations,
+    used,
+    periods=(),
+    *,
+    render_reference=None,
+    metadata_labels=(),
+):
     if len(text) > 2500:
         raise ValueError("Text too long")
     # Accept an unambiguous shorthand only for an already declared calculation.
@@ -182,6 +191,11 @@ def _render_text(text, facts, calculations, used, periods=()):
 
     text = re.sub(r"\{\{period:([^{}]+)\}\}", period_reference, text)
     remainder = REFERENCE.sub("", text)
+    # Canonical calculation names may contain comparison years, e.g.
+    # "毛利率变动（2019 较 2018）". They are trusted labels, not model values.
+    for label in metadata_labels:
+        if label:
+            remainder = remainder.replace(label, "指标名称")
 
     def period_range(match):
         first, last = match.groups()
@@ -220,6 +234,8 @@ def _render_text(text, facts, calculations, used, periods=()):
             raise ValueError("Reference not declared")
         used.add((kind, ref))
         item = source[ref]
+        if render_reference is not None:
+            return render_reference(kind, ref, item)
         if kind == "fact":
             return (
                 f"{item['fiscalPeriod']} 年{item['metricName']} {item['displayValue']}"
@@ -238,7 +254,7 @@ def _validate_interpretation(text):
     observations can still compare the available facts and calculations.
     """
     text = REFERENCE.sub("指标引用", text)
-    for clause in re.split(r"[。；;！!?？]", text):
+    for clause in re.split(r"[，,。；;！!?？]|但是|不过|然而|但", text):
         if re.search(
             r"(?:缺少|缺乏|未提供|没有|无法|不能|尚不能|不足以|不代表|不等于)", clause
         ):

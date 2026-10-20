@@ -57,7 +57,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", attachment_ctx=None, agent_task_holder=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)
@@ -87,7 +89,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
 async def test_runtime_failure_emits_structured_final_and_done(
     monkeypatch, caplog
 ) -> None:
-    async def _failing_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _failing_stream_impl(
+        dialogue, tool_mode="full", attachment_ctx=None, agent_task_holder=None
+    ):
         del dialogue, tool_mode, agent_task_holder
         if False:
             yield ""
@@ -114,12 +118,13 @@ async def test_runtime_failure_emits_structured_final_and_done(
         {"type": "done"},
     ]
     assert "ReAct agent stream failed before normal completion" in caplog.text
+    assert "model stream failed" in caplog.text
 
 
 @pytest.mark.asyncio
 async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> None:
     async def _partially_failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None
+        dialogue, tool_mode="full", attachment_ctx=None, agent_task_holder=None
     ):
         del dialogue, tool_mode, agent_task_holder
         yield agentic_data_api._sse_event(
@@ -157,7 +162,9 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
         finally:
             task_finished.set()
 
-    async def _fake_stream_impl(dialogue, tool_mode="full", agent_task_holder=None):
+    async def _fake_stream_impl(
+        dialogue, tool_mode="full", attachment_ctx=None, agent_task_holder=None
+    ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)

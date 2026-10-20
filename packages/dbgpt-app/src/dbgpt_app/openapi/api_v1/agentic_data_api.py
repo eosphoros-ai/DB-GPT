@@ -8,10 +8,12 @@ import shutil
 import tempfile
 import uuid
 import zipfile
+from contextlib import aclosing
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
+import anyio
 from fastapi import (
     APIRouter,
     Body,
@@ -1114,7 +1116,9 @@ async def _cancel_and_await_agent_task(task: "asyncio.Task[Any]") -> None:
     if not was_done:
         task.cancel()
     try:
-        await task
+        # Disconnect cleanup runs inside Starlette's cancelled task group.
+        with anyio.CancelScope(shield=True):
+            await task
     except asyncio.CancelledError:
         pass
     except Exception:
@@ -1140,10 +1144,11 @@ async def _react_agent_stream(
             ``None`` for pure-text / legacy ``file_path`` requests).
     """
     try:
-        async for event in _react_agent_stream_inner(
-            dialogue, tool_mode, attachment_ctx
-        ):
-            yield event
+        async with aclosing(
+            _react_agent_stream_inner(dialogue, tool_mode, attachment_ctx)
+        ) as stream:
+            async for event in stream:
+                yield event
     finally:
         if attachment_ctx is not None:
             try:
@@ -1543,6 +1548,7 @@ async def _react_agent_stream_impl(
     # Step 3: Load knowledge space resource if specified in ext_info
     knowledge_resources: List[Any] = []
     knowledge_context = ""
+    wiki_available = False
     if knowledge_space:
         try:
             from dbgpt_serve.agent.resource.knowledge import (
@@ -1630,6 +1636,7 @@ async def _react_agent_stream_impl(
 """
 
     react_state: Dict[str, Any] = {
+        "financial_user_query": dialogue.user_input,
         "skills_loaded": True,  # Skills are pre-loaded now
         "matched": None,
         "skill_prompt": None,
@@ -2194,6 +2201,7 @@ print(json.dumps(summary, ensure_ascii=False))
     from dbgpt_app.openapi.api_v1.tools.financial_tools import (
         FINANCIAL_MAX_STEPS,
         finalize_financial_answer,
+        financial_answer_error,
         financial_completion_error,
         make_financial_tools,
     )
@@ -2919,6 +2927,14 @@ Thought/Action/Action Input format shown above.
                 error = await financial_completion_error(react_state)
                 if error:
                     return False, error
+                answer_error = financial_answer_error(
+                    extract_terminate_content(
+                        message.action_report.content or "", parser
+                    ),
+                    react_state,
+                )
+                if answer_error:
+                    return False, answer_error
             return await super().correctness_check(message)
 
     agent_builder = (
