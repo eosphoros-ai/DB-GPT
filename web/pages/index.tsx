@@ -1379,7 +1379,10 @@ const Playground: NextPage = () => {
     sendInFlightRef.current = false;
     setPendingApprovals([]);
     exampleRunInFlightRef.current = false;
-    abortInFlightChat();
+    // Parallel tasks: do NOT abort the in-flight stream — drop the handle so
+    // the stop button targets only the active session while the old SSE
+    // keeps pumping in the background until its own finally clears badges.
+    chatAbortControllerRef.current = null;
     historyAbortControllerRef.current?.abort();
     historyAbortControllerRef.current = null;
     exampleAbortControllerRef.current?.abort();
@@ -1444,30 +1447,10 @@ const Playground: NextPage = () => {
 
   useNewTaskOwner(resetTaskSession);
 
-  // A new-task command issued while a turn is streaming (or an example run is
-  // still preparing) is destructive — it aborts the request and discards the
-  // round — so gate it behind an explicit confirmation. Idle sessions resolve
-  // synchronously and never see the dialog.
-  const confirmInterruptRunningTask = useCallback((): boolean | Promise<boolean> => {
-    if (!sendInFlightRef.current && !exampleRunInFlightRef.current) return true;
-    return new Promise<boolean>(resolve => {
-      let settled = false;
-      const settle = (confirmed: boolean) => {
-        if (settled) return;
-        settled = true;
-        resolve(confirmed);
-      };
-      Modal.confirm({
-        title: t('new_task_interrupt_title'),
-        content: t('new_task_interrupt_content'),
-        okText: t('new_task_interrupt_ok'),
-        cancelText: t('cancel'),
-        okButtonProps: { danger: true },
-        onOk: () => settle(true),
-        onCancel: () => settle(false),
-      });
-    });
-  }, [t]);
+  // Tasks run in parallel: starting a new task detaches the in-flight stream
+  // (it keeps running in the background, sidebar badge spinning) instead of
+  // interrupting it, so no confirmation is needed anymore.
+  const confirmInterruptRunningTask = useCallback((): boolean => true, []);
   useNewTaskGuard(confirmInterruptRunningTask);
 
   const startNewTask = useStartNewTask();
@@ -3438,18 +3421,25 @@ const Playground: NextPage = () => {
           if (!content) continue;
           accumulated += content;
           const parsedStream = parseTaskflowStream(accumulated);
-          if (taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId) return;
-          syncSteps(parsedStream.markers, false);
-          // Keep the RAW text (markers included) in the message: the flow run
-          // card parses per-node sections from it; markers never render as-is.
-          setMessages(prev =>
-            prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: true } : m)),
-          );
+          // Detached (background) flow streams keep pumping so the server
+          // run continues; only the UI apply is skipped for stale sessions.
+          const staleStream = taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId;
+          if (!staleStream) {
+            syncSteps(parsedStream.markers, false);
+            // Keep the RAW text (markers included) in the message: the flow
+            // run card parses per-node sections from it; markers never
+            // render as-is.
+            setMessages(prev =>
+              prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: true } : m)),
+            );
+          }
         }
       }
       const parsedStream = parseTaskflowStream(accumulated);
-      syncSteps(parsedStream.markers, true);
-      setMessages(prev => prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: false } : m)));
+      if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
+        syncSteps(parsedStream.markers, true);
+        setMessages(prev => prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: false } : m)));
+      }
     } catch (e: any) {
       if (e?.name !== 'AbortError') {
         setMessages(prev =>
@@ -3989,135 +3979,152 @@ const Playground: NextPage = () => {
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
                   <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
-                  {rounds.map((round, roundIndex) => {
-                    const isLastRound = roundIndex === rounds.length - 1;
-                    const isSelected = round.viewMsg?.id === selectedViewMsgId;
-                    const isCurrentRoundCollapsed = !isLastRound && !isSelected;
+                    {rounds.map((round, roundIndex) => {
+                      const isLastRound = roundIndex === rounds.length - 1;
+                      const isSelected = round.viewMsg?.id === selectedViewMsgId;
+                      const isCurrentRoundCollapsed = !isLastRound && !isSelected;
 
-                    const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
-                    const {
-                      sections,
-                      activeStep: _activeStep,
-                      outputs: _outputs,
-                      stepThoughts,
-                    } = convertToManusFormat(execution, round.humanMsg?.context, t);
-                    const isWorking =
-                      (isLastRound &&
-                        (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
-                      false;
+                      const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
+                      const {
+                        sections,
+                        activeStep: _activeStep,
+                        outputs: _outputs,
+                        stepThoughts,
+                      } = convertToManusFormat(execution, round.humanMsg?.context, t);
+                      const isWorking =
+                        (isLastRound &&
+                          (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
+                        false;
 
-                    const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
-                    const roundAssistantText = isPresentingThisRound
-                      ? streamingSummary
-                      : round.viewMsg?.context || undefined;
-                    const roundCitations = round.viewMsg?.citations || [];
+                      const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
+                      const roundAssistantText = isPresentingThisRound
+                        ? streamingSummary
+                        : round.viewMsg?.context || undefined;
+                      const roundCitations = round.viewMsg?.citations || [];
 
-                    // DSH-style timeline view (default on; set
-                    // __db_gpt_timeline_view=off to fall back to the
-                    // card list inside ManusLeftPanel).
-                    const useTimelineView =
-                      typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off';
-                    const timelineBlocks = useTimelineView
-                      ? stepsToTimelineBlocks(execution?.steps ?? [], stepThoughts, execution?.outputs)
-                      : [];
-                    const roundArtifacts: StreamArtifact[] =
-                      useTimelineView && execution && hasArtifactOutputs(execution)
-                        ? buildArtifactsFromExecution(
-                            round.viewMsg!.id,
-                            execution,
-                            undefined,
-                            undefined,
-                            round.viewMsg!.context,
-                          ).map(a => ({
-                            id: a.id,
-                            type: a.type,
-                            name: a.name,
-                            size: a.size,
-                            content: a.content,
-                            stepId: a.stepId,
-                            tier: a.tier,
-                          }))
+                      // DSH-style timeline view (default on; set
+                      // __db_gpt_timeline_view=off to fall back to the
+                      // card list inside ManusLeftPanel).
+                      const useTimelineView =
+                        typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off';
+                      const timelineBlocks = useTimelineView
+                        ? stepsToTimelineBlocks(execution?.steps ?? [], stepThoughts, execution?.outputs)
                         : [];
-                    const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
-                    const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
+                      const roundArtifacts: StreamArtifact[] =
+                        useTimelineView && execution && hasArtifactOutputs(execution)
+                          ? buildArtifactsFromExecution(
+                              round.viewMsg!.id,
+                              execution,
+                              undefined,
+                              undefined,
+                              round.viewMsg!.context,
+                            ).map(a => ({
+                              id: a.id,
+                              type: a.type,
+                              name: a.name,
+                              size: a.size,
+                              content: a.content,
+                              stepId: a.stepId,
+                              tier: a.tier,
+                            }))
+                          : [];
+                      const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
+                      const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
 
-                    return (
-                      <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
-                        <ManusLeftPanel
-                          key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
-                          sections={useTimelineView ? [] : sections}
-                          answerSeparated={useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0)}
-                          timelineSlot={
-                            // Flow rounds render their own node chain + node
-                            // cards via FlowRunView; the generic agent timeline
-                            // would duplicate the DSL-node steps.
-                            useTimelineView &&
-                            !round.viewMsg?.flowRun &&
-                            (timelineBlocks.length > 0 || roundArtifacts.length > 0) ? (
-                              <div className='flex flex-col'>
-                                {roundIntent && (
-                                  <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
-                                    <AimOutlined className='text-[#8b8b84] flex-none' />
-                                    <span className='truncate'>{roundIntent}</span>
-                                    {roundCount > 0 && (
-                                      <span className='flex-none text-xs font-normal text-[#8b8b84] dark:text-[#7c7972]'>
-                                        {t('round_count_suffix', { count: roundCount })}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                                {timelineBlocks.length > 0 && (
-                                  <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
-                                )}
-                                <ArtifactCards
-                                  artifacts={roundArtifacts}
-                                  onPreview={handlePreviewStreamArtifact}
-                                  onSkillAdd={handleSkillAdd}
-                                  onSkillDownload={handleSkillZipDownload}
-                                />
-                              </div>
-                            ) : undefined
-                          }
-                          flowRun={
-                            round.viewMsg?.flowRun
-                              ? {
-                                  label: round.viewMsg.flowRun.label,
-                                  running: !!round.viewMsg.thinking,
-                                  done: execution?.steps.filter(s => s.status === 'done').length ?? 0,
-                                  total: execution?.steps.length ?? 0,
-                                }
-                              : undefined
-                          }
-                          subAgentSlot={
-                            execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
-                              <SubAgentSection
-                                subAgents={execution.subAgents}
-                                artifactCount={execution.subAgentArtifacts}
-                                activeSubAgentId={
-                                  isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
-                                    ? activeSubAgent.agentId
-                                    : null
-                                }
-                                onSubAgentClick={agentId => {
-                                  if (round.viewMsg?.id) {
-                                    setActiveViewMsgId(round.viewMsg.id);
-                                    setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                      return (
+                        <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
+                          <ManusLeftPanel
+                            key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
+                            sections={useTimelineView ? [] : sections}
+                            answerSeparated={
+                              useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0)
+                            }
+                            timelineSlot={
+                              // Flow rounds render their own node chain + node
+                              // cards via FlowRunView; the generic agent timeline
+                              // would duplicate the DSL-node steps.
+                              useTimelineView &&
+                              !round.viewMsg?.flowRun &&
+                              (timelineBlocks.length > 0 || roundArtifacts.length > 0) ? (
+                                <div className='flex flex-col'>
+                                  {roundIntent && (
+                                    <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+                                      <AimOutlined className='text-[#8b8b84] flex-none' />
+                                      <span className='truncate'>{roundIntent}</span>
+                                      {roundCount > 0 && (
+                                        <span className='flex-none text-xs font-normal text-[#8b8b84] dark:text-[#7c7972]'>
+                                          {t('round_count_suffix', { count: roundCount })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {timelineBlocks.length > 0 && (
+                                    <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
+                                  )}
+                                  <ArtifactCards
+                                    artifacts={roundArtifacts}
+                                    onPreview={handlePreviewStreamArtifact}
+                                    onSkillAdd={handleSkillAdd}
+                                    onSkillDownload={handleSkillZipDownload}
+                                  />
+                                </div>
+                              ) : undefined
+                            }
+                            flowRun={
+                              round.viewMsg?.flowRun
+                                ? {
+                                    label: round.viewMsg.flowRun.label,
+                                    running: !!round.viewMsg.thinking,
+                                    done: execution?.steps.filter(s => s.status === 'done').length ?? 0,
+                                    total: execution?.steps.length ?? 0,
                                   }
-                                  setRailDebug(true);
-                                  setRightPanelView('execution');
-                                  setRightPanelCollapsed(false);
-                                }}
-                              />
-                            ) : undefined
-                          }
-                          activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
-                          onStepClick={(stepId, _sectionId) => {
-                            if (round.viewMsg?.id) {
-                              setActiveViewMsgId(round.viewMsg.id);
-                              setSelectedStepId(stepId);
-                              // Timeline view expands step details inline in
-                              // the stream; the rail stays an artifact viewer.
-                              if (useTimelineView) {
+                                : undefined
+                            }
+                            subAgentSlot={
+                              execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                                <SubAgentSection
+                                  subAgents={execution.subAgents}
+                                  artifactCount={execution.subAgentArtifacts}
+                                  activeSubAgentId={
+                                    isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                      ? activeSubAgent.agentId
+                                      : null
+                                  }
+                                  onSubAgentClick={agentId => {
+                                    if (round.viewMsg?.id) {
+                                      setActiveViewMsgId(round.viewMsg.id);
+                                      setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                    }
+                                    setRailDebug(true);
+                                    setRightPanelView('execution');
+                                    setRightPanelCollapsed(false);
+                                  }}
+                                />
+                              ) : undefined
+                            }
+                            activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
+                            onStepClick={(stepId, _sectionId) => {
+                              if (round.viewMsg?.id) {
+                                setActiveViewMsgId(round.viewMsg.id);
+                                setSelectedStepId(stepId);
+                                // Timeline view expands step details inline in
+                                // the stream; the rail stays an artifact viewer.
+                                if (useTimelineView) {
+                                  setExecutionMap(prev => ({
+                                    ...prev,
+                                    [round.viewMsg!.id!]: {
+                                      ...prev[round.viewMsg!.id!],
+                                      activeStepId: stepId,
+                                    },
+                                  }));
+                                  return;
+                                }
+                                // Clicking a main-agent step exits the sub-agent
+                                // process view, so the right panel shows this step.
+                                setActiveSubAgent(null);
+                                setRailDebug(true);
+                                setRightPanelView('execution');
+                                setRightPanelCollapsed(false);
                                 setExecutionMap(prev => ({
                                   ...prev,
                                   [round.viewMsg!.id!]: {
@@ -4125,124 +4132,109 @@ const Playground: NextPage = () => {
                                     activeStepId: stepId,
                                   },
                                 }));
-                                return;
                               }
-                              // Clicking a main-agent step exits the sub-agent
-                              // process view, so the right panel shows this step.
-                              setActiveSubAgent(null);
-                              setRailDebug(true);
-                              setRightPanelView('execution');
-                              setRightPanelCollapsed(false);
-                              setExecutionMap(prev => ({
-                                ...prev,
-                                [round.viewMsg!.id!]: {
-                                  ...prev[round.viewMsg!.id!],
-                                  activeStepId: stepId,
-                                },
-                              }));
+                            }}
+                            isWorking={isWorking}
+                            userQuery={round.humanMsg?.context}
+                            attachedFiles={round.humanMsg?.attachedFiles}
+                            attachedKnowledge={round.humanMsg?.attachedKnowledge}
+                            attachedSkill={round.humanMsg?.attachedSkill}
+                            attachedDb={round.humanMsg?.attachedDb}
+                            taskPlan={round.viewMsg?.taskPlan}
+                            attachedConnectors={round.humanMsg?.attachedConnectors}
+                            assistantText={roundAssistantText}
+                            isAssistantStreaming={
+                              (isPresentingThisRound && !_summaryComplete) ||
+                              (!!round.viewMsg?.thinking && !!roundAssistantText)
                             }
-                          }}
-                          isWorking={isWorking}
-                          userQuery={round.humanMsg?.context}
-                          attachedFiles={round.humanMsg?.attachedFiles}
-                          attachedKnowledge={round.humanMsg?.attachedKnowledge}
-                          attachedSkill={round.humanMsg?.attachedSkill}
-                          attachedDb={round.humanMsg?.attachedDb}
-                          taskPlan={round.viewMsg?.taskPlan}
-                          attachedConnectors={round.humanMsg?.attachedConnectors}
-                          assistantText={roundAssistantText}
-                          isAssistantStreaming={
-                            (isPresentingThisRound && !_summaryComplete) ||
-                            (!!round.viewMsg?.thinking && !!roundAssistantText)
-                          }
-                          citationIndexes={roundCitations.map(citation => citation.index)}
-                          onReferencesClick={
-                            roundCitations.length > 0
-                              ? () => {
-                                  if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                                  setSelectedCitationIndex(roundCitations[0].index);
-                                  setRailDebug(true);
-                                  setRightPanelView('references');
-                                  setRightPanelCollapsed(false);
+                            citationIndexes={roundCitations.map(citation => citation.index)}
+                            onReferencesClick={
+                              roundCitations.length > 0
+                                ? () => {
+                                    if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                    setSelectedCitationIndex(roundCitations[0].index);
+                                    setRailDebug(true);
+                                    setRightPanelView('references');
+                                    setRightPanelCollapsed(false);
+                                  }
+                                : undefined
+                            }
+                            stepThoughts={stepThoughts}
+                            artifacts={useTimelineView ? [] : artifacts.filter(a => a.messageId === round.viewMsg?.id)}
+                            onArtifactClick={artifact => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setRightPanelCollapsed(false);
+                              if (artifact.type === 'html') {
+                                setPreviewArtifact(artifact as Artifact);
+                                setRightPanelView('html-preview');
+                              } else if (artifact.type === 'code' && artifact.stepId) {
+                                setSelectedStepId(artifact.stepId);
+                                setRailDebug(true);
+                                setRightPanelView('execution');
+                                if (round.viewMsg?.id && execution) {
+                                  setExecutionMap(prev => ({
+                                    ...prev,
+                                    [round.viewMsg!.id!]: {
+                                      ...prev[round.viewMsg!.id!],
+                                      activeStepId: artifact.stepId!,
+                                    },
+                                  }));
                                 }
-                              : undefined
-                          }
-                          stepThoughts={stepThoughts}
-                          artifacts={useTimelineView ? [] : artifacts.filter(a => a.messageId === round.viewMsg?.id)}
-                          onArtifactClick={artifact => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setRightPanelCollapsed(false);
-                            if (artifact.type === 'html') {
-                              setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('html-preview');
-                            } else if (artifact.type === 'code' && artifact.stepId) {
-                              setSelectedStepId(artifact.stepId);
-                              setRailDebug(true);
-                              setRightPanelView('execution');
-                              if (round.viewMsg?.id && execution) {
-                                setExecutionMap(prev => ({
-                                  ...prev,
-                                  [round.viewMsg!.id!]: {
-                                    ...prev[round.viewMsg!.id!],
-                                    activeStepId: artifact.stepId!,
-                                  },
-                                }));
-                              }
-                            } else if (artifact.type === 'file') {
-                              // Image file artifacts: preview instead of download
-                              if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                              } else if (artifact.type === 'file') {
+                                // Image file artifacts: preview instead of download
+                                if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                                  setPreviewArtifact(artifact as Artifact);
+                                  setRightPanelView('image-preview');
+                                } else {
+                                  downloadArtifact(artifact as Artifact);
+                                }
+                              } else if (artifact.type === 'image') {
                                 setPreviewArtifact(artifact as Artifact);
                                 setRightPanelView('image-preview');
-                              } else {
-                                downloadArtifact(artifact as Artifact);
                               }
-                            } else if (artifact.type === 'image') {
-                              setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
-                            }
-                          }}
-                          onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
-                          onViewAllFiles={() => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setRightPanelCollapsed(false);
-                            setRightPanelView('files');
-                          }}
-                          isCollapsed={isCurrentRoundCollapsed}
-                          onExpand={() => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          }}
-                        />
-                      </React.Fragment>
-                    );
-                  })}
-                  {streamStatus && (
-                    <div className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'>
-                      {streamStatus.running ? (
-                        <LoadingOutlined spin className='text-blue-500' />
-                      ) : (
-                        <CheckCircleFilled className='text-emerald-500' />
-                      )}
-                      <span className='tabular-nums'>{streamStatus.text}</span>
-                    </div>
-                  )}
-                  {/* Conversation-completion artifact summary: everything
+                            }}
+                            onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
+                            onViewAllFiles={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setRightPanelCollapsed(false);
+                              setRightPanelView('files');
+                            }}
+                            isCollapsed={isCurrentRoundCollapsed}
+                            onExpand={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            }}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
+                    {streamStatus && (
+                      <div className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'>
+                        {streamStatus.running ? (
+                          <LoadingOutlined spin className='text-blue-500' />
+                        ) : (
+                          <CheckCircleFilled className='text-emerald-500' />
+                        )}
+                        <span className='tabular-nums'>{streamStatus.text}</span>
+                      </div>
+                    )}
+                    {/* Conversation-completion artifact summary: everything
                       produced across all rounds, surfaced again at the end
                       so finished conversations keep a visible deliverable
                       list (mid-stream cards stay where they were made). */}
-                  {convArtifacts.some(a => a.type !== 'summary') && (
-                    <div className='mt-4 mb-2'>
-                      <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
-                        <InboxOutlined />
-                        <span>对话产物 · {convArtifacts.filter(a => a.type !== 'summary').length}</span>
+                    {convArtifacts.some(a => a.type !== 'summary') && (
+                      <div className='mt-4 mb-2'>
+                        <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
+                          <InboxOutlined />
+                          <span>对话产物 · {convArtifacts.filter(a => a.type !== 'summary').length}</span>
+                        </div>
+                        <ArtifactCards
+                          artifacts={convArtifacts.filter(a => a.type !== 'summary')}
+                          onPreview={handlePreviewStreamArtifact}
+                          onSkillAdd={handleSkillAdd}
+                          onSkillDownload={handleSkillZipDownload}
+                        />
                       </div>
-                      <ArtifactCards
-                        artifacts={convArtifacts.filter(a => a.type !== 'summary')}
-                        onPreview={handlePreviewStreamArtifact}
-                        onSkillAdd={handleSkillAdd}
-                        onSkillDownload={handleSkillZipDownload}
-                      />
-                    </div>
-                  )}
+                    )}
                   </div>
                 </div>
 
