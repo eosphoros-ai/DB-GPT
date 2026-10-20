@@ -36,6 +36,8 @@ SELECTABLE_TOOLS = [
     "knowledge_retrieve",
     "html_interpreter",
     "shell_interpreter",
+    "web_search",
+    "web_fetch",
 ]
 #: Factory tools attached automatically when skills are selected.
 SKILL_TOOLS = ["load_skill", "execute_skill_script_file"]

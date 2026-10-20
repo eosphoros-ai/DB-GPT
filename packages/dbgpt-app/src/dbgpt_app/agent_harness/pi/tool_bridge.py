@@ -72,7 +72,14 @@ def push_conv_event(conv_id: str, payload: Dict[str, Any]) -> bool:
 #: Tools exposed to pi when their prerequisite resource is selected.
 #: Execution-class pi built-ins stay excluded; these run server-side
 #: inside DB-GPT's sandbox/connector containment.
-_CORE_TOOLS = ("sql_query", "code_interpreter", "shell_interpreter", "html_interpreter")
+_CORE_TOOLS = (
+    "sql_query",
+    "code_interpreter",
+    "shell_interpreter",
+    "html_interpreter",
+    "web_search",
+    "web_fetch",
+)
 
 
 def _make_get_skill_resource(system_app: Any) -> Any:

@@ -369,9 +369,12 @@ def make_react_tools(
     # context and cleanup cannot drift between main and sub-agent paths.
     from ..tools.code_interpreter import make_code_interpreter
     from ..tools.shell_interpreter import make_shell_interpreter
+    from ..tools.web_tools import make_web_fetch, make_web_search
 
     code_interpreter = make_code_interpreter(react_state)
     shell_interpreter = make_shell_interpreter(react_state)
+    web_search = make_web_search()
+    web_fetch = make_web_fetch()
 
     @tool(
         description="执行技能scripts目录下的脚本文件。参数: "
@@ -901,4 +904,6 @@ def make_react_tools(
         "shell_interpreter": shell_interpreter,
         "execute_skill_script_file": execute_skill_script_file,
         "html_interpreter": html_interpreter,
+        "web_search": web_search,
+        "web_fetch": web_fetch,
     }
