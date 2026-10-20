@@ -64,6 +64,10 @@
   .chip.bad { color: var(--danger); border-color: #f3c9c9; background: #fef2f2; }
   .obs { margin: 6px 0 2px; padding: 8px 12px; border-left: 2px solid var(--line); color: var(--ink-3); font-size: 12.5px; font-style: italic; background: var(--hover); border-radius: 0 6px 6px 0; }
   .obs b { font-style: normal; color: var(--ink-2); }
+  .qrecap { margin: 8px 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 12px 16px; box-shadow: var(--shadow); }
+  .qrecap-item + .qrecap-item { margin-top: 10px; }
+  .qrecap .q { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+  .qrecap .a { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
   .statusline { margin-top: 20px; display: flex; gap: 8px; align-items: center; color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--line-2); padding-top: 12px; }
   .statusline .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); animation: pulse 1.2s infinite; }
   .statusline.run .dot { background: var(--ok); }
@@ -676,8 +680,9 @@ function render() {
     if (st === "denied") tl += `<div class="obs"><b>observation 回灌模型：</b>[policy] ${c.approval.tool} 被安全策略拦截（规则：${c.approval.denyRule}）。改用替代方案或向用户说明为何不可行。</div>`;
   }
   if (c.question) {
-    const qchip = (QS.done) ? ["ok", "已回复"] : (QS.skipped ? ["", "已跳过"] : ["warn", "待回复"]);
-    tl += `<div class="trow">${ICON_Q}<span class="name">question</span><span class="gist">${c.question.pages[0].title}</span><span class="chip ${qchip[0]}">${qchip[1]}</span></div>`;
+    tl += `<div class="qrecap" data-an="question 回顾卡：问+答留在对话流（pending 显示等待回复）">${c.question.pages
+      .map((pg, pi) => `<div class="qrecap-item"><div class="q">${pg.title}</div><div class="a">${QS.skipped ? "已跳过 / 未回答" : QS.done ? (QS.sel[pi] != null ? pg.opts[QS.sel[pi]].lab : "") : "等待回复…"}</div></div>`)
+      .join("")}</div>`;
   }
   if (st === "approved" && c.approval) tl += rowsHtml(c.postRows);
   if (QS && QS.done && c.question && S.case === "D") tl += rowsHtml(c.postRows);
