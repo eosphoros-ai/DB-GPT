@@ -4,7 +4,8 @@ import asyncio
 import dataclasses
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from contextvars import ContextVar
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
@@ -16,6 +17,29 @@ from ...resource.base import AgentResource, Resource, ResourceType
 from ...resource.tool.pack import ToolPack
 
 logger = logging.getLogger(__name__)
+
+
+# ── Human-in-the-loop tool approval gate ────────────────────────────────────
+# The agentic API layer installs a per-conversation gate (risk policy classify
+# + ApprovalCenter wait) via this ContextVar before spawning the agent task.
+# ``run_tool`` consults it before executing any tool; a non-None return value
+# short-circuits execution and is fed back to the model as the tool
+# observation (policy-deny / user-reject / timeout wording).
+ToolGate = Callable[[str, dict], Awaitable[Optional[str]]]
+
+_CURRENT_TOOL_GATE: ContextVar[Optional[ToolGate]] = ContextVar(
+    "dbgpt_current_tool_gate", default=None
+)
+
+
+def set_current_tool_gate(gate: Optional[ToolGate]):
+    """Install the approval gate for the current async context (returns token)."""
+    return _CURRENT_TOOL_GATE.set(gate)
+
+
+def reset_current_tool_gate(token) -> None:
+    """Restore the previous gate binding."""
+    _CURRENT_TOOL_GATE.reset(token)
 
 
 class ToolInput(BaseModel):
@@ -209,6 +233,11 @@ async def run_tool(
             missing_required = [
                 k for k, v in arg_spec.items() if getattr(v, "required", False)
             ]
+        gate = _CURRENT_TOOL_GATE.get()
+        gate_observation: Optional[str] = None
+        if gate is not None and not missing_required:
+            gate_observation = await gate(name, args)
+
         if missing_required:
             response_success = False
             status = Status.FAILED.value
@@ -221,6 +250,15 @@ async def run_tool(
             )
             logger.warning(err_msg)
             tool_result = err_msg
+        elif gate_observation is not None:
+            # Approval gate blocked the call (policy deny / user reject /
+            # confirmation timeout). The observation tells the model not to
+            # retry the same operation verbatim.
+            response_success = False
+            status = Status.FAILED.value
+            err_msg = None
+            tool_result = gate_observation
+            logger.info("Tool [%s] blocked by approval gate", name)
         else:
             try:
                 tool_result = await tool_pack.async_execute(resource_name=name, **args)

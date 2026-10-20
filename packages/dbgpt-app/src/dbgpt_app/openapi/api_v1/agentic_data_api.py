@@ -3614,6 +3614,19 @@ ordering. The registered tools and backend validation remain authoritative.
             historical_dialogues=historical_dialogues,
         )
 
+    # ── Tool approval gate (human-in-the-loop confirm for high-risk tools) ──
+    # Installed via ContextVar before the agent task spawns so every run_tool
+    # in this round (including sub-agent tasks) consults the policy gate.
+    from dbgpt.agent.expand.actions.tool_action import (
+        reset_current_tool_gate,
+        set_current_tool_gate,
+    )
+    from dbgpt_app.openapi.api_v1.approval import make_approval_gate
+
+    _approval_gate_token = set_current_tool_gate(
+        make_approval_gate(conv_id, stream_callback)
+    )
+
     agent_task = asyncio.create_task(run_bounded_generation(react_state, run_agent))
     if agent_task_holder is not None:
         agent_task_holder.append(agent_task)
@@ -3686,6 +3699,7 @@ ordering. The registered tools and backend validation remain authoritative.
 
     while True:
         if agent_task.done() and stream_queue.empty():
+            reset_current_tool_gate(_approval_gate_token)
             break
         try:
             event = await asyncio.wait_for(stream_queue.get(), timeout=0.1)
@@ -3700,6 +3714,9 @@ ordering. The registered tools and backend validation remain authoritative.
             yield _sse_event(event)
         elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
+            yield _sse_event(event)
+        elif event_type in ("approval.requested", "approval.resolved"):
+            # Forward tool-approval (high-risk confirm) events to frontend.
             yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
             # Forward human-in-the-loop question events to frontend as-is.
@@ -4758,6 +4775,48 @@ async def question_reject(
         return Result.succ({"success": True, "request_id": request_id})
     except (KeyError, ValueError) as e:
         return Result.failed(msg=str(e))
+
+
+# ── Human-in-the-Loop Tool Approval API ─────────────────────────────────────
+
+
+class _ApprovalResolveBody(_BaseModel):
+    decision: str  # approve | reject
+    scope: str = "once"  # once | session | always
+    reason: Optional[str] = None
+
+
+@router.post("/v1/chat/approval/{approval_id}/resolve", response_model=Result)
+async def approval_resolve(
+    approval_id: str,
+    body: _ApprovalResolveBody,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """User decides on a pending high-risk tool call, unblocking the gate."""
+    from dbgpt_app.openapi.api_v1.approval import approval_center
+
+    if body.decision not in ("approve", "approved", "reject", "rejected"):
+        return Result.failed(msg=f"invalid decision: {body.decision}")
+    if body.scope not in ("once", "session", "always"):
+        return Result.failed(msg=f"invalid scope: {body.scope}")
+    decision = "approved" if body.decision.startswith("approve") else "rejected"
+    ok = approval_center.resolve(approval_id, decision, body.scope, body.reason)
+    if not ok:
+        return Result.failed(msg=f"approval {approval_id} is not pending")
+    return Result.succ(
+        {"success": True, "approval_id": approval_id, "decision": decision}
+    )
+
+
+@router.get("/v1/chat/approval/pending", response_model=Result)
+async def approval_pending(
+    con_uid: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """List pending approvals for a conversation (page-refresh recovery)."""
+    from dbgpt_app.openapi.api_v1.approval import approval_center
+
+    return Result.succ(approval_center.pending_for(con_uid))
 
 
 # Harness engine endpoints (engine availability for the settings UI).
