@@ -8,9 +8,12 @@ from dbgpt_app.openapi.api_v1.approval import (
     TIER_AUTO,
     TIER_CONFIRM,
     TIER_DENY,
+    INTENT_FALLBACK_BULLETS,
     ApprovalCenter,
     ToolRiskPolicy,
     make_approval_gate,
+    parse_intent_bullets,
+    push_intent,
 )
 
 
@@ -236,3 +239,41 @@ def test_shell_composition_rules(cmd, tier, rule):
         tier,
         rule,
     )
+
+
+def test_parse_intent_bullets_json_and_lines():
+    assert parse_intent_bullets('["a **x**", "b"]') == ["a **x**", "b"]
+    assert parse_intent_bullets("1. first\n- second\n") == ["first", "second"]
+    assert parse_intent_bullets("") == []
+    assert parse_intent_bullets("not json at all") == ["not json at all"]
+
+
+def test_push_intent_fallback_on_analyzer_error():
+    center = ApprovalCenter()
+    pa = center.register("c1", "shell_interpreter", {"command": "pkill x"}, "r")
+    events = []
+
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    async def bad_analyzer(tool, args):
+        raise RuntimeError("llm down")
+
+    asyncio.run(push_intent(pa, cb, bad_analyzer))
+    assert events[0][0] == "approval.intent"
+    assert events[0][1]["bullets"] == INTENT_FALLBACK_BULLETS
+
+
+def test_push_intent_passes_analyzer_bullets():
+    center = ApprovalCenter()
+    pa = center.register("c1", "shell_interpreter", {"command": "pkill x"}, "r")
+    events = []
+
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    async def good_analyzer(tool, args):
+        return ["将**强制终止**匹配进程"]
+
+    asyncio.run(push_intent(pa, cb, good_analyzer))
+    assert events[0][1]["bullets"] == ["将**强制终止**匹配进程"]

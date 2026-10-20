@@ -3621,10 +3621,17 @@ ordering. The registered tools and backend validation remain authoritative.
         reset_current_tool_gate,
         set_current_tool_gate,
     )
-    from dbgpt_app.openapi.api_v1.approval import make_approval_gate
+    from dbgpt_app.openapi.api_v1.approval import (
+        make_approval_gate,
+        make_intent_analyzer,
+    )
 
     _approval_gate_token = set_current_tool_gate(
-        make_approval_gate(conv_id, stream_callback)
+        make_approval_gate(
+            conv_id,
+            stream_callback,
+            intent_analyzer=make_intent_analyzer(llm_client, dialogue.model_name),
+        )
     )
 
     agent_task = asyncio.create_task(run_bounded_generation(react_state, run_agent))
@@ -3715,11 +3722,15 @@ ordering. The registered tools and backend validation remain authoritative.
         elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
-        elif event_type in ("approval.requested", "approval.resolved"):
-            # Forward tool-approval (high-risk confirm) events to frontend.
-            yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
             # Forward human-in-the-loop question events to frontend as-is.
+            yield _sse_event(event)
+        elif event_type in (
+            "approval.requested",
+            "approval.resolved",
+            "approval.intent",
+        ):
+            # Forward tool-approval (high-risk confirm) events to frontend.
             yield _sse_event(event)
         elif event_type in (
             "agent.start",

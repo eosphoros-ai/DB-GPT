@@ -28,6 +28,18 @@ const SCOPE_OPTIONS = [
   { value: 'always', label: '始终 always' },
 ];
 
+/** Render intent bullets; **phrase** segments become red-bold risk highlights. */
+const renderBullet = (text: string) =>
+  text.split(/\*\*(.+?)\*\*/g).map((seg, i) =>
+    i % 2 === 1 ? (
+      <b key={i} className='font-semibold text-[#dc2626] dark:text-red-400'>
+        {seg}
+      </b>
+    ) : (
+      <React.Fragment key={i}>{seg}</React.Fragment>
+    ),
+  );
+
 const ApprovalCard: React.FC<{
   approval: PendingApproval;
   onResolve: ApprovalDockProps['onResolve'];
@@ -49,6 +61,24 @@ const ApprovalCard: React.FC<{
         <pre className='whitespace-pre-wrap break-all rounded-lg border border-[#efefeb] bg-[#f6f6f2] p-3 font-mono text-[12px] leading-[1.7] dark:border-[#33353b] dark:bg-[#17181c]'>
           {approval.args_preview}
         </pre>
+        {approval.intent && approval.intent.length > 0 ? (
+          <ul className='mt-3 space-y-1.5'>
+            {approval.intent.map((b, i) => (
+              <li
+                key={i}
+                className='flex gap-2 text-[13px] leading-6 text-gray-600 dark:text-gray-300'
+              >
+                <span className='mt-[9px] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gray-300 dark:bg-gray-600' />
+                <span>{renderBullet(b)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className='mt-3 flex items-center gap-2 text-[13px] text-gray-400'>
+            <span className='h-3 w-3 animate-spin rounded-full border-2 border-gray-200 border-t-red-500' />
+            正在分析命令意图…
+          </div>
+        )}
         <div className='mt-2 flex flex-wrap gap-3 text-[12px] text-gray-400'>
           <span>命中规则 {approval.rule_id}</span>
           <span>confirm 档</span>
@@ -78,7 +108,9 @@ const ApprovalCard: React.FC<{
             {confirmingReject ? '确认拒绝' : '拒绝'}
           </button>
           <button
-            className='h-8 rounded-lg bg-[#1c1c1a] px-4 text-[13px] text-white hover:bg-black dark:bg-white dark:text-black'
+            className='h-8 rounded-lg bg-[#1c1c1a] px-4 text-[13px] text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-black'
+            disabled={!approval.intent || approval.intent.length === 0}
+            title={!approval.intent || approval.intent.length === 0 ? '意图分析到达前不可允许' : undefined}
             onClick={() => onResolve(approval.approval_id, 'approve', scope)}
           >
             允许

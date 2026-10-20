@@ -383,7 +383,9 @@ def register_harness_endpoints(router: Any) -> None:
             approval_mode,
             approval_ttl_seconds,
             deny_observation,
+            get_intent_analyzer,
             preview_args,
+            push_intent,
         )
 
         if x_approval_token:
@@ -421,6 +423,13 @@ def register_harness_endpoints(router: Any) -> None:
                     pa.approval_id,
                     name,
                 )
+                analyzer = get_intent_analyzer()
+                if analyzer is not None:
+
+                    async def _push_side(event_type: str, payload: Dict[str, Any]):
+                        tool_bridge.push_conv_event(conv_id, payload)
+
+                    asyncio.ensure_future(push_intent(pa, _push_side, analyzer))
                 return Result.succ(
                     {
                         "approval": True,

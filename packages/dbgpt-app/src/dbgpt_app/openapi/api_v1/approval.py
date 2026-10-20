@@ -433,6 +433,133 @@ approval_center = ApprovalCenter()
 
 StreamCallback = Callable[[str, Dict[str, Any]], Awaitable[None]]
 
+# ── Intent analysis (approval.intent) ───────────────────────────────────────
+# Async, never blocks the card: the dock shows a spinner (Allow disabled,
+# Reject enabled) until ``approval.intent`` arrives; on analyzer failure a
+# fallback bullet is pushed so Allow is never held hostage.
+INTENT_MODEL_ENV = "DBGPT_APPROVAL_INTENT_MODEL"
+INTENT_TIMEOUT_SECONDS = 10.0
+INTENT_FALLBACK_BULLETS = ["意图分析不可用，请自行核对命令内容与影响范围后决策。"]
+
+IntentAnalyzer = Callable[[str, dict], Awaitable[Optional[List[str]]]]
+
+_INTENT_PROMPT = (
+    "你是命令意图分析器。针对下面这次工具调用，用中文输出 3-5 条要点，"
+    "说明它会做什么、影响范围与后果，供用户审批决策。要求：\n"
+    "- 每条一句话，按执行顺序；\n"
+    "- 把影响/风险词（如强制终止、立即中断、不可恢复、删除、覆盖、外发、"
+    "后台重启等）用一对 ** 包裹强调；\n"
+    "- 只输出 JSON 字符串数组，不要任何其他内容。\n"
+    "工具：{tool}\n参数：{args}"
+)
+
+
+def parse_intent_bullets(text: str) -> List[str]:
+    """Extract <=6 bullets from LLM output (JSON array or line list)."""
+    text = (text or "").strip()
+    if not text:
+        return []
+    start, end = text.find("["), text.rfind("]")
+    if start != -1 and end > start:
+        try:
+            data = json.loads(text[start : end + 1])
+            if isinstance(data, list):
+                bullets = [str(x).strip() for x in data if str(x).strip()]
+                if bullets:
+                    return bullets[:6]
+        except Exception:
+            pass
+    bullets = []
+    for line in text.splitlines():
+        line = line.strip().lstrip("-*").strip()
+        numbered = re.match(r"^\d+[.)]\s*(.*)$", line)
+        if numbered:
+            line = numbered.group(1).strip()
+        if line:
+            bullets.append(line[:160])
+        if len(bullets) >= 6:
+            break
+    return bullets
+
+
+def make_intent_analyzer(
+    llm_client: Any, model_name: Optional[str] = None
+) -> IntentAnalyzer:
+    """Build an analyzer bound to an LLM client; env model wins over round."""
+
+    async def analyze(tool: str, args: dict) -> Optional[List[str]]:
+        target = os.environ.get(INTENT_MODEL_ENV) or model_name
+        if llm_client is None or not target:
+            return None
+        from dbgpt.core.interface.llm import ModelMessage, ModelRequest
+
+        request = ModelRequest(
+            model=target,
+            messages=[
+                ModelMessage(
+                    role="system",
+                    content=_INTENT_PROMPT.format(
+                        tool=tool, args=preview_args(args, 1200)
+                    ),
+                )
+            ],
+        )
+        output = await asyncio.wait_for(
+            llm_client.generate(request), timeout=INTENT_TIMEOUT_SECONDS
+        )
+        text = getattr(output, "text", None) or str(output)
+        return parse_intent_bullets(text) or None
+
+    return analyze
+
+
+_INTENT_CACHE: Dict[str, Any] = {}
+
+
+def get_intent_analyzer() -> Optional[IntentAnalyzer]:
+    """Process-wide analyzer for paths without a round LLM client (pi)."""
+    if "analyzer" in _INTENT_CACHE:
+        return _INTENT_CACHE["analyzer"]
+    analyzer: Optional[IntentAnalyzer] = None
+    try:
+        from dbgpt.component import ComponentType
+        from dbgpt.model.cluster import WorkerManagerFactory
+        from dbgpt.model.cluster.client import DefaultLLMClient
+        from dbgpt_app.base import CFG
+
+        client = DefaultLLMClient(
+            CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create(),
+            auto_convert_message=True,
+        )
+        analyzer = make_intent_analyzer(client)
+    except Exception:
+        logger.exception("approval intent analyzer unavailable")
+    _INTENT_CACHE["analyzer"] = analyzer
+    return analyzer
+
+
+async def push_intent(
+    pa: PendingApproval,
+    stream_callback: StreamCallback,
+    analyzer: IntentAnalyzer,
+) -> None:
+    bullets: Optional[List[str]] = None
+    try:
+        bullets = await analyzer(pa.tool, pa.args)
+    except Exception:
+        logger.exception(
+            "approval intent analysis failed, approval_id=%s", pa.approval_id
+        )
+    if not bullets:
+        bullets = list(INTENT_FALLBACK_BULLETS)
+    await stream_callback(
+        "approval.intent",
+        {"approval_id": pa.approval_id, "conv_id": pa.conv_id, "bullets": bullets},
+    )
+
+
 def deny_observation(tool: str, rule_id: str) -> str:
     return (
         f"[policy] {tool} was blocked by safety policy (rule: {rule_id}). "
@@ -459,6 +586,7 @@ def make_approval_gate(
     stream_callback: StreamCallback,
     center: Optional[ApprovalCenter] = None,
     policy: Optional[ToolRiskPolicy] = None,
+    intent_analyzer: Optional["IntentAnalyzer"] = None,
 ):
     """Build the tool_action gate closure for one conversation round."""
     center = center or approval_center
@@ -495,6 +623,8 @@ def make_approval_gate(
             pa.approval_id,
             name,
         )
+        if intent_analyzer is not None:
+            asyncio.ensure_future(push_intent(pa, stream_callback, intent_analyzer))
         decision = await center.wait(pa, approval_ttl_seconds())
         await stream_callback(
             "approval.resolved",

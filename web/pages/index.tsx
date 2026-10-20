@@ -2863,6 +2863,14 @@ const Playground: NextPage = () => {
           setPendingApprovals(prev => prev.filter(p => p.approval_id !== payload.approval_id));
           return;
         }
+        if (payload.type === 'approval.intent') {
+          setPendingApprovals(prev =>
+            prev.map(p =>
+              p.approval_id === payload.approval_id ? { ...p, intent: payload.bullets } : p,
+            ),
+          );
+          return;
+        }
         if (payload.type === 'plan.update') {
           if (Array.isArray(payload.tasks)) {
             const nextTasks = payload.tasks as TaskItem[];

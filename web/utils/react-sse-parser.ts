@@ -113,7 +113,6 @@ export interface SSEQuestionRejectedEvent {
   request_id: string;
 }
 
-
 // ── Human-in-the-loop: tool approval events ────────────────────────────────
 
 export interface SSEApprovalRequestedEvent {
@@ -136,9 +135,18 @@ export interface SSEApprovalResolvedEvent {
   scope?: string;
 }
 
+export interface SSEApprovalIntentEvent {
+  type: 'approval.intent';
+  approval_id: string;
+  conv_id?: string;
+  /** Bullet lines; risk phrases wrapped in **...** for red-bold rendering. */
+  bullets: string[];
+}
+
 export interface PendingApproval extends SSEApprovalRequestedEvent {
   status: 'pending' | 'approved' | 'rejected' | 'timeout';
   scope?: string;
+  intent?: string[];
 }
 
 export type SSEEvent =
@@ -152,6 +160,7 @@ export type SSEEvent =
   | SSEQuestionRejectedEvent
   | SSEApprovalRequestedEvent
   | SSEApprovalResolvedEvent
+  | SSEApprovalIntentEvent
   | SSEFinalChunkEvent
   | SSEFinalEvent
   | SSETaskPreviewEvent
@@ -232,6 +241,9 @@ export class ReActSSEState {
       case 'approval.resolved':
         this.handleApprovalResolved(event);
         break;
+      case 'approval.intent':
+        this.handleApprovalIntent(event);
+        break;
       case 'final':
         this.handleFinal(event);
         break;
@@ -257,7 +269,6 @@ export class ReActSSEState {
     return current ? { type: 'question.asked', ...current } : null;
   }
 
-
   private handleApprovalRequested(event: SSEApprovalRequestedEvent): void {
     if (this.approvals.has(event.approval_id)) return;
     this.approvals.set(event.approval_id, { ...event, status: 'pending' });
@@ -272,12 +283,20 @@ export class ReActSSEState {
     }
   }
 
+  private handleApprovalIntent(event: SSEApprovalIntentEvent): void {
+    const pa = this.approvals.get(event.approval_id);
+    if (pa) {
+      pa.intent = event.bullets;
+    }
+  }
+
   /** Pending (awaiting user decision) approvals, in request order. */
   getPendingApprovals(): PendingApproval[] {
     return this.approvalOrder
       .map(id => this.approvals.get(id))
       .filter((pa): pa is PendingApproval => !!pa && pa.status === 'pending');
   }
+
   private handleStepStart(event: SSEStepStartEvent): void {
     const existing = this.steps.get(event.id);
     if (existing) {
