@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import re
+import secrets
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -307,6 +308,12 @@ class PendingApproval:
     reason: Optional[str] = None
     created_ts: float = field(default_factory=time.time)
     event: asyncio.Event = field(default_factory=asyncio.Event)
+    # "dbgpt" gate waits in-process and pushes approval.resolved itself;
+    # "pi" gate returns HTTP 202 and the loopback status poll pushes it.
+    engine: str = "dbgpt"
+    token: Optional[str] = None  # one-shot redemption token (pi 202 flow)
+    finalized: bool = False  # resolved event pushed / pending entry popped
+    consumed: bool = False  # redemption token already used
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -331,6 +338,10 @@ class ApprovalCenter:
 
     def __init__(self) -> None:
         self._pending: Dict[str, PendingApproval] = {}
+        # token -> PendingApproval object (NOT id): the pi status poll pops
+        # settled approvals out of ``_pending``, so redemption must hold its
+        # own reference or every re-post would 403.
+        self._tokens: Dict[str, PendingApproval] = {}
         self._session_allow: Dict[str, set] = {}
         self._always_allow: set = set()
 
@@ -353,7 +364,7 @@ class ApprovalCenter:
             self._always_allow.add(sig)
 
     def register(
-        self, conv_id: str, tool: str, args: dict, rule_id: str
+        self, conv_id: str, tool: str, args: dict, rule_id: str, engine: str = "dbgpt"
     ) -> PendingApproval:
         pa = PendingApproval(
             approval_id=f"apr_{uuid.uuid4().hex[:10]}",
@@ -361,12 +372,24 @@ class ApprovalCenter:
             tool=tool,
             args=args,
             rule_id=rule_id,
+            engine=engine,
         )
         self._pending[pa.approval_id] = pa
         return pa
 
     def get(self, approval_id: str) -> Optional[PendingApproval]:
         return self._pending.get(approval_id)
+
+    def pop(self, approval_id: str) -> None:
+        self._pending.pop(approval_id, None)
+
+    def consume_token(self, token: str) -> Optional[PendingApproval]:
+        """Redeem a one-shot token issued when an approval was granted."""
+        pa = self._tokens.pop(token, None)
+        if pa is None or pa.status != "approved" or pa.consumed:
+            return None
+        pa.consumed = True
+        return pa
 
     def resolve(
         self,
@@ -383,6 +406,8 @@ class ApprovalCenter:
         pa.reason = reason
         if decision == "approved":
             self.remember(pa.conv_id, scope, pa.tool, pa.args)
+            pa.token = secrets.token_urlsafe(16)
+            self._tokens[pa.token] = pa
         pa.event.set()
         return True
 

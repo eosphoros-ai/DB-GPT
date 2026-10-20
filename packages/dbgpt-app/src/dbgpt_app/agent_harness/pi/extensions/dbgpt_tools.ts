@@ -198,6 +198,87 @@ export default function (pi: ExtensionAPI) {
           } catch {
             payload = null;
           }
+          const data = payload && payload.data;
+          if (data && data.approval === true && data.approval_id) {
+            // High-risk gate (server-side policy): poll the approval status
+            // endpoint like the question protocol, then redeem the one-shot
+            // token by re-posting the identical call with X-Approval-Token.
+            const approvalStatusUrl = runUrl.replace(
+              /\/tool\/run$/,
+              "/approval/status",
+            );
+            const deadline = Date.now() + 320_000;
+            while (Date.now() < deadline) {
+              await new Promise(r => setTimeout(r, 2000));
+              if (signal?.aborted) {
+                return {
+                  content: [{ type: "text", text: "Approval cancelled." }],
+                  details: {},
+                };
+              }
+              const poll = await fetch(
+                `${approvalStatusUrl}?approval_id=${encodeURIComponent(
+                  data.approval_id,
+                )}`,
+                { headers: { Authorization: `Bearer ${token}` }, signal },
+              );
+              const pj: any = await poll.json().catch(() => null);
+              const st = pj?.data?.state;
+              if (!st || st === "pending") continue;
+              if (st === "approved" && pj?.data?.token) {
+                const exec = await fetch(runUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                    "X-Approval-Token": String(pj.data.token),
+                  },
+                  body: JSON.stringify({
+                    conv_id: convId,
+                    tool: entry.name,
+                    arguments: params || {},
+                  }),
+                  signal,
+                });
+                const eraw = await exec.text();
+                let ep: any = null;
+                try {
+                  ep = JSON.parse(eraw);
+                } catch {
+                  ep = null;
+                }
+                const etext =
+                  ep && ep.data && typeof ep.data.result === "string"
+                    ? ep.data.result
+                    : eraw || `DB-GPT tool endpoint returned HTTP ${exec.status}`;
+                return {
+                  content: [{ type: "text", text: etext }],
+                  details: { status: exec.status, approval: "approved" },
+                };
+              }
+              return {
+                content: [
+                  {
+                    type: "text",
+                    text: String(
+                      pj?.data?.result ||
+                        `Approval ${st}: the tool call was not executed.`,
+                    ),
+                  },
+                ],
+                details: { state: st },
+              };
+            }
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: "Approval timed out after 320 seconds. The tool call was not executed.",
+                },
+              ],
+              details: {},
+            };
+          }
           const text =
             payload && payload.data && typeof payload.data.result === "string"
               ? payload.data.result
