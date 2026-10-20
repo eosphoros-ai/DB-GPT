@@ -26,7 +26,6 @@ SUPPORTED_CURRENCIES = (
 ).split()
 MAX_LIMIT = 100
 REQUEST_TIMEOUT_SECONDS = 10
-MAX_ERROR_DETAIL_LENGTH = 300
 # Top level catalogue keys that are notices, not indicators.
 _CATALOGUE_NOTICE_KEYS = {"freemium_window", "freemium_delay", "pagination"}
 
@@ -114,18 +113,6 @@ def _validate_limit(limit: int) -> int:
     return limit
 
 
-def _error_detail(response: Any) -> str:
-    """Return the error message of an API response body, if there is one."""
-    try:
-        body = response.json()
-    except ValueError:
-        return ""
-    if not isinstance(body, dict):
-        return ""
-    detail = body.get("detail") or body.get("message") or body.get("error") or ""
-    return str(detail)[:MAX_ERROR_DETAIL_LENGTH]
-
-
 def _raise_for_status(response: Any, api_key: Optional[str]) -> None:
     status = response.status_code
     if 300 <= status < 400:
@@ -133,9 +120,6 @@ def _raise_for_status(response: Any, api_key: Optional[str]) -> None:
         raise FXMacroDataError(f"FXMacroData answered with a redirect (HTTP {status}).")
     if status >= 400:
         message = f"FXMacroData request failed (HTTP {status})."
-        detail = _error_detail(response)
-        if detail:
-            message += f" {detail}"
         if status in (401, 403) and not api_key:
             message += f" Set `{FXMACRODATA_API_KEY_ENV}` to use an API key."
         raise FXMacroDataError(_scrub(message, api_key))
@@ -145,13 +129,11 @@ def _parse_body(response: Any, api_key: Optional[str]) -> Dict[str, Any]:
     try:
         body = response.json()
     except ValueError:
-        raise FXMacroDataError("FXMacroData returned a response that is not JSON.")
+        raise FXMacroDataError("FXMacroData returned a response that is not JSON.") from None
     if not isinstance(body, dict):
         raise FXMacroDataError("FXMacroData returned an unexpected response shape.")
-    if "error" in body:
-        detail = str(body.get("detail") or body["error"])[:MAX_ERROR_DETAIL_LENGTH]
-        message = f"FXMacroData returned an error: {detail}"
-        raise FXMacroDataError(_scrub(message, api_key))
+    if body.get("error") or body.get("detail"):
+        raise FXMacroDataError("FXMacroData returned an error.")
     return body
 
 

@@ -17,6 +17,37 @@ from ..fxmacrodata_tool import (
 TEST_KEY = "test-key-123"
 
 
+def test_http_details_are_private(keyless, mock_requests_get):
+    mock_requests_get.return_value = _response(
+        {"detail": "sensitive upstream text"}, 500
+    )
+    with pytest.raises(FXMacroDataError) as caught:
+        fxmacrodata_release_calendar("USD")
+    assert "sensitive upstream text" not in str(caught.value)
+
+
+def test_success_error_details_are_private(keyless, mock_requests_get):
+    mock_requests_get.return_value = _response(
+        {"error": "failed", "detail": "sensitive upstream text"}
+    )
+    with pytest.raises(FXMacroDataError) as caught:
+        fxmacrodata_release_calendar("USD")
+    assert "sensitive upstream text" not in str(caught.value)
+
+
+def test_detail_error_with_data_rejected(keyless, mock_requests_get):
+    mock_requests_get.return_value = _response({"detail": "failed", "data": []})
+    with pytest.raises(FXMacroDataError):
+        fxmacrodata_release_calendar("USD")
+
+
+def test_json_exception_context_suppressed(keyless, mock_requests_get):
+    mock_requests_get.return_value = _response(json_error=True)
+    with pytest.raises(FXMacroDataError) as caught:
+        fxmacrodata_release_calendar("USD")
+    assert caught.value.__suppress_context__
+
+
 @pytest.fixture
 def mock_requests_get():
     with patch("requests.get") as mock_get:
@@ -287,7 +318,7 @@ def test_api_key_required_error(keyless, mock_requests_get):
 
     message = str(error.value)
     assert "HTTP 401" in message
-    assert "This endpoint requires a key." in message
+    assert "This endpoint requires a key." not in message
     assert "FXMACRODATA_API_KEY" in message
 
 
@@ -299,7 +330,7 @@ def test_error_text_never_contains_the_key(with_key, mock_requests_get):
         fxmacrodata_latest_releases("USD")
 
     assert TEST_KEY not in str(error.value)
-    assert "***" in str(error.value)
+    assert "HTTP 401" in str(error.value)
 
 
 def test_output_never_contains_the_key(with_key, mock_requests_get):
