@@ -375,6 +375,18 @@ class ApprovalCenter:
             engine=engine,
         )
         self._pending[pa.approval_id] = pa
+        from dbgpt_app.openapi.api_v1 import approval_audit as audit
+
+        audit.audit_register(
+            pa.approval_id,
+            conv_id,
+            engine,
+            tool,
+            self.signature(tool, args),
+            preview_args(args),
+            rule_id,
+            TIER_CONFIRM,
+        )
         return pa
 
     def get(self, approval_id: str) -> Optional[PendingApproval]:
@@ -397,6 +409,7 @@ class ApprovalCenter:
         decision: str,
         scope: str = "once",
         reason: Optional[str] = None,
+        actor: Optional[str] = None,
     ) -> bool:
         pa = self._pending.get(approval_id)
         if pa is None or pa.status != "pending":
@@ -408,6 +421,11 @@ class ApprovalCenter:
             self.remember(pa.conv_id, scope, pa.tool, pa.args)
             pa.token = secrets.token_urlsafe(16)
             self._tokens[pa.token] = pa
+        from dbgpt_app.openapi.api_v1 import approval_audit as audit
+
+        audit.audit_decision(
+            approval_id, decision, scope, reason, actor, settle_source="rest"
+        )
         pa.event.set()
         return True
 
@@ -417,6 +435,16 @@ class ApprovalCenter:
         except asyncio.TimeoutError:
             if pa.status == "pending":
                 pa.status = "timeout"
+                from dbgpt_app.openapi.api_v1 import approval_audit as audit
+
+                audit.audit_decision(
+                    pa.approval_id,
+                    "timeout",
+                    None,
+                    None,
+                    None,
+                    settle_source="ttl",
+                )
         finally:
             self._pending.pop(pa.approval_id, None)
         return pa.status
@@ -554,6 +582,9 @@ async def push_intent(
         )
     if not bullets:
         bullets = list(INTENT_FALLBACK_BULLETS)
+    from dbgpt_app.openapi.api_v1 import approval_audit as audit
+
+    audit.audit_intent(pa.approval_id, json.dumps(bullets, ensure_ascii=False))
     await stream_callback(
         "approval.intent",
         {"approval_id": pa.approval_id, "conv_id": pa.conv_id, "bullets": bullets},

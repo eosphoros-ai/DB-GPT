@@ -4811,7 +4811,13 @@ async def approval_resolve(
     if body.scope not in ("once", "session", "always"):
         return Result.failed(msg=f"invalid scope: {body.scope}")
     decision = "approved" if body.decision.startswith("approve") else "rejected"
-    ok = approval_center.resolve(approval_id, decision, body.scope, body.reason)
+    ok = approval_center.resolve(
+        approval_id,
+        decision,
+        body.scope,
+        body.reason,
+        actor=user_token.user_id if user_token else None,
+    )
     if not ok:
         return Result.failed(msg=f"approval {approval_id} is not pending")
     return Result.succ(
@@ -4828,6 +4834,27 @@ async def approval_pending(
     from dbgpt_app.openapi.api_v1.approval import approval_center
 
     return Result.succ(approval_center.pending_for(con_uid))
+
+
+@router.get("/v1/chat/approval/log", response_model=Result)
+async def approval_log(
+    con_uid: str,
+    limit: int = 50,
+    offset: int = 0,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Approval audit log for the setting page (owned conversations only)."""
+    from dbgpt_app.openapi.api_v1.approval_audit import query_approval_logs
+
+    actor_id = user_token.user_id if user_token else None
+    if actor_id:
+        try:
+            _require_owned_conversation(con_uid, actor_id)
+        except Exception as e:
+            return Result.failed(msg=str(e))
+    return Result.succ(
+        query_approval_logs(con_uid, limit=min(limit, 200), offset=offset)
+    )
 
 
 # Harness engine endpoints (engine availability for the settings UI).

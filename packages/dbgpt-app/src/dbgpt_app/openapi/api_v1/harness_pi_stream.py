@@ -468,6 +468,16 @@ def register_harness_endpoints(router: Any) -> None:
             time.time() - pa.created_ts > approval_ttl_seconds()
         ):
             pa.status = "timeout"
+            from .approval_audit import audit_decision
+
+            audit_decision(
+                pa.approval_id,
+                "timeout",
+                None,
+                None,
+                None,
+                settle_source="ttl",
+            )
         if pa.status == "pending":
             return Result.succ({"state": "pending"})
         if not pa.finalized:
