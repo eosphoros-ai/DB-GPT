@@ -1,6 +1,7 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
+import type { FinancialCitation } from '@/new-components/financial-analysis/report-citations';
 import {
   ApartmentOutlined,
   ApiOutlined,
@@ -108,6 +109,7 @@ export interface ManusLeftPanelProps {
   isWorking?: boolean;
   userQuery?: string;
   assistantText?: string;
+  onFinancialCitationClick?: (citation: FinancialCitation) => void;
   /** Render incremental answer text without reparsing Markdown on every frame. */
   isAssistantStreaming?: boolean;
   modelName?: string;
@@ -1041,6 +1043,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   isWorking,
   userQuery,
   assistantText,
+  onFinancialCitationClick,
   isAssistantStreaming = false,
   modelName,
   stepThoughts,
@@ -1257,7 +1260,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               {isAssistantStreaming ? (
                 <span className='whitespace-pre-wrap break-words'>{assistantText}</span>
               ) : (
-                <MarkdownContext>{assistantText}</MarkdownContext>
+                <MarkdownContext onFinancialCitationClick={onFinancialCitationClick}>{assistantText}</MarkdownContext>
               )}
             </div>
             {citationIndexes.length > 0 && onReferencesClick && (

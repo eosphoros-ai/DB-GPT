@@ -15,7 +15,7 @@ import {
 } from '@ant-design/icons';
 import { Tooltip } from 'antd';
 import { useRouter } from 'next/router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AgentRunPanel from './AgentRunPanel';
 import AskDbGPTDock from './AskDbGPTDock';
 import EvidencePanel from './EvidencePanel';
@@ -25,6 +25,7 @@ import ReportExports from './ReportExports';
 import { BalanceTab, CashFlowTab, OverviewTab, ProfitabilityTab, StatementsTab } from './ReportSections';
 import SourcePreviewPanel from './SourcePreviewPanel';
 import styles from './financial-analysis.module.css';
+import { resolveFinancialCitation, type FinancialCitationTarget } from './report-citations';
 import { reportRunState } from './report-data';
 import {
   EvidenceExcerpt,
@@ -140,6 +141,7 @@ const SkillPanel: React.FC = () => {
 };
 
 const FinancialAnalysisWorkspace: React.FC<{
+  citationTarget?: FinancialCitationTarget | null;
   onTopicRetry?: (topicId: string) => void;
   busy?: boolean;
   embedded?: boolean;
@@ -149,6 +151,7 @@ const FinancialAnalysisWorkspace: React.FC<{
   questionAccess?: ReportQuestionAccess;
   exportAccess?: ReportExportAccess;
 }> = ({
+  citationTarget,
   embedded = false,
   onNewReport,
   sourceAccess,
@@ -169,6 +172,17 @@ const FinancialAnalysisWorkspace: React.FC<{
   const [agentCollapsed, setAgentCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const reportScroll = useRef(0);
+  const appliedCitation = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!citationTarget || appliedCitation.current === citationTarget.requestId) return;
+    const next = resolveFinancialCitation(data, citationTarget);
+    if (!next) return;
+    appliedCitation.current = citationTarget.requestId;
+    setSelection(next);
+    setPreviewEvidence(null);
+    setWorkspaceTab('evidence');
+  }, [citationTarget, data]);
 
   const switchWorkspace = (next: WorkspaceTab) => {
     if (workspaceTab === 'report') reportScroll.current = scrollRef.current?.scrollTop || 0;
@@ -221,6 +235,10 @@ const FinancialAnalysisWorkspace: React.FC<{
           <section className={styles.agentRail} aria-label='DB-GPT Agent 任务' hidden={agentCollapsed}>
             <div className={styles.agentScroll}>
               <AgentRunPanel
+                onFinancialCitationClick={citation => {
+                  const next = resolveFinancialCitation(data, citation);
+                  if (next) openEvidence(next);
+                }}
                 activeStepId={activeStepId}
                 onStepSelect={id => {
                   setActiveStepId(id);
@@ -352,6 +370,7 @@ const FinancialAnalysisWorkspace: React.FC<{
   );
 };
 const FinancialAnalysisPage: React.FC<{
+  citationTarget?: FinancialCitationTarget | null;
   onTopicRetry?: (topicId: string) => void;
   busy?: boolean;
   embedded?: boolean;
@@ -362,6 +381,7 @@ const FinancialAnalysisPage: React.FC<{
   questionAccess?: ReportQuestionAccess;
   exportAccess?: ReportExportAccess;
 }> = ({
+  citationTarget,
   data,
   embedded,
   onNewReport,
@@ -374,6 +394,7 @@ const FinancialAnalysisPage: React.FC<{
 }) => (
   <ReportDataProvider key={`${data.report.id}:${data.report.run.id}:${data.revision}`} data={data}>
     <FinancialAnalysisWorkspace
+      citationTarget={citationTarget}
       onTopicRetry={onTopicRetry}
       busy={busy}
       embedded={embedded}

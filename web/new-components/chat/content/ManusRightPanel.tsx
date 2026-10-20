@@ -7,6 +7,7 @@ import {
   FinancialReportReference,
   isFinancialReportReference,
 } from '@/new-components/financial-analysis/agent-artifact';
+import type { FinancialCitation, FinancialCitationTarget } from '@/new-components/financial-analysis/report-citations';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
 import type { AgentCitation } from '@/utils/react-agent-final';
 import {
@@ -183,6 +184,8 @@ export interface ActiveStepInfo {
 }
 
 export interface ManusRightPanelProps {
+  financialCitationTarget?: FinancialCitationTarget | null;
+  onFinancialCitationClick?: (citation: FinancialCitation) => void;
   onFinancialTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
   activeStep?: ActiveStepInfo | null;
   outputs: ExecutionOutput[];
@@ -2508,6 +2511,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   panelView: controlledPanelView,
   onPanelViewChange,
   previewArtifact,
+  financialCitationTarget,
+  onFinancialCitationClick,
   databaseType,
   databaseName,
   skillName,
@@ -2930,6 +2935,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           </div>
         ) : panelView === 'html-preview' && previewArtifact && isFinancialReportReference(previewArtifact.content) ? (
           <FinancialReportArtifact
+            citationTarget={financialCitationTarget}
             busy={isRunning}
             onTopicRetry={onFinancialTopicRetry}
             key={`${previewArtifact.content.runId}:${previewArtifact.content.revision}`}
@@ -2990,7 +2996,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             {isSummaryStreaming ? (
               <span className='whitespace-pre-wrap break-words'>{summaryContent}</span>
             ) : (
-              <MarkDownContext>{fixSquishedTables(summaryContent)}</MarkDownContext>
+              <MarkDownContext onFinancialCitationClick={onFinancialCitationClick}>
+                {fixSquishedTables(summaryContent)}
+              </MarkDownContext>
             )}
             {isSummaryStreaming && (
               <span className='inline-block w-1.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-text-bottom' />

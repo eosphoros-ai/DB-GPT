@@ -47,6 +47,11 @@ import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
 import { isFinancialReportReference, reportArtifactContent } from '@/new-components/financial-analysis/agent-artifact';
+import {
+  findFinancialCitationArtifact,
+  type FinancialCitation,
+  type FinancialCitationTarget,
+} from '@/new-components/financial-analysis/report-citations';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
@@ -868,6 +873,8 @@ const Playground: NextPage = () => {
   const summaryPresentationResponseIdRef = useRef<string | null>(null);
   const summaryPresentationFullTextRef = useRef('');
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+  const [financialCitationTarget, setFinancialCitationTarget] = useState<FinancialCitationTarget | null>(null);
+  const financialCitationRequest = useRef(0);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -903,6 +910,24 @@ const Playground: NextPage = () => {
     messageId: string;
     agentId: string;
   } | null>(null);
+
+  const openFinancialCitation = (citation: FinancialCitation, messageId?: string) => {
+    const artifact = findFinancialCitationArtifact(
+      artifacts.filter(item => !messageId || item.messageId === messageId),
+      citation,
+    );
+    if (!artifact) {
+      message.info('对应的报告暂不可用，请先打开本轮财报报告。');
+      return;
+    }
+    cancelSummaryPresentation();
+    setActiveViewMsgId(artifact.messageId || messageId || null);
+    setActiveSubAgent(null);
+    setPreviewArtifact(artifact);
+    setFinancialCitationTarget({ ...citation, requestId: ++financialCitationRequest.current });
+    setRightPanelView('html-preview');
+    setRightPanelCollapsed(false);
+  };
 
   // Track step IDs that belong to a terminate action so we can suppress them
   const terminatedStepIdsRef = useRef<Set<string>>(new Set());
@@ -994,6 +1019,7 @@ const Playground: NextPage = () => {
     setTaskPlan([]);
     setSelectedStepId(null);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setSummaryPresentationResponseId(null);
@@ -2036,6 +2062,7 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
@@ -2698,6 +2725,7 @@ const Playground: NextPage = () => {
     setStreamingSummary('');
     setSummaryComplete(false);
     setSelectedCitationIndex(null);
+    setFinancialCitationTarget(null);
     setPendingFinalization(null);
     setPendingSummaryPresentation(null);
 
@@ -3137,6 +3165,7 @@ const Playground: NextPage = () => {
                         taskPlan={round.viewMsg?.taskPlan}
                         attachedConnectors={round.humanMsg?.attachedConnectors}
                         assistantText={roundAssistantText}
+                        onFinancialCitationClick={citation => openFinancialCitation(citation, round.viewMsg?.id)}
                         isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
                         citationIndexes={roundCitations.map(citation => citation.index)}
                         onReferencesClick={
@@ -3153,6 +3182,7 @@ const Playground: NextPage = () => {
                         stepThoughts={stepThoughts}
                         artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
                         onArtifactClick={artifact => {
+                          setFinancialCitationTarget(null);
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setRightPanelCollapsed(false);
                           if (artifact.type === 'html') {
@@ -3898,6 +3928,8 @@ const Playground: NextPage = () => {
 
                     return (
                       <ManusRightPanel
+                        financialCitationTarget={financialCitationTarget}
+                        onFinancialCitationClick={citation => openFinancialCitation(citation, activeViewMsg?.id)}
                         onFinancialTopicRetry={(reference, topicId) => {
                           if (loading || reference.sessionId !== conversationId) return;
                           void handleStart(
@@ -3921,6 +3953,7 @@ const Playground: NextPage = () => {
                         artifacts={artifacts.filter(a => a.messageId === activeViewMsg?.id)}
                         inputFiles={rounds.find(r => r.viewMsg?.id === activeViewMsg?.id)?.humanMsg?.attachedFiles}
                         onArtifactClick={artifact => {
+                          setFinancialCitationTarget(null);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
                             setRightPanelView('html-preview');

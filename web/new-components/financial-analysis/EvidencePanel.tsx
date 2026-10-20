@@ -14,18 +14,18 @@ interface EvidencePanelProps {
 }
 const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChange, onOpenSource }) => {
   const { data, evidenceExcerptMap, sourceDocumentMap } = useReportData();
-  const { evidenceId, findingId } = selection;
+  const { evidenceId, findingId, factId, calculationId } = selection;
   const selectedRef = useRef<HTMLDivElement>(null);
   const resolved = useMemo(() => resolveEvidence(data, selection), [data, selection]);
   const finding = resolved.finding;
   useEffect(() => {
-    if (!evidenceId) return;
+    if (!evidenceId && !factId && !calculationId) return;
     const frame = requestAnimationFrame(() => {
       selectedRef.current?.scrollIntoView({ block: 'center' });
       selectedRef.current?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
-  }, [evidenceId, findingId]);
+  }, [evidenceId, findingId, factId, calculationId, selection]);
 
   return (
     <div className={styles.evidencePanel}>
@@ -70,7 +70,14 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChang
         </h2>
         {!resolved.calculations.length && <p className={styles.meta}>暂无计算记录</p>}
         {resolved.calculations.map(calculation => (
-          <div className={styles.calculationDetail} key={calculation.id}>
+          <div
+            className={styles.calculationDetail}
+            key={calculation.id}
+            ref={calculation.id === calculationId ? selectedRef : undefined}
+            tabIndex={-1}
+            data-selected={calculation.id === calculationId}
+            data-financial-reference={calculation.id}
+          >
             <h3>{calculation.name}</h3>
             <div className={styles.meta}>{calculation.formula}</div>
             <div className={styles.calculationSteps}>
@@ -89,7 +96,13 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChang
         </h2>
         <div className={styles.evidenceFacts}>
           {resolved.facts.map(fact => (
-            <div key={fact.id}>
+            <div
+              key={fact.id}
+              ref={fact.id === factId ? selectedRef : undefined}
+              tabIndex={-1}
+              data-selected={fact.id === factId}
+              data-financial-reference={fact.id}
+            >
               <div>
                 <h3>{fact.metricName}</h3>
                 <span className={styles.meta}>

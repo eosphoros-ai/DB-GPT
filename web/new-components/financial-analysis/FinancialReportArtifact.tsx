@@ -11,6 +11,7 @@ import {
   listExports,
   requestError,
 } from './api';
+import type { FinancialCitationTarget } from './report-citations';
 import type { ReportData, ReportExportAccess, SourcePreviewAccess } from './types';
 
 export async function downloadFinancialReport(ref: FinancialReportReference) {
@@ -22,9 +23,10 @@ export async function downloadFinancialReport(ref: FinancialReportReference) {
 /** Render in the current agent's Computer panel; no route or second chat rail. */
 const FinancialReportArtifact: React.FC<{
   reference: FinancialReportReference;
+  citationTarget?: FinancialCitationTarget | null;
   busy?: boolean;
   onTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
-}> = ({ reference, busy, onTopicRetry }) => {
+}> = ({ reference, citationTarget, busy, onTopicRetry }) => {
   const { sessionId, runId, revision } = reference;
   const [loaded, setLoaded] = useState<{ scope: string; data: ReportData } | null>(null);
   const [error, setError] = useState('');
@@ -79,6 +81,7 @@ const FinancialReportArtifact: React.FC<{
   return (
     <FinancialAnalysisPage
       data={loaded.data}
+      citationTarget={citationTarget}
       embedded
       sourceAccess={sourceAccess}
       exportAccess={exportAccess}

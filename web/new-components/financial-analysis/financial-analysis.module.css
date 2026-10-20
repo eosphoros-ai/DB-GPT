@@ -666,7 +666,9 @@
   border-radius: 8px;
   scroll-margin: 24px;
 }
-.excerpt[data-selected='true'] {
+.excerpt[data-selected='true'],
+.calculationDetail[data-selected='true'],
+.evidenceFacts > div[data-selected='true'] {
   background: var(--subtle);
   outline: 1px solid var(--line);
 }

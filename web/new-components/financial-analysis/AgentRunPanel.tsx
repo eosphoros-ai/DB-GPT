@@ -2,6 +2,7 @@ import type { ArtifactItem, ExecutionStep, ThinkingSection } from '@/new-compone
 import dynamic from 'next/dynamic';
 import React, { useMemo } from 'react';
 import { useReportData } from './ReportDataContext';
+import type { FinancialCitation } from './report-citations';
 import { isDefined, reportRunState } from './report-data';
 import { AgentExecutionStep } from './types';
 
@@ -17,6 +18,7 @@ const ManusLeftPanel = dynamic(() => import('@/new-components/chat/content/Manus
 });
 
 interface AgentRunPanelProps {
+  onFinancialCitationClick?: (citation: FinancialCitation) => void;
   activeStepId?: string;
   onStepSelect: (stepId: string) => void;
   onOpenArtifact: () => void;
@@ -34,7 +36,13 @@ const toExecutionStep = (step: AgentExecutionStep): ExecutionStep => ({
   actionInput: step.script ? { script: step.script } : undefined,
 });
 
-const AgentRunPanel: React.FC<AgentRunPanelProps> = ({ activeStepId, onStepSelect, onOpenArtifact, onOpenFiles }) => {
+const AgentRunPanel: React.FC<AgentRunPanelProps> = ({
+  activeStepId,
+  onStepSelect,
+  onOpenArtifact,
+  onOpenFiles,
+  onFinancialCitationClick,
+}) => {
   const { data } = useReportData();
   const sections = useMemo<ThinkingSection[]>(
     () =>
@@ -70,6 +78,7 @@ const AgentRunPanel: React.FC<AgentRunPanelProps> = ({ activeStepId, onStepSelec
     }));
   return (
     <ManusLeftPanel
+      onFinancialCitationClick={onFinancialCitationClick}
       sections={sections}
       activeStepId={activeStepId}
       onStepClick={stepId => onStepSelect(stepId)}
