@@ -15,6 +15,7 @@ import Icon, {
   DeleteOutlined,
   GlobalOutlined,
   LineChartOutlined,
+  LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageOutlined,
@@ -66,7 +67,8 @@ function SidebarPictureIcon({
 }
 
 function SideBar() {
-  const { isMenuExpand, setIsMenuExpand, mode, setMode } = useContext(ChatContext);
+  const { isMenuExpand, setIsMenuExpand, mode, setMode, runningConvIds, optimisticConvs, dialogueListVersion } =
+    useContext(ChatContext);
   const router = useRouter();
   const { pathname } = router;
   const isSettingsActive =
@@ -95,12 +97,19 @@ function SideBar() {
     });
   }, [i18n.language, startNewTask]);
 
+  const mergedDialogues = useMemo(() => {
+    const pending = optimisticConvs.filter(
+      (o: any) => !dialogueList.some(d => d.conv_uid === o.conv_uid),
+    ) as IChatDialogueSchema[];
+    return [...pending, ...dialogueList];
+  }, [optimisticConvs, dialogueList]);
+
   const fetchDialogueList = useCallback(async () => {
     setLoadingDialogues(true);
     try {
       const [, data] = await apiInterceptors(getDialogueList());
       if (data && Array.isArray(data)) {
-        setDialogueList(data.filter(item => item.chat_mode === 'chat_react_agent'));
+        setDialogueList(data.filter(item => item.chat_mode === 'chat_react_agent' || item.chat_mode === 'chat_flow'));
       }
     } catch (e) {
       console.error('Failed to fetch dialogue list', e);
@@ -378,7 +387,7 @@ function SideBar() {
 
   useEffect(() => {
     fetchDialogueList();
-  }, [fetchDialogueList]);
+  }, [fetchDialogueList, dialogueListVersion]);
 
   useEffect(() => {
     if (settingsOpen) {
@@ -526,15 +535,21 @@ function SideBar() {
           <div className='px-2 pt-2'>
             <Skeleton active title={false} paragraph={{ rows: 4, width: '100%' }} />
           </div>
-        ) : dialogueList.length > 0 ? (
+        ) : mergedDialogues.length > 0 ? (
           <div className='space-y-0.5'>
-            {dialogueList.map(conv => (
+            {mergedDialogues.map(conv => (
               <Link
                 key={conv.conv_uid}
                 href={`/?id=${conv.conv_uid}`}
                 className='flex items-start gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors group hover:bg-[#F1F5F9] dark:hover:bg-theme-dark'
               >
-                <MessageOutlined className='text-gray-400 flex-shrink-0 text-xs mt-1' />
+                {runningConvIds.includes(conv.conv_uid) ? (
+                  <span className='w-5 h-5 rounded-md bg-[#F1F5F9] dark:bg-white/10 border border-[#E2E8F0] dark:border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5'>
+                    <LoadingOutlined className='text-[11px] text-emerald-500' />
+                  </span>
+                ) : (
+                  <MessageOutlined className='text-gray-400 flex-shrink-0 text-xs mt-1' />
+                )}
                 <div className='flex-1 min-w-0'>
                   <div className='font-medium truncate leading-5 text-gray-700 dark:text-gray-300'>
                     {typeof conv.user_input === 'string'

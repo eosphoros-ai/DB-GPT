@@ -31,6 +31,7 @@ import {
 import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import AgentTimeline, { stepsToTimelineBlocks } from '@/new-components/chat/content/AgentTimeline';
+import ApprovalDock from '@/new-components/chat/content/ApprovalDock';
 import ArtifactCards, { StreamArtifact } from '@/new-components/chat/content/ArtifactCards';
 import ArtifactRail from '@/new-components/chat/content/ArtifactRail';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -61,6 +62,7 @@ import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
+import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
 import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
@@ -783,7 +785,7 @@ const EXAMPLE_CARDS = [
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { model, setModel } = useContext(ChatContext);
+  const { model, setModel, setConvRunning, addOptimisticConv, bumpDialogueList } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const exampleRunInFlightRef = useRef(false);
@@ -1365,6 +1367,7 @@ const Playground: NextPage = () => {
       custom?: boolean;
     }>;
   } | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
   const resetTaskSession = useCallback(() => {
@@ -1374,6 +1377,7 @@ const Playground: NextPage = () => {
     historyRequestRef.current += 1;
     conversationIdRef.current = null;
     sendInFlightRef.current = false;
+    setPendingApprovals([]);
     exampleRunInFlightRef.current = false;
     abortInFlightChat();
     historyAbortControllerRef.current?.abort();
@@ -1467,6 +1471,22 @@ const Playground: NextPage = () => {
   useNewTaskGuard(confirmInterruptRunningTask);
 
   const startNewTask = useStartNewTask();
+
+  const resolveApproval = useCallback(
+    async (approvalId: string, decision: 'approve' | 'reject', scope: string = 'once', reason?: string) => {
+      try {
+        const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/approval/${approvalId}/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision, scope, reason }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.error('resolveApproval failed:', e);
+      }
+    },
+    [],
+  );
 
   const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
     const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
@@ -2514,10 +2534,19 @@ const Playground: NextPage = () => {
 
     // The conversation id must be settled before preparing file sends so the
     // uploads (bound at pick time) and this request share one session scope.
+    const isNewConv = !conversationIdRef.current;
     const currentConvId = conversationIdRef.current || generateUUID();
     if (!conversationIdRef.current) {
       conversationIdRef.current = currentConvId;
       setConversationId(currentConvId);
+    }
+    if (isNewConv) {
+      addOptimisticConv({
+        conv_uid: currentConvId,
+        user_input: inputQuery,
+        chat_mode: 'chat_react_agent',
+        gmt_created: new Date().toISOString(),
+      } as any);
     }
     let sendSnapshot: SessionFilesSendSnapshot | null = null;
 
@@ -2682,6 +2711,7 @@ const Playground: NextPage = () => {
     };
 
     try {
+      setConvRunning(currentConvId, true);
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
         method: 'POST',
         headers: {
@@ -2836,6 +2866,18 @@ const Playground: NextPage = () => {
         }
         if (payload.type === 'question.replied' || payload.type === 'question.rejected') {
           setPendingQuestion(null);
+          return;
+        }
+        if (payload.type === 'approval.requested') {
+          setPendingApprovals(prev =>
+            prev.some(p => p.approval_id === payload.approval_id)
+              ? prev
+              : [...prev, { ...payload, status: 'pending' } as PendingApproval],
+          );
+          return;
+        }
+        if (payload.type === 'approval.resolved') {
+          setPendingApprovals(prev => prev.filter(p => p.approval_id !== payload.approval_id));
           return;
         }
         if (payload.type === 'plan.update') {
@@ -3178,6 +3220,8 @@ const Playground: NextPage = () => {
         });
       }
     } finally {
+      setConvRunning(currentConvId, false);
+      bumpDialogueList();
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
       }
@@ -3200,10 +3244,19 @@ const Playground: NextPage = () => {
       message.error(t('error_occurred') as string);
       return;
     }
+    const isNewConv = !conversationIdRef.current;
     const currentConvId = conversationIdRef.current || generateUUID();
     if (!conversationIdRef.current) {
       conversationIdRef.current = currentConvId;
       setConversationId(currentConvId);
+    }
+    if (isNewConv) {
+      addOptimisticConv({
+        conv_uid: currentConvId,
+        user_input: flowQuery,
+        chat_mode: 'chat_flow',
+        gmt_created: new Date().toISOString(),
+      } as any);
     }
     if (router.query.id !== currentConvId) {
       router.replace({ pathname: '/', query: { ...(router.query ?? {}), id: currentConvId } }, undefined, {
@@ -3337,6 +3390,7 @@ const Playground: NextPage = () => {
     chatAbortControllerRef.current = controller;
     let accumulated = '';
     try {
+      setConvRunning(currentConvId, true);
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3405,6 +3459,8 @@ const Playground: NextPage = () => {
         );
       }
     } finally {
+      setConvRunning(currentConvId, false);
+      bumpDialogueList();
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
       }
@@ -4242,6 +4298,11 @@ const Playground: NextPage = () => {
                           </>
                         )}
                       </div>
+
+                      {/* Human-in-the-loop Tool Approval Dock (floats above composer) */}
+                      {pendingApprovals.length > 0 && (
+                        <ApprovalDock approvals={pendingApprovals} onResolve={resolveApproval} />
+                      )}
 
                       {/* Human-in-the-loop Question Dock */}
                       {pendingQuestion && (
