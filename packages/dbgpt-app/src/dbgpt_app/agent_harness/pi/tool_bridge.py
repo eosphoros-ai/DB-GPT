@@ -24,6 +24,22 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+#: todowrite manifest description (mirrors tools/todowrite.py).
+_TODOWRITE_DESCRIPTION = (
+    "Create and manage a structured task list for the current session. "
+    "Use this tool to plan complex tasks (3+ steps) or tasks containing "
+    "2 or more mutually independent subtasks, track progress, and show "
+    "the user what you are doing. "
+    "Pass the FULL todo list every time (not incremental). "
+    "Each todo has: content (brief description), "
+    "status (pending | in_progress | completed | cancelled), "
+    "priority (high | medium | low). "
+    "Rules: only ONE task in_progress at a time; mark tasks completed "
+    "immediately after finishing; do NOT use for single trivial tasks."
+    '\nParameter: {"todos": [{"content": "...", "status": "...", '
+    '"priority": "..."}]}'
+)
+
 #: Seconds a per-conv tool context stays cached without use.
 _TTL_S = 6 * 3600
 #: Cap on cached conv contexts (oldest evicted first).
@@ -262,10 +278,36 @@ def register_conv_tools(
             },
         }
     )
+    # Plan parity with the dbgpt engine: per-conv todo state + tool.
+    from dbgpt_app.openapi.api_v1.tools.todowrite import make_todowrite
+
+    todo_list: List[Dict[str, str]] = []
+    todowrite_fn = make_todowrite(todo_list, lambda *a, **k: None)
+    manifest.append(
+        {
+            "name": "todowrite",
+            "description": _TODOWRITE_DESCRIPTION,
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "todos": {
+                        "type": "string",
+                        "description": (
+                            "JSON string: FULL list of {content, status, "
+                            "priority} replacing the session plan"
+                        ),
+                    }
+                },
+                "required": ["todos"],
+            },
+        }
+    )
     _REGISTRY[conv_id] = {
         "pack": pack,
         "manifest": manifest,
         "ts": time.time(),
+        "todowrite": todowrite_fn,
+        "todo_list": todo_list,
     }
     _evict_expired()
     logger.info(
@@ -293,6 +335,12 @@ async def run_tool(conv_id: str, name: str, arguments: Dict[str, Any]) -> str:
             ensure_ascii=False,
         )
     entry["ts"] = time.time()
+    if name == "todowrite":
+        fn = entry.get("todowrite")
+        if fn is None:
+            return json.dumps({"error": "todowrite unavailable"}, ensure_ascii=False)
+        raw = (arguments or {}).get("todos", "[]")
+        return str(fn(raw if isinstance(raw, str) else json.dumps(raw)))
     try:
         result = await entry["pack"].async_execute(
             resource_name=name, **(arguments or {})

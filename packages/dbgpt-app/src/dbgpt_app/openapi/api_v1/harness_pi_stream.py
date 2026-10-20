@@ -1263,6 +1263,53 @@ async def run_pi_harness_turn(
                 round_out["thoughts"] = thoughts
             trace_rounds.append(round_out)
             pending_tool.clear()
+            # Plan parity with the dbgpt engine: todowrite results carry
+            # __todos__; re-emit the stable TODO step card + plan.update so
+            # the session task-plan panel renders identically under pi.
+            if (ev.tool_name or "") == "todowrite":
+                todos_payload: List[Dict[str, Any]] = []
+                try:
+                    _env = json.loads(ev.text or "")
+                    if isinstance(_env, dict):
+                        todos_payload = _env.get("__todos__") or []
+                except Exception:
+                    todos_payload = []
+                if todos_payload:
+                    _total = len(todos_payload)
+                    _done = sum(
+                        1 for t in todos_payload if t.get("status") == "completed"
+                    )
+                    if _done == 0:
+                        _tstate = "init"
+                    elif _total and _done == _total:
+                        _tstate = "done"
+                    else:
+                        _tstate = "progress"
+                    if not getattr(state, "todo_step_id", None):
+                        state.todo_step_id = "step-todo-plan"
+                    await out_queue.put(
+                        _sse_event(
+                            {
+                                "type": "step.start",
+                                "step": 0,
+                                "id": state.todo_step_id,
+                                "title": (
+                                    f"TODO::{_tstate}:{_done}/{_total}"
+                                    if _total
+                                    else f"TODO::{_tstate}"
+                                ),
+                                "detail": "todowrite",
+                                "todo_meta": {
+                                    "state": _tstate,
+                                    "done": _done,
+                                    "total": _total,
+                                },
+                            }
+                        )
+                    )
+                    await out_queue.put(
+                        _sse_event({"type": "plan.update", "tasks": todos_payload})
+                    )
         for frame in _translate_event(state, ev):
             await out_queue.put(frame)
 
