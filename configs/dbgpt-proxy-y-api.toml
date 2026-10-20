@@ -1,0 +1,35 @@
+[system]
+language = "${env:DBGPT_LANG:-en}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+[models]
+# Y-API serves several vendors behind one endpoint, so the model name keeps its
+# vendor prefix. See https://y-api.bestvirtualgoods.com/models for the full list.
+[[models.llms]]
+name = "${env:LLM_MODEL_NAME:-deepseek/deepseek-v4-flash}"
+provider = "proxy/y-api"
+api_key = "${env:YAPI_API_KEY}"
+
+[[models.llms]]
+name = "z-ai/glm-5.3"
+provider = "proxy/y-api"
+api_key = "${env:YAPI_API_KEY}"
+
+[[models.llms]]
+name = "openai/gpt-5.6-sol"
+provider = "proxy/y-api"
+api_key = "${env:YAPI_API_KEY}"
