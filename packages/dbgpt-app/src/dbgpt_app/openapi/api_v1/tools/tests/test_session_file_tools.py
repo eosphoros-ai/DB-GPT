@@ -111,7 +111,7 @@ def test_load_file_legacy_file_reports_name_and_current_path(tmp_path):
     chunks = _chunks(tool())
 
     payload = json.dumps(chunks, ensure_ascii=False)
-    assert target in payload
+    assert target in _text(chunks)
     assert Path(target).name in payload
     assert "File provided by user upload" in payload
 
@@ -169,7 +169,7 @@ def test_load_file_no_args_summarizes_selected_session_files(tmp_path):
     # Materialized per-turn paths are surfaced so the model can analyze the
     # files directly with code_interpreter.
     for path in state["session_file_paths"].values():
-        assert path in payload
+        assert path in content
     # The internal child-process handoff file stays invisible.
     assert state["files_json_path"] not in payload
 
@@ -368,7 +368,9 @@ async def test_execute_analysis_no_args_uses_all_session_files_through_env(
     assert [chunk["output_type"] for chunk in chunks[:2]] == ["code", "json"]
     assert len(seam.calls) == 1
     call = seam.calls[0]
-    assert call["env"]["FILE_PATH"] == mapping["sf_alpha"]
+    # Multi-file analysis uses the manifest. A legacy primary path would
+    # unnecessarily expose a file outside an explicitly selected subset.
+    assert "FILE_PATH" not in call["env"]
     assert call["env"]["FILES_JSON"] == state["files_json_path"]
     assert json.loads(call["env"]["ANALYZE_IDS"]) == ["sf_alpha", "sf_beta"]
     assert json.loads(call["env"]["ANALYZE_NAMES"]) == {
@@ -413,7 +415,7 @@ async def test_execute_analysis_exact_subset_is_validated_in_request_order(
         "sf_gamma": "c.csv",
         "sf_alpha": "a.csv",
     }
-    assert call["env"]["FILE_PATH"] == state["file_path"]
+    assert "FILE_PATH" not in call["env"]
     assert call["env"]["FILES_JSON"] == state["files_json_path"]
     assert str(tmp_path) not in call["code"]
 
@@ -717,6 +719,7 @@ async def _run_analysis_direct(state, **overrides):
         "analyze_ids": ["file"],
         "analyze_names": {"file": "a.csv"},
         "files_json_path": None,
+        "input_artifact_ids": [],
     }
     kwargs.update(overrides)
     return await execute_analysis_module._run_analysis(**kwargs)

@@ -190,6 +190,7 @@ thirdparty
 /i18n/locales/**/**/*_ai_translated.po
 /i18n/locales/**/**/*~
 configs/my
+python_uploads/
 .devcontainer/dev.toml
 test_docs
 
@@ -217,3 +218,7 @@ docs/superpowers/
 # Uploaded files and generated runtime assets
 /.work/
 /python_uploads/
+# Generated Dashboard demo data and local share-token encryption key
+/examples/dashboard/generated/
+/pilot/meta_data/dashboard-share.key
+/examples/dashboard/olist/data/

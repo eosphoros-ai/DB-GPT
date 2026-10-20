@@ -1,0 +1,327 @@
+{
+  "schema_version": "1.3",
+  "dashboard": {
+    "id": "walmart-sales-demo",
+    "title": "Walmart 门店经营看板",
+    "description": "同一套 Schema v1 编辑器上的零售销售案例；数据为可复现的合成演示数据。",
+    "data_source_id": "walmart_sales_demo",
+    "status": "draft",
+    "theme": {}
+  },
+  "metric_context": {
+    "grain": "一行代表一家门店的一周销售",
+    "time_range": "2011-01-07 至 2012-12-28",
+    "data_freshness": "由 build_demo_databases.py 确定性生成",
+    "source_notes": [
+      "该案例使用 Walmart 风格字段的合成数据，只用于功能演示，不用于真实经营结论。"
+    ]
+  },
+  "filters": [
+    {
+      "id": "date",
+      "type": "date_range",
+      "label": "销售日期",
+      "field": "sale_date",
+      "default": ["2011-01-07", "2012-12-28"],
+      "options": []
+    },
+    {
+      "id": "stores",
+      "type": "multi_select",
+      "label": "门店",
+      "field": "store",
+      "default": [1, 2, 3, 4, 5],
+      "options": [
+        {"label": "Store 1", "value": 1},
+        {"label": "Store 2", "value": 2},
+        {"label": "Store 3", "value": 3},
+        {"label": "Store 4", "value": 4},
+        {"label": "Store 5", "value": 5}
+      ]
+    },
+    {
+      "id": "holiday",
+      "type": "select",
+      "label": "节假日口径",
+      "field": "holiday_flag",
+      "default": "all",
+      "options": [
+        {"label": "全部", "value": "all"},
+        {"label": "节假日周", "value": 1},
+        {"label": "普通周", "value": 0}
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "id": "total-sales",
+      "type": "kpi",
+      "title": "总销售额",
+      "description": "当前全局筛选范围内的周销售额合计。",
+      "query": {
+        "data_source_id": "walmart_sales_demo",
+        "sql": "SELECT ROUND(SUM(weekly_sales), 2) AS total_sales FROM walmart_sales WHERE sale_date BETWEEN :start_date AND :end_date AND store IN (:stores) AND (:holiday = 'all' OR holiday_flag = :holiday)",
+        "filter_parameters": {
+          "date": {"start_parameter": "start_date", "end_parameter": "end_date"},
+          "stores": "stores",
+          "holiday": "holiday"
+        },
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "total_sales", "type": "number", "label": "总销售额", "nullable": true}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 10,
+        "grain": "筛选范围合计"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "walmart_sales_demo",
+          "sql": "SELECT store, sale_date, weekly_sales, holiday_flag FROM walmart_sales ORDER BY sale_date, store",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "store", "type": "integer", "nullable": false},
+            {"name": "sale_date", "type": "date", "nullable": false},
+            {"name": "weekly_sales", "type": "number", "nullable": false},
+            {"name": "holiday_flag", "type": "integer", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 1000
+        },
+        "filter_fields": {"date": "sale_date", "stores": "store", "holiday": "holiday_flag"},
+        "group_by": [],
+        "measures": [{"source_field": "weekly_sales", "output_field": "total_sales", "aggregation": "sum"}],
+        "output_columns": ["total_sales"],
+        "row_mode": false,
+        "sort": [],
+        "max_output_rows": 10
+      },
+      "encoding": {"value": "total_sales", "columns": []},
+      "style": {"prefix": "$", "precision": 2}
+    },
+    {
+      "id": "monthly-trend",
+      "type": "line",
+      "title": "月度销售趋势",
+      "description": "观察季节性和长期趋势。",
+      "query": {
+        "data_source_id": "walmart_sales_demo",
+        "sql": "SELECT SUBSTR(sale_date, 1, 7) AS month, ROUND(SUM(weekly_sales), 2) AS sales FROM walmart_sales WHERE sale_date BETWEEN :start_date AND :end_date AND store IN (:stores) AND (:holiday = 'all' OR holiday_flag = :holiday) GROUP BY SUBSTR(sale_date, 1, 7) ORDER BY month",
+        "filter_parameters": {
+          "date": {"start_parameter": "start_date", "end_parameter": "end_date"},
+          "stores": "stores",
+          "holiday": "holiday"
+        },
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "month", "type": "string", "label": "月份", "nullable": false},
+          {"name": "sales", "type": "number", "label": "销售额", "nullable": true}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 100,
+        "grain": "月"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "walmart_sales_demo",
+          "sql": "SELECT store, sale_date, SUBSTR(sale_date, 1, 7) AS month, weekly_sales, holiday_flag FROM walmart_sales ORDER BY sale_date, store",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "store", "type": "integer", "nullable": false},
+            {"name": "sale_date", "type": "date", "nullable": false},
+            {"name": "month", "type": "string", "nullable": false},
+            {"name": "weekly_sales", "type": "number", "nullable": false},
+            {"name": "holiday_flag", "type": "integer", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 1000
+        },
+        "filter_fields": {"date": "sale_date", "stores": "store", "holiday": "holiday_flag"},
+        "group_by": ["month"],
+        "measures": [{"source_field": "weekly_sales", "output_field": "sales", "aggregation": "sum"}],
+        "output_columns": ["month", "sales"],
+        "row_mode": false,
+        "sort": [{"field": "month", "direction": "ascending"}],
+        "max_output_rows": 100
+      },
+      "encoding": {"x": "month", "y": "sales", "columns": []},
+      "style": {"smooth": true}
+    },
+    {
+      "id": "store-ranking",
+      "type": "bar",
+      "title": "门店销售排行",
+      "description": "比较门店贡献。",
+      "query": {
+        "data_source_id": "walmart_sales_demo",
+        "sql": "SELECT store, ROUND(SUM(weekly_sales), 2) AS sales FROM walmart_sales WHERE sale_date BETWEEN :start_date AND :end_date AND store IN (:stores) AND (:holiday = 'all' OR holiday_flag = :holiday) GROUP BY store ORDER BY sales DESC",
+        "filter_parameters": {
+          "date": {"start_parameter": "start_date", "end_parameter": "end_date"},
+          "stores": "stores",
+          "holiday": "holiday"
+        },
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "store", "type": "integer", "label": "门店", "nullable": false},
+          {"name": "sales", "type": "number", "label": "销售额", "nullable": true}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 100,
+        "grain": "门店"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "walmart_sales_demo",
+          "sql": "SELECT store, sale_date, weekly_sales, holiday_flag FROM walmart_sales ORDER BY sale_date, store",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "store", "type": "integer", "nullable": false},
+            {"name": "sale_date", "type": "date", "nullable": false},
+            {"name": "weekly_sales", "type": "number", "nullable": false},
+            {"name": "holiday_flag", "type": "integer", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 1000
+        },
+        "filter_fields": {"date": "sale_date", "stores": "store", "holiday": "holiday_flag"},
+        "group_by": ["store"],
+        "measures": [{"source_field": "weekly_sales", "output_field": "sales", "aggregation": "sum"}],
+        "output_columns": ["store", "sales"],
+        "row_mode": false,
+        "sort": [{"field": "sales", "direction": "descending"}],
+        "max_output_rows": 100
+      },
+      "encoding": {"x": "store", "y": "sales", "columns": []},
+      "style": {}
+    },
+    {
+      "id": "holiday-share",
+      "type": "pie",
+      "title": "节假日销售占比",
+      "description": "比较节假日周与普通周销售贡献。",
+      "query": {
+        "data_source_id": "walmart_sales_demo",
+        "sql": "SELECT CASE WHEN holiday_flag = 1 THEN 'Holiday' ELSE 'Regular' END AS holiday_type, ROUND(SUM(weekly_sales), 2) AS sales FROM walmart_sales WHERE sale_date BETWEEN :start_date AND :end_date AND store IN (:stores) AND (:holiday = 'all' OR holiday_flag = :holiday) GROUP BY holiday_flag ORDER BY holiday_type",
+        "filter_parameters": {
+          "date": {"start_parameter": "start_date", "end_parameter": "end_date"},
+          "stores": "stores",
+          "holiday": "holiday"
+        },
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "holiday_type", "type": "string", "label": "周类型", "nullable": false},
+          {"name": "sales", "type": "number", "label": "销售额", "nullable": true}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 10,
+        "grain": "节假日标记"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "walmart_sales_demo",
+          "sql": "SELECT store, sale_date, weekly_sales, holiday_flag, CASE WHEN holiday_flag = 1 THEN 'Holiday' ELSE 'Regular' END AS holiday_type FROM walmart_sales ORDER BY sale_date, store",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "store", "type": "integer", "nullable": false},
+            {"name": "sale_date", "type": "date", "nullable": false},
+            {"name": "weekly_sales", "type": "number", "nullable": false},
+            {"name": "holiday_flag", "type": "integer", "nullable": false},
+            {"name": "holiday_type", "type": "string", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 1000
+        },
+        "filter_fields": {"date": "sale_date", "stores": "store", "holiday": "holiday_flag"},
+        "group_by": ["holiday_type"],
+        "measures": [{"source_field": "weekly_sales", "output_field": "sales", "aggregation": "sum"}],
+        "output_columns": ["holiday_type", "sales"],
+        "row_mode": false,
+        "sort": [{"field": "holiday_type", "direction": "ascending"}],
+        "max_output_rows": 10
+      },
+      "encoding": {"category": "holiday_type", "angle": "sales", "columns": []},
+      "style": {"innerRadius": 0.55}
+    },
+    {
+      "id": "sales-detail",
+      "type": "table",
+      "title": "销售明细",
+      "description": "可核对图表背后的门店周明细。",
+      "query": {
+        "data_source_id": "walmart_sales_demo",
+        "sql": "SELECT store, sale_date, weekly_sales, holiday_flag, temperature, fuel_price, cpi, unemployment FROM walmart_sales WHERE sale_date BETWEEN :start_date AND :end_date AND store IN (:stores) AND (:holiday = 'all' OR holiday_flag = :holiday) ORDER BY sale_date DESC, store",
+        "filter_parameters": {
+          "date": {"start_parameter": "start_date", "end_parameter": "end_date"},
+          "stores": "stores",
+          "holiday": "holiday"
+        },
+        "default_parameters": {},
+        "output_fields": [
+          {"name": "store", "type": "integer", "label": "门店", "nullable": false},
+          {"name": "sale_date", "type": "date", "label": "日期", "nullable": false},
+          {"name": "weekly_sales", "type": "number", "label": "周销售额", "nullable": false},
+          {"name": "holiday_flag", "type": "integer", "label": "节假日", "nullable": false},
+          {"name": "temperature", "type": "number", "label": "温度", "nullable": false},
+          {"name": "fuel_price", "type": "number", "label": "油价", "nullable": false},
+          {"name": "cpi", "type": "number", "label": "CPI", "nullable": false},
+          {"name": "unemployment", "type": "number", "label": "失业率", "nullable": false}
+        ],
+        "timeout_seconds": 15,
+        "max_rows": 500,
+        "grain": "门店周"
+      },
+      "publication": {
+        "query": {
+          "data_source_id": "walmart_sales_demo",
+          "sql": "SELECT store, sale_date, weekly_sales, holiday_flag, temperature, fuel_price, cpi, unemployment FROM walmart_sales ORDER BY sale_date, store",
+          "filter_parameters": {},
+          "default_parameters": {},
+          "output_fields": [
+            {"name": "store", "type": "integer", "nullable": false},
+            {"name": "sale_date", "type": "date", "nullable": false},
+            {"name": "weekly_sales", "type": "number", "nullable": false},
+            {"name": "holiday_flag", "type": "integer", "nullable": false},
+            {"name": "temperature", "type": "number", "nullable": false},
+            {"name": "fuel_price", "type": "number", "nullable": false},
+            {"name": "cpi", "type": "number", "nullable": false},
+            {"name": "unemployment", "type": "number", "nullable": false}
+          ],
+          "timeout_seconds": 15,
+          "max_rows": 1000
+        },
+        "filter_fields": {"date": "sale_date", "stores": "store", "holiday": "holiday_flag"},
+        "group_by": [],
+        "measures": [],
+        "output_columns": ["store", "sale_date", "weekly_sales", "holiday_flag", "temperature", "fuel_price", "cpi", "unemployment"],
+        "row_mode": true,
+        "sort": [
+          {"field": "sale_date", "direction": "descending"},
+          {"field": "store", "direction": "ascending"}
+        ],
+        "max_output_rows": 500
+      },
+      "encoding": {"columns": ["store", "sale_date", "weekly_sales", "holiday_flag", "temperature", "fuel_price", "cpi", "unemployment"]},
+      "style": {"pageSize": 20}
+    }
+  ],
+  "layouts": {
+    "columns": 12,
+    "desktop": [
+      {"widget_id": "total-sales", "x": 0, "y": 0, "w": 4, "h": 3},
+      {"widget_id": "monthly-trend", "x": 4, "y": 0, "w": 8, "h": 7},
+      {"widget_id": "store-ranking", "x": 0, "y": 7, "w": 6, "h": 7},
+      {"widget_id": "holiday-share", "x": 6, "y": 7, "w": 6, "h": 7},
+      {"widget_id": "sales-detail", "x": 0, "y": 14, "w": 12, "h": 8}
+    ],
+    "mobile_strategy": "stack"
+  },
+  "metadata": {
+    "conversation_id": null,
+    "agent": {"generated": false},
+    "compatibility": {"demo": "walmart-sales", "data_kind": "synthetic"}
+  }
+}

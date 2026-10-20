@@ -102,6 +102,33 @@ async def test_skill_upload_accepts_plain_filename(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "hello.py/",
+        "hello.py\\",
+        "./hello.py",
+        ".\\hello.py",
+        "C:hello.py",
+        "\x00hello.py",
+    ],
+)
+async def test_skill_upload_rejects_non_plain_names(tmp_path, monkeypatch, filename):
+    agentic_data_api, upload_dir, skills_dir = _configure_skill_paths(
+        tmp_path, monkeypatch
+    )
+
+    result = await agentic_data_api.skill_upload(
+        FakeUploadFile(filename, b"print('unexpected')"),
+        UserRequest(user_id="alice"),
+    )
+
+    assert result.success is False
+    assert not any(path.is_file() for path in upload_dir.rglob("*"))
+    assert not any(path.is_file() for path in skills_dir.rglob("*"))
+
+
+@pytest.mark.asyncio
 async def test_skill_upload_accepts_valid_zip_package(tmp_path, monkeypatch):
     agentic_data_api, _, skills_dir = _configure_skill_paths(tmp_path, monkeypatch)
 

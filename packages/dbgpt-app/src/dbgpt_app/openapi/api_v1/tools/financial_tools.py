@@ -86,7 +86,7 @@ Action Input: {}
 不能猜测 prepare.py、prepare_financial_report.py 等脚本名，也不使用
 code_interpreter、shell_interpreter 或知识库搜索替代财报提取、计算和发布。
 如专用工具返回错误，根据实际错误处理；不把工具错误解释成缺少 Skill 脚本。
-不使用 html_interpreter、旧 HTML 模板或自行编写网页来替代财报组件。
+不使用 generate_report、html_interpreter、旧 HTML 模板或自行编写网页来替代财报组件。
 工具返回的财报已显示在当前对话右侧，不要让用户跳转 /financial-analysis。
 后续追问先调用 read_financial_report 读取当前对话的报告，不重复提取 PDF，
 只引用已有事实、计算及原文，缺少数据就明确说明，不自行计算新指标或补造原因。

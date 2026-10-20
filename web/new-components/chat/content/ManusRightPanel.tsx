@@ -8,6 +8,15 @@ import {
   isFinancialReportReference,
 } from '@/new-components/financial-analysis/agent-artifact';
 import type { FinancialCitation, FinancialCitationTarget } from '@/new-components/financial-analysis/report-citations';
+import HtmlReportEvidence from '@/new-components/report/HtmlReportEvidence';
+import ReportIframe, { resolveReportAssetUrls, sanitizeEmbeddedReportHtml } from '@/new-components/report/ReportIframe';
+import TraceableReportWorkspace from '@/new-components/report/TraceableReportWorkspace';
+import { referenceLocation } from '@/new-components/report/reference-location';
+import {
+  cleanReportHtmlForExport,
+  exportRenderedReportHtml,
+  printRenderedReport,
+} from '@/new-components/report/report-print';
 import type { SubAgentState, SubAgentStep } from '@/types/subagent';
 import type { AgentCitation } from '@/utils/react-agent-final';
 import {
@@ -50,7 +59,7 @@ import {
   UpOutlined,
 } from '@ant-design/icons';
 import { GPTVis } from '@antv/gpt-vis';
-import { Button, Table, Tooltip, message } from 'antd';
+import { Button, Dropdown, Table, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import dynamic from 'next/dynamic';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -79,10 +88,9 @@ const resolveImageUrl = (src: string): string => {
 };
 
 /** Replace `/images/...` references inside HTML content with full backend URLs */
-const resolveHtmlImageUrls = (html: string): string => {
-  const base = process.env.API_BASE_URL || '';
-  if (!base || !html) return html;
-  return html.replace(/(src\s*=\s*["'])\/images\//gi, `$1${base}/images/`);
+const resolveHtmlImageUrls = (html: string, allowScripts = false): string => {
+  if (!html) return html;
+  return resolveReportAssetUrls(sanitizeEmbeddedReportHtml(html, allowScripts));
 };
 
 export interface ExecutionOutput {
@@ -232,6 +240,11 @@ export interface ManusRightPanelProps {
   subAgentContext?: SubAgentState | null;
   /** Exit the sub-agent process view (return to the main agent timeline). */
   onExitSubAgentView?: () => void;
+  /** Persisted ReportRun for this ordinary agent turn, when it produced artifacts. */
+  reportId?: string;
+  reportRunId?: string;
+  /** Locate a report evidence artifact in the existing execution timeline. */
+  onReportArtifactFocus?: (stepId: string) => void;
   /**
    * Active conversation id used to query the observability trace for the
    * current conversation. When conversationId is provided, a "Trace" tab is
@@ -248,7 +261,9 @@ export type PanelView =
   | 'skill-preview'
   | 'summary'
   | 'trace'
-  | 'references';
+  | 'references'
+  | 'report'
+  | 'evidence-graph';
 
 // Get icon for step type
 const getStepTypeIcon = (type: StepType) => {
@@ -458,7 +473,12 @@ const InputFileListItem: React.FC<{ file: SessionFileSnapshot }> = memo(({ file 
 InputFileListItem.displayName = 'InputFileListItem';
 
 const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> = memo(({ artifact, onClick }) => {
+  const { t } = useTranslation();
   const isImage = artifact.type === 'image' || /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(artifact.name);
+  // A persisted ReportRun is the report itself; exposing its implementation
+  // filename makes it look like a second, unrelated deliverable.
+  const displayName =
+    artifact.type === 'html' && /^report\.html$/i.test(artifact.name) ? t('traceable_report_tab') : artifact.name;
   const imgSrc = isImage && typeof artifact.content === 'string' ? resolveImageUrl(artifact.content) : null;
 
   return (
@@ -484,7 +504,7 @@ const FileListItem: React.FC<{ artifact: ArtifactItem; onClick?: () => void }> =
         </div>
       )}
       <div className='min-w-0 flex-1'>
-        <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{artifact.name}</div>
+        <div className='text-sm font-medium text-gray-800 dark:text-gray-200 truncate'>{displayName}</div>
         <div className='text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5 mt-0.5'>
           <span>{getArtifactTypeLabel(artifact.type)}</span>
           {artifact.size != null && (
@@ -574,90 +594,16 @@ function fixSquishedTables(text: string): string {
     .join('\n');
 }
 
-// Auto-resizing iframe for HTML reports. Unlike a one-shot `onLoad` measure,
-// this keeps a ResizeObserver on the iframe document body so the height tracks
-// async content (charts / fonts / images that lay out after load). Falls back
-// to a polling re-measure for the first second to catch late layout shifts.
+// Legacy call sites use this name; all HTML previews now use the same report
+// iframe lifecycle as the persisted report tab.
 const AutoHeightIframe: React.FC<{
   srcDoc: string;
   title?: string;
   minHeight?: number;
   maxHeight?: number;
-}> = memo(({ srcDoc, title, minHeight = 500, maxHeight = 6000 }) => {
-  const ref = useRef<HTMLIFrameElement>(null);
-
-  // Neutralize viewport-relative full-height layouts. Reports authored with
-  // `html,body{height:100vh}` / `height:100%` / a `min-height:100vh` hero pin
-  // their height to the iframe's own viewport, so scrollHeight collapses to the
-  // initial iframe height (a fixed point ResizeObserver can never grow out of —
-  // the "only a purple gradient, cut off" symptom). Forcing auto height lets the
-  // real content drive scrollHeight so measurement works.
-  const patchedSrcDoc = useMemo(() => {
-    const resetCss =
-      '<style>html,body{height:auto!important;min-height:0!important;' + 'overflow:visible!important;}</style>';
-    if (!srcDoc) return srcDoc;
-    if (/<\/head>/i.test(srcDoc)) return srcDoc.replace(/<\/head>/i, resetCss + '</head>');
-    if (/<body[^>]*>/i.test(srcDoc)) return srcDoc.replace(/(<body[^>]*>)/i, '$1' + resetCss);
-    return resetCss + srcDoc;
-  }, [srcDoc]);
-
-  const measure = useCallback(() => {
-    const iframe = ref.current;
-    if (!iframe) return;
-    try {
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (doc?.body) {
-        const h = Math.max(doc.body.scrollHeight, doc.documentElement?.scrollHeight || 0, minHeight);
-        iframe.style.height = `${Math.min(h, maxHeight)}px`;
-      }
-    } catch {
-      // Cross-origin — keep current height
-    }
-  }, [minHeight, maxHeight]);
-
-  const handleLoad = useCallback(() => {
-    const iframe = ref.current;
-    // Tear down any observer/timers from a previous load before re-arming, so
-    // a re-fired onLoad (srcDoc change) does not leak observers/timers.
-    (iframe as any)?.__cleanup?.();
-    measure();
-    let observer: ResizeObserver | null = null;
-    try {
-      const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
-      if (doc?.body && typeof ResizeObserver !== 'undefined') {
-        observer = new ResizeObserver(() => measure());
-        observer.observe(doc.body);
-      }
-    } catch {
-      // ignore
-    }
-    // Catch late layout (charts/fonts) that may not trigger ResizeObserver.
-    const timers = [120, 400, 1000].map(ms => setTimeout(measure, ms));
-    (iframe as any).__cleanup = () => {
-      observer?.disconnect();
-      timers.forEach(clearTimeout);
-    };
-  }, [measure]);
-
-  useEffect(() => {
-    return () => {
-      const iframe = ref.current as any;
-      iframe?.__cleanup?.();
-    };
-  }, []);
-
-  return (
-    <iframe
-      ref={ref}
-      title={title || 'html-report'}
-      srcDoc={patchedSrcDoc}
-      sandbox='allow-scripts allow-same-origin'
-      className='w-full bg-white'
-      style={{ border: 'none', minHeight }}
-      onLoad={handleLoad}
-    />
-  );
-});
+}> = memo(({ srcDoc, title, minHeight = 500, maxHeight = 6000 }) => (
+  <ReportIframe isolated srcDoc={srcDoc} title={title || 'html-report'} minHeight={minHeight} maxHeight={maxHeight} />
+));
 
 AutoHeightIframe.displayName = 'AutoHeightIframe';
 
@@ -1080,12 +1026,11 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number; action?
                 <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>{content.title}</span>
               </div>
             )}
-            <AutoHeightIframe
-              srcDoc={resolveHtmlImageUrls(
-                typeof content === 'string' ? content : content?.html || content?.content || String(content),
-              )}
-              title={content?.title}
-            />
+            {(() => {
+              const rawHtml =
+                typeof content === 'string' ? content : content?.html || content?.content || String(content);
+              return <AutoHeightIframe srcDoc={resolveHtmlImageUrls(rawHtml, true)} title={content?.title} />;
+            })()}
           </div>
         )}
 
@@ -1368,7 +1313,7 @@ const HtmlTabbedRenderer: React.FC<{
   const htmlContent = html.content;
   const rawHtml =
     typeof htmlContent === 'string' ? htmlContent : htmlContent?.html || htmlContent?.content || String(htmlContent);
-  const htmlString = resolveHtmlImageUrls(rawHtml);
+  const htmlString = resolveHtmlImageUrls(rawHtml, true);
   const sourceCode = code ? String(code.content) : rawHtml;
 
   if (isFinancialReportReference(htmlContent)) {
@@ -2469,6 +2414,11 @@ const ReferencesPanel: React.FC<{
                     {citation.path}
                   </div>
                 )}
+                {citation.locator && (
+                  <div className='mt-2 break-all text-xs text-teal-700 dark:text-teal-300'>
+                    {referenceLocation(citation.locator)}
+                  </div>
+                )}
                 {citation.excerpt && (
                   <div className='mt-3 whitespace-pre-wrap break-words text-xs leading-5 text-gray-600 dark:text-gray-300'>
                     {citation.excerpt}
@@ -2525,6 +2475,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   onSubAgentClick,
   subAgentContext,
   onExitSubAgentView,
+  reportId,
+  reportRunId,
+  onReportArtifactFocus,
   conversationId,
 }) => {
   const { t } = useTranslation();
@@ -2540,32 +2493,45 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     onPanelViewChange?.(view);
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     try {
       const iframe = htmlPreviewRef.current;
       if (iframe?.contentWindow) {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        return;
+        if (!iframe.sandbox.contains('allow-same-origin')) {
+          iframe.contentWindow.postMessage({ type: 'dbgpt-preview-print' }, '*');
+          return;
+        }
+        if (await printRenderedReport(iframe)) return;
       }
     } catch {
       /* fallback below */
     }
-    if (previewArtifact) {
-      const htmlStr =
-        typeof previewArtifact.content === 'string'
-          ? previewArtifact.content
-          : previewArtifact.content?.html || previewArtifact.content?.content || String(previewArtifact.content);
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.write(resolveHtmlImageUrls(htmlStr));
-        win.document.close();
-        win.focus();
-        win.print();
-      } else {
-        message.error('浏览器阻止了弹出窗口，请允许后重试');
-      }
+    message.error(t('report_export_not_ready'));
+  };
+
+  const handleExportHtml = async () => {
+    const iframe = htmlPreviewRef.current;
+    const fallbackHtml = previewArtifact
+      ? typeof previewArtifact.content === 'string'
+        ? previewArtifact.content
+        : previewArtifact.content?.html || previewArtifact.content?.content || String(previewArtifact.content)
+      : undefined;
+    const fallback = fallbackHtml ? cleanReportHtmlForExport(resolveHtmlImageUrls(fallbackHtml, true)) : undefined;
+    const exported = (iframe ? await exportRenderedReportHtml(iframe) : undefined) || fallback;
+    if (!exported) {
+      message.error(t('report_export_not_ready'));
+      return;
     }
+    const basename = (previewArtifact?.name || t('traceable_report_tab')).replace(/\.(?:html?|pdf)$/i, '');
+    const blob = new Blob([exported], { type: 'text/html;charset=utf-8' });
+    const href = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.download = `${basename}.html`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(href), 0);
   };
 
   useEffect(() => {
@@ -2652,18 +2618,21 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         </div>
 
         <div className='flex items-center gap-1'>
-          {panelView === 'html-preview' && previewArtifact && !isFinancialReportReference(previewArtifact.content) && (
-            <Tooltip title={t('export_pdf')}>
-              <Button
-                type='text'
-                size='small'
-                icon={<ExportOutlined />}
-                onClick={handleExportPdf}
-                className='text-gray-500 hover:text-blue-500'
-              >
-                {t('export_pdf')}
+          {((panelView === 'report' && reportId && reportRunId) ||
+            (panelView === 'html-preview' && previewArtifact && !isFinancialReportReference(previewArtifact.content))) && (
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [
+                  { key: 'pdf', label: t('export_pdf'), onClick: handleExportPdf },
+                  { key: 'html', label: t('export_html'), onClick: handleExportHtml },
+                ],
+              }}
+            >
+              <Button type='text' size='small' icon={<ExportOutlined />} className='text-gray-500 hover:text-blue-500'>
+                {t('export')} <DownOutlined className='ml-1 text-[10px]' />
               </Button>
-            </Tooltip>
+            </Dropdown>
           )}
 
           {onSchedule && (
@@ -2777,8 +2746,10 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         previewArtifact ||
         skillName ||
         !!summaryContent ||
+        citations.length > 0 ||
         !!conversationId ||
-        citations.length > 0) && (
+        citations.length > 0 ||
+        (reportId && reportRunId)) && (
         <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
           <button
             onClick={() => setPanelView('execution')}
@@ -2866,6 +2837,40 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             </button>
           )}
+          {reportId && reportRunId && (
+            <button
+              onClick={() => setPanelView('report')}
+              className={classNames(
+                'px-4 py-2.5 text-xs font-medium transition-colors relative whitespace-nowrap',
+                panelView === 'report'
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <BarChartOutlined className='mr-1.5' />
+              {t('traceable_report_tab')}
+              {panelView === 'report' && (
+                <div className='absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-gray-900 dark:bg-gray-100' />
+              )}
+            </button>
+          )}
+          {reportId && reportRunId && (
+            <button
+              onClick={() => setPanelView('evidence-graph')}
+              className={classNames(
+                'px-4 py-2.5 text-xs font-medium transition-colors relative whitespace-nowrap',
+                panelView === 'evidence-graph'
+                  ? 'text-gray-900 dark:text-gray-100'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <ApartmentOutlined className='mr-1.5' />
+              {t('evidence_graph_tab')}
+              {panelView === 'evidence-graph' && (
+                <div className='absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-gray-900 dark:bg-gray-100' />
+              )}
+            </button>
+          )}
           {citations.length > 0 && (
             <button
               onClick={() => setPanelView('references')}
@@ -2877,7 +2882,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             >
               <BookOutlined className='mr-1.5' />
-              参考来源
+              {t('reference_sources_tab')}
               <span className='ml-1.5 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-600 dark:bg-blue-500/10 dark:text-blue-300'>
                 {citations.length}
               </span>
@@ -2886,7 +2891,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
               )}
             </button>
           )}
-          {previewArtifact && (
+          {previewArtifact && !(reportId && reportRunId && previewArtifact.type === 'html') && (
             <button
               onClick={() => setPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview')}
               className={classNames(
@@ -2912,6 +2917,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           'flex min-h-0 flex-1 flex-col',
           isSubAgentExecution ? 'overflow-hidden' : 'overflow-y-auto',
           isSubAgentExecution ||
+            panelView === 'report' ||
             panelView === 'html-preview' ||
             panelView === 'image-preview' ||
             panelView === 'skill-preview' ||
@@ -2921,7 +2927,37 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         )}
         data-testid='right-panel-content'
       >
-        {panelView === 'trace' && conversationId ? (
+        {reportId &&
+        reportRunId &&
+        (panelView === 'report' || (panelView === 'html-preview' && previewArtifact?.type === 'html')) ? (
+          <HtmlReportEvidence
+            html={
+              previewArtifact?.type === 'html'
+                ? (() => {
+                    const raw =
+                      typeof previewArtifact.content === 'string'
+                        ? previewArtifact.content
+                        : previewArtifact.content?.html ||
+                          previewArtifact.content?.content ||
+                          String(previewArtifact.content);
+                    return resolveReportAssetUrls(raw);
+                  })()
+                : ''
+            }
+            reportId={reportId}
+            reportRunId={reportRunId}
+            iframeRef={htmlPreviewRef}
+            onArtifactFocus={onReportArtifactFocus}
+          />
+        ) : reportId && reportRunId && panelView === 'evidence-graph' ? (
+          <TraceableReportWorkspace
+            reportId={reportId}
+            reportRunId={reportRunId}
+            view='evidence'
+            generatedFiles={artifacts || []}
+            onFileOpen={file => onArtifactClick?.(file as ArtifactItem)}
+          />
+        ) : panelView === 'trace' && conversationId ? (
           <ConversationTracePanel conversationId={conversationId} />
         ) : panelView === 'references' && citations.length > 0 ? (
           <ReferencesPanel
@@ -2944,30 +2980,25 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         ) : panelView === 'html-preview' && previewArtifact ? (
           <div className='w-full h-full flex flex-col'>
             {(() => {
-              const srcDoc = resolveHtmlImageUrls(
+              const rawHtml =
                 typeof previewArtifact.content === 'string'
                   ? previewArtifact.content
                   : previewArtifact.content?.html ||
-                      previewArtifact.content?.content ||
-                      String(previewArtifact.content),
-              );
-              console.log(
-                '[HTML Preview] artifact id:',
-                previewArtifact.id,
-                'srcDoc length:',
-                srcDoc?.length,
-                'first 300 chars:',
-                srcDoc?.substring(0, 300),
-              );
+                    previewArtifact.content?.content ||
+                    String(previewArtifact.content);
+              const srcDoc = resolveHtmlImageUrls(rawHtml, true);
               return (
-                <iframe
-                  key={previewArtifact.id || 'html-preview'}
-                  ref={htmlPreviewRef}
-                  srcDoc={srcDoc}
-                  sandbox='allow-scripts allow-same-origin allow-modals'
-                  className='w-full flex-1 bg-white'
-                  style={{ border: 'none', minHeight: 600 }}
-                />
+                <>
+                  <ReportIframe
+                    isolated
+                    key={previewArtifact.id || 'html-preview'}
+                    iframeRef={htmlPreviewRef}
+                    srcDoc={srcDoc}
+                    title={previewArtifact.name || 'HTML 预览'}
+                    minHeight={600}
+                    className='flex-1'
+                  />
+                </>
               );
             })()}
           </div>

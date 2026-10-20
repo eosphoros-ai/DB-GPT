@@ -1,4 +1,3 @@
-import ast
 import json
 import logging
 from typing import Any, List, Optional
@@ -12,6 +11,7 @@ from dbgpt.util.similarity_util import calculate_cosine_similarity
 from dbgpt.util.string_utils import remove_trailing_punctuation
 from dbgpt_serve.rag.models.models import KnowledgeSpaceDao
 
+from ..chunk_metadata import parse_chunk_metadata
 from ..models.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from ..models.document_db import KnowledgeDocumentDao
 
@@ -78,7 +78,12 @@ class QARetriever(BaseRetriever):
                     candidates = [
                         Chunk(
                             content=chunk.content,
-                            metadata=ast.literal_eval(chunk.meta_info),
+                            chunk_id=str(chunk.id),
+                            metadata={
+                                **parse_chunk_metadata(chunk.meta_info),
+                                "document_id": chunk.document_id,
+                                "chunk_db_id": chunk.id,
+                            },
                             retriever=self.name(),
                             score=0.0,
                         )
@@ -120,7 +125,11 @@ class QARetriever(BaseRetriever):
                         Chunk(
                             content=chunk.content,
                             chunk_id=str(chunk.id),
-                            metadata={"prop_field": ast.literal_eval(chunk.meta_info)},
+                            metadata={
+                                "prop_field": parse_chunk_metadata(chunk.meta_info),
+                                "document_id": chunk.document_id,
+                                "chunk_db_id": chunk.id,
+                            },
                             retriever=self.name(),
                             score=1.0,
                         )
@@ -141,7 +150,11 @@ class QARetriever(BaseRetriever):
                         Chunk(
                             content=chunk.content,
                             chunk_id=str(chunk.id),
-                            metadata={"prop_field": ast.literal_eval(chunk.meta_info)},
+                            metadata={
+                                "prop_field": parse_chunk_metadata(chunk.meta_info),
+                                "document_id": chunk.document_id,
+                                "chunk_db_id": chunk.id,
+                            },
                             retriever=self.name(),
                             score=1.0,
                         )

@@ -12,16 +12,22 @@
   "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
   "scripts": {
     "start": "NODE_OPTIONS=--max_old_space_size=8192 next start",
-    "dev": "NODE_OPTIONS=--max_old_space_size=16384 next dev",
-    "build": "NODE_OPTIONS=--max_old_space_size=8192 next build",
-    "build:prod": "APP_ENV=prod  NODE_OPTIONS=--max_old_space_size=8192 next build",
+    "dev": "NODE_OPTIONS=--max_old_space_size=16384 next dev --webpack",
+    "build": "NODE_OPTIONS=\"--max_old_space_size=8192 --require=./scripts/graceful-fs-register.cjs\" next build --webpack",
+    "build:prod": "APP_ENV=prod  NODE_OPTIONS=\"--max_old_space_size=8192 --require=./scripts/graceful-fs-register.cjs\" next build --webpack",
     "lint": "eslint '**/*.{ts,tsx}' --fix",
     "format": "prettier --write '**/*.{ts,tsx}'",
-    "export": "next export",
-    "compile": " NODE_OPTIONS=--max_old_space_size=8192 next build && next export",
-    "test": "npm run test:react-final && npm run test:final-presentation",
+    "export": "DBGPT_WEB_STATIC_EXPORT=1 npm run build",
+    "compile": "DBGPT_WEB_STATIC_EXPORT=1 npm run build",
+    "test": "npm run test:react-final && npm run test:final-presentation && npm run test:report-graph && npm run test:report-html",
+    "test:report-html": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/report-html-tests new-components/report/report-html.ts new-components/report/report-html.test.ts && node node_modules/.cache/report-html-tests/report-html.test.js",
+    "test:report-graph": "tsc --project tsconfig.report-graph-test.json --moduleResolution node && node node_modules/.cache/report-graph-tests/new-components/report/report-graph-model.test.js",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
-    "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js"
+    "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
+    "test:dashboard": "vitest run --config vitest.dashboard.config.mts",
+    "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
+    "test:e2e:report": "playwright test --config playwright.report.config.ts",
+    "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",
@@ -69,10 +75,9 @@
     "monaco-editor": ">=0.31.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.2",
-    "next": "13.4.7",
-    "next-auth": "^4.20.1",
+    "next": "16.3.8",
+    "next-auth": "^4.24.15",
     "next-connect": "^1.0.0-next.4",
-    "next-transpile-modules": "^10.0.1",
     "nprogress": "^0.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -89,20 +94,23 @@
     "sql-formatter": "^12.2.4",
     "tailwindcss": "3.3.2",
     "tailwindcss-animated": "^1.0.1",
-    "typescript": "5.1.3"
+    "typescript": "5.9.3",
+    "ajv": "^8.20.0",
+    "react-grid-layout": "^2.2.4",
+    "react-markdown": "9.0.1",
+    "react-resizable": "3.2.0"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.2",
     "@types/google-one-tap": "^1.2.4",
     "@types/lodash": "^4.14.195",
     "@types/markdown-it": "^14.1.1",
-    "@types/node": "20.5.7",
+    "@types/node": "20.19.43",
     "@types/node-localstorage": "^1.3.2",
     "@types/nprogress": "^0.2.0",
-    "@types/react": "18.2.14",
-    "@types/react-dom": "18.2.6",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
     "@types/react-syntax-highlighter": "^15.5.7",
-    "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^8.3.0",
     "@typescript-eslint/parser": "^8.3.0",
     "autoprefixer": "10.4.14",
@@ -111,12 +119,19 @@
     "eslint-config-next": "13.4.7",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.3",
+    "graceful-fs": "^4.2.11",
     "husky": "^9.1.5",
     "lint-staged": "^15.2.9",
     "monaco-editor-webpack-plugin": "^7.1.0",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^4.0.0",
-    "prettier-plugin-packagejson": "^2.5.2"
+    "prettier-plugin-packagejson": "^2.5.2",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "^16.3.0",
+    "@playwright/test": "^1.62.0",
+    "jsdom": "^26.1.0",
+    "vitest": "4.1.10",
+    "@types/uuid": "^9.0.8"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -141,5 +156,8 @@
     "d3-quadtree": "2",
     "d3-force": "2",
     "d3-geo": "2"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }

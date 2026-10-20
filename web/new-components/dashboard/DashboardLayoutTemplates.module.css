@@ -1,0 +1,279 @@
+.gallery {
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Microsoft YaHei',
+    sans-serif;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.galleryCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce3eb;
+  border-radius: 12px;
+  background: #fff;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.galleryCard:hover {
+  border-color: #93b4e9;
+  box-shadow: 0 6px 20px #1720330a;
+}
+.galleryButton {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 12px 12px 0;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.galleryButton:focus-visible,
+.choice:focus-visible {
+  outline: 3px solid #1d5fd1;
+  outline-offset: -3px;
+}
+.thumbnail {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cardCopy {
+  padding: 16px 6px 18px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #64748b;
+}
+.eyebrow span {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.cardCopy h3 {
+  margin: 10px 0 7px;
+  color: #172033;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.cardCopy p {
+  margin: 0;
+  min-height: 44px;
+  font-size: 13px;
+  line-height: 22px;
+  color: #5f6f85;
+}
+.structure {
+  margin-top: 14px;
+  font-size: 11px;
+  color: #64748b;
+}
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  color: #1d5fd1;
+  font-size: 12px;
+  font-weight: 600;
+}
+.source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-top: 1px solid #edf0f4;
+  color: #5f6f85;
+  font-size: 11px;
+}
+.source:hover {
+  color: #1d5fd1;
+  background: #f6f8fb;
+}
+.intro {
+  margin: 4px 0 18px;
+  color: #5f6f85;
+  font-size: 13px;
+}
+.choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.choice {
+  min-width: 0;
+  border: 1px solid #dce3eb;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  color: #172033;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.choice[aria-pressed='true'] {
+  border-color: #1d5fd1;
+  box-shadow: 0 0 0 1px #1d5fd1;
+}
+.choice .thumbnail {
+  max-height: 150px;
+}
+.choiceTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.choiceTitle svg {
+  color: #1d5fd1;
+}
+.choiceSource {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+.previewHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 24px 0 14px;
+}
+.previewHeading h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.previewHeading p {
+  max-width: 620px;
+  font-size: 12px;
+  line-height: 20px;
+  color: #5f6f85;
+  margin: 0 0 6px;
+}
+.previewHeading a {
+  font-size: 11px;
+  color: #1d5fd1;
+}
+.previewHeading > label {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.preview {
+  padding: 16px;
+  border: 1px solid #dce3eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.preview > p {
+  margin: 20px;
+  text-align: center;
+  color: #64748b;
+}
+:global(.dark) .galleryCard,
+:global(.dark) .choice {
+  background: #1b1e24;
+  border-color: #3c4350;
+  color: #f4f5f7;
+}
+:global(.dark) .cardCopy h3 {
+  color: #f4f5f7;
+}
+:global(.dark) .cardCopy p,
+:global(.dark) .eyebrow,
+:global(.dark) .structure,
+:global(.dark) .source,
+:global(.dark) .choiceSource,
+:global(.dark) .intro,
+:global(.dark) .previewHeading p {
+  color: #aab4c4;
+}
+:global(.dark) .source {
+  border-color: #3c4350;
+}
+:global(.dark) .source:hover {
+  background: #252a34;
+}
+:global(.dark) .cta,
+:global(.dark) .previewHeading a {
+  color: #9cb8ff;
+}
+:global(.dark) .choice[aria-pressed='true'] {
+  border-color: #9cb8ff;
+  box-shadow: 0 0 0 1px #9cb8ff;
+}
+@media (max-width: 760px) {
+  .gallery {
+    grid-template-columns: 1fr;
+  }
+  .galleryButton {
+    display: grid;
+    grid-template-columns: minmax(110px, 0.85fr) minmax(0, 1.15fr);
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+  }
+  .cardCopy {
+    padding: 0;
+  }
+  .cardCopy h3 {
+    font-size: 16px;
+  }
+  .cardCopy p {
+    min-height: 0;
+    font-size: 12px;
+  }
+  .eyebrow {
+    flex-wrap: wrap;
+    font-size: 9px;
+  }
+  .structure {
+    display: none;
+  }
+  .cta {
+    margin-top: 12px;
+  }
+  .choices {
+    gap: 8px;
+  }
+  .choice {
+    padding: 6px;
+  }
+  .choiceTitle {
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .choiceSource {
+    font-size: 9px;
+  }
+  .previewHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .preview {
+    padding: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .galleryCard,
+  .choice {
+    transition: none;
+  }
+}

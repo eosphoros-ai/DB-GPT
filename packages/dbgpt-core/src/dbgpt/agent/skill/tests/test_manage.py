@@ -1,12 +1,89 @@
 """Tests for the skill manager."""
 
 import json
+import shutil
+import zipfile
 from pathlib import Path
 
 import pytest
 
 from dbgpt.agent.skill.manage import SkillManager
 from dbgpt.configs import model_config
+
+
+@pytest.mark.asyncio
+async def test_skill_creator_cli_initializes_and_packages_skill(tmp_path, monkeypatch):
+    """Exercise the actual bundled CLI scripts, including Windows path handling."""
+    repository = next(
+        parent
+        for parent in Path(__file__).resolve().parents
+        if (parent / "skills/skill-creator/scripts/init_skill.py").is_file()
+    )
+    skills_dir = tmp_path / "skills"
+    shutil.copytree(repository / "skills/skill-creator", skills_dir / "skill-creator")
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skills_dir))
+    monkeypatch.setenv("PYTHONUTF8", "1")
+    manager = SkillManager(None)
+    destination = tmp_path / "中文 skills with spaces"
+    output_dir = tmp_path / "execution"
+
+    failed = json.loads(
+        await manager.execute_skill_script_file(
+            "skill-creator",
+            "init_skill.py",
+            {"skill-name": "sql-data-analysis", "path": str(destination)},
+            output_dir=str(output_dir),
+        )
+    )
+    assert failed["success"] is False
+    assert not destination.exists()
+    assert "argv" in failed["chunks"][-1]["content"]
+
+    argv = ["sql-data-analysis", "--path", str(destination)]
+    initialized = json.loads(
+        await manager.execute_skill_script_file(
+            "skill-creator", "init_skill.py", argv=argv, output_dir=str(output_dir)
+        )
+    )
+    assert initialized["success"] is True, initialized
+    assert initialized["script_arguments"] == {"argv": argv}
+    skill_dir = destination / "sql-data-analysis"
+    assert (skill_dir / "SKILL.md").is_file()
+    assert (skill_dir / "scripts/example.py").is_file()
+
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: sql-data-analysis\n"
+        "description: Query SQL databases and visualize results.\n---\n"
+        "# SQL data analysis\nConnect, query, and visualize SQL data.\n",
+        encoding="utf-8",
+    )
+    packaged = json.loads(
+        await manager.execute_skill_script_file(
+            "skill-creator",
+            "package_skill.py",
+            argv=[str(skill_dir), str(tmp_path / "dist")],
+            output_dir=str(output_dir),
+        )
+    )
+    assert packaged["success"] is True, packaged
+    with zipfile.ZipFile(tmp_path / "dist/sql-data-analysis.skill") as archive:
+        assert "sql-data-analysis/SKILL.md" in archive.namelist()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "args,argv", [({"marker": "unused"}, ["x"]), (None, "x"), (None, [1])]
+)
+async def test_skill_cli_rejects_ambiguous_or_invalid_arguments(
+    tmp_path, monkeypatch, args, argv
+):
+    skill_dir = tmp_path / "skills/test-skill"
+    _write_marker_script(skill_dir)
+    monkeypatch.setattr(model_config, "SKILLS_DIR", str(skill_dir.parent))
+    with pytest.raises(ValueError, match="either args"):
+        await SkillManager(None).execute_skill_script_file(
+            "test-skill", "touch_marker.py", args, argv=argv
+        )
 
 
 def _write_marker_script(skill_dir: Path) -> None:

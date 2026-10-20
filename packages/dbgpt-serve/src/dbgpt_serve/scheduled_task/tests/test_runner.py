@@ -27,7 +27,7 @@ from ..dao.task_dao import ScheduledTaskDao
 # db.create_all() can discover the tables.
 from ..models.scheduled_run_model import ScheduledRunEntity  # noqa: F401
 from ..models.scheduled_task_model import ScheduledTaskEntity  # noqa: F401
-from ..service.chat_replay_runner import ChatReplayRunner
+from ..service.chat_replay_runner import ChatReplayRunner, run_scheduled_task
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -48,6 +48,9 @@ def _seed_task(
     user_name: str = "alice",
     sys_code: str = "sys-A",
     payload_overrides: dict = None,
+    owner_id: str = None,
+    resource_type: str = None,
+    resource_id: str = None,
 ) -> None:
     """Insert a task row into the in-memory DB."""
     payload = dict(_DEFAULT_PAYLOAD)
@@ -63,7 +66,10 @@ def _seed_task(
             "payload_json": json.dumps(payload),
             "enabled": enabled,
             "user_name": user_name,
+            "owner_id": owner_id,
             "sys_code": sys_code,
+            "resource_type": resource_type,
+            "resource_id": resource_id,
         }
     )
 
@@ -158,6 +164,67 @@ def runner() -> ChatReplayRunner:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stop", ["lease_lost", "cancel_then_retry"])
+async def test_dispatcher_finishes_cancelled_chat_replay_and_can_retry(
+    monkeypatch, stop
+):
+    _seed_task(owner_id="stable-user-id", user_name="Display Name")
+    entered = asyncio.Event()
+    cancelled = asyncio.Event()
+    conversations = []
+
+    async def stream(self, payload):
+        conversations.append(payload["conv_uid"])
+        assert payload["user_name"] == "stable-user-id"
+        if len(conversations) == 1:
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cancelled.set()
+        return ["replayed after cancellation"], [], 0
+
+    monkeypatch.setattr(ChatReplayRunner, "_run_agent_stream", stream)
+    monkeypatch.setattr(
+        "dbgpt_serve.scheduled_task.service.chat_replay_runner._LEASE_RENEW_INTERVAL_SECONDS",
+        0.01,
+    )
+    running = asyncio.create_task(run_scheduled_task("t1"))
+    try:
+        await asyncio.wait_for(entered.wait(), 2)
+        assert ScheduledRunDao().list_by_task_id("t1")[0]["status"] == "running"
+        if stop == "lease_lost":
+            ScheduledTaskDao().update(
+                {"task_id": "t1"}, {"lease_owner": "other-worker"}
+            )
+        else:
+            running.cancel()
+        expected = RuntimeError if stop == "lease_lost" else asyncio.CancelledError
+        with pytest.raises(expected):
+            await asyncio.wait_for(running, 2)
+    finally:
+        if not running.done():
+            running.cancel()
+        await asyncio.gather(running, return_exceptions=True)
+
+    assert cancelled.is_set()
+    run = ScheduledRunDao().list_by_task_id("t1")[0]
+    assert run["status"] == "failed"
+    assert run["finished_at"] is not None
+    assert run["error_message"] == "execution cancelled"
+    assert run["output_conv_uid"] == conversations[0]
+    lease = ScheduledTaskDao().get_one({"task_id": "t1"})["lease_owner"]
+    assert lease == ("other-worker" if stop == "lease_lost" else None)
+    if stop == "lease_lost":
+        ScheduledTaskDao().release_lease("t1", "other-worker")
+    assert await run_scheduled_task("t1") is True
+    runs = ScheduledRunDao().list_by_task_id("t1")
+    assert sorted(item["status"] for item in runs) == ["failed", "success"]
+    assert all(item["finished_at"] is not None for item in runs)
+    assert len(set(item["output_conv_uid"] for item in runs)) == 2
 
 
 @pytest.mark.asyncio
@@ -645,3 +712,36 @@ def test_reclaim_previous_run_swallows_errors():
     runner._reclaim_previous_run_session_files("alice", "task-1", "new-conv", registry)
 
     registry.delete_session_files.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_uploaded_dataset_replay_uses_owner_and_opaque_binding(
+    runner: ChatReplayRunner,
+):
+    _seed_task(
+        owner_id="alice-owner",
+        resource_type="uploaded_dataset",
+        resource_id="dataset-1",
+        payload_overrides={
+            "ext_info": {
+                "dataset_id": "dataset-1",
+                "file_paths": ["C:/forged.csv"],
+                "database_name": "forged-db",
+            }
+        },
+    )
+    mock_conv = _make_mock_conv_vo()
+
+    with (
+        patch(_PATCH_REACT, new=_make_fake_stream()),
+        patch(_PATCH_CONV_VO, new=mock_conv),
+    ):
+        await runner.replay_chat_task("t1")
+
+    payload = mock_conv.call_args.kwargs
+    assert payload["user_name"] == "alice-owner"
+    assert payload["ext_info"] == {
+        "dataset_id": "dataset-1",
+        "dataset_replay_task_id": "t1",
+    }
+    assert payload["conv_uid"]
