@@ -16,6 +16,7 @@ import {
   ClockCircleOutlined,
   CodeOutlined,
   ConsoleSqlOutlined,
+  CopyOutlined,
   DatabaseOutlined,
   DesktopOutlined,
   DownloadOutlined,
@@ -23,6 +24,7 @@ import {
   ExclamationCircleOutlined,
   FileExcelOutlined,
   FileImageOutlined,
+  FileMarkdownOutlined,
   FileOutlined,
   FilePptOutlined,
   FileSearchOutlined,
@@ -34,12 +36,28 @@ import {
   SearchOutlined,
   TableOutlined,
 } from '@ant-design/icons';
-import { Button, Tooltip } from 'antd';
+import { Button, message, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ObservationFormatter from './ObservationFormatter';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
+
+/** Strip markdown syntax for the "copy as plain text" action. */
+function markdownToPlainText(md: string): string {
+  return md
+    .replace(/```[a-zA-Z0-9_-]*\n/g, '')
+    .replace(/```/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
 
@@ -1076,6 +1094,26 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     return stripFlowNarration(stripVisBlocks(flowParsed?.cleanText ?? ''));
   }, [isFlowRun, flowRunning, flowParsed, assistantText]);
 
+  const copyAnswer = useCallback(
+    async (asMarkdown: boolean) => {
+      const src = displayAssistantText || '';
+      const text = asMarkdown ? src : markdownToPlainText(src);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      message.success(t(asMarkdown ? 'copied_markdown' : 'copied_text') as string);
+    },
+    [displayAssistantText, t],
+  );
+
+
   const handleStepClick = useCallback(
     (stepId: string, sectionId: string) => {
       onStepClick?.(stepId, sectionId);
@@ -1272,6 +1310,28 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                 <MarkdownContext>{displayAssistantText}</MarkdownContext>
               )}
             </div>
+            {!isAssistantStreaming && displayAssistantText && (
+              <div className='mt-3 flex items-center gap-1'>
+                <Tooltip title={t('copy_plain_text', '复制文本')}>
+                  <button
+                    type='button'
+                    onClick={() => copyAnswer(false)}
+                    className='w-7 h-7 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
+                  >
+                    <CopyOutlined className='text-[13px]' />
+                  </button>
+                </Tooltip>
+                <Tooltip title={t('copy_markdown', '复制 Markdown')}>
+                  <button
+                    type='button'
+                    onClick={() => copyAnswer(true)}
+                    className='w-7 h-7 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
+                  >
+                    <FileMarkdownOutlined className='text-[13px]' />
+                  </button>
+                </Tooltip>
+              </div>
+            )}
             {citationIndexes.length > 0 && onReferencesClick && (
               <button
                 type='button'
