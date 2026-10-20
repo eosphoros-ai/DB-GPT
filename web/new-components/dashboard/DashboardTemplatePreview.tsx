@@ -1,3 +1,8 @@
+import {
+  dashboardDateLocale,
+  dashboardText as dt,
+  useDashboardTranslation,
+} from '@/new-components/dashboard/dashboard-i18n';
 import { useId } from 'react';
 
 export interface TemplatePreviewData {
@@ -10,9 +15,10 @@ export interface TemplatePreviewData {
   segments: { label: string; value: number }[];
 }
 const number = (value: number) =>
-  new Intl.NumberFormat('zh-CN', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  new Intl.NumberFormat(dashboardDateLocale(), { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 /** Tiny charts from the verified query result, not a screenshot of an empty editor. */
 export default function DashboardTemplatePreview({ data }: { data: TemplatePreviewData }) {
+  useDashboardTranslation();
   const gradientId = useId().replaceAll(':', '');
   const max = Math.max(1, ...data.trend.map(p => p.value));
   const points = data.trend
@@ -30,7 +36,12 @@ export default function DashboardTemplatePreview({ data }: { data: TemplatePrevi
     <svg
       viewBox='0 0 560 350'
       role='img'
-      aria-label={`${data.title}，${data.metric} ${number(data.total)}${data.unit}，已验证数据预览`}
+      aria-label={dt('{{value0}}，{{value1}} {{value2}}{{value3}}，已验证数据预览', {
+        value0: data.title,
+        value1: data.metric,
+        value2: number(data.total),
+        value3: data.unit,
+      })}
     >
       <defs>
         <linearGradient id={gradientId} x1='0' y1='0' x2='0' y2='1'>
@@ -54,17 +65,17 @@ export default function DashboardTemplatePreview({ data }: { data: TemplatePrevi
         {number(data.total)}
       </text>
       <text x='36' y='145' fontSize='11' fill='var(--app-muted)'>
-        {data.unit} · 全部年份
+        {data.unit} {dt('· 全部年份')}
       </text>
       <rect x='206' y='51' width='334' height='114' rx='10' fill='var(--app-surface)' />
       <text x='223' y='77' fontSize='12' fill='var(--app-text)'>
-        月度趋势
+        {dt('月度趋势')}
       </text>
       <path d={`M227 150 L${points} L510 150 Z`} fill={`url(#${gradientId})`} />
       <polyline points={points} fill='none' stroke='var(--app-accent)' strokeWidth='2.3' />
       <rect x='20' y='178' width='291' height='151' rx='10' fill='var(--app-surface)' />
       <text x='36' y='201' fontSize='12' fill='var(--app-text)'>
-        贡献排行
+        {dt('贡献排行')}
       </text>
       {ranking.map((p, i) => (
         <g key={p.label}>
@@ -86,7 +97,7 @@ export default function DashboardTemplatePreview({ data }: { data: TemplatePrevi
       ))}
       <rect x='324' y='178' width='216' height='151' rx='10' fill='var(--app-surface)' />
       <text x='340' y='201' fontSize='12' fill='var(--app-text)'>
-        主要分类
+        {dt('主要分类')}
       </text>
       {segments.map((p, i) => {
         const length = (p.value / sum) * 226;
@@ -112,7 +123,7 @@ export default function DashboardTemplatePreview({ data }: { data: TemplatePrevi
         );
       })}
       <text x='378' y='269' textAnchor='middle' fontSize='10' fill='var(--app-muted)'>
-        前 {segments.length} 类
+        {dt('前')} {segments.length} {dt('类')}
       </text>
     </svg>
   );

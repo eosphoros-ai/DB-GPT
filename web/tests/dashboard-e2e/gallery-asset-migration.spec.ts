@@ -54,7 +54,7 @@ for (const model of [null, 'test-model', undefined]) {
       }),
     );
     await page.goto('/dashboards/?tab=templates');
-    await page.getByRole('button', { name: '预览模板 零售经营总览', exact: true }).click();
+    await page.getByRole('button', { name: '使用模板 零售经营总览', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'AI 适配并预览', exact: true }).click();
     const request = page.waitForRequest('**/api/v1/dashboard-catalog/retail-overview/generate');

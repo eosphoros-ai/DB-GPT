@@ -238,6 +238,14 @@ interface Skill {
   icon?: string;
 }
 
+// Editor guidance is loaded by the Dashboard backend with the current
+// dashboard/annotation context, rather than selected as a standalone task.
+const DASHBOARD_EDITOR_SKILLS = new Set([
+  'dashboard-chart-configuration',
+  'dashboard-filter-configuration',
+  'dashboard-collaboration',
+]);
+
 type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
 
 interface Artifact {
@@ -1162,7 +1170,7 @@ const Playground: NextPage = () => {
       const response = await axios.get(`${process.env.API_BASE_URL ?? ''}/api/v1/skills/list`);
       // ctx-axios interceptor returns response.data directly
       if (response?.success && Array.isArray(response.data)) {
-        return response.data.map((item: any) => ({
+        const skills = response.data.map((item: any) => ({
           id: String(item.id || item.name),
           name: normalizeText(item.name),
           description: normalizeText(item.description),
@@ -1180,6 +1188,7 @@ const Playground: NextPage = () => {
                       ? '💬'
                       : '⚡',
         })) as Skill[];
+        return skills.filter(skill => !DASHBOARD_EDITOR_SKILLS.has(skill.name));
       }
       return [];
     } catch (e) {

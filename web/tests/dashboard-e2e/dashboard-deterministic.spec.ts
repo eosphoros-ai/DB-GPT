@@ -199,6 +199,29 @@ const installDashboardApi = async (page: Page) => {
 test.describe('Deterministic dashboard browser lifecycle', () => {
   test.skip(!process.env.DASHBOARD_E2E_BASE_URL, 'Start the built web app and set DASHBOARD_E2E_BASE_URL.');
 
+  test('switches editor language without losing a draft, then saves and publishes', async ({ page }, testInfo) => {
+    const api = await installDashboardApi(page);
+    await page.goto(`/dashboards/${api.record().id}`);
+    const draftTitle = '保留我的看板标题';
+    await page.getByRole('textbox', { name: '看板标题', exact: true }).fill(draftTitle);
+    await page.locator('.anticon-global').click();
+    await expect(page.getByRole('textbox', { name: 'Dashboard title', exact: true })).toHaveValue(draftTitle);
+    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('english-editor.png'), fullPage: true });
+    const saved = page.waitForResponse(
+      response => response.request().method() === 'POST' && response.url().endsWith('/operations') && response.ok(),
+    );
+    await page.getByRole('button', { name: 'Save dashboard', exact: true }).click();
+    await saved;
+    expect(api.record().schema.dashboard.title).toBe(draftTitle);
+    await expect(page.getByText('Unsaved', { exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Publish dashboard', exact: true }).click();
+    await page.getByRole('button', { name: 'Publish fixed snapshot', exact: true }).click();
+    await expect(page.locator('a[href*="/dashboard-share/"]').first()).toBeVisible();
+    expect(api.published().schema.dashboard.title).toBe(draftTitle);
+    await page.screenshot({ path: testInfo.outputPath('english-publication.png'), fullPage: true });
+  });
+
   test('keeps newer edits when a pending save completes, then saves them at the new revision', async ({ page }) => {
     const api = await installDashboardApi(page);
     let release!: () => void;
