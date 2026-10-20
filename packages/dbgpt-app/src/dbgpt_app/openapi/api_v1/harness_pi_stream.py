@@ -26,6 +26,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 import uuid
 from typing import (
     Any,
@@ -318,6 +319,7 @@ def register_harness_endpoints(router: Any) -> None:
     async def run_harness_tool(
         payload: Dict[str, Any] = Body(),
         authorization: Optional[str] = Header(default=None),
+        x_approval_token: Optional[str] = Header(default=None),
     ) -> Result:
         """Loopback executor for DB-GPT tools bridged into pi.
 
@@ -368,8 +370,118 @@ def register_harness_endpoints(router: Any) -> None:
                 },
             )
             return Result.succ({"request_id": pending.request_id, "async": True})
+        # ── Tool approval gate for bridged tools (pi engine) ───────────────
+        # Mirrors the dbgpt-engine gate but over HTTP: a confirm-tier call
+        # returns an approval handle (the pi extension polls
+        # /approval/status and re-posts with the one-shot X-Approval-Token),
+        # a deny-tier call returns the policy observation as tool output.
+        from .approval import (
+            POLICY,
+            TIER_CONFIRM,
+            TIER_DENY,
+            approval_center,
+            approval_mode,
+            approval_ttl_seconds,
+            deny_observation,
+            preview_args,
+        )
+
+        if x_approval_token:
+            # Redemption re-post of an approved call: single-use token.
+            if approval_center.consume_token(x_approval_token) is None:
+                raise HTTPException(
+                    status_code=403, detail="invalid or reused approval token"
+                )
+        elif approval_mode() != "off" and not approval_center.is_allowed(
+            conv_id, name, arguments
+        ):
+            tier, rule_id = POLICY.classify(name, arguments)
+            if tier == TIER_DENY:
+                return Result.succ({"result": deny_observation(name, rule_id)})
+            if tier == TIER_CONFIRM:
+                pa = approval_center.register(
+                    conv_id, name, arguments, rule_id, engine="pi"
+                )
+                tool_bridge.push_conv_event(
+                    conv_id,
+                    {
+                        "type": "approval.requested",
+                        "approval_id": pa.approval_id,
+                        "conv_id": conv_id,
+                        "tool": name,
+                        "args_preview": preview_args(arguments),
+                        "rule_id": rule_id,
+                        "risk": tier,
+                        "ttl_seconds": int(approval_ttl_seconds()),
+                        "ts": pa.created_ts,
+                    },
+                )
+                logger.info(
+                    "pi approval gate: awaiting decision approval_id=%s tool=%s",
+                    pa.approval_id,
+                    name,
+                )
+                return Result.succ(
+                    {
+                        "approval": True,
+                        "approval_id": pa.approval_id,
+                        "ttl_seconds": int(approval_ttl_seconds()),
+                    }
+                )
         result = await tool_bridge.run_tool(conv_id, name, arguments)
         return Result.succ({"result": result})
+
+    @router.get("/v1/chat/harness/approval/status", response_model=Result)
+    async def harness_approval_status(
+        approval_id: str = Query(...),
+        authorization: Optional[str] = Header(default=None),
+    ) -> Result:
+        """Polling endpoint for the pi approval gate (loopback)."""
+        bearer = (authorization or "").strip()
+        if not bearer.lower().startswith("bearer ") or bearer[7:] != (
+            _harness_internal_token()
+        ):
+            raise HTTPException(status_code=401, detail="invalid harness token")
+        from .approval import approval_center, approval_ttl_seconds, reject_observation
+
+        pa = approval_center.get(approval_id)
+        if pa is None:
+            return Result.succ(
+                {
+                    "state": "gone",
+                    "result": (
+                        "Approval expired or was already handled."
+                        " The tool call was not executed."
+                    ),
+                }
+            )
+        if pa.status == "pending" and (
+            time.time() - pa.created_ts > approval_ttl_seconds()
+        ):
+            pa.status = "timeout"
+        if pa.status == "pending":
+            return Result.succ({"state": "pending"})
+        if not pa.finalized:
+            pa.finalized = True
+            approval_center.pop(approval_id)
+            tool_bridge.push_conv_event(
+                pa.conv_id,
+                {
+                    "type": "approval.resolved",
+                    "approval_id": pa.approval_id,
+                    "conv_id": pa.conv_id,
+                    "decision": pa.status,
+                    "scope": pa.scope,
+                },
+            )
+        if pa.status == "approved":
+            return Result.succ({"state": "approved", "token": pa.token or ""})
+        return Result.succ(
+            {
+                "state": pa.status,
+                "result": reject_observation(pa.tool, pa.status, pa.reason),
+            }
+        )
 
     @router.get("/v1/chat/harness/question/status", response_model=Result)
     async def harness_question_status(
@@ -658,6 +770,66 @@ def _skills_prompt_block(preselected: Optional[str]) -> str:
     except Exception:
         logger.exception("pi harness: failed to build skills prompt block")
         return ""
+
+
+def _pi_history_preamble(
+    storage_conv: Optional[StorageConversation], current_input: str
+) -> str:
+    """Compact prior-turn context for cold-started pi sessions.
+
+    A warm pi child keeps its own session context, but after the idle
+    reaper (or a server restart) the next turn spawns a fresh pi
+    session whose prompt would carry only the current message. Rebuild
+    a short user/assistant transcript from the persisted conversation
+    so follow-up turns stay coherent across process boundaries.
+    """
+    if storage_conv is None:
+        return ""
+    try:
+        messages = list(getattr(storage_conv, "messages", []) or [])
+    except Exception:
+        return ""
+    turns: List[str] = []
+    for msg in messages:
+        role = getattr(msg, "role", None) or getattr(msg, "type", None)
+        content = getattr(msg, "content", None)
+        if isinstance(msg, dict):
+            role = role or msg.get("role") or msg.get("type")
+            content = content if content is not None else msg.get("content")
+        if not role or not content:
+            continue
+        text = str(content)
+        if role in ("view", "ai", "assistant"):
+            try:
+                payload = json.loads(text)
+                if isinstance(payload, dict) and payload.get("final_content"):
+                    text = str(payload["final_content"])
+            except Exception:
+                pass
+        text = text.strip()
+        if not text:
+            continue
+        if role in ("human", "user"):
+            if text == (current_input or "").strip() and not turns:
+                continue  # current turn appended before the run
+            turns.append(f"User: {text[:1200]}")
+        elif role in ("view", "ai", "assistant"):
+            turns.append(f"Assistant: {text[:1200]}")
+    # drop a trailing user line that is actually the current message
+    if (
+        turns
+        and turns[-1].startswith("User:")
+        and (turns[-1][len("User: ") :] == (current_input or "").strip()[:1200])
+    ):
+        turns.pop()
+    if not turns:
+        return ""
+    body = "\n".join(turns[-12:])
+    return (
+        "[Conversation history — earlier turns of this session, for context]\n"
+        + body
+        + "\n\n[Current user message follows]\n\n"
+    )
 
 
 def _build_pi_prompt(dialogue: ConversationVo, work_dir: Optional[str] = None) -> str:
@@ -1321,10 +1493,16 @@ async def run_pi_harness_turn(
             await out_queue.put(_sse_event(item))
 
     side_task = asyncio.ensure_future(_forward_side())
+    warm_session = bool(runner.alive)
 
     async def _drive() -> None:
         try:
-            await runner.run(_build_pi_prompt(dialogue), on_event=_sink)
+            prompt = _build_pi_prompt(dialogue)
+            if not warm_session:
+                preamble = _pi_history_preamble(storage_conv, dialogue.user_input or "")
+                if preamble:
+                    prompt = preamble + prompt
+            await runner.run(prompt, on_event=_sink)
         except Exception as e:
             logger.exception("pi harness run failed")
             run_error.append(e)
