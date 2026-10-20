@@ -3985,7 +3985,7 @@ const Playground: NextPage = () => {
           ) : messages.length > 0 ? (
             <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] min-[2200px]:max-w-[1600px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
                   {rounds.map((round, roundIndex) => {
@@ -4247,7 +4247,7 @@ const Playground: NextPage = () => {
                 {/* Input Area at Bottom for Chat Mode - Hidden in read-only task replay mode */}
                 {!router.query.from_task && (
                   <div className='bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-[#1a1b1e] dark:via-[#1a1b1e]/95 dark:to-[#1a1b1e]/80 p-4 md:p-6'>
-                    <div className='max-w-[720px] mx-auto'>
+                    <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                       {/* Context Tags Area */}
                       <div className='flex flex-wrap gap-2 mb-2'>
                         {selectedFlow && (
@@ -5016,7 +5016,7 @@ const Playground: NextPage = () => {
           ) : (
             // Welcome Mode: Display Hero Section
             <div className='flex-1 flex flex-col items-center justify-center px-6 py-4 pb-20 overflow-y-auto'>
-              <div className='w-full max-w-[860px] flex flex-col items-center animate-fade-in-up'>
+              <div className='w-full max-w-[860px] 2xl:max-w-[1000px] flex flex-col items-center animate-fade-in-up'>
                 <h1 className='text-4xl md:text-5xl font-serif text-gray-900 dark:text-gray-100 mb-4 text-center flex items-center gap-4'>
                   <div className='w-12 h-12 rounded-xl bg-white dark:bg-[#1a1b1e] shadow-md flex items-center justify-center flex-shrink-0'>
                     <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={32} height={32} className='object-contain' />
