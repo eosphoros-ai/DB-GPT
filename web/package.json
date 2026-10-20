@@ -12,7 +12,7 @@
   "repository": "https://github.com/eosphoros-ai/DB-GPT-Web.git",
   "scripts": {
     "start": "NODE_OPTIONS=--max_old_space_size=8192 next start",
-    "dev": "NODE_OPTIONS=--max_old_space_size=16384 next dev --webpack",
+    "dev": "node --max-old-space-size=16384 node_modules/next/dist/bin/next dev --webpack",
     "build": "NODE_OPTIONS=\"--max_old_space_size=8192 --require=./scripts/graceful-fs-register.cjs\" next build --webpack",
     "build:prod": "APP_ENV=prod  NODE_OPTIONS=\"--max_old_space_size=8192 --require=./scripts/graceful-fs-register.cjs\" next build --webpack",
     "lint": "eslint '**/*.{ts,tsx}' --fix",
