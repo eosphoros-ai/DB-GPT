@@ -309,7 +309,7 @@ approval 与 question 两类卡**均不进 timeline**，统一悬浮渲染在 co
 
 ### 8.2 时间线接入（紧凑审计行）
 
-timeline 不再插大卡：`AgentTimeline.tsx` 为每个 approval 增加一条紧凑行（工具行 + 状态 chip：待确认 / 已允许·scope / 已拒绝 / 超时·自动拒绝 / 策略拦截），rejected/timeout/denied 于行下附 observation 引用行；并行多 approval 按发起顺序多行。question 行复用现有 question step 行 + chip（待回复 / 已回复 / 已跳过）。历史回放直接以 resolved 态渲染行。
+timeline 不再插大卡：`AgentTimeline.tsx` 为每个 approval 增加一条紧凑行（工具行 + 状态 chip：待确认 / 已允许·scope / 已拒绝 / 超时·自动拒绝 / 策略拦截），rejected/timeout/denied 于行下附 observation 引用行；并行多 approval 按发起顺序多行。question step 不再占工具行：timeline 适配器将其渲染为 **question 回顾卡**（问句 + 用户答案灰字；pending 显示「等待回复…」，跳过/超时显示「已跳过 / 未回答」），数据源为 question 工具回包的 `question_recap` chunk（pending 期回退 `actionInput.questions`），live 与历史回放同路。
 
 ### 8.3 SSE / REST
 

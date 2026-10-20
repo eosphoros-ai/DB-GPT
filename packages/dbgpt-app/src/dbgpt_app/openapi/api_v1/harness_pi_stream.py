@@ -262,9 +262,29 @@ def _probe_pi_cli() -> Tuple[bool, str]:
 
 
 def _format_question_result(pq: Any) -> str:
-    """Same answer formatting as the dbgpt-engine question tool."""
+    """Same answer formatting as the dbgpt-engine question tool.
+
+    Appends a ``question_recap`` fence so the pi engine's step observation
+    carries the machine-readable Q&A pairs (the dbgpt engine gets them via
+    the question tool's recap chunk); the timeline recap card parses it.
+    """
+    pairs = [
+        {
+            "question": q.get("question", ""),
+            "answer": (
+                ", ".join((pq.answers or [])[i])
+                if i < len(pq.answers or []) and (pq.answers or [])[i]
+                else ""
+            ),
+        }
+        for i, q in enumerate(pq.questions)
+    ]
+    recap = {"pairs": pairs, "rejected": bool(pq.rejected)}
+    fence = f"\n```question_recap\n{json.dumps(recap, ensure_ascii=False)}\n```"
     if pq.rejected:
-        return "The user dismissed the question. Proceeding without answer."
+        return (
+            "The user dismissed the question. Proceeding without answer." + fence
+        )
     answers = pq.answers or []
     parts = []
     for i, q in enumerate(pq.questions):
@@ -274,7 +294,7 @@ def _format_question_result(pq: Any) -> str:
         parts.append(f'"{q.get("question", "")}"="{a_text}"')
     return (
         f"User has answered your questions: {', '.join(parts)}."
-        " You can now continue with the user's answers in mind."
+        " You can now continue with the user's answers in mind." + fence
     )
 
 

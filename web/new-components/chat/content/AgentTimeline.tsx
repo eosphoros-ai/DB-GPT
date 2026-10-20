@@ -34,7 +34,7 @@ import { envelopeReadableText } from '@/utils/tool-envelope';
 
 interface TimelineBlock {
   id: string;
-  kind: 'text' | 'tool' | 'thinking';
+  kind: 'text' | 'tool' | 'thinking' | 'question';
   /** text block content (markdown-ish, already streamed) */
   content?: string;
   /** tool/thinking row fields */
@@ -52,6 +52,10 @@ interface TimelineBlock {
   /** grouped tool calls (consecutive same-tool steps) */
   children?: TimelineBlock[];
   count?: number;
+  /** question recap pairs (question tool): question + user answer */
+  pairs?: { question: string; answer: string }[];
+  /** question dismissed / timed out (no answers available) */
+  rejected?: boolean;
 }
 
 interface AgentTimelineProps {
@@ -358,6 +362,30 @@ function TextBlock({ block }: { block: TimelineBlock }) {
   );
 }
 
+/**
+ * Question recap card: after the user answers (or skips) a `question` tool
+ * call, the conversation flow keeps a readable Q&A record at the position
+ * where the question was asked. Pending state shows "awaiting reply".
+ */
+function QuestionRecap({ block }: { block: TimelineBlock }) {
+  const pairs = block.pairs || [];
+  if (!pairs.length) return null;
+  return (
+    <div className='my-2 rounded-xl border border-[#e6e6e2] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(20,20,15,.05)] dark:border-[#33353b] dark:bg-[#1e1f24]'>
+      {pairs.map((p, i) => (
+        <div key={i} className={i > 0 ? 'mt-3' : undefined}>
+          <div className='text-[13.5px] font-medium leading-6 text-[#1c1c1a] dark:text-[#e6e4df]'>
+            {p.question}
+          </div>
+          <div className='mt-0.5 text-[13px] leading-6 text-[#8b8b84] dark:text-[#7c7972]'>
+            {p.answer ? p.answer : block.rejected ? '已跳过 / 未回答' : '等待回复…'}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── main ───────────────────────────────────────────────────────────────
 
 function AgentTimeline({ blocks, isRunning }: AgentTimelineProps) {
@@ -367,7 +395,13 @@ function AgentTimeline({ blocks, isRunning }: AgentTimelineProps) {
   return (
     <div className='py-1'>
       {blocks.map(block =>
-        block.kind === 'text' ? <TextBlock key={block.id} block={block} /> : <FlowRow key={block.id} block={block} />,
+        block.kind === 'text' ? (
+          <TextBlock key={block.id} block={block} />
+        ) : block.kind === 'question' ? (
+          <QuestionRecap key={block.id} block={block} />
+        ) : (
+          <FlowRow key={block.id} block={block} />
+        ),
       )}
     </div>
   );
@@ -419,14 +453,72 @@ export function stepsToTimelineBlocks(
           : 'running';
     const durationMs =
       step.startedAt != null && step.endedAt != null ? Math.max(0, step.endedAt - step.startedAt) : undefined;
+    const isQuestion = step.action === 'question';
+    const recapChunk = rawOutputs.find(o => o.output_type === 'question_recap');
+    const recap =
+      recapChunk && typeof recapChunk.content === 'object' && recapChunk.content
+        ? (recapChunk.content as {
+            pairs?: { question: string; answer: string }[];
+            rejected?: boolean;
+            timed_out?: boolean;
+          })
+        : null;
+    let pairs = recap?.pairs;
+    let rejectedFlag = recap?.rejected || recap?.timed_out || undefined;
+    if (!recap && isQuestion && outputText) {
+      // pi engine: the recap travels as a fence inside the observation text.
+      const fence = outputText.match(/```question_recap\n([\s\S]*?)\n```/);
+      if (fence) {
+        try {
+          const parsed = JSON.parse(fence[1]) as {
+            pairs?: { question: string; answer: string }[];
+            rejected?: boolean;
+            timed_out?: boolean;
+          };
+          if (Array.isArray(parsed.pairs)) {
+            pairs = parsed.pairs;
+            rejectedFlag = parsed.rejected || parsed.timed_out || undefined;
+          }
+        } catch {
+          pairs = undefined;
+        }
+      } else if (status !== 'running') {
+        // Legacy observations (pre-recap): parse "Q"="A" pairs as last resort.
+        const legacy = [...outputText.matchAll(/"([^"]*)"="([^"]*)"/g)].map(m => ({
+          question: m[1],
+          answer: m[2] === 'Unanswered' ? '' : m[2],
+        }));
+        if (legacy.length) {
+          pairs = legacy;
+          rejectedFlag = /dismissed the question/i.test(outputText) || undefined;
+        }
+      }
+    }
+    if (!pairs && isQuestion && step.actionInput != null && status === 'running') {
+      // Pending question (no recap yet): show the questions awaiting reply.
+      try {
+        const ai = typeof step.actionInput === 'string' ? JSON.parse(step.actionInput) : step.actionInput;
+        const qs = (ai as { questions?: unknown })?.questions;
+        if (Array.isArray(qs)) {
+          pairs = qs.map((item: unknown) => {
+            const text = typeof item === 'string' ? item : (item as { question?: string })?.question || '';
+            return { question: text, answer: '' };
+          });
+        }
+      } catch {
+        pairs = undefined;
+      }
+    }
     return {
       id: step.id,
-      kind: isThinking ? 'thinking' : 'tool',
+      kind: isThinking ? 'thinking' : isQuestion ? 'question' : 'tool',
       title: step.title,
       tool: step.action || step.title,
       status,
       durationMs,
       thought: thought || undefined,
+      pairs,
+      rejected: rejectedFlag,
       input:
         step.actionInput != null
           ? typeof step.actionInput === 'string'
