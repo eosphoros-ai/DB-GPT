@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import hashlib
 import io
 import json
@@ -88,6 +89,7 @@ from .react_final import (
     FinalAnswerAssembler,
     extract_terminate_content,
 )
+from .react_history import ReactHistoryCheckpoint, save_history_view
 from .react_prompt import build_react_prompt_template
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
@@ -1341,6 +1343,8 @@ def _build_react_history_payload(
     report_status: Optional[str] = None,
     dashboard_refs: Optional[List[Dict[str, Any]]] = None,
     dashboard_generation_failure: Optional[Dict[str, Any]] = None,
+    execution_status: Optional[str] = None,
+    financial_report: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Serialize the persisted react-agent history payload (version 2).
 
@@ -1369,6 +1373,10 @@ def _build_react_history_payload(
         value["report_run_id"] = report_run_id
     if report_status:
         value["report_status"] = report_status
+    if execution_status:
+        value["execution_status"] = execution_status
+    if financial_report:
+        value["financial_report"] = financial_report
     return json.dumps(value, ensure_ascii=False)
 
 
@@ -1578,12 +1586,14 @@ def _react_terminal_events(
     storage_conv: Any,
     history_payload: str,
     final_answer: AgentFinalAnswer,
+    history_checkpoint: Optional[ReactHistoryCheckpoint] = None,
 ) -> Tuple[str, str]:
     """Persist one ReAct round without risking its terminal SSE events."""
+    if history_checkpoint is not None:
+        history_checkpoint.finished = True
     try:
-        storage_conv.add_view_message(history_payload)
+        save_history_view(storage_conv, history_payload)
         storage_conv.end_current_round()
-        storage_conv.save_to_storage()
     except Exception:
         logger.exception("Failed to persist ReAct agent history")
 
@@ -1941,6 +1951,7 @@ async def _react_agent_stream_inner(
 ) -> AsyncGenerator[str, None]:
     """Stream ReAct events while owning the lifetime of its background task."""
     agent_task_holder: List["asyncio.Task[Any]"] = []
+    history_checkpoint = ReactHistoryCheckpoint()
     final_emitted = False
     done_emitted = False
     try:
@@ -1949,10 +1960,12 @@ async def _react_agent_stream_inner(
             tool_mode=tool_mode,
             attachment_ctx=attachment_ctx,
             agent_task_holder=agent_task_holder,
+            history_checkpoint=history_checkpoint,
         ):
             event_type = _sse_event_type(event)
             final_emitted = final_emitted or event_type == "final"
             done_emitted = done_emitted or event_type == "done"
+            history_checkpoint.flush()
             yield event
     except Exception:
         logger.exception("ReAct agent stream failed before normal completion")
@@ -1965,8 +1978,12 @@ async def _react_agent_stream_inner(
         if not done_emitted:
             yield _sse_event({"type": "done"})
     finally:
-        if agent_task_holder:
-            await _cancel_and_await_agent_task(agent_task_holder[0])
+        # Save after cancellation has retained the financial workflow's partial
+        # results. Shield this cleanup from the response's cancellation scope.
+        with anyio.CancelScope(shield=True):
+            if agent_task_holder:
+                await _cancel_and_await_agent_task(agent_task_holder[0])
+            history_checkpoint.flush(status="interrupted", force=True)
 
 
 class _AgentStreamingResponse(StreamingResponse):
@@ -1994,6 +2011,7 @@ async def _react_agent_stream_impl(
     tool_mode: str = "full",
     attachment_ctx: Optional[SessionAttachmentContext] = None,
     agent_task_holder: Optional[List["asyncio.Task[Any]"]] = None,
+    history_checkpoint: Optional[ReactHistoryCheckpoint] = None,
 ) -> AsyncGenerator[str, None]:
     """Core ReAct agent streaming logic.
 
@@ -3335,6 +3353,20 @@ async def _react_agent_stream_impl(
             if _content:
                 historical_dialogues.append(AgentMessage(content=_content))
     storage_conv.add_user_message(user_input)
+    if history_checkpoint is not None:
+        history_checkpoint.bind(
+            storage_conv,
+            lambda status: _build_react_history_payload(
+                final_content="任务执行已中断，可继续任务。" if status == "interrupted" else "",
+                steps=[],
+                task_plan=[],
+                generated_images=[],
+                sub_agents=[],
+                input_files=input_files_snapshot,
+                execution_status=status,
+            ),
+        )
+        history_checkpoint.flush(force=True)
     if react_state.get("dashboard_confirmation_error"):
         confirmation_error = react_state["dashboard_confirmation_error"]
         yield _sse_event(
@@ -3356,6 +3388,7 @@ async def _react_agent_stream_impl(
                 ensure_ascii=False,
             ),
             AgentFinalAnswer(content=confirmation_error),
+            history_checkpoint,
         ):
             yield terminal_event
         return
@@ -4194,6 +4227,47 @@ After partial results, finish only missing requested deliverables, then report.
     subagent_history: Dict[str, Dict[str, Any]] = {}
     final_answer_assembler = FinalAnswerAssembler()
 
+    def checkpoint_payload(status: str) -> str:
+        steps = copy.deepcopy(history_steps)
+        if current_history_step is not None and not any(
+            step["id"] == current_history_step["id"] for step in steps
+        ):
+            steps.append(copy.deepcopy(current_history_step))
+        snapshot_agents = copy.deepcopy(subagent_history)
+        task_plan = copy.deepcopy(react_state.get("financial_plan") or list(_todo_list))
+        if status == "interrupted":
+            for step in steps:
+                if step.get("status") == "running":
+                    step["status"] = "failed"
+            for task in task_plan:
+                if task.get("status") == "in_progress":
+                    task.update(status="cancelled", detail="执行已中断，可继续任务。")
+            fail_running_subagent_history(snapshot_agents)
+        financial_report = None
+        report = react_state.get("financial_report_context")
+        if report:
+            from .tools.financial_tools import _artifact
+
+            financial_report = _artifact(report, conv_id)["content"]
+        return _build_react_history_payload(
+            final_content=(
+                "任务执行已中断，已保存的进度和结果已保留，可继续任务。"
+                if status == "interrupted"
+                else ""
+            ),
+            steps=steps,
+            task_plan=task_plan,
+            generated_images=react_state.get("generated_images", []),
+            sub_agents=build_subagent_history_snapshot(snapshot_agents),
+            input_files=input_files_snapshot,
+            dashboard_refs=react_state.get("dashboard_refs", []),
+            execution_status=status,
+            financial_report=financial_report,
+        )
+
+    if history_checkpoint is not None:
+        history_checkpoint.bind(storage_conv, checkpoint_payload)
+
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
         skill_step_id, skill_step_event = build_step(
@@ -4791,6 +4865,7 @@ After partial results, finish only missing requested deliverables, then report.
             storage_conv,
             error_payload,
             error_answer,
+            history_checkpoint,
         )
         for terminal_event in terminal_events:
             yield terminal_event
@@ -4953,6 +5028,7 @@ After partial results, finish only missing requested deliverables, then report.
         storage_conv,
         history_payload,
         final_answer,
+        history_checkpoint,
     )
     for terminal_event in terminal_events:
         yield terminal_event
