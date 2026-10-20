@@ -1913,7 +1913,10 @@ const Playground: NextPage = () => {
               if (output.output_type === 'code' || output.output_type === 'text') {
                 const text = String(output.content || '');
                 // Look for file creation patterns
-                const hasFileCreation = /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>)/.test(text);
+                const hasFileCreation =
+                  /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>|Successfully wrote\b|Wrote \d+ bytes)/.test(
+                    text,
+                  );
                 if (hasFileCreation) {
                   const foundPaths: string[] = [];
                   // Extract absolute paths
@@ -2080,21 +2083,28 @@ const Playground: NextPage = () => {
           if (cls.referenced) referencedNames.add(a.name);
         }
       }
-      // Draft demotion: an unreferenced file-backed HTML is usually an
-      // intermediate draft when the round already produced a strong
-      // deliverable (rendered html / images / skill / referenced file).
+      // Draft demotion: unreferenced weak-deliverable files (html/md/csv/
+      // svg) are usually intermediates when the round already produced a
+      // strong deliverable — skill package, rendered html envelope, office/
+      // pdf document, or a file the answer explicitly references.
+      const STRONG_EXTS = new Set(['xlsx', 'xls', 'pptx', 'ppt', 'pdf', 'docx']);
+      const DEMOTABLE_EXTS = new Set(['html', 'htm', 'md', 'csv', 'svg']);
+      const extOfName = (n: string) => ((n.includes('.') ? n.split('.').pop() : '') || '').toLowerCase();
       const hasStrongDeliverable = finalArtifacts.some(
         a =>
-          a.type === 'image' ||
           a.type === 'skill' ||
           a.type === 'html' ||
-          (a.type === 'file' && referencedNames.has(a.name)),
+          (a.type === 'file' && (referencedNames.has(a.name) || STRONG_EXTS.has(extOfName(a.name)))),
       );
       if (hasStrongDeliverable) {
         for (const a of finalArtifacts) {
-          if (a.type === 'file' && a.tier === 'final' && !referencedNames.has(a.name)) {
-            const ext = (a.name.includes('.') ? a.name.split('.').pop() : '') || '';
-            if (ext === 'html' || ext === 'htm') a.tier = 'process';
+          if (
+            a.type === 'file' &&
+            a.tier === 'final' &&
+            !referencedNames.has(a.name) &&
+            DEMOTABLE_EXTS.has(extOfName(a.name))
+          ) {
+            a.tier = 'process';
           }
         }
       }
@@ -2130,6 +2140,41 @@ const Playground: NextPage = () => {
         if (members.length < 3) continue;
         deduped.push({
           id: `${messageId}-skill-${root}`,
+          type: 'skill',
+          name: `${root.split('/').pop() || root}/`,
+          content: {
+            files: members.map(i => ({
+              name: i.name,
+              filePath: i.filePath,
+              size: i.size,
+              content: i.content?.content,
+            })),
+          },
+          createdAt: now,
+          messageId,
+          filePath: root,
+          size: members.reduce((sum, i) => sum + (i.size || 0), 0),
+        });
+        members.forEach(i => collapsedIds.add(i.id));
+      }
+      // Path-based skill folding: member files written under a skills/
+      // tree belong to that package even when SKILL.md landed in another
+      // round; aggregate >=2 of them into a skill card.
+      const SKILL_PATH_RE = /(\/|^)(?:\.?agents\/skills|skills)\/([^/]+)\//;
+      const bySkillRoot = new Map<string, Artifact[]>();
+      for (const a of deduped) {
+        if (collapsedIds.has(a.id) || a.type !== 'file' || !a.filePath) continue;
+        const m = SKILL_PATH_RE.exec(a.filePath);
+        if (!m) continue;
+        const root = a.filePath.slice(0, m.index + m[0].length - 1);
+        const arr = bySkillRoot.get(root) || [];
+        arr.push(a);
+        bySkillRoot.set(root, arr);
+      }
+      for (const [root, members] of bySkillRoot) {
+        if (members.length < 2) continue;
+        deduped.push({
+          id: `${messageId}-skillpath-${root}`,
           type: 'skill',
           name: `${root.split('/').pop() || root}/`,
           content: {
