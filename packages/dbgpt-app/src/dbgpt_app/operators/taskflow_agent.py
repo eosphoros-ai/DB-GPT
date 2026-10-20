@@ -13,6 +13,7 @@ stays identical to other nodes.
 """
 
 import logging
+import re
 from typing import List, Optional
 
 from dbgpt._private.config import Config
@@ -44,6 +45,13 @@ CFG = Config()
 _MAX_TRACE_LINES = 24
 
 _KIND_ICON = {"thinking": "💭", "action": "🔧", "observation": "👁", "answer": "✅"}
+
+#: Provider-level fatal errors that must fail the node instead of being
+#: returned (and thus marked success) as the agent's "answer".
+_PROVIDER_FATAL_RE = re.compile(
+    r"Insufficient Balance|Error code: 4(?:01|02|03)",
+    re.I,
+)
 
 
 def _list_param(label: str, name: str, desc: str) -> Parameter:
@@ -189,6 +197,7 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
 
         trace_lines: List[str] = []
         trace_events: List[AgentStepEvent] = []
+        fatal_errors: List[str] = []
         queue = None
         try:
             conv_uid = await self.current_dag_context.get_from_share_data(
@@ -229,6 +238,10 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
                 pass
 
         async def _on_step(event: AgentStepEvent) -> None:
+            if event.kind == "thinking" and _PROVIDER_FATAL_RE.search(
+                event.detail or ""
+            ):
+                fatal_errors.append(event.detail or "")
             icon = _KIND_ICON.get(event.kind, "•")
             label = event.title
             detail = (event.detail or "").strip().replace("\n", " ")
@@ -255,6 +268,16 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             on_step=_on_step,
             language="zh" if zh else "en",
         )
+        # Provider-level fatal errors (billing/auth/rate-limit) surface as
+        # error text in the model "answer" after max_turns retries; returning
+        # it would mark the node success with garbage. Fail loudly instead.
+        # Billing/auth failures never recover within a run; whatever the
+        # loop returned afterwards ("No valid response" fallbacks, error
+        # echoes) is not a real analysis — fail the node honestly.
+        if fatal_errors:
+            raise Exception(
+                f"agent node failed: model provider error: {fatal_errors[-1][:200]}"
+            )
         # Final live frame: full trace + answer before the marker operator
         # emits the canonical success event.
         await _push_live()
