@@ -11,6 +11,7 @@ from starlette.background import BackgroundTask
 
 from dbgpt_serve.core import Result
 from dbgpt_serve.session_file.api.endpoints import (
+    SessionFileApiError,
     _SessionFileApiRoute,
     get_authenticated_owner,
 )
@@ -64,6 +65,21 @@ def make_router(service):
                 owner, body.session_id, body.file_ids[0], str(body.request_id)
             )
         )
+
+    @router.get("/runs/latest")
+    def latest_report(
+        session_id: str = Query(
+            min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$"
+        ),
+        owner: str = Depends(get_authenticated_owner),
+    ):
+        try:
+            report = service.latest_agent_report(owner, session_id)
+        except SessionFileApiError as exc:
+            if exc.err_code != "REPORT_NOT_FOUND":
+                raise
+            return Result.succ(None)
+        return Result.succ(public_snapshot(report))
 
     @router.get("/runs/{run_id}")
     def get_run(

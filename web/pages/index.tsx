@@ -48,6 +48,8 @@ import ConfirmDialog from '@/new-components/connector/ConfirmDialog';
 import { AttachedConnector, ConnectorInstance } from '@/new-components/connector/types';
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
 import { isFinancialReportReference, reportArtifactContent } from '@/new-components/financial-analysis/agent-artifact';
+import { getLatestReport } from '@/new-components/financial-analysis/api';
+import { recoverFinancialHistory } from '@/new-components/financial-analysis/recover-history';
 import {
   findFinancialCitationArtifact,
   type FinancialCitation,
@@ -1220,6 +1222,7 @@ const Playground: NextPage = () => {
   }, [messages]);
 
   useEffect(() => {
+    if (!router.isReady) return;
     const convId = router.query.id as string | undefined;
     if (convId && convId !== conversationIdRef.current) {
       resetTaskSession();
@@ -1237,7 +1240,7 @@ const Playground: NextPage = () => {
       // ref before removing ?id, so its route completion remains idempotent.
       resetTaskSession();
     }
-  }, [rehydrateSessionFiles, resetTaskSession, router.query.id]);
+  }, [rehydrateSessionFiles, resetTaskSession, router.isReady, router.query.id]);
 
   useEffect(() => {
     const lastView = [...messages].reverse().find(msg => msg.role === 'view');
@@ -2828,7 +2831,7 @@ const Playground: NextPage = () => {
             step: idx + 1,
             title: s.title || s.action || `Step ${idx + 1}`,
             detail: s.detail || '',
-            status: (s.status === 'failed' ? 'failed' : 'done') as 'done' | 'failed',
+            status: (s.status === 'failed' || s.status === 'running' ? 'failed' : 'done') as 'done' | 'failed',
             action: s.action,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
@@ -2888,7 +2891,10 @@ const Playground: NextPage = () => {
           };
 
           const historyAnswer = decodeHistoryAnswer(payload);
-          const finalContent = cleanFinalContent(historyAnswer.content);
+          const finalContent = cleanFinalContent(
+            historyAnswer.content ||
+              (payload.execution_status ? '已恢复任务记录，可查看已保存的执行进度和结果。' : ''),
+          );
 
           // History payload v2: the turn's input_files snapshot attaches to
           // the human message of this round. v1 stays on the legacy one-item
@@ -2910,6 +2916,24 @@ const Playground: NextPage = () => {
             null,
           );
           allArtifacts.push(...restoredArtifacts);
+          if (
+            isFinancialReportReference(payload.financial_report) &&
+            !restoredArtifacts.some(
+              artifact =>
+                isFinancialReportReference(artifact.content) &&
+                artifact.content.runId === payload.financial_report.runId,
+            )
+          ) {
+            allArtifacts.push({
+              id: `${viewId}-financial-report`,
+              type: 'html',
+              name: `${payload.financial_report.title}.html`,
+              content: payload.financial_report,
+              createdAt: Date.now(),
+              messageId: viewId,
+              downloadable: true,
+            });
+          }
 
           // Detect skill creation from restored execution
           const isSkillPackageStep = (s: ExecutionStep) => {
@@ -2936,6 +2960,11 @@ const Playground: NextPage = () => {
             }
           }
 
+          const savedTasks = Array.isArray(payload.task_plan)
+            ? payload.task_plan
+            : Array.isArray(payload.tasks)
+              ? payload.tasks
+              : undefined;
           newMessages.push({
             id: viewId,
             role: 'view',
@@ -2945,11 +2974,11 @@ const Playground: NextPage = () => {
             reportRunId: historyAnswer.reportRunId,
             order: msg.order,
             thinking: false,
-            taskPlan: Array.isArray(payload.task_plan)
-              ? payload.task_plan
-              : Array.isArray(payload.tasks)
-                ? payload.tasks
-                : undefined,
+            taskPlan: savedTasks?.map((task: TaskItem) =>
+              payload.execution_status && task.status === 'in_progress'
+                ? { ...task, status: 'cancelled' as const, detail: '已恢复保存的进度，可继续任务。' }
+                : task,
+            ),
           });
         } else {
           const historyAnswer = decodeHistoryAnswer(msg.context || '');
@@ -3004,6 +3033,13 @@ const Playground: NextPage = () => {
         msgList = res.data;
       } else if (Array.isArray(res)) {
         msgList = res;
+      }
+      if (msgList?.length === 0) {
+        // Older interrupted turns have a saved financial run but no messages.
+        // Recovery is scoped by the authenticated owner and this conversation.
+        const report = await getLatestReport(convUid, controller.signal);
+        if (historyRequestRef.current !== requestVersion || taskEpochRef.current !== taskEpoch) return;
+        if (report) msgList = [recoverFinancialHistory(report, convUid)];
       }
       if (msgList) {
         conversationIdRef.current = convUid;
@@ -3162,8 +3198,8 @@ const Playground: NextPage = () => {
           {router.query.from_task && <FromTaskBanner taskId={router.query.from_task as string} />}
 
           {/* Chat Messages or Hero Section */}
-          {/* When from_task mode and loading history, show loading spinner instead of Hero */}
-          {router.query.from_task && historyLoading && messages.length === 0 ? (
+          {/* Keep conversation recovery visible instead of flashing the new-task hero. */}
+          {historyLoading && messages.length === 0 ? (
             <div className='flex-1 flex items-center justify-center'>
               <Spin size='large' tip='加载对话历史...' />
             </div>

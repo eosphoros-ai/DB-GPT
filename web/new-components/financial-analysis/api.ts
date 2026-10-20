@@ -83,6 +83,11 @@ export async function getReport(sessionId: string, runId: string, signal?: Abort
     ),
   );
 }
+export async function getLatestReport(sessionId: string, signal?: AbortSignal) {
+  return unwrap(
+    await GET<unknown, ReportData | null>(`${base}/latest`, { session_id: sessionId }, { signal }),
+  );
+}
 export function requestError(error: unknown): string {
   const value = error as { response?: { data?: { err_msg?: string } }; message?: string };
   return value?.response?.data?.err_msg || value?.message || '请求失败，请重试';
