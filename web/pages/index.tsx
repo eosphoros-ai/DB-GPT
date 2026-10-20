@@ -4004,7 +4004,7 @@ const Playground: NextPage = () => {
                                     <span className='truncate'>{roundIntent}</span>
                                     {roundCount > 0 && (
                                       <span className='flex-none text-xs font-normal text-[#8b8b84] dark:text-[#7c7972]'>
-                                        · {roundCount} 轮
+                                        {t('round_count_suffix', { count: roundCount })}
                                       </span>
                                     )}
                                   </div>

@@ -2975,7 +2975,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                         上传资料 · {visibleInputFiles.length}
                       </div>
                       <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
-                        用户本轮带入的分析上下文
+                        {t('right_ctx_user', '用户本轮带入的分析上下文')}
                       </div>
                     </div>
                   )}
@@ -2995,7 +2995,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                         推理生成 · {filteredArtifacts.length}
                       </div>
                       <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
-                        Agent 在本轮推理过程中生成的文件
+                        {t('right_ctx_agent', 'Agent 在本轮推理过程中生成的文件')}
                       </div>
                     </div>
                   )}
