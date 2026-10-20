@@ -22,6 +22,7 @@ import {
   PictureOutlined,
 } from '@ant-design/icons';
 import cls from 'classnames';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { resolveImageUrl } from './image-url';
@@ -108,12 +109,20 @@ export function ReportThumb() {
 
 export default function ArtifactCards({ artifacts, onPreview }: ArtifactCardsProps) {
   const { t } = useTranslation();
+  const [imagesExpanded, setImagesExpanded] = useState(false);
   if (!artifacts || artifacts.length === 0) return null;
   const finals = artifacts.filter(a => a.tier !== 'process');
   const processes = artifacts.filter(a => a.tier === 'process');
+  // Chart floods: cap visible image cards and aggregate the rest into a
+  // mosaic card that expands in place.
+  const IMAGE_CAP = 4;
+  const images = finals.filter(a => a.type === 'image');
+  const capped = !imagesExpanded && images.length > IMAGE_CAP;
+  const shownImages = capped ? images.slice(0, 3) : images;
+  const shownFinals = finals.filter(a => a.type !== 'image' || shownImages.includes(a));
   return (
     <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
-      {finals.map(artifact => {
+      {shownFinals.map(artifact => {
         const isHtml = artifact.type === 'html';
         const isImage = artifact.type === 'image';
         const isSkill = artifact.type === 'skill';
@@ -201,6 +210,42 @@ export default function ArtifactCards({ artifacts, onPreview }: ArtifactCardsPro
           </div>
         );
       })}
+      {capped && (
+        <button
+          type='button'
+          onClick={() => setImagesExpanded(true)}
+          className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] overflow-hidden bg-white dark:bg-[#111217] text-left shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)] hover:shadow-[0_2px_6px_rgba(20,20,15,.08),0_8px_24px_rgba(20,20,15,.06)] transition-shadow'
+        >
+          <span className='relative grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5 h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220]'>
+            {images.slice(3, 7).map(im => (
+              <img
+                key={im.id}
+                src={resolveImageUrl(String(im.content))}
+                alt=''
+                className='w-full h-full object-cover'
+              />
+            ))}
+            <span
+              className='absolute inset-0 flex items-center justify-center text-white text-[12px] font-medium'
+              style={{ background: 'rgba(0,0,0,0.45)' }}
+            >
+              +{images.length - 3} {t('artifacts_charts_label', '图表')}
+            </span>
+          </span>
+          <span className='block px-2.5 py-2 text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
+            {t('artifacts_expand_charts', '展开全部图表')}
+          </span>
+        </button>
+      )}
+      {imagesExpanded && images.length > IMAGE_CAP && (
+        <button
+          type='button'
+          onClick={() => setImagesExpanded(false)}
+          className='h-7 px-2.5 self-center rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972]'
+        >
+          {t('artifacts_collapse_charts', '收起图表')}
+        </button>
+      )}
       {processes.length > 0 && (
         <details className='w-full'>
           <summary className='cursor-pointer inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972] list-none select-none'>
