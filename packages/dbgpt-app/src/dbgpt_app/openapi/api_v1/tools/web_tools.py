@@ -53,7 +53,7 @@ _DROP_TAGS = [
 
 
 def _env_provider() -> str:
-    return os.getenv("DBGPT_WEB_SEARCH_PROVIDER", "duckduckgo").strip().lower()
+    return os.getenv("DBGPT_WEB_SEARCH_PROVIDER", "bing").strip().lower()
 
 
 def _env_max_chars() -> int:
@@ -256,6 +256,38 @@ def _search_baidu(query: str, num: int) -> List[Dict[str, str]]:
     return results
 
 
+def _search_bing(query: str, num: int) -> List[Dict[str, str]]:
+    """Keyless provider that works from CN networks (cn.bing.com)."""
+    results: List[Dict[str, str]] = []
+    with httpx.Client(
+        follow_redirects=True,
+        timeout=15.0,
+        headers={"User-Agent": _UA, "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"},
+    ) as client:
+        resp = client.get(
+            "https://cn.bing.com/search",
+            params={"q": query, "count": str(max(num, 10))},
+        )
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "lxml")
+        if "验证" in (soup.title.get_text() if soup.title else ""):
+            raise ValueError("bing captcha wall")
+        for block in soup.select("li.b_algo"):
+            a = block.select_one("h2 a")
+            if a is None:
+                continue
+            href = a.get("href") or ""
+            title = a.get_text(strip=True)
+            if not href.startswith("http") or not title:
+                continue
+            cap = block.select_one(".b_caption p, p")
+            snippet = re.sub(r"\s+", " ", cap.get_text(" ", strip=True)) if cap else ""
+            results.append({"title": title, "url": href, "snippet": snippet[:300]})
+            if len(results) >= num:
+                break
+    return results
+
+
 def _search_searxng(query: str, num: int) -> List[Dict[str, str]]:
     base = os.getenv("DBGPT_WEB_SEARXNG_URL", "").rstrip("/")
     if not base:
@@ -277,19 +309,25 @@ def _search_searxng(query: str, num: int) -> List[Dict[str, str]]:
 
 
 _PROVIDERS = {
+    "bing": _search_bing,
     "duckduckgo": _search_duckduckgo,
     "baidu": _search_baidu,
     "searxng": _search_searxng,
 }
+#: Fallback order when the configured provider yields nothing.
+_PROVIDER_CHAIN = ("bing", "duckduckgo", "baidu")
 
 
-def build_search_envelope(query: str, items: List[Dict[str, str]]) -> str:
+def build_search_envelope(
+    query: str, items: List[Dict[str, str]], provider: str = ""
+) -> str:
     """Serialize search results into the tool envelope (text + structured)."""
     lines = [
         f"{i + 1}. {it['title']}\n   {it['url']}\n   {it['snippet']}"
         for i, it in enumerate(items)
     ]
-    body = f"Web search results for: {query}\n\n" + "\n".join(lines)
+    via = f" (via {provider})" if provider else ""
+    body = f"Web search results for: {query}{via}\n\n" + "\n".join(lines)
     return json.dumps(
         {
             "chunks": [
@@ -338,8 +376,7 @@ def make_web_search() -> Any:
     )
     def web_search(query: str, max_results: int = 8) -> str:
         provider = _env_provider()
-        fn = _PROVIDERS.get(provider)
-        if fn is None:
+        if provider not in _PROVIDERS:
             return json.dumps(
                 {
                     "chunks": [
@@ -348,24 +385,34 @@ def make_web_search() -> Any:
                 },
                 ensure_ascii=False,
             )
-        try:
-            items = fn(query, min(int(max_results or 8), 10))
-        except Exception as e:
-            logger.warning("web_search provider %s failed: %s", provider, e)
-            return json.dumps(
-                {
-                    "chunks": [
-                        _envelope_text(f"Error: search provider {provider} failed: {e}")
-                    ]
-                },
-                ensure_ascii=False,
-            )
+        num = min(int(max_results or 8), 10)
+        chain = [provider] + [p for p in _PROVIDER_CHAIN if p != provider]
+        if provider == "searxng":
+            chain = ["searxng"] + list(_PROVIDER_CHAIN)
+        items: List[Dict[str, str]] = []
+        used = ""
+        last_err = ""
+        for name in chain:
+            fn = _PROVIDERS.get(name)
+            if fn is None:
+                continue
+            if name == "searxng" and not os.getenv("DBGPT_WEB_SEARXNG_URL"):
+                continue
+            try:
+                got = fn(query, num)
+            except Exception as e:
+                last_err = f"{name}: {e}"
+                logger.warning("web_search provider %s failed: %s", name, e)
+                continue
+            if got:
+                items, used = got, name
+                break
         if not items:
-            return json.dumps(
-                {"chunks": [_envelope_text(f"No results for query: {query}")]},
-                ensure_ascii=False,
-            )
-        return build_search_envelope(query, items)
+            msg = f"No results for query: {query}"
+            if last_err:
+                msg += f" (providers failed: {last_err})"
+            return json.dumps({"chunks": [_envelope_text(msg)]}, ensure_ascii=False)
+        return build_search_envelope(query, items, provider=used)
 
     return web_search
 

@@ -19,6 +19,25 @@ from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+#: Platform guidance dropped into the isolated pi agent dir as AGENTS.md.
+_PI_AGENTS_MD = """# DB-GPT platform guidance
+
+- You run inside DB-GPT as a data agent. The platform tools (sql_query,
+  code_interpreter, shell_interpreter, html_interpreter, web_search,
+  web_fetch, question, todowrite, skill family) are the sanctioned way to
+  touch data, code, files and the web.
+- Web research rule: for questions about the external world that are
+  time-sensitive or verifiable (products, comparisons, prices, versions,
+  documentation, news, "what exists / which solutions" style questions),
+  call web_search FIRST and ground the answer in its results; use web_fetch
+  to read a candidate page in full when snippets are not enough. Do not
+  answer such questions from memory alone.
+- 涉及外部世界的时效性/可验证问题(产品、对比、价格、版本、文档、新闻、
+  "有哪些方案"类),必须先调用 web_search 并基于结果回答,必要时用 web_fetch
+  读全文;不得仅凭记忆作答。
+- Plan multi-step work with todowrite; keep only one task in_progress.
+"""
+
 #: Default tool convergence: pi has no built-in sandbox, so execution-class
 #: built-ins are disabled by default; anything the agent really needs to
 #: execute should be routed through DB-GPT tools (sandboxed/audited).
@@ -200,6 +219,9 @@ class PiHarnessConfig:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(models_json, f, indent=2, ensure_ascii=False)
         logger.info("pi harness: wrote %s", path)
+        agents_md = os.path.join(agent_dir, "AGENTS.md")
+        with open(agents_md, "w", encoding="utf-8") as f:
+            f.write(_PI_AGENTS_MD)
 
         # pi's RPC mode requires a user-level settings.json
         # to exist (even if empty) before it will process

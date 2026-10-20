@@ -99,3 +99,22 @@ def test_web_fetch_error_envelope(monkeypatch):
     tool = web_tools.make_web_fetch()
     out = str(tool(url="http://127.0.0.1/"))
     assert "fetch failed" in out
+
+
+def test_web_search_falls_back_through_chain(monkeypatch):
+    monkeypatch.setenv("DBGPT_WEB_SEARCH_PROVIDER", "bing")
+
+    def boom(q, n):
+        raise ValueError("captcha wall")
+
+    monkeypatch.setitem(web_tools._PROVIDERS, "bing", boom)
+    monkeypatch.setitem(web_tools._PROVIDERS, "duckduckgo", lambda q, n: [])
+    monkeypatch.setitem(
+        web_tools._PROVIDERS,
+        "baidu",
+        lambda q, n: [{"title": "B", "url": "https://b/", "snippet": "s"}],
+    )
+    tool = web_tools.make_web_search()
+    env = json.loads(tool(query="q"))
+    assert "via baidu" in env["chunks"][0]["content"]
+    assert env["chunks"][1]["items"][0]["title"] == "B"

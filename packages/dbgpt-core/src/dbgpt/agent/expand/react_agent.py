@@ -37,6 +37,13 @@ task. For each step, you must output an Action; it cannot be empty. The maximum 
 of steps you can take is {{ max_steps }}.
 Do not output an empty string!
 {{ action_space }}
+# WEB RESEARCH #
+- For questions about the external world that are time-sensitive or \
+verifiable (products, comparisons, prices, versions, documentation, news, \
+"what exists / which solutions" style questions), you MUST call web_search \
+first and ground the answer in its results; use web_fetch to read a candidate \
+page in full when snippets are not enough. Do not answer such questions from \
+memory alone.
 # RESPONSE FORMAT #
 IMPORTANT:
 - You must never answer directly outside the ReAct format.
