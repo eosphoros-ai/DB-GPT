@@ -1181,12 +1181,20 @@ const Playground: NextPage = () => {
       return {
         running,
         text: running
-          ? `运行中 · 第 ${rounds} 轮 · 已执行 ${toolCalls} 次工具调用${dur ? ` · ${dur}` : ''}`
-          : `已完成 · ${rounds} 轮 · ${toolCalls} 次工具调用${dur ? ` · ${dur}` : ''}`,
+          ? (t('agent_status_running', {
+              rounds,
+              calls: toolCalls,
+              dur: dur ? ` · ${dur}` : '',
+            }) as string)
+          : (t('agent_status_done', {
+              rounds,
+              calls: toolCalls,
+              dur: dur ? ` · ${dur}` : '',
+            }) as string),
       };
     }
     return null;
-  }, [messages, executionMap]);
+  }, [messages, executionMap, t]);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;

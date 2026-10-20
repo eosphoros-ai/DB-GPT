@@ -25,6 +25,7 @@ import {
 } from '@ant-design/icons';
 import cls from 'classnames';
 import { useMemo, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { envelopeReadableText } from '@/utils/tool-envelope';
@@ -197,6 +198,7 @@ const sweepKeyframes = `
 // ── row: 24px collapsible line (tools & thinking) ──────────────────────
 
 function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }) {
+  const { t } = useTranslation();
   // thinking rows start collapsed (DSH default); tool rows too.
   const [open, setOpen] = useState(false);
   const running = block.status === 'running' || block.streaming;
@@ -206,7 +208,7 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
     if (block.kind === 'thinking') {
       // Completed reasoning shows its duration next to the title (mockup:
       // "思考 6s"); the summary slot stays empty to avoid duplication.
-      if (running) return latestLine(block.thought || '') || '思考中…';
+      if (running) return latestLine(block.thought || '') || (t('timeline_thinking_dots', '思考中…') as string);
       return '';
     }
     if (isGroup) return toolSummary(block.children![0]);
@@ -257,8 +259,8 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
         >
           {block.kind === 'thinking'
             ? block.streaming
-              ? '思考中'
-              : `思考${block.durationMs ? ` ${formatDuration(block.durationMs)}` : ''}`
+              ? t('timeline_thinking_running', '思考中')
+              : `${t('timeline_thinking', '思考')}${block.durationMs ? ` ${formatDuration(block.durationMs)}` : ''}`
             : block.title || block.tool}
         </span>
         {block.count != null && block.count > 1 && (
