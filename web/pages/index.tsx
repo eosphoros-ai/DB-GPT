@@ -1123,6 +1123,35 @@ const Playground: NextPage = () => {
     }
   }, [previewArtifact]);
 
+  /** Skill-package actions on artifact cards (download zip / add). */
+  const handleSkillZipDownload = useCallback(
+    async (skillName: string) => {
+      try {
+        const base = process.env.API_BASE_URL || '';
+        const res = await fetch(`${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`);
+        if (!res.ok) throw new Error('Download failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${skillName}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        message.error(t('download_failed', 'Download failed') as string);
+      }
+    },
+    [t],
+  );
+  const handleSkillAdd = useCallback(
+    (skillName: string) => {
+      message.success(t('skill_added_success', { skillName }) as string);
+    },
+    [t],
+  );
+
   const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
     setPreviewArtifact(artifact as Artifact);
   }, []);
@@ -1904,57 +1933,65 @@ const Playground: NextPage = () => {
 
           // For shell_interpreter steps, extract file paths from code/text outputs
           // and create downloadable file artifacts
-          if (step.action === 'shell_interpreter' || step.action === 'code_interpreter') {
+          const WRITE_SCAN_ACTIONS = new Set(['shell_interpreter', 'code_interpreter', 'write', 'edit']);
+          if (WRITE_SCAN_ACTIONS.has((step.action || '') as string)) {
             // Match both absolute paths and relative filenames with extensions
             const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
             const relFilePattern = /(?:>|>>|\btee\b|\btouch\b)\s+([\w\-./ ]+\.\w{1,10})/g;
             const seenFilePaths = new Set<string>();
+            // Scan tool outputs plus the step's own detail/observation text:
+            // pi write/edit results live there, not in execution.outputs.
+            const scanTexts: string[] = [];
             stepOutputs.forEach(output => {
               if (output.output_type === 'code' || output.output_type === 'text') {
-                const text = String(output.content || '');
-                // Look for file creation patterns
-                const hasFileCreation =
-                  /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>|Successfully wrote\b|Wrote \d+ bytes)/.test(
-                    text,
-                  );
-                if (hasFileCreation) {
-                  const foundPaths: string[] = [];
-                  // Extract absolute paths
-                  const absMatches = text.match(absPathPattern) || [];
-                  foundPaths.push(...absMatches);
-                  // Extract relative paths after redirection operators
-                  let relMatch;
-                  while ((relMatch = relFilePattern.exec(text)) !== null) {
-                    const p = relMatch[1].trim();
-                    if (p && !p.startsWith('/')) foundPaths.push(p);
-                  }
-                  foundPaths.forEach(fp => {
-                    // Normalize: strip leading ./ if present
-                    const normalized = fp.replace(/^\.\//, '');
-                    const fileName = normalized.split('/').pop() || normalized;
-                    if (!seenFilePaths.has(fileName.toLowerCase())) {
-                      seenFilePaths.add(fileName.toLowerCase());
-                      const alreadyHasFile = finalArtifacts.some(
-                        a =>
-                          (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
-                      );
-                      if (!alreadyHasFile) {
-                        // Use the path as-is; backend resolves relative paths against pilot/tmp
-                        finalArtifacts.push({
-                          id: `${messageId}-shellfile-${step.id}-${fileName}`,
-                          type: 'file',
-                          name: fileName,
-                          content: { name: fileName, file_path: normalized },
-                          createdAt: now,
-                          messageId,
-                          stepId: step.id,
-                          downloadable: true,
-                          filePath: normalized,
-                        });
-                      }
-                    }
-                  });
+                scanTexts.push(String(output.content || ''));
+              }
+            });
+            const stepExtra = step as unknown as { detail?: string; observation?: string };
+            if (stepExtra.detail) scanTexts.push(String(stepExtra.detail));
+            if (stepExtra.observation) scanTexts.push(String(stepExtra.observation));
+            scanTexts.forEach(text => {
+              // Look for file creation patterns
+              const hasFileCreation =
+                /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>|Successfully wrote\b|Wrote \d+ bytes)/.test(
+                  text,
+                );
+              if (hasFileCreation) {
+                const foundPaths: string[] = [];
+                // Extract absolute paths
+                const absMatches = text.match(absPathPattern) || [];
+                foundPaths.push(...absMatches);
+                // Extract relative paths after redirection operators
+                let relMatch;
+                while ((relMatch = relFilePattern.exec(text)) !== null) {
+                  const p = relMatch[1].trim();
+                  if (p && !p.startsWith('/')) foundPaths.push(p);
                 }
+                foundPaths.forEach(fp => {
+                  // Normalize: strip leading ./ if present
+                  const normalized = fp.replace(/^\.\//, '');
+                  const fileName = normalized.split('/').pop() || normalized;
+                  if (!seenFilePaths.has(fileName.toLowerCase())) {
+                    seenFilePaths.add(fileName.toLowerCase());
+                    const alreadyHasFile = finalArtifacts.some(
+                      a => (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
+                    );
+                    if (!alreadyHasFile) {
+                      // Use the path as-is; backend resolves relative paths against pilot/tmp
+                      finalArtifacts.push({
+                        id: `${messageId}-shellfile-${step.id}-${fileName}`,
+                        type: 'file',
+                        name: fileName,
+                        content: { name: fileName, file_path: normalized },
+                        createdAt: now,
+                        messageId,
+                        stepId: step.id,
+                        downloadable: true,
+                        filePath: normalized,
+                      });
+                    }
+                  }
+                });
               }
             });
           }
@@ -3874,7 +3911,12 @@ const Playground: NextPage = () => {
                                 {timelineBlocks.length > 0 && (
                                   <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
                                 )}
-                                <ArtifactCards artifacts={roundArtifacts} onPreview={handlePreviewStreamArtifact} />
+                                <ArtifactCards
+                                  artifacts={roundArtifacts}
+                                  onPreview={handlePreviewStreamArtifact}
+                                  onSkillAdd={handleSkillAdd}
+                                  onSkillDownload={handleSkillZipDownload}
+                                />
                               </div>
                             ) : undefined
                           }
@@ -4011,64 +4053,6 @@ const Playground: NextPage = () => {
                           onExpand={() => {
                             if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           }}
-                          createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
-                          onSkillCardClick={_skillName => {
-                            if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                            setRightPanelCollapsed(false);
-                            setRightPanelView('skill-preview');
-                            // Find the package_skill step and select it so right panel shows SkillCardRenderer
-                            if (execution) {
-                              const skillStep = execution.steps.find((s: ExecutionStep) => {
-                                if (s.action !== 'shell_interpreter') return false;
-                                const detailHas =
-                                  s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-                                const inputHas =
-                                  (typeof s.actionInput === 'string'
-                                    ? s.actionInput
-                                    : JSON.stringify(s.actionInput ?? '')
-                                  ).includes('package_skill') ||
-                                  (typeof s.actionInput === 'string'
-                                    ? s.actionInput
-                                    : JSON.stringify(s.actionInput ?? '')
-                                  ).includes('init_skill');
-                                const outputTexts = (execution.outputs[s.id] || [])
-                                  .map(o => String(o.content))
-                                  .join(' ');
-                                const outputHas =
-                                  outputTexts.includes('package_skill') ||
-                                  outputTexts.includes('init_skill') ||
-                                  outputTexts.includes('Successfully packaged');
-                                return detailHas || inputHas || outputHas;
-                              });
-                              if (skillStep) {
-                                setSelectedStepId(skillStep.id);
-                                setExecutionMap(prev => ({
-                                  ...prev,
-                                  [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
-                                }));
-                              }
-                            }
-                          }}
-                          onSkillDownload={async skillName => {
-                            try {
-                              const base = process.env.API_BASE_URL || '';
-                              const res = await fetch(
-                                `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
-                              );
-                              if (!res.ok) throw new Error('Download failed');
-                              const blob = await res.blob();
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `${skillName}.zip`;
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                              URL.revokeObjectURL(url);
-                            } catch {
-                              // Download failed silently
-                            }
-                          }}
                         />
                       </React.Fragment>
                     );
@@ -4096,6 +4080,8 @@ const Playground: NextPage = () => {
                       <ArtifactCards
                         artifacts={convArtifacts.filter(a => a.type !== 'summary')}
                         onPreview={handlePreviewStreamArtifact}
+                        onSkillAdd={handleSkillAdd}
+                        onSkillDownload={handleSkillZipDownload}
                       />
                     </div>
                   )}

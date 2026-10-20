@@ -12,14 +12,18 @@
  * gallery so every conversation has artifacts without card noise.
  */
 import {
+  CheckOutlined,
   CodeOutlined,
+  DownloadOutlined,
   FileExcelOutlined,
   FileMarkdownOutlined,
   FilePptOutlined,
   FileTextOutlined,
   FileWordOutlined,
   FolderOutlined,
+  LoadingOutlined,
   PictureOutlined,
+  PlusOutlined,
 } from '@ant-design/icons';
 import cls from 'classnames';
 import { useState } from 'react';
@@ -39,9 +43,57 @@ export interface StreamArtifact {
   tier?: 'final' | 'process';
 }
 
+/** Download-zip + Add actions for a skill-package card (moved here from
+ *  the legacy compact skill banner). */
+const SkillActions: React.FC<{
+  name: string;
+  onAdd?: (name: string) => void;
+  onDownload?: (name: string) => void;
+}> = ({ name, onAdd, onDownload }) => {
+  const { t } = useTranslation();
+  const [isAdded, setIsAdded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const bare = name.replace(/\/$/, '');
+  return (
+    <>
+      <button
+        type='button'
+        title={t('download_as_zip', 'Download as zip')}
+        disabled={downloading}
+        onClick={() => {
+          setDownloading(true);
+          Promise.resolve(onDownload?.(bare)).finally(() => setDownloading(false));
+        }}
+        className='h-6 w-7 inline-flex items-center justify-center rounded-md border border-[#e6e6e2] dark:border-[#2a2925] text-[#8b8b84] dark:text-[#7c7972] hover:text-[#55554f] dark:hover:text-[#d4d2cc]'
+      >
+        {downloading ? <LoadingOutlined className='text-[11px]' /> : <DownloadOutlined className='text-[11px]' />}
+      </button>
+      <button
+        type='button'
+        onClick={() => {
+          if (!isAdded) {
+            setIsAdded(true);
+            onAdd?.(bare);
+          }
+        }}
+        className={
+          isAdded
+            ? 'h-6 px-2.5 inline-flex items-center gap-1 rounded-md text-xs font-medium bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900'
+            : 'h-6 px-2.5 inline-flex items-center gap-1 rounded-md text-xs font-medium bg-[#1c1c1a] dark:bg-[#e6e4df] text-white dark:text-[#1c1c1a] hover:opacity-90'
+        }
+      >
+        {isAdded ? <CheckOutlined className='text-[10px]' /> : <PlusOutlined className='text-[10px]' />}
+        {isAdded ? t('added', 'Added') : t('add', 'Add')}
+      </button>
+    </>
+  );
+};
+
 interface ArtifactCardsProps {
   artifacts: StreamArtifact[];
   onPreview?: (artifact: StreamArtifact) => void;
+  onSkillAdd?: (name: string) => void;
+  onSkillDownload?: (name: string) => void;
 }
 
 const PREVIEW_EXTS = new Set(['md', 'markdown', 'txt', 'py', 'js', 'ts', 'tsx', 'jsx', 'json', 'csv', 'sql']);
@@ -107,7 +159,7 @@ export function ReportThumb() {
   );
 }
 
-export default function ArtifactCards({ artifacts, onPreview }: ArtifactCardsProps) {
+export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkillDownload }: ArtifactCardsProps) {
   const { t } = useTranslation();
   const [imagesExpanded, setImagesExpanded] = useState(false);
   if (!artifacts || artifacts.length === 0) return null;
@@ -187,6 +239,7 @@ export default function ArtifactCards({ artifacts, onPreview }: ArtifactCardsPro
               </div>
               <div className='text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate'>{meta}</div>
               <div className='mt-auto pt-1.5 flex gap-1.5'>
+                {isSkill && <SkillActions name={artifact.name} onAdd={onSkillAdd} onDownload={onSkillDownload} />}
                 {previewable && (
                   <button
                     type='button'

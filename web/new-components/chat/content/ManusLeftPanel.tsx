@@ -6,7 +6,6 @@ import { parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils
 import {
   ApartmentOutlined,
   ApiOutlined,
-  AppstoreOutlined,
   BarChartOutlined,
   BookOutlined,
   CaretDownOutlined,
@@ -31,12 +30,11 @@ import {
   FolderOpenOutlined,
   LoadingOutlined,
   PlayCircleOutlined,
-  PlusOutlined,
   QuestionCircleOutlined,
   SearchOutlined,
   TableOutlined,
 } from '@ant-design/icons';
-import { Button, Tooltip, message } from 'antd';
+import { Button, Tooltip } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -156,9 +154,6 @@ export interface ManusLeftPanelProps {
     db_type: string;
   };
   attachedConnectors?: AttachedConnector[];
-  createdSkillName?: string;
-  onSkillCardClick?: (skillName: string) => void;
-  onSkillDownload?: (skillName: string) => void;
   taskPlan?: TaskItem[];
   /** Citation indexes that are valid for this answer. */
   citationIndexes?: number[];
@@ -384,75 +379,6 @@ const ArtifactCard: React.FC<{
 ArtifactCard.displayName = 'ArtifactCard';
 
 /** Compact skill card for left panel — shows skill name, download, add-to-skills */
-const SkillCompactCard: React.FC<{
-  skillName: string;
-  onClick?: () => void;
-  onDownload?: () => void;
-}> = memo(({ skillName, onClick, onDownload }) => {
-  const { t } = useTranslation();
-  const [downloading, _setDownloading] = useState(false);
-  const [isAdded, setIsAdded] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      className='group flex items-center gap-3 px-4 py-3.5 rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-[#1a1b1e] cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all duration-200 w-full'
-    >
-      <div className='w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0'>
-        <AppstoreOutlined className='text-lg text-gray-500 dark:text-gray-400' />
-      </div>
-      <div className='min-w-0 flex-1'>
-        <div className='flex items-center gap-2'>
-          <span className='text-sm font-semibold text-gray-800 dark:text-gray-200 truncate'>{skillName}</span>
-          <span className='flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium'>
-            {t('skill_label')}
-          </span>
-        </div>
-      </div>
-      <div className='flex items-center gap-2 flex-shrink-0'>
-        <Tooltip title={t('download_as_zip')}>
-          <button
-            className='flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors'
-            onClick={e => {
-              e.stopPropagation();
-              onDownload?.();
-            }}
-            disabled={downloading}
-          >
-            {downloading ? <LoadingOutlined className='text-sm' /> : <DownloadOutlined className='text-sm' />}
-          </button>
-        </Tooltip>
-        <button
-          className={`flex items-center gap-1.5 rounded-lg text-xs font-medium px-4 py-2 transition-all duration-200 ${
-            isAdded
-              ? 'bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/20 dark:text-green-500 dark:border-green-800'
-              : 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:opacity-90'
-          }`}
-          onClick={e => {
-            e.stopPropagation();
-            if (!isAdded) {
-              setIsAdded(true);
-              message.success(t('skill_added_success', { skillName }));
-            }
-          }}
-        >
-          {isAdded ? (
-            <>
-              <CheckOutlined className='text-[10px]' />
-              {t('added')}
-            </>
-          ) : (
-            <>
-              <PlusOutlined className='text-[10px]' />
-              {t('add')}
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-});
-
-SkillCompactCard.displayName = 'SkillCompactCard';
 
 const StreamingText: React.FC<{ text: string }> = memo(({ text }) => {
   const [displayed, setDisplayed] = useState('');
@@ -1080,9 +1006,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   attachedSkill,
   attachedDb,
   attachedConnectors,
-  createdSkillName,
-  onSkillCardClick,
-  onSkillDownload,
   taskPlan,
   citationIndexes = [],
   onReferencesClick,
@@ -1359,16 +1282,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                 查看 {citationIndexes.length} 条参考来源
               </button>
             )}
-          </div>
-        )}
-
-        {createdSkillName && (
-          <div className='mt-5 px-1'>
-            <SkillCompactCard
-              skillName={createdSkillName}
-              onClick={() => onSkillCardClick?.(createdSkillName)}
-              onDownload={() => onSkillDownload?.(createdSkillName)}
-            />
           </div>
         )}
 
