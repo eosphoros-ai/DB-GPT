@@ -36,6 +36,7 @@ export interface RailArtifact {
   content?: any;
   createdAt?: number;
   filePath?: string;
+  tier?: 'final' | 'process';
 }
 
 interface ArtifactRailProps {
@@ -283,7 +284,8 @@ export default function ArtifactRail({
   const groups: { label: string; items: RailArtifact[] }[] = [];
   for (const a of list) {
     let label = '会话根目录';
-    if (a.type === 'summary') label = '兜底产物';
+    if (a.type === 'summary') label = t('rail_fallback_group', '兜底产物');
+    else if (a.tier === 'process') label = t('rail_process_group', '过程文件');
     else if (a.filePath) {
       const dir = a.filePath.split('/').slice(0, -1).join('/');
       label = dir || '会话根目录';

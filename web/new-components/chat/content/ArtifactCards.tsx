@@ -22,6 +22,7 @@ import {
   PictureOutlined,
 } from '@ant-design/icons';
 import cls from 'classnames';
+import { useTranslation } from 'react-i18next';
 
 import { resolveImageUrl } from './image-url';
 
@@ -33,6 +34,8 @@ export interface StreamArtifact {
   content?: any;
   stepId?: string;
   filePath?: string;
+  /** 'process' intermediates collapse into a group instead of cards. */
+  tier?: 'final' | 'process';
 }
 
 interface ArtifactCardsProps {
@@ -104,10 +107,13 @@ export function ReportThumb() {
 }
 
 export default function ArtifactCards({ artifacts, onPreview }: ArtifactCardsProps) {
+  const { t } = useTranslation();
   if (!artifacts || artifacts.length === 0) return null;
+  const finals = artifacts.filter(a => a.tier !== 'process');
+  const processes = artifacts.filter(a => a.tier === 'process');
   return (
     <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
-      {artifacts.map(artifact => {
+      {finals.map(artifact => {
         const isHtml = artifact.type === 'html';
         const isImage = artifact.type === 'image';
         const isSkill = artifact.type === 'skill';
@@ -195,6 +201,24 @@ export default function ArtifactCards({ artifacts, onPreview }: ArtifactCardsPro
           </div>
         );
       })}
+      {processes.length > 0 && (
+        <details className='w-full'>
+          <summary className='cursor-pointer inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972] list-none select-none'>
+            ▸ {t('artifacts_process_group', '过程文件')} · {processes.length}
+          </summary>
+          <div className='flex flex-wrap gap-1.5 mt-2'>
+            {processes.map(p => (
+              <span
+                key={p.id}
+                title={p.filePath || p.name}
+                className='inline-flex items-center h-6 px-2 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] font-mono text-[11px] text-[#8b8b84] dark:text-[#7c7972]'
+              >
+                {p.name}
+              </span>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }

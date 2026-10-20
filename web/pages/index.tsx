@@ -202,6 +202,87 @@ const servableImageUrl = (filePath?: string): string | null => {
   return null;
 };
 
+/** Deliverable extensions shown as first-class artifact cards. */
+const DELIVERABLE_EXTS = new Set([
+  'html',
+  'htm',
+  'xlsx',
+  'xls',
+  'csv',
+  'pptx',
+  'pdf',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'svg',
+  'webp',
+  'docx',
+  'md',
+]);
+/** Intermediate extensions that never surface as deliverable cards. */
+const PROCESS_EXTS = new Set([
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'py',
+  'sh',
+  'bash',
+  'log',
+  'tmp',
+  'lock',
+  'map',
+  'bak',
+  'ckpt',
+  'npy',
+  'npz',
+]);
+const PROCESS_NAME_RE = /(template|_rows|_check|check_|draft|scratch|intermediate|backup|\.bak|_tmp|tmp_)/i;
+
+/**
+ * Classify a file artifact as presentable deliverable vs intermediate
+ * process file. Files the final answer references (by name or path) are
+ * always deliverables; otherwise extension + naming heuristics decide,
+ * and unknown/no-extension names (path-segment noise) count as process
+ * so they stay out of the artifact strip.
+ */
+/**
+ * Boundary-aware reference check: the name/path must appear in the answer
+ * as a whole path segment or token — plain substring matching would treat
+ * e.g. "chenketing.ckt" (a segment of every absolute path) as referenced.
+ */
+const isReferencedInAnswer = (needle: string, answerText: string | undefined): boolean => {
+  if (!answerText || !needle) return false;
+  let idx = answerText.indexOf(needle);
+  while (idx >= 0) {
+    const before = idx > 0 ? answerText[idx - 1] : ' ';
+    const afterIdx = idx + needle.length;
+    const after = afterIdx < answerText.length ? answerText[afterIdx] : ' ';
+    const okBefore = idx === 0 || /[/\s"'`(=【:：]/.test(before);
+    const okAfter = !/[A-Za-z0-9._\-/\\]/.test(after);
+    if (okBefore && okAfter) return true;
+    idx = answerText.indexOf(needle, idx + 1);
+  }
+  return false;
+};
+
+const classifyFileTier = (
+  name: string,
+  filePath: string | undefined,
+  answerText: string | undefined,
+): { tier: 'final' | 'process'; referenced: boolean } => {
+  const base = (name || (filePath || '').split('/').pop() || '').toLowerCase();
+  const ext = base.includes('.') ? base.split('.').pop() || '' : '';
+  const referenced = isReferencedInAnswer(name, answerText) || isReferencedInAnswer(filePath || '', answerText);
+  if (referenced) return { tier: 'final', referenced };
+  if (PROCESS_NAME_RE.test(base) || PROCESS_EXTS.has(ext)) {
+    return { tier: 'process', referenced };
+  }
+  if (DELIVERABLE_EXTS.has(ext)) return { tier: 'final', referenced };
+  return { tier: 'process', referenced };
+};
+
 interface DataSource {
   id: number;
   type: string;
@@ -293,6 +374,12 @@ interface Artifact {
   filePath?: string;
   /** Which sub-agent produced this artifact (for sub-agent produced files). */
   sourceAgent?: string;
+  /**
+   * Presentation tier for file artifacts: ``final`` deliverables render
+   * as cards; ``process`` intermediates (templates, scratch scripts,
+   * row dumps, unknown-ext noise) collapse into a process-files group.
+   */
+  tier?: 'final' | 'process';
   // Chart-specific metadata
   chartType?: ChartType;
   chartConfig?: Partial<ChartConfig>;
@@ -1725,6 +1812,7 @@ const Playground: NextPage = () => {
       },
       summaryText?: string,
       filePath?: string | null,
+      answerText?: string,
     ): Artifact[] => {
       const finalArtifacts: Artifact[] = [];
       const now = Date.now();
@@ -1982,6 +2070,35 @@ const Playground: NextPage = () => {
         a.content = url;
       }
 
+      // Tier file artifacts: deliverables vs intermediate process files
+      // (the reference check needs the round's final answer text).
+      const referencedNames = new Set<string>();
+      for (const a of finalArtifacts) {
+        if (a.type === 'file') {
+          const cls = classifyFileTier(a.name, a.filePath, answerText || summaryText);
+          a.tier = cls.tier;
+          if (cls.referenced) referencedNames.add(a.name);
+        }
+      }
+      // Draft demotion: an unreferenced file-backed HTML is usually an
+      // intermediate draft when the round already produced a strong
+      // deliverable (rendered html / images / skill / referenced file).
+      const hasStrongDeliverable = finalArtifacts.some(
+        a =>
+          a.type === 'image' ||
+          a.type === 'skill' ||
+          a.type === 'html' ||
+          (a.type === 'file' && referencedNames.has(a.name)),
+      );
+      if (hasStrongDeliverable) {
+        for (const a of finalArtifacts) {
+          if (a.type === 'file' && a.tier === 'final' && !referencedNames.has(a.name)) {
+            const ext = (a.name.includes('.') ? a.name.split('.').pop() : '') || '';
+            if (ext === 'html' || ext === 'htm') a.tier = 'process';
+          }
+        }
+      }
+
       // Deduplicate: for artifacts with the same name+type, keep only the last one
       const deduped: Artifact[] = [];
       const seen = new Map<string, number>();
@@ -2044,7 +2161,7 @@ const Playground: NextPage = () => {
       if (msg.role !== 'view') continue;
       const exec = executionMap[msg.id];
       if (!exec || !hasArtifactOutputs(exec)) continue;
-      list.push(...buildArtifactsFromExecution(msg.id, exec));
+      list.push(...buildArtifactsFromExecution(msg.id, exec, undefined, undefined, msg.context));
     }
     const lastView = [...messages].reverse().find(m => m.role === 'view' && m.context);
     if (lastView?.id && lastView.context) {
@@ -3665,13 +3782,20 @@ const Playground: NextPage = () => {
                       : [];
                     const roundArtifacts: StreamArtifact[] =
                       useTimelineView && execution && hasArtifactOutputs(execution)
-                        ? buildArtifactsFromExecution(round.viewMsg!.id, execution).map(a => ({
+                        ? buildArtifactsFromExecution(
+                            round.viewMsg!.id,
+                            execution,
+                            undefined,
+                            undefined,
+                            round.viewMsg!.context,
+                          ).map(a => ({
                             id: a.id,
                             type: a.type,
                             name: a.name,
                             size: a.size,
                             content: a.content,
                             stepId: a.stepId,
+                            tier: a.tier,
                           }))
                         : [];
                     const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
