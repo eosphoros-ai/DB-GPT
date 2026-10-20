@@ -1113,7 +1113,6 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     [displayAssistantText, t],
   );
 
-
   const handleStepClick = useCallback(
     (stepId: string, sectionId: string) => {
       onStepClick?.(stepId, sectionId);
@@ -1311,36 +1310,39 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               )}
             </div>
             {!isAssistantStreaming && displayAssistantText && (
-              <div className='mt-3 flex items-center gap-1'>
+              <div className='mt-2 -ml-1.5 flex items-center'>
                 <Tooltip title={t('copy_plain_text', '复制文本')}>
                   <button
                     type='button'
                     onClick={() => copyAnswer(false)}
-                    className='w-7 h-7 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
+                    className='w-6 h-6 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
                   >
-                    <CopyOutlined className='text-[13px]' />
+                    <CopyOutlined className='text-[15px] leading-none' />
                   </button>
                 </Tooltip>
                 <Tooltip title={t('copy_markdown', '复制 Markdown')}>
                   <button
                     type='button'
                     onClick={() => copyAnswer(true)}
-                    className='w-7 h-7 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
+                    className='w-6 h-6 inline-flex items-center justify-center rounded-md text-[#8b8b84] dark:text-[#7c7972] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06] transition-colors'
                   >
-                    <FileMarkdownOutlined className='text-[13px]' />
+                    <FileMarkdownOutlined className='text-[15px] leading-none' />
                   </button>
                 </Tooltip>
+                {citationIndexes.length > 0 && onReferencesClick && (
+                  <>
+                    <span className='w-px h-3.5 mx-1 bg-[#e6e6e2] dark:bg-[#2a2925]' aria-hidden />
+                    <button
+                      type='button'
+                      onClick={onReferencesClick}
+                      className='h-6 inline-flex items-center gap-1.5 rounded-md px-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
+                    >
+                      <BookOutlined aria-hidden />
+                      查看 {citationIndexes.length} 条参考来源
+                    </button>
+                  </>
+                )}
               </div>
-            )}
-            {citationIndexes.length > 0 && onReferencesClick && (
-              <button
-                type='button'
-                onClick={onReferencesClick}
-                className='mt-3 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-300'
-              >
-                <BookOutlined aria-hidden />
-                查看 {citationIndexes.length} 条参考来源
-              </button>
             )}
           </div>
         )}
