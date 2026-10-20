@@ -58,6 +58,10 @@ const nextConfig = {
 };
 
 const withTM = require("next-transpile-modules")([
+  // GPTVis and chart advice also load G2; bundle their ESM dependency graph
+  // instead of leaving CommonJS entries for Node to require during SSR.
+  "@ant-design/plots",
+  "@antv/ava",
   "@berryv/g2-react",
   "@antv/g2",
   "react-syntax-highlighter",
