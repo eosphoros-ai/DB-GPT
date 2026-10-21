@@ -142,6 +142,11 @@ const ApprovalCard: React.FC<{
             ))}
           </select>
         </div>
+        {scope !== 'once' && approval.memory_key && (
+          <div className='mt-2 text-[12px] text-gray-400 dark:text-gray-500'>
+            {t('approval_remember_hint', { key: approval.memory_key })}
+          </div>
+        )}
       </div>
     </div>
   );

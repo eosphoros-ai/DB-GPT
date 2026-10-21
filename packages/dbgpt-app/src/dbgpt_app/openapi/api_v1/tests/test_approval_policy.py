@@ -133,8 +133,8 @@ def test_whitelist_revoke(policy_db):
     center = ApprovalCenter()
     center.remember("c1", "session", "shell_interpreter", {"command": "uv run pytest"})
     center.remember("c1", "always", "sql_query", {"query": "SELECT 1"})
-    sig_session = center.signature("shell_interpreter", {"command": "uv run pytest"})
-    sig_always = center.signature("sql_query", {"query": "SELECT 1"})
+    sig_session = center.memory_key("shell_interpreter", {"command": "uv run pytest"})
+    sig_always = center.memory_key("sql_query", {"query": "SELECT 1"})
     entries = ap.whitelist_view(center, "c1")
     assert {e["signature"] for e in entries} == {sig_session, sig_always}
     assert center.revoke("session", sig_session, "c1") is True

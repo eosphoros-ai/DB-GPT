@@ -123,6 +123,8 @@ export interface SSEApprovalRequestedEvent {
   args_preview: string;
   rule_id: string;
   risk?: string;
+  /** class-of-call key that session/always scope will remember */
+  memory_key?: string;
   ttl_seconds?: number;
   ts?: number;
 }

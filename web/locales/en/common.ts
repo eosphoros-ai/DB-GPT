@@ -382,6 +382,7 @@ export const CommonEn = {
   approval_scope_once: 'This time only',
   approval_scope_session: 'This session',
   approval_scope_always: 'Always',
+  approval_remember_hint: 'Will remember {{key}} calls; same class stops popping',
   approval_rule: 'Matched rule',
   approval_ttl: 'auto-reject on timeout',
   // ── question dock (AskUserQuestion form) ──

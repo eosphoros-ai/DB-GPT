@@ -387,6 +387,7 @@ export const CommonZh: Resources['translation'] = {
   approval_scope_once: '仅本次',
   approval_scope_session: '本会话',
   approval_scope_always: '始终',
+  approval_remember_hint: '将记住 {{key}} 类调用，同类不再弹卡',
   approval_rule: '命中规则',
   approval_ttl: '超时自动拒绝',
   // ── question 卡（AskUserQuestion 形态）──

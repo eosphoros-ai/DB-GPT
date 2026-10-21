@@ -415,13 +415,14 @@ def register_harness_endpoints(router: Any) -> None:
                 raise HTTPException(
                     status_code=403, detail="invalid or reused approval token"
                 )
-        elif approval_mode() != "off" and not approval_center.is_allowed(
-            conv_id, name, arguments
-        ):
+        elif approval_mode() != "off":
             tier, rule_id = POLICY.classify(name, arguments)
             if tier == TIER_DENY:
+                # Deny beats whitelist memory (same rule as the dbgpt gate).
                 return Result.succ({"result": deny_observation(name, rule_id)})
-            if tier == TIER_CONFIRM:
+            if tier == TIER_CONFIRM and not approval_center.is_allowed(
+                conv_id, name, arguments
+            ):
                 pa = approval_center.register(
                     conv_id, name, arguments, rule_id, engine="pi"
                 )
@@ -435,6 +436,9 @@ def register_harness_endpoints(router: Any) -> None:
                         "args_preview": preview_args(arguments),
                         "rule_id": rule_id,
                         "risk": tier,
+                        "memory_key": approval_center.memory_key(
+                            name, arguments
+                        ),
                         "ttl_seconds": int(approval_ttl_seconds()),
                         "ts": pa.created_ts,
                     },
@@ -454,7 +458,9 @@ def register_harness_endpoints(router: Any) -> None:
                     # The pi side-queue forwarder emits payloads verbatim, so
                     # the frame type must ride inside the dict (push_intent
                     # passes it as a separate argument).
-                    tool_bridge.push_conv_event(conv_id, {**payload, "type": event_type})
+                    tool_bridge.push_conv_event(
+                        conv_id, {**payload, "type": event_type}
+                    )
 
                 # Always push an intent frame: the dock gates Allow on it, so
                 # an absent analyzer must still yield the fallback bullets

@@ -5,10 +5,10 @@ import asyncio
 import pytest
 
 from dbgpt_app.openapi.api_v1.approval import (
+    INTENT_FALLBACK_BULLETS,
     TIER_AUTO,
     TIER_CONFIRM,
     TIER_DENY,
-    INTENT_FALLBACK_BULLETS,
     ApprovalCenter,
     ToolRiskPolicy,
     make_approval_gate,
@@ -149,7 +149,11 @@ def test_gate_confirm_approve_then_session_memory():
 
     obs = asyncio.run(scenario())
     assert obs is None
-    assert [t for t, _ in events] == ["approval.requested", "approval.resolved"]
+    assert [t for t, _ in events] == [
+        "approval.requested",
+        "approval.intent",
+        "approval.resolved",
+    ]
     # Session memory: identical call now passes without a confirmation card.
     events.clear()
     assert asyncio.run(gate("shell_interpreter", args)) is None
@@ -262,6 +266,59 @@ def test_push_intent_fallback_on_analyzer_error():
     asyncio.run(push_intent(pa, cb, bad_analyzer))
     assert events[0][0] == "approval.intent"
     assert events[0][1]["bullets"] == INTENT_FALLBACK_BULLETS
+
+
+def test_memory_key_groups_class_of_calls():
+    center = ApprovalCenter()
+    center.remember(
+        "c1", "always", "shell_interpreter", {"command": "pkill -f aaa"}
+    )
+    # same command head, different args: remembered
+    assert center.is_allowed(
+        "c2", "shell_interpreter", {"command": "pkill -f bbb"}
+    )
+    # different command head: still gated
+    assert not center.is_allowed(
+        "c1", "shell_interpreter", {"command": "rm -rf /tmp/x"}
+    )
+
+    sess = ApprovalCenter()
+    sess.remember(
+        "c1", "session", "sql_query", {"query": "UPDATE t SET a=1 WHERE id=2"}
+    )
+    assert sess.is_allowed("c1", "sql_query", {"query": "UPDATE t SET a=9 WHERE id=3"})
+    assert not sess.is_allowed("c1", "sql_query", {"query": "DELETE FROM t WHERE id=3"})
+    assert not sess.is_allowed(
+        "other", "sql_query", {"query": "UPDATE t SET a=9 WHERE id=3"}
+    )
+
+    web = ApprovalCenter()
+    web.remember("c1", "session", "web_fetch", {"url": "https://api.internal/x"})
+    assert web.is_allowed("c1", "web_fetch", {"url": "https://api.internal/y"})
+    assert not web.is_allowed("c1", "web_fetch", {"url": "https://other.internal/y"})
+
+    # code_interpreter memory stays exact-script (first token is meaningless)
+    code = ApprovalCenter()
+    code.remember("c1", "always", "code_interpreter", {"code": "import os; print(1)"})
+    assert code.is_allowed("c1", "code_interpreter", {"code": "import os; print(1)"})
+    assert not code.is_allowed(
+        "c1", "code_interpreter", {"code": "import os; shutil.rmtree('/')"}
+    )
+
+
+def test_memory_never_bypasses_deny_tier():
+    center = ApprovalCenter()
+    center.remember("c1", "always", "shell_interpreter", {"command": "rm tmp/x"})
+    events = []
+
+    async def cb(event_type, payload):
+        events.append(event_type)
+
+    gate = make_approval_gate("c1", cb, center=center)
+    # same command head (rm*) but deny-tier args: deny wins over memory
+    obs = asyncio.run(gate("shell_interpreter", {"command": "rm -rf /"}))
+    assert obs and obs.startswith("[policy]")
+    assert events == []
 
 
 def test_push_intent_passes_analyzer_bullets():

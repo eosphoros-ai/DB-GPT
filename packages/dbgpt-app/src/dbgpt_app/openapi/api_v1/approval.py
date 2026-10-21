@@ -425,18 +425,47 @@ class ApprovalCenter:
         blob = json.dumps(args, sort_keys=True, ensure_ascii=False, default=str)
         return hashlib.sha1(f"{tool}:{blob}".encode("utf-8")).hexdigest()[:12]
 
+    @staticmethod
+    def memory_key(tool: str, args: dict) -> str:
+        """Coarse "class of call" key for session/always memory.
+
+        The exact-args hash was too narrow: approving ``pkill -f x`` with
+        scope=always still popped the card for ``pkill -f y``. Key by command
+        head / SQL verb / URL host so the scope dropdown keeps its promise.
+        """
+        blob = _args_blob(args)
+        if tool == "shell_interpreter":
+            head = blob.strip().split(None, 1)[:1]
+            name_ = os.path.basename(head[0]) if head else blob.strip()[:24]
+            return f"{tool}: {name_}*"
+        if tool == "code_interpreter":
+            # Code is Turing-complete: the first token (import/def/for…)
+            # carries no safety meaning, so memory stays exact-script only.
+            return f"{tool}: {ApprovalCenter.signature(tool, args)}"
+        if tool == "sql_query":
+            verb = re.match(r"\s*([a-zA-Z]+)", blob)
+            return f"{tool}: {(verb.group(1).upper() if verb else 'OTHER')} …"
+        if tool == "web_fetch":
+            host = re.match(r"\s*https?://([^/:\s]+)", blob)
+            return f"{tool}: {(host.group(1) if host else blob.strip()[:24])}/*"
+        return f"{tool}: {ApprovalCenter.signature(tool, args)}"
+
     def is_allowed(self, conv_id: str, tool: str, args: dict) -> bool:
+        key = self.memory_key(tool, args)
         sig = self.signature(tool, args)
-        if sig in self._always_allow:
-            return True
-        return sig in self._session_allow.get(conv_id, set())
+        for cand in (key, sig):
+            if cand in self._always_allow:
+                return True
+            if cand in self._session_allow.get(conv_id, set()):
+                return True
+        return False
 
     def remember(self, conv_id: str, scope: str, tool: str, args: dict) -> None:
-        sig = self.signature(tool, args)
+        key = self.memory_key(tool, args)
         if scope == "session":
-            self._session_allow.setdefault(conv_id, set()).add(sig)
+            self._session_allow.setdefault(conv_id, set()).add(key)
         elif scope == "always":
-            self._always_allow.add(sig)
+            self._always_allow.add(key)
 
     def register(
         self, conv_id: str, tool: str, args: dict, rule_id: str, engine: str = "dbgpt"
@@ -722,13 +751,16 @@ def make_approval_gate(
         mode = approval_mode()
         if mode == "off":
             return None
-        if mode != "always" and center.is_allowed(conv_id, name, args):
-            return None
+        # Deny is evaluated BEFORE whitelist memory: a remembered class key
+        # (e.g. ``rm tmp/x`` -> "rm*") must never shield a deny-tier call
+        # (``rm -rf /``) that shares the same command head.
         tier, rule_id = policy.classify(name, args)
-        if tier == TIER_AUTO:
-            return None
         if tier == TIER_DENY:
             return deny_observation(name, rule_id)
+        if mode != "always" and center.is_allowed(conv_id, name, args):
+            return None
+        if tier == TIER_AUTO:
+            return None
 
         pa = center.register(conv_id, name, args, rule_id)
         await stream_callback(
@@ -740,6 +772,7 @@ def make_approval_gate(
                 "args_preview": preview_args(args),
                 "rule_id": rule_id,
                 "risk": tier,
+                "memory_key": center.memory_key(name, args),
                 "ttl_seconds": int(approval_ttl_seconds()),
                 "ts": pa.created_ts,
             },
