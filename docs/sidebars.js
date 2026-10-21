@@ -436,11 +436,6 @@ const sidebars = {
       collapsible: true,
       items: [
         { type: "doc", id: "getting-started/concepts/architecture", label: "Architecture" },
-        { type: "doc", id: "getting-started/concepts/agents", label: "Agents" },
-        { type: "doc", id: "getting-started/concepts/awel", label: "AWEL" },
-        { type: "doc", id: "getting-started/concepts/rag", label: "RAG" },
-        { type: "doc", id: "getting-started/concepts/smmf", label: "SMMF" },
-        { type: "doc", id: "getting-started/concepts/data-sources", label: "Data Sources" },
       ],
     },
   ],
