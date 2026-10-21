@@ -2,6 +2,11 @@
 
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
+  sidebarHarness: [
+    { type: "doc", id: "harness/introduction", label: "What is a Harness?" },
+    { type: "doc", id: "harness/usage", label: "Using the Harness" },
+    { type: "doc", id: "harness/extending", label: "Extending: Adding an Engine" },
+  ],
   docsSidebar: [
     { type: "doc", id: "overview", label: "Overview" },
 
@@ -303,18 +308,6 @@ const sidebars = {
         { type: "doc", id: "workflow/custom-operator", label: "Custom Operators" },
         { type: "doc", id: "workflow/runs-and-artifacts", label: "Runs & Artifacts" },
         { type: "doc", id: "workflow/troubleshooting", label: "Troubleshooting" },
-      ],
-    },
-
-    {
-      type: "category",
-      label: "Harness",
-      collapsed: false,
-      collapsible: true,
-      items: [
-        { type: "doc", id: "harness/introduction", label: "What is a Harness?" },
-        { type: "doc", id: "harness/usage", label: "Using the Harness" },
-        { type: "doc", id: "harness/extending", label: "Extending: Adding an Engine" },
       ],
     },
 
@@ -838,6 +831,11 @@ const sidebars = {
         { type: "doc", id: "agents/modules/resource/tools/html-interpreter", label: "html_interpreter" },
       ],
     },
+    {
+      type: "doc",
+      id: "application/high_risk_tool_approval",
+      label: "High-risk Tool Approval",
+    },
     { type: "doc", id: "application/prompts", label: "Prompts" },
   ],
 
@@ -921,6 +919,13 @@ module.exports = {
       collapsed: false,
       collapsible: true,
       items: sidebars.sidebarAwel,
+    },
+    {
+      type: "category",
+      label: "Harness",
+      collapsed: false,
+      collapsible: true,
+      items: sidebars.sidebarHarness,
     },
     {
       type: "category",
