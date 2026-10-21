@@ -5,6 +5,13 @@ from typing import Any, Dict, Optional
 
 from dbgpt.agent.resource.tool.base import tool
 
+from .query_artifact import (
+    build_query_chunk,
+    check_read_only,
+    markdown_table,
+    normalize_result,
+)
+
 
 def make_sql_query(
     react_state: Dict[str, Any],
@@ -67,32 +74,20 @@ def make_sql_query(
             )
 
         sql_stripped = sql.strip().rstrip(";")
-        sql_upper = sql_stripped.upper().lstrip()
-        forbidden = [
-            "INSERT",
-            "UPDATE",
-            "DELETE",
-            "DROP",
-            "ALTER",
-            "TRUNCATE",
-            "CREATE",
-            "GRANT",
-            "REVOKE",
-        ]
-        for kw in forbidden:
-            if sql_upper.startswith(kw):
-                return json.dumps(
-                    {
-                        "chunks": [
-                            {
-                                "output_type": "text",
-                                "content": f"安全限制: 不允许执行 {kw} 语句，"
-                                "仅支持 SELECT 查询。",
-                            }
-                        ]
-                    },
-                    ensure_ascii=False,
-                )
+        forbidden_kw = check_read_only(sql_stripped)
+        if forbidden_kw:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": f"安全限制: 不允许执行 {forbidden_kw} 语句，"
+                            "仅支持 SELECT 查询。",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
 
         try:
             result = database_connector.run(sql_stripped)
@@ -106,34 +101,25 @@ def make_sql_query(
                     ensure_ascii=False,
                 )
 
-            columns = result[0]
-            col_names = [str(c[0]) if isinstance(c, tuple) else str(c) for c in columns]
-            rows = result[1:]
-
-            header = "| " + " | ".join(col_names) + " |"
-            separator = "| " + " | ".join(["---"] * len(col_names)) + " |"
-            md_rows = []
-            for row in rows[:50]:
-                md_rows.append("| " + " | ".join(str(v) for v in row) + " |")
-            table = "\n".join([header, separator] + md_rows)
-            if len(rows) > 50:
-                table += f"\n\n（仅显示前 50 行，共 {len(rows)} 行）"
-
-            # Cap total output size so a single wide query can't blow out the
-            # LLM context window. The full result remains available via the
-            # ToolResultStorage persistence layer if it exceeds the threshold.
-            MAX_SQL_OUTPUT_CHARS = 20_000
-            if len(table) > MAX_SQL_OUTPUT_CHARS:
-                table = (
-                    table[:MAX_SQL_OUTPUT_CHARS]
-                    + f"\n\n... [Output truncated at {MAX_SQL_OUTPUT_CHARS} chars. "
-                    f"Total rows: {len(rows)}]"
-                )
-
-            return json.dumps(
-                {"chunks": [{"output_type": "markdown", "content": table}]},
-                ensure_ascii=False,
-            )
+            col_names, rows = normalize_result(result)
+            # First-class query artifact (SQL + capped full result set) rides
+            # alongside the markdown observation: the client renders it as a
+            # data artifact with CSV / Excel export, the model only sees the
+            # compact markdown table.  db_name travels with the payload so
+            # the edit & re-run endpoint can re-resolve the connector.
+            chunks = [
+                build_query_chunk(
+                    sql_stripped,
+                    col_names,
+                    rows,
+                    db_name=(react_state or {}).get("database_name"),
+                ),
+                {
+                    "output_type": "markdown",
+                    "content": markdown_table(col_names, rows),
+                },
+            ]
+            return json.dumps({"chunks": chunks}, ensure_ascii=False)
         except Exception as e:
             return json.dumps(
                 {

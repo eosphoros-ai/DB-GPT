@@ -24,8 +24,10 @@ import cls from 'classnames';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { ITaskflowAgentStep } from '@/types/taskflow';
+import type { ITaskflowAgentStep, ITaskflowArtifact } from '@/types/taskflow';
 import { stripFlowNarration } from '@/utils/taskflow';
+
+import QueryArtifactBlock from './QueryArtifactBlock';
 
 export interface FlowRunRow {
   id: string;
@@ -45,6 +47,10 @@ interface FlowRunViewProps {
   running: boolean;
   doneCount: number;
   totalCount: number;
+  onArtifactClick?: (artifact: ITaskflowArtifact) => void;
+  onArtifactDownload?: (artifact: ITaskflowArtifact) => void;
+  /** Edit & re-run for inline query artifacts (SQL result sets). */
+  onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
 }
 
 const GUARD_RE = /no arguments|missing \d+ required|Action Input was missing|truncated/i;
@@ -178,7 +184,13 @@ const TraceRow: React.FC<{
 });
 TraceRow.displayName = 'TraceRow';
 
-const NodeCard: React.FC<{ row: FlowRunRow; defaultOpen: boolean }> = memo(({ row, defaultOpen }) => {
+const NodeCard: React.FC<{
+  row: FlowRunRow;
+  defaultOpen: boolean;
+  onArtifactClick?: (artifact: ITaskflowArtifact) => void;
+  onArtifactDownload?: (artifact: ITaskflowArtifact) => void;
+  onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
+}> = memo(({ row, defaultOpen, onArtifactClick, onArtifactDownload, onQueryRerun }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(defaultOpen);
   useEffect(() => {
@@ -256,10 +268,65 @@ const NodeCard: React.FC<{ row: FlowRunRow; defaultOpen: boolean }> = memo(({ ro
           {fmtDur(row.durationMs)} {open ? '▴' : '▾'}
         </span>
       </button>
+      {/* First-class artifacts of this node (mockup: flow-output-artifacts §2).
+          Query artifacts (SQL result sets) render as full-width data blocks;
+          file artifacts keep the compact chip row. */}
+      {row.artifacts && row.artifacts.filter(a => a.type !== 'query').length > 0 && (
+        <div className='px-3.5 py-2 flex items-center gap-2 flex-wrap border-b border-[#efefeb] dark:border-[#232220]'>
+          {row.artifacts
+            .filter(a => a.type !== 'query')
+            .map(a => (
+              <span
+                key={a.path}
+                className='inline-flex items-center gap-1.5 h-[26px] pl-2 pr-1 rounded-[8px] border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f8f8f5] dark:bg-white/[.04] text-[11.5px] text-[#55554f] dark:text-[#a8a59e]'
+              >
+                {a.type === 'html' ? (
+                  <Html5Outlined className='text-[#d97706] flex-none' />
+                ) : (
+                  <FileTextOutlined className='text-[#8b8b84] flex-none' />
+                )}
+                <button
+                  type='button'
+                  title={t('flow_artifact_preview', '预览')}
+                  onClick={() => onArtifactClick?.(a)}
+                  className='hover:text-[#0069fe] truncate max-w-[240px]'
+                >
+                  {a.name}
+                </button>
+                {fmtSize(a.size) && (
+                  <span className='font-mono text-[10.5px] text-[#8b8b84] dark:text-[#7c7972] flex-none'>
+                    {fmtSize(a.size)}
+                  </span>
+                )}
+                <button
+                  type='button'
+                  title={t('flow_artifact_download', '下载')}
+                  onClick={() => onArtifactDownload?.(a)}
+                  className='w-[20px] h-[20px] rounded-[6px] inline-flex items-center justify-center flex-none text-[#8b8b84] hover:bg-[#efefeb] dark:hover:bg-white/[.08]'
+                >
+                  <DownloadOutlined className='text-[11px]' />
+                </button>
+              </span>
+            ))}
+        </div>
+      )}
+      {row.artifacts && row.artifacts.filter(a => a.type === 'query' && a.query).length > 0 && (
+        <div className='px-3.5 py-2.5 flex flex-col gap-3 border-b border-[#efefeb] dark:border-[#232220]'>
+          {row.artifacts
+            .filter(a => a.type === 'query' && a.query)
+            .map(a => (
+              <QueryArtifactBlock key={a.name} payload={a.query!} fileName={a.name} onRerun={onQueryRerun} />
+            ))}
+        </div>
+      )}
       {open && (
         <div className='px-3.5 py-2 flex flex-col'>
           {steps.length > 0 ? (
             steps.map((s, i) => <TraceRow key={`${row.id}-${i}`} step={s} failInfo={failInfoByIndex.get(i) || null} />)
+          ) : isPending ? (
+            <div className='px-2 py-1 text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
+              {t('flow_node_pending_hint', '等待上游节点完成后执行')}
+            </div>
           ) : summaryLine ? (
             <div className='flex items-baseline gap-2 px-2 py-1 text-[12.5px]'>
               <span className='text-[#8b8b84] flex-none'>{t('flow_summary_label', '一句话结论:')}</span>
@@ -275,7 +342,16 @@ const NodeCard: React.FC<{ row: FlowRunRow; defaultOpen: boolean }> = memo(({ ro
 });
 NodeCard.displayName = 'NodeCard';
 
-const FlowRunView: React.FC<FlowRunViewProps> = ({ label, rows, running, doneCount, totalCount }) => {
+const FlowRunView: React.FC<FlowRunViewProps> = ({
+  label,
+  rows,
+  running,
+  doneCount,
+  totalCount,
+  onArtifactClick,
+  onArtifactDownload,
+  onQueryRerun,
+}) => {
   const { t } = useTranslation();
   const completedMs = useMemo(
     () => rows.reduce((sum, r) => sum + (r.status === 'completed' || r.status === 'failed' ? r.durationMs || 0 : 0), 0),
@@ -368,6 +444,9 @@ const FlowRunView: React.FC<FlowRunViewProps> = ({ label, rows, running, doneCou
             key={row.id}
             row={row}
             defaultOpen={row.status === 'running' || row.status === 'failed' || rows.length <= 2}
+            onArtifactClick={onArtifactClick}
+            onArtifactDownload={onArtifactDownload}
+            onQueryRerun={onQueryRerun}
           />
         ))}
       </div>

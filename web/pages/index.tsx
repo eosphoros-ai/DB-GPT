@@ -61,6 +61,7 @@ import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
+import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
 import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
@@ -454,7 +455,7 @@ interface Skill {
   icon?: string;
 }
 
-type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html' | 'skill';
+type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html' | 'skill' | 'query';
 
 interface Artifact {
   id: string;
@@ -482,7 +483,7 @@ interface Artifact {
 }
 
 /** Output types that materialize as stream artifact cards. */
-const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code']);
+const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code', 'query']);
 const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutput[]> }): boolean =>
   Object.values(execution?.outputs || {}).some(arr =>
     arr.some(
@@ -1058,6 +1059,8 @@ const Playground: NextPage = () => {
   const [_activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  /** Query artifacts re-run from edited SQL, keyed by view-message id. */
+  const [rerunQueryArtifacts, setRerunQueryArtifacts] = useState<Record<string, StreamArtifact[]>>({});
   const [createdSkillNames, setCreatedSkillNames] = useState<Record<string, string>>({});
   const [_rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('preview');
   const [streamingSummary, setStreamingSummary] = useState<string>('');
@@ -1251,6 +1254,46 @@ const Playground: NextPage = () => {
   const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
     setPreviewArtifact(artifact as Artifact);
   }, []);
+
+  /** Edit & re-run a query artifact's SQL against the bound datasource.
+   *  The new result set is appended to the round as a fresh query artifact. */
+  const handleQueryRerun = useCallback(
+    async (sql: string, dbName?: string, messageId?: string) => {
+      const convUid = conversationIdRef.current;
+      if (!convUid) throw new Error(t('qa_rerun_no_conv', '会话未就绪'));
+      const res: any = await axios.post('/api/v1/chat/sql/run', {
+        con_uid: convUid,
+        sql,
+        db_name: dbName,
+      });
+      const body = res?.data;
+      if (!body || body.success === false) {
+        throw new Error(body?.err_msg || t('qa_rerun_failed', '重跑失败'));
+      }
+      const payload = body.data;
+      if (messageId) {
+        setRerunQueryArtifacts(prev => ({
+          ...prev,
+          [messageId]: [
+            ...(prev[messageId] || []),
+            {
+              id: `${messageId}-query-rerun-${Date.now()}`,
+              type: 'query',
+              name: t('qa_artifact_name', '查询结果 · {{count}} 行', {
+                count: payload?.row_count ?? payload?.rows?.length ?? 0,
+              }),
+              content: payload,
+              createdAt: Date.now(),
+              messageId,
+              tier: 'final',
+            },
+          ],
+        }));
+      }
+      return payload;
+    },
+    [t],
+  );
 
   // Global turn status line (Codex-style): one summary line at the end
   // of the stream instead of per-panel spinners/badges.
@@ -1884,6 +1927,10 @@ const Playground: NextPage = () => {
         triggerBlobDownload(blob, artifact.name || 'code.py');
         break;
       }
+      case 'query': {
+        downloadQueryCsv(artifact.content, artifact.name || 'query_result');
+        break;
+      }
       case 'table': {
         const rows = artifact.content?.rows || [];
         const columns = artifact.content?.columns?.map((c: any) => c.dataIndex || c.key || c) || [];
@@ -1911,7 +1958,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning(t('artifact_download_unavailable', '文件暂不可下载'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1920,16 +1967,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || t('artifact_download_unavailable', '文件暂不可下载'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning(t('artifact_download_failed', '文件下载失败'));
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning(t('artifact_download_unavailable', '文件暂不可下载'));
         }
         break;
       }
@@ -2063,6 +2110,21 @@ const Playground: NextPage = () => {
                 type: 'image',
                 name: displayName,
                 content: imgUrl,
+                createdAt: now,
+                messageId,
+                stepId: step.id,
+                downloadable: true,
+              });
+            } else if (output.output_type === 'query') {
+              // SQL result-set artifact: rendered as the full-width data
+              // block (SQL + table + CSV/Excel export) by ArtifactCards.
+              const payload = output.content || {};
+              const rowCount = payload.row_count ?? payload.rows?.length ?? 0;
+              finalArtifacts.push({
+                id: `${messageId}-query-${step.id}-${oIdx}`,
+                type: 'query',
+                name: t('qa_artifact_name', '查询结果 · {{count}} 行', { count: rowCount }),
+                content: payload,
                 createdAt: now,
                 messageId,
                 stepId: step.id,
@@ -2377,7 +2439,7 @@ const Playground: NextPage = () => {
       }
       return collapsedIds.size ? deduped.filter(a => !collapsedIds.has(a.id)) : deduped;
     },
-    [],
+    [t],
   );
 
   // Conversation-level artifact list (rail gallery + header capsule).
@@ -2396,11 +2458,15 @@ const Playground: NextPage = () => {
       list.push({
         id: `summary-${lastView.id}`,
         type: 'summary',
-        name: '本回答摘要',
+        name: t('artifact_summary_name', '本回答摘要'),
         content: lastView.context,
         createdAt: Date.now(),
         messageId: lastView.id,
       });
+    }
+    // Query artifacts re-run from edited SQL live outside executionMap.
+    for (const extras of Object.values(rerunQueryArtifacts)) {
+      for (const extra of extras) list.push(extra as unknown as Artifact);
     }
     // Cross-round convergence: charts/regenerations carry a hex run prefix
     // (``a1d66fa2_correlation_heatmap.png``) or repeat verbatim each round;
@@ -2411,7 +2477,7 @@ const Playground: NextPage = () => {
     const seen = new Map<string, number>();
     for (let i = list.length - 1; i >= 0; i--) {
       const a = list[i];
-      if (a.type === 'summary') {
+      if (a.type === 'summary' || a.type === 'query') {
         deduped.unshift(a);
         continue;
       }
@@ -2421,7 +2487,7 @@ const Playground: NextPage = () => {
       deduped.unshift(a);
     }
     return deduped;
-  }, [messages, executionMap, buildArtifactsFromExecution]);
+  }, [messages, executionMap, buildArtifactsFromExecution, rerunQueryArtifacts, t]);
 
   useEffect(() => {
     if (!pendingFinalization) return;
@@ -2727,7 +2793,7 @@ const Playground: NextPage = () => {
     // snapshot captured for "保存定时任务", so a saved task replays the exact
     // same context (files / database / knowledge / skill / connectors).
     // NOTE: the harness engine is now a server-side
-    // preference (Setting → Agent Engine); it is NOT sent
+    // preference (Setting → Harness); it is NOT sent
     // per request to avoid stale client states.
     const baseExtInfo: Record<string, any> = {
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
@@ -4100,14 +4166,17 @@ const Playground: NextPage = () => {
                           : [];
                       const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
                       const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
+                      const rerunExtra = (round.viewMsg?.id && rerunQueryArtifacts[round.viewMsg.id]) || [];
+                      const roundArtifactsAll = rerunExtra.length ? [...roundArtifacts, ...rerunExtra] : roundArtifacts;
 
                       return (
                         <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
                           <ManusLeftPanel
                             key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
                             sections={useTimelineView ? [] : sections}
+                            flowExecSteps={round.viewMsg?.flowRun ? sections[0]?.steps : undefined}
                             answerSeparated={
-                              useTimelineView && (timelineBlocks.length > 0 || roundArtifacts.length > 0)
+                              useTimelineView && (timelineBlocks.length > 0 || roundArtifactsAll.length > 0)
                             }
                             timelineSlot={
                               // Flow rounds render their own node chain + node
@@ -4115,7 +4184,7 @@ const Playground: NextPage = () => {
                               // would duplicate the DSL-node steps.
                               useTimelineView &&
                               !round.viewMsg?.flowRun &&
-                              (timelineBlocks.length > 0 || roundArtifacts.length > 0) ? (
+                              (timelineBlocks.length > 0 || roundArtifactsAll.length > 0) ? (
                                 <div className='flex flex-col'>
                                   {roundIntent && (
                                     <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
@@ -4132,10 +4201,11 @@ const Playground: NextPage = () => {
                                     <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
                                   )}
                                   <ArtifactCards
-                                    artifacts={roundArtifacts}
+                                    artifacts={roundArtifactsAll}
                                     onPreview={handlePreviewStreamArtifact}
                                     onSkillAdd={handleSkillAdd}
                                     onSkillDownload={handleSkillZipDownload}
+                                    onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
                                   />
                                 </div>
                               ) : undefined
@@ -4150,6 +4220,7 @@ const Playground: NextPage = () => {
                                   }
                                 : undefined
                             }
+                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
                             subAgentSlot={
                               execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
                                 <SubAgentSection
@@ -4299,12 +4370,13 @@ const Playground: NextPage = () => {
                         a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
                       );
                       if (finalCount === 0 && !hasCharts) return null;
+                      const lastViewId = [...messages].reverse().find(m => m.role === 'view')?.id;
                       return (
                         <div className='mt-4 mb-2'>
                           {finalCount > 0 && (
                             <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
                               <InboxOutlined />
-                              <span>对话产物 · {finalCount}</span>
+                              <span>{t('conv_artifacts_title', '对话产物 · {{count}}', { count: finalCount })}</span>
                             </div>
                           )}
                           <ArtifactCards
@@ -4312,6 +4384,7 @@ const Playground: NextPage = () => {
                             onPreview={handlePreviewStreamArtifact}
                             onSkillAdd={handleSkillAdd}
                             onSkillDownload={handleSkillZipDownload}
+                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, lastViewId)}
                           />
                         </div>
                       );

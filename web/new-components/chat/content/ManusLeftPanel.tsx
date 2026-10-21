@@ -147,6 +147,8 @@ export interface ManusLeftPanelProps {
   artifacts?: ArtifactItem[];
   onArtifactClick?: (artifact: ArtifactItem) => void;
   onArtifactDownload?: (artifact: ArtifactItem) => void;
+  /** Edit & re-run for inline query artifacts inside flow node cards. */
+  onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
   onViewAllFiles?: () => void;
   onShare?: () => void;
   isCollapsed?: boolean;
@@ -1015,6 +1017,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   artifacts,
   onArtifactClick,
   onArtifactDownload,
+  onQueryRerun,
   onViewAllFiles,
   onShare: _onShare,
   isCollapsed,
@@ -1243,6 +1246,9 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
                 running={flowRunning}
                 doneCount={flowDoneCount}
                 totalCount={flowRun?.total || flowRows.length}
+                onArtifactClick={artifact => handleFlowArtifact(artifact, 'preview')}
+                onArtifactDownload={artifact => handleFlowArtifact(artifact, 'download')}
+                onQueryRerun={onQueryRerun}
               />
             ) : (
               sections.map((section, index) => (
