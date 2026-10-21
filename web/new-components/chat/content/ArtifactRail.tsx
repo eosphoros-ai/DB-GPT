@@ -81,14 +81,16 @@ function typeIcon(type: string, name: string) {
   return <FileTextOutlined className='text-gray-400' />;
 }
 
-function typeLabel(type: string, name: string): string {
+type TrFn = (key: string, fallback: string) => string;
+
+function typeLabel(type: string, name: string, tr: TrFn): string {
   const ext = extOf(name);
   if (type === 'html') return 'HTML';
-  if (type === 'image') return '图片';
-  if (type === 'skill') return '技能包';
+  if (type === 'image') return tr('rail_type_image', '图片');
+  if (type === 'skill') return tr('rail_type_skill', '技能包');
   if (type === 'summary') return 'summary';
-  if (type === 'code') return '代码';
-  return ext ? ext.toUpperCase() : '文件';
+  if (type === 'code') return tr('rail_type_code', '代码');
+  return ext ? ext.toUpperCase() : tr('rail_type_file', '文件');
 }
 
 /** Wide report glyph for gallery thumbnails (mockup gitem style). */
@@ -167,6 +169,7 @@ function ThumbGlyph({ artifact }: { artifact: RailArtifact }) {
 }
 
 function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPreview: (a: RailArtifact | null) => void }) {
+  const { t } = useTranslation();
   const text = textOf(artifact);
   const ext = extOf(artifact.name);
   if (artifact.type === 'image') {
@@ -195,7 +198,7 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
         <div className='px-4 py-3 border-b border-[#efefeb] dark:border-[#232220] font-mono text-[13px] text-[#1c1c1a] dark:text-[#e6e4df]'>
           {artifact.name}
           <span className='ml-2 text-[11.5px] text-[#8b8b84] font-sans'>
-            技能包 · {files.length} 文件 · {formatSize(artifact.size)}
+            {t('rail_skill_meta', '技能包 · {{count}} 文件', { count: files.length })} · {formatSize(artifact.size)}
           </span>
         </div>
         <div className='p-2'>
@@ -217,7 +220,11 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
                     filePath: f.filePath,
                   });
                 }}
-                title={previewable ? '预览文件' : '该文件无预览内容（历史会话或二进制）'}
+                title={
+                  previewable
+                    ? t('rail_preview_file', '预览文件')
+                    : t('rail_preview_none', '该文件无预览内容（历史会话或二进制）')
+                }
                 className={
                   previewable
                     ? 'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-[#f4f4f0] dark:hover:bg-white/[.05]'
@@ -231,7 +238,7 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
                 <span className='flex-none text-[11px] text-[#8b8b84]'>{formatSize(f.size)}</span>
                 {previewable && (
                   <span className='flex-none h-6 px-2 rounded-md text-xs border border-[#e6e6e2] dark:border-[#2a2925] text-[#55554f] dark:text-[#a8a59e] flex items-center'>
-                    预览
+                    {t('artifact_preview', '预览')}
                   </span>
                 )}
               </div>
@@ -262,10 +269,12 @@ function PreviewBody({ artifact, onPreview }: { artifact: RailArtifact; onPrevie
         {artifact.name}
       </div>
       <div className='text-[11.5px] text-[#8b8b84]'>
-        {typeLabel(artifact.type, artifact.name)}
+        {typeLabel(artifact.type, artifact.name, t)}
         {artifact.size != null ? ` · ${formatSize(artifact.size)}` : ''}
       </div>
-      <div className='text-xs text-[#8b8b84] pt-1'>二进制办公文档 v1 不在浏览器内渲染，提供元信息与下载入口。</div>
+      <div className='text-xs text-[#8b8b84] pt-1'>
+        {t('rail_binary_note', '二进制办公文档 v1 不在浏览器内渲染，提供元信息与下载入口。')}
+      </div>
     </div>
   );
 }
@@ -283,12 +292,12 @@ export default function ArtifactRail({
 
   const groups: { label: string; items: RailArtifact[] }[] = [];
   for (const a of list) {
-    let label = '会话根目录';
+    let label = t('rail_root_group', '会话根目录');
     if (a.type === 'summary') label = t('rail_fallback_group', '兜底产物');
     else if (a.tier === 'process') label = t('rail_process_group', '过程文件');
     else if (a.filePath) {
       const dir = a.filePath.split('/').slice(0, -1).join('/');
-      label = dir || '会话根目录';
+      label = dir || t('rail_root_group', '会话根目录');
     } else if (a.type === 'skill') {
       label = (a.filePath || a.name).replace(/\/$/, '');
     }
@@ -383,7 +392,7 @@ export default function ArtifactRail({
                           {artifact.name}
                         </span>
                         <span className='flex-none text-[11.5px] text-[#8b8b84]'>
-                          {typeLabel(artifact.type, artifact.name)}
+                          {typeLabel(artifact.type, artifact.name, t)}
                           {artifact.size != null ? ` · ${formatSize(artifact.size)}` : ''}
                         </span>
                       </span>
