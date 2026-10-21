@@ -97,6 +97,7 @@ interface ArtifactCardsProps {
 }
 
 const PREVIEW_EXTS = new Set(['md', 'markdown', 'txt', 'py', 'js', 'ts', 'tsx', 'jsx', 'json', 'csv', 'sql']);
+const CHART_EXT_RE = /\.(png|jpe?g|gif|svg|webp)$/i;
 
 function extOf(name: string): string {
   const m = (name || '').toLowerCase().match(/\.([a-z0-9]+)$/);
@@ -163,52 +164,49 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
   const { t } = useTranslation();
   const [imagesExpanded, setImagesExpanded] = useState(false);
   if (!artifacts || artifacts.length === 0) return null;
-  const finals = artifacts.filter(a => a.tier !== 'process');
+  const finals = artifacts.filter(a => a.tier !== 'process' && a.type !== 'image');
   const processes = artifacts.filter(a => a.tier === 'process');
-  // Chart floods: cap visible image cards and aggregate the rest into a
-  // mosaic card that expands in place.
-  const IMAGE_CAP = 4;
-  const images = finals.filter(a => a.type === 'image');
-  const capped = !imagesExpanded && images.length > IMAGE_CAP;
-  const shownImages = capped ? images.slice(0, 3) : images;
-  const shownFinals = finals.filter(a => a.type !== 'image' || shownImages.includes(a));
+  // Charts are not deliverables: every image artifact (thumbnail-backed or
+  // plain file entry) aggregates into ONE mosaic tile that expands in place
+  // into a thumbnail grid, keeping the deliverable row document-only.
+  const isChart = (a: StreamArtifact) => a.type === 'image' || CHART_EXT_RE.test(a.name || '');
+  const charts = processes.filter(isChart);
+  const processOthers = processes.filter(a => !isChart(a));
+  const chartUrl = (a: StreamArtifact) => {
+    const raw = String(a.content ?? '');
+    return a.type === 'image' && raw ? resolveImageUrl(raw) : '';
+  };
   return (
     <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
-      {shownFinals.map(artifact => {
+      {finals.map(artifact => {
         const isHtml = artifact.type === 'html';
-        const isImage = artifact.type === 'image';
         const isSkill = artifact.type === 'skill';
         const ext = extOf(artifact.name);
         const hasTextContent = Boolean(
           typeof artifact.content === 'string' ? artifact.content : artifact.content?.content,
         );
-        const previewable =
-          isHtml || isImage || isSkill || (artifact.type === 'file' && PREVIEW_EXTS.has(ext) && hasTextContent);
+        const previewable = isHtml || isSkill || (artifact.type === 'file' && PREVIEW_EXTS.has(ext) && hasTextContent);
         const downloadable = isHtml || artifact.type === 'code' || (artifact.type === 'file' && hasTextContent);
         const meta = isHtml
           ? `HTML · ${formatSize(artifact.size) || `${(artifact.content || '').length} B`}`
-          : isImage
-            ? '图片'
-            : isSkill
-              ? `技能包 · ${artifact.content?.files?.length ?? 0} 文件`
-              : artifact.type === 'code'
-                ? '代码'
-                : `${(ext || 'file').toUpperCase()} · ${formatSize(artifact.size) || '—'}`;
+          : isSkill
+            ? `技能包 · ${artifact.content?.files?.length ?? 0} 文件`
+            : artifact.type === 'code'
+              ? '代码'
+              : `${(ext || 'file').toUpperCase()} · ${formatSize(artifact.size) || '—'}`;
         return (
           <div
             key={artifact.id}
             className={cls(
               'flex border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden',
               'shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]',
-              isImage ? 'w-[168px] flex-col' : 'w-[340px] gap-2.5',
+              'w-[340px] gap-2.5',
             )}
           >
             <div
               className={cls(
                 'bg-[#efefeb] dark:bg-white/[.04] flex items-center justify-center',
-                isImage
-                  ? 'h-[92px] border-b border-[#efefeb] dark:border-[#232220] cursor-pointer'
-                  : 'w-[84px] self-stretch',
+                'w-[84px] self-stretch',
                 previewable && 'cursor-pointer',
               )}
               onClick={() => previewable && onPreview?.(artifact)}
@@ -216,12 +214,6 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
             >
               {isHtml ? (
                 <ReportThumb />
-              ) : isImage ? (
-                <img
-                  src={resolveImageUrl(String(artifact.content))}
-                  alt={artifact.name}
-                  className='max-h-[92px] object-contain'
-                />
               ) : isSkill ? (
                 <FolderOutlined className='text-amber-500 text-xl' />
               ) : artifact.type === 'code' ? (
@@ -233,7 +225,6 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
             <div className='flex-1 min-w-0 px-2.5 py-2 flex flex-col gap-0.5'>
               <div className='text-[13px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] truncate flex items-center gap-1.5'>
                 {isHtml && <FileTextOutlined className='text-orange-500' />}
-                {isImage && <PictureOutlined className='text-blue-500' />}
                 {isSkill && <FolderOutlined className='text-amber-500' />}
                 {artifact.name}
               </div>
@@ -263,26 +254,28 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
           </div>
         );
       })}
-      {capped && (
+      {charts.length > 0 && !imagesExpanded && (
         <button
           type='button'
           onClick={() => setImagesExpanded(true)}
           className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] overflow-hidden bg-white dark:bg-[#111217] text-left shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)] hover:shadow-[0_2px_6px_rgba(20,20,15,.08),0_8px_24px_rgba(20,20,15,.06)] transition-shadow'
         >
           <span className='relative grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5 h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220]'>
-            {images.slice(3, 7).map(im => (
-              <img
-                key={im.id}
-                src={resolveImageUrl(String(im.content))}
-                alt=''
-                className='w-full h-full object-cover'
-              />
-            ))}
+            {charts.slice(0, 4).map(im => {
+              const url = chartUrl(im);
+              return url ? (
+                <img key={im.id} src={url} alt='' className='w-full h-full object-cover' />
+              ) : (
+                <span key={im.id} className='flex items-center justify-center'>
+                  <PictureOutlined className='text-gray-400' />
+                </span>
+              );
+            })}
             <span
               className='absolute inset-0 flex items-center justify-center text-white text-[12px] font-medium'
               style={{ background: 'rgba(0,0,0,0.45)' }}
             >
-              +{images.length - 3} {t('artifacts_charts_label', '图表')}
+              {charts.length} {t('artifacts_charts_label', '图表')}
             </span>
           </span>
           <span className='block px-2.5 py-2 text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
@@ -290,7 +283,53 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
           </span>
         </button>
       )}
-      {imagesExpanded && images.length > IMAGE_CAP && (
+      {imagesExpanded &&
+        charts.length > 0 &&
+        charts.map(im => {
+          const url = chartUrl(im);
+          return (
+            <div
+              key={im.id}
+              className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]'
+            >
+              <div
+                className={cls(
+                  'h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220] flex items-center justify-center overflow-hidden',
+                  url && 'cursor-pointer',
+                )}
+                onClick={() => url && onPreview?.(im)}
+                title={url ? '预览' : undefined}
+              >
+                {url ? (
+                  <img src={url} alt={im.name} className='max-h-[92px] object-contain' />
+                ) : (
+                  <PictureOutlined className='text-gray-400 text-xl' />
+                )}
+              </div>
+              <div className='flex-1 min-w-0 px-2.5 py-2 flex flex-col gap-0.5'>
+                <div className='text-[13px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] truncate flex items-center gap-1.5'>
+                  <PictureOutlined className='text-blue-500' />
+                  {im.name}
+                </div>
+                <div className='text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate'>
+                  {(extOf(im.name) || 'img').toUpperCase()} · {formatSize(im.size) || '—'}
+                </div>
+                {url && (
+                  <div className='mt-auto pt-1.5'>
+                    <button
+                      type='button'
+                      onClick={() => onPreview?.(im)}
+                      className='h-6 px-2.5 rounded-md text-xs bg-[#1c1c1a] dark:bg-[#e6e4df] text-white dark:text-[#1c1c1a] hover:opacity-90'
+                    >
+                      预览
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      {imagesExpanded && charts.length > 0 && (
         <button
           type='button'
           onClick={() => setImagesExpanded(false)}
@@ -299,13 +338,13 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
           {t('artifacts_collapse_charts', '收起图表')}
         </button>
       )}
-      {processes.length > 0 && (
+      {processOthers.length > 0 && (
         <details className='w-full'>
           <summary className='cursor-pointer inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972] list-none select-none'>
-            ▸ {t('artifacts_process_group', '过程文件')} · {processes.length}
+            ▸ {t('artifacts_process_group', '过程文件')} · {processOthers.length}
           </summary>
           <div className='flex flex-wrap gap-1.5 mt-2'>
-            {processes.map(p => (
+            {processOthers.map(p => (
               <span
                 key={p.id}
                 title={p.filePath || p.name}

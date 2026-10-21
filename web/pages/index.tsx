@@ -204,7 +204,9 @@ const servableImageUrl = (filePath?: string): string | null => {
   return null;
 };
 
-/** Deliverable extensions shown as first-class artifact cards. */
+/** Deliverable extensions shown as first-class artifact cards: document
+ *  family only (reports / office / markdown). Charts and images are not
+ *  deliverables — they aggregate into a compact mosaic tile instead. */
 const DELIVERABLE_EXTS = new Set([
   'html',
   'htm',
@@ -212,16 +214,16 @@ const DELIVERABLE_EXTS = new Set([
   'xls',
   'csv',
   'pptx',
+  'ppt',
   'pdf',
-  'png',
-  'jpg',
-  'jpeg',
-  'gif',
-  'svg',
-  'webp',
   'docx',
+  'doc',
   'md',
+  'markdown',
 ]);
+/** Image extensions: never a final card, always folded into the chart
+ *  mosaic / process group. */
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']);
 /** Intermediate extensions that never surface as deliverable cards. */
 const PROCESS_EXTS = new Set([
   'js',
@@ -277,10 +279,13 @@ const classifyFileTier = (
   const base = (name || (filePath || '').split('/').pop() || '').toLowerCase();
   const ext = base.includes('.') ? base.split('.').pop() || '' : '';
   const referenced = isReferencedInAnswer(name, answerText) || isReferencedInAnswer(filePath || '', answerText);
-  if (referenced) return { tier: 'final', referenced };
+  // Charts/images are never deliverables: they fold into the mosaic tile
+  // and the process group even when the answer mentions them.
+  if (IMAGE_EXTS.has(ext)) return { tier: 'process', referenced };
   if (PROCESS_NAME_RE.test(base) || PROCESS_EXTS.has(ext)) {
     return { tier: 'process', referenced };
   }
+  if (referenced) return { tier: 'final', referenced };
   if (DELIVERABLE_EXTS.has(ext)) return { tier: 'final', referenced };
   return { tier: 'process', referenced };
 };
@@ -2249,6 +2254,12 @@ const Playground: NextPage = () => {
       // (the reference check needs the round's final answer text).
       const referencedNames = new Set<string>();
       for (const a of finalArtifacts) {
+        if (a.type === 'image') {
+          // Charts are never first-class deliverables; the mosaic tile and
+          // the process group carry them instead.
+          a.tier = 'process';
+          continue;
+        }
         if (a.type === 'file') {
           const cls = classifyFileTier(a.name, a.filePath, answerText || summaryText);
           a.tier = cls.tier;
@@ -2391,7 +2402,25 @@ const Playground: NextPage = () => {
         messageId: lastView.id,
       });
     }
-    return list;
+    // Cross-round convergence: charts/regenerations carry a hex run prefix
+    // (``a1d66fa2_correlation_heatmap.png``) or repeat verbatim each round;
+    // keep only the newest artifact per normalized name so the end summary
+    // lists each logical deliverable once.
+    const stripRunPrefix = (n: string) => n.replace(/^[0-9a-f]{8}_/i, '');
+    const deduped: Artifact[] = [];
+    const seen = new Map<string, number>();
+    for (let i = list.length - 1; i >= 0; i--) {
+      const a = list[i];
+      if (a.type === 'summary') {
+        deduped.unshift(a);
+        continue;
+      }
+      const key = `${a.type}:${stripRunPrefix(a.name || '').toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.set(key, i);
+      deduped.unshift(a);
+    }
+    return deduped;
   }, [messages, executionMap, buildArtifactsFromExecution]);
 
   useEffect(() => {
@@ -4258,24 +4287,35 @@ const Playground: NextPage = () => {
                         <span className='tabular-nums'>{streamStatus.text}</span>
                       </div>
                     )}
-                    {/* Conversation-completion artifact summary: everything
-                      produced across all rounds, surfaced again at the end
-                      so finished conversations keep a visible deliverable
-                      list (mid-stream cards stay where they were made). */}
-                    {convArtifacts.some(a => a.type !== 'summary') && (
-                      <div className='mt-4 mb-2'>
-                        <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
-                          <InboxOutlined />
-                          <span>对话产物 · {convArtifacts.filter(a => a.type !== 'summary').length}</span>
+                    {/* Conversation-completion artifact summary: deliverables
+                      produced across all rounds, surfaced again at the end so
+                      finished conversations keep a visible deliverable list
+                      (mid-stream cards stay where they were made). Charts are
+                      folded into the mosaic tile, scripts into process. */}
+                    {(() => {
+                      const surface = convArtifacts.filter(a => a.type !== 'summary');
+                      const finalCount = surface.filter(a => a.tier !== 'process').length;
+                      const hasCharts = surface.some(
+                        a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
+                      );
+                      if (finalCount === 0 && !hasCharts) return null;
+                      return (
+                        <div className='mt-4 mb-2'>
+                          {finalCount > 0 && (
+                            <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
+                              <InboxOutlined />
+                              <span>对话产物 · {finalCount}</span>
+                            </div>
+                          )}
+                          <ArtifactCards
+                            artifacts={surface}
+                            onPreview={handlePreviewStreamArtifact}
+                            onSkillAdd={handleSkillAdd}
+                            onSkillDownload={handleSkillZipDownload}
+                          />
                         </div>
-                        <ArtifactCards
-                          artifacts={convArtifacts.filter(a => a.type !== 'summary')}
-                          onPreview={handlePreviewStreamArtifact}
-                          onSkillAdd={handleSkillAdd}
-                          onSkillDownload={handleSkillZipDownload}
-                        />
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
 
