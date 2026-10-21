@@ -78,9 +78,64 @@ def test_load_does_not_crash_without_header_row(numeric_only_xlsx):
     assert len(docs) == 6
 
 
+def test_find_header_row_preserves_duplicate_blank_header_names():
+    headers, row_index = ExcelKnowledge()._find_header_row([["", "", "name"]])
+
+    assert headers == ["Col_0", " (1)", "name"]
+    assert row_index == 0
+
+
 def test_load_reads_formula_results_not_formulas(formula_xlsx):
     docs = ExcelKnowledge(file_path=formula_xlsx)._load()
     assert [doc.content for doc in docs] == [
         "item: apple\nprice: 3\nwith tax: 3.6",
         "item: total\nprice: 3\nwith tax: 3.6",
     ]
+
+
+@pytest.mark.parametrize(
+    ("headers", "expected_content", "expected_metadata"),
+    [
+        (
+            ["name", "name", "name (1)"],
+            "name: 1\nname (2): 2\nname (1): 3",
+            {"name": "1", "name (2)": "2", "name (1)": "3"},
+        ),
+        (
+            ["name", "name", "name (1)", "name (1)"],
+            "name: 1\nname (2): 2\nname (1): 3\nname (1) (1): 4",
+            {
+                "name": "1",
+                "name (2)": "2",
+                "name (1)": "3",
+                "name (1) (1)": "4",
+            },
+        ),
+        (
+            ["name", "name"],
+            "name: 1\nname (1): 2",
+            {"name": "1", "name (1)": "2"},
+        ),
+    ],
+    ids=[
+        "preserve-existing-suffixed-header",
+        "preserve-repeated-suffixed-header",
+        "ordinary-duplicate-header",
+    ],
+)
+def test_load_deduplicates_headers_without_losing_columns(
+    tmp_path, headers, expected_content, expected_metadata
+):
+    path = tmp_path / "duplicate_headers.xlsx"
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.append(headers)
+    sheet.append(list(range(1, len(headers) + 1)))
+    workbook.save(path)
+
+    docs = ExcelKnowledge(file_path=str(path))._load()
+
+    assert len(docs) == 1
+    assert docs[0].content == expected_content
+    actual_metadata = {key: docs[0].metadata[key] for key in expected_metadata}
+    assert actual_metadata == expected_metadata
