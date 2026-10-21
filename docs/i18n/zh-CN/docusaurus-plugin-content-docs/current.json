@@ -343,6 +343,10 @@
     "message": "工具概览",
     "description": "The label for the doc item Tools Overview in sidebar docsSidebar, linking to the doc agents/introduction/tools"
   },
+  "sidebar.docsSidebar.doc.High-risk Tool Approval": {
+    "message": "高危工具拦截与审批",
+    "description": "The label for the doc item High-risk Tool Approval in sidebar docsSidebar, linking to the doc application/high_risk_tool_approval"
+  },
   "sidebar.docsSidebar.doc.load_skill": {
     "message": "load_skill",
     "description": "The label for the doc item load_skill in sidebar docsSidebar, linking to the doc agents/modules/resource/tools/load-skill"
@@ -488,7 +492,7 @@
     "description": "The label for the doc item Custom Knowledge Source Connector in sidebar sidebarDevelopmentGuide, linking to the doc agents/modules/resource/knowledge-source-connector"
   },
   "sidebar.docsSidebar.category.Harness": {
-    "message": "Harness 执行引擎",
-    "description": "Harness docs category"
+    "message": "Harness",
+    "description": "The label for category Harness in sidebar docsSidebar"
   }
 }

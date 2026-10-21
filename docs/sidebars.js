@@ -880,6 +880,13 @@ module.exports = {
     },
     {
       type: "category",
+      label: "Harness",
+      collapsed: false,
+      collapsible: true,
+      items: sidebars.sidebarHarness,
+    },
+    {
+      type: "category",
       label: "Skills",
       collapsed: true,
       collapsible: true,
@@ -919,13 +926,6 @@ module.exports = {
       collapsed: false,
       collapsible: true,
       items: sidebars.sidebarAwel,
-    },
-    {
-      type: "category",
-      label: "Harness",
-      collapsed: false,
-      collapsible: true,
-      items: sidebars.sidebarHarness,
     },
     {
       type: "category",
