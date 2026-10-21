@@ -50,12 +50,34 @@ _PRIMARY_ARG_KEYS = (
 
 
 def approval_mode() -> str:
-    """Global mode: ``off`` | ``tiered`` (default) | ``always``."""
-    return os.environ.get("DBGPT_APPROVAL_MODE", "tiered").strip().lower()
+    """Global mode: ``off`` | ``tiered`` (default) | ``always``.
+
+    L2 setting row wins over the env var (design §4.4).
+    """
+    from dbgpt_app.openapi.api_v1 import approval_policy
+
+    value = approval_policy.get_setting("mode") or os.environ.get(
+        "DBGPT_APPROVAL_MODE", "tiered"
+    )
+    return str(value).strip().lower()
 
 
 def approval_ttl_seconds() -> float:
-    return float(os.environ.get("DBGPT_APPROVAL_TTL_SECONDS", "300"))
+    from dbgpt_app.openapi.api_v1 import approval_policy
+
+    value = approval_policy.get_setting("ttl_seconds") or os.environ.get(
+        "DBGPT_APPROVAL_TTL_SECONDS", "300"
+    )
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 300.0
+
+
+def approval_intent_enabled() -> bool:
+    from dbgpt_app.openapi.api_v1 import approval_policy
+
+    return approval_policy.get_setting("intent_analysis", "true") != "false"
 
 
 def _args_blob(args: Any) -> str:
@@ -269,28 +291,81 @@ BUILTIN_RULES: List[ApprovalRule] = [
 
 
 class ToolRiskPolicy:
-    """Classify a (tool, args) pair into auto / confirm / deny."""
+    """Classify a (tool, args) pair into auto / confirm / deny.
+
+    Evaluation order (design §4): L2 setting rules (DB) are listed before the
+    builtin table and win ties within a tier; deny matches can never be
+    relaxed by a per-tool override; overrides then beat confirm/auto matches.
+    """
 
     def __init__(self, rules: Optional[List[ApprovalRule]] = None) -> None:
         self._rules = list(rules if rules is not None else BUILTIN_RULES)
 
+    def _merged_rules(self) -> List[ApprovalRule]:
+        from dbgpt_app.openapi.api_v1 import approval_policy
+
+        dyn = [
+            ApprovalRule(
+                rule_id=f"setting:{r['id']}",
+                tool=r["tool"],
+                tier=r["tier"],
+                pattern=r["arg_pattern"],
+                source="setting",
+            )
+            for r in approval_policy.dynamic_rules()
+        ]
+        return dyn + self._rules
+
     def classify(self, tool: str, args: dict) -> Tuple[str, str]:
+        verdict, _ = self._classify(tool, args)
+        return verdict
+
+    def classify_trace(
+        self, tool: str, args: dict
+    ) -> Tuple[Tuple[str, str], List[Dict[str, Any]]]:
+        """Classify with a per-rule evaluation trace (setting playground)."""
+        return self._classify(tool, args)
+
+    def _classify(
+        self, tool: str, args: dict
+    ) -> Tuple[Tuple[str, str], List[Dict[str, Any]]]:
+        trace: List[Dict[str, Any]] = []
         mode = approval_mode()
         if mode == "off":
-            return TIER_AUTO, "mode.off"
+            trace.append({"rule_id": "mode.off", "tier": TIER_AUTO, "hit": True})
+            return (TIER_AUTO, "mode.off"), trace
         blob = _args_blob(args)
-        for rule in sorted(self._rules, key=lambda r: _TIER_RANK[r.tier]):
-            if rule.matches(tool, args, blob):
-                tier = rule.tier
-                if mode == "always" and tier == TIER_AUTO:
-                    return TIER_CONFIRM, "mode.always"
-                return tier, rule.rule_id
+        hit: Optional[Tuple[str, str]] = None
+        for rule in sorted(self._merged_rules(), key=lambda r: _TIER_RANK[r.tier]):
+            matched = rule.matches(tool, args, blob)
+            trace.append({"rule_id": rule.rule_id, "tier": rule.tier, "hit": matched})
+            if matched and hit is None:
+                hit = (rule.tier, rule.rule_id)
+        if hit and hit[0] == TIER_DENY:
+            return hit, trace
+        from dbgpt_app.openapi.api_v1 import approval_policy
+
+        forced = approval_policy.tool_override(tool)
+        if forced:
+            trace.append(
+                {"rule_id": "setting.override", "tier": forced, "hit": True}
+            )
+            return (forced, "setting.override"), trace
+        if hit:
+            if mode == "always" and hit[0] == TIER_AUTO:
+                return (TIER_CONFIRM, "mode.always"), trace
+            return hit, trace
         if mode == "always":
-            return TIER_CONFIRM, "mode.always"
+            return (TIER_CONFIRM, "mode.always"), trace
         if tool in GATED_TOOLS:
-            # Fail safe: unmatched call on a side-effect-capable tool asks.
-            return TIER_CONFIRM, "failsafe.gated_tool"
-        return TIER_AUTO, "default.readonly"
+            # Fail safe: unmatched call on a side-effect-capable tool asks
+            # (relaxable to auto via the setting page fail_safe param).
+            from dbgpt_app.openapi.api_v1 import approval_policy
+
+            fail_safe = approval_policy.get_setting("fail_safe", "confirm")
+            tier = TIER_AUTO if fail_safe == "auto" else TIER_CONFIRM
+            return (tier, "failsafe.gated_tool"), trace
+        return (TIER_AUTO, "default.readonly"), trace
 
 
 POLICY = ToolRiskPolicy()
@@ -456,6 +531,22 @@ class ApprovalCenter:
             if pa.conv_id == conv_id and pa.status == "pending"
         ]
 
+    def revoke(
+        self, scope: str, signature: str, conv_id: Optional[str] = None
+    ) -> bool:
+        """Drop one whitelist memory entry (setting page management)."""
+        if scope == "always":
+            if signature in self._always_allow:
+                self._always_allow.discard(signature)
+                return True
+            return False
+        if scope == "session" and conv_id:
+            sigs = self._session_allow.get(conv_id, set())
+            if signature in sigs:
+                sigs.discard(signature)
+                return True
+        return False
+
 
 approval_center = ApprovalCenter()
 
@@ -544,42 +635,46 @@ def make_intent_analyzer(
 _INTENT_CACHE: Dict[str, Any] = {}
 
 
-def get_intent_analyzer() -> Optional[IntentAnalyzer]:
+def get_intent_analyzer(model_name: Optional[str] = None) -> Optional[IntentAnalyzer]:
     """Process-wide analyzer for paths without a round LLM client (pi)."""
-    if "analyzer" in _INTENT_CACHE:
-        return _INTENT_CACHE["analyzer"]
+    cache_key = model_name or "__default__"
+    if cache_key in _INTENT_CACHE:
+        return _INTENT_CACHE[cache_key]
     analyzer: Optional[IntentAnalyzer] = None
     try:
+        from dbgpt._private.config import Config
         from dbgpt.component import ComponentType
         from dbgpt.model.cluster import WorkerManagerFactory
         from dbgpt.model.cluster.client import DefaultLLMClient
-        from dbgpt_app.base import CFG
 
         client = DefaultLLMClient(
-            CFG.SYSTEM_APP.get_component(
+            Config()
+            .SYSTEM_APP.get_component(
                 ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create(),
+            )
+            .create(),
             auto_convert_message=True,
         )
-        analyzer = make_intent_analyzer(client)
+        analyzer = make_intent_analyzer(client, model_name)
     except Exception:
         logger.exception("approval intent analyzer unavailable")
-    _INTENT_CACHE["analyzer"] = analyzer
+    _INTENT_CACHE[cache_key] = analyzer
     return analyzer
 
 
 async def push_intent(
     pa: PendingApproval,
     stream_callback: StreamCallback,
-    analyzer: IntentAnalyzer,
+    analyzer: Optional[IntentAnalyzer],
 ) -> None:
     bullets: Optional[List[str]] = None
-    try:
-        bullets = await analyzer(pa.tool, pa.args)
-    except Exception:
-        logger.exception(
-            "approval intent analysis failed, approval_id=%s", pa.approval_id
-        )
+    if analyzer is not None:
+        try:
+            bullets = await analyzer(pa.tool, pa.args)
+        except Exception:
+            logger.exception(
+                "approval intent analysis failed, approval_id=%s", pa.approval_id
+            )
     if not bullets:
         bullets = list(INTENT_FALLBACK_BULLETS)
     from dbgpt_app.openapi.api_v1 import approval_audit as audit
@@ -654,8 +749,11 @@ def make_approval_gate(
             pa.approval_id,
             name,
         )
-        if intent_analyzer is not None:
-            asyncio.ensure_future(push_intent(pa, stream_callback, intent_analyzer))
+        # Always push an intent frame (real bullets, or the fallback when
+        # analysis is off / the analyzer is unavailable): the dock disables
+        # Allow until the frame arrives, so skipping the push would stall
+        # the round until the approval TTL expires.
+        asyncio.ensure_future(push_intent(pa, stream_callback, intent_analyzer))
         decision = await center.wait(pa, approval_ttl_seconds())
         await stream_callback(
             "approval.resolved",

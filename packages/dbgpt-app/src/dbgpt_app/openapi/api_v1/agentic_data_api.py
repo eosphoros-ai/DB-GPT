@@ -3622,6 +3622,7 @@ ordering. The registered tools and backend validation remain authoritative.
         set_current_tool_gate,
     )
     from dbgpt_app.openapi.api_v1.approval import (
+        approval_intent_enabled,
         make_approval_gate,
         make_intent_analyzer,
     )
@@ -3630,7 +3631,11 @@ ordering. The registered tools and backend validation remain authoritative.
         make_approval_gate(
             conv_id,
             stream_callback,
-            intent_analyzer=make_intent_analyzer(llm_client, dialogue.model_name),
+            intent_analyzer=(
+                make_intent_analyzer(llm_client, dialogue.model_name)
+                if approval_intent_enabled()
+                else None
+            ),
         )
     )
 
@@ -4863,3 +4868,10 @@ from .harness_pi_stream import (  # noqa: E402
 )
 
 register_harness_endpoints(router)
+
+# Approval policy setting-page endpoints (L2 store, playground, whitelist).
+from .approval_policy import (  # noqa: E402
+    register_approval_policy_endpoints,
+)
+
+register_approval_policy_endpoints(router)

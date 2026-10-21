@@ -1611,6 +1611,41 @@ const Playground: NextPage = () => {
         if (taskEpochRef.current !== transitionEpoch) return;
         console.error('Failed to restore conversation files', error);
       });
+      // Refresh recovery: an approval whose gate is still waiting server-side
+      // must re-show its dock after a reload even though the SSE frame that
+      // created it is gone from this page instance.
+      void (async () => {
+        try {
+          const res = await fetch(
+            `${process.env.API_BASE_URL ?? ''}/api/v1/chat/approval/pending?con_uid=${encodeURIComponent(convId)}`,
+          );
+          const json = await res.json();
+          if (taskEpochRef.current !== transitionEpoch) return;
+          const rows = (json?.data ?? []) as Array<Record<string, any>>;
+          if (!rows.length) return;
+          setPendingApprovals(prev => {
+            const known = new Set(prev.map(p => p.approval_id));
+            const added = rows
+              .filter(r => r.approval_id && !known.has(r.approval_id))
+              .map(r => ({
+                type: 'approval.requested' as const,
+                approval_id: String(r.approval_id),
+                conv_id: r.conv_id,
+                tool: String(r.tool ?? ''),
+                args_preview: String(r.args_preview ?? ''),
+                rule_id: String(r.rule_id ?? ''),
+                risk: 'confirm',
+                ttl_seconds: 300,
+                ts: r.created_ts,
+                status: 'pending' as const,
+                scope: r.scope,
+              }));
+            return added.length ? [...prev, ...added] : prev;
+          });
+        } catch {
+          // Recovery is best-effort; the live SSE path remains authoritative.
+        }
+      })();
     } else if (!convId && conversationIdRef.current) {
       // Browser back / direct route changes use the same reset command as the
       // explicit new-task affordances. The command itself already clears the
@@ -2865,9 +2900,7 @@ const Playground: NextPage = () => {
         }
         if (payload.type === 'approval.intent') {
           setPendingApprovals(prev =>
-            prev.map(p =>
-              p.approval_id === payload.approval_id ? { ...p, intent: payload.bullets } : p,
-            ),
+            prev.map(p => (p.approval_id === payload.approval_id ? { ...p, intent: payload.bullets } : p)),
           );
           return;
         }

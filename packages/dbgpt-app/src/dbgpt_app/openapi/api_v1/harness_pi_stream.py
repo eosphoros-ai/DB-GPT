@@ -400,6 +400,7 @@ def register_harness_endpoints(router: Any) -> None:
             TIER_CONFIRM,
             TIER_DENY,
             approval_center,
+            approval_intent_enabled,
             approval_mode,
             approval_ttl_seconds,
             deny_observation,
@@ -443,13 +444,22 @@ def register_harness_endpoints(router: Any) -> None:
                     pa.approval_id,
                     name,
                 )
-                analyzer = get_intent_analyzer()
-                if analyzer is not None:
+                analyzer = (
+                    get_intent_analyzer(tool_bridge.get_conv_model(conv_id))
+                    if approval_intent_enabled()
+                    else None
+                )
 
-                    async def _push_side(event_type: str, payload: Dict[str, Any]):
-                        tool_bridge.push_conv_event(conv_id, payload)
+                async def _push_side(event_type: str, payload: Dict[str, Any]):
+                    # The pi side-queue forwarder emits payloads verbatim, so
+                    # the frame type must ride inside the dict (push_intent
+                    # passes it as a separate argument).
+                    tool_bridge.push_conv_event(conv_id, {**payload, "type": event_type})
 
-                    asyncio.ensure_future(push_intent(pa, _push_side, analyzer))
+                # Always push an intent frame: the dock gates Allow on it, so
+                # an absent analyzer must still yield the fallback bullets
+                # (otherwise the round stalls until the approval TTL).
+                asyncio.ensure_future(push_intent(pa, _push_side, analyzer))
                 return Result.succ(
                     {
                         "approval": True,
@@ -1436,6 +1446,7 @@ async def run_pi_harness_turn(
     state = _PiSessionState()
     side_queue: asyncio.Queue = asyncio.Queue()
     tool_bridge.bind_conv_side_queue(conv_id, side_queue)
+    tool_bridge.set_conv_model(conv_id, dialogue.model_name)
     state.cwd = os.path.join(
         getattr(CFG.SYSTEM_APP, "work_dir", None) or os.getcwd(),
         "pi_workspace",

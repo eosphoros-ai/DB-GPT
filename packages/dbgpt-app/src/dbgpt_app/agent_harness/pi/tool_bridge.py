@@ -51,6 +51,10 @@ _REGISTRY: Dict[str, Dict[str, Any]] = {}
 #: and friends) pushed while a pi turn is streaming.
 _SIDE_QUEUES: Dict[str, Any] = {}
 
+#: Per-conv round model (from the chat request) so loopback gates such as the
+#: approval intent analyzer can reuse the same LLM the turn is running on.
+_CONV_MODEL: Dict[str, str] = {}
+
 
 def bind_conv_side_queue(conv_id: str, queue: Any) -> None:
     _SIDE_QUEUES[conv_id] = queue
@@ -58,6 +62,16 @@ def bind_conv_side_queue(conv_id: str, queue: Any) -> None:
 
 def unbind_conv_side_queue(conv_id: str) -> None:
     _SIDE_QUEUES.pop(conv_id, None)
+    _CONV_MODEL.pop(conv_id, None)
+
+
+def set_conv_model(conv_id: str, model: Optional[str]) -> None:
+    if model:
+        _CONV_MODEL[conv_id] = str(model)
+
+
+def get_conv_model(conv_id: str) -> Optional[str]:
+    return _CONV_MODEL.get(conv_id)
 
 
 def push_conv_event(conv_id: str, payload: Dict[str, Any]) -> bool:
@@ -175,6 +189,7 @@ def _evict_expired() -> None:
     now = time.time()
     for key in [k for k, v in _REGISTRY.items() if now - v["ts"] > _TTL_S]:
         _REGISTRY.pop(key, None)
+        _CONV_MODEL.pop(key, None)
     if len(_REGISTRY) > _MAX_CONVS:
         oldest = sorted(_REGISTRY, key=lambda k: _REGISTRY[k]["ts"])
         for key in oldest[: len(_REGISTRY) - _MAX_CONVS]:

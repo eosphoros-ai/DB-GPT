@@ -21,6 +21,7 @@ import Icon, {
   MessageOutlined,
   PlusOutlined,
   RightOutlined,
+  SafetyCertificateOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
 import { Popover, Skeleton, Tooltip, message } from 'antd';
@@ -331,6 +332,22 @@ function SideBar() {
       >
         <DashboardOutlined className='text-indigo-500' />
         <span>{t('observability')}</span>
+      </div>
+      <div
+        onClick={() => {
+          router.push('/approval-settings');
+          setSettingsOpen(false);
+        }}
+        className={cls(
+          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
+          {
+            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
+              pathname === '/approval-settings',
+          },
+        )}
+      >
+        <SafetyCertificateOutlined className='text-orange-500' />
+        <span>{t('tool_approval')}</span>
       </div>
       {/* Agent engine (harness) */}
       <div className='px-3 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider'>
