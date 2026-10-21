@@ -444,8 +444,8 @@ DB-GPT aims to help developers and enterprises build that future.
 ## Licence
 The MIT License (MIT)
 
-## DISCKAIMER
-- [disckaimer](./DISCKAIMER.md)
+## DISCLAIMER
+- [disckaimer](./DISCLAIMER.md)
 
 ## Citation
 If you want to understand the overall architecture of DB-GPT, please cite <a href="https://arxiv.org/abs/2312.17449" target="_blank">Paper</a> and <a href="https://arxiv.org/abs/2404.10209" target="_blank">Paper</a>
