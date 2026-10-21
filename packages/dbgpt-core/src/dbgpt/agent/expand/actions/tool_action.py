@@ -192,6 +192,9 @@ async def run_tool(
     raw_tool_input: Optional[str] = None,
 ) -> ActionOutput:
     """Run the tool."""
+    batch = split_joined_action(name, args)
+    if batch:
+        return await run_tools_batch(batch, resource, render_protocol, need_vis_render)
     is_terminal = None
     try:
         tool_packs = ToolPack.from_resource(resource)
@@ -345,6 +348,32 @@ class ToolCallSpec:
     args: Dict[str, Any] = dataclasses.field(default_factory=dict)
     call_id: Optional[str] = None
     raw_tool_input: Optional[str] = None
+
+
+def split_joined_action(name: str, args: Any) -> Optional[List[ToolCallSpec]]:
+    """Split a text-ReAct turn that joined several actions into one line.
+
+    The text protocol occasionally emits ``Action: tool_a, tool_b`` together
+    with an array ``Action Input: [{...}, {...}]``. Forwarding that verbatim
+    crashes ``ToolPack.async_execute(**args)`` ("argument after ** must be a
+    mapping, not list"). Pair the comma-joined names with the array elements
+    so the turn executes as a real batch instead.
+    """
+    if not isinstance(args, list) or not args:
+        return None
+    names = [n.strip() for n in str(name).split(",") if n.strip()]
+    if not names:
+        return None
+    specs: List[ToolCallSpec] = []
+    for index, item in enumerate(args):
+        spec_name = names[index] if index < len(names) else names[-1]
+        specs.append(
+            ToolCallSpec(
+                name=spec_name,
+                args=item if isinstance(item, dict) else {},
+            )
+        )
+    return specs
 
 
 async def run_tools_batch(
