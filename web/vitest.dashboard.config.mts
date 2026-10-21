@@ -21,6 +21,7 @@ export default defineConfig({
       './new-components/scheduled-task/**/*.test.{ts,tsx}',
       './hooks/use-scheduled-task.test.tsx',
       './new-components/chat/content/QuestionDock.test.tsx',
+      './pages/approval-settings.test.tsx',
       './hooks/use-question-session.test.tsx',
       './hooks/use-chat.question.test.tsx',
       './hooks/use-chat.failure.test.tsx',
