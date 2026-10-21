@@ -567,6 +567,268 @@ const sidebars = {
   ],
 
 
+  sidebarKnowledge: [
+    {
+      type: "category",
+      label: "Principles",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
+        { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Usage Manual",
+      collapsed: false,
+      collapsible: true,
+      link: {
+        type: "doc",
+        id: "getting-started/web-ui/knowledge-base",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "getting-started/web-ui/knowledge-base",
+          label: "Knowledge Base",
+        },
+        {
+          type: "doc",
+          id: "getting-started/web-ui/external-datasources",
+          label: "External Data Sources",
+        },
+        {
+          type: "doc",
+          id: "getting-started/web-ui/llm-wiki",
+          label: "LLM-Wiki",
+        },
+      ],
+    },
+    { type: "doc", id: "modules/rag", label: "RAG Overview" },
+    { type: "doc", id: "application/graph_rag", label: "GraphRAG" },
+  ],
+
+  sidebarDevelopmentGuide: [
+    { type: "doc", id: "design/dashboard" },
+    {
+      type: "category",
+      label: "Agents",
+      collapsed: true,
+      items: [
+        { type: "doc", id: "agents/introduction/introduction", label: "Data Driven Multi-Agents" },
+        { type: "doc", id: "agents/introduction/tools_use", label: "Tool Use" },
+        { type: "doc", id: "agents/introduction/planning", label: "Planning" },
+        { type: "doc", id: "agents/introduction/conversation", label: "Conversation" },
+        { type: "doc", id: "agents/introduction/custom_agents", label: "Custom Agents" },
+        {
+          type: "category",
+          label: "Agent Modules",
+          collapsed: true,
+          items: [
+            {
+              type: "category",
+              label: "Profile",
+              collapsed: true,
+              items: [
+                { type: "doc", id: "agents/modules/profile/profile" },
+                { type: "doc", id: "agents/modules/profile/profile_creation" },
+                { type: "doc", id: "agents/modules/profile/profile_to_prompt" },
+                { type: "doc", id: "agents/modules/profile/profile_dynamic" },
+              ],
+            },
+            {
+              type: "category",
+              label: "Memory",
+              collapsed: true,
+              items: [
+                { type: "doc", id: "agents/modules/memory/memory" },
+                { type: "doc", id: "agents/modules/memory/sensory_memory" },
+                { type: "doc", id: "agents/modules/memory/short_term_memory" },
+                { type: "doc", id: "agents/modules/memory/long_term_memory" },
+                { type: "doc", id: "agents/modules/memory/hybrid_memory" },
+              ],
+            },
+            {
+              type: "category",
+              label: "Plan",
+              collapsed: true,
+              items: [{ type: "doc", id: "agents/modules/plan/plan" }],
+            },
+            {
+              type: "category",
+              label: "Action",
+              collapsed: true,
+              items: [{ type: "doc", id: "agents/modules/action/action" }],
+            },
+            {
+              type: "category",
+              label: "Resource",
+              collapsed: true,
+              items: [
+                { type: "doc", id: "agents/modules/resource/resource" },
+                { type: "doc", id: "agents/modules/resource/tools" },
+                {
+                  type: "doc",
+                  id: "agents/modules/resource/knowledge-source-connector",
+                  label: "Custom Knowledge Source Connector",
+                },
+                { type: "doc", id: "agents/modules/resource/database" },
+                { type: "doc", id: "agents/modules/resource/knowledge" },
+                { type: "doc", id: "agents/modules/resource/pack" },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+
+  sidebarHelp: [
+    {
+      type: "category",
+      label: "FAQ",
+      collapsed: false,
+      items: [
+        { type: "doc", id: "faq/install" },
+        { type: "doc", id: "faq/llm" },
+        { type: "doc", id: "faq/kbqa" },
+      ],
+    },
+    {
+      type: "category",
+      label: "ChangeLog",
+      collapsed: false,
+      items: [
+        { type: "doc", id: "changelog/doc" },
+        { type: "doc", id: "changelog/Released_V0.8.2" },
+        { type: "doc", id: "changelog/Released_V0.8.1" },
+        { type: "doc", id: "changelog/Released_V0.8.0" },
+        { type: "doc", id: "changelog/Released_V0.6.0" },
+        { type: "doc", id: "changelog/Released_V0.5.0" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Upgrade",
+      collapsed: false,
+      items: [
+        { type: "doc", id: "upgrade/v0.8.2" },
+        { type: "doc", id: "upgrade/v0.8.1" },
+        { type: "doc", id: "upgrade/v0.8.0" },
+        { type: "doc", id: "upgrade/v0.6.0" },
+        { type: "doc", id: "upgrade/v0.5.1" },
+        { type: "doc", id: "upgrade/v0.5.0" },
+      ],
+    },
+  ],
+
+  sidebarModels: [
+    { type: "doc", id: "modules/smmf", label: "SMMF Overview" },
+    { type: "doc", id: "application/llms", label: "LLMs" },
+    { type: "doc", id: "application/advanced_tutorial/smmf", label: "Advanced SMMF" },
+    {
+      type: "category",
+      label: "Model Service Deployment",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "installation/model_service/stand_alone" },
+        { type: "doc", id: "installation/model_service/cluster" },
+        { type: "doc", id: "installation/model_service/cluster_ha" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Inference Backends",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "installation/advanced_usage/More_proxyllms" },
+        { type: "doc", id: "installation/advanced_usage/ollama" },
+        { type: "doc", id: "installation/advanced_usage/vLLM_inference" },
+        { type: "doc", id: "installation/advanced_usage/mlx_inference" },
+        { type: "doc", id: "installation/advanced_usage/Llamacpp_server" },
+        { type: "doc", id: "installation/advanced_usage/OpenAI_SDK_call" },
+        { type: "doc", id: "installation/advanced_usage/multimodal" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Fine Tuning",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "modules/fine_tuning" },
+        { type: "doc", id: "application/fine_tuning_manual/text_to_sql" },
+        { type: "doc", id: "application/fine_tuning_manual/dbgpt_hub" },
+      ],
+    },
+  ],
+
+  sidebarReference: [
+    {
+      type: "category",
+      label: "API Reference",
+      collapsed: false,
+      collapsible: false,
+      link: { type: "generated-index", slug: "api" },
+      items: [
+        { type: "doc", id: "api/introduction" },
+        { type: "doc", id: "api/chat" },
+        { type: "doc", id: "api/app" },
+        { type: "doc", id: "api/flow" },
+        { type: "doc", id: "api/knowledge" },
+        { type: "doc", id: "api/datasource" },
+        { type: "doc", id: "api/evaluation" },
+      ],
+    },
+    {
+      type: "category",
+      label: "Config Reference",
+      collapsed: false,
+      collapsible: false,
+      link: {
+        type: "generated-index",
+        title: "Config Reference",
+        description: "All system configurable parameters and their detailed descriptions",
+        slug: "/config/config-reference",
+      },
+      items: [{ type: "autogenerated", dirName: "config-reference" }],
+    },
+    {
+      type: "category",
+      label: "CLI & Advanced",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        { type: "doc", id: "application/advanced_tutorial/cli" },
+        { type: "doc", id: "application/advanced_tutorial/api" },
+      ],
+    },
+    { type: "doc", id: "modules/visual", label: "Visual" },
+    { type: "doc", id: "modules/eval", label: "Evaluation" },
+  ],
+
+  sidebarTools: [
+    { type: "doc", id: "agents/introduction/tools", label: "Tools Overview" },
+    {
+      type: "category",
+      label: "Built-in tools",
+      collapsed: false,
+      collapsible: true,
+      items: [
+        { type: "doc", id: "agents/modules/resource/tools", label: "Overview" },
+        { type: "doc", id: "agents/modules/resource/tools/load-skill", label: "load_skill" },
+        { type: "doc", id: "agents/modules/resource/tools/code-interpreter", label: "code_interpreter" },
+        { type: "doc", id: "agents/modules/resource/tools/shell-interpreter", label: "shell_interpreter" },
+        { type: "doc", id: "agents/modules/resource/tools/sql-query", label: "sql_query" },
+        { type: "doc", id: "agents/modules/resource/tools/html-interpreter", label: "html_interpreter" },
+      ],
+    },
+    { type: "doc", id: "application/prompts", label: "Prompts" },
+  ],
+
   sidebarAwel: [
     { type: "doc", id: "workflow/introduction", label: "What is a Workflow?" },
     { type: "doc", id: "workflow/quickstart", label: "Quickstart" },
