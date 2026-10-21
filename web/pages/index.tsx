@@ -32,6 +32,7 @@ import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
 import AgentTimeline, { stepsToTimelineBlocks } from '@/new-components/chat/content/AgentTimeline';
 import ApprovalDock from '@/new-components/chat/content/ApprovalDock';
+import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
 import ArtifactCards, { StreamArtifact } from '@/new-components/chat/content/ArtifactCards';
 import ArtifactRail from '@/new-components/chat/content/ArtifactRail';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
@@ -2343,6 +2344,15 @@ const Playground: NextPage = () => {
       );
       if (hasStrongDeliverable) {
         for (const a of finalArtifacts) {
+          if (a.type === 'query') {
+            // Fetch result sets are the deliverable only for fetch-style
+            // turns. When the turn produced a real deliverable (report,
+            // skill package, office document), the queries are intermediate
+            // evidence: fold them into the process group so the final
+            // surface shows the deliverable, not the scaffolding.
+            a.tier = 'process';
+            continue;
+          }
           if (
             a.type === 'file' &&
             a.tier === 'final' &&
@@ -4605,6 +4615,19 @@ const Playground: NextPage = () => {
                                 </Tooltip>
                               </Dropdown>
 
+                              {/* High-risk tool permission badge (per conversation) */}
+                              <ApprovalModeBadge
+                                convId={conversationId}
+                                ensureConvId={() => {
+                                  if (!conversationIdRef.current) {
+                                    const fresh = generateUUID();
+                                    conversationIdRef.current = fresh;
+                                    setConversationId(fresh);
+                                  }
+                                  return conversationIdRef.current;
+                                }}
+                              />
+
                               {/* Skill Selector Button with Badge */}
                               <Popover
                                 trigger='click'
@@ -5369,6 +5392,19 @@ const Playground: NextPage = () => {
                               />
                             </Tooltip>
                           </Dropdown>
+
+                          {/* High-risk tool permission badge (per conversation) */}
+                          <ApprovalModeBadge
+                            convId={conversationId}
+                            ensureConvId={() => {
+                              if (!conversationIdRef.current) {
+                                const fresh = generateUUID();
+                                conversationIdRef.current = fresh;
+                                setConversationId(fresh);
+                              }
+                              return conversationIdRef.current;
+                            }}
+                          />
 
                           {/* Skill Selector Button with Badge - Purple Gradient */}
                           <Popover

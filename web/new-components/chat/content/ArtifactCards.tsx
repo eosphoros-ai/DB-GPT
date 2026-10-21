@@ -175,8 +175,13 @@ export default function ArtifactCards({
   if (!artifacts || artifacts.length === 0) return null;
   // Query artifacts (SQL result sets) render as full-width data blocks above
   // the document card row — they are deliverables, not compact chips.
-  const queryArtifacts = artifacts.filter(a => a.type === 'query' && a.content);
-  const rest = artifacts.filter(a => !(a.type === 'query' && a.content));
+  // Query result sets render as full-width data blocks only while they are
+  // the turn's deliverable; once demoted to process tier (turn produced a
+  // report / package / document) they fold into the process group like any
+  // other intermediate.
+  const isFinalQuery = (a: Artifact) => a.type === 'query' && !!a.content && a.tier !== 'process';
+  const queryArtifacts = artifacts.filter(isFinalQuery);
+  const rest = artifacts.filter(a => !isFinalQuery(a));
   const finals = rest.filter(a => a.tier !== 'process' && a.type !== 'image');
   const processes = rest.filter(a => a.tier === 'process');
   // Charts are not deliverables: every image artifact (thumbnail-backed or
