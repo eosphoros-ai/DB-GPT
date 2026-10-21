@@ -145,7 +145,7 @@ const sidebars = {
         { type: "doc", id: "installation/sourcecode", label: "Source Code" },
         { type: "doc", id: "installation/docker", label: "Docker" },
         { type: "doc", id: "getting-started/deploy/docker-compose", label: "Docker Compose" },
-        { type: "doc", id: "installation/docker-build-guide", label: "Docker Build Guide" },
+        { type: "doc", id: "installation/docker", label: "Docker Build Guide" },
         {
           type: "category",
           label: "Other Integrations",
@@ -459,7 +459,7 @@ const sidebars = {
           items: [
             { type: "doc", id: "installation/docker", label: "Docker" },
             { type: "doc", id: "getting-started/deploy/docker-compose", label: "Docker Compose" },
-            { type: "doc", id: "installation/docker-build-guide", label: "Docker Build Guide" },
+            { type: "doc", id: "installation/docker", label: "Docker Build Guide" },
           ],
         },
       ],
