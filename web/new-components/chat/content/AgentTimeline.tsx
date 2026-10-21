@@ -368,6 +368,7 @@ function TextBlock({ block }: { block: TimelineBlock }) {
  * where the question was asked. Pending state shows "awaiting reply".
  */
 function QuestionRecap({ block }: { block: TimelineBlock }) {
+  const { t } = useTranslation();
   const pairs = block.pairs || [];
   if (!pairs.length) return null;
   return (
@@ -378,7 +379,7 @@ function QuestionRecap({ block }: { block: TimelineBlock }) {
             {p.question}
           </div>
           <div className='mt-0.5 text-[13px] leading-6 text-[#8b8b84] dark:text-[#7c7972]'>
-            {p.answer ? p.answer : block.rejected ? '已跳过 / 未回答' : '等待回复…'}
+            {p.answer ? p.answer : block.rejected ? t('timeline_q_skipped') : t('timeline_q_awaiting')}
           </div>
         </div>
       ))}

@@ -11,6 +11,7 @@
 
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PendingQuestion, questionSlots } from '@/utils/question-session';
 
@@ -26,6 +27,7 @@ const isRecommended = (label: string, description?: string) =>
   /推荐|recommended/i.test(`${label} ${description || ''}`);
 
 const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onReject }) => {
+  const { t } = useTranslation();
   const questions = useMemo(() => questionSlots(request.questions), [request.questions]);
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[][]>(() => questions.map(() => []));
@@ -97,7 +99,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
     try {
       await action();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '问题未提交成功，请重试或取消。');
+      setError(cause instanceof Error ? cause.message : t('qdock_retry_fail'));
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +141,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
     >
       {/* Header: group label + pagination */}
       <div className='flex items-center gap-3 px-[18px] pt-3.5 text-[12.5px] text-slate-400 dark:text-slate-500'>
-        <span>{q?.header || '问题'}</span>
+        <span>{q?.header || t('qdock_group')}</span>
         {total > 1 && (
           <span className='ml-auto flex items-center gap-1.5'>
             <button
@@ -172,7 +174,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
         </div>
       ) : (
         <div role='status' className='px-[18px] pb-1.5 pt-2 text-[13px] text-amber-700 dark:text-amber-400'>
-          第 {page + 1} 项问题内容无效，该位置将保留为空答；你可以翻到其他题回答，或跳过让 AI 重新提问。
+          {t('qdock_invalid', { n: page + 1 })}
         </div>
       )}
 
@@ -217,7 +219,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
             <input
               type='text'
               aria-label={q.question}
-              placeholder='其他（请填写）'
+              placeholder={t('qdock_other')}
               value={customInputs[page] || ''}
               onChange={e => setCustom(e.target.value)}
               className='w-full bg-transparent text-[13px] text-slate-700 placeholder-slate-400 outline-none dark:text-slate-200 dark:placeholder-slate-500'
@@ -243,7 +245,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
             <path d='m15 4 5 5-11 11H4v-5L15 4Z' />
             <path d='m13 6 5 5' />
           </svg>
-          推荐
+          {t('qdock_recommend')}
         </button>
         <span className='ml-auto flex items-center gap-3.5'>
           <button
@@ -251,7 +253,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
             disabled={submitting}
             className='text-[13px] text-slate-500 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
           >
-            跳过
+            {t('qdock_skip')}
           </button>
           <button
             onClick={goNext}
@@ -260,7 +262,7 @@ const QuestionDockForm: React.FC<QuestionDockProps> = ({ request, onReply, onRej
               isLast ? (canSubmit ? 'bg-slate-800 text-white hover:bg-black dark:bg-slate-200 dark:text-slate-900' : 'cursor-not-allowed bg-[#e8e8e6] text-slate-400 dark:bg-white/5 dark:text-slate-600') : canAdvance ? 'bg-slate-800 text-white hover:bg-black dark:bg-slate-200 dark:text-slate-900' : 'cursor-not-allowed bg-[#e8e8e6] text-slate-400 dark:bg-white/5 dark:text-slate-600'
             }`}
           >
-            {isLast ? '提交' : '下一题'} <span className='font-mono'>↵</span>
+            {isLast ? t('qdock_submit') : t('qdock_next')} <span className='font-mono'>↵</span>
           </button>
         </span>
       </div>

@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 import QuestionDock, { QuestionRequest } from './QuestionDock';
 
 const request = (questions: unknown[], request_id = 'A'): QuestionRequest => ({
@@ -8,7 +10,7 @@ const request = (questions: unknown[], request_id = 'A'): QuestionRequest => ({
   questions,
 });
 
-const nextBtn = () => screen.getByRole('button', { name: /下一题|提交/ });
+const nextBtn = () => screen.getByRole('button', { name: /qdock_next|qdock_submit/ });
 const advance = () => fireEvent.click(nextBtn());
 
 describe('question slots and request identity', () => {
@@ -18,7 +20,7 @@ describe('question slots and request identity', () => {
       const onReply = vi.fn();
       render(<QuestionDock request={request([questions])} onReply={onReply} onReject={vi.fn()} />);
       fireEvent.change(screen.getByRole('textbox'), { target: { value: '保留可计算指标' } });
-      fireEvent.click(screen.getByRole('button', { name: /提交/ }));
+      fireEvent.click(screen.getByRole('button', { name: /qdock_submit/ }));
       expect(onReply).toHaveBeenCalledWith('A', [['保留可计算指标']]);
     },
   );
@@ -54,9 +56,9 @@ describe('question slots and request identity', () => {
     );
     expect(screen.getAllByRole('textbox').map(input => (input as HTMLInputElement).value)).toEqual(['']);
     fireEvent.change(screen.getByRole('textbox', { name: 'B first' }), { target: { value: 'B1' } });
-    fireEvent.click(screen.getByRole('button', { name: /下一题/ }));
+    fireEvent.click(screen.getByRole('button', { name: /qdock_next/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'B second' }), { target: { value: 'B2' } });
-    fireEvent.click(screen.getByRole('button', { name: /提交/ }));
+    fireEvent.click(screen.getByRole('button', { name: /qdock_submit/ }));
     expect(onReply).toHaveBeenCalledWith('B', [['B1'], ['B2']]);
   });
 
@@ -80,8 +82,8 @@ describe('question slots and request identity', () => {
         onReject={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '推荐', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: /提交/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'qdock_recommend', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /qdock_submit/ }));
     expect(onReply).toHaveBeenCalledWith('A', [['HTML 报告']]);
   });
 
@@ -89,10 +91,10 @@ describe('question slots and request identity', () => {
     const onReply = vi.fn().mockRejectedValueOnce(new Error('请重试')).mockResolvedValue(undefined);
     render(<QuestionDock request={request(['问题'])} onReply={onReply} onReject={vi.fn()} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '答案' } });
-    fireEvent.click(screen.getByRole('button', { name: /提交/ }));
+    fireEvent.click(screen.getByRole('button', { name: /qdock_submit/ }));
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', '请重试');
     await waitFor(() => expect((nextBtn() as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole('button', { name: /提交/ }));
+    fireEvent.click(screen.getByRole('button', { name: /qdock_submit/ }));
     expect(onReply).toHaveBeenCalledTimes(2);
   });
 
@@ -101,8 +103,8 @@ describe('question slots and request identity', () => {
       onReject = vi.fn();
     render(<QuestionDock request={request([null, {}])} onReply={onReply} onReject={onReject} />);
     advance(); // hole page 1 -> last (hole) page
-    expect((screen.getByRole('button', { name: /提交/ }) as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: '跳过' }));
+    expect((screen.getByRole('button', { name: /qdock_submit/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'qdock_skip' }));
     expect(onReject).toHaveBeenCalledWith('A');
     expect(onReply).not.toHaveBeenCalled();
   });
