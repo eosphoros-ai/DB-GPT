@@ -3508,6 +3508,7 @@ const Playground: NextPage = () => {
     const controller = new AbortController();
     chatAbortControllerRef.current = controller;
     let accumulated = '';
+    let serverError = '';
     try {
       setConvRunning(currentConvId, true);
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
@@ -3555,6 +3556,13 @@ const Playground: NextPage = () => {
             content = payload.replace(/(?<!\\)\\n/g, '\n');
           }
           if (!content) continue;
+          // Flow-level fatal frames (e.g. DAG not registered after a restart
+          // while the flow sat undeployed): surface the real reason instead
+          // of letting the empty stream paint every node as failed at 0:00.
+          if (typeof content === 'string' && content.startsWith('[SERVER_ERROR]')) {
+            serverError = content.replace('[SERVER_ERROR]', '').trim();
+            continue;
+          }
           accumulated += content;
           const parsedStream = parseTaskflowStream(accumulated);
           // Detached (background) flow streams keep pumping so the server
@@ -3570,6 +3578,26 @@ const Playground: NextPage = () => {
             );
           }
         }
+      }
+      if (serverError) {
+        message.error(serverError);
+        if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
+          setExecutionMap(prev => {
+            const exec = prev[responseId];
+            if (!exec) return prev;
+            return {
+              ...prev,
+              [responseId]: {
+                ...exec,
+                steps: exec.steps.map(s => ({ ...s, status: 'failed' as ExecutionStep['status'] })),
+              },
+            };
+          });
+          setMessages(prev =>
+            prev.map(m => (m.id === responseId ? { ...m, context: serverError, thinking: false } : m)),
+          );
+        }
+        return;
       }
       const parsedStream = parseTaskflowStream(accumulated);
       if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {

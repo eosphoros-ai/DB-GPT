@@ -79,6 +79,7 @@ export const TaskflowEn = {
   error_occurred: 'An error occurred',
   flow_nodes_unit: 'nodes',
   flow_status_running: 'running',
+  flow_status_pending: 'Pending',
   flow_status_success: 'success',
   flow_status_failed: 'failed',
   flow_tool_count: '{{n}} tool calls',
@@ -89,4 +90,8 @@ export const TaskflowEn = {
   flow_badge_retry: 'retry ×{{n}}',
   flow_summary_label: 'Summary:',
   flow_no_output: 'No output',
+  flow_node_pending_hint: 'Waiting for upstream nodes to finish',
+  flow_artifact_preview: 'Preview',
+  flow_artifact_download: 'Download',
+  flow_artifact_load_failed: 'Failed to load the artifact',
 };

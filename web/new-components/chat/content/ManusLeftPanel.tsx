@@ -2,7 +2,9 @@ import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/sess
 import FlowRunView, { type FlowRunRow } from '@/new-components/chat/content/FlowRunView';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
-import { parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
+import type { ITaskflowArtifact } from '@/types/taskflow';
+import { extractFlowArtifacts, parseTaskflowStream, stripFlowNarration, stripVisBlocks } from '@/utils/taskflow';
+import { envelopeReadableText } from '@/utils/tool-envelope';
 import {
   ApartmentOutlined,
   ApiOutlined,
@@ -131,6 +133,11 @@ export interface ManusLeftPanelProps {
     done: number;
     total: number;
   };
+  /** TaskFlow execution steps seeded from the DSL (with live statuses).
+   *  The run card needs the full node chain from the first frame, but the
+   *  generic `sections` list is suppressed in timeline view — pass the steps
+   *  explicitly so pending nodes stay visible while the DAG executes. */
+  flowExecSteps?: ExecutionStep[];
   userQuery?: string;
   assistantText?: string;
   /** Render incremental answer text without reparsing Markdown on every frame. */
@@ -1007,6 +1014,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onStepClick,
   isWorking,
   flowRun,
+  flowExecSteps,
   userQuery,
   assistantText,
   isAssistantStreaming = false,
@@ -1047,38 +1055,70 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     [flowParsed],
   );
   const flowRows = useMemo<FlowRunRow[]>(() => {
-    const execSteps = sections[0]?.steps ?? [];
+    // Prefer the DSL-seeded execution steps (they carry pending/running
+    // statuses for nodes the DAG has not reached yet); fall back to the
+    // generic sections list, then to marker synthesis for restored rounds.
+    const execSteps = flowExecSteps ?? sections[0]?.steps ?? [];
     if (execSteps.length > 0) {
       return execSteps.map(step => {
         const sec = flowSectionMap.get(step.id);
+        const extracted = extractFlowArtifacts(sec?.content ?? '');
         return {
           id: step.id,
           title: step.title,
           subtitle: step.subtitle,
-          status: step.status,
+          status: step.status === 'error' ? ('failed' as StepStatus) : step.status,
           durationMs: sec?.marker.duration_ms,
           summary: sec?.marker.summary,
-          content: sec?.content ?? '',
+          content: extracted.clean,
           kind: sec?.marker.kind,
           steps: sec?.marker.steps,
+          artifacts: extracted.artifacts.length > 0 ? extracted.artifacts : undefined,
         };
       });
     }
     // Restored round without execution state: synthesize rows from markers.
-    return (flowParsed?.sections ?? []).map(sec => ({
-      id: sec.marker.step_id,
-      title: sec.marker.label,
-      subtitle: undefined,
-      status: 'completed' as StepStatus,
-      durationMs: sec.marker.duration_ms,
-      summary: sec.marker.summary,
-      content: sec.content,
-      kind: sec.marker.kind,
-      steps: sec.marker.steps,
-    }));
-  }, [sections, flowSectionMap, flowParsed]);
+    return (flowParsed?.sections ?? []).map(sec => {
+      const extracted = extractFlowArtifacts(sec.content);
+      return {
+        id: sec.marker.step_id,
+        title: sec.marker.label,
+        subtitle: undefined,
+        status: 'completed' as StepStatus,
+        durationMs: sec.marker.duration_ms,
+        summary: sec.marker.summary,
+        content: extracted.clean,
+        kind: sec.marker.kind,
+        steps: sec.marker.steps,
+        artifacts: extracted.artifacts.length > 0 ? extracted.artifacts : undefined,
+      };
+    });
+  }, [sections, flowSectionMap, flowParsed, flowExecSteps]);
   const flowDoneCount = flowRows.filter(row => row.status === 'completed').length;
   const flowRunning = flowRun?.running ?? flowRows.some(row => row.status === 'running');
+  // Flow node artifact chips: payloads live on disk behind the scoped
+  // artifact-file endpoint; preview reuses the react-round html rail.
+  const handleFlowArtifact = useCallback(
+    async (artifact: ITaskflowArtifact, mode: 'preview' | 'download') => {
+      try {
+        const resp = await fetch(`/api/v1/chat/harness/artifact-file?path=${encodeURIComponent(artifact.path)}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const text = await resp.text();
+        const item: ArtifactItem = {
+          id: artifact.path,
+          type: artifact.type === 'html' ? 'html' : 'file',
+          name: artifact.name,
+          content: text,
+          createdAt: Date.now(),
+        };
+        if (mode === 'preview') onArtifactClick?.(item);
+        else onArtifactDownload?.(item);
+      } catch {
+        message.error(t('flow_artifact_load_failed', '产物加载失败'));
+      }
+    },
+    [onArtifactClick, onArtifactDownload, t],
+  );
   // For flow rounds, the text area below the card shows ONLY the final
   // node's conclusion (each node's intermediate output stays inside its own
   // step card). Visual-only sections (charts) are skipped when picking the
@@ -1089,12 +1129,15 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
     // narration as section content — the node cards already show that trace
     // structurally, so the answer area stays empty until the run settles.
     if (flowRunning) return '';
+    // Legacy/edge answers may still carry a raw tool envelope ({"chunks":…})
+    // when a model terminated with an observation pasted as its result.
+    const salvage = (s: string) => (s && s.includes('"chunks"') ? (envelopeReadableText(s) ?? s) : s);
     const sections = flowParsed?.sections ?? [];
     for (let i = sections.length - 1; i >= 0; i--) {
       const text = stripFlowNarration(stripVisBlocks(sections[i].content ?? ''));
-      if (text) return text;
+      if (text) return salvage(text);
     }
-    return stripFlowNarration(stripVisBlocks(flowParsed?.cleanText ?? ''));
+    return salvage(stripFlowNarration(stripVisBlocks(flowParsed?.cleanText ?? '')));
   }, [isFlowRun, flowRunning, flowParsed, assistantText]);
 
   const copyAnswer = useCallback(

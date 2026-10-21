@@ -144,6 +144,49 @@ def _robust_final_answer(text: str) -> str:
     return "\n".join(lines).strip() or cleaned
 
 
+_ENVELOPE_START_RE = re.compile(r'^\s*\{\s*"chunks"')
+
+
+def _envelope_readable(text: str, zh: bool = True) -> Optional[str]:
+    """Reduce a raw tool envelope (``{"chunks": [...]}``) to readable text.
+
+    Models occasionally terminate with the last tool observation pasted as
+    the result; leaking the JSON payload into the answer area is useless.
+    Returns ``None`` when ``text`` is not an envelope so callers can keep
+    the original answer untouched.
+    """
+    if not text or _ENVELOPE_START_RE.match(text) is None:
+        return None
+    try:
+        parsed = json.loads(text.strip())
+    except Exception:
+        return None
+    chunks = parsed.get("chunks") if isinstance(parsed, dict) else None
+    if not isinstance(chunks, list):
+        return None
+    parts: List[str] = []
+    html_titles: List[str] = []
+    for chunk in chunks:
+        if not isinstance(chunk, dict):
+            continue
+        output_type = chunk.get("output_type")
+        content = chunk.get("content")
+        if output_type == "html":
+            html_titles.append(str(chunk.get("title") or "HTML"))
+        elif (
+            output_type in ("text", "markdown")
+            and isinstance(content, str)
+            and content.strip()
+        ):
+            parts.append(content.strip())
+    if html_titles:
+        # A rendered HTML report IS the deliverable; the tool's own
+        # instruction text ("please terminate now…") is not user content.
+        note = "HTML 报告已渲染: " if zh else "HTML report rendered: "
+        return note + ", ".join(html_titles)
+    return "\n\n".join(parts) if parts else None
+
+
 @dataclass
 class AgentProfile:
     """A builtin agent persona: system prompt skeleton + default tools."""
@@ -459,18 +502,35 @@ def _make_multi_db_sql_tool(datasources: List[str], system_app: Any):
                     ensure_ascii=False,
                 )
         try:
+            from ..openapi.api_v1.tools.query_artifact import (
+                build_query_chunk,
+                markdown_table,
+                normalize_result,
+            )
+
             manager = ConnectorManager.get_instance(system_app)
             connector = manager.get_connector(target)
             result = connector.run(sql.strip().rstrip(";"))
             if not result:
                 text = "查询返回空结果。"
-            else:
-                text = str(result)
-            return json.dumps(
-                {"chunks": [{"output_type": "text", "content": text}]},
-                ensure_ascii=False,
-                default=str,
-            )
+                return json.dumps(
+                    {"chunks": [{"output_type": "text", "content": text}]},
+                    ensure_ascii=False,
+                )
+            col_names, rows = normalize_result(result)
+            # Query artifact (SQL + capped result set) first so the flow UI
+            # can render the data artifact; the markdown table is what the
+            # node agent reasons over.
+            chunks = [
+                build_query_chunk(
+                    sql.strip().rstrip(";"), col_names, rows, db_name=target
+                ),
+                {
+                    "output_type": "markdown",
+                    "content": markdown_table(col_names, rows),
+                },
+            ]
+            return json.dumps({"chunks": chunks}, ensure_ascii=False)
         except Exception as e:
             return json.dumps(
                 {"chunks": [{"output_type": "text", "content": f"查询失败: {e}"}]},
@@ -722,8 +782,10 @@ async def run_react_agent(
     llm_client: Any = None,
     system_app: Any = None,
     on_step: Optional[StepCallback] = None,
+    on_artifact: Optional[Callable[[Dict[str, Any]], Awaitable[None]]] = None,
     conv_id: Optional[str] = None,
     language: Optional[str] = None,
+    max_new_tokens: int = 16384,
 ) -> str:
     """Run one focused ReAct agent task and return the final answer text.
 
@@ -744,6 +806,8 @@ async def run_react_agent(
         on_step: Async callback receiving :class:`AgentStepEvent` per round.
         conv_id: Isolation anchor; auto-generated when absent.
         language: ``zh`` or ``en`` (defaults to CFG.LANGUAGE).
+        max_new_tokens: Model output cap for this node (HTML report tool
+            args need far more than the agent default of 4096).
 
     Returns:
         The agent's final answer text.
@@ -771,6 +835,10 @@ async def run_react_agent(
 
     # ---- tools ----------------------------------------------------------
     react_state: Dict[str, Any] = {"conv_id": conv_id, "file_path": None}
+    if datasources:
+        # Carried into query artifacts so the edit & re-run endpoint can
+        # re-resolve the connector for flow-produced artifacts as well.
+        react_state["database_name"] = datasources[0]
     knowledge_resources = _load_knowledge_resources(knowledge, system_app)
     single_connector = None
     if len(datasources) == 1:
@@ -843,6 +911,9 @@ async def run_react_agent(
         gpts_app_code="taskflow_agent_node",
         gpts_app_name=f"TaskFlow-{profile.label_en}",
         language="zh" if zh else "en",
+        # HTML report tool args can run to 8-12k tokens; the 4096 default
+        # truncated them mid-string and every render failed empty.
+        max_new_tokens=max_new_tokens,
         enable_context_management=True,
         enable_native_function_calling=True,
     )
@@ -907,6 +978,41 @@ async def run_react_agent(
                         round=round_num,
                     )
                 )
+            # First-class artifacts (html reports, query result sets) are
+            # captured in full — the trace row above only keeps a 400-char
+            # preview.
+            if on_artifact and str(action) in ("html_interpreter", "sql_query") and obs:
+                try:
+                    env = json.loads(obs) if isinstance(obs, str) else None
+                    env_chunks = env.get("chunks") if isinstance(env, dict) else None
+                    if isinstance(env_chunks, list):
+                        for chunk in env_chunks:
+                            if not isinstance(chunk, dict) or not chunk.get("content"):
+                                continue
+                            if (
+                                str(action) == "html_interpreter"
+                                and chunk.get("output_type") == "html"
+                            ):
+                                await on_artifact(
+                                    {
+                                        "type": "html",
+                                        "title": str(chunk.get("title") or "report"),
+                                        "content": chunk.get("content"),
+                                    }
+                                )
+                            elif (
+                                str(action) == "sql_query"
+                                and chunk.get("output_type") == "query"
+                            ):
+                                await on_artifact(
+                                    {
+                                        "type": "query",
+                                        "content": chunk.get("content"),
+                                    }
+                                )
+                except Exception:
+                    # Artifact capture is best-effort; never break the loop.
+                    pass
         except Exception:
             # Step events are best-effort; never break the agent loop.
             pass
@@ -929,6 +1035,11 @@ async def run_react_agent(
             else getattr(reply, "content", "") or ""
         )
         content = _robust_final_answer(raw if isinstance(raw, str) else str(raw))
+        # Safety net: a terminate result that is still a raw tool envelope
+        # ({"chunks": ...}) must never reach the answer area as JSON noise.
+        readable = _envelope_readable(content, zh)
+        if readable:
+            content = readable
     if on_step:
         try:
             await on_step(

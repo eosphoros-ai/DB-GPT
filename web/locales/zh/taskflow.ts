@@ -78,6 +78,7 @@ export const TaskflowZh = {
   error_occurred: '发生错误',
   flow_nodes_unit: '节点',
   flow_status_running: '运行中',
+  flow_status_pending: '待执行',
   flow_status_success: '成功',
   flow_status_failed: '失败',
   flow_tool_count: '{{n}} 次工具调用',
@@ -88,4 +89,8 @@ export const TaskflowZh = {
   flow_badge_retry: '重试 ×{{n}}',
   flow_summary_label: '一句话结论:',
   flow_no_output: '暂无输出',
+  flow_node_pending_hint: '等待上游节点完成后执行',
+  flow_artifact_preview: '预览',
+  flow_artifact_download: '下载',
+  flow_artifact_load_failed: '产物加载失败',
 };

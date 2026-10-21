@@ -147,6 +147,22 @@ def strip_step_markers(text: str) -> str:
     return "".join(out).strip()
 
 
+#: Fence tag carrying a node's first-class artifacts (metadata only — the
+#: payloads live on disk and are served via the scoped artifact-file
+#: endpoint). Design: docs/design/flow-output-artifacts-mockup.html §2.
+TASKFLOW_ARTIFACT_VIS_TAG = "vis-flow-artifact"
+
+_ARTIFACT_FENCE_RE = re.compile(r"```vis-flow-artifact\s*\n[\s\S]*?```")
+
+
+def strip_artifact_fences(text: str) -> str:
+    """Remove ``vis-flow-artifact`` fences (artifact metadata is UI
+    protocol, not LLM material)."""
+    if not text or TASKFLOW_ARTIFACT_VIS_TAG not in text:
+        return text or ""
+    return _ARTIFACT_FENCE_RE.sub("", text).strip()
+
+
 # ---------------------------------------------------------------------------
 # Step marker operator
 # ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@ import { apiInterceptors } from '@/client/api';
 import { addFlow, getFlowById } from '@/client/api/flow';
 import type { IFlow } from '@/types/flow';
 import type {
+  ITaskflowArtifact,
   ITaskflowDSL,
   ITaskflowNode,
   ITaskflowNodeKind,
@@ -14,6 +15,7 @@ import type {
 } from '@/types/taskflow';
 
 export const TASKFLOW_STEP_VIS_TAG = 'vis-flow-step';
+export const TASKFLOW_ARTIFACT_VIS_TAG = 'vis-flow-artifact';
 
 /** Palette group order + colors (aligned with docs/design/taskflow-mockups). */
 export const TASKFLOW_GROUPS: Array<{ key: TaskflowGroup; color: string; bg: string }> = [
@@ -195,6 +197,53 @@ const VIS_BLOCK_RE = /```vis-[a-z0-9_-]*\s*\n[\s\S]*?```/g;
 export function stripVisBlocks(text: string): string {
   if (!text) return '';
   return text.replace(VIS_BLOCK_RE, '').trim();
+}
+
+/**
+ * Pull the node artifact metadata fence (```vis-flow-artifact … ```) out of
+ * a node section's content. Returns the artifacts plus the content with the
+ * fences removed (the fence is UI protocol, never visible text).
+ */
+const ARTIFACT_BLOCK_RE = /```vis-flow-artifact\s*\n([\s\S]*?)```/g;
+
+export function extractFlowArtifacts(content: string): {
+  artifacts: ITaskflowArtifact[];
+  clean: string;
+} {
+  if (!content) return { artifacts: [], clean: '' };
+  if (!content.includes(TASKFLOW_ARTIFACT_VIS_TAG)) return { artifacts: [], clean: content };
+  const artifacts: ITaskflowArtifact[] = [];
+  for (const match of content.matchAll(ARTIFACT_BLOCK_RE)) {
+    try {
+      const parsed = JSON.parse(match[1].trim());
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (item && item.type === 'query' && item.query) {
+            // Query artifacts carry their payload inline (no on-disk path).
+            artifacts.push({
+              name: String(item.name || 'query'),
+              type: 'query',
+              path: '',
+              query: item.query,
+              row_count:
+                typeof item.row_count === 'number' ? item.row_count : undefined,
+            });
+          } else if (item && typeof item.path === 'string' && item.path) {
+            artifacts.push({
+              name: String(item.name || item.path.split('/').pop() || 'artifact'),
+              type: String(item.type || 'file'),
+              path: item.path,
+              size: typeof item.size === 'number' ? item.size : undefined,
+            });
+          }
+        }
+      }
+    } catch {
+      /* malformed fence: ignore */
+    }
+  }
+  const clean = content.replace(ARTIFACT_BLOCK_RE, '').trim();
+  return { artifacts, clean };
 }
 
 /**

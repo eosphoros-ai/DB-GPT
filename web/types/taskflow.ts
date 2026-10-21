@@ -126,6 +126,25 @@ export interface ITaskflowStepMarker {
   steps?: ITaskflowAgentStep[];
 }
 
+/** First-class artifact of a flow node (metadata only — the payload lives
+ *  on disk and is served via the scoped artifact-file endpoint). */
+export interface ITaskflowArtifact {
+  name: string;
+  type: string; // html | image | query | ...
+  path: string;
+  size?: number;
+  /** Inline SQL result payload for ``type === 'query'`` artifacts. */
+  query?: {
+    sql: string;
+    columns: string[];
+    rows: any[][];
+    row_count?: number;
+    truncated?: boolean;
+    db_name?: string;
+  };
+  row_count?: number;
+}
+
 /** A flow (or template) offered in the chat "+" menu. */
 export interface ITaskflowRef {
   uid?: string;

@@ -8,6 +8,7 @@ from dbgpt_app.operators.agent_runner import (
     AgentStepEvent,
     _build_resources_section,
     _build_skills_section,
+    _envelope_readable,
     _make_multi_db_sql_tool,
     build_user_message,
     get_agent_profile,
@@ -281,3 +282,41 @@ async def test_run_react_agent_end_to_end(monkeypatch):
     assert kinds[-1] == "answer"
     action_event = next(e for e in events if e.kind == "action")
     assert action_event.title == "sql_query"
+
+
+class TestEnvelopeReadable:
+    """Raw tool envelopes must never leak into the answer area as JSON."""
+
+    def test_text_chunks_salvaged(self):
+        env = json.dumps(
+            {
+                "chunks": [
+                    {"output_type": "code", "content": "import pandas as pd"},
+                    {"output_type": "text", "content": "N 143 MAX 80.9 MEAN 47.1"},
+                ]
+            }
+        )
+        assert _envelope_readable(env) == "N 143 MAX 80.9 MEAN 47.1"
+
+    def test_html_chunk_becomes_render_note(self):
+        env = json.dumps(
+            {
+                "chunks": [
+                    {
+                        "output_type": "text",
+                        "content": "✅ 渲染成功,请直接 terminate",
+                    },
+                    {
+                        "output_type": "html",
+                        "content": "<html></html>",
+                        "title": "沃尔玛周销报告",
+                    },
+                ]
+            }
+        )
+        assert _envelope_readable(env) == "HTML 报告已渲染: 沃尔玛周销报告"
+        assert _envelope_readable(env, zh=False) == "HTML report rendered: 沃尔玛周销报告"
+
+    def test_non_envelope_untouched(self):
+        assert _envelope_readable("正常结论文本") is None
+        assert _envelope_readable("") is None

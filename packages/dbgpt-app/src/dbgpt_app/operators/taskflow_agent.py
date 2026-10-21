@@ -12,9 +12,12 @@ by the regular ``TFStepMarkerOperator`` downstream, so the stored final text
 stays identical to other nodes.
 """
 
+import json
 import logging
+import os
 import re
-from typing import List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.core import LLMClient
@@ -32,8 +35,10 @@ from dbgpt.util.i18n_utils import _
 from .agent_runner import AgentStepEvent, run_react_agent
 from .taskflow import (
     SHARE_KEY_TASKFLOW_CONV_UID,
+    TASKFLOW_ARTIFACT_VIS_TAG,
     build_step_marker,
     get_step_event_queue,
+    strip_artifact_fences,
     strip_step_markers,
 )
 
@@ -183,7 +188,11 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
         self._step_label = step_label
 
     async def _join_func(self, question: str, *args) -> str:
-        data_parts = [strip_step_markers(a) for a in args if isinstance(a, str) and a]
+        data_parts = [
+            strip_artifact_fences(strip_step_markers(a))
+            for a in args
+            if isinstance(a, str) and a
+        ]
         upstream_sections = [
             ("上游节点", "data", part) for part in data_parts if part.strip()
         ]
@@ -198,6 +207,7 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
         trace_lines: List[str] = []
         trace_events: List[AgentStepEvent] = []
         fatal_errors: List[str] = []
+        conv_uid: Optional[str] = None
         queue = None
         try:
             conv_uid = await self.current_dag_context.get_from_share_data(
@@ -206,6 +216,59 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             queue = get_step_event_queue(conv_uid)
         except Exception:
             queue = None
+
+        # First-class artifacts captured from tool observations (html
+        # reports). Payloads are written to the session artifact dir and
+        # only metadata travels in the ``vis-flow-artifact`` fence.
+        artifacts: List[Dict[str, Any]] = []
+
+        async def _on_artifact(art: Dict[str, Any]) -> None:
+            if art.get("type") == "query" and art.get("content"):
+                # Query artifacts carry their payload inline (SQL + capped
+                # rows); nothing touches disk — the fence metadata below is
+                # enough for the flow UI to render and export the table.
+                stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                content = art["content"]
+                artifacts.append(
+                    {
+                        "name": f"query_{stamp}",
+                        "type": "query",
+                        "query": content,
+                        "row_count": (
+                            content.get("row_count")
+                            if isinstance(content, dict)
+                            else None
+                        ),
+                    }
+                )
+                return
+            if art.get("type") != "html" or not art.get("content"):
+                return
+            try:
+                from dbgpt.configs.model_config import PILOT_PATH
+
+                slug = re.sub(
+                    r"[^0-9A-Za-z\u4e00-\u9fff_-]+", "_", str(art.get("title") or "")
+                ).strip("_")[:40] or "report"
+                stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                dir_path = os.path.join(
+                    PILOT_PATH, "taskflow_artifacts", conv_uid or "default"
+                )
+                os.makedirs(dir_path, exist_ok=True)
+                name = f"{slug}_{stamp}.html"
+                path = os.path.join(dir_path, name)
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(art["content"])
+                artifacts.append(
+                    {
+                        "name": name,
+                        "type": "html",
+                        "path": path,
+                        "size": os.path.getsize(path),
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"write flow html artifact failed: {e}")
 
         async def _push_live() -> None:
             if queue is None or not self._step_id:
@@ -266,6 +329,7 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             llm_client=self.llm_client,
             system_app=self.system_app,
             on_step=_on_step,
+            on_artifact=_on_artifact,
             language="zh" if zh else "en",
         )
         # Provider-level fatal errors (billing/auth/rate-limit) surface as
@@ -281,4 +345,14 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
         # Final live frame: full trace + answer before the marker operator
         # emits the canonical success event.
         await _push_live()
+        if artifacts:
+            # Metadata fence rides inside the node content so the canonical
+            # marker (and stored history) keep the artifact chips; the
+            # frontend strips vis-* fences from the visible answer text.
+            fence = (
+                f"```{TASKFLOW_ARTIFACT_VIS_TAG}\n"
+                + json.dumps(artifacts, ensure_ascii=False)
+                + "\n```\n\n"
+            )
+            answer = (answer or "").rstrip() + "\n\n" + fence
         return answer

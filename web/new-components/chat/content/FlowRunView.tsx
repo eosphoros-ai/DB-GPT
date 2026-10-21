@@ -16,7 +16,10 @@ import {
   BarChartOutlined,
   BulbOutlined,
   DatabaseOutlined,
+  DownloadOutlined,
   FileTextOutlined,
+  Html5Outlined,
+  LoadingOutlined,
   NodeIndexOutlined,
   RobotOutlined,
 } from '@ant-design/icons';
@@ -39,6 +42,7 @@ export interface FlowRunRow {
   content?: string;
   kind?: string;
   steps?: ITaskflowAgentStep[];
+  artifacts?: ITaskflowArtifact[];
 }
 
 interface FlowRunViewProps {
@@ -67,6 +71,13 @@ function fmtDur(ms?: number): string {
 function fmtElapsed(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function fmtSize(bytes?: number): string {
+  if (bytes == null) return '';
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
 }
 
 function isEmptyDetail(d?: string): boolean {
@@ -198,6 +209,7 @@ const NodeCard: React.FC<{
   }, [defaultOpen]);
   const isFail = row.status === 'failed';
   const isRun = row.status === 'running';
+  const isPending = row.status === 'pending' || !row.status;
   const stepsRef = useMemo(() => row.steps ?? [], [row.steps]);
   const steps = stepsRef;
   const toolCount = steps.filter(s => s.kind === 'action').length;
@@ -245,14 +257,25 @@ const NodeCard: React.FC<{
         >
           {kindIcon(row.kind)}
         </span>
-        <span className='text-[13px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] truncate'>{row.title}</span>
+        <span
+          className={cls(
+            'text-[13px] font-semibold truncate',
+            isPending ? 'text-[#8b8b84] dark:text-[#7c7972]' : 'text-[#1c1c1a] dark:text-[#e6e4df]',
+          )}
+        >
+          {row.title}
+        </span>
         {isFail ? (
           <span className='h-[19px] px-2 rounded-md text-[11px] inline-flex items-center gap-1 bg-[#fef2f2] dark:bg-red-950/30 text-[#b91c1c] dark:text-red-400 border border-[#fecaca] dark:border-red-900 flex-none'>
             ✕ {t('flow_status_failed', '失败')}
           </span>
         ) : isRun ? (
           <span className='h-[19px] px-2 rounded-md text-[11px] inline-flex items-center gap-1 bg-[#fffbeb] dark:bg-amber-950/30 text-[#b45309] dark:text-amber-400 border border-[#fde68a] dark:border-amber-900 flex-none'>
-            ● {t('flow_status_running', '运行中')}
+            <LoadingOutlined spin className='text-[10px]' /> {t('flow_status_running', '运行中')}
+          </span>
+        ) : isPending ? (
+          <span className='h-[19px] px-2 rounded-md text-[11px] inline-flex items-center gap-1 bg-[#f4f4f0] dark:bg-white/[.06] text-[#8b8b84] dark:text-[#7c7972] border border-dashed border-[#e6e6e2] dark:border-[#2a2925] flex-none'>
+            ○ {t('flow_status_pending', '待执行')}
           </span>
         ) : (
           <span className='h-[19px] px-2 rounded-md text-[11px] inline-flex items-center gap-1 bg-[#f0fdf4] dark:bg-emerald-950/30 text-[#15803d] dark:text-emerald-400 border border-[#bbf7d0] dark:border-emerald-900 flex-none'>
