@@ -117,15 +117,18 @@ class Service(
             else request.db_type
         )
         desc = ""
+        display_name = None
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
                 self.datasource_manager._create_parameters(request)
             )
             persisted_state = connector_params.persisted_state()
             desc = request.description
+            display_name = request.display_name
         else:
             persisted_state = model_to_dict(request)
             desc = request.comment
+            display_name = request.display_name
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
@@ -133,6 +136,7 @@ class Service(
                 persisted_state["ext_config"], ensure_ascii=False
             )
         persisted_state["comment"] = desc
+        persisted_state["display_name"] = display_name
         db_name = persisted_state.get("db_name")
         datasource = self._dao.get_by_names(db_name)
         if datasource:
@@ -181,15 +185,18 @@ class Service(
             else request.db_type
         )
         desc = ""
+        display_name = None
         if isinstance(request, DatasourceCreateRequest):
             connector_params: BaseDatasourceParameters = (
                 self.datasource_manager._create_parameters(request)
             )
             persisted_state = connector_params.persisted_state()
             desc = request.description
+            display_name = request.display_name
         else:
             persisted_state = model_to_dict(request)
             desc = request.comment
+            display_name = request.display_name
         if "ext_config" in persisted_state and isinstance(
             persisted_state["ext_config"], dict
         ):
@@ -197,6 +204,7 @@ class Service(
                 persisted_state["ext_config"], ensure_ascii=False
             )
         persisted_state["comment"] = desc
+        persisted_state["display_name"] = display_name
         db_name = persisted_state.get("db_name")
         if not db_name:
             raise HTTPException(status_code=400, detail="datasource name is required")
@@ -271,6 +279,7 @@ class Service(
             type=res.db_type,
             params=param_dict,
             description=res.comment,
+            display_name=res.display_name,
             id=res.id,
             db_name=res.db_name,
             gmt_created=res.gmt_created,
