@@ -9,6 +9,7 @@ import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
   ApiOutlined,
+  AppstoreOutlined,
   BookOutlined,
   CheckOutlined,
   ClockCircleOutlined,
@@ -61,7 +62,6 @@ function SideBar() {
   const { pathname } = router;
   const isSettingsActive =
     pathname.startsWith('/construct/app') ||
-    pathname.startsWith('/construct/flow') ||
     pathname.startsWith('/construct/prompt') ||
     pathname.startsWith('/construct/dbgpts') ||
     pathname.startsWith('/construct/models') ||
@@ -194,15 +194,8 @@ function SideBar() {
     localStorage.setItem(STORAGE_LANG_KEY, language);
   }, [i18n]);
 
-  const functions = useMemo(() => {
-    const items: RouteItem[] = [
-      {
-        key: 'skills',
-        name: t('skills'),
-        isActive: pathname.startsWith('/construct/skills'),
-        IconComponent: ThunderboltOutlined,
-        path: '/construct/skills',
-      },
+  const nav = useMemo(() => {
+    const main: RouteItem[] = [
       {
         key: 'dashboards',
         name: i18n.language === 'en' ? 'Dashboards' : '看板',
@@ -218,18 +211,38 @@ function SideBar() {
         path: '/construct/database',
       },
       {
+        key: 'knowledge',
+        name: t('knowledge'),
+        isActive: pathname.startsWith('/construct/knowledge'),
+        IconComponent: BookOutlined,
+        path: '/construct/knowledge',
+      },
+    ];
+    // AntWork-style "extensions" cluster: capability add-ons sit under a
+    // labeled header as indented, rule-lined entries.
+    const extensions: RouteItem[] = [
+      {
+        key: 'skills',
+        name: t('skills'),
+        isActive: pathname.startsWith('/construct/skills'),
+        IconComponent: ThunderboltOutlined,
+        path: '/construct/skills',
+      },
+      {
         key: 'connectors',
         name: t('connectors'),
         isActive: pathname.startsWith('/construct/connectors'),
         IconComponent: ApiOutlined,
         path: '/construct/connectors',
       },
+    ];
+    const tail: RouteItem[] = [
       {
-        key: 'knowledge',
-        name: t('knowledge'),
-        isActive: pathname.startsWith('/construct/knowledge'),
-        IconComponent: BookOutlined,
-        path: '/construct/knowledge',
+        key: 'workflow',
+        name: t('sidebar_workflow'),
+        isActive: pathname.startsWith('/construct/flow'),
+        IconComponent: ApartmentOutlined,
+        path: '/construct/flow',
       },
       {
         key: 'scheduled-tasks',
@@ -239,8 +252,27 @@ function SideBar() {
         path: '/construct/scheduled-tasks',
       },
     ];
-    return items;
+    return { main, extensions, tail, all: [...extensions, ...main, ...tail] };
   }, [t, pathname, i18n.language]);
+
+  const navRow = (item: RouteItem) => (
+    <Link
+      href={item.path}
+      className={cls(
+        'flex items-center w-full h-12 px-3 rounded-[10px] cursor-pointer text-[15px] font-medium',
+        'text-[#1c1c1a] dark:text-[#e6e4df] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors',
+        {
+          'bg-[#ececea] dark:bg-white/[.10]': item.isActive,
+        },
+      )}
+      key={item.key}
+    >
+      <div className='mr-3 w-6 flex justify-center text-[17px] text-[#3f3f3a] dark:text-[#a8a59e]'>
+        <item.IconComponent />
+      </div>
+      <span className='truncate'>{item.name}</span>
+    </Link>
+  );
 
   const settingsContent = (
     <div className='w-56 py-1'>
@@ -260,21 +292,6 @@ function SideBar() {
       >
         <Icon component={ModelSvg} className='text-cyan-500' />
         <span>{t('model_provider_config')}</span>
-      </div>
-      <div
-        onClick={() => {
-          router.push('/construct/flow');
-          setSettingsOpen(false);
-        }}
-        className={cls(
-          'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
-          {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname.startsWith('/construct/flow'),
-          },
-        )}
-      >
-        <ApartmentOutlined className='text-green-500' />
-        <span>{t('awel_workflow')}</span>
       </div>
       <div
         onClick={() => {
@@ -403,7 +420,7 @@ function SideBar() {
             </Tooltip>
           </div>
           <div className='flex flex-col gap-1.5 items-center'>
-            {functions.map(item => (
+            {nav.all.map(item => (
               <Link key={item.key} className='h-12 flex items-center' href={item.path}>
                 <Tooltip title={item.name} placement='right'>
                   <div className={smallMenuItemStyle(item.isActive)}>
@@ -470,27 +487,37 @@ function SideBar() {
         <span>{t('new_task')}</span>
       </button>
 
-      {/* Functions */}
-      <div className='flex flex-col gap-1'>
-        {functions.map(item => (
-          <Link
-            href={item.path}
-            className={cls(
-              'flex items-center w-full h-12 px-3 rounded-[10px] cursor-pointer text-[15px] font-medium',
-              'text-[#1c1c1a] dark:text-[#e6e4df] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors',
-              {
-                'bg-[#ececea] dark:bg-white/[.10]': item.isActive,
-              },
-            )}
-            key={item.key}
-          >
-            <div className='mr-3 w-6 flex justify-center text-[17px] text-[#3f3f3a] dark:text-[#a8a59e]'>
-              <item.IconComponent />
-            </div>
-            <span className='truncate'>{item.name}</span>
-          </Link>
-        ))}
+      {/* Extensions cluster (AntWork-style labeled group) */}
+      <div className='mt-2 flex flex-col gap-1'>
+        <div className='flex items-center h-12 px-3 text-[15px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+          <div className='mr-3 w-6 flex justify-center text-[17px] text-[#3f3f3a] dark:text-[#a8a59e]'>
+            <AppstoreOutlined />
+          </div>
+          <span>{t('sidebar_extensions')}</span>
+        </div>
+        <div className='ml-[27px] pl-2 border-l border-[#e3e3dd] dark:border-white/[.10] flex flex-col gap-0.5'>
+          {nav.extensions.map(item => (
+            <Link
+              href={item.path}
+              className={cls(
+                'flex items-center w-full h-10 px-3 rounded-[8px] cursor-pointer text-[14px] font-medium',
+                'text-[#3f3f3a] dark:text-[#d4d2cc] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors',
+                {
+                  'bg-[#ececea] text-[#1c1c1a] dark:bg-white/[.10] dark:text-[#e6e4df]': item.isActive,
+                },
+              )}
+              key={item.key}
+            >
+              <span className='truncate'>{item.name}</span>
+            </Link>
+          ))}
+        </div>
       </div>
+
+      {/* Functions */}
+      <div className='flex flex-col gap-1'>{nav.main.map(item => navRow(item))}</div>
+
+      <div className='flex flex-col gap-1 mt-1'>{nav.tail.map(item => navRow(item))}</div>
 
       {/* All Tasks Section */}
       <div className='mt-4 mb-2 px-1'>

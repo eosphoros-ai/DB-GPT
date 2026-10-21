@@ -312,6 +312,8 @@ export const CommonZh: Resources['translation'] = {
   app_in_mind: '没有心仪的应用？去',
   explore: '探索广场',
   new_task: '新任务',
+  sidebar_workflow: '工作流',
+  sidebar_extensions: '扩展',
   new_task_interrupt_title: '中断当前任务？',
   new_task_interrupt_content: '当前任务正在执行中，新建任务将中断执行并丢弃当前进度。',
   new_task_interrupt_ok: '中断并新建',
