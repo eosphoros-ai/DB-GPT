@@ -5,7 +5,10 @@ sidebar_position: 1
 
 # Show Cases
 
-DB-GPT helps teams turn data questions into SQL, code, charts, dashboards, reports, and knowledge-driven workflows.
+DB-GPT helps teams turn data questions into SQL, code, charts, dashboards, reports, and
+knowledge-driven workflows. Every scenario below was run end-to-end on the **pi harness
+engine** against the bundled `Walmart_Sales` sample database; the screenshots are taken
+from the live product UI in light theme.
 
 ## What you can do with DB-GPT
 
@@ -54,80 +57,50 @@ DB-GPT helps teams turn data questions into SQL, code, charts, dashboards, repor
   </div>
 </div>
 
-## Featured scenarios
+## Scenario 1 — Natural-language fetching with first-class query artifacts
 
-<img
-  src="/img/agentic_data/dbgpt_playgroup.png"
-  alt="DB-GPT welcome page"
-  className="showcase-hero-image"
-/>
+Ask a business question in plain language; the pi engine grounds itself in the schema
+(table list, column stats), writes the SQL and executes it. Every result set arrives as a
+**query artifact**: the executed statement in a copyable, editable SQL block, the result
+table with row-count and truncation notes, and one-click CSV / Excel export.
 
-## End-to-end examples
+![A pi-engine fetch turn: SQL block plus result table artifact with exports](/img/showcases/en/fig-01-fetch.png)
 
-### 1. Agentic data analysis
+- Schema-grounding queries are artifacts too, so the whole reasoning chain stays
+  inspectable after the turn ends.
+- **Edit & re-run** lets you tweak the generated SQL and re-execute it in place; the
+  re-run endpoint re-checks conversation and datasource ownership and enforces read-only
+  SQL, so the convenience never widens the trust boundary.
+- Result payloads travel capped for display (2000 rows) but exports always carry the full
+  set.
 
-Use DB-GPT to plan tasks, break work into steps, call tools, and complete end-to-end analysis workflows.
+## Scenario 2 — Autonomous profiling into a visual HTML report
 
-<img
-  src="/img/agentic_data/csv_data_analysis.jpg"
-  alt="Agentic data analysis showcase"
-  className="showcase-hero-image"
-/>
+One message ("profile this database and give me a visual report") lets the pi engine plan
+its own probes — row counts, date ranges, top stores, concentration — and then render a
+styled HTML analysis report through the HTML tool. The report lands as an **HTML
+artifact**: a card in the conversation, a thumbnail in the artifact rail, and an in-place
+preview panel.
 
-### 2. Autonomous SQL + code execution
+![A pi-engine analysis turn with the HTML report open in the rail preview](/img/showcases/en/fig-02-report.png)
 
-Generate SQL and code to query data, clean datasets, compute metrics, and produce outputs.
+- Artifacts persist with the conversation: reload the page and the timeline, the trace
+  and every artifact card rebuild identically.
+- The Trace entry opens the synthesized span tree (thoughts, tool actions, terminate) for
+  pi runs, so long autonomous turns stay auditable.
+- High-risk tool calls in any scenario raise the same confirmation dock, with
+  session/always memory keyed by class of call.
 
-<div className="showcase-dual-grid">
-  <img
-    src="/img/agentic_data/agentic_gen_code.png"
-    alt="Agentic code generation"
-    className="showcase-hero-image"
-  />
-  <img
-    src="/img/agentic_data/agentic_sql_query.png"
-    alt="SQL query generation"
-    className="showcase-hero-image"
-  />
-</div>
+## Scenario 3 — Repeatable analysis as a declared workflow
 
-### 3. Intelligent database insight and analysis report
+When a analysis pattern recurs, promote it from ad-hoc chat to a **TaskFlow workflow**: a
+declared DAG of focused agent nodes (grounding → fetch → pivot → numeric review →
+report), each with its own tool boundary and output contract. Node runs reuse the same
+harness contract, so workflow runs produce the same query artifacts, HTML reports and
+traces as the scenarios above. See the [Workflow guide](../workflow/introduction.md).
 
-Built on the new Agentic architecture, the engine autonomously performs data diagnostics, feature extraction, and multi-dimensional analysis, generating exclusive analysis reports with beautiful charts and deep insights that make data value crystal clear.
+## Pick your engine
 
-<img
-  src="/img/agentic_data/agentic_db_data.jpg"
-  alt="Intelligent database insight and analysis report"
-  className="showcase-hero-image"
-/>
-
-### 4. Skills-driven extensibility
-
-Package domain knowledge, analysis methods, and execution workflows into reusable skills.
-
-<div className="showcase-dual-grid">
-  <img
-    src="/img/skill/import_github_skill_.png"
-    alt="Import GitHub skill"
-    className="showcase-hero-image"
-  />
-  <img
-    src="/img/agentic_data/agent_browse_use.jpg"
-    alt="Agent browse skill usage"
-    className="showcase-hero-image"
-  />
-</div>
-
-### 5. Sandboxed execution
-
-Run code and tools in isolated environments for safer, more reliable analysis.
-
-<img
-  src="/img/agentic_data/sanbox_running.png"
-  alt="Sandboxed execution"
-  className="showcase-hero-image"
-/>
-
-## Outcome
-
-DB-GPT is designed for teams that want to go beyond simple chatbots and build practical AI + Data systems that can connect to data, reason with tools, and deliver reports, insights, and action.
+All scenarios run on whichever harness engine you select — the built-in DB-GPT loop or
+the external pi harness — with identical tools, approvals and artifacts. Engine choice,
+availability and the extension contract live in the [Harness guide](../harness/introduction.md).
