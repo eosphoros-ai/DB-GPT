@@ -365,8 +365,8 @@ export const CommonEn = {
   double_click_open: 'Double click the DingTalk icon to open',
   construct: ' Construct App',
   Setting: 'Setting',
-  agent_engine: 'Agent Engine',
-  agent_engine_hint: 'Decides which execution engine runs agent tasks from the home page. Applies to new tasks.',
+  agent_engine: 'Harness',
+  agent_engine_hint: 'Decides which harness runs agent tasks from the home page. Applies to new tasks.',
   agent_engine_unavailable: 'unavailable',
   tool_approval: 'Tool Approval',
   // ── high-risk approval dock ──

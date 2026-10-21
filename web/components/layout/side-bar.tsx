@@ -182,11 +182,11 @@ function SideBar() {
         message.success(
           engine === 'dbgpt'
             ? i18n.language === 'en'
-              ? 'Agent engine: DB-GPT (built-in)'
-              : 'Agent 引擎：DB-GPT（内置）'
+              ? 'Harness: DB-GPT (built-in)'
+              : 'Harness：DB-GPT（内置）'
             : i18n.language === 'en'
-              ? `Agent engine: ${engine}`
-              : `Agent 引擎：${engine}`,
+              ? `Harness: ${engine}`
+              : `Harness：${engine}`,
         );
       });
     },

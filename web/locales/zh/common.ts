@@ -370,8 +370,8 @@ export const CommonZh: Resources['translation'] = {
   double_click_open: '双击钉钉打开',
   construct: '应用管理',
   Setting: '设置',
-  agent_engine: 'Agent 引擎',
-  agent_engine_hint: '决定首页任务由哪个执行引擎运行，对新任务生效。',
+  agent_engine: 'Harness',
+  agent_engine_hint: '决定首页任务由哪个 harness 运行，对新任务生效。',
   agent_engine_unavailable: '不可用',
   tool_approval: '高危拦截策略',
   // ── 高危审批卡 ──

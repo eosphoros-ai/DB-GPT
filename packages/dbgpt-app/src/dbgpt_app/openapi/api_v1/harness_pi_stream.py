@@ -62,6 +62,11 @@ CFG = Config()
 #: Engines addressable from the frontend; dsh lands in P1.
 KNOWN_ENGINES = ("dbgpt", "pi", "dsh")
 
+#: Project default engine for fresh deployments (no persisted preference).
+#: Availability-gated in ``_default_harness_engine``: falls back to the
+#: built-in dbgpt engine when the pi CLI is missing.
+DEFAULT_HARNESS_ENGINE = "pi"
+
 #: Env var names driving the pi subprocess (no TOML yet).
 ENV_PI_CLI = "DBGPT_HARNESS_PI_CLI"
 ENV_PI_NODE = "DBGPT_HARNESS_PI_NODE"
@@ -132,14 +137,27 @@ def get_harness_engine_pref() -> str:
         pass
     except Exception:
         logger.warning("failed to read harness engine pref", exc_info=True)
-    return "dbgpt"
+    return _default_harness_engine()
+
+
+def _default_harness_engine() -> str:
+    """Effective engine for fresh deployments (no persisted preference).
+
+    The project default is the pi harness; it is availability-gated so a
+    bare deployment without the pi CLI never starts into a dead engine
+    and silently runs on the built-in dbgpt engine instead.
+    """
+    if DEFAULT_HARNESS_ENGINE == "pi":
+        ok, _detail = _probe_pi_cli()
+        return "pi" if ok else "dbgpt"
+    return DEFAULT_HARNESS_ENGINE
 
 
 def set_harness_engine_pref(engine: str) -> str:
     """Persist the engine preference; returns effective value."""
     normalized = str(engine or "").strip().lower()
     if normalized not in KNOWN_ENGINES:
-        normalized = "dbgpt"
+        normalized = _default_harness_engine()
     try:
         with open(_pref_file(), "w", encoding="utf-8") as f:
             json.dump({"engine": normalized}, f)
@@ -332,7 +350,9 @@ def register_harness_endpoints(router: Any) -> None:
         payload: Dict[str, Any] = Body(),
     ) -> Result:
         """Persist the harness engine preference."""
-        engine = set_harness_engine_pref(str(payload.get("engine") or "dbgpt"))
+        engine = set_harness_engine_pref(
+            str(payload.get("engine") or DEFAULT_HARNESS_ENGINE)
+        )
         return Result.succ({"engine": engine})
 
     @router.post("/v1/chat/harness/tool/run", response_model=Result)
