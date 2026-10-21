@@ -308,6 +308,18 @@ const sidebars = {
 
     {
       type: "category",
+      label: "Harness",
+      collapsed: false,
+      collapsible: true,
+      items: [
+        { type: "doc", id: "harness/introduction", label: "What is a Harness?" },
+        { type: "doc", id: "harness/usage", label: "Using the Harness" },
+        { type: "doc", id: "harness/extending", label: "Extending: Adding an Engine" },
+      ],
+    },
+
+    {
+      type: "category",
       label: "Knowledge",
       collapsed: true,
       collapsible: true,

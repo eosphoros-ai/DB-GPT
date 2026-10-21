@@ -486,5 +486,9 @@
   "sidebar.sidebarDevelopmentGuide.doc.Custom Knowledge Source Connector": {
     "message": "自定义知识数据源连接器",
     "description": "The label for the doc item Custom Knowledge Source Connector in sidebar sidebarDevelopmentGuide, linking to the doc agents/modules/resource/knowledge-source-connector"
+  },
+  "sidebar.docsSidebar.category.Harness": {
+    "message": "Harness 执行引擎",
+    "description": "Harness docs category"
   }
 }
