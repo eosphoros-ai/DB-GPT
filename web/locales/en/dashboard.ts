@@ -893,6 +893,7 @@ const DashboardEn: Record<string, string> = {
   '已略过 {{value0}} 条空值或无效数值。': 'Skipped {{value0}} null or invalid values.',
   '气泡面积表示数值，位置为国家标记点。{{value0}}':
     'Bubble area represents the value; positions are country markers. {{value0}}',
+  '未匹配 {{value0}} 项：{{value1}}。': '{{value0}} unmatched items: {{value1}}.',
   国家地理分布: 'Geographic distribution by country',
   ' · 无数据': ' · No data',
   '数值均为 0，无法分配面积': 'All values are zero; areas cannot be allocated',
@@ -908,6 +909,7 @@ const DashboardEn: Record<string, string> = {
   '从零开始、统一量程的雷达图': 'Radar chart with a zero baseline and shared scale',
   '量程 0 —': 'Range 0 —',
   '各维度使用相同单位与量程。{{value0}}': 'All dimensions share the same unit and scale. {{value0}}',
+  '显示前 12 / {{value0}} 个维度。': 'Showing the first 12 of {{value0}} dimensions.',
   各项增减及累计总额瀑布图: 'Waterfall showing changes and cumulative total',
   '；累计': '; cumulative',
   '最后一列为累计合计。已核对一致的末尾合计不会重复累加。':

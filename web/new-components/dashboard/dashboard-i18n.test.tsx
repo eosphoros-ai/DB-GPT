@@ -5,6 +5,7 @@ import i18next from 'i18next';
 import { useState } from 'react';
 import { initReactI18next } from 'react-i18next';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import DashboardExtendedChart from './DashboardExtendedChart';
 import DashboardGenerationCard from './DashboardGenerationCard';
 import { dashboardDateLocale, dashboardText, useDashboardTranslation } from './dashboard-i18n';
 
@@ -72,6 +73,34 @@ describe('Dashboard locale integration', () => {
     });
     expect(screen.getByText('销售计划')).toBeTruthy();
     expect(screen.getByText(/SQL has not been generated/)).toBeTruthy();
+  });
+
+  it('switches nested chart notices while preserving data labels and counts', async () => {
+    render(
+      <>
+        <DashboardExtendedChart
+          visualization='geo_map'
+          data={[{ label: '自定义地区', value: 5 }]}
+          categoryField='label'
+          valueField='value'
+          format={String}
+        />
+        <DashboardExtendedChart
+          visualization='radar'
+          data={Array.from({ length: 13 }, (_, index) => ({ label: `Dimension ${index}`, value: index + 1 }))}
+          categoryField='label'
+          valueField='value'
+          format={String}
+        />
+      </>,
+    );
+    expect(screen.getByText(/未匹配 1 项：自定义地区。/)).toBeTruthy();
+    expect(screen.getByText(/显示前 12 \/ 13 个维度。/)).toBeTruthy();
+    await act(async () => {
+      await i18next.changeLanguage('en');
+    });
+    expect(screen.getByText(/1 unmatched items: 自定义地区\./)).toBeTruthy();
+    expect(screen.getByText(/Showing the first 12 of 13 dimensions\./)).toBeTruthy();
   });
 
   it('preserves interpolation fields in every English message', () => {

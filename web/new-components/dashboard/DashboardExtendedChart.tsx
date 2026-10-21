@@ -78,7 +78,10 @@ export default function DashboardExtendedChart({
     const largest = Math.max(...matched.map(item => item.value), 1);
     note += dt('气泡面积表示数值，位置为国家标记点。{{value0}}', {
       value0: unmatched.length
-        ? `未匹配 ${unmatched.length} 项：${unmatched.map(item => item.label).join('、')}。`
+        ? dt('未匹配 {{value0}} 项：{{value1}}。', {
+            value0: unmatched.length,
+            value1: unmatched.map(item => item.label).join('、'),
+          })
         : '',
     });
     plot = (
@@ -235,7 +238,7 @@ export default function DashboardExtendedChart({
       </svg>
     );
     note += dt('各维度使用相同单位与量程。{{value0}}', {
-      value0: rows.length > 12 ? `显示前 12 / ${rows.length} 个维度。` : '',
+      value0: rows.length > 12 ? dt('显示前 12 / {{value0}} 个维度。', { value0: rows.length }) : '',
     });
   } else {
     const steps = waterfallSeries(rows);
