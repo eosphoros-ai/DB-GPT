@@ -9,20 +9,23 @@ import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
 import Icon, {
   ApartmentOutlined,
   ApiOutlined,
+  BookOutlined,
   CheckOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
+  DatabaseOutlined,
   DeleteOutlined,
+  FormOutlined,
   GlobalOutlined,
   LineChartOutlined,
   LoadingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageOutlined,
-  PlusOutlined,
   RightOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { Popover, Skeleton, Tooltip, message } from 'antd';
 import cls from 'classnames';
@@ -37,34 +40,18 @@ import { useTranslation } from 'react-i18next';
 type RouteItem = {
   key: string;
   name: string;
-  iconSrc: string;
-  activeIconSrc?: string;
   path: string;
   isActive?: boolean;
-  /** Antd icon fallback when no picture asset exists for the route. */
-  IconComponent?: React.ComponentType<{ className?: string }>;
+  /** Monochrome outline icon (AntWork-style sidebar language). */
+  IconComponent: React.ComponentType<{ className?: string }>;
 };
 
 function smallMenuItemStyle(active?: boolean) {
-  return `flex items-center justify-center mx-auto rounded w-14 h-14 text-xl hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors cursor-pointer ${
-    active ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 shadow-sm' : ''
+  return `flex items-center justify-center mx-auto rounded-[10px] w-12 h-12 text-[17px] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors cursor-pointer ${
+    active
+      ? 'bg-[#ececea] text-[#1c1c1a] dark:bg-white/[.10] dark:text-[#e6e4df]'
+      : 'text-[#55554f] dark:text-[#a8a59e]'
   }`;
-}
-
-function SidebarPictureIcon({
-  src,
-  activeSrc,
-  active,
-  alt,
-  size = 32,
-}: {
-  src: string;
-  activeSrc?: string;
-  active?: boolean;
-  alt: string;
-  size?: number;
-}) {
-  return <Image src={active && activeSrc ? activeSrc : src} alt={alt} width={size} height={size} />;
 }
 
 function SideBar() {
@@ -210,26 +197,16 @@ function SideBar() {
   const functions = useMemo(() => {
     const items: RouteItem[] = [
       {
-        key: 'explore',
-        name: t('explore'),
-        isActive: pathname === '/',
-        iconSrc: '/pictures/explore.png',
-        activeIconSrc: '/pictures/explore_active.png',
-        path: '/',
-      },
-      {
         key: 'skills',
         name: t('skills'),
         isActive: pathname.startsWith('/construct/skills'),
-        iconSrc: '/pictures/skills.svg',
-        activeIconSrc: '/pictures/skills_active.svg',
+        IconComponent: ThunderboltOutlined,
         path: '/construct/skills',
       },
       {
         key: 'dashboards',
         name: i18n.language === 'en' ? 'Dashboards' : '看板',
         isActive: pathname.startsWith('/dashboards'),
-        iconSrc: '',
         IconComponent: DashboardOutlined,
         path: '/dashboards',
       },
@@ -237,32 +214,28 @@ function SideBar() {
         key: 'datasources',
         name: t('datasources'),
         isActive: pathname.startsWith('/construct/database'),
-        iconSrc: '/pictures/datasource.svg',
-        activeIconSrc: '/pictures/datasource_active.svg',
+        IconComponent: DatabaseOutlined,
         path: '/construct/database',
       },
       {
         key: 'connectors',
         name: t('connectors'),
         isActive: pathname.startsWith('/construct/connectors'),
-        iconSrc: '',
-        IconComponent: props => <ApiOutlined className='text-violet-500' {...props} />,
+        IconComponent: ApiOutlined,
         path: '/construct/connectors',
       },
       {
         key: 'knowledge',
         name: t('knowledge'),
         isActive: pathname.startsWith('/construct/knowledge'),
-        iconSrc: '/pictures/knowledge_sidebar.svg',
-        activeIconSrc: '/pictures/knowledge_sidebar_active.svg',
+        IconComponent: BookOutlined,
         path: '/construct/knowledge',
       },
       {
         key: 'scheduled-tasks',
         name: t('scheduled_tasks'),
         isActive: pathname.startsWith('/construct/scheduled-tasks'),
-        iconSrc: '',
-        IconComponent: props => <ClockCircleOutlined className='text-teal-500' {...props} />,
+        IconComponent: ClockCircleOutlined,
         path: '/construct/scheduled-tasks',
       },
     ];
@@ -341,8 +314,7 @@ function SideBar() {
         className={cls(
           'flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors',
           {
-            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400':
-              pathname === '/approval-settings',
+            'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': pathname === '/approval-settings',
           },
         )}
       >
@@ -415,7 +387,7 @@ function SideBar() {
   // ============ COLLAPSED SIDEBAR ============
   if (!isMenuExpand) {
     return (
-      <div className='flex flex-col justify-between pt-4 h-screen bg-bar dark:bg-[#232734] animate-fade animate-duration-300'>
+      <div className='flex flex-col justify-between pt-4 h-screen bg-[#f7f7f5] dark:bg-[#232734] animate-fade animate-duration-300'>
         <div>
           <div className='flex flex-col items-center pb-2'>
             <Link href='/' className='flex justify-center items-center pb-2'>
@@ -430,21 +402,12 @@ function SideBar() {
               </div>
             </Tooltip>
           </div>
-          <div className='flex flex-col gap-4 items-center'>
+          <div className='flex flex-col gap-1.5 items-center'>
             {functions.map(item => (
               <Link key={item.key} className='h-12 flex items-center' href={item.path}>
                 <Tooltip title={item.name} placement='right'>
                   <div className={smallMenuItemStyle(item.isActive)}>
-                    {item.IconComponent ? (
-                      <item.IconComponent />
-                    ) : (
-                      <SidebarPictureIcon
-                        src={item.iconSrc}
-                        activeSrc={item.activeIconSrc}
-                        active={item.isActive}
-                        alt={`${item.key}_icon`}
-                      />
-                    )}
+                    <item.IconComponent />
                   </div>
                 </Tooltip>
               </Link>
@@ -480,7 +443,7 @@ function SideBar() {
 
   // ============ EXPANDED SIDEBAR ============
   return (
-    <div className='flex flex-col h-screen w-[240px] min-w-[240px] px-4 pt-4 bg-bar dark:bg-[#232734] animate-fade animate-duration-300'>
+    <div className='flex flex-col h-screen w-[240px] min-w-[240px] px-4 pt-4 bg-[#f7f7f5] dark:bg-[#232734] animate-fade animate-duration-300'>
       {/* LOGO + Collapse Toggle */}
       <div className='flex items-center justify-between p-2 pb-4'>
         <Link href='/' className='flex items-center'>
@@ -496,13 +459,14 @@ function SideBar() {
         </Tooltip>
       </div>
 
-      {/* New Task Button */}
+      {/* New Task — AntWork-style plain nav row: outline pen glyph + label,
+          no heavy filled pill, keeps the chrome quiet and monochrome. */}
       <button
         type='button'
         onClick={handleStartNewTask}
-        className='flex items-center justify-center gap-2 w-full px-4 py-2.5 mb-4 border-0 bg-black dark:bg-white dark:text-black text-white rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer'
+        className='flex items-center gap-3 w-full h-12 px-3 mb-3 rounded-[10px] text-[15px] font-medium text-[#1c1c1a] dark:text-[#e6e4df] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors cursor-pointer'
       >
-        <PlusOutlined className='text-xs' />
+        <FormOutlined className='text-[17px] text-[#3f3f3a] dark:text-[#a8a59e]' />
         <span>{t('new_task')}</span>
       </button>
 
@@ -512,26 +476,18 @@ function SideBar() {
           <Link
             href={item.path}
             className={cls(
-              'flex items-center w-full h-12 px-4 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:rounded-xl',
+              'flex items-center w-full h-12 px-3 rounded-[10px] cursor-pointer text-[15px] font-medium',
+              'text-[#1c1c1a] dark:text-[#e6e4df] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors',
               {
-                'bg-blue-50 rounded-xl text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': item.isActive,
+                'bg-[#ececea] dark:bg-white/[.10]': item.isActive,
               },
             )}
             key={item.key}
           >
-            <div className='mr-3 w-8 flex justify-center text-xl'>
-              {item.IconComponent ? (
-                <item.IconComponent />
-              ) : (
-                <SidebarPictureIcon
-                  src={item.iconSrc}
-                  activeSrc={item.activeIconSrc}
-                  active={item.isActive}
-                  alt={`${item.key}_icon`}
-                />
-              )}
+            <div className='mr-3 w-6 flex justify-center text-[17px] text-[#3f3f3a] dark:text-[#a8a59e]'>
+              <item.IconComponent />
             </div>
-            <span className='text-sm'>{item.name}</span>
+            <span className='truncate'>{item.name}</span>
           </Link>
         ))}
       </div>
@@ -539,7 +495,7 @@ function SideBar() {
       {/* All Tasks Section */}
       <div className='mt-4 mb-2 px-1'>
         <div className='flex items-center justify-between'>
-          <span className='text-xs font-semibold text-gray-400 uppercase tracking-wider'>{t('all_tasks')}</span>
+          <span className='text-xs font-medium text-[#8b8b84] dark:text-[#7c7972]'>{t('all_tasks')}</span>
           <Link href='/conversations' className='inline-flex items-center'>
             <Tooltip title={t('view_all')}>
               <RightOutlined className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer transition-colors text-xs leading-none' />
@@ -558,17 +514,17 @@ function SideBar() {
               <Link
                 key={conv.conv_uid}
                 href={`/?id=${conv.conv_uid}`}
-                className='flex items-start gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-sm transition-colors group hover:bg-[#F1F5F9] dark:hover:bg-theme-dark'
+                className='flex items-start gap-3 px-3 py-2.5 rounded-[10px] cursor-pointer text-sm transition-colors group hover:bg-[#efefeb] dark:hover:bg-white/[.06]'
               >
                 {runningConvIds.includes(conv.conv_uid) ? (
-                  <span className='w-5 h-5 rounded-md bg-[#F1F5F9] dark:bg-white/10 border border-[#E2E8F0] dark:border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5'>
+                  <span className='w-5 h-5 rounded-md bg-[#f0f0ec] dark:bg-white/10 border border-[#e6e6e2] dark:border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5'>
                     <LoadingOutlined className='text-[11px] text-emerald-500' />
                   </span>
                 ) : (
-                  <MessageOutlined className='text-gray-400 flex-shrink-0 text-xs mt-1' />
+                  <MessageOutlined className='text-[#8b8b84] flex-shrink-0 text-xs mt-1' />
                 )}
                 <div className='flex-1 min-w-0'>
-                  <div className='font-medium truncate leading-5 text-gray-700 dark:text-gray-300'>
+                  <div className='font-medium truncate leading-5 text-[#3f3f3a] dark:text-[#d4d2cc]'>
                     {typeof conv.user_input === 'string'
                       ? conv.user_input.slice(0, 40) || 'New Conversation'
                       : 'New Conversation'}
@@ -610,29 +566,39 @@ function SideBar() {
         >
           <div
             className={cls(
-              'flex items-center w-full h-12 px-4 mb-2 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:rounded-xl',
-              { 'bg-blue-50 rounded-xl text-blue-600 dark:bg-blue-900/20 dark:text-blue-400': isSettingsActive },
+              'flex items-center w-full h-12 px-3 mb-2 rounded-[10px] cursor-pointer text-[15px] font-medium',
+              'text-[#1c1c1a] dark:text-[#e6e4df] hover:bg-[#efefeb] dark:hover:bg-white/[.06] transition-colors',
+              { 'bg-[#ececea] dark:bg-white/[.10]': isSettingsActive },
             )}
           >
-            <div className='mr-3 w-8 flex justify-center'>
-              <SettingOutlined className='text-xl' />
+            <div className='mr-3 w-6 flex justify-center text-[17px] text-[#3f3f3a] dark:text-[#a8a59e]'>
+              <SettingOutlined />
             </div>
-            <span className='text-sm'>{t('Setting')}</span>
+            <span>{t('Setting')}</span>
           </div>
         </Popover>
-        <div className='flex items-center justify-around py-4 mt-2 border-t border-dashed border-gray-200 dark:border-gray-700'>
+        <div className='flex items-center justify-around py-4 mt-2 border-t border-[#e6e6e2] dark:border-white/[.08]'>
           <Popover content={mode === 'dark' ? 'Light' : 'Dark'}>
-            <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleToggleTheme}>
+            <div
+              className='flex-1 flex items-center justify-center cursor-pointer text-[17px] text-[#8b8b84] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] transition-colors'
+              onClick={handleToggleTheme}
+            >
               {mode === 'dark' ? <Icon component={DarkSvg} /> : <Icon component={SunnySvg} />}
             </div>
           </Popover>
           <Popover content={t('language')}>
-            <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleChangeLang}>
+            <div
+              className='flex-1 flex items-center justify-center cursor-pointer text-[17px] text-[#8b8b84] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] transition-colors'
+              onClick={handleChangeLang}
+            >
               <GlobalOutlined />
             </div>
           </Popover>
           <Popover content={t(isMenuExpand ? 'Close_Sidebar' : 'Show_Sidebar')}>
-            <div className='flex-1 flex items-center justify-center cursor-pointer text-xl' onClick={handleToggleMenu}>
+            <div
+              className='flex-1 flex items-center justify-center cursor-pointer text-[17px] text-[#8b8b84] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] transition-colors'
+              onClick={handleToggleMenu}
+            >
               {isMenuExpand ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
             </div>
           </Popover>
