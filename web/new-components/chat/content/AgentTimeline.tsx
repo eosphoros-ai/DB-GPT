@@ -12,6 +12,7 @@
  *
  * Consumes the same `step.*` SSE data as ManusLeftPanel.
  */
+import { envelopeReadableText, extractEnvelopeObjects } from '@/utils/tool-envelope';
 import {
   BulbOutlined,
   CodeOutlined,
@@ -26,9 +27,10 @@ import {
 import cls from 'classnames';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import QueryArtifactBlock from './QueryArtifactBlock';
+import { resolveImageUrl } from './image-url';
 
 import MarkdownContext from '@/new-components/common/MarkdownContext';
-import { envelopeReadableText } from '@/utils/tool-envelope';
 
 // ── types ──────────────────────────────────────────────────────────────
 
@@ -45,6 +47,17 @@ interface TimelineBlock {
   /** collapsed-body content */
   input?: string;
   output?: string;
+  /** sql_query rows: structured result set rendered as the shared data card */
+  queryPayload?: {
+    sql?: string;
+    columns?: string[];
+    rows?: unknown[];
+    row_count?: number;
+    truncated?: boolean;
+    db_name?: string;
+  };
+  /** image payloads lifted out of tool-result envelopes (chart pngs) */
+  outputImages?: string[];
   /** accumulated thinking text (drives the live summary) */
   thought?: string;
   /** is this block still streaming? */
@@ -321,7 +334,27 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
                   {block.thought}
                 </pre>
               )}
-              {block.input && (
+              {block.queryPayload && (
+                <div className='space-y-2'>
+                  <QueryArtifactBlock
+                    payload={block.queryPayload}
+                    fileName={`query_${(block.id || '').slice(-8) || 'result'}`}
+                  />
+                  {block.outputImages && block.outputImages.length > 0 && (
+                    <div className='flex flex-wrap gap-2'>
+                      {block.outputImages.map(src => (
+                        <img
+                          key={src}
+                          src={resolveImageUrl(src)}
+                          alt='chart'
+                          className='w-40 h-28 object-cover rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-white dark:bg-[#111217]'
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!block.queryPayload && block.input && (
                 <div>
                   <div className='text-[11px] text-gray-400 uppercase tracking-wide mb-0.5'>Input</div>
                   <pre className='text-xs leading-5 bg-[#efefeb] dark:bg-white/[.04] rounded-md p-2 text-[#55554f] dark:text-[#a8a59e] whitespace-pre-wrap break-all overflow-x-auto'>
@@ -329,7 +362,7 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
                   </pre>
                 </div>
               )}
-              {block.output && (
+              {!block.queryPayload && block.output && (
                 <div>
                   <div className='text-[11px] text-gray-400 uppercase tracking-wide mb-0.5'>Output</div>
                   {prettyOutput ? (
@@ -340,6 +373,18 @@ function FlowRow({ block, sub = false }: { block: TimelineBlock; sub?: boolean }
                     <pre className='text-xs leading-5 bg-[#efefeb] dark:bg-white/[.04] rounded-md p-2 text-[#55554f] dark:text-[#a8a59e] whitespace-pre-wrap break-all overflow-x-auto max-h-56 overflow-y-auto'>
                       {block.output}
                     </pre>
+                  )}
+                  {block.outputImages && block.outputImages.length > 0 && (
+                    <div className='flex flex-wrap gap-2 mt-2'>
+                      {block.outputImages.map(src => (
+                        <img
+                          key={src}
+                          src={resolveImageUrl(src)}
+                          alt='chart'
+                          className='w-40 h-28 object-cover rounded-md border border-[#e6e6e2] dark:border-[#2a2925]'
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -375,9 +420,7 @@ function QuestionRecap({ block }: { block: TimelineBlock }) {
     <div className='my-2 rounded-xl border border-[#e6e6e2] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(20,20,15,.05)] dark:border-[#33353b] dark:bg-[#1e1f24]'>
       {pairs.map((p, i) => (
         <div key={i} className={i > 0 ? 'mt-3' : undefined}>
-          <div className='text-[13.5px] font-medium leading-6 text-[#1c1c1a] dark:text-[#e6e4df]'>
-            {p.question}
-          </div>
+          <div className='text-[13.5px] font-medium leading-6 text-[#1c1c1a] dark:text-[#e6e4df]'>{p.question}</div>
           <div className='mt-0.5 text-[13px] leading-6 text-[#8b8b84] dark:text-[#7c7972]'>
             {p.answer ? p.answer : block.rejected ? t('timeline_q_skipped') : t('timeline_q_awaiting')}
           </div>
@@ -446,6 +489,23 @@ export function stepsToTimelineBlocks(
       .filter(o => o.output_type === 'text' && o.content != null)
       .map(o => String(o.content))
       .join('\n');
+    // sql_query result sets ride as structured query chunks; the timeline
+    // renders them with the same data card as the artifact surface.
+    const queryChunk = rawOutputs.find(o => o.output_type === 'query' && o.content && typeof o.content === 'object');
+    const queryPayload = queryChunk ? (queryChunk.content as NonNullable<TimelineBlock['queryPayload']>) : undefined;
+    // Tool-result envelopes must never leak as raw JSON: lift image payloads
+    // to thumbnails and keep only readable chunk text + residue.
+    let outputImages: string[] | undefined;
+    let sanitizedOutput = outputText;
+    if (outputText.includes('"chunks"')) {
+      const imgs = extractEnvelopeObjects(outputText).flatMap(e =>
+        (e.chunks || [])
+          .filter((c: any) => c && c.output_type === 'image' && typeof c.content === 'string')
+          .map((c: any) => String(c.content)),
+      );
+      if (imgs.length) outputImages = imgs;
+      sanitizedOutput = envelopeReadableText(outputText) ?? outputText;
+    }
     const status: TimelineBlock['status'] =
       step.status === 'completed' || step.status === 'done'
         ? 'success'
@@ -526,7 +586,9 @@ export function stepsToTimelineBlocks(
             ? step.actionInput
             : JSON.stringify(step.actionInput, null, 2)
           : undefined,
-      output: outputText || undefined,
+      output: sanitizedOutput || undefined,
+      queryPayload,
+      outputImages,
       streaming: status === 'running',
     } as TimelineBlock;
   });
