@@ -129,7 +129,7 @@ const sidebars = {
       items: [
         { type: "doc", id: "dbgpts/introduction", label: "What are dbgpts?" },
         { type: "doc", id: "modules/rag", label: "RAG Overview" },
-        { type: "doc", id: "awel/awel", label: "What is AWEL?" },
+        { type: "doc", id: "workflow/introduction", label: "What is a Workflow?" },
         { type: "doc", id: "agents/introduction/introduction", label: "Agents Overview" },
         { type: "doc", id: "modules/connections", label: "Connections Overview" },
         { type: "doc", id: "modules/observability", label: "Observability Overview" },
@@ -282,96 +282,27 @@ const sidebars = {
 
     {
       type: "category",
-      label: "AWEL",
-      collapsed: true,
+      label: "Workflow",
+      collapsed: false,
       collapsible: true,
       items: [
-        { type: "doc", id: "awel/awel", label: "What is AWEL?" },
-        { type: "doc", id: "awel/why_use_awel" },
-        { type: "doc", id: "awel/get_started" },
+        { type: "doc", id: "workflow/introduction", label: "What is a Workflow?" },
+        { type: "doc", id: "workflow/quickstart", label: "Quickstart" },
+        { type: "doc", id: "workflow/editor", label: "The Flow Editor" },
         {
           type: "category",
-          label: "Cookbook",
+          label: "Node Reference",
           collapsed: true,
-          link: {
-            type: "generated-index",
-            description: "Example AWEL workflows for common use cases.",
-            slug: "awel/cookbook",
-          },
           items: [
-            { type: "doc", id: "awel/cookbook/quickstart_basic_awel_workflow" },
-            { type: "doc", id: "awel/cookbook/multi_round_chat_withllm" },
-            { type: "doc", id: "awel/cookbook/first_rag_with_awel" },
-            { type: "doc", id: "awel/cookbook/write_your_chat_database" },
+            { type: "doc", id: "workflow/nodes/overview", label: "Node Kinds & Contract" },
+            { type: "doc", id: "workflow/nodes/agent", label: "Agent Node" },
+            { type: "doc", id: "workflow/nodes/data-entry", label: "Data Entry (file_data)" },
+            { type: "doc", id: "workflow/nodes/human-confirm", label: "Confirmation Gates" },
           ],
         },
-        {
-          type: "category",
-          label: "Tutorial",
-          collapsed: true,
-          link: {
-            type: "generated-index",
-            description: "Step-by-step AWEL tutorial from basics to advanced patterns.",
-            slug: "awel/tutorial",
-          },
-          items: [
-            {
-              type: "category",
-              label: "1. Getting Started",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "awel/awel_tutorial/getting_started/1.1_hello_world" },
-                { type: "doc", id: "awel/awel_tutorial/getting_started/1.2_how_works" },
-                { type: "doc", id: "awel/awel_tutorial/getting_started/1.3_custom_operator" },
-              ],
-            },
-            {
-              type: "category",
-              label: "2. Basic Syntax",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.1_map_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.2_reduce_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.3_join_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.4_branch_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.5_streamify_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.6_unstreamify_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.7_transform_stream_operator" },
-                { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.8_input_operator" },
-              ],
-            },
-            {
-              type: "category",
-              label: "3. Network Programming",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "awel/awel_tutorial/network_program/3.1_http_trigger" },
-                { type: "doc", id: "awel/awel_tutorial/network_program/3.2_http_trigger_get" },
-                { type: "doc", id: "awel/awel_tutorial/network_program/3.3_http_trigger_post" },
-                { type: "doc", id: "awel/awel_tutorial/network_program/3.4_http_trigger_streaming" },
-              ],
-            },
-            {
-              type: "category",
-              label: "4. Advanced Guide",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "awel/awel_tutorial/advanced_guide/4.1_lifecycle" },
-              ],
-            },
-            {
-              type: "category",
-              label: "5. Templates",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "awel/awel_tutorial/templates/Embedding" },
-                { type: "doc", id: "awel/awel_tutorial/templates/Knowledge_Graph" },
-                { type: "doc", id: "awel/awel_tutorial/templates/Hybrid_Workflow" },
-              ],
-            },
-          ],
-        },
-        { type: "doc", id: "application/awel", label: "AWEL in Application" },
+        { type: "doc", id: "workflow/custom-operator", label: "Custom Operators" },
+        { type: "doc", id: "workflow/runs-and-artifacts", label: "Runs & Artifacts" },
+        { type: "doc", id: "workflow/troubleshooting", label: "Troubleshooting" },
       ],
     },
 
@@ -626,7 +557,6 @@ const sidebars = {
       items: [
         { type: "doc", id: "application/prompts", label: "Prompts" },
         { type: "doc", id: "application/llms", label: "LLMs" },
-        { type: "doc", id: "application/awel", label: "Use Data App With AWEL" },
         { type: "doc", id: "modules/benchmark", label: "Benchmark" },
       ],
     },
@@ -638,363 +568,24 @@ const sidebars = {
 
 
   sidebarAwel: [
-    { type: "doc", id: "awel/awel", label: "What is AWEL?" },
-    { type: "doc", id: "awel/why_use_awel" },
-    { type: "doc", id: "awel/get_started" },
+    { type: "doc", id: "workflow/introduction", label: "What is a Workflow?" },
+    { type: "doc", id: "workflow/quickstart", label: "Quickstart" },
+    { type: "doc", id: "workflow/editor", label: "The Flow Editor" },
     {
       type: "category",
-      label: "Cookbook",
-      collapsed: false,
-      collapsible: false,
-      link: {
-        type: "generated-index",
-        description: "Example AWEL workflows for common use cases.",
-        slug: "awel/cookbook",
-      },
-      items: [
-        { type: "doc", id: "awel/cookbook/quickstart_basic_awel_workflow" },
-        { type: "doc", id: "awel/cookbook/multi_round_chat_withllm" },
-        { type: "doc", id: "awel/cookbook/first_rag_with_awel" },
-        { type: "doc", id: "awel/cookbook/write_your_chat_database" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Tutorial",
-      collapsed: false,
-      collapsible: false,
-      link: {
-        type: "generated-index",
-        description: "Step-by-step AWEL tutorial from basics to advanced patterns.",
-        slug: "awel/tutorial",
-      },
-      items: [
-        {
-          type: "category",
-          label: "1. Getting Started",
-          collapsed: false,
-          collapsible: false,
-          items: [
-            { type: "doc", id: "awel/awel_tutorial/getting_started/1.1_hello_world" },
-            { type: "doc", id: "awel/awel_tutorial/getting_started/1.2_how_works" },
-            { type: "doc", id: "awel/awel_tutorial/getting_started/1.3_custom_operator" },
-          ],
-        },
-        {
-          type: "category",
-          label: "2. Basic Syntax",
-          collapsed: false,
-          collapsible: false,
-          items: [
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.1_map_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.2_reduce_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.3_join_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.4_branch_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.5_streamify_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.6_unstreamify_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.7_transform_stream_operator" },
-            { type: "doc", id: "awel/awel_tutorial/basic_syntax/2.8_input_operator" },
-          ],
-        },
-        {
-          type: "category",
-          label: "3. Network Programming",
-          collapsed: false,
-          collapsible: false,
-          items: [
-            { type: "doc", id: "awel/awel_tutorial/network_program/3.1_http_trigger" },
-            { type: "doc", id: "awel/awel_tutorial/network_program/3.2_http_trigger_get" },
-            { type: "doc", id: "awel/awel_tutorial/network_program/3.3_http_trigger_post" },
-            { type: "doc", id: "awel/awel_tutorial/network_program/3.4_http_trigger_streaming" },
-          ],
-        },
-        {
-          type: "category",
-          label: "4. Advanced Guide",
-          collapsed: false,
-          collapsible: false,
-          items: [
-            { type: "doc", id: "awel/awel_tutorial/advanced_guide/4.1_lifecycle" },
-          ],
-        },
-        {
-          type: "category",
-          label: "5. Templates",
-          collapsed: false,
-          collapsible: false,
-          items: [
-            { type: "doc", id: "awel/awel_tutorial/templates/Embedding" },
-            { type: "doc", id: "awel/awel_tutorial/templates/Knowledge_Graph" },
-            { type: "doc", id: "awel/awel_tutorial/templates/Hybrid_Workflow" },
-          ],
-        },
-      ],
-    },
-    { type: "doc", id: "application/awel", label: "AWEL in Application" },
-  ],
-
-  sidebarKnowledge: [
-    {
-      type: "category",
-      label: "Principles",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "design/kb_index_principles", label: "Knowledge Base Indexing" },
-        { type: "doc", id: "design/agentic_rag_principles", label: "Agentic RAG Conversation" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Usage Manual",
-      collapsed: false,
-      collapsible: true,
-      link: {
-        type: "doc",
-        id: "getting-started/web-ui/knowledge-base",
-      },
-      items: [
-        {
-          type: "doc",
-          id: "getting-started/web-ui/knowledge-base",
-          label: "Knowledge Base",
-        },
-        {
-          type: "doc",
-          id: "getting-started/web-ui/external-datasources",
-          label: "External Data Sources",
-        },
-        {
-          type: "doc",
-          id: "getting-started/web-ui/llm-wiki",
-          label: "LLM-Wiki",
-        },
-      ],
-    },
-    { type: "doc", id: "modules/rag", label: "RAG Overview" },
-    { type: "doc", id: "application/graph_rag", label: "GraphRAG" },
-  ],
-
-  sidebarTools: [
-    { type: "doc", id: "agents/introduction/tools", label: "Tools Overview" },
-    {
-      type: "category",
-      label: "Built-in tools",
-      collapsed: false,
-      collapsible: true,
-      items: [
-        { type: "doc", id: "agents/modules/resource/tools", label: "Overview" },
-        { type: "doc", id: "agents/modules/resource/tools/load-skill", label: "load_skill" },
-        { type: "doc", id: "agents/modules/resource/tools/code-interpreter", label: "code_interpreter" },
-        { type: "doc", id: "agents/modules/resource/tools/shell-interpreter", label: "shell_interpreter" },
-        { type: "doc", id: "agents/modules/resource/tools/sql-query", label: "sql_query" },
-        { type: "doc", id: "agents/modules/resource/tools/html-interpreter", label: "html_interpreter" },
-      ],
-    },
-    { type: "doc", id: "application/prompts", label: "Prompts" },
-  ],
-
-  sidebarModels: [
-    { type: "doc", id: "modules/smmf", label: "SMMF Overview" },
-    { type: "doc", id: "application/llms", label: "LLMs" },
-    { type: "doc", id: "application/advanced_tutorial/smmf", label: "Advanced SMMF" },
-    {
-      type: "category",
-      label: "Model Service Deployment",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "installation/model_service/stand_alone" },
-        { type: "doc", id: "installation/model_service/cluster" },
-        { type: "doc", id: "installation/model_service/cluster_ha" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Inference Backends",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "installation/advanced_usage/More_proxyllms" },
-        { type: "doc", id: "installation/advanced_usage/ollama" },
-        { type: "doc", id: "installation/advanced_usage/vLLM_inference" },
-        { type: "doc", id: "installation/advanced_usage/mlx_inference" },
-        { type: "doc", id: "installation/advanced_usage/Llamacpp_server" },
-        { type: "doc", id: "installation/advanced_usage/OpenAI_SDK_call" },
-        { type: "doc", id: "installation/advanced_usage/multimodal" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Fine Tuning",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "modules/fine_tuning" },
-        { type: "doc", id: "application/fine_tuning_manual/text_to_sql" },
-        { type: "doc", id: "application/fine_tuning_manual/dbgpt_hub" },
-      ],
-    },
-  ],
-
-  sidebarDevelopmentGuide: [
-    { type: "doc", id: "design/dashboard" },
-    {
-      type: "category",
-      label: "Agents",
+      label: "Node Reference",
       collapsed: true,
       items: [
-        { type: "doc", id: "agents/introduction/introduction", label: "Data Driven Multi-Agents" },
-        { type: "doc", id: "agents/introduction/tools_use", label: "Tool Use" },
-        { type: "doc", id: "agents/introduction/planning", label: "Planning" },
-        { type: "doc", id: "agents/introduction/conversation", label: "Conversation" },
-        { type: "doc", id: "agents/introduction/custom_agents", label: "Custom Agents" },
-        {
-          type: "category",
-          label: "Agent Modules",
-          collapsed: true,
-          items: [
-            {
-              type: "category",
-              label: "Profile",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "agents/modules/profile/profile" },
-                { type: "doc", id: "agents/modules/profile/profile_creation" },
-                { type: "doc", id: "agents/modules/profile/profile_to_prompt" },
-                { type: "doc", id: "agents/modules/profile/profile_dynamic" },
-              ],
-            },
-            {
-              type: "category",
-              label: "Memory",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "agents/modules/memory/memory" },
-                { type: "doc", id: "agents/modules/memory/sensory_memory" },
-                { type: "doc", id: "agents/modules/memory/short_term_memory" },
-                { type: "doc", id: "agents/modules/memory/long_term_memory" },
-                { type: "doc", id: "agents/modules/memory/hybrid_memory" },
-              ],
-            },
-            {
-              type: "category",
-              label: "Plan",
-              collapsed: true,
-              items: [{ type: "doc", id: "agents/modules/plan/plan" }],
-            },
-            {
-              type: "category",
-              label: "Action",
-              collapsed: true,
-              items: [{ type: "doc", id: "agents/modules/action/action" }],
-            },
-            {
-              type: "category",
-              label: "Resource",
-              collapsed: true,
-              items: [
-                { type: "doc", id: "agents/modules/resource/resource" },
-                { type: "doc", id: "agents/modules/resource/tools" },
-                {
-                  type: "doc",
-                  id: "agents/modules/resource/knowledge-source-connector",
-                  label: "Custom Knowledge Source Connector",
-                },
-                { type: "doc", id: "agents/modules/resource/database" },
-                { type: "doc", id: "agents/modules/resource/knowledge" },
-                { type: "doc", id: "agents/modules/resource/pack" },
-              ],
-            },
-          ],
-        },
+        { type: "doc", id: "workflow/nodes/overview", label: "Node Kinds & Contract" },
+        { type: "doc", id: "workflow/nodes/agent", label: "Agent Node" },
+        { type: "doc", id: "workflow/nodes/data-entry", label: "Data Entry (file_data)" },
+        { type: "doc", id: "workflow/nodes/human-confirm", label: "Confirmation Gates" },
       ],
     },
+    { type: "doc", id: "workflow/custom-operator", label: "Custom Operators" },
+    { type: "doc", id: "workflow/runs-and-artifacts", label: "Runs & Artifacts" },
+    { type: "doc", id: "workflow/troubleshooting", label: "Troubleshooting" },
   ],
-
-  sidebarReference: [
-    {
-      type: "category",
-      label: "API Reference",
-      collapsed: false,
-      collapsible: false,
-      link: { type: "generated-index", slug: "api" },
-      items: [
-        { type: "doc", id: "api/introduction" },
-        { type: "doc", id: "api/chat" },
-        { type: "doc", id: "api/app" },
-        { type: "doc", id: "api/flow" },
-        { type: "doc", id: "api/knowledge" },
-        { type: "doc", id: "api/datasource" },
-        { type: "doc", id: "api/evaluation" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Config Reference",
-      collapsed: false,
-      collapsible: false,
-      link: {
-        type: "generated-index",
-        title: "Config Reference",
-        description: "All system configurable parameters and their detailed descriptions",
-        slug: "/config/config-reference",
-      },
-      items: [{ type: "autogenerated", dirName: "config-reference" }],
-    },
-    {
-      type: "category",
-      label: "CLI & Advanced",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        { type: "doc", id: "application/advanced_tutorial/cli" },
-        { type: "doc", id: "application/advanced_tutorial/api" },
-      ],
-    },
-    { type: "doc", id: "modules/visual", label: "Visual" },
-    { type: "doc", id: "modules/eval", label: "Evaluation" },
-  ],
-
-  sidebarHelp: [
-    {
-      type: "category",
-      label: "FAQ",
-      collapsed: false,
-      items: [
-        { type: "doc", id: "faq/install" },
-        { type: "doc", id: "faq/llm" },
-        { type: "doc", id: "faq/kbqa" },
-      ],
-    },
-    {
-      type: "category",
-      label: "ChangeLog",
-      collapsed: false,
-      items: [
-        { type: "doc", id: "changelog/doc" },
-        { type: "doc", id: "changelog/Released_V0.8.2" },
-        { type: "doc", id: "changelog/Released_V0.8.1" },
-        { type: "doc", id: "changelog/Released_V0.8.0" },
-        { type: "doc", id: "changelog/Released_V0.6.0" },
-        { type: "doc", id: "changelog/Released_V0.5.0" },
-      ],
-    },
-    {
-      type: "category",
-      label: "Upgrade",
-      collapsed: false,
-      items: [
-        { type: "doc", id: "upgrade/v0.8.2" },
-        { type: "doc", id: "upgrade/v0.8.1" },
-        { type: "doc", id: "upgrade/v0.8.0" },
-        { type: "doc", id: "upgrade/v0.6.0" },
-        { type: "doc", id: "upgrade/v0.5.1" },
-        { type: "doc", id: "upgrade/v0.5.0" },
-      ],
-    },
-  ],
-
   tutorials: ["tutorials/index"],
 };
 
@@ -1052,8 +643,8 @@ module.exports = {
     },
     {
       type: "category",
-      label: "AWEL",
-      collapsed: true,
+      label: "Workflow",
+      collapsed: false,
       collapsible: true,
       items: sidebars.sidebarAwel,
     },
