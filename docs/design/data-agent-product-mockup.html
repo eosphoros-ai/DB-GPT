@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB-GPT 数据 Agent · 整产品设计稿</title>
+<style>
+  :root{--primary:#0069fe;--gL:#00DAEF;--gR:#105EFF;--bg:#f7f7f7;--card:#fff;--line:#e8ebf0;--line2:#dfe3ea;
+    --txt:#1f2329;--txt2:#5a6472;--txt3:#8a94a3;--ok:#52C41A;--err:#FF4D4F;--warn:#FAAD14;
+    --grad:linear-gradient(90deg,#00DAEF,#105EFF);--sh:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);--sh2:0 8px 30px rgba(16,24,40,.10)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Josefin Sans",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.6}
+  /* mockup chrome */
+  .chrome{position:sticky;top:0;z-index:200;background:#111827;color:#e5e7eb}
+  .chrome .in{max-width:1500px;margin:0;padding:8px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .chrome .ttl{font-weight:700;font-size:13px;color:#fff;display:flex;align-items:center;gap:8px}
+  .chrome .ttl .dot{width:15px;height:15px;border-radius:5px;background:var(--grad)}
+  .vtabs{display:flex;gap:4px}
+  .vtabs button{background:#1f2937;border:1px solid #374151;color:#9ca3af;padding:4px 12px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600}
+  .vtabs button.on{background:var(--grad);border-color:transparent;color:#fff}
+  .chrome .right{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:11px;color:#9ca3af}
+  .toggle{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .sw{width:32px;height:18px;border-radius:20px;background:#374151;position:relative}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#9ca3af;transition:.2s}
+  .toggle.on .sw{background:var(--primary)}.toggle.on .sw::after{left:16px;background:#fff}
+  /* shell */
+  .app{display:flex;height:calc(100vh - 41px);min-height:640px}
+  .sidebar{width:230px;flex:none;background:#eef0f4;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 12px;overflow:auto;position:relative}
+  .newtask{background:#151622;color:#fff;border:0;border-radius:10px;padding:10px;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:14px}
+  .sitem{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:var(--txt2);font-size:13.5px;font-weight:600;cursor:pointer;margin-bottom:2px}
+  .sitem:hover{background:#e3e6ec;color:var(--txt)}
+  .sitem.on{background:#dbe9ff;color:var(--primary)}
+  .sitem .ic{width:18px;text-align:center}
+  .sitem .bdg{margin-left:auto;font-size:10px;background:var(--err);color:#fff;border-radius:9px;padding:0 6px;font-weight:700}
+  .ssec{font-size:10.5px;color:var(--txt3);font-weight:700;letter-spacing:.6px;margin:14px 6px 6px}
+  .task{padding:7px 10px;border-radius:8px;font-size:12.3px;color:var(--txt2);cursor:pointer;display:flex;gap:7px;align-items:center}
+  .task:hover{background:#e3e6ec}
+  .task .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .task .tm{font-size:10px;color:var(--txt3)}
+  .sfoot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line2)}
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+  .topbar{height:50px;flex:none;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 20px;gap:12px}
+  .topbar .tt{font-size:14px;font-weight:700}
+  .topbar .r{margin-left:auto;display:flex;align-items:center;gap:11px}
+  .credit{font-size:12px;background:#fff7e6;border:1px solid #ffe7ba;color:#d48806;border-radius:20px;padding:2px 10px;font-weight:700}
+  .ibtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;position:relative;color:var(--txt2);font-size:14px}
+  .ibtn .dotb{position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;border-radius:8px;background:var(--err);color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;padding:0 3px;border:2px solid #fff}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#31afff,#1677ff);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700}
+  .view{flex:1;display:none;overflow:auto}
+  .view.on{display:block}
+  .view.fill{overflow:hidden}
+  /* annotations */
+  .anno{display:none;position:absolute;z-index:60;align-items:flex-start;gap:6px;pointer-events:none}
+  body.anno-on .anno{display:flex}
+  .anno .num{flex:none;width:19px;height:19px;border-radius:50%;background:#ff7a45;color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;box-shadow:0 2px 8px rgba(255,122,69,.5)}
+  .anno .txt{background:#fff7f0;border:1px solid #ffd8bf;border-radius:8px;padding:5px 9px;font-size:11px;color:#a8480f;max-width:250px;line-height:1.45;box-shadow:var(--sh)}
+  /* HOME */
+  .home{display:flex;flex-direction:column;align-items:center;padding:34px 24px 20px;position:relative}
+  .hero-logo{width:64px;height:64px;border-radius:16px;background:#fff;box-shadow:var(--sh2);display:grid;place-items:center;font-size:30px;margin-bottom:14px}
+  .home h1{font-size:34px;font-weight:800;letter-spacing:.5px}
+  .home .slogan{color:var(--txt3);letter-spacing:3px;font-size:13px;margin:6px 0 26px}
+  .composer{width:100%;max-width:880px;background:#fff;border-radius:18px;box-shadow:var(--sh2);border:1px solid var(--line);padding:16px 16px 10px;position:relative}
+  .composer textarea{width:100%;border:0;outline:0;resize:none;font-family:inherit;font-size:15px;color:var(--txt);min-height:64px;background:transparent}
+  .composer textarea::placeholder{color:#b3bac5}
+  .crow{display:flex;align-items:center;gap:6px;padding-top:8px}
+  .cicon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--txt3);cursor:pointer;font-size:15px}
+  .cicon:hover{background:#f2f4f7;color:var(--txt)}
+  .modelchip{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:9px;padding:5px 11px;font-size:12.5px;font-weight:600;color:var(--txt2);cursor:pointer;margin-left:8px}
+  .modelchip .m{width:16px;height:16px;border-radius:50%;background:#151622;color:#fff;display:grid;place-items:center;font-size:9px;font-weight:800}
+  .routechip{margin-left:6px;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;background:#eef6ff;color:var(--primary);border:1px solid #cfe3ff;cursor:default}
+  .sendc{margin-left:auto;width:34px;height:34px;border-radius:50%;background:#e8ebf0;color:#fff;display:grid;place-items:center;font-size:15px;cursor:pointer}
+  .sendc.act{background:var(--grad)}
+  /* scenario tabs */
+  .scenwrap{width:100%;max-width:880px;margin-top:26px;position:relative}
+  .scenhead{display:flex;align-items:center;gap:9px;color:var(--txt3);font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:12px}
+  .scenhead::before,.scenhead::after{content:"";flex:1;height:1px;background:var(--line2)}
+  .stabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .stab{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:11px;border:1px solid var(--line2);background:#fff;cursor:pointer;font-size:13px;font-weight:700;color:var(--txt2);transition:.15s}
+  .stab:hover{border-color:#c9d3e0}
+  .stab.on{border-color:var(--primary);background:#eaf2ff;color:var(--primary);box-shadow:0 2px 10px rgba(0,105,254,.12)}
+  .stab .sic{font-size:15px}
+  .stab .cnt{font-size:10px;background:#f2f4f7;border-radius:9px;padding:0 6px;color:var(--txt3);font-weight:700}
+  .stab.on .cnt{background:#d6e6ff;color:var(--primary)}
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:800px){.qgrid{grid-template-columns:1fr}}
+  .qcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;transition:.15s;box-shadow:var(--sh)}
+  .qcard:hover{border-color:#cfe0ff;transform:translateY(-1px);box-shadow:var(--sh2)}
+  .qcard .qi{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:15px}
+  .qcard .qt{font-size:13px;font-weight:650}
+  .qcard .qd{font-size:11.5px;color:var(--txt3);margin-top:2px}
+  .qcard .go{margin-left:auto;color:var(--txt3);font-size:13px;align-self:center}
+  .homefoot{margin-top:30px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:6px 16px;font-size:11.5px;color:var(--txt2);box-shadow:var(--sh)}
+  /* WORKSPACE shared */
+  .ws{display:grid;grid-template-columns:236px 1fr 0;height:100%;transition:grid-template-columns .28s}
+  .ws.open{grid-template-columns:236px 1fr 340px}
+  .rail{border-right:1px solid var(--line);background:#fcfcfd;display:flex;flex-direction:column;overflow:hidden}
+  .rail .rh{padding:13px 15px 9px;font-size:11.5px;font-weight:750;color:var(--txt3);letter-spacing:.4px}
+  .tl{flex:1;overflow:auto;padding:0 11px 14px}
+  .tl-item{position:relative;padding:7px 9px 7px 24px;border-radius:9px;margin-bottom:2px}
+  .tl-item::before{content:"";position:absolute;left:10px;top:0;bottom:0;width:1.5px;background:var(--line2)}
+  .tl-item:first-child::before{top:13px}.tl-item:last-child::before{bottom:calc(100% - 13px)}
+  .tl-item .nd{position:absolute;left:5px;top:11px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--line2);z-index:1}
+  .tl-item.done .nd{border-color:var(--ok);background:var(--ok)}
+  .tl-item.run .nd{border-color:var(--primary);box-shadow:0 0 0 3px #0069fe22}
+  .tl-item .t{font-size:12.2px;font-weight:650}
+  .tl-item .d{font-size:10.8px;color:var(--txt3)}
+  .tl-item .tools{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}
+  .tl-item .tools span{font-size:9.5px;background:#eef1f6;color:var(--txt2);padding:1px 6px;border-radius:5px;font-family:monospace}
+  .center{display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#fff,#fbfcfe);position:relative}
+  .ws-head{padding:11px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.7)}
+  .ws-head .st{font-size:13.5px;font-weight:750;display:flex;align-items:center;gap:8px}
+  .ws-head .sic{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;font-size:13px}
+  .ws-head .ctx{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .tagchip{font-size:11px;padding:3px 9px;border-radius:8px;background:#f2f5f9;color:var(--txt2);border:1px solid var(--line);font-weight:600;cursor:pointer}
+  .tagchip.sem{background:#f3ecff;color:#7c3aed;border-color:#e4d6ff}
+  .conv{flex:1;overflow:auto;padding:20px 24px}
+  .msg{margin-bottom:18px;max-width:800px}
+  .msg.user{text-align:right}
+  .bubble-u{background:var(--grad);color:#fff;padding:9px 14px;border-radius:14px 14px 4px 14px;font-size:13.2px;display:inline-block;max-width:80%;box-shadow:0 3px 12px rgba(16,94,255,.22)}
+  .ai-row{display:flex;gap:10px;text-align:left}
+  .ai-av{width:27px;height:27px;border-radius:9px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:12px;flex:none;font-weight:800}
+  .ai-body{flex:1;min-width:0}
+  .ai-txt{font-size:13.2px;margin-bottom:7px}
+  .ai-txt b{color:var(--primary)}
+  .art{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;margin:8px 0;box-shadow:var(--sh)}
+  .art .ah{padding:7px 12px;background:#fafbfc;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;color:var(--txt2)}
+  .art .ah .ty{font-size:9.5px;padding:1px 7px;border-radius:5px;font-weight:700}
+  .ty.sql{background:#e8f4ff;color:#0069fe}.ty.chart{background:#eafbea;color:#389e0d}.ty.table{background:#fff3e6;color:#d46b08}.ty.report{background:#f3ecff;color:#7c3aed}.ty.diag{background:#fff1f0;color:#cf1322}
+  .art .ah .open{margin-left:auto;font-size:10.5px;color:var(--primary);cursor:pointer;font-weight:700}
+  .art .ab{padding:11px 13px}
+  pre.code{background:#0d1526;color:#c9d5e3;border-radius:9px;padding:11px 13px;font-family:"SF Mono",Menlo,monospace;font-size:11.5px;line-height:1.65;overflow:auto;margin:0}
+  pre.code .k{color:#ff7b9c}pre.code .s{color:#9be89b}pre.code .c{color:#6b7f99;font-style:italic}pre.code .f{color:#ffd479}
+  table.data{width:100%;border-collapse:collapse;font-size:12px}
+  table.data th,table.data td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left}
+  table.data th{background:#fafbfc;color:var(--txt3);font-weight:700;font-size:10.5px}
+  .num-cell{font-family:monospace;text-align:right}
+  .bars{display:flex;align-items:flex-end;gap:11px;height:110px;padding:6px 4px 0}
+  .bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end;height:100%}
+  .bars .bar{width:68%;background:var(--grad);border-radius:5px 5px 0 0;min-height:4px}
+  .bars .lb{font-size:10px;color:var(--txt3)}.bars .vl{font-size:10px;font-weight:700;color:var(--txt2)}
+  .concl{background:#f6ffed;border:1px solid #b7eb8f;border-radius:10px;padding:10px 13px;font-size:12.4px;color:#237804;margin-top:8px}
+  .concl b{color:#135200}
+  .dock{margin:0 24px 11px;border-radius:13px;border:1px solid #ffd591;background:#fffbf0;box-shadow:var(--sh2);overflow:hidden}
+  .dock .dh{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #ffe7ba;background:#fff7e6}
+  .dock .dh .ic{width:20px;height:20px;border-radius:6px;background:var(--warn);color:#fff;display:grid;place-items:center;font-size:11px}
+  .dock .dh .tt{font-size:12.5px;font-weight:750;color:#874d00}
+  .dock .dh .risk{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#fff1f0;color:#cf1322;border:1px solid #ffccc7}
+  .dock .db{padding:12px 14px}
+  .dock .desc{font-size:12.2px;color:#7a5b1e;margin-bottom:8px}
+  .dock .sqlmini{background:#0d1526;border-radius:8px;padding:8px 11px;font-family:monospace;font-size:11px;color:#c9d5e3;margin-bottom:10px}
+  .dock .sqlmini .k{color:#ff7b9c}.dock .sqlmini .s{color:#9be89b}
+  .dock .meta{display:flex;gap:14px;font-size:11px;color:#9a7b3f;margin-bottom:11px;flex-wrap:wrap}
+  .dock .meta b{color:#6b4e16}
+  .dock .acts{display:flex;gap:8px;align-items:center}
+  .dbtn{padding:6px 14px;border-radius:9px;font-size:12.2px;font-weight:700;cursor:pointer;border:1px solid var(--line2);background:#fff;color:var(--txt2)}
+  .dbtn.pri{background:var(--grad);border:0;color:#fff}
+  .dbtn.dan{background:#fff1f0;border-color:#ffccc7;color:#cf1322}
+  .dock .scope{margin-left:auto;font-size:10.5px;color:#9a7b3f;display:flex;align-items:center;gap:5px}
+  .dock .scope select{font-size:10.5px;padding:2px 6px;border-radius:6px;border:1px solid #ffe7ba;background:#fff;color:#874d00}
+  .ws-comp{padding:0 24px 16px}
+  .ws-comp .box{background:#fff;border:1px solid var(--line2);border-radius:13px;box-shadow:var(--sh);padding:4px}
+  .ws-comp textarea{width:100%;border:0;outline:0;resize:none;padding:8px 11px;font-size:13.2px;font-family:inherit;background:transparent;min-height:36px}
+  .ws-comp .cbar{display:flex;align-items:center;gap:6px;padding:3px 7px 5px}
+  .mini{font-size:11px;padding:4px 9px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--txt2);cursor:pointer;font-weight:600}
+  .mini.mode{background:#f3ecff;border-color:#e4d6ff;color:#7c3aed}
+  .sendmini{margin-left:auto;width:30px;height:30px;border-radius:9px;background:var(--grad);border:0;color:#fff;cursor:pointer;font-size:14px}
+  .statusline{padding:5px 24px;font-size:11px;color:var(--txt3);border-top:1px solid var(--line);background:#fcfcfd;display:flex;align-items:center;gap:7px}
+  .statusline .live{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .viewer{border-left:1px solid var(--line);background:#fff;overflow:hidden;display:flex;flex-direction:column}
+  .viewer .vh{padding:11px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:750}
+  .viewer .vh .x{margin-left:auto;cursor:pointer;color:var(--txt3)}
+  .viewer .vb{flex:1;overflow:auto;padding:14px}
+  .vtabs2{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+  .vtabs2 button{background:transparent;border:0;border-bottom:2px solid transparent;padding:6px 11px;font-size:12px;color:var(--txt2);cursor:pointer;font-weight:600;margin-bottom:-1px}
+  .vtabs2 button.on{color:var(--primary);border-bottom-color:var(--primary)}
+  .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f2f4f7;font-size:12px}
+  .kv .k{color:var(--txt3)}.kv .v{font-weight:650;font-family:monospace}
+  /* module pages (semantic / approval) */
+  .mod{padding:22px 26px;max-width:1180px;margin:0 auto}
+  .mod h2{font-size:19px;font-weight:800;display:flex;align-items:center;gap:9px}
+  .mod .sub{color:var(--txt2);font-size:12.5px;margin:4px 0 18px}
+  .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+  @media(max-width:900px){.mgrid{grid-template-columns:1fr 1fr}}
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px;box-shadow:var(--sh);cursor:pointer;transition:.15s}
+  .mcard:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+  .mcard .mh{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:750}
+  .mcard .st{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .st.pub{background:#eafbea;color:#389e0d}.st.draft{background:#fff7e6;color:#d48806}
+  .mcard .mm{display:flex;gap:14px;margin:10px 0 8px;font-size:11.5px;color:var(--txt3)}
+  .mcard .mm b{color:var(--txt);font-size:14px}
+  .mcard .tags{display:flex;gap:5px;flex-wrap:wrap}
+  .mcard .tags span{font-size:10px;background:#f2f5f9;border-radius:5px;padding:1px 7px;color:var(--txt2)}
+  .yamlprev{background:#0d1526;border-radius:9px;padding:10px 12px;font-family:monospace;font-size:10.8px;color:#c9d5e3;margin-top:9px;line-height:1.6;overflow:auto;max-height:120px;white-space:pre}
+  .yamlprev .key{color:#d2a8ff}.yamlprev .s{color:#9be89b}.yamlprev .c{color:#6b7f99}
+  .aprow{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;display:flex;gap:13px;align-items:center;box-shadow:var(--sh)}
+  .aprow .ric{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+  .aprow .tt{font-size:13px;font-weight:700}
+  .aprow .dd{font-size:11.5px;color:var(--txt3)}
+  .aprow .rt{margin-left:auto;text-align:right}
+  .aprow .risk{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px}
+  .risk.hi{background:#fff1f0;color:#cf1322;border:1px solid #ffccc7}
+  .risk.md{background:#fff7e6;color:#d48806;border:1px solid #ffe7ba}
+  .aprow .cd{font-size:10.5px;color:var(--txt3);margin-top:3px}
+  .ruletbl{width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .ruletbl th,.ruletbl td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left}
+  .ruletbl th{background:#fafbfc;color:var(--txt3);font-size:10.5px;font-weight:700}
+  .act-pill{font-size:10px;font-weight:700;padding:2px 9px;border-radius:6px}
+  .act-pill.auto{background:#eafbea;color:#389e0d}.act-pill.confirm{background:#fff7e6;color:#d48806}.act-pill.deny{background:#fff1f0;color:#cf1322}
+  /* scenario preset chip + popover + task tags */
+  .pchip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:9px;font-size:12.5px;font-weight:750;cursor:pointer;border:1px solid}
+  .pchip.q{background:#e8f4ff;color:#0069fe;border-color:#cfe3ff}
+  .pchip.a{background:#eafbea;color:#389e0d;border-color:#b7eb8f}
+  .pchip.o{background:#fff3e6;color:#d46b08;border-color:#ffd591}
+  .pchip.k{background:#f3ecff;color:#7c3aed;border-color:#e4d6ff}
+  .wname{font-size:12.5px;color:var(--txt2);font-weight:600}
+  .ppop{position:absolute;top:46px;left:16px;background:#fff;border:1px solid var(--line2);border-radius:11px;box-shadow:var(--sh2);padding:6px;z-index:90;display:none;min-width:180px}
+  .ppop.on{display:block}
+  .ppop .pt{font-size:10px;color:var(--txt3);font-weight:700;padding:3px 10px 5px;letter-spacing:.4px}
+  .ppop .pi{display:flex;gap:8px;align-items:center;padding:7px 10px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--txt2);cursor:pointer}
+  .ppop .pi:hover{background:#f2f5f9}
+  .ppop .pi.on{background:#eaf2ff;color:var(--primary)}
+  .stag{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;flex:none}
+  .stag.q{background:#dbe9ff;color:#0069fe}.stag.a{background:#dcf5dc;color:#389e0d}.stag.o{background:#ffe8cc;color:#d46b08}.stag.k{background:#ece0ff;color:#7c3aed}
+  .tfilter{display:flex;gap:4px;margin:0 4px 7px;flex-wrap:wrap}
+  .tfilter button{font-size:10px;padding:2px 9px;border-radius:12px;border:1px solid var(--line2);background:#fff;color:var(--txt3);cursor:pointer;font-weight:600}
+  .tfilter button.on{border-color:var(--primary);color:var(--primary);background:#eaf2ff}
+  .prevlabel{font-size:10px;color:#6b7280;background:#1f2937;border:1px dashed #4b5563;border-radius:6px;padding:2px 8px;margin-right:2px}
+</style>
+</head>
+<body class="anno-on">
+
+<div class="chrome"><div class="in">
+  <div class="ttl"><span class="dot"></span>DB-GPT 数据 Agent · 整产品设计稿 v1.0</div>
+  <span class="prevlabel">视图预览 · 非产品导航</span>
+  <div class="vtabs" id="vtabs">
+    <button data-v="home" class="on">首页 Explore</button>
+    <button data-v="query">智能问数</button>
+    <button data-v="analysis">智能分析</button>
+    <button data-v="ops">智能运维</button>
+    <button data-v="semantic">语义层</button>
+    <button data-v="approval">审批中心</button>
+  </div>
+  <div class="right"><span>亮色 · 贴现有 UI</span><div class="toggle on" id="annoToggle"><span>设计标注</span><span class="sw"></span></div></div>
+</div></div>
+
+<div class="app">
+  <!-- ===== sidebar (real UI) ===== -->
+  <div class="sidebar">
+    <button class="newtask">＋ New Task</button>
+    <div class="sitem on" data-go="home"><span class="ic">🧭</span>Explore</div>
+    <div class="sitem"><span class="ic">⚡</span>Skills</div>
+    <div class="sitem"><span class="ic">📊</span>Dashboards</div>
+    <div class="sitem"><span class="ic">🗄️</span>Datasources</div>
+    <div class="sitem"><span class="ic">🔌</span>Connectors</div>
+    <div class="sitem"><span class="ic">📚</span>Knowledge Base</div>
+    <div class="sitem" data-go="semantic"><span class="ic">🧬</span>语义层</div>
+    <div class="sitem" data-go="approval"><span class="ic">🛡️</span>审批中心<span class="bdg">2</span></div>
+    <div class="sitem"><span class="ic">⏰</span>Scheduled Tasks</div>
+    <div class="ssec">ALL TASKS</div>
+    <div class="tfilter" id="tfilter">
+      <button class="on" data-f="all">全部</button><button data-f="q">问数</button><button data-f="a">分析</button><button data-f="o">运维</button>
+    </div>
+    <div class="task" data-go="query" data-s="q"><span class="stag q">问数</span><span class="t">近30天各品类客单价</span><span class="tm">12m</span></div>
+    <div class="task" data-go="ops" data-s="o"><span class="stag o">运维</span><span class="t">订单库慢查询排障</span><span class="tm">1h</span></div>
+    <div class="task" data-go="analysis" data-s="a"><span class="stag a">分析</span><span class="t">Q3 区域销售复盘</span><span class="tm">1d</span></div>
+    <div class="anno" style="left:6px;top:600px"><span class="num">8</span><span class="txt">侧栏按对话列（非按场景）；每条带场景着色标签并可按场景过滤 —— 场景是对话的标签，不是入口</span></div>
+    <div class="sfoot"><div class="sitem"><span class="ic">⚙️</span>Setting</div></div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tt" id="topTitle">DB-GPT AI Data Assistant</div>
+      <div class="r"><span class="credit">⚡ 300</span><div class="ibtn">🔔</div><div class="ibtn" data-go="approval">🛡️<span class="dotb">2</span></div><div class="avatar">CK</div></div>
+    </div>
+
+    <!-- ================= HOME ================= -->
+    <section class="view on" id="home">
+      <div class="home">
+        <div class="hero-logo">🌀</div>
+        <h1>DB-GPT AI Data Assistant</h1>
+        <div class="slogan">Agentic Data Driven Decisions</div>
+        <div class="composer">
+          <textarea id="homeInput" placeholder="Ask a question about your database, upload a CSV, or generate a report..."></textarea>
+          <div class="crow">
+            <span class="cicon">＋</span><span class="cicon">⚡</span><span class="cicon">🔗</span><span class="cicon">📋</span><span class="cicon">📄</span>
+            <span class="modelchip"><span class="m">Z</span>glm-5.1 ▾</span>
+            <span class="routechip" id="routeChip">智能路由：待识别</span>
+            <span class="cicon">🎙</span>
+            <span class="sendc" id="homeSend">↑</span>
+          </div>
+        </div>
+        <div class="anno" style="right:-4px;top:64px"><span class="num">1</span><span class="txt">composer 保留现有形态，新增"智能路由"chip 实时显示识别到的场景；模型 chip 沿用现有 glm-5.1 选择器</span></div>
+
+        <div class="scenwrap">
+          <div class="scenhead">SCENARIOS · 选择场景或点击推荐问题</div>
+          <div class="stabs" id="stabs">
+            <div class="stab on" data-s="q"><span class="sic">🔍</span>智能问数<span class="cnt">3</span></div>
+            <div class="stab" data-s="a"><span class="sic">📊</span>智能分析<span class="cnt">3</span></div>
+            <div class="stab" data-s="o"><span class="sic">🩺</span>智能运维<span class="cnt">3</span></div>
+            <div class="stab" data-s="k"><span class="sic">🛠️</span>技能与 Agent<span class="cnt">3</span></div>
+          </div>
+          <div class="qgrid" id="qgrid"></div>
+          <div class="anno" style="right:0;top:-8px"><span class="num">2</span><span class="txt">原平铺 RECOMMENDED EXAMPLES 改为"场景 Tab + 推荐问题"（对标阿里 DataAgent 场景入口）。场景 Tab = 预设初始化器，对话在首次发送时才创建；产品导航无常驻三工作台入口（见设计文档 §4）</span></div>
+        </div>
+
+        <div class="homefoot">🌀 Agentic Data Driven Decisions · DB-GPT AI Data Assistant</div>
+      </div>
+    </section>
+
+    <!-- ================= QUERY ================= -->
+    <section class="view fill" id="query">
+      <div class="ws" id="ws-query">
+        <div class="rail"><div class="rh">取数轨迹 · SESSION</div><div class="tl">
+          <div class="tl-item done"><span class="nd"></span><div class="t">意图识别</div><div class="d">取数 · 近30天客单价</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">加载语义模型</div><div class="d">电商直播域 v3</div><div class="tools"><span>semantic</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">选表选字段</div><div class="d">ads_ctlive_item_stats</div><div class="tools"><span>schema_link</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">生成 SQL</div><div class="d">口径: 客单价=GMV/订单数</div><div class="tools"><span>nl2sql</span></div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">执行 & 返回</div><div class="d">运行中…</div></div>
+        </div></div>
+        <div class="center">
+          <div class="ws-head"><div class="st"><span class="pchip q" data-ws="ws-query">🔍 智能问数 ▾</span><span class="wname">· 对话工作台</span></div>
+            <div class="ctx"><span class="tagchip sem">🧬 语义模型：电商直播域 v3 ✓</span><span class="tagchip">🗄️ MaxCompute</span><span class="tagchip" data-viewer="ws-query">⋯</span></div></div>
+          <div class="anno" style="left:16px;top:50px"><span class="num">7</span><span class="txt">头部 preset chip 可切换：点开弹四预设；切换=重绑上下文+换工具白名单与审批策略+写一条"场景切换"timeline 事件，历史不丢（同一引擎、不同预设）</span></div>
+          <div class="anno" style="right:16px;top:52px"><span class="num">3</span><span class="txt">头部常驻语义模型绑定 chip（紫）：问数准确率的地基，可切换/查看 YAML</span></div>
+          <div class="conv">
+            <div class="msg user"><span class="bubble-u">近30天各品类的客单价是多少？</span></div>
+            <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
+              <div class="ai-txt">已基于语义模型识别口径 <b>客单价 = GMV / 订单数</b>，选表 <code>ads_ctlive_item_stats</code>：</div>
+              <div class="art"><div class="ah"><span class="ty sql">SQL</span>生成语句 · 可编辑/复制<span class="open">复制</span></div><div class="ab">
+                <pre class="code"><span class="c">-- 语义模型: 客单价 = GMV / 订单数 (metric_formulas)</span>
+<span class="k">SELECT</span> cate_level1_name, <span class="f">SUM</span>(gmv)/<span class="f">SUM</span>(order_cnt) <span class="k">AS</span> avg_order_value
+<span class="k">FROM</span> ads_ctlive_item_stats <span class="k">WHERE</span> stat_period = <span class="s">'30d'</span>
+<span class="k">GROUP BY</span> cate_level1_name <span class="k">ORDER BY</span> avg_order_value <span class="k">DESC</span>;</pre></div></div>
+              <div class="art"><div class="ah"><span class="ty table">结果</span>查询结果 · 8 行<span class="open" data-viewer="ws-query">导出 CSV ›</span></div><div class="ab">
+                <table class="data"><thead><tr><th>一级品类</th><th style="text-align:right">客单价(元)</th><th style="text-align:right">GMV(元)</th><th style="text-align:right">订单数</th></tr></thead>
+                <tbody><tr><td>美妆个护</td><td class="num-cell">386.20</td><td class="num-cell">12,480,300</td><td class="num-cell">32,318</td></tr>
+                <tr><td>3C 数码</td><td class="num-cell">342.75</td><td class="num-cell">9,865,400</td><td class="num-cell">28,783</td></tr>
+                <tr><td>服饰鞋包</td><td class="num-cell">218.40</td><td class="num-cell">15,230,900</td><td class="num-cell">69,738</td></tr></tbody></table></div></div>
+            </div></div></div>
+          </div>
+          <div class="dock" id="dock-query"><div class="dh"><span class="ic">🛡️</span><span class="tt">高代价操作确认 · 预估扫描成本</span><span class="risk">中风险</span></div>
+            <div class="db"><div class="desc">追问"看明细全量"将触发大范围扫描，预估成本较高：</div>
+            <div class="sqlmini"><span class="k">SELECT</span> * <span class="k">FROM</span> dwd_ctlive_trd_detail <span class="k">WHERE</span> dt <span class="k">BETWEEN</span> <span class="s">'20260920'</span> <span class="k">AND</span> <span class="s">'20261020'</span>;</div>
+            <div class="meta"><span>预估扫描：<b>~480 GB</b></span><span>预估费用：<b>¥62.4</b></span><span>耗时：<b>~3min</b></span></div>
+            <div class="acts"><button class="dbtn pri" data-resolve="query">确认执行</button><button class="dbtn dan" data-reject="query">取消</button><button class="dbtn">加 LIMIT 1000 预览</button>
+            <span class="scope">记忆：<select><option>仅本次</option><option>本会话</option></select></span></div></div></div>
+          <div class="ws-comp"><div class="box"><textarea placeholder="继续追问，如「按地区拆分」「只看 TOP10」…"></textarea>
+            <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">🧬 电商直播域 v3</span><button class="sendmini">↑</button></div></div></div>
+          <div class="statusline"><span class="live"></span>取数 Agent 运行中 · 语义模型已加载 · Token 3.1k/0.6k · 3.7s</div>
+        </div>
+        <div class="viewer" id="viewer-query"><div class="vh">🧬 语义模型 · 电商直播域 v3<span class="x" data-close="ws-query">✕</span></div>
+          <div class="vb"><div class="vtabs2"><button class="on">指标</button><button>数据集</button><button>YAML</button></div>
+          <div class="kv"><span class="k">metric</span><span class="v">GMV</span></div><div class="kv"><span class="k">synonyms</span><span class="v">成交额/销售额</span></div>
+          <div class="kv"><span class="k">expression</span><span class="v">SUM(gmv)</span></div><div class="kv"><span class="k">formula</span><span class="v">客单价=GMV/订单数</span></div>
+          <div class="kv"><span class="k">dataset</span><span class="v">ads_ctlive_item_stats</span></div></div></div>
+      </div>
+    </section>
+
+    <!-- ================= ANALYSIS ================= -->
+    <section class="view fill" id="analysis">
+      <div class="ws" id="ws-analysis">
+        <div class="rail"><div class="rh">分析轨迹 · SESSION</div><div class="tl">
+          <div class="tl-item done"><span class="nd"></span><div class="t">理解分析需求</div><div class="d">本月各品类销售</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">圈定数据集</div><div class="d">电商销售域 · 4 表</div><div class="tools"><span>dataset</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">多步取数</div><div class="d">GMV/订单/客单价</div><div class="tools"><span>nl2sql ×3</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">绘制图表</div><div class="d">柱状 + 趋势</div><div class="tools"><span>chart</span></div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">提炼结论 & 报告</div><div class="d">生成中…</div></div>
+        </div></div>
+        <div class="center">
+          <div class="ws-head"><div class="st"><span class="pchip a" data-ws="ws-analysis">📊 智能分析 ▾</span><span class="wname">· 对话工作台</span></div>
+            <div class="ctx"><span class="tagchip">📁 数据集：电商销售域(4表)</span><span class="tagchip sem">🧬 v3 ✓</span><span class="tagchip" data-viewer="ws-analysis">⋯</span></div></div>
+          <div class="anno" style="right:16px;top:52px"><span class="num">4</span><span class="txt">分析场景先"圈定数据集"（=表范围+绑定语义模型，对齐 ChatBI 前置），头部常驻可切换</span></div>
+          <div class="conv">
+            <div class="msg user"><span class="bubble-u">分析本月各品类销售情况，给出结论</span></div>
+            <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
+              <div class="art"><div class="ah"><span class="ty chart">图表</span>各品类 GMV 对比（本月）<span class="open" data-viewer="ws-analysis">放大 ›</span></div><div class="ab">
+                <div class="bars"><div class="b"><span class="vl">1523万</span><div class="bar" style="height:88%"></div><span class="lb">服饰</span></div>
+                <div class="b"><span class="vl">1248万</span><div class="bar" style="height:72%"></div><span class="lb">美妆</span></div>
+                <div class="b"><span class="vl">986万</span><div class="bar" style="height:57%"></div><span class="lb">3C</span></div>
+                <div class="b"><span class="vl">612万</span><div class="bar" style="height:36%"></div><span class="lb">食品</span></div>
+                <div class="b"><span class="vl">438万</span><div class="bar" style="height:26%"></div><span class="lb">家居</span></div></div></div></div>
+              <div class="art"><div class="ah"><span class="ty report">分析报告</span>本月品类销售复盘<span class="open" data-viewer="ws-analysis">HTML/PDF 分享 ›</span></div><div class="ab">
+                <div class="concl" style="margin:0"><b>核心结论：</b>① 服饰 GMV 居首(1523万)但客单最低，走高频低客单；② 美妆客单最高(386元)环比+12%，建议加投；③ 食品订单量最大但 GMV 占比仅11%，关注履约成本。</div></div></div>
+            </div></div></div>
+          </div>
+          <div class="ws-comp"><div class="box"><textarea placeholder="继续追问，如「加环比趋势图」「导出 PDF」…"></textarea>
+            <div class="cbar"><span class="mini mode">🛡️ 自动编辑 ▾</span><span class="mini">📁 电商销售域</span><span class="mini">导出 ▾</span><button class="sendmini">↑</button></div></div></div>
+          <div class="statusline"><span class="live"></span>分析 Agent 运行中 · 3 取数 · 2 图表 · Token 6.8k/2.4k · 14.2s</div>
+        </div>
+        <div class="viewer" id="viewer-analysis"><div class="vh">📁 数据集 · 电商销售域<span class="x" data-close="ws-analysis">✕</span></div>
+          <div class="vb"><div class="vtabs2"><button class="on">表</button><button>图表</button><button>报告</button></div>
+          <div class="kv"><span class="k">ads_ctlive_item_stats</span><span class="v">商品成交</span></div><div class="kv"><span class="k">ads_ctlive_anchor_stats</span><span class="v">主播成交</span></div>
+          <div class="kv"><span class="k">dws_ctlive_trd_item_1d</span><span class="v">明细汇总</span></div><div class="kv"><span class="k">dim_category</span><span class="v">品类维表</span></div>
+          <div style="margin-top:12px"><span class="tagchip sem">🧬 绑定：电商直播域 v3</span></div></div></div>
+      </div>
+    </section>
+
+    <!-- ================= OPS ================= -->
+    <section class="view fill" id="ops">
+      <div class="ws" id="ws-ops">
+        <div class="rail"><div class="rh">运维轨迹 · SESSION</div><div class="tl">
+          <div class="tl-item done"><span class="nd"></span><div class="t">意图识别</div><div class="d">慢查询诊断 · 订单库</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">采集执行计划</div><div class="d">慢日志 + EXPLAIN</div><div class="tools"><span>slow_log</span><span>explain</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">聚合多维信息</div><div class="d">索引/锁/统计</div><div class="tools"><span>db_metrics</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">根因定位</div><div class="d">索引失效→全表扫描</div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">生成诊断报告</div><div class="d">输出中…</div></div>
+        </div></div>
+        <div class="center">
+          <div class="ws-head"><div class="st"><span class="pchip o" data-ws="ws-ops">🩺 智能运维 ▾</span><span class="wname">· 对话工作台</span></div>
+            <div class="ctx"><span class="tagchip">🗄️ order_db (MySQL)</span><span class="tagchip">🕑 昨晚22:00-24:00</span><span class="tagchip" data-viewer="ws-ops">⋯</span></div></div>
+          <div class="conv">
+            <div class="msg user"><span class="bubble-u">订单库昨晚 22:00-24:00 有哪些慢查询？帮我定位根因</span></div>
+            <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
+              <div class="ai-txt">扫描该时段慢日志，发现 <b>3 条</b>高频慢查询，最严重平均 <b>4.2s</b>。根因：<b>索引失效致全表扫描</b>。</div>
+              <div class="art"><div class="ah"><span class="ty diag">诊断报告</span>慢查询根因分析 · order_db<span class="open" data-viewer="ws-ops">右栏展开 ›</span></div><div class="ab">
+                <table class="data"><thead><tr><th>SQL 摘要</th><th>次数</th><th>平均耗时</th><th>根因</th></tr></thead><tbody>
+                <tr><td><code>SELECT * FROM orders WHERE status=? ...</code></td><td class="num-cell">1,284</td><td class="num-cell" style="color:var(--err)">4.2s</td><td>status 隐式类型转换致索引失效</td></tr>
+                <tr><td><code>SELECT ... FROM order_items JOIN ...</code></td><td class="num-cell">326</td><td class="num-cell" style="color:var(--warn)">1.8s</td><td>JOIN 顺序不合理</td></tr></tbody></table>
+                <div class="concl"><b>修复建议：</b>① 建联合索引 orders(status,create_time)；② 统一 status 传参类型；③ ANALYZE TABLE 刷新统计。预估 P95 4.2s→&lt;200ms。</div></div></div>
+            </div></div></div>
+          </div>
+          <div class="dock" id="dock-ops"><div class="dh"><span class="ic">🛡️</span><span class="tt">破坏性操作确认 · 生产表结构变更</span><span class="risk">高风险</span></div>
+            <div class="db"><div class="desc">Agent 建议执行以下 DDL 修复索引失效：</div>
+            <div class="sqlmini"><span class="k">ALTER TABLE</span> orders <span class="k">ADD INDEX</span> idx_status_ctime (status, create_time);</div>
+            <div class="meta"><span>影响表：<b>orders</b></span><span>锁表：<b>&lt;3s(online)</b></span><span>数据量：<b>1.2亿行</b></span><span>环境：<b>生产</b></span></div>
+            <div class="acts"><button class="dbtn pri" data-resolve="ops">批准执行</button><button class="dbtn dan" data-reject="ops">拒绝</button><button class="dbtn">先看执行计划</button>
+            <span class="scope">记忆：<select><option>仅本次</option><option>本会话</option><option>该表始终询问</option></select></span></div></div></div>
+          <div class="ws-comp"><div class="box"><textarea placeholder="继续追问，或让 Agent 执行修复…"></textarea>
+            <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">@ order_db</span><button class="sendmini">↑</button></div></div></div>
+          <div class="statusline"><span class="live"></span>运维 Agent 运行中 · 3 工具 · Token 4.2k/1.1k · 8.3s</div>
+        </div>
+        <div class="viewer" id="viewer-ops"><div class="vh">📋 诊断详情<span class="x" data-close="ws-ops">✕</span></div>
+          <div class="vb"><div class="vtabs2"><button class="on">根因</button><button>执行计划</button><button>血缘影响</button></div>
+          <div class="kv"><span class="k">目标表</span><span class="v">orders</span></div><div class="kv"><span class="k">问题字段</span><span class="v">status</span></div>
+          <div class="kv"><span class="k">根因</span><span class="v" style="color:var(--err)">隐式类型转换</span></div><div class="kv"><span class="k">扫描/命中</span><span class="v">1.2e8/3.4e2</span></div>
+          <pre class="code" style="margin-top:10px"><span class="k">ALTER TABLE</span> orders <span class="k">ADD INDEX</span> idx_status_ctime (status, create_time);</pre></div></div>
+      </div>
+    </section>
+
+    <!-- ================= SEMANTIC ================= -->
+    <section class="view" id="semantic">
+      <div class="mod">
+        <h2>🧬 语义层 Semantic Layer</h2>
+        <div class="sub">企业级语义模型 = 问数准确率的地基。结构化库为权威源，发布时写向量（chunk 带指针 metadata）。数据模型对齐阿里四模块：ai_context / metrics / metric_formulas / datasets。</div>
+        <div class="mgrid">
+          <div class="mcard"><div class="mh">🧬 电商直播域<span class="st pub">已发布 v3</span></div>
+            <div class="mm"><span><b>4</b> 数据集</span><span><b>9</b> 指标</span><span><b>6</b> 派生公式</span><span><b>12</b> few_shots</span></div>
+            <div class="tags"><span>GMV</span><span>客单价</span><span>购买人数</span><span>ads_ctlive_*</span></div>
+            <div class="yamlprev"><span class="key">metrics</span>:
+  - <span class="key">name</span>: GMV
+    <span class="key">synonyms</span>: [<span class="s">成交额,销售额</span>]
+    <span class="key">expression</span>: SUM(gmv)</div></div>
+          <div class="mcard"><div class="mh">🧬 订单交易域<span class="st pub">已发布 v1</span></div>
+            <div class="mm"><span><b>6</b> 数据集</span><span><b>14</b> 指标</span><span><b>8</b> 派生公式</span></div>
+            <div class="tags"><span>订单数</span><span>退款率</span><span>客单价</span><span>orders</span></div></div>
+          <div class="mcard"><div class="mh">🧬 用户增长域<span class="st draft">草稿 v2</span></div>
+            <div class="mm"><span><b>3</b> 数据集</span><span><b>7</b> 指标</span><span><b>2</b> 派生公式</span></div>
+            <div class="tags"><span>新增用户</span><span>留存率</span><span>DAU</span></div></div>
+        </div>
+        <div class="anno" style="left:252px;top:148px"><span class="num">5</span><span class="txt">语义层为新增一级模块：模型卡显示数据集/指标/公式/few_shots 规模与发布状态；详情进图谱↔YAML 双屏编辑，发布写向量</span></div>
+      </div>
+    </section>
+
+    <!-- ================= APPROVAL ================= -->
+    <section class="view" id="approval">
+      <div class="mod">
+        <h2>🛡️ 审批中心 Approval Center</h2>
+        <div class="sub">高危/高代价操作的统一待办、策略规则与审计。策略分层：属性声明 → 参数模式(deny&gt;confirm&gt;auto) → 上下文 → LLM 意图解释；记忆白名单 once/session/always。</div>
+        <div class="aprow"><span class="ric" style="background:#fff1f0">💥</span>
+          <div><div class="tt">ALTER TABLE orders ADD INDEX ...（生产）</div><div class="dd">智能运维 · 会话"订单库慢查询排障" · 发起 Agent</div></div>
+          <div class="rt"><span class="risk hi">高风险 · 破坏性</span><div class="cd">超时自动拒绝 04:32</div></div>
+          <button class="dbtn pri">批准</button><button class="dbtn dan">拒绝</button></div>
+        <div class="aprow"><span class="ric" style="background:#fff7e6">🧮</span>
+          <div><div class="tt">全表扫描 dwd_ctlive_trd_detail（~480GB / ¥62.4）</div><div class="dd">智能问数 · 会话"近30天各品类客单价"</div></div>
+          <div class="rt"><span class="risk md">中风险 · 高代价</span><div class="cd">超时自动拒绝 09:10</div></div>
+          <button class="dbtn pri">批准</button><button class="dbtn dan">拒绝</button></div>
+        <h2 style="font-size:15px;margin:22px 0 10px">策略规则（UI 可定义 + 试运行）</h2>
+        <table class="ruletbl"><thead><tr><th>规则</th><th>匹配</th><th>动作</th><th>说明</th></tr></thead><tbody>
+          <tr><td>shell / code 执行</td><td>工具属性声明</td><td><span class="act-pill confirm">confirm</span></td><td>默认高危，需确认</td></tr>
+          <tr><td>sql_query · DROP/TRUNCATE/ALTER</td><td>参数模式</td><td><span class="act-pill deny">deny→confirm</span></td><td>生产环境强制确认</td></tr>
+          <tr><td>sql_query · 预估扫描&gt;100GB</td><td>上下文(成本)</td><td><span class="act-pill confirm">confirm</span></td><td>高代价操作提示预估</td></tr>
+          <tr><td>select 只读查询</td><td>参数模式</td><td><span class="act-pill auto">auto</span></td><td>只读放行</td></tr>
+        </tbody></table>
+        <div class="anno" style="right:26px;top:120px"><span class="num">6</span><span class="txt">审批中心=待办队列+策略规则表+审计；策略产品化进 UI（多源配置+试运行框），toml 仅作 bootstrap seed</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+var QS={
+ q:[['查询上月各区域销售额','按 region 汇总上月 sales，含环比','🌍','#e8f4ff'],
+    ['统计 Top10 客户 GMV 及环比','客户维度 GMV 排序 + 环比变化','👥','#e8f4ff'],
+    ['近30天各品类客单价','语义模型口径：GMV/订单数','🧮','#e8f4ff']],
+ a:[['生成 Walmart 销售分析报告','分析销售 CSV，产出可视化 web 报告','📊','#eafbea'],
+    ['分析本月销售下滑归因','多维归因 + 结论提炼','🔎','#eafbea'],
+    ['对比华东华南订单占比趋势','近半年分区域趋势图','📈','#eafbea']],
+ o:[['订单库昨晚慢查询根因','慢日志+EXPLAIN 定位索引失效','🐢','#fff3e6'],
+    ['生产库健康巡检出报告','全链路巡检 + 可下载报告','🩺','#fff3e6'],
+    ['生成数据库 profile 与治理建议','库表结构诊断 + 优化建议','🧾','#fff3e6']],
+ k:[['用 skill-creator 创建 SQL 分析 skill','封装可复用取数分析技能','🛠️','#f3ecff'],
+    ['创建定时经营报告 Agent','每日 9 点自动生成经营报告','⏰','#f3ecff'],
+    ['封装一个取数 API 技能','把常用取数封装为数据服务 API','🔌','#f3ecff']]
+};
+var ROUTE={q:'智能问数',a:'智能分析',o:'智能运维',k:'技能与Agent'};
+function renderQ(s){
+  document.getElementById('qgrid').innerHTML=QS[s].map(function(x){
+    return '<div class="qcard" data-q="'+x[0]+'" data-s="'+s+'"><span class="qi" style="background:'+x[3]+'">'+x[2]+'</span><span><span class="qt">'+x[0]+'</span><br><span class="qd">'+x[1]+'</span></span><span class="go">›</span></div>';
+  }).join('');
+}
+renderQ('q');
+document.getElementById('stabs').addEventListener('click',function(e){
+  var t=e.target.closest('.stab');if(!t)return;
+  document.querySelectorAll('.stab').forEach(function(x){x.classList.remove('on')});t.classList.add('on');renderQ(t.dataset.s);
+});
+// view switching
+var TITLES={home:'DB-GPT AI Data Assistant',query:'智能问数 · DB 取数',analysis:'智能分析 · DB 数据分析',ops:'智能运维 · DB 运维',semantic:'语义层 Semantic Layer',approval:'审批中心 Approval Center'};
+function show(v){
+  document.querySelectorAll('#vtabs button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
+  document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('on',s.id===v)});
+  document.querySelectorAll('.sitem').forEach(function(s){s.classList.toggle('on',s.dataset.go===v)});
+  document.getElementById('topTitle').textContent=TITLES[v]||TITLES.home;
+}
+document.getElementById('vtabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)show(b.dataset.v)});
+document.addEventListener('click',function(e){
+  var go=e.target.closest('[data-go]');if(go){show(go.dataset.go);return;}
+  var q=e.target.closest('.qcard');
+  if(q){document.getElementById('homeInput').value=q.dataset.q;detect(q.dataset.s);setTimeout(function(){show(q.dataset.s==='k'?'home':q.dataset.s)},350);return;}
+  var op=e.target.closest('[data-viewer]');if(op){document.getElementById(op.dataset.viewer).classList.add('open');return;}
+  var cl=e.target.closest('[data-close]');if(cl){document.getElementById(cl.dataset.close).classList.remove('open');return;}
+  var ok=e.target.closest('[data-resolve]');if(ok){document.getElementById('dock-'+ok.dataset.resolve).style.display='none';return;}
+  var no=e.target.closest('[data-reject]');if(no){document.getElementById('dock-'+no.dataset.reject).style.display='none';return;}
+});
+// route detection
+function detect(s){var c=document.getElementById('routeChip');c.textContent='识别场景：'+ROUTE[s];}
+document.getElementById('homeInput').addEventListener('input',function(e){
+  var t=e.target.value,c=document.getElementById('routeChip');
+  if(/慢查询|巡检|排障|根因|profile|治理/.test(t)){c.textContent='识别场景：智能运维';detect('o');}
+  else if(/分析|报告|归因|趋势|对比|复盘/.test(t)){detect('a');}
+  else if(/查|统计|导出|客单价|GMV|top/i.test(t)){detect('q');}
+  else c.textContent='智能路由：待识别';
+  document.getElementById('homeSend').classList.toggle('act',t.trim().length>0);
+});
+document.getElementById('homeSend').addEventListener('click',function(){
+  var t=document.getElementById('homeInput').value;
+  if(/慢查询|巡检|排障|根因|profile|治理/.test(t))show('ops');
+  else if(/分析|报告|归因|趋势|对比|复盘/.test(t))show('analysis');
+  else if(t.trim())show('query');
+});
+// annotation toggle
+document.getElementById('annoToggle').addEventListener('click',function(){this.classList.toggle('on');document.body.classList.toggle('anno-on');});
+// ---- scenario preset switch (one engine, different presets) ----
+var PRESETS={q:{ic:'🔍',n:'智能问数'},a:{ic:'📊',n:'智能分析'},o:{ic:'🩺',n:'智能运维'},k:{ic:'🛠️',n:'技能与Agent'}};
+var ppop=null;
+function closePop(){if(ppop){ppop.remove();ppop=null;}}
+document.addEventListener('click',function(e){
+  var chip=e.target.closest('.pchip');
+  if(chip){
+    closePop();
+    var cur=chip.className.replace('pchip','').trim();
+    var center=chip.closest('.center');
+    ppop=document.createElement('div');ppop.className='ppop on';
+    ppop.innerHTML='<div class="pt">切换场景预设 · 同一 ReAct 引擎</div>'+Object.keys(PRESETS).map(function(k){
+      return '<div class="pi'+(k===cur?' on':'')+'" data-k="'+k+'">'+PRESETS[k].ic+' '+PRESETS[k].n+'</div>';}).join('');
+    center.appendChild(ppop);
+    ppop.addEventListener('click',function(ev){
+      var pi=ev.target.closest('.pi');if(!pi)return;
+      var k=pi.dataset.k;
+      chip.className='pchip '+k;chip.textContent=PRESETS[k].ic+' '+PRESETS[k].n+' ▾';
+      var tl=chip.closest('.ws').querySelector('.tl');
+      var it=document.createElement('div');it.className='tl-item done';
+      it.innerHTML='<span class="nd"></span><div class="t">场景切换</div><div class="d">→ '+PRESETS[k].n+' · 重绑上下文/工具/策略</div>';
+      tl.appendChild(it);
+      closePop();
+    });
+    return;
+  }
+  if(ppop && !e.target.closest('.ppop')) closePop();
+});
+// ---- sidebar conversation filter by scenario ----
+document.getElementById('tfilter').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  this.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
+  var f=b.dataset.f;
+  document.querySelectorAll('.task[data-s]').forEach(function(t){t.style.display=(f==='all'||t.dataset.s===f)?'':'none';});
+});
+// deep link
+(function(){var h=(location.hash||'').replace('#','');if(TITLES[h])show(h);})();
+</script>
+</body>
+</html>

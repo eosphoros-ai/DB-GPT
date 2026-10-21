@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataWorks Data Agent → DB-GPT 集成设计稿</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2a3140; --line2:#39424f;
+    --txt:#e6edf3; --txt2:#9aa7b4; --txt3:#6b7787;
+    --brand:#4c8dff; --brand2:#7c5cff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --mid:#e3873f;
+    --chip:#222b3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6;font-size:14px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  header.top{border-bottom:1px solid var(--line);background:linear-gradient(180deg,#12182200,#0d1117);position:sticky;top:0;z-index:50;backdrop-filter:blur(8px);background-color:rgba(13,17,23,.86)}
+  .topbar{display:flex;align-items:center;gap:16px;padding:14px 0}
+  .logo{font-weight:700;font-size:16px;letter-spacing:.3px;display:flex;align-items:center;gap:9px}
+  .logo .dot{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:inline-block}
+  .crumb{color:var(--txt3);font-size:12px;margin-left:auto}
+  .crumb b{color:var(--txt2);font-weight:600}
+  nav.tabs{display:flex;gap:4px;padding:0 0 12px;flex-wrap:wrap}
+  nav.tabs button{background:transparent;border:1px solid transparent;color:var(--txt2);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.15s}
+  nav.tabs button:hover{color:var(--txt);background:var(--panel)}
+  nav.tabs button.on{color:#fff;background:var(--panel2);border-color:var(--line2);box-shadow:inset 0 0 0 1px #ffffff08}
+  main{padding:26px 0 80px}
+  section.view{display:none;animation:fade .25s ease}
+  section.view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h2.sec{font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:.2px}
+  .sub{color:var(--txt2);margin-bottom:22px;max-width:820px}
+  h3.blk{font-size:15px;font-weight:650;margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+  h3.blk::before{content:"";width:3px;height:15px;border-radius:2px;background:linear-gradient(var(--brand),var(--brand2))}
+  .note{background:#12203a;border:1px solid #23406e;border-left:3px solid var(--brand);border-radius:8px;padding:11px 14px;color:#bcd3f5;font-size:12.5px;margin:14px 0}
+  .note.warn{background:#2a2213;border-color:#5c4a1f;border-left-color:var(--warn);color:#e8d3a0}
+  .note b{color:#fff}
+  .grid{display:grid;gap:14px}
+  .g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:900px){.g4,.g3,.g2{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.g4,.g3,.g2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;transition:.18s;position:relative;overflow:hidden}
+  .card:hover{border-color:var(--line2);transform:translateY(-2px)}
+  .card .ic{font-size:19px;margin-bottom:8px;display:block}
+  .card h4{font-size:14px;font-weight:650;margin-bottom:5px}
+  .card p{color:var(--txt2);font-size:12.5px}
+  .card .tag{position:absolute;top:12px;right:12px;font-size:10.5px;padding:2px 7px;border-radius:20px;background:var(--chip);color:var(--txt2);border:1px solid var(--line)}
+  ul.clean{list-style:none;margin-top:8px} ul.clean li{font-size:12.3px;color:var(--txt2);padding:3px 0 3px 15px;position:relative}
+  ul.clean li::before{content:"▸";position:absolute;left:0;color:var(--brand)}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--line2);background:var(--chip);color:var(--txt2);margin:2px 3px 2px 0}
+  table{width:100%;border-collapse:collapse;font-size:12.6px;margin-top:6px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--txt3);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;background:var(--panel)}
+  tr:hover td{background:#ffffff05}
+  .badge{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;white-space:nowrap}
+  .b-bad{background:#3a1618;color:#ff8b83;border:1px solid #6e2b28}
+  .b-mid{background:#3a2a12;color:#f0b36b;border:1px solid #6e5220}
+  .b-warn{background:#33301a;color:#e3d27a;border:1px solid #615a2b}
+  .b-ok{background:#132e1a;color:#6ee787;border:1px solid #245c31}
+  .b-none{background:#1c222b;color:var(--txt3);border:1px solid var(--line)}
+  code{font-family:"SF Mono",Menlo,Consolas,monospace;background:#0b0f16;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px;color:#9ecbff}
+  pre{background:#0b0f16;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;line-height:1.65;color:#c9d5e3}
+  pre .k{color:#ff7b72} pre .s{color:#a5d6ff} pre .c{color:#6b7787;font-style:italic} pre .n{color:#79c0ff} pre .key{color:#d2a8ff}
+  /* two-pane semantic */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  @media(max-width:820px){.split{grid-template-columns:1fr}}
+  .split .pane{min-height:340px}
+  .split .pane.l{border-right:1px solid var(--line);background:radial-gradient(circle at 30% 20%,#141c2b,#0f141d)}
+  .panehead{font-size:11px;color:var(--txt3);padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between}
+  .graph{position:relative;height:340px}
+  .gnode{position:absolute;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:7px 11px;font-size:11.5px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .gnode:hover,.gnode.hi{border-color:var(--brand);box-shadow:0 0 0 3px #4c8dff22;color:#fff}
+  .gnode.metric{background:#241a3a;border-color:#4a3a7a}
+  .gnode.metric:hover,.gnode.metric.hi{border-color:var(--brand2);box-shadow:0 0 0 3px #7c5cff22}
+  .gnode small{display:block;color:var(--txt3);font-size:10px}
+  svg.edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .ybox{height:340px;overflow:auto}
+  .ybox pre{border:0;border-radius:0;margin:0}
+  .ybox .hl{background:#4c8dff22;border-radius:3px;box-shadow:0 0 0 2px #4c8dff22}
+  /* approval demo */
+  .modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .modes button{background:var(--panel);border:1px solid var(--line);color:var(--txt2);padding:8px 13px;border-radius:9px;cursor:pointer;font-size:12.5px;transition:.15s}
+  .modes button.on{background:linear-gradient(135deg,#1e3a6e,#2a2450);border-color:var(--brand);color:#fff}
+  .term{background:#0b0f16;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
+  .term .tbar{background:var(--panel);padding:8px 13px;font-size:11.5px;color:var(--txt3);border-bottom:1px solid var(--line);display:flex;gap:7px;align-items:center}
+  .term .tbar i{width:9px;height:9px;border-radius:50%;background:#3a4450;display:inline-block}
+  .tbody{padding:15px 17px;font-family:"SF Mono",Menlo,monospace;font-size:12.3px;min-height:180px}
+  .line{margin:5px 0;color:var(--txt2)} .line .u{color:#7ee787} .line .a{color:#79c0ff}
+  .dock{margin-top:12px;border:1px solid var(--warn);background:#241d0f;border-radius:11px;padding:13px 15px}
+  .dock h5{font-size:13px;color:#f0c674;margin-bottom:5px;display:flex;align-items:center;gap:7px}
+  .dock p{font-size:12px;color:#d8c9a8}
+  .dock .acts{margin-top:11px;display:flex;gap:8px}
+  .btn{padding:6px 15px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--txt);font-size:12.3px;cursor:pointer}
+  .btn.pri{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .btn.dan{background:#3a1618;border-color:#6e2b28;color:#ff9d97}
+  .btn:hover{filter:brightness(1.12)}
+  /* roadmap */
+  .phase{border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+  .phase .ph{padding:13px 17px;background:var(--panel);display:flex;align-items:center;gap:12px;cursor:pointer}
+  .phase .ph .p{font-size:12px;font-weight:700;padding:3px 11px;border-radius:7px}
+  .p0{background:#3a1618;color:#ff8b83;border:1px solid #6e2b28}.p1{background:#3a2a12;color:#f0b36b;border:1px solid #6e5220}.p2{background:#132e1a;color:#6ee787;border:1px solid #245c31}
+  .phase .ph h4{font-size:14.5px;font-weight:650}
+  .phase .ph .arrow{margin-left:auto;color:var(--txt3);transition:.2s}
+  .phase.open .arrow{transform:rotate(90deg)}
+  .phase .body{padding:0 17px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s}
+  .phase.open .body{padding:6px 17px 17px;max-height:600px}
+  .kbd{font-family:monospace;background:#0b0f16;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11.5px;color:#c9d5e3}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 4px;font-size:11.5px;color:var(--txt3)}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .footer{border-top:1px solid var(--line);margin-top:40px;padding-top:18px;color:var(--txt3);font-size:11.5px}
+  .footer a{color:var(--brand);text-decoration:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="logo"><span class="dot"></span>DataWorks Data Agent → DB-GPT 集成设计稿</div>
+      <div class="crumb">调研 <b>v1.0</b> · 2026-10-20 · 配套 <b>dataworks-data-agent-research.md</b></div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-v="map" class="on">① 能力全景地图</button>
+      <button data-v="sem">② 语义层深潜</button>
+      <button data-v="appr">③ 审批模式</button>
+      <button data-v="matrix">④ 能力映射矩阵</button>
+      <button data-v="road">⑤ 集成路线图</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ========== ① 能力全景 ========== -->
+<section class="view on" id="map">
+  <h2 class="sec">Data Agent 能力全景</h2>
+  <p class="sub">阿里把"数据智能体"拆成四大核心能力 + 数据集成垂直集，全链路覆盖 集成→开发→运维→治理→分析。新版 Data Agent 基于 <b>Qwen Code</b> 构建 —— 与你 DB-GPT 的 pi 引擎同源，Skills / 审批 / MCP 工具范式可直接借鉴。</p>
+
+  <h3 class="blk">四大核心能力</h3>
+  <div class="grid g4">
+    <div class="card"><span class="tag">自动化</span><span class="ic">🤖</span><h4>Agent 智能体</h4><p>LLM 规划+任务分解，调 MCP Server 工具执行。5 类专用 Agent，<code>/</code> 唤起。</p>
+      <ul class="clean"><li>数据集成 Agent</li><li>数据开发 Agent（ETL 全流程）</li><li>数据运维 Agent（诊断报告）</li><li>数据地图 Agent（NL 找表+血缘）</li><li>数据治理 Agent（自主式治理）</li></ul></div>
+    <div class="card"><span class="tag">编码</span><span class="ic">⌨️</span><h4>代码编程助手</h4><p>NL2SQL + SQL 补全（Tab 采纳）。SQL/Python 生成/改写/优化/纠错/注释/测试/解释。</p>
+      <ul class="clean"><li>取数查询 · SQL 优化转换</li><li>语法/函数查询 · 功能咨询</li><li>注释生成 · SQL 解释</li><li>一键纠错 · 上下文感知</li><li>多模型切换</li></ul></div>
+    <div class="card"><span class="tag">问数</span><span class="ic">📊</span><h4>ChatBI</h4><p>扮演数据分析师，基于<b>数据集</b>提问，全流程自动化。</p>
+      <ul class="clean"><li>问题理解 → 目标表识别</li><li>SQL 生成运行 → 图表绘制</li><li>结论提炼（图文报告）</li><li>知识库纠偏（模板/术语/逻辑）</li><li>报告分享 HTML/PDF</li></ul></div>
+    <div class="card"><span class="tag">内嵌</span><span class="ic">⚡</span><h4>快捷 AI 操作</h4><p>模块内 Copilot 按钮，一键智能化产品操作。</p>
+      <ul class="clean"><li>查询结果智能可视化</li><li>AI 智能建表（关键字→DDL）</li><li>任务发布描述生成</li><li>任务异常智能诊断</li><li>质量规则推荐 · API 生成</li></ul></div>
+  </div>
+
+  <h3 class="blk">DI Agent —— 数据集成垂直能力集（六大能力）</h3>
+  <div class="grid g3">
+    <div class="card"><h4>💬 对话式任务配置</h4><p>单表/整库 × 离线/实时统一管理，一句话建任务，自动 Schema 探测+字段映射+调度。</p></div>
+    <div class="card"><h4>🧠 AI 数据处理（多模态 ETL）</h4><p>把大模型当 ETL 算子嵌入 Source→Transform→Sink，图片/视频/音频/文档识别打标转写向量化。</p></div>
+    <div class="card"><h4>🗄️ ChatDB 数据问答</h4><p>复用 80+ 连接器，业务语言即问即答 + 建库建表 + 表结构变更 + 慢 SQL 性能排查。</p></div>
+    <div class="card"><h4>🩺 AI 诊断</h4><p>聚合日志/监控/源端状态定位根因，给修复方案+一键执行，经验自动归档知识库。</p></div>
+    <div class="card"><h4>🔁 智能周期巡检</h4><p>Cron 主动扫描全量链路，出可下载报告，高风险按影响排序。</p></div>
+    <div class="card"><h4>📱 IM 频道集成</h4><p>钉钉/微信/飞书直接对话，完成状态查询、诊断、任务管理。</p></div>
+  </div>
+
+  <div class="note">📌 <b>范围判断</b>：DB-GPT 定位"业务库智能取数+分析"，<b>不做</b>数据集成 ETL / 调度运维 / 质量治理。DI Agent 与数据运维/治理 Agent 属"定位差异"，非必须补齐 —— 火力应集中在 <b>语义层 + ChatBI 问数闭环 + 审批/Skills 产品化</b>。</div>
+
+  <h3 class="blk">技术底座三支柱</h3>
+  <div class="grid g3">
+    <div class="card"><span class="ic">🧬</span><h4>语义层（YAML 模型）</h4><p>扫描数据源提取表关联/字段语义/指标口径 → 结构化 YAML → <code>/dataworks-semantic</code> 注入上下文。<b>问数准确率的地基</b>。</p></div>
+    <div class="card"><span class="ic">🛠️</span><h4>Skills + MCP 工具</h4><p>内置官方 Skill + 自定义上传（SKILL.md+zip），<code>/命令</code> 路由或意图自动路由；工具经 DataWorks MCP Server 执行。</p></div>
+    <div class="card"><span class="ic">📚</span><h4>知识增强</h4><p>Rules（企业级/个人级）+ Context（<code>@</code>表/代码/文件）+ ChatBI 知识库（问题模板/术语/业务逻辑）+ 诊断经验沉淀。</p></div>
+  </div>
+</section>
+
+<!-- ========== ② 语义层 ========== -->
+<section class="view" id="sem">
+  <h2 class="sec">语义层深潜 —— YAML 语义模型</h2>
+  <p class="sub">本次调研最有价值的部分。阿里用整块功能证明：<b>问数准确率的分水岭是语义层</b>。下面用官方电商直播域 case，图谱↔YAML 双屏联动（点节点高亮源码），并对照加载前后效果。</p>
+
+  <h3 class="blk">语义模型四大模块 & 双屏联动</h3>
+  <div class="legend"><span><i class="sw" style="background:#4a3a7a"></i>指标 metrics</span><span><i class="sw" style="background:#39424f"></i>数据集 datasets</span><span>点击节点 → 高亮右侧 YAML</span></div>
+  <div class="split">
+    <div class="pane l">
+      <div class="panehead"><span>语义模型图谱</span><span>电商直播域</span></div>
+      <div class="graph" id="graph">
+        <svg class="edges" id="edges"></svg>
+        <div class="gnode metric" data-t="m-gmv" style="left:36%;top:26px">GMV<small>SUM(gmv)</small></div>
+        <div class="gnode metric" data-t="m-aov" style="left:60%;top:26px">客单价<small>GMV/订单数</small></div>
+        <div class="gnode" data-t="d-anchor" style="left:12%;top:150px">ads_ctlive_anchor_stats<small>主播成交统计</small></div>
+        <div class="gnode" data-t="d-item" style="left:52%;top:150px">ads_ctlive_item_stats<small>商品成交统计</small></div>
+        <div class="gnode" data-t="d-dws" style="left:34%;top:262px">dws_ctlive_trd_*_1d<small>DWS 明细汇总</small></div>
+      </div>
+    </div>
+    <div class="pane r">
+      <div class="panehead"><span>YAML 源码</span><span id="yhint">semantic_model.yaml</span></div>
+      <div class="ybox"><pre id="yml"></pre></div>
+    </div>
+  </div>
+  <div class="note">🔑 <b>生成机制（双维度交叉验证）</b>：① 读"代码所在空间"的 SQL 脚本，从<b>真实代码</b>反提取口径（如发现 <code>gmv = SUM(CASE WHEN order_status='paid' THEN pay_amount END)</code>）；② 扫描重点表元数据（字段含义/同义词/层级/派生公式/示例问答）。官方强调"选对代码空间"是质量分水岭，否则只能靠字段注释猜。</div>
+
+  <h3 class="blk"><code>/dataworks-semantic</code> —— 语义模型全生命周期 Skill</h3>
+  <div>
+    <span class="pill">check 环境自检</span><span class="pill">create 创建任务</span><span class="pill">list 任务列表</span><span class="pill">runs 运行历史</span><span class="pill">download 下载产物</span><span class="pill">sync 批量同步</span><span class="pill">index 构建索引</span><span class="pill">search 搜索</span><span class="pill">inspect 查验原文</span><span class="pill">rollback 回滚快照</span><span class="pill">report 生成报告</span><span class="pill">log 查看日志</span>
+  </div>
+  <p class="sub" style="margin-top:10px">典型流程：<code>check → list → download/sync → index → search → 加载 YAML 至会话上下文 → 精准问数</code>。产物缓存本地 <code>.semantic/</code>；加载仅对当前会话生效，可加载多个业务域模型。</p>
+
+  <h3 class="blk">加载前后对照（官方实验）</h3>
+  <div class="grid g2">
+    <div class="card" style="border-color:#6e2b28"><h4 style="color:#ff8b83">❌ 未加载语义模型</h4>
+      <p style="margin-bottom:8px">问："近 30 天各品类的客单价是多少？"</p>
+<pre><span class="c">-- AI 不理解"客单价"口径，表名字段全猜错</span>
+<span class="k">SELECT</span> category, <span class="n">AVG</span>(price) <span class="k">AS</span> avg_price
+<span class="k">FROM</span> products
+<span class="k">GROUP BY</span> category;</pre>
+      <p style="color:#ff9d97;font-size:12px;margin-top:6px">客单价 ≠ 商品均价；缺时间过滤；表名错误</p></div>
+    <div class="card" style="border-color:#245c31"><h4 style="color:#6ee787">✅ 已加载语义模型</h4>
+      <p style="margin-bottom:8px">同一问题，注入 metrics + metric_formulas 后：</p>
+<pre><span class="c">-- 语义模型知道：客单价 = GMV / 订单数</span>
+<span class="k">SELECT</span> cate_level1_name,
+       <span class="n">SUM</span>(gmv)/<span class="n">SUM</span>(order_cnt) <span class="k">AS</span> avg_order_value
+<span class="k">FROM</span> ads_ctlive_item_stats
+<span class="k">WHERE</span> stat_period = <span class="s">'30d'</span>
+<span class="k">GROUP BY</span> cate_level1_name
+<span class="k">ORDER BY</span> avg_order_value <span class="k">DESC</span>;</pre>
+      <p style="color:#6ee787;font-size:12px;margin-top:6px">正确表名 · 正确口径 · 正确统计周期</p></div>
+  </div>
+
+  <div class="note warn">🎯 <b>对 DB-GPT 的启示</b>：你现有 <code>DBSummary</code> 只做 schema 摘要注入，<b>没有</b> metrics/metric_formulas/synonyms/few_shots 结构化语义模型。这与你既有定论完全一致 —— <b>结构化库=权威源，KB 托管空间=派生向量索引</b>。建议 P0 落地 YAML 语义层，数据模型直接对齐阿里四模块（少走弯路、便于对标）。</div>
+</section>
+
+<!-- ========== ③ 审批模式 ========== -->
+<section class="view" id="appr">
+  <h2 class="sec">审批模式 —— 你已 80% 就位</h2>
+  <p class="sub">新版 Data Agent 提供 5 档会话级审批模式（composer 左下角切换）。你的 <code>approval.py</code>（ToolRiskPolicy auto/confirm/deny + ApprovalCenter + make_approval_gate）已对标核心，缺"会话级模式切换"和"auto 智能审批"。点下面切换体验：</p>
+
+  <div class="modes" id="modes">
+    <button data-m="plan">plan 计划</button>
+    <button data-m="default" class="on">default 请求批准</button>
+    <button data-m="auto-edit">auto-edit 自动编辑</button>
+    <button data-m="auto">auto 智能审批</button>
+    <button data-m="yolo">yolo 完全访问</button>
+  </div>
+
+  <div class="term">
+    <div class="tbar"><i></i><i></i><i></i>&nbsp; Data Agent · 场景：删表重建高危操作</div>
+    <div class="tbody" id="tbody"></div>
+  </div>
+  <div id="dockzone"></div>
+
+  <h3 class="blk">8 类交互式确认触发点</h3>
+  <div class="grid g4">
+    <div class="card"><h4>规划确认</h4><p>拆解复杂任务后，展示执行计划待确认</p></div>
+    <div class="card"><h4>破坏性操作</h4><p>DROP / TRUNCATE / 覆盖写分区前</p></div>
+    <div class="card"><h4>发布上线</h4><p>提交代码/任务到生产环境前</p></div>
+    <div class="card"><h4>信息补充</h4><p>表名歧义、字段类型/时间范围缺失</p></div>
+    <div class="card"><h4>高代价操作</h4><p>全表扫描/大 JOIN，提示预估成本</p></div>
+    <div class="card"><h4>跨边界操作</h4><p>跨项目/租户/环境前</p></div>
+    <div class="card"><h4>权限变更</h4><p>授权/共享/改 ACL 前</p></div>
+    <div class="card"><h4>长任务中断</h4><p>关键节点告知进度，可继续或中断</p></div>
+  </div>
+  <div class="note">🟢 <b>映射</b>：DB-GPT approval.py 高危工具已含 shell/code/sql_query/web_fetch → 对应"破坏性操作"。<b>差距</b>：缺"高代价操作预估成本""跨边界/权限变更"等语义级触发点，以及会话级模式切换 UI（对齐你的 ApprovalDock）。</div>
+</section>
+
+<!-- ========== ④ 映射矩阵 ========== -->
+<section class="view" id="matrix">
+  <h2 class="sec">能力映射矩阵</h2>
+  <p class="sub">Data Agent 能力 → DB-GPT 现状（当前仓库实盘）→ 差距评级。图例：🔴 最大差距 · 🟠 中 · 🟡 小 · 🟢 已对标 · ⚪ 范围外。</p>
+  <div class="legend">
+    <span><i class="sw" style="background:#f85149"></i>🔴 最大差距</span>
+    <span><i class="sw" style="background:#e3873f"></i>🟠 中差距</span>
+    <span><i class="sw" style="background:#d29922"></i>🟡 小差距</span>
+    <span><i class="sw" style="background:#3fb950"></i>🟢 已对标</span>
+    <span><i class="sw" style="background:#6b7787"></i>⚪ 范围外</span>
+  </div>
+  <table>
+    <thead><tr><th style="width:20%">Data Agent 能力</th><th style="width:38%">DB-GPT 现状（文件）</th><th style="width:10%">评级</th><th style="width:32%">差距</th></tr></thead>
+    <tbody id="matrixbody"></tbody>
+  </table>
+</section>
+
+<!-- ========== ⑤ 路线图 ========== -->
+<section class="view" id="road">
+  <h2 class="sec">集成路线图</h2>
+  <p class="sub">结合既有资产（语义层定论、tool-approval P0、pi 引擎、chat_flow/AWEL）分三档落地。点击展开每档细节。</p>
+
+  <div class="phase open"><div class="ph"><span class="p p0">P0</span><h4>企业级语义层（最高价值，直击问数准确率）</h4><span class="arrow">▶</span></div>
+    <div class="body">
+      <p style="color:var(--txt2);margin:6px 0">在 <code>DBSummary</code> 之上引入 <b>YAML 语义模型层</b>作为权威语义源：</p>
+      <ul class="clean">
+        <li>数据模型对齐阿里四模块：<code>ai_context(instructions+few_shots)</code> / <code>metrics(name/desc/synonyms/expression+dialects)</code> / <code>metric_formulas</code> / <code>datasets(fields+synonyms+metric标记)</code></li>
+        <li><b>发布链路复用既定方案</b>：语义模型存结构化库（权威源）→ 发布写向量、chunk 带指针 metadata → 注入 <code>chat_db</code>/<code>react_agent</code> prompt（<code>{table_info}</code> 扩展为 <code>{semantic_model}</code>）</li>
+        <li>生成借鉴"双维度"：元数据扫描 + 从库内既有 SQL/视图/历史查询日志<b>反提取指标口径</b></li>
+        <li>与 <code>indicator_assistant_agent</code> 合流，把薄弱指标能力升级为完整语义模型</li>
+      </ul>
+      <div class="note" style="margin-bottom:0">📂 涉及：<code>rag/summary/db_summary.py</code> · <code>serve/datasource/service/db_summary_client.py</code> · <code>agent/expand/Indicator_assistant_agent.py</code> · <code>ext/rag/schemalinker</code></div>
+    </div></div>
+
+  <div class="phase"><div class="ph"><span class="p p0">P0</span><h4>审批模式产品化（低成本，已 80% 就位）</h4><span class="arrow">▶</span></div>
+    <div class="body">
+      <ul class="clean">
+        <li>把 <code>approval.py</code> 的 auto/confirm/deny 规则表包装成<b>会话级审批模式切换</b>（plan/default/auto/yolo，UI 放 composer 左下角，对齐新版 Data Agent）</li>
+        <li><code>ApprovalDock</code> 增"智能审批(auto)"档 —— 由 Agent 自评风险分再决定是否弹确认</li>
+        <li>补语义级触发点：高代价操作（预估扫描成本）、跨边界、权限变更</li>
+      </ul>
+      <div class="note" style="margin-bottom:0">📂 涉及：<code>openapi/api_v1/approval.py</code> · <code>web/new-components/chat/content/ApprovalDock.tsx</code></div>
+    </div></div>
+
+  <div class="phase"><div class="ph"><span class="p p1">P1</span><h4>ChatBI 式问数-报告闭环</h4><span class="arrow">▶</span></div>
+    <div class="body">
+      <ul class="clean">
+        <li>把 <code>chat_db</code> + <code>chat_dashboard</code> + 报告产物封装成"<b>数据集 → 问数会话 → 结论提炼 → HTML/PDF 分享</b>"闭环</li>
+        <li>"数据集" = 圈定表范围 + 绑定语义模型（对齐 ChatBI 前置）</li>
+        <li>复用你的 <code>flow-output-artifacts</code> 多格式产物稿做报告导出</li>
+      </ul>
+      <div class="note" style="margin-bottom:0">📂 涉及：<code>scene/chat_db/auto_execute</code> · <code>scene/chat_dashboard</code> · <code>actions/chart_action</code>·<code>dashboard_action</code></div>
+    </div></div>
+
+  <div class="phase"><div class="ph"><span class="p p1">P1</span><h4>Skills 产品化 + Rules 体系</h4><span class="arrow">▶</span></div>
+    <div class="body">
+      <ul class="clean">
+        <li>Skills：<code>web/pages/construct/skills</code> 补自定义上传（SKILL.md + zip）、<code>/命令</code> 路由、内置官方 Skill 库（复用 pi <code>_skill_tools</code>）</li>
+        <li>Rules：新增"企业级/个人级规则"作为独立知识源，<b>产品化进 setting 界面</b>（多源配置 + UI 可定义 + 试运行框），toml 仅作 bootstrap seed</li>
+      </ul>
+      <div class="note" style="margin-bottom:0">📂 涉及：pi <code>tool_bridge._skill_tools</code> · <code>web/pages/construct/skills</code></div>
+    </div></div>
+
+  <div class="phase"><div class="ph"><span class="p p2">P2</span><h4>体验增强</h4><span class="arrow">▶</span></div>
+    <div class="body">
+      <ul class="clean">
+        <li>语义图谱可视化编辑器（图谱↔YAML 双屏联动，如本页 ②）</li>
+        <li><code>@</code> 上下文引用（表/代码/文件/Rules）</li>
+        <li>快捷 AI 操作：AI 建表、结果一键可视化</li>
+      </ul>
+    </div></div>
+
+  <h3 class="blk">给 DB-GPT 的三条判断</h3>
+  <div class="grid g3">
+    <div class="card"><span class="ic">🔗</span><h4>技术选型同源</h4><p>阿里新版 = Qwen Code + Skills + 审批 + MCP，与你 pi 引擎几乎一致。这些不是"要不要做"，而是"把已有底座产品化"。</p></div>
+    <div class="card"><span class="ic">🧬</span><h4>语义层是分水岭</h4><p>阿里用整块功能证明问数地基是语义层，与你语义层定论一致。列 P0，数据模型直接对齐阿里四模块。</p></div>
+    <div class="card"><span class="ic">🎯</span><h4>范围要克制</h4><p>阿里是全链路平台，DB-GPT 聚焦取数+分析。集成/运维/治理属定位差异，不盲目补齐。</p></div>
+  </div>
+
+  <div class="footer">
+    <b>参考来源</b>（详见 dataworks-data-agent-research.md）：<br>
+    <a href="https://help.aliyun.com/zh/dataworks/user-guide/dataworks-copilot-intelligent-assistant-hands-on-practice">Data Agent 概述</a> ·
+    <a href="https://help.aliyun.com/zh/dataworks/user-guide/new-data-agent">新版 Data Agent</a> ·
+    <a href="https://help.aliyun.com/zh/dataworks/user-guide/dataworks-copilot-agent">Agent 智能体</a> ·
+    <a href="https://help.aliyun.com/zh/dataworks/user-guide/data-agent-semantic-analysis">Data Agent 语义分析</a> ·
+    <a href="https://help.aliyun.com/zh/dataworks/user-guide/dataworks-chatbi-overview">ChatBI 概述</a> ·
+    <a href="http://intl.aliyun.com/help/zh/dataworks/user-guide/introduction-to-data-integration-and-ai-native-capabilities">DI Agent</a> ·
+    <a href="https://developer.aliyun.com/article/1559452">DataWorks Copilot NL2SQL</a>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ---- tabs ----
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.dataset.v).classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+// ---- semantic YAML + graph linkage ----
+const YML={
+ 'm-gmv':[[0,'metrics:'],[1,'  - name: GMV'],[2,'    description: 成交总额（元）'],[3,'    ai_context:'],[4,'      synonyms: [成交额, 销售额, 交易额]'],[5,'    expression:'],[6,'      dialects:'],[7,'        - dialect: MaxCompute'],[8,'          expression: SUM(gmv)']],
+ 'm-aov':[[0,'metric_formulas:'],[1,'  - name: 客单价'],[2,'    description: 平均每单成交金额（元）'],[3,'    formula: GMV / 订单数']],
+ 'd-anchor':[[0,'datasets:'],[1,'  - source: ads_ctlive_anchor_stats'],[2,'    description: ADS-主播成交统计表'],[3,'    fields:'],[4,'      - name: anchor_name'],[5,'        type: string'],[6,'        description: 主播昵称'],[7,'        synonyms: [主播, 主播名, 达人]'],[8,'      - name: gmv'],[9,'        type: double'],[10,'        metric: true'],[11,'        synonyms: [成交额, GMV, 销售额]']],
+ 'd-item':[[0,'datasets:'],[1,'  - source: ads_ctlive_item_stats'],[2,'    description: ADS-商品成交统计表'],[3,'    fields:'],[4,'      - name: cate_level1_name  # 一级品类'],[5,'      - name: gmv  { metric: true }'],[6,'      - name: order_cnt  # 订单数']],
+ 'd-dws':[[0,'ai_context:'],[1,'  instructions: |'],[2,'    电商直播数据分析域。主播带货 + 商品销售两大维度。'],[3,'    数据分层：ODS → DWD → DWS → ADS'],[4,'    分区字段为 dt，金额单位均为人民币元'],[5,'  few_shots:'],[6,'    - question: 昨天 GMV 最高的前10个主播是谁？'],[7,'      sql: |'],[8,'        SELECT anchor_name, gmv FROM ads_ctlive_anchor_stats'],[9,'        WHERE stat_period = \'1d\' ORDER BY gmv DESC LIMIT 10;']]
+};
+const FULL=[
+ '<span class="c"># semantic_model.yaml — 阿里官方电商直播域示例（简化）</span>',
+ '<span class="key">ai_context</span>:',
+ '  <span class="key">instructions</span>: <span class="s">电商直播域，主播带货+商品销售，ODS→DWD→DWS→ADS，分区 dt</span>',
+ '  <span class="key">few_shots</span>: <span class="c"># 真实"问题+SQL"示例，教 AI 常见查询模式</span>',
+ '    - <span class="s">昨天 GMV 最高的前10个主播 → SELECT anchor_name,gmv ...</span>',
+ '<span class="key">metrics</span>:',
+ '  - <span class="key">name</span>: GMV',
+ '    <span class="key">synonyms</span>: [成交额, 销售额, 交易额]',
+ '    <span class="key">expression</span>: <span class="n">SUM(gmv)</span>  <span class="c"># dialect: MaxCompute</span>',
+ '<span class="key">metric_formulas</span>:',
+ '  - <span class="key">name</span>: 客单价',
+ '    <span class="key">formula</span>: <span class="n">GMV / 订单数</span>',
+ '<span class="key">datasets</span>:',
+ '  - <span class="key">source</span>: ads_ctlive_anchor_stats  <span class="c"># 主播成交统计</span>',
+ '    <span class="key">fields</span>:',
+ '      - anchor_name <span class="c">(string, 同义词:主播/达人)</span>',
+ '      - gmv <span class="c">(double, metric:true)</span>',
+ '  - <span class="key">source</span>: ads_ctlive_item_stats  <span class="c"># 商品成交统计</span>',
+ '      - cate_level1_name, gmv<span class="c">(metric)</span>, order_cnt',
+ '  - <span class="key">source</span>: dws_ctlive_trd_anchor_1d  <span class="c"># DWS 明细</span>'
+];
+document.getElementById('yml').innerHTML=FULL.map(l=>'<span class="yl">'+(l||' ')+'</span>').join('\n');
+const graph=document.getElementById('graph'), edges=document.getElementById('edges');
+const LINK={'m-gmv':['d-anchor','d-item'],'m-aov':['m-gmv'],'d-anchor':['d-dws'],'d-item':['d-dws']};
+function drawEdges(){
+  edges.innerHTML='';
+  const gr=graph.getBoundingClientRect();
+  for(const a in LINK){LINK[a].forEach(b=>{
+    const na=graph.querySelector('[data-t="'+a+'"]'),nb=graph.querySelector('[data-t="'+b+'"]');
+    if(!na||!nb)return;
+    const ra=na.getBoundingClientRect(),rb=nb.getBoundingClientRect();
+    const x1=ra.left-gr.left+ra.width/2,y1=ra.top-gr.top+ra.height/2,x2=rb.left-gr.left+rb.width/2,y2=rb.top-gr.top+rb.height/2;
+    edges.innerHTML+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#3a4658" stroke-width="1.5"/>';
+  });}
+}
+graph.addEventListener('click',e=>{
+  const n=e.target.closest('.gnode'); if(!n)return;
+  const seg=YML[n.dataset.t]; if(!seg)return;
+  // rebuild yaml with highlight on matched block keywords
+  const kw=seg.map(s=>s[1].trim().split(/[:#\[]/)[0].trim()).filter(Boolean);
+  document.getElementById('yml').innerHTML=FULL.map(l=>{
+    const plain=l.replace(/<[^>]+>/g,'');
+    const hit=kw.some(k=>k&&plain.includes(k));
+    return '<span class="yl'+(hit?' hl':'')+'">'+(l||' ')+'</span>';
+  }).join('\n');
+  document.getElementById('yhint').textContent='已定位: '+n.textContent.split('\n')[0];
+  graph.querySelectorAll('.gnode').forEach(x=>x.classList.remove('hi')); n.classList.add('hi');
+});
+setTimeout(drawEdges,60); window.addEventListener('resize',drawEdges);
+
+// ---- approval demo ----
+const SCEN={
+ plan:{body:[['u','帮我把 ads_ctlive_item_stats 表重建，加一个物流状态字段'],
+   ['a','【plan 模式】仅分析，不修改文件 / 不执行命令。'],
+   ['a','执行计划：① 探测现有表结构 ② 生成 ALTER 语句 ③ 待你切出 plan 模式后再执行'],
+   ['a','当前为计划模式，未产生任何变更。']],dock:null},
+ default:{body:[['u','给订单表加一个物流状态字段并同步到生产'],
+   ['a','我准备执行以下操作，请确认：'],
+   ['a','1) ALTER TABLE ads_ctlive_item_stats ADD COLUMN logistics_status STRING']],dock:{t:'⚠️ 破坏性操作确认 · 表结构变更',d:'ALTER TABLE ads_ctlive_item_stats ADD COLUMN logistics_status STRING —— 将修改生产表结构，预估影响 1 张表。',acts:['pri:批准执行','dan:拒绝',':查看 SQL']}},
+ 'auto-edit':{body:[['u','给订单表加一个物流状态字段'],
+   ['a','【auto-edit】编辑操作已自动批准，无需逐步确认 ✓'],
+   ['a','已执行 ALTER TABLE ... ADD COLUMN logistics_status STRING'],
+   ['a','字段已添加完成。']],dock:null},
+ auto:{body:[['u','给订单表加物流状态字段，然后 DROP 掉旧的 tmp 表'],
+   ['a','【auto 智能审批】风险自评：ADD COLUMN = 低风险(自动放行) ✓；DROP TABLE = 高风险(需确认) ⚠'],
+   ['a','ADD COLUMN 已自动执行。DROP TABLE 被判定为高风险，暂停等待确认。']],dock:{t:'🛡️ 智能审批 · 仅高风险操作拦截',d:'DROP TABLE tmp_ctlive_old —— Agent 自评风险=高（不可逆删表）。低风险操作已自动放行。',acts:['pri:批准 DROP','dan:拒绝','改:先看数据量']}},
+ yolo:{body:[['u','给订单表加物流状态字段并 DROP 旧 tmp 表'],
+   ['a','【yolo 完全访问】自动执行所有工具调用和命令，无需任何确认'],
+   ['a','✓ ALTER TABLE ... ADD COLUMN logistics_status STRING'],
+   ['a','✓ DROP TABLE tmp_ctlive_old'],
+   ['a','全部操作已完成。']],dock:null}
+};
+const modesEl=document.getElementById('modes');
+function renderMode(m){
+  const s=SCEN[m];
+  document.getElementById('tbody').innerHTML=s.body.map(l=>'<div class="line"><span class="'+l[0]+'">'+(l[0]==='u'?'你 ▸ ':'Agent ▸ ')+'</span>'+l[1]+'</div>').join('');
+  const dz=document.getElementById('dockzone');
+  dz.innerHTML = s.dock ? '<div class="dock"><h5>'+s.dock.t+'</h5><p>'+s.dock.d+'</p><div class="acts">'+
+    s.dock.acts.map(a=>{const [c,...t]=a.split(':');return '<button class="btn '+(c==='pri'?'pri':c==='dan'?'dan':'')+'">'+t.join(':')+'</button>';}).join('')+'</div></div>' : '<div class="note" style="margin-top:12px">该模式下无确认卡弹出 —— Agent 自主完成或仅分析。</div>';
+}
+modesEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  modesEl.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderMode(b.dataset.m);});
+renderMode('default');
+
+// ---- matrix ----
+const ROWS=[
+ ['语义分析 / YAML 语义模型','仅 <code>DBSummary</code> 做 schema 摘要注入 + <code>schema_linking</code> 表列裁剪；<code>indicator_assistant_agent</code> 很薄','bad','🔴 最大','无 metrics/formulas/synonyms/few_shots 结构化模型；无从 SQL 反提取口径；无图谱编辑器'],
+ ['ChatBI（数据集+问数+报告）','<code>chat_db/auto_execute</code> · <code>chat_dashboard</code> · <code>data_scientist_agent</code> · chart/dashboard action','mid','🟠 中','有取数+出图零件，缺"数据集圈范围"+结论提炼报告+HTML/PDF 分享的产品化闭环'],
+ ['代码编程助手（NL2SQL 8 场景）','<code>chat_db</code> · <code>react_agent</code> · <code>professional_qa</code>','warn','🟡 小','生成/问答/解释具备；SQL 补全(Tab)、纠错、注释、测试用例、方言适配未产品化'],
+ ['Agent 智能体 + 专用 Agent 路由','<code>base_agent</code>(ConversableAgent) · <code>agent/expand</code> · <code>awel</code> DAG(chat_flow)','warn','🟡 小','多 Agent+DAG 在，缺"/ 选专用 Agent + 场景自动路由"的 LUI 体验'],
+ ['审批模式（plan/default/auto/yolo）','✅ <code>approval.py</code>(ToolRiskPolicy+ApprovalCenter+gate) · <code>ApprovalDock.tsx</code>','ok','🟢 已对标','规则分级已有；缺会话级模式切换 + auto 智能审批(Agent 自评风险)'],
+ ['交互式确认触发点','approval.py 高危工具 shell/code/sql_query/web_fetch','warn','🟡 小','已拦高危；缺"高代价预估成本""跨边界/权限变更"语义级触发点'],
+ ['Skills（SKILL.md+zip+/命令）','pi <code>tool_bridge._skill_tools</code> · <code>web/pages/construct/skills</code>','ok','🟢 接近','底座在(同 Qwen Code 系)；缺自定义上传 UI + /命令路由 + 内置官方 Skill 库'],
+ ['上下文引用（@表/代码/文件/Rules）','<code>QuestionDock.tsx</code> · chat 上下文 · KB 检索','mid','🟠 中','@ 引用元数据/Rules 体系较弱'],
+ ['Rules（企业级/个人级知识）','无系统化 Rules，只有 KB','mid','🟠 中','缺"规则/规范/口径"作为独立可配置知识源'],
+ ['快捷 AI 操作（建表/诊断/API）','零散，未产品化为模块内嵌 Copilot 按钮','warn','🟡 小','AI 建表、结果可视化可低成本补'],
+ ['数据集成/运维/治理 Agent · DI 多模态 ETL · IM 集成','无（范围外）','none','⚪ 范围外','定位差异，DB-GPT 聚焦取数+分析，不建议盲目补齐']
+];
+document.getElementById('matrixbody').innerHTML=ROWS.map(r=>{
+  const cls={'bad':'b-bad','mid':'b-mid','warn':'b-warn','ok':'b-ok','none':'b-none'}[r[2]];
+  return '<tr><td><b>'+r[0]+'</b></td><td style="color:var(--txt2)">'+r[1]+'</td><td><span class="badge '+cls+'">'+r[3]+'</span></td><td style="color:var(--txt2)">'+r[4]+'</td></tr>';
+}).join('');
+
+// ---- roadmap accordion ----
+document.querySelectorAll('.phase .ph').forEach(ph=>ph.addEventListener('click',()=>ph.parentElement.classList.toggle('open')));
+</script>
+</body>
+</html>
