@@ -142,3 +142,26 @@ test('style Use opens creation, retains edits across language changes, and sends
   await expect(page.getByRole('alert').filter({ hasText: 'getReader' })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('English style Use prefills a localized editable request', async ({ page }, testInfo) => {
+  const errors = await fixture(page);
+  let starts = 0;
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/api/v1/chat/react-agent') starts++;
+  });
+  await page.goto('/dashboards/?tab=templates');
+  await page.locator('.anticon-global').click();
+  await page
+    .locator('[data-design-template="learnhub-viz-design"]')
+    .getByRole('button', { name: 'Use template Learning progress' })
+    .click();
+  await expect(page).toHaveURL(/\/dashboards\/new\/?\?/);
+  const request = page.getByRole('textbox', { name: 'Analysis request' });
+  await expect(request).toHaveValue(/^Use the Learning progress style/);
+  await expect(request).toHaveValue(/learnhub-viz-design.*dashboard-builder/);
+  await expect(request).not.toHaveValue(/[\u4e00-\u9fff]/);
+  await expect(request).toBeEditable();
+  expect(starts).toBe(0);
+  expect(errors).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('english-style-request.png') });
+});

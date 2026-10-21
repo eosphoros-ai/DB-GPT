@@ -1,13 +1,18 @@
 import DashboardEn from '@/locales/en/dashboard';
 import DashboardZh from '@/locales/zh/dashboard';
+import { ADAPTED_SKILLS } from '@/new-components/skills/skill-catalog';
+import type { DashboardSchemaV1 } from '@/types/dashboard';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import i18next from 'i18next';
 import { useState } from 'react';
 import { initReactI18next } from 'react-i18next';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import DashboardAnomalyRuleEditor from './DashboardAnomalyRuleEditor';
+import DashboardDataFreshness from './DashboardDataFreshness';
 import DashboardExtendedChart from './DashboardExtendedChart';
 import DashboardGenerationCard from './DashboardGenerationCard';
 import { dashboardDateLocale, dashboardText, useDashboardTranslation } from './dashboard-i18n';
+import { dashboardTemplateEntry, dashboardTemplatePrompt } from './dashboard-template-entry';
 
 beforeAll(async () => {
   await i18next.use(initReactI18next).init({
@@ -101,6 +106,74 @@ describe('Dashboard locale integration', () => {
     });
     expect(screen.getByText(/1 unmatched items: 自定义地区\./)).toBeTruthy();
     expect(screen.getByText(/Showing the first 12 of 13 dimensions\./)).toBeTruthy();
+  });
+
+  it('separates English labels and rule fragments from their values', async () => {
+    const refreshedAt = '2026-10-21T10:00:00Z';
+    render(
+      <>
+        <DashboardDataFreshness
+          schema={{ widgets: [] } as unknown as DashboardSchemaV1}
+          snapshot={{ dashboard_id: 'spacing', refreshed_at: refreshedAt, filters: {}, widgets: {} }}
+        />
+        <DashboardAnomalyRuleEditor
+          fields={[{ value: 'sales', label: 'Sales' }]}
+          rules={[
+            {
+              id: 'sales-drop',
+              label: 'My sales rule',
+              baseline: 'previous_period',
+              value_field: 'sales',
+              direction: 'below',
+              threshold: { mode: 'relative_change', value: 0.2 },
+              rolling_window: 3,
+              min_samples: 2,
+              enabled: true,
+            },
+          ]}
+          onChange={() => undefined}
+        />
+      </>,
+    );
+    expect(screen.getByText(/^查询时间：/).textContent).toBe(
+      `查询时间：${new Date(refreshedAt).toLocaleString('zh-CN')}`,
+    );
+    await act(async () => {
+      await i18next.changeLanguage('en');
+    });
+    expect(screen.getByText(/^Query time:/).textContent).toBe(
+      `Query time: ${new Date(refreshedAt).toLocaleString('en-US')}`,
+    );
+    expect(screen.getByText(/^Data through/).textContent).toBe(
+      'Data through (current results): No date field provided',
+    );
+    expect(screen.getByLabelText('Rule meaning').textContent).toBe(
+      'When Sales compared with Previous period Decrease of at least 20%, flag an anomaly.',
+    );
+  });
+
+  it('localizes all built-in template requests without translating skill names or custom requests', async () => {
+    for (const language of ['en', 'zh']) {
+      await act(async () => {
+        await i18next.changeLanguage(language);
+      });
+      for (const [name, design] of Object.entries(ADAPTED_SKILLS)) {
+        const prompt = dashboardTemplatePrompt(name);
+        expect(prompt).toContain(name);
+        expect(prompt).toContain('dashboard-builder');
+        if (language === 'en') {
+          expect(prompt).not.toMatch(/[\u4e00-\u9fff]/);
+          expect(prompt).toContain('All values must come from actual queries.');
+        } else {
+          expect(prompt.startsWith(design.prompt)).toBe(true);
+        }
+        expect(dashboardTemplateEntry({ creation_mode: 'dashboard', skill: name })?.prompt).toBe(prompt);
+        expect(
+          dashboardTemplateEntry({ creation_mode: 'dashboard', skill: name, skill_prompt: 'Revenue 需求保持原样' })
+            ?.prompt,
+        ).toBe('Revenue 需求保持原样');
+      }
+    }
   });
 
   it('preserves interpolation fields in every English message', () => {

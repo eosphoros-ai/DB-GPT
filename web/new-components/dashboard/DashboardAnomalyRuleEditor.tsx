@@ -134,8 +134,7 @@ export default function DashboardAnomalyRuleEditor({ rules, fields, result, onCh
               />
             </div>
             <p className='rounded bg-[var(--app-surface-muted)] p-2 text-xs leading-5' aria-label={dt('规则含义')}>
-              {dt('当')} {metricName} {dt('比')}
-              {baseline}
+              {dt('当')} {metricName} {dt('比')} {baseline}{' '}
               {directions.find(item => item.value === rule.direction)?.label} {threshold}
               {dt('，标记异常。')}
             </p>
