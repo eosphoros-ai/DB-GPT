@@ -554,6 +554,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         sys_code: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
+        lang: Optional[str] = None,
     ) -> PaginationResult[Dict]:
         """Get a list of Flow templates
 
@@ -562,10 +563,16 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             sys_code (Optional[str]): The system code
             page (int): The page number
             page_size (int): The page size
+            lang (Optional[str]): Requested template language (``zh``/``en``);
+                falls back to the server environment language.
         Returns:
             List[ServerResponse]: The response
         """
-        user_lang = self._system_app.config.get_current_lang(default="en")
+        user_lang = (
+            lang
+            if lang in ("zh", "en")
+            else self._system_app.config.get_current_lang(default="en")
+        )
         local_file_templates = _get_flow_templates_from_files(user_lang)
         templates = []
         for _, t in local_file_templates:

@@ -1,0 +1,138 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB 智能分析",
+    "name": "taskflow_db_analysis_template",
+    "flow_category": "chat_flow",
+    "description": "模式接地→分析计划→透视分析→数字复核→HTML 分析报告的多 Agent 分析链。",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "模式与语义接地",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "对数据库做画像:表清单与行数、关键字段类型与注释、枚举字段取值、表间关联线索;结合用户问题标注可分析表与维度;用 sql_query 只查元数据与有界聚合,禁止全表扫描。输出语义卡(表/字段/口径/方言)+数据量概览。",
+            "tools": [
+              "sql_query"
+            ],
+            "skills": [
+              "sql-data-analysis"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "分析计划",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "基于上游语义卡与用户问题,提出 3-5 个最有业务价值的分析问题(写清指标口径与对比基准);可用 sql_query 轻量探查验证可行性。输出分析计划清单,不要开始分析。",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "透视分析",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "按上游分析计划逐问题回答:用 sql_query 取数验证,必要时用 code_interpreter 后处理;每个问题给出结论+关键数字+一句解释;最后汇总为结构化分析结论。",
+            "tools": [
+              "sql_query",
+              "code_interpreter"
+            ],
+            "skills": [
+              "sql-data-analysis"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 10
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "agent",
+          "label": "数字复核",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "对上游分析结论中的关键数字,用 SQL 从口径独立重写重算(不得复用上游 SQL);逐项标注「确认 / 修正」与差异说明。输出复核表。",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n6",
+          "kind": "agent",
+          "label": "分析报告",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "把上游的画像、分析结论、复核意见组织成一份面向业务读者的分析报告:标题、核心结论(不超过 3 条)、关键数据、趋势与异常、可执行建议。数字以复核后的为准。最后把报告组织成完整 HTML(含标题、核心结论、关键数据、趋势与异常、建议,自包含样式)并调用 html_interpreter 一次性渲染;渲染成功后用不超过 3 句话总结核心结论作为最终答案,禁止把工具返回值或 JSON 原样粘贴为答案。",
+            "tools": [
+              "html_interpreter"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n7",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ],
+        [
+          "n4",
+          "n5"
+        ],
+        [
+          "n5",
+          "n6"
+        ],
+        [
+          "n6",
+          "n7"
+        ]
+      ]
+    }
+  }
+}

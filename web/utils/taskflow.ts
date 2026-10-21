@@ -270,7 +270,7 @@ export function stripFlowNarration(text: string): string {
 // The server recompiles taskflow entities from their DSL on load, so existing
 // instances self-heal when the compiler changes — no cache bump needed. Bump
 // the version only if the instance *creation* params change (name/label/etc).
-const TEMPLATE_INSTANCE_KEY = 'taskflow_template_instances_v3';
+const TEMPLATE_INSTANCE_KEY = 'taskflow_template_instances_v4';
 
 function readInstanceCache(): Record<string, string> {
   try {

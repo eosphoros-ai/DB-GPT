@@ -1,3 +1,4 @@
+import i18n from '@/app/i18n';
 import { apiInterceptors, deleteFlowById, getFlows, getFlowTemplates, getTaskflowNodeKinds } from '@/client/api';
 import MyEmpty from '@/components/common/MyEmpty';
 import FlowChainPreview from '@/components/taskflow/FlowChainPreview';
@@ -132,6 +133,8 @@ function TaskflowList() {
   }, [manifestData]);
 
   const { loading: loadingTemplates } = useRequest(async () => apiInterceptors(getFlowTemplates()), {
+    // Template cards ship per-language; refetch when the UI locale flips.
+    refreshDeps: [i18n.language],
     onSuccess: data => {
       const [, res] = (data as any) ?? [];
       const items = (res?.items ?? []).map(templateToRef).filter(Boolean) as ITaskflowRef[];

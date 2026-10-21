@@ -583,6 +583,9 @@ async def query_flow_templates(
     sys_code: Optional[str] = Query(default=None, description="system code"),
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
+    lang: Optional[str] = Query(
+        default=None, description="template language (zh/en), defaults to server lang"
+    ),
     service: Service = Depends(get_service),
 ):
     """Query Flow templates."""
@@ -594,6 +597,7 @@ async def query_flow_templates(
         sys_code,
         page,
         page_size,
+        lang,
     )
     return Result.succ(res)
 
