@@ -235,6 +235,10 @@ def register_conv_tools(
             )
 
     react_state: Dict[str, Any] = {"conv_id": conv_id, "file_path": None}
+    # Carried into query artifacts so the edit & re-run endpoint can
+    # re-resolve the connector (gpts_conversations does not persist ext_info).
+    if datasources:
+        react_state["database_name"] = datasources[0]
     factory = make_react_tools(
         react_state,
         database_connector=connector,

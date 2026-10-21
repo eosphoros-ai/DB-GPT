@@ -793,6 +793,15 @@ def _embedded_artifact_outputs(text: str) -> List[Dict[str, Any]]:
             )
         elif ctype == "image" and content:
             outputs.append({"output_type": "image", "content": content})
+        elif (
+            ctype == "query"
+            and isinstance(content, dict)
+            and isinstance(content.get("columns"), list)
+        ):
+            # SQL result-set artifact: promoted uncapped so the data card
+            # and CSV / Excel export see the full payload, not the
+            # display-capped envelope text.
+            outputs.append({"output_type": "query", "content": content})
     return outputs
 
 

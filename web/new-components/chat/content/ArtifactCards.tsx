@@ -30,6 +30,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { resolveImageUrl } from './image-url';
+import QueryArtifactBlock from './QueryArtifactBlock';
 
 export interface StreamArtifact {
   id: string;
@@ -94,6 +95,8 @@ interface ArtifactCardsProps {
   onPreview?: (artifact: StreamArtifact) => void;
   onSkillAdd?: (name: string) => void;
   onSkillDownload?: (name: string) => void;
+  /** Edit & re-run for query artifacts (SQL result sets). */
+  onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
 }
 
 const PREVIEW_EXTS = new Set(['md', 'markdown', 'txt', 'py', 'js', 'ts', 'tsx', 'jsx', 'json', 'csv', 'sql']);
@@ -160,12 +163,22 @@ export function ReportThumb() {
   );
 }
 
-export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkillDownload }: ArtifactCardsProps) {
+export default function ArtifactCards({
+  artifacts,
+  onPreview,
+  onSkillAdd,
+  onSkillDownload,
+  onQueryRerun,
+}: ArtifactCardsProps) {
   const { t } = useTranslation();
   const [imagesExpanded, setImagesExpanded] = useState(false);
   if (!artifacts || artifacts.length === 0) return null;
-  const finals = artifacts.filter(a => a.tier !== 'process' && a.type !== 'image');
-  const processes = artifacts.filter(a => a.tier === 'process');
+  // Query artifacts (SQL result sets) render as full-width data blocks above
+  // the document card row — they are deliverables, not compact chips.
+  const queryArtifacts = artifacts.filter(a => a.type === 'query' && a.content);
+  const rest = artifacts.filter(a => !(a.type === 'query' && a.content));
+  const finals = rest.filter(a => a.tier !== 'process' && a.type !== 'image');
+  const processes = rest.filter(a => a.tier === 'process');
   // Charts are not deliverables: every image artifact (thumbnail-backed or
   // plain file entry) aggregates into ONE mosaic tile that expands in place
   // into a thumbnail grid, keeping the deliverable row document-only.
@@ -177,185 +190,200 @@ export default function ArtifactCards({ artifacts, onPreview, onSkillAdd, onSkil
     return a.type === 'image' && raw ? resolveImageUrl(raw) : '';
   };
   return (
-    <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
-      {finals.map(artifact => {
-        const isHtml = artifact.type === 'html';
-        const isSkill = artifact.type === 'skill';
-        const ext = extOf(artifact.name);
-        const hasTextContent = Boolean(
-          typeof artifact.content === 'string' ? artifact.content : artifact.content?.content,
-        );
-        const previewable = isHtml || isSkill || (artifact.type === 'file' && PREVIEW_EXTS.has(ext) && hasTextContent);
-        const downloadable = isHtml || artifact.type === 'code' || (artifact.type === 'file' && hasTextContent);
-        const meta = isHtml
-          ? `HTML · ${formatSize(artifact.size) || `${(artifact.content || '').length} B`}`
-          : isSkill
-            ? `技能包 · ${artifact.content?.files?.length ?? 0} 文件`
-            : artifact.type === 'code'
-              ? '代码'
-              : `${(ext || 'file').toUpperCase()} · ${formatSize(artifact.size) || '—'}`;
-        return (
-          <div
-            key={artifact.id}
-            className={cls(
-              'flex border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden',
-              'shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]',
-              'w-[340px] gap-2.5',
-            )}
-          >
-            <div
-              className={cls(
-                'bg-[#efefeb] dark:bg-white/[.04] flex items-center justify-center',
-                'w-[84px] self-stretch',
-                previewable && 'cursor-pointer',
-              )}
-              onClick={() => previewable && onPreview?.(artifact)}
-              title={previewable ? '预览' : undefined}
-            >
-              {isHtml ? (
-                <ReportThumb />
-              ) : isSkill ? (
-                <FolderOutlined className='text-amber-500 text-xl' />
-              ) : artifact.type === 'code' ? (
-                <CodeOutlined className='text-gray-400 text-lg' />
-              ) : (
-                fileExtIcon(artifact.name)
-              )}
-            </div>
-            <div className='flex-1 min-w-0 px-2.5 py-2 flex flex-col gap-0.5'>
-              <div className='text-[13px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] truncate flex items-center gap-1.5'>
-                {isHtml && <FileTextOutlined className='text-orange-500' />}
-                {isSkill && <FolderOutlined className='text-amber-500' />}
-                {artifact.name}
-              </div>
-              <div className='text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate'>{meta}</div>
-              <div className='mt-auto pt-1.5 flex gap-1.5'>
-                {isSkill && <SkillActions name={artifact.name} onAdd={onSkillAdd} onDownload={onSkillDownload} />}
-                {previewable && (
-                  <button
-                    type='button'
-                    onClick={() => onPreview?.(artifact)}
-                    className='h-6 px-2.5 rounded-md text-xs bg-[#1c1c1a] dark:bg-[#e6e4df] text-white dark:text-[#1c1c1a] hover:opacity-90'
-                  >
-                    预览
-                  </button>
-                )}
-                {downloadable && (
-                  <button
-                    type='button'
-                    onClick={() => downloadArtifact(artifact)}
-                    className='h-6 px-2.5 rounded-md text-xs border border-[#e6e6e2] dark:border-[#2a2925] text-[#55554f] dark:text-[#a8a59e] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06]'
-                  >
-                    下载
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-      {charts.length > 0 && !imagesExpanded && (
-        <button
-          type='button'
-          onClick={() => setImagesExpanded(true)}
-          className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] overflow-hidden bg-white dark:bg-[#111217] text-left shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)] hover:shadow-[0_2px_6px_rgba(20,20,15,.08),0_8px_24px_rgba(20,20,15,.06)] transition-shadow'
-        >
-          <span className='relative grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5 h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220]'>
-            {charts.slice(0, 4).map(im => {
-              const url = chartUrl(im);
-              return url ? (
-                <img key={im.id} src={url} alt='' className='w-full h-full object-cover' />
-              ) : (
-                <span key={im.id} className='flex items-center justify-center'>
-                  <PictureOutlined className='text-gray-400' />
-                </span>
-              );
-            })}
-            <span
-              className='absolute inset-0 flex items-center justify-center text-white text-[12px] font-medium'
-              style={{ background: 'rgba(0,0,0,0.45)' }}
-            >
-              {charts.length} {t('artifacts_charts_label', '图表')}
-            </span>
-          </span>
-          <span className='block px-2.5 py-2 text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
-            {t('artifacts_expand_charts', '展开全部图表')}
-          </span>
-        </button>
+    <>
+      {queryArtifacts.length > 0 && (
+        <div className='flex flex-col gap-3 mt-3 w-full'>
+          {queryArtifacts.map(a => (
+            <QueryArtifactBlock
+              key={a.id}
+              payload={a.content}
+              fileName={`query_${(a.id || '').slice(-8) || 'result'}`}
+              onRerun={onQueryRerun}
+            />
+          ))}
+        </div>
       )}
-      {imagesExpanded &&
-        charts.length > 0 &&
-        charts.map(im => {
-          const url = chartUrl(im);
+      <div className='flex flex-wrap gap-2.5 mt-3 mb-1'>
+        {finals.map(artifact => {
+          const isHtml = artifact.type === 'html';
+          const isSkill = artifact.type === 'skill';
+          const ext = extOf(artifact.name);
+          const hasTextContent = Boolean(
+            typeof artifact.content === 'string' ? artifact.content : artifact.content?.content,
+          );
+          const previewable =
+            isHtml || isSkill || (artifact.type === 'file' && PREVIEW_EXTS.has(ext) && hasTextContent);
+          const downloadable = isHtml || artifact.type === 'code' || (artifact.type === 'file' && hasTextContent);
+          const meta = isHtml
+            ? `HTML · ${formatSize(artifact.size) || `${(artifact.content || '').length} B`}`
+            : isSkill
+              ? `技能包 · ${artifact.content?.files?.length ?? 0} 文件`
+              : artifact.type === 'code'
+                ? '代码'
+                : `${(ext || 'file').toUpperCase()} · ${formatSize(artifact.size) || '—'}`;
           return (
             <div
-              key={im.id}
-              className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]'
+              key={artifact.id}
+              className={cls(
+                'flex border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden',
+                'shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]',
+                'w-[340px] gap-2.5',
+              )}
             >
               <div
                 className={cls(
-                  'h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220] flex items-center justify-center overflow-hidden',
-                  url && 'cursor-pointer',
+                  'bg-[#efefeb] dark:bg-white/[.04] flex items-center justify-center',
+                  'w-[84px] self-stretch',
+                  previewable && 'cursor-pointer',
                 )}
-                onClick={() => url && onPreview?.(im)}
-                title={url ? '预览' : undefined}
+                onClick={() => previewable && onPreview?.(artifact)}
+                title={previewable ? t('artifact_preview', '预览') : undefined}
               >
-                {url ? (
-                  <img src={url} alt={im.name} className='max-h-[92px] object-contain' />
+                {isHtml ? (
+                  <ReportThumb />
+                ) : isSkill ? (
+                  <FolderOutlined className='text-amber-500 text-xl' />
+                ) : artifact.type === 'code' ? (
+                  <CodeOutlined className='text-gray-400 text-lg' />
                 ) : (
-                  <PictureOutlined className='text-gray-400 text-xl' />
+                  fileExtIcon(artifact.name)
                 )}
               </div>
               <div className='flex-1 min-w-0 px-2.5 py-2 flex flex-col gap-0.5'>
                 <div className='text-[13px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] truncate flex items-center gap-1.5'>
-                  <PictureOutlined className='text-blue-500' />
-                  {im.name}
+                  {isHtml && <FileTextOutlined className='text-orange-500' />}
+                  {isSkill && <FolderOutlined className='text-amber-500' />}
+                  {artifact.name}
                 </div>
-                <div className='text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate'>
-                  {(extOf(im.name) || 'img').toUpperCase()} · {formatSize(im.size) || '—'}
-                </div>
-                {url && (
-                  <div className='mt-auto pt-1.5'>
+                <div className='text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate'>{meta}</div>
+                <div className='mt-auto pt-1.5 flex gap-1.5'>
+                  {isSkill && <SkillActions name={artifact.name} onAdd={onSkillAdd} onDownload={onSkillDownload} />}
+                  {previewable && (
                     <button
                       type='button'
-                      onClick={() => onPreview?.(im)}
+                      onClick={() => onPreview?.(artifact)}
                       className='h-6 px-2.5 rounded-md text-xs bg-[#1c1c1a] dark:bg-[#e6e4df] text-white dark:text-[#1c1c1a] hover:opacity-90'
                     >
-                      预览
+                      {t('artifact_preview', '预览')}
                     </button>
-                  </div>
-                )}
+                  )}
+                  {downloadable && (
+                    <button
+                      type='button'
+                      onClick={() => downloadArtifact(artifact)}
+                      className='h-6 px-2.5 rounded-md text-xs border border-[#e6e6e2] dark:border-[#2a2925] text-[#55554f] dark:text-[#a8a59e] hover:bg-[#f4f4f0] dark:hover:bg-white/[.06]'
+                    >
+                      {t('artifact_download', '下载')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
-      {imagesExpanded && charts.length > 0 && (
-        <button
-          type='button'
-          onClick={() => setImagesExpanded(false)}
-          className='h-7 px-2.5 self-center rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972]'
-        >
-          {t('artifacts_collapse_charts', '收起图表')}
-        </button>
-      )}
-      {processOthers.length > 0 && (
-        <details className='w-full'>
-          <summary className='cursor-pointer inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972] list-none select-none'>
-            ▸ {t('artifacts_process_group', '过程文件')} · {processOthers.length}
-          </summary>
-          <div className='flex flex-wrap gap-1.5 mt-2'>
-            {processOthers.map(p => (
+        {charts.length > 0 && !imagesExpanded && (
+          <button
+            type='button'
+            onClick={() => setImagesExpanded(true)}
+            className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] overflow-hidden bg-white dark:bg-[#111217] text-left shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)] hover:shadow-[0_2px_6px_rgba(20,20,15,.08),0_8px_24px_rgba(20,20,15,.06)] transition-shadow'
+          >
+            <span className='relative grid grid-cols-2 grid-rows-2 gap-0.5 p-0.5 h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220]'>
+              {charts.slice(0, 4).map(im => {
+                const url = chartUrl(im);
+                return url ? (
+                  <img key={im.id} src={url} alt='' className='w-full h-full object-cover' />
+                ) : (
+                  <span key={im.id} className='flex items-center justify-center'>
+                    <PictureOutlined className='text-gray-400' />
+                  </span>
+                );
+              })}
               <span
-                key={p.id}
-                title={p.filePath || p.name}
-                className='inline-flex items-center h-6 px-2 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] font-mono text-[11px] text-[#8b8b84] dark:text-[#7c7972]'
+                className='absolute inset-0 flex items-center justify-center text-white text-[12px] font-medium'
+                style={{ background: 'rgba(0,0,0,0.45)' }}
               >
-                {p.name}
+                {charts.length} {t('artifacts_charts_label', '图表')}
               </span>
-            ))}
-          </div>
-        </details>
-      )}
-    </div>
+            </span>
+            <span className='block px-2.5 py-2 text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
+              {t('artifacts_expand_charts', '展开全部图表')}
+            </span>
+          </button>
+        )}
+        {imagesExpanded &&
+          charts.length > 0 &&
+          charts.map(im => {
+            const url = chartUrl(im);
+            return (
+              <div
+                key={im.id}
+                className='w-[168px] flex flex-col border border-[#e6e6e2] dark:border-[#2a2925] rounded-[10px] bg-white dark:bg-[#111217] overflow-hidden shadow-[0_1px_2px_rgba(20,20,15,.05),0_4px_16px_rgba(20,20,15,.04)]'
+              >
+                <div
+                  className={cls(
+                    'h-[92px] bg-[#efefeb] dark:bg-white/[.04] border-b border-[#efefeb] dark:border-[#232220] flex items-center justify-center overflow-hidden',
+                    url && 'cursor-pointer',
+                  )}
+                  onClick={() => url && onPreview?.(im)}
+                  title={url ? t('artifact_preview', '预览') : undefined}
+                >
+                  {url ? (
+                    <img src={url} alt={im.name} className='max-h-[92px] object-contain' />
+                  ) : (
+                    <PictureOutlined className='text-gray-400 text-xl' />
+                  )}
+                </div>
+                <div className='flex-1 min-w-0 px-2.5 py-2 flex flex-col gap-0.5'>
+                  <div className='text-[13px] font-semibold text-[#1c1c1a] dark:text-[#e6e4df] truncate flex items-center gap-1.5'>
+                    <PictureOutlined className='text-blue-500' />
+                    {im.name}
+                  </div>
+                  <div className='text-[11.5px] text-[#8b8b84] dark:text-[#7c7972] truncate'>
+                    {(extOf(im.name) || 'img').toUpperCase()} · {formatSize(im.size) || '—'}
+                  </div>
+                  {url && (
+                    <div className='mt-auto pt-1.5'>
+                      <button
+                        type='button'
+                        onClick={() => onPreview?.(im)}
+                        className='h-6 px-2.5 rounded-md text-xs bg-[#1c1c1a] dark:bg-[#e6e4df] text-white dark:text-[#1c1c1a] hover:opacity-90'
+                      >
+                        {t('artifact_preview', '预览')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        {imagesExpanded && charts.length > 0 && (
+          <button
+            type='button'
+            onClick={() => setImagesExpanded(false)}
+            className='h-7 px-2.5 self-center rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972]'
+          >
+            {t('artifacts_collapse_charts', '收起图表')}
+          </button>
+        )}
+        {processOthers.length > 0 && (
+          <details className='w-full'>
+            <summary className='cursor-pointer inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972] list-none select-none'>
+              ▸ {t('artifacts_process_group', '过程文件')} · {processOthers.length}
+            </summary>
+            <div className='flex flex-wrap gap-1.5 mt-2'>
+              {processOthers.map(p => (
+                <span
+                  key={p.id}
+                  title={p.filePath || p.name}
+                  className='inline-flex items-center h-6 px-2 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] font-mono text-[11px] text-[#8b8b84] dark:text-[#7c7972]'
+                >
+                  {p.name}
+                </span>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </>
   );
 }

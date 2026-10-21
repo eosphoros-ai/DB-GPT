@@ -2051,6 +2051,10 @@ async def _react_agent_stream_impl(
         "file_paths": file_paths,
         "uploaded_files": uploaded_files,
         "dataset_id": dataset_id,
+        # Carried into query artifacts so the edit & re-run endpoint can
+        # re-resolve the connector without guessing (gpts_conversations
+        # does not persist ext_info).
+        "database_name": database_name,
     }
 
     # An authoritative Dashboard continuation marker always wins over a stale
@@ -4859,6 +4863,93 @@ async def approval_log(
             return Result.failed(msg=str(e))
     return Result.succ(
         query_approval_logs(con_uid, limit=min(limit, 200), offset=offset)
+    )
+
+
+class SqlRunRequest(_BaseModel):
+    """Re-run an edited SQL statement from a query artifact."""
+
+    con_uid: str
+    sql: str
+    db_name: Optional[str] = None
+
+
+@router.post("/v1/chat/sql/run", response_model=Result)
+async def chat_sql_run(
+    request: SqlRunRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Execute an edited query-artifact SQL (read-only) and return its payload.
+
+    Powers the "edit & re-run" action on query artifacts: the datasource is
+    resolved from the explicit ``db_name`` (flow artifacts) or the owning
+    conversation's ``ext_info.database_name`` (react artifacts), and both the
+    conversation ownership and the datasource ownership are re-checked here —
+    the endpoint never trusts the client's claim about either.
+    """
+    from dbgpt_serve.conversation.api.schemas import ServeRequest
+
+    from .tools.query_artifact import (
+        build_query_chunk,
+        check_read_only,
+        normalize_result,
+    )
+
+    actor_id = user_token.user_id if user_token else None
+    conv_uid = (request.con_uid or "").strip()
+    sql = (request.sql or "").strip().rstrip(";")
+    if not conv_uid or not sql:
+        return Result.failed(msg="con_uid 与 sql 均为必填")
+    try:
+        conversation = _get_conversation_service().get(
+            ServeRequest(conv_uid=conv_uid, user_name=actor_id)
+        )
+    except Exception:
+        conversation = None
+    if conversation is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    database_name = (request.db_name or "").strip() or None
+    ext_info = getattr(conversation, "ext_info", None)
+    if not database_name and isinstance(ext_info, dict):
+        database_name = ext_info.get("database_name") or None
+    if not database_name:
+        return Result.failed(msg="该会话未绑定数据源，无法重跑 SQL")
+
+    forbidden_kw = check_read_only(sql)
+    if forbidden_kw:
+        return Result.failed(
+            msg=f"安全限制: 不允许执行 {forbidden_kw} 语句，仅支持 SELECT 查询。"
+        )
+
+    try:
+        local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
+        _require_database_access(local_db_manager, database_name, actor_id)
+        connector = local_db_manager.get_connector(database_name)
+        result = await run_in_threadpool(connector.run, sql)
+    except PermissionError as e:
+        return Result.failed(msg=str(e))
+    except ValueError as e:
+        return Result.failed(msg=str(e))
+    except Exception as e:
+        return Result.failed(msg=f"查询失败: {e}")
+
+    if not result:
+        return Result.succ(
+            {
+                "sql": sql,
+                "columns": [],
+                "rows": [],
+                "row_count": 0,
+                "truncated": False,
+                "db_name": database_name,
+            }
+        )
+    col_names, rows = normalize_result(result)
+    return Result.succ(
+        build_query_chunk(sql, col_names, rows, db_name=database_name)["content"]
     )
 
 
