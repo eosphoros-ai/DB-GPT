@@ -10,11 +10,13 @@ import Icon, {
   ApartmentOutlined,
   ApiOutlined,
   AppstoreOutlined,
+  BlockOutlined,
   BookOutlined,
   CheckOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
   DatabaseOutlined,
+  DeploymentUnitOutlined,
   DeleteOutlined,
   FormOutlined,
   GlobalOutlined,
@@ -215,10 +217,24 @@ function SideBar() {
         IconComponent: BookOutlined,
         path: '/construct/knowledge',
       },
+      {
+        key: 'semantic',
+        name: i18n.language === 'en' ? 'Semantic Layer' : '语义层',
+        isActive: pathname.startsWith('/construct/semantic'),
+        IconComponent: DeploymentUnitOutlined,
+        path: '/construct/semantic',
+      },
     ];
     // AntWork-style "extensions" cluster: capability add-ons sit under a
     // labeled header as indented, rule-lined entries.
     const extensions: RouteItem[] = [
+      {
+        key: 'suites',
+        name: t('suites'),
+        isActive: pathname.startsWith('/construct/suites'),
+        IconComponent: BlockOutlined,
+        path: '/construct/suites',
+      },
       {
         key: 'skills',
         name: t('skills'),

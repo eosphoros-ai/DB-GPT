@@ -25,6 +25,7 @@ from dbgpt_serve.semantic.models import (
     SemRuleDao,
     SemTableDao,
     dump_json,
+    filters_to_dict,
 )
 from dbgpt_serve.semantic.publisher import SemanticPublisher
 from dbgpt_serve.semantic.sync import SemanticSyncService
@@ -264,6 +265,187 @@ class SemanticService:
             "entries": entry_status,
             "metrics": metric_status,
         }
+
+    # ---- list passthroughs (S7 API) ----
+    def list_tables(self, ds_id: int, status: str = "active") -> List[Dict[str, Any]]:
+        keys = [
+            "id",
+            "table_name",
+            "table_comment",
+            "table_type",
+            "row_count_est",
+            "is_whitelisted",
+            "is_sensitive",
+            "status",
+        ]
+        tables = self._table_dao.list_by_ds(ds_id, status=status)
+        return [filters_to_dict(t, keys) for t in tables]
+
+    def list_columns(self, ds_id: int, table_id: int) -> List[Dict[str, Any]]:
+        keys = [
+            "id",
+            "column_name",
+            "column_type",
+            "column_comment",
+            "is_pk",
+            "is_enum",
+            "status",
+        ]
+        cols = self._column_dao.list_by_table(ds_id, table_id)
+        return [filters_to_dict(c, keys) for c in cols]
+
+    def list_entries(
+        self, ds_id: int, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        keys = [
+            "id",
+            "entry_type",
+            "target_id",
+            "entry_name",
+            "entry_comment",
+            "synonyms",
+            "status",
+            "version",
+            "provenance",
+            "publish_version",
+        ]
+        entries = self._entry_dao.list_by_ds(ds_id, status=status)
+        return [filters_to_dict(e, keys) for e in entries]
+
+    def list_metrics(
+        self, ds_id: int, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        keys = [
+            "id",
+            "metric_name",
+            "metric_comment",
+            "metric_type",
+            "formula",
+            "dimensions",
+            "status",
+            "version",
+            "provenance",
+            "suite_id",
+            "publish_version",
+        ]
+        metrics = self._metric_dao.list_by_ds(ds_id, status=status)
+        return [filters_to_dict(m, keys) for m in metrics]
+
+    def list_examples(
+        self, ds_id: int, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        session = self._example_dao.get_raw_session()
+        try:
+            from dbgpt_serve.semantic.models import SemExampleEntity
+
+            q = session.query(SemExampleEntity).filter(SemExampleEntity.ds_id == ds_id)
+            if status:
+                q = q.filter(SemExampleEntity.status == status)
+            rows = q.all()
+            keys = [
+                "id",
+                "example_name",
+                "question",
+                "sql_text",
+                "source",
+                "use_count",
+                "status",
+            ]
+            return [filters_to_dict(r, keys) for r in rows]
+        finally:
+            session.close()
+
+    def list_relations(
+        self, ds_id: int, status: str = "active"
+    ) -> List[Dict[str, Any]]:
+        session = self._rule_dao.get_raw_session()
+        try:
+            from dbgpt_serve.semantic.models import SemRelationEntity
+
+            rows = (
+                session.query(SemRelationEntity)
+                .filter(
+                    SemRelationEntity.ds_id == ds_id,
+                    SemRelationEntity.status == status,
+                )
+                .all()
+            )
+            keys = [
+                "id",
+                "left_table_id",
+                "left_column_id",
+                "right_table_id",
+                "right_column_id",
+                "relation_type",
+                "join_condition",
+                "confidence",
+            ]
+            return [filters_to_dict(r, keys) for r in rows]
+        finally:
+            session.close()
+
+    def list_rules(
+        self, ds_id: int, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        keys = [
+            "id",
+            "rule_name",
+            "rule_type",
+            "rule_definition",
+            "rule_condition",
+            "rule_action",
+            "priority",
+            "status",
+        ]
+        rules = self._rule_dao.list_by_ds(ds_id, status=status)
+        return [filters_to_dict(r, keys) for r in rules]
+
+    def set_rule_status(self, rule_id: int, status: str) -> Dict[str, Any]:
+        session = self._rule_dao.get_raw_session()
+        session.expire_on_commit = False
+        try:
+            from dbgpt_serve.semantic.models import SemRuleEntity
+
+            rule = (
+                session.query(SemRuleEntity).filter(SemRuleEntity.id == rule_id).first()
+            )
+            if not rule:
+                raise ValueError(f"rule {rule_id} not found")
+            rule.status = status
+            session.commit()
+            return {"rule_id": rule_id, "status": rule.status}
+        finally:
+            session.close()
+
+    def create_entry(
+        self,
+        ds_id: int,
+        payload: Dict[str, Any],
+        user: Optional[str] = None,
+        provenance: str = "manual",
+    ) -> Dict[str, Any]:
+        from dbgpt_serve.semantic.models import SemEntryEntity, dump_json
+
+        entry = SemEntryEntity(
+            ds_id=ds_id,
+            entry_type=payload["entry_type"],
+            target_id=payload.get("target_id"),
+            entry_name=payload.get("entry_name"),
+            entry_comment=payload.get("entry_comment"),
+            synonyms=dump_json(payload.get("synonyms")),
+            entry_definition=payload.get("entry_definition"),
+            status="draft",
+            provenance=provenance,
+            user_name=user,
+        )
+        session = self._entry_dao.get_raw_session()
+        session.expire_on_commit = False
+        try:
+            session.add(entry)
+            session.commit()
+            return {"id": entry.id, "status": entry.status}
+        finally:
+            session.close()
 
     # ---- internals ----
     def _commit_entry(self, entry: SemEntryEntity) -> None:
