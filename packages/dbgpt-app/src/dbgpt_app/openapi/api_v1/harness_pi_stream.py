@@ -429,6 +429,9 @@ def register_harness_endpoints(router: Any) -> None:
             preview_args,
             push_intent,
         )
+        from .tool_names import canonical_tool
+
+        name = canonical_tool(name)
 
         if x_approval_token:
             # Redemption re-post of an approved call: single-use token.

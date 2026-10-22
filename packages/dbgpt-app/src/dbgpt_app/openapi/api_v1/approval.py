@@ -27,6 +27,9 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
+from .approval_code_risk import code_has_sink, code_provably_safe
+from .tool_names import canonical_tool
+
 logger = logging.getLogger(__name__)
 
 TIER_AUTO = "auto"
@@ -35,7 +38,7 @@ TIER_DENY = "deny"
 _TIER_RANK = {TIER_DENY: 0, TIER_CONFIRM: 1, TIER_AUTO: 2}
 
 # Tools whose unmatched calls fail safe to ``confirm`` instead of ``auto``.
-GATED_TOOLS = {"shell_interpreter", "code_interpreter", "sql_query", "web_fetch"}
+GATED_TOOLS = {"bash", "code", "sql_query", "web_fetch"}
 
 _PRIMARY_ARG_KEYS = (
     "command",
@@ -127,24 +130,55 @@ def _is_write_with_where(args: dict) -> bool:
 _READONLY_CMD_RE = re.compile(
     r"^\s*(ls|cat|grep|ps|df|du|tail|head|wc|pwd|echo|pytest|uv run pytest|"
     r"git (status|log|diff|show|branch)|find|which|whereis|env|printenv|"
-    r"date|whoami|id|uname|hostname|jq|tree|stat|file)\b",
+    r"date|whoami|id|uname|hostname|jq|tree|stat|file|cut|tr|uniq|diff|comm|"
+    r"paste|column|nl|md5|shasum|sha256sum|basename|dirname|readlink|"
+    r"realpath|seq|bc|awk|sed|sort|tar|lsof|netstat)\b",
     re.IGNORECASE,
 )
 _COMPOSE_RE = re.compile(r"[|;&]+|\$\(|`")
+_ENV_PREFIX_RE = re.compile(r"^\s*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+")
+# Output redirection writes a file, so the command is never read-only no
+# matter how pure the left side looks (``ls > out.txt``).
+_REDIRECT_RE = re.compile(r">")
+# Flags that turn an otherwise read-only verb into a writer / executor.
+_FLAG_GUARDS = (
+    (
+        re.compile(r"^find\b", re.IGNORECASE),
+        re.compile(r"-delete|-exec(dir)?\b|-ok(dir)?\b"),
+    ),
+    (re.compile(r"^sort\b", re.IGNORECASE), re.compile(r"\s-o\s|--output")),
+    (re.compile(r"^sed\b", re.IGNORECASE), re.compile(r"\s-i\b|--in-place")),
+    (re.compile(r"^awk\b", re.IGNORECASE), re.compile(r"system\s*\(")),
+)
 
 
 def _command_segments(blob: str) -> List[str]:
     return [s for s in _COMPOSE_RE.split(blob) if s and s.strip()]
 
 
+def _segment_readonly(seg: str) -> bool:
+    seg = _ENV_PREFIX_RE.sub("", seg.strip())
+    if not _READONLY_CMD_RE.match(seg):
+        return False
+    # tar is read-only only when listing; create/extract write files.
+    if re.match(r"tar\b", seg, re.IGNORECASE) and not re.search(
+        r"(^|\s)-[a-z]*t[a-z]*\b|--list\b", seg
+    ):
+        return False
+    for head, bad in _FLAG_GUARDS:
+        if head.match(seg) and bad.search(seg):
+            return False
+    return True
+
+
 def _is_readonly_pipeline(args: dict) -> bool:
     blob = _args_blob(args)
     if not blob.strip():
         return False
+    if _REDIRECT_RE.search(blob):
+        return False
     segments = _command_segments(blob)
-    return bool(segments) and all(
-        _READONLY_CMD_RE.match(seg.strip()) for seg in segments
-    )
+    return bool(segments) and all(_segment_readonly(seg) for seg in segments)
 
 
 def _is_composed(args: dict) -> bool:
@@ -166,7 +200,8 @@ class ApprovalRule:
     source: str = "builtin"
 
     def matches(self, tool: str, args: dict, blob: str) -> bool:
-        if self.tool != "*" and self.tool != tool:
+        rule_tool = canonical_tool(self.tool)
+        if rule_tool != "*" and rule_tool != canonical_tool(tool):
             return False
         if self.pred is not None:
             try:
@@ -183,31 +218,31 @@ BUILTIN_RULES: List[ApprovalRule] = [
     # ── deny tier (evaluated first) ─────────────────────────────────────────
     ApprovalRule(
         "shell.mass_kill",
-        "shell_interpreter",
+        "bash",
         TIER_DENY,
         pattern=r"rm\s+-rf\s+(/|~|\*)(\s|$)",
     ),
     ApprovalRule(
         "shell.pipe_exec",
-        "shell_interpreter",
+        "bash",
         TIER_DENY,
         pattern=r"(curl|wget)[^\n]*\|\s*(sh|bash|zsh)",
     ),
-    ApprovalRule("shell.mkfs", "shell_interpreter", TIER_DENY, pattern=r"\bmkfs\b"),
+    ApprovalRule("shell.mkfs", "bash", TIER_DENY, pattern=r"\bmkfs\b"),
     ApprovalRule(
         "shell.dd_device",
-        "shell_interpreter",
+        "bash",
         TIER_DENY,
         pattern=r"\bdd\b[^\n]*of=/dev/",
     ),
     ApprovalRule(
         "shell.chmod_root",
-        "shell_interpreter",
+        "bash",
         TIER_DENY,
         pattern=r"chmod\s+(-R\s+)?777\s+(/|~)(\s|$)",
     ),
     ApprovalRule(
-        "shell.fork_bomb", "shell_interpreter", TIER_DENY, pattern=r":\(\)\s*\{"
+        "shell.fork_bomb", "bash", TIER_DENY, pattern=r":\(\)\s*\{"
     ),
     ApprovalRule(
         "sql.dml_no_where", "sql_query", TIER_DENY, pred=_is_write_without_where
@@ -215,56 +250,62 @@ BUILTIN_RULES: List[ApprovalRule] = [
     ApprovalRule("sql.ddl", "sql_query", TIER_DENY, pattern=r"^\s*(drop|truncate)\b"),
     ApprovalRule(
         "code.mass_kill",
-        "code_interpreter",
+        "code",
         TIER_DENY,
         pattern=r"rm\s+-rf\s+(/|~|\*)(\s|$)",
     ),
     # ── confirm tier ────────────────────────────────────────────────────────
     ApprovalRule(
         "shell.kill_process",
-        "shell_interpreter",
+        "bash",
         TIER_CONFIRM,
         pattern=r"\b(pkill|kill)\b",
     ),
     ApprovalRule(
         "shell.priv_esc",
-        "shell_interpreter",
+        "bash",
         TIER_CONFIRM,
         pattern=r"\bsudo\b|chmod\s+777",
     ),
-    ApprovalRule("shell.rm_rf", "shell_interpreter", TIER_CONFIRM, pattern=r"rm\s+-rf"),
+    ApprovalRule("shell.rm_rf", "bash", TIER_CONFIRM, pattern=r"rm\s+-rf"),
     ApprovalRule(
-        "shell.background_svc", "shell_interpreter", TIER_CONFIRM, pattern=r"\bnohup\b"
+        "shell.background_svc", "bash", TIER_CONFIRM, pattern=r"\bnohup\b"
     ),
     ApprovalRule(
         "shell.git_force",
-        "shell_interpreter",
+        "bash",
         TIER_CONFIRM,
         pattern=r"git\s+push\s+\S*\s*--force",
     ),
     ApprovalRule(
         "shell.git_destructive",
-        "shell_interpreter",
+        "bash",
         TIER_CONFIRM,
         pattern=r"git\s+(reset\s+--hard|clean\s+-fd?)",
     ),
     ApprovalRule(
         "shell.eval_indirect",
-        "shell_interpreter",
+        "bash",
         TIER_CONFIRM,
         pattern=r"\beval\b|\b(bash|sh|zsh)\s+-c\b",
     ),
     ApprovalRule(
-        "shell.killall", "shell_interpreter", TIER_CONFIRM, pattern=r"\bkillall\b"
+        "shell.killall", "bash", TIER_CONFIRM, pattern=r"\bkillall\b"
     ),
     ApprovalRule(
-        "shell.composed", "shell_interpreter", TIER_CONFIRM, pred=_is_composed
+        "shell.composed", "bash", TIER_CONFIRM, pred=_is_composed
     ),
     ApprovalRule(
         "code.kill_process",
-        "code_interpreter",
+        "code",
         TIER_CONFIRM,
         pattern=r"\bpkill\b|os\.system\(['\"]kill",
+    ),
+    ApprovalRule(
+        "code.static_sink",
+        "code",
+        TIER_CONFIRM,
+        pred=code_has_sink,
     ),
     ApprovalRule("sql.dml_write", "sql_query", TIER_CONFIRM, pred=_is_write_with_where),
     ApprovalRule(
@@ -276,9 +317,15 @@ BUILTIN_RULES: List[ApprovalRule] = [
     # ── auto tier (read-only families) ──────────────────────────────────────
     ApprovalRule(
         "shell.readonly",
-        "shell_interpreter",
+        "bash",
         TIER_AUTO,
         pred=_is_readonly_pipeline,
+    ),
+    ApprovalRule(
+        "code.static_auto",
+        "code",
+        TIER_AUTO,
+        pred=code_provably_safe,
     ),
     ApprovalRule(
         "sql.read",
@@ -330,6 +377,7 @@ class ToolRiskPolicy:
         self, tool: str, args: dict
     ) -> Tuple[Tuple[str, str], List[Dict[str, Any]]]:
         trace: List[Dict[str, Any]] = []
+        tool = canonical_tool(tool)
         mode = approval_mode()
         if mode == "off":
             trace.append({"rule_id": "mode.off", "tier": TIER_AUTO, "hit": True})
