@@ -587,11 +587,28 @@ StreamCallback = Callable[[str, Dict[str, Any]], Awaitable[None]]
 # fallback bullet is pushed so Allow is never held hostage.
 INTENT_MODEL_ENV = "DBGPT_APPROVAL_INTENT_MODEL"
 INTENT_TIMEOUT_SECONDS = 10.0
-INTENT_FALLBACK_BULLETS = ["意图分析不可用，请自行核对命令内容与影响范围后决策。"]
+INTENT_FALLBACK_BULLETS = [
+    "Intent analysis unavailable — review the command content and its blast "
+    "radius yourself before deciding."
+]
+INTENT_FALLBACK_BULLETS_ZH = ["意图分析不可用，请自行核对命令内容与影响范围后决策。"]
 
 IntentAnalyzer = Callable[[str, dict], Awaitable[Optional[List[str]]]]
 
 _INTENT_PROMPT = (
+    "You are a command-intent analyzer. For the tool call below, output 3-5 "
+    "bullet points in English explaining what it will do, its blast radius "
+    "and its consequences, so the user can decide whether to approve. "
+    "Requirements:\n"
+    "- one sentence per bullet, in execution order;\n"
+    "- wrap impact/risk words (e.g. force-kill, abort immediately, "
+    "irreversible, delete, overwrite, exfiltrate, restart in background) in "
+    "a pair of ** for emphasis;\n"
+    "- output ONLY a JSON array of strings, nothing else.\n"
+    "tool: {tool}\nargs: {args}"
+)
+
+_INTENT_PROMPT_ZH = (
     "你是命令意图分析器。针对下面这次工具调用，用中文输出 3-5 条要点，"
     "说明它会做什么、影响范围与后果，供用户审批决策。要求：\n"
     "- 每条一句话，按执行顺序；\n"
@@ -600,6 +617,53 @@ _INTENT_PROMPT = (
     "- 只输出 JSON 字符串数组，不要任何其他内容。\n"
     "工具：{tool}\n参数：{args}"
 )
+
+# ── Per-conversation UI locale ──────────────────────────────────────────────
+# The intent bullets are rendered verbatim in the approval dock, so they must
+# follow the *UI* language. The frontend sends its i18n locale with every chat
+# request (``ext_info.locale``); both engines record it here at turn start and
+# the intent path reads it back by conv_id.
+DEFAULT_INTENT_LOCALE = "en"
+_CONV_LOCALE: Dict[str, str] = {}
+_CONV_LOCALE_MAX = 512
+
+
+def normalize_intent_locale(locale: Optional[str]) -> str:
+    """Map any locale tag (``zh-CN``, ``en_US``, …) onto ``zh``/``en``."""
+    tag = (locale or "").strip().lower().replace("_", "-")
+    if tag.startswith("zh"):
+        return "zh"
+    if tag.startswith("en"):
+        return "en"
+    return DEFAULT_INTENT_LOCALE
+
+
+def locale_from_ext_info(ext_info: Optional[dict]) -> str:
+    ext = ext_info if isinstance(ext_info, dict) else {}
+    return normalize_intent_locale(
+        ext.get("locale") or ext.get("lang") or ext.get("language")
+    )
+
+
+def set_conv_locale(conv_id: Optional[str], locale: Optional[str]) -> None:
+    """Record the UI locale for one conversation (bounded, turn-start)."""
+    if not conv_id:
+        return
+    _CONV_LOCALE[conv_id] = normalize_intent_locale(locale)
+    while len(_CONV_LOCALE) > _CONV_LOCALE_MAX:
+        _CONV_LOCALE.pop(next(iter(_CONV_LOCALE)))
+
+
+def get_conv_locale(conv_id: Optional[str]) -> str:
+    return _CONV_LOCALE.get(conv_id or "", DEFAULT_INTENT_LOCALE)
+
+
+def intent_prompt(lang: str) -> str:
+    return _INTENT_PROMPT_ZH if lang == "zh" else _INTENT_PROMPT
+
+
+def intent_fallback_bullets(lang: str) -> List[str]:
+    return list(INTENT_FALLBACK_BULLETS_ZH if lang == "zh" else INTENT_FALLBACK_BULLETS)
 
 
 def parse_intent_bullets(text: str) -> List[str]:
@@ -631,9 +695,17 @@ def parse_intent_bullets(text: str) -> List[str]:
 
 
 def make_intent_analyzer(
-    llm_client: Any, model_name: Optional[str] = None
+    llm_client: Any,
+    model_name: Optional[str] = None,
+    lang: Optional[str] = None,
 ) -> IntentAnalyzer:
-    """Build an analyzer bound to an LLM client; env model wins over round."""
+    """Build an analyzer bound to an LLM client; env model wins over round.
+
+    ``lang`` pins the bullet language (``zh``/``en``); without it the
+    analyzer emits the default locale, so callers that know the
+    conversation's UI locale should pass it explicitly.
+    """
+    pinned = normalize_intent_locale(lang) if lang else None
 
     async def analyze(tool: str, args: dict) -> Optional[List[str]]:
         target = os.environ.get(INTENT_MODEL_ENV) or model_name
@@ -641,14 +713,13 @@ def make_intent_analyzer(
             return None
         from dbgpt.core.interface.llm import ModelMessage, ModelRequest
 
+        prompt = intent_prompt(pinned or DEFAULT_INTENT_LOCALE)
         request = ModelRequest(
             model=target,
             messages=[
                 ModelMessage(
                     role="system",
-                    content=_INTENT_PROMPT.format(
-                        tool=tool, args=preview_args(args, 1200)
-                    ),
+                    content=prompt.format(tool=tool, args=preview_args(args, 1200)),
                 )
             ],
         )
@@ -664,9 +735,12 @@ def make_intent_analyzer(
 _INTENT_CACHE: Dict[str, Any] = {}
 
 
-def get_intent_analyzer(model_name: Optional[str] = None) -> Optional[IntentAnalyzer]:
+def get_intent_analyzer(
+    model_name: Optional[str] = None, lang: Optional[str] = None
+) -> Optional[IntentAnalyzer]:
     """Process-wide analyzer for paths without a round LLM client (pi)."""
-    cache_key = model_name or "__default__"
+    locale = normalize_intent_locale(lang) if lang else None
+    cache_key = f"{model_name or '__default__'}::{locale or '__conv__'}"
     if cache_key in _INTENT_CACHE:
         return _INTENT_CACHE[cache_key]
     analyzer: Optional[IntentAnalyzer] = None
@@ -684,7 +758,7 @@ def get_intent_analyzer(model_name: Optional[str] = None) -> Optional[IntentAnal
             .create(),
             auto_convert_message=True,
         )
-        analyzer = make_intent_analyzer(client, model_name)
+        analyzer = make_intent_analyzer(client, model_name, lang=locale)
     except Exception:
         logger.exception("approval intent analyzer unavailable")
     _INTENT_CACHE[cache_key] = analyzer
@@ -705,7 +779,9 @@ async def push_intent(
                 "approval intent analysis failed, approval_id=%s", pa.approval_id
             )
     if not bullets:
-        bullets = list(INTENT_FALLBACK_BULLETS)
+        # Fallback follows the conversation's UI locale so the dock never
+        # shows a language the user did not choose.
+        bullets = intent_fallback_bullets(get_conv_locale(pa.conv_id))
     from dbgpt_app.openapi.api_v1 import approval_audit as audit
 
     audit.audit_intent(pa.approval_id, json.dumps(bullets, ensure_ascii=False))

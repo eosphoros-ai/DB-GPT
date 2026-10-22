@@ -791,7 +791,7 @@ const EXAMPLE_CARDS = [
 
 const Playground: NextPage = () => {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { model, setModel, setConvRunning, addOptimisticConv, bumpDialogueList } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -2806,6 +2806,9 @@ const Playground: NextPage = () => {
     // preference (Setting → Harness); it is NOT sent
     // per request to avoid stale client states.
     const baseExtInfo: Record<string, any> = {
+      // UI locale so server-generated prose (approval intent bullets…)
+      // comes back in the language the user is actually reading.
+      locale: i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
       ...(effectiveDb ? { database_name: effectiveDb.db_name, database_type: effectiveDb.db_type } : {}),
       ...(selectedKnowledge

@@ -6,14 +6,17 @@ import pytest
 
 from dbgpt_app.openapi.api_v1.approval import (
     INTENT_FALLBACK_BULLETS,
+    INTENT_FALLBACK_BULLETS_ZH,
     TIER_AUTO,
     TIER_CONFIRM,
     TIER_DENY,
     ApprovalCenter,
     ToolRiskPolicy,
     make_approval_gate,
+    normalize_intent_locale,
     parse_intent_bullets,
     push_intent,
+    set_conv_locale,
 )
 
 
@@ -319,6 +322,32 @@ def test_memory_never_bypasses_deny_tier():
     obs = asyncio.run(gate("shell_interpreter", {"command": "rm -rf /"}))
     assert obs and obs.startswith("[policy]")
     assert events == []
+
+
+def test_normalize_intent_locale_maps_ui_tags():
+    assert normalize_intent_locale("zh-CN") == "zh"
+    assert normalize_intent_locale("zh") == "zh"
+    assert normalize_intent_locale("en_US") == "en"
+    assert normalize_intent_locale(None) == "en"
+    assert normalize_intent_locale("fr-FR") == "en"
+
+
+def test_push_intent_fallback_follows_conv_locale():
+    center = ApprovalCenter()
+    events = []
+
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    set_conv_locale("c-zh", "zh-CN")
+    pa_zh = center.register("c-zh", "shell_interpreter", {"command": "pkill x"}, "r")
+    asyncio.run(push_intent(pa_zh, cb, None))
+    assert events[0][1]["bullets"] == INTENT_FALLBACK_BULLETS_ZH
+
+    set_conv_locale("c-en", "en")
+    pa_en = center.register("c-en", "shell_interpreter", {"command": "pkill x"}, "r")
+    asyncio.run(push_intent(pa_en, cb, None))
+    assert events[1][1]["bullets"] == INTENT_FALLBACK_BULLETS
 
 
 def test_push_intent_passes_analyzer_bullets():

@@ -424,6 +424,7 @@ def register_harness_endpoints(router: Any) -> None:
             approval_mode,
             approval_ttl_seconds,
             deny_observation,
+            get_conv_locale,
             get_intent_analyzer,
             preview_args,
             push_intent,
@@ -469,7 +470,10 @@ def register_harness_endpoints(router: Any) -> None:
                     name,
                 )
                 analyzer = (
-                    get_intent_analyzer(tool_bridge.get_conv_model(conv_id))
+                    get_intent_analyzer(
+                        tool_bridge.get_conv_model(conv_id),
+                        lang=get_conv_locale(conv_id),
+                    )
                     if approval_intent_enabled()
                     else None
                 )
@@ -1488,6 +1492,15 @@ async def run_pi_harness_turn(
         user_input = str(user_input or "")
     conv_id = dialogue.conv_uid or ""
     engine_requested = resolve_harness_engine(dialogue)
+
+    # Record the UI locale at turn start: approval intent bullets are pushed
+    # later from the loopback tool-run endpoint, which only knows conv_id.
+    try:
+        from .approval import locale_from_ext_info, set_conv_locale
+
+        set_conv_locale(conv_id, locale_from_ext_info(dialogue.ext_info))
+    except Exception:
+        logger.debug("pi harness: conv locale not recorded", exc_info=True)
 
     # Fail fast, before the agent stream starts, when the
     # requested engine is not available in this deployment.

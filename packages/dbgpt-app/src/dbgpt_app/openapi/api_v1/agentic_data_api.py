@@ -3629,16 +3629,23 @@ ordering. The registered tools and backend validation remain authoritative.
     )
     from dbgpt_app.openapi.api_v1.approval import (
         approval_intent_enabled,
+        locale_from_ext_info,
         make_approval_gate,
         make_intent_analyzer,
+        set_conv_locale,
     )
+
+    # The approval dock renders intent bullets verbatim, so pin them to the
+    # UI locale the frontend sent with this request.
+    _ui_locale = locale_from_ext_info(dialogue.ext_info)
+    set_conv_locale(conv_id, _ui_locale)
 
     _approval_gate_token = set_current_tool_gate(
         make_approval_gate(
             conv_id,
             stream_callback,
             intent_analyzer=(
-                make_intent_analyzer(llm_client, dialogue.model_name)
+                make_intent_analyzer(llm_client, dialogue.model_name, lang=_ui_locale)
                 if approval_intent_enabled()
                 else None
             ),

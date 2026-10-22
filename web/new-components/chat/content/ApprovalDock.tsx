@@ -95,10 +95,10 @@ const ApprovalCard: React.FC<{
             {t('approval_rule')} {approval.rule_id}
           </span>
           <span>{tierLabel}</span>
-          <span>
-            ttl {approval.ttl_seconds ?? 300}s {t('approval_ttl')}
+          <span>{t('approval_ttl_line', { n: approval.ttl_seconds ?? 300 })}</span>
+          <span className='font-mono'>
+            {t('approval_id_label')} {approval.approval_id}
           </span>
-          <span className='font-mono'>approval_id {approval.approval_id}</span>
         </div>
         {confirmingReject && (
           <input
