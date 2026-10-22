@@ -87,7 +87,7 @@ For the final generated knowledge graph, we used AntV's G6 engine to upgrade the
 
 ## User Manual
 - [Apps](../application/apps/app_manage.md)
-- [AWEL](../awel/awel.md)
+- [AWEL](/docs/workflow/introduction)
 - [GraphRAG](../application/graph_rag.md)
 
 ## Acknowledgements
