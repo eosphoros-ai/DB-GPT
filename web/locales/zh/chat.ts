@@ -293,6 +293,7 @@ export const ChatZh: Resources['translation'] = {
   qa_result_title: '查询结果 · {{count}} 行',
   qa_preview_note: '仅显示前 {{count}} 行 · 导出获取全量',
   qa_truncated_note: '结果已截断至前 {{kept}} 行（共 {{count}} 行）',
+  qa_intermediate_queries: '中间查询 · {{count}}',
   qa_export_csv: '导出 CSV',
   qa_export_xlsx: '导出 Excel',
   qa_rerun_failed: '重跑失败',

@@ -288,6 +288,7 @@ export const ChatEn = {
   qa_result_title: 'Query result · {{count}} rows',
   qa_preview_note: 'Showing first {{count}} rows · export for the full set',
   qa_truncated_note: 'Result capped at first {{kept}} rows (total {{count}})',
+  qa_intermediate_queries: 'Intermediate queries · {{count}}',
   qa_export_csv: 'Export CSV',
   qa_export_xlsx: 'Export Excel',
   qa_rerun_failed: 'Re-run failed',

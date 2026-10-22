@@ -232,44 +232,48 @@ export default function QueryArtifactBlock({ payload, onRerun, fileName, classNa
             {t('qa_empty', '查询返回空结果')}
           </div>
         ) : (
-          <div className='overflow-x-auto'>
-            <table className='w-full text-[13px] text-[#1c1c1a] dark:text-[#e6e4df]'>
-              <thead>
-                <tr className='bg-[#f7f7f5] dark:bg-white/[.04] text-[#8b8b84] dark:text-[#7c7972]'>
-                  {columns.map((col, i) => (
-                    <th
-                      key={`${col}-${i}`}
-                      className={cls(
-                        'px-4 py-2.5 font-medium text-left whitespace-nowrap',
-                        numericCols[i] && 'text-right',
-                      )}
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((row, rIdx) => (
-                  <tr
-                    key={rIdx}
-                    className='border-t border-[#f0f0ec] dark:border-[#232220] hover:bg-[#fafaf7] dark:hover:bg-white/[.03]'
-                  >
-                    {columns.map((_, cIdx) => (
-                      <td
-                        key={cIdx}
+          <>
+            {/* Fixed-height scroll body: 60+ row result sets must not stretch
+                the card across screens; the header row stays pinned. */}
+            <div className='overflow-auto max-h-[380px]'>
+              <table className='w-full text-[13px] text-[#1c1c1a] dark:text-[#e6e4df]'>
+                <thead>
+                  <tr className='text-[#8b8b84] dark:text-[#7c7972]'>
+                    {columns.map((col, i) => (
+                      <th
+                        key={`${col}-${i}`}
                         className={cls(
-                          'px-4 py-2.5 whitespace-nowrap font-mono text-[12.5px]',
-                          numericCols[cIdx] ? 'text-right' : 'text-left',
+                          'sticky top-0 z-10 bg-[#f7f7f5] dark:bg-[#17181c] px-4 py-2.5 font-medium text-left whitespace-nowrap',
+                          numericCols[i] && 'text-right',
                         )}
                       >
-                        {formatCell(row?.[cIdx])}
-                      </td>
+                        {col}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {previewRows.map((row, rIdx) => (
+                    <tr
+                      key={rIdx}
+                      className='border-t border-[#f0f0ec] dark:border-[#232220] hover:bg-[#fafaf7] dark:hover:bg-white/[.03]'
+                    >
+                      {columns.map((_, cIdx) => (
+                        <td
+                          key={cIdx}
+                          className={cls(
+                            'px-4 py-2.5 whitespace-nowrap font-mono text-[12.5px]',
+                            numericCols[cIdx] ? 'text-right' : 'text-left',
+                          )}
+                        >
+                          {formatCell(row?.[cIdx])}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {rows.length > PREVIEW_ROWS && (
               <div className='px-4 py-2 border-t border-[#f0f0ec] dark:border-[#232220] text-[12px] text-[#8b8b84] dark:text-[#7c7972]'>
                 {t('qa_preview_note', '仅显示前 {{count}} 行 · 导出获取全量', {
@@ -285,7 +289,7 @@ export default function QueryArtifactBlock({ payload, onRerun, fileName, classNa
                 })}
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -97,10 +97,33 @@ interface ArtifactCardsProps {
   onSkillDownload?: (name: string) => void;
   /** Edit & re-run for query artifacts (SQL result sets). */
   onQueryRerun?: (sql: string, dbName?: string) => Promise<any>;
+  /** Fold every query card of this round (older rounds in the thread). */
+  foldAllQueries?: boolean;
 }
 
 const PREVIEW_EXTS = new Set(['md', 'markdown', 'txt', 'py', 'js', 'ts', 'tsx', 'jsx', 'json', 'csv', 'sql']);
 const CHART_EXT_RE = /\.(png|jpe?g|gif|svg|webp)$/i;
+
+/** Split a round's query artifacts into what stays expanded and what folds.
+ *
+ *  Running 5 sql_query calls must not stack 5 full result cards: only the
+ *  LATEST result set stays expanded (it is the one the answer builds on),
+ *  earlier ones fold into a collapsed "intermediate queries" group. During
+ *  streaming each newly arriving query becomes the latest, so the previous
+ *  card folds away on its own — at most one expanded query card at any time.
+ *
+ *  ``foldAll`` folds EVERY query of the round: only the newest round of the
+ *  conversation keeps an expanded card, otherwise multi-round fetch sessions
+ *  re-stack one card per round down the page.
+ */
+export function splitQueryArtifacts<T>(
+  queries: T[],
+  foldAll = false,
+): { visible: T[]; folded: T[] } {
+  if (foldAll) return { visible: [], folded: queries };
+  if (queries.length <= 1) return { visible: queries, folded: [] };
+  return { visible: queries.slice(-1), folded: queries.slice(0, -1) };
+}
 
 function extOf(name: string): string {
   const m = (name || '').toLowerCase().match(/\.([a-z0-9]+)$/);
@@ -169,6 +192,7 @@ export default function ArtifactCards({
   onSkillAdd,
   onSkillDownload,
   onQueryRerun,
+  foldAllQueries,
 }: ArtifactCardsProps) {
   const { t } = useTranslation();
   const [imagesExpanded, setImagesExpanded] = useState(false);
@@ -181,6 +205,10 @@ export default function ArtifactCards({
   // other intermediate.
   const isFinalQuery = (a: Artifact) => a.type === 'query' && !!a.content && a.tier !== 'process';
   const queryArtifacts = artifacts.filter(isFinalQuery);
+  const { visible: visibleQueries, folded: foldedQueries } = splitQueryArtifacts(
+    queryArtifacts,
+    foldAllQueries,
+  );
   const rest = artifacts.filter(a => !isFinalQuery(a));
   const finals = rest.filter(a => a.tier !== 'process' && a.type !== 'image');
   const processes = rest.filter(a => a.tier === 'process');
@@ -198,7 +226,44 @@ export default function ArtifactCards({
     <>
       {queryArtifacts.length > 0 && (
         <div className='flex flex-col gap-3 mt-3 w-full'>
-          {queryArtifacts.map(a => (
+          {foldedQueries.length > 0 && (
+            <details className='w-full'>
+              <summary className='cursor-pointer inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-[#e6e6e2] dark:border-[#2a2925] bg-[#f4f4f0] dark:bg-white/[.04] text-[12px] text-[#8b8b84] dark:text-[#7c7972] list-none select-none'>
+                ▸ {t('qa_intermediate_queries', '中间查询 · {{count}}', { count: foldedQueries.length })}
+              </summary>
+              {/* One compact row per folded query (SQL gist + row count);
+                  each row expands in place into the full data card, so
+                  peeking at one intermediate never stacks them all. */}
+              <div className='flex flex-col gap-1.5 mt-2'>
+                {foldedQueries.map(a => {
+                  const sql = String(a.content?.sql || '').replace(/\s+/g, ' ').trim();
+                  const rowCount = a.content?.row_count ?? a.content?.rows?.length ?? 0;
+                  return (
+                    <details
+                      key={a.id}
+                      className='w-full border border-[#e6e6e2] dark:border-[#2a2925] rounded-[8px] bg-[#fafaf7] dark:bg-white/[.02]'
+                    >
+                      <summary className='cursor-pointer flex items-center gap-2 h-8 px-2.5 text-[12px] text-[#55554f] dark:text-[#a8a59e] list-none select-none'>
+                        <span className='font-mono truncate flex-1'>{sql || a.name}</span>
+                        <span className='flex-none text-[11px] text-[#8b8b84] dark:text-[#7c7972]'>
+                          {t('qa_result_title', '查询结果 · {{count}} 行', { count: rowCount })}
+                        </span>
+                      </summary>
+                      <div className='p-2 pt-1'>
+                        <QueryArtifactBlock
+                          key={a.id}
+                          payload={a.content}
+                          fileName={`query_${(a.id || '').slice(-8) || 'result'}`}
+                          onRerun={onQueryRerun}
+                        />
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+          {visibleQueries.map(a => (
             <QueryArtifactBlock
               key={a.id}
               payload={a.content}

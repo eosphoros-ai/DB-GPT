@@ -2499,6 +2499,18 @@ const Playground: NextPage = () => {
     return deduped;
   }, [messages, executionMap, buildArtifactsFromExecution, rerunQueryArtifacts, t]);
 
+  // Newest round that produced a query result set: only that round keeps an
+  // expanded query card; every older round folds its queries into its own
+  // "intermediate queries" group so multi-round fetch sessions do not
+  // re-stack one result card per round down the page.
+  const lastQueryRoundId = useMemo(() => {
+    for (let i = convArtifacts.length - 1; i >= 0; i -= 1) {
+      const a = convArtifacts[i];
+      if (a.type === 'query' && a.messageId) return a.messageId;
+    }
+    return null;
+  }, [convArtifacts]);
+
   useEffect(() => {
     if (!pendingFinalization) return;
 
@@ -4247,6 +4259,7 @@ const Playground: NextPage = () => {
                                     onSkillAdd={handleSkillAdd}
                                     onSkillDownload={handleSkillZipDownload}
                                     onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
+                                    foldAllQueries={round.viewMsg?.id !== lastQueryRoundId}
                                   />
                                 </div>
                               ) : undefined
@@ -4403,9 +4416,14 @@ const Playground: NextPage = () => {
                       produced across all rounds, surfaced again at the end so
                       finished conversations keep a visible deliverable list
                       (mid-stream cards stay where they were made). Charts are
-                      folded into the mosaic tile, scripts into process. */}
+                      folded into the mosaic tile, scripts into process.
+                      Query cards are excluded: every round already renders
+                      its own (folded) query block, so repeating them here
+                      stacked each sql_query result a second time. */}
                     {(() => {
-                      const surface = convArtifacts.filter(a => a.type !== 'summary');
+                      const surface = convArtifacts.filter(
+                        a => a.type !== 'summary' && a.type !== 'query',
+                      );
                       const finalCount = surface.filter(a => a.tier !== 'process').length;
                       const hasCharts = surface.some(
                         a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
