@@ -229,3 +229,28 @@ class TestLayer3FullContextCompression:
         assert llm_client.calls == []
         contents = [m.content or "" for m in result]
         assert not any("SUMMARY-OF-EARLIER-ROUNDS" in content for content in contents)
+
+    @pytest.mark.asyncio
+    async def test_layer3_without_model_name_does_not_record_a_failure(self):
+        """Skipping layer 3 must not count against the compaction circuit breaker.
+
+        `FullContextCompression.compact` deliberately returns early when it has
+        no model name, so nothing failed. Reading an attribute that does not
+        exist made that branch raise instead, and the surrounding
+        `except Exception` recorded it as a compaction failure; after
+        `max_compact_failures` calls the breaker trips and compaction is
+        disabled for the rest of the session.
+        """
+        llm_client = _RecordingLLMClient()
+        mgr = ContextManager(config=_layer3_config(), llm_client=llm_client)
+        mgr.tracker._tokenizer = _CharTokenizer()
+
+        # One more call than the breaker tolerates failures.
+        for _ in range(mgr.tracker.config.max_compact_failures + 1):
+            msgs = _build_detailed_conversation(num_rounds=35)
+            await mgr.manage_context(msgs, current_round=35)
+
+            assert not mgr.tracker.circuit_breaker_tripped, (
+                "layer 3 skipped for want of a model name, so no compaction "
+                "failure should have been recorded"
+            )
