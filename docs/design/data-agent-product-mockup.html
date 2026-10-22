@@ -226,6 +226,20 @@
   .tfilter button{font-size:10px;padding:2px 9px;border-radius:12px;border:1px solid var(--line2);background:#fff;color:var(--txt3);cursor:pointer;font-weight:600}
   .tfilter button.on{border-color:var(--primary);color:var(--primary);background:#eaf2ff}
   .prevlabel{font-size:10px;color:#6b7280;background:#1f2937;border:1px dashed #4b5563;border-radius:6px;padding:2px 8px;margin-right:2px}
+  /* plugins page */
+  .plbanner{background:linear-gradient(120deg,#eafbea,#f2fbf5);border:1px solid #b7eb8f;border-radius:14px;padding:18px 20px;display:flex;gap:18px;align-items:center;margin-bottom:18px}
+  .plbanner .bt{font-size:16px;font-weight:800;color:#237804}
+  .plbanner .bd{font-size:12.5px;color:#4c7a3d;margin:4px 0 10px}
+  .plbanner .chips{margin-left:auto;display:flex;flex-wrap:wrap;gap:7px;max-width:46%;justify-content:flex-end}
+  .plbanner .chips span{font-size:11px;background:#fff;border:1px solid #d9f0d0;color:#4c7a3d;border-radius:20px;padding:3px 11px}
+  .seg{display:flex;gap:6px;margin:6px 0 14px}
+  .seg button{padding:6px 16px;border-radius:10px;border:1px solid var(--line2);background:#fff;font-size:12.5px;font-weight:700;color:var(--txt2);cursor:pointer}
+  .seg button.on{border-color:#237804;color:#237804;background:#f2fbf5}
+  .plcard .pf{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:11.5px;color:var(--txt3)}
+  .plcard .pf .v{margin-left:auto;font-family:monospace}
+  .inst{width:26px;height:26px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--txt2);font-size:14px;cursor:pointer;display:grid;place-items:center;margin-left:auto}
+  .inst.on{border-color:#b7eb8f;color:#237804;background:#f2fbf5}
+  .scn{font-size:10px;font-weight:700;padding:1px 8px;border-radius:5px}
 </style>
 </head>
 <body class="anno-on">
@@ -240,6 +254,7 @@
     <button data-v="ops">智能运维</button>
     <button data-v="semantic">语义层</button>
     <button data-v="approval">审批中心</button>
+    <button data-v="plugins">场景插件</button>
   </div>
   <div class="right"><span>亮色 · 贴现有 UI</span><div class="toggle on" id="annoToggle"><span>设计标注</span><span class="sw"></span></div></div>
 </div></div>
@@ -250,6 +265,7 @@
     <button class="newtask">＋ New Task</button>
     <div class="sitem on" data-go="home"><span class="ic">🧭</span>Explore</div>
     <div class="sitem"><span class="ic">⚡</span>Skills</div>
+    <div class="sitem" data-go="plugins"><span class="ic">🧩</span>场景插件</div>
     <div class="sitem"><span class="ic">📊</span>Dashboards</div>
     <div class="sitem"><span class="ic">🗄️</span>Datasources</div>
     <div class="sitem"><span class="ic">🔌</span>Connectors</div>
@@ -293,7 +309,7 @@
         <div class="anno" style="right:-4px;top:64px"><span class="num">1</span><span class="txt">composer 保留现有形态，新增"智能路由"chip 实时显示识别到的场景；模型 chip 沿用现有 glm-5.1 选择器</span></div>
 
         <div class="scenwrap">
-          <div class="scenhead">SCENARIOS · 选择场景或点击推荐问题</div>
+          <div class="scenhead">SCENARIOS · 由已启用场景插件渲染 · 选择场景或点击推荐问题</div>
           <div class="stabs" id="stabs">
             <div class="stab on" data-s="q"><span class="sic">🔍</span>智能问数<span class="cnt">3</span></div>
             <div class="stab" data-s="a"><span class="sic">📊</span>智能分析<span class="cnt">3</span></div>
@@ -485,6 +501,28 @@
         <div class="anno" style="right:26px;top:120px"><span class="num">6</span><span class="txt">审批中心=待办队列+策略规则表+审计；策略产品化进 UI（多源配置+试运行框），toml 仅作 bootstrap seed</span></div>
       </div>
     </section>
+
+    <!-- ================= PLUGINS ================= -->
+    <section class="view" id="plugins">
+      <div class="mod">
+        <h2>🧩 场景插件 <span style="font-size:12px;color:var(--txt3);font-weight:600">专家套件形态 · 场景 = 可安装的预设束</span></h2>
+        <div class="sub">六维预设束打包为可安装/可版本化单元；首页 Tab、推荐问题与路由均由已启用插件渲染；对话 pin 插件@版本。approval_overrides 仅可加严，enforcement 在核心 gate。</div>
+        <div class="plbanner">
+          <div>
+            <div class="bt">金融行业套件</div>
+            <div class="bd">风控、研报与合规流程一键接入对话：用套件固化常用模板、语义模型与数据源。</div>
+            <button class="dbtn">让 DB-GPT 帮我创建</button>
+          </div>
+          <div class="chips"><span>📈 财报分析专家</span><span>🔗 供应链对账专家</span><span>🏬 门店经营日报专家</span><span>🧾 年报解析技能包</span></div>
+        </div>
+        <div class="seg" id="plseg">
+          <button class="on" data-g="off">官方内置 3</button><button data-g="ent">企业专属 3</button><button data-g="mkt">市场</button>
+        </div>
+        <div class="mgrid" id="plgrid"></div>
+        <div class="anno" style="right:26px;top:346px"><span class="num">9</span><span class="txt">卡片形态对齐专家套件：图标/名称/描述/N 技能/版本/安装·启用；官方内置=三场景重构而来，企业专属=租户自发布（zip 上传）</span></div>
+        <div class="anno" style="right:26px;top:110px"><span class="num">10</span><span class="txt">启用后首页出现对应场景 Tab 与推荐问题；对话 pin plugin@version，升级不破坏历史；manifest 的 approval_overrides 只读且标注"仅可加严"</span></div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -515,7 +553,7 @@ document.getElementById('stabs').addEventListener('click',function(e){
   document.querySelectorAll('.stab').forEach(function(x){x.classList.remove('on')});t.classList.add('on');renderQ(t.dataset.s);
 });
 // view switching
-var TITLES={home:'DB-GPT AI Data Assistant',query:'智能问数 · DB 取数',analysis:'智能分析 · DB 数据分析',ops:'智能运维 · DB 运维',semantic:'语义层 Semantic Layer',approval:'审批中心 Approval Center'};
+var TITLES={home:'DB-GPT AI Data Assistant',query:'智能问数 · DB 取数',analysis:'智能分析 · DB 数据分析',ops:'智能运维 · DB 运维',semantic:'语义层 Semantic Layer',approval:'审批中心 Approval Center',plugins:'场景插件 · 专家套件'};
 function show(v){
   document.querySelectorAll('#vtabs button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
   document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('on',s.id===v)});
@@ -584,6 +622,35 @@ document.getElementById('tfilter').addEventListener('click',function(e){
   this.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
   var f=b.dataset.f;
   document.querySelectorAll('.task[data-s]').forEach(function(t){t.style.display=(f==='all'||t.dataset.s===f)?'':'none';});
+});
+// ---- scenario plugins (expert-suite form) ----
+var PLUGINS={
+ off:[{ic:'🔍',n:'智能问数',sid:'query',d:'NL→SQL 精准取数，强制绑定语义模型；含高代价扫描审批 override。',skills:['nl2sql','schema_link','semantic_search','export_csv'],v:'v1.0.0',on:true},
+      {ic:'📊',n:'智能分析',sid:'analysis',d:'圈定数据集→多步取数→图表→结论→报告分享（HTML/PDF）。',skills:['dataset_scope','nl2sql','chart','report_export','concl'],v:'v1.0.0',on:true},
+      {ic:'🩺',n:'智能运维',sid:'ops',d:'慢查询诊断/健康巡检/画像治理；DDL 走破坏性操作审批。',skills:['slow_log','explain','db_metrics','ddl_gated'],v:'v1.0.0',on:true}],
+ ent:[{ic:'📈',n:'财报分析专家',sid:'analysis+',d:'组合包：智能分析插件 + 财报语义模型 + 年报解析 skill（章节路由）。',skills:['pdf_parse','section_route','metric_verify','report'],v:'v1.0.0',on:false},
+      {ic:'🔗',n:'供应链对账专家',sid:'query+',d:'对账场景：应收应付匹配、合同质押查重、贸易背景核查。',skills:['match','contract_check','bg_check'],v:'v0.9.0',on:false},
+      {ic:'🏬',n:'门店经营日报专家',sid:'analysis+',d:'每日自动产出门店经营日报并推送 IM 频道。',skills:['daily_agg','chart','im_push'],v:'v0.8.0',on:false}],
+ mkt:[]};
+function renderPl(g){
+  var el=document.getElementById('plgrid');
+  if(!PLUGINS[g].length){el.innerHTML='<div style="grid-column:1/-1;color:var(--txt3);font-size:12.5px;padding:22px;background:#fff;border:1px dashed var(--line2);border-radius:12px">市场 P2 开放：插件发布 / 发现 / 安装量统计。当前请通过"企业专属"zip 上传自有插件。</div>';return;}
+  el.innerHTML=PLUGINS[g].map(function(p){
+    return '<div class="mcard plcard"><div class="mh"><span style="font-size:16px">'+p.ic+'</span>'+p.n+' <span class="scn" style="background:#f2f5f9;color:var(--txt2)">scenario:'+p.sid+'</span><button class="inst'+(p.on?' on':'')+'">'+(p.on?'✓':'＋')+'</button></div>'
+    +'<div style="font-size:12px;color:var(--txt2);margin:7px 0">'+p.d+'</div>'
+    +'<div class="tags">'+p.skills.map(function(s){return '<span>'+s+'</span>'}).join('')+'</div>'
+    +'<div class="pf"><span>'+p.skills.length+' 个技能</span><span>·</span><span class="stx">'+(p.on?'已启用':'未启用')+'</span><span class="v">'+p.v+'</span></div></div>';
+  }).join('');
+}
+renderPl('off');
+document.getElementById('plseg').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  this.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');renderPl(b.dataset.g);
+});
+document.getElementById('plgrid').addEventListener('click',function(e){
+  var b=e.target.closest('.inst');if(!b)return;
+  b.classList.toggle('on');b.textContent=b.classList.contains('on')?'✓':'＋';
+  var st=b.closest('.plcard').querySelector('.stx');if(st)st.textContent=b.classList.contains('on')?'已启用':'未启用';
 });
 // deep link
 (function(){var h=(location.hash||'').replace('#','');if(TITLES[h])show(h);})();
