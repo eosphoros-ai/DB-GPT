@@ -1,6 +1,9 @@
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors } from '@/client/api';
 import { getChatFlows, getFlowById, getFlowTemplates } from '@/client/api/flow';
+import { getSuites } from '@/client/api/suite';
+import type { SuiteItem } from '@/types/suite';
+import { scoreSuites, suiteDisplayName } from '@/utils/suite-routing';
 import type { ResponseType } from '@/client/api';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
@@ -739,6 +742,8 @@ const convertToManusFormat = (
   return { sections, activeStep, outputs, stepThoughts };
 };
 
+const SUITE_EXAMPLES_TAB = '__examples__';
+
 const EXAMPLE_CARDS = [
   {
     id: 'olist_ecommerce_report',
@@ -822,6 +827,60 @@ const Playground: NextPage = () => {
     bumpDialogueList,
   } = useContext(ChatContext);
   const [query, setQuery] = useState('');
+  // Expert suites (scenario presets) rendered on the home page from the
+  // registry (GET /api/v1/suites).  Tab click = explicit preset initializer;
+  // the route chip is only a suggestion scored from routing.keywords.
+  const [suites, setSuites] = useState<SuiteItem[]>([]);
+  const [activeSuiteTab, setActiveSuiteTab] = useState<string>('');
+  const [suiteQOffset, setSuiteQOffset] = useState(0);
+  // Tab click = explicit preset override; until the user touches a tab the
+  // keyword router decides the bound suite (design §三 routing rules).
+  const [suiteTabTouched, setSuiteTabTouched] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSuites()
+      .then(list => {
+        if (cancelled) return;
+        // Scenario order mirrors the mockup: 取数 → 分析 → 运维 → 其余按 slug。
+        const scenarioOrder: Record<string, number> = { query: 0, analysis: 1, ops: 2 };
+        const enabled = (Array.isArray(list) ? list : [])
+          .filter(s => s?.status === 'enabled')
+          .sort(
+            (a, b) =>
+              (scenarioOrder[a.scenario_id ?? ''] ?? 9) - (scenarioOrder[b.scenario_id ?? ''] ?? 9) ||
+              a.name.localeCompare(b.name),
+          );
+        setSuites(enabled);
+        setActiveSuiteTab(prev => prev || (enabled[0]?.name ?? SUITE_EXAMPLES_TAB));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const routedSuiteHit = useMemo(() => scoreSuites(query, suites), [query, suites]);
+  const routedSuite = useMemo(
+    () => suites.find(s => s.name === routedSuiteHit?.slug) ?? null,
+    [suites, routedSuiteHit],
+  );
+  const activeSuite = useMemo(
+    () =>
+      activeSuiteTab && activeSuiteTab !== SUITE_EXAMPLES_TAB
+        ? suites.find(s => s.name === activeSuiteTab) ?? null
+        : null,
+    [activeSuiteTab, suites],
+  );
+  // Explicit tab selection overrides automatic keyword routing; an untouched
+  // tab is only a question-browser default, not a preset choice.
+  const effectiveSuite = (suiteTabTouched ? activeSuite : null) ?? routedSuite ?? activeSuite;
+  const rotatedSuiteQuestions = useMemo(() => {
+    const qs = activeSuite?.manifest_snapshot?.recommended_questions ?? [];
+    if (!qs.length) return [] as { text: string; hint?: string }[];
+    const off = suiteQOffset % qs.length;
+    return [...qs.slice(off), ...qs.slice(0, off)].slice(0, 4);
+  }, [activeSuite, suiteQOffset]);
   const [loading, setLoading] = useState(false);
   const exampleRunInFlightRef = useRef(false);
   const sendInFlightRef = useRef(false);
@@ -2865,6 +2924,9 @@ const Playground: NextPage = () => {
         ? { knowledge_space_name: effectiveKnowledge.name, knowledge_space_id: effectiveKnowledge.id }
         : {}),
       ...(selectedConnectors.length > 0 ? { connector_ids: selectedConnectors.map(c => c.id) } : {}),
+      // Suite pin: explicit tab selection wins over keyword routing; the
+      // backend binder records the pin and keeps it sticky for the conv.
+      ...(effectiveSuite ? { suite: effectiveSuite.name } : {}),
     };
     // Session-file sends travel via file_ids (+ display-safe task snapshot);
     // zero files keep the legacy payload byte-for-byte unchanged.
@@ -5479,6 +5541,19 @@ const Playground: NextPage = () => {
                         </div>
                       )}
 
+                      {effectiveSuite && (
+                        <div className='flex items-center gap-2 pb-2'>
+                          <span className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12.5px] font-semibold bg-[#f2fbf5] text-[#237804] border border-[#d9f0d0] dark:bg-[#16231a] dark:text-[#7fc48b] dark:border-[#2c4a33]'>
+                            <span>{effectiveSuite.icon || '🧩'}</span>
+                            {suiteDisplayName(effectiveSuite, i18n.language)}
+                            <span className='font-mono text-[10px] opacity-70'>@{effectiveSuite.version}</span>
+                          </span>
+                          <span className='text-[12px] text-gray-400 dark:text-gray-500'>
+                            {t('suite_prefix_hint')}
+                          </span>
+                        </div>
+                      )}
+
                       <Input.TextArea
                         value={query}
                         onChange={e => {
@@ -6147,6 +6222,18 @@ const Playground: NextPage = () => {
                                 `,
                             }}
                           />
+                          {/* Smart-routing chip: keyword scoring over enabled suites */}
+                          <span
+                            className={`ml-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap ${
+                              routedSuite
+                                ? 'bg-[#eef6ff] text-[#0069fe] border-[#cfe3ff] dark:bg-[#0d1b2e] dark:border-[#1d4ed8]'
+                                : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                            }`}
+                          >
+                            {routedSuite
+                              ? t('suite_route_hit', { name: suiteDisplayName(routedSuite, i18n.language) })
+                              : t('suite_route_idle')}
+                          </span>
                         </div>
 
                         <div className='flex items-center gap-3'>
@@ -6211,51 +6298,135 @@ const Playground: NextPage = () => {
                   </div>
                 </div>
 
-                {/* Recommended Examples */}
+                {/* Scenario tabs + recommended questions, rendered from enabled suites */}
                 <div className='mt-10 w-full'>
                   <div className='flex items-center justify-center gap-2 mb-4'>
                     <div className='h-px flex-1 bg-gradient-to-r from-transparent to-gray-200 dark:to-gray-700' />
                     <span className='text-xs font-medium text-gray-400 dark:text-gray-500 tracking-wider uppercase'>
-                      {t('recommend_examples')}
+                      {t('suite_scenarios_header')}
                     </span>
                     <div className='h-px flex-1 bg-gradient-to-l from-transparent to-gray-200 dark:to-gray-700' />
                   </div>
-                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                    {EXAMPLE_CARDS.map(example => (
-                      <div
-                        key={example.id}
-                        onClick={() => handleExampleClick(example)}
-                        className={`group relative bg-gradient-to-br ${example.color} border ${example.borderColor} rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
+                  <div className='flex flex-wrap justify-center gap-2 mb-4'>
+                    {suites.map(suite => (
+                      <button
+                        key={suite.name}
+                        onClick={() => {
+                          setActiveSuiteTab(suite.name);
+                          setSuiteQOffset(0);
+                          setSuiteTabTouched(true);
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[13px] font-semibold transition-all ${
+                          activeSuiteTab === suite.name
+                            ? 'border-[#0069fe] bg-[#eaf2ff] text-[#0069fe] shadow-[0_2px_10px_rgba(0,105,254,0.12)] dark:bg-[#0d1b2e]'
+                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                        }`}
                       >
-                        <div className='flex items-start gap-3'>
-                          <div
-                            className={`w-10 h-10 ${example.iconBg} rounded-xl flex items-center justify-center text-xl flex-shrink-0`}
-                          >
-                            {example.icon}
-                          </div>
-                          <div className='flex-1 min-w-0'>
-                            <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
-                              {(() => {
-                                const key = `example_${example.id}_title`;
-                                const val = t(key) as string;
-                                return val && val !== key ? val : example.title;
-                              })()}
-                            </h3>
-                            <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
-                              {(() => {
-                                const key = `example_${example.id}_desc`;
-                                const val = t(key) as string;
-                                return val && val !== key ? val : example.description;
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
-                          <RightOutlined className='text-xs text-gray-400' />
-                        </div>
-                      </div>
+                        <span className='text-[15px]'>{suite.icon || '🧩'}</span>
+                        {suiteDisplayName(suite, i18n.language)}
+                        <span className='font-mono text-[9.5px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'>
+                          {suite.name}@{suite.version}
+                        </span>
+                      </button>
                     ))}
+                    <button
+                      onClick={() => setActiveSuiteTab(SUITE_EXAMPLES_TAB)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[13px] font-semibold transition-all ${
+                        activeSuiteTab === SUITE_EXAMPLES_TAB
+                          ? 'border-[#0069fe] bg-[#eaf2ff] text-[#0069fe] shadow-[0_2px_10px_rgba(0,105,254,0.12)] dark:bg-[#0d1b2e]'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1f24] text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className='text-[15px]'>🧪</span>
+                      {t('suite_tab_examples')}
+                    </button>
                   </div>
+                  {activeSuiteTab === SUITE_EXAMPLES_TAB ? (
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                      {EXAMPLE_CARDS.map(example => (
+                        <div
+                          key={example.id}
+                          onClick={() => handleExampleClick(example)}
+                          className={`group relative bg-gradient-to-br ${example.color} border ${example.borderColor} rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
+                        >
+                          <div className='flex items-start gap-3'>
+                            <div
+                              className={`w-10 h-10 ${example.iconBg} rounded-xl flex items-center justify-center text-xl flex-shrink-0`}
+                            >
+                              {example.icon}
+                            </div>
+                            <div className='flex-1 min-w-0'>
+                              <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
+                                {(() => {
+                                  const key = `example_${example.id}_title`;
+                                  const val = t(key) as string;
+                                  return val && val !== key ? val : example.title;
+                                })()}
+                              </h3>
+                              <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
+                                {(() => {
+                                  const key = `example_${example.id}_desc`;
+                                  const val = t(key) as string;
+                                  return val && val !== key ? val : example.description;
+                                })()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
+                            <RightOutlined className='text-xs text-gray-400' />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                        {rotatedSuiteQuestions.map((q, idx) => (
+                          <div
+                            key={`${activeSuite?.name}-${idx}-${q.text}`}
+                            onClick={() => {
+                              setQuery(q.text);
+                              if (activeSuite) {
+                                setActiveSuiteTab(activeSuite.name);
+                                setSuiteTabTouched(true);
+                              }
+                            }}
+                            className='group relative bg-white dark:bg-[#1e1f24] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:border-[#cfe0ff] transition-all duration-300'
+                          >
+                            <div className='flex items-start gap-3'>
+                              <div className='w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 bg-[#e8f4ff] dark:bg-[#0d1b2e]'>
+                                {activeSuite?.icon || '🧩'}
+                              </div>
+                              <div className='flex-1 min-w-0'>
+                                <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1'>
+                                  {q.text}
+                                </h3>
+                                {q.hint && (
+                                  <p className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>{q.hint}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className='absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity'>
+                              <RightOutlined className='text-xs text-gray-400' />
+                            </div>
+                          </div>
+                        ))}
+                        {rotatedSuiteQuestions.length === 0 && (
+                          <div className='col-span-2 text-center text-xs text-gray-400 dark:text-gray-500 py-6'>
+                            {t('suite_questions_empty')}
+                          </div>
+                        )}
+                      </div>
+                      {(activeSuite?.manifest_snapshot?.recommended_questions?.length ?? 0) > 4 && (
+                        <div
+                          className='text-center text-xs text-gray-400 dark:text-gray-500 mt-3 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300'
+                          onClick={() => setSuiteQOffset(o => o + 4)}
+                        >
+                          ⟳ {t('suite_swap_batch')}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

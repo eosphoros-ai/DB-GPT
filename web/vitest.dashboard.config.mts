@@ -29,6 +29,7 @@ export default defineConfig({
       './hooks/use-chat.failure.test.tsx',
       './utils/question-session.test.ts',
       './utils/query-export.test.ts',
+      './utils/suite-routing.test.ts',
       './lib/model-runtime.test.ts',
     ],
     restoreMocks: true,
