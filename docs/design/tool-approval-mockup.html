@@ -721,6 +721,15 @@ function render() {
 
   [...$("seg-state").children].forEach((b) => { b.disabled = !c.approval; });
 }
+// deep link for doc screenshots: #case=A&state=pending&annot=0
+(function deepLink() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const c = h.get("case"); if (c && CASES[c]) S.case = c;
+  const st = h.get("state"); if (st) S.state = st;
+  const en = h.get("engine"); if (en) S.engine = en;
+  if (h.get("annot") === "0") S.annot = false;
+})();
+
 render();
 
 /* ══════════ settings view ══════════ */
