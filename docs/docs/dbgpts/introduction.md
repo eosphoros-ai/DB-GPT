@@ -128,8 +128,8 @@ Skills often orchestrate the built-in execution tools together:
 
 - `load_skill` → load the skill instructions
 - `sql_query` → retrieve structured data if needed
-- `code_interpreter` → compute metrics, transform data, and generate charts
-- `shell_interpreter` → run shell commands when required
+- `code` → compute metrics, transform data, and generate charts
+- `bash` → run shell commands when required
 - `html_interpreter` → render the final report or webpage
 
 ## Practical examples

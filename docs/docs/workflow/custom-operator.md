@@ -15,7 +15,7 @@ A new analysis capability is usually a goal + tool boundary:
   "config": {
     "agent_profile": "react_data",
     "goal": "Compute weekly cohort retention from the upstream semantic card; verify denominators with an independent SQL path. Output: retention table + three findings.",
-    "tools": ["sql_query", "code_interpreter"],
+    "tools": ["sql_query", "code"],
     "datasources": ["Walmart_Sales"],
     "max_turns": 8
   }

@@ -820,8 +820,8 @@ const sidebars = {
       items: [
         { type: "doc", id: "agents/modules/resource/tools", label: "Overview" },
         { type: "doc", id: "agents/modules/resource/tools/load-skill", label: "load_skill" },
-        { type: "doc", id: "agents/modules/resource/tools/code-interpreter", label: "code_interpreter" },
-        { type: "doc", id: "agents/modules/resource/tools/shell-interpreter", label: "shell_interpreter" },
+        { type: "doc", id: "agents/modules/resource/tools/code-interpreter", label: "code" },
+        { type: "doc", id: "agents/modules/resource/tools/shell-interpreter", label: "bash" },
         { type: "doc", id: "agents/modules/resource/tools/sql-query", label: "sql_query" },
         { type: "doc", id: "agents/modules/resource/tools/html-interpreter", label: "html_interpreter" },
       ],

@@ -17,7 +17,7 @@ count) that downstream agent nodes receive through the data channel.
 Upload resolution, encoding sniffing and truncation protection are mechanical work where
 determinism beats improvisation: an agent "loading" a file can hallucinate a path or silently
 drop rows. Keeping the entry point as an operator means the summary downstream nodes cite is
-exactly what was loaded. Agents then analyze via `code_interpreter` / `sql_query` against the
+exactly what was loaded. Agents then analyze via `code` / `sql_query` against the
 resolved dataset instead of re-reading raw files.
 
 ## Databases instead of files

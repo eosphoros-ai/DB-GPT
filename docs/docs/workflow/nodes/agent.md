@@ -18,8 +18,8 @@ tool traces — only the goal you give it, the user's question, and upstream out
 | `max_turns` | 1–30 | ReAct loop cap for this node. |
 | `model` | text | Override the chat model for this node (default: session model). |
 
-Available tool ids: `sql_query`, `code_interpreter`, `knowledge_retrieve`, `html_interpreter`,
-`shell_interpreter`, `web_search`, `web_fetch`.
+Available tool ids: `sql_query`, `code`, `knowledge_retrieve`, `html_interpreter`,
+`bash`, `web_search`, `web_fetch`.
 
 ## Writing goals that compose
 

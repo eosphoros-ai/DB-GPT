@@ -14,7 +14,7 @@
   "config": {
     "agent_profile": "react_data",
     "goal": "基于上游语义卡计算周队列留存;用独立 SQL 路径复核分母。输出:留存表+三条发现。",
-    "tools": ["sql_query", "code_interpreter"],
+    "tools": ["sql_query", "code"],
     "datasources": ["Walmart_Sales"],
     "max_turns": 8
   }

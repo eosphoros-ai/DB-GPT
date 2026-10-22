@@ -351,12 +351,12 @@
     "message": "load_skill",
     "description": "The label for the doc item load_skill in sidebar docsSidebar, linking to the doc agents/modules/resource/tools/load-skill"
   },
-  "sidebar.docsSidebar.doc.code_interpreter": {
-    "message": "code_interpreter",
+  "sidebar.docsSidebar.doc.code": {
+    "message": "code",
     "description": "The label for the doc item code_interpreter in sidebar docsSidebar, linking to the doc agents/modules/resource/tools/code-interpreter"
   },
-  "sidebar.docsSidebar.doc.shell_interpreter": {
-    "message": "shell_interpreter",
+  "sidebar.docsSidebar.doc.bash": {
+    "message": "bash",
     "description": "The label for the doc item shell_interpreter in sidebar docsSidebar, linking to the doc agents/modules/resource/tools/shell-interpreter"
   },
   "sidebar.docsSidebar.doc.sql_query": {

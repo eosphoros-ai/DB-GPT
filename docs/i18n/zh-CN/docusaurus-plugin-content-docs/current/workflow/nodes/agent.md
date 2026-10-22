@@ -17,8 +17,8 @@
 | `max_turns` | 1–30 | 本节点 ReAct 循环上限 |
 | `model` | 文本 | 覆盖本节点模型（默认会话模型） |
 
-可用工具 id：`sql_query`、`code_interpreter`、`knowledge_retrieve`、`html_interpreter`、
-`shell_interpreter`、`web_search`、`web_fetch`。
+可用工具 id：`sql_query`、`code`、`knowledge_retrieve`、`html_interpreter`、
+`bash`、`web_search`、`web_fetch`。
 
 ## 写利于组合的 goal
 
