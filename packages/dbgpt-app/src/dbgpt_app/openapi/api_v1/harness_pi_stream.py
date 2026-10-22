@@ -432,6 +432,16 @@ def register_harness_endpoints(router: Any) -> None:
 
         name = canonical_tool(name)
 
+        # Suite allow/deny (T3) beats the approval policy: a tool outside the
+        # bound suite's boundary is rejected before any approval dock opens.
+        from .suite_binder import get_conv_suite
+
+        _suite_binding = get_conv_suite(conv_id)
+        if _suite_binding is not None:
+            _suite_violation = _suite_binding.violation(name)
+            if _suite_violation:
+                return Result.succ({"result": _suite_violation})
+
         if x_approval_token:
             # Redemption re-post of an approved call: single-use token.
             if approval_center.consume_token(x_approval_token) is None:
@@ -1054,6 +1064,14 @@ def _build_pi_prompt(
     skills_block = _skills_prompt_block(ext_info.get("skill_name"))
     if skills_block:
         base = f"{base}\n\n—\n{skills_block}"
+    try:
+        from .suite_binder import build_sop_block, get_conv_suite
+
+        _suite_binding = get_conv_suite(dialogue.conv_uid or "")
+        if _suite_binding is not None:
+            base = f"{base}\n\n—\n{build_sop_block(_suite_binding).strip()}"
+    except Exception:
+        logger.debug("pi harness: suite SOP not appended", exc_info=True)
     return base
 
 
@@ -1510,6 +1528,15 @@ async def run_pi_harness_turn(
     except Exception:
         logger.debug("pi harness: conv locale not recorded", exc_info=True)
 
+    # Suite binder (T3): resolve the pin once per turn; the loopback tool-run
+    # endpoint reads it back by conv_id (pi runs in a separate process).
+    try:
+        from .suite_binder import resolve_binding_for_turn, set_conv_suite
+
+        set_conv_suite(conv_id, resolve_binding_for_turn(dialogue))
+    except Exception:
+        logger.debug("pi harness: suite binding not recorded", exc_info=True)
+
     # Fail fast, before the agent stream starts, when the
     # requested engine is not available in this deployment.
     if engine_requested != "dbgpt":
@@ -1729,6 +1756,9 @@ async def run_pi_harness_turn(
     finally:
         side_queue.put_nowait(None)
         tool_bridge.unbind_conv_side_queue(conv_id)
+        from .suite_binder import clear_conv_suite
+
+        clear_conv_suite(conv_id)
     if run_error:
         final_content = f"pi harness failed: {run_error[0]}"
     elif state.aborted:

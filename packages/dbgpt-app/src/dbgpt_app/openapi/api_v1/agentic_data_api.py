@@ -4218,6 +4218,21 @@ narrow and within the user's requested period. Query timeouts require inspecting
 the plan and indexes and changing the SQL; never repeat the unchanged query.
 After partial results, finish only missing requested deliverables, then report.
 """
+    # --- Suite binder (T3): resolve the scenario-suite pin and prepend SOP ---
+    suite_binding = None
+    try:
+        from dbgpt_app.openapi.api_v1.suite_binder import (
+            build_sop_block,
+            resolve_binding_for_turn,
+        )
+
+        suite_binding = resolve_binding_for_turn(dialogue)
+        if suite_binding is not None:
+            workflow_prompt = build_sop_block(suite_binding) + workflow_prompt
+    except Exception:
+        suite_binding = None
+        logger.warning("suite binder failed; turn continues unbound", exc_info=True)
+
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
     workflow_prompt_template = PromptTemplate(
@@ -4318,17 +4333,25 @@ After partial results, finish only missing requested deliverables, then report.
     _ui_locale = locale_from_ext_info(dialogue.ext_info)
     set_conv_locale(conv_id, _ui_locale)
 
-    _approval_gate_token = set_current_tool_gate(
-        make_approval_gate(
-            conv_id,
-            stream_callback,
-            intent_analyzer=(
-                make_intent_analyzer(llm_client, dialogue.model_name, lang=_ui_locale)
-                if approval_intent_enabled()
-                else None
-            ),
-        )
+    _base_gate = make_approval_gate(
+        conv_id,
+        stream_callback,
+        intent_analyzer=(
+            make_intent_analyzer(llm_client, dialogue.model_name, lang=_ui_locale)
+            if approval_intent_enabled()
+            else None
+        ),
     )
+    if suite_binding is not None:
+        # Suite allow/deny is checked BEFORE the approval gate: a tool outside
+        # the suite boundary is blocked without ever raising an approval dock.
+        from dbgpt_app.openapi.api_v1.suite_binder import (
+            compose_gates,
+            make_suite_gate,
+        )
+
+        _base_gate = compose_gates(make_suite_gate(suite_binding), _base_gate)
+    _approval_gate_token = set_current_tool_gate(_base_gate)
 
     agent_task = asyncio.create_task(run_bounded_generation(react_state, run_agent))
     if agent_task_holder is not None:

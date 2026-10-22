@@ -60,7 +60,7 @@ recommended_questions:
 |---|---|---|---|---|
 | T1 | 套件包约定 + 三个官方套件入库 ✅ 2026-10-22 | `assets/suites/{db-query,db-analysis,db-ops}/`（suite.yaml+skills/+prompts/） | ~300（内容） | 三包可被 loader 解析；skills 为合法 SKILL.md |
 | T2 | loader + registry + REST ✅ 2026-10-22 | 新增 `packages/dbgpt-serve/src/dbgpt_serve/plugins/{loader,registry,api}.py` + `models/` + `service/` + `serve.py` | ~500 | GET /suites、POST /suites/{id}/enable、disable；返回版本/状态/推荐问题 |
-| T3 | binder：套件→会话配置 | `dbgpt-app/openapi/api_v1/` 新增 `suite_binder.py`，挂接对话创建与每轮开始 | ~250 | 会话配置含 sop 注入/allowlist 求交/绑定/渲染器；缺语义层时降级不报错 |
+| T3 | binder：套件→会话配置 ✅ 2026-10-22 | `dbgpt-app/openapi/api_v1/suite_binder.py`（新增）+ 挂接 `agentic_data_api.py`（dbgpt 引擎：SOP 前置 + gate 外层组合）与 `harness_pi_stream.py`（pi 引擎：per-conv 绑定 + loopback tool-run 前置检查） | ~250 | 会话配置含 sop 注入/allowlist 求交/绑定/渲染器；缺语义层时降级不报错 |
 | T4 | 审批合并（仅加严） | `approval.py` 增 `merge_suite_overrides(policy, suite)` | ~80 | suite 放宽核心 deny 的被拒；加严生效并有单测 |
 | T5 | 首页路由（关键词评分） | binder 旁 `router.py`：suite routing.keywords 评分，平局交 LLM 意图 | ~120 | 三类问句路由准确率自测集 ≥90% |
 | T6 | pin 与切换 | 对话创建写 `ext_info.suite=suite@version`；切换端点写新轮 ext_info + timeline 事件 | ~100 | 历史轮保留旧 pin；切换后工具/策略即时生效 |

@@ -28,6 +28,9 @@ wheels/
 # Soft link
 /models
 plugins/
+# ...but keep the scenario-suite serve module (product code, not build artifact)
+!packages/dbgpt-serve/src/dbgpt_serve/plugins/
+!packages/dbgpt-serve/src/dbgpt_serve/plugins/**
 
 pip-wheel-metadata/
 share/python-wheels/
