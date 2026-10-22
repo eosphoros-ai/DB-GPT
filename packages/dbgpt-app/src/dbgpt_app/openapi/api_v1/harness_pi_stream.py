@@ -169,7 +169,8 @@ def set_harness_engine_pref(engine: str) -> str:
 def resolve_harness_engine(dialogue: ConversationVo) -> str:
     """Engine pick: explicit request field, then the
     server-side preference."""
-    ext_info = dialogue.ext_info if isinstance(dialogue.ext_info, dict) else {}
+    raw_ext = getattr(dialogue, "ext_info", None)
+    ext_info = raw_ext if isinstance(raw_ext, dict) else {}
     engine = str(ext_info.get("harness_engine") or "").strip().lower()
     if engine in KNOWN_ENGINES:
         return engine

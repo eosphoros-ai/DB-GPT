@@ -162,6 +162,15 @@ class SparkConnector(BaseConnector):
         """Get database names."""
         return ["default"]
 
+    def get_current_db_name(self) -> str:
+        """Return the active Spark SQL database for database resources.
+
+        Native chart actions need the same database identity as ordinary SQL
+        resources. Read it from the session rather than assuming an RDBMS
+        connector's private ``_db_name`` attribute exists.
+        """
+        return self.spark_session.catalog.currentDatabase()
+
     def get_database_names(self):
         """Get database names."""
         return []

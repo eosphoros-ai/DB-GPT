@@ -7,6 +7,9 @@ const path = require("path");
 const staticExport = process.env.DBGPT_WEB_STATIC_EXPORT === "1";
 
 const nextConfig = {
+  // Chart extensions require G2 from CommonJS. Bundle page dependencies so
+  // they share Webpack module loading instead of racing native ESM imports.
+  bundlePagesRouterDependencies: true,
   experimental: {
     esmExternals: "loose",
   },

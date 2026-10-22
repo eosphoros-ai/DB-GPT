@@ -19,11 +19,14 @@
     "format": "prettier --write '**/*.{ts,tsx}'",
     "export": "DBGPT_WEB_STATIC_EXPORT=1 npm run build",
     "compile": "DBGPT_WEB_STATIC_EXPORT=1 npm run build",
-    "test": "npm run test:react-final && npm run test:final-presentation",
+    "test": "npm run test:react-final && npm run test:final-presentation && npm run test:report-graph && npm run test:report-html",
+    "test:report-html": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/report-html-tests new-components/report/report-html.ts new-components/report/report-html.test.ts && node node_modules/.cache/report-html-tests/report-html.test.js",
+    "test:report-graph": "tsc --project tsconfig.report-graph-test.json --moduleResolution node && node node_modules/.cache/report-graph-tests/new-components/report/report-graph-model.test.js",
     "test:react-final": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/react-final-tests utils/react-agent-final.ts utils/react-agent-final.test.ts && node node_modules/.cache/react-final-tests/react-agent-final.test.js",
     "test:final-presentation": "tsc --target ES2020 --module commonjs --moduleResolution node --esModuleInterop --skipLibCheck --strict --outDir node_modules/.cache/final-presentation-tests utils/final-presentation.ts utils/final-presentation.test.ts && node node_modules/.cache/final-presentation-tests/final-presentation.test.js",
     "test:dashboard": "vitest run --config vitest.dashboard.config.mts",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
+    "test:e2e:report": "playwright test --config playwright.report.config.ts",
     "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build"
   },
   "dependencies": {

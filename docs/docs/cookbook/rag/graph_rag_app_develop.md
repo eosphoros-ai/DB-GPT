@@ -500,7 +500,7 @@ The results of the text2gql search mode are as follows:
   <img src={'/img/chat_knowledge/graph_rag/comparison_result_for_text2gql_search.png'} width="1000px"/>
 </p>
 
-Compared to the keyword search method, the text2gql search method can generate an accurate graph query laguage to query the entity of DB-GPT in knowledge graph, which is
+Compared to the keyword search method, the text2gql search method can generate an accurate graph query language to query the entity of DB-GPT in knowledge graph, which is
 
 ```cypher
 MATCH (n) WHERE n.id = 'DB-GPT' RETURN n LIMIT 10

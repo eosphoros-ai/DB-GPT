@@ -106,6 +106,9 @@ export type IChatDialogueMessageSchema = {
   feedback?: Record<string, any>;
   /** Structured knowledge sources attached to an agent final answer. */
   citations?: AgentCitation[];
+  /** Deterministic ID of the persisted evidence report for this turn. */
+  reportId?: string;
+  reportRunId?: string;
 };
 
 export type ModelType =

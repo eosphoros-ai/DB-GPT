@@ -6,10 +6,9 @@ Builds the set of ReAct tools that are bound to a per-(sub-)agent
 physical prerequisite for per-sub-agent state isolation (see design spec
 §4.5 / plan stage 1).
 
-Most tool bodies were relocated from ``agentic_data_api.py``; only
-their dependency sources changed (closure free variables -> factory params or
-module-level imports). Python and shell execution now reuse the main agent
-tool factories to share runtime configuration and file handling.
+SQL, Python, skill execution, shell execution and HTML rendering use the shared tool
+factories. Each factory captures this agent's state so fixes apply to both the
+main agent and sub-agents without sharing their mutable session state.
 
 Returns 8 tools::
 
@@ -35,11 +34,22 @@ from dbgpt.agent.resource.base import AgentResource, ResourceType
 from dbgpt.agent.resource.manage import get_resource_manager
 from dbgpt.agent.resource.tool.base import tool
 from dbgpt.configs.model_config import SKILLS_DIR
+from dbgpt.core.interface.report_capture import get_current_artifact_sink
+
+from ..tools.code_interpreter import (
+    make_code_interpreter as make_shared_code_interpreter,
+)
+from ..tools.knowledge_retrieve import (
+    make_knowledge_retrieve as make_shared_knowledge_retrieve,
+)
+from ..tools.shell_interpreter import make_shell_interpreter
+from ..tools.sql_query import make_sql_query as make_shared_sql_query
 
 CFG = Config()
 logger = logging.getLogger(__name__)
 
 DEFAULT_SKILLS_DIR = SKILLS_DIR
+
 AUTO_DATA_MARKER_PATTERN = re.compile(
     r"###([A-Z0-9_]+)_START###\s*(.*?)\s*###\1_END###", re.DOTALL
 )
@@ -85,7 +95,7 @@ def make_react_tools(
         react_state: The per-agent mutable state container. The only
             per-sub-agent isolation anchor. Tools read/write ``conv_id``,
             ``file_path``, ``generated_images``, ``image_url_map``,
-            ``auto_data``, ``ratio_data``, ``matched``, ``skill_prompt``.
+            ``auto_data``, ``matched``, ``skill_prompt``.
         database_connector: Shared read-only DB connector (or None). Used by
             ``sql_query``.
         knowledge_resources: Shared read-only knowledge resources (or None).
@@ -210,7 +220,7 @@ def make_react_tools(
         "Use this tool when the user question involves content that may be "
         'in the knowledge base. Parameters: {{"query": "search query"}}'
     )
-    async def knowledge_retrieve(query: str) -> str:
+    async def legacy_knowledge_retrieve(query: str) -> str:
         if not knowledge_resources:
             return json.dumps(
                 {
@@ -270,26 +280,32 @@ def make_react_tools(
                 ensure_ascii=False,
             )
 
-    # Shared with the main react path so the query-artifact payload
-    # (SQL + capped result set) cannot drift between agent implementations.
-    from ..tools.sql_query import make_sql_query
-
-    sql_query = make_sql_query(react_state, database_connector)
-
-    # Share execution tools with the main agent so runtime selection, file
-    # context and cleanup cannot drift between main and sub-agent paths.
-    from ..tools.code_interpreter import make_code_interpreter
-    from ..tools.shell_interpreter import make_shell_interpreter
+    # SQL/Python are semantic execution boundaries. Delegate them to the same
+    # implementations used by the main agent so capture, safety, truncation,
+    # and future fixes cannot diverge between parent and child agents.
     from ..tools.web_tools import make_web_fetch, make_web_search
 
-    code = make_code_interpreter(react_state)
     bash = make_shell_interpreter(react_state)
     web_search = make_web_search()
     web_fetch = make_web_fetch()
+    shared_sql_query = make_shared_sql_query(
+        react_state,
+        database_connector,
+        max_output_chars=None,
+    )
+    shared_code_interpreter = make_shared_code_interpreter(
+        react_state,
+        max_output_chars=2_000,
+        legacy_truncation_notice=True,
+    )
+    shared_knowledge_retrieve = make_shared_knowledge_retrieve(
+        react_state, knowledge_resources or []
+    )
 
     @tool(
-        description="执行技能scripts目录下的脚本文件。参数: "
-        '{"skill_name": "技能名称", "script_file_name": "脚本文件名", "args": {参数}}'
+        description="Retrieve relevant information from the knowledge base. "
+        "Use this tool when the user question involves content that may be "
+        'in the knowledge base. Parameters: {{"query": "search query"}}'
     )
     async def execute_skill_script_file(
         skill_name: str, script_file_name: str, args: Optional[dict] = None
@@ -805,13 +821,17 @@ def make_react_tools(
             {"output_type": "html", "content": fixed_html, "title": title},
         ]
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
+    async def knowledge_retrieve(query: str) -> str:
+        if get_current_artifact_sink() is None:
+            return await legacy_knowledge_retrieve(query=query)
+        return await shared_knowledge_retrieve(query=query)
 
     return {
         "load_skill": load_skill,
         "load_tools": load_tools,
         "knowledge_retrieve": knowledge_retrieve,
-        "sql_query": sql_query,
-        "code": code,
+        "sql_query": shared_sql_query,
+        "code": shared_code_interpreter,
         "bash": bash,
         "execute_skill_script_file": execute_skill_script_file,
         "html_interpreter": html_interpreter,

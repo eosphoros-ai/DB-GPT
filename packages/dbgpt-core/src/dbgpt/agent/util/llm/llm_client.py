@@ -298,6 +298,11 @@ class AIWrapper:
 
             async for output in self._llm_client.generate_stream(model_request.copy()):
                 model_output = output
+                if output.error_code:
+                    raise ValueError(
+                        f"LLM_PROVIDER_ERROR: code={output.error_code}; "
+                        + output.gen_text_with_thinking()
+                    )
                 delta_text = ""
                 delta_thinking = ""
                 if output.has_text:

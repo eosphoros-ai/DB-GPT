@@ -315,7 +315,9 @@ class TestEnvelopeReadable:
             }
         )
         assert _envelope_readable(env) == "HTML 报告已渲染: 沃尔玛周销报告"
-        assert _envelope_readable(env, zh=False) == "HTML report rendered: 沃尔玛周销报告"
+        assert (
+            _envelope_readable(env, zh=False) == "HTML report rendered: 沃尔玛周销报告"
+        )
 
     def test_non_envelope_untouched(self):
         assert _envelope_readable("正常结论文本") is None

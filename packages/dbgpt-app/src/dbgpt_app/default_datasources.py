@@ -11,6 +11,16 @@ def default_file_datasources(
 
     return [
         (
+            "Olist_Ecommerce",
+            [
+                os.path.join(pilot_path, "examples", "Olist_Ecommerce.db"),
+                os.path.join(
+                    root_path, "docker", "examples", "dashboard", "Olist_Ecommerce.db"
+                ),
+            ],
+            "Synthetic Olist-shaped offline example (not real transactions)",
+        ),
+        (
             "Walmart_Sales",
             [
                 os.path.join(pilot_path, "examples", "Walmart_Sales.db"),

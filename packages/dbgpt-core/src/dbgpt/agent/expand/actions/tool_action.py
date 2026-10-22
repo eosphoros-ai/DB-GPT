@@ -275,6 +275,18 @@ async def run_tool(
                 tool_result = err_msg
 
         result_str = str(tool_result)
+        try:
+            payload = (
+                tool_result if isinstance(tool_result, dict) else json.loads(result_str)
+            )
+        except (TypeError, ValueError):
+            payload = None
+        if isinstance(payload, dict) and (
+            payload.get("success") is False or payload.get("error_code")
+        ):
+            response_success = False
+            status = Status.FAILED.value
+            err_msg = str(payload.get("error_code") or "TOOL_FAILED")
 
         # Layer 2: persist oversized tool results to disk and replace the
         # in-context content with a <persisted-output> preview + file path.

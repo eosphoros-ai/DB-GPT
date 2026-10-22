@@ -34,6 +34,9 @@ class PromptRequest(BaseModel):
     frequency_penalty: Optional[float] = None
     chat_model: Optional[bool] = True
     """Whether to use chat model"""
+    tools: Optional[List[Dict[str, Any]]] = None
+    """Native function definitions, retained across remote worker requests."""
+    tool_choice: Optional[Union[str, Dict[str, Any]]] = None
 
 
 class EmbeddingsRequest(BaseModel):
