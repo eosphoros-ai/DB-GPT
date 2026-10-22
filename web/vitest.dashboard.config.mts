@@ -22,7 +22,7 @@ export default defineConfig({
       './hooks/use-scheduled-task.test.tsx',
       './new-components/chat/content/QuestionDock.test.tsx',
       './new-components/chat/content/ArtifactCards.test.tsx',
-      './pages/approval-settings.test.tsx',
+      './tests/approval-settings.test.tsx',
       './new-components/chat/input/ApprovalModeBadge.test.tsx',
       './hooks/use-question-session.test.tsx',
       './hooks/use-chat.question.test.tsx',
