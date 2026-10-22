@@ -1,0 +1,267 @@
+# =============================================================================
+# DB-GPT 官方场景套件 · 智能运维（db-ops）
+# -----------------------------------------------------------------------------
+# 形态：场景套件（专家套件形态）= 会话级声明式配置束。
+# 原则：一个 ReAct agent + 三个套件；套件只声明，核心来执行（§5.8）。
+# 解析契约：dbgpt_serve/suite/loader.py 读取本文件；P0 字段名不可改；
+#          校验为 fail-soft（必填字段存在 + 类型粗检 + 缺省补全，坏字段跳过并告警）。
+# 安全底线：审批 gate / 沙箱 / 执行引擎留在核心；本文件 approval_overrides 只能加严，
+#          不能放宽（合并顺序：core deny > suite > core default，见 §5.4）。
+# =============================================================================
+
+kind: scenario-suite
+name: db-ops
+display: 智能运维
+icon: 🛠️
+version: 1.0.0
+description: >-
+  面向企业业务库（非数仓）的智能运维工作台。以 DBA 角色执行"采集慢日志/EXPLAIN →
+  聚合多维信息 → 根因定位 → 诊断 → 修复提案"五步链，产出诊断报告、修复计划、
+  执行计划与血缘影响四类产物。覆盖慢查询诊断、健康巡检、索引优化、画像治理、
+  受控 DDL 评审五个技能。含破坏性操作（DDL/ANALYZE），审批最严：破坏性动作一律
+  人确认，生产库 DDL 默认拒绝，修复永远是"提案 + 人确认"，套件不自动执行变更。
+author: DB-GPT Official
+maintainers:
+  - data-agent-core
+license: MIT
+tags:
+  - 官方套件
+  - 运维
+  - DBA
+  - 慢查询诊断
+  - 健康巡检
+  - 索引优化
+  - 画像治理
+  - 生产安全
+  - 破坏性操作受控
+
+# ---- 场景与编排 -------------------------------------------------------------
+scenario_id: ops
+execution: react            # P0 仅 react；flow 为 P1 保留字段
+sop: prompts/ops-playbook.md
+
+# ---- 工具白名单（求交后交核心 gate 执行） ------------------------------------
+tools:
+  allow:
+    - slow_log
+    - explain
+    - db_metrics
+    - index_info
+    - semantic_search
+    - schema_link
+    - analyze
+    - ddl
+  deny:
+    - shell
+    - drop_database
+    - truncate
+  # 以下为声明性标注，供 binder/前端展示与审计聚合；实际拦截仍由核心 gate 决定
+  read_only:
+    - slow_log
+    - explain
+    - db_metrics
+    - index_info
+    - semantic_search
+    - schema_link
+  gated:                     # 破坏性/高代价：每次调用必过审批 dock，不得进入 auto 白名单记忆
+    - analyze
+    - ddl
+  provide_mcp: []            # 本套件不自带 MCP server，全部复用核心内置工具
+
+# ---- 默认绑定上下文（头部常驻 chip） ----------------------------------------
+context_defaults:
+  target_db: required        # 目标库：运维一切动作的作用域，未绑定不得执行任何工具
+  time_window: required      # 时间窗：慢日志/指标采集的默认区间，未绑定则先向用户澄清
+  datasource: session        # 数据源随会话选择（只读优先，生产库需带 env 标识）
+  semantic_layer: optional   # 语义层可选，仅用于影响面/血缘与业务口径解释
+  env: session               # 环境标识（dev/test/staging/production）由数据源元信息带入，套件不可覆盖
+  time_window_defaults:
+    preset: last_4h
+    granularity: 5m
+    max_span: 7d             # 超过 7 天的窗口需分段采集，避免一次性拖垮目标库
+  bind_hint: 请先在头部选择「目标库 + 时间窗」，两者缺一不进入采集阶段
+
+# ---- 产物卡（引用核心渲染器注册表，套件不自带 UI 代码） ----------------------
+artifacts:
+  - diag_report              # 诊断报告卡：慢查询表 + 根因 + 修复建议
+  - fix_plan                 # 修复计划卡：候选动作 + 收益预估 + 风险等级 + 审批状态
+  - execution_plan           # 执行计划卡：EXPLAIN 前后对比、锁影响、回滚步骤
+  - citation                 # 引用溯源：慢日志条目/指标快照/语义层血缘指针
+
+# ---- 审批加严（只能加严；合并顺序 core deny > suite > core default） ---------
+approval_overrides:
+  - match: {tool: ddl}
+    action: confirm
+    reason: DDL 变更破坏性，生产强制确认
+  - match: {tool: analyze}
+    action: confirm
+    reason: 锁表/资源影响
+  - match: {tool: ddl, env: production}
+    action: deny
+    reason: 生产库 DDL 默认拒绝，需走变更流程
+  # --- 以下为 db-ops 追加的加严规则（同样只紧不松） ---
+  - match: {tool: ddl, sql_pattern: "^(DROP|TRUNCATE|RENAME)"}
+    action: deny
+    reason: 删表/清表/改名不可逆，套件层永久拒绝，必须走线下变更流程与备份
+  - match: {tool: analyze, env: production, est_table_rows: ">10000000"}
+    action: confirm
+    reason: 千万行以上大表 ANALYZE 可能引发锁等待与优化器统计抖动，需避开业务高峰
+  - match: {tool: ddl, phase: plan}
+    action: confirm
+    reason: 复杂变更先出执行计划卡（计划确认），批准后才允许生成正式 DDL 提案
+  - match: {tool: slow_log, env: production, est_scan_gb: ">50"}
+    action: confirm
+    reason: 大窗口日志采集本身也是高代价读取，预估超 50GB 需确认并缩窗
+approval_policy_notes:
+  - 破坏性工具（ddl/analyze）不适用 once/session/always 记忆白名单，每次都询问
+  - 审批 dock 必须展示：风险等级、破坏性标识、生产环境标识、影响面（表/行数/血缘）、预估耗时与锁范围、回滚方案
+  - 用户拒绝后不得改写参数重试同一意图，只能降级为只读诊断或输出提案文档
+
+# ---- 路由（首页自动识别；平局交 LLM 意图） ----------------------------------
+routing:
+  keywords:
+    - 慢查询
+    - 巡检
+    - 根因
+    - 诊断
+    - 索引
+    - 优化
+    - 健康
+    - profile
+    - 治理
+    - 执行计划
+    - 锁
+  specificity: 0.9           # 与 db-query/db-analysis 关键词重叠时的优先级因子
+  tie_break: llm_intent
+  negative_keywords:         # 命中则降低运维评分，避免误路由（取数/分析场景词）
+    - 导出
+    - GMV
+    - 环比
+    - 报告分享
+
+# ---- 推荐问题（首页 Tab 数据源，也是套件 eval set 的种子） -------------------
+recommended_questions:
+  - {text: 订单库昨晚慢查询根因, hint: 采集慢日志+EXPLAIN→聚合→根因→修复提案}
+  - {text: 生产库健康巡检出报告, hint: db_metrics 多维基线（连接/QPS/慢查询率/缓冲池/磁盘/复制延迟）+ 巡检结论}
+  - {text: 生成数据库 profile 与治理建议, hint: 表膨胀/碎片/无主键/大字段/冷热分层，出 profile + 治理路线图}
+  - {text: orders 表该加什么索引, hint: index_info + 查询模式聚类→索引候选→重复/未用索引清理建议（仅提案）}
+  - {text: 这条 SQL 为什么走了全表扫, hint: explain 判读 type/key/rows/Extra，定位坏计划并给改写建议}
+  - {text: 给 payment 表加索引的变更风险有多大, hint: safe-ddl-review 出破坏性分级/锁影响/在线 DDL 工具建议，生产默认 deny}
+
+# ---- 输出契约（完成标准） ---------------------------------------------------
+output_contract: diag_report+fix_plan
+output_contract_detail:
+  required:
+    - diag_report            # 必须给结论：根因、证据链、影响面
+    - fix_plan               # 必须给可评审的修复提案（含风险等级与回滚）
+  optional:
+    - execution_plan         # 涉及 EXPLAIN 对比或 DDL 时必出
+    - citation               # 引用慢日志条目/指标快照/血缘，保证可溯源
+  completion_rule: >-
+    未产出 diag_report 不得 terminate；修复动作未标注"待审批/需人工确认"不得 terminate；
+    任何 DDL/ANALYZE 在获得批准前不得出现在已执行工具轨迹中。
+
+# ---- 语义层消费策略 ---------------------------------------------------------
+semantic:
+  layer: mysql_prod
+  require: optional          # 运维以物理层为主，语义层可选(用于影响面/血缘)
+  scope: {tags: []}
+  pin: {policy: latest_published}
+  consumption: rule_first    # 运维=rule_first(护栏/规则优先，指标次要)
+  proposals: []
+  fallback: db_summary       # 语义层未就绪时由 binder 降级为 DBSummary 摘要注入，并在水位线标注
+
+# ---- 快捷命令（/command，会话内显式调用；与自动路由形成双轨） ----------------
+commands:
+  - {name: /slowlog, summary: 按时间窗采集并聚合慢查询, skill: slow-query-diagnosis,
+     prefill: "拉取 {target_db} 最近 {time_window} 的慢查询并按指纹聚合 Top10"}
+  - {name: /explain, summary: 解读一条 SQL 的执行计划, skill: slow-query-diagnosis,
+     prefill: "对以下 SQL 做 EXPLAIN 判读并指出坏计划原因："}
+  - {name: /inspect, summary: 目标库健康巡检并出报告, skill: health-inspection,
+     prefill: "对 {target_db} 做健康巡检，覆盖连接数/QPS/慢查询率/缓冲池/磁盘/复制延迟"}
+  - {name: /index, summary: 索引候选与冗余索引建议, skill: index-advisor,
+     prefill: "基于 {time_window} 的查询模式，给 {target_db} 输出索引优化建议（仅提案）"}
+  - {name: /profile, summary: 数据库画像与治理建议, skill: profile-governance,
+     prefill: "生成 {target_db} 的数据库 profile：表膨胀/碎片/无主键/大字段/冷热分层与治理建议"}
+  - {name: /fix, summary: 汇总修复提案与风险分级, skill: safe-ddl-review,
+     prefill: "把本次诊断的修复动作整理为 fix_plan：分级、锁影响、在线 DDL 方案、回滚与审批要求"}
+
+# ---- 包内技能索引（skills/ 走现有 skill registry，SKILL.md 格式不变） --------
+skills:
+  - {name: slow-query-diagnosis, path: skills/slow-query-diagnosis/SKILL.md,
+     summary: 慢查询采集、EXPLAIN 判读与根因归类（缺索引/坏计划/锁等待/大扫描）}
+  - {name: health-inspection, path: skills/health-inspection/SKILL.md,
+     summary: db_metrics 多维基线巡检与巡检报告}
+  - {name: index-advisor, path: skills/index-advisor/SKILL.md,
+     summary: 索引候选生成、重复/未用索引识别与 ADD INDEX 提案}
+  - {name: profile-governance, path: skills/profile-governance/SKILL.md,
+     summary: 数据库画像、表膨胀/碎片治理与冷热分层建议}
+  - {name: safe-ddl-review, path: skills/safe-ddl-review/SKILL.md,
+     summary: 受控 DDL 评审：破坏性分级、生产 deny、锁影响预估、在线 DDL 建议}
+
+runbooks:
+  - {name: slow-query-rootcause, path: runbooks/slow-query-rootcause.md,
+     summary: 慢查询根因定位手册（症状→采集→EXPLAIN 判读表→根因分类→修复动作与风险等级）}
+  - {name: production-safety-checklist, path: runbooks/production-safety-checklist.md,
+     summary: 生产安全变更清单（破坏性分级、审批矩阵、禁止项、回滚预案）}
+
+# ---- 工作台 UI 声明（渲染器由核心注册表提供，套件不带前端代码） --------------
+ui:
+  header_chips:
+    - {type: target_db, label: 目标库, required: true, color: ops}
+    - {type: time_window, label: 时间窗, required: true, color: ops}
+    - {type: env, label: 环境, required: true, badge_on: production}   # 生产红标常驻
+  right_panel_viewers:
+    - root_cause_detail
+    - execution_plan
+    - lineage_impact
+  conversation_flow:
+    - 意图识别
+    - 采集执行计划/慢日志
+    - 聚合多维信息
+    - 根因定位
+    - 诊断报告卡
+    - 修复类操作弹审批 dock（破坏性/生产标识）
+
+# ---- 安全声明（§5.4 安全边界；enforcement 在核心，此处仅为可审计的声明） ----
+safety:
+  risk_class: destructive          # 三套件中唯一含破坏性操作的套件，审批最严
+  read_only_first: true            # 先诊断后动手：只读工具无需审批，破坏性工具必须审批
+  fixes_are_proposals_only: true   # 修复动作永远是"提案 + 人确认"，套件不自动执行 DDL/ANALYZE
+  production_default: deny         # 生产环境破坏性操作默认拒绝，需显式走变更流程
+  policy_monotonicity: tighten_only  # approval_overrides 只能加严；试图放宽核心 deny 会被核心拒绝
+  enforcement_owner: core          # 执行引擎、审批 gate、沙箱、渲染器注册表均在核心，不可插件化
+  forbidden:
+    - 通过 shell/脚本绕过工具白名单执行 SQL
+    - 未绑定 target_db/time_window 即采集或变更
+    - 把 ddl/analyze 写入 auto 或 always 记忆白名单
+    - 在诊断结论未出前提前提交变更提案
+    - 用户拒绝审批后改写参数或换工具重试同一破坏性意图
+  audit:
+    record: [tool_call, approval_decision, suite_version, target_db, time_window, env]
+    replayable: true               # 审计可回答"这份诊断是哪个套件版本、哪个库、哪个窗口跑出来的"
+
+# ---- 对核心的依赖声明（缺失时 fail-soft 降级，不报错） ----------------------
+requires:
+  approval_gate: required          # 无审批 gate 时本套件不得启用（破坏性工具无法拦截）
+  sandbox: required
+  renderer_registry: required
+  semantic_layer: optional         # 缺失时降级 DBSummary
+  scheduled_tasks: optional        # 巡检周期化依赖定时任务模块
+
+# ---- 版本与升级（对话 pin db-ops@version，升级不破坏历史会话） --------------
+pin:
+  policy: exact                    # 对话创建时 pin db-ops@1.0.0
+  upgrade_scope: new_conversation_only
+  in_session_upgrade: explicit     # P1：会话内升级需显式动作 + timeline 事件
+
+evals:
+  routing_accuracy_target: 0.9     # T5 验收：三类问句路由准确率自测集 ≥90%
+  seed_cases:
+    - {input: 订单库昨晚 22:00-02:00 慢查询根因, expect_suite: db-ops, expect_tools: [db_metrics, slow_log, explain, index_info]}
+    - {input: 生产库健康巡检出报告, expect_suite: db-ops, expect_tools: [db_metrics]}
+    - {input: 给 orders 表加索引有什么风险, expect_suite: db-ops, expect_approval: confirm, expect_env_deny_on: production}
+    - {input: 查询上月各区域销售额, expect_suite: db-query, note: 负样本，不应命中运维}
+
+changelog:
+  - {version: 1.0.0, date: 2026-10-22, changes: 首个官方版本：5 技能 + 2 runbook + ops-playbook SOP；DDL/ANALYZE 全量加严，生产 DDL 默认 deny}

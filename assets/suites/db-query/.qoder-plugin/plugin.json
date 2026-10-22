@@ -1,0 +1,30 @@
+{
+  "name": "db-query",
+  "displayName": "Smart Data Query",
+  "displayNameEn": "Smart Data Query",
+  "displayNameCn": "智能取数",
+  "version": "1.0.0",
+  "description": "Official scenario suite for precise natural-language data retrieval against business databases. Enforces semantic-layer binding (metric definitions, default filters, table whitelist, row-level security), generates SQL via NL2SQL with sql.validate self-correction, executes on a read replica under cost/approval gates, and attaches citation chips (metric version / table / example / rules). Includes 4 skills and 4 quick commands.",
+  "descriptionEn": "Official scenario suite for precise natural-language data retrieval against business databases. Enforces semantic-layer binding, NL2SQL with validation self-correction, read-replica execution under cost gates, and citation chips. 4 skills + 4 quick commands.",
+  "descriptionZh": "官方场景套件 · 智能取数。面向企业业务库（非数仓）的自然语言精准取数：强制绑定语义层（指标口径 / 默认过滤 / 表白名单 / 行级权限），SQL 经 NL2SQL 生成并通过 sql.validate 自纠后在只读从库执行；高代价扫描按预估成本触发审批 confirm；答案下附引用溯源 chips（指标版本 / 表 / 样例 / 规则）；👍 沉淀样例库、✏️ 纠错进语义标注待审队列。含 4 个技能 + 4 个快捷命令。",
+  "author": {
+    "name": "DB-GPT Official",
+    "url": "https://github.com/eosphoros-ai/DB-GPT"
+  },
+  "category": "engineering",
+  "tags": [
+    "db-gpt",
+    "scenario-suite",
+    "nl2sql",
+    "semantic-layer",
+    "chatbi",
+    "data-query",
+    "official"
+  ],
+  "skills": [
+    "skills/semantic-linking",
+    "skills/nl2sql-precision",
+    "skills/readonly-guardrails",
+    "skills/result-export"
+  ]
+}

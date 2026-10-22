@@ -1,0 +1,326 @@
+# =============================================================================
+# DB-GPT 官方场景套件 · 智能分析 (db-analysis) · 已验证分析样例库
+# -----------------------------------------------------------------------------
+# 用途（三位一体）：
+#   ① few-shot 注入：semantic_search(types=["sample"]) 命中后，复用其多步计划与图表选型
+#   ② 评测集：推荐问题 + 本文件 = 本套件的 eval set（设计 §5.8「评测按套件组织」）
+#   ③ 自进化闭环：报告 👍 → use_count+1 并可新增样例；✏️ 纠错 → 语义提案进待审队列
+# 口径纪律：每条样例的 metric_refs 必须带版本号（pin），steps 内不得改写默认过滤。
+# =============================================================================
+
+kind: suite-few-shots
+suite: db-analysis
+suite_version: 1.0.0
+semantic_layer: mysql_prod
+consumption: metric_first
+writeback: on_thumbs_up
+description: 智能分析场景的已验证多步分析样例（问题 → 数据集圈定 → 多步 SQL → 图表选型 → 结论模板）
+
+# 字段约定（loader fail-soft：未知键忽略，缺键补默认值）
+fields:
+  id: 样例唯一标识，报告引用 chips 中作为 sample 类型引用
+  question: 触发该样例的典型问法（用于向量召回与关键词匹配）
+  intent: attribution | trend | comparison | structure | retention | promo_roi | overview
+  dataset: 圈定结果概述（表白名单 + join + 默认过滤 + 粒度）
+  metric_refs: 本样例使用的指标及其 pin 版本（跨步一致，禁止混版本）
+  steps: 多步取数计划（intent + SQL 概述 + 关键产出 + 建议图型）
+  charts: 图表清单（类型 + 维度度量映射 + 结论式标题）
+  conclusion_template: 结论卡骨架（含占位符，装配时替换为实际数字）
+  guardrails: 该样例必须执行的可信度排除项（防假异动）
+  tags: 召回与过滤标签
+  use_count: 被复用次数（👍 沉淀 +1，用于 few-shot 排序）
+  verified: 验证信息（验证人角色 / 验证时间 / 数据源）
+
+samples:
+  # ---------------------------------------------------------------------------
+  - id: va-001-eastchina-sales-decline
+    question: 分析本月华东区销售下滑的归因，出图文报告
+    intent: attribution
+    dataset:
+      name: 交易域-华东区销售下滑归因-本月
+      tables: [ods_order_main, ods_order_item, dim_region, dim_channel, dim_category]
+      joins:
+        - "ods_order_main.order_id = ods_order_item.order_id (1:N)"
+        - "ods_order_main.region_id = dim_region.region_id (N:1)"
+        - "ods_order_main.channel_id = dim_channel.channel_id (N:1)"
+        - "ods_order_item.category_id = dim_category.category_id (N:1)"
+      default_filters:
+        - "is_deleted = 0"
+        - "order_type <> 'TEST'"
+        - "order_status IN ('PAID','SHIPPED','FINISHED')"
+      grain: day
+      window_rule: 本期与对比期等长（本月至今 N 天 vs 上月同 N 天 vs 去年同月同 N 天）
+    metric_refs:
+      - {metric: valid_gmv, version: v2}
+      - {metric: paid_order_cnt, version: v1}
+      - {metric: aov, version: v1}
+      - {metric: refund_rate, version: v1}
+    steps:
+      - {no: 1, intent: 总量与趋势, sql_summary: "按 stat_date 汇总华东区 valid_gmv@v2，三期对比（本期/上月同期/去年同期）", output: "本期总额、环比、同比、日序列", chart: line}
+      - {no: 2, intent: 一级维度拆解, sql_summary: "按 channel_name 汇总本期与对比期 valid_gmv@v2 及差额", output: "各渠道差额与贡献度", chart: bar}
+      - {no: 3, intent: 二级下钻, sql_summary: "在主因渠道内按 category_name 汇总差额 Top10（含其他合并）", output: "品类贡献度与闭合校验", chart: bar}
+      - {no: 4, intent: 量价分解, sql_summary: "取主因渠道主因品类的 paid_order_cnt@v1 与 aov@v1，计算量效应 ΔQ×P0 与价效应 ΔP×Q1", output: "量/价效应及与总差额的误差", chart: bar+line 双轴}
+      - {no: 5, intent: 异动定位, sql_summary: "日粒度 paid_order_cnt@v1 与 refund_rate@v1，定位断点日期并排除退款异常", output: "异动起点、影响范围、库内可查变化", chart: line}
+    charts:
+      - {id: ch-01, type: line, x: stat_date, y: valid_gmv, series: period, title: "华东区日度 valid_gmv：{onset} 起持续低于上月同期"}
+      - {id: ch-02, type: bar, x: channel_name, y: gmv_delta, title: "渠道贡献：{top_channel} 占总下滑 {top_channel_share}"}
+      - {id: ch-03, type: bar, x: category_name, y: gmv_delta, title: "{top_channel} 下滑集中在 {top_category}（占 {top_category_share}）"}
+      - {id: ch-04, type: bar+line, x: stat_date, y: paid_order_cnt, secondary_y: aov, title: "订单量 {order_delta_pct}、客单价 {aov_delta_pct} → 纯量问题"}
+      - {id: ch-05, type: pie, x: channel_name, y: share, title: "渠道结构：{top_channel} 占 {top_channel_gmv_share}"}
+    conclusion_template: >-
+      {scope} {period}（{window}）{metric}@{metric_version} 为 {value}，环比 {mom_pct}
+      （剔除节假日后 {mom_pct_adj}）、同比 {yoy_pct}。主因为 {top_channel} 的 {top_category}：
+      贡献总下滑 {combined_share}，异动起点 {onset}；量价分解显示量效应 {volume_effect}、
+      价效应 {price_effect}，性质为「量」问题。各层贡献度闭合（差值 {closure_gap}），
+      已排除口径变更、数据缺失与退款异常，置信度 {confidence}。待验证假设：{hypotheses}。
+    guardrails:
+      - 检查最后一天数据是否完整入仓，未完整则所有窗口统一下修
+      - 检查本期是否含节假日/大促，含则补一版剔除后的口径对比
+      - 检查 valid_gmv 是否近期发生版本变更（v1→v2）导致假异动
+      - 各层拆解必须闭合：Σ 子项差额 = 上层差额，偏差 > 2% 需解释
+    tags: [归因, 下滑, 区域, 渠道, 品类, 量价分解, 环比, 同比, 图文报告]
+    use_count: 128
+    verified: {by: 数据分析负责人, at: "2026-09-18", source: mysql_prod 只读从库}
+
+  # ---------------------------------------------------------------------------
+  - id: va-002-region-order-share-trend
+    question: 对比华东华南近 12 周订单占比趋势
+    intent: comparison
+    dataset:
+      name: 交易域-华东华南订单结构-近12周
+      tables: [ods_order_main, dim_region, dim_channel]
+      joins:
+        - "ods_order_main.region_id = dim_region.region_id (N:1)"
+        - "ods_order_main.channel_id = dim_channel.channel_id (N:1)"
+      default_filters:
+        - "is_deleted = 0"
+        - "order_type <> 'TEST'"
+        - "order_status IN ('PAID','SHIPPED','FINISHED')"
+      grain: week
+      window_rule: 近 12 个完整自然周（周一为周首），排除未结束当周
+    metric_refs:
+      - {metric: paid_order_cnt, version: v1}
+      - {metric: valid_gmv, version: v2}
+    steps:
+      - {no: 1, intent: 周度总量, sql_summary: "按 stat_week 与 region_name 汇总 paid_order_cnt@v1（日粒度上卷至周）", output: "12 周 × 2 区域订单量", chart: line}
+      - {no: 2, intent: 占比计算, sql_summary: "在同一份周度结果上计算各区域占两区合计的比重", output: "周度占比序列", chart: line}
+      - {no: 3, intent: 结构演变, sql_summary: "按 stat_week 与 channel_name 拆分两区订单量，观察渠道结构迁移", output: "渠道结构堆叠序列", chart: stacked_bar}
+      - {no: 4, intent: 金额交叉验证, sql_summary: "同口径取 valid_gmv@v2 周度序列，验证订单占比与金额占比是否背离", output: "量额背离判断", chart: bar+line 双轴}
+    charts:
+      - {id: ch-01, type: line, x: stat_week, y: paid_order_cnt, series: region_name, title: "近 12 周订单量：{leading_region} 领先且差距 {gap_trend}"}
+      - {id: ch-02, type: line, x: stat_week, y: order_share, series: region_name, title: "订单占比：{leading_region} 由 {share_start} 变化至 {share_end}"}
+      - {id: ch-03, type: stacked_bar, x: stat_week, y: paid_order_cnt, series: channel_name, title: "渠道结构迁移：{shift_channel} 占比上升 {shift_pct}"}
+      - {id: ch-04, type: bar+line, x: stat_week, y: paid_order_cnt, secondary_y: valid_gmv, title: "量额背离：订单占比与金额占比差 {divergence_pct}"}
+    conclusion_template: >-
+      近 {weeks} 周（{window}）{region_a} 与 {region_b} 订单量分别为 {orders_a} 与 {orders_b}，
+      占比由 {share_a_start}/{share_b_start} 变化至 {share_a_end}/{share_b_end}，
+      趋势方向为 {trend_direction}。结构上 {shift_channel} 渠道占比变化 {shift_pct} 是主要驱动；
+      金额口径（{metric}@{metric_version}）显示 {divergence_note}，说明 {mix_or_volume}。
+      口径：周粒度、日数据上卷、两区同过滤同版本，闭合校验通过，置信度 {confidence}。
+    guardrails:
+      - 周粒度必须由日粒度上卷，禁止另写按周聚合 SQL（默认过滤边界会不一致）
+      - 排除未结束当周，避免尾周偏低造成假趋势
+      - 占比之和必须为 100%（含"其他"），偏差 > 0.5% 需复核
+      - 量额背离时先检查 aov 版本与结构效应，不要直接归因于价格
+    tags: [对比, 区域, 占比, 趋势, 周粒度, 结构迁移, 量额背离]
+    use_count: 76
+    verified: {by: 运营分析组, at: "2026-08-30", source: mysql_prod 只读从库}
+
+  # ---------------------------------------------------------------------------
+  - id: va-003-category-topn-weekly-report
+    question: 近 30 天各品类 GMV Top10 及环比，生成周报
+    intent: structure
+    dataset:
+      name: 交易域-品类周报-近30天
+      tables: [ods_order_main, ods_order_item, dim_category, dim_channel]
+      joins:
+        - "ods_order_main.order_id = ods_order_item.order_id (1:N)"
+        - "ods_order_item.category_id = dim_category.category_id (N:1)"
+        - "ods_order_main.channel_id = dim_channel.channel_id (N:1)"
+      default_filters:
+        - "is_deleted = 0"
+        - "order_type <> 'TEST'"
+        - "order_status IN ('PAID','SHIPPED','FINISHED')"
+      grain: day
+      window_rule: 近 30 天 vs 前 30 天（等长滚动窗口）
+    metric_refs:
+      - {metric: valid_gmv, version: v2}
+      - {metric: paid_order_cnt, version: v1}
+      - {metric: aov, version: v1}
+    steps:
+      - {no: 1, intent: 榜单计算, sql_summary: "按 category_name 汇总近 30 天 valid_gmv@v2，降序取 Top10，其余合并为其他", output: "Top10 金额与占比", chart: bar}
+      - {no: 2, intent: 环比计算, sql_summary: "同口径取前 30 天 valid_gmv@v2，计算各品类环比与差额", output: "环比幅度与异动标记", chart: bar}
+      - {no: 3, intent: 日趋势, sql_summary: "Top5 品类的日度 valid_gmv@v2 序列", output: "趋势线与异动起点", chart: line}
+      - {no: 4, intent: 量价补充, sql_summary: "Top10 品类的 paid_order_cnt@v1 与 aov@v1 环比", output: "量价归因标签", chart: table}
+      - {no: 5, intent: 榜单变化, sql_summary: "对比两期 Top10 排名，标出新进/掉出/排名变化", output: "榜单变动清单", chart: table}
+    charts:
+      - {id: ch-01, type: bar, x: category_name, y: valid_gmv, title: "近 30 天品类 GMV Top10：{top_category} 居首占 {top_share}"}
+      - {id: ch-02, type: bar, x: category_name, y: mom_pct, title: "环比异动：{rise_count} 升 {fall_count} 降，{worst_category} 降幅最大 {worst_pct}"}
+      - {id: ch-03, type: line, x: stat_date, y: valid_gmv, series: category_name, title: "Top5 品类日趋势：{trend_note}"}
+    conclusion_template: >-
+      近 {days} 天（{window}）品类 GMV Top10 合计 {topn_total}，占全域 {topn_share}；
+      榜首 {top_category} 为 {top_value}（环比 {top_mom_pct}）。异动方面 {rise_count} 个品类上升、
+      {fall_count} 个下降，其中 {worst_category} 环比 {worst_pct} 为主要拖累，量价标签为 {worst_nature}；
+      {new_entry} 新进榜单（排名 {new_rank}）。口径：{metric}@{metric_version}、日粒度、等长滚动窗口，
+      Top10 + 其他闭合（其他占 {other_share}），置信度 {confidence}。
+    guardrails:
+      - 滚动窗口必须等长（30 vs 30），不要用自然月比滚动 30 天
+      - Top10 之外合并为"其他"并标注占比，保证与全域总量闭合
+      - 榜单变化需排除品类维表改名/合并造成的假新进
+      - 周报固定对比规则（环比=前一等长窗口，同比=去年同期），跨期不随意变更
+    tags: [周报, 品类, Top10, 环比, 榜单, 结构, 周期报告]
+    use_count: 94
+    verified: {by: 品类运营, at: "2026-09-25", source: mysql_prod 只读从库}
+
+  # ---------------------------------------------------------------------------
+  - id: va-004-promo-roi-attribution
+    question: 618 大促 ROI 归因，哪些渠道品类拉动了增量
+    intent: promo_roi
+    dataset:
+      name: 交易域-大促ROI-618
+      tables: [ods_order_main, ods_order_item, dim_channel, dim_category, dim_promo_activity, fact_promo_cost]
+      joins:
+        - "ods_order_main.order_id = ods_order_item.order_id (1:N)"
+        - "ods_order_main.channel_id = dim_channel.channel_id (N:1)"
+        - "ods_order_item.category_id = dim_category.category_id (N:1)"
+        - "ods_order_main.activity_id = dim_promo_activity.activity_id (N:1)"
+        - "dim_promo_activity.activity_id = fact_promo_cost.activity_id (1:N)"
+      default_filters:
+        - "is_deleted = 0"
+        - "order_type <> 'TEST'"
+        - "order_status IN ('PAID','SHIPPED','FINISHED')"
+      grain: day
+      window_rule: 大促期（活动起止日）vs 日常基线（活动前等长窗口 + 去年同期活动）
+    metric_refs:
+      - {metric: valid_gmv, version: v2}
+      - {metric: paid_order_cnt, version: v1}
+      - {metric: aov, version: v1}
+      - {metric: promo_cost, version: v1}
+      - {metric: refund_rate, version: v1}
+    steps:
+      - {no: 1, intent: 总量与基线, sql_summary: "大促期与日常基线期的 valid_gmv@v2、paid_order_cnt@v1 汇总，计算增量", output: "总增量与增幅", chart: bar}
+      - {no: 2, intent: 投入汇总, sql_summary: "按渠道汇总 promo_cost@v1（活动期）", output: "各渠道投入", chart: bar}
+      - {no: 3, intent: 增量拆解, sql_summary: "按渠道与品类计算增量 ΔGMV = 活动期 - 基线期（同口径同长度）", output: "增量贡献度", chart: bar}
+      - {no: 4, intent: ROI 计算, sql_summary: "ROI = ΔGMV / promo_cost，按渠道与品类分组", output: "ROI 排序与低效项", chart: scatter}
+      - {no: 5, intent: 质量校验, sql_summary: "大促期与基线期 refund_rate@v1、aov@v1 对比，识别刷量与深度折扣", output: "增量质量标签", chart: line}
+      - {no: 6, intent: 透支效应, sql_summary: "活动结束后 14 天的日度 valid_gmv@v2 与基线对比，判断是否透支", output: "活动后回落幅度", chart: line}
+    charts:
+      - {id: ch-01, type: bar, x: period, y: valid_gmv, title: "大促期 GMV {promo_value}，较日常基线增量 {increment}（{lift_pct}）"}
+      - {id: ch-02, type: scatter, x: promo_cost, y: gmv_increment, series: channel_name, title: "投入产出：{best_channel} ROI 最高 {best_roi}，{worst_channel} 低于 1"}
+      - {id: ch-03, type: bar, x: category_name, y: gmv_increment, title: "增量来源：{top_category} 贡献 {top_share}"}
+      - {id: ch-04, type: line, x: stat_date, y: valid_gmv, series: period, title: "活动后 14 天回落 {fallback_pct}，{cannibalization_note}"}
+    conclusion_template: >-
+      {promo_name}（{window}）{metric}@{metric_version} 为 {promo_value}，较日常基线增量 {increment}（{lift_pct}），
+      总投入 {total_cost}，整体 ROI {overall_roi}。增量主要由 {top_channel} 的 {top_category} 拉动
+      （贡献 {top_share}，ROI {top_roi}）；{worst_channel} 投入 {worst_cost} 而 ROI 仅 {worst_roi}，为低效项。
+      增量质量：退款率 {refund_delta}、客单价 {aov_delta}，判定为 {quality_label}；
+      活动后 14 天回落 {fallback_pct}，{cannibalization_conclusion}。口径为活动期与基线等长同过滤，置信度 {confidence}。
+    guardrails:
+      - 基线必须等长且同口径（活动前 N 天 + 去年同期活动双基线），避免用大促月比日常月
+      - promo_cost 与 GMV 的归因口径需一致（同一 activity_id 归集），跨活动费用不得混入
+      - ROI < 1 的结论要同时看退款率与透支效应，避免把刷量当增量
+      - 活动后回落窗口需完整（≥14 天），数据不足时标注为初步结论
+    tags: [大促, ROI, 归因, 增量, 投入产出, 渠道, 品类, 透支效应, 散点]
+    use_count: 61
+    verified: {by: 增长分析组, at: "2026-07-05", source: mysql_prod 只读从库}
+
+  # ---------------------------------------------------------------------------
+  - id: va-005-key-account-repurchase-decline
+    question: 分析大客户复购率下滑原因，出图文报告
+    intent: retention
+    dataset:
+      name: 会员域-大客户复购-近6个月
+      tables: [ods_order_main, dim_customer, dim_customer_level, dim_category]
+      joins:
+        - "ods_order_main.customer_id = dim_customer.customer_id (N:1)"
+        - "dim_customer.level_id = dim_customer_level.level_id (N:1)"
+        - "ods_order_main.category_id = dim_category.category_id (N:1)"
+      default_filters:
+        - "is_deleted = 0"
+        - "order_type <> 'TEST'"
+        - "order_status IN ('PAID','SHIPPED','FINISHED')"
+        - "customer_level IN ('KA','A')"
+      grain: month
+      window_rule: 近 6 个完整自然月，复购窗口固定为 90 天（各月一致）
+    metric_refs:
+      - {metric: repurchase_rate_90d, version: v2}
+      - {metric: active_buyers, version: v1}
+      - {metric: valid_gmv, version: v2}
+      - {metric: aov, version: v1}
+    steps:
+      - {no: 1, intent: 复购率趋势, sql_summary: "按月计算 KA/A 客户 90 天复购率 repurchase_rate_90d@v2", output: "6 个月复购率序列", chart: line}
+      - {no: 2, intent: 分群拆解, sql_summary: "按 customer_level 与 region_name 分组计算复购率与人数，做贡献度拆解", output: "哪一群贡献了下滑", chart: bar}
+      - {no: 3, intent: 同期群分析, sql_summary: "按首购月构造 cohort，比较各 cohort 的 90 天复购率", output: "新客质量 vs 老客流失判断", chart: line}
+      - {no: 4, intent: 品类交叉, sql_summary: "复购客户与流失客户的品类分布对比（valid_gmv@v2）", output: "品类相关性线索", chart: bar}
+      - {no: 5, intent: 金额影响, sql_summary: "复购率下滑对应的 GMV 损失测算（复购人数差 × 人均复购金额）", output: "财务影响量化", chart: table}
+    charts:
+      - {id: ch-01, type: line, x: stat_month, y: repurchase_rate_90d, title: "大客户 90 天复购率自 {onset_month} 起由 {rate_start} 降至 {rate_end}"}
+      - {id: ch-02, type: bar, x: segment, y: rate_delta, title: "下滑主要来自 {top_segment}（贡献 {top_share}）"}
+      - {id: ch-03, type: line, x: cohort_month, y: repurchase_rate_90d, series: cohort, title: "{cohort_conclusion}（新客质量 vs 老客流失）"}
+      - {id: ch-04, type: bar, x: category_name, y: gmv_delta, title: "流失客户集中于 {top_category}"}
+    conclusion_template: >-
+      近 {months} 个月 KA/A 客户 90 天复购率由 {rate_start} 降至 {rate_end}（{rate_delta}），
+      下滑起点 {onset_month}。分群拆解显示 {top_segment} 贡献 {top_share}；cohort 分析表明
+      {cohort_conclusion}。品类交叉发现流失客户集中于 {top_category}（相关非因果，列为待验证假设）。
+      财务影响：测算 GMV 损失 {gmv_loss}（复购人数差 {buyer_delta} × 人均复购金额 {arpu}）。
+      口径：repurchase_rate_90d@v2、月粒度、90 天固定复购窗口、样本 {sample_size} 人，置信度 {confidence}。
+    guardrails:
+      - 复购窗口必须各期一致（固定 90 天），窗口变动会直接制造假趋势
+      - cohort 需排除观察期不足的月份（最近 3 个月 cohort 未成熟，标注为初步）
+      - 样本量 < 30 的分群结论必须标注低置信度，不得作为主因
+      - 客户分群标签（KA/A）变更历史需核查，避免分层规则调整导致的口径断裂
+      - 涉及客户明细的导出与外发必须脱敏，触发审批 confirm
+    tags: [复购, 留存, 大客户, cohort, 分群, 会员, 下滑归因, 月度]
+    use_count: 43
+    verified: {by: 会员运营分析, at: "2026-09-02", source: mysql_prod 只读从库}
+
+  # ---------------------------------------------------------------------------
+  - id: va-006-walmart-sales-overview-report
+    question: 生成 Walmart 销售分析报告
+    intent: overview
+    dataset:
+      name: 零售域-Walmart门店销售-全景
+      tables: [fact_walmart_sales, dim_walmart_store, dim_walmart_dept, dim_walmart_calendar, ext_unemployment_rate]
+      joins:
+        - "fact_walmart_sales.store_id = dim_walmart_store.store_id (N:1)"
+        - "fact_walmart_sales.dept_id = dim_walmart_dept.dept_id (N:1)"
+        - "fact_walmart_sales.week_date = dim_walmart_calendar.week_date (N:1)"
+        - "dim_walmart_store.region_tag = ext_unemployment_rate.region_tag (N:1)"
+      default_filters:
+        - "is_deleted = 0"
+        - "sales IS NOT NULL"
+      grain: week
+      window_rule: 全量周序列（按 dim_walmart_calendar 的周首对齐），节假日周单独标注
+    metric_refs:
+      - {metric: weekly_sales, version: v1}
+      - {metric: weekly_cpi_impact, version: v1}
+      - {metric: unemployment_rate, version: v1}
+    steps:
+      - {no: 1, intent: 总量趋势, sql_summary: "按 week_date 汇总 weekly_sales@v1，标注节假日周", output: "全景周序列与季节性", chart: line}
+      - {no: 2, intent: 门店对比, sql_summary: "按 store_id 汇总周均 weekly_sales@v1，取 Top10 与 Bottom10", output: "门店分布与离散度", chart: bar}
+      - {no: 3, intent: 部门结构, sql_summary: "按 dept_name 汇总占比，Top10 + 其他", output: "品类结构与集中度", chart: pie}
+      - {no: 4, intent: 外部因子相关性, sql_summary: "周度 weekly_sales@v1 与 unemployment_rate@v1 配对（同 region_tag）", output: "相关系数与散点分布", chart: scatter}
+      - {no: 5, intent: 节假日效应, sql_summary: "节假日周 vs 非节假日周的周均销售对比（等周数或加权）", output: "节假日提升幅度", chart: bar}
+      - {no: 6, intent: 异常周定位, sql_summary: "以近 8 周均值为基线标记偏离 > 2σ 的周与门店", output: "异常清单", chart: line}
+    charts:
+      - {id: ch-01, type: line, x: week_date, y: weekly_sales, title: "周度销售呈明显季节性，{peak_week} 为峰值 {peak_value}"}
+      - {id: ch-02, type: bar, x: store_id, y: avg_weekly_sales, title: "门店周均销售 Top10：{top_store} 领先，为末位的 {ratio} 倍"}
+      - {id: ch-03, type: pie, x: dept_name, y: sales_share, title: "部门结构：{top_dept} 占 {top_dept_share}，前 5 部门集中度 {cr5}"}
+      - {id: ch-04, type: scatter, x: unemployment_rate, y: weekly_sales, series: region_tag, title: "失业率与周度销售相关系数 {corr}（{corr_strength}）"}
+      - {id: ch-05, type: bar, x: week_type, y: avg_weekly_sales, title: "节假日周较非节假日周高 {holiday_lift}"}
+    conclusion_template: >-
+      {scope} 周度销售（{metric}@{metric_version}，{weeks} 周）合计 {total}，周均 {avg}，
+      峰值出现在 {peak_week}（{peak_value}），呈 {seasonality} 季节性。门店层面 Top10 与 Bottom10
+      周均差 {store_gap_ratio} 倍，离散度 {dispersion}；部门结构上 {top_dept} 占 {top_dept_share}，
+      前 5 部门集中度 {cr5}。节假日周较非节假日周高 {holiday_lift}；与失业率的相关系数为 {corr}
+      （{corr_strength}，相关非因果）。异常周 {anomaly_weeks} 已单列待核查。口径：周粒度、
+      日历表对齐、外部失业率表按 region_tag 关联，置信度 {confidence}。
+    guardrails:
+      - 周序列必须按日历表对齐周首，跨表周定义不一致会造成假波动
+      - 外部数据（失业率）为关联分析，只能表述相关性，禁止表述因果
+      - 门店/部门 Top N 之外的部分合并为"其他"，保证与总量闭合
+      - 节假日周与非节假日周对比需说明周数差异或做加权，避免样本量不等导致偏差
+      - 异常周判定用近 8 周均值 ± 2σ，并排除数据缺失周
+    tags: [Walmart, 零售, 门店, 全景分析, 季节性, 相关性, 失业率, 报告]
+    use_count: 87
+    verified: {by: DB-GPT 官方, at: "2026-08-12", source: walmart_sales 演示数据集}
