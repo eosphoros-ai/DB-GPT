@@ -1545,7 +1545,9 @@ async def _react_agent_stream_inner(
     )
 
     if resolve_harness_engine(dialogue) == "pi":
-        async for event in run_pi_harness_turn(dialogue):
+        # Hand the resolved uploads to the pi branch too: it stages them
+        # into the pi conv workspace so the agent can read them.
+        async for event in run_pi_harness_turn(dialogue, attachment_ctx):
             yield event
         return
     agent_task_holder: List["asyncio.Task[Any]"] = []

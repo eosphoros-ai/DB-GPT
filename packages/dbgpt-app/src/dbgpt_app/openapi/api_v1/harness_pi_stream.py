@@ -916,7 +916,79 @@ def _pi_history_preamble(
     )
 
 
-def _build_pi_prompt(dialogue: ConversationVo, work_dir: Optional[str] = None) -> str:
+PI_UPLOAD_SUBDIR = "uploads"
+
+
+def _safe_upload_name(name: str) -> str:
+    """Return a filesystem-safe basename for a staged attachment."""
+    base = os.path.basename((name or "").strip().replace("\x00", "_"))
+    base = base.replace("/", "_").replace("\\", "_")
+    return base or "attachment"
+
+
+def _stage_pi_attachments(conv_id: str, attachment_ctx: Any) -> List[Dict[str, Any]]:
+    """Copy this turn's attachments into the pi conversation workspace.
+
+    pi is a coding-style agent with a persistent per-conv cwd
+    (``<work_dir>/pi_workspace/<conv_id>``), while session-file
+    materialization is a per-turn temp copy deleted when the turn ends.
+    Staging the bytes under ``uploads/`` gives pi stable, in-workspace paths
+    its read/shell tools can open during this turn and in later turns of the
+    same conversation — without it the model is never told a file exists.
+
+    Returns ``[{"file_id","name","path"}]`` in request order. A file that
+    cannot be staged is skipped (logged) instead of failing the turn.
+    """
+    if attachment_ctx is None:
+        return []
+    local_paths = getattr(attachment_ctx, "local_paths", None) or {}
+    manifests = getattr(attachment_ctx, "manifests", ()) or ()
+    if not local_paths or not manifests:
+        return []
+    work_dir = getattr(CFG.SYSTEM_APP, "work_dir", None) or os.getcwd()
+    upload_dir = os.path.join(work_dir, "pi_workspace", conv_id, PI_UPLOAD_SUBDIR)
+    staged: List[Dict[str, Any]] = []
+    used: set = set()
+    for manifest in manifests:
+        src = local_paths.get(manifest.file_id)
+        if not src or not os.path.isfile(src):
+            continue
+        base = _safe_upload_name(manifest.name)
+        if base in used:
+            root, ext = os.path.splitext(base)
+            n = 2
+            while f"{root}_{n}{ext}" in used:
+                n += 1
+            base = f"{root}_{n}{ext}"
+        used.add(base)
+        target = os.path.join(upload_dir, base)
+        try:
+            os.makedirs(upload_dir, exist_ok=True)
+            shutil.copyfile(src, target)
+        except Exception as e:
+            logger.warning("pi harness: stage attachment %s failed: %s", base, e)
+            continue
+        staged.append(
+            {"file_id": manifest.file_id, "name": manifest.name, "path": target}
+        )
+    return staged
+
+
+def _attachment_react_state(staged: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """react_state overlay so bridged tools (load_file/…) see staged files."""
+    if not staged:
+        return None
+    return {
+        "file_path": staged[0]["path"],
+        "session_file_paths": {item["file_id"]: item["path"] for item in staged},
+    }
+
+
+def _build_pi_prompt(
+    dialogue: ConversationVo,
+    work_dir: Optional[str] = None,
+    attachments: Optional[List[Dict[str, Any]]] = None,
+) -> str:
     """Turn user input + selected resources into one pi prompt.
 
     pi is a coding-style agent: it needs concrete file paths and
@@ -936,6 +1008,15 @@ def _build_pi_prompt(dialogue: ConversationVo, work_dir: Optional[str] = None) -
             f"- input data file: {file_path} "
             "(use your read tool to inspect it; analysis/report "
             "outputs go into the current working directory)"
+        )
+    if attachments:
+        listing = "\n  ".join(
+            f"{item['name']} -> {item['path']}" for item in attachments
+        )
+        ctx.append(
+            "- user-uploaded files for this request (staged under ./uploads/ "
+            "of the current working directory; open them with your read or "
+            f"shell tools, they are the files the user is referring to):\n  {listing}"
         )
     skill_name = ext_info.get("skill_name")
     if skill_name:
@@ -1392,11 +1473,15 @@ _SENTINEL = object()
 
 async def run_pi_harness_turn(
     dialogue: ConversationVo,
+    attachment_ctx: Optional[Any] = None,
 ) -> AsyncGenerator[str, None]:
     """Run one react-agent turn on the pi harness engine.
 
     Emits the exact ``step.*`` vocabulary the dbgpt branch
     uses, persists the round, and closes with ``final``/``done``.
+    ``attachment_ctx`` (when present) carries this turn's resolved
+    session-file uploads; they are staged into the pi workspace so the
+    agent can actually read them.
     """
     user_input = dialogue.user_input
     if not isinstance(user_input, str):
@@ -1433,11 +1518,19 @@ async def run_pi_harness_turn(
     # Storage stays optional: without it the turn still
     # streams, only the history persistence is skipped.
 
+    # Stage this turn's uploaded files into the pi conv workspace so the
+    # agent's read/shell tools can open them (the session-file copies are
+    # per-turn temp files pi is never told about otherwise).
+    staged_attachments = _stage_pi_attachments(conv_id, attachment_ctx)
+
     # Bridge DB-GPT built-in tools (sql_query / code_interpreter / ...)
     # into pi for this conversation; the manifest travels to the pi
     # extension via env at runner creation.
     manifest = tool_bridge.register_conv_tools(
-        conv_id, dialogue.ext_info, CFG.SYSTEM_APP
+        conv_id,
+        dialogue.ext_info,
+        CFG.SYSTEM_APP,
+        react_state_extra=_attachment_react_state(staged_attachments),
     )
 
     def _pi_config_factory() -> PiHarnessConfig:
@@ -1582,7 +1675,7 @@ async def run_pi_harness_turn(
 
     async def _drive() -> None:
         try:
-            prompt = _build_pi_prompt(dialogue)
+            prompt = _build_pi_prompt(dialogue, attachments=staged_attachments)
             if not warm_session:
                 preamble = _pi_history_preamble(storage_conv, dialogue.user_input or "")
                 if preamble:
@@ -1621,7 +1714,12 @@ async def run_pi_harness_turn(
         final_content = state.final_text or "任务已中止。"
     else:
         final_content = state.final_text or "（pi 引擎未返回文本）"
-    _write_pi_trace(conv_id, _build_pi_prompt(dialogue), trace_rounds, final_content)
+    _write_pi_trace(
+        conv_id,
+        _build_pi_prompt(dialogue, attachments=staged_attachments),
+        trace_rounds,
+        final_content,
+    )
     for frame in _pi_terminal_events(
         storage_conv,
         _build_pi_history_payload(final_content, state.history_steps),

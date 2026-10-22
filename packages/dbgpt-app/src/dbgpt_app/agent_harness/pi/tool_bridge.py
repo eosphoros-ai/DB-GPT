@@ -200,11 +200,14 @@ def register_conv_tools(
     conv_id: str,
     ext_info: Optional[Dict[str, Any]],
     system_app: Any,
+    react_state_extra: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """Build/cache the per-conv ToolPack and return its pi manifest.
 
     Returns an empty list when the conversation selected no resource
     that maps to a DB-GPT tool (pi then runs with its built-ins only).
+    ``react_state_extra`` overlays per-turn state (e.g. staged upload
+    paths) onto the react_state handed to the bridged tools.
     """
     from dbgpt.agent.resource.tool.pack import ToolPack
     from dbgpt_app.openapi.api_v1.subagent.react_tools import make_react_tools
@@ -235,6 +238,8 @@ def register_conv_tools(
             )
 
     react_state: Dict[str, Any] = {"conv_id": conv_id, "file_path": None}
+    if react_state_extra:
+        react_state.update(react_state_extra)
     # Carried into query artifacts so the edit & re-run endpoint can
     # re-resolve the connector (gpts_conversations does not persist ext_info).
     if datasources:
