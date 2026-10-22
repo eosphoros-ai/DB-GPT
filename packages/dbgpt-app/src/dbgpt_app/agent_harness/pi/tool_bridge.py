@@ -1,7 +1,7 @@
 """Bridge DB-GPT agent built-in tools into the pi harness engine.
 
 pi only ships its own coding tools (read/edit/write/...), so data-plane
-capabilities of the platform (``sql_query``, ``code_interpreter``,
+capabilities of the platform (``sql_query``, ``code``,
 ``html_interpreter``, knowledge retrieval, ...) never reach a pi turn.
 This module closes that gap in three pieces:
 
@@ -35,7 +35,11 @@ _TODOWRITE_DESCRIPTION = (
     "status (pending | in_progress | completed | cancelled), "
     "priority (high | medium | low). "
     "Rules: only ONE task in_progress at a time; mark tasks completed "
-    "immediately after finishing; do NOT use for single trivial tasks."
+    "immediately after finishing; do NOT use for single trivial tasks. "
+    "IMPORTANT: You MUST call todowrite again after EACH task completes to "
+    "update status. The user sees progress in real time — never skip an "
+    "update, and never end the turn while finished work is still pending "
+    "or in_progress."
     '\nParameter: {"todos": [{"content": "...", "status": "...", '
     '"priority": "..."}]}'
 )
@@ -88,8 +92,8 @@ def push_conv_event(conv_id: str, payload: Dict[str, Any]) -> bool:
 #: inside DB-GPT's sandbox/connector containment.
 _CORE_TOOLS = (
     "sql_query",
-    "code_interpreter",
-    "shell_interpreter",
+    "code",
+    "bash",
     "html_interpreter",
     "web_search",
     "web_fetch",
@@ -108,7 +112,7 @@ def _make_get_skill_resource(system_app: Any) -> Any:
         "\\n示例:"
         '\\n- 读取参考文档: {"skill_name": "my-skill", '
         '"resource_path": "references/analysis_framework.md"}'
-        "\n注意: 执行脚本请使用 shell_interpreter 工具"
+        "\n注意: 执行脚本请使用 bash 工具"
     )
     async def get_skill_resource(skill_name: str, resource_path: str) -> str:
         from dbgpt.agent.skill.manage import get_skill_manager

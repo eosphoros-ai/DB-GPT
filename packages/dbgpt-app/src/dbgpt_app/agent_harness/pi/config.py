@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 _PI_AGENTS_MD = """# DB-GPT platform guidance
 
 - You run inside DB-GPT as a data agent. The platform tools (sql_query,
-  code_interpreter, shell_interpreter, html_interpreter, web_search,
+  code, bash, html_interpreter, web_search,
   web_fetch, question, todowrite, skill family) are the sanctioned way to
   touch data, code, files and the web.
 - Web research rule: for questions about the external world that are
@@ -36,6 +36,13 @@ _PI_AGENTS_MD = """# DB-GPT platform guidance
   "有哪些方案"类),必须先调用 web_search 并基于结果回答,必要时用 web_fetch
   读全文;不得仅凭记忆作答。
 - Plan multi-step work with todowrite; keep only one task in_progress.
+- Todo discipline (IMPORTANT): after EACH todo task completes, call todowrite
+  again immediately with the FULL list to mark it completed — the user watches
+  the plan card live, so never skip an update; before ending the turn, sync the
+  list one last time so finished work is not left pending/in_progress.
+- 任务清单纪律:每完成一个 todo 子任务必须立即再次调用 todowrite(传全量列表)
+  标记 completed,不得跳过更新;结束回合前最后同步一次,避免已完成的工作仍
+  停留在 pending/in_progress。
 """
 
 #: Default tool convergence: pi has no built-in sandbox, so execution-class
