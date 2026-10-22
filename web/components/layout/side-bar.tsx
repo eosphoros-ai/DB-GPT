@@ -2,7 +2,7 @@ import { ChatContext } from '@/app/chat-context';
 import { getHarnessEngines, saveHarnessEngine } from '@/client/api/chat';
 import { delDialogue, getDialogueList } from '@/client/api/request';
 import { apiInterceptors } from '@/client/api/tools/interceptors';
-import { DarkSvg, ModelSvg, SunnySvg } from '@/components/icons';
+import { DarkSvg, ModelSvg, PanelLeft, SunnySvg } from '@/components/icons';
 import { useStartNewTask } from '@/modules/new-task';
 import type { IChatDialogueSchema } from '@/types/chat';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils/constants/index';
@@ -20,8 +20,6 @@ import Icon, {
   GlobalOutlined,
   LineChartOutlined,
   LoadingOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
   MessageOutlined,
   RightOutlined,
   SafetyCertificateOutlined,
@@ -415,7 +413,7 @@ function SideBar() {
                 onClick={handleToggleMenu}
                 className='flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors'
               >
-                <MenuUnfoldOutlined style={{ fontSize: 14 }} />
+                <PanelLeft style={{ fontSize: 16 }} />
               </div>
             </Tooltip>
           </div>
@@ -450,7 +448,7 @@ function SideBar() {
           </Popover>
           <Tooltip title={t(isMenuExpand ? 'Close_Sidebar' : 'Show_Sidebar')} placement='right'>
             <div className={smallMenuItemStyle()} onClick={handleToggleMenu}>
-              <MenuUnfoldOutlined />
+              <PanelLeft />
             </div>
           </Tooltip>
         </div>
@@ -461,19 +459,20 @@ function SideBar() {
   // ============ EXPANDED SIDEBAR ============
   return (
     <div className='flex flex-col h-screen w-[240px] min-w-[240px] px-4 pt-4 bg-[#f7f7f5] dark:bg-[#232734] animate-fade animate-duration-300'>
-      {/* LOGO + Collapse Toggle */}
-      <div className='flex items-center justify-between p-2 pb-4'>
-        <Link href='/' className='flex items-center'>
-          <Image src={logo} alt='DB-GPT' width={140} height={32} />
-        </Link>
+      {/* Collapse Toggle + LOGO — AntWork-style: the panel glyph leads the
+          header row (top-left) instead of trailing the logo. */}
+      <div className='flex items-center gap-1 p-2 pb-4'>
         <Tooltip title={t('Close_Sidebar') || '收起侧栏'}>
           <div
             onClick={handleToggleMenu}
             className='flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 dark:hover:text-gray-300 cursor-pointer transition-colors'
           >
-            <MenuFoldOutlined style={{ fontSize: 14 }} />
+            <PanelLeft style={{ fontSize: 16 }} />
           </div>
         </Tooltip>
+        <Link href='/' className='flex items-center ml-1'>
+          <Image src={logo} alt='DB-GPT' width={140} height={32} />
+        </Link>
       </div>
 
       {/* New Task — AntWork-style plain nav row: outline pen glyph + label,
@@ -626,7 +625,7 @@ function SideBar() {
               className='flex-1 flex items-center justify-center cursor-pointer text-[17px] text-[#8b8b84] hover:text-[#1c1c1a] dark:hover:text-[#e6e4df] transition-colors'
               onClick={handleToggleMenu}
             >
-              {isMenuExpand ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
+              <PanelLeft />
             </div>
           </Popover>
         </div>
