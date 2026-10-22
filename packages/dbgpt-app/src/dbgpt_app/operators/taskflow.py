@@ -988,9 +988,7 @@ class HOChartAdvisorOperator(GPTVisMixin, MixinLLMOperator, JoinOperator[str]):
         # thinking-included concatenation, then to one strict retry.
         proposals = self._extract_json_array(model_output.text or "")
         if not proposals:
-            proposals = self._extract_json_array(
-                model_output.gen_text_with_thinking()
-            )
+            proposals = self._extract_json_array(model_output.gen_text_with_thinking())
         if not proposals:
             strict_suffix = (
                 "\n\n【强制】上一次回复无法解析为 JSON 数组。这次只输出 JSON "
@@ -1011,8 +1009,7 @@ class HOChartAdvisorOperator(GPTVisMixin, MixinLLMOperator, JoinOperator[str]):
                 )
             )
             proposals = self._extract_json_array(
-                (retry_output.text or "")
-                + retry_output.gen_text_with_thinking()
+                (retry_output.text or "") + retry_output.gen_text_with_thinking()
             )
         if not proposals:
             # Fail loudly: an empty string here used to surface as a
@@ -1037,7 +1034,7 @@ class HOChartAdvisorOperator(GPTVisMixin, MixinLLMOperator, JoinOperator[str]):
         """
         if not text:
             return []
-        for start in reversed([i for i, ch in enumerate(text) if ch == "[" ]):
+        for start in reversed([i for i, ch in enumerate(text) if ch == "["]):
             depth = 0
             in_str = False
             esc = False

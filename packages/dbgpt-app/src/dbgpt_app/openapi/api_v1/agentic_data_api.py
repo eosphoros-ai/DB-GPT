@@ -4847,9 +4847,7 @@ After partial results, finish only missing requested deliverables, then report.
 
             # Emit thinking metadata
             if thoughts or action or action_input:
-                step_action_input = (
-                    None if action == "code" else action_input
-                )
+                step_action_input = None if action == "code" else action_input
                 yield step_meta(
                     react_step_id,
                     display_thought,

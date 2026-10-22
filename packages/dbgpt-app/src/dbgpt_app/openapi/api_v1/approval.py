@@ -241,9 +241,7 @@ BUILTIN_RULES: List[ApprovalRule] = [
         TIER_DENY,
         pattern=r"chmod\s+(-R\s+)?777\s+(/|~)(\s|$)",
     ),
-    ApprovalRule(
-        "shell.fork_bomb", "bash", TIER_DENY, pattern=r":\(\)\s*\{"
-    ),
+    ApprovalRule("shell.fork_bomb", "bash", TIER_DENY, pattern=r":\(\)\s*\{"),
     ApprovalRule(
         "sql.dml_no_where", "sql_query", TIER_DENY, pred=_is_write_without_where
     ),
@@ -268,9 +266,7 @@ BUILTIN_RULES: List[ApprovalRule] = [
         pattern=r"\bsudo\b|chmod\s+777",
     ),
     ApprovalRule("shell.rm_rf", "bash", TIER_CONFIRM, pattern=r"rm\s+-rf"),
-    ApprovalRule(
-        "shell.background_svc", "bash", TIER_CONFIRM, pattern=r"\bnohup\b"
-    ),
+    ApprovalRule("shell.background_svc", "bash", TIER_CONFIRM, pattern=r"\bnohup\b"),
     ApprovalRule(
         "shell.git_force",
         "bash",
@@ -289,12 +285,8 @@ BUILTIN_RULES: List[ApprovalRule] = [
         TIER_CONFIRM,
         pattern=r"\beval\b|\b(bash|sh|zsh)\s+-c\b",
     ),
-    ApprovalRule(
-        "shell.killall", "bash", TIER_CONFIRM, pattern=r"\bkillall\b"
-    ),
-    ApprovalRule(
-        "shell.composed", "bash", TIER_CONFIRM, pred=_is_composed
-    ),
+    ApprovalRule("shell.killall", "bash", TIER_CONFIRM, pattern=r"\bkillall\b"),
+    ApprovalRule("shell.composed", "bash", TIER_CONFIRM, pred=_is_composed),
     ApprovalRule(
         "code.kill_process",
         "code",
@@ -395,9 +387,7 @@ class ToolRiskPolicy:
 
         forced = approval_policy.tool_override(tool)
         if forced:
-            trace.append(
-                {"rule_id": "setting.override", "tier": forced, "hit": True}
-            )
+            trace.append({"rule_id": "setting.override", "tier": forced, "hit": True})
             return (forced, "setting.override"), trace
         if hit:
             if mode == "always" and hit[0] == TIER_AUTO:
@@ -646,9 +636,7 @@ class ApprovalCenter:
             if pa.conv_id == conv_id and pa.status == "pending"
         ]
 
-    def revoke(
-        self, scope: str, signature: str, conv_id: Optional[str] = None
-    ) -> bool:
+    def revoke(self, scope: str, signature: str, conv_id: Optional[str] = None) -> bool:
         """Drop one whitelist memory entry (setting page management)."""
         if scope == "always":
             if signature in self._always_allow:

@@ -301,9 +301,7 @@ def _format_question_result(pq: Any) -> str:
     recap = {"pairs": pairs, "rejected": bool(pq.rejected)}
     fence = f"\n```question_recap\n{json.dumps(recap, ensure_ascii=False)}\n```"
     if pq.rejected:
-        return (
-            "The user dismissed the question. Proceeding without answer." + fence
-        )
+        return "The user dismissed the question. Proceeding without answer." + fence
     answers = pq.answers or []
     parts = []
     for i, q in enumerate(pq.questions):
@@ -469,9 +467,7 @@ def register_harness_endpoints(router: Any) -> None:
                         "args_preview": preview_args(arguments),
                         "rule_id": rule_id,
                         "risk": tier,
-                        "memory_key": approval_center.memory_key(
-                            name, arguments
-                        ),
+                        "memory_key": approval_center.memory_key(name, arguments),
                         "ttl_seconds": int(approval_ttl_seconds()),
                         "ts": pa.created_ts,
                     },

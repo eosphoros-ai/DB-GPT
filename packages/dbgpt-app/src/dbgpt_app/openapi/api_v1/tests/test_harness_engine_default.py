@@ -14,9 +14,7 @@ from dbgpt_app.openapi.api_view_model import ConversationVo
 
 @pytest.fixture
 def pref_env(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        hps.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path))
-    )
+    monkeypatch.setattr(hps.CFG, "SYSTEM_APP", SimpleNamespace(work_dir=str(tmp_path)))
     return tmp_path
 
 

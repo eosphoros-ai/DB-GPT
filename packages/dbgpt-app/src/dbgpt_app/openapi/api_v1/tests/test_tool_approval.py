@@ -273,13 +273,9 @@ def test_push_intent_fallback_on_analyzer_error():
 
 def test_memory_key_groups_class_of_calls():
     center = ApprovalCenter()
-    center.remember(
-        "c1", "always", "shell_interpreter", {"command": "pkill -f aaa"}
-    )
+    center.remember("c1", "always", "shell_interpreter", {"command": "pkill -f aaa"})
     # same command head, different args: remembered
-    assert center.is_allowed(
-        "c2", "shell_interpreter", {"command": "pkill -f bbb"}
-    )
+    assert center.is_allowed("c2", "shell_interpreter", {"command": "pkill -f bbb"})
     # different command head: still gated
     assert not center.is_allowed(
         "c1", "shell_interpreter", {"command": "rm -rf /tmp/x"}

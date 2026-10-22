@@ -247,9 +247,14 @@ class TFAgentOperator(MixinLLMOperator, JoinOperator[str]):
             try:
                 from dbgpt.configs.model_config import PILOT_PATH
 
-                slug = re.sub(
-                    r"[^0-9A-Za-z\u4e00-\u9fff_-]+", "_", str(art.get("title") or "")
-                ).strip("_")[:40] or "report"
+                slug = (
+                    re.sub(
+                        r"[^0-9A-Za-z\u4e00-\u9fff_-]+",
+                        "_",
+                        str(art.get("title") or ""),
+                    ).strip("_")[:40]
+                    or "report"
+                )
                 stamp = datetime.now().strftime("%Y%m%d%H%M%S")
                 dir_path = os.path.join(
                     PILOT_PATH, "taskflow_artifacts", conv_uid or "default"

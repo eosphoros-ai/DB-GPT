@@ -40,15 +40,11 @@ class ToolApprovalLogEntity(Model):
     rule_id = Column(String(128), nullable=False)
     risk = Column(String(16), nullable=False, comment="confirm | deny")
     intent_json = Column(Text, nullable=True, comment="bullets shown to the user")
-    decision = Column(
-        String(32), nullable=True, index=True, comment="NULL=pending"
-    )
+    decision = Column(String(32), nullable=True, index=True, comment="NULL=pending")
     scope = Column(String(16), nullable=True, comment="once | session | always")
     reason = Column(Text, nullable=True)
     actor = Column(String(128), nullable=True, comment="deciding user id")
-    settle_source = Column(
-        String(32), nullable=True, comment="rest | ttl | sweep"
-    )
+    settle_source = Column(String(32), nullable=True, comment="rest | ttl | sweep")
     ts_request = Column(DateTime, default=datetime.now, nullable=False)
     ts_decision = Column(DateTime, nullable=True)
 
@@ -258,7 +254,10 @@ def query_approval_logs(
         if conv_id:
             q = q.filter(ToolApprovalLogEntity.conv_id == conv_id)
         rows = (
-            q.order_by(ToolApprovalLogEntity.id.desc()).offset(offset).limit(limit).all()
+            q.order_by(ToolApprovalLogEntity.id.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
         )
         return [
             {

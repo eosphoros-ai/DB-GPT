@@ -207,8 +207,10 @@ class CodeRisk:
 
     @property
     def has_sink(self) -> bool:
-        return bool(self.sinks) or bool(self.write_opens) or bool(
-            self.imports & CONFIRM_IMPORT_ROOTS
+        return (
+            bool(self.sinks)
+            or bool(self.write_opens)
+            or bool(self.imports & CONFIRM_IMPORT_ROOTS)
         )
 
     @property

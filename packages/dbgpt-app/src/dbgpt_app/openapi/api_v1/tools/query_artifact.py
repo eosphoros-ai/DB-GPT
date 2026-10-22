@@ -64,9 +64,7 @@ def normalize_result(
     result: Sequence[Any],
 ) -> Tuple[List[str], List[List[Any]]]:
     """Split a connector result (header row + data rows) into names/rows."""
-    columns = [
-        str(c[0]) if isinstance(c, tuple) else str(c) for c in (result[0] or [])
-    ]
+    columns = [str(c[0]) if isinstance(c, tuple) else str(c) for c in (result[0] or [])]
     rows = [list(row) for row in result[1:]]
     return columns, rows
 
@@ -85,9 +83,7 @@ def build_query_chunk(
     payload: Dict[str, Any] = {
         "sql": sql,
         "columns": col_names,
-        "rows": [
-            [_jsonable(v) for v in list(row)[: len(col_names)]] for row in kept
-        ],
+        "rows": [[_jsonable(v) for v in list(row)[: len(col_names)]] for row in kept],
         "row_count": len(rows),
         "truncated": len(rows) > max_rows,
     }
@@ -116,8 +112,7 @@ def markdown_table(
         table += f"\n\n（仅显示前 {max_rows} 行，共 {len(rows)} 行）"
     if len(table) > max_chars:
         table = (
-            table[:max_chars]
-            + f"\n\n... [Output truncated at {max_chars} chars. "
+            table[:max_chars] + f"\n\n... [Output truncated at {max_chars} chars. "
             f"Total rows: {len(rows)}]"
         )
     return table

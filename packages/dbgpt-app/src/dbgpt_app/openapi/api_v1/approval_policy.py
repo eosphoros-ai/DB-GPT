@@ -192,16 +192,12 @@ def set_conv_mode(conv_id: str, mode: str) -> str:
     key = f"{_CONV_MODE_PREFIX}{conv_id}"
     _ensure_tables()
     with db.session() as session:
-        row = (
-            session.query(ApprovalPolicySettingEntity).filter_by(key=key).first()
-        )
+        row = session.query(ApprovalPolicySettingEntity).filter_by(key=key).first()
         if mode == "default":
             if row is not None:
                 session.delete(row)
         elif row is None:
-            session.add(
-                ApprovalPolicySettingEntity(key=key, value=mode)
-            )
+            session.add(ApprovalPolicySettingEntity(key=key, value=mode))
         else:
             row.value = mode
             row.updated_ts = datetime.now()
@@ -285,9 +281,7 @@ def register_approval_policy_endpoints(router: APIRouter) -> None:
         actor = user_token.user_id if user_token else None
         diff: Dict[str, Any] = {}
         snap = _snapshot()
-        locked_override_tools = {
-            ov["tool"] for ov in snap["overrides"] if ov["locked"]
-        }
+        locked_override_tools = {ov["tool"] for ov in snap["overrides"] if ov["locked"]}
         locked_rule_ids = {r["id"] for r in snap["rules"] if r["locked"]}
         # ── validate everything BEFORE opening a write session: db.session()
         # commits on exit, so a mid-write failure must never persist half a
@@ -324,9 +318,7 @@ def register_approval_policy_endpoints(router: APIRouter) -> None:
                 for key, value in scalars.items():
                     if value is None:
                         continue
-                    text = (
-                        str(value).lower() if isinstance(value, bool) else str(value)
-                    )
+                    text = str(value).lower() if isinstance(value, bool) else str(value)
                     row = (
                         session.query(ApprovalPolicySettingEntity)
                         .filter_by(key=key)

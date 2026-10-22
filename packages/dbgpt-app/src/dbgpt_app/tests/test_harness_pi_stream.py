@@ -133,9 +133,7 @@ def test_settled_and_dangling_close():
     # settled without a tool end -> dangling step closed
     frames = _translate_event(
         state,
-        HarnessEvent(
-            kind=HarnessEventKind.SETTLED, data={"aborted": False}
-        ),
+        HarnessEvent(kind=HarnessEventKind.SETTLED, data={"aborted": False}),
     )
     assert frames == []
     assert state.done is True

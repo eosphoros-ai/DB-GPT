@@ -35,6 +35,7 @@ def _supports_cooperative_query(connector: Any) -> bool:
         and connector.dialect == "sqlite"
     )
 
+
 def make_sql_query(
     react_state: Dict[str, Any],
     database_connector: Optional[Any],

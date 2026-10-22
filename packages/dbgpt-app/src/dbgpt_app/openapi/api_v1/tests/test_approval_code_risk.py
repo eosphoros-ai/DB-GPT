@@ -60,10 +60,14 @@ def test_provably_safe_analysis_code(snippet):
         ("import socket\ns = socket.socket()", "socket"),
         ("os.system('rm -rf /tmp/x')", "os.system"),
         ("import urllib.request\nurllib.request.urlopen(u)", "urllib"),
-        ("import sqlite3\ncon = sqlite3.connect(p)\n"
-         "con.execute('DELETE FROM t')", "sqlite write literal"),
-        ("import sqlite3\ncon = sqlite3.connect(p)\n"
-         "con.executescript(script)", "executescript"),
+        (
+            "import sqlite3\ncon = sqlite3.connect(p)\ncon.execute('DELETE FROM t')",
+            "sqlite write literal",
+        ),
+        (
+            "import sqlite3\ncon = sqlite3.connect(p)\ncon.executescript(script)",
+            "executescript",
+        ),
     ],
 )
 def test_sink_code_confirms(snippet, why):

@@ -821,6 +821,7 @@ def make_react_tools(
             {"output_type": "html", "content": fixed_html, "title": title},
         ]
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
+
     async def knowledge_retrieve(query: str) -> str:
         if get_current_artifact_sink() is None:
             return await legacy_knowledge_retrieve(query=query)
