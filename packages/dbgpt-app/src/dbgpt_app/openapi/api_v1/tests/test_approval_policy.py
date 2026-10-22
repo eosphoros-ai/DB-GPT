@@ -24,6 +24,17 @@ def policy_db(monkeypatch):
     monkeypatch.setattr(ap, "_initialized", True)
     ap.invalidate_cache()
     yield
+    # Conversation-mode rows live in the shared in-memory sqlite; drop them so
+    # gate tests in other files never inherit a persisted mode.
+    with db.session() as session:
+        stale = (
+            session.query(ap.ApprovalPolicySettingEntity)
+            .filter(ap.ApprovalPolicySettingEntity.key.like("conv_mode:%"))
+            .all()
+        )
+        for row in stale:
+            session.delete(row)
+        session.commit()
     ap.invalidate_cache()
 
 
@@ -141,3 +152,19 @@ def test_whitelist_revoke(policy_db):
     assert center.revoke("session", sig_session, "c1") is False
     assert center.revoke("always", sig_always) is True
     assert not center.is_allowed("c1", "sql_query", {"query": "SELECT 1"})
+
+
+def test_conv_mode_persists_across_center_instances(policy_db):
+    center = ApprovalCenter()
+    assert center.conv_mode("c1") == "default"
+    center.set_conv_mode("c1", "open")
+    assert center.conv_mode("c1") == "open"
+    # Simulated restart: a fresh center has empty memory and must read the
+    # persisted setting row.
+    fresh = ApprovalCenter()
+    assert fresh.conv_mode("c1") == "open"
+    # Reset deletes the row; other conversations stay untouched.
+    fresh.set_conv_mode("c1", "default")
+    assert ApprovalCenter().conv_mode("c1") == "default"
+    with pytest.raises(ValueError):
+        fresh.set_conv_mode("c1", "yolo")

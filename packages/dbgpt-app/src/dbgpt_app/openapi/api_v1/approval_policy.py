@@ -10,6 +10,8 @@ Endpoints (registered onto the agentic router):
 - POST /v1/chat/approval/policy/playground dry-run classify trace
 - GET  /v1/chat/approval/whitelist         session/always memory entries
 - POST /v1/chat/approval/whitelist/revoke  revoke one memory entry
+- GET  /v1/chat/approval/session-mode      per-conversation permission mode
+- POST /v1/chat/approval/session-mode      set default | strict | open
 """
 
 import logging
@@ -25,6 +27,7 @@ from dbgpt._private.pydantic import BaseModel
 from dbgpt.storage.metadata import Model, db
 
 from .approval_audit import audit_policy_change
+from .tool_names import canonical_tool
 
 logger = logging.getLogger(__name__)
 
@@ -153,8 +156,9 @@ def dynamic_rules() -> List[Dict[str, Any]]:
 
 
 def tool_override(tool: str) -> Optional[str]:
+    wanted = canonical_tool(tool)
     for ov in _snapshot()["overrides"]:
-        if ov["tool"] == tool:
+        if canonical_tool(ov["tool"]) == wanted:
             return ov["tier"]
     return None
 
@@ -162,6 +166,47 @@ def tool_override(tool: str) -> Optional[str]:
 def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:
     value = _snapshot()["settings"].get(key)
     return value if value not in (None, "") else default
+
+
+# ── per-conversation permission mode (composer badge) ──────────────────────
+# Persisted as setting rows keyed ``conv_mode:<conv_uid>`` so a conversation
+# keeps its mode across backend restarts; brand-new conversations have no row
+# and start at ``default``.
+CONV_MODES = ("default", "strict", "open")
+_CONV_MODE_PREFIX = "conv_mode:"
+
+
+def get_conv_mode(conv_id: str) -> str:
+    if not conv_id:
+        return "default"
+    return get_setting(f"{_CONV_MODE_PREFIX}{conv_id}", "default") or "default"
+
+
+def set_conv_mode(conv_id: str, mode: str) -> str:
+    """Upsert the persisted mode; ``default`` deletes the row."""
+    mode = (mode or "default").strip().lower()
+    if mode not in CONV_MODES:
+        raise ValueError(f"unknown conversation approval mode: {mode}")
+    if not conv_id:
+        raise ValueError("conv_id is required")
+    key = f"{_CONV_MODE_PREFIX}{conv_id}"
+    _ensure_tables()
+    with db.session() as session:
+        row = (
+            session.query(ApprovalPolicySettingEntity).filter_by(key=key).first()
+        )
+        if mode == "default":
+            if row is not None:
+                session.delete(row)
+        elif row is None:
+            session.add(
+                ApprovalPolicySettingEntity(key=key, value=mode)
+            )
+        else:
+            row.value = mode
+            row.updated_ts = datetime.now()
+    invalidate_cache()
+    return mode
 
 
 def whitelist_view(center, conv_id: Optional[str]) -> List[Dict[str, Any]]:
@@ -382,3 +427,38 @@ def register_approval_policy_endpoints(router: APIRouter) -> None:
                 {"whitelist_revoke": {"scope": scope, "signature": signature}},
             )
         return Result.succ({"success": ok})
+
+    @router.get("/v1/chat/approval/session-mode")
+    async def approval_session_mode(
+        con_uid: Optional[str] = Query(default=None),
+        user_token: UserRequest = Depends(get_user_from_headers),
+    ):
+        """Per-conversation permission mode shown by the composer badge."""
+        from .approval import approval_center
+
+        return Result.succ(
+            {"con_uid": con_uid, "mode": approval_center.conv_mode(con_uid or "")}
+        )
+
+    @router.post("/v1/chat/approval/session-mode")
+    async def approval_session_mode_set(
+        payload: Dict[str, Any] = Body(),
+        user_token: UserRequest = Depends(get_user_from_headers),
+    ):
+        """Set the per-conversation mode: default | strict | open."""
+        from .approval import approval_center
+
+        conv_id = str(payload.get("con_uid") or payload.get("conv_id") or "").strip()
+        mode = str(payload.get("mode") or "default").strip().lower()
+        if not conv_id:
+            return Result.failed(msg="con_uid is required")
+        if mode not in approval_center.CONV_MODES:
+            return Result.failed(msg=f"invalid mode: {mode}")
+        old = approval_center.conv_mode(conv_id)
+        approval_center.set_conv_mode(conv_id, mode)
+        audit_policy_change(
+            user_token.user_id if user_token else None,
+            "session-mode",
+            {"session_mode": {"con_uid": conv_id, "old": old, "new": mode}},
+        )
+        return Result.succ({"con_uid": conv_id, "mode": mode})

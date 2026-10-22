@@ -36,7 +36,7 @@ interface TraceLine {
   hit: boolean;
 }
 
-const TOOL_OPTIONS = ['shell_interpreter', 'code_interpreter', 'sql_query', 'web_fetch'];
+const TOOL_OPTIONS = ['bash', 'code', 'sql_query', 'web_fetch'];
 const TIERS = ['rules', 'auto', 'confirm', 'deny'];
 
 const card =
@@ -57,11 +57,11 @@ export default function ApprovalSettingsPage() {
   const [deletedRuleIds, setDeletedRuleIds] = useState<number[]>([]);
   const [addedRules, setAddedRules] = useState<{ tool: string; arg_pattern: string; tier: string }[]>([]);
   // rule add form
-  const [newTool, setNewTool] = useState('shell_interpreter');
+  const [newTool, setNewTool] = useState('bash');
   const [newPattern, setNewPattern] = useState('');
   const [newTier, setNewTier] = useState('confirm');
   // playground
-  const [pgTool, setPgTool] = useState('shell_interpreter');
+  const [pgTool, setPgTool] = useState('bash');
   const [pgText, setPgText] = useState('');
   const [pgResult, setPgResult] = useState<{ verdict: [string, string]; trace: TraceLine[] } | null>(null);
   // whitelist
@@ -86,8 +86,33 @@ export default function ApprovalSettingsPage() {
   }, []);
 
   useEffect(() => {
-    load().catch(e => setError(String(e)));
-  }, [load]);
+    // Deep links: ?mode= drafts a mode change (save bar demo / shareable
+    // state), ?tool=&try= auto-runs the playground (shareable trial links).
+    const q = new URLSearchParams(window.location.search);
+    const modeParam = q.get('mode');
+    if (modeParam === 'off' || modeParam === 'tiered' || modeParam === 'always') {
+      setMode(modeParam);
+    }
+    const tryText = q.get('try');
+    const rawTool = q.get('tool') || 'bash';
+    const tryTool =
+      rawTool === 'shell_interpreter'
+        ? 'bash'
+        : rawTool === 'code_interpreter'
+          ? 'code'
+          : rawTool;
+    if (tryText) {
+      setPgTool(tryTool);
+      setPgText(tryText);
+    }
+    load()
+      .then(() => {
+        if (tryText) return runPlayground(tryTool, tryText);
+        return undefined;
+      })
+      .catch(e => setError(String(e)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadWhitelist = useCallback(async () => {
     const res = await fetch(`${API}/api/v1/chat/approval/whitelist?con_uid=${encodeURIComponent(wlConv)}`);
@@ -145,11 +170,13 @@ export default function ApprovalSettingsPage() {
     setNewPattern('');
   };
 
-  const runPlayground = async () => {
+  const runPlayground = async (toolArg?: string, textArg?: string) => {
+    const tool = toolArg ?? pgTool;
+    const text = textArg ?? pgText;
     const res = await fetch(`${API}/api/v1/chat/approval/policy/playground`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tool: pgTool, text: pgText }),
+      body: JSON.stringify({ tool, text }),
     });
     const json = await res.json();
     if (json.success) setPgResult(json.data);

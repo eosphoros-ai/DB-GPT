@@ -439,13 +439,21 @@ def register_harness_endpoints(router: Any) -> None:
                 raise HTTPException(
                     status_code=403, detail="invalid or reused approval token"
                 )
-        elif approval_mode() != "off":
+        else:
+            ov = approval_center.conv_mode(conv_id)
             tier, rule_id = POLICY.classify(name, arguments)
             if tier == TIER_DENY:
-                # Deny beats whitelist memory (same rule as the dbgpt gate).
+                # Deny beats whitelist memory and the per-conversation open
+                # mode (same rule as the dbgpt gate).
                 return Result.succ({"result": deny_observation(name, rule_id)})
-            if tier == TIER_CONFIRM and not approval_center.is_allowed(
-                conv_id, name, arguments
+            if (
+                tier == TIER_CONFIRM
+                and ov != "open"
+                and approval_mode() != "off"
+                and (
+                    ov == "strict"
+                    or not approval_center.is_allowed(conv_id, name, arguments)
+                )
             ):
                 pa = approval_center.register(
                     conv_id, name, arguments, rule_id, engine="pi"

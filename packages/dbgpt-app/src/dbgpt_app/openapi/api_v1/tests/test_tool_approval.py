@@ -363,3 +363,63 @@ def test_push_intent_passes_analyzer_bullets():
 
     asyncio.run(push_intent(pa, cb, good_analyzer))
     assert events[0][1]["bullets"] == ["将**强制终止**匹配进程"]
+
+
+def test_conv_mode_open_skips_confirm_but_not_deny():
+    center = ApprovalCenter()
+    events = []
+
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    center.set_conv_mode("copen", "open")
+    with pytest.raises(ValueError):
+        center.set_conv_mode("c1", "yolo")
+    gate = make_approval_gate("copen", cb, center=center)
+    args = {"command": "pkill -f dbgpt_server.py"}
+    # open: confirm-tier calls pass with no card and no stream events.
+    assert asyncio.run(gate("shell_interpreter", args)) is None
+    assert events == []
+    # The deny tier keeps its floor even under per-conversation open mode.
+    obs = asyncio.run(gate("shell_interpreter", {"command": "rm -rf /"}))
+    assert obs and obs.startswith("[policy]")
+    assert events == []
+    # Other conversations stay on the global policy.
+    assert center.conv_mode("cother") == "default"
+
+
+def test_conv_mode_strict_ignores_whitelist_memory():
+    center = ApprovalCenter()
+    events = []
+
+    async def cb(event_type, payload):
+        events.append((event_type, payload))
+
+    gate = make_approval_gate("cstrict", cb, center=center)
+    args = {"command": "pkill -f dbgpt_server.py"}
+
+    async def approve_once():
+        task = asyncio.ensure_future(gate("shell_interpreter", args))
+        await asyncio.sleep(0.05)
+        pending = center.pending_for("cstrict")
+        assert len(pending) == 1
+        assert center.resolve(pending[0]["approval_id"], "approved", "session")
+        return await task
+
+    assert asyncio.run(approve_once()) is None
+    assert center.is_allowed("cstrict", "shell_interpreter", args)
+    events.clear()
+
+    center.set_conv_mode("cstrict", "strict")
+
+    async def approve_again():
+        task = asyncio.ensure_future(gate("shell_interpreter", args))
+        await asyncio.sleep(0.05)
+        pending = center.pending_for("cstrict")
+        # strict pops the card again despite the remembered whitelist entry.
+        assert len(pending) == 1
+        assert center.resolve(pending[0]["approval_id"], "approved", "session")
+        return await task
+
+    assert asyncio.run(approve_again()) is None
+    assert "approval.requested" in [t for t, _ in events]

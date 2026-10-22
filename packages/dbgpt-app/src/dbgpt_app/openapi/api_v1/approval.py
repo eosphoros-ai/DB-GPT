@@ -467,6 +467,43 @@ class ApprovalCenter:
         self._tokens: Dict[str, PendingApproval] = {}
         self._session_allow: Dict[str, set] = {}
         self._always_allow: set = set()
+        # Per-conversation permission mode override set from the composer
+        # badge: "default" (follow global policy) | "strict" (always card)
+        # | "open" (auto-approve, deny tier keeps its floor).
+        self._conv_mode: Dict[str, str] = {}
+
+    CONV_MODES = ("default", "strict", "open")
+
+    def set_conv_mode(self, conv_id: str, mode: str) -> str:
+        mode = (mode or "default").strip().lower()
+        if mode not in self.CONV_MODES:
+            raise ValueError(f"unknown conversation approval mode: {mode}")
+        if mode == "default":
+            self._conv_mode.pop(conv_id, None)
+        else:
+            self._conv_mode[conv_id] = mode
+        try:
+            from dbgpt_app.openapi.api_v1 import approval_policy
+
+            approval_policy.set_conv_mode(conv_id, mode)
+        except Exception:
+            # DB unavailable (unit tests / early boot): memory-only fallback,
+            # same lifetime as the whitelist memory.
+            logger.warning(
+                "conv mode persistence unavailable; memory-only for %s", conv_id
+            )
+        return mode
+
+    def conv_mode(self, conv_id: str) -> str:
+        cached = self._conv_mode.get(conv_id)
+        if cached:
+            return cached
+        try:
+            from dbgpt_app.openapi.api_v1 import approval_policy
+
+            return approval_policy.get_conv_mode(conv_id)
+        except Exception:
+            return "default"
 
     @staticmethod
     def signature(tool: str, args: dict) -> str:
@@ -481,12 +518,13 @@ class ApprovalCenter:
         scope=always still popped the card for ``pkill -f y``. Key by command
         head / SQL verb / URL host so the scope dropdown keeps its promise.
         """
+        tool = canonical_tool(tool)
         blob = _args_blob(args)
-        if tool == "shell_interpreter":
+        if tool == "bash":
             head = blob.strip().split(None, 1)[:1]
             name_ = os.path.basename(head[0]) if head else blob.strip()[:24]
             return f"{tool}: {name_}*"
-        if tool == "code_interpreter":
+        if tool == "code":
             # Code is Turing-complete: the first token (import/def/for…)
             # carries no safety meaning, so memory stays exact-script only.
             return f"{tool}: {ApprovalCenter.signature(tool, args)}"
@@ -872,7 +910,17 @@ def make_approval_gate(
     policy = policy or POLICY
 
     async def gate(name: str, args: dict) -> Optional[str]:
+        name = canonical_tool(name)
         mode = approval_mode()
+        ov = center.conv_mode(conv_id)
+        if ov == "open":
+            # Per-conversation full access from the composer badge: skip
+            # confirm cards, but the deny tier keeps its floor so forbidden
+            # commands (``rm -rf /`` …) stay blocked even here.
+            tier, rule_id = policy.classify(name, args)
+            if tier == TIER_DENY:
+                return deny_observation(name, rule_id)
+            return None
         if mode == "off":
             return None
         # Deny is evaluated BEFORE whitelist memory: a remembered class key
@@ -881,7 +929,11 @@ def make_approval_gate(
         tier, rule_id = policy.classify(name, args)
         if tier == TIER_DENY:
             return deny_observation(name, rule_id)
-        if mode != "always" and center.is_allowed(conv_id, name, args):
+        if (
+            ov != "strict"
+            and mode != "always"
+            and center.is_allowed(conv_id, name, args)
+        ):
             return None
         if tier == TIER_AUTO:
             return None
