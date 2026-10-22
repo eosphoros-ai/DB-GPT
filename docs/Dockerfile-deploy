@@ -46,11 +46,7 @@ RUN git config --global user.email "dbgpt@example.com" && \
 # New logic for building versions directly in Dockerfile
 RUN git config --global --add safe.directory /app && \
     # Record the current position
-    CURRENT_POSITION=$(git rev-parse --abbrev-ref HEAD) && \
-    # Record the exact commit as well: the tag loop below moves HEAD, so
-    # restoring by branch name / "HEAD" afterwards would silently keep the
-    # last tag's tree (and its stale static assets) for the final build.
-    CURRENT_SHA=$(git rev-parse HEAD) && \
+    CURRENT_POSITION=$(git rev-parse HEAD) && \
     # Get the latest tags
     TAGS=$(git tag --sort=-creatordate | head -n $NUM_VERSION | tac) && \
     # If there are no tags, get the latest commits
@@ -84,7 +80,7 @@ RUN git config --global --add safe.directory /app && \
         cd /app-build/docs && npm run docusaurus docs:version $TAG || exit 1; \
     done && \
     # Return to the original position, build dev version
-    cd /app && git checkout . && git checkout $CURRENT_SHA && \
+    cd /app && git checkout . && git checkout $CURRENT_POSITION && \
     cd /app/docs && \
     rm -rf /app-build/docs/docs /app-build/docs/sidebars.js /app-build/docs/static /app-build/docs/src && \
     cp -r /app/docs/docs /app-build/docs/ && \
