@@ -4021,10 +4021,11 @@ const Playground: NextPage = () => {
         // live execution state) is carried over from memory — without it the
         // page rendered empty until the turn finished server-side.
         const live = liveRoundRef.current[convUid];
+        const liveFlushed = (msgList || []).some(
+          (m: any) => m.role === 'view' && (m.order ?? 0) >= (live?.view?.order ?? Number.MAX_SAFE_INTEGER),
+        );
         const liveTail =
-          live && runningConvIds.includes(convUid)
-            ? messages.filter(m => m.id === live.humanId || m.id === live.viewId)
-            : [];
+          live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
         restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
