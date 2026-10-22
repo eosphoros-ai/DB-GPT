@@ -32,6 +32,8 @@
   .sitem.on{background:#dbe9ff;color:var(--primary)}
   .sitem .ic{width:18px;text-align:center}
   .sitem .bdg{margin-left:auto;font-size:10px;background:var(--err);color:#fff;border-radius:9px;padding:0 6px;font-weight:700}
+  .srule{margin:0 0 6px 20px;padding-left:8px;border-left:1.5px solid var(--line2)}
+  .srule .sitem{padding:7px 10px;font-size:13px;margin-bottom:1px}
   .ssec{font-size:10.5px;color:var(--txt3);font-weight:700;letter-spacing:.6px;margin:14px 6px 6px}
   .task{padding:7px 10px;border-radius:8px;font-size:12.3px;color:var(--txt2);cursor:pointer;display:flex;gap:7px;align-items:center}
   .task:hover{background:#e3e6ec}
@@ -79,6 +81,9 @@
   .stab:hover{border-color:#c9d3e0}
   .stab.on{border-color:var(--primary);background:#eaf2ff;color:var(--primary);box-shadow:0 2px 10px rgba(0,105,254,.12)}
   .stab .sic{font-size:15px}
+  .stab .sname{font-weight:750}
+  .stab .sslug{font-size:9.5px;font-family:"SF Mono",Menlo,monospace;background:#f2f5f9;border-radius:5px;padding:1px 6px;color:var(--txt3);font-weight:600;letter-spacing:.2px}
+  .stab.on .sslug{background:#d6e6ff;color:var(--primary)}
   .stab .cnt{font-size:10px;background:#f2f4f7;border-radius:9px;padding:0 6px;color:var(--txt3);font-weight:700}
   .stab.on .cnt{background:#d6e6ff;color:var(--primary)}
   .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -240,6 +245,76 @@
   .inst{width:26px;height:26px;border-radius:8px;border:1px solid var(--line2);background:#fff;color:var(--txt2);font-size:14px;cursor:pointer;display:grid;place-items:center;margin-left:auto}
   .inst.on{border-color:#b7eb8f;color:#237804;background:#f2fbf5}
   .scn{font-size:10px;font-weight:700;padding:1px 8px;border-radius:5px}
+  /* semantic knowledge center */
+  .semstats{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
+  .sstat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:8px 14px;cursor:pointer;font-size:11.5px;font-weight:700;color:var(--txt2);transition:.15s}
+  .sstat b{font-size:14px;color:var(--txt);font-family:monospace}
+  .sstat b.warnb{color:var(--warn)}
+  .sstat:hover{border-color:#c9d3e0}
+  .sstat.on{border-color:var(--primary);background:#eaf2ff;color:var(--primary)}
+  .sstat.on b{color:var(--primary)}
+  .semtab{display:none}
+  .semtab.on{display:block}
+  .sdraft{background:#fff;border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:11px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--sh)}
+  .sdraft .dh2{display:flex;align-items:center;gap:9px;font-size:12.8px;font-weight:750;font-family:monospace}
+  .sdraft .conf{font-size:10px;font-weight:700;padding:1px 8px;border-radius:12px;background:#fff7e6;color:#d48806;border:1px solid #ffe7ba}
+  .sdraft .stt{font-size:10px;font-weight:700;padding:1px 8px;border-radius:12px;background:#f2f5f9;color:var(--txt3)}
+  .sdraft .body{font-size:12.3px;color:var(--txt2);margin:6px 0}
+  .sdraft .src{font-size:10.8px;color:var(--txt3);margin-bottom:9px}
+  .sdraft .acts{display:flex;gap:7px}
+  .rulelist{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--sh)}
+  .rulelist .ri{display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #f2f4f7;font-size:12.6px}
+  .rulelist .ri:last-child{border:0}
+  .rulelist .ri .nm{font-weight:700}
+  .rulelist .ri .ds{color:var(--txt3);font-size:11.5px}
+  .rulelist .tg{margin-left:auto;width:34px;height:19px;border-radius:20px;background:var(--ok);position:relative;flex:none}
+  .rulelist .tg::after{content:"";position:absolute;top:2px;left:17px;width:15px;height:15px;border-radius:50%;background:#fff}
+  .rulelist .tg.off{background:#d5dae2}.rulelist .tg.off::after{left:2px}
+  .rulelist .val{margin-left:auto;font-family:monospace;font-size:11.5px;color:var(--txt2);font-weight:700}
+  .pipe{margin-top:16px;background:#f4f8ff;border:1px solid #d6e6ff;border-radius:11px;padding:10px 14px;font-size:11.8px;color:#3b6ea5;line-height:1.7}
+  .pipe b{color:#1d4ed8}
+  /* semantic usage chain + citations */
+  .chain{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:7px 20px;background:#f8fbff;border-bottom:1px solid var(--line);font-size:10.5px;color:var(--txt3)}
+  .chain .c{background:#fff;border:1px solid var(--line2);border-radius:6px;padding:2px 8px;font-weight:700;color:var(--txt2)}
+  .chain .c.hi{border-color:#cfe3ff;background:#eaf2ff;color:var(--primary)}
+  .chain .ar{color:#b6c2d0}
+  .cite{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px;padding:8px 11px;background:#f8fbff;border:1px dashed #cfe3ff;border-radius:10px;font-size:11px;color:var(--txt3)}
+  .cite .cl{font-weight:700;color:#3b6ea5}
+  .cite .cc{background:#fff;border:1px solid #d6e6ff;border-radius:6px;padding:2px 8px;color:#1d4ed8;font-weight:600}
+  .cite .cc .v{color:var(--txt3);font-weight:500}
+  .cite .fb{margin-left:auto;display:flex;gap:6px}
+  .cite .fb button{font-size:10.5px;border:1px solid var(--line2);background:#fff;border-radius:7px;padding:2px 9px;cursor:pointer;color:var(--txt2)}
+  .cite .fb button:hover{border-color:#c9d3e0;color:var(--txt)}
+  /* plan confirm + long-task progress (DataWorks 8-class confirms) */
+  .plancard{margin:10px 0;border:1px solid var(--line2);border-radius:12px;background:#fff;overflow:hidden;box-shadow:var(--sh)}
+  .plancard .ph2{padding:9px 13px;background:#f8fbff;border-bottom:1px solid var(--line);font-size:12px;font-weight:750;color:#1d4ed8;display:flex;gap:8px;align-items:center}
+  .plancard .pb{padding:11px 14px}
+  .plancard .step{display:flex;gap:9px;align-items:center;font-size:12.3px;padding:4px 0;color:var(--txt2)}
+  .plancard .step .no{width:18px;height:18px;border-radius:6px;background:#eaf2ff;color:var(--primary);font-size:10.5px;font-weight:800;display:grid;place-items:center;flex:none}
+  .plancard .acts{display:flex;gap:8px;margin-top:9px}
+  .progwrap{margin:10px 0;border:1px solid var(--line2);border-radius:12px;background:#fff;padding:11px 14px;box-shadow:var(--sh)}
+  .progwrap .pt2{font-size:12.3px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .progwrap .pt2 .pc{margin-left:auto;font-family:monospace;font-size:11.5px;color:var(--txt2)}
+  .progbar{height:7px;border-radius:5px;background:#eef1f6;overflow:hidden;margin:8px 0}
+  .progbar i{display:block;height:100%;width:62%;background:var(--grad);border-radius:5px}
+  /* plugin list top / detail / suite prefix */
+  .pltop{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .plsearch{flex:1;max-width:320px;border:1px solid var(--line2);border-radius:9px;padding:6px 12px;font-size:12.5px;background:#fff;outline:none;font-family:inherit}
+  .addbtn{background:#151622;color:#fff;border:0;border-radius:9px;padding:7px 15px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .addbtn:hover{filter:brightness(1.2)}
+  .publink{margin-left:auto;font-size:12px;color:var(--txt2);text-decoration:underline;cursor:pointer}
+  .pldetail{display:none}
+  .pldetail.on{display:block}
+  .cmdrow{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 14px;margin-bottom:8px;cursor:pointer;font-size:12.4px;color:var(--txt2)}
+  .cmdrow:hover{border-color:#cfe0ff}
+  .cmdrow .cmd{font-family:monospace;font-size:11.5px;background:#eafbea;color:#237804;border:1px solid #d9f0d0;border-radius:7px;padding:2px 9px;font-weight:700;flex:none}
+  .cmdrow .ar{margin-left:auto;color:var(--txt3)}
+  .suiteprefix{display:none;align-items:center;gap:8px;padding:10px 6px 0}
+  .suiteprefix.on{display:flex}
+  .suiteprefix .sp{color:#237804;font-weight:750;font-size:13.5px}
+  .suiteprefix .hint{color:var(--txt3);font-size:12.3px}
+  .swap{text-align:center;font-size:12px;color:var(--txt3);margin-top:13px;cursor:pointer}
+  .swap:hover{color:var(--txt2)}
 </style>
 </head>
 <body class="anno-on">
@@ -249,12 +324,12 @@
   <span class="prevlabel">视图预览 · 非产品导航</span>
   <div class="vtabs" id="vtabs">
     <button data-v="home" class="on">首页 Explore</button>
-    <button data-v="query">智能问数</button>
+    <button data-v="query">智能取数</button>
     <button data-v="analysis">智能分析</button>
     <button data-v="ops">智能运维</button>
     <button data-v="semantic">语义层</button>
     <button data-v="approval">审批中心</button>
-    <button data-v="plugins">场景插件</button>
+    <button data-v="plugins">专家套件</button>
   </div>
   <div class="right"><span>亮色 · 贴现有 UI</span><div class="toggle on" id="annoToggle"><span>设计标注</span><span class="sw"></span></div></div>
 </div></div>
@@ -264,20 +339,24 @@
   <div class="sidebar">
     <button class="newtask">＋ New Task</button>
     <div class="sitem on" data-go="home"><span class="ic">🧭</span>Explore</div>
-    <div class="sitem"><span class="ic">⚡</span>Skills</div>
-    <div class="sitem" data-go="plugins"><span class="ic">🧩</span>场景插件</div>
+    <div class="sitem"><span class="ic">⊞</span>扩展</div>
+    <div class="srule">
+      <div class="sitem" data-go="plugins"><span class="ic">🧩</span>专家套件</div>
+      <div class="sitem"><span class="ic">⚡</span>技能</div>
+      <div class="sitem"><span class="ic">🔌</span>连接器</div>
+    </div>
     <div class="sitem"><span class="ic">📊</span>Dashboards</div>
     <div class="sitem"><span class="ic">🗄️</span>Datasources</div>
-    <div class="sitem"><span class="ic">🔌</span>Connectors</div>
     <div class="sitem"><span class="ic">📚</span>Knowledge Base</div>
     <div class="sitem" data-go="semantic"><span class="ic">🧬</span>语义层</div>
     <div class="sitem" data-go="approval"><span class="ic">🛡️</span>审批中心<span class="bdg">2</span></div>
     <div class="sitem"><span class="ic">⏰</span>Scheduled Tasks</div>
+    <div class="anno" style="left:6px;top:118px"><span class="num">18</span><span class="txt">左栏"扩展"分组（左规尺缩进，对齐 AntWork 侧栏形态）：专家套件 / 技能 / 连接器。专家套件 = 套件管理页入口（P1：安装/启用/升级/zip 上传/企业专属）</span></div>
     <div class="ssec">ALL TASKS</div>
     <div class="tfilter" id="tfilter">
       <button class="on" data-f="all">全部</button><button data-f="q">问数</button><button data-f="a">分析</button><button data-f="o">运维</button>
     </div>
-    <div class="task" data-go="query" data-s="q"><span class="stag q">问数</span><span class="t">近30天各品类客单价</span><span class="tm">12m</span></div>
+    <div class="task" data-go="query" data-s="q"><span class="stag q">问数</span><span class="t">上个月华东区有效GMV</span><span class="tm">12m</span></div>
     <div class="task" data-go="ops" data-s="o"><span class="stag o">运维</span><span class="t">订单库慢查询排障</span><span class="tm">1h</span></div>
     <div class="task" data-go="analysis" data-s="a"><span class="stag a">分析</span><span class="t">Q3 区域销售复盘</span><span class="tm">1d</span></div>
     <div class="anno" style="left:6px;top:600px"><span class="num">8</span><span class="txt">侧栏按对话列（非按场景）；每条带场景着色标签并可按场景过滤 —— 场景是对话的标签，不是入口</span></div>
@@ -297,10 +376,12 @@
         <h1>DB-GPT AI Data Assistant</h1>
         <div class="slogan">Agentic Data Driven Decisions</div>
         <div class="composer">
+          <div class="suiteprefix" id="suitePrefix"></div>
           <textarea id="homeInput" placeholder="Ask a question about your database, upload a CSV, or generate a report..."></textarea>
           <div class="crow">
-            <span class="cicon">＋</span><span class="cicon">⚡</span><span class="cicon">🔗</span><span class="cicon">📋</span><span class="cicon">📄</span>
+            <span class="cicon">＋</span><span class="cicon">⚡</span><span class="cicon">🔗</span><span class="cicon">📋</span><span class="cicon">📄</span><span class="cicon" title="/ 调用技能/插件" style="font-weight:800">/</span>
             <span class="modelchip"><span class="m">Z</span>glm-5.1 ▾</span>
+            <span class="mini mode">🛡️ 请求批准 ▾</span>
             <span class="routechip" id="routeChip">智能路由：待识别</span>
             <span class="cicon">🎙</span>
             <span class="sendc" id="homeSend">↑</span>
@@ -309,15 +390,16 @@
         <div class="anno" style="right:-4px;top:64px"><span class="num">1</span><span class="txt">composer 保留现有形态，新增"智能路由"chip 实时显示识别到的场景；模型 chip 沿用现有 glm-5.1 选择器</span></div>
 
         <div class="scenwrap">
-          <div class="scenhead">SCENARIOS · 由已启用场景插件渲染 · 选择场景或点击推荐问题</div>
+          <div class="scenhead">SCENARIOS · 由已启用专家套件渲染 · 场景 = 可安装的套件（含 slug@version）</div>
           <div class="stabs" id="stabs">
-            <div class="stab on" data-s="q"><span class="sic">🔍</span>智能问数<span class="cnt">3</span></div>
-            <div class="stab" data-s="a"><span class="sic">📊</span>智能分析<span class="cnt">3</span></div>
-            <div class="stab" data-s="o"><span class="sic">🩺</span>智能运维<span class="cnt">3</span></div>
-            <div class="stab" data-s="k"><span class="sic">🛠️</span>技能与 Agent<span class="cnt">3</span></div>
+            <div class="stab on" data-s="q"><span class="sic">🔍</span><span class="sname">智能取数</span><span class="sslug">db-query@1.0.0</span><span class="cnt">4 技能</span></div>
+            <div class="stab" data-s="a"><span class="sic">📊</span><span class="sname">智能分析</span><span class="sslug">db-analysis@1.0.0</span><span class="cnt">5 技能</span></div>
+            <div class="stab" data-s="o"><span class="sic">🩺</span><span class="sname">智能运维</span><span class="sslug">db-ops@1.0.0</span><span class="cnt">4 技能</span></div>
+            <div class="stab" data-s="k"><span class="sic">🛠️</span><span class="sname">技能与 Agent</span><span class="sslug">skill-forge@0.9.0</span><span class="cnt">2 技能</span></div>
           </div>
           <div class="qgrid" id="qgrid"></div>
-          <div class="anno" style="right:0;top:-8px"><span class="num">2</span><span class="txt">原平铺 RECOMMENDED EXAMPLES 改为"场景 Tab + 推荐问题"（对标阿里 DataAgent 场景入口）。场景 Tab = 预设初始化器，对话在首次发送时才创建；产品导航无常驻三工作台入口（见设计文档 §4）</span></div>
+          <div class="swap" id="swapQ">⟳ 换一批</div>
+          <div class="anno" style="right:0;top:-8px"><span class="num">2</span><span class="txt">首页场景 Tab = 已启用专家套件（含 slug@version + 技能数）；点击 Tab = 用该套件初始化对话预设；推荐问题由套件 manifest.recommended_questions 渲染。原"智能问数"改名"智能取数"以贴业务库取数场景（对齐 db-query 套件 suite.yaml.display）</span></div>
         </div>
 
         <div class="homefoot">🌀 Agentic Data Driven Decisions · DB-GPT AI Data Assistant</div>
@@ -328,48 +410,52 @@
     <section class="view fill" id="query">
       <div class="ws" id="ws-query">
         <div class="rail"><div class="rh">取数轨迹 · SESSION</div><div class="tl">
-          <div class="tl-item done"><span class="nd"></span><div class="t">意图识别</div><div class="d">取数 · 近30天客单价</div></div>
-          <div class="tl-item done"><span class="nd"></span><div class="t">加载语义模型</div><div class="d">电商直播域 v3</div><div class="tools"><span>semantic</span></div></div>
-          <div class="tl-item done"><span class="nd"></span><div class="t">选表选字段</div><div class="d">ads_ctlive_item_stats</div><div class="tools"><span>schema_link</span></div></div>
-          <div class="tl-item done"><span class="nd"></span><div class="t">生成 SQL</div><div class="d">口径: 客单价=GMV/订单数</div><div class="tools"><span>nl2sql</span></div></div>
-          <div class="tl-item run"><span class="nd"></span><div class="t">执行 & 返回</div><div class="d">运行中…</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">意图识别</div><div class="d">取数 · 华东有效GMV</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">语义召回</div><div class="d">双路：向量 top-k + 精确匹配</div><div class="tools"><span>SemanticRetriever</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">加载权威定义</div><div class="d">指标 v2 公式/默认过滤/join</div><div class="tools"><span>by id</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">生成 SQL</div><div class="d">规则自动注入 is_deleted=0</div><div class="tools"><span>nl2sql</span></div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">执行(只读从库)+引用溯源</div><div class="d">运行中…</div></div>
         </div></div>
         <div class="center">
-          <div class="ws-head"><div class="st"><span class="pchip q" data-ws="ws-query">🔍 智能问数 ▾</span><span class="wname">· 对话工作台</span></div>
-            <div class="ctx"><span class="tagchip sem">🧬 语义模型：电商直播域 v3 ✓</span><span class="tagchip">🗄️ MaxCompute</span><span class="tagchip" data-viewer="ws-query">⋯</span></div></div>
-          <div class="anno" style="left:16px;top:50px"><span class="num">7</span><span class="txt">头部 preset chip 可切换：点开弹四预设；切换=重绑上下文+换工具白名单与审批策略+写一条"场景切换"timeline 事件，历史不丢（同一引擎、不同预设）</span></div>
-          <div class="anno" style="right:16px;top:52px"><span class="num">3</span><span class="txt">头部常驻语义模型绑定 chip（紫）：问数准确率的地基，可切换/查看 YAML</span></div>
+          <div class="ws-head"><div class="st"><span class="pchip q" data-ws="ws-query">🔍 智能取数 v1.0.0 ▾</span><span class="wname">· 对话工作台</span></div>
+            <div class="ctx"><span class="tagchip">⚙️ 实例 ws-prod · 4CU · 运行中</span><span class="tagchip sem">🧬 语义层：mysql_prod · 42表白名单 ✓</span><span class="tagchip">🗄️ MySQL · 只读从库</span><span class="tagchip" data-viewer="ws-query">⋯</span></div></div>
+          <div class="chain"><span class="c">问题</span><span class="ar">→</span><span class="c hi">① 双路召回</span><span class="ar">→</span><span class="c hi">② 按 id 加载权威定义</span><span class="ar">→</span><span class="c">③ 组装 prompt(公式/默认过滤/join/规则)</span><span class="ar">→</span><span class="c">④ NL2SQL</span><span class="ar">→</span><span class="c">⑤ 引用溯源</span><span class="ar">→</span><span class="c">👍 沉淀样例</span></div>
+          <div class="anno" style="left:16px;top:88px"><span class="num">7</span><span class="txt">头部套件 chip 可切换：点开弹四专家套件（带版本+编排策略 react/flow）；切换=热加载配置+写一条"套件切换"timeline 事件，历史不丢（一个 agent、三个套件）</span></div>
           <div class="conv">
-            <div class="msg user"><span class="bubble-u">近30天各品类的客单价是多少？</span></div>
+            <div class="msg user"><span class="bubble-u">上个月华东区的有效GMV是多少？</span></div>
             <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
-              <div class="ai-txt">已基于语义模型识别口径 <b>客单价 = GMV / 订单数</b>，选表 <code>ads_ctlive_item_stats</code>：</div>
+              <div class="ai-txt">命中指标 <b>有效订单GMV（v2）</b>与样例 #12，加载权威定义与默认过滤后生成 SQL，并在只读从库执行：</div>
               <div class="art"><div class="ah"><span class="ty sql">SQL</span>生成语句 · 可编辑/复制<span class="open">复制</span></div><div class="ab">
-                <pre class="code"><span class="c">-- 语义模型: 客单价 = GMV / 订单数 (metric_formulas)</span>
-<span class="k">SELECT</span> cate_level1_name, <span class="f">SUM</span>(gmv)/<span class="f">SUM</span>(order_cnt) <span class="k">AS</span> avg_order_value
-<span class="k">FROM</span> ads_ctlive_item_stats <span class="k">WHERE</span> stat_period = <span class="s">'30d'</span>
-<span class="k">GROUP BY</span> cate_level1_name <span class="k">ORDER BY</span> avg_order_value <span class="k">DESC</span>;</pre></div></div>
-              <div class="art"><div class="ah"><span class="ty table">结果</span>查询结果 · 8 行<span class="open" data-viewer="ws-query">导出 CSV ›</span></div><div class="ab">
-                <table class="data"><thead><tr><th>一级品类</th><th style="text-align:right">客单价(元)</th><th style="text-align:right">GMV(元)</th><th style="text-align:right">订单数</th></tr></thead>
-                <tbody><tr><td>美妆个护</td><td class="num-cell">386.20</td><td class="num-cell">12,480,300</td><td class="num-cell">32,318</td></tr>
-                <tr><td>3C 数码</td><td class="num-cell">342.75</td><td class="num-cell">9,865,400</td><td class="num-cell">28,783</td></tr>
-                <tr><td>服饰鞋包</td><td class="num-cell">218.40</td><td class="num-cell">15,230,900</td><td class="num-cell">69,738</td></tr></tbody></table></div></div>
+                <pre class="code"><span class="c">-- 指标 v2: 有效订单GMV = SUM(order_amount) on orders</span>
+<span class="k">SELECT</span> <span class="f">SUM</span>(order_amount) <span class="k">AS</span> valid_gmv
+<span class="k">FROM</span> orders
+<span class="k">WHERE</span> region = <span class="s">'华东'</span>
+  <span class="k">AND</span> status <span class="k">IN</span> (<span class="n">1,2,3</span>)         <span class="c">-- 指标默认过滤</span>
+  <span class="k">AND</span> is_deleted = <span class="n">0</span>            <span class="c">-- 规则护栏自动注入</span>
+  <span class="k">AND</span> paid_at &gt;= <span class="s">'2026-09-01'</span>
+  <span class="k">AND</span> paid_at &lt; <span class="s">'2026-10-01'</span>;</pre></div></div>
+              <div class="art"><div class="ah"><span class="ty table">结果</span>只读从库执行 · 38ms<span class="open" data-viewer="ws-query">导出 CSV ›</span></div><div class="ab">
+                <div style="display:flex;align-items:baseline;gap:14px"><span style="font-size:26px;font-weight:800;font-family:monospace">¥1,284,560</span><span style="font-size:12px;color:#389e0d;font-weight:700">环比 +12.4%</span><span style="font-size:11px;color:var(--txt3)">2026-09 · 华东 · 有效订单口径</span></div></div></div>
+              <div class="cite"><span class="cl">本次回答引用：</span><span class="cc">指标 有效订单GMV <span class="v">v2</span></span><span class="cc">表 orders <span class="v">已标注</span></span><span class="cc">样例 #12 <span class="v">命中</span></span><span class="cc">规则 is_deleted=0 · status IN(1,2,3)</span>
+                <span class="fb"><button>👍 有帮助（沉淀样例）</button><button>✏️ 纠错</button></span></div>
             </div></div></div>
           </div>
           <div class="dock" id="dock-query"><div class="dh"><span class="ic">🛡️</span><span class="tt">高代价操作确认 · 预估扫描成本</span><span class="risk">中风险</span></div>
             <div class="db"><div class="desc">追问"看明细全量"将触发大范围扫描，预估成本较高：</div>
-            <div class="sqlmini"><span class="k">SELECT</span> * <span class="k">FROM</span> dwd_ctlive_trd_detail <span class="k">WHERE</span> dt <span class="k">BETWEEN</span> <span class="s">'20260920'</span> <span class="k">AND</span> <span class="s">'20261020'</span>;</div>
+            <div class="sqlmini"><span class="k">SELECT</span> * <span class="k">FROM</span> order_items <span class="k">WHERE</span> created_at &gt;= <span class="s">'2023-10-01'</span>;  <span style="color:#6b7f99">-- 三年全量明细</span></div>
             <div class="meta"><span>预估扫描：<b>~480 GB</b></span><span>预估费用：<b>¥62.4</b></span><span>耗时：<b>~3min</b></span></div>
             <div class="acts"><button class="dbtn pri" data-resolve="query">确认执行</button><button class="dbtn dan" data-reject="query">取消</button><button class="dbtn">加 LIMIT 1000 预览</button>
             <span class="scope">记忆：<select><option>仅本次</option><option>本会话</option></select></span></div></div></div>
           <div class="ws-comp"><div class="box"><textarea placeholder="继续追问，如「按地区拆分」「只看 TOP10」…"></textarea>
-            <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">🧬 电商直播域 v3</span><button class="sendmini">↑</button></div></div></div>
-          <div class="statusline"><span class="live"></span>取数 Agent 运行中 · 语义模型已加载 · Token 3.1k/0.6k · 3.7s</div>
+            <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">/ 技能</span><span class="mini">🧬 mysql_prod</span><button class="sendmini">↑</button></div></div></div>
+          <div class="statusline"><span class="live"></span>取数 Agent 运行中 · 语义召回 2 命中 · 规则已注入 · Token 3.1k/0.6k · 3.7s</div>
         </div>
-        <div class="viewer" id="viewer-query"><div class="vh">🧬 语义模型 · 电商直播域 v3<span class="x" data-close="ws-query">✕</span></div>
-          <div class="vb"><div class="vtabs2"><button class="on">指标</button><button>数据集</button><button>YAML</button></div>
-          <div class="kv"><span class="k">metric</span><span class="v">GMV</span></div><div class="kv"><span class="k">synonyms</span><span class="v">成交额/销售额</span></div>
-          <div class="kv"><span class="k">expression</span><span class="v">SUM(gmv)</span></div><div class="kv"><span class="k">formula</span><span class="v">客单价=GMV/订单数</span></div>
-          <div class="kv"><span class="k">dataset</span><span class="v">ads_ctlive_item_stats</span></div></div></div>
+        <div class="viewer" id="viewer-query"><div class="vh">🧬 语义条目 · 有效订单GMV v2<span class="x" data-close="ws-query">✕</span></div>
+          <div class="vb"><div class="vtabs2"><button class="on">权威定义</button><button>样例</button><button>规则</button></div>
+          <div class="kv"><span class="k">metric</span><span class="v">有效订单GMV v2</span></div><div class="kv"><span class="k">expression</span><span class="v">SUM(order_amount)</span></div>
+          <div class="kv"><span class="k">default_filter</span><span class="v">status IN(1,2,3) AND is_deleted=0</span></div><div class="kv"><span class="k">dimensions</span><span class="v">region/channel/dt</span></div>
+          <div class="kv"><span class="k">time_grain</span><span class="v">paid_at · day</span></div><div class="kv"><span class="k">owner</span><span class="v">交易数据组</span></div>
+          <div class="kv"><span class="k">样例 #12</span><span class="v">src=thumbs_up · 用37次</span></div><div class="kv"><span class="k">存储</span><span class="v">结构化库=权威 · 向量=索引</span></div></div></div>
       </div>
     </section>
 
@@ -377,38 +463,51 @@
     <section class="view fill" id="analysis">
       <div class="ws" id="ws-analysis">
         <div class="rail"><div class="rh">分析轨迹 · SESSION</div><div class="tl">
-          <div class="tl-item done"><span class="nd"></span><div class="t">理解分析需求</div><div class="d">本月各品类销售</div></div>
-          <div class="tl-item done"><span class="nd"></span><div class="t">圈定数据集</div><div class="d">电商销售域 · 4 表</div><div class="tools"><span>dataset</span></div></div>
-          <div class="tl-item done"><span class="nd"></span><div class="t">多步取数</div><div class="d">GMV/订单/客单价</div><div class="tools"><span>nl2sql ×3</span></div></div>
-          <div class="tl-item done"><span class="nd"></span><div class="t">绘制图表</div><div class="d">柱状 + 趋势</div><div class="tools"><span>chart</span></div></div>
-          <div class="tl-item run"><span class="nd"></span><div class="t">提炼结论 & 报告</div><div class="d">生成中…</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">理解分析需求</div><div class="d">上月各渠道销售</div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">圈定数据集</div><div class="d">白名单 42 表→4 表 + join 路径</div><div class="tools"><span>whitelist</span><span>join_graph</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">多步取数</div><div class="d">同一指标 v2 ×3（口径一致）</div><div class="tools"><span>nl2sql ×3</span></div></div>
+          <div class="tl-item done"><span class="nd"></span><div class="t">绘制图表</div><div class="d">渠道 GMV 柱状</div><div class="tools"><span>chart</span></div></div>
+          <div class="tl-item run"><span class="nd"></span><div class="t">提炼结论 & 报告</div><div class="d">引用指标 v2…</div></div>
         </div></div>
         <div class="center">
-          <div class="ws-head"><div class="st"><span class="pchip a" data-ws="ws-analysis">📊 智能分析 ▾</span><span class="wname">· 对话工作台</span></div>
-            <div class="ctx"><span class="tagchip">📁 数据集：电商销售域(4表)</span><span class="tagchip sem">🧬 v3 ✓</span><span class="tagchip" data-viewer="ws-analysis">⋯</span></div></div>
-          <div class="anno" style="right:16px;top:52px"><span class="num">4</span><span class="txt">分析场景先"圈定数据集"（=表范围+绑定语义模型，对齐 ChatBI 前置），头部常驻可切换</span></div>
+          <div class="ws-head"><div class="st"><span class="pchip a" data-ws="ws-analysis">📊 智能分析 v1.0.0 ▾</span><span class="wname">· 对话工作台</span></div>
+            <div class="ctx"><span class="tagchip">⚙️ 实例 ws-prod · 4CU · 运行中</span><span class="tagchip">📁 数据集：订单分析域(4表)</span><span class="tagchip sem">🧬 语义层 · 口径 v2 ✓</span><span class="tagchip" data-viewer="ws-analysis">⋯</span></div></div>
+          <div class="anno" style="right:16px;top:52px"><span class="num">4</span><span class="txt">分析场景语义层用法：数据集圈定=表白名单+join 路径（不从全量选表）；多步取数共用同一指标定义 v2 保跨图口径一致；报告引用版本、👍 沉淀样例</span></div>
           <div class="conv">
-            <div class="msg user"><span class="bubble-u">分析本月各品类销售情况，给出结论</span></div>
+            <div class="msg user"><span class="bubble-u">分析上月各渠道销售情况，给出结论</span></div>
             <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
-              <div class="art"><div class="ah"><span class="ty chart">图表</span>各品类 GMV 对比（本月）<span class="open" data-viewer="ws-analysis">放大 ›</span></div><div class="ab">
-                <div class="bars"><div class="b"><span class="vl">1523万</span><div class="bar" style="height:88%"></div><span class="lb">服饰</span></div>
-                <div class="b"><span class="vl">1248万</span><div class="bar" style="height:72%"></div><span class="lb">美妆</span></div>
-                <div class="b"><span class="vl">986万</span><div class="bar" style="height:57%"></div><span class="lb">3C</span></div>
-                <div class="b"><span class="vl">612万</span><div class="bar" style="height:36%"></div><span class="lb">食品</span></div>
-                <div class="b"><span class="vl">438万</span><div class="bar" style="height:26%"></div><span class="lb">家居</span></div></div></div></div>
-              <div class="art"><div class="ah"><span class="ty report">分析报告</span>本月品类销售复盘<span class="open" data-viewer="ws-analysis">HTML/PDF 分享 ›</span></div><div class="ab">
-                <div class="concl" style="margin:0"><b>核心结论：</b>① 服饰 GMV 居首(1523万)但客单最低，走高频低客单；② 美妆客单最高(386元)环比+12%，建议加投；③ 食品订单量最大但 GMV 占比仅11%，关注履约成本。</div></div></div>
+              <div class="ai-txt">已按语义层<b>表白名单+join 路径</b>圈定数据集（4 表），3 步取数均引用指标 <b>有效订单GMV（v2）</b>口径：</div>
+              <div class="plancard" style="max-width:64%"><div class="ph2">📋 计划确认 · Agent 已拆解为 5 步，确认后执行</div><div class="pb">
+                <div class="step"><span class="no">1</span>圈定数据集：白名单 42 表 → 4 表 + join 路径</div>
+                <div class="step"><span class="no">2</span>取数：各渠道上月 GMV（指标 有效订单GMV v2）</div>
+                <div class="step"><span class="no">3</span>取数：各渠道订单数与客单（同口径）</div>
+                <div class="step"><span class="no">4</span>取数：环比（复用 v2 口径）</div>
+                <div class="step"><span class="no">5</span>图表 + 结论提炼 → 复盘报告（引用指标版本）</div>
+                <div class="acts"><button class="dbtn pri">确认执行</button><button class="dbtn">调整计划</button></div>
+              </div></div>
+              <div class="anno" style="right:16px;top:262px"><span class="num">12</span><span class="txt">计划确认=八类确认机制之一（对齐新版 Data Agent）：复杂任务拆解后先展示执行计划，确认方向再执行</span></div>
+              <div class="art"><div class="ah"><span class="ty chart">图表</span>各渠道有效 GMV 对比（上月）<span class="open" data-viewer="ws-analysis">放大 ›</span></div><div class="ab">
+                <div class="bars"><div class="b"><span class="vl">824万</span><div class="bar" style="height:88%"></div><span class="lb">支付宝</span></div>
+                <div class="b"><span class="vl">641万</span><div class="bar" style="height:68%"></div><span class="lb">微信</span></div>
+                <div class="b"><span class="vl">213万</span><div class="bar" style="height:24%"></div><span class="lb">银联</span></div>
+                <div class="b"><span class="vl">62万</span><div class="bar" style="height:8%"></div><span class="lb">余额*</span></div></div>
+                <div style="font-size:10.5px;color:var(--txt3);margin-top:6px">* 余额为内部余额，是否计入 GMV 待业务确认（见语义标注 pay_channel 草稿）</div></div></div>
+              <div class="art"><div class="ah"><span class="ty report">分析报告</span>上月渠道销售复盘<span class="open" data-viewer="ws-analysis">HTML/PDF 分享 ›</span></div><div class="ab">
+                <div class="concl" style="margin:0"><b>核心结论：</b>① 支付宝+微信占有效 GMV 81.6%，为主力渠道；② 余额渠道 62 万是否计入待业务确认，口径确认前报告以"不含余额"为主口径；③ 建议将 channel 维度纳入周报固定拆解。</div>
+                <div class="cite"><span class="cl">报告引用：</span><span class="cc">指标 有效订单GMV <span class="v">v2</span></span><span class="cc">规则 is_deleted=0 · status IN(1,2,3)</span><span class="cc">join orders—payments <span class="v">order_id</span></span>
+                <span class="fb"><button>👍 有帮助（沉淀样例）</button><button>✏️ 纠错</button></span></div></div></div>
             </div></div></div>
           </div>
           <div class="ws-comp"><div class="box"><textarea placeholder="继续追问，如「加环比趋势图」「导出 PDF」…"></textarea>
-            <div class="cbar"><span class="mini mode">🛡️ 自动编辑 ▾</span><span class="mini">📁 电商销售域</span><span class="mini">导出 ▾</span><button class="sendmini">↑</button></div></div></div>
+            <div class="cbar"><span class="mini mode">🛡️ 自动编辑 ▾</span><span class="mini">/ 技能</span><span class="mini">📁 订单分析域</span><span class="mini">导出 ▾</span><button class="sendmini">↑</button></div></div></div>
           <div class="statusline"><span class="live"></span>分析 Agent 运行中 · 3 取数 · 2 图表 · Token 6.8k/2.4k · 14.2s</div>
         </div>
-        <div class="viewer" id="viewer-analysis"><div class="vh">📁 数据集 · 电商销售域<span class="x" data-close="ws-analysis">✕</span></div>
-          <div class="vb"><div class="vtabs2"><button class="on">表</button><button>图表</button><button>报告</button></div>
-          <div class="kv"><span class="k">ads_ctlive_item_stats</span><span class="v">商品成交</span></div><div class="kv"><span class="k">ads_ctlive_anchor_stats</span><span class="v">主播成交</span></div>
-          <div class="kv"><span class="k">dws_ctlive_trd_item_1d</span><span class="v">明细汇总</span></div><div class="kv"><span class="k">dim_category</span><span class="v">品类维表</span></div>
-          <div style="margin-top:12px"><span class="tagchip sem">🧬 绑定：电商直播域 v3</span></div></div></div>
+        <div class="viewer" id="viewer-analysis"><div class="vh">📁 数据集 · 订单分析域<span class="x" data-close="ws-analysis">✕</span></div>
+          <div class="vb"><div class="vtabs2"><button class="on">表(白名单)</button><button>join 路径</button><button>报告</button></div>
+          <div class="kv"><span class="k">orders</span><span class="v">订单主表 · 已标注</span></div><div class="kv"><span class="k">order_items</span><span class="v">订单明细 · 已标注</span></div>
+          <div class="kv"><span class="k">payments</span><span class="v">支付流水 · 待审核</span></div><div class="kv"><span class="k">users</span><span class="v">用户 · 已标注</span></div>
+          <div class="kv"><span class="k">join</span><span class="v">orders—payments(order_id)</span></div><div class="kv"><span class="k">join</span><span class="v">users—orders(user_id)</span></div>
+          <div style="margin-top:12px"><span class="tagchip sem">🧬 语义层 mysql_prod · 白名单 42 表</span></div></div></div>
       </div>
     </section>
 
@@ -423,8 +522,8 @@
           <div class="tl-item run"><span class="nd"></span><div class="t">生成诊断报告</div><div class="d">输出中…</div></div>
         </div></div>
         <div class="center">
-          <div class="ws-head"><div class="st"><span class="pchip o" data-ws="ws-ops">🩺 智能运维 ▾</span><span class="wname">· 对话工作台</span></div>
-            <div class="ctx"><span class="tagchip">🗄️ order_db (MySQL)</span><span class="tagchip">🕑 昨晚22:00-24:00</span><span class="tagchip" data-viewer="ws-ops">⋯</span></div></div>
+          <div class="ws-head"><div class="st"><span class="pchip o" data-ws="ws-ops">🩺 智能运维 v1.0.0 ▾</span><span class="wname">· 对话工作台</span></div>
+            <div class="ctx"><span class="tagchip">⚙️ 实例 ws-prod · 4CU · 运行中</span><span class="tagchip">🗄️ order_db (MySQL)</span><span class="tagchip">🕑 昨晚22:00-24:00</span><span class="tagchip" data-viewer="ws-ops">⋯</span></div></div>
           <div class="conv">
             <div class="msg user"><span class="bubble-u">订单库昨晚 22:00-24:00 有哪些慢查询？帮我定位根因</span></div>
             <div class="msg"><div class="ai-row"><div class="ai-av">D</div><div class="ai-body">
@@ -434,6 +533,10 @@
                 <tr><td><code>SELECT * FROM orders WHERE status=? ...</code></td><td class="num-cell">1,284</td><td class="num-cell" style="color:var(--err)">4.2s</td><td>status 隐式类型转换致索引失效</td></tr>
                 <tr><td><code>SELECT ... FROM order_items JOIN ...</code></td><td class="num-cell">326</td><td class="num-cell" style="color:var(--warn)">1.8s</td><td>JOIN 顺序不合理</td></tr></tbody></table>
                 <div class="concl"><b>修复建议：</b>① 建联合索引 orders(status,create_time)；② 统一 status 传参类型；③ ANALYZE TABLE 刷新统计。预估 P95 4.2s→&lt;200ms。</div></div></div>
+              <div class="progwrap" style="max-width:64%"><div class="pt2">⏳ 长任务：创建索引 idx_status_ctime（1.2亿行 · online DDL）<span class="pc">62% · 预计剩余 45s</span></div>
+                <div class="progbar"><i></i></div>
+                <div style="display:flex;gap:8px"><button class="dbtn">继续后台</button><button class="dbtn dan">中断</button><span style="font-size:10.5px;color:var(--txt3);align-self:center">长任务关键节点告知进度，可选择继续或中断</span></div></div>
+              <div class="anno" style="right:16px;top:560px"><span class="num">13</span><span class="txt">长任务中断确认=八类确认之一：预计耗时较长的任务在关键节点告知进度，用户可继续或中断</span></div>
             </div></div></div>
           </div>
           <div class="dock" id="dock-ops"><div class="dh"><span class="ic">🛡️</span><span class="tt">破坏性操作确认 · 生产表结构变更</span><span class="risk">高风险</span></div>
@@ -443,7 +546,7 @@
             <div class="acts"><button class="dbtn pri" data-resolve="ops">批准执行</button><button class="dbtn dan" data-reject="ops">拒绝</button><button class="dbtn">先看执行计划</button>
             <span class="scope">记忆：<select><option>仅本次</option><option>本会话</option><option>该表始终询问</option></select></span></div></div></div>
           <div class="ws-comp"><div class="box"><textarea placeholder="继续追问，或让 Agent 执行修复…"></textarea>
-            <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">@ order_db</span><button class="sendmini">↑</button></div></div></div>
+            <div class="cbar"><span class="mini mode">🛡️ 请求批准 ▾</span><span class="mini">/ 技能</span><span class="mini">@ order_db</span><button class="sendmini">↑</button></div></div></div>
           <div class="statusline"><span class="live"></span>运维 Agent 运行中 · 3 工具 · Token 4.2k/1.1k · 8.3s</div>
         </div>
         <div class="viewer" id="viewer-ops"><div class="vh">📋 诊断详情<span class="x" data-close="ws-ops">✕</span></div>
@@ -457,24 +560,126 @@
     <!-- ================= SEMANTIC ================= -->
     <section class="view" id="semantic">
       <div class="mod">
-        <h2>🧬 语义层 Semantic Layer</h2>
-        <div class="sub">企业级语义模型 = 问数准确率的地基。结构化库为权威源，发布时写向量（chunk 带指针 metadata）。数据模型对齐阿里四模块：ai_context / metrics / metric_formulas / datasets。</div>
-        <div class="mgrid">
-          <div class="mcard"><div class="mh">🧬 电商直播域<span class="st pub">已发布 v3</span></div>
-            <div class="mm"><span><b>4</b> 数据集</span><span><b>9</b> 指标</span><span><b>6</b> 派生公式</span><span><b>12</b> few_shots</span></div>
-            <div class="tags"><span>GMV</span><span>客单价</span><span>购买人数</span><span>ads_ctlive_*</span></div>
-            <div class="yamlprev"><span class="key">metrics</span>:
-  - <span class="key">name</span>: GMV
-    <span class="key">synonyms</span>: [<span class="s">成交额,销售额</span>]
-    <span class="key">expression</span>: SUM(gmv)</div></div>
-          <div class="mcard"><div class="mh">🧬 订单交易域<span class="st pub">已发布 v1</span></div>
-            <div class="mm"><span><b>6</b> 数据集</span><span><b>14</b> 指标</span><span><b>8</b> 派生公式</span></div>
-            <div class="tags"><span>订单数</span><span>退款率</span><span>客单价</span><span>orders</span></div></div>
-          <div class="mcard"><div class="mh">🧬 用户增长域<span class="st draft">草稿 v2</span></div>
-            <div class="mm"><span><b>3</b> 数据集</span><span><b>7</b> 指标</span><span><b>2</b> 派生公式</span></div>
-            <div class="tags"><span>新增用户</span><span>留存率</span><span>DAU</span></div></div>
+        <div id="semList">
+          <h2>🧬 语义中心 <span style="font-size:12px;color:var(--txt3);font-weight:600">语义空间列表 · 每个数据源连接自动创建一个</span></h2>
+          <div class="sub">Onboarding 模型：<b>显示自动、治理显式</b> —— Datasources 连接后 L1 元数据自动同步并显示（零配置、只读）；"激活治理"一键确认（采样/草稿生成/embedding）后点亮 L2-L6 与检索消费。语义中心不独立管理连接。</div>
+          <div class="aprow"><span class="ric" style="background:#e8f4ff">🗄️</span>
+            <div><div class="tt">semantic::mysql_prod</div><div class="dd">来源 mysql_prod · 已连接 · 同步 10-20 10:32 · bge-large-zh</div></div>
+            <div style="margin-left:18px;font-size:11.5px;color:var(--txt3)">128 表 · <b style="color:var(--warn)">12 待审</b> · 24 指标 · 86 样例</div>
+            <div class="rt"><span class="risk md" style="background:#eafbea;color:#389e0d;border-color:#b7eb8f">已激活</span></div>
+            <button class="dbtn pri sem-enter" data-name="mysql_prod">进入</button><button class="dbtn">同步</button></div>
+          <div class="aprow"><span class="ric" style="background:#eafbea">🗄️</span>
+            <div><div class="tt">semantic::sqlite_dbgpt</div><div class="dd">来源 sqlite_dbgpt · 已连接 · bge-large-zh</div></div>
+            <div style="margin-left:18px;font-size:11.5px;color:var(--txt3)">58 表 · 0 待审 · 6 指标 · 12 样例</div>
+            <div class="rt"><span class="risk md" style="background:#eafbea;color:#389e0d;border-color:#b7eb8f">已激活</span></div>
+            <button class="dbtn pri sem-enter" data-name="sqlite_dbgpt">进入</button><button class="dbtn">同步</button></div>
+          <div class="aprow" id="rowCrm"><span class="ric" style="background:#f2f5f9">🗄️</span>
+            <div><div class="tt">semantic::pg_crm</div><div class="dd">来源 pg_crm · 已连接 · L1 已同步（只读浏览）</div></div>
+            <div style="margin-left:18px;font-size:11.5px;color:var(--txt3)">36 表 · 未激活</div>
+            <div class="rt"><span class="risk md">未激活</span></div>
+            <button class="dbtn pri" id="actBtn">激活治理</button><button class="dbtn sem-enter" data-name="pg_crm">进入(仅浏览)</button></div>
+          <div class="plancard" id="activateBox" style="display:none;max-width:560px;margin-top:12px">
+            <div class="ph2">⚙️ 激活治理 · semantic::pg_crm</div>
+            <div class="pb">
+              <div class="step"><span class="no">1</span>采样范围：<select class="dbtn" style="padding:3px 8px"><option>高频 top 42 表（推荐）</option><option>全表（分批）</option></select></div>
+              <div class="step"><span class="no">2</span>立即跑 LLM 草稿生成（标注/指标挖掘，消耗 token）：<select class="dbtn" style="padding:3px 8px"><option>跑</option><option>暂不跑</option></select></div>
+              <div class="step"><span class="no">3</span>embedding 模型（与空间绑定，换则全量重建）：<select class="dbtn" style="padding:3px 8px"><option>bge-large-zh</option><option>text-embedding-v3</option></select></div>
+              <div class="acts"><button class="dbtn pri" id="actConfirm">确认激活</button><button class="dbtn" id="actCancel">取消</button></div>
+            </div></div>
+          <div class="anno" style="left:252px;top:640px"><span class="num">16</span><span class="txt">Onboarding：显示自动、治理显式。连接后空间自动创建、L1 显示（只读）；激活=一键确认采样/草稿生成/embedding，成本项 opt-in</span></div>
+          <div class="anno" style="right:26px;top:640px"><span class="num">17</span><span class="txt">空间=顶层对象（每连接一个）；空间内六 tab+设置（embedding/采样/重建/托管空间入口）；状态：未激活/已激活/syncing/漂移待审</span></div>
         </div>
-        <div class="anno" style="left:252px;top:148px"><span class="num">5</span><span class="txt">语义层为新增一级模块：模型卡显示数据集/指标/公式/few_shots 规模与发布状态；详情进图谱↔YAML 双屏编辑，发布写向量</span></div>
+        <div id="semSpace" style="display:none">
+        <span class="publink" id="semBack" style="margin-left:0">‹ 空间列表</span>
+        <h2 style="margin-top:12px">🧬 语义层 · 知识中心 <span class="tagchip" style="margin-left:8px" id="semSpaceName">🗄️ mysql_prod · 已连接 · 同步 10-20 10:32</span></h2>
+        <div class="sub">Agent 的语义记忆：元数据自动同步 → LLM 草稿+人审 → 指标/血缘/样例/规则 → 混合检索供 NL2SQL。结构化库=权威源，KB 托管空间=派生索引（只读）；点赞/纠错自进化。</div>
+        <div class="semstats" id="semstats">
+          <button class="sstat on" data-t="cat">① 元数据目录<b>128 表</b></button>
+          <button class="sstat" data-t="ann">② 语义标注<b class="warnb">12 待审</b></button>
+          <button class="sstat" data-t="met">③ 指标口径<b>24</b></button>
+          <button class="sstat" data-t="ex">④ 样例库<b>86</b></button>
+          <button class="sstat" data-t="lin">⑤ 关系/血缘<b>join 图</b></button>
+          <button class="sstat" data-t="rule">⑥ 规则护栏<b>6 项</b></button>
+        </div>
+
+        <div class="semtab on" data-t="cat">
+          <table class="ruletbl"><thead><tr><th>表</th><th>字段数</th><th>comment 覆盖</th><th>语义状态</th><th>说明</th></tr></thead><tbody>
+            <tr><td><code>orders</code></td><td>22</td><td>96%</td><td><span class="act-pill auto">已标注</span></td><td>订单主表</td></tr>
+            <tr><td><code>order_items</code></td><td>14</td><td>91%</td><td><span class="act-pill auto">已标注</span></td><td>订单明细</td></tr>
+            <tr><td><code>payments</code></td><td>16</td><td>74%</td><td><span class="act-pill confirm">待审核</span></td><td>支付流水</td></tr>
+            <tr><td><code>refund_log</code></td><td>9</td><td>38%</td><td><span class="act-pill deny">未标注</span></td><td>—</td></tr>
+          </tbody></table>
+          <div class="pipe" style="margin-top:12px">⚠️ 大库采样：当前库 128 表 / 1,842 字段，进入 NL2SQL 上下文的为高频 <b>42 表</b>（表白名单）；可在「⑥ 规则护栏」调整采样范围。</div>
+        </div>
+
+        <div class="semtab" data-t="ann">
+          <div class="sdraft"><div class="dh2">orders.status<span class="conf">置信度 0.92</span><span class="stt">待审核 · AI 草稿</span></div>
+            <div class="body">订单状态：0=待支付,1=已支付,2=已发货,3=已完成,9=已取消。统计"有效订单"时取 1/2/3。</div>
+            <div class="src">来源：LLM 基于字段名+采样值推断 · 关联指标：有效订单GMV</div>
+            <div class="acts"><button class="dbtn pri sem-pub">确认发布</button><button class="dbtn">修改</button><button class="dbtn dan sem-rej">驳回</button></div></div>
+          <div class="sdraft"><div class="dh2">orders.is_deleted<span class="conf">置信度 0.88</span><span class="stt">待审核 · AI 草稿</span></div>
+            <div class="body">软删除标记：0=正常,1=已删除。所有统计口径默认需过滤 is_deleted=0。</div>
+            <div class="src">来源：LLM 推断 · 建议同时写入「⑥ 规则护栏」默认过滤</div>
+            <div class="acts"><button class="dbtn pri sem-pub">确认发布</button><button class="dbtn">修改</button><button class="dbtn dan sem-rej">驳回</button></div></div>
+          <div class="sdraft"><div class="dh2">payments.pay_channel<span class="conf">置信度 0.71</span><span class="stt">待审核 · 低置信</span></div>
+            <div class="body">支付渠道：alipay / wechat / unionpay / balance。balance 为内部余额，是否计入 GMV 待业务确认。</div>
+            <div class="src">来源：LLM 推断 · 置信度偏低，建议人工核对枚举</div>
+            <div class="acts"><button class="dbtn pri sem-pub">确认发布</button><button class="dbtn">修改</button><button class="dbtn dan sem-rej">驳回</button></div></div>
+          <div class="pipe">设计要点：草稿默认<b>不进入检索</b>；只有"确认发布"后才写入正式知识库并建立向量索引（status=published, version+1），保证业务语义可信。</div>
+        </div>
+
+        <div class="semtab" data-t="met">
+          <div class="mgrid" style="grid-template-columns:1fr 1fr">
+            <div class="mcard"><div class="mh">📐 有效订单GMV<span class="st pub">已发布 v2</span></div>
+              <div class="yamlprev" style="max-height:none">expression: SUM(order_amount)
+table: orders
+dimensions: region / channel / dt
+default_filter: status IN (1,2,3) AND is_deleted=0
+time_grain: paid_at · day · 单位 元
+owner: 交易数据组</div></div>
+            <div class="mcard"><div class="mh">📐 活跃用户数<span class="st pub">已发布 v1</span></div>
+              <div class="yamlprev" style="max-height:none">expression: COUNT(DISTINCT user_id)
+table: users JOIN orders
+default_filter: is_active=1 AND 近30天有下单
+owner: 增长组</div></div>
+            <div class="mcard"><div class="mh">📐 退款率<span class="st draft">草稿</span></div>
+              <div class="body" style="font-size:12px;color:var(--txt2)">退款单数 / 有效订单数 · 表 refund_log / orders<br>状态：口径待业务确认（balance 是否计入）</div></div>
+          </div>
+        </div>
+
+        <div class="semtab" data-t="ex">
+          <table class="ruletbl"><thead><tr><th>问题</th><th>SQL（摘要）</th><th>来源</th><th>使用次数</th></tr></thead><tbody>
+            <tr><td>上个月华东区的有效GMV</td><td><code>SUM(order_amount) … region='华东' AND status IN(1,2,3) AND is_deleted=0</code></td><td><span class="act-pill auto">点赞沉淀</span></td><td>37</td></tr>
+            <tr><td>各渠道活跃用户数 TOP5</td><td><code>SELECT channel, COUNT(DISTINCT user_id) … GROUP BY 1 ORDER BY 2 DESC LIMIT 5</code></td><td><span class="act-pill confirm">人工导入</span></td><td>21</td></tr>
+          </tbody></table>
+          <div class="pipe" style="margin-top:12px">反馈闭环：对话 <b>👍 点赞 → 自动沉淀进样例库</b>；✏️ 纠错 → 进入「② 语义标注」待审队列。样例以 chunk 形式入托管空间（type=example, src=thumbs_up）。</div>
+        </div>
+
+        <div class="semtab" data-t="lin">
+          <div class="pipe" style="margin:0 0 12px">边 = 可用 join 路径（带 join key），供 schema linking 与可解释性；自动发现 + 人工校准。</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px">
+            <span class="tagchip">users</span><span style="color:var(--txt3)">—user_id—</span><span class="tagchip" style="background:#eaf2ff;border-color:#cfe3ff;color:var(--primary)">orders（事实表）</span><span style="color:var(--txt3)">—order_id—</span><span class="tagchip">order_items</span>
+            <span style="color:var(--txt3)">·</span><span class="tagchip" style="background:#eaf2ff;border-color:#cfe3ff;color:var(--primary)">orders</span><span style="color:var(--txt3)">—order_id—</span><span class="tagchip">payments</span>
+            <span style="color:var(--txt3)">·</span><span class="tagchip">regions</span><span style="color:var(--txt3)">—region_id—</span><span class="tagchip" style="background:#eaf2ff;border-color:#cfe3ff;color:var(--primary)">orders</span>
+            <span style="color:var(--txt3)">·</span><span class="tagchip">products</span><span style="color:var(--txt3)">—product_id—</span><span class="tagchip">order_items</span>
+          </div>
+        </div>
+
+        <div class="semtab" data-t="rule">
+          <div class="rulelist">
+            <div class="ri"><span class="nm">🔒 只读模式</span><span class="ds">Agent 仅允许 SELECT，禁止 DDL/DML</span><span class="tg"></span></div>
+            <div class="ri"><span class="nm">🧍 行级权限（租户隔离）</span><span class="ds">自动注入 tenant_id 过滤</span><span class="tg"></span></div>
+            <div class="ri"><span class="nm">🧹 默认软删除过滤</span><span class="ds">统计自动附加 is_deleted=0</span><span class="tg"></span></div>
+            <div class="ri"><span class="nm">📋 表白名单</span><span class="ds">仅允许查询已标注的高频表</span><span class="val">42 表</span></div>
+            <div class="ri"><span class="nm">⏱ 查询超时 / 行数上限</span><span class="ds">超限拦截</span><span class="val">30s / 10,000 行</span></div>
+            <div class="ri"><span class="nm">🧭 走只读从库</span><span class="ds">分析查询路由到 replica，保护主库</span><span class="tg"></span></div>
+          </div>
+        </div>
+
+        <div class="pipe"><b>存储分工</b>：指标/规则/血缘/枚举/版本/owner → 结构化库（权威源）；描述/同义词/样例检索文本 → KB 托管空间（派生索引，chunk=一条语义项，带指针 metadata{id,type,target,version}，KB 内只读）。<b>发布管道</b>：编辑草稿(仅结构化库) → 人审发布(version+1) → 写托管空间(按 id 删旧 chunk→插新→embed)。<b>混合检索</b>：向量 top-k(按 type 过滤) + 结构化精确匹配(同义词/指标名) → 按 id 加载权威定义 → 组装 prompt（AWEL 算子 SemanticRetriever）。</div>
+        <div class="anno" style="left:252px;top:610px"><span class="num">5</span><span class="txt">语义层=一级治理模块六 tab：元数据(只读同步)/语义标注(LLM草稿→人审→发布)/指标口径(版本化)/样例库(点赞沉淀)/血缘 join 图/规则护栏；草稿不进入检索</span></div>
+        <div class="anno" style="right:26px;top:610px"><span class="num">11</span><span class="txt">存储分工+发布管道+混合检索：向量只是索引不是真相，命中后回结构化库加载权威定义；托管空间在 KB 内只读防绕过治理</span></div>
+        </div>
       </div>
     </section>
 
@@ -488,7 +693,7 @@
           <div class="rt"><span class="risk hi">高风险 · 破坏性</span><div class="cd">超时自动拒绝 04:32</div></div>
           <button class="dbtn pri">批准</button><button class="dbtn dan">拒绝</button></div>
         <div class="aprow"><span class="ric" style="background:#fff7e6">🧮</span>
-          <div><div class="tt">全表扫描 dwd_ctlive_trd_detail（~480GB / ¥62.4）</div><div class="dd">智能问数 · 会话"近30天各品类客单价"</div></div>
+          <div><div class="tt">全表扫描 dwd_ctlive_trd_detail（~480GB / ¥62.4）</div><div class="dd">智能取数 · 会话"近30天各品类客单价"</div></div>
           <div class="rt"><span class="risk md">中风险 · 高代价</span><div class="cd">超时自动拒绝 09:10</div></div>
           <button class="dbtn pri">批准</button><button class="dbtn dan">拒绝</button></div>
         <h2 style="font-size:15px;margin:22px 0 10px">策略规则（UI 可定义 + 试运行）</h2>
@@ -497,6 +702,8 @@
           <tr><td>sql_query · DROP/TRUNCATE/ALTER</td><td>参数模式</td><td><span class="act-pill deny">deny→confirm</span></td><td>生产环境强制确认</td></tr>
           <tr><td>sql_query · 预估扫描&gt;100GB</td><td>上下文(成本)</td><td><span class="act-pill confirm">confirm</span></td><td>高代价操作提示预估</td></tr>
           <tr><td>select 只读查询</td><td>参数模式</td><td><span class="act-pill auto">auto</span></td><td>只读放行</td></tr>
+          <tr><td>跨边界操作（跨项目/跨环境/跨租户）</td><td>上下文(边界)</td><td><span class="act-pill confirm">confirm</span></td><td>防止环境或权限边界被无意突破</td></tr>
+          <tr><td>权限变更（授权/共享/改 ACL）</td><td>工具属性声明</td><td><span class="act-pill deny">deny→confirm</span></td><td>权限操作强制确认并留审计</td></tr>
         </tbody></table>
         <div class="anno" style="right:26px;top:120px"><span class="num">6</span><span class="txt">审批中心=待办队列+策略规则表+审计；策略产品化进 UI（多源配置+试运行框），toml 仅作 bootstrap seed</span></div>
       </div>
@@ -505,9 +712,10 @@
     <!-- ================= PLUGINS ================= -->
     <section class="view" id="plugins">
       <div class="mod">
-        <h2>🧩 场景插件 <span style="font-size:12px;color:var(--txt3);font-weight:600">专家套件形态 · 场景 = 可安装的预设束</span></h2>
-        <div class="sub">六维预设束打包为可安装/可版本化单元；首页 Tab、推荐问题与路由均由已启用插件渲染；对话 pin 插件@版本。approval_overrides 仅可加严，enforcement 在核心 gate。</div>
-        <div class="plbanner">
+        <h2>🧩 专家套件 <span style="font-size:12px;color:var(--txt3);font-weight:600">左栏"扩展"分组入口 · 场景 = 可安装的预设束（suite）</span></h2>
+        <div class="sub">六维预设束打包为可安装/可版本化单元；首页 Tab、推荐问题与路由均由已启用插件渲染；对话 pin 插件@版本。approval_overrides 仅可加严，enforcement 在核心 gate。启用按工作空间（实例）级生效；技能支持意图自动路由与 <code>/</code> 显式调用（对齐新版 Data Agent 官方 Skills 机制）。</div>
+        <div class="pltop" id="pltop"><input class="plsearch" placeholder="搜索套件…"><button class="addbtn">＋ 添加</button><span class="publink">查看我发布的套件</span></div>
+        <div class="plbanner" id="plbanner">
           <div>
             <div class="bt">金融行业套件</div>
             <div class="bd">风控、研报与合规流程一键接入对话：用套件固化常用模板、语义模型与数据源。</div>
@@ -516,9 +724,12 @@
           <div class="chips"><span>📈 财报分析专家</span><span>🔗 供应链对账专家</span><span>🏬 门店经营日报专家</span><span>🧾 年报解析技能包</span></div>
         </div>
         <div class="seg" id="plseg">
-          <button class="on" data-g="off">官方内置 3</button><button data-g="ent">企业专属 3</button><button data-g="mkt">市场</button>
+          <button class="on" data-g="off">官方内置 3</button><button data-g="ent">企业专属 3</button><button data-g="inst">已安装 3</button><button data-g="mkt">市场</button>
         </div>
         <div class="mgrid" id="plgrid"></div>
+        <div class="pldetail" id="pldetail"></div>
+        <div class="anno" style="left:880px;top:92px"><span class="num">14</span><span class="txt">列表顶栏对齐专家套件页：搜索 + 添加（zip 上传）+ 查看我发布的；"已安装"统计跨组已启用套件</span></div>
+        <div class="anno" style="left:252px;top:620px"><span class="num">15</span><span class="txt">点卡片进套件详情：slug+版本+徽标+作者+安装、README、快捷命令（/command，会话内可调用）、manifest 关键值（execution/tools/overrides）</span></div>
         <div class="anno" style="right:26px;top:346px"><span class="num">9</span><span class="txt">卡片形态对齐专家套件：图标/名称/描述/N 技能/版本/安装·启用；官方内置=三场景重构而来，企业专属=租户自发布（zip 上传）</span></div>
         <div class="anno" style="right:26px;top:110px"><span class="num">10</span><span class="txt">启用后首页出现对应场景 Tab 与推荐问题；对话 pin plugin@version，升级不破坏历史；manifest 的 approval_overrides 只读且标注"仅可加严"</span></div>
       </div>
@@ -528,9 +739,11 @@
 
 <script>
 var QS={
- q:[['查询上月各区域销售额','按 region 汇总上月 sales，含环比','🌍','#e8f4ff'],
-    ['统计 Top10 客户 GMV 及环比','客户维度 GMV 排序 + 环比变化','👥','#e8f4ff'],
-    ['近30天各品类客单价','语义模型口径：GMV/订单数','🧮','#e8f4ff']],
+ q:[['上个月华东区的有效GMV','指标 met_007 v2 口径 + 默认过滤自动注入 + 引用溯源','🧮','#e8f4ff'],
+    ['查询上月各区域销售额','按 region 汇总 valid_gmv，含环比','🌍','#e8f4ff'],
+    ['统计 Top10 客户 GMV 及环比','客户维度 GMV 排序 + MoM','👥','#e8f4ff'],
+    ['近30天各品类客单价','客单价 = valid_gmv / order_count（派生指标）','📦','#e8f4ff'],
+    ['导出上月华东区订单明细','明细导出走脱敏 + 行数上限审批','📤','#e8f4ff']],
  a:[['生成 Walmart 销售分析报告','分析销售 CSV，产出可视化 web 报告','📊','#eafbea'],
     ['分析本月销售下滑归因','多维归因 + 结论提炼','🔎','#eafbea'],
     ['对比华东华南订单占比趋势','近半年分区域趋势图','📈','#eafbea']],
@@ -541,19 +754,23 @@ var QS={
     ['创建定时经营报告 Agent','每日 9 点自动生成经营报告','⏰','#f3ecff'],
     ['封装一个取数 API 技能','把常用取数封装为数据服务 API','🔌','#f3ecff']]
 };
-var ROUTE={q:'智能问数',a:'智能分析',o:'智能运维',k:'技能与Agent'};
+var ROUTE={q:'智能取数',a:'智能分析',o:'智能运维',k:'技能与Agent'};
 function renderQ(s){
   document.getElementById('qgrid').innerHTML=QS[s].map(function(x){
     return '<div class="qcard" data-q="'+x[0]+'" data-s="'+s+'"><span class="qi" style="background:'+x[3]+'">'+x[2]+'</span><span><span class="qt">'+x[0]+'</span><br><span class="qd">'+x[1]+'</span></span><span class="go">›</span></div>';
   }).join('');
 }
 renderQ('q');
+var curS='q';
+var SUITE_HINT={q:'自然语言 → SQL 精准取数 · 强制绑定语义层 mysql_prod · 只读从库执行 · 引用溯源',a:'圈数据集 → 多步取数 → 图表 → 结论 → 报告',o:'慢查询诊断 / 健康巡检 / 画像治理',k:'封装可复用 Skill / 定时 Agent'};
+function setPrefix(s){var el=document.getElementById('suitePrefix');el.classList.add('on');el.innerHTML='<span class="sp">🧩 '+PRESETS[s].n+'</span><span class="hint">'+SUITE_HINT[s]+'</span>';}
+document.getElementById('swapQ').addEventListener('click',function(){QS[curS].push(QS[curS].shift());renderQ(curS);});
 document.getElementById('stabs').addEventListener('click',function(e){
   var t=e.target.closest('.stab');if(!t)return;
-  document.querySelectorAll('.stab').forEach(function(x){x.classList.remove('on')});t.classList.add('on');renderQ(t.dataset.s);
+  document.querySelectorAll('.stab').forEach(function(x){x.classList.remove('on')});t.classList.add('on');curS=t.dataset.s;renderQ(curS);setPrefix(curS);
 });
 // view switching
-var TITLES={home:'DB-GPT AI Data Assistant',query:'智能问数 · DB 取数',analysis:'智能分析 · DB 数据分析',ops:'智能运维 · DB 运维',semantic:'语义层 Semantic Layer',approval:'审批中心 Approval Center',plugins:'场景插件 · 专家套件'};
+var TITLES={home:'DB-GPT AI Data Assistant',query:'智能取数 · DB 取数',analysis:'智能分析 · DB 数据分析',ops:'智能运维 · DB 运维',semantic:'语义层 Semantic Layer',approval:'审批中心 Approval Center',plugins:'专家套件 · Suites'};
 function show(v){
   document.querySelectorAll('#vtabs button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});
   document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('on',s.id===v)});
@@ -564,7 +781,7 @@ document.getElementById('vtabs').addEventListener('click',function(e){var b=e.ta
 document.addEventListener('click',function(e){
   var go=e.target.closest('[data-go]');if(go){show(go.dataset.go);return;}
   var q=e.target.closest('.qcard');
-  if(q){document.getElementById('homeInput').value=q.dataset.q;detect(q.dataset.s);setTimeout(function(){show(q.dataset.s==='k'?'home':q.dataset.s)},350);return;}
+  if(q){document.getElementById('homeInput').value=q.dataset.q;detect(q.dataset.s);setPrefix(q.dataset.s);setTimeout(function(){show(q.dataset.s==='k'?'home':q.dataset.s)},350);return;}
   var op=e.target.closest('[data-viewer]');if(op){document.getElementById(op.dataset.viewer).classList.add('open');return;}
   var cl=e.target.closest('[data-close]');if(cl){document.getElementById(cl.dataset.close).classList.remove('open');return;}
   var ok=e.target.closest('[data-resolve]');if(ok){document.getElementById('dock-'+ok.dataset.resolve).style.display='none';return;}
@@ -589,7 +806,7 @@ document.getElementById('homeSend').addEventListener('click',function(){
 // annotation toggle
 document.getElementById('annoToggle').addEventListener('click',function(){this.classList.toggle('on');document.body.classList.toggle('anno-on');});
 // ---- scenario preset switch (one engine, different presets) ----
-var PRESETS={q:{ic:'🔍',n:'智能问数'},a:{ic:'📊',n:'智能分析'},o:{ic:'🩺',n:'智能运维'},k:{ic:'🛠️',n:'技能与Agent'}};
+var PRESETS={q:{ic:'🔍',n:'智能取数',slug:'db-query',v:'v1.0.0',ex:'react'},a:{ic:'📊',n:'智能分析',slug:'db-analysis',v:'v1.0.0',ex:'react'},o:{ic:'🩺',n:'智能运维',slug:'db-ops',v:'v1.0.0',ex:'react'},k:{ic:'🛠️',n:'技能与Agent',slug:'skill-forge',v:'v0.9.0',ex:'flow'}};
 var ppop=null;
 function closePop(){if(ppop){ppop.remove();ppop=null;}}
 document.addEventListener('click',function(e){
@@ -599,16 +816,16 @@ document.addEventListener('click',function(e){
     var cur=chip.className.replace('pchip','').trim();
     var center=chip.closest('.center');
     ppop=document.createElement('div');ppop.className='ppop on';
-    ppop.innerHTML='<div class="pt">切换场景预设 · 同一 ReAct 引擎</div>'+Object.keys(PRESETS).map(function(k){
-      return '<div class="pi'+(k===cur?' on':'')+'" data-k="'+k+'">'+PRESETS[k].ic+' '+PRESETS[k].n+'</div>';}).join('');
+    ppop.innerHTML='<div class="pt">切换专家套件 · 同一 agent（ReAct 运行时）</div>'+Object.keys(PRESETS).map(function(k){
+      return '<div class="pi'+(k===cur?' on':'')+'" data-k="'+k+'" style="display:flex">'+PRESETS[k].ic+' '+PRESETS[k].n+'<span style="margin-left:auto;font-family:monospace;font-size:10px;color:var(--txt3)">'+PRESETS[k].v+' · '+PRESETS[k].ex+'</span></div>';}).join('');
     center.appendChild(ppop);
     ppop.addEventListener('click',function(ev){
       var pi=ev.target.closest('.pi');if(!pi)return;
       var k=pi.dataset.k;
-      chip.className='pchip '+k;chip.textContent=PRESETS[k].ic+' '+PRESETS[k].n+' ▾';
+      chip.className='pchip '+k;chip.textContent=PRESETS[k].ic+' '+PRESETS[k].n+' '+PRESETS[k].v+' ▾';
       var tl=chip.closest('.ws').querySelector('.tl');
       var it=document.createElement('div');it.className='tl-item done';
-      it.innerHTML='<span class="nd"></span><div class="t">场景切换</div><div class="d">→ '+PRESETS[k].n+' · 重绑上下文/工具/策略</div>';
+      it.innerHTML='<span class="nd"></span><div class="t">套件切换</div><div class="d">→ '+PRESETS[k].n+'@'+PRESETS[k].v+' · 重绑上下文/工具/策略</div>';
       tl.appendChild(it);
       closePop();
     });
@@ -625,18 +842,28 @@ document.getElementById('tfilter').addEventListener('click',function(e){
 });
 // ---- scenario plugins (expert-suite form) ----
 var PLUGINS={
- off:[{ic:'🔍',n:'智能问数',sid:'query',d:'NL→SQL 精准取数，强制绑定语义模型；含高代价扫描审批 override。',skills:['nl2sql','schema_link','semantic_search','export_csv'],v:'v1.0.0',on:true},
+ off:[{ic:'🔍',n:'智能取数',sid:'query',d:'自然语言→SQL 精准取数；强制绑定语义层（表白名单+指标口径+默认过滤+行级权限），SQL 经 sql.validate 自纠后在只读从库执行；含高代价扫描审批 override 与引用溯源，👍 沉淀样例库。',skills:['semantic-linking','nl2sql-precision','readonly-guardrails','result-export'],v:'v1.0.0',on:true},
       {ic:'📊',n:'智能分析',sid:'analysis',d:'圈定数据集→多步取数→图表→结论→报告分享（HTML/PDF）。',skills:['dataset_scope','nl2sql','chart','report_export','concl'],v:'v1.0.0',on:true},
       {ic:'🩺',n:'智能运维',sid:'ops',d:'慢查询诊断/健康巡检/画像治理；DDL 走破坏性操作审批。',skills:['slow_log','explain','db_metrics','ddl_gated'],v:'v1.0.0',on:true}],
- ent:[{ic:'📈',n:'财报分析专家',sid:'analysis+',d:'组合包：智能分析插件 + 财报语义模型 + 年报解析 skill（章节路由）。',skills:['pdf_parse','section_route','metric_verify','report'],v:'v1.0.0',on:false},
-      {ic:'🔗',n:'供应链对账专家',sid:'query+',d:'对账场景：应收应付匹配、合同质押查重、贸易背景核查。',skills:['match','contract_check','bg_check'],v:'v0.9.0',on:false},
-      {ic:'🏬',n:'门店经营日报专家',sid:'analysis+',d:'每日自动产出门店经营日报并推送 IM 频道。',skills:['daily_agg','chart','im_push'],v:'v0.8.0',on:false}],
+ ent:[{ic:'📈',n:'财报分析专家',sid:'analysis+',ex:'flow',d:'组合包：智能分析插件 + 财报语义模型 + 年报解析 skill（章节路由）。',skills:['pdf_parse','section_route','metric_verify','report'],v:'v1.0.0',on:false},
+      {ic:'🔗',n:'供应链对账专家',sid:'query+',ex:'react',d:'对账场景：应收应付匹配、合同质押查重、贸易背景核查。',skills:['match','contract_check','bg_check'],v:'v0.9.0',on:false},
+      {ic:'🏬',n:'门店经营日报专家',sid:'analysis+',ex:'flow',d:'每日自动产出门店经营日报并推送 IM 频道。',skills:['daily_agg','chart','im_push'],v:'v0.8.0',on:false}],
  mkt:[]};
+var PLMETA={
+ '智能取数':{slug:'db-query',author:'@DB-GPT 官方',readme:'自然语言→SQL 精准取数能力包（官方场景套件之一）。强制绑定语义层（表白名单 + 指标口径 + 默认过滤 + 行级权限），SQL 经 NL2SQL 生成并通过 sql.validate 自纠后在只读从库执行；高代价扫描按预估成本触发审批 confirm；答案下附引用溯源 chips（指标版本 / 表 / 样例 / 规则），👍 沉淀样例库、✏️ 纠错进语义标注待审队列。含 4 个技能 + 4 个快捷命令 + 8 条 Verified few-shot。',cmds:[['/nl2sql','自然语言→SQL 并在只读从库执行（引用指标口径与默认过滤）'],['/schema','查看目标表结构、语义标注与白名单状态'],['/metric','查询指标定义、版本与默认过滤（权威口径回源）'],['/export','导出当前结果集为 CSV/Excel（列类型保真 + 脱敏）']]},
+ '智能分析':{slug:'db-analysis',author:'@DB-GPT 官方',readme:'对话式数据分析能力包。按语义层白名单+join 路径圈定数据集，多步取数统一指标口径，自动匹配图表并提炼结论，产出可分享分析报告（HTML/PDF）。',cmds:[['/report','生成结构化分析报告（HTML/PDF 分享）'],['/chart','基于最近结果集绘制图表（自动选型）'],['/attribute','对指标波动做多维归因'],['/dataset','查看/切换当前数据集与 join 路径']]},
+ '智能运维':{slug:'db-ops',author:'@DB-GPT 官方',readme:'数据库运维能力包。慢查询诊断、健康巡检、库表画像治理；修复类操作（DDL/ANALYZE）走破坏性操作审批，长任务进度告知可继续/中断。',cmds:[['/slowlog','聚合分析指定时段慢查询日志'],['/explain','生成并解读 SQL 执行计划'],['/index','索引建议与 DDL 生成（破坏性走审批）'],['/patrol','执行一次健康巡检并出报告']]},
+ '技能与Agent':{slug:'skill-forge',author:'@DB-GPT 官方',readme:'技能与定时 Agent 创建能力包：自然语言生成 SKILL.md+zip，把会话封装为定时 Agent。',cmds:[['/skill-create','自然语言生成新 Skill（SKILL.md+zip）'],['/schedule','把当前会话封装为定时 Agent']]},
+ '财报分析专家':{slug:'fin-report-expert',author:'@数据平台组',readme:'组合包：智能分析套件 + 财报语义模型 + 年报解析 skill（CSRC 章节路由）。',cmds:[['/fin-report','生成财报深度分析'],['/section','定位年报章节（跨版本别名表）']]},
+ '供应链对账专家':{slug:'scf-recon',author:'@企业财务',readme:'对账场景：应收应付匹配、合同质押查重、贸易背景核查。',cmds:[['/recon','执行应收应付对账']]},
+ '门店经营日报专家':{slug:'store-daily',author:'@零售运营',readme:'每日自动产出门店经营日报并推送 IM 频道。',cmds:[['/daily','生成昨日经营日报']]}
+};
 function renderPl(g){
   var el=document.getElementById('plgrid');
-  if(!PLUGINS[g].length){el.innerHTML='<div style="grid-column:1/-1;color:var(--txt3);font-size:12.5px;padding:22px;background:#fff;border:1px dashed var(--line2);border-radius:12px">市场 P2 开放：插件发布 / 发现 / 安装量统计。当前请通过"企业专属"zip 上传自有插件。</div>';return;}
-  el.innerHTML=PLUGINS[g].map(function(p){
-    return '<div class="mcard plcard"><div class="mh"><span style="font-size:16px">'+p.ic+'</span>'+p.n+' <span class="scn" style="background:#f2f5f9;color:var(--txt2)">scenario:'+p.sid+'</span><button class="inst'+(p.on?' on':'')+'">'+(p.on?'✓':'＋')+'</button></div>'
+  var list = g==='inst' ? [].concat(PLUGINS.off,PLUGINS.ent).filter(function(p){return p.on;}) : PLUGINS[g];
+  if(!list.length){el.innerHTML='<div style="grid-column:1/-1;color:var(--txt3);font-size:12.5px;padding:22px;background:#fff;border:1px dashed var(--line2);border-radius:12px">市场 P2 开放：插件发布 / 发现 / 安装量统计。当前请通过"企业专属"zip 上传自有插件。</div>';return;}
+  el.innerHTML=list.map(function(p){
+    return '<div class="mcard plcard" data-name="'+p.n+'"><div class="mh"><span style="font-size:16px">'+p.ic+'</span>'+p.n+' <span class="scn" style="background:#f2f5f9;color:var(--txt2)">scenario:'+p.sid+'</span><span class="scn" style="background:#f2f5f9;color:var(--txt2)">exec:'+(p.ex||'react')+'</span><button class="inst'+(p.on?' on':'')+'">'+(p.on?'✓':'＋')+'</button></div>'
     +'<div style="font-size:12px;color:var(--txt2);margin:7px 0">'+p.d+'</div>'
     +'<div class="tags">'+p.skills.map(function(s){return '<span>'+s+'</span>'}).join('')+'</div>'
     +'<div class="pf"><span>'+p.skills.length+' 个技能</span><span>·</span><span class="stx">'+(p.on?'已启用':'未启用')+'</span><span class="v">'+p.v+'</span></div></div>';
@@ -647,10 +874,70 @@ document.getElementById('plseg').addEventListener('click',function(e){
   var b=e.target.closest('button');if(!b)return;
   this.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');renderPl(b.dataset.g);
 });
+function openDetail(name){
+  var p=null,grp='off';
+  ['off','ent'].forEach(function(g){PLUGINS[g].forEach(function(x){if(x.n===name){p=x;grp=g;}});});
+  if(!p)return;
+  var m=PLMETA[name]||{slug:p.n,author:'@企业',readme:p.d,cmds:p.skills.map(function(s){return ['/'+s,s+'（套件提供）'];})};
+  var d=document.getElementById('pldetail');
+  d.innerHTML='<span class="publink" id="plback" style="margin-left:0">‹ 返回列表</span>'
+   +'<div style="display:flex;align-items:center;gap:12px;margin:14px 0"><span style="font-size:26px">'+p.ic+'</span>'
+   +'<div><div style="font-size:17px;font-weight:800;font-family:monospace">'+m.slug+'</div><div style="font-size:11px;color:var(--txt3)">'+m.author+'</div></div>'
+   +'<span class="st pub" style="margin-left:4px">'+p.v+'</span>'
+   +'<span class="scn" style="background:#e8f4ff;color:#0069fe">'+(grp==='off'?'官方内置套件':'企业套件')+'</span>'
+   +'<button class="addbtn" style="margin-left:auto">'+(p.on?'✓ 已安装':'安装')+'</button></div>'
+   +'<div style="font-size:12.8px;color:var(--txt2);line-height:1.8;margin-bottom:16px">'+m.readme+'</div>'
+   +'<h2 style="font-size:14px;margin:0 0 10px">快捷命令（'+m.cmds.length+'）</h2>'
+   +m.cmds.map(function(c){return '<div class="cmdrow"><span class="cmd">'+c[0]+'</span>'+c[1]+'<span class="ar">→</span></div>';}).join('')
+   +'<h2 style="font-size:14px;margin:16px 0 8px">manifest 关键值</h2>'
+   +'<div class="kv"><span class="k">execution</span><span class="v">'+(p.ex||'react')+'</span></div>'
+   +'<div class="kv"><span class="k">tools.allow</span><span class="v">'+p.skills.join(', ')+'</span></div>'
+   +'<div class="kv"><span class="k">approval_overrides</span><span class="v">仅可加严 · enforcement 在核心 gate</span></div>'
+   +'<div class="kv"><span class="k">context_defaults</span><span class="v">semantic_layer: required</span></div>';
+  d.classList.add('on');
+  ['pltop','plbanner','plseg','plgrid'].forEach(function(id){document.getElementById(id).style.display='none';});
+  document.querySelectorAll('#plugins .anno').forEach(function(a){a.style.display='none';});
+  document.getElementById('plback').addEventListener('click',closeDetail);
+}
+function closeDetail(){
+  document.getElementById('pldetail').classList.remove('on');
+  ['pltop','plbanner','plseg','plgrid'].forEach(function(id){document.getElementById(id).style.display='';});
+  document.querySelectorAll('#plugins .anno').forEach(function(a){a.style.display='';});
+}
 document.getElementById('plgrid').addEventListener('click',function(e){
-  var b=e.target.closest('.inst');if(!b)return;
-  b.classList.toggle('on');b.textContent=b.classList.contains('on')?'✓':'＋';
-  var st=b.closest('.plcard').querySelector('.stx');if(st)st.textContent=b.classList.contains('on')?'已启用':'未启用';
+  var b=e.target.closest('.inst');
+  if(b){b.classList.toggle('on');b.textContent=b.classList.contains('on')?'✓':'＋';
+    var st=b.closest('.plcard').querySelector('.stx');if(st)st.textContent=b.classList.contains('on')?'已启用':'未启用';return;}
+  var card=e.target.closest('.mcard');if(card)openDetail(card.dataset.name);
+});
+// ---- semantic knowledge center tabs + draft publish ----
+document.getElementById('semstats').addEventListener('click',function(e){
+  var b=e.target.closest('.sstat');if(!b)return;
+  this.querySelectorAll('.sstat').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
+  document.querySelectorAll('.semtab').forEach(function(t){t.classList.toggle('on',t.dataset.t===b.dataset.t)});
+});
+document.addEventListener('click',function(e){
+  var pub=e.target.closest('.sem-pub');
+  if(pub){var d=pub.closest('.sdraft');d.style.borderLeftColor='var(--ok)';
+    var st=d.querySelector('.stt');st.textContent='已发布 · 写入托管空间';st.style.background='#eafbea';st.style.color='#389e0d';
+    pub.closest('.acts').innerHTML='<span style="font-size:11px;color:#389e0d;font-weight:700">✓ 已发布（version+1，chunk 写入托管空间）</span>';return;}
+  var rej=e.target.closest('.sem-rej');
+  if(rej){var d2=rej.closest('.sdraft');d2.style.opacity=.45;d2.querySelector('.stt').textContent='已驳回';
+    rej.closest('.acts').innerHTML='<span style="font-size:11px;color:var(--txt3)">已驳回 · 不进入检索</span>';}
+});
+// ---- semantic space list <-> space ----
+document.addEventListener('click',function(e){
+  var en=e.target.closest('.sem-enter');
+  if(en){document.getElementById('semList').style.display='none';document.getElementById('semSpace').style.display='';
+    document.getElementById('semSpaceName').textContent='🗄️ '+en.dataset.name+' · 已连接';return;}
+  if(e.target.closest('#semBack')){document.getElementById('semSpace').style.display='none';document.getElementById('semList').style.display='';return;}
+  if(e.target.closest('#actBtn')){document.getElementById('activateBox').style.display='';return;}
+  if(e.target.closest('#actCancel')){document.getElementById('activateBox').style.display='none';return;}
+  if(e.target.closest('#actConfirm')){document.getElementById('activateBox').style.display='none';
+    var row=document.getElementById('rowCrm');
+    var rk=row.querySelector('.risk');rk.textContent='已激活';rk.style.cssText='background:#eafbea;color:#389e0d;border-color:#b7eb8f';
+    row.querySelector('.dd').textContent='来源 pg_crm · 已连接 · 激活中：采样+草稿生成后台运行';
+    var b=row.querySelector('#actBtn');if(b)b.remove();return;}
 });
 // deep link
 (function(){var h=(location.hash||'').replace('#','');if(TITLES[h])show(h);})();
