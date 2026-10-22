@@ -350,8 +350,10 @@ const synthesizeIntention = (
       return q ? t('intent_sql', { q }) : (t('intent_sql_plain') as string);
     }
     case 'code_interpreter':
+    case 'code':
       return t('intent_code');
     case 'shell_interpreter':
+    case 'bash':
       return t('intent_shell');
     case 'html_interpreter':
       return t('intent_html');
@@ -555,7 +557,7 @@ const _convertExecutionToMessageParts = (
             ? 'write'
             : step.title?.toLowerCase().includes('code') ||
                 step.title?.toLowerCase().includes('execute') ||
-                actionLower === 'shell_interpreter'
+                (actionLower === 'shell_interpreter' || actionLower === 'bash')
               ? 'bash'
               : 'task';
 
@@ -609,7 +611,8 @@ const convertToManusFormat = (
       actionLower === 'load_skill'
     )
       return 'skill';
-    if (actionLower === 'shell_interpreter') return 'bash';
+    if (actionLower === 'shell_interpreter' || actionLower === 'bash') return 'bash';
+    if (actionLower === 'code_interpreter' || actionLower === 'code') return 'code';
     if (actionLower === 'sql_query') return 'sql';
     if (actionLower === 'question') return 'question';
     if (
@@ -2134,9 +2137,9 @@ const Playground: NextPage = () => {
             }
           });
 
-          // For shell_interpreter steps, extract file paths from code/text outputs
+          // For bash steps, extract file paths from code/text outputs
           // and create downloadable file artifacts
-          const WRITE_SCAN_ACTIONS = new Set(['shell_interpreter', 'code_interpreter', 'write', 'edit']);
+          const WRITE_SCAN_ACTIONS = new Set(['shell_interpreter', 'code_interpreter', 'bash', 'code', 'write', 'edit']);
           if (WRITE_SCAN_ACTIONS.has((step.action || '') as string)) {
             // Match both absolute paths and relative filenames with extensions
             const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
@@ -2541,7 +2544,7 @@ const Playground: NextPage = () => {
 
     if (execution) {
       const skillStep = execution.steps.find(step => {
-        if (step.action !== 'shell_interpreter') return false;
+        if (step.action !== 'shell_interpreter' && step.action !== 'bash') return false;
         const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
         // actionInput may be a string (dbgpt) or an args object (pi bridge).
         const inputText =
@@ -2758,34 +2761,32 @@ const Playground: NextPage = () => {
     const humanId = generateUUID();
 
     // Add user message and AI placeholder message
-    setMessages(prev => [
-      ...prev,
-      {
-        id: humanId,
-        role: 'human',
-        context: inputQuery,
-        order: currentOrder,
-        attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
-        attachedKnowledge: selectedKnowledge ?? undefined,
-        attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
-        attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
-        attachedConnectors:
-          selectedConnectors.length > 0
-            ? selectedConnectors.map(c => ({
-                id: c.id,
-                connector_type: c.connector_type,
-                display_name: c.display_name,
-              }))
-            : undefined,
-      },
-      {
-        id: responseId,
-        role: 'view',
-        context: '',
-        order: currentOrder,
-        thinking: true,
-      },
-    ]);
+    const humanMsg: ChatMessage = {
+      id: humanId,
+      role: 'human',
+      context: inputQuery,
+      order: currentOrder,
+      attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
+      attachedKnowledge: selectedKnowledge ?? undefined,
+      attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
+      attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
+      attachedConnectors:
+        selectedConnectors.length > 0
+          ? selectedConnectors.map(c => ({
+              id: c.id,
+              connector_type: c.connector_type,
+              display_name: c.display_name,
+            }))
+          : undefined,
+    };
+    const viewMsg: ChatMessage = {
+      id: responseId,
+      role: 'view',
+      context: '',
+      order: currentOrder,
+      thinking: true,
+    };
+    setMessages(prev => [...prev, humanMsg, viewMsg]);
 
     setLoading(true);
     setQuery(''); // Clear input
@@ -3131,6 +3132,8 @@ const Playground: NextPage = () => {
                 if (
                   payload.action !== 'code_interpreter' &&
                   payload.action !== 'shell_interpreter' &&
+                  payload.action !== 'code' &&
+                  payload.action !== 'bash' &&
                   payload.action_input
                 ) {
                   const inputStr =
@@ -3411,24 +3414,22 @@ const Playground: NextPage = () => {
     const currentOrder = Math.floor(messages.length / 2) + 1;
     const humanId = generateUUID();
     const responseId = generateUUID();
-    setMessages(prev => [
-      ...prev,
-      {
-        id: humanId,
-        role: 'human',
-        context: flowQuery,
-        order: currentOrder,
-        attachedDb: selectedDb ? { db_name: selectedDb.db_name, db_type: selectedDb.db_type } : undefined,
-      },
-      {
-        id: responseId,
-        role: 'view',
-        context: '',
-        order: currentOrder,
-        thinking: true,
-        flowRun: { label: flow.label },
-      },
-    ]);
+    const humanMsg: ChatMessage = {
+      id: humanId,
+      role: 'human',
+      context: flowQuery,
+      order: currentOrder,
+      attachedDb: selectedDb ? { db_name: selectedDb.db_name, db_type: selectedDb.db_type } : undefined,
+    };
+    const viewMsg: ChatMessage = {
+      id: responseId,
+      role: 'view',
+      context: '',
+      order: currentOrder,
+      thinking: true,
+      flowRun: { label: flow.label },
+    };
+    setMessages(prev => [...prev, humanMsg, viewMsg]);
     setQuery('');
     setLoading(true);
     setActiveViewMsgId(responseId);
@@ -3771,6 +3772,7 @@ const Playground: NextPage = () => {
 
   const restoreFromHistory = (
     historyMessages: Array<{ role: string; context: string; order?: number; model_name?: string }>,
+    liveTail: ChatMessage[] = [],
   ) => {
     cancelSummaryPresentation();
     setExecutionMap({});
@@ -3826,7 +3828,7 @@ const Playground: NextPage = () => {
                 content: o.content,
               }));
             }
-            if ((s.action === 'code_interpreter' || s.action === 'shell_interpreter') && s.action_input) {
+            if ((s.action === 'code_interpreter' || s.action === 'shell_interpreter' || s.action === 'code' || s.action === 'bash') && s.action_input) {
               const existingOutputs = outputs[stepId] || [];
               const hasCode = existingOutputs.some((o: ExecutionOutput) => o.output_type === 'code');
               if (!hasCode) {
@@ -3893,7 +3895,7 @@ const Playground: NextPage = () => {
 
           // Detect skill creation from restored execution
           const isSkillPackageStep = (s: ExecutionStep) => {
-            if (s.action !== 'shell_interpreter') return false;
+            if (s.action !== 'shell_interpreter' && s.action !== 'bash') return false;
             const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
             const inputHas =
               (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
@@ -3949,6 +3951,15 @@ const Playground: NextPage = () => {
       }
     });
 
+    if (liveTail.length > 0) {
+      // Carry the in-flight round over: history has no row for it yet, and
+      // dropping it left re-entered running conversations blank.
+      newMessages.push(...liveTail);
+      for (const m of liveTail) {
+        const exec = executionMap[m.id];
+        if (exec) newExecutionMap[m.id] = exec;
+      }
+    }
     setMessages(newMessages);
     setExecutionMap(newExecutionMap);
     setArtifacts(allArtifacts);
@@ -3959,9 +3970,15 @@ const Playground: NextPage = () => {
     const lastView = [...newMessages].reverse().find(m => m.role === 'view');
     if (lastView?.id) {
       setActiveMessageId(lastView.id);
-      setStreamingSummary(lastView.context || '');
-      setSummaryComplete(true);
-      setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
+      if (liveTail.length > 0) {
+        // Live round: keep the streaming summary / presentation state that
+        // the in-flight SSE handlers own; only re-anchor the active ids.
+        if (lastView.flowRun) setActiveViewMsgId(lastView.id);
+      } else {
+        setStreamingSummary(lastView.context || '');
+        setSummaryComplete(true);
+        setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
+      }
     }
   };
 
@@ -3997,6 +4014,7 @@ const Playground: NextPage = () => {
             order: m.order,
             model_name: m.model_name,
           })),
+          liveTail,
         );
       }
     } catch (e) {

@@ -63,7 +63,7 @@ describe('approval setting page', () => {
       const save = calls.find(c => String(c.url).includes('/approval/policy/save'));
       expect(save).toBeTruthy();
       expect(save!.body.add_rules).toEqual([
-        { tool: 'shell_interpreter', arg_pattern: 'rm\\s+-rf\\s+/tmp/x', tier: 'confirm' },
+        { tool: 'bash', arg_pattern: 'rm\\s+-rf\\s+/tmp/x', tier: 'confirm' },
       ]);
     });
   });
