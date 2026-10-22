@@ -795,7 +795,8 @@ const EXAMPLE_CARDS = [
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { model, setModel, setConvRunning, addOptimisticConv, bumpDialogueList } = useContext(ChatContext);
+  const { model, setModel, setConvRunning, runningConvIds, addOptimisticConv, bumpDialogueList } =
+    useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const exampleRunInFlightRef = useRef(false);
@@ -1389,6 +1390,10 @@ const Playground: NextPage = () => {
   const taskEpochRef = useRef(0);
   const historyRequestRef = useRef(0);
   const historyAbortControllerRef = useRef<AbortController | null>(null);
+  /** In-flight round per conv (the message objects themselves) so re-entering
+   *  a running conversation can re-inject the live human/view pair — history
+   *  only holds flushed rounds and New Task clears the messages state. */
+  const liveRoundRef = useRef<Record<string, { human: any; view: any }>>({});
   const exampleAbortControllerRef = useRef<AbortController | null>(null);
   const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
 
@@ -2851,6 +2856,7 @@ const Playground: NextPage = () => {
 
     try {
       setConvRunning(currentConvId, true);
+      liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
         method: 'POST',
         headers: {
@@ -3368,6 +3374,7 @@ const Playground: NextPage = () => {
       }
     } finally {
       setConvRunning(currentConvId, false);
+      delete liveRoundRef.current[currentConvId];
       bumpDialogueList();
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
@@ -3537,6 +3544,7 @@ const Playground: NextPage = () => {
     let serverError = '';
     try {
       setConvRunning(currentConvId, true);
+      liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3640,6 +3648,7 @@ const Playground: NextPage = () => {
       }
     } finally {
       setConvRunning(currentConvId, false);
+      delete liveRoundRef.current[currentConvId];
       bumpDialogueList();
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
@@ -4007,6 +4016,15 @@ const Playground: NextPage = () => {
       if (msgList) {
         conversationIdRef.current = convUid;
         setConversationId(convUid);
+        // Re-entering a RUNNING conversation: the server history only holds
+        // flushed rounds, so the in-flight round (human + view pair and its
+        // live execution state) is carried over from memory — without it the
+        // page rendered empty until the turn finished server-side.
+        const live = liveRoundRef.current[convUid];
+        const liveTail =
+          live && runningConvIds.includes(convUid)
+            ? messages.filter(m => m.id === live.humanId || m.id === live.viewId)
+            : [];
         restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
