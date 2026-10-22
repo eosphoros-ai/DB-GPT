@@ -32,10 +32,10 @@ CFG = Config()
 #: Factory tools that can be selected via the node's ``tools`` config.
 SELECTABLE_TOOLS = [
     "sql_query",
-    "code_interpreter",
+    "code",
     "knowledge_retrieve",
     "html_interpreter",
-    "shell_interpreter",
+    "bash",
     "web_search",
     "web_fetch",
 ]
@@ -206,7 +206,7 @@ _PROFILES: Dict[str, AgentProfile] = {
         label_en="Data Analysis Agent",
         desc="目标驱动的数据分析师,可用 SQL / 代码复核数字与口径",
         desc_en="Goal-driven data analyst; verifies numbers with SQL/code",
-        default_tools=["sql_query", "code_interpreter"],
+        default_tools=["sql_query", "code"],
     ),
     "react_knowledge": AgentProfile(
         profile_id="react_knowledge",
@@ -276,7 +276,7 @@ def list_builtin_tools() -> List[Dict[str, Any]]:
             "desc_en": "Read-only SQL on selected datasources",
         },
         {
-            "id": "code_interpreter",
+            "id": "code",
             "label": "代码解释器",
             "label_en": "Code Interpreter",
             "desc": "沙箱执行 Python 复核计算",
@@ -297,7 +297,7 @@ def list_builtin_tools() -> List[Dict[str, Any]]:
             "desc_en": "Generate visual HTML reports",
         },
         {
-            "id": "shell_interpreter",
+            "id": "bash",
             "label": "Shell",
             "label_en": "Shell",
             "desc": "沙箱执行 shell 命令",

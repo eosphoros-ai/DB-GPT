@@ -59,6 +59,7 @@ from .subagent.history import (
     fail_running_subagent_history,
     update_subagent_history,
 )
+from .tool_names import canonical_tool
 
 router = APIRouter()
 CFG = Config()
@@ -452,7 +453,7 @@ async def execute_skill_script(skill_name: str, script_name: str, args: dict) ->
     "\\n示例:"
     '\\n- 读取参考文档: {"skill_name": "my-skill", '
     '"resource_path": "references/analysis_framework.md"}'
-    "\n注意: 执行脚本请使用 shell_interpreter 工具"
+    "\n注意: 执行脚本请使用 bash 工具"
 )
 async def get_skill_resource(
     skill_name: str, resource_path: str, args: Optional[dict] = None
@@ -1902,10 +1903,10 @@ async def _react_agent_stream_impl(
                 lowered = text.lower()
                 break
 
-        action_lower = (action or "").lower()
+        action_lower = canonical_tool((action or "").lower())
         if action_lower == "sql_query":
             return "正在查询数据库信息"
-        if action_lower == "code_interpreter":
+        if action_lower == "code":
             return "正在生成分析代码"
         if action_lower == "html_interpreter":
             return "正在生成并渲染 HTML 报告"
@@ -2549,8 +2550,8 @@ async def _react_agent_stream_impl(
         database_connector,
         max_calls=dashboard_sql_query_limit,
     )
-    code_interpreter_tool = make_code_interpreter(react_state)
-    shell_interpreter_tool = make_shell_interpreter(react_state)
+    code_tool = make_code_interpreter(react_state)
+    bash_tool = make_shell_interpreter(react_state)
     html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
     todowrite_tool = make_todowrite(_todo_list, stream_callback)
     question_tool = make_question(react_state, stream_callback)
@@ -2618,7 +2619,7 @@ async def _react_agent_stream_impl(
         if active_idx is None:
             return False
 
-        action_lower = _normalize_text(action_name)
+        action_lower = canonical_tool(_normalize_text(action_name))
         thought_lower = _normalize_text(thought)
         observation_lower = _normalize_text(observation_text)
         current_todo = _normalize_text(_todo_list[active_idx].get("content"))
@@ -2698,7 +2699,7 @@ async def _react_agent_stream_impl(
 
             return False
 
-        if action_lower in {"code_interpreter", "execute_tool", "shell_interpreter"}:
+        if action_lower in {"code", "execute_tool", "bash"}:
             if _is_report_like(current_todo):
                 return False
             if next_todo and any(
@@ -3005,7 +3006,7 @@ complete HTML via the `html` parameter** — you generate the full HTML code
 yourself (including `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`, styles,
 content). The HTML can be as long as needed. **Only use `template_path` if the
 skill explicitly provides HTML templates in its `templates/` directory and its
-documentation tells you to use them.** Do not use `code_interpreter` to generate
+documentation tells you to use them.** Do not use `code` to generate
 the report.
 
 ## Available Tools Description
@@ -3019,7 +3020,7 @@ name", "args": {{parameters}}}}
 "script_file_name": "calculate_ratios.py",
 "args": {{"input_data": "..."}}}}
    - **Must use this tool when executing skill scripts**, do not use
-shell_interpreter.
+bash.
 2. **get_skill_resource**: Read reference documents, configurations, templates, and
 other non-script resource files in the skill.
    Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
@@ -3031,7 +3032,7 @@ templates.
 3. **execute_skill_script**: Execute the inline script defined in the skill
 (backup). Parameters: {{"skill_name": "skill name", "script_name": "script name",
 "args": {{"parameter name": "parameter value"}}}}
-4. **shell_interpreter**: Execute shell/bash commands (only for non-skill script
+4. **bash**: Execute shell/bash commands (only for non-skill script
 system commands, such as ls, cat, etc.).
    Parameters: {{"code": "shell command"}}
    - Each call is independent and does not retain state. If multi-step operations
@@ -3044,7 +3045,7 @@ way to display reports on the right panel.
 "title": "report title"}}
    - Generate complete HTML yourself (DOCTYPE, html, head, body, CSS styles,
 content). No length limit.
-   - **Do not** use code_interpreter to write HTML. Directly pass the HTML string
+   - **Do not** use code to write HTML. Directly pass the HTML string
 to this tool.
    **Template mode (only when skill has templates/)**: {{"template_path":
 "skill-name/templates/template.html", "data": {{"KEY": "value"}}, "title": "title"}}
@@ -3124,7 +3125,7 @@ Thought/Action/Action Input format shown above.
                     execute_skill_script,
                     get_skill_resource,
                     execute_skill_script_file_tool,
-                    shell_interpreter_tool,
+                    bash_tool,
                     html_interpreter_tool,
                     sql_query_tool,
                     todowrite_tool,
@@ -3183,7 +3184,7 @@ The Action Input format must be {{"result": "final answer"}}.
 `html_interpreter` for HTML rendering. When the user requests generating a webpage,
 HTML report, or interactive report, the final presentation step must call
 `html_interpreter` to render it. It is forbidden to output HTML using only
-`code_interpreter` and then directly terminate. Correct process: code_interpreter
+`code` and then directly terminate. Correct process: code
 writes to .html file -> html_interpreter(file_path=...) renders -> terminate.**
 
 ## Task Management
@@ -3257,9 +3258,9 @@ Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
 4. **execute_skill_script**: Execute the inline script defined in the skill.
 Parameters: {{"skill_name": "skill name", "script_name": "script name",
 "args": {{parameters}}}}
-5. **shell_interpreter**: Execute shell/bash commands.
+5. **bash**: Execute shell/bash commands.
 Parameters: {{"code": "shell command"}}
-6. **code_interpreter**: Execute arbitrary Python code.
+6. **code**: Execute arbitrary Python code.
 Parameters: {{"code": "python code string"}}
 7. **load_file**: Load uploaded file info. Parameters: none.
 8. **execute_analysis**: Execute quick analysis on uploaded Excel/CSV file.
@@ -3349,10 +3350,10 @@ Thought/Action/Action Input format shown above.
                     execute_skill_script,
                     get_skill_resource,
                     execute_skill_script_file_tool,
-                    code_interpreter_tool,
+                    code_tool,
                     load_file_tool,
                     execute_analysis_tool,
-                    shell_interpreter_tool,
+                    bash_tool,
                     html_interpreter_tool,
                     sql_query_tool,
                     read_file_tool,
@@ -3906,6 +3907,8 @@ ordering. The registered tools and backend validation remain authoritative.
             action_output = event.get("action_output") or {}
             thoughts = action_output.get("thoughts")
             action = action_output.get("action")
+            if action:
+                action = canonical_tool(action)
             action_input = action_output.get("action_input")
             action_input_data = None
             if action_input is not None:
@@ -4143,9 +4146,9 @@ ordering. The registered tools and backend validation remain authoritative.
             }
 
             # Stream action code to frontend for right panel
-            # (code_interpreter)
+            # (code)
             code_payload = None
-            if action == "code_interpreter" and isinstance(action_input_data, dict):
+            if action == "code" and isinstance(action_input_data, dict):
                 code_payload = action_input_data.get("code")
             if isinstance(code_payload, str) and code_payload.strip():
                 yield step_chunk(react_step_id, "code", code_payload)
@@ -4157,7 +4160,7 @@ ordering. The registered tools and backend validation remain authoritative.
             # Emit thinking metadata
             if thoughts or action or action_input:
                 step_action_input = (
-                    None if action == "code_interpreter" else action_input
+                    None if action == "code" else action_input
                 )
                 yield step_meta(
                     react_step_id,
@@ -4579,7 +4582,7 @@ async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    """Download a file created by agent tools (shell_interpreter, code_interpreter).
+    """Download a file created by agent tools (bash, code).
 
     Only files under allowed directories (/tmp, PILOT_PATH/tmp/) can be downloaded.
     This prevents arbitrary file access on the server.

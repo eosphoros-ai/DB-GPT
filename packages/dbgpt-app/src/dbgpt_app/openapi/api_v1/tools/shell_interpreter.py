@@ -1,4 +1,4 @@
-"""shell_interpreter tool — run bash using the configured execution runtime."""
+"""bash tool — run shell commands using the configured execution runtime."""
 
 import json
 import logging
@@ -26,7 +26,7 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
             'Parameters: {"code": "shell command(s) to execute"}'
         )
     )
-    async def shell_interpreter(code: str) -> str:
+    async def bash(code: str) -> str:
         """Execute shell/bash commands with the selected runtime."""
         if not code or not code.strip():
             return json.dumps(
@@ -177,4 +177,4 @@ def make_shell_interpreter(react_state: Dict[str, Any]):
 
         return json.dumps({"chunks": chunks}, ensure_ascii=False)
 
-    return shell_interpreter
+    return bash

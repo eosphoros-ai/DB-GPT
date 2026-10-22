@@ -14,7 +14,7 @@ tool factories to share runtime configuration and file handling.
 Returns 8 tools::
 
     load_skill / load_tools / knowledge_retrieve / sql_query /
-    code_interpreter / shell_interpreter / execute_skill_script_file /
+    code / bash / execute_skill_script_file /
     html_interpreter
 
 ``todowrite`` is intentionally NOT here — it shares ``_todo_list`` with the
@@ -94,7 +94,7 @@ def make_react_tools(
     Returns:
         A dict mapping tool name -> tool callable, with 8 entries:
         ``load_skill``, ``load_tools``, ``knowledge_retrieve``, ``sql_query``,
-        ``code_interpreter``, ``shell_interpreter``,
+        ``code``, ``bash``,
         ``execute_skill_script_file``, ``html_interpreter``.
     """
 
@@ -282,8 +282,8 @@ def make_react_tools(
     from ..tools.shell_interpreter import make_shell_interpreter
     from ..tools.web_tools import make_web_fetch, make_web_search
 
-    code_interpreter = make_code_interpreter(react_state)
-    shell_interpreter = make_shell_interpreter(react_state)
+    code = make_code_interpreter(react_state)
+    bash = make_shell_interpreter(react_state)
     web_search = make_web_search()
     web_fetch = make_web_fetch()
 
@@ -457,8 +457,8 @@ def make_react_tools(
         "HTML 可以很长，没有长度限制，不需要分段传入；"
         "若报告含多部分内容，请合并进【同一份】HTML 一次性渲染，"
         "不要分多次生成多份报告。"
-        "【禁止】不要用 code_interpreter 写 HTML 再 print，"
-        "不要用 code_interpreter 把 HTML 写入文件再读取，"
+        "【禁止】不要用 code 写 HTML 再 print，"
+        "不要用 code 把 HTML 写入文件再读取，"
         "直接把 HTML 传给本工具即可。"
         "【技能模式 - 仅在使用技能时可选】如果正在使用技能（skill），可以用模板模式："
         '{"template_path": "技能名/templates/模板.html", '
@@ -811,8 +811,8 @@ def make_react_tools(
         "load_tools": load_tools,
         "knowledge_retrieve": knowledge_retrieve,
         "sql_query": sql_query,
-        "code_interpreter": code_interpreter,
-        "shell_interpreter": shell_interpreter,
+        "code": code,
+        "bash": bash,
         "execute_skill_script_file": execute_skill_script_file,
         "html_interpreter": html_interpreter,
         "web_search": web_search,
