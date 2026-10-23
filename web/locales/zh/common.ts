@@ -646,6 +646,8 @@ export const CommonZh: Resources['translation'] = {
   suites_disabled: '未启用',
   suites_uninstall: '卸载',
   suites_back: '‹ 返回列表',
+  suites_enable_label: '启用',
+  suites_skills_section: '知识技能',
   suites_cmds: '快捷命令',
   suites_manifest: 'manifest 关键值',
   suites_overrides_note: '仅可加严 · enforcement 在核心 gate',

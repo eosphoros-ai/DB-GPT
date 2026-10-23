@@ -646,6 +646,8 @@ export const CommonEn = {
   suites_disabled: 'Disabled',
   suites_uninstall: 'Uninstall',
   suites_back: '‹ Back to list',
+  suites_enable_label: 'Enable',
+  suites_skills_section: 'Skills',
   suites_cmds: 'Quick commands',
   suites_manifest: 'Manifest key values',
   suites_overrides_note: 'strict-only · enforced by the core gate',

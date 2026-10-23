@@ -157,6 +157,38 @@ def _collect_skills(
     return skills
 
 
+def _frontmatter_desc(path: Path) -> str:
+    """Read description_zh (fallback description) from a SKILL.md frontmatter."""
+    import re
+
+    try:
+        text = path.read_text(encoding="utf-8")
+    except Exception:  # noqa: BLE001 - unreadable skill file yields empty summary
+        return ""
+    fm_match = re.search(r"^---\n(.*?)\n---", text, re.S)
+    if not fm_match:
+        return ""
+    frontmatter = fm_match.group(1)
+    for key in ("description_zh", "description"):
+        kv = re.search(rf"^{key}:\s*(.+)$", frontmatter, re.M)
+        if kv:
+            return kv.group(1).strip().strip('"')
+    return ""
+
+
+def read_skill_summaries(
+    package_path: Optional[str], skill_names: List[str]
+) -> List[Dict[str, str]]:
+    """Name + one-line summary per skill, for the suite detail page."""
+    if not package_path:
+        return []
+    summaries: List[Dict[str, str]] = []
+    for name in skill_names:
+        skill_md = Path(package_path) / "skills" / name / "SKILL.md"
+        summaries.append({"name": name, "description": _frontmatter_desc(skill_md)})
+    return summaries
+
+
 def load_suite_dir(dirpath: Path) -> Optional[SuitePackage]:
     """Parse one suite package directory; None when unusable."""
     dirpath = Path(dirpath)

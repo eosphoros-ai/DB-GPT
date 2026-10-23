@@ -13,7 +13,7 @@ from ..api.schemas import (
     SuiteSyncSummary,
 )
 from ..config import SERVE_SERVICE_COMPONENT_NAME, ServeConfig
-from ..loader import resolve_suites_dir, scan_suites
+from ..loader import read_skill_summaries, resolve_suites_dir, scan_suites
 from ..models.models import SuiteDao, SuiteEntity, SuiteEventDao
 from ..registry import SuiteRegistry
 
@@ -88,6 +88,10 @@ class Service(BaseService[SuiteEntity, SuiteRequest, SuiteResponse]):
         response = self.registry.get(name, workspace_id=workspace_id)
         if response is not None:
             response.readme = self._read_readme(response.package_path)
+            response.skill_details = read_skill_summaries(
+                response.package_path,
+                list((response.manifest_snapshot or {}).get("skills") or []),
+            )
         return response
 
     @staticmethod

@@ -36,6 +36,9 @@ class SuiteResponse(BaseModel):
     readme: Optional[str] = Field(
         None, description="Package README.md text (detail page only, read from disk)"
     )
+    skill_details: Optional[List[Dict[str, str]]] = Field(
+        None, description="Per-skill name+summary for the detail page (read from disk)"
+    )
     use_count: Optional[int] = Field(0, description="Pin / invoke count")
     enabled_at: Optional[datetime] = Field(None, description="Last enabled time")
     user_name: Optional[str] = Field(None, description="Installer / owner")

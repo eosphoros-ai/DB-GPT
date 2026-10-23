@@ -39,6 +39,7 @@ export interface SuiteItem {
   package_digest?: string;
   manifest_snapshot?: SuiteManifestSnapshot;
   readme?: string | null;
+  skill_details?: { name: string; description?: string }[] | null;
   use_count?: number;
   user_name?: string | null;
 }

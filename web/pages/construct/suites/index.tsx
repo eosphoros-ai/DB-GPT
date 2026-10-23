@@ -6,11 +6,13 @@ import { getUserId } from '@/utils';
 import { suiteDisplayName } from '@/utils/suite-routing';
 import {
   AppstoreAddOutlined,
+  ArrowRightOutlined,
   InboxOutlined,
+  MoreOutlined,
   SearchOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { Button, Input, Popconfirm, Segmented, Switch, Tag, Tooltip, message, theme } from 'antd';
+import { Button, Dropdown, Input, Segmented, Switch, Tag, Tooltip, message, theme } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -164,55 +166,106 @@ const SuitesPage = () => {
             <Button type='link' className='px-0' onClick={() => setDetail(null)}>
               {t('suites_back')}
             </Button>
-            <div className='mt-2 flex items-center gap-3'>
-              <span className='text-[26px]'>{detail.icon || '🧩'}</span>
-              <div>
-                <div className='font-mono text-[17px] font-extrabold'>{detail.name}</div>
-                <div className='text-[11px]' style={{ color: token.colorTextTertiary }}>
+            {/* Header: icon box + title + version/source pills + author, right controls */}
+            <div className='mt-4 flex items-start gap-4'>
+              <div
+                className='flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border text-[28px]'
+                style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
+              >
+                {detail.icon || '🧩'}
+              </div>
+              <div className='min-w-0 flex-1'>
+                <div className='flex flex-wrap items-center gap-2'>
+                  <span className='text-[22px] font-extrabold leading-7'>
+                    {suiteDisplayName(detail, i18n.language)}
+                  </span>
+                  <Tag color='green' className='rounded-full' style={{ marginInlineEnd: 0 }}>
+                    v{detail.version}
+                  </Tag>
+                  <Tag
+                    color={detail.source === 'official' ? 'blue' : 'gold'}
+                    className='rounded-full'
+                    style={{ marginInlineEnd: 0 }}
+                  >
+                    {detail.source === 'official' ? t('suites_seg_official') : t('suites_seg_enterprise')}
+                  </Tag>
+                </div>
+                <div className='mt-1 text-[12px]' style={{ color: token.colorTextTertiary }}>
                   @{detail.user_name || 'DB-GPT'}
                 </div>
               </div>
-              <Tag color='green'>v{detail.version}</Tag>
-              <Tag color={detail.source === 'official' ? 'blue' : 'gold'}>
-                {detail.source === 'official' ? t('suites_seg_official') : t('suites_seg_enterprise')}
-              </Tag>
-              <div className='ml-auto flex items-center gap-2'>
-                <Switch
-                  checked={detail.status === 'enabled'}
-                  onChange={checked => toggle(detail, checked)}
-                />
-                <Popconfirm
-                  title={t('suites_uninstall_confirm', { name: detail.name })}
-                  onConfirm={() => doUninstall(detail.name)}
+              <div className='flex flex-shrink-0 items-center gap-3 pt-3'>
+                <span className='text-[13px]' style={{ color: token.colorTextSecondary }}>
+                  {t('suites_enable_label')}
+                </span>
+                <Switch checked={detail.status === 'enabled'} onChange={c => toggle(detail, c)} />
+                <Dropdown
+                  trigger={['click']}
+                  menu={{
+                    items: [
+                      {
+                        key: 'uninstall',
+                        danger: true,
+                        label: t('suites_uninstall'),
+                        onClick: () => doUninstall(detail.name),
+                      },
+                    ],
+                  }}
                 >
-                  <Button danger size='small'>
-                    {t('suites_uninstall')}
-                  </Button>
-                </Popconfirm>
+                  <Button icon={<MoreOutlined />} />
+                </Dropdown>
               </div>
             </div>
-            <div className='mt-4 text-[12.8px] leading-6' style={{ color: token.colorTextSecondary }}>
-              <MarkDownContext>
-                {detail.readme || detail.manifest_snapshot?.description || ''}
-              </MarkDownContext>
-            </div>
-            <h3 className='mb-2 mt-5 text-[14px] font-bold'>
+
+            <p className='mt-5 text-[13px] leading-7' style={{ color: token.colorTextSecondary }}>
+              {detail.manifest_snapshot?.description || ''}
+            </p>
+
+            <h3 className='mb-3 mt-7 text-[15px] font-bold'>
               {t('suites_cmds')}（{(detail.manifest_snapshot?.commands || []).length}）
             </h3>
             {(detail.manifest_snapshot?.commands || []).map((cmd: any) => (
               <div
                 key={cmd.name || cmd}
-                className='mb-2 flex items-center gap-3 rounded-lg border px-3 py-2 text-[12.4px]'
+                className='mb-2 flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-[13px] transition-colors hover:border-[#b7eb8f]'
                 style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
               >
-                <Tag color='green' className='font-mono' style={{ fontSize: 11 }}>
+                <Tag color='green' className='font-mono' style={{ fontSize: 11.5, marginInlineEnd: 0 }}>
                   {cmd.name || cmd}
                 </Tag>
                 <span style={{ color: token.colorTextSecondary }}>{cmd.description || ''}</span>
+                <ArrowRightOutlined className='ml-auto' style={{ color: token.colorTextQuaternary }} />
               </div>
             ))}
-            <h3 className='mb-2 mt-5 text-[14px] font-bold'>{t('suites_manifest')}</h3>
-            <div className='rounded-lg border p-3 text-[12px]' style={{ borderColor: token.colorBorderSecondary }}>
+
+            <h3 className='mb-3 mt-7 text-[15px] font-bold'>
+              {t('suites_skills_section')}（{(detail.skill_details || []).length}）
+            </h3>
+            <div
+              className='overflow-hidden rounded-xl border'
+              style={{ borderColor: token.colorBorderSecondary, background: token.colorBgContainer }}
+            >
+              {(detail.skill_details || []).map((sk, i) => (
+                <div
+                  key={sk.name}
+                  className='px-5 py-4'
+                  style={{ borderTop: i ? `1px solid ${token.colorBorderSecondary}` : undefined }}
+                >
+                  <div className='text-[14px] font-bold'>{sk.name}</div>
+                  <p className='mt-1 text-[12.5px] leading-6' style={{ color: token.colorTextTertiary }}>
+                    {sk.description}
+                  </p>
+                </div>
+              ))}
+              {(detail.skill_details || []).length === 0 && (
+                <div className='px-5 py-6 text-center text-[12px]' style={{ color: token.colorTextTertiary }}>
+                  —
+                </div>
+              )}
+            </div>
+
+            <h3 className='mb-2 mt-7 text-[15px] font-bold'>{t('suites_manifest')}</h3>
+            <div className='rounded-xl border p-4 text-[12px]' style={{ borderColor: token.colorBorderSecondary }}>
               <div className='flex justify-between py-1'>
                 <span style={{ color: token.colorTextTertiary }}>execution</span>
                 <span className='font-mono font-bold'>{detail.execution || 'react'}</span>
@@ -233,6 +286,11 @@ const SuitesPage = () => {
                   {JSON.stringify(detail.manifest_snapshot?.context_defaults || {})}
                 </span>
               </div>
+            </div>
+
+            <h3 className='mb-2 mt-7 text-[15px] font-bold'>README</h3>
+            <div className='text-[12.8px] leading-6' style={{ color: token.colorTextSecondary }}>
+              <MarkDownContext>{detail.readme || ''}</MarkDownContext>
             </div>
           </div>
         ) : (
