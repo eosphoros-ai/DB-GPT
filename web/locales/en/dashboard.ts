@@ -1,5 +1,32 @@
 // Chinese source copy is used as a stable translation key for dashboard UI.
 const DashboardEn: Record<string, string> = {
+  '请修改看板计划：': 'Please revise the dashboard plan: ',
+  分享链接无效或已失效: 'This share link is invalid or has expired',
+  发布快照筛选失败: 'Could not filter the published snapshot',
+  无法打开分享看板: 'Could not open the shared dashboard',
+  '正在读取已发布快照…': 'Loading the published snapshot…',
+  持续更新: 'Live updates',
+  最新版公开链接: 'Latest public version',
+  历史快照: 'Historical snapshot',
+  '粒度：{{grain}}': 'Grain: {{grain}}',
+  未说明: 'Not specified',
+  分享页筛选条: 'Shared dashboard filters',
+  每分钟更新: 'Updates every minute',
+  快照联动: 'Snapshot filtering',
+  '布局与查询固定，数据持续更新。筛选会联动本次刷新后的数据。':
+    'The layout and queries are fixed while data updates. Filters apply to the refreshed data.',
+  '可调整筛选条件；结果只在发布时冻结的数据集上计算，不会连接生产数据库。':
+    'Filters use only the dataset frozen at publication and do not connect to the production database.',
+  这个发布版本不能完整响应筛选: 'This published version cannot fully apply filters',
+  '以下组件发布时没有冻结筛选数据，只能保持当时的结果：{{widgets}}。请让看板所有者完成发布筛选配置后重新发布一个新版本。':
+    'These widgets retain their original results because filter data was not frozen at publication: {{widgets}}. Ask the dashboard owner to configure publication filters and publish a new version.',
+  数据更新暂时不可用: 'Data updates are temporarily unavailable',
+  筛选发布快照失败: 'Could not filter the published snapshot',
+  '{{error}}。已保留上一次成功显示的结果。': '{{error}}. The last successfully displayed results have been retained.',
+  '只读持续更新分享 · 数据由发布者授权查询 · 每分钟最多更新一次；原数据库新增或修改后会在这里体现。':
+    'Read-only live view · Queries are authorized by the publisher · Updates at most once per minute to reflect changes in the source database.',
+  '这是发布时保存的只读数据快照；打开此页面不会连接或查询原始数据库。':
+    'This is a read-only snapshot saved at publication. Opening this page does not connect to or query the original database.',
   零售经营总览: 'Retail overview',
   '指标、面积趋势与门店排行组合，查看销售规模和主要贡献。':
     'Combine metrics, area trends, and store rankings to review sales and their main contributors.',

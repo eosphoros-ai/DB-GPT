@@ -94,7 +94,6 @@ export default function DashboardCreatePage() {
     setBusy(true);
     setError('');
     setAnswer('');
-    setHasRun(true);
     const complete = () => {
       if (active.current === controller) {
         active.current = null;
@@ -122,6 +121,7 @@ export default function DashboardCreatePage() {
         datasetId.current = body.data.dataset_id;
       }
       controller.signal.throwIfAborted();
+      setHasRun(true);
       await chat({
         chatId: conversationId.current,
         ctrl: controller,
@@ -242,7 +242,7 @@ export default function DashboardCreatePage() {
               if (state.confirmationPrompt) void send(state.confirmationPrompt);
             }}
             onRevise={() => {
-              setPrompt(generation.revisionPrompt || '请修改看板计划：');
+              setPrompt(generation.revisionPrompt || dt('请修改看板计划：'));
               textInput.current?.focus();
             }}
           />

@@ -220,6 +220,14 @@ test.describe('Deterministic dashboard browser lifecycle', () => {
     await expect(page.locator('a[href*="/dashboard-share/"]').first()).toBeVisible();
     expect(api.published().schema.dashboard.title).toBe(draftTitle);
     await page.screenshot({ path: testInfo.outputPath('english-publication.png'), fullPage: true });
+    const shareUrl = await page.locator('a[href*="/dashboard-share/"]').first().getAttribute('href');
+    await page.goto(shareUrl!);
+    await expect(page.getByRole('heading', { name: draftTitle, exact: true })).toBeVisible();
+    await expect(
+      page.getByText(`Published version ${api.published().published_revision}`, { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('Global filters', { exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('english-public-share.png'), fullPage: true });
   });
 
   test('keeps newer edits when a pending save completes, then saves them at the new revision', async ({ page }) => {

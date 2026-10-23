@@ -192,6 +192,31 @@ describe('scoped Dashboard creation entry', () => {
     expect(screen.getByRole('alert').textContent).toContain('已停止生成');
   });
 
+  it('allows a failed upload to be replaced before starting a conversation', async () => {
+    const upload = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ success: false, err_msg: 'Invalid workbook' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { dataset_id: 'replacement' } }) });
+    vi.stubGlobal('fetch', upload);
+    render(<DashboardCreatePage />);
+    const fileInput = screen.getByLabelText('上传数据文件') as HTMLInputElement;
+    const prompt = screen.getByRole('textbox', { name: '分析需求' }) as HTMLTextAreaElement;
+    fireEvent.change(fileInput, { target: { files: [new File(['broken'], 'broken.xlsx')] } });
+    fireEvent.change(prompt, { target: { value: 'Keep my analysis request' } });
+    fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+    await screen.findByText('Invalid workbook');
+    expect(state.chat).not.toHaveBeenCalled();
+    expect(fileInput.disabled).toBe(false);
+    expect(prompt.value).toBe('Keep my analysis request');
+    fireEvent.change(fileInput, { target: { files: [new File(['sales\n10'], 'sales.csv')] } });
+    fireEvent.click(screen.getByRole('button', { name: '发送需求' }));
+    await waitFor(() => expect(state.chat).toHaveBeenCalledTimes(1));
+    const body = upload.mock.calls[1][1].body as FormData;
+    expect((body.get('files') as File).name).toBe('sales.csv');
+    expect(state.chat.mock.calls[0][0].data.ext_info.dataset_id).toBe('replacement');
+    expect(fileInput.disabled).toBe(true);
+  });
+
   it('releases a terminal failure without waiting for stream closure and preserves the next request', async () => {
     let resolveOld!: () => void;
     state.chat.mockImplementationOnce(
