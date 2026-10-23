@@ -112,6 +112,14 @@ export const postSemanticActivate = (
   data: { sampling_limit?: number; run_draft_generation?: boolean; embedding_model?: string },
 ) => POST<typeof data, { ds_id: number; status: string; whitelist: number }>(`/api/v1/semantic/spaces/${id}/activate`, data);
 
+export const postSemanticBackfill = () =>
+  POST<null, { synced: string[]; failed: string[] }>('/api/v1/semantic/spaces/backfill');
+
+export const postSemanticExample = (
+  id: number,
+  data: { question: string; sql_text: string; example_name?: string; explanation?: string; source?: string },
+) => POST<typeof data, { id: number; status: string }>(`/api/v1/semantic/spaces/${id}/examples`, data);
+
 export const postSemanticSync = (id: number, data?: { db_name?: string }) =>
   POST<typeof data, Record<string, number>>(`/api/v1/semantic/spaces/${id}/sync`, data ?? {});
 

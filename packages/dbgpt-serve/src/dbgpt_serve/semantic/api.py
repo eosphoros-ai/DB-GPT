@@ -86,6 +86,40 @@ async def sync_space(ds_id: int, payload: Dict[str, Any] = Body(default={})):
     return Result.succ(asdict(report))
 
 
+@router.post("/v1/semantic/spaces/backfill")
+async def backfill_spaces():
+    """Register + L1-sync spaces for pre-existing datasource connections.
+
+    The auto-register hook only fires on *new* connections; this endpoint
+    backfills the ones created before the semantic center was deployed.
+    """
+    from dbgpt_serve.datasource.manages.connect_config_db import (
+        ConnectConfigDao,
+        ConnectConfigEntity,
+    )
+
+    dao = ConnectConfigDao()
+    session = dao.get_raw_session()
+    try:
+        rows = session.query(ConnectConfigEntity).all()
+        conns = [(r.db_name, r.db_type) for r in rows]
+    finally:
+        session.close()
+    sync = SemanticSyncService()
+    done: list = []
+    failed: list = []
+    for db_name, db_type in conns:
+        try:
+            sync.ensure_space(db_name, db_name, db_type or "")
+            connector = _connector(db_name)
+            sync.sync(db_name, connector)
+            done.append(db_name)
+        except Exception as e:  # noqa: BLE001 - one bad conn must not stop all
+            logger.warning(f"backfill sync failed for {db_name}: {e}")
+            failed.append(db_name)
+    return Result.succ({"synced": done, "failed": failed})
+
+
 @router.get("/v1/semantic/spaces/{ds_id}/coverage")
 async def coverage(ds_id: int):
     return Result.succ(get_semantic_service().coverage(ds_id))
@@ -170,6 +204,18 @@ async def publish_metric(metric_id: int, payload: Dict[str, Any] = Body(default=
 
 
 # ---- L4/L5/L6 ----
+@router.post("/v1/semantic/spaces/{ds_id}/examples")
+async def create_example(ds_id: int, payload: Dict[str, Any] = Body(...)):
+    return Result.succ(
+        get_semantic_service().create_example(
+            ds_id,
+            payload,
+            user=payload.get("user"),
+            source=payload.get("source", "manual"),
+        )
+    )
+
+
 @router.get("/v1/semantic/spaces/{ds_id}/relations")
 async def list_relations(ds_id: int):
     return Result.succ(get_semantic_service().list_relations(ds_id))

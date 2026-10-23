@@ -21,6 +21,7 @@ import {
   postMetricPublish,
   postRuleStatus,
   postSemanticActivate,
+  postSemanticBackfill,
   postSemanticSync,
 } from '@/client/api/semantic';
 import ConstructLayout from '@/new-components/layout/Construct';
@@ -96,6 +97,12 @@ const SemanticCenter = () => {
     else await loadSpaces();
   }, [dsId]);
 
+  const doBackfill = async () => {
+    const [, res] = await apiInterceptors(postSemanticBackfill());
+    message.success(`回填完成：同步 ${res?.synced?.length ?? 0} 个连接，失败 ${res?.failed?.length ?? 0}`);
+    await loadSpaces();
+  };
+
   const doSync = async (id: number) => {
     const [, report] = await apiInterceptors(postSemanticSync(id));
     message.success(`同步完成：新增表 ${report?.tables_added ?? 0}，删除 ${report?.tables_deleted ?? 0}`);
@@ -139,7 +146,10 @@ const SemanticCenter = () => {
     return (
       <ConstructLayout>
         <div className='p-6'>
-          <Title level={4}>语义中心</Title>
+          <Space>
+            <Title level={4} style={{ margin: 0 }}>语义中心</Title>
+            <Button size='small' onClick={doBackfill}>登记存量连接</Button>
+          </Space>
           <Text type='secondary'>
             每个数据源连接自动创建一个语义空间（L1 元数据自动同步、只读）；“激活治理”后点亮标注/指标/样例/规则与检索消费。
           </Text>

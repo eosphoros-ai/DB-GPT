@@ -110,6 +110,7 @@ class SemanticService:
         finally:
             session.close()
         whitelist = self._sync.apply_whitelist(ds_id, sampling_limit)
+        rules_seeded = self.seed_default_rules(ds_id, user)
         if run_draft_generation:
             if self.draft_hook:
                 self.draft_hook(ds_id)
@@ -119,7 +120,85 @@ class SemanticService:
                     "in phase 3, skipped for now",
                     ds_id,
                 )
-        return {"ds_id": ds_id, "status": "activated", "whitelist": whitelist}
+        return {
+            "ds_id": ds_id,
+            "status": "activated",
+            "whitelist": whitelist,
+            "rules_seeded": rules_seeded,
+        }
+
+    # L6 bootstrap seeds: readonly/whitelist/limit active by default (safe),
+    # business-specific ones (tenant/soft_delete/replica) inactive for admin.
+    DEFAULT_RULES = [
+        ("只读模式", "readonly", "Agent 仅允许 SELECT，禁止 DDL/DML", "active"),
+        (
+            "行级权限（租户隔离）",
+            "tenant_filter",
+            "自动注入 tenant_id 过滤",
+            "inactive",
+        ),
+        ("默认软删除过滤", "soft_delete", "统计自动附加 is_deleted=0", "inactive"),
+        ("表白名单", "whitelist", "仅允许查询白名单内表", "active"),
+        ("查询超时/行数上限", "limit", "30s / 10000 行，超限拦截", "active"),
+        ("走只读从库", "replica", "分析查询路由到 replica，保护主库", "inactive"),
+    ]
+
+    def seed_default_rules(self, ds_id: int, user: Optional[str] = None) -> int:
+        """Idempotent L6 bootstrap: seed once per space on activation."""
+        if self._rule_dao.list_by_ds(ds_id):
+            return 0
+        from dbgpt_serve.semantic.models import SemRuleEntity
+
+        session = self._rule_dao.get_raw_session()
+        session.expire_on_commit = False
+        try:
+            for name, rtype, definition, status in self.DEFAULT_RULES:
+                session.add(
+                    SemRuleEntity(
+                        ds_id=ds_id,
+                        rule_name=name,
+                        rule_type=rtype,
+                        rule_definition=definition,
+                        status=status,
+                        provenance="bootstrap",
+                        user_name=user,
+                    )
+                )
+            session.commit()
+            return len(self.DEFAULT_RULES)
+        finally:
+            session.close()
+
+    def create_example(
+        self,
+        ds_id: int,
+        payload: Dict[str, Any],
+        user: Optional[str] = None,
+        source: str = "manual",
+    ) -> Dict[str, Any]:
+        """L5 manual/import entry (feedback path reuses source=thumbs_up)."""
+        from dbgpt_serve.semantic.models import SemExampleEntity, dump_json
+
+        example = SemExampleEntity(
+            ds_id=ds_id,
+            example_name=payload.get("example_name"),
+            question=payload["question"],
+            sql_text=payload["sql_text"],
+            explanation=payload.get("explanation"),
+            linked_metrics=dump_json(payload.get("linked_metrics")),
+            linked_tables=dump_json(payload.get("linked_tables")),
+            source=source,
+            status=payload.get("status", "verified"),
+            user_name=user,
+        )
+        session = self._example_dao.get_raw_session()
+        session.expire_on_commit = False
+        try:
+            session.add(example)
+            session.commit()
+            return {"id": example.id, "status": example.status}
+        finally:
+            session.close()
 
     # ---- review & publish ----
     def review_entry(

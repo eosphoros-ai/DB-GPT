@@ -20,6 +20,7 @@ def client(tmp_path_factory):
     path = tmp_path_factory.mktemp("sem_api") / "sem.db"
     db.init_db(f"sqlite:///{path}")
     import dbgpt_serve.semantic.models  # noqa: F401  (register tables)
+    import dbgpt_serve.datasource.manages.connect_config_db  # noqa: F401
 
     db.create_all()
     app = FastAPI()
@@ -128,6 +129,36 @@ def test_metric_create_publish_and_rules(client):
     assert toggled["status"] == "inactive"
     rules = client.get(f"{P}/spaces/{ds_id}/rules").json()["data"]
     assert any(r["id"] == rule_id and r["status"] == "inactive" for r in rules)
+
+
+def test_backfill_without_datasources(client):
+    resp = client.post(f"{P}/spaces/backfill")
+    assert resp.status_code == 200
+    assert resp.json()["data"]["synced"] == []
+
+
+def test_activate_seeds_default_rules(client):
+    sync = SemanticSyncService()
+    space = sync.ensure_space("api_conn_rules", "api_conn_rules", "sqlite")
+    sync.sync("api_conn_rules", FakeConnector(TABLES_V1))
+    resp = client.post(f"{P}/spaces/{space.id}/activate", json={})
+    assert resp.json()["data"]["rules_seeded"] == 6
+    rules = client.get(f"{P}/spaces/{space.id}/rules").json()["data"]
+    assert len(rules) == 6
+    by_type = {r["rule_type"]: r for r in rules}
+    assert by_type["readonly"]["status"] == "active"
+    assert by_type["tenant_filter"]["status"] == "inactive"
+
+
+def test_create_example_endpoint(client):
+    ds_id = _seed()
+    resp = client.post(
+        f"{P}/spaces/{ds_id}/examples",
+        json={"question": "q1", "sql_text": "SELECT 1", "source": "import"},
+    )
+    assert resp.status_code == 200
+    examples = client.get(f"{P}/spaces/{ds_id}/examples").json()["data"]
+    assert any(e["question"] == "q1" and e["source"] == "import" for e in examples)
 
 
 def test_unknown_space_404(client):
