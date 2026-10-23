@@ -19,8 +19,8 @@ P = "/api/v1/semantic"
 def client(tmp_path_factory):
     path = tmp_path_factory.mktemp("sem_api") / "sem.db"
     db.init_db(f"sqlite:///{path}")
-    import dbgpt_serve.semantic.models  # noqa: F401  (register tables)
     import dbgpt_serve.datasource.manages.connect_config_db  # noqa: F401
+    import dbgpt_serve.semantic.models  # noqa: F401  (register tables)
 
     db.create_all()
     app = FastAPI()
