@@ -4,7 +4,8 @@ import asyncio
 import dataclasses
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from contextvars import ContextVar
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
@@ -16,6 +17,29 @@ from ...resource.base import AgentResource, Resource, ResourceType
 from ...resource.tool.pack import ToolPack
 
 logger = logging.getLogger(__name__)
+
+
+# ── Human-in-the-loop tool approval gate ────────────────────────────────────
+# The agentic API layer installs a per-conversation gate (risk policy classify
+# + ApprovalCenter wait) via this ContextVar before spawning the agent task.
+# ``run_tool`` consults it before executing any tool; a non-None return value
+# short-circuits execution and is fed back to the model as the tool
+# observation (policy-deny / user-reject / timeout wording).
+ToolGate = Callable[[str, dict], Awaitable[Optional[str]]]
+
+_CURRENT_TOOL_GATE: ContextVar[Optional[ToolGate]] = ContextVar(
+    "dbgpt_current_tool_gate", default=None
+)
+
+
+def set_current_tool_gate(gate: Optional[ToolGate]):
+    """Install the approval gate for the current async context (returns token)."""
+    return _CURRENT_TOOL_GATE.set(gate)
+
+
+def reset_current_tool_gate(token) -> None:
+    """Restore the previous gate binding."""
+    _CURRENT_TOOL_GATE.reset(token)
 
 
 class ToolInput(BaseModel):
@@ -168,6 +192,9 @@ async def run_tool(
     raw_tool_input: Optional[str] = None,
 ) -> ActionOutput:
     """Run the tool."""
+    batch = split_joined_action(name, args)
+    if batch:
+        return await run_tools_batch(batch, resource, render_protocol, need_vis_render)
     is_terminal = None
     try:
         tool_packs = ToolPack.from_resource(resource)
@@ -190,16 +217,62 @@ async def run_tool(
             except Exception:
                 pass
 
-        try:
-            tool_result = await tool_pack.async_execute(resource_name=name, **args)
-            status = Status.COMPLETE.value
-            is_terminal = tool_pack.is_terminal(name)
-        except Exception as e:
+        # Guard: a truncated ReAct turn can emit ``Action: <tool>`` with no
+        # ``Action Input:`` (or native tool_calls with empty arguments).
+        # Executing then raises a confusing ``missing 1 required positional
+        # argument`` TypeError; fail fast with an observation the model can
+        # act on instead.
+        missing_required: List[str] = []
+        if not args:
+            tool_obj = next(
+                (
+                    r
+                    for r in (tool_pack.sub_resources or [])
+                    if getattr(r, "name", None) == name
+                ),
+                None,
+            )
+            arg_spec = getattr(tool_obj, "args", None) or {}
+            missing_required = [
+                k for k, v in arg_spec.items() if getattr(v, "required", False)
+            ]
+        gate = _CURRENT_TOOL_GATE.get()
+        gate_observation: Optional[str] = None
+        if gate is not None and not missing_required:
+            gate_observation = await gate(name, args)
+
+        if missing_required:
             response_success = False
-            logger.exception(f"Tool [{name}] execute failed!")
             status = Status.FAILED.value
-            err_msg = f"Tool [{name}] execute failed! {str(e)}"
+            err_msg = (
+                f"Tool [{name}] was called with no arguments (the Action Input "
+                f"was missing or the output was truncated). Required "
+                f"parameters: {missing_required}. Retry the call with a "
+                f"complete JSON Action Input; keep the payload short enough "
+                f"to fit the output limit."
+            )
+            logger.warning(err_msg)
             tool_result = err_msg
+        elif gate_observation is not None:
+            # Approval gate blocked the call (policy deny / user reject /
+            # confirmation timeout). The observation tells the model not to
+            # retry the same operation verbatim.
+            response_success = False
+            status = Status.FAILED.value
+            err_msg = None
+            tool_result = gate_observation
+            logger.info("Tool [%s] blocked by approval gate", name)
+        else:
+            try:
+                tool_result = await tool_pack.async_execute(resource_name=name, **args)
+                status = Status.COMPLETE.value
+                is_terminal = tool_pack.is_terminal(name)
+            except Exception as e:
+                response_success = False
+                logger.exception(f"Tool [{name}] execute failed!")
+                status = Status.FAILED.value
+                err_msg = f"Tool [{name}] execute failed! {str(e)}"
+                tool_result = err_msg
 
         result_str = str(tool_result)
         try:
@@ -287,6 +360,32 @@ class ToolCallSpec:
     args: Dict[str, Any] = dataclasses.field(default_factory=dict)
     call_id: Optional[str] = None
     raw_tool_input: Optional[str] = None
+
+
+def split_joined_action(name: str, args: Any) -> Optional[List[ToolCallSpec]]:
+    """Split a text-ReAct turn that joined several actions into one line.
+
+    The text protocol occasionally emits ``Action: tool_a, tool_b`` together
+    with an array ``Action Input: [{...}, {...}]``. Forwarding that verbatim
+    crashes ``ToolPack.async_execute(**args)`` ("argument after ** must be a
+    mapping, not list"). Pair the comma-joined names with the array elements
+    so the turn executes as a real batch instead.
+    """
+    if not isinstance(args, list) or not args:
+        return None
+    names = [n.strip() for n in str(name).split(",") if n.strip()]
+    if not names:
+        return None
+    specs: List[ToolCallSpec] = []
+    for index, item in enumerate(args):
+        spec_name = names[index] if index < len(names) else names[-1]
+        specs.append(
+            ToolCallSpec(
+                name=spec_name,
+                args=item if isinstance(item, dict) else {},
+            )
+        )
+    return specs
 
 
 async def run_tools_batch(

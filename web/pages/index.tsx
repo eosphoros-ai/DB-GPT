@@ -1,4 +1,6 @@
 import { ChatContext } from '@/app/chat-context';
+import { apiInterceptors } from '@/client/api';
+import { getChatFlows, getFlowById, getFlowTemplates } from '@/client/api/flow';
 import type { ResponseType } from '@/client/api';
 import ModelSelector from '@/components/chat/header/model-selector';
 import { useConnectors } from '@/hooks/use-connector-api';
@@ -29,6 +31,11 @@ import {
 } from '@/modules/session-files';
 import { PreprocessingResult } from '@/new-components/analysis';
 import { ChartConfig, ChartType } from '@/new-components/charts';
+import AgentTimeline, { stepsToTimelineBlocks } from '@/new-components/chat/content/AgentTimeline';
+import ApprovalDock from '@/new-components/chat/content/ApprovalDock';
+import ApprovalModeBadge from '@/new-components/chat/input/ApprovalModeBadge';
+import ArtifactCards, { StreamArtifact } from '@/new-components/chat/content/ArtifactCards';
+import ArtifactRail from '@/new-components/chat/content/ArtifactRail';
 import ContextUsageBar from '@/new-components/chat/content/ContextUsageBar';
 import ManusLeftPanel, {
   ExecutionStep as ManusExecutionStep,
@@ -49,14 +56,22 @@ import { AttachedConnector, ConnectorInstance } from '@/new-components/connector
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
+import type { IFlow } from '@/types/flow';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
 import type { SubAgentState } from '@/types/subagent';
+import type { ITaskflowRef } from '@/types/taskflow';
 import { buildActionDisplayText } from '@/utils/action-display';
 import axios from '@/utils/ctx-axios';
 import { createSummaryPresentation, type SummaryPresentation } from '@/utils/final-presentation';
+import { downloadQueryCsv } from '@/utils/query-export';
 import { decodeFinalEvent, decodeHistoryAnswer, type AgentCitation } from '@/utils/react-agent-final';
+import type { PendingApproval } from '@/utils/react-sse-parser';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
+import { flowToRef, parseTaskflowStream, resolveFlowUid, templateToRef } from '@/utils/taskflow';
+import { envelopeEmbeddedOutputs } from '@/utils/tool-envelope';
 import {
+  AimOutlined,
+  ApartmentOutlined,
   ApiOutlined,
   ArrowUpOutlined,
   AudioOutlined,
@@ -74,7 +89,9 @@ import {
   FileOutlined,
   FilePptOutlined,
   FileTextOutlined,
+  InboxOutlined,
   LeftOutlined,
+  LoadingOutlined,
   PaperClipOutlined,
   PieChartOutlined,
   PlusOutlined,
@@ -107,7 +124,7 @@ import {
 import { NextPage } from 'next';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const generateUUID = () => {
@@ -168,6 +185,205 @@ const _getFileIcon = (fileName: string, mimeType?: string) => {
   return <FileTextOutlined className='text-blue-500 text-lg' />;
 };
 
+/** Image extensions that can be rendered as thumbnails. */
+const SERVE_IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
+
+/**
+ * Map a file artifact's on-disk path to a URL the browser can load, or
+ * null when the backend cannot serve it. Generated images live either in
+ * the static ``/images`` mount (``pilot/message/img``) or under the
+ * generated-work roots (``pilot/tmp``, ``pi_workspace``) exposed via the
+ * scoped ``/v1/chat/harness/artifact-file`` endpoint.
+ */
+const servableImageUrl = (filePath?: string): string | null => {
+  if (!filePath) return null;
+  const p = filePath.replace(/\\/g, '/');
+  const base = p.split('/').pop() || '';
+  if (!SERVE_IMAGE_EXT_RE.test(base)) return null;
+  if (p.includes('/message/img/')) return `/images/${base}`;
+  if (p.includes('/pilot/') || p.includes('/pi_workspace/')) {
+    return `/api/v1/chat/harness/artifact-file?path=${encodeURIComponent(filePath)}`;
+  }
+  return null;
+};
+
+/** Deliverable extensions shown as first-class artifact cards: document
+ *  family only (reports / office / markdown). Charts and images are not
+ *  deliverables — they aggregate into a compact mosaic tile instead. */
+const DELIVERABLE_EXTS = new Set([
+  'html',
+  'htm',
+  'xlsx',
+  'xls',
+  'csv',
+  'pptx',
+  'ppt',
+  'pdf',
+  'docx',
+  'doc',
+  'md',
+  'markdown',
+]);
+/** Image extensions: never a final card, always folded into the chart
+ *  mosaic / process group. */
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']);
+/** Intermediate extensions that never surface as deliverable cards. */
+const PROCESS_EXTS = new Set([
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'py',
+  'sh',
+  'bash',
+  'log',
+  'tmp',
+  'lock',
+  'map',
+  'bak',
+  'ckpt',
+  'npy',
+  'npz',
+]);
+const PROCESS_NAME_RE = /(template|_rows|_check|check_|draft|scratch|intermediate|backup|\.bak|_tmp|tmp_)/i;
+
+/**
+ * Classify a file artifact as presentable deliverable vs intermediate
+ * process file. Files the final answer references (by name or path) are
+ * always deliverables; otherwise extension + naming heuristics decide,
+ * and unknown/no-extension names (path-segment noise) count as process
+ * so they stay out of the artifact strip.
+ */
+/**
+ * Boundary-aware reference check: the name/path must appear in the answer
+ * as a whole path segment or token — plain substring matching would treat
+ * e.g. "chenketing.ckt" (a segment of every absolute path) as referenced.
+ */
+const isReferencedInAnswer = (needle: string, answerText: string | undefined): boolean => {
+  if (!answerText || !needle) return false;
+  let idx = answerText.indexOf(needle);
+  while (idx >= 0) {
+    const before = idx > 0 ? answerText[idx - 1] : ' ';
+    const afterIdx = idx + needle.length;
+    const after = afterIdx < answerText.length ? answerText[afterIdx] : ' ';
+    const okBefore = idx === 0 || /[/\s"'`(=【:：]/.test(before);
+    const okAfter = !/[A-Za-z0-9._\-/\\]/.test(after);
+    if (okBefore && okAfter) return true;
+    idx = answerText.indexOf(needle, idx + 1);
+  }
+  return false;
+};
+
+const classifyFileTier = (
+  name: string,
+  filePath: string | undefined,
+  answerText: string | undefined,
+): { tier: 'final' | 'process'; referenced: boolean } => {
+  const base = (name || (filePath || '').split('/').pop() || '').toLowerCase();
+  const ext = base.includes('.') ? base.split('.').pop() || '' : '';
+  const referenced = isReferencedInAnswer(name, answerText) || isReferencedInAnswer(filePath || '', answerText);
+  // Charts/images are never deliverables: they fold into the mosaic tile
+  // and the process group even when the answer mentions them.
+  if (IMAGE_EXTS.has(ext)) return { tier: 'process', referenced };
+  if (PROCESS_NAME_RE.test(base) || PROCESS_EXTS.has(ext)) {
+    return { tier: 'process', referenced };
+  }
+  if (referenced) return { tier: 'final', referenced };
+  if (DELIVERABLE_EXTS.has(ext)) return { tier: 'final', referenced };
+  return { tier: 'process', referenced };
+};
+
+/**
+ * Synthesize a user-facing intention line for engines whose models do not
+ * emit one (pi): derive it from the tool name + primary argument so the
+ * round header / status row show what the step is doing, localized.
+ */
+const synthesizeIntention = (
+  action: string | undefined,
+  input: any,
+  t: (key: string, options?: any) => string,
+): string | undefined => {
+  if (!action) return undefined;
+  const pick = (keys: string[]): string => {
+    if (input && typeof input === 'object') {
+      for (const k of keys) {
+        if (typeof input[k] === 'string' && input[k]) return input[k] as string;
+      }
+      return '';
+    }
+    if (typeof input === 'string' && input.trim()) {
+      const src = input.trim();
+      try {
+        const obj = JSON.parse(src);
+        if (obj && typeof obj === 'object') {
+          for (const k of keys) {
+            if (typeof obj[k] === 'string' && obj[k]) return obj[k] as string;
+          }
+          return '';
+        }
+      } catch {
+        // python-repr style: {'query': '...', 'max_results': 8}
+        if (src.startsWith('{')) {
+          for (const k of keys) {
+            const m = src.match(new RegExp(`['"]?${k}['"]?\\s*:\\s*(['"])([^'"]*)\\1`));
+            if (m && m[2]) return m[2];
+          }
+          return '';
+        }
+        return src;
+      }
+    }
+    return '';
+  };
+  const clip = (v: string, n = 48) => (v.length > n ? `${v.slice(0, n)}…` : v);
+  const param = (keys: string[]) => clip(pick(keys));
+  switch (action) {
+    case 'web_search': {
+      const q = param(['query', 'q']);
+      return q ? t('intent_web_search', { q }) : (t('intent_web_search_plain') as string);
+    }
+    case 'web_fetch': {
+      const url = param(['url']);
+      return url ? t('intent_web_fetch', { url: clip(url, 64) }) : (t('intent_web_fetch_plain') as string);
+    }
+    case 'sql_query': {
+      const q = param(['sql', 'query']);
+      return q ? t('intent_sql', { q }) : (t('intent_sql_plain') as string);
+    }
+    case 'code_interpreter':
+    case 'code':
+      return t('intent_code');
+    case 'shell_interpreter':
+    case 'bash':
+      return t('intent_shell');
+    case 'html_interpreter':
+      return t('intent_html');
+    case 'read': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_read', { p: pth }) : (t('intent_read_plain') as string);
+    }
+    case 'write': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_write', { p: pth }) : (t('intent_write_plain') as string);
+    }
+    case 'edit': {
+      const pth = param(['path', 'file_path', 'file']);
+      return pth ? t('intent_edit', { p: pth }) : (t('intent_edit_plain') as string);
+    }
+    case 'todowrite':
+      return t('intent_todo');
+    case 'question':
+      return t('intent_question');
+    default:
+      if (action.startsWith('kb_') || action === 'knowledge_retrieve') return t('intent_kb');
+      if (/^(load_skill|get_skill|execute_skill)/.test(action)) {
+        const n = param(['skill_name', 'name', 'package']);
+        return n ? t('intent_skill', { n }) : (t('intent_skill_plain') as string);
+      }
+      return action;
+  }
+};
+
 interface DataSource {
   id: number;
   type: string;
@@ -198,6 +414,8 @@ interface ChatMessage {
   model_name?: string;
   order?: number;
   thinking?: boolean;
+  /** TaskFlow run metadata (set when this answer was produced by a task flow). */
+  flowRun?: { label: string };
   /** Immutable server snapshots of every session file attached to this message. */
   attachedFiles?: readonly SessionFileSnapshot[];
   attachedKnowledge?: KnowledgeSpace;
@@ -215,9 +433,14 @@ interface ExecutionStep {
   step: number;
   title?: string;
   detail: string;
-  status: 'running' | 'done' | 'failed';
+  status: 'running' | 'done' | 'failed' | 'pending';
   action?: string;
   actionInput?: any;
+  /** Wall-clock ms when the step started / finished (timeline durations). */
+  startedAt?: number;
+  endedAt?: number;
+  /** User-facing intent line from step.meta (action_intention). */
+  actionIntention?: string;
   todoMeta?: {
     state?: 'init' | 'progress' | 'done';
     done?: number;
@@ -238,7 +461,7 @@ interface Skill {
   icon?: string;
 }
 
-type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html';
+type ArtifactType = 'file' | 'table' | 'chart' | 'image' | 'code' | 'markdown' | 'summary' | 'html' | 'skill' | 'query';
 
 interface Artifact {
   id: string;
@@ -254,11 +477,32 @@ interface Artifact {
   filePath?: string;
   /** Which sub-agent produced this artifact (for sub-agent produced files). */
   sourceAgent?: string;
+  /**
+   * Presentation tier for file artifacts: ``final`` deliverables render
+   * as cards; ``process`` intermediates (templates, scratch scripts,
+   * row dumps, unknown-ext noise) collapse into a process-files group.
+   */
+  tier?: 'final' | 'process';
   // Chart-specific metadata
   chartType?: ChartType;
   chartConfig?: Partial<ChartConfig>;
 }
 
+/** Output types that materialize as stream artifact cards. */
+const ARTIFACT_OUTPUT_TYPES = new Set(['html', 'image', 'file', 'code', 'query']);
+const hasArtifactOutputs = (execution?: { outputs?: Record<string, ExecutionOutput[]> }): boolean =>
+  Object.values(execution?.outputs || {}).some(arr =>
+    arr.some(
+      o =>
+        ARTIFACT_OUTPUT_TYPES.has(o.output_type) ||
+        ((o.output_type === 'text' || o.output_type === 'markdown') &&
+          typeof o.content === 'string' &&
+          o.content.includes('"chunks"') &&
+          envelopeEmbeddedOutputs(o.content).length > 0),
+    ),
+  );
+
+type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary';
 type RightPanelTab = 'preview' | 'files' | 'charts' | 'tables' | 'analysis' | 'preprocess' | 'summary' | 'report';
 
 const _convertExecutionToMessageParts = (
@@ -317,7 +561,7 @@ const _convertExecutionToMessageParts = (
             ? 'write'
             : step.title?.toLowerCase().includes('code') ||
                 step.title?.toLowerCase().includes('execute') ||
-                actionLower === 'shell_interpreter'
+                (actionLower === 'shell_interpreter' || actionLower === 'bash')
               ? 'bash'
               : 'task';
 
@@ -361,6 +605,8 @@ const convertToManusFormat = (
   const getStepType = (title?: string, action?: string): StepType => {
     // Check action name first — it's the most reliable indicator
     const actionLower = (action || '').toLowerCase();
+    // TaskFlow product node (from the taskflow chat channel)
+    if (actionLower === 'taskflow_node') return 'flow_node';
     if (
       actionLower.includes('skill') ||
       actionLower === 'execute_skill_script_file' ||
@@ -369,7 +615,8 @@ const convertToManusFormat = (
       actionLower === 'load_skill'
     )
       return 'skill';
-    if (actionLower === 'shell_interpreter') return 'bash';
+    if (actionLower === 'shell_interpreter' || actionLower === 'bash') return 'bash';
+    if (actionLower === 'code_interpreter' || actionLower === 'code') return 'code';
     if (actionLower === 'sql_query') return 'sql';
     if (actionLower === 'question') return 'question';
     if (
@@ -565,7 +812,15 @@ const EXAMPLE_CARDS = [
 const Playground: NextPage = () => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { model, modelList, setModel } = useContext(ChatContext);
+  const {
+    model,
+    modelList,
+    setModel,
+    setConvRunning,
+    runningConvIds,
+    addOptimisticConv,
+    bumpDialogueList,
+  } = useContext(ChatContext);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const exampleRunInFlightRef = useRef(false);
@@ -833,6 +1088,8 @@ const Playground: NextPage = () => {
   const [_activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  /** Query artifacts re-run from edited SQL, keyed by view-message id. */
+  const [rerunQueryArtifacts, setRerunQueryArtifacts] = useState<Record<string, StreamArtifact[]>>({});
   const [createdSkillNames, setCreatedSkillNames] = useState<Record<string, string>>({});
   const [_rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('preview');
   const [streamingSummary, setStreamingSummary] = useState<string>('');
@@ -852,6 +1109,90 @@ const Playground: NextPage = () => {
   const [isConnectorPanelOpen, setIsConnectorPanelOpen] = useState(false);
   const [selectedConnectors, setSelectedConnectors] = useState<ConnectorInstance[]>([]);
   const [connectorSearchQuery, setConnectorSearchQuery] = useState('');
+
+  // ------------------------------------------------------------------
+  // TaskFlow: the flow selected from the "+" menu runs via chat_flow
+  // ------------------------------------------------------------------
+  const [selectedFlow, setSelectedFlow] = useState<ITaskflowRef | null>(null);
+  const selectedFlowRef = useRef<ITaskflowRef | null>(null);
+  selectedFlowRef.current = selectedFlow;
+  const [flowOptions, setFlowOptions] = useState<ITaskflowRef[]>([]);
+
+  // Load built-in templates + my taskflow flows for the "+" menu cascade.
+  useEffect(() => {
+    (async () => {
+      try {
+        const [, templatesRes] = await apiInterceptors(getFlowTemplates());
+        const templates = (((templatesRes as any)?.items ?? []) as any[])
+          .map(templateToRef)
+          .filter(Boolean) as ITaskflowRef[];
+        const [, flowsRes] = await apiInterceptors(getChatFlows({ page: 1, page_size: 50 }));
+        const mine = (((flowsRes as any)?.items ?? []) as IFlow[]).map(flowToRef).filter(Boolean) as ITaskflowRef[];
+        // De-duplicate: template instances already created appear in both.
+        const templateNames = new Set(templates.map(item => item.name));
+        setFlowOptions([...templates, ...mine.filter(item => !templateNames.has(item.name.replace(/_instance$/, '')))]);
+      } catch {
+        /* flow menu is best-effort */
+      }
+    })();
+  }, []);
+
+  // Deep link: /?flow=<uid> selects the flow chip (from the TaskFlow list "Run").
+  useEffect(() => {
+    if (!router.isReady) return;
+    const flowUid = router.query.flow as string | undefined;
+    if (!flowUid || selectedFlowRef.current?.uid === flowUid) return;
+    (async () => {
+      const [, flow] = await apiInterceptors(getFlowById(flowUid));
+      const ref = flow ? flowToRef(flow as IFlow) : null;
+      if (ref) {
+        setSelectedFlow(ref);
+        // Consume the query param so a later manual send is unaffected.
+        const { flow: _omit, ...rest } = router.query;
+        router.replace({ pathname: '/', query: rest }, undefined, { shallow: true });
+      } else {
+        message.warning(t('taskflow_not_taskflow_flow') as string);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query.flow]);
+
+  const flowMenuItems = useMemo(() => {
+    const items = flowOptions.map(ref => ({
+      key: `flow_${ref.isTemplate ? 'tpl' : 'flow'}_${ref.name}`,
+      label: (
+        <div className='flex items-center gap-2 py-0.5 max-w-[300px]'>
+          <ApartmentOutlined className='text-blue-500 flex-none' />
+          <div className='flex-1 min-w-0'>
+            <div className='flex items-center gap-1.5 text-[13px] font-medium text-gray-800 dark:text-gray-100'>
+              <span className='truncate'>{ref.label}</span>
+              {ref.isTemplate && (
+                <span className='text-[9px] px-1 rounded bg-blue-50 text-blue-600 flex-none'>
+                  {t('taskflow_builtin')}
+                </span>
+              )}
+            </div>
+            {ref.description && <div className='text-[10.5px] text-gray-400 truncate'>{ref.description}</div>}
+          </div>
+          <span className='text-[10px] text-gray-300 flex-none'>
+            {t('taskflow_nodes_count', { count: ref.nodeCount })}
+          </span>
+        </div>
+      ),
+      onClick: () => setSelectedFlow(ref),
+    }));
+    return [
+      ...items,
+      ...(items.length > 0 ? [{ type: 'divider' as const }] : []),
+      {
+        key: 'taskflow_manage',
+        icon: <ApartmentOutlined />,
+        label: t('taskflow_manage'),
+        onClick: () => router.push('/construct/taskflow'),
+      },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowOptions, t]);
   const [isScheduleOpen, setScheduleOpen] = useState(false);
   const { connectors: connectorsList } = useConnectors();
 
@@ -864,7 +1205,9 @@ const Playground: NextPage = () => {
   });
 
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  // Right rail is a contextual viewer (artifact previews / debug trace):
+  // collapsed by default so the conversation stream gets full width.
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [rightPanelView, setRightPanelView] = useState<PanelView>('execution');
   const [selectedCitationIndex, setSelectedCitationIndex] = useState<number | null>(null);
   const [pendingFinalization, setPendingFinalization] = useState<{
@@ -881,7 +1224,144 @@ const Playground: NextPage = () => {
   const summaryPresentationRef = useRef<SummaryPresentation | null>(null);
   const summaryPresentationResponseIdRef = useRef<string | null>(null);
   const summaryPresentationFullTextRef = useRef('');
+  // Response ids that received server-streamed `final.chunk` events. When
+  // set, the `final` event skips the client-side typewriter presentation
+  // because the panel already grew in real time.
+  const finalChunkStreamedRef = useRef<Record<string, boolean>>({});
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
+
+  // Rail mode: viewer (mockup form: artifact preview / gallery) by default;
+  // legacy Execution Steps / Trace / Summary panel behind the debug toggle
+  // or whenever a legacy view (references, sub-agent, step detail) is needed.
+  const [railDebug, setRailDebug] = useState(false);
+
+  // Contextual rail behavior: slide open while an artifact preview is
+  // active, slide closed when it clears — but only when the preview itself
+  // opened the rail (manual expansion / gallery stays open).
+  const previewOpenedRailRef = useRef(false);
+  useEffect(() => {
+    if (previewArtifact) {
+      previewOpenedRailRef.current = true;
+      setRightPanelView(previewArtifact.type === 'image' ? 'image-preview' : 'html-preview');
+      setRightPanelCollapsed(false);
+    } else if (previewOpenedRailRef.current) {
+      previewOpenedRailRef.current = false;
+      setRightPanelCollapsed(true);
+    }
+  }, [previewArtifact]);
+
+  /** Skill-package actions on artifact cards (download zip / add). */
+  const handleSkillZipDownload = useCallback(
+    async (skillName: string) => {
+      try {
+        const base = process.env.API_BASE_URL || '';
+        const res = await fetch(`${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`);
+        if (!res.ok) throw new Error('Download failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${skillName}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        message.error(t('download_failed', 'Download failed') as string);
+      }
+    },
+    [t],
+  );
+  const handleSkillAdd = useCallback(
+    (skillName: string) => {
+      message.success(t('skill_added_success', { skillName }) as string);
+    },
+    [t],
+  );
+
+  const handlePreviewStreamArtifact = useCallback((artifact: StreamArtifact) => {
+    setPreviewArtifact(artifact as Artifact);
+  }, []);
+
+  /** Edit & re-run a query artifact's SQL against the bound datasource.
+   *  The new result set is appended to the round as a fresh query artifact. */
+  const handleQueryRerun = useCallback(
+    async (sql: string, dbName?: string, messageId?: string) => {
+      const convUid = conversationIdRef.current;
+      if (!convUid) throw new Error(t('qa_rerun_no_conv', '会话未就绪'));
+      const res: any = await axios.post('/api/v1/chat/sql/run', {
+        con_uid: convUid,
+        sql,
+        db_name: dbName,
+      });
+      const body = res?.data;
+      if (!body || body.success === false) {
+        throw new Error(body?.err_msg || t('qa_rerun_failed', '重跑失败'));
+      }
+      const payload = body.data;
+      if (messageId) {
+        setRerunQueryArtifacts(prev => ({
+          ...prev,
+          [messageId]: [
+            ...(prev[messageId] || []),
+            {
+              id: `${messageId}-query-rerun-${Date.now()}`,
+              type: 'query',
+              name: t('qa_artifact_name', '查询结果 · {{count}} 行', {
+                count: payload?.row_count ?? payload?.rows?.length ?? 0,
+              }),
+              content: payload,
+              createdAt: Date.now(),
+              messageId,
+              tier: 'final',
+            },
+          ],
+        }));
+      }
+      return payload;
+    },
+    [t],
+  );
+
+  // Global turn status line (Codex-style): one summary line at the end
+  // of the stream instead of per-panel spinners/badges.
+  const streamStatus = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.role !== 'view') continue;
+      const exec = executionMap[msg.id];
+      if (!exec || exec.steps.length === 0) continue;
+      const toolCalls = exec.steps.filter(s => s.action && s.action.toLowerCase() !== 'terminate').length;
+      const rounds = exec.steps.reduce((m, s) => Math.max(m, s.step || 0), 0);
+      const running = exec.steps.some(s => s.status === 'running') || Boolean(msg.thinking);
+      const starts = exec.steps.map(s => s.startedAt).filter((v): v is number => typeof v === 'number');
+      const ends = exec.steps.map(s => s.endedAt).filter((v): v is number => typeof v === 'number');
+      let dur = '';
+      if (starts.length) {
+        const end = running || !ends.length ? Date.now() : Math.max(...ends);
+        const elapsed = end - Math.min(...starts);
+        dur =
+          elapsed >= 60000
+            ? `${Math.floor(elapsed / 60000)}m ${Math.round((elapsed % 60000) / 1000)}s`
+            : `${Math.max(1, Math.round(elapsed / 1000))}s`;
+      }
+      return {
+        running,
+        text: running
+          ? (t('agent_status_running', {
+              rounds,
+              calls: toolCalls,
+              dur: dur ? ` · ${dur}` : '',
+            }) as string)
+          : (t('agent_status_done', {
+              rounds,
+              calls: toolCalls,
+              dur: dur ? ` · ${dur}` : '',
+            }) as string),
+      };
+    }
+    return null;
+  }, [messages, executionMap, t]);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -933,6 +1413,10 @@ const Playground: NextPage = () => {
   const taskEpochRef = useRef(0);
   const historyRequestRef = useRef(0);
   const historyAbortControllerRef = useRef<AbortController | null>(null);
+  /** In-flight round per conv (the message objects themselves) so re-entering
+   *  a running conversation can re-inject the live human/view pair — history
+   *  only holds flushed rounds and New Task clears the messages state. */
+  const liveRoundRef = useRef<Record<string, { human: any; view: any }>>({});
   const exampleAbortControllerRef = useRef<AbortController | null>(null);
   const loadConversationRef = useRef<(convUid: string) => Promise<void>>(async () => undefined);
 
@@ -963,6 +1447,7 @@ const Playground: NextPage = () => {
       custom?: boolean;
     }>;
   } | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
   const [taskPlan, setTaskPlan] = useState<TaskItem[]>([]);
 
   const resetTaskSession = useCallback(() => {
@@ -972,8 +1457,12 @@ const Playground: NextPage = () => {
     historyRequestRef.current += 1;
     conversationIdRef.current = null;
     sendInFlightRef.current = false;
+    setPendingApprovals([]);
     exampleRunInFlightRef.current = false;
-    abortInFlightChat();
+    // Parallel tasks: do NOT abort the in-flight stream — drop the handle so
+    // the stop button targets only the active session while the old SSE
+    // keeps pumping in the background until its own finally clears badges.
+    chatAbortControllerRef.current = null;
     historyAbortControllerRef.current?.abort();
     historyAbortControllerRef.current = null;
     exampleAbortControllerRef.current?.abort();
@@ -1002,7 +1491,9 @@ const Playground: NextPage = () => {
     setCreatedSkillNames({});
     setRightPanelTab('preview');
     setRightPanelView('execution');
-    setRightPanelCollapsed(false);
+    // Viewer paradigm: rail stays collapsed across conversation switches;
+    // it slides open only for artifact previews / explicit user actions.
+    setRightPanelCollapsed(true);
     setStreamingSummary('');
     setSummaryComplete(false);
     setTaskPlan([]);
@@ -1036,33 +1527,29 @@ const Playground: NextPage = () => {
 
   useNewTaskOwner(resetTaskSession);
 
-  // A new-task command issued while a turn is streaming (or an example run is
-  // still preparing) is destructive — it aborts the request and discards the
-  // round — so gate it behind an explicit confirmation. Idle sessions resolve
-  // synchronously and never see the dialog.
-  const confirmInterruptRunningTask = useCallback((): boolean | Promise<boolean> => {
-    if (!sendInFlightRef.current && !exampleRunInFlightRef.current) return true;
-    return new Promise<boolean>(resolve => {
-      let settled = false;
-      const settle = (confirmed: boolean) => {
-        if (settled) return;
-        settled = true;
-        resolve(confirmed);
-      };
-      Modal.confirm({
-        title: t('new_task_interrupt_title'),
-        content: t('new_task_interrupt_content'),
-        okText: t('new_task_interrupt_ok'),
-        cancelText: t('cancel'),
-        okButtonProps: { danger: true },
-        onOk: () => settle(true),
-        onCancel: () => settle(false),
-      });
-    });
-  }, [t]);
+  // Tasks run in parallel: starting a new task detaches the in-flight stream
+  // (it keeps running in the background, sidebar badge spinning) instead of
+  // interrupting it, so no confirmation is needed anymore.
+  const confirmInterruptRunningTask = useCallback((): boolean => true, []);
   useNewTaskGuard(confirmInterruptRunningTask);
 
   const startNewTask = useStartNewTask();
+
+  const resolveApproval = useCallback(
+    async (approvalId: string, decision: 'approve' | 'reject', scope: string = 'once', reason?: string) => {
+      try {
+        const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/approval/${approvalId}/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision, scope, reason }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (e) {
+        console.error('resolveApproval failed:', e);
+      }
+    },
+    [],
+  );
 
   const replyQuestion = useCallback(async (requestId: string, answers: string[][]) => {
     const res = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/question/${requestId}/reply`, {
@@ -1204,6 +1691,41 @@ const Playground: NextPage = () => {
         if (taskEpochRef.current !== transitionEpoch) return;
         console.error('Failed to restore conversation files', error);
       });
+      // Refresh recovery: an approval whose gate is still waiting server-side
+      // must re-show its dock after a reload even though the SSE frame that
+      // created it is gone from this page instance.
+      void (async () => {
+        try {
+          const res = await fetch(
+            `${process.env.API_BASE_URL ?? ''}/api/v1/chat/approval/pending?con_uid=${encodeURIComponent(convId)}`,
+          );
+          const json = await res.json();
+          if (taskEpochRef.current !== transitionEpoch) return;
+          const rows = (json?.data ?? []) as Array<Record<string, any>>;
+          if (!rows.length) return;
+          setPendingApprovals(prev => {
+            const known = new Set(prev.map(p => p.approval_id));
+            const added = rows
+              .filter(r => r.approval_id && !known.has(r.approval_id))
+              .map(r => ({
+                type: 'approval.requested' as const,
+                approval_id: String(r.approval_id),
+                conv_id: r.conv_id,
+                tool: String(r.tool ?? ''),
+                args_preview: String(r.args_preview ?? ''),
+                rule_id: String(r.rule_id ?? ''),
+                risk: 'confirm',
+                ttl_seconds: 300,
+                ts: r.created_ts,
+                status: 'pending' as const,
+                scope: r.scope,
+              }));
+            return added.length ? [...prev, ...added] : prev;
+          });
+        } catch {
+          // Recovery is best-effort; the live SSE path remains authoritative.
+        }
+      })();
     } else if (!convId && conversationIdRef.current) {
       // Browser back / direct route changes use the same reset command as the
       // explicit new-task affordances. The command itself already clears the
@@ -1437,6 +1959,10 @@ const Playground: NextPage = () => {
         triggerBlobDownload(blob, artifact.name || 'code.py');
         break;
       }
+      case 'query': {
+        downloadQueryCsv(artifact.content, artifact.name || 'query_result');
+        break;
+      }
       case 'table': {
         const rows = artifact.content?.rows || [];
         const columns = artifact.content?.columns?.map((c: any) => c.dataIndex || c.key || c) || [];
@@ -1464,7 +1990,7 @@ const Playground: NextPage = () => {
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || imgName || 'file');
           } catch {
-            message.warning('文件暂不可下载');
+            message.warning(t('artifact_download_unavailable', '文件暂不可下载'));
           }
         } else if (filePath) {
           // Download via backend file download endpoint (for agent-created files)
@@ -1473,16 +1999,16 @@ const Playground: NextPage = () => {
             const resp = await fetch(downloadUrl);
             if (!resp.ok) {
               const errData = await resp.json().catch(() => ({}));
-              message.warning(errData.detail || '文件暂不可下载');
+              message.warning(errData.detail || t('artifact_download_unavailable', '文件暂不可下载'));
               break;
             }
             const blob = await resp.blob();
             triggerBlobDownload(blob, artifact.name || filePath.split('/').pop() || 'file');
           } catch {
-            message.warning('文件下载失败');
+            message.warning(t('artifact_download_failed', '文件下载失败'));
           }
         } else {
-          message.warning('文件暂不可下载');
+          message.warning(t('artifact_download_unavailable', '文件暂不可下载'));
         }
         break;
       }
@@ -1534,6 +2060,7 @@ const Playground: NextPage = () => {
       },
       summaryText?: string,
       filePath?: string | null,
+      answerText?: string,
     ): Artifact[] => {
       const finalArtifacts: Artifact[] = [];
       const now = Date.now();
@@ -1542,7 +2069,20 @@ const Playground: NextPage = () => {
       if (execution) {
         const allSteps = execution.steps || [];
         allSteps.forEach(step => {
-          const stepOutputs = execution.outputs[step.id] || [];
+          const rawOutputs = execution.outputs[step.id] || [];
+          // Harness engines embed html/image payloads inside plain-text
+          // ``{"chunks": [...]}`` envelopes; surface them as first-class
+          // outputs so artifact cards and previews work there too.
+          const stepOutputs: ExecutionOutput[] = [];
+          rawOutputs.forEach(output => {
+            stepOutputs.push(output);
+            if (output.output_type !== 'text' && output.output_type !== 'markdown') return;
+            const content = typeof output.content === 'string' ? output.content : '';
+            if (!content.includes('"chunks"')) return;
+            for (const embedded of envelopeEmbeddedOutputs(content)) {
+              stepOutputs.push({ output_type: embedded.type, content: embedded.content });
+            }
+          });
           stepOutputs.forEach((output, oIdx) => {
             if (output.output_type === 'code') {
               const codeStr = String(output.content || '').trim();
@@ -1572,6 +2112,7 @@ const Playground: NextPage = () => {
                 stepId: step.id,
                 downloadable: true,
                 size: output.content?.size,
+                filePath: output.content?.file_path || output.content?.path,
               });
             } else if (output.output_type === 'html') {
               const htmlContent =
@@ -1606,59 +2147,85 @@ const Playground: NextPage = () => {
                 stepId: step.id,
                 downloadable: true,
               });
+            } else if (output.output_type === 'query') {
+              // SQL result-set artifact: rendered as the full-width data
+              // block (SQL + table + CSV/Excel export) by ArtifactCards.
+              const payload = output.content || {};
+              const rowCount = payload.row_count ?? payload.rows?.length ?? 0;
+              finalArtifacts.push({
+                id: `${messageId}-query-${step.id}-${oIdx}`,
+                type: 'query',
+                name: t('qa_artifact_name', '查询结果 · {{count}} 行', { count: rowCount }),
+                content: payload,
+                createdAt: now,
+                messageId,
+                stepId: step.id,
+                downloadable: true,
+              });
             }
           });
 
-          // For shell_interpreter steps, extract file paths from code/text outputs
+          // For bash steps, extract file paths from code/text outputs
           // and create downloadable file artifacts
-          if (step.action === 'shell_interpreter') {
+          const WRITE_SCAN_ACTIONS = new Set(['shell_interpreter', 'code_interpreter', 'bash', 'code', 'write', 'edit']);
+          if (WRITE_SCAN_ACTIONS.has((step.action || '') as string)) {
             // Match both absolute paths and relative filenames with extensions
             const absPathPattern = /(?:\/[\w\-.]+)+\.\w{1,10}/g;
             const relFilePattern = /(?:>|>>|\btee\b|\btouch\b)\s+([\w\-./ ]+\.\w{1,10})/g;
             const seenFilePaths = new Set<string>();
+            // Scan tool outputs plus the step's own detail/observation text:
+            // pi write/edit results live there, not in execution.outputs.
+            const scanTexts: string[] = [];
             stepOutputs.forEach(output => {
               if (output.output_type === 'code' || output.output_type === 'text') {
-                const text = String(output.content || '');
-                // Look for file creation patterns
-                const hasFileCreation = /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>)/.test(text);
-                if (hasFileCreation) {
-                  const foundPaths: string[] = [];
-                  // Extract absolute paths
-                  const absMatches = text.match(absPathPattern) || [];
-                  foundPaths.push(...absMatches);
-                  // Extract relative paths after redirection operators
-                  let relMatch;
-                  while ((relMatch = relFilePattern.exec(text)) !== null) {
-                    const p = relMatch[1].trim();
-                    if (p && !p.startsWith('/')) foundPaths.push(p);
-                  }
-                  foundPaths.forEach(fp => {
-                    // Normalize: strip leading ./ if present
-                    const normalized = fp.replace(/^\.\//, '');
-                    const fileName = normalized.split('/').pop() || normalized;
-                    if (!seenFilePaths.has(fileName.toLowerCase())) {
-                      seenFilePaths.add(fileName.toLowerCase());
-                      const alreadyHasFile = finalArtifacts.some(
-                        a =>
-                          (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
-                      );
-                      if (!alreadyHasFile) {
-                        // Use the path as-is; backend resolves relative paths against pilot/tmp
-                        finalArtifacts.push({
-                          id: `${messageId}-shellfile-${step.id}-${fileName}`,
-                          type: 'file',
-                          name: fileName,
-                          content: { name: fileName, file_path: normalized },
-                          createdAt: now,
-                          messageId,
-                          stepId: step.id,
-                          downloadable: true,
-                          filePath: normalized,
-                        });
-                      }
-                    }
-                  });
+                scanTexts.push(String(output.content || ''));
+              }
+            });
+            const stepExtra = step as unknown as { detail?: string; observation?: string };
+            if (stepExtra.detail) scanTexts.push(String(stepExtra.detail));
+            if (stepExtra.observation) scanTexts.push(String(stepExtra.observation));
+            scanTexts.forEach(text => {
+              // Look for file creation patterns
+              const hasFileCreation =
+                /(?:>|>>|\btee\b|\bcat\b.*>|\bcp\b|\bmv\b|\btouch\b|\becho\b.*>|Successfully wrote\b|Wrote \d+ bytes)/.test(
+                  text,
+                );
+              if (hasFileCreation) {
+                const foundPaths: string[] = [];
+                // Extract absolute paths
+                const absMatches = text.match(absPathPattern) || [];
+                foundPaths.push(...absMatches);
+                // Extract relative paths after redirection operators
+                let relMatch;
+                while ((relMatch = relFilePattern.exec(text)) !== null) {
+                  const p = relMatch[1].trim();
+                  if (p && !p.startsWith('/')) foundPaths.push(p);
                 }
+                foundPaths.forEach(fp => {
+                  // Normalize: strip leading ./ if present
+                  const normalized = fp.replace(/^\.\//, '');
+                  const fileName = normalized.split('/').pop() || normalized;
+                  if (!seenFilePaths.has(fileName.toLowerCase())) {
+                    seenFilePaths.add(fileName.toLowerCase());
+                    const alreadyHasFile = finalArtifacts.some(
+                      a => (a.type === 'file' || a.type === 'image') && a.name.toLowerCase() === fileName.toLowerCase(),
+                    );
+                    if (!alreadyHasFile) {
+                      // Use the path as-is; backend resolves relative paths against pilot/tmp
+                      finalArtifacts.push({
+                        id: `${messageId}-shellfile-${step.id}-${fileName}`,
+                        type: 'file',
+                        name: fileName,
+                        content: { name: fileName, file_path: normalized },
+                        createdAt: now,
+                        messageId,
+                        stepId: step.id,
+                        downloadable: true,
+                        filePath: normalized,
+                      });
+                    }
+                  }
+                });
               }
             });
           }
@@ -1766,6 +2333,69 @@ const Playground: NextPage = () => {
         }
       }
 
+      // Promote image-extension file artifacts whose bytes the backend can
+      // serve (static /images mount or the scoped artifact-file endpoint)
+      // to first-class image artifacts, so stream cards and the rail
+      // gallery render real thumbnails instead of a generic file glyph.
+      for (const a of finalArtifacts) {
+        if (a.type !== 'file' || !a.filePath) continue;
+        const url = servableImageUrl(a.filePath);
+        if (!url) continue;
+        a.type = 'image';
+        a.content = url;
+      }
+
+      // Tier file artifacts: deliverables vs intermediate process files
+      // (the reference check needs the round's final answer text).
+      const referencedNames = new Set<string>();
+      for (const a of finalArtifacts) {
+        if (a.type === 'image') {
+          // Charts are never first-class deliverables; the mosaic tile and
+          // the process group carry them instead.
+          a.tier = 'process';
+          continue;
+        }
+        if (a.type === 'file') {
+          const cls = classifyFileTier(a.name, a.filePath, answerText || summaryText);
+          a.tier = cls.tier;
+          if (cls.referenced) referencedNames.add(a.name);
+        }
+      }
+      // Draft demotion: unreferenced weak-deliverable files (html/md/csv/
+      // svg) are usually intermediates when the round already produced a
+      // strong deliverable — skill package, rendered html envelope, office/
+      // pdf document, or a file the answer explicitly references.
+      const STRONG_EXTS = new Set(['xlsx', 'xls', 'pptx', 'ppt', 'pdf', 'docx']);
+      const DEMOTABLE_EXTS = new Set(['html', 'htm', 'md', 'csv', 'svg']);
+      const extOfName = (n: string) => ((n.includes('.') ? n.split('.').pop() : '') || '').toLowerCase();
+      const hasStrongDeliverable = finalArtifacts.some(
+        a =>
+          a.type === 'skill' ||
+          a.type === 'html' ||
+          (a.type === 'file' && (referencedNames.has(a.name) || STRONG_EXTS.has(extOfName(a.name)))),
+      );
+      if (hasStrongDeliverable) {
+        for (const a of finalArtifacts) {
+          if (a.type === 'query') {
+            // Fetch result sets are the deliverable only for fetch-style
+            // turns. When the turn produced a real deliverable (report,
+            // skill package, office document), the queries are intermediate
+            // evidence: fold them into the process group so the final
+            // surface shows the deliverable, not the scaffolding.
+            a.tier = 'process';
+            continue;
+          }
+          if (
+            a.type === 'file' &&
+            a.tier === 'final' &&
+            !referencedNames.has(a.name) &&
+            DEMOTABLE_EXTS.has(extOfName(a.name))
+          ) {
+            a.tier = 'process';
+          }
+        }
+      }
+
       // Deduplicate: for artifacts with the same name+type, keep only the last one
       const deduped: Artifact[] = [];
       const seen = new Map<string, number>();
@@ -1777,10 +2407,141 @@ const Playground: NextPage = () => {
         }
       }
 
-      return deduped;
+      // Directory-level aggregation: >=3 files under one root that
+      // includes SKILL.md collapse into a single skill-package artifact
+      // (folder card + tree preview), matching mockup v2.
+      // Skill roots = directories that directly contain a SKILL.md file;
+      // every descendant file joins the package (scripts/, references/...).
+      const skillRoots = deduped
+        .filter(a => a.type === 'file' && (a.name || '').toUpperCase() === 'SKILL.MD' && a.filePath)
+        .map(a => a.filePath!.split('/').slice(0, -1).join('/'));
+      const collapsedIds = new Set<string>();
+      for (const root of skillRoots) {
+        const members = deduped.filter(
+          a =>
+            (a.type === 'file' || (a.type === 'image' && !!a.filePath)) &&
+            !!a.filePath &&
+            !collapsedIds.has(a.id) &&
+            (a.filePath === `${root}/SKILL.md` || a.filePath.startsWith(`${root}/`)),
+        );
+        if (members.length < 3) continue;
+        deduped.push({
+          id: `${messageId}-skill-${root}`,
+          type: 'skill',
+          name: `${root.split('/').pop() || root}/`,
+          content: {
+            files: members.map(i => ({
+              name: i.name,
+              filePath: i.filePath,
+              size: i.size,
+              content: i.content?.content,
+            })),
+          },
+          createdAt: now,
+          messageId,
+          filePath: root,
+          size: members.reduce((sum, i) => sum + (i.size || 0), 0),
+        });
+        members.forEach(i => collapsedIds.add(i.id));
+      }
+      // Path-based skill folding: member files written under a skills/
+      // tree belong to that package even when SKILL.md landed in another
+      // round; aggregate >=2 of them into a skill card.
+      const SKILL_PATH_RE = /(\/|^)(?:\.?agents\/skills|skills)\/([^/]+)\//;
+      const bySkillRoot = new Map<string, Artifact[]>();
+      for (const a of deduped) {
+        if (collapsedIds.has(a.id) || a.type !== 'file' || !a.filePath) continue;
+        const m = SKILL_PATH_RE.exec(a.filePath);
+        if (!m) continue;
+        const root = a.filePath.slice(0, m.index + m[0].length - 1);
+        const arr = bySkillRoot.get(root) || [];
+        arr.push(a);
+        bySkillRoot.set(root, arr);
+      }
+      for (const [root, members] of bySkillRoot) {
+        if (members.length < 2) continue;
+        deduped.push({
+          id: `${messageId}-skillpath-${root}`,
+          type: 'skill',
+          name: `${root.split('/').pop() || root}/`,
+          content: {
+            files: members.map(i => ({
+              name: i.name,
+              filePath: i.filePath,
+              size: i.size,
+              content: i.content?.content,
+            })),
+          },
+          createdAt: now,
+          messageId,
+          filePath: root,
+          size: members.reduce((sum, i) => sum + (i.size || 0), 0),
+        });
+        members.forEach(i => collapsedIds.add(i.id));
+      }
+      return collapsedIds.size ? deduped.filter(a => !collapsedIds.has(a.id)) : deduped;
     },
-    [],
+    [t],
   );
+
+  // Conversation-level artifact list (rail gallery + header capsule).
+  // Includes the fallback summary artifact of the latest answer so every
+  // conversation has artifacts even when no files were produced.
+  const convArtifacts = useMemo(() => {
+    const list: Artifact[] = [];
+    for (const msg of messages) {
+      if (msg.role !== 'view') continue;
+      const exec = executionMap[msg.id];
+      if (!exec || !hasArtifactOutputs(exec)) continue;
+      list.push(...buildArtifactsFromExecution(msg.id, exec, undefined, undefined, msg.context));
+    }
+    const lastView = [...messages].reverse().find(m => m.role === 'view' && m.context);
+    if (lastView?.id && lastView.context) {
+      list.push({
+        id: `summary-${lastView.id}`,
+        type: 'summary',
+        name: t('artifact_summary_name', '本回答摘要'),
+        content: lastView.context,
+        createdAt: Date.now(),
+        messageId: lastView.id,
+      });
+    }
+    // Query artifacts re-run from edited SQL live outside executionMap.
+    for (const extras of Object.values(rerunQueryArtifacts)) {
+      for (const extra of extras) list.push(extra as unknown as Artifact);
+    }
+    // Cross-round convergence: charts/regenerations carry a hex run prefix
+    // (``a1d66fa2_correlation_heatmap.png``) or repeat verbatim each round;
+    // keep only the newest artifact per normalized name so the end summary
+    // lists each logical deliverable once.
+    const stripRunPrefix = (n: string) => n.replace(/^[0-9a-f]{8}_/i, '');
+    const deduped: Artifact[] = [];
+    const seen = new Map<string, number>();
+    for (let i = list.length - 1; i >= 0; i--) {
+      const a = list[i];
+      if (a.type === 'summary' || a.type === 'query') {
+        deduped.unshift(a);
+        continue;
+      }
+      const key = `${a.type}:${stripRunPrefix(a.name || '').toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.set(key, i);
+      deduped.unshift(a);
+    }
+    return deduped;
+  }, [messages, executionMap, buildArtifactsFromExecution, rerunQueryArtifacts, t]);
+
+  // Newest round that produced a query result set: only that round keeps an
+  // expanded query card; every older round folds its queries into its own
+  // "intermediate queries" group so multi-round fetch sessions do not
+  // re-stack one result card per round down the page.
+  const lastQueryRoundId = useMemo(() => {
+    for (let i = convArtifacts.length - 1; i >= 0; i -= 1) {
+      const a = convArtifacts[i];
+      if (a.type === 'query' && a.messageId) return a.messageId;
+    }
+    return null;
+  }, [convArtifacts]);
 
   useEffect(() => {
     if (!pendingFinalization) return;
@@ -1812,9 +2573,12 @@ const Playground: NextPage = () => {
 
     if (execution) {
       const skillStep = execution.steps.find(step => {
-        if (step.action !== 'shell_interpreter') return false;
+        if (step.action !== 'shell_interpreter' && step.action !== 'bash') return false;
         const detailHas = step.detail?.includes('package_skill') || step.detail?.includes('init_skill');
-        const inputHas = step.actionInput?.includes('package_skill') || step.actionInput?.includes('init_skill');
+        // actionInput may be a string (dbgpt) or an args object (pi bridge).
+        const inputText =
+          typeof step.actionInput === 'string' ? step.actionInput : JSON.stringify(step.actionInput ?? '');
+        const inputHas = inputText.includes('package_skill') || inputText.includes('init_skill');
         const outputTexts = (execution.outputs[step.id] || []).map(output => String(output.content)).join(' ');
         const outputHas =
           outputTexts.includes('package_skill') ||
@@ -1929,6 +2693,14 @@ const Playground: NextPage = () => {
     )
       return;
 
+    // TaskFlow: a selected flow takes over the send — it runs the compiled
+    // AWEL DAG via the chat_flow channel instead of the ReAct agent.
+    const activeFlow = selectedFlowRef.current;
+    if (activeFlow && inputQuery.trim()) {
+      await performFlowStart(activeFlow, inputQuery.trim());
+      return;
+    }
+
     const taskEpoch = taskEpochRef.current;
 
     cancelSummaryPresentation();
@@ -1939,10 +2711,19 @@ const Playground: NextPage = () => {
 
     // The conversation id must be settled before preparing file sends so the
     // uploads (bound at pick time) and this request share one session scope.
+    const isNewConv = !conversationIdRef.current;
     const currentConvId = conversationIdRef.current || generateUUID();
     if (!conversationIdRef.current) {
       conversationIdRef.current = currentConvId;
       setConversationId(currentConvId);
+    }
+    if (isNewConv) {
+      addOptimisticConv({
+        conv_uid: currentConvId,
+        user_input: inputQuery,
+        chat_mode: 'chat_react_agent',
+        gmt_created: new Date().toISOString(),
+      } as any);
     }
     let sendSnapshot: SessionFilesSendSnapshot | null = null;
 
@@ -2019,34 +2800,32 @@ const Playground: NextPage = () => {
     const humanId = generateUUID();
 
     // Add user message and AI placeholder message
-    setMessages(prev => [
-      ...prev,
-      {
-        id: humanId,
-        role: 'human',
-        context: inputQuery,
-        order: currentOrder,
-        attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
-        attachedKnowledge: effectiveKnowledge ?? undefined,
-        attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
-        attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
-        attachedConnectors:
-          selectedConnectors.length > 0
-            ? selectedConnectors.map(c => ({
-                id: c.id,
-                connector_type: c.connector_type,
-                display_name: c.display_name,
-              }))
-            : undefined,
-      },
-      {
-        id: responseId,
-        role: 'view',
-        context: '',
-        order: currentOrder,
-        thinking: true,
-      },
-    ]);
+    const humanMsg: ChatMessage = {
+      id: humanId,
+      role: 'human',
+      context: inputQuery,
+      order: currentOrder,
+      attachedFiles: filesAttachedThisSend ? snapshotsForSend(filesAttachedThisSend) : undefined,
+      attachedKnowledge: effectiveKnowledge ?? undefined,
+      attachedSkill: effectiveSkill ? { name: effectiveSkill.name, id: effectiveSkill.id } : undefined,
+      attachedDb: effectiveDb ? { db_name: effectiveDb.db_name, db_type: effectiveDb.db_type } : undefined,
+      attachedConnectors:
+        selectedConnectors.length > 0
+          ? selectedConnectors.map(c => ({
+              id: c.id,
+              connector_type: c.connector_type,
+              display_name: c.display_name,
+            }))
+          : undefined,
+    };
+    const viewMsg: ChatMessage = {
+      id: responseId,
+      role: 'view',
+      context: '',
+      order: currentOrder,
+      thinking: true,
+    };
+    setMessages(prev => [...prev, humanMsg, viewMsg]);
 
     setLoading(true);
     setQuery(''); // Clear input
@@ -2075,6 +2854,9 @@ const Playground: NextPage = () => {
     // Build ext_info once and reuse it for both the live request and the
     // snapshot captured for "保存定时任务", so a saved task replays the exact
     // same context (files / database / knowledge / skill / connectors).
+    // NOTE: the harness engine is now a server-side
+    // preference (Setting → Harness); it is NOT sent
+    // per request to avoid stale client states.
     const baseExtInfo: Record<string, any> = {
       locale: i18n.resolvedLanguage || i18n.language,
       ...(effectiveSkill ? { skill_id: effectiveSkill.id, skill_name: effectiveSkill.name } : {}),
@@ -2108,6 +2890,8 @@ const Playground: NextPage = () => {
     };
 
     try {
+      setConvRunning(currentConvId, true);
+      liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
       const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/react-agent`, {
         method: 'POST',
         headers: {
@@ -2279,6 +3063,24 @@ const Playground: NextPage = () => {
           setPendingQuestion(null);
           return;
         }
+        if (payload.type === 'approval.requested') {
+          setPendingApprovals(prev =>
+            prev.some(p => p.approval_id === payload.approval_id)
+              ? prev
+              : [...prev, { ...payload, status: 'pending' } as PendingApproval],
+          );
+          return;
+        }
+        if (payload.type === 'approval.resolved') {
+          setPendingApprovals(prev => prev.filter(p => p.approval_id !== payload.approval_id));
+          return;
+        }
+        if (payload.type === 'approval.intent') {
+          setPendingApprovals(prev =>
+            prev.map(p => (p.approval_id === payload.approval_id ? { ...p, intent: payload.bullets } : p)),
+          );
+          return;
+        }
         if (payload.type === 'plan.update') {
           if (Array.isArray(payload.tasks)) {
             const nextTasks = payload.tasks as TaskItem[];
@@ -2337,6 +3139,7 @@ const Playground: NextPage = () => {
                   todoMeta: payload.todo_meta,
                   status: 'running' as const,
                   action: payload.action,
+                  startedAt: Date.now(),
                 },
               ];
             }
@@ -2354,7 +3157,6 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          setRightPanelCollapsed(false);
         } else if (payload.type === 'step.meta') {
           if (payload.action && payload.action.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
@@ -2386,6 +3188,8 @@ const Playground: NextPage = () => {
                 if (
                   payload.action !== 'code_interpreter' &&
                   payload.action !== 'shell_interpreter' &&
+                  payload.action !== 'code' &&
+                  payload.action !== 'bash' &&
                   payload.action_input
                 ) {
                   const inputStr =
@@ -2402,11 +3206,15 @@ const Playground: NextPage = () => {
                 action: payload.action || item.action,
                 actionInput: payload.action_input || item.actionInput,
                 todoMeta: payload.todo_meta || item.todoMeta,
+                actionIntention:
+                  payload.action_intention ||
+                  item.actionIntention ||
+                  synthesizeIntention(payload.action || item.action, payload.action_input || item.actionInput, t),
               };
             });
             // Route model-provided action display fields to the subtle status row.
             const displayThought = buildActionDisplayText({
-              actionIntention: payload.action_intention,
+              actionIntention: payload.action_intention || synthesizeIntention(payload.action, payload.action_input, t),
               actionReason: payload.action_reason,
               thought: payload.thought,
             });
@@ -2471,7 +3279,9 @@ const Playground: NextPage = () => {
             const targetId = id || current.activeStepId;
             if (!targetId) return prev;
             const nextSteps = current.steps.map(item =>
-              item.id === targetId ? { ...item, status: payload.status || 'done' } : item,
+              item.id === targetId
+                ? { ...item, status: payload.status || 'done', endedAt: item.endedAt || Date.now() }
+                : item,
             );
             return { ...prev, [responseId]: { ...current, steps: nextSteps } };
           });
@@ -2480,6 +3290,22 @@ const Playground: NextPage = () => {
           // timeline. Display copy must come from step.meta action_intention or
           // action_reason, which are constrained to concise, readable text.
           return;
+        } else if (payload.type === 'final.chunk') {
+          const chunkText = typeof payload.content === 'string' ? payload.content : '';
+          if (!chunkText) return;
+          const isFirstFinalChunk = !finalChunkStreamedRef.current[responseId];
+          finalChunkStreamedRef.current[responseId] = true;
+          setMessages(prev =>
+            prev.map(msg => {
+              if (msg.id !== responseId || msg.role !== 'view') return msg;
+              return { ...msg, context: (msg.context || '') + chunkText };
+            }),
+          );
+          if (isFirstFinalChunk) {
+            // The answer streams into the left bubble; the right rail
+            // stays a contextual viewer (artifact previews only).
+            setActiveMessageId(responseId);
+          }
         } else if (payload.type === 'final') {
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
@@ -2509,7 +3335,8 @@ const Playground: NextPage = () => {
           setActiveMessageId(responseId);
           setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
-          if (summaryText) {
+          const hadStreamedFinalChunks = !!finalChunkStreamedRef.current[responseId];
+          if (summaryText && !hadStreamedFinalChunks) {
             const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
             summaryPresentationResponseIdRef.current = responseId;
             summaryPresentationFullTextRef.current = summaryText;
@@ -2522,11 +3349,15 @@ const Playground: NextPage = () => {
           } else if (finalAnswer.citations.length > 0) {
             setStreamingSummary('');
             setSummaryComplete(true);
+            setRailDebug(true);
             setRightPanelView('references');
           } else {
+            // Server-streamed chunks already filled the panel (or there is
+            // nothing to present): skip the client-side typewriter.
             setStreamingSummary('');
             setSummaryComplete(true);
           }
+          delete finalChunkStreamedRef.current[responseId];
 
           // Final is already a complete server event. Build artifacts now;
           // the bounded summary presentation controls only visible navigation.
@@ -2595,6 +3426,283 @@ const Playground: NextPage = () => {
         });
       }
     } finally {
+      setConvRunning(currentConvId, false);
+      delete liveRoundRef.current[currentConvId];
+      bumpDialogueList();
+      if (chatAbortControllerRef.current === controller) {
+        chatAbortControllerRef.current = null;
+      }
+      if (taskEpochRef.current === taskEpoch) {
+        setLoading(false);
+      }
+    }
+  };
+
+  /**
+   * TaskFlow send path: resolve the runnable flow uid (templates are
+   * instantiated on first use), then stream the chat_flow SSE channel. Step
+   * progress is parsed from `vis-flow-step` markers embedded in the answer
+   * text and projected onto the existing Manus execution-step UI.
+   */
+  const performFlowStart = async (flow: ITaskflowRef, flowQuery: string): Promise<void> => {
+    const taskEpoch = taskEpochRef.current;
+    const flowUid = await resolveFlowUid(flow);
+    if (!flowUid) {
+      message.error(t('error_occurred') as string);
+      return;
+    }
+    const isNewConv = !conversationIdRef.current;
+    const currentConvId = conversationIdRef.current || generateUUID();
+    if (!conversationIdRef.current) {
+      conversationIdRef.current = currentConvId;
+      setConversationId(currentConvId);
+    }
+    if (isNewConv) {
+      addOptimisticConv({
+        conv_uid: currentConvId,
+        user_input: flowQuery,
+        chat_mode: 'chat_flow',
+        gmt_created: new Date().toISOString(),
+      } as any);
+    }
+    if (router.query.id !== currentConvId) {
+      router.replace({ pathname: '/', query: { ...(router.query ?? {}), id: currentConvId } }, undefined, {
+        shallow: true,
+      });
+    }
+
+    const currentOrder = Math.floor(messages.length / 2) + 1;
+    const humanId = generateUUID();
+    const responseId = generateUUID();
+    const humanMsg: ChatMessage = {
+      id: humanId,
+      role: 'human',
+      context: flowQuery,
+      order: currentOrder,
+      attachedDb: selectedDb ? { db_name: selectedDb.db_name, db_type: selectedDb.db_type } : undefined,
+    };
+    const viewMsg: ChatMessage = {
+      id: responseId,
+      role: 'view',
+      context: '',
+      order: currentOrder,
+      thinking: true,
+      flowRun: { label: flow.label },
+    };
+    setMessages(prev => [...prev, humanMsg, viewMsg]);
+    setQuery('');
+    setLoading(true);
+    setActiveViewMsgId(responseId);
+
+    // Seed the step list from the DSL so the run card shows the full plan
+    // while the DAG executes server-side. Titles use product kind labels
+    // (localized), details show the node's key config summary.
+    const dslNodes = flow.taskflow_source?.nodes ?? [];
+    const flowNodeSummary = (node: (typeof dslNodes)[number]): string => {
+      const config = node.config ?? {};
+      switch (node.kind) {
+        case 'db_query':
+          return config.datasource ? `${config.datasource} · ≤${config.max_rows ?? 1000}` : '';
+        case 'file_data':
+          return config.file_name ?? '';
+        case 'agent': {
+          const goal = (config.goal || '').trim();
+          const short = goal.length > 24 ? `${goal.slice(0, 24)}…` : goal;
+          const toolCount =
+            (config.tools?.length ?? 0) +
+            (config.skills?.length ?? 0) +
+            (config.mcp ? String(config.mcp).split('\n').filter(Boolean).length : 0);
+          return [short, toolCount > 0 ? `${toolCount} tools` : ''].filter(Boolean).join(' · ');
+        }
+        case 'visualize':
+          return `≤${config.max_charts ?? 4}`;
+        case 'human_confirm':
+          return config.message ?? '';
+        default:
+          return '';
+      }
+    };
+    const initialSteps: ExecutionStep[] = dslNodes.map((node, idx) => ({
+      id: node.id,
+      step: idx + 1,
+      title: node.label || (t(`taskflow_kind_${node.kind}`) as string),
+      detail: flowNodeSummary(node),
+      status: (idx === 0 ? 'running' : 'pending') as ExecutionStep['status'],
+      action: 'taskflow_node',
+    }));
+    setExecutionMap(prev => ({
+      ...prev,
+      [responseId]: { steps: initialSteps, outputs: {}, activeStepId: null, collapsed: false, stepThoughts: {} },
+    }));
+
+    const syncSteps = (markers: ReturnType<typeof parseTaskflowStream>['markers'], done: boolean) => {
+      const markerMap = new Map(markers.map(m => [m.step_id, m]));
+      const kindById = new Map(dslNodes.map(n => [n.id, n.kind]));
+      const isBoundary = (id: string) => {
+        const kind = kindById.get(id);
+        return kind === 'start' || kind === 'output';
+      };
+      // A successful run produces a marker for every content node; an unmarked
+      // content node at stream end means the run failed (or was skipped)
+      // before reaching it — don't paint it as done.
+      let runningSet = false;
+      // A live running marker (e.g. an agent node mid-loop) already marks the
+      // current step — don't let the heuristic mark the NEXT one running too.
+      const hasLiveRunning = markers.some(m => m.status === 'running');
+      setExecutionMap(prev => {
+        const exec = prev[responseId];
+        if (!exec) return prev;
+        const completedRun = done && exec.steps.every(s => isBoundary(s.id) || markerMap.has(s.id));
+        const steps = exec.steps.map((step, idx) => {
+          const marker = markerMap.get(step.id);
+          if (marker) {
+            return {
+              ...step,
+              status: (marker.status === 'failed'
+                ? 'failed'
+                : marker.status === 'running'
+                  ? 'running'
+                  : 'done') as ExecutionStep['status'],
+              // Keep the config-summary subtitle; marker.summary (e.g. row
+              // count) renders as its own badge in the flow step row.
+              detail: step.detail,
+            };
+          }
+          if (!done && kindById.get(step.id) === 'start') {
+            // Start has no marker; it completes the moment the trigger fires,
+            // i.e. as soon as any stream reaches the client.
+            return { ...step, status: 'done' as ExecutionStep['status'] };
+          }
+          if (!done && !hasLiveRunning && !runningSet && idx > 0) {
+            runningSet = true;
+            return { ...step, status: 'running' as ExecutionStep['status'] };
+          }
+          if (done) {
+            if (completedRun || kindById.get(step.id) === 'start') {
+              // Start is instant and always ran; other steps (output included)
+              // only count as done when the whole run completed.
+              return { ...step, status: 'done' as ExecutionStep['status'] };
+            }
+            return { ...step, status: 'failed' as ExecutionStep['status'] };
+          }
+          return step;
+        });
+        return { ...prev, [responseId]: { ...exec, steps } };
+      });
+    };
+
+    const controller = new AbortController();
+    chatAbortControllerRef.current = controller;
+    let accumulated = '';
+    let serverError = '';
+    try {
+      setConvRunning(currentConvId, true);
+      liveRoundRef.current[currentConvId] = { human: humanMsg, view: viewMsg };
+      const response = await fetch(`${process.env.API_BASE_URL ?? ''}/api/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conv_uid: currentConvId,
+          chat_mode: 'chat_flow',
+          select_param: flowUid,
+          user_input: flowQuery,
+          model_name: model,
+          temperature: 0.6,
+          max_new_tokens: 4000,
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          let content = '';
+          try {
+            const parsed = JSON.parse(payload);
+            content = parsed?.choices?.[0]?.message?.content ?? parsed?.vis ?? '';
+            // The chat_flow channel escapes newlines in the wire format
+            // (server-side text.replace("\n", "\\n")); restore them so both
+            // markdown and the vis-flow-step markers parse correctly. Use a
+            // negative lookbehind so escaped backslashes inside the marker
+            // JSON (e.g. code like print('\n')) survive intact.
+            if (typeof content === 'string') content = content.replace(/(?<!\\)\\n/g, '\n');
+          } catch {
+            content = payload.replace(/(?<!\\)\\n/g, '\n');
+          }
+          if (!content) continue;
+          // Flow-level fatal frames (e.g. DAG not registered after a restart
+          // while the flow sat undeployed): surface the real reason instead
+          // of letting the empty stream paint every node as failed at 0:00.
+          if (typeof content === 'string' && content.startsWith('[SERVER_ERROR]')) {
+            serverError = content.replace('[SERVER_ERROR]', '').trim();
+            continue;
+          }
+          accumulated += content;
+          const parsedStream = parseTaskflowStream(accumulated);
+          // Detached (background) flow streams keep pumping so the server
+          // run continues; only the UI apply is skipped for stale sessions.
+          const staleStream = taskEpochRef.current !== taskEpoch || conversationIdRef.current !== currentConvId;
+          if (!staleStream) {
+            syncSteps(parsedStream.markers, false);
+            // Keep the RAW text (markers included) in the message: the flow
+            // run card parses per-node sections from it; markers never
+            // render as-is.
+            setMessages(prev =>
+              prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: true } : m)),
+            );
+          }
+        }
+      }
+      if (serverError) {
+        message.error(serverError);
+        if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
+          setExecutionMap(prev => {
+            const exec = prev[responseId];
+            if (!exec) return prev;
+            return {
+              ...prev,
+              [responseId]: {
+                ...exec,
+                steps: exec.steps.map(s => ({ ...s, status: 'failed' as ExecutionStep['status'] })),
+              },
+            };
+          });
+          setMessages(prev =>
+            prev.map(m => (m.id === responseId ? { ...m, context: serverError, thinking: false } : m)),
+          );
+        }
+        return;
+      }
+      const parsedStream = parseTaskflowStream(accumulated);
+      if (taskEpochRef.current === taskEpoch && conversationIdRef.current === currentConvId) {
+        syncSteps(parsedStream.markers, true);
+        setMessages(prev => prev.map(m => (m.id === responseId ? { ...m, context: accumulated, thinking: false } : m)));
+      }
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === responseId ? { ...m, context: `${t('error_occurred')}: ${e?.message ?? e}`, thinking: false } : m,
+          ),
+        );
+      }
+    } finally {
+      setConvRunning(currentConvId, false);
+      delete liveRoundRef.current[currentConvId];
+      bumpDialogueList();
       if (chatAbortControllerRef.current === controller) {
         chatAbortControllerRef.current = null;
       }
@@ -2755,6 +3863,7 @@ const Playground: NextPage = () => {
 
   const restoreFromHistory = (
     historyMessages: Array<{ role: string; context: string; order?: number; model_name?: string }>,
+    liveTail: ChatMessage[] = [],
   ) => {
     cancelSummaryPresentation();
     setExecutionMap({});
@@ -2795,6 +3904,7 @@ const Playground: NextPage = () => {
             action: s.action,
             actionInput: s.action_input || undefined,
             todoMeta: s.todo_meta || undefined,
+            actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
           }));
 
           const outputs: Record<string, ExecutionOutput[]> = {};
@@ -2809,7 +3919,7 @@ const Playground: NextPage = () => {
                 content: o.content,
               }));
             }
-            if ((s.action === 'code_interpreter' || s.action === 'shell_interpreter') && s.action_input) {
+            if ((s.action === 'code_interpreter' || s.action === 'shell_interpreter' || s.action === 'code' || s.action === 'bash') && s.action_input) {
               const existingOutputs = outputs[stepId] || [];
               const hasCode = existingOutputs.some((o: ExecutionOutput) => o.output_type === 'code');
               if (!hasCode) {
@@ -2824,7 +3934,7 @@ const Playground: NextPage = () => {
               }
             }
             const historyThought = buildActionDisplayText({
-              actionIntention: s.action_intention,
+              actionIntention: s.action_intention || synthesizeIntention(s.action, s.action_input, t),
               actionReason: s.action_reason,
               thought: s.thought,
             });
@@ -2876,9 +3986,15 @@ const Playground: NextPage = () => {
 
           // Detect skill creation from restored execution
           const isSkillPackageStep = (s: ExecutionStep) => {
-            if (s.action !== 'shell_interpreter') return false;
+            if (s.action !== 'shell_interpreter' && s.action !== 'bash') return false;
             const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-            const inputHas = s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
+            const inputHas =
+              (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
+                'package_skill',
+              ) ||
+              (typeof s.actionInput === 'string' ? s.actionInput : JSON.stringify(s.actionInput ?? '')).includes(
+                'init_skill',
+              );
             const outputTexts = (outputs[s.id] || []).map(o => String(o.content)).join(' ');
             const outputHas =
               outputTexts.includes('package_skill') ||
@@ -2930,6 +4046,15 @@ const Playground: NextPage = () => {
       }
     });
 
+    if (liveTail.length > 0) {
+      // Carry the in-flight round over: history has no row for it yet, and
+      // dropping it left re-entered running conversations blank.
+      newMessages.push(...liveTail);
+      for (const m of liveTail) {
+        const exec = executionMap[m.id];
+        if (exec) newExecutionMap[m.id] = exec;
+      }
+    }
     setMessages(newMessages);
     setExecutionMap(newExecutionMap);
     setArtifacts(allArtifacts);
@@ -2940,9 +4065,15 @@ const Playground: NextPage = () => {
     const lastView = [...newMessages].reverse().find(m => m.role === 'view');
     if (lastView?.id) {
       setActiveMessageId(lastView.id);
-      setStreamingSummary(lastView.context || '');
-      setSummaryComplete(true);
-      setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
+      if (liveTail.length > 0) {
+        // Live round: keep the streaming summary / presentation state that
+        // the in-flight SSE handlers own; only re-anchor the active ids.
+        if (lastView.flowRun) setActiveViewMsgId(lastView.id);
+      } else {
+        setStreamingSummary(lastView.context || '');
+        setSummaryComplete(true);
+        setSelectedCitationIndex(lastView.citations?.[0]?.index ?? null);
+      }
     }
   };
 
@@ -2971,6 +4102,16 @@ const Playground: NextPage = () => {
       if (msgList) {
         conversationIdRef.current = convUid;
         setConversationId(convUid);
+        // Re-entering a RUNNING conversation: the server history only holds
+        // flushed rounds, so the in-flight round (human + view pair and its
+        // live execution state) is carried over from memory — without it the
+        // page rendered empty until the turn finished server-side.
+        const live = liveRoundRef.current[convUid];
+        const liveFlushed = (msgList || []).some(
+          (m: any) => m.role === 'view' && (m.order ?? 0) >= (live?.view?.order ?? Number.MAX_SAFE_INTEGER),
+        );
+        const liveTail =
+          live && !liveFlushed && runningConvIds.includes(convUid) ? [live.human, live.view] : [];
         restoreFromHistory(
           msgList.map((m: any) => ({
             role: m.role,
@@ -2978,6 +4119,7 @@ const Playground: NextPage = () => {
             order: m.order,
             model_name: m.model_name,
           })),
+          liveTail,
         );
       }
     } catch (e) {
@@ -3108,6 +4250,22 @@ const Playground: NextPage = () => {
                   {getDbIcon(selectedDb.type)} <span className='font-medium ml-1'>{selectedDb.db_name}</span>
                 </Tag>
               )}
+              {convArtifacts.length > 0 && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setRailDebug(false);
+                    previewOpenedRailRef.current = false;
+                    setPreviewArtifact(null);
+                    setRightPanelCollapsed(false);
+                  }}
+                  className='flex items-center gap-1.5 h-7 px-2.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[.06]'
+                >
+                  <InboxOutlined />
+                  <span>{t('rail_artifacts_title')}</span>
+                  <b className='text-gray-800 dark:text-gray-200 font-semibold'>{convArtifacts.length}</b>
+                </button>
+              )}
               {messages.length > 0 && (
                 <Button type='text' size='small' onClick={handleClearChat} className='text-gray-500'>
                   Clear Chat
@@ -3133,208 +4291,322 @@ const Playground: NextPage = () => {
           ) : messages.length > 0 ? (
             <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] min-[2200px]:max-w-[1600px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
-                  {rounds.map((round, roundIndex) => {
-                    const isLastRound = roundIndex === rounds.length - 1;
-                    const isSelected = round.viewMsg?.id === selectedViewMsgId;
-                    const isCurrentRoundCollapsed = !isLastRound && !isSelected;
+                  <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
+                    {rounds.map((round, roundIndex) => {
+                      const isLastRound = roundIndex === rounds.length - 1;
+                      const isSelected = round.viewMsg?.id === selectedViewMsgId;
+                      const isCurrentRoundCollapsed = !isLastRound && !isSelected;
 
-                    const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
-                    const {
-                      sections,
-                      activeStep: _activeStep,
-                      outputs: _outputs,
-                      stepThoughts,
-                    } = convertToManusFormat(execution, round.humanMsg?.context, t);
-                    const isWorking =
-                      (isLastRound &&
-                        (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
-                      false;
+                      const execution = round.viewMsg?.id ? executionMap[round.viewMsg.id] : undefined;
+                      const {
+                        sections,
+                        activeStep: _activeStep,
+                        outputs: _outputs,
+                        stepThoughts,
+                      } = convertToManusFormat(execution, round.humanMsg?.context, t);
+                      const isWorking =
+                        (isLastRound &&
+                          (round.viewMsg?.thinking || execution?.steps.some(s => s.status === 'running'))) ||
+                        false;
 
-                    const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
-                    const roundAssistantText = isPresentingThisRound
-                      ? streamingSummary
-                      : round.viewMsg?.context || undefined;
-                    const roundCitations = round.viewMsg?.citations || [];
+                      const isPresentingThisRound = summaryPresentationResponseId === round.viewMsg?.id;
+                      const roundAssistantText = isPresentingThisRound
+                        ? streamingSummary
+                        : round.viewMsg?.context || undefined;
+                      const roundCitations = round.viewMsg?.citations || [];
 
-                    return (
-                      <ManusLeftPanel
-                        key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
-                        sections={sections}
-                        subAgentSlot={
-                          execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
-                            <SubAgentSection
-                              subAgents={execution.subAgents}
-                              artifactCount={execution.subAgentArtifacts}
-                              activeSubAgentId={
-                                isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
-                                  ? activeSubAgent.agentId
-                                  : null
-                              }
-                              onSubAgentClick={agentId => {
-                                if (round.viewMsg?.id) {
-                                  setActiveViewMsgId(round.viewMsg.id);
-                                  setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                      // DSH-style timeline view (default on; set
+                      // __db_gpt_timeline_view=off to fall back to the
+                      // card list inside ManusLeftPanel).
+                      const useTimelineView =
+                        typeof window !== 'undefined' && localStorage.getItem('__db_gpt_timeline_view') !== 'off';
+                      const timelineBlocks = useTimelineView
+                        ? stepsToTimelineBlocks(execution?.steps ?? [], stepThoughts, execution?.outputs)
+                        : [];
+                      const roundArtifacts: StreamArtifact[] =
+                        useTimelineView && execution && hasArtifactOutputs(execution)
+                          ? buildArtifactsFromExecution(
+                              round.viewMsg!.id,
+                              execution,
+                              undefined,
+                              undefined,
+                              round.viewMsg!.context,
+                            ).map(a => ({
+                              id: a.id,
+                              type: a.type,
+                              name: a.name,
+                              size: a.size,
+                              content: a.content,
+                              stepId: a.stepId,
+                              tier: a.tier,
+                            }))
+                          : [];
+                      const roundIntent = execution?.steps.find(s => s.actionIntention)?.actionIntention || null;
+                      const roundCount = execution?.steps.reduce((m, s) => Math.max(m, s.step || 0), 0) || 0;
+                      const rerunExtra = (round.viewMsg?.id && rerunQueryArtifacts[round.viewMsg.id]) || [];
+                      const roundArtifactsAll = rerunExtra.length ? [...roundArtifacts, ...rerunExtra] : roundArtifacts;
+
+                      return (
+                        <React.Fragment key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}>
+                          <ManusLeftPanel
+                            key={round.viewMsg?.id || round.humanMsg?.id || `round-${roundIndex}`}
+                            sections={useTimelineView ? [] : sections}
+                            flowExecSteps={round.viewMsg?.flowRun ? sections[0]?.steps : undefined}
+                            answerSeparated={
+                              useTimelineView && (timelineBlocks.length > 0 || roundArtifactsAll.length > 0)
+                            }
+                            timelineSlot={
+                              // Flow rounds render their own node chain + node
+                              // cards via FlowRunView; the generic agent timeline
+                              // would duplicate the DSL-node steps.
+                              useTimelineView &&
+                              !round.viewMsg?.flowRun &&
+                              (timelineBlocks.length > 0 || roundArtifactsAll.length > 0) ? (
+                                <div className='flex flex-col'>
+                                  {roundIntent && (
+                                    <div className='flex items-center gap-1.5 mb-1 min-w-0 text-[13px] font-medium text-[#1c1c1a] dark:text-[#e6e4df]'>
+                                      <AimOutlined className='text-[#8b8b84] flex-none' />
+                                      <span className='truncate'>{roundIntent}</span>
+                                      {roundCount > 0 && (
+                                        <span className='flex-none text-xs font-normal text-[#8b8b84] dark:text-[#7c7972]'>
+                                          {t('round_count_suffix', { count: roundCount })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {timelineBlocks.length > 0 && (
+                                    <AgentTimeline blocks={timelineBlocks} isRunning={isWorking} />
+                                  )}
+                                  <ArtifactCards
+                                    artifacts={roundArtifactsAll}
+                                    onPreview={handlePreviewStreamArtifact}
+                                    onSkillAdd={handleSkillAdd}
+                                    onSkillDownload={handleSkillZipDownload}
+                                    onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
+                                    foldAllQueries={round.viewMsg?.id !== lastQueryRoundId}
+                                  />
+                                </div>
+                              ) : undefined
+                            }
+                            flowRun={
+                              round.viewMsg?.flowRun
+                                ? {
+                                    label: round.viewMsg.flowRun.label,
+                                    running: !!round.viewMsg.thinking,
+                                    done: execution?.steps.filter(s => s.status === 'done').length ?? 0,
+                                    total: execution?.steps.length ?? 0,
+                                  }
+                                : undefined
+                            }
+                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, round.viewMsg?.id)}
+                            subAgentSlot={
+                              execution?.subAgents && Object.keys(execution.subAgents).length > 0 ? (
+                                <SubAgentSection
+                                  subAgents={execution.subAgents}
+                                  artifactCount={execution.subAgentArtifacts}
+                                  activeSubAgentId={
+                                    isSelected && activeSubAgent && activeSubAgent.messageId === round.viewMsg?.id
+                                      ? activeSubAgent.agentId
+                                      : null
+                                  }
+                                  onSubAgentClick={agentId => {
+                                    if (round.viewMsg?.id) {
+                                      setActiveViewMsgId(round.viewMsg.id);
+                                      setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
+                                    }
+                                    setRailDebug(true);
+                                    setRightPanelView('execution');
+                                    setRightPanelCollapsed(false);
+                                  }}
+                                />
+                              ) : undefined
+                            }
+                            activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
+                            onStepClick={(stepId, _sectionId) => {
+                              if (round.viewMsg?.id) {
+                                setActiveViewMsgId(round.viewMsg.id);
+                                setSelectedStepId(stepId);
+                                // Timeline view expands step details inline in
+                                // the stream; the rail stays an artifact viewer.
+                                if (useTimelineView) {
+                                  setExecutionMap(prev => ({
+                                    ...prev,
+                                    [round.viewMsg!.id!]: {
+                                      ...prev[round.viewMsg!.id!],
+                                      activeStepId: stepId,
+                                    },
+                                  }));
+                                  return;
                                 }
+                                // Clicking a main-agent step exits the sub-agent
+                                // process view, so the right panel shows this step.
+                                setActiveSubAgent(null);
+                                setRailDebug(true);
                                 setRightPanelView('execution');
                                 setRightPanelCollapsed(false);
-                              }}
-                            />
-                          ) : undefined
-                        }
-                        activeStepId={isSelected ? selectedStepId || execution?.activeStepId : undefined}
-                        onStepClick={(stepId, _sectionId) => {
-                          if (round.viewMsg?.id) {
-                            setActiveViewMsgId(round.viewMsg.id);
-                            setSelectedStepId(stepId);
-                            // Clicking a main-agent step exits the sub-agent
-                            // process view, so the right panel shows this step.
-                            setActiveSubAgent(null);
-                            setRightPanelView('execution');
-                            setRightPanelCollapsed(false);
-                            setExecutionMap(prev => ({
-                              ...prev,
-                              [round.viewMsg!.id!]: {
-                                ...prev[round.viewMsg!.id!],
-                                activeStepId: stepId,
-                              },
-                            }));
-                          }
-                        }}
-                        isWorking={isWorking}
-                        userQuery={round.humanMsg?.context}
-                        attachedFiles={round.humanMsg?.attachedFiles}
-                        attachedKnowledge={round.humanMsg?.attachedKnowledge}
-                        attachedSkill={round.humanMsg?.attachedSkill}
-                        attachedDb={round.humanMsg?.attachedDb}
-                        taskPlan={round.viewMsg?.taskPlan}
-                        attachedConnectors={round.humanMsg?.attachedConnectors}
-                        assistantText={roundAssistantText}
-                        isAssistantStreaming={isPresentingThisRound && !_summaryComplete}
-                        citationIndexes={roundCitations.map(citation => citation.index)}
-                        reportId={round.viewMsg?.reportId}
-                        reportRunId={round.viewMsg?.reportRunId}
-                        onReportClick={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setActiveSubAgent(null);
-                          setRightPanelView('report');
-                          setRightPanelCollapsed(false);
-                        }}
-                        onReferencesClick={
-                          roundCitations.length > 0
-                            ? () => {
-                                if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                                setSelectedCitationIndex(roundCitations[0].index);
-                                setRightPanelView('references');
-                                setRightPanelCollapsed(false);
+                                setExecutionMap(prev => ({
+                                  ...prev,
+                                  [round.viewMsg!.id!]: {
+                                    ...prev[round.viewMsg!.id!],
+                                    activeStepId: stepId,
+                                  },
+                                }));
                               }
-                            : undefined
-                        }
-                        modelName={round.viewMsg?.model_name || model}
-                        stepThoughts={stepThoughts}
-                        artifacts={artifacts.filter(a => a.messageId === round.viewMsg?.id)}
-                        onArtifactClick={artifact => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          if (artifact.type === 'html') {
-                            setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
-                          } else if (artifact.type === 'code' && artifact.stepId) {
-                            setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
-                            if (round.viewMsg?.id && execution) {
-                              setExecutionMap(prev => ({
-                                ...prev,
-                                [round.viewMsg!.id!]: {
-                                  ...prev[round.viewMsg!.id!],
-                                  activeStepId: artifact.stepId!,
-                                },
-                              }));
+                            }}
+                            isWorking={isWorking}
+                            userQuery={round.humanMsg?.context}
+                            attachedFiles={round.humanMsg?.attachedFiles}
+                            attachedKnowledge={round.humanMsg?.attachedKnowledge}
+                            attachedSkill={round.humanMsg?.attachedSkill}
+                            attachedDb={round.humanMsg?.attachedDb}
+                            taskPlan={round.viewMsg?.taskPlan}
+                            attachedConnectors={round.humanMsg?.attachedConnectors}
+                            assistantText={roundAssistantText}
+                            isAssistantStreaming={
+                              (isPresentingThisRound && !_summaryComplete) ||
+                              (!!round.viewMsg?.thinking && !!roundAssistantText)
                             }
-                          } else if (artifact.type === 'file') {
-                            // Image file artifacts: preview instead of download
-                            if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
-                              setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
-                            } else {
-                              downloadArtifact(artifact as Artifact);
+                            citationIndexes={roundCitations.map(citation => citation.index)}
+                            reportId={round.viewMsg?.reportId}
+                            reportRunId={round.viewMsg?.reportRunId}
+                            onReportClick={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setActiveSubAgent(null);
+                              setRightPanelView('report');
+                              setRightPanelCollapsed(false);
+                            }}
+                            onReferencesClick={
+                              roundCitations.length > 0
+                                ? () => {
+                                    if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                                    setSelectedCitationIndex(roundCitations[0].index);
+                                    setRailDebug(true);
+                                    setRightPanelView('references');
+                                    setRightPanelCollapsed(false);
+                                  }
+                                : undefined
                             }
-                          } else if (artifact.type === 'image') {
-                            setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
-                          }
-                        }}
-                        onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
-                        onViewAllFiles={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          setRightPanelView('files');
-                        }}
-                        isCollapsed={isCurrentRoundCollapsed}
-                        onExpand={() => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                        }}
-                        createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
-                        onSkillCardClick={_skillName => {
-                          if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
-                          setRightPanelCollapsed(false);
-                          setRightPanelView('skill-preview');
-                          // Find the package_skill step and select it so right panel shows SkillCardRenderer
-                          if (execution) {
-                            const skillStep = execution.steps.find((s: ExecutionStep) => {
-                              if (s.action !== 'shell_interpreter') return false;
-                              const detailHas = s.detail?.includes('package_skill') || s.detail?.includes('init_skill');
-                              const inputHas =
-                                s.actionInput?.includes('package_skill') || s.actionInput?.includes('init_skill');
-                              const outputTexts = (execution.outputs[s.id] || []).map(o => String(o.content)).join(' ');
-                              const outputHas =
-                                outputTexts.includes('package_skill') ||
-                                outputTexts.includes('init_skill') ||
-                                outputTexts.includes('Successfully packaged');
-                              return detailHas || inputHas || outputHas;
-                            });
-                            if (skillStep) {
-                              setSelectedStepId(skillStep.id);
-                              setExecutionMap(prev => ({
-                                ...prev,
-                                [round.viewMsg!.id!]: { ...prev[round.viewMsg!.id!], activeStepId: skillStep.id },
-                              }));
-                            }
-                          }
-                        }}
-                        onSkillDownload={async skillName => {
-                          try {
-                            const base = process.env.API_BASE_URL || '';
-                            const res = await fetch(
-                              `${base}/api/v1/agent/skills/download?skill_name=${encodeURIComponent(skillName)}`,
-                            );
-                            if (!res.ok) throw new Error('Download failed');
-                            const blob = await res.blob();
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${skillName}.zip`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          } catch {
-                            // Download failed silently
-                          }
-                        }}
-                      />
-                    );
-                  })}
+                            stepThoughts={stepThoughts}
+                            artifacts={useTimelineView ? [] : artifacts.filter(a => a.messageId === round.viewMsg?.id)}
+                            onArtifactClick={artifact => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setRightPanelCollapsed(false);
+                              if (artifact.type === 'html') {
+                                setPreviewArtifact(artifact as Artifact);
+                                setRightPanelView('html-preview');
+                              } else if (artifact.type === 'code' && artifact.stepId) {
+                                setSelectedStepId(artifact.stepId);
+                                setRailDebug(true);
+                                setRightPanelView('execution');
+                                if (round.viewMsg?.id && execution) {
+                                  setExecutionMap(prev => ({
+                                    ...prev,
+                                    [round.viewMsg!.id!]: {
+                                      ...prev[round.viewMsg!.id!],
+                                      activeStepId: artifact.stepId!,
+                                    },
+                                  }));
+                                }
+                              } else if (artifact.type === 'file') {
+                                // Image file artifacts: preview instead of download
+                                if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
+                                  setPreviewArtifact(artifact as Artifact);
+                                  setRightPanelView('image-preview');
+                                } else {
+                                  downloadArtifact(artifact as Artifact);
+                                }
+                              } else if (artifact.type === 'image') {
+                                setPreviewArtifact(artifact as Artifact);
+                                setRightPanelView('image-preview');
+                              }
+                            }}
+                            onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
+                            onViewAllFiles={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                              setRightPanelCollapsed(false);
+                              setRightPanelView('files');
+                            }}
+                            isCollapsed={isCurrentRoundCollapsed}
+                            onExpand={() => {
+                              if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
+                            }}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
+                    {streamStatus && (
+                      <div className='mt-6 pt-3 border-t border-dashed border-[#e6e6e2] dark:border-[#2a2925] text-xs text-[#8b8b84] dark:text-[#7c7972] flex items-center gap-2'>
+                        {streamStatus.running ? (
+                          <LoadingOutlined spin className='text-blue-500' />
+                        ) : (
+                          <CheckCircleFilled className='text-emerald-500' />
+                        )}
+                        <span className='tabular-nums'>{streamStatus.text}</span>
+                      </div>
+                    )}
+                    {/* Conversation-completion artifact summary: deliverables
+                      produced across all rounds, surfaced again at the end so
+                      finished conversations keep a visible deliverable list
+                      (mid-stream cards stay where they were made). Charts are
+                      folded into the mosaic tile, scripts into process.
+                      Query cards are excluded: every round already renders
+                      its own (folded) query block, so repeating them here
+                      stacked each sql_query result a second time. */}
+                    {(() => {
+                      const surface = convArtifacts.filter(
+                        a => a.type !== 'summary' && a.type !== 'query',
+                      );
+                      const finalCount = surface.filter(a => a.tier !== 'process').length;
+                      const hasCharts = surface.some(
+                        a => a.type === 'image' || /\.(png|jpe?g|gif|svg|webp)$/i.test(a.name || ''),
+                      );
+                      if (finalCount === 0 && !hasCharts) return null;
+                      const lastViewId = [...messages].reverse().find(m => m.role === 'view')?.id;
+                      return (
+                        <div className='mt-4 mb-2'>
+                          {finalCount > 0 && (
+                            <div className='flex items-center gap-1.5 text-xs text-[#8b8b84] dark:text-[#7c7972] mb-1.5'>
+                              <InboxOutlined />
+                              <span>{t('conv_artifacts_title', '对话产物 · {{count}}', { count: finalCount })}</span>
+                            </div>
+                          )}
+                          <ArtifactCards
+                            artifacts={surface}
+                            onPreview={handlePreviewStreamArtifact}
+                            onSkillAdd={handleSkillAdd}
+                            onSkillDownload={handleSkillZipDownload}
+                            onQueryRerun={(sql, db) => handleQueryRerun(sql, db, lastViewId)}
+                          />
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 {/* Input Area at Bottom for Chat Mode - Hidden in read-only task replay mode */}
                 {!router.query.from_task && (
                   <div className='bg-gradient-to-t from-white via-white/95 to-white/80 dark:from-[#1a1b1e] dark:via-[#1a1b1e]/95 dark:to-[#1a1b1e]/80 p-4 md:p-6'>
-                    <div className='max-w-[720px] mx-auto'>
+                    <div className='w-full max-w-[720px] xl:max-w-[880px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1360px] mx-auto'>
                       {/* Context Tags Area */}
                       <div className='flex flex-wrap gap-2 mb-2'>
+                        {selectedFlow && (
+                          <Tag
+                            closable
+                            onClose={() => setSelectedFlow(null)}
+                            className='flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-lg'
+                          >
+                            <ApartmentOutlined />
+                            <span className='font-semibold'>
+                              {t('taskflow_flow_chip')} · {selectedFlow.label}
+                            </span>
+                            <span className='text-blue-400 text-[10px]'>
+                              {t('taskflow_nodes_count', { count: selectedFlow.nodeCount })}
+                            </span>
+                          </Tag>
+                        )}
                         {selectedDb && (
                           <Tag
                             closable
@@ -3368,6 +4640,11 @@ const Playground: NextPage = () => {
                           </>
                         )}
                       </div>
+
+                      {/* Human-in-the-loop Tool Approval Dock (floats above composer) */}
+                      {pendingApprovals.length > 0 && (
+                        <ApprovalDock approvals={pendingApprovals} onResolve={resolveApproval} />
+                      )}
 
                       {/* Human-in-the-loop Question Dock */}
                       {pendingQuestion && (
@@ -3473,6 +4750,12 @@ const Playground: NextPage = () => {
                                       icon: <ApiOutlined />,
                                       onClick: () => setIsConnectorPanelOpen(true),
                                     },
+                                    {
+                                      key: 'taskflow',
+                                      label: t('taskflow'),
+                                      icon: <ApartmentOutlined />,
+                                      children: flowMenuItems,
+                                    },
                                   ],
                                 }}
                                 trigger={['click']}
@@ -3487,6 +4770,19 @@ const Playground: NextPage = () => {
                                   />
                                 </Tooltip>
                               </Dropdown>
+
+                              {/* High-risk tool permission badge (per conversation) */}
+                              <ApprovalModeBadge
+                                convId={conversationId}
+                                ensureConvId={() => {
+                                  if (!conversationIdRef.current) {
+                                    const fresh = generateUUID();
+                                    conversationIdRef.current = fresh;
+                                    setConversationId(fresh);
+                                  }
+                                  return conversationIdRef.current;
+                                }}
+                              />
 
                               {/* Skill Selector Button with Badge */}
                               <Popover
@@ -3979,7 +5275,7 @@ const Playground: NextPage = () => {
                       isRunning = activeSub.status === 'running';
                     }
 
-                    return (
+                    return railDebug ? (
                       <ManusRightPanel
                         activeStep={activeStep}
                         outputs={outputs}
@@ -4034,7 +5330,10 @@ const Playground: NextPage = () => {
                             ? streamingSummary
                             : activeViewMsg?.context || ''
                         }
-                        isSummaryStreaming={summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete}
+                        isSummaryStreaming={
+                          (summaryPresentationResponseId === activeViewMsg?.id && !_summaryComplete) ||
+                          (!!activeViewMsg?.thinking && !!activeViewMsg?.context)
+                        }
                         citations={activeViewMsg?.citations || []}
                         selectedCitationIndex={
                           activeViewMsg?.citations?.some(citation => citation.index === selectedCitationIndex)
@@ -4066,6 +5365,19 @@ const Playground: NextPage = () => {
                         subAgentContext={activeSub || null}
                         onExitSubAgentView={() => setActiveSubAgent(null)}
                       />
+                    ) : (
+                      <ArtifactRail
+                        artifacts={convArtifacts}
+                        previewArtifact={previewArtifact}
+                        onPreview={artifact => setPreviewArtifact(artifact as Artifact | null)}
+                        onDebug={() => setRailDebug(true)}
+                        onClose={() => setRightPanelCollapsed(true)}
+                        onTrace={() => {
+                          setRailDebug(true);
+                          setRightPanelView('trace');
+                          setRightPanelCollapsed(false);
+                        }}
+                      />
                     );
                   })()
                 )}
@@ -4074,7 +5386,7 @@ const Playground: NextPage = () => {
           ) : (
             // Welcome Mode: Display Hero Section
             <div className='flex-1 flex flex-col items-center justify-center px-6 py-4 pb-20 overflow-y-auto'>
-              <div className='w-full max-w-[860px] flex flex-col items-center animate-fade-in-up'>
+              <div className='w-full max-w-[860px] 2xl:max-w-[1000px] flex flex-col items-center animate-fade-in-up'>
                 <h1 className='text-4xl md:text-5xl font-serif text-gray-900 dark:text-gray-100 mb-4 text-center flex items-center gap-4'>
                   <div className='w-12 h-12 rounded-xl bg-white dark:bg-[#1a1b1e] shadow-md flex items-center justify-center flex-shrink-0'>
                     <Image src='/LOGO_SMALL.png' alt='DB-GPT' width={32} height={32} className='object-contain' />
@@ -4114,8 +5426,23 @@ const Playground: NextPage = () => {
                         className='mb-2'
                       />
                       {/* Database, Knowledge, Connector Tags */}
-                      {(selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
+                      {(selectedFlow || selectedDb || selectedKnowledge || selectedConnectors.length > 0) && (
                         <div className='flex flex-wrap gap-2 mb-2'>
+                          {selectedFlow && (
+                            <Tag
+                              closable
+                              onClose={() => setSelectedFlow(null)}
+                              className='flex items-center gap-1.5 bg-blue-50 border-blue-200 text-blue-700 px-3 py-1 rounded-lg'
+                            >
+                              <ApartmentOutlined />
+                              <span className='font-semibold'>
+                                {t('taskflow_flow_chip')} · {selectedFlow.label}
+                              </span>
+                              <span className='text-blue-400 text-[10px]'>
+                                {t('taskflow_nodes_count', { count: selectedFlow.nodeCount })}
+                              </span>
+                            </Tag>
+                          )}
                           {selectedDb && (
                             <Tag
                               closable
@@ -4216,6 +5543,12 @@ const Playground: NextPage = () => {
                                   icon: <ApiOutlined />,
                                   onClick: () => setIsConnectorPanelOpen(true),
                                 },
+                                {
+                                  key: 'taskflow',
+                                  label: t('taskflow'),
+                                  icon: <ApartmentOutlined />,
+                                  children: flowMenuItems,
+                                },
                               ],
                             }}
                             trigger={['click']}
@@ -4230,6 +5563,19 @@ const Playground: NextPage = () => {
                               />
                             </Tooltip>
                           </Dropdown>
+
+                          {/* High-risk tool permission badge (per conversation) */}
+                          <ApprovalModeBadge
+                            convId={conversationId}
+                            ensureConvId={() => {
+                              if (!conversationIdRef.current) {
+                                const fresh = generateUUID();
+                                conversationIdRef.current = fresh;
+                                setConversationId(fresh);
+                              }
+                              return conversationIdRef.current;
+                            }}
+                          />
 
                           {/* Skill Selector Button with Badge - Purple Gradient */}
                           <Popover

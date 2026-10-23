@@ -1,0 +1,138 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB Intelligent Analysis",
+    "name": "taskflow_db_analysis_template",
+    "flow_category": "chat_flow",
+    "description": "Schema grounding → analysis plan → pivot analysis → numeric review → HTML analysis report, a multi-agent chain.",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "Schema & Semantic Grounding",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Profile the database: table list with row counts, key column types and comments, enum column values, join hints; mark analyzable tables and dimensions for the user's question; use sql_query for metadata and bounded aggregates only, no full scans. Output a semantic card (tables/columns/calibers/dialect) plus a volume overview.",
+            "tools": [
+              "sql_query"
+            ],
+            "skills": [
+              "sql-data-analysis"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "Analysis Plan",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "From the upstream semantic card and the user's question, propose 3-5 highest-value business analysis questions (state metric calibers and comparison baselines); light sql_query probes allowed to confirm feasibility. Output the analysis plan list, do not start analyzing.",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 4
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "Pivot Analysis",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Answer each upstream plan question: verify with sql_query, post-process with code_interpreter when needed; per question give conclusion + key numbers + one-sentence explanation; finally aggregate into structured analysis conclusions.",
+            "tools": [
+              "sql_query",
+              "code_interpreter"
+            ],
+            "skills": [
+              "sql-data-analysis"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 10
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "agent",
+          "label": "Numeric Review",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Independently recompute the key numbers of the upstream conclusions with SQL rewritten from the calibers (do not reuse upstream SQL); mark each item confirmed/corrected with difference notes. Output a review table.",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n6",
+          "kind": "agent",
+          "label": "Analysis Report",
+          "config": {
+            "agent_profile": "react_general",
+            "goal": "Compose a business-facing analysis report from the upstream profile, conclusions and review notes: title, core conclusions (at most 3), key data, trends and anomalies, actionable recommendations. Use the reviewed numbers. Finally compose the report as a self-contained HTML document (title, core conclusions, key data, trends and anomalies, recommendations, inline styles) and render it with a single html_interpreter call; after rendering succeeds, terminate with at most 3 sentences summarizing the core conclusions — never paste raw tool output or JSON as the answer.",
+            "tools": [
+              "html_interpreter"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n7",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ],
+        [
+          "n4",
+          "n5"
+        ],
+        [
+          "n5",
+          "n6"
+        ],
+        [
+          "n6",
+          "n7"
+        ]
+      ]
+    }
+  }
+}

@@ -51,7 +51,33 @@ const nextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   skipTrailingSlashRedirect: true,
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    // Next 16's react-refresh loader appends an ESM-only snippet
+    // (import.meta.webpackHot) to every non-.cjs module, which breaks
+    // CommonJS refresh boundaries in node_modules (e.g. @babel/runtime
+    // helpers under antd) with "Cannot use 'import.meta' outside a
+    // module". Swap in a shim that picks the runtime variant by source
+    // inspection. Dev client builds only.
+    if (dev && !isServer) {
+      const shim = path.join(__dirname, 'scripts/react-refresh-loader-cjs-safe.js');
+      const isRefreshLoader = u => {
+        const loader = typeof u === 'string' ? u : u && u.loader;
+        return typeof loader === 'string' && loader.includes('@next/react-refresh-utils/dist/loader');
+      };
+      const walk = rules => {
+        for (const rule of rules || []) {
+          if (!rule || typeof rule !== 'object') continue;
+          if (Array.isArray(rule.use)) {
+            rule.use = rule.use.map(u => (isRefreshLoader(u) ? (typeof u === 'string' ? shim : { ...u, loader: shim }) : u));
+          } else if (isRefreshLoader(rule.use)) {
+            rule.use = shim;
+          }
+          if (Array.isArray(rule.oneOf)) walk(rule.oneOf);
+          if (Array.isArray(rule.rules)) walk(rule.rules);
+        }
+      };
+      walk(config.module.rules);
+    }
     // transpilePackages still selects CommonJS entries that require ESM-only dependencies.
     config.resolve.alias = {
       ...config.resolve.alias,

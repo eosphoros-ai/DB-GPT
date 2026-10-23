@@ -126,7 +126,7 @@ const featureGroups = [
       {
         title: 'AWEL Flows',
         description: 'Build and run agentic workflows visually.',
-        link: '/docs/application/awel',
+        link: '/docs/workflow/introduction',
         icon: '🎯',
       },
     ],

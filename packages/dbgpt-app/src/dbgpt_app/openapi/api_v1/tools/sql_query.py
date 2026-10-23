@@ -14,6 +14,10 @@ from dbgpt.core.interface.report_capture import (
 )
 from dbgpt.datasource.rdbms.base import RDBMSConnector
 
+from .query_artifact import (
+    build_query_chunk,
+    check_read_only,
+)
 from .sql_read_only import ReadOnlySqlError, read_only_sql
 
 
@@ -95,6 +99,22 @@ def make_sql_query(
                             "content": "未选择数据库，请先在左侧面板选择一个数据源。",
                         }
                     ],
+                },
+                ensure_ascii=False,
+            )
+
+        sql_stripped = sql.strip().rstrip(";")
+        forbidden_kw = check_read_only(sql_stripped)
+        if forbidden_kw:
+            return json.dumps(
+                {
+                    "chunks": [
+                        {
+                            "output_type": "text",
+                            "content": f"安全限制: 不允许执行 {forbidden_kw} 语句，"
+                            "仅支持 SELECT 查询。",
+                        }
+                    ]
                 },
                 ensure_ascii=False,
             )
@@ -187,23 +207,27 @@ def make_sql_query(
                     f"Total rows: {len(rows)}]"
                 )
 
-            return json.dumps(
+            # First-class query artifact (SQL + capped full result set) rides
+            # alongside the markdown observation: the client renders it as a
+            # data artifact with CSV / Excel export, the model only sees the
+            # compact markdown table.  db_name travels with the payload so
+            # the edit & re-run endpoint can re-resolve the connector.
+            chunks = [
+                build_query_chunk(
+                    sql_stripped,
+                    col_names,
+                    rows,
+                    db_name=(react_state or {}).get("database_name"),
+                ),
                 {
-                    "artifact_id": artifact_id,
-                    "chunks": [{"output_type": "markdown", "content": table}],
+                    "output_type": "markdown",
+                    "content": table,
                 },
+            ]
+            return json.dumps(
+                {"artifact_id": artifact_id, "chunks": chunks},
                 ensure_ascii=False,
             )
-        except asyncio.CancelledError:
-            cancel_event.set()
-            capture_sql_execution(
-                sql=sql_stripped,
-                database=connector_database_name(database_connector, artifact_sink),
-                duration_ms=int((time.perf_counter() - started) * 1000),
-                error="SQL_QUERY_CANCELLED: upper-level task cancelled the query",
-                artifact_sink=artifact_sink,
-            )
-            raise
         except Exception as e:
             if str(e).startswith("ARTIFACT_CAPTURE_FAILED:"):
                 return json.dumps(

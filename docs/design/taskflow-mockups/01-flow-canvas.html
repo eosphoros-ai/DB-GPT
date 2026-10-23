@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>任务流程编辑器 · 数据分析流</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  /* ================= 编辑器三栏布局 ================= */
+  .editor { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .ed-top {
+    height: 54px; flex: none; display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; border-bottom: 1px solid var(--border-1); background: #fff;
+  }
+  .ed-back {
+    width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; color: var(--tx-2); font-size: 16px;
+  }
+  .ed-back:hover { background: var(--bg-2); }
+  .ed-name { display: flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 700; }
+  .ed-name .edit { color: var(--tx-3); font-size: 13px; cursor: pointer; }
+  .ed-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .save-state { color: var(--tx-3); font-size: 12px; margin-right: 6px; }
+
+  .nl-bar { padding: 10px 16px 0; background: #fff; }
+  .nl-input {
+    display: flex; align-items: center; gap: 10px; border: 1px solid var(--border-1);
+    border-radius: 10px; padding: 9px 14px; color: var(--tx-3); font-size: 13px;
+    background: var(--bg-1);
+  }
+  .nl-input .spark { color: var(--violet); }
+  .nl-input .hint-go { margin-left: auto; font-size: 12px; color: var(--tx-4); }
+
+  .ed-body { flex: 1; display: flex; min-height: 0; }
+
+  /* ================= 左：节点面板 ================= */
+  .palette {
+    width: 250px; flex: none; border-right: 1px solid var(--border-1);
+    background: #fff; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .palette-head { padding: 12px 14px 8px; }
+  .palette-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .palette-search {
+    display: flex; align-items: center; gap: 7px; background: var(--bg-2);
+    border-radius: 8px; padding: 6px 10px; color: var(--tx-3); font-size: 12.5px;
+  }
+  .palette-list { flex: 1; overflow-y: auto; padding: 4px 10px 16px; }
+  .p-group { margin-top: 10px; }
+  .p-group-name {
+    font-size: 11.5px; color: var(--tx-3); padding: 0 4px 6px; display: flex;
+    align-items: center; gap: 6px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .p-group-name .cnt { margin-left: auto; font-weight: 400; color: var(--tx-4); }
+  .p-node {
+    display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 10px;
+    border: 1px solid transparent; cursor: grab; margin-bottom: 4px; background: #fff;
+  }
+  .p-node:hover { border-color: var(--border-2); box-shadow: var(--shadow-sm); }
+  .p-node .tx { min-width: 0; flex: 1; }
+  .p-node .nm { font-size: 13px; font-weight: 600; color: var(--tx-1); line-height: 1.3; }
+  .p-node .ds { font-size: 11px; color: var(--tx-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .p-node .add {
+    width: 20px; height: 20px; border-radius: 6px; color: var(--pri); font-size: 15px;
+    display: flex; align-items: center; justify-content: center; flex: none;
+  }
+  .p-node .add:hover { background: var(--pri-soft); }
+  .p-node.builtin-tag .nm::after {
+    content: "内置"; font-size: 10px; color: var(--pri); background: var(--pri-soft);
+    border-radius: 4px; padding: 0 4px; margin-left: 5px; font-weight: 500;
+  }
+
+  /* ================= 中：画布 ================= */
+  .canvas-wrap { flex: 1; position: relative; overflow: auto; background: var(--bg-1); }
+  .canvas-tip {
+    position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; align-items: center;
+    padding: 8px 18px; font-size: 12px; color: var(--tx-3); background: var(--bg-1);
+  }
+  .canvas-tip b { color: var(--tx-2); font-weight: 600; }
+  .canvas {
+    min-height: 100%; padding: 10px 0 120px;
+    background-image: radial-gradient(circle, #d6d3d1 1px, transparent 1px);
+    background-size: 22px 22px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .flow-node {
+    width: 300px; background: #fff; border: 1.5px solid var(--border-1);
+    border-radius: 12px; padding: 11px 13px; display: flex; gap: 10px;
+    align-items: center; box-shadow: var(--shadow-sm); cursor: pointer;
+    position: relative;
+  }
+  .flow-node:hover { border-color: var(--border-2); }
+  .flow-node.selected { border-color: var(--pri); box-shadow: 0 0 0 3px var(--pri-soft); }
+  .flow-node .tx { flex: 1; min-width: 0; }
+  .flow-node .nm { font-size: 13.5px; font-weight: 650; }
+  .flow-node .ds { font-size: 11.5px; color: var(--tx-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .flow-node .step {
+    color: var(--tx-4); font-size: 11px; font-family: var(--mono); flex: none;
+  }
+  .flow-node .node-menu {
+    position: absolute; top: 8px; right: 8px; color: var(--tx-4); font-size: 12px;
+    display: none;
+  }
+  .flow-node:hover .node-menu { display: block; }
+  .conn {
+    width: 2px; height: 34px; background: var(--border-2); position: relative;
+  }
+  .conn .plus {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    border: 1px solid var(--border-2); color: var(--tx-3); font-size: 12px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .conn .plus:hover { border-color: var(--pri); color: var(--pri); }
+  .flow-node.is-boundary { border-style: solid; }
+  .badge-mini { font-size: 10px; padding: 0 5px; border-radius: 4px; background: var(--warn-soft); color: var(--warn); font-weight: 600; }
+
+  /* ================= 右：属性面板 ================= */
+  .props {
+    width: 300px; flex: none; border-left: 1px solid var(--border-1);
+    background: #fff; overflow-y: auto;
+  }
+  .props-head { padding: 14px 16px 10px; border-bottom: 1px solid var(--border-1); }
+  .props-title { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+  .props-sub { font-size: 11.5px; color: var(--tx-3); margin-top: 3px; }
+  .props-sec { padding: 12px 16px; border-bottom: 1px solid var(--border-1); }
+  .props-sec h5 { font-size: 11.5px; color: var(--tx-3); font-weight: 600; margin-bottom: 9px; letter-spacing: 0.3px; }
+  .fld { margin-bottom: 12px; }
+  .fld:last-child { margin-bottom: 2px; }
+  .fld label { display: block; font-size: 12.5px; color: var(--tx-2); margin-bottom: 5px; font-weight: 500; }
+  .fld label .req { color: var(--err); }
+  .fld .in {
+    width: 100%; border: 1px solid var(--border-2); border-radius: 8px; padding: 7px 10px;
+    font-size: 12.5px; color: var(--tx-1); background: #fff;
+  }
+  .fld .in:focus { outline: none; border-color: var(--pri); box-shadow: 0 0 0 3px var(--pri-soft); }
+  .fld textarea.in { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .fld .opt { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--tx-1); }
+  .fld .desc { font-size: 11px; color: var(--tx-3); margin-top: 4px; }
+  .select-mock { display: flex; align-items: center; justify-content: space-between; }
+  .select-mock .v { display: flex; align-items: center; gap: 7px; }
+  .switch {
+    width: 34px; height: 20px; border-radius: 999px; background: var(--pri);
+    position: relative; flex: none;
+  }
+  .switch::after {
+    content: ""; position: absolute; top: 2px; right: 2px; width: 16px; height: 16px;
+    border-radius: 50%; background: #fff;
+  }
+  .switch.off { background: var(--bg-4); }
+  .switch.off::after { right: auto; left: 2px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; }
+  .kv {
+    display: flex; align-items: center; gap: 8px; border: 1px dashed var(--border-2);
+    border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--tx-2);
+    margin-bottom: 6px;
+  }
+  .kv .k { color: var(--tx-1); font-weight: 600; }
+  .props-foot { padding: 12px 16px; color: var(--tx-3); font-size: 11.5px; }
+  .mini-mono { font-family: var(--mono); font-size: 11px; background: var(--bg-2); border-radius: 6px; padding: 6px 9px; color: var(--tx-2); }
+</style>
+</head>
+<body>
+<div class="editor">
+  <!-- ============ 顶栏 ============ -->
+  <div class="ed-top">
+    <button class="ed-back">←</button>
+    <div class="ed-name">数据分析流 <span class="edit">✎</span></div>
+    <span class="tag blue">内置模板</span>
+    <span class="tag green">已发布</span>
+    <div class="ed-actions">
+      <span class="save-state">已自动保存 · 2 分钟前</span>
+      <button class="btn">▶ 试运行</button>
+      <button class="btn">导入 / 导出</button>
+      <button class="btn primary">发布</button>
+    </div>
+  </div>
+
+  <!-- ============ 自然语言改流程 ============ -->
+  <div class="nl-bar">
+    <div class="nl-input">
+      <span class="spark">✦</span>
+      <span>输入自然语言，描述希望如何调整当前任务流程，例如「在可视化前加一个人工确认」…</span>
+      <span class="hint-go">⏎ 由 AI 调整</span>
+    </div>
+  </div>
+
+  <div class="ed-body">
+    <!-- ============ 左侧节点面板 ============ -->
+    <aside class="palette">
+      <div class="palette-head">
+        <div class="palette-title">节点</div>
+        <div class="palette-search">⌕&nbsp; 搜索节点</div>
+      </div>
+      <div class="palette-list">
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-source)">●</span> 数据来源 <span class="cnt">3</span></div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--pri-soft);color:var(--pri)">🗄</div>
+            <div class="tx"><div class="nm">数据库查询</div><div class="ds">自然语言或 SQL 查询数据源</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--pri-soft);color:var(--pri)">📄</div>
+            <div class="tx"><div class="nm">文件数据</div><div class="ds">上传 CSV / Excel 作为分析数据</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--pri-soft);color:var(--pri)">📚</div>
+            <div class="tx"><div class="nm">知识库检索</div><div class="ds">检索知识库补充业务口径</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-analysis)">●</span> 分析计算 <span class="cnt">3</span></div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">🧹</div>
+            <div class="tx"><div class="nm">数据清洗</div><div class="ds">AI 生成代码完成清洗与转换</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node builtin-tag">
+            <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">🧮</div>
+            <div class="tx"><div class="nm">智能分析</div><div class="ds">围绕分析目标执行计算与洞察</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--cyan-soft);color:var(--cyan)">📊</div>
+            <div class="tx"><div class="nm">可视化生成</div><div class="ds">将结果生成图表与仪表盘</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-control)">●</span> 流程控制 <span class="cnt">3</span></div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--warn-soft);color:var(--warn)">⑂</div>
+            <div class="tx"><div class="nm">条件分支</div><div class="ds">按上一步结果走向不同分支</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--warn-soft);color:var(--warn)">✋</div>
+            <div class="tx"><div class="nm">人工确认</div><div class="ds">暂停等待人工检查后继续</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--warn-soft);color:var(--warn)">🔁</div>
+            <div class="tx"><div class="nm">循环遍历</div><div class="ds">对列表数据逐条执行子流程</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+
+        <div class="p-group">
+          <div class="p-group-name"><span style="color:var(--c-output)">●</span> 结果输出 <span class="cnt">3</span></div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--ok-soft);color:var(--ok)">📝</div>
+            <div class="tx"><div class="nm">分析报告</div><div class="ds">汇总结论生成结构化分析报告</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--ok-soft);color:var(--ok)">🧪</div>
+            <div class="tx"><div class="nm">结果校验</div><div class="ds">口径核对与异常结果拦截</div></div>
+            <div class="add">+</div>
+          </div>
+          <div class="p-node">
+            <div class="ico-box sm" style="background:var(--ok-soft);color:var(--ok)">🔔</div>
+            <div class="tx"><div class="nm">消息推送</div><div class="ds">结果推送到 webhook / 群机器人</div></div>
+            <div class="add">+</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============ 中间画布 ============ -->
+    <div class="canvas-wrap">
+      <div class="canvas-tip"><b>任务流程画布</b> 点击节点在右侧配置；点连线上的 + 在任意位置插入节点；选中节点后可设置是否「与上一步并行」</div>
+      <div class="canvas">
+        <div class="flow-node is-boundary" style="border-color:#bbf7d0">
+          <div class="ico-box" style="background:var(--ok-soft);color:var(--ok)">▶</div>
+          <div class="tx"><div class="nm">开始</div><div class="ds">读取分析目标与对话上下文（数据库 / 文件）</div></div>
+          <div class="step">1</div>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node">
+          <div class="ico-box" style="background:var(--pri-soft);color:var(--pri)">🗄</div>
+          <div class="tx"><div class="nm">数据库查询</div><div class="ds">数据源：mysql_prod · 自然语言转 SQL · ≤1000 行</div></div>
+          <div class="step">2</div>
+          <div class="node-menu">⋯</div>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node selected">
+          <div class="ico-box" style="background:var(--violet-soft);color:var(--violet)">🧮</div>
+          <div class="tx"><div class="nm">智能分析</div><div class="ds">DeepSeek · 趋势 + 同比环比 · 输出中间表</div></div>
+          <div class="step">3</div>
+          <div class="node-menu">⋯</div>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node">
+          <div class="ico-box" style="background:var(--cyan-soft);color:var(--cyan)">📊</div>
+          <div class="tx"><div class="nm">可视化生成</div><div class="ds">自动选择图表类型 · 最多 4 张</div></div>
+          <div class="step">4</div>
+          <div class="node-menu">⋯</div>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node">
+          <div class="ico-box" style="background:var(--warn-soft);color:var(--warn)">✋</div>
+          <div class="tx"><div class="nm">人工确认 <span class="badge-mini">可选</span></div><div class="ds">确认结论口径后再生成报告</div></div>
+          <div class="step">5</div>
+          <div class="node-menu">⋯</div>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node">
+          <div class="ico-box" style="background:var(--ok-soft);color:var(--ok)">📝</div>
+          <div class="tx"><div class="nm">分析报告</div><div class="ds">Markdown 报告 · 含图表引用与建议</div></div>
+          <div class="step">6</div>
+          <div class="node-menu">⋯</div>
+        </div>
+        <div class="conn"><div class="plus">+</div></div>
+
+        <div class="flow-node is-boundary" style="border-color:#bbf7d0">
+          <div class="ico-box" style="background:var(--ok-soft);color:var(--ok)">✓</div>
+          <div class="tx"><div class="nm">输出</div><div class="ds">整理最终结果返回对话</div></div>
+          <div class="step">7</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 右侧属性面板 ============ -->
+    <aside class="props">
+      <div class="props-head">
+        <div class="props-title">
+          <div class="ico-box sm" style="background:var(--violet-soft);color:var(--violet)">🧮</div>
+          智能分析
+        </div>
+        <div class="props-sub">围绕分析目标对上游数据执行计算，产出结论与中间结果表</div>
+      </div>
+
+      <div class="props-sec">
+        <h5>基本</h5>
+        <div class="fld">
+          <label>节点名称</label>
+          <input class="in" value="智能分析" />
+        </div>
+        <div class="fld">
+          <label>分析模型 <span class="req">*</span></label>
+          <div class="in select-mock">
+            <span class="v"><span class="ico-box sm" style="background:var(--pri-soft)">🐳</span> DeepSeek-V3</span>
+            <span style="color:var(--tx-3)">▾</span>
+          </div>
+        </div>
+        <div class="fld">
+          <label>分析要求</label>
+          <textarea class="in">关注趋势变化与同比 / 环比，识别异常波动并给出可能原因。</textarea>
+          <div class="desc">留空则由模型根据「开始」节点的分析目标自行决定</div>
+        </div>
+      </div>
+
+      <div class="props-sec">
+        <h5>输入 / 输出</h5>
+        <div class="kv"><span class="k">输入</span> 上游数据表 · 分析目标</div>
+        <div class="kv"><span class="k">输出</span> 分析结论 · 中间结果表</div>
+        <div class="fld" style="margin-top:8px">
+          <div class="row-between">
+            <label style="margin:0">输出中间结果表</label>
+            <div class="switch"></div>
+          </div>
+          <div class="desc">开启后，下游「可视化生成」可直接引用中间表</div>
+        </div>
+      </div>
+
+      <div class="props-sec">
+        <h5>执行策略</h5>
+        <div class="fld">
+          <div class="row-between">
+            <label style="margin:0">与上一步并行</label>
+            <div class="switch off"></div>
+          </div>
+        </div>
+        <div class="fld">
+          <div class="row-between">
+            <label style="margin:0">失败自动重试</label>
+            <span class="mini-mono">2 次</span>
+          </div>
+        </div>
+        <div class="fld">
+          <div class="row-between">
+            <label style="margin:0">超时时间</label>
+            <span class="mini-mono">120 s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="props-foot">
+        节点实现：AWEL 高阶算子 <span class="mono">HODataAnalysisOperator</span><br/>
+        高级用户可在「开发者模式」下查看底层参数
+      </div>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

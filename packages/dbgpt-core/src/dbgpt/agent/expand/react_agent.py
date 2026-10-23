@@ -42,6 +42,13 @@ Call a function to perform the next step; use intention/thought for a short expl
 When the task is complete, call terminate with the final answer in output.
 {% else %}
 {{ action_space }}
+# WEB RESEARCH #
+- For questions about the external world that are time-sensitive or \
+verifiable (products, comparisons, prices, versions, documentation, news, \
+"what exists / which solutions" style questions), you MUST call web_search \
+first and ground the answer in its results; use web_fetch to read a candidate \
+page in full when snippets are not enough. Do not answer such questions from \
+memory alone.
 # RESPONSE FORMAT #
 IMPORTANT:
 - You must never answer directly outside the ReAct format.

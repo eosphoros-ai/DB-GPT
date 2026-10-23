@@ -51,6 +51,32 @@ from .react_agent import (
 logger = logging.getLogger(__name__)
 
 
+_JSON_TYPES = {"string", "number", "integer", "boolean", "object", "array", "null"}
+
+
+def _json_type_spec(raw: Optional[str]) -> Dict[str, Any]:
+    """Convert a ToolParameter type string into a valid JSON-Schema fragment.
+
+    Strict validators (DeepSeek/OpenAI) reject DB-GPT's comma-joined union
+    strings such as ``"object, string"`` produced from ``dict | str``
+    annotations; map them to ``anyOf`` instead.
+    """
+    parts = [x.strip() for x in (raw or "").split(",") if x.strip()]
+    valid = [x for x in parts if x in _JSON_TYPES]
+    if len(valid) == 1:
+        spec: Dict[str, Any] = {"type": valid[0]}
+        if valid[0] == "array":
+            spec["items"] = {}
+        return spec
+    if len(valid) > 1:
+        return {
+            "anyOf": [
+                {"type": t, **({"items": {}} if t == "array" else {})} for t in valid
+            ]
+        }
+    return {}
+
+
 def _build_openai_tools(resource) -> List[Dict[str, Any]]:
     """Build an OpenAI ``tools`` array from the agent's ToolPack.
 

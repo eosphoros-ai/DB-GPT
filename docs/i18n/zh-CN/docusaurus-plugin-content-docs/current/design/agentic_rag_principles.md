@@ -177,10 +177,10 @@ _build_references_xml             references='[{                 点击弹出 Dr
 ┌─────────────────────────┐               ┌─────────────────────────────┐
 │ 只含知识库工具:          │               │ 全部工具:                    │
 │  • kb_semantic_search   │               │  • kb_* (知识库)             │
-│  • kb_grep / kb_cat     │               │  • shell_interpreter (Shell) │
+│  • kb_grep / kb_cat     │               │  • bash (Shell) │
 │  • kb_ls / kb_glob      │               │  • sql_query (SQL)           │
 │  • kb_codegraph_*       │               │  • html_interpreter (报表)   │
-│  • todowrite / terminate│               │  • code_interpreter (代码)   │
+│  • todowrite / terminate│               │  • code (代码)   │
 └─────────────────────────┘               │  • execute_skill_script     │
         ↑                                  │  • todowrite / terminate    │
    聚焦知识检索                            └─────────────────────────────┘

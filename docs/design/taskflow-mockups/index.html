@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>DB-GPT · 任务流程（TaskFlow）产品改造设计稿</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .cover { max-width: 1080px; margin: 0 auto; padding: 48px 32px; }
+  .cover h1 { font-size: 30px; letter-spacing: 0.3px; }
+  .cover .sub { color: var(--tx-3); margin: 10px 0 30px; line-height: 1.7; }
+  .shot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .shot { background: #fff; border: 1px solid var(--border-1); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+  .shot:hover { border-color: var(--border-2); box-shadow: var(--shadow-md); }
+  .shot .thumb { height: 230px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border-1); background: var(--bg-1); }
+  .shot .thumb iframe { width: 200%; height: 200%; border: 0; transform: scale(0.5); transform-origin: 0 0; pointer-events: none; }
+  .shot .info { padding: 14px 18px; }
+  .shot .no { color: var(--pri); font-weight: 800; font-size: 12px; letter-spacing: 1px; }
+  .shot .nm { font-size: 16px; font-weight: 700; margin: 3px 0 6px; }
+  .shot .ds { color: var(--tx-3); font-size: 12.5px; line-height: 1.65; }
+  .notes { margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .note { background: #fff; border: 1px solid var(--border-1); border-radius: 14px; padding: 18px 20px; }
+  .note h3 { font-size: 14px; margin-bottom: 10px; }
+  .note li { color: var(--tx-3); font-size: 12.5px; margin: 5px 0 5px 16px; }
+  .note b { color: var(--tx-2); }
+</style>
+</head>
+<body>
+<div class="cover">
+  <h1>DB-GPT · <span style="color:var(--pri)">任务流程（TaskFlow）</span> 产品改造设计稿</h1>
+  <p class="sub">
+    废弃旧 AWEL Flow 编辑器的产品形态（节点即算子、参数即元数据），保留 AWEL 引擎内核；<br/>
+    以「数据分析」为唯一场景重新包装：粗粒度节点 + 内置模板 + 对话内一键调用 + 自然语言改流程。<br/>
+    配套方案文档：<span class="mono" style="color:var(--tx-2)">docs/design/taskflow-redesign-plan.md</span>
+    · 视觉沿用首页 Manus 浅色语言（白底 / 浅灰侧栏 / 蓝主色 / 黑主按钮）。
+  </p>
+
+  <div class="shot-grid">
+    <a class="shot" href="./01-flow-canvas.html" target="_blank">
+      <div class="thumb"><iframe src="./01-flow-canvas.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 01</div>
+        <div class="nm">任务流程编辑器</div>
+        <div class="ds">三栏布局：左侧 12 个粗粒度节点（数据来源 / 分析计算 / 流程控制 / 输出四组），中间线性画布（连线上 + 号插入节点），右侧属性面板只暴露产品级配置（模型、分析要求、并行 / 重试），顶部常驻「自然语言改流程」入口。</div>
+      </div>
+    </a>
+    <a class="shot" href="./02-chat-picker.html" target="_blank">
+      <div class="thumb"><iframe src="./02-chat-picker.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 02</div>
+        <div class="nm">首页对话 · 选择任务流程</div>
+        <div class="ds">首页输入框 + 菜单新增「任务流程」分组：内置模板（数据分析流 / 通用快速取数 / Excel 透视分析）与我的流程混排；选中后以 chip 挂在输入框上，附默认数据源上下文，发送即按流程执行。</div>
+      </div>
+    </a>
+    <a class="shot" href="./03-flow-list.html" target="_blank">
+      <div class="thumb"><iframe src="./03-flow-list.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 03</div>
+        <div class="nm">任务流程管理</div>
+        <div class="ds">内置模板与我的流程分区卡片：节点链缩略图、运行次数 / 成功率、发布状态；内置模板只可「编辑副本」，我的流程支持编辑 / 发布 / 导入导出 dbgpts。</div>
+      </div>
+    </a>
+    <a class="shot" href="./04-flow-run.html" target="_blank">
+      <div class="thumb"><iframe src="./04-flow-run.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 04</div>
+        <div class="nm">对话内运行态</div>
+        <div class="ds">流程进度卡（步骤时间线 + 每步可展开 SQL / 数据预览 / 结论摘要）+ HITL 人工确认横幅 + 右侧 Artifact 面板（图表 / 报告草稿 / 中间数据），复用首页 Manus 双栏体验。</div>
+      </div>
+    </a>
+    <a class="shot" href="./05-agent-flow-canvas.html" target="_blank">
+      <div class="thumb"><iframe src="./05-agent-flow-canvas.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 05</div>
+        <div class="nm">编辑器 · Agent 节点（多 Agent 串联）</div>
+        <div class="ds">新增 Agent 节点类型：可连续串联 2 个、3 个或更多 Agent，每个 Agent 看到全部上游产出作为上下文；属性面板 = 指派 Agent（画像）+ 模型 + 目标 Prompt + 工具/MCP 连接器勾选 + 最大回合数。</div>
+      </div>
+    </a>
+    <a class="shot" href="./06-agent-flow-run.html" target="_blank">
+      <div class="thumb"><iframe src="./06-agent-flow-run.html" scrolling="no" tabindex="-1"></iframe></div>
+      <div class="info">
+        <div class="no">SCREEN 06</div>
+        <div class="nm">对话内运行态 · Agent 节点实时轨迹</div>
+        <div class="ds">Agent 节点完成即展开内部 ReAct 小步骤（思考 → 工具调用 → 观察 → 回答）；运行中的节点显示当前动作行与回合数；已完成的 Agent 产出增量可见。</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h3>🎨 视觉规范</h3>
+      <ul>
+        <li><b>面板</b>：白底 #ffffff / 浅灰 #fafafa #f5f5f4，描边 #e7e5e4</li>
+        <li><b>主色</b>：蓝 #2563eb（首页 badge / avatar 一致）；主按钮黑 #1c1917</li>
+        <li><b>节点分组色</b>：数据来源 蓝 · 分析计算 紫 · 可视化 青 · 流程控制 琥珀 · 输出 绿</li>
+        <li>所有 token 收敛在 <span class="mono">styles.css :root</span></li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>🧩 与旧 Flow 编辑器的对照</h3>
+      <ul>
+        <li><b>旧</b>：/construct/flow/canvas，节点 = AWEL 算子描述符，参数表单由 ui_type 驱动，资源/算子/变量全暴露</li>
+        <li><b>新</b>：节点 = 产品能力（数据库查询 / 智能分析 / 可视化…），属性面板只放业务配置；AWEL 细节下沉「开发者模式」</li>
+        <li><b>入口迁移</b>：/construct/flow → 侧栏「任务流程」；chat_flow 场景不变，select_param 仍传 flow uid</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>

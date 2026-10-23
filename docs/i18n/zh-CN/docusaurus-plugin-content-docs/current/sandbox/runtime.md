@@ -69,7 +69,7 @@ SANDBOX_AGENT_IMAGE，默认值为：
 dbgpt-sandbox-agent:latest
 ~~~
 
-仓库提供了一个 Agent 镜像构建文件，预装 code_interpreter 常用的数据分析依赖：
+仓库提供了一个 Agent 镜像构建文件，预装 code 常用的数据分析依赖：
 
 ~~~bash
 cd /path/to/DB-GPT
