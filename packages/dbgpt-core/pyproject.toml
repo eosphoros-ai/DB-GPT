@@ -193,6 +193,10 @@ conflicts = [
         { extra = "hf_kimi" },
     ],
 ]
+
+[dependency-groups]
+dev = []
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/dbgpt"]
 exclude = [
