@@ -282,6 +282,11 @@ output_contract: result_set+sql
 - 语义中心**不独立管理连接**（连接唯一真源 = Datasources）；外部语义定义（yaml/csv）可导入，属内容非连接。
 - 对标取舍：DataWorks 语义分析 = 重显式建任务（源+业务域+重点表+代码空间）；ChatBI = 显式建数据集；本设计取中间：**L1 自动登记 + 一键激活 + 空间内任务化**（草稿生成/指标挖掘为后台作业，非建空间前置表单）。
 
+**实施状态（2026-10-23）**：
+- 空间列表页已落：登记存量连接（backfill）、一键激活（采样/草稿/embedding）、覆盖率统计条；空间内六 tab + **生成草稿**按钮 + 标注置信度列（审核队列按置信度排序）。
+- L2/L3/L4 生产者已落：标注器双模（LLM JSON / 启发式四档置信度：comment 0.95、键/时间/布尔 0.70、枚举 0.60、其余 0.50）、指标矿工（金额列 SUM + 每表 COUNT 候选 / LLM 提案）、join 发现（FK→active 免审、命名启发→draft 待人工校准）；LLM 桥经 `CFG.LLM_MODEL`+WorkerManager 解析服务默认模型，无模型在服时静默降级启发式。
+- 消费侧（SemanticRetriever 双路召回 / sql_guard / 引用 chip / 点赞回写）= 阶段三，见 `semantic-center-impl-plan.md` §四/§九。
+
 - **六 tab 治理面**：① 元数据目录（schema/comment 自动同步、只读、大库采样提示）② 语义标注（LLM 草稿+置信度→人审 确认发布/修改/驳回；**草稿不进入检索**）③ 指标口径（版本化可溯源：expression/表/维度/默认过滤/时间粒度/owner/状态）④ 样例库 Verified Q→SQL（点赞沉淀/人工导入、使用次数）⑤ 关系/血缘图谱（join 路径带 join key，供 schema linking 与可解释性）⑥ 规则护栏（只读模式/行级权限/默认软删除过滤/表白名单/超时行数/只读从库）。
 - **存储分工**：指标/规则/血缘/枚举/版本/owner → 结构化库（**权威源**）；描述/同义词/样例检索文本 → KB 托管空间（**派生索引**；chunk=一条语义项，带指针 metadata{id,type,target,version}；托管空间在 KB UI 内只读防绕过治理；换 embedding 模型全量重建）。
 - **发布管道**：编辑草稿（仅写结构化库）→ 人审发布（status=published, version+1）→ 写托管空间（按 metadata.id 删旧 chunk→插新→embed）。

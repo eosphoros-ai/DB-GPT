@@ -116,3 +116,32 @@ manifest.semantic 解析：`layer`→sem_datasource；`scope`→retriever 过滤
 - **P0**：S1/S2/S4/S5/S6/S7/S9 基础 + 人工录入指标与规则；验收：连库分钟级出目录；发布指标后 chunk 可命中；问数 SQL 带默认过滤；答案带引用 chip；readonly 规则拦 DDL。
 - **P1**：S3 全量 + 历史样例挖掘 + 输入待办队列 + 覆盖率水位 + 套件 proposals 入队 + rebuild 任务。
 - **P2**：列级血缘（视图/ETL 解析）、Semantic-as-API/MCP、access_tag 行级联动、跨源指标组合。
+
+---
+
+## 八、存储分工决策：不是所有东西都进 DB 表
+
+四类存储：
+
+1. **meta 库新表（治理态+权威定义）**：P0 十表 `sem_datasource / sem_table / sem_column / sem_entry / sem_metric / sem_metric_version / sem_relation / sem_example / sem_rule / sem_publish_log`；`sem_entry.confidence` 为 S3 实施期补充列（已有 dev 库需 `ALTER TABLE sem_entry ADD COLUMN confidence FLOAT`，MySQL 用 DOUBLE）。
+2. **复用 KB VectorStore**：托管空间 `semantic::<conn_id>` 的 chunk（派生索引，按 metadata.id 删旧插新）；`ManagedSpaceSink` 真向量接线（StorageManager+EmbeddingFactory）随阶段三 retriever 落地，阶段二 LoggingSink fail-soft。
+3. **文件**：套件包（suite.yaml/skills/prompts）、toml bootstrap seed、P2 的 YAML 导入/导出 interchange。
+4. **复用现有字段**：对话 `ext_info.suite` pin、message metadata 引用 chips（sem_citation 表 P0 不建，反馈直接回写 example/entry）。
+
+被否替代：YAML 文件当真源（dbt 式）——web 多节点+审核工作流+漂移检测都不顺；实时 introspect 不存——无漂移基线、重复 introspect 贵、源库离线不可浏览。
+
+## 九、实施状态与代码挂点（截至 2026-10-23）
+
+| 任务 | 状态 | 落点 |
+|---|---|---|
+| S1 models+建表 | ✅ | `semantic/models.py`（10 表+Dao），注册进 `db_model_initialization._MODELS` 启动建表 |
+| S2 同步 | ✅ | `semantic/sync.py`（sync/漂移/白名单/`semantic_auto_register`），挂 datasource `create()` 后台同步 |
+| S3 草稿 | ✅ | `annotator.py`（LLM/启发式双模四档置信度）、`metric_miner.py`（SUM/COUNT 候选+LLM 提案）、`join_discovery.py`（FK→active 免审、命名启发→draft 待审）、`llm_bridge.py`（CFG.LLM_MODEL+WorkerManager，`asyncio.to_thread` 桥接） |
+| S4 发布 | ✅ | `semantic/publisher.py`（四渲染器+sink 协议+审计日志）；向量真接线留阶段三 |
+| S5 retriever | ❌ 阶段三 | `semantic/retriever.py` + AWEL 算子 + chat_db/react 注入 + 引用 chip |
+| S6 sql_guard | ❌ 阶段三 | `semantic/sql_guard.py` + tool_action/approval 挂点 |
+| S7 API | ✅ | `semantic/api.py`：spaces/activate/sync/backfill/drafts/coverage/tables/columns/entries+review/metrics+publish/examples/relations/rules+status，注册进 `dbgpt_server` |
+| S8 反馈 | ⏸ 部分 | 引用 chip 依赖 S5；点赞回写通道已预留（source=thumbs_up） |
+| S9 前端 | ✅ | `web/pages/construct/semantic.tsx`（空间列表+登记存量连接+六 tab+激活卡+生成草稿+置信度列）、侧栏导航、`client/api/semantic.ts` |
+
+验收对照：清单 1-3 ✅；清单 4（发布后 chunk 可命中）待 ManagedSpaceSink 真接线后闭环；清单 5（readonly 拦 DDL）随 S6 sql_guard 落地。
