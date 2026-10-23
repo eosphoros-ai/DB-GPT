@@ -52,7 +52,15 @@ const nextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   skipTrailingSlashRedirect: true,
-  webpack: (config, { isServer }) => {
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Fast Refresh can reach CommonJS helpers nested under optimized packages.
+      // Its injected import.meta needs an auto parser despite Babel's package type.
+      config.module.rules.push({
+        test: /[\\/]node_modules[\\/]@babel[\\/]runtime[\\/]helpers[\\/][^\\/]+\.js$/,
+        type: 'javascript/auto',
+      });
+    }
     // transpilePackages still selects CommonJS entries that require ESM-only dependencies.
     config.resolve.alias = {
       ...config.resolve.alias,
