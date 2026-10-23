@@ -122,11 +122,32 @@ async def backfill_spaces():
 
 @router.post("/v1/semantic/spaces/{ds_id}/drafts")
 async def generate_drafts(ds_id: int, payload: Dict[str, Any] = Body(default={})):
-    """Trigger L2 annotator + L3 metric miner (heuristic mode for now)."""
+    """Trigger L2 annotator + L3 miner + L4 join discovery.
+
+    ``use_llm`` (default true) resolves the serving default model via the
+    llm bridge; generation runs in a worker thread so the sync LLM adapter
+    can own its event loop.
+    """
+    import asyncio
+
     service = get_semantic_service()
-    if not service.get_space(ds_id):
+    space = service.get_space(ds_id)
+    if not space:
         raise HTTPException(status_code=404, detail=f"space {ds_id} not found")
-    return Result.succ(service.run_draft_generation(ds_id))
+    llm = None
+    if bool(payload.get("use_llm", True)):
+        from dbgpt_serve.semantic.llm_bridge import build_sync_llm
+
+        llm = await asyncio.to_thread(build_sync_llm)
+    connector = None
+    try:
+        connector = _connector(str(space["conn_id"]))
+    except Exception as e:  # noqa: BLE001 - FK discovery is best-effort
+        logger.warning(f"connector unavailable for join discovery: {e}")
+    result = await asyncio.to_thread(
+        service.run_draft_generation, ds_id, llm, connector
+    )
+    return Result.succ(result)
 
 
 @router.get("/v1/semantic/spaces/{ds_id}/coverage")

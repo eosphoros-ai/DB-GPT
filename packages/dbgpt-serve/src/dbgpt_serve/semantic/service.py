@@ -126,10 +126,14 @@ class SemanticService:
         }
 
     def run_draft_generation(
-        self, ds_id: int, llm_client: Optional[Any] = None
+        self,
+        ds_id: int,
+        llm_client: Optional[Any] = None,
+        connector: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """L2 annotator + L3 metric miner (heuristic mode when llm is None)."""
+        """L2 annotator + L3 metric miner + L4 join discovery."""
         from dbgpt_serve.semantic.annotator import SemanticAnnotator
+        from dbgpt_serve.semantic.join_discovery import JoinDiscoverer
         from dbgpt_serve.semantic.metric_miner import MetricMiner
 
         annotator = SemanticAnnotator(
@@ -142,9 +146,13 @@ class SemanticService:
             column_dao=self._column_dao,
             metric_dao=self._metric_dao,
         )
+        discoverer = JoinDiscoverer(
+            table_dao=self._table_dao, column_dao=self._column_dao
+        )
         return {
             "entries": annotator.generate_drafts(ds_id, llm_client=llm_client),
             "metrics": miner.mine(ds_id, llm_client=llm_client),
+            "joins": discoverer.discover(ds_id, connector=connector),
         }
 
     # L6 bootstrap seeds: readonly/whitelist/limit active by default (safe),
