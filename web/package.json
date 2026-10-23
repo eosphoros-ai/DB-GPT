@@ -99,7 +99,7 @@
     "react-grid-layout": "^2.2.4",
     "react-markdown": "9.0.1",
     "react-resizable": "3.2.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.2",
