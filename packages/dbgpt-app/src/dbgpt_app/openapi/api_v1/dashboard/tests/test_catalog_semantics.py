@@ -111,6 +111,41 @@ def test_filter_claims_must_refer_to_real_bound_objects(mapped_source):
     validate_adaptation_promises(schema)
 
 
+@pytest.mark.parametrize(
+    "change",
+    [
+        "filters 为空。",
+        "filters=[]。",
+        "filters: []",
+        "Filters are empty.",
+        "未提供全局筛选（用户未要求，且分类筛选会显著改变口径），filters 留空。",
+        "本次不新增全局筛选。",
+        "No global filters were requested.",
+    ],
+)
+def test_empty_filter_description_does_not_require_new_filters(change):
+    schema = build_template("voice-observatory", "test")
+    schema.filters = []
+    schema.metadata.compatibility["template_adaptation"] = {"changes": [change]}
+    validate_adaptation_promises(schema)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "添加订单状态全局筛选，当前 filters 为空",
+        "filters=[]，需要添加全局筛选器",
+        "未提供全局筛选，现需添加订单状态筛选器",
+    ],
+)
+def test_empty_filter_description_does_not_hide_a_positive_request(change):
+    schema = build_template("voice-observatory", "test")
+    schema.filters = []
+    schema.metadata.compatibility["template_adaptation"] = {"changes": [change]}
+    with pytest.raises(ValueError, match="filters 为空"):
+        validate_adaptation_promises(schema)
+
+
 @pytest.mark.asyncio
 async def test_model_must_repair_omitted_filter_before_preview_is_accepted(
     mapped_source,

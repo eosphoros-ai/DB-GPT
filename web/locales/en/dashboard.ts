@@ -1605,6 +1605,8 @@ const DashboardEn: Record<string, string> = {
   '正在加载看板…': 'Loading dashboard…',
   取消收藏: 'Unfavorite',
   收藏: 'Favorite',
+  '{{value0}}模板示例预览': '{{value0}} template example preview',
+  示例预览: 'Example preview',
   '，已截断': ', truncated',
 };
 export default DashboardEn;

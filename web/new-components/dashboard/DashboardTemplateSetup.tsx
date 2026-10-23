@@ -1,3 +1,4 @@
+import { ChatContext } from '@/app/chat-context';
 import {
   adaptDashboardTemplate,
   generateDashboardTemplate,
@@ -27,7 +28,7 @@ import {
 } from '@ant-design/icons';
 import { Alert, Button, Checkbox, Collapse, Input, Modal, Radio, Select, Spin, Steps, Tag } from 'antd';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import type { CatalogTemplate } from './dashboard-catalog';
 import { describeDashboardError } from './dashboard-errors';
 import { dashboardSourceLabel } from './dashboard-source-label';
@@ -82,6 +83,7 @@ export default function DashboardTemplateSetup({
 }) {
   useDashboardTranslation();
   const router = useRouter();
+  const { model, modelList } = useContext(ChatContext);
   const [source, setSource] = useState(template.sourceNames.find(name => sources.includes(name)) || sources[0] || '');
   const [info, setInfo] = useState<TemplateSourceInfo | null>(null);
   const [manual, setManual] = useState(false);
@@ -193,13 +195,11 @@ export default function DashboardTemplateSetup({
     setBusy(true);
     setError('');
     try {
+      const preferredModel = model || localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || '';
+      // A server switch can leave a previously selected model in local storage.
+      const availableModel = modelList.includes(preferredModel) ? preferredModel : modelList[0];
       const response = aiAssisted
-        ? await adaptDashboardTemplate(
-            template.id,
-            source,
-            aiPrompt,
-            localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || undefined,
-          )
+        ? await adaptDashboardTemplate(template.id, source, aiPrompt, availableModel)
         : await previewDashboardTemplate(template.id, source, manual ? mapping : undefined);
       if (!response.data.success) throw new Error(response.data.err_msg || dt('预览验证失败'));
       if (epoch.current === version) setPreview(response.data.data);

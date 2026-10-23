@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -25,6 +26,7 @@ async function fixture(page: Page, model?: string | null) {
     let data: unknown = [];
     if (pathname === '/api/v2/serve/datasources')
       data = sources.map((db_name, id) => ({ id, db_name, type: 'sqlite', params: { name: db_name } }));
+    else if (pathname === '/api/v1/model/types') data = ['available-model'];
     else if (pathname === '/api/v1/dashboards/page') data = { items: [], total: 0, limit: 24, offset: 0 };
     else if (pathname.endsWith('/source'))
       data = { builtin_available: true, grain: 'store_week', tables: [], roles: [] };
@@ -66,13 +68,13 @@ for (const model of [null, 'test-model', undefined]) {
   });
 }
 
-test('template gallery renders all retained layouts and opens a query preview without screenshot assets', async ({
+test('template gallery renders fixed previews and opens a query preview without old PNG assets', async ({
   page,
 }, testInfo) => {
   const { removedImages, errors } = await fixture(page);
   await page.goto('/dashboards/?tab=templates');
   await expect(page.locator('[data-catalog-template]')).toHaveCount(32);
-  await expect(page.locator('svg[data-template-layout]')).toHaveCount(32);
+  await expect(page.locator('img[data-template-preview]')).toHaveCount(32);
   await expect(page.locator('[data-design-template]')).toHaveCount(7);
   await expect(page.getByText('风格技能 · 连接数据后生成', { exact: true })).toHaveCount(7);
   for (const name of ['learnhub', 'brutal', 'pawspa', 'serenityspa', 'datapulse', 'nexusai']) {
@@ -86,7 +88,7 @@ test('template gallery renders all retained layouts and opens a query preview wi
   await expect(page.locator('[data-catalog-template]')).toHaveCount(32);
   await page.screenshot({ path: testInfo.outputPath('retained-template-gallery.png') });
   const cover = page.locator('[data-catalog-template="retail-overview"]');
-  await expect(cover.getByRole('img', { name: /布局示意/ })).toBeVisible();
+  await expect(cover.getByRole('img', { name: /模板示例预览/ })).toBeVisible();
   await cover.screenshot({ path: testInfo.outputPath('layout-cover.png') });
   await cover.getByRole('button', { name: '预览模板 零售经营总览', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -161,16 +163,48 @@ test('favorites retain restored styles and still open data templates', async ({ 
   expect(errors).toEqual([]);
 });
 
-test('template layout covers remain visible on a narrow screen', async ({ page }, testInfo) => {
+test('template covers remain visible on a narrow screen', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const { removedImages, errors } = await fixture(page);
   await page.goto('/dashboards/?tab=templates');
-  await expect(page.locator('svg[data-template-layout]')).toHaveCount(32);
-  await page.locator('svg[data-template-layout]').first().scrollIntoViewIfNeeded();
-  const box = await page.locator('svg[data-template-layout]').first().boundingBox();
+  await expect(page.locator('img[data-template-preview]')).toHaveCount(32);
+  await page.locator('img[data-template-preview]').first().scrollIntoViewIfNeeded();
+  const box = await page.locator('img[data-template-preview]').first().boundingBox();
   expect(box?.width).toBeGreaterThan(100);
   expect(box?.width).toBeLessThanOrEqual(390);
   expect(removedImages).toEqual([]);
   expect(errors).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath('mobile-gallery.png') });
+});
+
+test('every template has a different compact cover that loads in the gallery', async ({ page }) => {
+  await fixture(page);
+  await page.goto('/dashboards/?tab=templates');
+  const covers = page.locator('img[data-template-preview]');
+  await expect(covers).toHaveCount(32);
+  const digests = new Set<string>();
+  let totalBytes = 0;
+  for (const cover of await covers.all()) {
+    await cover.scrollIntoViewIfNeeded();
+    await expect.poll(() => cover.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBe(800);
+    const id = await cover.getAttribute('data-template-preview');
+    const bytes = readFileSync(path.resolve(process.cwd(), `public/dashboard-templates/covers/${id}.webp`));
+    digests.add(createHash('sha256').update(bytes).digest('hex'));
+    totalBytes += bytes.length;
+  }
+  expect(digests.size).toBe(32);
+  expect(totalBytes).toBeLessThan(1024 * 1024);
+});
+
+test('template adaptation does not send a model removed from the current server', async ({ page }) => {
+  await fixture(page);
+  await page.addInitScript(() => localStorage.setItem('dbgpt-selected-model', 'removed-model'));
+  const models = page.waitForResponse('**/api/v1/model/types');
+  await page.goto('/dashboards/?tab=templates');
+  await models;
+  await page.getByRole('button', { name: '使用模板 零售经营总览', exact: true }).click();
+  const request = page.waitForRequest('**/api/v1/dashboard-catalog/retail-overview/adapt');
+  await page.getByRole('dialog').getByRole('button', { name: 'AI 适配并预览', exact: true }).click();
+  expect((await request).postDataJSON().model).toBe('available-model');
+  await expect(page.getByRole('dialog').getByRole('button', { name: '创建看板', exact: true })).toBeVisible();
 });

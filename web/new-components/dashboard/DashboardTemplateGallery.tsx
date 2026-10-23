@@ -128,12 +128,16 @@ export default function DashboardTemplateGallery({ featured = false }: { feature
           {proof?.previewKind === 'layout' ? (
             <DashboardTemplateLayoutPreview template={item} />
           ) : proof?.preview ? (
-            <Image
-              src={proof.preview}
-              alt={dt('{{value0}}实际生成预览', { value0: dt(item.title) })}
-              width={640}
-              height={400}
-            />
+            <>
+              <Image
+                src={proof.preview}
+                alt={dt('{{value0}}模板示例预览', { value0: dt(item.title) })}
+                data-template-preview={item.id}
+                width={800}
+                height={500}
+              />
+              <span className={styles.designLabel}>{dt('示例预览')}</span>
+            </>
           ) : (
             <div className={styles.assetCover}>
               <strong>{dt(item.title)}</strong>
