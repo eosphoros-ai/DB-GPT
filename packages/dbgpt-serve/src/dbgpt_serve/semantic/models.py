@@ -123,6 +123,7 @@ class SemEntryEntity(_SemBase):
     entry_definition = Column(Text)
     status = Column(String(32), default="draft")
     version = Column(Integer, default=1)
+    confidence = Column(Float)
     provenance = Column(String(32), default="llm_draft")
     suite_id = Column(String(128))
     publish_version = Column(Integer)

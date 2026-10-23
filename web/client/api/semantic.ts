@@ -43,6 +43,7 @@ export interface SemanticEntry {
   synonyms?: string;
   status: string;
   version: number;
+  confidence?: number;
   provenance: string;
   publish_version?: number;
 }
@@ -114,6 +115,11 @@ export const postSemanticActivate = (
 
 export const postSemanticBackfill = () =>
   POST<null, { synced: string[]; failed: string[] }>('/api/v1/semantic/spaces/backfill');
+
+export const postSemanticDrafts = (id: number) =>
+  POST<null, { entries: Record<string, number>; metrics: Record<string, number> }>(
+    `/api/v1/semantic/spaces/${id}/drafts`,
+  );
 
 export const postSemanticExample = (
   id: number,

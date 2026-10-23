@@ -111,20 +111,40 @@ class SemanticService:
             session.close()
         whitelist = self._sync.apply_whitelist(ds_id, sampling_limit)
         rules_seeded = self.seed_default_rules(ds_id, user)
+        drafts: Optional[Dict[str, Any]] = None
         if run_draft_generation:
             if self.draft_hook:
                 self.draft_hook(ds_id)
             else:
-                logger.info(
-                    "draft generation requested for space %s; annotator lands "
-                    "in phase 3, skipped for now",
-                    ds_id,
-                )
+                drafts = self.run_draft_generation(ds_id)
         return {
             "ds_id": ds_id,
             "status": "activated",
             "whitelist": whitelist,
             "rules_seeded": rules_seeded,
+            "drafts": drafts,
+        }
+
+    def run_draft_generation(
+        self, ds_id: int, llm_client: Optional[Any] = None
+    ) -> Dict[str, Any]:
+        """L2 annotator + L3 metric miner (heuristic mode when llm is None)."""
+        from dbgpt_serve.semantic.annotator import SemanticAnnotator
+        from dbgpt_serve.semantic.metric_miner import MetricMiner
+
+        annotator = SemanticAnnotator(
+            table_dao=self._table_dao,
+            column_dao=self._column_dao,
+            entry_dao=self._entry_dao,
+        )
+        miner = MetricMiner(
+            table_dao=self._table_dao,
+            column_dao=self._column_dao,
+            metric_dao=self._metric_dao,
+        )
+        return {
+            "entries": annotator.generate_drafts(ds_id, llm_client=llm_client),
+            "metrics": miner.mine(ds_id, llm_client=llm_client),
         }
 
     # L6 bootstrap seeds: readonly/whitelist/limit active by default (safe),
@@ -385,6 +405,7 @@ class SemanticService:
             "synonyms",
             "status",
             "version",
+            "confidence",
             "provenance",
             "publish_version",
         ]
@@ -515,6 +536,7 @@ class SemanticService:
             entry_definition=payload.get("entry_definition"),
             status="draft",
             provenance=provenance,
+            confidence=payload.get("confidence"),
             user_name=user,
         )
         session = self._entry_dao.get_raw_session()

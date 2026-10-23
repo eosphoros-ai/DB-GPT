@@ -22,6 +22,7 @@ import {
   postRuleStatus,
   postSemanticActivate,
   postSemanticBackfill,
+  postSemanticDrafts,
   postSemanticSync,
 } from '@/client/api/semantic';
 import ConstructLayout from '@/new-components/layout/Construct';
@@ -123,6 +124,14 @@ const SemanticCenter = () => {
     setActivateId(null);
     if (dsId) await loadDetail(activateId);
     else await loadSpaces();
+  };
+
+  const doDrafts = async (id: number) => {
+    const [, res] = await apiInterceptors(postSemanticDrafts(id));
+    message.success(
+      `草稿生成：标注 +${res?.entries?.column_entries ?? 0} 列 / +${res?.entries?.table_entries ?? 0} 表，指标 +${res?.metrics?.metrics ?? 0}`,
+    );
+    await loadDetail(id);
   };
 
   const review = async (entryId: number, action: 'confirm' | 'reject') => {
@@ -273,6 +282,11 @@ const SemanticCenter = () => {
             { title: '名称', dataIndex: 'entry_name' },
             { title: '描述', dataIndex: 'entry_comment', ellipsis: true },
             { title: '来源', dataIndex: 'provenance' },
+            {
+              title: '置信度',
+              dataIndex: 'confidence',
+              render: (v?: number) => (v != null ? v.toFixed(2) : '-'),
+            },
             { title: '状态', dataIndex: 'status', render: (s: string) => <Tag color={STATUS_COLOR[s]}>{s}</Tag> },
             {
               title: '操作',
@@ -397,6 +411,9 @@ const SemanticCenter = () => {
           <Tag color={STATUS_COLOR[space?.status ?? '']}>{space?.status}</Tag>
           <Button size='small' onClick={() => doSync(dsId)}>
             同步
+          </Button>
+          <Button size='small' onClick={() => doDrafts(dsId)}>
+            生成草稿
           </Button>
         </Space>
         {coverage && (

@@ -120,6 +120,15 @@ async def backfill_spaces():
     return Result.succ({"synced": done, "failed": failed})
 
 
+@router.post("/v1/semantic/spaces/{ds_id}/drafts")
+async def generate_drafts(ds_id: int, payload: Dict[str, Any] = Body(default={})):
+    """Trigger L2 annotator + L3 metric miner (heuristic mode for now)."""
+    service = get_semantic_service()
+    if not service.get_space(ds_id):
+        raise HTTPException(status_code=404, detail=f"space {ds_id} not found")
+    return Result.succ(service.run_draft_generation(ds_id))
+
+
 @router.get("/v1/semantic/spaces/{ds_id}/coverage")
 async def coverage(ds_id: int):
     return Result.succ(get_semantic_service().coverage(ds_id))
