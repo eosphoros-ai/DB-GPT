@@ -23,6 +23,33 @@ pi 引擎按会话拉起 pi CLI 子进程：
 - 破坏性内置工具默认排除（`DBGPT_HARNESS_PI_EXCLUDED_TOOLS`，默认 `bash`），与 dbgpt 引擎
   的 containment 对齐。
 
+## 安装 pi 运行时
+
+pi CLI **故意不写进** DB-GPT 的任何依赖清单：它是带外运行时，由探针按请求发现。因此全新机器上
+项目默认值（`pi`）会回退到内置 DB-GPT 引擎，直到运行时被安装。
+
+一键安装脚本（幂等、无需 sudo）：
+
+```bash
+bash scripts/install_pi_runtime.sh
+```
+
+脚本先确保 Node ≥ 22.19（依次复用 `DBGPT_HARNESS_PI_NODE`、`PATH`、已有 nvm 安装；都不满足时
+经 nvm 安装 Node 22），再把 `@earendil-works/pi-coding-agent` 装进 `~/.dbgpt/pi-runtime`——
+探针的已知位置之一。npm 源可用 `NPM_REGISTRY` 覆盖（例如 `https://registry.npmmirror.com`），
+安装前缀可用 `PI_PREFIX` 覆盖。
+
+手工等价命令：
+
+```bash
+nvm install 22
+npm install -g --prefix ~/.dbgpt/pi-runtime @earendil-works/pi-coding-agent
+```
+
+可用性按请求探测，装完后 `GET /api/v1/chat/harness/engines` 无需重启服务即显示
+`pi.available: true`。注意：服务端持久化偏好（服务启动目录下的 `harness_engine.json`）优先级
+高于项目默认值——若它钉住 `dbgpt`，需在设置里重选 pi 或 `PUT /api/v1/chat/harness/engine`。
+
 ## 读一轮运行
 
 无论哪个引擎执行，会话表面完全一致：

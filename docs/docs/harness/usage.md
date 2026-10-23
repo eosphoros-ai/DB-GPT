@@ -27,6 +27,38 @@ The pi engine spawns the pi CLI as a subprocess per conversation:
 - Destructive built-ins stay excluded by default (`DBGPT_HARNESS_PI_EXCLUDED_TOOLS`,
   default `bash`), mirroring the dbgpt engine's containment.
 
+## Installing the pi runtime
+
+The pi CLI is deliberately **not** part of DB-GPT's dependency manifests: it is an
+out-of-band runtime the probe discovers per request. On a fresh machine the project
+default (`pi`) therefore falls back to the built-in DB-GPT engine until the runtime
+is installed.
+
+One-shot installer (idempotent, sudo-free):
+
+```bash
+bash scripts/install_pi_runtime.sh
+```
+
+The script ensures a Node runtime ≥ 22.19 (reusing `DBGPT_HARNESS_PI_NODE`, `PATH`, or
+existing nvm installs; installing Node 22 via nvm when nothing qualifies), then installs
+`@earendil-works/pi-coding-agent` into `~/.dbgpt/pi-runtime` — one of the probe's known
+locations. Override the npm registry with `NPM_REGISTRY` (for example
+`https://registry.npmmirror.com`) and the install prefix with `PI_PREFIX`.
+
+Manual equivalent:
+
+```bash
+nvm install 22
+npm install -g --prefix ~/.dbgpt/pi-runtime @earendil-works/pi-coding-agent
+```
+
+Availability is probed per request, so `GET /api/v1/chat/harness/engines` shows
+`pi.available: true` right after installation without a server restart. Note that a
+persisted server preference (`harness_engine.json` in the server working directory)
+outranks the project default: if it pins `dbgpt`, re-select pi in Setting or
+`PUT /api/v1/chat/harness/engine`.
+
 ## Reading a run
 
 Whichever engine runs the turn, the conversation surface is identical:
