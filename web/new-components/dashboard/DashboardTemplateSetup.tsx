@@ -83,7 +83,7 @@ export default function DashboardTemplateSetup({
 }) {
   useDashboardTranslation();
   const router = useRouter();
-  const { model, modelList } = useContext(ChatContext);
+  const { model, modelList, modelListLoading } = useContext(ChatContext);
   const [source, setSource] = useState(template.sourceNames.find(name => sources.includes(name)) || sources[0] || '');
   const [info, setInfo] = useState<TemplateSourceInfo | null>(null);
   const [manual, setManual] = useState(false);
@@ -184,13 +184,16 @@ export default function DashboardTemplateSetup({
           : !confirmedGrain
             ? dt('请确认明细表每行代表的业务含义和数值单位。')
             : dt('匹配已填写完整，可以验证查询并预览。');
+  const aiModelsReady = !modelListLoading && modelList.length > 0;
   const canPreview =
     !!source &&
     !!info &&
+    (!aiAssisted || aiModelsReady) &&
     (aiAssisted ||
       !manual ||
       (mapping.table && mapping.unit.trim() && confirmedGrain && fieldsComplete && joinsComplete));
   const check = async () => {
+    if (!canPreview || busy || loading) return;
     const version = ++epoch.current;
     setBusy(true);
     setError('');
@@ -392,6 +395,16 @@ export default function DashboardTemplateSetup({
                       <CommentOutlined />
                       {dt('模板 AI 助手')}
                     </div>
+                    {!aiModelsReady && (
+                      <Alert
+                        className='mb-3'
+                        type={modelListLoading ? 'info' : 'warning'}
+                        showIcon
+                        message={
+                          modelListLoading ? dt('正在加载可用模型…') : dt('暂无可用模型，请检查模型服务后重试。')
+                        }
+                      />
+                    )}
                     <p className='mb-3 text-sm leading-6 text-[var(--app-muted)]'>
                       {features
                         ? dt('已提取模板的组件组合、布局和配色。')

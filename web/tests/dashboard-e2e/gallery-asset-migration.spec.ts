@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { MODELS_CHANGED_EVENT } from '../../utils/events';
 
 const sources = ['Walmart_Sales', 'sqlite_energy', 'sqlite_itsm', 'sqlite_maintenance', 'sqlite_students'];
 const snapshot = JSON.parse(
@@ -208,3 +209,77 @@ test('template adaptation does not send a model removed from the current server'
   expect((await request).postDataJSON().model).toBe('available-model');
   await expect(page.getByRole('dialog').getByRole('button', { name: '创建看板', exact: true })).toBeVisible();
 });
+
+for (const refreshing of [false, true]) {
+  test(`template AI preview waits for ${refreshing ? 'refreshed' : 'initial'} model discovery`, async ({
+    page,
+  }, testInfo) => {
+    await fixture(page);
+    await page.addInitScript(() => localStorage.setItem('dbgpt-selected-model', 'removed-model'));
+    let releaseModels!: () => void;
+    const modelsReady = new Promise<void>(resolve => {
+      releaseModels = resolve;
+    });
+    let modelRequests = 0;
+    const adaptationRequests: string[] = [];
+    page.on('request', request => {
+      if (new URL(request.url()).pathname.endsWith('/adapt')) adaptationRequests.push(request.url());
+    });
+    await page.route('**/api/v1/model/types', async route => {
+      modelRequests++;
+      if (refreshing && modelRequests === 1) {
+        await route.fulfill({ json: success(['old-model']) });
+        return;
+      }
+      await modelsReady;
+      await route.fulfill({ json: success(['available-model']) });
+    });
+    try {
+      await page.goto('/dashboards/?tab=templates');
+      await page.getByRole('button', { name: '使用模板 零售经营总览', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      const previewButton = dialog.getByRole('button', { name: 'AI 适配并预览', exact: true });
+      await expect(dialog.getByTestId('template-ai-assistant')).toBeVisible();
+      if (refreshing) {
+        await expect(previewButton).toBeEnabled();
+        await page.evaluate(event => window.dispatchEvent(new Event(event)), MODELS_CHANGED_EVENT);
+      }
+      await expect.poll(() => modelRequests).toBe(refreshing ? 2 : 1);
+      await expect(previewButton).toBeDisabled();
+      await expect(dialog.getByText('正在加载可用模型…', { exact: true })).toBeVisible();
+      await dialog.getByRole('radio', { name: /使用预设匹配/ }).check();
+      await expect(dialog.getByRole('button', { name: '验证并预览', exact: true })).toBeEnabled();
+      await dialog.getByRole('radio', { name: /AI 智能适配/ }).check();
+      await expect(previewButton).toBeDisabled();
+      expect(adaptationRequests).toEqual([]);
+      await dialog.screenshot({ path: testInfo.outputPath('waiting-for-models.png') });
+      releaseModels();
+      await expect(previewButton).toBeEnabled();
+      const request = page.waitForRequest('**/api/v1/dashboard-catalog/retail-overview/adapt');
+      await previewButton.click();
+      expect((await request).postDataJSON().model).toBe('available-model');
+      await expect(dialog.getByRole('button', { name: '创建看板', exact: true })).toBeVisible();
+    } finally {
+      releaseModels();
+    }
+  });
+}
+
+for (const unavailable of ['empty', 'failed']) {
+  test(`template AI preview stays disabled when model discovery is ${unavailable}`, async ({ page }, testInfo) => {
+    await fixture(page);
+    await page.route('**/api/v1/model/types', route =>
+      route.fulfill({
+        json: unavailable === 'empty' ? success([]) : { success: false, err_msg: 'Model discovery unavailable.' },
+      }),
+    );
+    await page.goto('/dashboards/?tab=templates');
+    await page.getByRole('button', { name: '使用模板 零售经营总览', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', { name: 'AI 适配并预览', exact: true })).toBeDisabled();
+    await expect(dialog.getByText('暂无可用模型，请检查模型服务后重试。', { exact: true })).toBeVisible();
+    await dialog.screenshot({ path: testInfo.outputPath('no-available-models.png') });
+    await dialog.getByRole('radio', { name: /使用预设匹配/ }).check();
+    await expect(dialog.getByRole('button', { name: '验证并预览', exact: true })).toBeEnabled();
+  });
+}

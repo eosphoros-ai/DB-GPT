@@ -179,14 +179,17 @@ def validate_adaptation_promises(schema):
                 clause,
                 flags=re.I,
             )
-            if re.search(
+            # Remove only the negated mention, not later positive requests.
+            # Stop at the nearest filter mention even without punctuation.
+            clause = re.sub(
                 r"(?:不需要|无需|不要|取消|删除|无法添加|(?:不|未|没有)"
-                r"(?:添加|新增|增加|配置|提供|启用|设置|保留)).{0,20}(?:筛选|filter)"
+                r"(?:添加|新增|增加|配置|提供|启用|设置|保留)).{0,20}?"
+                r"(?:筛选(?:器)?|filters?\b)"
                 r"|\b(?:no|without)\s+(?:global\s+)?filters?\b",
+                "",
                 clause,
-                re.I,
-            ):
-                continue
+                flags=re.I,
+            )
             if re.search(
                 r"筛选器|全局筛选|(?:添加|新增|增加|提供|配置|保留|需要|支持).{0,24}筛选|\bfilters?\b",
                 clause,

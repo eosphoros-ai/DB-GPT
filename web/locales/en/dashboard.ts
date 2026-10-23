@@ -1590,6 +1590,8 @@ const DashboardEn: Record<string, string> = {
   请选择数据源: 'Select a data source',
   模型: 'Model',
   请选择模型: 'Select a model',
+  '正在加载可用模型…': 'Loading available models…',
+  '暂无可用模型，请检查模型服务后重试。': 'No models are available. Check the model service and try again.',
   '或上传 CSV / Excel 文件（可多选）': 'Or upload CSV / Excel files (multiple selection allowed)',
   上传数据文件: 'Upload data files',
   看板生成答复: 'Dashboard generation response',
