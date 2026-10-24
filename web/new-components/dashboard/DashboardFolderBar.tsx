@@ -4,6 +4,7 @@ import {
   renameDashboardFolder,
   type DashboardFolder,
 } from '@/client/api/dashboard';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DeleteOutlined, EditOutlined, FolderAddOutlined, FolderOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Input, Modal, Popconfirm, Space, message } from 'antd';
 import { useState } from 'react';
@@ -19,6 +20,7 @@ export default function DashboardFolderBar({
   onChange: (id: string | undefined) => void;
   onRefresh: () => Promise<void>;
 }) {
+  useDashboardTranslation();
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -30,12 +32,12 @@ export default function DashboardFolderBar({
     setBusy(true);
     try {
       const r = editing ? await renameDashboardFolder(editing, name) : await createDashboardFolder(name);
-      if (!r.data.success) throw new Error(r.data.err_msg || '保存失败');
+      if (!r.data.success) throw new Error(r.data.err_msg || dt('保存失败'));
       await onRefresh();
       setEditing(null);
       onChange(r.data.data.id);
     } catch (e) {
-      message.error(e instanceof Error ? e.message : '保存失败');
+      message.error(e instanceof Error ? e.message : dt('保存失败'));
     } finally {
       setBusy(false);
     }
@@ -44,22 +46,22 @@ export default function DashboardFolderBar({
     <>
       <Dropdown
         trigger={['contextMenu']}
-        menu={{ items: [{ key: 'new', label: '新建文件夹', icon: <FolderAddOutlined /> }], onClick: () => open() }}
+        menu={{ items: [{ key: 'new', label: dt('新建文件夹'), icon: <FolderAddOutlined /> }], onClick: () => open() }}
       >
-        <div className='mb-5 min-h-12 rounded-lg border border-[var(--app-border)] p-3' aria-label='看板文件夹'>
+        <div className='mb-5 min-h-12 rounded-lg border border-[var(--app-border)] p-3' aria-label={dt('看板文件夹')}>
           <Space wrap>
             <Button type={!value ? 'primary' : 'text'} onClick={() => onChange(undefined)}>
-              所有文件夹
+              {dt('所有文件夹')}
             </Button>
             <Button type={value === 'unfiled' ? 'primary' : 'text'} onClick={() => onChange('unfiled')}>
-              未分类
+              {dt('未分类')}
             </Button>
             {folders.map(folder => (
               <Dropdown
                 key={folder.id}
                 trigger={['contextMenu']}
                 menu={{
-                  items: [{ key: 'rename', label: '重命名', icon: <EditOutlined /> }],
+                  items: [{ key: 'rename', label: dt('重命名'), icon: <EditOutlined /> }],
                   onClick: () => open(folder.id),
                 }}
               >
@@ -75,25 +77,25 @@ export default function DashboardFolderBar({
                 </Button>
               </Dropdown>
             ))}
-            <Button aria-label='新建文件夹' icon={<FolderAddOutlined />} onClick={() => open()}>
-              新建文件夹
+            <Button aria-label={dt('新建文件夹')} icon={<FolderAddOutlined />} onClick={() => open()}>
+              {dt('新建文件夹')}
             </Button>
             {value && value !== 'unfiled' && (
               <>
-                <Button aria-label='重命名文件夹' icon={<EditOutlined />} onClick={() => open(value)} />
+                <Button aria-label={dt('重命名文件夹')} icon={<EditOutlined />} onClick={() => open(value)} />
                 <Popconfirm
-                  title='删除文件夹？看板会回到未分类，不会删除看板。'
+                  title={dt('删除文件夹？看板会回到未分类，不会删除看板。')}
                   onConfirm={async () => {
                     try {
                       await deleteDashboardFolder(value);
                       await onRefresh();
                       onChange(undefined);
                     } catch {
-                      message.error('删除失败，请重试');
+                      message.error(dt('删除失败，请重试'));
                     }
                   }}
                 >
-                  <Button aria-label='删除文件夹' icon={<DeleteOutlined />} />
+                  <Button aria-label={dt('删除文件夹')} icon={<DeleteOutlined />} />
                 </Popconfirm>
               </>
             )}
@@ -101,7 +103,7 @@ export default function DashboardFolderBar({
         </div>
       </Dropdown>
       <Modal
-        title={editing ? '重命名文件夹' : '新建文件夹'}
+        title={editing ? dt('重命名文件夹') : dt('新建文件夹')}
         open={editing !== null}
         onCancel={() => setEditing(null)}
         onOk={() => void save()}
@@ -109,8 +111,8 @@ export default function DashboardFolderBar({
         okButtonProps={{ disabled: !name.trim() }}
       >
         <Input
-          aria-label='文件夹名称'
-          placeholder='例如：Apple 财务分析'
+          aria-label={dt('文件夹名称')}
+          placeholder={dt('例如：Apple 财务分析')}
           value={name}
           maxLength={80}
           onChange={e => setName(e.target.value)}

@@ -243,6 +243,50 @@ async def test_reference_positions_cannot_override_the_template_layout(mapped_so
 
 
 @pytest.mark.asyncio
+async def test_template_examples_produce_valid_kpi_trend_and_donut_queries(mapped_source):
+    service, _, _ = mapped_source
+
+    class ExampleModel:
+        async def generate(self, request):
+            examples = json.loads(request.messages[1].content)["widget_examples"]
+            for widget in examples:
+                widget["query"]["sql"] = (
+                    "SELECT SUM(net) AS value FROM transactions"
+                    if widget["type"] == "kpi"
+                    else "SELECT market AS category, SUM(net) AS value "
+                    "FROM transactions GROUP BY market ORDER BY market"
+                )
+            return SimpleNamespace(
+                error_code=0,
+                text=json.dumps(
+                    {
+                        "title": "交易数据预览",
+                        "changes": ["使用真实交易字段，filters 为空。"],
+                        "widgets": examples,
+                        "filters": [],
+                    }
+                ),
+            )
+
+    result = await adapt_template(
+        service,
+        "voice-observatory",
+        "alice",
+        TemplateAdaptRequest(data_source_id="renamed", model="test"),
+        ExampleModel(),
+    )
+    assert result["validation"]["widgets"] == 8
+    assert all(
+        not item["error"] and item["rows"]
+        for item in result["snapshot"]["widgets"].values()
+    )
+    assert result["snapshot"]["widgets"]["interaction"]["rows"] == [
+        ["North", 85.0],
+        ["South", 65.0],
+    ]
+
+
+@pytest.mark.asyncio
 async def test_holiday_adaptation_preserves_all_33_months_and_series(mapped_source):
     service, path, mapping = mapped_source
     months = [f"{2023 + i // 12}-{i % 12 + 1:02d}" for i in range(33)]

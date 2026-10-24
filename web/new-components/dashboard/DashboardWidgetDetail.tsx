@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import type { DashboardSchemaV1, DashboardWidget, DashboardWidgetResult } from '@/types/dashboard';
 import { Empty, Modal, Table, Tabs } from 'antd';
 import type { DashboardThemeTokens } from './dashboard-appearance';
@@ -19,11 +20,12 @@ export default function DashboardWidgetDetail({
   onClose: () => void;
   getContainer: () => HTMLElement;
 }) {
+  useDashboardTranslation();
   const rows = rowsToObjects(result);
   return (
     <Modal
       open
-      title={`${widget.title} · 明细查看`}
+      title={dt('{{value0}} · 明细查看', { value0: widget.title })}
       onCancel={onClose}
       footer={null}
       width='min(1120px, 94vw)'
@@ -31,13 +33,15 @@ export default function DashboardWidgetDetail({
       destroyOnClose
     >
       <p className={styles.detailCaption}>
-        按当前筛选结果显示{result ? `，共 ${result.row_count} 行` : ''}。表格保留查询返回的原始数值。
+        {dt('按当前筛选结果显示')}
+        {result ? dt('，共 {{value0}} 行', { value0: result.row_count }) : ''}
+        {dt('。表格保留查询返回的原始数值。')}
       </p>
       <Tabs
         items={[
           {
             key: 'chart',
-            label: '图表',
+            label: dt('图表'),
             children: (
               <div className={styles.detailChart}>
                 <DashboardWidgetCard
@@ -51,7 +55,7 @@ export default function DashboardWidgetDetail({
           },
           {
             key: 'data',
-            label: '数据明细',
+            label: dt('数据明细'),
             children: result?.error ? (
               <p role='alert'>{result.error.message}</p>
             ) : rows.length ? (
@@ -69,7 +73,7 @@ export default function DashboardWidgetDetail({
                 }))}
               />
             ) : (
-              <Empty description='当前筛选没有数据' />
+              <Empty description={dt('当前筛选没有数据')} />
             ),
           },
         ]}

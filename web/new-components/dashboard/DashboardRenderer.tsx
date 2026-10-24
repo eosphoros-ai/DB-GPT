@@ -1,4 +1,5 @@
 import { interfaceThemeVariables } from '@/lib/interface-tokens';
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import { DashboardLayoutItem, DashboardSchemaV1, DashboardSelectionTarget, DashboardSnapshot } from '@/types/dashboard';
 import {
   AppstoreOutlined,
@@ -95,6 +96,7 @@ export default function DashboardRenderer({
   onEditAnnotationDraft,
   onSelectAnnotationTarget,
 }: DashboardRendererProps) {
+  useDashboardTranslation();
   const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1200 });
   const mobile = width < 900;
   const presentation = catalogPresentation(schema);
@@ -245,7 +247,7 @@ export default function DashboardRenderer({
           />
         )}
         {branded && (
-          <aside className={sceneStyles.brandRail} aria-label='品牌看板导航'>
+          <aside className={sceneStyles.brandRail} aria-label={dt('品牌看板导航')}>
             <div className={sceneStyles.brandIdentity}>
               <span>
                 <ShopOutlined />
@@ -255,11 +257,11 @@ export default function DashboardRenderer({
             </div>
             <nav>
               {[
-                { id: 'hero', label: '经营总览', icon: <AppstoreOutlined /> },
-                { id: 'trend', label: '收入趋势', icon: <LineChartOutlined /> },
-                { id: 'world', label: '全球市场', icon: <GlobalOutlined /> },
-                { id: 'contribution', label: '品类贡献', icon: <BarChartOutlined /> },
-                { id: 'customers', label: '客户规模', icon: <TeamOutlined /> },
+                { id: 'hero', label: dt('经营总览'), icon: <AppstoreOutlined /> },
+                { id: 'trend', label: dt('收入趋势'), icon: <LineChartOutlined /> },
+                { id: 'world', label: dt('全球市场'), icon: <GlobalOutlined /> },
+                { id: 'contribution', label: dt('品类贡献'), icon: <BarChartOutlined /> },
+                { id: 'customers', label: dt('客户规模'), icon: <TeamOutlined /> },
               ]
                 .filter(item => positions.has(item.id))
                 .map(item => (
@@ -284,7 +286,7 @@ export default function DashboardRenderer({
             <div className={sceneStyles.brandRailFooter}>
               Revenue. Markets. People.
               <br />
-              经营数据，尽在此处。
+              {dt('经营数据，尽在此处。')}
             </div>
           </aside>
         )}
@@ -305,7 +307,7 @@ export default function DashboardRenderer({
           </header>
         )}
         {presentation && ['timeline', 'story', 'dossier'].includes(presentation) && (
-          <nav className={sceneStyles.chapters} aria-label='看板章节'>
+          <nav className={sceneStyles.chapters} aria-label={dt('看板章节')}>
             {orderedWidgets
               .filter(widget => widget.type !== 'kpi')
               .map((widget, index) => (
@@ -407,7 +409,7 @@ export default function DashboardRenderer({
         )}
         {presentation && !!schema.metric_context.source_notes.length && (
           <details className={sceneStyles.notes}>
-            <summary>数据来源与计算口径</summary>
+            <summary>{dt('数据来源与计算口径')}</summary>
             {schema.metric_context.source_notes.map(note => (
               <p key={note}>{note}</p>
             ))}

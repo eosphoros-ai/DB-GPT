@@ -1,3 +1,8 @@
+import {
+  dashboardDateLocale,
+  dashboardText as dt,
+  useDashboardTranslation,
+} from '@/new-components/dashboard/dashboard-i18n';
 import type { DashboardWidget } from '@/types/dashboard';
 import type { CSSProperties } from 'react';
 import type { DashboardThemeTokens } from './dashboard-appearance';
@@ -12,6 +17,7 @@ export default function DashboardCohortMatrix({
   data: Record<string, unknown>[];
   theme?: DashboardThemeTokens;
 }) {
+  useDashboardTranslation();
   const {
     row = 'cohort',
     column = 'age',
@@ -22,7 +28,7 @@ export default function DashboardCohortMatrix({
   const cohorts = [...new Set(data.map(item => String(item[row!])))].sort();
   const ages = [...new Set(data.map(item => Number(item[column!])))].filter(Number.isFinite).sort((a, b) => a - b);
   const lookup = new Map(data.map(item => [`${item[row!]}:${item[column!]}`, item]));
-  const unit = widget.presentation?.unit === '周' ? '周' : '月';
+  const unit = widget.presentation?.unit === '周' ? dt('周') : dt('月');
   return (
     <div
       className={styles.root}
@@ -35,15 +41,15 @@ export default function DashboardCohortMatrix({
         } as CSSProperties
       }
     >
-      <div className={styles.scroll} tabIndex={0} aria-label='留存矩阵，可横向查看后续周期'>
-        <table className={styles.table} aria-label='客户首购与复购留存矩阵'>
+      <div className={styles.scroll} tabIndex={0} aria-label={dt('留存矩阵，可横向查看后续周期')}>
+        <table className={styles.table} aria-label={dt('客户首购与复购留存矩阵')}>
           <thead>
             <tr>
-              <th scope='col'>首次购买</th>
-              <th scope='col'>客户数</th>
+              <th scope='col'>{dt('首次购买')}</th>
+              <th scope='col'>{dt('客户数')}</th>
               {ages.map(age => (
                 <th key={age} scope='col'>
-                  第 {age} {unit}
+                  {dt('第')} {age} {unit}
                 </th>
               ))}
             </tr>
@@ -54,7 +60,7 @@ export default function DashboardCohortMatrix({
               return (
                 <tr key={cohort}>
                   <th scope='row'>{cohort}</th>
-                  <td className={styles.size}>{Number(first?.[target!] || 0).toLocaleString('zh-CN')}</td>
+                  <td className={styles.size}>{Number(first?.[target!] || 0).toLocaleString(dashboardDateLocale())}</td>
                   {ages.map(age => {
                     const datum = lookup.get(`${cohort}:${age}`);
                     const observed = datum && Number(datum[color!]) === 1;
@@ -81,21 +87,28 @@ export default function DashboardCohortMatrix({
                         }
                         title={
                           !datum
-                            ? '缺少此周期数据'
+                            ? dt('缺少此周期数据')
                             : !observed
-                              ? '源数据尚未覆盖此周期，不能视为 0% 留存'
+                              ? dt('源数据尚未覆盖此周期，不能视为 0% 留存')
                               : valid
-                                ? `${numerator} / ${denominator} 位客户在第 ${age} ${unit}购买`
-                                : '人数或分母无效'
+                                ? dt('{{value0}} / {{value1}} 位客户在第 {{value2}} {{value3}}购买', {
+                                    value0: numerator,
+                                    value1: denominator,
+                                    value2: age,
+                                    value3: unit,
+                                  })
+                                : dt('人数或分母无效')
                         }
                       >
                         {valid ? (
                           <>
                             <strong>{rate.toFixed(1)}%</strong>
-                            <span>{numerator.toLocaleString('zh-CN')} 人</span>
+                            <span>
+                              {numerator.toLocaleString(dashboardDateLocale())} {dt('人')}
+                            </span>
                           </>
                         ) : (
-                          <span>{datum && !observed ? '未到期' : '无数据'}</span>
+                          <span>{datum && !observed ? dt('未到期') : dt('无数据')}</span>
                         )}
                       </td>
                     );
@@ -107,7 +120,7 @@ export default function DashboardCohortMatrix({
         </table>
       </div>
       <p className={styles.note}>
-        留存率 = 当期购买客户数 ÷ 首购客户数。按客户去重；未到期不计为 0%。最近一个周期可能尚未结束。
+        {dt('留存率 = 当期购买客户数 ÷ 首购客户数。按客户去重；未到期不计为 0%。最近一个周期可能尚未结束。')}
       </p>
     </div>
   );

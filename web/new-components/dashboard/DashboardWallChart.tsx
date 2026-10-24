@@ -1,3 +1,4 @@
+import { dashboardText as dt, useDashboardTranslation } from '@/new-components/dashboard/dashboard-i18n';
 import type { DashboardVisualization } from '@/types/dashboard';
 import { useState } from 'react';
 import styles from './DashboardShowcase.module.css';
@@ -27,6 +28,7 @@ export default function DashboardWallChart({
   height: number;
   onSelect?: (datum: Record<string, unknown>) => void;
 }) {
+  useDashboardTranslation();
   const [hover, setHover] = useState('');
   const w = Math.max(180, width),
     h = Math.max(64, height - 18);
@@ -82,7 +84,7 @@ export default function DashboardWallChart({
           {format(current)}
         </text>
         <text x={cx} y={h - 6} textAnchor='middle' fontSize='10' fill='var(--dashboard-theme-muted)'>
-          当前比例 · 百分比刻度 0–100
+          {dt('当前比例 · 百分比刻度 0–100')}
         </text>
       </>
     );
@@ -293,7 +295,7 @@ export default function DashboardWallChart({
   }
   return (
     <div className={styles.wallChart}>
-      <svg width='100%' height={h} viewBox={`0 0 ${w} ${h}`} role='img' aria-label='数据图表'>
+      <svg width='100%' height={h} viewBox={`0 0 ${w} ${h}`} role='img' aria-label={dt('数据图表')}>
         {plot}
       </svg>
       <div className={styles.plotTooltip} aria-live='polite'>
