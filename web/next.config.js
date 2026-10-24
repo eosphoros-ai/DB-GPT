@@ -54,10 +54,10 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
-      // Fast Refresh can reach CommonJS helpers nested under optimized packages.
+      // Fast Refresh can reach CommonJS helpers and regenerator nested under transpiled packages.
       // Its injected import.meta needs an auto parser despite Babel's package type.
       config.module.rules.push({
-        test: /[\\/]node_modules[\\/]@babel[\\/]runtime[\\/]helpers[\\/][^\\/]+\.js$/,
+        test: /[\\/]node_modules[\\/]@babel[\\/]runtime[\\/](?:helpers[\\/][^\\/]+|regenerator[\\/]index)\.js$/,
         type: 'javascript/auto',
       });
     }

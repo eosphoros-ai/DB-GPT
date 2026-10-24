@@ -131,6 +131,27 @@ def test_empty_filter_description_does_not_require_new_filters(change):
     validate_adaptation_promises(schema)
 
 
+@pytest.mark.parametrize("field", ["prompt", "changes"])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "不要添加日期筛选器和渠道筛选器",
+        "不要新增筛选器，包括日期筛选器和渠道筛选器。",
+        "不要新增筛选器（包括日期筛选器和渠道筛选器）。",
+        "无需日期筛选器、渠道筛选器以及地区筛选器",
+        "不提供全局筛选，包括日期筛选和渠道筛选。",
+        "No global filters, including date filters and channel filters.",
+    ],
+)
+def test_negation_covers_enumerated_filters(field, text):
+    schema = build_template("voice-observatory", "test")
+    schema.filters = []
+    schema.metadata.compatibility["template_adaptation"] = {
+        field: [text] if field == "changes" else text
+    }
+    validate_adaptation_promises(schema)
+
+
 @pytest.mark.parametrize(
     "change",
     [
@@ -142,6 +163,16 @@ def test_empty_filter_description_does_not_require_new_filters(change):
         "不新增全局筛选但需要订单状态筛选器",
         "新增订单状态筛选器但未提供全局筛选",
         "No global filters were requested but add a status filter.",
+        "不要添加日期筛选器和渠道筛选器，但需要订单状态筛选器",
+        "不要新增筛选器，包括日期筛选器和渠道筛选器。不过需要地区筛选器",
+        "不要添加日期筛选器和渠道筛选器，并保留地区筛选器",
+        "不要添加日期筛选器和渠道筛选器，新增地区筛选器",
+        "不要新增筛选器（包括日期筛选器和渠道筛选器），但需要地区筛选器",
+        "不需要图例但需要状态筛选器",
+        (
+            "No global filters, including date filters and channel filters,"
+            " but add a status filter."
+        ),
     ],
 )
 @pytest.mark.parametrize("field", ["prompt", "changes"])

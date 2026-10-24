@@ -168,6 +168,23 @@ def validate_adaptation_promises(schema):
     changes = [str(item) for item in adaptation.get("changes", [])]
 
     def positive_filter_clause(text):
+        mention = r"(?:筛选(?:器)?|\bfilters?\b)"
+        contrast = r"但是|但|不过|然而|而是|\b(?:but|however|instead)\b"
+        action = r"添加|新增|增加|提供|配置|保留|需要|支持|\b(?:add|keep|need|provide)\b"
+        # A negation also covers its list items, including an "包括..." clause.
+        # Stop at a new request or contrast instead of discarding the sentence.
+        negation = (
+            r"(?:(?:不需要|无需|不要|取消|删除|无法添加|(?:不|未|没有)"
+            r"(?:添加|新增|增加|配置|提供|启用|设置|保留))"
+            rf"(?:(?!(?:{contrast}|[。；;，,\n])).){{0,20}}?"
+            r"|\b(?:no|without)\s+(?:global\s+)?)"
+        )
+        continuation = (
+            r"(?:\s*(?:[，,、（(]|以及|包括|包含|例如|比如|和|与|及|或|"
+            r"\b(?:and|or|including)\b)\s*"
+            rf"(?:(?!(?:{contrast}|{action}|[。；;，,\n])).){{0,24}}?{mention})*"
+        )
+        text = re.sub(negation + mention + continuation, "", text, flags=re.I)
         for clause in re.split(r"[。；;，,\n]", text):
             # Reporting an empty filters array is not a claim to provide filters.
             # Remove only that statement so a separate request in the same clause
@@ -175,17 +192,6 @@ def validate_adaptation_promises(schema):
             clause = re.sub(
                 r"\bfilters?\s*(?:[=:：]\s*\[\s*\]|(?:为|保持|留)?\s*空(?:数组)?"
                 r"|(?:is|are|remains?)\s+empty\b)",
-                "",
-                clause,
-                flags=re.I,
-            )
-            # Remove only the negated mention, not later positive requests.
-            # Stop at the nearest filter mention even without punctuation.
-            clause = re.sub(
-                r"(?:不需要|无需|不要|取消|删除|无法添加|(?:不|未|没有)"
-                r"(?:添加|新增|增加|配置|提供|启用|设置|保留)).{0,20}?"
-                r"(?:筛选(?:器)?|filters?\b)"
-                r"|\b(?:no|without)\s+(?:global\s+)?filters?\b",
                 "",
                 clause,
                 flags=re.I,
