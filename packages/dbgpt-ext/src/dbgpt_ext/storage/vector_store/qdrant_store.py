@@ -404,4 +404,7 @@ class QdrantStore(VectorStoreBase):
         if filters.condition == FilterCondition.AND:
             return Filter(must=positive or None, must_not=negative or None)
         else:
-            return Filter(should=positive or None, must_not=negative or None)
+            # A top-level must_not would be ANDed with should, so each negated
+            # condition is wrapped in its own Filter to become an OR branch.
+            should = positive + [Filter(must_not=[cond]) for cond in negative]
+            return Filter(should=should or None)
