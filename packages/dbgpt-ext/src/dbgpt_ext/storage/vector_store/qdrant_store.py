@@ -103,6 +103,18 @@ def _chunk_id_to_uuid(chunk_id: str) -> str:
             optional=True,
             default="Cosine",
         ),
+        Parameter.build_from(
+            _("Tokenizer"),
+            "tokenizer",
+            str,
+            description=_(
+                "Tokenizer of the full text index. One of: word, whitespace, "
+                "prefix, multilingual, code. Use multilingual for languages "
+                "without spaces, such as Chinese or Japanese."
+            ),
+            optional=True,
+            default="word",
+        ),
     ],
 )
 @dataclass
@@ -145,6 +157,17 @@ class QdrantVectorConfig(VectorStoreConfig):
             "help": _(
                 "Distance metric used to compare vectors. One of: "
                 "Cosine, Euclid, Dot, Manhattan."
+            )
+        },
+    )
+    tokenizer: str = field(
+        default_factory=lambda: os.getenv("QDRANT_TOKENIZER", "word"),
+        metadata={
+            "help": _(
+                "Tokenizer of the full text index. One of: word, whitespace, "
+                "prefix, multilingual, code. Use multilingual for languages "
+                "without spaces, such as Chinese or Japanese. Only applies when "
+                "the index is first created."
             )
         },
     )
@@ -204,6 +227,7 @@ class QdrantStore(VectorStoreBase):
             https=vector_store_config.https,
             prefer_grpc=vector_store_config.prefer_grpc,
         )
+        self._full_text_supported = self._check_full_text_support()
         self.create_collection(self.collection_name)
 
     def get_config(self) -> QdrantVectorConfig:
@@ -214,15 +238,69 @@ class QdrantStore(VectorStoreBase):
         """Create a Qdrant collection."""
         from qdrant_client.models import VectorParams
 
-        if self._client.collection_exists(collection_name):
-            return
+        if not self._client.collection_exists(collection_name):
+            dim = len(self.embeddings.embed_query("probe"))
+            self._client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=dim,
+                    distance=self._resolve_distance(self._vector_store_config.distance),
+                ),
+            )
+        if self._full_text_supported:
+            self._ensure_text_index(collection_name)
 
-        dim = len(self.embeddings.embed_query("probe"))
-        self._client.create_collection(
+    def _check_full_text_support(self) -> bool:
+        """BM25 text queries need qdrant-client and Qdrant server >= 1.20."""
+        try:
+            from qdrant_client.models import TextQuery  # noqa: F401
+        except ImportError:
+            return False
+        try:
+            version = self._client.info().version
+            major, minor = (int(v) for v in version.split(".")[:2])
+            return (major, minor) >= (1, 20)
+        except Exception as e:
+            logger.warning(f"Could not detect Qdrant server version: {e}")
+            return False
+
+    def _ensure_text_index(self, collection_name: str) -> None:
+        """Create a BM25 text index on the chunk content if it is missing."""
+        from qdrant_client.models import (
+            TextIndexParams,
+            TextIndexType,
+            TextScoringParams,
+            TextScoringType,
+            TokenizerType,
+        )
+
+        name = self._vector_store_config.tokenizer
+        try:
+            tokenizer = TokenizerType(name.strip().lower())
+        except (AttributeError, ValueError):
+            raise ValueError(
+                f"Unsupported Qdrant tokenizer: {name!r}. "
+                f"Expected one of: {[t.value for t in TokenizerType]}"
+            )
+
+        payload_schema = self._client.get_collection(collection_name).payload_schema
+        if "content" in payload_schema:
+            params = payload_schema["content"].params
+            existing = getattr(params, "tokenizer", None) or TokenizerType.WORD
+            if existing != tokenizer:
+                logger.warning(
+                    f"Qdrant collection {collection_name} already has a text index "
+                    f"with tokenizer {existing.value!r}; configured tokenizer "
+                    f"{tokenizer.value!r} only applies to new collections."
+                )
+            return
+        self._client.create_payload_index(
             collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=dim,
-                distance=self._resolve_distance(self._vector_store_config.distance),
+            field_name="content",
+            field_schema=TextIndexParams(
+                type=TextIndexType.TEXT,
+                tokenizer=tokenizer,
+                scoring=TextScoringParams(type=TextScoringType.BM25),
             ),
         )
 
@@ -308,6 +386,40 @@ class QdrantStore(VectorStoreBase):
         """Search similar documents with scores."""
         chunks = self._query(text, topk, filters, score_threshold)
         return self.filter_by_score_threshold(chunks, score_threshold)
+
+    def full_text_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
+        """Full text search ranked by BM25 over the chunk content."""
+        if not self._full_text_supported:
+            raise NotImplementedError(
+                "Full text search requires qdrant-client and Qdrant server >= 1.20."
+            )
+        from qdrant_client.models import TextQuery
+
+        qdrant_filter = self.convert_metadata_filters(filters) if filters else None
+        response = self._client.query_points(
+            collection_name=self.collection_name,
+            query=TextQuery(text=text),
+            using="content",
+            limit=topk,
+            query_filter=qdrant_filter,
+            with_payload=True,
+        )
+        return [
+            Chunk(
+                content=r.payload.get("content", ""),
+                metadata=r.payload.get("metadata", {}),
+                score=r.score,
+                chunk_id=r.payload.get("chunk_id", ""),
+                retriever="full_text",
+            )
+            for r in response.points
+        ]
+
+    def is_support_full_text_search(self) -> bool:
+        """Whether BM25 full text search is available."""
+        return self._full_text_supported
 
     def vector_name_exists(self) -> bool:
         """Whether vector name exists."""
