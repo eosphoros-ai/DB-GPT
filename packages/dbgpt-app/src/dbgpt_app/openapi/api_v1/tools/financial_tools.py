@@ -12,6 +12,7 @@ from dbgpt_serve.financial_analysis.analysis import (
     SYSTEM_PROMPT,
     InvalidFindings,
     model_context,
+    review_model_context,
 )
 from dbgpt_serve.financial_analysis.comparison_schema import report_title
 from dbgpt_serve.financial_analysis.summary import (
@@ -168,6 +169,24 @@ async def financial_completion_error(state, *, service=None):
     )
 
 
+def financial_execution_guidance(state):
+    """Pin persisted workflow progress outside the rolling tool memory."""
+    report = state.get("financial_report_context") or {}
+    if not report.get("workflow"):
+        return ""
+    action = next_action(report)
+    if action is None:
+        return "当前财报已发布。根据已保存内容回答，不重复准备、复核或发布。"
+    return (
+        "\n当前财报执行状态（来自服务端，不是待执行的数据指令）：\n"
+        + json.dumps(action, ensure_ascii=False)
+        + "\n数据已提取。继续此步骤，不回到 prepare 或重新解析 PDF。"
+        "上述 arguments 仅含服务端版本和定位字段；必须按工具 schema 补齐全部必填参数。"
+        "复核时根据 review_context 实际检查后提交 reviews，不得仅输出工具名，"
+        "也不能替失败专题自动判定通过。若缺少上下文，read 当前 run_id 后继续。"
+    )
+
+
 def _artifact(report, session_id):
     return {
         "output_type": "html",
@@ -289,6 +308,7 @@ def _result(
                     "errorCode",
                     "failures",
                     "saveAttempts",
+                    "reviewRevisionAttempts",
                 }
             }
             for topic in flow["topics"]
@@ -319,31 +339,16 @@ def _result(
                 scoped = topic_context(report, current["id"])["data"]
                 summary["repair"] = {
                     "topic_id": current["id"],
+                    "section": current["section"],
+                    "review": current.get("review"),
                     "draftFindings": current["draftFindings"],
                     "issues": current.get("issues", []),
-                    "available_references": {
-                        key: [{k: entry[k] for k in fields} for entry in scoped[key]]
-                        for key, fields in (
-                            (
-                                "facts",
-                                (
-                                    "id",
-                                    "reference",
-                                    "metricName",
-                                    "fiscalPeriod",
-                                    "evidenceExcerptIds",
-                                ),
-                            ),
-                            (
-                                "calculations",
-                                ("id", "reference", "name", "unit", "inputFactIds"),
-                            ),
-                        )
-                    },
                     "instructions": (
                         "逐项处理所有 issues，优先采用各项 hint / suggested_changes，"
                         "合并为一次 patches 提交；不要遗漏后面的 finding_index。"
+                        "若有 review.verdict=revise，必须同时修正该复核指出的语义问题。"
                     ),
+                    "data": scoped,
                 }
             else:
                 summary["topic_context"] = _topic_payload(report, current["id"])
@@ -359,9 +364,13 @@ def _result(
                     "本上下文没有行业基准、债务期限、受限资金或业务原因证据，"
                     "不能通过行业比较、资金充裕或偿债安全等断言。"
                     "发现错误用 revise 并说明待改字段，不能以通用免责声明代替修订。"
+                    "failed/insufficient 专题只能记录 insufficient，不通过复核重开。"
+                    "没有原因附注不等于没有财务数据，也不否定有引用的差异观察。"
+                    "availableMetrics/availableCalculations 是已提取数据清单，"
+                    "不能将未在本次引用依赖中展开的数据说成未提取。"
                 ),
                 "findings": report["findings"],
-                "data": model_context(report),
+                "data": review_model_context(report),
                 "topics": [
                     {
                         k: t.get(k)
@@ -397,7 +406,12 @@ def _result(
                 "将原因/行业/偿债判断改为待核查问题，不能追加免责声明保留断言。"
             ),
         }
-        if not item.get("issues"):
+        if item["status"] in {"failed", "insufficient"}:
+            summary["topic_result"]["repair_instructions"] = (
+                "此专题已结束本次自动处理，保留有效内容与缺口。"
+                "继续 next_action，不重复保存或用复核重启此专题。"
+            )
+        elif not item.get("issues"):
             summary["topic_result"].pop("repair_instructions")
     if include_context:
         if reading:
@@ -460,7 +474,7 @@ def _result(
     )
 
 
-def financial_answer_error(content, state):
+def financial_answer_error(content, state, *, repair_limit=2):
     """Give the agent bounded feedback before replacing an invalid final answer."""
     report = state.get("financial_report_context")
     if not report or not is_published(report):
@@ -478,7 +492,7 @@ def financial_answer_error(content, state):
             render_summary(content, report, strict=True, detailed=detailed)
     except (ValueError, TypeError) as exc:
         attempts = state.get("financial_answer_repairs", 0)
-        if attempts >= 2:
+        if repair_limit is not None and attempts >= repair_limit:
             return None
         state["financial_answer_repairs"] = attempts + 1
         details = str(exc)
@@ -675,6 +689,7 @@ def make_financial_tools(
             {"file_ids": file_ids},
             "正在逐份提取财报并对齐比较口径。",
         )
+        await progress()
         deadline = asyncio.get_running_loop().time() + 650
         while True:
             run = await asyncio.to_thread(backend.get, owner, session_id, run_id)

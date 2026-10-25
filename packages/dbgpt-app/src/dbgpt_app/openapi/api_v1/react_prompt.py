@@ -7,20 +7,30 @@ from .tools.financial_tools import FINANCIAL_AGENT_PROMPT
 REGISTERED_TOOLS_PROMPT = """
 ## Available Tools Description
 The following tools are registered for this turn. Use their exact names and
-parameter schemas. Invoke them directly with `Action: <tool_name>` and JSON
+parameter schemas.
+{% if native_function_calling %}
+Invoke the supplied native functions with complete JSON arguments.
+Do not emit a bare `Action:` line or describe an intended call instead of calling it.
+{% else %}
+Invoke them directly with `Action: <tool_name>` and JSON
 `Action Input`; do not treat a tool name as a skill script or wrap it in
 execute_skill_script, execute_skill_script_file, or execute_tool.
+{% endif %}
 Only use a skill script executor for a script explicitly provided by that skill.
 Tools absent from this list are unavailable; do not invent tools or script names.
 
 {{ action_space }}
 
 Action must be one of: [{{ action_space_names }}].
+{% if native_function_calling %}
+When finished, call the registered terminate function with {"output": "final answer"}.
+{% else %}
 Every response must contain exactly one Action and one Action Input.
 When finished, return the user-facing answer through the registered terminate tool:
 Action: terminate
 Action Input: {"output": "final answer"}
 Put only the final answer in output; do not include Thought or Action prefixes.
+{% endif %}
 """
 
 
@@ -39,6 +49,10 @@ def build_react_prompt_template(
     sections.append(REGISTERED_TOOLS_PROMPT)
     return PromptTemplate(
         template="\n\n".join(sections),
-        input_variables=["action_space", "action_space_names"],
+        input_variables=[
+            "action_space",
+            "action_space_names",
+            "native_function_calling",
+        ],
         template_format="jinja2",
     )

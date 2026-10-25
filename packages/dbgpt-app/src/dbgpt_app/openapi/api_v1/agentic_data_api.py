@@ -83,11 +83,10 @@ from .attachment_react_adapter import (
     resolve_legacy_chat_file_path,
     scrub_react_history_for_share,
 )
-from .financial_execution import FinancialExecutionStream
+from .financial_execution import FinancialExecutionStream, interrupt_financial_progress
 from .react_final import (
     AgentFinalAnswer,
     FinalAnswerAssembler,
-    extract_terminate_content,
 )
 from .react_history import ReactHistoryCheckpoint, save_history_view
 from .react_prompt import build_react_prompt_template
@@ -2029,7 +2028,6 @@ async def _react_agent_stream_impl(
         GptsMemory,
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
-    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
     from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
@@ -3041,7 +3039,6 @@ async def _react_agent_stream_impl(
     from dbgpt_app.openapi.api_v1.tools.financial_tools import (
         FINANCIAL_MAX_STEPS,
         finalize_financial_answer,
-        financial_answer_error,
         financial_completion_error,
         make_financial_tools,
     )
@@ -4113,7 +4110,9 @@ After partial results, finish only missing requested deliverables, then report.
         workflow_prompt, financial_enabled=tool_mode != "knowledge"
     )
 
-    class ReportAwareAgent(ToolCallingReActAgent):
+    from .financial_agent import FinancialWorkflowAgent
+
+    class ReportAwareAgent(FinancialWorkflowAgent):
         async def correctness_check(self, message):
             if react_state.get("financial_report_context", {}).get("workflow"):
                 # Six saves, optional reads and bounded repairs/reviews can
@@ -4127,14 +4126,6 @@ After partial results, finish only missing requested deliverables, then report.
                 error = await financial_completion_error(react_state)
                 if error:
                     return False, error
-                answer_error = financial_answer_error(
-                    extract_terminate_content(
-                        message.action_report.content or "", parser
-                    ),
-                    react_state,
-                )
-                if answer_error:
-                    return False, answer_error
             return await super().correctness_check(message)
 
     workflow_agent = (
@@ -4402,6 +4393,10 @@ After partial results, finish only missing requested deliverables, then report.
             # Don't emit anything yet - wait for 'act' event to create step
 
         elif event_type == "thinking_chunk":
+            # Financial progress already reports actual persisted work. Model
+            # text is not a tool step, especially while finishing a publication.
+            if react_state.get("financial_plan"):
+                continue
             round_num = int(event.get("round") or (len(round_step_map) + 1))
             delta_thinking = event.get("delta_thinking") or ""
             delta_text = event.get("delta_text") or ""
@@ -4464,12 +4459,9 @@ After partial results, finish only missing requested deliverables, then report.
                 pending_thoughts.pop(round_num, [])
                 pending_action_intentions.pop(round_num, None)
                 pending_action_reasons.pop(round_num, None)
-                # derisk 参考：terminate 是「模拟 action」，不展示为真实工具 step。
-                # 通知前端移除 terminate 这轮在 thinking_chunk 阶段提前创建的
-                # 「思考中」占位 step（前端 step.meta 里 action=terminate 会过滤）。
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
-                    yield step_meta(_stale_id, None, "terminate", None, "terminate")
+                    yield _sse_event({"type": "step.remove", "id": _stale_id})
                 # Do not fabricate plan completion.  Only an explicit
                 # todowrite update can mark a task complete; otherwise an
                 # early terminate must remain visibly incomplete.
@@ -4624,9 +4616,7 @@ After partial results, finish only missing requested deliverables, then report.
                 pending_action_reasons.pop(round_num, None)
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
-                    yield _sse_event(
-                        {"type": "step.done", "id": _stale_id, "status": "done"}
-                    )
+                    yield _sse_event({"type": "step.remove", "id": _stale_id})
                 continue
 
             # Use the actual action name as the step title (Manus-style UI)
@@ -4818,6 +4808,9 @@ After partial results, finish only missing requested deliverables, then report.
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        financial_tasks = interrupt_financial_progress(react_state)
+        if financial_tasks:
+            yield _sse_event({"type": "plan.update", "tasks": financial_tasks})
         incomplete = generation_failure(react_state)
         if incomplete:
             yield _sse_event(incomplete)
@@ -4878,6 +4871,9 @@ After partial results, finish only missing requested deliverables, then report.
     if stopped:
         from .tools.report_repair import render_saved_report, save_execution_checkpoint
 
+        financial_tasks = interrupt_financial_progress(react_state)
+        if financial_tasks:
+            yield _sse_event({"type": "plan.update", "tasks": financial_tasks})
         report_recovered = await render_saved_report(
             react_state, skills_dir, allow_unavailable_references=True
         )
@@ -4889,8 +4885,17 @@ After partial results, finish only missing requested deliverables, then report.
         execution_error = (
             execution_context.get("execution_error")
             or report_error
+            or (
+                reply.action_report.content
+                if reply.action_report and not reply.action_report.is_exe_success
+                else None
+            )
             or (reply.content if not reply.action_report else "主流程未提交完整结果")
         )
+        if str(execution_error).startswith(
+            ("TOOL_PROTOCOL_RETRY_EXHAUSTED:", "FINANCIAL_NO_PROGRESS:")
+        ):
+            execution_status = "failed"
         status_label = {
             "timeout": "运行超时",
             "step_limit": "达到执行步数上限",

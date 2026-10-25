@@ -2,6 +2,22 @@
 
 import json
 import time
+from datetime import datetime, timezone
+
+
+def interrupt_financial_progress(state):
+    """End the visible active stage without changing report/publication state."""
+    tasks = state.get("financial_plan") or []
+    now = datetime.now(timezone.utc).isoformat()
+    for task in tasks:
+        if task.get("status") == "in_progress":
+            task.update(
+                status="error",
+                detail="本次执行已中断，已提取数据和分析草稿已保留；可继续未完成的分析或复核。",
+                updatedAt=now,
+                finishedAt=now,
+            )
+    return tasks
 
 
 class FinancialExecutionLog:
@@ -55,6 +71,7 @@ class FinancialExecutionStream:
         self.clock = clock
         self.records = {}
         self.logs = {}
+        self.progress_log = None
 
     def start(self, round_num, step_id, action, action_input, message):
         record = {
@@ -67,7 +84,11 @@ class FinancialExecutionStream:
             "status": "running",
         }
         self.records[round_num] = record
-        self.logs[round_num] = FinancialExecutionLog(self.clock)
+        # One analysis spans several tool calls. Keep its clock and observed
+        # stages so review/publish neither replay old work nor reset to 00:00.
+        if self.progress_log is None:
+            self.progress_log = FinancialExecutionLog(self.clock)
+        self.logs[round_num] = self.progress_log
         self.history.append(record)
         return self._append(round_num, [message + "\n"])
 
