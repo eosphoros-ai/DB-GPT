@@ -59,7 +59,7 @@ const FinancialReportArtifact: React.FC<{
     let timer: ReturnType<typeof setTimeout> | undefined;
     setError('');
     const refresh = async () => {
-      let keepPolling = !!busy;
+      let keepPolling = !!busy && !pinnedRevision;
       try {
         const data = await getReport(sessionId, runId, controller.signal, pinnedRevision);
         if (controller.signal.aborted) return;

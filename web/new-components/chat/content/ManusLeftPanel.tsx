@@ -1,6 +1,7 @@
 import { AttachmentMessageCards, type SessionFileSnapshot } from '@/modules/session-files';
 import MarkdownContext from '@/new-components/common/MarkdownContext';
 import { AttachedConnector } from '@/new-components/connector/types';
+import { isFinancialReportReference } from '@/new-components/financial-analysis/agent-artifact';
 import type { FinancialCitation } from '@/new-components/financial-analysis/report-citations';
 import {
   ApartmentOutlined,
@@ -39,7 +40,7 @@ import { Button, Tooltip, message } from 'antd';
 import classNames from 'classnames';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import FinancialProgressPanel, { financialTasksForStep } from './FinancialProgressPanel';
+import FinancialProgressPanel, { FinancialProgressUpdates, financialTasksForStep } from './FinancialProgressPanel';
 import ObservationFormatter from './ObservationFormatter';
 import TaskPlanCard, { TaskItem } from './TaskPlanCard';
 
@@ -148,6 +149,7 @@ export interface ManusLeftPanelProps {
   onSkillCardClick?: (skillName: string) => void;
   onSkillDownload?: (skillName: string) => void;
   taskPlan?: TaskItem[];
+  financialUpdates?: string[];
   /** Citation indexes that are valid for this answer. */
   citationIndexes?: number[];
   /** Open the references panel from the answer footer. */
@@ -570,7 +572,8 @@ const StepCard: React.FC<{
           {
             'opacity-0 translate-y-1': !isVisible,
             'opacity-100 translate-y-0': isVisible,
-            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]': true,
+            'bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white dark:from-amber-900/20 dark:via-orange-900/10 dark:to-[#1a1b1e]':
+              true,
             'border-amber-300/80 dark:border-amber-500/30 shadow-[0_4px_16px_rgba(245,158,11,0.12)] ring-1 ring-amber-200/50 dark:ring-amber-500/20':
               isActive || isWaiting,
             'border-amber-200/60 dark:border-amber-600/20 hover:border-amber-300 hover:shadow-[0_4px_12px_rgba(245,158,11,0.08)]':
@@ -1068,6 +1071,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
   onSkillCardClick,
   onSkillDownload,
   taskPlan,
+  financialUpdates = [],
   citationIndexes = [],
   onReferencesClick,
   reportId,
@@ -1076,6 +1080,8 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const financialTasks = financialTasksForStep(taskPlan || []);
+  const financialArtifact = artifacts?.find(artifact => isFinancialReportReference(artifact.content));
+  const reportPublished = financialArtifact?.content.published === true;
   const isTaskPlanComplete =
     !taskPlan?.length || taskPlan.every(task => task.status === 'completed' || task.status === 'cancelled');
   const handleStepClick = useCallback(
@@ -1195,7 +1201,14 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
 
         {financialTasks.length > 0 ? (
           <div className='pt-1' data-testid='financial-left-execution'>
-            <FinancialProgressPanel tasks={financialTasks} isRunning={!!isWorking} compact />
+            <FinancialProgressPanel
+              tasks={financialTasks}
+              isRunning={!!isWorking}
+              updates={financialUpdates}
+              reportPublished={reportPublished}
+              onOpenReport={financialArtifact ? () => onArtifactClick?.(financialArtifact) : undefined}
+              compact
+            />
             {sections.length > 0 && (
               <details className='mt-3 text-sm text-slate-500'>
                 <summary className='cursor-pointer px-2 py-1'>工具调用详情</summary>
@@ -1238,6 +1251,10 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               <ThoughtBubble text={stepThoughts[activeStepId || 'initial']} />
             )}
           </div>
+        )}
+
+        {financialTasks.length === 0 && (
+          <FinancialProgressUpdates updates={financialUpdates} published={reportPublished} />
         )}
 
         {isWorking && sections.length > 0 && financialTasks.length === 0 && (
@@ -1333,7 +1350,7 @@ const ManusLeftPanel: React.FC<ManusLeftPanelProps> = ({
               )}
             </div>
 
-            {isTaskPlanComplete && (
+            {isTaskPlanComplete && !isWorking && (
               <div className='flex items-center gap-1.5 mt-5'>
                 <CheckOutlined className='text-xs text-emerald-500' />
                 <span className='text-sm text-emerald-600 dark:text-emerald-400 font-medium'>

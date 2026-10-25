@@ -6,10 +6,16 @@ export default function FinancialProgressPanel({
   tasks,
   isRunning,
   compact = false,
+  updates = [],
+  onOpenReport,
+  reportPublished = false,
 }: {
   tasks: TaskItem[];
   isRunning: boolean;
   compact?: boolean;
+  updates?: string[];
+  onOpenReport?: () => void;
+  reportPublished?: boolean;
 }) {
   const [now, setNow] = useState(Date.now);
   const current = tasks.find(task => task.status === 'in_progress' || task.status === 'error');
@@ -47,8 +53,41 @@ export default function FinancialProgressPanel({
       {waiting && (
         <p className='mb-4 text-xs text-slate-500'>尚未收到新的分析结果，仍在等待处理；进展更新后会自动显示。</p>
       )}
+      {onOpenReport && (
+        <button
+          type='button'
+          onClick={onOpenReport}
+          className='mb-4 rounded-lg bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-300'
+        >
+          {reportPublished ? '查看报告与原文依据' : '查看已有分析内容'}
+        </button>
+      )}
       <TaskPlanCard tasks={tasks} defaultCollapsed={false} embedded showDetails={false} />
+      <FinancialProgressUpdates updates={updates} published={finished} />
     </section>
+  );
+}
+
+export function FinancialProgressUpdates({ updates, published = false }: { updates: string[]; published?: boolean }) {
+  const visible = (
+    published ? updates.filter(update => !update.startsWith('已校验的分析发现（待最终复核）：')) : updates
+  ).slice(-3);
+  if (!visible.length) return null;
+  return (
+    <div
+      role='log'
+      aria-label='财报分析进展'
+      aria-live='polite'
+      aria-relevant='additions text'
+      className='mt-4 space-y-2'
+    >
+      <p className='text-xs font-medium text-slate-500'>{published ? '执行记录' : '最新进展'}</p>
+      {visible.map(update => (
+        <p key={update} className='border-l-2 border-sky-200 pl-3 text-sm leading-6 text-slate-600 dark:text-slate-300'>
+          {update}
+        </p>
+      ))}
+    </div>
   );
 }
 

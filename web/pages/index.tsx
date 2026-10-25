@@ -49,12 +49,22 @@ import { AttachedConnector, ConnectorInstance } from '@/new-components/connector
 import { useConfirmPolling } from '@/new-components/connector/useConfirmPolling';
 import { isFinancialReportReference, reportArtifactContent } from '@/new-components/financial-analysis/agent-artifact';
 import { getLatestReport } from '@/new-components/financial-analysis/api';
+import {
+  financialStepSubtitle,
+  financialStepTitle,
+  recentFinancialObservations,
+} from '@/new-components/financial-analysis/execution-display';
 import { recoverFinancialHistory } from '@/new-components/financial-analysis/recover-history';
 import {
   findFinancialCitationArtifact,
   type FinancialCitation,
   type FinancialCitationTarget,
 } from '@/new-components/financial-analysis/report-citations';
+import {
+  FinancialReportDelivery,
+  artifactIdentity,
+  mergeArtifacts,
+} from '@/new-components/financial-analysis/report-delivery';
 import FromTaskBanner from '@/new-components/scheduled-task/FromTaskBanner';
 import SaveAsScheduledTaskDrawer from '@/new-components/scheduled-task/SaveAsScheduledTaskDrawer';
 import type { ChatReplayPayload } from '@/types/scheduled-task';
@@ -443,8 +453,8 @@ const convertToManusFormat = (
       return {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
-        subtitle: friendlySubtitle || undefined,
+        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
+        subtitle: financialStepSubtitle(step, execution.outputs[step.id] || []) || friendlySubtitle || undefined,
         description: cleanDetail || undefined,
         phase: (step as any).phase,
         status: getStepStatus(step.status),
@@ -471,8 +481,9 @@ const convertToManusFormat = (
       activeStep = {
         id: step.id,
         type: getStepType(step.title, step.action),
-        title: step.title || `Step ${step.step}`,
-        subtitle: cleanDetail?.split('\n')[0]?.slice(0, 80),
+        title: financialStepTitle(step) || step.title || `Step ${step.step}`,
+        subtitle:
+          financialStepSubtitle(step, execution.outputs[step.id] || []) || cleanDetail?.split('\n')[0]?.slice(0, 80),
         status: getStepStatus(step.status),
         detail: cleanDetail,
         action: step.action,
@@ -492,7 +503,7 @@ const convertToManusFormat = (
 
   const stepThoughts = { ...(execution.stepThoughts || {}) };
   execution.steps.forEach(step => {
-    if (step.action === 'dispatch_parallel_tasks') {
+    if (step.action === 'dispatch_parallel_tasks' || financialStepTitle(step)) {
       delete stepThoughts[step.id];
     }
   });
@@ -632,6 +643,7 @@ const Playground: NextPage = () => {
   const openSessionFilePreview = useCallback(async (item: RailItem) => {
     const convId = conversationIdRef.current;
     if (!convId || !item.fileId) return;
+    panelNavigationVersion.current += 1;
     const requestVersion = ++sessionFilePreviewRequestRef.current;
     // Desktop previews render inside the right panel: make sure it is visible.
     setRightPanelCollapsed(false);
@@ -751,6 +763,7 @@ const Playground: NextPage = () => {
   // through the same preview surfaces (Drawer/desktop right panel).
   const openLegacyFilePreview = useCallback(
     async (file: { name: string; size: number; media_type: string; file_path: string }) => {
+      panelNavigationVersion.current += 1;
       const requestVersion = ++sessionFilePreviewRequestRef.current;
       setRightPanelCollapsed(false);
       setSessionFilePreview({ snapshot: null, loading: true, error: null, size: file.size });
@@ -892,6 +905,8 @@ const Playground: NextPage = () => {
   const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
   const [financialCitationTarget, setFinancialCitationTarget] = useState<FinancialCitationTarget | null>(null);
   const financialCitationRequest = useRef(0);
+  const financialDelivery = useRef(new FinancialReportDelivery());
+  const panelNavigationVersion = useRef(0);
 
   const cancelSummaryPresentation = useCallback(() => {
     if (!summaryPresentationRef.current && !summaryPresentationResponseIdRef.current) return;
@@ -910,6 +925,7 @@ const Playground: NextPage = () => {
 
   const handleUserPanelViewChange = useCallback(
     (view: PanelView) => {
+      panelNavigationVersion.current += 1;
       cancelSummaryPresentation();
       setRightPanelView(view);
     },
@@ -937,6 +953,7 @@ const Playground: NextPage = () => {
       message.info('对应的报告暂不可用，请先打开本轮财报报告。');
       return;
     }
+    panelNavigationVersion.current += 1;
     cancelSummaryPresentation();
     setActiveViewMsgId(artifact.messageId || messageId || null);
     setActiveSubAgent(null);
@@ -1013,6 +1030,7 @@ const Playground: NextPage = () => {
     closeSessionFilePreview();
     fileDragDepthRef.current = 0;
     terminatedStepIdsRef.current.clear();
+    financialDelivery.current = new FinancialReportDelivery();
     lastSentPayloadRef.current = null;
 
     setMessages([]);
@@ -1286,6 +1304,15 @@ const Playground: NextPage = () => {
     const lastRound = rounds[rounds.length - 1];
     return lastRound?.viewMsg?.id || null;
   }, [activeViewMsgId, rounds]);
+  const mobileFinancialPanel =
+    !isDesktopWidth &&
+    !rightPanelCollapsed &&
+    artifacts.some(
+      artifact =>
+        artifact.messageId === selectedViewMsgId &&
+        isFinancialReportReference(artifact.content) &&
+        artifact.content.published === true,
+    );
 
   const parseCsvLine = (line: string) => {
     const result: string[] = [];
@@ -1804,18 +1831,7 @@ const Playground: NextPage = () => {
         }
       }
 
-      // Deduplicate: for artifacts with the same name+type, keep only the last one
-      const deduped: Artifact[] = [];
-      const seen = new Map<string, number>();
-      for (let i = finalArtifacts.length - 1; i >= 0; i--) {
-        const key = `${finalArtifacts[i].type}:${finalArtifacts[i].name}`;
-        if (!seen.has(key)) {
-          seen.set(key, i);
-          deduped.unshift(finalArtifacts[i]);
-        }
-      }
-
-      return deduped;
+      return mergeArtifacts(finalArtifacts);
     },
     [],
   );
@@ -1834,8 +1850,18 @@ const Playground: NextPage = () => {
 
     setArtifacts(prevArtifacts => {
       const filtered = prevArtifacts.filter(artifact => artifact.messageId !== responseId);
-      return [...filtered, ...deduped];
+      const delivered = prevArtifacts.filter(
+        artifact => artifact.messageId === responseId && isFinancialReportReference(artifact.content),
+      );
+      return [...filtered, ...mergeArtifacts([...deduped, ...delivered])];
     });
+
+    // Financial reports arrive before the final answer. Finalization only fills
+    // the artifact list; it must not replace the report/evidence the user is reading.
+    if (financialDelivery.current.hasReport(responseId)) {
+      setPendingFinalization(null);
+      return;
+    }
 
     const htmlArtifact = deduped.find(artifact => artifact.type === 'html');
     const imageArtifact = deduped.find(artifact => artifact.type === 'image');
@@ -2053,6 +2079,7 @@ const Playground: NextPage = () => {
     const currentOrder = Math.floor(messages.length / 2) + 1;
 
     const responseId = generateUUID();
+    const navigationVersionAtSend = panelNavigationVersion.current;
 
     const humanId = generateUUID();
 
@@ -2097,6 +2124,7 @@ const Playground: NextPage = () => {
     setActiveViewMsgId(responseId); // Auto-switch right panel to new round
 
     const controller = new AbortController();
+    let receivedFinal = false;
     chatAbortControllerRef.current = controller;
     terminatedStepIdsRef.current.clear();
     setExecutionMap(prev => ({
@@ -2393,24 +2421,39 @@ const Playground: NextPage = () => {
             };
           });
           setActiveMessageId(responseId);
-          setRightPanelCollapsed(false);
-        } else if (payload.type === 'step.meta') {
-          if (payload.action && payload.action.toLowerCase() === 'terminate') {
+          if (panelNavigationVersion.current === navigationVersionAtSend) setRightPanelCollapsed(false);
+        } else if (payload.type === 'step.meta' || payload.type === 'step.remove') {
+          if (payload.type === 'step.remove' || payload.action?.toLowerCase() === 'terminate') {
             terminatedStepIdsRef.current.add(payload.id);
+            setSelectedStepId(selected => (selected === payload.id ? null : selected));
             setExecutionMap(prev => {
               const current = prev[responseId];
               if (!current) return prev;
               const nextSteps = current.steps.filter(item => item.id !== payload.id);
-              const nextActiveStepId = current.activeStepId === payload.id ? null : current.activeStepId;
+              const nextActiveStepId =
+                current.activeStepId === payload.id
+                  ? nextSteps[nextSteps.length - 1]?.id || null
+                  : current.activeStepId;
+              const nextOutputs = { ...current.outputs };
+              const nextThoughts = { ...current.stepThoughts };
+              delete nextOutputs[payload.id];
+              delete nextThoughts[payload.id];
               return {
                 ...prev,
-                [responseId]: { ...current, steps: nextSteps, activeStepId: nextActiveStepId },
+                [responseId]: {
+                  ...current,
+                  steps: nextSteps,
+                  outputs: nextOutputs,
+                  stepThoughts: nextThoughts,
+                  activeStepId: nextActiveStepId,
+                },
               };
             });
             return;
           }
+          if (terminatedStepIdsRef.current.has(payload.id)) return;
           // Clear manual step selection so the right panel auto-tracks this step
-          if (payload.action) {
+          if (payload.action && panelNavigationVersion.current === navigationVersionAtSend) {
             setSelectedStepId(null);
           }
           setExecutionMap(prev => {
@@ -2462,7 +2505,9 @@ const Playground: NextPage = () => {
                 steps: nextSteps,
                 stepThoughts: nextThoughts,
                 // Focus right panel on this step when it receives action content
-                ...(payload.action ? { activeStepId: payload.id } : {}),
+                ...(payload.action && panelNavigationVersion.current === navigationVersionAtSend
+                  ? { activeStepId: payload.id }
+                  : {}),
               },
             };
           });
@@ -2499,8 +2544,33 @@ const Playground: NextPage = () => {
             };
           });
 
-          // Artifacts are now generated at task completion (final event),
-          // not during streaming — to avoid showing intermediate outputs as artifacts
+          if (payload.output_type === 'html') {
+            const delivery = financialDelivery.current.receive(
+              payload.content,
+              currentConvId,
+              responseId,
+              panelNavigationVersion.current === navigationVersionAtSend,
+              id,
+            );
+            if (delivery) {
+              setArtifacts(previous => mergeArtifacts([...previous, delivery.artifact]));
+              if (delivery.open) {
+                cancelSummaryPresentation();
+                setPreviewArtifact(delivery.artifact);
+                setFinancialCitationTarget(null);
+                setActiveSubAgent(null);
+                setSelectedStepId(null);
+                setRightPanelView('html-preview');
+                setRightPanelCollapsed(false);
+              } else {
+                setPreviewArtifact(previous =>
+                  previous && artifactIdentity(previous) === artifactIdentity(delivery.artifact)
+                    ? delivery.artifact
+                    : previous,
+                );
+              }
+            }
+          }
         } else if (payload.type === 'step.done') {
           const id = payload.id;
           if (terminatedStepIdsRef.current.has(id || '')) return;
@@ -2520,6 +2590,7 @@ const Playground: NextPage = () => {
           // action_reason, which are constrained to concise, readable text.
           return;
         } else if (payload.type === 'final') {
+          receivedFinal = true;
           const finalAnswer = decodeFinalEvent(payload);
           const summaryText = cleanFinalContent(finalAnswer.content);
           cancelSummaryPresentation();
@@ -2548,7 +2619,10 @@ const Playground: NextPage = () => {
           setActiveMessageId(responseId);
           setSelectedCitationIndex(finalAnswer.citations[0]?.index ?? null);
 
-          if (summaryText) {
+          if (financialDelivery.current.hasReport(responseId)) {
+            setStreamingSummary(summaryText);
+            setSummaryComplete(true);
+          } else if (summaryText) {
             const firstSummaryCharacter = summaryText.match(/^./u)?.[0] || summaryText;
             summaryPresentationResponseIdRef.current = responseId;
             summaryPresentationFullTextRef.current = summaryText;
@@ -2639,6 +2713,39 @@ const Playground: NextPage = () => {
       }
       if (taskEpochRef.current === taskEpoch) {
         setLoading(false);
+        if (!receivedFinal && financialDelivery.current.hasReport(responseId)) {
+          setExecutionMap(previous => {
+            const current = previous[responseId];
+            if (!current) return previous;
+            return {
+              ...previous,
+              [responseId]: {
+                ...current,
+                steps: current.steps.map(step => (step.status === 'running' ? { ...step, status: 'failed' } : step)),
+              },
+            };
+          });
+          setMessages(previous =>
+            previous.map(item =>
+              item.id !== responseId
+                ? item
+                : {
+                    ...item,
+                    thinking: false,
+                    context:
+                      item.context ||
+                      (financialDelivery.current.hasPublished(responseId)
+                        ? '报告已生成，可查看报告与原文依据；本次回复未完成。'
+                        : '本次执行已结束，已保存的分析内容可继续查看。'),
+                    taskPlan: item.taskPlan?.map(task =>
+                      task.status === 'in_progress'
+                        ? { ...task, status: 'error' as const, detail: '本次执行已结束，已保存的内容仍可查看。' }
+                        : task,
+                    ),
+                  },
+            ),
+          );
+        }
       }
     }
   };
@@ -2892,8 +2999,7 @@ const Playground: NextPage = () => {
 
           const historyAnswer = decodeHistoryAnswer(payload);
           const finalContent = cleanFinalContent(
-            historyAnswer.content ||
-              (payload.execution_status ? '已恢复任务记录，可查看已保存的执行进度和结果。' : ''),
+            historyAnswer.content || (payload.execution_status ? '已恢复任务记录，可查看已保存的执行进度和结果。' : ''),
           );
 
           // History payload v2: the turn's input_files snapshot attaches to
@@ -2916,14 +3022,7 @@ const Playground: NextPage = () => {
             null,
           );
           allArtifacts.push(...restoredArtifacts);
-          if (
-            isFinancialReportReference(payload.financial_report) &&
-            !restoredArtifacts.some(
-              artifact =>
-                isFinancialReportReference(artifact.content) &&
-                artifact.content.runId === payload.financial_report.runId,
-            )
-          ) {
+          if (isFinancialReportReference(payload.financial_report)) {
             allArtifacts.push({
               id: `${viewId}-financial-report`,
               type: 'html',
@@ -2998,7 +3097,7 @@ const Playground: NextPage = () => {
 
     setMessages(newMessages);
     setExecutionMap(newExecutionMap);
-    setArtifacts(allArtifacts);
+    setArtifacts(mergeArtifacts(allArtifacts));
     if (Object.keys(restoredSkillNames).length > 0) {
       setCreatedSkillNames(prev => ({ ...prev, ...restoredSkillNames }));
     }
@@ -3206,7 +3305,7 @@ const Playground: NextPage = () => {
           ) : messages.length > 0 ? (
             <div className={`flex-1 min-h-0 flex overflow-hidden ${rightPanelCollapsed ? 'justify-center' : ''}`}>
               <div
-                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 flex flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
+                className={`${rightPanelCollapsed ? 'flex-1 max-w-[800px] border-r-0' : 'flex-[2] min-w-0 border-r border-gray-200/80 dark:border-gray-800'} min-h-0 ${mobileFinancialPanel ? 'hidden' : 'flex'} flex-col overflow-hidden bg-white dark:bg-[#111217] transition-all duration-300 relative`}
               >
                 <div className='flex-1 min-h-0 overflow-y-auto'>
                   {rounds.map((round, roundIndex) => {
@@ -3251,7 +3350,7 @@ const Playground: NextPage = () => {
                                   setActiveViewMsgId(round.viewMsg.id);
                                   setActiveSubAgent({ messageId: round.viewMsg.id, agentId });
                                 }
-                                setRightPanelView('execution');
+                                handleUserPanelViewChange('execution');
                                 setRightPanelCollapsed(false);
                               }}
                             />
@@ -3265,7 +3364,7 @@ const Playground: NextPage = () => {
                             // Clicking a main-agent step exits the sub-agent
                             // process view, so the right panel shows this step.
                             setActiveSubAgent(null);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             setRightPanelCollapsed(false);
                             setExecutionMap(prev => ({
                               ...prev,
@@ -3283,6 +3382,9 @@ const Playground: NextPage = () => {
                         attachedSkill={round.humanMsg?.attachedSkill}
                         attachedDb={round.humanMsg?.attachedDb}
                         taskPlan={round.viewMsg?.taskPlan}
+                        financialUpdates={
+                          execution ? recentFinancialObservations(execution.steps, execution.outputs) : []
+                        }
                         attachedConnectors={round.humanMsg?.attachedConnectors}
                         assistantText={roundAssistantText}
                         onFinancialCitationClick={citation => openFinancialCitation(citation, round.viewMsg?.id)}
@@ -3293,7 +3395,7 @@ const Playground: NextPage = () => {
                         onReportClick={() => {
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setActiveSubAgent(null);
-                          setRightPanelView('report');
+                          handleUserPanelViewChange('report');
                           setRightPanelCollapsed(false);
                         }}
                         onReferencesClick={
@@ -3301,7 +3403,7 @@ const Playground: NextPage = () => {
                             ? () => {
                                 if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                                 setSelectedCitationIndex(roundCitations[0].index);
-                                setRightPanelView('references');
+                                handleUserPanelViewChange('references');
                                 setRightPanelCollapsed(false);
                               }
                             : undefined
@@ -3315,10 +3417,10 @@ const Playground: NextPage = () => {
                           setRightPanelCollapsed(false);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
+                            handleUserPanelViewChange('html-preview');
                           } else if (artifact.type === 'code' && artifact.stepId) {
                             setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             if (round.viewMsg?.id && execution) {
                               setExecutionMap(prev => ({
                                 ...prev,
@@ -3332,30 +3434,31 @@ const Playground: NextPage = () => {
                             // Image file artifacts: preview instead of download
                             if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                               setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
+                              handleUserPanelViewChange('image-preview');
                             } else {
                               downloadArtifact(artifact as Artifact);
                             }
                           } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
+                            handleUserPanelViewChange('image-preview');
                           }
                         }}
                         onArtifactDownload={artifact => downloadArtifact(artifact as Artifact)}
                         onViewAllFiles={() => {
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setRightPanelCollapsed(false);
-                          setRightPanelView('files');
+                          handleUserPanelViewChange('files');
                         }}
                         isCollapsed={isCurrentRoundCollapsed}
                         onExpand={() => {
+                          panelNavigationVersion.current += 1;
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                         }}
                         createdSkillName={createdSkillNames[round.viewMsg?.id || '']}
                         onSkillCardClick={_skillName => {
                           if (round.viewMsg?.id) setActiveViewMsgId(round.viewMsg.id);
                           setRightPanelCollapsed(false);
-                          setRightPanelView('skill-preview');
+                          handleUserPanelViewChange('skill-preview');
                           // Find the package_skill step and select it so right panel shows SkillCardRenderer
                           if (execution) {
                             const skillStep = execution.steps.find((s: ExecutionStep) => {
@@ -3485,7 +3588,7 @@ const Playground: NextPage = () => {
                             onClosePreview={closeSessionFilePreview}
                             className='mb-2'
                           />
-                          {taskPlan.length > 0 && (
+                          {taskPlan.length > 0 && !taskPlan.some(task => task.kind === 'financial-stage') && (
                             <div className='mb-3'>
                               <TaskPlanCard tasks={taskPlan} embedded />
                             </div>
@@ -3975,7 +4078,10 @@ const Playground: NextPage = () => {
               <div className='relative z-20 flex-shrink-0'>
                 <Tooltip title={rightPanelCollapsed ? t('expand_panel') : t('collapse_panel')} placement='left'>
                   <button
-                    onClick={() => setRightPanelCollapsed(prev => !prev)}
+                    onClick={() => {
+                      panelNavigationVersion.current += 1;
+                      setRightPanelCollapsed(prev => !prev);
+                    }}
                     className='absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-8 flex items-center justify-center bg-white dark:bg-[#1a1b1e] border border-gray-200 dark:border-gray-700 rounded-full shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 hover:w-5 hover:shadow-md transition-all duration-200 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                   >
                     {rightPanelCollapsed ? (
@@ -3989,6 +4095,18 @@ const Playground: NextPage = () => {
               <div
                 className={`${rightPanelCollapsed ? 'w-0 min-w-0 overflow-hidden opacity-0' : 'flex-[3] min-w-0 overflow-hidden'} min-h-0 bg-[#f8f8fb] dark:bg-[#0f1114] flex flex-col transition-all duration-300`}
               >
+                {mobileFinancialPanel && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      panelNavigationVersion.current += 1;
+                      setRightPanelCollapsed(true);
+                    }}
+                    className='shrink-0 border-b border-slate-200 bg-white px-4 py-3 text-left text-sm text-sky-700 dark:border-slate-800 dark:bg-[#111217] dark:text-sky-300'
+                  >
+                    <LeftOutlined className='mr-2' /> 返回对话
+                  </button>
+                )}
                 {showInlineAttachmentPreview ? (
                   <div className='flex-1 min-h-0 flex flex-col bg-white dark:bg-[#1a1b1e]'>
                     <div className='flex h-12 flex-shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-3 dark:border-white/10 dark:bg-[#1a1b1e]/95'>
@@ -4084,10 +4202,10 @@ const Playground: NextPage = () => {
                           setFinancialCitationTarget(null);
                           if (artifact.type === 'html') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('html-preview');
+                            handleUserPanelViewChange('html-preview');
                           } else if (artifact.type === 'code' && artifact.stepId) {
                             setSelectedStepId(artifact.stepId);
-                            setRightPanelView('execution');
+                            handleUserPanelViewChange('execution');
                             if (activeViewMsg?.id && execution) {
                               setExecutionMap(prev => ({
                                 ...prev,
@@ -4100,12 +4218,12 @@ const Playground: NextPage = () => {
                           } else if (artifact.type === 'file') {
                             if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(artifact.name)) {
                               setPreviewArtifact(artifact as Artifact);
-                              setRightPanelView('image-preview');
+                              handleUserPanelViewChange('image-preview');
                               setRightPanelCollapsed(false);
                             }
                           } else if (artifact.type === 'image') {
                             setPreviewArtifact(artifact as Artifact);
-                            setRightPanelView('image-preview');
+                            handleUserPanelViewChange('image-preview');
                             setRightPanelCollapsed(false);
                           }
                         }}
@@ -4139,13 +4257,13 @@ const Playground: NextPage = () => {
                               activeStepId: stepId,
                             },
                           }));
-                          setRightPanelView('execution');
+                          handleUserPanelViewChange('execution');
                         }}
                         subAgents={parallelSubAgents}
                         onSubAgentClick={agentId => {
                           if (!activeViewMsg?.id) return;
                           setActiveSubAgent({ messageId: activeViewMsg.id, agentId });
-                          setRightPanelView('execution');
+                          handleUserPanelViewChange('execution');
                         }}
                         subAgentContext={activeSub || null}
                         onExitSubAgentView={() => setActiveSubAgent(null)}

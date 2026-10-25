@@ -2603,8 +2603,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       {/* Collapse button is rendered by the parent layout to avoid overflow clipping */}
 
       {/* Terminal Header */}
-      <div className='flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-[#111217]'>
-        <div className='flex items-center gap-3'>
+      <div className='flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-[#111217]'>
+        <div className='flex shrink-0 items-center gap-3 whitespace-nowrap'>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded-full bg-red-500' />
             <div className='w-3 h-3 rounded-full bg-yellow-500' />
@@ -2619,7 +2619,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
 
         <div className='flex items-center gap-1'>
           {((panelView === 'report' && reportId && reportRunId) ||
-            (panelView === 'html-preview' && previewArtifact && !isFinancialReportReference(previewArtifact.content))) && (
+            (panelView === 'html-preview' &&
+              previewArtifact &&
+              !isFinancialReportReference(previewArtifact.content))) && (
             <Dropdown
               trigger={['click']}
               menu={{
@@ -2750,7 +2752,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         !!conversationId ||
         citations.length > 0 ||
         (reportId && reportRunId)) && (
-        <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
+        <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto whitespace-nowrap border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217] [&>button]:shrink-0'>
           <button
             onClick={() => setPanelView('execution')}
             className={classNames(
@@ -2974,7 +2976,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             citationTarget={financialCitationTarget}
             busy={isRunning}
             onTopicRetry={onFinancialTopicRetry}
-            key={`${previewArtifact.content.runId}:${previewArtifact.content.revision}`}
+            key={`${previewArtifact.content.sessionId}:${previewArtifact.content.runId}`}
             reference={previewArtifact.content}
           />
         ) : panelView === 'html-preview' && previewArtifact ? (
