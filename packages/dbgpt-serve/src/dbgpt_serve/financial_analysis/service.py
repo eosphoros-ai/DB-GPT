@@ -847,7 +847,10 @@ class FinancialAnalysisService:
                     errorCode=code,
                     completedAt=now(),
                     note={
-                        "MODEL_TIMEOUT": "专题模型生成超时，可单独重试。",
+                        "MODEL_TIMEOUT": (
+                            "本项分析在限定时间内未完成，财务数据与指标计算已保留。"
+                            "可在“执行过程”中单独重试。"
+                        ),
                         "MODEL_REQUEST_FAILED": "专题模型请求失败，可单独重试。",
                         "INVALID_TOPIC_RESPONSE": "专题输出结构校验失败，可单独重试。",
                     }.get(code, "专题结论未通过完整校验，可单独重试。"),

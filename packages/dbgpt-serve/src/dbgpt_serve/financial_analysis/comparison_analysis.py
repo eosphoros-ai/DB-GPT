@@ -27,7 +27,75 @@ subjectEntityId、baselineEntityId、comparisonDirection。
 合并引用时归属集合必须精确等于全部输入事实的并集，不能只列结果指标。
 summary 中数值只使用 {{fact:真实ID}} / {{calculation:真实ID}} 占位符，
 不手写金额、倍数、百分比或年份。占位符必须声明在对应引用数组中。
+同一条发现只能采用一个比较方向；方向不同的指标拆成不同发现。
+单家公司事实或比率使用该公司的 entityId 作为 subjectEntityId，
+baselineEntityId=null、comparisonDirection=none；不要将两家无比较计算的事实合成一条。
 """
+
+FACT_CONTEXT_FIELDS = (
+    "id",
+    "metricCode",
+    "metricName",
+    "normalizedValue",
+    "displayValue",
+    "unit",
+    "currency",
+    "fiscalPeriod",
+    "periodType",
+    "statementScope",
+    "attribution",
+    "evidenceExcerptIds",
+    "entityId",
+    "sourceDocumentId",
+    "adjustment",
+    "sourceRole",
+    "periodStart",
+    "periodEnd",
+    "asOf",
+    "qualityStatus",
+    "reference",
+)
+CALCULATION_CONTEXT_FIELDS = (
+    "id",
+    "code",
+    "name",
+    "metricCode",
+    "formula",
+    "inputFactIds",
+    "inputCalculationIds",
+    "result",
+    "displayResult",
+    "unit",
+    "status",
+    "entityId",
+    "period",
+    "fiscalPeriod",
+    "comparisonType",
+    "subjectEntityId",
+    "baselineEntityId",
+    "subjectPeriod",
+    "baselinePeriod",
+    "direction",
+    "reference",
+)
+EVIDENCE_CONTEXT_FIELDS = (
+    "id",
+    "sourceDocumentId",
+    "page",
+    "section",
+    "row",
+    "column",
+    "sourcePeriod",
+    "snippet",
+    "sourceUnit",
+    "sourceCurrency",
+    "headerSnippet",
+    "qualityStatus",
+)
+
+
+def _select_fields(item, fields):
+    return {key: deepcopy(item[key]) for key in fields if key in item}
 
 
 class ComparisonFindingDraft(FindingDraft):
@@ -128,7 +196,7 @@ def comparison_context(report, *, codes=None, entity_ids=None, periods=None):
         "facts": facts,
         "calculations": calculations,
         "evidence": [
-            dict(e, snippet=e["snippet"][:350])
+            dict(_select_fields(e, EVIDENCE_CONTEXT_FIELDS), snippet=e["snippet"][:350])
             for e in report["evidence"]
             if e["id"] in evidence_ids
         ],
@@ -166,6 +234,12 @@ def comparison_context(report, *, codes=None, entity_ids=None, periods=None):
             }
         )
     context["findingReferenceTemplates"] = templates
+    # Coordinates, duplicated extraction values and display steps belong to the
+    # saved report, not each model call. Keep values, scope and source identities.
+    context["facts"] = [_select_fields(f, FACT_CONTEXT_FIELDS) for f in facts]
+    context["calculations"] = [
+        _select_fields(c, CALCULATION_CONTEXT_FIELDS) for c in calculations
+    ]
     # Bound contexts by rejecting oversized topics, never by silently truncating
     # one company's inputs and leaving another company's values behind.
     if len(json.dumps(context, ensure_ascii=False)) > 180000:
@@ -282,13 +356,27 @@ def validate_comparison_findings(raw, report, base_validate, **options):
                 for e in exc.errors(include_input=False, include_url=False)
             )
         except (ValueError, KeyError, TypeError) as exc:
+            code = str(exc) if type(exc) is ValueError else "invalid_comparison_finding"
+            hints = {
+                "comparison_direction_mismatch": (
+                    "按引用计算的 subjectEntityId/baselineEntityId/direction 填写；"
+                    "方向不同的计算不能放在同一条发现。拆分分析，不要反转原始数值。"
+                ),
+                "comparison_requires_precomputed_result": (
+                    "当前引用没有比较计算。单对象观察使用真实 subjectEntityId、"
+                    "baselineEntityId=null、comparisonDirection=none；比较需引用已有差额计算。"
+                ),
+                "cross_entity_claim_requires_comparison": (
+                    "跨公司判断须引用已有比较计算；无可比计算时拆成单家公司观察，"
+                    "每条仅引用该公司数据，不暗算差额或高低排名。"
+                ),
+            }
             details.append(
                 {
                     "finding_index": index,
                     "field": "comparison",
-                    "code": str(exc)
-                    if type(exc) is ValueError
-                    else "invalid_comparison_finding",
+                    "code": code,
+                    **({"hint": hints[code]} if code in hints else {}),
                 }
             )
     if not accepted or options.get("strict") and details:
@@ -347,6 +435,8 @@ def comparison_topic_context(report, topic_id):
 
 
 def review_context(report):
+    from .analysis import review_model_context
+
     return {
         "instructions": (
             "逐条核对财报结论的比较方向、公司归属、期间与口径以及原因依据。"
@@ -358,7 +448,7 @@ def review_context(report):
             "失败或缺少数据的专题只能使用 insufficient，不得机械通过。"
             "需修订时用 revise，并在 note 指明问题。"
         ),
-        "data": comparison_context(report),
+        "data": review_model_context(report),
         "findings": report["findings"],
         "topics": [
             {key: topic.get(key) for key in ("id", "status", "note", "findingIds")}

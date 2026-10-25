@@ -273,6 +273,7 @@ def start_topic(report, topic_id, retry=False):
         return report
     if retry:
         item["failures"] = 0
+        item["reviewRevisionAttempts"] = 0
     item.pop("review", None)
     item["issues"] = []
     item.update(
@@ -283,6 +284,30 @@ def start_topic(report, topic_id, retry=False):
         note="正在基于当前专题数据分析",
     )
     return changed(report)
+
+
+def preserve_valid_comparison_findings(report, topic_id, findings):
+    """Keep individually validated claims without marking the topic successful."""
+    item = topic(report, topic_id)
+    if report.get("mode") != "comparison" or item["findingIds"] or not findings:
+        return report
+    scoped = topic_context(report, topic_id)
+    try:
+        partial, _ = validate_findings(
+            json.dumps({"findings": findings}, ensure_ascii=False),
+            report,
+            strict=False,
+            section=item["section"],
+            allowed_fact_ids={f["id"] for f in scoped["data"]["facts"]},
+        )
+    except (InvalidFindings, ValueError):
+        partial = []
+    for index, finding in enumerate(partial):
+        finding["id"] = f"topic-{topic_id}-partial-{index + 1}"
+    if partial:
+        item["findingIds"] = [f["id"] for f in partial]
+        report = apply_findings(report, report["findings"] + partial)
+    return report
 
 
 def save_topic(
@@ -325,6 +350,37 @@ def save_topic(
             seen.add(index)
             findings[index].update(changes)
         findings.extend(deepcopy(append_findings or []))
+    # Section routing belongs to the selected topic in both parallel generation
+    # and agent repairs. It is not a model-authored financial assertion.
+    if isinstance(findings, list):
+        findings = deepcopy(findings)
+        facts = {f["id"]: f for f in scoped["data"]["facts"]}
+        calculations = {c["id"]: c for c in scoped["data"]["calculations"]}
+        for finding in findings:
+            if isinstance(finding, dict):
+                finding["section"] = item["section"]
+                if (
+                    report.get("mode") == "comparison"
+                    and finding.get("subjectEntityId") is None
+                ):
+                    fact_ids = finding.get("factIds", [])
+                    calc_ids = finding.get("calculationIds", [])
+                    if not isinstance(fact_ids, list) or not isinstance(calc_ids, list):
+                        continue
+                    if not all(isinstance(i, str) for i in fact_ids + calc_ids):
+                        continue
+                    if any(i not in calculations for i in calc_ids):
+                        continue
+                    referenced = fact_ids + [
+                        i for c in calc_ids for i in calculations[c]["inputFactIds"]
+                    ]
+                    if not referenced or any(i not in facts for i in referenced):
+                        continue
+                    entities = {facts[i]["entityId"] for i in referenced}
+                    if len(entities) == 1:
+                        # Only fill an omitted identity that is unambiguous from
+                        # the references. Never overwrite a conflicting company.
+                        finding["subjectEntityId"] = next(iter(entities))
     # Raw drafts are repair-only. Display/publication uses validated findings.
     if findings:
         item["draftFindings"] = deepcopy(findings)
@@ -429,22 +485,11 @@ def save_topic(
                 and item["status"] == "failed"
                 and not item["findingIds"]
             ):
-                try:
-                    partial, _ = validate_findings(
-                        json.dumps({"findings": findings}, ensure_ascii=False),
-                        report,
-                        strict=False,
-                        section=item["section"],
-                        allowed_fact_ids={f["id"] for f in scoped["data"]["facts"]},
+                report = preserve_valid_comparison_findings(report, topic_id, findings)
+                if topic(report, topic_id)["findingIds"]:
+                    topic(report, topic_id)["note"] += (
+                        " 已保留其中通过校验的部分，专题整体仍未通过。"
                     )
-                except (InvalidFindings, ValueError):
-                    partial = []
-                for index, finding in enumerate(partial):
-                    finding["id"] = f"topic-{topic_id}-partial-{index + 1}"
-                if partial:
-                    item["findingIds"] = [f["id"] for f in partial]
-                    report = apply_findings(report, report["findings"] + partial)
-                    item["note"] += " 已保留其中通过校验的部分，专题整体仍未通过。"
             return changed(report)
         note = f"已保存 {len(accepted)} 条发现，等待复核；结论仍需人工核对。"
     item["history"].append(
@@ -487,6 +532,15 @@ def next_action(report, active_topic=None):
     args = {"run_id": report["report"]["run"]["id"]}
     if flow["status"] == "published":
         return None
+    if not active_topic:
+        active_topic = next(
+            (
+                t["id"]
+                for t in flow["topics"]
+                if t["status"] in {"running", "needs_revision"}
+            ),
+            None,
+        )
     if active_topic:
         item = topic(report, active_topic)
         if item["status"] in {"running", "needs_revision"}:
@@ -554,8 +608,23 @@ def review_report(report, reviews):
                 "并在 note 说明限制；不要只修改 note 的格式。"
             )
         item = topic(report, review["topic_id"])
-        if review["verdict"] == "pass" and item["status"] in {"failed", "insufficient"}:
-            fail("失败或缺数据专题不能标记复核通过。")
+        if (
+            item["status"] in {"failed", "insufficient"}
+            and review["verdict"] != "insufficient"
+        ):
+            fail(
+                f"专题 {topic_id} 已失败或明确不足，复核只能记录 insufficient，"
+                "不能通过复核重新启动修订。保留已有内容与失败原因；"
+                "用户明确要求重做时才使用 get_financial_topic(retry=true)。"
+            )
+        if review["verdict"] == "revise" and item.get("reviewRevisionAttempts", 0) >= 2:
+            raise SessionFileApiError(
+                409,
+                "REVIEW_REPAIR_EXHAUSTED",
+                "REVIEW_REPAIR_EXHAUSTED: "
+                f"专题 {topic_id} 已完成两轮复核修订，仍未通过；"
+                "本次自动修订停止，草稿保留且不得自动发布。",
+            )
         if not isinstance(review.get("note"), str) or not review["note"].strip():
             fail("请说明每个专题的复核依据或需要修订的问题。")
         try:
@@ -569,7 +638,12 @@ def review_report(report, reviews):
         item = topic(report, review["topic_id"])
         item["review"] = deepcopy(review)
         if review["verdict"] == "revise":
-            item.update(status="needs_revision", note=review["note"])
+            item.update(
+                status="needs_revision",
+                note=review["note"],
+                reviewRevisionAttempts=item.get("reviewRevisionAttempts", 0) + 1,
+                failures=0,
+            )
         elif review["verdict"] == "pass":
             item["status"] = "reviewed"
         else:

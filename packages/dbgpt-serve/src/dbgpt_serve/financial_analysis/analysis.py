@@ -86,6 +86,71 @@ class InvalidNarrative(ValueError):
         self.invalid_tokens = invalid_tokens[:10]
 
 
+def review_model_context(report):
+    """Review every retained claim with its complete reference dependency set."""
+    context = model_context(report)
+    findings = report["findings"]
+    calc_ids = {i for f in findings for i in f.get("calculationIds", [])}
+    calculations = {c["id"]: c for c in context["calculations"]}
+    calculation_inventory = {}
+    for calc in context["calculations"]:
+        scope = (
+            calc.get("subjectEntityId", calc.get("entityId", "")),
+            calc.get("baselineEntityId") or "",
+            calc.get("subjectPeriod", calc.get("fiscalPeriod", "")),
+            calc.get("baselinePeriod") or "",
+        )
+        calculation_inventory.setdefault(scope, set()).add(
+            calc.get("code", calc["name"])
+        )
+    context["availableCalculations"] = [
+        {
+            "subjectEntityId": subject,
+            "baselineEntityId": baseline,
+            "subjectPeriod": period,
+            "baselinePeriod": baseline_period,
+            "calculationCodes": sorted(codes),
+        }
+        for (subject, baseline, period, baseline_period), codes in sorted(
+            calculation_inventory.items()
+        )
+    ]
+    pending = list(calc_ids)
+    while pending:
+        calculation = calculations.get(pending.pop(), {})
+        for dependency in calculation.get("inputCalculationIds", []):
+            if dependency not in calc_ids:
+                calc_ids.add(dependency)
+                pending.append(dependency)
+    context["calculations"] = [
+        c for c in context["calculations"] if c["id"] in calc_ids
+    ]
+    fact_ids = {i for f in findings for i in f.get("factIds", [])}
+    fact_ids.update(i for c in context["calculations"] for i in c["inputFactIds"])
+    # The inventory lets the reviewer challenge "missing data" claims without
+    # repeating all values and extraction metadata in the tool response.
+    inventory = {}
+    for fact in report["facts"]:
+        if fact.get("normalizedValue") is not None:
+            key = (fact.get("entityId", ""), fact["fiscalPeriod"])
+            inventory.setdefault(key, set()).add(fact["metricCode"])
+    context["availableMetrics"] = [
+        {"entityId": entity, "period": period, "metricCodes": sorted(codes)}
+        for (entity, period), codes in sorted(inventory.items())
+    ]
+    context["facts"] = [f for f in context["facts"] if f["id"] in fact_ids]
+    evidence_ids = {i for f in findings for i in f.get("evidenceExcerptIds", [])}
+    evidence_ids.update(i for f in context["facts"] for i in f["evidenceExcerptIds"])
+    context["evidence"] = [e for e in context["evidence"] if e["id"] in evidence_ids]
+    for key in (
+        "findingInstructions",
+        "findingReferenceTemplates",
+        "findingComparisonFieldsExample",
+    ):
+        context.pop(key, None)
+    return context
+
+
 def model_context(report):
     """Only extracted periods; no PDF paths, credentials or chat history."""
     if report.get("mode") == "comparison":

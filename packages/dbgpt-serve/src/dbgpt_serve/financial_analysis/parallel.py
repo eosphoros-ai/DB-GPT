@@ -41,9 +41,9 @@ class ValidatedTopic:
 
 def concurrency_limit():
     try:
-        return max(1, min(6, int(os.getenv("DBGPT_FINANCIAL_CONCURRENCY", "3"))))
+        return max(1, min(6, int(os.getenv("DBGPT_FINANCIAL_CONCURRENCY", "6"))))
     except ValueError:
-        return 3
+        return 6
 
 
 class TopicGenerator:
@@ -85,6 +85,14 @@ async def generate_topic(snapshot, topic_id, generate, timeout=120, activity=Non
     """No shared mutable report or database access. Whole-topic deadline, 3 tries."""
     local = deepcopy(snapshot)
     context = workflow.topic_context(local, topic_id)
+    if context["data"].get("mode") == "comparison":
+        from .comparison_analysis import COMPARISON_INSTRUCTIONS
+
+        # TopicGenerator already sends these rules once in the system message.
+        context["instructions"] = context["instructions"].replace(
+            COMPARISON_INSTRUCTIONS, ""
+        )
+        context["data"].pop("findingInstructions", None)
     if topic_id == "expenses":
         scoped_ids = {f["id"] for f in context["data"]["facts"]}
         context["requiredCoverage"] = [
@@ -193,6 +201,10 @@ async def generate_topic(snapshot, topic_id, generate, timeout=120, activity=Non
         # Never persist provider exceptions, credentials or raw reasoning.
         error = "MODEL_REQUEST_FAILED"
     metrics["elapsedMs"] = round((time.monotonic() - started) * 1000)
+    if error:
+        local = workflow.preserve_valid_comparison_findings(
+            local, topic_id, workflow.topic(local, topic_id).get("draftFindings")
+        )
     item = workflow.topic(local, topic_id)
     return ValidatedTopic(
         snapshot["workflow"]["parallelBatch"]["id"],
@@ -235,8 +247,11 @@ async def analyze_topics(
         if activity:
             await activity(
                 {
-                    key: list(active.values()).count(key)
-                    for key in ("generating", "validating", "repairing")
+                    "topics": dict(active),
+                    **{
+                        key: list(active.values()).count(key)
+                        for key in ("generating", "validating", "repairing")
+                    },
                 }
             )
 
