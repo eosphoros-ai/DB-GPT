@@ -530,6 +530,21 @@ def build_result(pages, document_id, file_name):
     )
     year = year_match.group(1) if year_match else None
     company = company_match.group(1) if company_match else None
+    company_candidates = sorted(
+        set(
+            re.findall(
+                r"([\u4e00-\u9fff]{2,}(?:股份有限公司|有限责任公司|有限公司))", cover
+            )
+        )
+    )
+    cover_candidates = sorted(
+        set(
+            re.findall(
+                r"([\u4e00-\u9fff]{2,}(?:股份有限公司|有限责任公司|有限公司))",
+                pages[0]["text"] if pages else "",
+            )
+        )
+    )
     observations = table_candidates(pages, document_id) if year else []
     # Opening balances and pre-adjustment values remain auditable observations,
     # but are not silently converted into comparable year-end financial facts.
@@ -601,6 +616,15 @@ def build_result(pages, document_id, file_name):
             )
             evidence.extend(c["evidence"] for c in matches)
     result = {"company_name": company, "report_year": year, "report_date": None}
+    result["company_identity"] = {
+        "candidates": cover_candidates or company_candidates,
+        "basis": "cover_page" if cover_candidates else "first_five_pdf_pages",
+        "evidence": [
+            {"page": page["page"], "snippet": page["text"][:600]}
+            for page in pages[:5]
+            if company and company in compact(page["text"])
+        ],
+    }
     for code in METRICS:
         for prefix, period in [
             ("", year),
