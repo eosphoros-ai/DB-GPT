@@ -243,7 +243,9 @@ async def test_reference_positions_cannot_override_the_template_layout(mapped_so
 
 
 @pytest.mark.asyncio
-async def test_template_examples_produce_valid_kpi_trend_and_donut_queries(mapped_source):
+async def test_template_examples_produce_valid_kpi_trend_and_donut_queries(
+    mapped_source,
+):
     service, _, _ = mapped_source
 
     class ExampleModel:

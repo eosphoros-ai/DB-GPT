@@ -170,7 +170,9 @@ def validate_adaptation_promises(schema):
     def positive_filter_clause(text):
         mention = r"(?:筛选(?:器)?|\bfilters?\b)"
         contrast = r"但是|但|不过|然而|而是|\b(?:but|however|instead)\b"
-        action = r"添加|新增|增加|提供|配置|保留|需要|支持|\b(?:add|keep|need|provide)\b"
+        action = (
+            r"添加|新增|增加|提供|配置|保留|需要|支持|\b(?:add|keep|need|provide)\b"
+        )
         # A negation also covers its list items, including an "包括..." clause.
         # Stop at a new request or contrast instead of discarding the sentence.
         negation = (
