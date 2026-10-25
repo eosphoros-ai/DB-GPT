@@ -27,7 +27,9 @@
     "test:dashboard": "vitest run --config vitest.dashboard.config.mts",
     "test:e2e:dashboard": "playwright test --config playwright.dashboard.config.ts",
     "test:e2e:report": "playwright test --config playwright.report.config.ts",
-    "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build"
+    "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build",
+    "test:financial": "vitest run --config vitest.financial.config.mts",
+    "test:e2e:financial": "playwright test --config playwright.financial.config.ts"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",
@@ -131,7 +133,9 @@
     "@playwright/test": "^1.62.0",
     "jsdom": "^26.1.0",
     "vitest": "4.1.10",
-    "@types/uuid": "^9.0.8"
+    "@types/uuid": "^9.0.8",
+    "terser": "5.51.2",
+    "webpack": "5.112.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

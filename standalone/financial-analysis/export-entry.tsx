@@ -5,19 +5,20 @@ import zhCN from 'antd/locale/zh_CN';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import zh from '../../web/locales/zh';
-import FinancialAnalysisPage from '../../web/new-components/financial-analysis/FinancialAnalysisPage';
-import type { ReportData } from '../../web/new-components/financial-analysis/types';
+import FinancialReportView from '../../web/new-components/financial-analysis/FinancialReportView';
+import { financialReportTitle, supportedFinancialProtocol } from '../../web/new-components/financial-analysis/report-data';
+import type { FinancialReportData } from '../../web/new-components/financial-analysis/types';
 import { ChatContext } from './adapters/chat-context';
 
 void i18n.use(initReactI18next).init({ lng: 'zh', fallbackLng: 'zh', resources: { zh: { translation: zh } }, interpolation: { escapeValue: false }, initImmediate: false });
-const data: ReportData = JSON.parse(document.getElementById('financial-report-data')!.textContent!);
-if (data.mode !== 'report' || data.schemaVersion !== 1) throw new Error('Unsupported report snapshot');
-document.title = `${data.report.companyName} · ${data.report.fiscalPeriod} 财报`;
+const data: FinancialReportData = JSON.parse(document.getElementById('financial-report-data')!.textContent!);
+if (!supportedFinancialProtocol(data)) throw new Error('Unsupported report snapshot');
+document.title = financialReportTitle(data);
 const questionAccess = { ask: async () => { throw new Error('离线快照不能在线追问，请回到应用打开此报告。'); } };
 createRoot(document.getElementById('root')!).render(
   <ChatContext.Provider value={{ mode: 'light' }}>
     <ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#0C75FC', borderRadius: 4, fontFamily: 'Segoe UI, Microsoft YaHei, system-ui, sans-serif' } }}>
-      <FinancialAnalysisPage data={data} questionAccess={questionAccess} />
+      <FinancialReportView data={data} questionAccess={questionAccess} />
     </ConfigProvider>
   </ChatContext.Provider>,
 );

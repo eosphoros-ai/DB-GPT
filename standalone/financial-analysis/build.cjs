@@ -8,14 +8,14 @@ const requireWeb = createRequire(path.join(web, 'package.json'));
 const webpack = requireWeb('webpack');
 const postcss = requireWeb('postcss');
 const tailwind = requireWeb('tailwindcss');
-const TerserPlugin = requireWeb('terser-webpack-plugin');
-const out = path.join(dir, '.work');
+const terser = requireWeb('terser');
 const financial = path.join(web, 'new-components/financial-analysis');
 const args = process.argv.slice(2).filter(argument => argument !== '--export-runtime');
 if (args.length > 1 || args.some(argument => argument.startsWith('--'))) {
   throw new Error('Usage: node build.cjs [output.html]');
 }
-const output = args.length ? path.resolve(args[0]) : path.join(out, 'export-runtime.html');
+const output = args.length ? path.resolve(args[0]) : path.join(dir, '.work', 'export-runtime.html');
+const out = path.dirname(output);
 
 async function build() {
   fs.mkdirSync(out, { recursive: true });
@@ -43,7 +43,7 @@ async function build() {
         { test: /\.(png|jpe?g|svg|gif|webp|woff2?)$/, type: 'asset/inline' },
       ],
     },
-    optimization: { splitChunks: false, runtimeChunk: false, minimizer: [new TerserPlugin({ parallel: false, extractComments: false, terserOptions: { format: { comments: false } } })] },
+    optimization: { splitChunks: false, runtimeChunk: false, minimize: false },
     plugins: [new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 })],
     performance: false,
   };
@@ -68,7 +68,11 @@ async function build() {
   const shell = "html,body,#root{margin:0;width:100%;height:100%;font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif}body{overflow:hidden}";
   const css = utilities.css + '\n' + shell + '\n' + assets.filter(name => name.endsWith('.css')).map(name => fs.readFileSync(path.join(out, name), 'utf8')).join('\n');
   if (/@import\b|url\(\s*['"]?(?!data:)[^)'"\s]/i.test(css)) throw new Error('External CSS dependency detected');
-  const js = fs.readFileSync(path.join(out, 'report.js'), 'utf8');
+  const minified = await terser.minify(fs.readFileSync(path.join(out, 'report.js'), 'utf8'), {
+    format: { comments: false },
+  });
+  if (!minified.code) throw new Error('Offline runtime minification produced no code');
+  const js = minified.code;
   const reportDataNode = '<script type="application/json" id="financial-report-data"><!--FINANCIAL_REPORT_JSON--></script>';
   const html = `<!doctype html>\n<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><link rel="icon" href="data:,"><title>DB-GPT Financial Analysis Report</title><style>${css.replace(/<\/style/gi, '<\\/style')}</style></head><body><div id="root"></div>${reportDataNode}<noscript>请启用 JavaScript 以使用交互式财务分析报告。</noscript><script>${js.replace(/<\/script/gi, '<\\/script')}</script></body></html>`;
   fs.mkdirSync(path.dirname(output), { recursive: true });
