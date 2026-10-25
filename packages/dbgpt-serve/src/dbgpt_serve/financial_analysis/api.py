@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Path, Query
 from fastapi.responses import Response, StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from starlette.background import BackgroundTask
 
 from dbgpt_serve.core import Result
@@ -16,13 +16,57 @@ from dbgpt_serve.session_file.api.endpoints import (
     get_authenticated_owner,
 )
 
+from .comparison_schema import ComparisonConfig, ComparisonRequest
 from .workflow import public_snapshot
 
 
 class CreateRun(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     session_id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$")
-    file_ids: list[str] = Field(min_length=1, max_length=1)
+    file_ids: list[str] = Field(min_length=1, max_length=5)
     request_id: UUID = Field(default_factory=uuid4)
+    mode: Literal["report", "comparison"] = "report"
+    comparison: ComparisonConfig | None = None
+
+    @model_validator(mode="after")
+    def validate_mode(self):
+        if self.mode == "report":
+            if len(self.file_ids) != 1 or self.comparison is not None:
+                raise ValueError("Single report requires exactly one file")
+        else:
+            if self.comparison is None:
+                raise ValueError("Comparison configuration required")
+            ComparisonRequest(file_ids=self.file_ids, comparison=self.comparison)
+        return self
+
+
+class IdentityResolution(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    company_name: str = Field(min_length=2, max_length=120)
+    report_year: str = Field(pattern=r"^20\d{2}$")
+
+
+class ResumeRun(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$")
+    revision: str | None = Field(default=None, max_length=255)
+    resolutions: dict[str, IdentityResolution] = Field(
+        default_factory=dict, max_length=5
+    )
+
+
+class ReconfigureRun(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$")
+    revision: str = Field(min_length=1, max_length=255)
+    comparison: ComparisonConfig
+
+
+class RetryTopic(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$")
+    revision: str = Field(min_length=1, max_length=255)
+    topic_id: str = Field(min_length=1, max_length=40)
 
 
 class AskQuestion(BaseModel):
@@ -60,6 +104,16 @@ def make_router(service):
 
     @router.post("/runs", status_code=202)
     def create_run(body: CreateRun, owner: str = Depends(get_authenticated_owner)):
+        if body.mode == "comparison":
+            return Result.succ(
+                service.comparisons.create(
+                    owner,
+                    body.session_id,
+                    body.file_ids,
+                    str(body.request_id),
+                    body.comparison.model_dump(),
+                )
+            )
         return Result.succ(
             service.create(
                 owner, body.session_id, body.file_ids[0], str(body.request_id)
@@ -93,10 +147,65 @@ def make_router(service):
     def get_report(
         run_id: UUID,
         session_id: str = Query(min_length=1, max_length=255),
+        revision: str | None = Query(default=None, min_length=1, max_length=255),
         owner: str = Depends(get_authenticated_owner),
     ):
         return Result.succ(
-            public_snapshot(service.get(owner, session_id, str(run_id), report=True))
+            public_snapshot(
+                service.get(
+                    owner, session_id, str(run_id), report=True, revision=revision
+                )
+            )
+        )
+
+    @router.get("/runs/{run_id}/revisions")
+    def list_revisions(
+        run_id: UUID,
+        session_id: str = Query(min_length=1, max_length=255),
+        owner: str = Depends(get_authenticated_owner),
+    ):
+        return Result.succ(service.list_revisions(owner, session_id, str(run_id)))
+
+    @router.post("/runs/{run_id}/resume")
+    def resume_run(
+        run_id: UUID, body: ResumeRun, owner: str = Depends(get_authenticated_owner)
+    ):
+        return Result.succ(
+            service.comparisons.resume(
+                owner,
+                body.session_id,
+                str(run_id),
+                body.revision,
+                {key: value.model_dump() for key, value in body.resolutions.items()},
+            )
+        )
+
+    @router.post("/runs/{run_id}/configuration")
+    def reconfigure_run(
+        run_id: UUID,
+        body: ReconfigureRun,
+        owner: str = Depends(get_authenticated_owner),
+    ):
+        return Result.succ(
+            public_snapshot(
+                service.comparisons.reconfigure(
+                    owner,
+                    body.session_id,
+                    str(run_id),
+                    body.revision,
+                    body.comparison.model_dump(),
+                )
+            )
+        )
+
+    @router.post("/runs/{run_id}/topics/retry", status_code=202)
+    def retry_topic(
+        run_id: UUID, body: RetryTopic, owner: str = Depends(get_authenticated_owner)
+    ):
+        return Result.succ(
+            service.comparisons.retry_topic(
+                owner, body.session_id, str(run_id), body.revision, body.topic_id
+            )
         )
 
     @router.get("/runs/{run_id}/exports")

@@ -22,10 +22,15 @@ from dbgpt_serve.session_file.domain import FileScope
 from . import workflow
 from .analysis import SECTIONS, InvalidFindings, apply_findings, validate_findings
 from .exports import render_export
+from .migrate import ensure_schema
 from .models import FinancialExportEntity as Export
+from .models import FinancialReportRevisionEntity as Revision
+from .models import FinancialRunDocumentEntity as RunDocument
 from .models import FinancialRunEntity as Run
+from .models import LegacyFinancialRunEntity as LegacyRun
 from .questions import question_context, reference_only_answer, validate_answer
 from .report import build_report
+from .revisions import read_revision, save_revision
 
 logger = logging.getLogger(__name__)
 
@@ -56,10 +61,11 @@ class FinancialAnalysisService:
         self.analyzer = analyzer
         self.answerer = answerer
         self.export_runtime = export_runtime
+        self._recovery_revisions = []
         self._question_slots = threading.BoundedSemaphore(2)
         # Bound aggregate topic generation/validation across conversations too.
         self.parallel_topic_slots = asyncio.Semaphore(6)
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._slots = threading.BoundedSemaphore(4)
         self._preview_slots = threading.BoundedSemaphore(2)
         self._executor = ThreadPoolExecutor(
@@ -67,23 +73,43 @@ class FinancialAnalysisService:
         )
         with self.session(commit=False) as session:
             engine = session.get_bind()
-        Run.__table__.create(bind=engine, checkfirst=True)
-        Export.__table__.create(bind=engine, checkfirst=True)
+        self.comparison_schema_ready = ensure_schema(engine, allow_legacy=True)
+        self._run_model = Run if self.comparison_schema_ready else LegacyRun
+        if not self.comparison_schema_ready:
+            logger.info(
+                "Financial schema is legacy during component registration; "
+                "capabilities will be refreshed after application migration."
+            )
+        from .comparison_service import ComparisonRunner
+
+        self.comparisons = ComparisonRunner(self)
         # This runner is intentionally for one local server process. Completed
         # snapshots survive restart; abandoned jobs are never left running.
         with self.session() as session:
-            session.query(Run).filter(Run.status.in_(["pending", "running"])).update(
+            session.query(self._run_model).filter(
+                self._run_model.status.in_(["pending", "running"])
+            ).update(
                 {
-                    Run.status: "failed",
-                    Run.error: "服务重启，任务已中断，请重新分析。",
-                    Run.updated_at: now(),
-                    Run.completed_at: now(),
+                    self._run_model.status: "failed",
+                    self._run_model.error: "服务重启，任务已中断，请重新分析。",
+                    self._run_model.updated_at: now(),
+                    self._run_model.completed_at: now(),
                 },
                 synchronize_session=False,
             )
+            if self.comparison_schema_ready:
+                session.query(RunDocument).filter(
+                    RunDocument.status.in_(["pending", "running"])
+                ).update(
+                    {
+                        RunDocument.status: "interrupted",
+                        RunDocument.error: "服务重启，文档提取已中断；请显式继续。",
+                    },
+                    synchronize_session=False,
+                )
             # Data snapshots are committed before model work. Preserve them if
             # the process exited during analysis; do not leave a perpetual spinner.
-            for row in session.query(Run).filter_by(
+            for row in session.query(self._run_model).filter_by(
                 status="completed", stage="analyze"
             ):
                 report = json.loads(row.report_json)
@@ -93,11 +119,32 @@ class FinancialAnalysisService:
                 row.report_json = json.dumps(
                     report, ensure_ascii=False, allow_nan=False
                 )
+                if report.get("mode") == "comparison":
+                    report["lifecycle"]["stage"] = "interrupted"
+                save_revision(session, row, report, timestamp=now())
                 row.stage, row.updated_at = "completed", now()
-            for row in session.query(Run).filter_by(
+            comparisons = (
+                session.query(Run).filter_by(mode="comparison", status="failed")
+                if self.comparison_schema_ready
+                else []
+            )
+            for row in comparisons:
+                if row.report_json:
+                    report = json.loads(row.report_json)
+                    if report["lifecycle"]["stage"] != "interrupted":
+                        workflow.changed(report)
+                    report["lifecycle"]["stage"] = "interrupted"
+                    row.report_json = json.dumps(report, ensure_ascii=False)
+            for row in session.query(self._run_model).filter_by(
                 status="completed", stage="agent_topics"
             ):
                 report = json.loads(row.report_json)
+                if self.comparison_schema_ready:
+                    self._save_recovery_revision(session, row, report, row.updated_at)
+                else:
+                    self._recovery_revisions.append(
+                        (row.id, deepcopy(report), row.updated_at)
+                    )
                 batch = report.get("workflow", {}).get("parallelBatch")
                 if batch and batch["status"] == "running":
                     batch.update(status="interrupted", completedAt=now())
@@ -108,10 +155,49 @@ class FinancialAnalysisService:
                             note="服务重启，专题尚未保存；可继续分析，无需重新解析。",
                         )
                 workflow.changed(report)
+                if report.get("mode") == "comparison":
+                    report["lifecycle"]["stage"] = "interrupted"
                 row.report_json = json.dumps(
                     report, ensure_ascii=False, allow_nan=False
                 )
                 row.stage, row.updated_at = "completed", now()
+
+    def refresh_schema(self):
+        """Refresh cached capabilities after the application's schema migration."""
+        with self._lock:
+            with self.session(commit=False) as session:
+                engine = session.get_bind()
+            ready = ensure_schema(engine, allow_legacy=True)
+            self._run_model = Run if ready else LegacyRun
+            self.comparison_schema_ready = ready
+            if ready:
+                with self.session() as session:
+                    for run_id, report, timestamp in self._recovery_revisions:
+                        row = session.query(Run).filter_by(id=run_id).first()
+                        if row is not None:
+                            self._save_recovery_revision(
+                                session, row, report, timestamp
+                            )
+                self._recovery_revisions.clear()
+                logger.info("Financial comparison and revision storage are ready.")
+            else:
+                logger.warning(
+                    "Financial comparison requires explicit schema migration and "
+                    "a restart; single-report analysis remains available."
+                )
+
+    @staticmethod
+    def _save_recovery_revision(session, row, report, timestamp):
+        # Already pinned revisions remain immutable even if execution state
+        # changed without a new revision before the process was interrupted.
+        if (
+            not session.query(Revision.id)
+            .filter_by(run_id=row.id, revision=report["revision"])
+            .first()
+        ):
+            save_revision(
+                session, row, report, timestamp=timestamp, update_current=False
+            )
 
     @staticmethod
     def _public(row):
@@ -130,6 +216,10 @@ class FinancialAnalysisService:
             ]
         }
         result["report_ready"] = bool(row.report_json)
+        result["mode"] = row.mode or "report"
+        snapshot = json.loads(row.report_json) if row.report_json else {}
+        result["members"] = snapshot.get("members", [])
+        result["lifecycle"] = snapshot.get("lifecycle")
         result["analysis_status"] = (
             json.loads(row.report_json).get("analysis", {}).get("status")
             if row.report_json
@@ -137,27 +227,60 @@ class FinancialAnalysisService:
         )
         return result
 
-    def get(self, owner, session_id, run_id, *, report=False):
+    def get(self, owner, session_id, run_id, *, report=False, revision=None):
         with self.session(commit=False) as session:
             row = (
-                session.query(Run)
+                session.query(self._run_model)
                 .filter_by(id=run_id, owner_id=owner, session_id=session_id)
                 .first()
             )
             if row is None:
                 raise SessionFileApiError(404, "RUN_NOT_FOUND", "未找到分析任务。")
             if report:
-                if row.status != "completed" or not row.report_json:
+                if not row.report_json or (
+                    row.mode != "comparison" and row.status != "completed"
+                ):
                     raise SessionFileApiError(409, "REPORT_NOT_READY", "报告尚未完成。")
+                if revision:
+                    return read_revision(session, row, revision)
                 return json.loads(row.report_json)
-            return self._public(row)
+            result = self._public(row)
+            if row.mode == "comparison":
+                result["members"] = [
+                    self.comparisons.member(m)
+                    for m in session.query(RunDocument)
+                    .filter_by(run_id=row.id)
+                    .order_by(RunDocument.position)
+                ]
+            return result
+
+    def list_revisions(self, owner, session_id, run_id):
+        self.get(owner, session_id, run_id)
+        if not self.comparison_schema_ready:
+            return []
+        with self.session(commit=False) as session:
+            return [
+                {
+                    "revision": row.revision,
+                    "createdAt": row.published_at,
+                    "publicationStatus": json.loads(row.report_json)
+                    .get("workflow", {})
+                    .get("status", "published"),
+                    "sha256": row.sha256,
+                }
+                for row in session.query(Revision)
+                .filter_by(run_id=run_id)
+                .order_by(Revision.published_at.desc())
+            ]
 
     def list_runs(self, owner, page=1, page_size=10):
         with self.session(commit=False) as session:
-            query = session.query(Run).filter_by(owner_id=owner)
+            query = session.query(self._run_model).filter_by(owner_id=owner)
             total = query.count()
             rows = (
-                query.order_by(Run.created_at.desc(), Run.id.desc())
+                query.order_by(
+                    self._run_model.created_at.desc(), self._run_model.id.desc()
+                )
                 .offset((page - 1) * page_size)
                 .limit(page_size)
                 .all()
@@ -168,7 +291,9 @@ class FinancialAnalysisService:
                 if row.report_json:
                     report = json.loads(row.report_json)
                     item.update(
-                        title=report["report"]["companyName"],
+                        title=report["report"]["title"]
+                        if report.get("mode") == "comparison"
+                        else report["report"]["companyName"],
                         fiscal_period=report["report"]["fiscalPeriod"],
                     )
                 else:
@@ -225,11 +350,7 @@ class FinancialAnalysisService:
             return [self._export_public(row) for row in rows]
 
     def create_export(self, owner, session_id, run_id, revision, kind):
-        report = self.get(owner, session_id, run_id, report=True)
-        if report["revision"] != revision:
-            raise SessionFileApiError(
-                409, "REPORT_CHANGED", "报告已更新，请刷新后再导出。"
-            )
+        report = self.get(owner, session_id, run_id, report=True, revision=revision)
         if report.get("analysis", {}).get("status") == "running":
             raise SessionFileApiError(
                 409, "ANALYSIS_RUNNING", "模型分析仍在执行，请结束后再导出。"
@@ -241,6 +362,10 @@ class FinancialAnalysisService:
         export_id = hashlib.sha256(f"{run_id}:{revision}:{kind}".encode()).hexdigest()
         with self._lock:
             with self.session() as session:
+                run = session.query(self._run_model).filter_by(id=run_id).one()
+                save_revision(
+                    session, run, report, timestamp=now(), update_current=False
+                )
                 row = session.query(Export).filter_by(id=export_id).first()
                 if row is None:
                     content = render_export(report, kind, self.export_runtime)
@@ -269,10 +394,10 @@ class FinancialAnalysisService:
             return row.content.encode("utf-8"), self._export_public(row)
 
     def ask(self, owner, session_id, run_id, revision, question):
-        report = self.get(owner, session_id, run_id, report=True)
-        if report["revision"] != revision:
+        report = self.get(owner, session_id, run_id, report=True, revision=revision)
+        if report.get("analysis", {}).get("status") == "running":
             raise SessionFileApiError(
-                409, "REPORT_CHANGED", "报告已更新，请刷新后重新提问。"
+                409, "ANALYSIS_RUNNING", "分析仍在执行，请完成后追问或选择历史版本。"
             )
         answerer = self.answerer
         if answerer is None:
@@ -284,6 +409,11 @@ class FinancialAnalysisService:
                 429, "QUESTIONS_BUSY", "追问请求较多，请稍后重试。"
             )
         try:
+            with self._lock, self.session() as session:
+                run = session.query(self._run_model).filter_by(id=run_id).one()
+                save_revision(
+                    session, run, report, timestamp=now(), update_current=False
+                )
             try:
                 context = question_context(report, question)
                 raw = answerer(report, question, owner, session_id)
@@ -306,10 +436,6 @@ class FinancialAnalysisService:
                 raise SessionFileApiError(
                     503, "QUESTIONS_UNAVAILABLE", "追问暂不可用，请稍后重试。"
                 ) from exc
-            if self.get(owner, session_id, run_id, report=True)["revision"] != revision:
-                raise SessionFileApiError(
-                    409, "REPORT_CHANGED", "报告已更新，请刷新后重新提问。"
-                )
             return dict(
                 answer,
                 runId=run_id,
@@ -327,13 +453,13 @@ class FinancialAnalysisService:
             # Idempotent request IDs prevent a retry/double click from queuing
             # the same file twice. A new ID explicitly creates another attempt.
             with self.session(commit=False) as session:
-                existing = session.query(Run).filter_by(id=run_id).first()
+                existing = session.query(self._run_model).filter_by(id=run_id).first()
                 if existing is not None:
                     if (existing.owner_id, existing.session_id, existing.file_id) != (
                         owner,
                         session_id,
                         file_id,
-                    ):
+                    ) or existing.mode != "report":
                         raise SessionFileApiError(
                             409, "RUN_ID_CONFLICT", "任务标识不可复用。"
                         )
@@ -354,7 +480,7 @@ class FinancialAnalysisService:
             try:
                 stamp = now()
                 with self.session() as session:
-                    row = Run(
+                    row = self._run_model(
                         id=run_id,
                         owner_id=owner,
                         session_id=session_id,
@@ -389,9 +515,21 @@ class FinancialAnalysisService:
 
     def _update(self, run_id, **values):
         with self.session() as session:
-            session.query(Run).filter_by(id=run_id).update(
-                dict(values, updated_at=now()), synchronize_session=False
-            )
+            row = session.query(self._run_model).filter_by(id=run_id).one_or_none()
+            if row is None:
+                return
+            if "report_json" in values:
+                previous = json.loads(row.report_json) if row.report_json else None
+                incoming = json.loads(values["report_json"])
+                if previous and (
+                    previous.get("workflow", {}).get("status") == "published"
+                    or not previous.get("workflow")
+                ):
+                    save_revision(session, row, previous, timestamp=row.updated_at)
+                if incoming.get("workflow", {}).get("status") == "published":
+                    save_revision(session, row, incoming, timestamp=now())
+            for key, value in dict(values, updated_at=now()).items():
+                setattr(row, key, value)
 
     def _work(
         self, owner, session_id, file_id, run_id, agent_model=None, sectional=False
@@ -495,7 +633,7 @@ class FinancialAnalysisService:
             save_at = now()
             # Status and snapshot become visible in the same transaction.
             with self.session() as session:
-                row = session.query(Run).filter_by(id=run_id).one()
+                row = session.query(self._run_model).filter_by(id=run_id).one()
                 row.status = "completed"
                 row.stage = (
                     "analyze"
@@ -516,6 +654,7 @@ class FinancialAnalysisService:
                 row.report_json = json.dumps(
                     report, ensure_ascii=False, allow_nan=False
                 )
+                save_revision(session, row, report, timestamp=now())
             if analyzer is not None and not agent_model:
                 self._analyze(run_id, report, analyzer, owner, session_id)
         except subprocess.TimeoutExpired:
@@ -801,15 +940,17 @@ class FinancialAnalysisService:
         """Find a report only within the authenticated conversation."""
         with self.session(commit=False) as session:
             rows = (
-                session.query(Run)
+                session.query(self._run_model)
                 .filter_by(owner_id=owner, session_id=session_id)
-                .order_by(Run.created_at.desc())
+                .order_by(self._run_model.created_at.desc())
                 .all()
             )
             for row in rows:
                 if row.report_json:
                     report = json.loads(row.report_json)
-                    if report.get("analysis", {}).get("driver") == "agent":
+                    if report.get("analysis", {}).get("driver") == "agent" or (
+                        report.get("mode") == "comparison"
+                    ):
                         return report
         raise SessionFileApiError(
             404, "REPORT_NOT_FOUND", "当前对话还没有财报分析结果。"
@@ -885,7 +1026,18 @@ class FinancialAnalysisService:
             (d for d in report["documents"] if d["id"] == document_id), None
         )
         run = self.get(owner, session_id, run_id)
-        if not document or document.get("fileId") != run["file_id"]:
+        valid_member = document and (
+            any(
+                m["file_id"] == document.get("fileId")
+                and m["document_id"] == document_id
+                and m["sha256"] == document.get("sha256")
+                and m["status"] == "completed"
+                for m in run.get("members", [])
+            )
+            if run["mode"] == "comparison"
+            else document.get("fileId") == run["file_id"]
+        )
+        if not valid_member:
             raise SessionFileApiError(
                 404, "SOURCE_NOT_FOUND", "未找到此报告的来源文件。"
             )

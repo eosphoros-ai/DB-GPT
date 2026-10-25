@@ -207,7 +207,11 @@ def _citation(report, kind, ref, indexes, *, title=None):
         indexes[key] = len(indexes) + 1
     run_id = report["report"]["run"]["id"]
     tooltip = (' "' + title.replace('"', '\\"') + '"') if title else ""
-    return f"[{indexes[key]}](#financial-report/{run_id}/{kind}/{ref}{tooltip})"
+    revision = report.get("revision")
+    version = "?revision=" + revision if revision else ""
+    return (
+        f"[{indexes[key]}](#financial-report/{run_id}/{kind}/{ref}{version}{tooltip})"
+    )
 
 
 def _reading_evidence(finding, context, used):

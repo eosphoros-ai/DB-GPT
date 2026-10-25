@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from uuid import uuid4
 
@@ -12,6 +13,7 @@ from dbgpt_serve.financial_analysis.analysis import (
     InvalidFindings,
     model_context,
 )
+from dbgpt_serve.financial_analysis.comparison_schema import report_title
 from dbgpt_serve.financial_analysis.summary import (
     SUMMARY_INSTRUCTIONS,
     is_published,
@@ -25,6 +27,20 @@ from dbgpt_serve.financial_analysis.summary import (
 from dbgpt_serve.financial_analysis.workflow import next_action, topic_context
 
 FINANCIAL_MAX_STEPS = 40
+
+
+def has_comparison_intent(query):
+    query = query or ""
+    if re.search(
+        r"不(?:要|需|用)?(?:进行)?(?:对比|比较)|do not compare|no comparison",
+        query,
+        re.I,
+    ):
+        return False
+    return bool(
+        re.search(r"对比|比较|横向|跨年|差异|异同|compar(?:e|ison)", query, re.I)
+    )
+
 
 SECTIONAL_RULES = """本报告采用专题流程，不要一次提交整份报告的 findings。
 prepare 默认有界并发生成六专题，返回完整 review_context 时直接逐项复核。
@@ -69,6 +85,12 @@ PUBLICATION_RULES = (
 )
 
 FINANCIAL_AGENT_PROMPT = """
+用户明确要求比较多份财报时调用 prepare_financial_comparison；
+参数 file_ids 为当前附件真实 ID 数组，comparison_kind=peer（同年多公司）
+或 trend（同公司跨年），baseline_file_id 可选。多附件本身不表示对比意图。
+对比结论必须按工具返回的结构化公司、期间、指标和方向字段保存。
+发现身份歧义时调用 resolve_financial_comparison，失败文件可显式 resume，
+成功提取不会重跑。不要以重新 prepare 替代局部恢复。
 ## 财报分析与当前对话中的报告
 分析年度报告时，先加载 financial-report-analyzer 技能（已预加载则不重复加载），并使用
 prepare_financial_report 提取、计算并有界并发生成专题草稿，
@@ -151,10 +173,12 @@ def _artifact(report, session_id):
         "output_type": "html",
         "content": {
             "kind": "financial-report",
-            "title": report["report"]["companyName"] + "财报分析",
+            "title": report_title(report),
             "runId": report["report"]["run"]["id"],
             "sessionId": session_id,
             "revision": report["revision"],
+            "mode": report.get("mode", "report"),
+            "published": is_published(report),
         },
     }
 
@@ -226,6 +250,19 @@ def _topic_payload(report, topic_id):
                 }
             ],
         }
+        if report.get("mode") == "comparison":
+            example = context["save_example"]["findings"][0]
+            scoped_facts = [
+                f for f in context["data"]["facts"] if f["id"] in example["factIds"]
+            ]
+            example.update(
+                entityIds=sorted({f["entityId"] for f in scoped_facts}),
+                periods=sorted({f["fiscalPeriod"] for f in scoped_facts}),
+                metricCodes=sorted({f["metricCode"] for f in scoped_facts}),
+                subjectEntityId=fact["entityId"],
+                baselineEntityId=None,
+                comparisonDirection="none",
+            )
     return context
 
 
@@ -595,6 +632,150 @@ def make_financial_tools(
 
     @tool(
         description=(
+            "仅用户明确要求对比时准备多财报：file_ids 为当前对话的两到五份 PDF，"
+            "comparison_kind=peer 同年度多公司，trend 同公司跨年；"
+            "可指定 baseline_file_id。"
+            "数据先持久化，然后复用专题保存、复核和发布工具。多附件但无比较意图不能调用。"
+        )
+    )
+    async def prepare_financial_comparison(
+        file_ids: list[str], comparison_kind: str, baseline_file_id: str = ""
+    ) -> str:
+        if not 2 <= len(file_ids) <= 5:
+            raise ValueError("对比需要两到五份 PDF。")
+        if not has_comparison_intent(state.get("financial_user_query")):
+            raise ValueError("当前请求未明确要求比较，请按单报告或普通附件处理。")
+        backend, owner, session_id = scope()
+        allowed = {
+            m.file_id
+            for m in state.get("session_files", [])
+            if m.name.lower().endswith(".pdf")
+        }
+        if not set(file_ids) <= allowed:
+            raise ValueError("只能选择当前对话已授权的 PDF 附件。")
+        config = {
+            "kind": comparison_kind,
+            "baseline_file_id": baseline_file_id or file_ids[0],
+        }
+        key = json.dumps([file_ids, config], sort_keys=True)
+        run_id = state.setdefault("financial_comparison_runs", {}).setdefault(
+            key, str(uuid4())
+        )
+        await asyncio.to_thread(
+            backend.comparisons.create,
+            owner,
+            session_id,
+            file_ids,
+            run_id,
+            config,
+            agent_model=state.get("model_name") or "conversation-agent",
+        )
+        await execution_started(
+            "prepare_financial_comparison",
+            {"file_ids": file_ids},
+            "正在逐份提取财报并对齐比较口径。",
+        )
+        deadline = asyncio.get_running_loop().time() + 650
+        while True:
+            run = await asyncio.to_thread(backend.get, owner, session_id, run_id)
+            if run["status"] == "failed":
+                raise ValueError(run.get("error") or "对比任务已中断，可显式继续。")
+            if run.get("report_ready") and run["status"] == "completed":
+                report = await asyncio.to_thread(
+                    backend.get, owner, session_id, run_id, report=True
+                )
+                if report["comparison"]["ready"]:
+                    from dbgpt_serve.financial_analysis.parallel import (
+                        TopicGenerator,
+                        analyze_topics,
+                    )
+
+                    generator = topic_generator
+                    if generator is None and state.get("financial_llm_client"):
+                        generator = TopicGenerator(
+                            state["financial_llm_client"],
+                            state["model_name"],
+                            owner,
+                            session_id,
+                        )
+                    if generator and all(
+                        t["status"] == "pending" for t in report["workflow"]["topics"]
+                    ):
+                        report = await analyze_topics(
+                            backend,
+                            owner,
+                            session_id,
+                            report,
+                            generator,
+                            progress,
+                            activity=activity_progress,
+                        )
+                    else:
+                        report = await asyncio.to_thread(
+                            backend.update_agent_workflow,
+                            owner,
+                            session_id,
+                            run_id,
+                            report["revision"],
+                            "advance",
+                        )
+                else:
+                    state.update(financial_report_context=report, financial_read=True)
+                    state.setdefault("financial_pending", set()).discard(run_id)
+                    return json.dumps(
+                        {
+                            "chunks": [_artifact(report, session_id)],
+                            "model_context": {
+                                "run_id": run_id,
+                                "revision": report["revision"],
+                                "clarifications": report["comparison"][
+                                    "clarifications"
+                                ],
+                                "members": report["members"],
+                                "instructions": (
+                                    "已保存提取内容，尚未形成有效对比；"
+                                    "请澄清或补充对象，不能声称完成对比。"
+                                ),
+                            },
+                        },
+                        ensure_ascii=False,
+                    )
+                return await remember(report)
+            if asyncio.get_running_loop().time() >= deadline:
+                raise TimeoutError("提取仍在后台运行；读取已保存任务，不要重新创建。")
+            await asyncio.sleep(0.3)
+
+    @tool(
+        description=(
+            "显式继续对比任务或确认元信息；run_id/revision 来自当前对比。"
+            "resolutions 为 file_id 到 {company_name,report_year} 的映射，"
+            "必须来自用户确认。"
+            "不传 resolutions 只重试失败文件，成功提取不重跑。"
+        )
+    )
+    async def resolve_financial_comparison(
+        run_id: str, revision: str = "", resolutions: dict = None
+    ) -> str:
+        backend, owner, session_id = scope()
+        if resolutions:
+            from dbgpt_serve.financial_analysis.api import IdentityResolution
+
+            resolutions = {
+                key: IdentityResolution.model_validate(value).model_dump()
+                for key, value in resolutions.items()
+            }
+        result = await asyncio.to_thread(
+            backend.comparisons.resume,
+            owner,
+            session_id,
+            run_id,
+            revision or None,
+            resolutions,
+        )
+        return json.dumps({"model_context": result}, ensure_ascii=False)
+
+    @tool(
+        description=(
             "提取当前对话 PDF 年报并执行确定性财务计算。"
             "返回原文引用、数字和待分析报告。"
             "默认并发生成六专题并完整校验，返回 review_context 后直接 review；"
@@ -821,7 +1002,7 @@ def make_financial_tools(
             "不直接写数字、年份、页码或带数字的原文；服务端会补齐数值和来源。"
         )
     )
-    async def read_financial_report(run_id: str = "") -> str:
+    async def read_financial_report(run_id: str = "", revision: str = "") -> str:
         await execution_started(
             "read_financial_report",
             {"run_id": run_id},
@@ -830,7 +1011,12 @@ def make_financial_tools(
         backend, owner, session_id = scope()
         if run_id:
             report = await asyncio.to_thread(
-                backend.get, owner, session_id, run_id, report=True
+                backend.get,
+                owner,
+                session_id,
+                run_id,
+                report=True,
+                revision=revision or None,
             )
         else:
             report = await asyncio.to_thread(
@@ -954,7 +1140,13 @@ def make_financial_tools(
         )
         return await remember(report)
 
-    legacy = [prepare_financial_report, publish_financial_report, read_financial_report]
+    legacy = [
+        prepare_financial_report,
+        prepare_financial_comparison,
+        resolve_financial_comparison,
+        publish_financial_report,
+        read_financial_report,
+    ]
     return (
         legacy + [get_financial_topic, save_financial_topic, review_financial_report]
         if sectional

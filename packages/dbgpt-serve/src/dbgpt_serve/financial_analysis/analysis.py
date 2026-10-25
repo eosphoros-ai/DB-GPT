@@ -88,6 +88,10 @@ class InvalidNarrative(ValueError):
 
 def model_context(report):
     """Only extracted periods; no PDF paths, credentials or chat history."""
+    if report.get("mode") == "comparison":
+        from .comparison_analysis import comparison_context
+
+        return comparison_context(report)
     year = report["report"]["fiscalPeriod"]
     periods = {f["fiscalPeriod"] for f in report["facts"]}
     facts = [
@@ -319,9 +323,26 @@ def _validate_fact_wording(text, facts):
 
 
 def validate_findings(
-    raw, report, *, strict=False, section=None, allowed_fact_ids=None
+    raw,
+    report,
+    *,
+    strict=False,
+    section=None,
+    allowed_fact_ids=None,
+    _comparison_checked=False,
 ):
     """Discard invalid findings individually; never publish raw model output."""
+    if report.get("mode") == "comparison" and not _comparison_checked:
+        from .comparison_analysis import validate_comparison_findings
+
+        return validate_comparison_findings(
+            raw,
+            report,
+            validate_findings,
+            strict=strict,
+            section=section,
+            allowed_fact_ids=allowed_fact_ids,
+        )
     if not isinstance(raw, str) or len(raw) > 24000:
         raise ValueError("Invalid model response")
     payload = json.loads(raw)
@@ -649,10 +670,15 @@ class QwenAnalyzer:
 
         manager = WorkerManagerFactory.get_instance(self.system_app).create()
         client = DefaultLLMClient(manager, auto_convert_message=True)
+        prompt = SYSTEM_PROMPT
+        if report.get("mode") == "comparison":
+            from .comparison_analysis import COMPARISON_INSTRUCTIONS
+
+            prompt += COMPARISON_INSTRUCTIONS
         request = ModelRequest(
             model=self.model,
             messages=[
-                ModelMessage(role="system", content=SYSTEM_PROMPT),
+                ModelMessage(role="system", content=prompt),
                 ModelMessage(
                     role="human", content=json.dumps(context, ensure_ascii=False)
                 ),
@@ -697,6 +723,10 @@ class QwenAnalyzer:
 
     def __call__(self, report, owner, session_id):
         context = model_context(report)
+        if report.get("_activeTopic"):
+            from .workflow import topic_context
+
+            context = topic_context(report, report["_activeTopic"])
         future = asyncio.run_coroutine_threadsafe(
             self._generate(context, report, owner, session_id), self.loop
         )
@@ -705,3 +735,47 @@ class QwenAnalyzer:
         except FutureTimeout:
             future.cancel()
             raise TimeoutError("Analysis timed out") from None
+
+    def review(self, report, owner, session_id):
+        """Independent model review; structural validation remains server-owned."""
+        from .comparison_analysis import review_context
+
+        async def generate():
+            from dbgpt.core import ModelMessage, ModelRequest
+            from dbgpt.core.interface.llm import ModelRequestContext
+            from dbgpt.model import DefaultLLMClient
+            from dbgpt.model.cluster import WorkerManagerFactory
+
+            manager = WorkerManagerFactory.get_instance(self.system_app).create()
+            client = DefaultLLMClient(manager, auto_convert_message=True)
+            response = await asyncio.wait_for(
+                client.generate(
+                    ModelRequest(
+                        model=self.model,
+                        messages=[
+                            ModelMessage(
+                                role="human",
+                                content=json.dumps(
+                                    review_context(report), ensure_ascii=False
+                                ),
+                            )
+                        ],
+                        temperature=0,
+                        max_new_tokens=2500,
+                        context=ModelRequestContext(
+                            user_name=owner, conv_uid=session_id, stream=False
+                        ),
+                    )
+                ),
+                timeout=self.timeout,
+            )
+            if not response.success or not response.has_text:
+                raise ValueError("Review generation unavailable")
+            return json.loads(response.text)["reviews"]
+
+        future = asyncio.run_coroutine_threadsafe(generate(), self.loop)
+        try:
+            return future.result(timeout=self.timeout + 1)
+        except FutureTimeout:
+            future.cancel()
+            raise TimeoutError("Review timed out") from None

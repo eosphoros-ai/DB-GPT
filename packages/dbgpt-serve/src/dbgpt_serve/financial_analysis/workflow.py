@@ -137,6 +137,10 @@ def initialize(report):
 def topic_context(report, topic_id):
     if topic_id not in TOPICS:
         fail("未知分析专题。")
+    if report.get("mode") == "comparison":
+        from .comparison_analysis import comparison_topic_context
+
+        return comparison_topic_context(report, topic_id)
     title, section, codes, instructions = TOPICS[topic_id]
     context = model_context(report)
     ids = {f["id"] for f in report["facts"] if f["metricCode"] in codes}
@@ -180,6 +184,13 @@ def topic_context(report, topic_id):
 
 def sync(report):
     workflow = report["workflow"]
+    if report.get("mode") == "comparison":
+        report["lifecycle"].update(
+            publicationStatus=workflow["status"],
+            analysisStatus=report.get("analysis", {}).get("status", "pending"),
+        )
+        if workflow["status"] == "published":
+            report["lifecycle"]["stage"] = "published"
     report["steps"] = [
         s
         for s in report["steps"]
@@ -413,6 +424,27 @@ def save_topic(
                     "errorCode": item["errorCode"],
                 }
             )
+            if (
+                report.get("mode") == "comparison"
+                and item["status"] == "failed"
+                and not item["findingIds"]
+            ):
+                try:
+                    partial, _ = validate_findings(
+                        json.dumps({"findings": findings}, ensure_ascii=False),
+                        report,
+                        strict=False,
+                        section=item["section"],
+                        allowed_fact_ids={f["id"] for f in scoped["data"]["facts"]},
+                    )
+                except (InvalidFindings, ValueError):
+                    partial = []
+                for index, finding in enumerate(partial):
+                    finding["id"] = f"topic-{topic_id}-partial-{index + 1}"
+                if partial:
+                    item["findingIds"] = [f["id"] for f in partial]
+                    report = apply_findings(report, report["findings"] + partial)
+                    item["note"] += " 已保留其中通过校验的部分，专题整体仍未通过。"
             return changed(report)
         note = f"已保存 {len(accepted)} 条发现，等待复核；结论仍需人工核对。"
     item["history"].append(
@@ -560,6 +592,8 @@ def review_report(report, reviews):
 
 def publish(report):
     workflow = report.get("workflow")
+    if report.get("mode") == "comparison" and not report["comparison"]["ready"]:
+        fail("尚不足以构成有效对比；可查看已提取资料，请先澄清或补充对象。")
     if (
         not workflow
         or not workflow.get("review")

@@ -5,6 +5,7 @@ Lifecycle (mirrors ``scheduled_task/serve.py``):
                         registry (storage seam, DAO, inspector, config, work
                         root) and bind it to the endpoints module
     on_init           - import the Entity class to register SQLAlchemy metadata
+    after_init        - refresh financial capabilities after application migration
     before_start      - create/get the database manager and bind shared storage
     async_before_stop - close the registry and unbind the endpoints module so
                         storage-backed endpoints fail closed again
@@ -122,10 +123,17 @@ class SessionFileServe(BaseServe):
     def on_init(self):
         """Import the Entity class to register SQLAlchemy metadata."""
         from dbgpt_serve.financial_analysis.models import (
+            FinancialReportRevisionEntity,  # noqa: F401
+            FinancialRunDocumentEntity,  # noqa: F401
             FinancialRunEntity,  # noqa: F401
         )
 
         from .models.models import SessionFileEntity  # noqa: F401
+
+    def after_init(self):
+        """Observe schema upgrades performed after component registration."""
+        if self._financial_analysis is not None:
+            self._financial_analysis.refresh_schema()
 
     def before_start(self):
         """Initialize metadata and bind storage registered during after_init."""

@@ -75,6 +75,19 @@ def question_context(report, question):
     wanted = set().union(
         *(codes for words, codes in TOPICS if any(w in question for w in words))
     )
+    if report.get("mode") == "comparison":
+        from .comparison_analysis import comparison_context
+
+        entities = {
+            e["id"] for e in report["comparison"]["entities"] if e["name"] in question
+        }
+        periods = {p for p in report["comparison"]["periods"] if p in question}
+        context = comparison_context(
+            report,
+            codes=wanted or None,
+            entity_ids=entities or None,
+            periods=periods or None,
+        )
     if wanted:
         ids = {f["id"] for f in report["facts"] if f["metricCode"] in wanted}
         context["facts"] = [f for f in context["facts"] if f["id"] in ids]

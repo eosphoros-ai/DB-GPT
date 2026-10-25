@@ -55,11 +55,16 @@ class TopicGenerator:
         from dbgpt.core import ModelMessage, ModelRequest
         from dbgpt.core.interface.llm import ModelRequestContext
 
+        prompt = TOPIC_PROMPT
+        if context.get("data", {}).get("mode") == "comparison":
+            from .comparison_analysis import COMPARISON_INSTRUCTIONS
+
+            prompt += COMPARISON_INSTRUCTIONS
         response = await self.client.generate(
             ModelRequest(
                 model=self.model,
                 messages=[
-                    ModelMessage(role="system", content=TOPIC_PROMPT),
+                    ModelMessage(role="system", content=prompt),
                     ModelMessage(
                         role="human", content=json.dumps(context, ensure_ascii=False)
                     ),
