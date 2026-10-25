@@ -104,6 +104,9 @@ export function supportedFinancialProtocol(data: { schemaVersion: number; mode: 
 
 /** Old snapshots may have a model note that contradicts their validator errors. */
 export function topicStatusNote(topic: NonNullable<ReportData['workflow']>['topics'][number]): string {
+  if (topic.status === 'failed' && topic.errorCode === 'MODEL_TIMEOUT') {
+    return '本项分析在限定时间内未完成，财务数据与指标计算已保留。可在“执行过程”中单独重试。';
+  }
   if (['failed', 'needs_revision'].includes(topic.status) && topic.errorCode === 'EXPLANATION_BOUNDARY_FAILED') {
     return '本专题结论超出当前证据的解释边界，需修订相关判断。详情及重试请查看执行过程。';
   }

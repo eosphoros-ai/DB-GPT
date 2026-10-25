@@ -8,6 +8,7 @@ import { parseFinancialCitation, resolveFinancialCitation } from '../report-cita
 import { financialReportTitle, reportRunState, resolveEvidence, supportedFinancialProtocol } from '../report-data';
 import ComparisonHeader from './ComparisonHeader';
 import ComparisonMatrix from './ComparisonMatrix';
+import ComparisonSections from './ComparisonSections';
 import { syntheticComparison } from './synthetic-fixture';
 
 describe('financial comparison protocol and evidence', () => {
@@ -43,6 +44,34 @@ describe('financial comparison protocol and evidence', () => {
 });
 
 describe('comparison workspace', () => {
+  it('explains a saved timeout without claiming the source data is missing', () => {
+    const data = syntheticComparison();
+    data.workflow = {
+      version: 1,
+      status: 'published',
+      publishedAt: '2026-10-25',
+      review: null,
+      history: [],
+      topics: [
+        {
+          id: 'cashflow',
+          title: '现金流',
+          section: 'cashflow',
+          status: 'failed',
+          attempts: 1,
+          failures: 2,
+          findingIds: [],
+          history: [],
+          errorCode: 'MODEL_TIMEOUT',
+          note: '专题模型生成超时，可单独重试。',
+        },
+      ],
+    };
+    render(<ComparisonSections data={data} section='cashflow' onOpenEvidence={vi.fn()} />);
+    expect(screen.getByText(/本项分析在限定时间内未完成/)).toBeTruthy();
+    expect(screen.queryByText(/分析尚未形成或依据不足/)).toBeNull();
+    expect(screen.queryByText(/正在形成本章节/)).toBeNull();
+  });
   it('selects an exact immutable historical revision without changing its content', async () => {
     const select = vi.fn();
     const list = vi.fn().mockResolvedValue([

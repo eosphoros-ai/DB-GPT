@@ -1,6 +1,7 @@
 import React from 'react';
 import FindingCard from '../FindingCard';
 import styles from '../financial-analysis.module.css';
+import { reportRunState, topicStatusNote } from '../report-data';
 import type { ComparisonReportData, OpenEvidence } from '../types';
 import ComparisonChart from './ComparisonChart';
 import ComparisonMatrix from './ComparisonMatrix';
@@ -34,14 +35,21 @@ const ComparisonSections: React.FC<{
       .map(finding => (
         <FindingCard key={finding.id} finding={finding} onOpenEvidence={onOpenEvidence} />
       ))}
-    {!data.sections[section].findingIds.length && (
-      <p className={styles.sectionDescription}>当前章节的分析尚未形成或依据不足，已提取数据与确定性计算仍可核对。</p>
-    )}
+    {!data.sections[section].findingIds.length &&
+      !data.workflow?.topics.some(
+        topic => topic.section === section && ['failed', 'insufficient', 'needs_revision'].includes(topic.status),
+      ) && (
+        <p className={styles.sectionDescription}>
+          {reportRunState(data).complete
+            ? '当前章节暂无通过核验的分析结论；可先查看上方财务数据、指标计算和原文依据。'
+            : '正在形成本章节的分析结论；可先查看上方财务数据、指标计算和原文依据。'}
+        </p>
+      )}
     {data.workflow?.topics
       .filter(topic => topic.section === section && ['failed', 'insufficient', 'needs_revision'].includes(topic.status))
       .map(topic => (
         <p className={styles.researchNote} key={topic.id}>
-          {topic.note}
+          {topicStatusNote(topic)}
         </p>
       ))}
   </>
