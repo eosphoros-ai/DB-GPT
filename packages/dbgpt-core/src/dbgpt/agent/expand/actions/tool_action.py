@@ -191,6 +191,35 @@ async def run_tool(
                 pass
 
         try:
+            execution_tool = tool_pack._get_execution_tool(name)
+            missing = [
+                key
+                for key, parameter in (execution_tool.args or {}).items()
+                if parameter.required and key not in args
+            ]
+            if missing:
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    action_input=json.dumps(args, ensure_ascii=False),
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: "
+                        + name
+                        + " missing required arguments: "
+                        + ", ".join(missing)
+                        + ". No tool was executed. Submit a complete JSON object "
+                        "in the native function arguments, or include Action Input "
+                        "after Action in text mode. Do not repeat the bare Action."
+                        + "\nRequired parameter schemas: "
+                        + json.dumps(
+                            {
+                                key: execution_tool.args[key].to_json_schema()
+                                for key in missing
+                            },
+                            ensure_ascii=False,
+                        )
+                    ),
+                )
             tool_result = await tool_pack.async_execute(resource_name=name, **args)
             status = Status.COMPLETE.value
             is_terminal = tool_pack.is_terminal(name)
@@ -255,6 +284,8 @@ async def run_tool(
 
         return ActionOutput(
             is_exe_success=response_success,
+            action=name,
+            action_input=json.dumps(args, ensure_ascii=False),
             content=in_context_content,
             view=view,
             observations=result_str,

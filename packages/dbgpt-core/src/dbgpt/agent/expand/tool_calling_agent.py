@@ -271,7 +271,14 @@ class NativeToolCallAction(ParallelToolAction):
                         action=name,
                         content="HTML_TOOL_ARGUMENT_INVALID: " + location,
                     )
-                args = {}
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: native function arguments must be "
+                        "valid JSON. No tool was executed; resend the complete object."
+                    ),
+                )
             if not isinstance(args, dict):
                 if name in {"html_interpreter", "append_report_sections"}:
                     return ActionOutput(
@@ -279,7 +286,14 @@ class NativeToolCallAction(ParallelToolAction):
                         action=name,
                         content="HTML_TOOL_ARGUMENT_INVALID: expected a JSON object",
                     )
-                args = {}
+                return ActionOutput(
+                    is_exe_success=False,
+                    action=name,
+                    content=(
+                        "TOOL_ARGUMENT_INVALID: expected a JSON object; "
+                        "no tool was executed."
+                    ),
+                )
             # derisk-style meta args: strip intention/thought so they never
             # reach the tool's async_execute, but surface them on ActionOutput.
             intention = args.pop("intention", None) or args.pop("intent", None)
@@ -347,6 +361,7 @@ class ToolCallingReActAgent(ReActAgent):
         # Native function-calling tool calls captured during thinking(); kept
         # on the instance (not a pydantic field) and consumed by act().
         object.__setattr__(self, "_pending_native_tool_calls", None)
+        object.__setattr__(self, "_tool_protocol_failures", 0)
 
     def prepare_act_param(
         self,
@@ -440,6 +455,28 @@ class ToolCallingReActAgent(ReActAgent):
         attempts_before: int,
         handled_calls_before: int = 0,
     ) -> ActionOutput:
+        protocol_failure = not output.is_exe_success and any(
+            marker in (output.content or "")
+            for marker in (
+                "TOOL_ARGUMENT_INVALID",
+                "No valid ReAct step",
+                "No correct response found",
+                "Only one action is allowed",
+            )
+        )
+        if protocol_failure:
+            failures = getattr(self, "_tool_protocol_failures", 0) + 1
+            object.__setattr__(self, "_tool_protocol_failures", failures)
+            if failures >= 3:
+                output.have_retry = False
+                output.content = (
+                    "TOOL_PROTOCOL_RETRY_EXHAUSTED: "
+                    "模型连续三次未提交完整的工具调用参数，"
+                    "本次执行已停止；已生成的数据和草稿保留，尚未完成的复核不会自动通过。"
+                )
+                output.observations = output.content
+        else:
+            object.__setattr__(self, "_tool_protocol_failures", 0)
         state = getattr(self, "_report_repair_state", None) or {}
         requested = (
             output.action in {"html_interpreter", "append_report_sections"}
@@ -589,6 +626,9 @@ class ToolCallingReActAgent(ReActAgent):
         """Return the OpenAI tools array for native function calling."""
         return _build_openai_tools(self.resource)
 
+    def _native_tool_choice(self) -> str:
+        return "required" if self._tool_protocol_failures else "auto"
+
     async def _thinking_native(
         self,
         messages: List[AgentMessage],
@@ -635,7 +675,7 @@ class ToolCallingReActAgent(ReActAgent):
                     stream_out=self.stream_out,
                     stream_callback=stream_callback,
                     tools=tools,
-                    tool_choice="auto",
+                    tool_choice=self._native_tool_choice(),
                 )
                 state = getattr(self, "_report_repair_state", None)
                 if state is not None and state.get("_report_render_phase") and response:
