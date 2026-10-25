@@ -5,7 +5,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dynamic from 'next/dynamic';
 import React from 'react';
 import FindingCard from './FindingCard';
-import { useReportData } from './ReportDataContext';
+import { useSingleReportData as useReportData } from './ReportDataContext';
 import styles from './financial-analysis.module.css';
 import { isDefined, periodRange, topicStatusNote } from './report-data';
 import type { FinancialFact, OpenEvidence, ReportSectionData } from './types';

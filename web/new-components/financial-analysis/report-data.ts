@@ -1,10 +1,10 @@
-import type { EvidenceSelection, ReportData } from './types';
+import type { EvidenceSelection, FinancialReportData, ReportData } from './types';
 
 export const isDefined = <T>(value: T | undefined | null): value is T => value != null;
 const indexById = <T extends { id: string }>(items: T[]): Record<string, T | undefined> =>
   Object.fromEntries(items.map(item => [item.id, item]));
 
-export function indexReport(data: ReportData) {
+export function indexReport(data: FinancialReportData) {
   return {
     financialFactMap: indexById(data.facts),
     calculationTraceMap: indexById(data.calculations),
@@ -14,7 +14,7 @@ export function indexReport(data: ReportData) {
   };
 }
 
-export function resolveEvidence(data: ReportData, selection: EvidenceSelection) {
+export function resolveEvidence(data: FinancialReportData, selection: EvidenceSelection) {
   const maps = indexReport(data);
   const finding = selection.findingId ? maps.analysisFindingMap[selection.findingId] : undefined;
   const metric = data.metrics.find(item => item.id === selection.metricId);
@@ -52,7 +52,25 @@ export function periodRange(points: Array<{ year: string }>) {
 
 export const runStatusLabels = { pending: 'Pending', running: 'Running', completed: 'Completed', failed: 'Failed' };
 
-export function reportRunState(data: ReportData) {
+export function reportRunState(data: FinancialReportData) {
+  if (data.mode === 'comparison') {
+    const complete = (data.workflow?.status || data.lifecycle.publicationStatus) === 'published';
+    return {
+      label: complete
+        ? '报告已生成'
+        : data.lifecycle.stage === 'interrupted'
+          ? '已中断 · 数据已保留'
+          : data.lifecycle.stage === 'awaiting_analysis'
+            ? '数据已就绪 · 待分析'
+            : data.lifecycle.stage === 'awaiting_revision'
+              ? '待修订 · 数据已保留'
+              : data.lifecycle.dataStatus === 'incomplete'
+                ? '资料已保存 · 待确认'
+                : '分析中',
+      working: !complete && !['interrupted', 'awaiting_revision', 'awaiting_analysis'].includes(data.lifecycle.stage),
+      complete,
+    };
+  }
   if (data.workflow) {
     // Publication is independent of how much analysis the source supports.
     const complete = data.workflow.status === 'published';
@@ -72,6 +90,16 @@ export function reportRunState(data: ReportData) {
     working: data.report.run.status === 'running',
     complete: data.report.run.status === 'completed',
   };
+}
+
+export function financialReportTitle(data: FinancialReportData) {
+  return data.mode === 'comparison' ? data.comparison.title : `${data.report.companyName}财报分析`;
+}
+
+export function supportedFinancialProtocol(data: { schemaVersion: number; mode: string }) {
+  return (
+    (data.schemaVersion === 1 && data.mode === 'report') || (data.schemaVersion === 2 && data.mode === 'comparison')
+  );
 }
 
 /** Old snapshots may have a model note that contradicts their validator errors. */

@@ -37,6 +37,9 @@ export interface SourceDocument {
   sizeBytes?: number;
   fileId?: string;
   pageCount?: number;
+  entityId?: string;
+  sha256?: string;
+  extractorVersion?: string;
 }
 
 export interface EvidenceExcerpt {
@@ -54,6 +57,7 @@ export interface EvidenceExcerpt {
   headerSnippet?: string;
   unitPage?: number;
   unitText?: string;
+  label?: string;
 }
 
 export interface SourcePreviewAccess {
@@ -90,6 +94,8 @@ export interface FinancialFact {
   statementScope: string;
   evidenceExcerptIds: string[];
   qualityStatus: QualityStatus;
+  entityId?: string;
+  sourceDocumentId?: string;
 }
 
 export interface CalculationTrace {
@@ -102,6 +108,16 @@ export interface CalculationTrace {
   result: number | string | null;
   displayResult: string;
   unit: string;
+  entityId?: string;
+  metricCode?: string;
+  subjectEntityId?: string;
+  baselineEntityId?: string;
+  subjectPeriod?: string;
+  baselinePeriod?: string;
+  comparisonType?: 'difference' | 'growth';
+  direction?: 'higher' | 'lower' | 'equal' | 'unavailable';
+  status?: 'calculated' | 'unavailable';
+  reason?: string | null;
 }
 
 export interface InlineTraceNode {
@@ -123,6 +139,12 @@ export interface AnalysisFinding {
   inlineTrace: InlineTraceNode[];
   counterEvidence?: string[];
   unresolvedQuestions?: string[];
+  entityIds?: string[];
+  periods?: string[];
+  metricCodes?: string[];
+  subjectEntityId?: string;
+  baselineEntityId?: string | null;
+  comparisonDirection?: 'higher' | 'lower' | 'equal' | 'none';
 }
 
 export interface FinancialMetric {
@@ -272,6 +294,7 @@ export interface ReportData {
     completedAt?: string | null;
     error?: string | null;
     rejectedCount: number;
+    reviewIssues?: string[];
   };
   report: FinancialReport;
   documents: SourceDocument[];
@@ -302,4 +325,114 @@ export interface ReportData {
     summary: string;
     groups: Array<{ id: string; title: string; content: string; stepIds: string[] }>;
   };
+}
+
+export interface ComparisonConfig {
+  kind: 'peer' | 'trend';
+  baseline_file_id?: string | null;
+  policy_version?: 'paired-disclosure-v1';
+  formula_version?: 'decimal-v1';
+}
+
+export interface ComparisonEntity {
+  id: string;
+  name: string;
+  identityStatus: 'resolved' | 'ambiguous';
+  identifications: Array<{
+    fileId: string;
+    name: string | null;
+    period: string | null;
+    status: 'resolved' | 'ambiguous';
+    candidates: string[];
+    basis: string;
+  }>;
+}
+
+export interface ComparisonCell {
+  id: string;
+  entityId: string;
+  period: string;
+  metricCode: string;
+  metricName: string;
+  dataStatus: 'available' | 'missing' | 'conflict' | 'extraction_failed';
+  factId: string | null;
+  calculationId: string | null;
+  candidateFactIds: string[];
+  selectionReason: string;
+  policyVersion: string;
+  comparability: {
+    status: 'unchecked' | 'comparable' | 'incomparable';
+    rules: string[];
+    reasons: string[];
+  };
+}
+
+export interface ComparisonMember {
+  file_id: string;
+  file_name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'interrupted';
+  error: string | null;
+  sha256: string;
+  extractor_version: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+}
+
+export interface ComparisonReportData
+  extends Omit<ReportData, 'schemaVersion' | 'mode' | 'report' | 'trends' | 'healthMetrics' | 'statements'> {
+  schemaVersion: 2;
+  mode: 'comparison';
+  report: Omit<FinancialReport, 'companyName' | 'shortName' | 'stockCode'>;
+  comparison: {
+    kind: 'peer' | 'trend';
+    title: string;
+    entities: ComparisonEntity[];
+    periods: string[];
+    objects: Array<{ entityId: string; period: string }>;
+    baselineEntityId: string | null;
+    baselinePeriod: string | null;
+    policyVersion: string;
+    formulaVersion: string;
+    config: ComparisonConfig;
+    cells: ComparisonCell[];
+    clarifications: Array<{
+      reason?: string;
+      fileId?: string;
+      name?: string | null;
+      period?: string | null;
+      candidates?: string[];
+    }>;
+    ready: boolean;
+    limitations: string[];
+  };
+  lifecycle: {
+    dataStatus: 'ready' | 'incomplete';
+    analysisStatus: 'pending' | 'running' | 'completed' | 'partial' | 'failed';
+    publicationStatus: 'draft' | 'published';
+    stage: string;
+  };
+  members: ComparisonMember[];
+}
+
+export type FinancialReportData = ReportData | ComparisonReportData;
+
+export interface ReportRevision {
+  revision: string;
+  createdAt: string;
+  publicationStatus: string;
+  sha256: string;
+}
+
+export interface ReportRevisionAccess {
+  selectedRevision?: string;
+  list: (signal: AbortSignal) => Promise<ReportRevision[]>;
+  select: (revision?: string) => void;
+}
+
+export interface ComparisonAccess {
+  configure: (config: ComparisonConfig, revision: string) => Promise<void>;
+  resume: (
+    revision: string,
+    resolutions?: Record<string, { company_name: string; report_year: string }>,
+  ) => Promise<void>;
 }

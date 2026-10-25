@@ -37,6 +37,9 @@ const SourcePreviewPanel: React.FC<SourcePreviewPanelProps> = ({ evidence, docum
         {document.fiscalPeriod} · {sourceAccess ? '指标引用：PDF 物理第' : 'PDF Page'} {evidence.page}
         {sourceAccess ? ' 页' : ''}
       </p>
+      {!sourceAccess && (
+        <p className={styles.researchNote}>离线快照保留摘录与公式；原 PDF 预览和下载需要回到应用授权访问。</p>
+      )}
       {sourceAccess && (
         <PdfPagePreview
           key={`${document.id}:${evidence.id}`}

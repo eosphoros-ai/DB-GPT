@@ -853,3 +853,29 @@
   overflow-wrap: anywhere;
   color: var(--text-secondary);
 }
+.comparisonHeader { margin-top: 18px; }
+.comparisonControls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 12px 0; }
+.comparisonControls select, .comparisonControls input { border: 1px solid #d8dfe5; border-radius: 4px; padding: 6px 10px; background: white; max-width: 100%; }
+.comparisonTableScroll { width: 100%; overflow-x: auto; margin: 20px 0; border: 1px solid #e2e7ec; border-radius: 6px; }
+.comparisonTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.comparisonTable th, .comparisonTable td { text-align: left; vertical-align: top; padding: 16px; border-bottom: 1px solid #e9edf1; min-width: 210px; }
+.comparisonTable th:first-child { min-width: 140px; position: sticky; left: 0; background: #fafbfd; z-index: 1; }
+.comparisonTable thead th { background: #f5f8fb; }
+.comparisonValue { font-variant-numeric: tabular-nums; color: #165fa0; cursor: pointer; text-align: left; }
+.comparisonValue:disabled { color: #7c838a; cursor: default; }
+.comparisonGap { color: #915c25; font-size: 12px; line-height: 1.7; margin: 6px 0; }
+.comparisonTable td[data-status='conflict'] { background: #fff7ed; }
+.comparisonDifference { margin-top: 9px; font-size: 12px; }
+.comparisonCandidates { display: grid; gap: 5px; margin-top: 8px; font-size: 12px; }
+.comparisonCandidates button { display: block; color: #165fa0; margin: 5px 0; }
+.comparisonChart { margin: 24px 0; padding: 20px; border: 1px solid #e2e7ec; border-radius: 6px; }
+.comparisonChartRow { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(80px, 2fr) minmax(100px, 1fr); align-items: center; gap: 16px; text-align: left; width: 100%; padding: 12px 0; font-size: 12px; }
+.comparisonBarTrack { background: #eef3f7; height: 14px; border-radius: 3px; overflow: hidden; }
+.comparisonBar { display: block; height: 100%; background: #377caa; }
+.comparisonClarification { padding: 12px; background: #faf7f0; margin: 10px 0; border-radius: 4px; }
+@media (max-width: 640px) {
+  .comparisonChartRow { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .comparisonChartRow strong { grid-column: 1 / -1; }
+  .comparisonTable th, .comparisonTable td { min-width: 190px; padding: 12px; }
+  .comparisonControls { align-items: stretch; flex-direction: column; }
+}

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import type { FinancialRunHistory, FinancialRunStatus } from './api';
 
 const statusText = (run: FinancialRunStatus) => {
+  if (run.lifecycle?.publicationStatus === 'published') return '报告已生成';
   if (run.analysis_status === 'running') return '数据已就绪，分析中';
   if (run.analysis_status === 'partial') return '部分分析';
   if (run.analysis_status === 'failed') return '数据可用，分析未完成';

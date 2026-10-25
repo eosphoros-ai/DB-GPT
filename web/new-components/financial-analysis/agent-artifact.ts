@@ -5,6 +5,8 @@ export interface FinancialReportReference {
   sessionId: string;
   revision: string;
   title: string;
+  mode?: 'report' | 'comparison';
+  published?: boolean;
 }
 
 export function isFinancialReportReference(value: unknown): value is FinancialReportReference {
@@ -20,11 +22,18 @@ export function isFinancialReportReference(value: unknown): value is FinancialRe
     ref.revision.length > 0 &&
     ref.revision.length <= 255 &&
     typeof ref.title === 'string' &&
-    ref.title.length <= 500
+    ref.title.length <= 500 &&
+    (ref.mode === undefined || ref.mode === 'report' || ref.mode === 'comparison') &&
+    (ref.published === undefined || typeof ref.published === 'boolean')
   );
 }
 
-export function reportArtifactContent(content: any): any {
+export function reportArtifactContent(content: unknown): unknown {
   if (isFinancialReportReference(content)) return content;
-  return typeof content === 'string' ? content : content?.content || content?.html || String(content);
+  if (typeof content === 'string') return content;
+  if (content && typeof content === 'object') {
+    if ('content' in content && typeof content.content === 'string') return content.content;
+    if ('html' in content && typeof content.html === 'string') return content.html;
+  }
+  return String(content);
 }

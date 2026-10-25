@@ -1,14 +1,23 @@
 import { isFinancialReportReference } from './agent-artifact';
-import type { ReportData } from './types';
+import { financialReportTitle } from './report-data';
+import type { FinancialReportData } from './types';
 
 /** Restore a saved result without inventing the lost user message or tool steps. */
-export function recoverFinancialHistory(data: ReportData, sessionId: string) {
+export function recoverFinancialHistory(data: FinancialReportData, sessionId: string) {
   const reference = {
     kind: 'financial-report',
     runId: data.report.run.id,
     sessionId,
     revision: data.revision,
-    title: `${data.report.companyName}财报分析`,
+    title: financialReportTitle(data),
+    mode: data.mode,
+    published: data.workflow
+      ? data.workflow.status === 'published'
+      : data.analysis
+        ? !!data.analysis.completedAt
+        : data.report.run.status === 'completed'
+          ? true
+          : undefined,
   };
   if (!isFinancialReportReference(reference)) throw new Error('保存的财报引用无效');
   return {

@@ -106,6 +106,8 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChang
               <div>
                 <h3>{fact.metricName}</h3>
                 <span className={styles.meta}>
+                  {data.mode === 'comparison' &&
+                    `${data.comparison.entities.find(entity => entity.id === fact.entityId)?.name || ''} · `}
                   {fact.fiscalPeriod} · {fact.statementScope}
                 </span>
               </div>
@@ -116,7 +118,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChang
                     id =>
                       evidenceExcerptMap[id] && (
                         <button type='button' key={id} onClick={() => onOpenSource(evidenceExcerptMap[id]!)}>
-                          {id} · PDF {evidenceExcerptMap[id]!.page}
+                          {evidenceExcerptMap[id]!.label || id} · PDF {evidenceExcerptMap[id]!.page}
                         </button>
                       ),
                   )}
@@ -141,7 +143,7 @@ const EvidencePanel: React.FC<EvidencePanelProps> = ({ selection, onFindingChang
           >
             <div className={styles.excerptHeading}>
               <strong>
-                {evidence.id} · PDF {evidence.page}
+                {evidence.label || evidence.id} · PDF {evidence.page}
               </strong>
               <button type='button' className={styles.textLink} onClick={() => onOpenSource(evidence)}>
                 定位原文 →

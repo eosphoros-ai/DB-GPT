@@ -1,11 +1,27 @@
 import type { ApiResponse } from '@/client/api';
 import { GET, POST } from '@/client/api';
-import type { FinancialExport, ReportData, ReportQuestionAnswer, SourceDocument } from './types';
+import type {
+  ComparisonConfig,
+  ComparisonMember,
+  FinancialExport,
+  FinancialReportData,
+  ReportQuestionAnswer,
+  ReportRevision,
+  SourceDocument,
+} from './types';
 
 export interface FinancialRunStatus {
   id: string;
   session_id: string;
   file_id: string;
+  mode?: 'report' | 'comparison';
+  members?: ComparisonMember[];
+  lifecycle?: {
+    dataStatus: string;
+    analysisStatus: string;
+    publicationStatus: 'draft' | 'published';
+    stage: string;
+  } | null;
   status: 'pending' | 'running' | 'completed' | 'failed';
   stage: string;
   error: string | null;
@@ -65,6 +81,68 @@ export async function createRun(sessionId: string, fileId: string, requestId: st
     }),
   );
 }
+export async function createComparison(
+  sessionId: string,
+  fileIds: string[],
+  requestId: string,
+  comparison: ComparisonConfig,
+) {
+  return unwrap(
+    await POST<unknown, FinancialRunStatus>(base, {
+      session_id: sessionId,
+      file_ids: fileIds,
+      request_id: requestId,
+      mode: 'comparison',
+      comparison,
+    }),
+  );
+}
+export async function resumeComparison(
+  sessionId: string,
+  runId: string,
+  revision?: string,
+  resolutions?: Record<string, { company_name: string; report_year: string }>,
+) {
+  return unwrap(
+    await POST<unknown, FinancialRunStatus>(`${base}/${encodeURIComponent(runId)}/resume`, {
+      session_id: sessionId,
+      revision,
+      resolutions: resolutions || {},
+    }),
+  );
+}
+export async function retryComparisonTopic(sessionId: string, runId: string, revision: string, topicId: string) {
+  return unwrap(
+    await POST<unknown, FinancialRunStatus>(`${base}/${encodeURIComponent(runId)}/topics/retry`, {
+      session_id: sessionId,
+      revision,
+      topic_id: topicId,
+    }),
+  );
+}
+export async function configureComparison(
+  sessionId: string,
+  runId: string,
+  revision: string,
+  comparison: ComparisonConfig,
+) {
+  return unwrap(
+    await POST<unknown, FinancialReportData>(`${base}/${encodeURIComponent(runId)}/configuration`, {
+      session_id: sessionId,
+      revision,
+      comparison,
+    }),
+  );
+}
+export async function listRevisions(sessionId: string, runId: string, signal?: AbortSignal) {
+  return unwrap(
+    await GET<unknown, ReportRevision[]>(
+      `${base}/${encodeURIComponent(runId)}/revisions`,
+      { session_id: sessionId },
+      { signal },
+    ),
+  );
+}
 export async function getRun(sessionId: string, runId: string, signal?: AbortSignal) {
   return unwrap(
     await GET<unknown, FinancialRunStatus>(
@@ -74,18 +152,18 @@ export async function getRun(sessionId: string, runId: string, signal?: AbortSig
     ),
   );
 }
-export async function getReport(sessionId: string, runId: string, signal?: AbortSignal) {
+export async function getReport(sessionId: string, runId: string, signal?: AbortSignal, revision?: string) {
   return unwrap(
-    await GET<unknown, ReportData>(
+    await GET<unknown, FinancialReportData>(
       `${base}/${encodeURIComponent(runId)}/report`,
-      { session_id: sessionId },
+      { session_id: sessionId, ...(revision ? { revision } : {}) },
       { signal },
     ),
   );
 }
 export async function getLatestReport(sessionId: string, signal?: AbortSignal) {
   return unwrap(
-    await GET<unknown, ReportData | null>(`${base}/latest`, { session_id: sessionId }, { signal }),
+    await GET<unknown, FinancialReportData | null>(`${base}/latest`, { session_id: sessionId }, { signal }),
   );
 }
 export function requestError(error: unknown): string {

@@ -53,6 +53,33 @@ const ExecutionProcessPanel: React.FC<{
         </div>
         <h2>{activeStep.title}</h2>
         <p>{activeTopic ? topicStatusNote(activeTopic) : activeStep.detail}</p>
+        {data.mode === 'comparison' && (
+          <section aria-label='文档执行状态'>
+            {data.members.map(member => (
+              <p key={member.file_id}>
+                {member.file_name}：
+                {member.status === 'completed'
+                  ? '已提取并保存'
+                  : member.status === 'failed'
+                    ? '提取失败'
+                    : member.status === 'interrupted'
+                      ? '提取中断'
+                      : '等待提取'}
+                {member.error && ` · ${member.error}`}
+              </p>
+            ))}
+            {analysisActions && (
+              <button
+                type='button'
+                className={styles.textLink}
+                disabled={analysisActions.busy}
+                onClick={analysisActions.retry}
+              >
+                显式继续或重试未完成文件
+              </button>
+            )}
+          </section>
+        )}
         {activeStep.id.startsWith('topic-') && (
           <TopicCoverage topicId={activeStep.id.slice(6)} onRetry={onTopicRetry} busy={busy} />
         )}
@@ -65,6 +92,16 @@ const ExecutionProcessPanel: React.FC<{
             ))}
           </ul>
         )}
+        {activeStep.id === 'review' && !!data.analysis?.reviewIssues?.length && (
+          <details>
+            <summary>复核未完成，数据与已校验发现已保留</summary>
+            <ul>
+              {data.analysis.reviewIssues.map((issue, index) => (
+                <li key={index}>{issue}</li>
+              ))}
+            </ul>
+          </details>
+        )}
         {activeStep.id === 'quality' && data.workflow?.dataQuality && (
           <p>
             已提取 {data.workflow.dataQuality.availableFacts} 个可用值，
@@ -72,7 +109,7 @@ const ExecutionProcessPanel: React.FC<{
             这表示当前提取范围，不代表整份年报覆盖率。
           </p>
         )}
-        {data.mode === 'report' && activeStep.elapsedMs !== undefined && (
+        {activeStep.elapsedMs !== undefined && (
           <p className={styles.meta}>耗时 {(activeStep.elapsedMs / 1000).toFixed(2)} 秒</p>
         )}
         {analysis && analysisActions && (
@@ -92,7 +129,11 @@ const ExecutionProcessPanel: React.FC<{
                 disabled={analysisActions.busy}
                 onClick={analysisActions.retry}
               >
-                {analysisActions.busy ? '正在创建任务…' : '重新分析此文件'}
+                {analysisActions.busy
+                  ? '正在处理…'
+                  : data.mode === 'comparison'
+                    ? '继续未完成的对比任务'
+                    : '重新分析此文件'}
               </button>
             )}
           </>

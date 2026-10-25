@@ -23,16 +23,21 @@ import ExecutionProcessPanel, { AnalysisActions } from './ExecutionProcessPanel'
 import { ReportDataProvider, useReportData } from './ReportDataContext';
 import ReportExports from './ReportExports';
 import { BalanceTab, CashFlowTab, OverviewTab, ProfitabilityTab, StatementsTab } from './ReportSections';
+import ReportVersions from './ReportVersions';
 import SourcePreviewPanel from './SourcePreviewPanel';
+import ComparisonHeader from './comparison/ComparisonHeader';
+import ComparisonSections from './comparison/ComparisonSections';
 import styles from './financial-analysis.module.css';
 import { resolveFinancialCitation, type FinancialCitationTarget } from './report-citations';
 import { reportRunState } from './report-data';
 import {
+  ComparisonAccess,
   EvidenceExcerpt,
   EvidenceSelection,
-  ReportData,
+  FinancialReportData,
   ReportExportAccess,
   ReportQuestionAccess,
+  ReportRevisionAccess,
   SourcePreviewAccess,
 } from './types';
 
@@ -46,20 +51,24 @@ const workspaceTabs: Array<{ key: WorkspaceTab; label: string; icon: React.React
 ];
 const capabilityNote = '当前页面展示所选报告数据。追问仅依据当前报告，缺少的指标与来源会明确标记。';
 
-const ArtifactContext: React.FC = () => {
-  const {
-    data: { report, documents },
-  } = useReportData();
+const ArtifactContext: React.FC<{
+  comparisonAccess?: ComparisonAccess;
+  revisionAccess?: ReportRevisionAccess;
+}> = ({ comparisonAccess, revisionAccess }) => {
+  const { data } = useReportData();
+  const { report, documents } = data;
   return (
     <section className={styles.reportContext}>
       <div className={styles.contextByline}>
         Financial Analysis <span>／ {report.run.skillName}</span>
       </div>
-      <h1>{report.companyName}</h1>
+      <h1>{data.mode === 'comparison' ? data.comparison.title : data.report.companyName}</h1>
       <div className={styles.meta}>
         {report.title} · {report.statementScope} · {report.currency} ·{' '}
         {documents.map(item => item.fileName).join(' / ') || '来源文件未提供'}
       </div>
+      <ReportVersions access={revisionAccess} revision={data.revision} />
+      {data.mode === 'comparison' && <ComparisonHeader data={data} access={comparisonAccess} />}
     </section>
   );
 };
@@ -141,6 +150,8 @@ const SkillPanel: React.FC = () => {
 };
 
 const FinancialAnalysisWorkspace: React.FC<{
+  comparisonAccess?: ComparisonAccess;
+  revisionAccess?: ReportRevisionAccess;
   citationTarget?: FinancialCitationTarget | null;
   onTopicRetry?: (topicId: string) => void;
   busy?: boolean;
@@ -151,6 +162,8 @@ const FinancialAnalysisWorkspace: React.FC<{
   questionAccess?: ReportQuestionAccess;
   exportAccess?: ReportExportAccess;
 }> = ({
+  comparisonAccess,
+  revisionAccess,
   citationTarget,
   embedded = false,
   onNewReport,
@@ -201,13 +214,37 @@ const FinancialAnalysisWorkspace: React.FC<{
     setPreviewEvidence(evidence);
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0 }));
   };
-  const financialTabs = [
-    { key: 'overview', label: 'Overview', content: <OverviewTab onOpenEvidence={openEvidence} /> },
-    { key: 'profitability', label: '盈利质量', content: <ProfitabilityTab onOpenEvidence={openEvidence} /> },
-    { key: 'cashflow', label: '现金流', content: <CashFlowTab onOpenEvidence={openEvidence} /> },
-    { key: 'balance', label: '资产负债', content: <BalanceTab onOpenEvidence={openEvidence} /> },
-    { key: 'statements', label: '关键报表', content: <StatementsTab onOpenEvidence={openEvidence} /> },
-  ];
+  const financialTabs =
+    data.mode === 'comparison'
+      ? [
+          {
+            key: 'overview',
+            label: 'Overview',
+            content: <ComparisonSections data={data} section='overview' onOpenEvidence={openEvidence} />,
+          },
+          {
+            key: 'profitability',
+            label: '盈利质量',
+            content: <ComparisonSections data={data} section='profitability' onOpenEvidence={openEvidence} />,
+          },
+          {
+            key: 'cashflow',
+            label: '现金流',
+            content: <ComparisonSections data={data} section='cashflow' onOpenEvidence={openEvidence} />,
+          },
+          {
+            key: 'balance',
+            label: '资产负债',
+            content: <ComparisonSections data={data} section='balance' onOpenEvidence={openEvidence} />,
+          },
+        ]
+      : [
+          { key: 'overview', label: 'Overview', content: <OverviewTab onOpenEvidence={openEvidence} /> },
+          { key: 'profitability', label: '盈利质量', content: <ProfitabilityTab onOpenEvidence={openEvidence} /> },
+          { key: 'cashflow', label: '现金流', content: <CashFlowTab onOpenEvidence={openEvidence} /> },
+          { key: 'balance', label: '资产负债', content: <BalanceTab onOpenEvidence={openEvidence} /> },
+          { key: 'statements', label: '关键报表', content: <StatementsTab onOpenEvidence={openEvidence} /> },
+        ];
   const previewDocument = previewEvidence ? sourceDocumentMap[previewEvidence.sourceDocumentId] : null;
 
   return (
@@ -296,7 +333,7 @@ const FinancialAnalysisWorkspace: React.FC<{
           <div ref={scrollRef} className={styles.artifactScroll}>
             {workspaceTab === 'report' && (
               <>
-                <ArtifactContext />
+                <ArtifactContext comparisonAccess={comparisonAccess} revisionAccess={revisionAccess} />
                 <nav className={styles.reportNav} aria-label='财务分析章节'>
                   {financialTabs.map(tab => (
                     <button
@@ -370,17 +407,21 @@ const FinancialAnalysisWorkspace: React.FC<{
   );
 };
 const FinancialAnalysisPage: React.FC<{
+  comparisonAccess?: ComparisonAccess;
+  revisionAccess?: ReportRevisionAccess;
   citationTarget?: FinancialCitationTarget | null;
   onTopicRetry?: (topicId: string) => void;
   busy?: boolean;
   embedded?: boolean;
-  data: ReportData;
+  data: FinancialReportData;
   onNewReport?: () => void;
   sourceAccess?: SourcePreviewAccess;
   analysisActions?: AnalysisActions;
   questionAccess?: ReportQuestionAccess;
   exportAccess?: ReportExportAccess;
 }> = ({
+  comparisonAccess,
+  revisionAccess,
   citationTarget,
   data,
   embedded,
@@ -394,6 +435,8 @@ const FinancialAnalysisPage: React.FC<{
 }) => (
   <ReportDataProvider key={`${data.report.id}:${data.report.run.id}:${data.revision}`} data={data}>
     <FinancialAnalysisWorkspace
+      comparisonAccess={comparisonAccess}
+      revisionAccess={revisionAccess}
       citationTarget={citationTarget}
       onTopicRetry={onTopicRetry}
       busy={busy}
