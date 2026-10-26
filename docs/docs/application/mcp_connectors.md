@@ -99,12 +99,12 @@ Keenable Search is a hosted MCP server for web search and page fetching. It does
 
 ### Example: activate deed.page
 
-deed.page is a hosted MCP server that publishes files to a public HTTPS URL, which is handy when an agent has produced an HTML report or chart and you want a link to share. No account or API key is needed to start: the first `publish_site` call returns an owner token, and later calls that update or delete the site pass that token as a tool argument.
+deed.page is a hosted MCP server that publishes files to a public HTTPS URL, which is handy when an agent has produced an HTML report or chart and you want a link to share. No account or API key is needed to start: the first `publish_site` call returns an owner token. Keep it: every owner-scoped tool, including `update_site`, `delete_site`, `restore_version`, `set_site_access`, and `set_listing`, needs that token as a tool argument.
 
 1. On the **deed.page** card, click **Activate**.
 2. Set **Streamable HTTP Endpoint URL** to `https://deed.page/mcp`.
 3. Leave **Auth type** as `none`.
-4. Save. Publishing, updating, restoring, and deleting sites ask for confirmation first; anything published is public on the web.
+4. Save. All six site-changing tools (`publish_site`, `update_site`, `restore_version`, `delete_site`, `set_site_access`, and `set_listing`) ask for confirmation first; published content is public by default.
 
 ### Inspect the tools
 
