@@ -190,6 +190,7 @@ async def run_tool(
             except Exception:
                 pass
 
+        action_input = json.dumps(args, ensure_ascii=False)
         try:
             execution_tool = tool_pack._get_execution_tool(name)
             missing = [
@@ -201,7 +202,7 @@ async def run_tool(
                 return ActionOutput(
                     is_exe_success=False,
                     action=name,
-                    action_input=json.dumps(args, ensure_ascii=False),
+                    action_input=action_input,
                     content=(
                         "TOOL_ARGUMENT_INVALID: "
                         + name
@@ -285,7 +286,7 @@ async def run_tool(
         return ActionOutput(
             is_exe_success=response_success,
             action=name,
-            action_input=json.dumps(args, ensure_ascii=False),
+            action_input=action_input,
             content=in_context_content,
             view=view,
             observations=result_str,
