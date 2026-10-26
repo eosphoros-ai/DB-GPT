@@ -1,18 +1,19 @@
 ---
 sidebar_position: 0
 title: Architecture
-summary: "DB-GPT repo layout and ReAct-centered runtime architecture"
+summary: "DB-GPT repo layout and the harness-centered runtime architecture"
 read_when:
   - You want the shortest mental model for how DB-GPT is organized
-  - You need to understand how UI, API, agents, skills, tools, and data resources connect
+  - You need to understand how UI, API, harness engines, workflows, tools and artifacts connect
 ---
 
 # Architecture
 
-DB-GPT is organized as a Python monorepo with a ReAct-centered agent runtime.
-The Web UI sends requests to the application layer, the ReAct Agent executes in an
-agent runtime loop, and the agent uses tools, skills, databases, and knowledge
-resources to produce analysis results back to the UI.
+DB-GPT is organized as a Python monorepo around a **harness layer**: the product
+surface (chat UI, artifacts, approvals, history) is engine-agnostic, while pluggable
+**harness engines** own the agent loop. Two engines ship today — the built-in DB-GPT
+ReAct runtime and the external `pi` CLI harness — and declared **TaskFlow workflows**
+compose multi-agent DAGs on top of the same contract.
 
 ## Repository layout
 
@@ -20,8 +21,8 @@ resources to produce analysis results back to the UI.
 DB-GPT/
 ├── packages/
 │   ├── dbgpt-core/        # Core agent, memory, planning, RAG, model abstractions
-│   ├── dbgpt-app/         # Application server, API routes, scenes, UI asset hosting
-│   ├── dbgpt-serve/       # Service layer: knowledge, flow, agent resources, app services
+│   ├── dbgpt-app/         # Application server, API routes, harness adapters, UI asset hosting
+│   ├── dbgpt-serve/       # Service layer: knowledge, flow, datasource, app services
 │   ├── dbgpt-ext/         # Extensions: datasources, storage backends, RAG connectors
 │   ├── dbgpt-client/      # Python client SDK
 │   ├── dbgpt-sandbox/     # Sandbox execution runtime for safe code/tool execution
@@ -37,7 +38,7 @@ DB-GPT/
 | Package | Role |
 |---|---|
 | `dbgpt-core` | Core agent framework, ReAct parser/action flow, memory, planning, RAG, model interfaces |
-| `dbgpt-app` | FastAPI application server, chat APIs, runtime orchestration, static UI hosting |
+| `dbgpt-app` | FastAPI application server, chat APIs, harness engine adapters, static UI hosting |
 | `dbgpt-serve` | Resource services for knowledge, datasource, flow, app, and agent support |
 | `dbgpt-ext` | External connectors such as database/storage/RAG integrations |
 | `dbgpt-client` | Client SDK for DB-GPT APIs |
@@ -50,69 +51,74 @@ DB-GPT/
 flowchart TB
     User["User"] --> UI["Web UI / Chat Apps"]
     UI --> API["dbgpt-app API"]
+    API --> Resolve{"harness resolution:\nrequest override > server preference > default"}
+    Resolve --> DBGT["DB-GPT engine\nbuilt-in ReAct / tool-calling loop"]
+    Resolve --> PI["pi engine\nexternal CLI harness, tools bridged over HTTP"]
+    Resolve --> TF["TaskFlow\nAWEL multi-agent DAG"]
 
-    subgraph Runtime["agent_runtime"]
-        Agent["ReAct Agent"]
-        Loop["Thought -> Action -> Observation Loop"]
-        Action["Tool / Skill / Resource Selection"]
-        Agent --> Loop --> Action --> Agent
+    subgraph Contract["shared product contract"]
+        Tools["scoped tool belt\nSQL / code / shell / HTML / skills"]
+        Gate["approval policy\nhigh-risk confirmation dock"]
+        Art["artifact pipeline\nquery sets / HTML reports / files"]
+        Hist["protocol-v2 history\nstream + replay"]
     end
 
-    API --> Runtime
+    DBGT --> Contract
+    PI --> Contract
+    TF --> Contract
 
-    subgraph Resources["External resources"]
-        DB["Structured databases"]
-        KB["Unstructured data / knowledge space"]
-        Skill["Skills"]
-        Tool["Built-in tools"]
-        Sandbox["Sandbox runtime"]
-    end
-
-    Action --> DB
-    Action --> KB
-    Action --> Skill
-    Action --> Tool
-    Action --> Sandbox
-
-    Runtime --> Result["Analysis result / report / chart"]
-    Result --> UI
+    Contract --> Resources[("databases · knowledge · skills · sandbox")]
+    Contract --> Stream["SSE stream"]
+    Stream --> UI
 ```
 
 ## How it works
 
 1. The user interacts with the Web UI or another client.
-2. `dbgpt-app` receives the request and routes it to the agent chat API.
-3. The request enters the `agent_runtime` execution loop.
-4. The ReAct Agent reasons step by step and chooses the next action.
-5. The agent loads and uses external resources as needed:
-   - structured databases for SQL analysis
-   - unstructured knowledge spaces for retrieval
-   - skills for reusable workflows
-   - built-in tools for task execution
-   - sandbox runtimes for safe code execution
-6. The agent combines observations and produces the final analysis output.
-7. The result is streamed back to the UI for display.
+2. `dbgpt-app` receives the request and resolves the **harness engine**: an explicit
+   per-request override wins, then the server preference (Setting popover), then the
+   availability-gated project default.
+3. The chosen engine drives the turn: the built-in ReAct loop, the `pi` subprocess with
+   DB-GPT tools bridged in, or a TaskFlow DAG of focused agent nodes.
+4. Every tool call passes the same containment: scoped tool belt, read-only SQL rules,
+   sandboxed code/shell, and the approval policy for high-risk calls.
+5. Engines emit one shared SSE contract (steps, thoughts, tool rows, approvals,
+   questions) plus typed artifact payloads (query result sets, HTML reports, files).
+6. The turn persists as a protocol-v2 history payload, so reloading a conversation
+   rebuilds the timeline, the trace and the artifact cards identically.
+7. Results stream back to the UI: timeline while running, artifacts and the final
+   answer when done.
 
-## Agent runtime model
+## Harness engine layer
 
-The runtime is the conceptual execution layer that drives the ReAct loop.
-In the codebase, this is implemented through the agent builder, resource manager,
-ReAct parser/action flow, and the API streaming handlers that connect to the UI.
+The harness layer is what keeps the product surface stable across runtimes:
 
-Key implementation anchors:
+| Engine | Loop owner | Notes |
+|---|---|---|
+| DB-GPT | built-in ReAct / tool-calling agent | always available |
+| pi | external CLI (`pi --mode rpc`) per conversation | tools, models and approvals bridged from DB-GPT |
+| DSH | reserved | coming soon |
 
-- `packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py`
-- `packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py`
-- `packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py`
-- `web/hooks/use-react-agent-chat.ts`
-- `packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/runtime_factory.py`
+All engines share the tool containment, the approval gate, the artifact pipeline and
+the history protocol. See the [Harness guide](../../harness/introduction.md) for
+selection semantics and the [extension guide](../../harness/extending.md) for adding
+engines.
+
+## Workflows (TaskFlow)
+
+A workflow is a declared DAG compiled to AWEL: each node is an agent with its own goal,
+tool boundary and output contract, and nodes exchange clean upstream outputs over a
+data channel. Workflows reuse the same harness contract, so node runs produce the same
+trace, artifacts and approvals as single-agent turns. See the
+[Workflow guide](../../workflow/introduction.md).
 
 ## Resources used by the agent
 
 ### Structured data
 
 Databases and queryable tabular sources are used for SQL-style analysis, schema
-linking, and report generation.
+linking, and report generation. Query result sets surface as first-class artifacts
+with CSV / Excel export.
 
 ### Unstructured data
 
@@ -122,7 +128,7 @@ unstructured content.
 ### Skills
 
 Built-in skills package repeatable workflows into reusable task units. The agent
-can load and execute them during a session.
+can load and execute them within a session.
 
 ### Built-in tools
 
@@ -133,7 +139,7 @@ other task-specific operations registered through the resource manager.
 
 The output path is designed to be user-facing:
 
-`ReAct Agent` → `agent_runtime` → `streamed result` → `Web UI`
+`engine turn` → `shared contract (SSE + artifacts)` → `timeline / artifact cards / rail` → `Web UI`
 
 This makes the architecture suitable for interactive data analysis, report
-generation, and tool-assisted reasoning.
+generation, and tool-assisted reasoning — regardless of which engine runs the turn.

@@ -226,8 +226,8 @@ function buildReplayRounds(rawMessages: Array<{ role: string; context: string; o
         });
 
         const stepOutputs: ManusExecutionOutput[] = [];
-        // Prepend code from action_input for code_interpreter steps
-        if (s.action === 'code_interpreter' && s.action_input) {
+        // Prepend code from action_input for code steps
+        if ((s.action === 'code_interpreter' || s.action === 'code') && s.action_input) {
           try {
             const inp = typeof s.action_input === 'string' ? JSON.parse(s.action_input) : s.action_input;
             if (inp?.code) stepOutputs.push({ output_type: 'code', content: inp.code });

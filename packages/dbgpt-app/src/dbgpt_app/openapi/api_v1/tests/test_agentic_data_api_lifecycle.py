@@ -113,7 +113,9 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
         _fake_stream_impl,
     )
 
-    stream = agentic_data_api._react_agent_stream(SimpleNamespace())
+    stream = agentic_data_api._react_agent_stream(
+        SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+    )
     assert await anext(stream) == "data: first\n\n"
 
     await stream.aclose()
@@ -144,7 +146,9 @@ async def test_runtime_failure_emits_structured_final_and_done(
 
     events = [
         _decode_sse_event(event)
-        async for event in agentic_data_api._react_agent_stream(SimpleNamespace())
+        async for event in agentic_data_api._react_agent_stream(
+            SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+        )
     ]
 
     assert events == [
@@ -178,7 +182,9 @@ async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> 
 
     events = [
         _decode_sse_event(event)
-        async for event in agentic_data_api._react_agent_stream(SimpleNamespace())
+        async for event in agentic_data_api._react_agent_stream(
+            SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+        )
     ]
 
     assert [event["type"] for event in events] == ["final", "done"]
@@ -226,7 +232,9 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
         _fake_stream_impl,
     )
     response = agentic_data_api._AgentStreamingResponse(
-        agentic_data_api._react_agent_stream(SimpleNamespace()),
+        agentic_data_api._react_agent_stream(
+            SimpleNamespace(ext_info={"harness_engine": "dbgpt"})
+        ),
         media_type="text/event-stream",
     )
     scope = {

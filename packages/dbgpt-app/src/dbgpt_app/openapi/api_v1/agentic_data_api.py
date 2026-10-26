@@ -89,6 +89,7 @@ from .subagent.history import (
     fail_running_subagent_history,
     update_subagent_history,
 )
+from .tool_names import canonical_tool
 
 _CHINESE_RECOMMENDATION_COUNTS = {
     "一": 1,
@@ -573,6 +574,7 @@ async def execute_skill_script(skill_name: str, script_name: str, args: dict) ->
     '\\n- 读取参考文档: {"skill_name": "my-skill", '
     '"resource_path": "references/analysis_framework.md"}'
     "\n注意: 执行技能脚本请使用 execute_skill_script_file 工具"
+    "\n注意: 执行脚本请使用 bash 工具"
 )
 async def get_skill_resource(
     skill_name: str, resource_path: str, args: Optional[dict] = None
@@ -1321,6 +1323,149 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+# Cut points where streamed ReAct text stops being user-facing thought:
+# labelled Action Input / Action markers, and bare line-start JSON objects
+# (glm-style text ReAct writes ``{"todos": ...}`` / ``{"sql": ...}`` blobs
+# without any label, which per-chunk regexes cannot strip).
+_THOUGHT_CUT_RE = re.compile(
+    r"\n\s*Action\s*Input\s*:|\n\s*Action\s*:\s*\w+|^\s*\{", re.MULTILINE
+)
+# Trailing partial Action markers withheld from emission until they either
+# complete (and become a cut point) or prove to be ordinary text. The
+# alternation enumerates every prefix of ``\n Action Input:`` / ``\n Action:``
+# so partial words never leak into the visible thought stream.
+_THOUGHT_HOLDBACK_RE = re.compile(
+    r"\n\s*(?:A|Ac|Act|Acti|Actio|Action\s*(?::|\s*(?:I|In|Inp|Inpu|Input\s*:?))?)?\s*$"
+)
+
+
+def _thought_safe_prefix(buffer: str) -> str:
+    """Return the leading part of ``buffer`` safe to show as thought text."""
+    match = _THOUGHT_CUT_RE.search(buffer)
+    safe = buffer[: match.start()] if match else buffer
+    holdback = _THOUGHT_HOLDBACK_RE.search(safe)
+    return safe[: holdback.start()] if holdback else safe
+
+
+def _extract_partial_json_string_value(buffer: str, key: str) -> str:
+    """Incrementally decode ``key``'s string value from a partial JSON object.
+
+    Native function calling streams the terminate tool's ``arguments`` as a
+    growing JSON string (``{"output": "...", ...``).  This walks ``buffer``
+    with a minimal escape-aware JSON lexer so the decodable prefix of the
+    target string value can be streamed before the closing quote arrives.
+
+    The scan is stateless (full rescan per call), which makes incomplete
+    trailing escapes and split surrogate pairs self-healing: they are simply
+    withheld until the next chunk completes them.
+    """
+    i, n = 0, len(buffer)
+    in_string = False
+    escaped = False
+    in_value = False
+    out: List[str] = []
+    while i < n:
+        ch = buffer[i]
+        if in_value:
+            if escaped:
+                if ch == "u":
+                    hx = buffer[i + 1 : i + 5]
+                    if len(hx) < 4 or any(
+                        c not in "0123456789abcdefABCDEF" for c in hx
+                    ):
+                        break  # incomplete \u escape; wait for more data
+                    cp = int(hx, 16)
+                    # Combine surrogate pairs into a single code point; lone
+                    # surrogates in a str cannot be UTF-8 encoded for SSE.
+                    if (
+                        out
+                        and 0xDC00 <= cp <= 0xDFFF
+                        and 0xD800 <= ord(out[-1]) <= 0xDBFF
+                    ):
+                        high = ord(out[-1])
+                        out[-1] = chr(0x10000 + (high - 0xD800) * 0x400 + (cp - 0xDC00))
+                    else:
+                        out.append(chr(cp))
+                    i += 5
+                    escaped = False
+                    continue
+                mapping = {
+                    "n": "\n",
+                    "t": "\t",
+                    "r": "\r",
+                    "b": "\b",
+                    "f": "\f",
+                    '"': '"',
+                    "\\": "\\",
+                    "/": "/",
+                }
+                out.append(mapping.get(ch, ch))
+                escaped = False
+                i += 1
+                continue
+            if ch == "\\":
+                escaped = True
+                i += 1
+                continue
+            if ch == '"':
+                break  # value complete
+            out.append(ch)
+            i += 1
+            continue
+        if in_string:
+            # Inside a non-target string value: consume it opaquely so keys
+            # mentioned inside other values never false-anchor the search.
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            # Structural string token: scan to its (escape-aware) close quote.
+            j = i + 1
+            while j < n:
+                if buffer[j] == "\\":
+                    j += 2
+                    continue
+                if buffer[j] == '"':
+                    break
+                j += 1
+            if j >= n:
+                break  # unterminated token; wait for more data
+            token = buffer[i + 1 : j]
+            if token == key:
+                k = j + 1
+                while k < n and buffer[k] in " \t\r\n":
+                    k += 1
+                if k >= n:
+                    break  # colon not arrived yet
+                if buffer[k] != ":":
+                    i = j + 1
+                    continue
+                k += 1
+                while k < n and buffer[k] in " \t\r\n":
+                    k += 1
+                if k >= n:
+                    break  # value not arrived yet
+                if buffer[k] != '"':
+                    break  # non-string value; nothing to stream
+                in_value = True
+                i = k + 1
+                continue
+            i = j + 1
+            continue
+        i += 1
+    text = "".join(out)
+    # Withhold a trailing lone high surrogate (split \uD83D\uDE00 pair); the
+    # stateless rescan re-decodes it paired on the next chunk.
+    if text and 0xD800 <= ord(text[-1]) <= 0xDBFF:
+        text = text[:-1]
+    return text
+
+
 def _build_react_history_payload(
     *,
     final_content: str,
@@ -1932,6 +2077,21 @@ async def _react_agent_stream_inner(
     attachment_ctx: Optional[SessionAttachmentContext] = None,
 ) -> AsyncGenerator[str, None]:
     """Stream ReAct events while owning the lifetime of its background task."""
+    # Harness engine dispatch: an external engine (pi, later dsh)
+    # runs the whole turn and reuses the same step.* SSE
+    # vocabulary, so the frontend stays engine-unaware.
+    # Lazy import avoids an import cycle with this module.
+    from .harness_pi_stream import (
+        resolve_harness_engine,
+        run_pi_harness_turn,
+    )
+
+    if resolve_harness_engine(dialogue) == "pi":
+        # Hand the resolved uploads to the pi branch too: it stages them
+        # into the pi conv workspace so the agent can read them.
+        async for event in run_pi_harness_turn(dialogue, attachment_ctx):
+            yield event
+        return
     agent_task_holder: List["asyncio.Task[Any]"] = []
     final_emitted = False
     done_emitted = False
@@ -2284,10 +2444,10 @@ async def _react_agent_stream_impl(
                 lowered = text.lower()
                 break
 
-        action_lower = (action or "").lower()
+        action_lower = canonical_tool((action or "").lower())
         if action_lower == "sql_query":
             return "正在查询数据库信息"
-        if action_lower == "code_interpreter":
+        if action_lower == "code":
             return "正在生成分析代码"
         if action_lower == "html_interpreter":
             return "正在生成并渲染 HTML 报告"
@@ -2471,6 +2631,10 @@ async def _react_agent_stream_impl(
         "file_paths": file_paths,
         "uploaded_files": uploaded_files,
         "dataset_id": dataset_id,
+        # Carried into query artifacts so the edit & re-run endpoint can
+        # re-resolve the connector without guessing (gpts_conversations
+        # does not persist ext_info).
+        "database_name": database_name,
     }
     required_recommendation_count = _requested_recommendation_count(user_input)
     if required_recommendation_count is not None:
@@ -2876,12 +3040,12 @@ async def _react_agent_stream_impl(
 
     # ── Import built-in tools from tools/ directory ──
     from dbgpt_app.openapi.api_v1.tools import (
-        make_chart_query,
         make_code_interpreter,
         make_dashboard_planner_tools,
         make_execute_analysis,
         make_execute_skill_script_file,
         make_execute_tool,
+        make_html_interpreter,
         make_kb_tools,
         make_knowledge_retrieve,
         make_load_file,
@@ -2889,9 +3053,9 @@ async def _react_agent_stream_impl(
         make_load_tools,
         make_question,
         make_read_file,
+        make_shell_interpreter,
         make_sql_query,
         make_todowrite,
-        make_traceable_report_capability,
     )
     # ── Build tool instances via factory functions ──────────────────────────
     # (Inline @tool definitions have been moved to tools/ directory.)
@@ -2964,15 +3128,9 @@ async def _react_agent_stream_impl(
         database_connector,
         max_calls=dashboard_sql_query_limit,
     )
-    chart_query_tool = make_chart_query(react_state, database_connector)
-    code_interpreter_tool = make_code_interpreter(react_state)
-    # Report rendering/provenance is a small capability bundle.  The ReAct loop
-    # only composes it; deployments can replace its policy/tool factory without
-    # changing agent orchestration.
-    traceable_report_capability = make_traceable_report_capability(
-        react_state, DEFAULT_SKILLS_DIR
-    )
-    report_tools = traceable_report_capability.tools
+    code_tool = make_code_interpreter(react_state)
+    bash_tool = make_shell_interpreter(react_state)
+    html_interpreter_tool = make_html_interpreter(react_state, DEFAULT_SKILLS_DIR)
     todowrite_tool = make_todowrite(_todo_list, stream_callback)
     question_tool = make_question(react_state, stream_callback)
     dashboard_planner_tools = make_dashboard_planner_tools(
@@ -3039,7 +3197,7 @@ async def _react_agent_stream_impl(
         if active_idx is None:
             return False
 
-        action_lower = _normalize_text(action_name)
+        action_lower = canonical_tool(_normalize_text(action_name))
         thought_lower = _normalize_text(thought)
         observation_lower = _normalize_text(observation_text)
         current_todo = _normalize_text(_todo_list[active_idx].get("content"))
@@ -3119,7 +3277,7 @@ async def _react_agent_stream_impl(
 
             return False
 
-        if action_lower in {"code_interpreter", "execute_tool", "shell_interpreter"}:
+        if action_lower in {"code", "execute_tool", "bash"}:
             if _is_report_like(current_todo):
                 return False
             if next_todo and any(
@@ -3220,19 +3378,6 @@ async def _react_agent_stream_impl(
         # Evidence capture is observational and must not break a legacy turn
         # whose conversation identifier predates the persistence contract.
         logger.warning("Report artifact capture disabled for this turn", exc_info=True)
-    # The report is owned by one dedicated sub-agent: the lead agent delegates
-    # through `generate_report` instead of rendering (and repairing) the
-    # template spec inside its own analysis loop.
-    from .subagent.report_agent import make_generate_report_tool
-
-    report_tools = [
-        make_generate_report_tool(
-            react_state=react_state,
-            skills_dir=DEFAULT_SKILLS_DIR,
-            llm_client=llm_client,
-            model_name=dialogue.model_name,
-        )
-    ]
     if attachment_ctx is not None:
         # Public manifests for runtime tools plus the internal primary
         # materialized path / files_json mapping (execution-only values —
@@ -3484,8 +3629,7 @@ You are the DB-GPT intelligent assistant, executing the skill task selected by t
 1. Strictly follow the instructions of the loaded skill.
 2. For each step, call the supplied native function with JSON arguments.
 3. Wait for the system to return Observation before deciding on the next step.
-4. {traceable_report_capability.prompt_fragment}
-5. If the task does not require generating a report, directly call terminate to
+4. If the task does not require generating a report, directly call terminate to
 return the final result with {{"output": "final answer"}}.
 
 {skill_prompt_context}
@@ -3506,19 +3650,13 @@ Pass each CLI argument separately. Never pass both args and argv.
 reference document.
 - **Encounter image file** -> If the model does not support image input, it will
 return an error prompt.
-- **Need to generate report** -> Call `generate_report` with the report title, the
-required sections and the requested recommendation count. A dedicated report agent
-owns the template, the evidence-bound spec and every repair; do not write report HTML
-yourself, do not call `code_interpreter` for the report and do not re-run analysis.
-- **Need to create or edit skill files** -> Use `code_interpreter` with Python
-pathlib to write UTF-8 files and inspect existing directories. Skill script tools
-only run existing scripts; never invent a script name or put comments in tool names.
-Keep new skills in the persistent user-skills directory:
-{json.dumps(str(Path(DEFAULT_SKILLS_DIR).resolve() / "user"), ensure_ascii=False)}.
-Pass this absolute directory to init_skill.py --path. If a directory exists, inspect
-and finish it; do not repeatedly initialize it in per-execution temporary folders.
-Use execute_skill_script_file with argv to test scripts and package the skill.
-Do not generate an analysis report for a skill-creation task.
+- **Need to generate report** -> Call `html_interpreter`. **Default: directly pass
+complete HTML via the `html` parameter** — you generate the full HTML code
+yourself (including `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`, styles,
+content). The HTML can be as long as needed. **Only use `template_path` if the
+skill explicitly provides HTML templates in its `templates/` directory and its
+documentation tells you to use them.** Do not use `code` to generate
+the report.
 
 ## Available Tools Description
 1. **execute_skill_script_file** (recommended for executing skill scripts): Execute
@@ -3533,7 +3671,7 @@ name", "args": {{parameters}}}}
    - For CLI scripts replace args with argv (a list of strings). init_skill.py
 requires positional skill name followed by --path and the destination directory.
    - **Must use this tool when executing skill scripts**, do not use
-shell_interpreter.
+bash.
 2. **get_skill_resource**: Read reference documents, configurations, templates, and
 other non-script resource files in the skill.
    Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
@@ -3544,9 +3682,23 @@ Use concise inline HTML when there is no applicable template.
 3. **execute_skill_script**: Execute the inline script defined in the skill
 (backup). Parameters: {{"skill_name": "skill name", "script_name": "script name",
 "args": {{"parameter name": "parameter value"}}}}
-4. **generate_report**: Hand the analysis report to the dedicated report agent (it
-owns `report_evidence_manifest`, the report template and every spec repair).
-Parameters: {{"instructions": "report title, required sections, recommendation count"}}
+4. **bash**: Execute shell/bash commands (only for non-skill script
+system commands, such as ls, cat, etc.).
+   Parameters: {{"code": "shell command"}}
+   - Each call is independent and does not retain state. If multi-step operations
+are needed, use `&&` or `;` to connect commands.
+   - **Note: Do not use this tool to execute skill scripts**, as it will not
+automatically handle images and data recording.
+5. **html_interpreter**: Render HTML as an interactive web report. This is the ONLY
+way to display reports on the right panel.
+   **Default usage (recommended)**: {{"html": "<html>your complete HTML code</html>",
+"title": "report title"}}
+   - Generate complete HTML yourself (DOCTYPE, html, head, body, CSS styles,
+content). No length limit.
+   - **Do not** use code to write HTML. Directly pass the HTML string
+to this tool.
+   **Template mode (only when skill has templates/)**: {{"template_path":
+"skill-name/templates/template.html", "data": {{"KEY": "value"}}, "title": "title"}}
    - Only use this if the skill's documentation explicitly provides template paths.
 If a template fails, fix the indicated input or select an existing suitable template.
 For a saved HTML candidate, use {{"retry_saved": true, "repair_patches":
@@ -3613,11 +3765,9 @@ Example flow for 3 tasks:
                     execute_skill_script,
                     get_skill_resource,
                     execute_skill_script_file_tool,
-                    code_interpreter_tool,
-                    read_file_tool,
-                    *report_tools,
+                    bash_tool,
+                    html_interpreter_tool,
                     sql_query_tool,
-                    chart_query_tool,
                     todowrite_tool,
                     question_tool,
                     Terminate(),
@@ -3668,15 +3818,13 @@ order, select as needed).
 3. For each step, call the supplied native function with JSON arguments.
 4. Wait for the system to return Observation before deciding on the next step.
 5. When the task is completed, call the terminate tool to return the final result.
-Parameters: {{"output": "final answer"}}.
-6. {traceable_report_capability.prompt_fragment}
-
-7. **[Database-report execution rule]** Use the available tools that best fit the
-analysis. `chart_query` returns DB-GPT's native SQL chart when a database chart is
-useful; `code_interpreter` remains available for advanced calculations or custom
-visualizations. Do not use `shell_interpreter` to test an environment, create
-charts, or prepare an HTML report; the shell tool is intentionally unavailable in
-this workflow. Call the supplied functions directly with complete JSON arguments.
+The Action Input format must be {{"result": "final answer"}}.
+6. **[Mandatory Rule] If there is a requirement for an analysis report, you MUST call
+`html_interpreter` for HTML rendering. When the user requests generating a webpage,
+HTML report, or interactive report, the final presentation step must call
+`html_interpreter` to render it. It is forbidden to output HTML using only
+`code` and then directly terminate. Correct process: code
+writes to .html file -> html_interpreter(file_path=...) renders -> terminate.**
 
 ## Task Management
 For complex tasks that require 3 or more steps, use the `todowrite` tool to create
@@ -3750,7 +3898,9 @@ Parameters: {{"skill_name": "skill name", "resource_path": "resource path"}}
 4. **execute_skill_script**: Execute the inline script defined in the skill.
 Parameters: {{"skill_name": "skill name", "script_name": "script name",
 "args": {{parameters}}}}
-5. **code_interpreter**: Execute arbitrary Python code.
+5. **bash**: Execute shell/bash commands.
+Parameters: {{"code": "shell command"}}
+6. **code**: Execute arbitrary Python code.
 Parameters: {{"code": "python code string"}}
 For report analysis, assign computed metrics and tables to REPORT_RESULT, a
 JSON-compatible dict/list captured separately from printed output. Convert each
@@ -3833,12 +3983,12 @@ Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
                     execute_skill_script,
                     get_skill_resource,
                     execute_skill_script_file_tool,
-                    code_interpreter_tool,
+                    code_tool,
                     load_file_tool,
                     execute_analysis_tool,
-                    *report_tools,
+                    bash_tool,
+                    html_interpreter_tool,
                     sql_query_tool,
-                    chart_query_tool,
                     read_file_tool,
                     todowrite_tool,
                     execute_tool_tool,
@@ -4148,6 +4298,38 @@ After partial results, finish only missing requested deliverables, then report.
             return await generate_reply()
         return await _run_with_artifact_capture(artifact_sink, generate_reply)
 
+    # ── Tool approval gate (human-in-the-loop confirm for high-risk tools) ──
+    # Installed via ContextVar before the agent task spawns so every run_tool
+    # in this round (including sub-agent tasks) consults the policy gate.
+    from dbgpt.agent.expand.actions.tool_action import (
+        reset_current_tool_gate,
+        set_current_tool_gate,
+    )
+    from dbgpt_app.openapi.api_v1.approval import (
+        approval_intent_enabled,
+        locale_from_ext_info,
+        make_approval_gate,
+        make_intent_analyzer,
+        set_conv_locale,
+    )
+
+    # The approval dock renders intent bullets verbatim, so pin them to the
+    # UI locale the frontend sent with this request.
+    _ui_locale = locale_from_ext_info(dialogue.ext_info)
+    set_conv_locale(conv_id, _ui_locale)
+
+    _approval_gate_token = set_current_tool_gate(
+        make_approval_gate(
+            conv_id,
+            stream_callback,
+            intent_analyzer=(
+                make_intent_analyzer(llm_client, dialogue.model_name, lang=_ui_locale)
+                if approval_intent_enabled()
+                else None
+            ),
+        )
+    )
+
     agent_task = asyncio.create_task(run_bounded_generation(react_state, run_agent))
     if agent_task_holder is not None:
         agent_task_holder.append(agent_task)
@@ -4164,6 +4346,18 @@ After partial results, finish only missing requested deliverables, then report.
     current_history_step: Optional[Dict[str, Any]] = None
     subagent_history: Dict[str, Dict[str, Any]] = {}
     final_answer_assembler = FinalAnswerAssembler()
+    # Native function-calling streaming: accumulate per-(round, tool index)
+    # ``function.arguments`` fragments so the terminate tool's ``output``
+    # value can be streamed to the client as incremental ``final.chunk``
+    # events instead of waiting for the single-shot ``final`` event.
+    native_args_buffers: Dict[Tuple[int, int], str] = {}
+    native_args_names: Dict[Tuple[int, int], str] = {}
+    streamed_final_text: Dict[int, str] = {}
+    # Text-mode ReAct: per-round raw model text buffer (for cross-chunk
+    # thought cleaning) and incremental terminate-answer streaming state.
+    round_text_buffers: Dict[int, str] = {}
+    emitted_thought_len: Dict[int, int] = {}
+    text_terminate_emitted: Dict[int, str] = {}
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -4208,6 +4402,7 @@ After partial results, finish only missing requested deliverables, then report.
 
     while True:
         if agent_task.done() and stream_queue.empty():
+            reset_current_tool_gate(_approval_gate_token)
             break
         try:
             event = await asyncio.wait_for(stream_queue.get(), timeout=0.1)
@@ -4225,6 +4420,13 @@ After partial results, finish only missing requested deliverables, then report.
             yield _sse_event(event)
         elif event_type in ("question.asked", "question.replied", "question.rejected"):
             # Forward human-in-the-loop question events to frontend as-is.
+            yield _sse_event(event)
+        elif event_type in (
+            "approval.requested",
+            "approval.resolved",
+            "approval.intent",
+        ):
+            # Forward tool-approval (high-risk confirm) events to frontend.
             yield _sse_event(event)
         elif event_type in (
             "agent.start",
@@ -4283,17 +4485,31 @@ After partial results, finish only missing requested deliverables, then report.
 
             chunk = delta_thinking or delta_text
             if chunk:
-                # Clean chunk: remove Action Input JSON to keep thought pure
-                # Split on Action Input pattern and keep only thought part
-                clean_chunk = re.split(
-                    r"\n\s*Action\s*Input\s*:\s*\{", chunk, maxsplit=1
-                )[0]
-                # Also remove Action: lines
-                clean_chunk = re.sub(r"\n\s*Action\s*:\s*\w+", "", clean_chunk)
-                # Remove Thought: prefix if present
-                if clean_chunk.startswith("Thought:"):
-                    clean_chunk = clean_chunk[len("Thought:") :].strip()
+                # Accumulate raw model text per round: glm-style text ReAct
+                # writes bare Action-Input JSON blobs (no ``Action Input:``
+                # label) that per-chunk regexes cannot strip, so cleaning
+                # must see across chunk boundaries. The safe prefix is
+                # monotonic, so diffing it yields clean thought deltas.
+                buffer = round_text_buffers.get(round_num, "") + chunk
+                round_text_buffers[round_num] = buffer
+                # Wait until it is decided whether the round opens with a
+                # "Thought:" marker; emitting raw marker characters before
+                # the strip kicks in would corrupt the diff offsets.
+                if (
+                    buffer
+                    and not buffer.startswith("Thought:")
+                    and "Thought:".startswith(buffer)
+                ):
+                    safe = ""
+                else:
+                    start_off = 0
+                    if buffer.startswith("Thought:"):
+                        start_off = re.match(r"Thought:\s*", buffer).end()
+                    safe = _thought_safe_prefix(buffer[start_off:])
+                prev_len = emitted_thought_len.get(round_num, 0)
+                clean_chunk = safe[prev_len:]
                 if clean_chunk:
+                    emitted_thought_len[round_num] = len(safe)
                     if round_num not in pending_thoughts:
                         pending_thoughts[round_num] = []
                     pending_thoughts[round_num].append(clean_chunk)
@@ -4306,6 +4522,67 @@ After partial results, finish only missing requested deliverables, then report.
                         )
                         round_step_map[round_num] = pending_step_id
                         yield pending_step_event
+                    # Stream EVERY thinking delta (not just the one
+                    # that created the step) so the step card grows
+                    # live — matches the pi branch's behavior.
+                    yield step_chunk(round_step_map[round_num], "thought", clean_chunk)
+
+            # ── Native function calling: stream the terminate answer ──
+            # The final answer travels inside tool_calls[].function.arguments
+            # (terminate tool's ``output`` key), which the thought pipeline
+            # above never sees. Decode its JSON string value incrementally
+            # and forward it as ``final.chunk`` so the UI renders the answer
+            # token-by-token instead of waiting for the single-shot final.
+            if round_num not in text_terminate_emitted:
+                for tc_delta in event.get("delta_tool_calls") or []:
+                    tc_index = tc_delta.get("index", 0) or 0
+                    tc_name = (tc_delta.get("name") or "").strip().lower()
+                    delta_args = tc_delta.get("delta_arguments") or ""
+                    buf_key = (round_num, tc_index)
+                    if tc_name:
+                        native_args_names[buf_key] = tc_name
+                    if delta_args:
+                        native_args_buffers[buf_key] = (
+                            native_args_buffers.get(buf_key, "") + delta_args
+                        )
+                    if native_args_names.get(buf_key) != "terminate":
+                        continue
+                    decoded = _extract_partial_json_string_value(
+                        native_args_buffers.get(buf_key, ""), "output"
+                    )
+                    prev_decoded = streamed_final_text.get(round_num, "")
+                    if decoded.startswith(prev_decoded):
+                        new_text = decoded[len(prev_decoded) :]
+                    else:
+                        new_text = decoded
+                    if new_text:
+                        streamed_final_text[round_num] = decoded
+                        yield _sse_event({"type": "final.chunk", "content": new_text})
+
+            # ── Text-mode ReAct: stream the terminate Action Input ──
+            # Models that ignore native tools write ``Action: terminate`` +
+            # ``Action Input: <answer>`` in plain text; stream the input
+            # suffix incrementally so these models get real streaming too.
+            if round_num not in streamed_final_text:
+                buffer = round_text_buffers.get(round_num, "")
+                marker = re.search(r"Action\s*:\s*terminate\b", buffer, re.IGNORECASE)
+                if marker:
+                    input_marker = re.search(
+                        r"Action\s*Input\s*:\s*", buffer[marker.end() :]
+                    )
+                    if input_marker:
+                        start = marker.end() + input_marker.end()
+                        decoded = buffer[start:]
+                        prev_text = text_terminate_emitted.get(round_num, "")
+                        if decoded.startswith(prev_text):
+                            new_text = decoded[len(prev_text) :]
+                        else:
+                            new_text = decoded
+                        if new_text:
+                            text_terminate_emitted[round_num] = decoded
+                            yield _sse_event(
+                                {"type": "final.chunk", "content": new_text}
+                            )
 
         elif event_type == "act":
             # Create step ONLY when action is confirmed
@@ -4314,6 +4591,8 @@ After partial results, finish only missing requested deliverables, then report.
             action_output = event.get("action_output") or {}
             thoughts = action_output.get("thoughts")
             action = action_output.get("action")
+            if action:
+                action = canonical_tool(action)
             action_input = action_output.get("action_input")
             action_input_data = None
             if action_input is not None:
@@ -4555,9 +4834,9 @@ After partial results, finish only missing requested deliverables, then report.
             }
 
             # Stream action code to frontend for right panel
-            # (code_interpreter)
+            # (code)
             code_payload = None
-            if action == "code_interpreter" and isinstance(action_input_data, dict):
+            if action == "code" and isinstance(action_input_data, dict):
                 code_payload = action_input_data.get("code")
             if isinstance(code_payload, str) and code_payload.strip():
                 yield step_chunk(react_step_id, "code", code_payload)
@@ -4568,9 +4847,7 @@ After partial results, finish only missing requested deliverables, then report.
 
             # Emit thinking metadata
             if thoughts or action or action_input:
-                step_action_input = (
-                    None if action == "code_interpreter" else action_input
-                )
+                step_action_input = None if action == "code" else action_input
                 yield step_meta(
                     react_step_id,
                     display_thought,
@@ -5105,7 +5382,7 @@ async def download_agent_file(
     file_path: str = Query(..., description="Absolute path to the file to download"),
     user_token: UserRequest = Depends(get_user_from_headers),
 ):
-    """Download a file created by agent tools (shell_interpreter, code_interpreter).
+    """Download a file created by agent tools (bash, code).
 
     Only files under allowed directories (/tmp, PILOT_PATH/tmp/) can be downloaded.
     This prevents arbitrary file access on the server.
@@ -5330,3 +5607,174 @@ async def question_reject(
         return Result.succ({"success": True, "request_id": request_id})
     except (KeyError, ValueError) as e:
         return Result.failed(msg=str(e))
+
+
+# ── Human-in-the-Loop Tool Approval API ─────────────────────────────────────
+
+
+class _ApprovalResolveBody(_BaseModel):
+    decision: str  # approve | reject
+    scope: str = "once"  # once | session | always
+    reason: Optional[str] = None
+
+
+@router.post("/v1/chat/approval/{approval_id}/resolve", response_model=Result)
+async def approval_resolve(
+    approval_id: str,
+    body: _ApprovalResolveBody,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """User decides on a pending high-risk tool call, unblocking the gate."""
+    from dbgpt_app.openapi.api_v1.approval import approval_center
+
+    if body.decision not in ("approve", "approved", "reject", "rejected"):
+        return Result.failed(msg=f"invalid decision: {body.decision}")
+    if body.scope not in ("once", "session", "always"):
+        return Result.failed(msg=f"invalid scope: {body.scope}")
+    decision = "approved" if body.decision.startswith("approve") else "rejected"
+    ok = approval_center.resolve(
+        approval_id,
+        decision,
+        body.scope,
+        body.reason,
+        actor=user_token.user_id if user_token else None,
+    )
+    if not ok:
+        return Result.failed(msg=f"approval {approval_id} is not pending")
+    return Result.succ(
+        {"success": True, "approval_id": approval_id, "decision": decision}
+    )
+
+
+@router.get("/v1/chat/approval/pending", response_model=Result)
+async def approval_pending(
+    con_uid: str,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """List pending approvals for a conversation (page-refresh recovery)."""
+    from dbgpt_app.openapi.api_v1.approval import approval_center
+
+    return Result.succ(approval_center.pending_for(con_uid))
+
+
+@router.get("/v1/chat/approval/log", response_model=Result)
+async def approval_log(
+    con_uid: str,
+    limit: int = 50,
+    offset: int = 0,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Approval audit log for the setting page (owned conversations only)."""
+    from dbgpt_app.openapi.api_v1.approval_audit import query_approval_logs
+
+    actor_id = user_token.user_id if user_token else None
+    if actor_id:
+        try:
+            _require_owned_conversation(con_uid, actor_id)
+        except Exception as e:
+            return Result.failed(msg=str(e))
+    return Result.succ(
+        query_approval_logs(con_uid, limit=min(limit, 200), offset=offset)
+    )
+
+
+class SqlRunRequest(_BaseModel):
+    """Re-run an edited SQL statement from a query artifact."""
+
+    con_uid: str
+    sql: str
+    db_name: Optional[str] = None
+
+
+@router.post("/v1/chat/sql/run", response_model=Result)
+async def chat_sql_run(
+    request: SqlRunRequest,
+    user_token: UserRequest = Depends(get_user_from_headers),
+):
+    """Execute an edited query-artifact SQL (read-only) and return its payload.
+
+    Powers the "edit & re-run" action on query artifacts: the datasource is
+    resolved from the explicit ``db_name`` (flow artifacts) or the owning
+    conversation's ``ext_info.database_name`` (react artifacts), and both the
+    conversation ownership and the datasource ownership are re-checked here —
+    the endpoint never trusts the client's claim about either.
+    """
+    from dbgpt_serve.conversation.api.schemas import ServeRequest
+
+    from .tools.query_artifact import (
+        build_query_chunk,
+        check_read_only,
+        normalize_result,
+    )
+
+    actor_id = user_token.user_id if user_token else None
+    conv_uid = (request.con_uid or "").strip()
+    sql = (request.sql or "").strip().rstrip(";")
+    if not conv_uid or not sql:
+        return Result.failed(msg="con_uid 与 sql 均为必填")
+    try:
+        conversation = _get_conversation_service().get(
+            ServeRequest(conv_uid=conv_uid, user_name=actor_id)
+        )
+    except Exception:
+        conversation = None
+    if conversation is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    database_name = (request.db_name or "").strip() or None
+    ext_info = getattr(conversation, "ext_info", None)
+    if not database_name and isinstance(ext_info, dict):
+        database_name = ext_info.get("database_name") or None
+    if not database_name:
+        return Result.failed(msg="该会话未绑定数据源，无法重跑 SQL")
+
+    forbidden_kw = check_read_only(sql)
+    if forbidden_kw:
+        return Result.failed(
+            msg=f"安全限制: 不允许执行 {forbidden_kw} 语句，仅支持 SELECT 查询。"
+        )
+
+    try:
+        local_db_manager = ConnectorManager.get_instance(CFG.SYSTEM_APP)
+        _require_database_access(local_db_manager, database_name, actor_id)
+        connector = local_db_manager.get_connector(database_name)
+        result = await run_in_threadpool(connector.run, sql)
+    except PermissionError as e:
+        return Result.failed(msg=str(e))
+    except ValueError as e:
+        return Result.failed(msg=str(e))
+    except Exception as e:
+        return Result.failed(msg=f"查询失败: {e}")
+
+    if not result:
+        return Result.succ(
+            {
+                "sql": sql,
+                "columns": [],
+                "rows": [],
+                "row_count": 0,
+                "truncated": False,
+                "db_name": database_name,
+            }
+        )
+    col_names, rows = normalize_result(result)
+    return Result.succ(
+        build_query_chunk(sql, col_names, rows, db_name=database_name)["content"]
+    )
+
+
+# Harness engine endpoints (engine availability for the settings UI).
+from .harness_pi_stream import (  # noqa: E402
+    register_harness_endpoints,
+)
+
+register_harness_endpoints(router)
+
+# Approval policy setting-page endpoints (L2 store, playground, whitelist).
+from .approval_policy import (  # noqa: E402
+    register_approval_policy_endpoints,
+)
+
+register_approval_policy_endpoints(router)

@@ -1,131 +1,134 @@
 ---
 sidebar_position: 0
 title: 架构
-summary: "DB-GPT 仓库结构与以 ReAct 为中心的运行时架构"
+summary: "DB-GPT 仓库布局与以 harness 为中心的运行架构"
 read_when:
-  - 你想快速理解 DB-GPT 在仓库中的组织方式
-  - 你需要理解 UI、API、agent、skill、tool 和数据资源之间如何连接
+  - 你想用最短的心智模型理解 DB-GPT 的组织方式
+  - 你需要弄清 UI、API、harness 引擎、工作流、工具与产物如何连接
 ---
 
 # 架构
 
-DB-GPT 是一个 Python 单体仓库（monorepo），其整体运行方式围绕以 ReAct 为中心的 agent runtime 展开。
-Web UI 将请求发送到应用层，ReAct Agent 在 agent runtime 循环中执行，并通过工具、技能、数据库与知识资源完成分析任务，最终将结果返回到 UI。
+DB-GPT 是一个 Python monorepo，围绕 **harness（执行引擎层）** 组织：产品表面
+（对话 UI、产物、审批、历史）与引擎无关，可插拔的 **harness 引擎** 持有 Agent 循环。
+当前内置两个引擎——DB-GPT 内置 ReAct 运行时与外部 `pi` CLI harness；声明式的
+**TaskFlow 工作流** 在同一契约之上编排多 Agent DAG。
 
-## 仓库结构
+## 仓库布局
 
 ```text
 DB-GPT/
 ├── packages/
-│   ├── dbgpt-core/        # 核心 agent、memory、planning、RAG、模型抽象
-│   ├── dbgpt-app/         # 应用服务、API 路由、场景逻辑、UI 资源托管
-│   ├── dbgpt-serve/       # 服务层：knowledge、flow、agent resource、app service
-│   ├── dbgpt-ext/         # 扩展能力：datasource、storage backend、RAG connector
+│   ├── dbgpt-core/        # 核心 agent、记忆、规划、RAG、模型抽象
+│   ├── dbgpt-app/         # 应用服务器、API 路由、harness 适配器、UI 静态托管
+│   ├── dbgpt-serve/       # 服务层：知识库、flow、数据源、应用服务
+│   ├── dbgpt-ext/         # 扩展：数据源、存储后端、RAG 连接器
 │   ├── dbgpt-client/      # Python 客户端 SDK
-│   ├── dbgpt-sandbox/     # 安全代码/工具执行的沙箱运行时
-│   └── dbgpt-accelerator/ # 加速相关包
+│   ├── dbgpt-sandbox/     # 沙箱执行运行时（安全代码/工具执行）
+│   └── dbgpt-accelerator/ # 加速包
 ├── web/                   # Next.js Web UI
-├── skills/                # 内置 skills 与可复用工作流
+├── skills/                # 内置技能与可复用工作流
 ├── configs/               # TOML 配置文件
-└── docs/                  # Docusaurus 文档站
+└── docs/                  # Docusaurus 文档
 ```
 
-## 各个 package 的职责
+## 包职责
 
-| Package | 作用 |
+| 包 | 职责 |
 |---|---|
-| `dbgpt-core` | 核心 agent 框架、ReAct 解析/动作流、memory、planning、RAG、模型接口 |
-| `dbgpt-app` | FastAPI 应用服务、聊天 API、运行时编排、静态 UI 托管 |
-| `dbgpt-serve` | knowledge、datasource、flow、app、agent 等资源服务 |
-| `dbgpt-ext` | 外部连接器，例如数据库 / 存储 / RAG 集成 |
-| `dbgpt-client` | DB-GPT API 的客户端 SDK |
+| `dbgpt-core` | 核心 agent 框架、ReAct 解析/动作流、记忆、规划、RAG、模型接口 |
+| `dbgpt-app` | FastAPI 应用服务器、chat API、harness 引擎适配器、UI 静态托管 |
+| `dbgpt-serve` | 知识库、数据源、flow、应用等资源服务 |
+| `dbgpt-ext` | 数据库/存储/RAG 等外部连接器 |
+| `dbgpt-client` | DB-GPT API 客户端 SDK |
 | `dbgpt-sandbox` | 代码与工具执行的隔离运行时 |
-| `skills/` | 打包后的领域工作流、脚本、模板和参考资源 |
+| `skills/` | 打包的领域工作流、脚本、模板与参考 |
 
 ## 高层架构
 
 ```mermaid
 flowchart TB
-    User["User"] --> UI["Web UI / Chat Apps"]
+    User["用户"] --> UI["Web UI / 对话应用"]
     UI --> API["dbgpt-app API"]
+    API --> Resolve{"harness 解析:\n请求覆盖 > 服务端偏好 > 默认"}
+    Resolve --> DBGT["DB-GPT 引擎\n内置 ReAct / tool-calling 循环"]
+    Resolve --> PI["pi 引擎\n外部 CLI harness，工具经 HTTP 桥接"]
+    Resolve --> TF["TaskFlow\nAWEL 多 Agent DAG"]
 
-    subgraph Runtime["agent_runtime"]
-        Agent["ReAct Agent"]
-        Loop["Thought -> Action -> Observation Loop"]
-        Action["Tool / Skill / Resource Selection"]
-        Agent --> Loop --> Action --> Agent
+    subgraph Contract["共享产品契约"]
+        Tools["受控工具带\nSQL / 代码 / Shell / HTML / 技能"]
+        Gate["审批策略\n高危确认 dock"]
+        Art["产物管线\n取数结果 / HTML 报告 / 文件"]
+        Hist["protocol-v2 历史\n流式 + 回放"]
     end
 
-    API --> Runtime
+    DBGT --> Contract
+    PI --> Contract
+    TF --> Contract
 
-    subgraph Resources["外部资源"]
-        DB["结构化数据库"]
-        KB["非结构化数据 / 知识空间"]
-        Skill["Skills"]
-        Tool["内置工具"]
-        Sandbox["Sandbox runtime"]
-    end
-
-    Action --> DB
-    Action --> KB
-    Action --> Skill
-    Action --> Tool
-    Action --> Sandbox
-
-    Runtime --> Result["分析结果 / 报告 / 图表"]
-    Result --> UI
+    Contract --> Resources[("数据库 · 知识库 · 技能 · 沙箱")]
+    Contract --> Stream["SSE 流"]
+    Stream --> UI
 ```
 
 ## 工作流程
 
 1. 用户通过 Web UI 或其他客户端发起请求。
-2. `dbgpt-app` 接收请求，并将其路由到 agent 聊天 API。
-3. 请求进入 `agent_runtime` 执行循环。
-4. ReAct Agent 逐步推理，并决定下一步动作。
-5. Agent 按需加载并使用外部资源：
-   - 结构化数据库：用于 SQL 分析
-   - 非结构化知识空间：用于检索增强
-   - skills：用于复用工作流
-   - 内置工具：用于执行具体任务
-   - sandbox runtime：用于安全代码执行
-6. Agent 汇总观察结果，并生成最终分析输出。
-7. 结果以流式方式返回到 UI 展示给用户。
+2. `dbgpt-app` 接收请求并解析 **harness 引擎**：请求级覆盖优先，其次服务端偏好
+   （设置弹层），最后是带可用性门控的项目默认。
+3. 选中引擎驱动回合：内置 ReAct 循环、桥接了 DB-GPT 工具的 `pi` 子进程、或
+   TaskFlow 的专注节点 DAG。
+4. 每次工具调用过同一 containment：受控工具带、只读 SQL 规则、沙箱化代码/Shell、
+   以及高危调用的审批策略。
+5. 引擎发射同一套 SSE 契约（步骤、思考、工具行、审批、提问）与类型化产物 payload
+   （取数结果集、HTML 报告、文件）。
+6. 回合以 protocol-v2 历史 payload 持久化，刷新会话可一致地重建时间线、轨迹与产物卡。
+7. 结果流式回 UI：运行中看时间线，结束看产物与最终回答。
 
-## Agent runtime 模型
+## Harness 引擎层
 
-runtime 是驱动 ReAct 循环的概念性执行层。
-在代码层面，它通过 agent builder、resource manager、ReAct parser / action flow，以及与 UI 相连的 API streaming handler 共同实现。
+harness 层是产品表面跨运行时保持稳定的关键：
 
-关键实现锚点：
+| 引擎 | 循环持有者 | 说明 |
+|---|---|---|
+| DB-GPT | 内置 ReAct / tool-calling agent | 始终可用 |
+| pi | 外部 CLI（`pi --mode rpc`）按会话拉起 | 工具、模型与审批由 DB-GPT 桥接 |
+| DSH | 预留 | coming soon |
 
-- `packages/dbgpt-core/src/dbgpt/agent/expand/react_agent.py`
-- `packages/dbgpt-core/src/dbgpt/agent/util/react_parser.py`
-- `packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/agentic_data_api.py`
-- `web/hooks/use-react-agent-chat.ts`
-- `packages/dbgpt-sandbox/src/dbgpt_sandbox/sandbox/execution_layer/runtime_factory.py`
+所有引擎共享工具 containment、审批门、产物管线与历史协议。选择语义见
+[Harness 指南](../../harness/introduction.md)，新增引擎见
+[扩展指南](../../harness/extending.md)。
 
-## Agent 会使用哪些资源
+## 工作流（TaskFlow）
+
+工作流是编译为 AWEL 的声明式 DAG：每个节点是一个带自身目标、工具边界与输出契约的
+agent，节点间经数据通道交换干净的上游产出。工作流复用同一 harness 契约，因此节点
+运行产出与单 agent 回合相同的轨迹、产物与审批。见
+[工作流指南](../../workflow/introduction.md)。
+
+## Agent 使用的资源
 
 ### 结构化数据
 
-数据库和可查询的表格型数据源主要用于 SQL 分析、schema linking 和报表生成。
+数据库与可查询表源用于 SQL 式分析、schema 链接与报告生成；取数结果集以一等产物
+呈现，支持 CSV / Excel 导出。
 
 ### 非结构化数据
 
-知识空间和文档集合为非结构化内容提供检索支持。
+知识空间与文档集合为非结构化内容提供检索支持。
 
-### Skills
+### 技能
 
-内置 skills 将可复用的流程打包成可重复执行的任务单元，agent 可以在会话中按需加载和执行。
+内置技能把可重复工作流打包为可复用任务单元，agent 可在会话内加载执行。
 
 ### 内置工具
 
-工具包括 SQL 执行、shell / 代码执行、HTML 渲染、搜索，以及其他通过 resource manager 注册的任务型操作。
+工具包括 SQL 执行、shell/代码执行、HTML 渲染、搜索等经资源管理器注册的任务操作。
 
-## 结果如何交付给用户
+## 结果交付
 
-最终输出路径是面向用户的：
+输出路径面向用户设计：
 
-`ReAct Agent` → `agent_runtime` → `streamed result` → `Web UI`
+`引擎回合` → `共享契约（SSE + 产物）` → `时间线 / 产物卡 / rail` → `Web UI`
 
-这种架构非常适合交互式数据分析、报表生成以及借助工具完成的复杂推理任务。
+无论哪个引擎执行回合，该架构都适合交互式数据分析、报告生成与工具辅助推理。

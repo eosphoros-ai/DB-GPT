@@ -63,25 +63,9 @@ import ConversationTracePanel from './ConversationTracePanel';
 import { ArtifactItem, StepStatus, StepType } from './ManusLeftPanel';
 import ParallelTasksPanel from './ParallelTasksPanel';
 import SubAgentStatusBadge from './SubAgentStatusBadge';
+import { resolveHtmlImageUrls, resolveImageUrl } from './image-url';
 import type { TaskFileTab, TaskFileTabNavigationKey } from './task-files-view-model';
 import { TASK_FILE_TABS, buildTaskFileView, getNextTaskFileTab, getTaskFileEmptyLabel } from './task-files-view-model';
-
-/** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
-const resolveImageUrl = (src: string): string => {
-  if (!src) return src;
-  if (/^https?:\/\//.test(src)) return src;
-  if (src.startsWith('/images/')) {
-    const base = process.env.API_BASE_URL || '';
-    return base ? `${base}${src}` : src;
-  }
-  return src;
-};
-
-/** Replace `/images/...` references inside HTML content with full backend URLs */
-const resolveHtmlImageUrls = (html: string, allowScripts = false): string => {
-  if (!html) return html;
-  return resolveReportAssetUrls(sanitizeEmbeddedReportHtml(html, allowScripts));
-};
 
 export interface ExecutionOutput {
   output_type: 'code' | 'text' | 'markdown' | 'table' | 'chart' | 'json' | 'error' | 'thought' | 'html' | 'image';
@@ -3023,7 +3007,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                         上传资料 · {visibleInputFiles.length}
                       </div>
                       <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
-                        用户本轮带入的分析上下文
+                        {t('right_ctx_user', '用户本轮带入的分析上下文')}
                       </div>
                     </div>
                   )}
@@ -3043,7 +3027,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                         推理生成 · {filteredArtifacts.length}
                       </div>
                       <div className='mt-0.5 text-[11px] text-slate-400 dark:text-slate-500'>
-                        Agent 在本轮推理过程中生成的文件
+                        {t('right_ctx_agent', 'Agent 在本轮推理过程中生成的文件')}
                       </div>
                     </div>
                   )}

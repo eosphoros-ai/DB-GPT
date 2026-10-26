@@ -1,0 +1,95 @@
+{
+  "flow": {
+    "uid": "",
+    "label": "DB Data Fetch",
+    "name": "taskflow_db_fetch_template",
+    "flow_category": "chat_flow",
+    "description": "Business question → semantic grounding → bounded read-only SQL fetch → verification and caliber notes.",
+    "state": "running",
+    "define_type": "json",
+    "flow_format": "taskflow",
+    "editable": false,
+    "taskflow_source": {
+      "format": "taskflow/1",
+      "nodes": [
+        {
+          "id": "n1",
+          "kind": "start",
+          "config": {}
+        },
+        {
+          "id": "n2",
+          "kind": "agent",
+          "label": "Semantic Grounding & Query Plan",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Map business nouns in the user's question to tables/columns/calibers: query metadata and bounded samples with sql_query (schema, distinct/limit samples; no full scans); when multiple calibers exist, list candidates and state the default choice with reasoning. Output a query plan: per-step SQL draft plus expected columns and row caps.",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n3",
+          "kind": "agent",
+          "label": "SQL Fetch",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Execute the upstream query plan with sql_query; on errors, fix the SQL from the observation and retry (never change the caliber); output row count/column overview plus a sample of key rows; minimal extra queries allowed if the plan has gaps.",
+            "tools": [
+              "sql_query"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 8
+          }
+        },
+        {
+          "id": "n4",
+          "kind": "agent",
+          "label": "Verification & Caliber Notes",
+          "config": {
+            "agent_profile": "react_data",
+            "goal": "Spot-check the upstream result independently: verify key numbers via a different aggregation path or reverse sample lookup; explain the caliber and its limits (time window/filters/aggregation grain/null handling). Output a verification verdict (confirmed/corrected) plus a caliber note.",
+            "tools": [
+              "sql_query",
+              "code_interpreter"
+            ],
+            "datasources": [
+              "Walmart_Sales"
+            ],
+            "max_turns": 6
+          }
+        },
+        {
+          "id": "n5",
+          "kind": "output",
+          "config": {}
+        }
+      ],
+      "edges": [
+        [
+          "n1",
+          "n2"
+        ],
+        [
+          "n2",
+          "n3"
+        ],
+        [
+          "n3",
+          "n4"
+        ],
+        [
+          "n4",
+          "n5"
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+[system]
+# Load language from environment variable(It is set by the hook)
+language = "${env:DBGPT_LANG:-zh}"
+api_keys = []
+encrypt_key = "your_secret_key"
+
+# Server Configurations
+[service.web]
+host = "0.0.0.0"
+port = 5670
+
+[service.web.database]
+type = "sqlite"
+path = "pilot/meta_data/dbgpt.db"
+[service.model.worker]
+host = "127.0.0.1"
+
+[rag.storage]
+[rag.storage.vector]
+type = "chroma"
+persist_path = "pilot/data"
+
+# Model Configurations
+[models]
+[[models.llms]]
+name = "${env:LLM_MODEL_NAME:-minimaxai/minimax-m2.7}"
+provider = "proxy/nvidia"
+api_key = "${env:NVIDIA_API_KEY}"
+
+[[models.embeddings]]
+name = "BAAI/bge-large-zh-v1.5"
+provider = "proxy/openai"
+api_url = "https://integrate.api.nvidia.com/v1/embeddings"
+api_key = "${env:NVIDIA_API_KEY}"

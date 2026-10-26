@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>对话 · 任务流程运行态</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  .chat-wrap { flex: 1; display: flex; min-height: 0; }
+  .chat-col { flex: 1; overflow-y: auto; padding: 26px 34px 30px; display: flex; flex-direction: column; gap: 22px; }
+
+  .msg-user { align-self: flex-end; max-width: 560px; }
+  .msg-user .bubble {
+    background: var(--bg-2); border-radius: 16px 16px 4px 16px; padding: 12px 16px;
+    font-size: 14px; line-height: 1.6;
+  }
+  .msg-user .attach { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .flow-chip-sm {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--pri-soft);
+    border: 1px solid var(--pri-tint); border-radius: 8px; padding: 4px 9px;
+    font-size: 12px; font-weight: 600; color: var(--pri);
+  }
+  .file-chip-sm {
+    display: inline-flex; align-items: center; gap: 6px; background: #fff;
+    border: 1px solid var(--border-1); border-radius: 8px; padding: 4px 9px; font-size: 12px; color: var(--tx-2);
+  }
+
+  .msg-ai { max-width: 640px; }
+  .ai-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .ai-avatar { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg,#22d3ee,var(--pri)); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .ai-name { font-weight: 700; font-size: 13.5px; }
+
+  /* ============ 流程进度卡 ============ */
+  .run-card {
+    border: 1px solid var(--border-1); border-radius: 16px; background: #fff;
+    box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .run-head {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-bottom: 1px solid var(--border-1); background: var(--bg-1);
+  }
+  .run-head .r-ico { width: 28px; height: 28px; border-radius: 8px; background: var(--pri); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .run-head .r-nm { font-weight: 700; font-size: 13.5px; }
+  .run-head .r-sub { font-size: 11px; color: var(--tx-3); }
+  .run-head .prog { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .prog-bar { width: 110px; height: 5px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
+  .prog-bar i { display: block; height: 100%; width: 57%; background: var(--pri); border-radius: 999px; }
+  .prog .p-tx { font-size: 11.5px; color: var(--tx-2); font-family: var(--mono); }
+
+  .steps { padding: 8px 10px; }
+  .step { display: flex; gap: 10px; padding: 7px 8px; border-radius: 10px; }
+  .step.open { background: var(--bg-1); }
+  .step .s-ico {
+    width: 22px; height: 22px; border-radius: 50%; flex: none; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .s-done .s-ico { background: var(--ok-soft); color: var(--ok); }
+  .s-run .s-ico { background: var(--pri-soft); color: var(--pri); }
+  .s-wait .s-ico { background: var(--bg-3); color: var(--tx-3); }
+  .s-hitl .s-ico { background: var(--warn-soft); color: var(--warn); }
+  .step .s-tx { flex: 1; min-width: 0; }
+  .step .s-nm { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .step .s-nm .dur { font-size: 10.5px; color: var(--tx-4); font-family: var(--mono); font-weight: 400; }
+  .step .s-ds { font-size: 11.5px; color: var(--tx-3); margin-top: 1px; }
+  .s-run .s-nm::after {
+    content: ""; width: 12px; height: 12px; border: 2px solid var(--pri-tint);
+    border-top-color: var(--pri); border-radius: 50%; animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .step .caret { color: var(--tx-4); font-size: 10px; margin-top: 5px; flex: none; }
+
+  .step-detail { margin-top: 8px; border: 1px solid var(--border-1); border-radius: 10px; overflow: hidden; background: #fff; }
+  .sql-block { background: #1c1917; color: #d6d3d1; font-family: var(--mono); font-size: 11.5px; padding: 10px 13px; line-height: 1.6; }
+  .sql-block .kw { color: #7dd3fc; }
+  .sql-block .st { color: #86efac; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .tbl th { text-align: left; color: var(--tx-3); font-weight: 600; padding: 6px 13px; border-bottom: 1px solid var(--border-1); background: var(--bg-1); }
+  .tbl td { padding: 6px 13px; border-bottom: 1px solid var(--bg-2); color: var(--tx-2); font-family: var(--mono); }
+  .tbl .num { color: var(--tx-1); }
+  .step-detail .more-rows { padding: 5px 13px; font-size: 11px; color: var(--tx-3); background: var(--bg-1); }
+
+  .insight-list { padding: 9px 13px; font-size: 12px; color: var(--tx-2); line-height: 1.7; }
+  .insight-list li { margin-left: 16px; margin-bottom: 3px; }
+  .insight-list b { color: var(--tx-1); }
+
+  .hitl-banner {
+    margin: 0 10px 10px; border: 1px solid #fde68a; background: var(--warn-soft);
+    border-radius: 10px; padding: 9px 13px; display: flex; align-items: center; gap: 9px;
+    font-size: 12.5px; color: var(--warn);
+  }
+  .hitl-banner .acts { margin-left: auto; display: flex; gap: 6px; }
+
+  .ai-text { font-size: 14px; line-height: 1.75; color: var(--tx-1); margin-top: 14px; }
+  .cursor { display: inline-block; width: 8px; height: 16px; background: var(--pri); vertical-align: -2px; animation: blink 1s steps(2) infinite; border-radius: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ============ 底部输入（运行中禁用） ============ */
+  .chat-foot { flex: none; padding: 0 34px 22px; }
+  .composer3 {
+    border: 1px solid var(--border-1); border-radius: var(--radius-lg); background: #fff;
+    box-shadow: var(--shadow-sm); padding: 13px 18px; display: flex; align-items: center; gap: 12px;
+  }
+  .composer3 .running { display: flex; align-items: center; gap: 9px; color: var(--tx-2); font-size: 13px; }
+  .stop-btn { margin-left: auto; border: 1px solid var(--border-2); border-radius: 999px; padding: 6px 16px; font-size: 12.5px; color: var(--tx-2); background: #fff; display: flex; align-items: center; gap: 6px; }
+  .stop-btn:hover { color: var(--err); border-color: var(--err); }
+
+  /* ============ 右侧 artifact 面板 ============ */
+  .artifact {
+    width: 460px; flex: none; border-left: 1px solid var(--border-1); background: var(--bg-1);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .af-head { padding: 14px 18px 0; }
+  .af-tabs { display: flex; gap: 4px; background: var(--bg-3); border-radius: 10px; padding: 3px; width: max-content; }
+  .af-tab { padding: 5px 16px; font-size: 12.5px; border-radius: 8px; color: var(--tx-2); cursor: pointer; }
+  .af-tab.active { background: #fff; color: var(--tx-1); font-weight: 600; box-shadow: var(--shadow-sm); }
+  .af-body { flex: 1; overflow-y: auto; padding: 14px 18px 30px; }
+  .chart-card { background: #fff; border: 1px solid var(--border-1); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .chart-card .c-title { font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 7px; }
+  .chart-card .c-sub { font-size: 11px; color: var(--tx-3); margin: 2px 0 8px; }
+  .legend { display: flex; gap: 14px; font-size: 11px; color: var(--tx-2); margin-top: 6px; }
+  .legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; margin-right: 4px; }
+  .skeleton { border-radius: 10px; background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%); background-size: 400% 100%; animation: sk 1.4s infinite; }
+  @keyframes sk { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  .report-outline { background: #fff; border: 1px solid var(--border-1); border-radius: 14px; padding: 16px 18px; }
+  .report-outline h4 { font-size: 14px; margin-bottom: 8px; }
+  .report-outline .ro { display: flex; gap: 8px; font-size: 12.5px; color: var(--tx-2); padding: 4px 0; }
+  .report-outline .ro .n { color: var(--tx-4); font-family: var(--mono); font-size: 11px; margin-top: 1px; }
+  .report-outline .ro.done { color: var(--tx-1); }
+  .report-outline .ro.done .n { color: var(--ok); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="app-side">
+    <div class="logo"><div class="logo-mark">DB</div><div class="logo-name">DB-GPT</div></div>
+    <button class="new-task-btn">＋ new_task</button>
+    <div class="side-tabs">
+      <div class="side-tab active">🕘 tasks</div>
+      <div class="side-tab">⚡ skills</div>
+      <div class="side-tab">🗄 datasources</div>
+    </div>
+    <div class="nav-item active" style="flex-direction:column;align-items:flex-start;gap:2px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px"><span>🧬</span> 近 30 天各区域销售额趋势…</div>
+      <div style="font-size:10.5px;color:var(--tx-3);padding-left:24px">任务流程 · 数据分析流 · 运行中</div>
+    </div>
+    <div class="nav-item"><span class="ico">💬</span> 昨天 · 月度经营分析</div>
+    <div class="nav-item"><span class="ico">💬</span> 周一 · AB 实验复盘</div>
+    <div style="flex:1"></div>
+    <div class="side-bottom"><div class="nav-item"><span class="ico">⚙</span> settings</div></div>
+  </aside>
+
+  <main class="app-main">
+    <div class="topbar">
+      <span class="ver">近 30 天各区域销售额趋势分析</span>
+      <span class="tag blue">🧬 数据分析流</span>
+      <div class="right"><span style="color:var(--tx-3)">↗ 分享</span><span class="chip">⚡ 300</span><span class="ico-box sm" style="background:var(--pri);color:#fff">A</span></div>
+    </div>
+
+    <div class="chat-wrap">
+      <!-- ============ 对话流 ============ -->
+      <div class="chat-col">
+        <div class="msg-user">
+          <div class="bubble">
+            <div class="attach">
+              <span class="flow-chip-sm">🧬 数据分析流</span>
+              <span class="file-chip-sm">🗄 mysql_prod</span>
+            </div>
+            分析近 30 天各区域销售额趋势，找出异常波动并给出可能原因
+          </div>
+        </div>
+
+        <div class="msg-ai">
+          <div class="ai-head"><div class="ai-avatar">🪐</div><span class="ai-name">DB-GPT</span></div>
+
+          <div class="run-card">
+            <div class="run-head">
+              <div class="r-ico">🧬</div>
+              <div>
+                <div class="r-nm">数据分析流</div>
+                <div class="r-sub">正在执行 · 已完成 4/7 节点</div>
+              </div>
+              <div class="prog">
+                <div class="prog-bar"><i></i></div>
+                <span class="p-tx">57%</span>
+              </div>
+            </div>
+
+            <div class="steps">
+              <div class="step s-done">
+                <div class="s-ico">✓</div>
+                <div class="s-tx">
+                  <div class="s-nm">开始 <span class="dur">0.2s</span></div>
+                  <div class="s-ds">读取分析目标与数据源上下文 mysql_prod</div>
+                </div>
+              </div>
+
+              <div class="step s-done open">
+                <div class="s-ico">✓</div>
+                <div class="s-tx">
+                  <div class="s-nm">数据库查询 <span class="dur">3.4s</span> <span class="tag gray">1,240 行</span></div>
+                  <div class="step-detail">
+                    <div class="sql-block"><span class="kw">SELECT</span> region, dt, <span class="kw">SUM</span>(amount) <span class="kw">AS</span> sales<br/><span class="kw">FROM</span> trade_order<br/><span class="kw">WHERE</span> dt &gt;= <span class="st">'2026-09-03'</span><br/><span class="kw">GROUP BY</span> region, dt <span class="kw">ORDER BY</span> dt;</div>
+                    <table class="tbl">
+                      <tr><th>region</th><th>dt</th><th>sales</th></tr>
+                      <tr><td>华东</td><td>2026-09-03</td><td class="num">482,100</td></tr>
+                      <tr><td>华北</td><td>2026-09-03</td><td class="num">365,870</td></tr>
+                      <tr><td>华南</td><td>2026-09-03</td><td class="num">298,450</td></tr>
+                    </table>
+                    <div class="more-rows">… 共 1,240 行，点击展开全部</div>
+                  </div>
+                </div>
+                <div class="caret">▾</div>
+              </div>
+
+              <div class="step s-done open">
+                <div class="s-ico">✓</div>
+                <div class="s-tx">
+                  <div class="s-nm">智能分析 <span class="dur">12.8s</span> <span class="tag violet">DeepSeek</span></div>
+                  <div class="step-detail">
+                    <ul class="insight-list">
+                      <li>整体销售额 <b>环比 +6.8%</b>，华东贡献增量的 <b>62%</b></li>
+                      <li><b>9 月 18 日华南出现异常峰值</b>（+214%），与直播大促活动时间吻合</li>
+                      <li>华北连续 5 日下滑，建议结合渠道投放数据进一步定位</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="caret">▾</div>
+              </div>
+
+              <div class="step s-run">
+                <div class="s-ico">●</div>
+                <div class="s-tx">
+                  <div class="s-nm">可视化生成</div>
+                  <div class="s-ds">正在生成趋势图与区域对比图…</div>
+                </div>
+              </div>
+
+              <div class="step s-hitl">
+                <div class="s-ico">✋</div>
+                <div class="s-tx">
+                  <div class="s-nm">人工确认 <span class="tag amber">待确认</span></div>
+                  <div class="s-ds">流程配置：报告生成前需人工确认结论口径</div>
+                </div>
+              </div>
+
+              <div class="step s-wait">
+                <div class="s-ico">6</div>
+                <div class="s-tx"><div class="s-nm" style="color:var(--tx-3)">分析报告</div></div>
+              </div>
+              <div class="step s-wait">
+                <div class="s-ico">7</div>
+                <div class="s-tx"><div class="s-nm" style="color:var(--tx-3)">输出</div></div>
+              </div>
+            </div>
+
+            <div class="hitl-banner">
+              ✋ 流程将在「可视化生成」完成后暂停，请确认分析结论口径
+              <div class="acts">
+                <button class="btn sm">修改要求</button>
+                <button class="btn sm primary">确认并继续</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-text">
+            已完成数据拉取与初步分析：近 30 天整体销售额环比上升 6.8%，其中 9 月 18 日华南区域出现明显峰值，正在生成趋势图表<span class="cursor"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 右侧 artifact ============ -->
+      <aside class="artifact">
+        <div class="af-head">
+          <div class="af-tabs">
+            <div class="af-tab active">📊 图表 (2)</div>
+            <div class="af-tab">📝 报告草稿</div>
+            <div class="af-tab">🗃 中间数据</div>
+          </div>
+        </div>
+        <div class="af-body">
+          <div class="chart-card">
+            <div class="c-title">近 30 天销售额趋势 <span class="tag green">已生成</span></div>
+            <div class="c-sub">按区域分组 · 数据源 mysql_prod.trade_order</div>
+            <svg width="100%" height="150" viewBox="0 0 400 150">
+              <line x1="30" y1="10" x2="30" y2="125" stroke="#e7e5e4" stroke-width="1"/>
+              <line x1="30" y1="125" x2="390" y2="125" stroke="#e7e5e4" stroke-width="1"/>
+              <line x1="30" y1="90" x2="390" y2="90" stroke="#f5f5f4" stroke-width="1"/>
+              <line x1="30" y1="55" x2="390" y2="55" stroke="#f5f5f4" stroke-width="1"/>
+              <polyline points="30,95 60,88 90,92 120,80 150,84 180,70 210,74 240,60 270,38 300,64 330,58 360,52 390,48"
+                fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>
+              <polyline points="30,105 60,102 90,108 120,100 150,104 180,98 210,102 240,96 270,20 300,92 330,88 360,84 390,80"
+                fill="none" stroke="#22d3ee" stroke-width="2.2" stroke-linejoin="round" stroke-dasharray="0"/>
+              <circle cx="270" cy="20" r="4" fill="#fff" stroke="#dc2626" stroke-width="2"/>
+              <text x="278" y="16" font-size="9" fill="#dc2626">异常峰值 +214%</text>
+              <polyline points="30,112 60,110 90,114 120,112 150,116 180,118 210,122 240,120 270,124 300,122 330,124 360,122 390,120"
+                fill="none" stroke="#a8a29e" stroke-width="2" stroke-dasharray="4 3"/>
+              <text x="30" y="140" font-size="9" fill="#a8a29e">09-03</text>
+              <text x="368" y="140" font-size="9" fill="#a8a29e">10-02</text>
+            </svg>
+            <div class="legend">
+              <span><i style="background:#2563eb"></i>华东</span>
+              <span><i style="background:#22d3ee"></i>华南</span>
+              <span><i style="background:#a8a29e"></i>华北</span>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="c-title">区域销售占比 <span class="tag amber">生成中</span></div>
+            <div class="c-sub">环形图 · 近 30 天汇总</div>
+            <div class="skeleton" style="height:120px"></div>
+          </div>
+
+          <div class="report-outline">
+            <h4>📝 报告大纲（草稿）</h4>
+            <div class="ro done"><span class="n">1</span> 核心结论：销售额环比 +6.8%</div>
+            <div class="ro done"><span class="n">2</span> 区域趋势与异常峰值解读</div>
+            <div class="ro"><span class="n">3</span> 华北下滑归因分析</div>
+            <div class="ro"><span class="n">4</span> 建议与后续动作</div>
+            <div style="margin-top:8px;font-size:11px;color:var(--tx-3)">报告将在人工确认后生成全文</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ============ 底部 ============ -->
+    <div class="chat-foot" style="display:none"></div>
+  </main>
+</div>
+</body>
+</html>

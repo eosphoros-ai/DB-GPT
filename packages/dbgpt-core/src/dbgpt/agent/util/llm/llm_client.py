@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 import traceback
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from dbgpt.core import LLMClient, ModelOutput, ModelRequestContext
 from dbgpt.core.interface.output_parser import BaseOutputParser
@@ -276,6 +276,12 @@ class AIWrapper:
             model_output: Optional[ModelOutput] = None
             previous_text = ""
             previous_thinking_text = ""
+            # Cumulative ``function.arguments`` per tool-call index, used to
+            # derive raw argument deltas for streaming (native function
+            # calling carries the payload — e.g. the terminate answer — in
+            # ``tool_calls``, which text/thinking diffs never observe).
+            previous_tool_args: Dict[int, str] = {}
+            seen_tool_call_indexes: set = set()
 
             async def _emit_stream_callback(payload: Dict[str, Any]) -> None:
                 if not stream_callback:
@@ -315,11 +321,44 @@ class AIWrapper:
                     else:
                         delta_thinking = current_thinking
                         previous_thinking_text = current_thinking
-                if delta_text or delta_thinking:
+                # Diff cumulative native ``tool_calls`` (list-position ordered)
+                # so argument growth — e.g. the terminate tool's ``output``
+                # value carrying the final answer — reaches stream_callback.
+                delta_tool_calls: List[Dict[str, Any]] = []
+                current_tool_calls = getattr(output, "tool_calls", None) or None
+                if current_tool_calls:
+                    for tc_index, tc in enumerate(current_tool_calls):
+                        if not isinstance(tc, dict):
+                            continue
+                        tc_fn = tc.get("function") or {}
+                        tc_name = tc_fn.get("name") or ""
+                        tc_args = tc_fn.get("arguments") or ""
+                        if not isinstance(tc_args, str):
+                            tc_args = json.dumps(tc_args, ensure_ascii=False)
+                        prev_args = previous_tool_args.get(tc_index, "")
+                        if tc_args.startswith(prev_args):
+                            delta_args = tc_args[len(prev_args) :]
+                        else:
+                            delta_args = tc_args
+                        previous_tool_args[tc_index] = tc_args
+                        if delta_args or (
+                            tc_name and tc_index not in seen_tool_call_indexes
+                        ):
+                            if tc_name:
+                                seen_tool_call_indexes.add(tc_index)
+                            delta_tool_calls.append(
+                                {
+                                    "index": tc_index,
+                                    "name": tc_name,
+                                    "delta_arguments": delta_args,
+                                }
+                            )
+                if delta_text or delta_thinking or delta_tool_calls:
                     await _emit_stream_callback(
                         {
                             "delta_text": delta_text,
                             "delta_thinking": delta_thinking,
+                            "delta_tool_calls": delta_tool_calls,
                         }
                     )
                 if memory and stream_out:

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Flow 输出产物节点设计 · Mockup v1</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f4f4f0; --surface-2:#efefeb; --border:#e6e6e2; --border-2:#efefeb;
+    --ink:#1c1c1a; --ink-2:#55554f; --ink-3:#8b8b84;
+    --ok:#15803d; --ok-bg:#f0fdf4; --ok-bd:#bbf7d0;
+    --run:#b45309; --run-bg:#fffbeb; --run-bd:#fde68a;
+    --fail:#b91c1c; --fail-bg:#fef2f2; --fail-bd:#fecaca;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);
+    font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 96px}
+  h1{font-size:26px;margin:0 0 6px;font-weight:700}
+  .sub{color:var(--ink-3);font-size:13px;margin-bottom:26px}
+  h2{font-size:17px;margin:42px 0 6px;font-weight:700}
+  h2 .no{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;
+    background:var(--ink);color:#fff;font-size:12px;margin-right:8px;vertical-align:2px}
+  .why{color:var(--ink-3);font-size:12.5px;margin:0 0 14px}
+  .card{background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(20,20,15,.05),0 8px 28px rgba(20,20,15,.05)}
+  .pad{padding:16px 20px}
+  .mono{font-family:var(--mono)}
+  .muted{color:var(--ink-3)}
+  table.map{width:100%;border-collapse:collapse;background:var(--bg);border:1px solid var(--border);
+    border-radius:12px;overflow:hidden;font-size:12.5px}
+  table.map th,table.map td{padding:9px 12px;border-bottom:1px solid var(--border-2);text-align:left;vertical-align:top}
+  table.map th{background:var(--surface);color:var(--ink-2);font-weight:600;font-size:12px}
+  table.map tr:last-child td{border-bottom:none}
+  /* editor panel */
+  .ed{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:420px}
+  .ed .canvas{background:
+      radial-gradient(circle at 1px 1px, #e3e3dd 1px, transparent 0) 0 0/22px 22px, #fafaf7;
+    border-right:1px solid var(--border-2);padding:26px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .nbox{width:300px;border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:12px 14px;
+    display:flex;gap:10px;align-items:center}
+  .nbox.sel{border:2px solid #2563eb}
+  .nbox .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+  .nbox .tt{font-weight:650;font-size:13.5px}
+  .nbox .ss{font-size:11.5px;color:var(--ink-3)}
+  .ed .props{padding:18px 20px}
+  .pgrp{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin:14px 0 8px}
+  .pgrp:first-child{margin-top:0}
+  .fld{margin:0 0 12px}
+  .fld label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px}
+  .fld .hint{font-size:11px;color:var(--ink-3);margin-top:4px}
+  .inp{width:100%;height:32px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-size:12.5px;
+    background:var(--bg);color:var(--ink)}
+  .fmts{display:flex;flex-wrap:wrap;gap:8px}
+  .fmt{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border-radius:9px;
+    border:1px solid var(--border);background:var(--bg);font-size:12.5px;color:var(--ink-2);cursor:pointer}
+  .fmt .bx{width:14px;height:14px;border-radius:4px;border:1.5px solid #c9c9c2;display:inline-flex;
+    align-items:center;justify-content:center;font-size:10px;color:#fff}
+  .fmt.on{border-color:#1c1c1a;background:#1c1c1a;color:#fff}
+  .fmt.on .bx{background:#1c1c1a;border-color:#fff}
+  .fmt .fi{font-size:13px}
+  /* run view chips */
+  .nhead{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);
+    border-bottom:1px solid var(--border-2)}
+  .nhead .k{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none;
+    background:#fff7ed;color:#c2410c;font-size:13px}
+  .ntitle{font-weight:650;font-size:13px}
+  .pill{height:19px;padding:0 8px;border-radius:6px;font-size:11px;display:inline-flex;align-items:center}
+  .pill.ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-bd)}
+  .ndur{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .nbody{padding:10px 14px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;border-radius:9px;
+    border:1px solid var(--border);background:var(--bg);font-size:12px;color:var(--ink-2)}
+  .chip .ci{font-size:14px}
+  .chip .sz{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+  .chip button{border:none;background:var(--ink);color:#fff;font-size:10.5px;height:20px;padding:0 8px;
+    border-radius:6px;cursor:pointer}
+  .chip button.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--border)}
+  /* end strip */
+  .arts{display:flex;gap:10px;flex-wrap:wrap;padding:14px 18px}
+  .acard{width:168px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg)}
+  .acard .th{height:80px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:26px}
+  .acard .bd{padding:8px 10px}
+  .acard .nm{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acard .mt{font-size:10.5px;color:var(--ink-3)}
+  .acard .bt{margin-top:6px;height:22px;padding:0 10px;border-radius:6px;border:none;background:var(--ink);
+    color:#fff;font-size:11px;cursor:pointer}
+  .acard .bt.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--border);margin-left:6px}
+  .endline{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid var(--border-2);
+    font-size:12px;color:var(--ink-3);background:var(--surface)}
+  .endline .st{color:var(--ok);font-weight:600}
+  /* xlsx preview */
+  .xlp{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .xlp .tabs{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border-2)}
+  .xlp .tab{padding:6px 14px;font-size:11.5px;color:var(--ink-2);border-right:1px solid var(--border-2)}
+  .xlp .tab.on{background:var(--bg);font-weight:650;color:var(--ink);box-shadow:inset 0 -2px 0 var(--ink)}
+  .xlp table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .xlp th,.xlp td{padding:5px 10px;border-bottom:1px solid var(--border-2);text-align:left;
+    font-family:var(--mono);white-space:nowrap}
+  .xlp th{background:var(--surface);color:var(--ink-2);font-weight:600}
+  .note{font-size:12px;color:var(--ink-3);margin:10px 0 0}
+  .impl{font-size:12.5px;color:var(--ink-2)}
+  .impl li{margin:5px 0}
+  .impl code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:5px;padding:1px 5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Flow 输出产物节点设计 · Mockup v1</h1>
+<div class="sub">报告/可视化节点的多格式产物(HTML / PPT / Excel / 图表)+ 产物进管线 · 2026-10-19 · 与 workflow-display-redesign-mockup 同语汇</div>
+
+<table class="map">
+  <tr><th style="width:34%">现状缺口</th><th>对策</th><th style="width:80px">章节</th></tr>
+  <tr><td>报告节点只出 markdown 文本,配置仅 model 一项</td><td>报告节点增加「输出格式」多选:Markdown / HTML / PPT / Excel</td><td>§1</td></tr>
+  <tr><td>flow 产物不进产物管线:运行卡无产物、结束无产物条、右栏画廊没有</td><td>vis-flow-step 帧增加 <span class="mono">artifacts[]</span>;节点卡产物 chips + 结束产物条 + 画廊分组</td><td>§2 §3</td></tr>
+  <tr><td>可视化节点的仪表盘只是一段 gpt-vis 文本,不落盘、不可下载</td><td>visualize 节点落盘 dashboard.html + 图表 png,登记为产物</td><td>§2</td></tr>
+  <tr><td>xlsx/pptx 无预览能力</td><td>xlsx 服务端读首 sheet 渲染表格预览;pptx 给幻灯片数/大小元信息 + 下载</td><td>§4</td></tr>
+</table>
+
+<h2><span class="no">1</span>编辑器:报告节点属性面板(输出格式多选)</h2>
+<p class="why">格式是节点配置而非运行时猜测;默认 Markdown+HTML,PPT/Excel 按需勾选。配置随 DSL 存(taskflow_source),重跑可复现。</p>
+<div class="card">
+  <div class="ed">
+    <div class="canvas">
+      <div class="nbox"><span class="ic" style="background:#ecfdf5">▶</span><span><span class="tt">Start</span><br><span class="ss">读取目标与对话上下文</span></span></div>
+      <div class="nbox"><span class="ic" style="background:#eef2ff">🤖</span><span><span class="tt">AI 分析</span><br><span class="ss">围绕上游数据做分析</span></span></div>
+      <div class="nbox sel"><span class="ic" style="background:#fff7ed">📝</span><span><span class="tt">分析报告</span><br><span class="ss">Markdown · HTML · PPT · Excel</span></span></div>
+      <div class="nbox"><span class="ic" style="background:#ecfdf5">✓</span><span><span class="tt">Output</span><br><span class="ss">组装最终回答</span></span></div>
+    </div>
+    <div class="props">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:4px">
+        <span class="nbox ic" style="width:30px;height:30px;border-radius:9px;background:#fff7ed;display:flex;align-items:center;justify-content:center">📝</span>
+        <div><div style="font-weight:700;font-size:14px">分析报告</div>
+        <div class="muted" style="font-size:11.5px">汇总结论与图表,生成结构化分析报告</div></div>
+      </div>
+      <div class="pgrp">Basics</div>
+      <div class="fld"><label>节点名称</label><input class="inp" value="分析报告" /></div>
+      <div class="fld"><label>报告模型</label><input class="inp" value="deepseek-v4-flash" /></div>
+      <div class="pgrp">输出格式(可多选)</div>
+      <div class="fld">
+        <div class="fmts">
+          <span class="fmt on"><span class="bx">✓</span><span class="fi">📄</span>Markdown</span>
+          <span class="fmt on"><span class="bx">✓</span><span class="fi">🌐</span>HTML 报告</span>
+          <span class="fmt on"><span class="bx">✓</span><span class="fi">📽</span>PPT 报告</span>
+          <span class="fmt on"><span class="bx">✓</span><span class="fi">📊</span>Excel 数据</span>
+        </div>
+        <div class="hint">HTML:交互式网页报告(含图表);PPT:标题页+结论页+图表页+数据页;Excel:原始数据+各图聚合+指标汇总三个 sheet。产物写入本次会话输出目录,可在运行卡与产物栏下载。</div>
+      </div>
+      <div class="pgrp">Inputs / Outputs</div>
+      <div class="fld"><span class="muted" style="font-size:12px">Inputs:分析结论 · 数据表 · 分析目标<br>Outputs:报告文档 + 产物清单(artifacts)</span></div>
+    </div>
+  </div>
+</div>
+
+<h2><span class="no">2</span>运行态:节点卡产物 chips</h2>
+<p class="why">vis-flow-step 帧新增 <span class="mono">artifacts:[{name,type,path,size}]</span>;节点卡头部下方渲染 chips,预览/下载直达。可视化节点同样落盘(dashboard.html + 图表 png)。</p>
+<div class="card">
+  <div class="nhead">
+    <span class="k">📝</span><span class="ntitle">分析报告</span>
+    <span class="pill ok">✓ 成功</span>
+    <span class="muted" style="font-size:11px">4 个产物</span>
+    <span class="ndur">38.2s ▴</span>
+  </div>
+  <div class="nbody">
+    <div class="chips">
+      <span class="chip"><span class="ci">🌐</span>walmart_分析报告.html<span class="sz">87 KB</span><button>预览</button><button class="ghost">下载</button></span>
+      <span class="chip"><span class="ci">📽</span>walmart_分析报告.pptx<span class="sz">9 页 · 412 KB</span><button class="ghost">下载</button></span>
+      <span class="chip"><span class="ci">📊</span>walmart_数据.xlsx<span class="sz">3 sheets · 96 KB</span><button>预览</button><button class="ghost">下载</button></span>
+      <span class="chip"><span class="ci">📄</span>report.md<span class="sz">6 KB</span><button>预览</button><button class="ghost">下载</button></span>
+    </div>
+    <div class="note">失败语义不变:某一格式生成失败(如 PPT 渲染异常)→ 该 chip 红色 + 错误 tooltip,节点整体仍成功(部分产物),仅当全部格式失败才标红节点。</div>
+  </div>
+  <div class="nhead" style="border-top:1px solid var(--border-2)">
+    <span class="k" style="background:#eef2ff;color:#4338ca">📊</span><span class="ntitle">可视化生成</span>
+    <span class="pill ok">✓ 成功</span>
+    <span class="muted" style="font-size:11px">5 个产物</span>
+    <span class="ndur">21.4s ▾</span>
+  </div>
+  <div class="nbody">
+    <div class="chips">
+      <span class="chip"><span class="ci">🌐</span>dashboard.html<span class="sz">4 charts · 52 KB</span><button>预览</button><button class="ghost">下载</button></span>
+      <span class="chip"><span class="ci">🖼</span>chart_周趋势.png<span class="sz">64 KB</span><button>预览</button></span>
+      <span class="chip"><span class="ci">🖼</span>chart_门店分化.png<span class="sz">71 KB</span><button>预览</button></span>
+      <span class="chip"><span class="ci">🖼</span>chart_假日占比.png<span class="sz">58 KB</span><button>预览</button></span>
+      <span class="chip"><span class="ci">🖼</span>chart_热力图.png<span class="sz">83 KB</span><button>预览</button></span>
+    </div>
+  </div>
+</div>
+
+<h2><span class="no">3</span>结束态:产物条 + 右栏画廊分组</h2>
+<p class="why">flow 产物与 react 会话产物共用 ArtifactCards / 画廊;画廊按「flow 输出」分组,与技能包/会话根目录并列。</p>
+<div class="card">
+  <div class="arts">
+    <div class="acard"><div class="th">🌐</div><div class="bd"><div class="nm">walmart_分析报告.html</div><div class="mt">HTML · 87 KB</div><button class="bt">预览</button><button class="bt ghost">下载</button></div></div>
+    <div class="acard"><div class="th">📽</div><div class="bd"><div class="nm">walmart_分析报告.pptx</div><div class="mt">PPTX · 9 页</div><button class="bt">下载</button></div></div>
+    <div class="acard"><div class="th">📊</div><div class="bd"><div class="nm">walmart_数据.xlsx</div><div class="mt">XLSX · 3 sheets</div><button class="bt">预览</button><button class="bt ghost">下载</button></div></div>
+    <div class="acard"><div class="th">🖼</div><div class="bd"><div class="nm">chart_周趋势.png</div><div class="mt">图片</div><button class="bt">预览</button></div></div>
+  </div>
+  <div class="endline"><span class="st">✓ 已完成</span><span>· 4 节点 · 3 分 02 秒 · 产物 9 项</span><span style="margin-left:auto">产物已同步到会话产物栏(flow 输出 分组)</span></div>
+</div>
+
+<h2><span class="no">4</span>预览能力:xlsx 表格预览 / pptx 元信息</h2>
+<p class="why">xlsx 服务端用 openpyxl 读 sheet 名 + 首 sheet 前 50 行,返回 JSON,前端渲染带 sheet 页签的表格;pptx 用 python-pptx 读页数/标题列表作元信息面板(不做幻灯片渲染)。</p>
+<div class="card pad">
+  <div class="xlp">
+    <div class="tabs"><span class="tab on">原始数据 (6435 行)</span><span class="tab">周趋势聚合</span><span class="tab">门店同比</span><span class="tab">指标汇总</span></div>
+    <table>
+      <tr><th>Store</th><th>Date</th><th>Weekly_Sales</th><th>Holiday_Flag</th><th>Temperature</th></tr>
+      <tr><td>1</td><td>05-02-2010</td><td>1643690.90</td><td>0</td><td>42.31</td></tr>
+      <tr><td>1</td><td>12-02-2010</td><td>1641957.44</td><td>1</td><td>38.51</td></tr>
+      <tr><td>1</td><td>19-02-2010</td><td>1611968.17</td><td>0</td><td>39.93</td></tr>
+      <tr><td colspan="5" class="muted">… 仅预览前 50 行,完整数据请下载</td></tr>
+    </table>
+  </div>
+  <p class="note">预览接口:<span class="mono">GET /api/v1/chat/harness/artifact-preview?path=…&kind=xlsx|pptx</span>(与 artifact-file 同安全边界:仅 PILOT_PATH / pi_workspace 内)。</p>
+</div>
+
+<h2><span class="no">5</span>落地清单(实现备注)</h2>
+<ul class="impl">
+  <li><b>DSL/编辑器</b>:<code>nodes.py</code> report 节点 config 增 <code>formats: list</code>(markdown/html/pptx/xlsx,默认 [markdown, html]);PropertyPanel 渲染多选 chips;compiler 把 formats 传进报告 operator。</li>
+  <li><b>报告 operator</b>(<code>operators/report.py</code> 扩展或新 <code>HOReportArtifactsOperator</code>):markdown 结论 → ① HTML:模板 + 上游图表 png(matplotlib 落盘 → <span class="mono">/images/</span> URL)+ 表格;② PPTX:python-pptx 标题页/结论页/每图一页/数据页;③ XLSX:pandas ExcelWriter(openpyxl) 写 原始数据(共享 df)/ 各图聚合 / 指标汇总 三个 sheet;全部写 <span class="mono">pilot/tmp/&lt;conv&gt;/outputs/</span>。</li>
+  <li><b>visualize operator</b>:gpt-vis dashboard 落盘 dashboard.html;每图 matplotlib png 落盘;登记产物。</li>
+  <li><b>帧协议</b>:<code>build_step_marker</code> 增 <code>artifacts</code> 字段(name/type/path/size/meta);TS 类型同步;<code>artifact-file</code> 端点已可服务 pilot 内文件,下载零新端点;预览增 <code>artifact-preview</code>(xlsx/pptx 元信息)。</li>
+  <li><b>前端</b>:FlowRunView 节点卡 chips(预览/下载);结束产物条 + 画廊「flow 输出」分组复用 ArtifactCards;xlsx 预览面板(sheet 页签表格)、pptx 元信息面板进 ArtifactRail PreviewBody。</li>
+  <li><b>失败语义</b>:单格式失败 → chip 红 + tooltip,节点仍成功;全失败 → 节点 failed(沿用上一轮的诚实失败原则)。</li>
+</ul>
+
+</div>
+</body>
+</html>

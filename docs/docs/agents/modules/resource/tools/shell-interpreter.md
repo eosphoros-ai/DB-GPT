@@ -1,8 +1,8 @@
-# shell_interpreter
+# bash
 
 ## Overview
 
-`shell_interpreter` executes shell / bash commands in a sandboxed environment.
+`bash` executes shell / bash commands in a sandboxed environment.
 
 It is intended for command-line workflows rather than data analysis logic.
 
@@ -43,6 +43,6 @@ It is intended for command-line workflows rather than data analysis logic.
 
 ## Notes
 
-- use `code_interpreter` for Python analysis instead
+- use `code` for Python analysis instead
 - use `html_interpreter` for final rendered output
 - if a skill explicitly requires another execution path, follow the skill instructions

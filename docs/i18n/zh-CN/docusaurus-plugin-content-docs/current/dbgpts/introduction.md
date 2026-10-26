@@ -127,8 +127,8 @@ skill 经常会编排多个内置执行工具一起工作：
 
 - `load_skill` → 加载 skill 指令
 - `sql_query` → 按需获取结构化数据
-- `code_interpreter` → 计算指标、转换数据、生成图表
-- `shell_interpreter` → 在需要时执行 shell 命令
+- `code` → 计算指标、转换数据、生成图表
+- `bash` → 在需要时执行 shell 命令
 - `html_interpreter` → 渲染最终报告或网页
 
 ## 实际示例

@@ -68,6 +68,10 @@ async def check_api_key(
         return None
 
 
+# OpenAI-compat alias for external harness engines (e.g.
+# pi): they hit ``<baseUrl>/chat/completions`` and their
+# OpenAI client insists on a ``/v1`` suffix.
+@router.post("/v2/v1/chat/completions", dependencies=[Depends(check_api_key)])
 @router.post("/v2/chat/completions", dependencies=[Depends(check_api_key)])
 async def chat_completions(
     request: ChatCompletionRequestBody = Body(),
@@ -357,3 +361,245 @@ def check_chat_request(request: ChatCompletionRequestBody = Body()):
                 }
             },
         )
+
+
+# ── Agentic chat completions (tools passthrough) ──────────────────────────
+#
+# Purpose-built OpenAI-compatible endpoint for external harness engines
+# (pi, DSH): accepts the standard request shape including ``tools`` and
+# ``tool_choice``, forwards them to the LLM untouched, and returns
+# OpenAI-shaped responses (non-stream JSON or SSE chunks with
+# ``tool_calls``). The legacy /v2 chat path routes through BaseChat's
+# scene machinery and does not carry tool schemas.
+
+
+def _agentic_message_content(content) -> str:
+    """Collapse OpenAI content blocks into a plain string."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list = []
+        for block in content:
+            if isinstance(block, dict):
+                if block.get("type") == "text":
+                    parts.append(str(block.get("text", "")))
+                elif block.get("type") == "thinking":
+                    parts.append(str(block.get("thinking", "")))
+        return "\n".join(p for p in parts if p)
+    return "" if content is None else str(content)
+
+
+def _agentic_to_model_messages(messages: list) -> list:
+    """Convert OpenAI chat messages to ModelMessage (roles mapped)."""
+    from dbgpt.core.interface.llm import ModelMessage
+
+    out = []
+    for msg in messages or []:
+        if not isinstance(msg, dict):
+            continue
+        role = msg.get("role") or "user"
+        mapped = {
+            "user": "human",
+            "assistant": "ai",
+            "system": "system",
+            "tool": "tool",
+        }.get(role, role)
+        out.append(
+            ModelMessage(
+                role=mapped,
+                content=_agentic_message_content(msg.get("content")),
+                tool_calls=msg.get("tool_calls"),
+                tool_call_id=msg.get("tool_call_id"),
+            )
+        )
+    return out
+
+
+def _agentic_usage(out) -> dict:
+    usage = getattr(out, "usage", None) or {}
+    return {
+        "prompt_tokens": usage.get("prompt_tokens", 0),
+        "completion_tokens": usage.get("completion_tokens", 0),
+        "total_tokens": usage.get("total_tokens", 0),
+    }
+
+
+def _agentic_out_text(content) -> str:
+    """Extract plain text from ModelOutput.content.
+
+    ModelOutput.content is ``Union[MediaContent, List[MediaContent]]`` —
+    a dataclass, not JSON-serializable. Pull the text payload out of
+    its ``object.data`` so SSE frames stay plain JSON.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(_agentic_out_text(c) for c in content)
+    # MediaContent dataclass: .object.data holds the payload
+    obj = getattr(content, "object", None)
+    data = getattr(obj, "data", None) if obj is not None else None
+    if isinstance(data, str):
+        return data
+    if data is not None:
+        return str(data)
+    return str(content)
+
+
+@router.post("/v2/agentic/chat/completions", dependencies=[Depends(check_api_key)])
+@router.post("/v2/v1/agentic/chat/completions", dependencies=[Depends(check_api_key)])
+async def agentic_chat_completions(
+    payload: dict = Body(),
+    service=Depends(get_service),
+):
+    """OpenAI-compatible chat completions with native tools passthrough."""
+    import time as _time
+
+    from dbgpt.component import ComponentType
+    from dbgpt.core.interface.llm import ModelRequest, ModelRequestContext
+    from dbgpt.model.cluster import WorkerManagerFactory
+    from dbgpt.model.cluster.client import DefaultLLMClient
+
+    model = payload.get("model")
+    messages = payload.get("messages") or []
+    if not model:
+        raise HTTPException(
+            status_code=400, detail={"error": {"message": "model is required"}}
+        )
+    if not messages:
+        raise HTTPException(
+            status_code=400, detail={"error": {"message": "messages is required"}}
+        )
+
+    stream = bool(payload.get("stream"))
+    request = ModelRequest(
+        model=model,
+        messages=_agentic_to_model_messages(messages),
+        temperature=payload.get("temperature"),
+        max_new_tokens=payload.get("max_tokens"),
+        stop=payload.get("stop"),
+        tools=payload.get("tools"),
+        tool_choice=payload.get("tool_choice"),
+        context=ModelRequestContext(stream=stream),
+    )
+
+    llm_client = DefaultLLMClient(
+        service.system_app.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create(),
+        auto_convert_message=True,
+    )
+
+    if not stream:
+        out = await llm_client.generate(request)
+        if getattr(out, "error_code", 0):
+            raise HTTPException(
+                status_code=500,
+                detail={"error": {"message": str(getattr(out, "text", out))}},
+            )
+        return {
+            "id": f"chatcmpl-{uuid.uuid4()}",
+            "object": "chat.completion",
+            "created": int(_time.time()),
+            "model": model,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": _agentic_out_text(out.content),
+                        **({"tool_calls": out.tool_calls} if out.tool_calls else {}),
+                    },
+                    "finish_reason": (out.finish_reason or "stop"),
+                }
+            ],
+            "usage": _agentic_usage(out),
+        }
+
+    async def _chunks():
+        chat_id = f"chatcmpl-{uuid.uuid4()}"
+        created = int(_time.time())
+        # Worker-stream ModelOutput carries CUMULATIVE text/tool_calls;
+        # OpenAI stream chunks must carry incremental deltas, so diff here.
+        prev_text = ""
+        prev_tool_args: dict = {}
+        seen_tool_names: set = set()
+        async for out in llm_client.generate_stream(request):
+            if getattr(out, "error_code", 0):
+                err_msg = str(getattr(out, "text", out))
+                yield f"data: {json.dumps({'error': {'message': err_msg}})}\n\n"
+                break
+            delta: dict = {"role": "assistant"}
+            full_text = _agentic_out_text(out.content)
+            if full_text.startswith(prev_text):
+                inc_text = full_text[len(prev_text) :]
+            else:
+                inc_text = full_text
+            prev_text = full_text
+            if inc_text:
+                delta["content"] = inc_text
+            tool_frags = []
+            for tc_idx, tc in enumerate(getattr(out, "tool_calls", None) or []):
+                if not isinstance(tc, dict):
+                    continue
+                fn = tc.get("function") or {}
+                tc_name = fn.get("name") or ""
+                tc_args = fn.get("arguments") or ""
+                if not isinstance(tc_args, str):
+                    tc_args = json.dumps(tc_args, ensure_ascii=False)
+                p_args = prev_tool_args.get(tc_idx, "")
+                if tc_args.startswith(p_args):
+                    inc_args = tc_args[len(p_args) :]
+                else:
+                    inc_args = tc_args
+                prev_tool_args[tc_idx] = tc_args
+                if inc_args or (tc_name and tc_idx not in seen_tool_names):
+                    if tc_name:
+                        seen_tool_names.add(tc_idx)
+                    tool_frags.append(
+                        {
+                            "index": tc_idx,
+                            "id": tc.get("id"),
+                            "type": "function",
+                            "function": {"name": tc_name, "arguments": inc_args},
+                        }
+                    )
+            if tool_frags:
+                delta["tool_calls"] = tool_frags
+            chunk = {
+                "id": chat_id,
+                "object": "chat.completion.chunk",
+                "created": created,
+                "model": model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": delta,
+                        "finish_reason": out.finish_reason or None,
+                    }
+                ],
+            }
+            yield f"data: {json.dumps(chunk, ensure_ascii=False, default=str)}\n\n"
+        # OpenAI spec: a terminal chunk with an empty delta and a
+        # finish_reason closes the message; clients (pi included) rely on
+        # finish_reason="tool_calls" to finalize streamed tool calls.
+        final_reason = "tool_calls" if (prev_tool_args or seen_tool_names) else "stop"
+        final_chunk = {
+            "id": chat_id,
+            "object": "chat.completion.chunk",
+            "created": created,
+            "model": model,
+            "choices": [{"index": 0, "delta": {}, "finish_reason": final_reason}],
+        }
+        yield f"data: {json.dumps(final_chunk, ensure_ascii=False)}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        _chunks(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
