@@ -151,19 +151,20 @@ class AWELAgentKnowledgeResource(AgentResource):
     @classmethod
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType."""
-        value = values.pop("agent_resource_value")
-        name = values.pop("agent_resource_name")
-        top_k = (
-            values.pop("agent_resource_recall_topk")
-            if "agent_resource_recall_topk" in values
-            else None
-        )
+        value = values.pop("agent_resource_value", None)
+        name = values.pop("agent_resource_name", None)
+        top_k = values.pop("agent_resource_recall_topk", None)
+        if top_k is None:
+            top_k = 3
 
         values["type"] = ResourceType.Knowledge
-        values["value"] = value
         values["name"] = name
-        if top_k:
-            values["context"] = {"top_k": int(top_k)}
+        # Serialize the parameters as a JSON object, otherwise the resource manager
+        # would only see the knowledge space id and drop `top_k`.
+        param_value: Dict[str, Any] = {"space_name": value, "top_k": int(top_k)}
+        if name:
+            param_value["name"] = name
+        values["value"] = json.dumps(param_value, ensure_ascii=False)
         return values
 
 
