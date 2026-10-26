@@ -1602,20 +1602,35 @@ def _react_terminal_events(
     )
 
 
+AGENT_CLEANUP_TIMEOUT_SECONDS = 5
+
+
 async def _cancel_and_await_agent_task(task: "asyncio.Task[Any]") -> None:
-    """Cancel a running agent task and always consume its terminal result."""
+    """Bound disconnect cleanup and consume results of late-finishing tasks."""
     was_done = task.done()
     if not was_done:
         task.cancel()
     try:
         # Disconnect cleanup runs inside Starlette's cancelled task group.
-        with anyio.CancelScope(shield=True):
-            await task
+        with anyio.move_on_after(AGENT_CLEANUP_TIMEOUT_SECONDS, shield=True):
+            await asyncio.shield(task)
     except asyncio.CancelledError:
         pass
     except Exception:
         if not was_done:
             logger.exception("ReAct agent task failed during stream cleanup")
+    if not task.done():
+        logger.warning("ReAct agent cancellation exceeded cleanup deadline")
+
+        def consume_result(completed):
+            try:
+                completed.result()
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                logger.exception("ReAct agent failed after stream cleanup")
+
+        task.add_done_callback(consume_result)
 
 
 async def _run_with_artifact_capture(
@@ -1979,9 +1994,9 @@ async def _react_agent_stream_inner(
     finally:
         # Save after cancellation has retained the financial workflow's partial
         # results. Shield this cleanup from the response's cancellation scope.
+        if agent_task_holder:
+            await _cancel_and_await_agent_task(agent_task_holder[0])
         with anyio.CancelScope(shield=True):
-            if agent_task_holder:
-                await _cancel_and_await_agent_task(agent_task_holder[0])
             history_checkpoint.flush(status="interrupted", force=True)
 
 

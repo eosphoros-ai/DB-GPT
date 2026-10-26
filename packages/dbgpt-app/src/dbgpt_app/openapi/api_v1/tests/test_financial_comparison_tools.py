@@ -9,6 +9,9 @@ from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     has_comparison_intent,
     make_financial_tools,
 )
+from dbgpt_serve.financial_analysis.tests.conftest import (
+    isolated_service as isolated_service,
+)
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
 
@@ -17,6 +20,41 @@ def test_attachment_count_alone_does_not_imply_comparison():
     assert not has_comparison_intent("不要对比，请单独分析")
     assert has_comparison_intent("请横向比较这几份年报")
     assert has_comparison_intent("Compare annual reports")
+
+
+@pytest.mark.asyncio
+async def test_comparison_without_model_name_uses_serial_topic_path(
+    isolated_service, monkeypatch
+):
+    service, _, _, _ = isolated_service
+    from dbgpt_serve.financial_analysis import parallel
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("TopicGenerator must not receive model=None")
+
+    monkeypatch.setattr(parallel, "TopicGenerator", forbidden)
+    state = {
+        "owner_id": "alice",
+        "conv_id": "scope",
+        "financial_user_query": "比较财报",
+        "financial_llm_client": object(),
+        "model_name": None,
+        "session_files": [
+            SimpleNamespace(file_id="a", name="a.pdf"),
+            SimpleNamespace(file_id="b", name="b.pdf"),
+        ],
+    }
+    prepare = next(
+        fn
+        for fn in make_financial_tools(state, service=service)
+        if fn.__name__ == "prepare_financial_comparison"
+    )
+    result = json.loads(await prepare(file_ids=["a", "b"], comparison_kind="peer"))
+    assert result["model_context"]["next_action"]["tool"] == "save_financial_topic"
+    assert (
+        state["financial_report_context"]["workflow"]["topics"][0]["status"]
+        == "running"
+    )
 
 
 @pytest.mark.asyncio

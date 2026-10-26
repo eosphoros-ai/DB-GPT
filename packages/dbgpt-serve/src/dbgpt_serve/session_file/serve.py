@@ -154,7 +154,10 @@ class SessionFileServe(BaseServe):
         if self._financial_analysis is not None:
             import asyncio
 
-            await asyncio.to_thread(self._financial_analysis.close)
+            try:
+                await asyncio.to_thread(self._financial_analysis.close)
+            except Exception:
+                logger.exception("Failed to close financial analysis service")
         if self._registry is not None:
             try:
                 self._registry.close()

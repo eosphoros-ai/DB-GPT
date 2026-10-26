@@ -30,6 +30,32 @@ from dbgpt_serve.financial_analysis.workflow import next_action, topic_context
 FINANCIAL_MAX_STEPS = 40
 
 
+def is_financial_turn(state):
+    """Scope report safeguards to financial requests, including brief follow-ups."""
+    if state.get("financial_pending") or "financial_user_query" not in state:
+        return True
+    query = (state.get("financial_user_query") or "").strip()
+    return bool(
+        re.search(
+            r"财报|年报|年度报告|财务|营收|营业收入|利润|毛利|费用率|负债|资产|"
+            r"现金流|偿债|扣非|净利|每股|分红|这家公司|该公司|这份报告|这份年报|"
+            r"刚才的(?:报告|分析)|上述(?:报告|分析)|"
+            r"\b(?:financial|annual reports?|revenue|profit|margin|cash flow|"
+            r"liquidity|balance sheet|earnings|dividends|this company|"
+            r"the report|that report|saved report)\b",
+            query,
+            re.I,
+        )
+        or re.fullmatch(
+            r"(?:继续(?:分析|任务)?|详细(?:说说|解释|一点)?|展开(?:说说)?|"
+            r"为什么(?:会这样|下降|上升|增长|减少|增加)?|有什么风险|依据是什么|"
+            r"再解释一下|continue|tell me more|why|explain(?: further)?)[？?。.!！]*",
+            query,
+            re.I,
+        )
+    )
+
+
 def has_comparison_intent(query):
     query = query or ""
     if re.search(
@@ -111,7 +137,8 @@ code_interpreter、shell_interpreter 或知识库搜索替代财报提取、计�
 如专用工具返回错误，根据实际错误处理；不把工具错误解释成缺少 Skill 脚本。
 不使用 generate_report、html_interpreter、旧 HTML 模板或自行编写网页来替代财报组件。
 工具返回的财报已显示在当前对话右侧，不要让用户跳转 /financial-analysis。
-后续追问先调用 read_financial_report 读取当前对话的报告，不重复提取 PDF，
+关于财报的后续追问先调用 read_financial_report 读取当前对话的报告，不重复提取 PDF，
+与财报无关的问题正常回答，不要求读取报告，也不套用财报引用或数字校验。
 只引用已有事实、计算及原文，缺少数据就明确说明，不自行计算新指标或补造原因。
 追问的最终回答必须直接复制 data.facts/data.calculations 中的 reference 字段，
 不能抄 displayValue、金额、年份或页码，也不能复制含数字的原文片段或追加单位。
@@ -150,6 +177,8 @@ async def financial_completion_error(state, *, service=None):
             "不要用未来计划代替执行；证据不足可以提交空 findings 数组。"
         )
     if state.get("financial_report_context"):
+        return None
+    if not is_financial_turn(state):
         return None
     from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
@@ -476,6 +505,8 @@ def _result(
 
 def financial_answer_error(content, state, *, repair_limit=2):
     """Give the agent bounded feedback before replacing an invalid final answer."""
+    if not is_financial_turn(state):
+        return None
     report = state.get("financial_report_context")
     if not report or not is_published(report):
         return None
@@ -521,6 +552,8 @@ def financial_answer_error(content, state, *, repair_limit=2):
 
 def finalize_financial_answer(content, state):
     """Render/validate agent references before both SSE final and history save."""
+    if not is_financial_turn(state):
+        return content
     report = state.get("financial_report_context")
     if not report:
         return content
@@ -706,7 +739,11 @@ def make_financial_tools(
                     )
 
                     generator = topic_generator
-                    if generator is None and state.get("financial_llm_client"):
+                    if (
+                        generator is None
+                        and state.get("financial_llm_client")
+                        and state.get("model_name")
+                    ):
                         generator = TopicGenerator(
                             state["financial_llm_client"],
                             state["model_name"],

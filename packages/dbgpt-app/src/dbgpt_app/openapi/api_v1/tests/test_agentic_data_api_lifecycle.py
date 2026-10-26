@@ -289,3 +289,32 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
     payload = json.loads(restored.messages[-1].content)
     assert payload["execution_status"] == "interrupted"
     assert payload["steps"][0]["outputs"][0]["content"] == "已读取财报"
+
+
+@pytest.mark.asyncio
+async def test_cancel_cleanup_times_out_and_consumes_late_failure(monkeypatch, caplog):
+    monkeypatch.setattr(agentic_data_api, "AGENT_CLEANUP_TIMEOUT_SECONDS", 0.01)
+    started = asyncio.Event()
+    finish = asyncio.Event()
+
+    async def stubborn_task():
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await finish.wait()
+            raise RuntimeError("late cleanup failure")
+
+    task = asyncio.create_task(stubborn_task())
+    await started.wait()
+    try:
+        await asyncio.wait_for(
+            agentic_data_api._cancel_and_await_agent_task(task), timeout=0.5
+        )
+        assert not task.done()
+        assert "exceeded cleanup deadline" in caplog.text
+    finally:
+        finish.set()
+        await asyncio.gather(task, return_exceptions=True)
+        await asyncio.sleep(0)
+    assert "failed after stream cleanup" in caplog.text
