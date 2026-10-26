@@ -3,6 +3,11 @@ import markdownComponents, { markdownPlugins, preprocessLaTeX } from '@/componen
 import type { SessionFileSnapshot } from '@/modules/session-files';
 import AdvancedChart, { createChartConfig } from '@/new-components/charts';
 import MarkDownContext from '@/new-components/common/MarkdownContext';
+import {
+  FinancialReportReference,
+  isFinancialReportReference,
+} from '@/new-components/financial-analysis/agent-artifact';
+import type { FinancialCitation, FinancialCitationTarget } from '@/new-components/financial-analysis/report-citations';
 import HtmlReportEvidence from '@/new-components/report/HtmlReportEvidence';
 import ReportIframe, { resolveReportAssetUrls, sanitizeEmbeddedReportHtml } from '@/new-components/report/ReportIframe';
 import TraceableReportWorkspace from '@/new-components/report/TraceableReportWorkspace';
@@ -56,6 +61,7 @@ import {
 import { GPTVis } from '@antv/gpt-vis';
 import { Button, Dropdown, Table, Tooltip, message } from 'antd';
 import classNames from 'classnames';
+import dynamic from 'next/dynamic';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Collapsible } from '../tools/Collapsible';
@@ -65,6 +71,10 @@ import ParallelTasksPanel from './ParallelTasksPanel';
 import SubAgentStatusBadge from './SubAgentStatusBadge';
 import type { TaskFileTab, TaskFileTabNavigationKey } from './task-files-view-model';
 import { TASK_FILE_TABS, buildTaskFileView, getNextTaskFileTab, getTaskFileEmptyLabel } from './task-files-view-model';
+
+const FinancialReportArtifact = dynamic(() => import('@/new-components/financial-analysis/FinancialReportArtifact'), {
+  ssr: false,
+});
 
 /** Resolve image paths like `/images/xxx.png` to full backend URLs in dev mode */
 const resolveImageUrl = (src: string): string => {
@@ -182,6 +192,9 @@ export interface ActiveStepInfo {
 }
 
 export interface ManusRightPanelProps {
+  financialCitationTarget?: FinancialCitationTarget | null;
+  onFinancialCitationClick?: (citation: FinancialCitation) => void;
+  onFinancialTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
   activeStep?: ActiveStepInfo | null;
   outputs: ExecutionOutput[];
   isRunning?: boolean;
@@ -949,8 +962,13 @@ const OutputRenderer: React.FC<{ output: ExecutionOutput; index: number; action?
         )}
 
         {output.output_type === 'text' && (
-          <div className='rounded-lg bg-gray-900 px-4 py-3 text-sm text-green-400 font-mono whitespace-pre leading-relaxed overflow-x-auto'>
-            {String(content)}
+          <div
+            className={classNames(
+              'rounded-lg bg-gray-900 px-4 py-3 text-sm text-green-400 font-mono leading-relaxed overflow-x-auto',
+              action?.includes('_financial_') ? 'whitespace-pre-wrap break-words' : 'whitespace-pre',
+            )}
+          >
+            {action?.includes('_financial_') ? String(content).replace(/\n{3,}/g, '\n\n') : String(content)}
           </div>
         )}
 
@@ -1285,13 +1303,26 @@ const SkillScriptRenderer: React.FC<{
 
 SkillScriptRenderer.displayName = 'SkillScriptRenderer';
 
-const HtmlTabbedRenderer: React.FC<{ code?: ExecutionOutput; html: ExecutionOutput }> = memo(({ code, html }) => {
+const HtmlTabbedRenderer: React.FC<{
+  code?: ExecutionOutput;
+  html: ExecutionOutput;
+  busy?: boolean;
+  onFinancialTopicRetry?: (reference: FinancialReportReference, topicId: string) => void;
+}> = memo(({ code, html, busy, onFinancialTopicRetry }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'source'>('preview');
   const htmlContent = html.content;
   const rawHtml =
     typeof htmlContent === 'string' ? htmlContent : htmlContent?.html || htmlContent?.content || String(htmlContent);
   const htmlString = resolveHtmlImageUrls(rawHtml, true);
   const sourceCode = code ? String(code.content) : rawHtml;
+
+  if (isFinancialReportReference(htmlContent)) {
+    return (
+      <div className='h-[75vh] min-h-[500px]'>
+        <FinancialReportArtifact reference={htmlContent} busy={busy} onTopicRetry={onFinancialTopicRetry} />
+      </div>
+    );
+  }
 
   return (
     <div className='rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700'>
@@ -2416,6 +2447,7 @@ const ReferencesPanel: React.FC<{
 
 // Main Component
 const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
+  onFinancialTopicRetry,
   activeStep,
   outputs,
   isRunning,
@@ -2429,6 +2461,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   panelView: controlledPanelView,
   onPanelViewChange,
   previewArtifact,
+  financialCitationTarget,
+  onFinancialCitationClick,
   databaseType,
   databaseName,
   skillName,
@@ -2451,6 +2485,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
   const [internalPanelView, setInternalPanelView] = useState<PanelView>('execution');
   const [fileFilter, setFileFilter] = useState<TaskFileTab>('all');
   const htmlPreviewRef = useRef<HTMLIFrameElement>(null);
+  const executionOutputRef = useRef<HTMLDivElement>(null);
+  const followOutputRef = useRef(true);
   const panelView = controlledPanelView ?? internalPanelView;
   const setPanelView = (view: PanelView) => {
     setInternalPanelView(view);
@@ -2510,6 +2546,20 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
     }
   }, [citations.length, onPanelViewChange, panelView]);
   const visibleOutputs = useMemo(() => outputs.filter(o => o.output_type !== 'thought'), [outputs]);
+  useEffect(() => {
+    followOutputRef.current = true;
+  }, [activeStep?.id]);
+  useEffect(() => {
+    const container = executionOutputRef.current;
+    if (
+      container &&
+      followOutputRef.current &&
+      activeStep?.status === 'running' &&
+      activeStep.action?.includes('_financial_')
+    ) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [visibleOutputs, activeStep?.id, activeStep?.status, activeStep?.action]);
 
   const {
     counts: taskFileCounts,
@@ -2553,8 +2603,8 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
       {/* Collapse button is rendered by the parent layout to avoid overflow clipping */}
 
       {/* Terminal Header */}
-      <div className='flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-[#111217]'>
-        <div className='flex items-center gap-3'>
+      <div className='flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-[#111217]'>
+        <div className='flex shrink-0 items-center gap-3 whitespace-nowrap'>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded-full bg-red-500' />
             <div className='w-3 h-3 rounded-full bg-yellow-500' />
@@ -2569,7 +2619,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
 
         <div className='flex items-center gap-1'>
           {((panelView === 'report' && reportId && reportRunId) ||
-            (panelView === 'html-preview' && previewArtifact)) && (
+            (panelView === 'html-preview' &&
+              previewArtifact &&
+              !isFinancialReportReference(previewArtifact.content))) && (
             <Dropdown
               trigger={['click']}
               menu={{
@@ -2700,7 +2752,7 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
         !!conversationId ||
         citations.length > 0 ||
         (reportId && reportRunId)) && (
-        <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217]'>
+        <div className='flex flex-shrink-0 items-center gap-0 overflow-x-auto whitespace-nowrap border-b border-gray-200 bg-white px-5 dark:border-gray-800 dark:bg-[#111217] [&>button]:shrink-0'>
           <button
             onClick={() => setPanelView('execution')}
             className={classNames(
@@ -2919,6 +2971,14 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
           <div className='w-full h-full flex flex-col p-5 overflow-auto'>
             <SkillCardRenderer skillName={skillName} outputs={visibleOutputs} />
           </div>
+        ) : panelView === 'html-preview' && previewArtifact && isFinancialReportReference(previewArtifact.content) ? (
+          <FinancialReportArtifact
+            citationTarget={financialCitationTarget}
+            busy={isRunning}
+            onTopicRetry={onFinancialTopicRetry}
+            key={`${previewArtifact.content.sessionId}:${previewArtifact.content.runId}`}
+            reference={previewArtifact.content}
+          />
         ) : panelView === 'html-preview' && previewArtifact ? (
           <div className='w-full h-full flex flex-col'>
             {(() => {
@@ -2969,7 +3029,9 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
             {isSummaryStreaming ? (
               <span className='whitespace-pre-wrap break-words'>{summaryContent}</span>
             ) : (
-              <MarkDownContext>{fixSquishedTables(summaryContent)}</MarkDownContext>
+              <MarkDownContext onFinancialCitationClick={onFinancialCitationClick}>
+                {fixSquishedTables(summaryContent)}
+              </MarkDownContext>
             )}
             {isSummaryStreaming && (
               <span className='inline-block w-1.5 h-4 bg-blue-500 animate-pulse ml-0.5 align-text-bottom' />
@@ -3444,6 +3506,12 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                   <div
                     className='min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4'
                     data-testid='execution-output-scroll'
+                    ref={executionOutputRef}
+                    onScroll={event => {
+                      const container = event.currentTarget;
+                      followOutputRef.current =
+                        container.scrollHeight - container.scrollTop - container.clientHeight < 48;
+                    }}
                   >
                     {outputGroups.map((group, gIdx) => {
                       // For skill-type steps, skip the "Skill: name — description" text output (shown in YAML card above)
@@ -3455,7 +3523,13 @@ const ManusRightPanel: React.FC<ManusRightPanelProps> = ({
                       return group.type === 'code-execution' ? (
                         <CodeExecutionRenderer key={`group-${gIdx}`} group={group} />
                       ) : group.type === 'html-tabbed' ? (
-                        <HtmlTabbedRenderer key={`html-tabbed-${gIdx}`} code={group.code} html={group.html} />
+                        <HtmlTabbedRenderer
+                          key={`html-tabbed-${gIdx}`}
+                          code={group.code}
+                          html={group.html}
+                          busy={isRunning}
+                          onFinancialTopicRetry={onFinancialTopicRetry}
+                        />
                       ) : (
                         <OutputRenderer
                           key={`output-${gIdx}`}
