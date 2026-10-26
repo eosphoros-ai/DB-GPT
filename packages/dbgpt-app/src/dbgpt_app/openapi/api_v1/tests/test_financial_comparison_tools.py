@@ -10,13 +10,13 @@ from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     make_financial_tools,
 )
 from dbgpt_serve.financial_analysis import workflow
-from dbgpt_serve.financial_analysis.tests.conftest import (
-    isolated_service as isolated_service,
-)
+from dbgpt_serve.financial_analysis.tests import conftest as financial_fixtures
 from dbgpt_serve.financial_analysis.tests.workflow_fixtures import (
     RecordingAnalyzer,
 )
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
+
+isolated_service = financial_fixtures.isolated_service
 
 
 def test_attachment_count_alone_does_not_imply_comparison():

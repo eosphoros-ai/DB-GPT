@@ -20,9 +20,7 @@ from dbgpt_app.openapi.api_v1.tools.financial_tools import (
 )
 from dbgpt_serve.financial_analysis import workflow
 from dbgpt_serve.financial_analysis.summary import report_summary, summary_context
-from dbgpt_serve.financial_analysis.tests.conftest import (
-    isolated_service as isolated_service,
-)
+from dbgpt_serve.financial_analysis.tests import conftest as financial_fixtures
 from dbgpt_serve.financial_analysis.tests.conftest import wait_ready
 from dbgpt_serve.financial_analysis.tests.test_comparison_service import create
 from dbgpt_serve.financial_analysis.tests.test_workflow_loops import (
@@ -30,6 +28,8 @@ from dbgpt_serve.financial_analysis.tests.test_workflow_loops import (
     reviews,
     topic_findings,
 )
+
+isolated_service = financial_fixtures.isolated_service
 
 
 def test_semantic_repair_has_scoped_data_and_can_pass_after_chinese_section_patch():
