@@ -9,9 +9,13 @@ from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 from .workflow import public_snapshot
 
 DATA_MARKER = "<!--FINANCIAL_REPORT_JSON-->"
+LANGUAGE_MARKER = "<!--FINANCIAL_REPORT_LANGUAGE-->"
 
 
-def render_export(report, kind, runtime=None):
+def render_export(report, kind, runtime=None, *, language="zh"):
+    """Embed an unchanged snapshot with an explicitly selected UI language."""
+    if language not in {"zh", "en"}:
+        raise SessionFileApiError(400, "EXPORT_LANGUAGE_INVALID", "不支持的导出语言。")
     payload = json.dumps(
         public_snapshot(report), ensure_ascii=False, allow_nan=False, indent=2
     )
@@ -41,4 +45,8 @@ def render_export(report, kind, runtime=None):
     safe_json = (
         payload.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
     )
+    html_language = "en" if language == "en" else "zh-CN"
+    shell = shell.replace(LANGUAGE_MARKER, html_language)
+    # Retain compatibility with runtimes built before the language marker.
+    shell = shell.replace('<html lang="zh-CN">', f'<html lang="{html_language}">')
     return shell.replace(DATA_MARKER, safe_json)

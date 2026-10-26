@@ -2497,7 +2497,10 @@ async def _react_agent_stream_impl(
     else:
         report_language = "zh" if re.search(r"[\u3400-\u9fff]", user_input) else "en"
     react_state: Dict[str, Any] = {
-        "financial_user_query": dialogue.user_input,
+        "financial_user_query": user_input,
+        "financial_other_source_selected": bool(
+            database_name or dataset_id or knowledge_space or connector_ids
+        ),
         "_report_original_request": user_input,
         "_report_language": report_language,
         "skills_loaded": True,  # Skills are pre-loaded now

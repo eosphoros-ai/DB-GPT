@@ -1,11 +1,15 @@
 import json
 import time
 from copy import deepcopy
+from uuid import uuid4
+
+import pytest
 
 from dbgpt_serve.financial_analysis import workflow
 from dbgpt_serve.financial_analysis.service import FinancialAnalysisService
 
 from .conftest import wait_ready
+from .fixtures import report_config
 from .test_comparison_analysis import comparison_finding
 from .test_comparison_service import create
 from .workflow_fixtures import RecordingAnalyzer
@@ -109,6 +113,7 @@ def test_invalid_model_review_is_bounded_and_leaves_explicit_draft(isolated_serv
     service.analyzer = adapter
     report = service.get("alice", "scope", run_id, report=True)
     report["analysis"]["driver"] = "standalone"
+    report.pop("timings")
     service._update(run_id, report_json=json.dumps(report))
     result = service.comparisons.analyze("alice", "scope", run_id, report)
     assert len(review_calls) == 2 and review_calls[1]
@@ -116,6 +121,43 @@ def test_invalid_model_review_is_bounded_and_leaves_explicit_draft(isolated_serv
     assert result["lifecycle"]["stage"] == "awaiting_revision"
     assert result["findings"] and calls == ["a", "b"]
     assert len(result["analysis"]["reviewIssues"]) == 2
+    assert result["timings"]["analysisMs"] >= 0
+
+
+@pytest.mark.parametrize("legacy_timings", [False, True])
+def test_standalone_baseline_change_and_topic_retry_preserve_extraction(
+    isolated_service, legacy_timings
+):
+    service, _, extraction_calls, _ = isolated_service
+    analyzer = RecordingAnalyzer()
+    service.analyzer = analyzer
+    run_id = str(uuid4())
+    service.comparisons.create("alice", "scope", ["a", "b"], run_id, report_config())
+    published = wait_analysis(service, run_id)
+    assert published["workflow"]["status"] == "published"
+    timings = dict(published["timings"])
+    if legacy_timings:
+        published.pop("timings")
+        workflow.changed(published)
+        service._update(run_id, report_json=json.dumps(published))
+    rebuilt = service.comparisons.reconfigure(
+        "alice", "scope", run_id, published["revision"], report_config(baseline="b")
+    )
+    if not legacy_timings:
+        assert rebuilt["timings"]["extractionMs"] == timings["extractionMs"]
+    revised = wait_analysis(service, run_id)
+    assert revised["workflow"]["status"] == "published"
+    assert revised["comparison"]["config"]["baseline_file_id"] == "b"
+    assert revised["timings"]["analysisMs"] >= 0
+    assert service.get("alice", "scope", run_id)["status"] == "completed"
+    assert len(analyzer.calls) == 12
+    service.comparisons.retry_topic(
+        "alice", "scope", run_id, revised["revision"], "expenses"
+    )
+    retried = wait_analysis(service, run_id)
+    assert retried["workflow"]["status"] == "published"
+    assert analyzer.calls[12:] == ["expenses"]
+    assert extraction_calls == ["a", "b"]
 
 
 def test_restart_during_extraction_retries_only_interrupted_document(isolated_service):

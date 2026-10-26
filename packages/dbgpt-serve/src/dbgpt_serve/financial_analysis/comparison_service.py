@@ -528,7 +528,7 @@ class ComparisonRunner:
                 report["analysis"]["reviewIssues"] = review_issues
                 workflow.changed(report)
                 report["lifecycle"]["stage"] = "awaiting_revision"
-                report["timings"]["analysisMs"] = round(
+                report.setdefault("timings", {})["analysisMs"] = round(
                     (time.monotonic() - timer) * 1000
                 )
                 self.service._update(
@@ -552,7 +552,9 @@ class ComparisonRunner:
                 for t in report["workflow"]["topics"]
             ]
         report["analysis"].pop("reviewIssues", None)
-        report["timings"]["analysisMs"] = round((time.monotonic() - timer) * 1000)
+        report.setdefault("timings", {})["analysisMs"] = round(
+            (time.monotonic() - timer) * 1000
+        )
         self.service._update(run_id, report_json=json.dumps(report, ensure_ascii=False))
         result = self.service.update_agent_workflow(
             owner, session_id, run_id, report["revision"], "review", reviews=reviews
@@ -611,6 +613,7 @@ class ComparisonRunner:
                     completedAt=None,
                     rejectedCount=0,
                 )
+                rebuilt["timings"] = dict(report.get("timings", {}))
                 workflow.initialize(rebuilt)
                 rebuilt["lifecycle"]["stage"] = "awaiting_analysis"
                 row.config_json = json.dumps(stored, ensure_ascii=False)

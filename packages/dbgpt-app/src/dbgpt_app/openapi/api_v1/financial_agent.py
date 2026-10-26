@@ -313,6 +313,13 @@ class FinancialWorkflowAgent(ToolCallingReActAgent):
                     break
         if output is None:
             output = await super().act(message, sender, **kwargs)
+        if output.is_exe_success and any(
+            name
+            in {"sql_query", "chart_query", "knowledge_retrieve", "semantic_search"}
+            or name.startswith("kb_")
+            for name, _ in calls
+        ):
+            state["financial_other_source_used"] = True
         if not output.is_exe_success and "REVIEW_REPAIR_EXHAUSTED" in (
             output.content or ""
         ):

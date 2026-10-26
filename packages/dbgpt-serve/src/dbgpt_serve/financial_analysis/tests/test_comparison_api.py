@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from dbgpt_serve.financial_analysis.api import CreateRun, make_router
+from dbgpt_serve.financial_analysis.api import CreateExport, CreateRun, make_router
 from dbgpt_serve.session_file.api.endpoints import get_authenticated_owner
 
 from .conftest import wait_ready
@@ -21,6 +21,14 @@ def test_request_dispatch_preserves_single_file_defaults():
     ]:
         with pytest.raises(ValidationError):
             CreateRun(session_id="s", **params)
+
+
+def test_export_language_contract_defaults_and_rejects_markup():
+    request = {"session_id": "scope", "revision": "saved", "format": "html"}
+    assert CreateExport(**request).language == "zh"
+    assert CreateExport(**request, language="en").language == "en"
+    with pytest.raises(ValidationError):
+        CreateExport(**request, language='en"><script>')
 
 
 def test_api_scope_versions_and_source_members(isolated_service):

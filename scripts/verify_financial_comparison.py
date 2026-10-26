@@ -38,13 +38,13 @@ from dbgpt_serve.financial_analysis.tests.test_comparison_analysis import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def write_snapshot(directory, name, report, runtime):
+def write_snapshot(directory, name, report, runtime, *, language="zh"):
     (directory / (name + ".json")).write_text(
         render_export(report, "json"), encoding="utf-8"
     )
     if runtime:
         (directory / (name + ".html")).write_text(
-            render_export(report, "html", runtime), encoding="utf-8"
+            render_export(report, "html", runtime, language=language), encoding="utf-8"
         )
 
 
@@ -106,6 +106,8 @@ def synthetic_snapshots(directory, runtime):
             }
             report = workflow.publish(report)
         write_snapshot(directory, name, report, runtime)
+        if name == "published":
+            write_snapshot(directory, "published-en", report, runtime, language="en")
     single = build_report(
         extracted(),
         {"id": str(uuid4()), "completed_at": "2026-10-24T00:00:00+00:00"},

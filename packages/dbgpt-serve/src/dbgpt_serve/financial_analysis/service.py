@@ -349,7 +349,9 @@ class FinancialAnalysisService:
             )
             return [self._export_public(row) for row in rows]
 
-    def create_export(self, owner, session_id, run_id, revision, kind):
+    def create_export(
+        self, owner, session_id, run_id, revision, kind, *, language="zh"
+    ):
         report = self.get(owner, session_id, run_id, report=True, revision=revision)
         if report.get("analysis", {}).get("status") == "running":
             raise SessionFileApiError(
@@ -359,7 +361,16 @@ class FinancialAnalysisService:
             raise SessionFileApiError(
                 400, "EXPORT_FORMAT_INVALID", "不支持的导出格式。"
             )
-        export_id = hashlib.sha256(f"{run_id}:{revision}:{kind}".encode()).hexdigest()
+        if language not in {"zh", "en"}:
+            raise SessionFileApiError(
+                400, "EXPORT_LANGUAGE_INVALID", "不支持的导出语言。"
+            )
+        # Keep existing JSON/default-language exports addressable. English HTML
+        # is a distinct artifact, never a replacement of an immutable export.
+        language_suffix = ":en" if kind == "html" and language == "en" else ""
+        export_id = hashlib.sha256(
+            f"{run_id}:{revision}:{kind}{language_suffix}".encode()
+        ).hexdigest()
         with self._lock:
             with self.session() as session:
                 run = session.query(self._run_model).filter_by(id=run_id).one()
@@ -368,14 +379,19 @@ class FinancialAnalysisService:
                 )
                 row = session.query(Export).filter_by(id=export_id).first()
                 if row is None:
-                    content = render_export(report, kind, self.export_runtime)
+                    content = render_export(
+                        report, kind, self.export_runtime, language=language
+                    )
                     encoded = content.encode("utf-8")
                     row = Export(
                         id=export_id,
                         run_id=run_id,
                         revision=revision,
                         format=kind,
-                        file_name=f"financial-{run_id}.{kind}",
+                        file_name=(
+                            f"financial-{run_id}"
+                            f"{'-en' if language_suffix else ''}.{kind}"
+                        ),
                         created_at=now(),
                         size_bytes=len(encoded),
                         sha256=hashlib.sha256(encoded).hexdigest(),

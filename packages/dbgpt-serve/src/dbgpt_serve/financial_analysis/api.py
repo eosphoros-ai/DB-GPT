@@ -89,6 +89,7 @@ class CreateExport(BaseModel):
     session_id: str = Field(min_length=1, max_length=255, pattern=r"^[A-Za-z0-9_-]+$")
     revision: str = Field(min_length=1, max_length=255)
     format: Literal["json", "html"]
+    language: Literal["zh", "en"] = "zh"
 
 
 def make_router(service):
@@ -222,7 +223,12 @@ def make_router(service):
     ):
         return Result.succ(
             service.create_export(
-                owner, body.session_id, str(run_id), body.revision, body.format
+                owner,
+                body.session_id,
+                str(run_id),
+                body.revision,
+                body.format,
+                language=body.language,
             )
         )
 

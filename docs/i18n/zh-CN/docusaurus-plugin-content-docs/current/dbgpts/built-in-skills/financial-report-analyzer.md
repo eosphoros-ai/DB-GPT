@@ -26,8 +26,10 @@
 
 ## 运行说明
 
-当前执行器仅支持单个本地服务进程。旧数据库需要显式增量迁移：先执行 `python -m dbgpt_serve.financial_analysis.migrate --database-url <目标>` 预览，按正常维护流程备份目标库后再加 `--apply`。应用不会静默修改旧表。旧程序不应直接运行在已有对比任务的新库上。
+当前执行器仅支持单个本地服务进程。旧数据库需要显式增量迁移：先执行 `uv run --no-sync python -m dbgpt_serve.financial_analysis.migrate --database-url <目标>` 预览，按正常维护流程备份目标库后再加 `--apply`。应用不会静默修改旧表。旧程序不应直接运行在已有对比任务的新库上。
 
-运行 `node standalone/financial-analysis/build.cjs <输出.html>` 构建离线组件，通过 `DBGPT_FINANCIAL_EXPORT_RUNTIME` 指向产物。当前工具流程见 `skills/financial-report-analyzer/SKILL.md`；原脚本及模板保留兼容用途。
+运行 `node standalone/financial-analysis/build.cjs web/node_modules/.cache/financial-comparison/runtime.html` 构建离线组件，通过 `DBGPT_FINANCIAL_EXPORT_RUNTIME` 指向产物。当前工具流程见 `skills/financial-report-analyzer/SKILL.md`；原脚本及模板保留兼容用途。
 
 具体迁移、隔离验证命令、实测记录及未验收场景见仓库 `docs/financial-comparison-acceptance.zh-CN.md`。合成 fixtures 和工程测试不能代替真实 PDF、真实模型与人工验收。
+
+HTML 导出支持可选的 `language`（`en` 或 `zh`，默认 `zh`），离线控件保留导出时选择的界面语言。中英文 HTML 分别保存为同一报告版本的独立文件，报告内容和 JSON 数据不变。更新前端后需重新构建离线运行时。

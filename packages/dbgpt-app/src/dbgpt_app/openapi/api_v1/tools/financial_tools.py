@@ -157,10 +157,21 @@ def _service():
     from dbgpt._private.config import Config
     from dbgpt_serve.session_file.serve import SessionFileServe
 
-    component = Config().SYSTEM_APP.get_component(
-        SessionFileServe.name, SessionFileServe
+    app = Config().SYSTEM_APP
+    if app is None:
+        return None
+    component = app.get_component(
+        SessionFileServe.name, SessionFileServe, default_component=None
     )
-    return component.financial_analysis
+    return component.financial_analysis if component else None
+
+
+def _has_other_source(state):
+    """Keep selected or executed non-report sources outside the keyword gate."""
+    return bool(
+        state.get("financial_other_source_selected")
+        or state.get("financial_other_source_used")
+    )
 
 
 async def financial_completion_error(state, *, service=None):
@@ -178,13 +189,16 @@ async def financial_completion_error(state, *, service=None):
         )
     if state.get("financial_report_context"):
         return None
-    if not is_financial_turn(state):
+    if not is_financial_turn(state) or _has_other_source(state):
         return None
     from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
+    backend = service or _service()
+    if backend is None:
+        return None
     try:
         await asyncio.to_thread(
-            (service or _service()).latest_agent_report,
+            backend.latest_agent_report,
             state["owner_id"],
             state["conv_id"],
         )
@@ -507,6 +521,12 @@ def financial_answer_error(content, state, *, repair_limit=2):
     """Give the agent bounded feedback before replacing an invalid final answer."""
     if not is_financial_turn(state):
         return None
+    if (
+        state.get("financial_read")
+        and _has_other_source(state)
+        and not REFERENCE.search(content)
+    ):
+        return None
     report = state.get("financial_report_context")
     if not report or not is_published(report):
         return None
@@ -562,6 +582,8 @@ def finalize_financial_answer(content, state):
         return render_summary(content, report, detailed=detailed)
     references = set(REFERENCE.findall(content))
     if not references:
+        if _has_other_source(state) or not re.search(r"\d", content):
+            return content
         return "当前报告已提取的数据不足以回答这个问题。请结合原文或补充相关资料核对。"
     context = model_context(report)
     try:
@@ -599,7 +621,10 @@ def make_financial_tools(
         owner, session_id = state.get("owner_id"), state.get("conv_id")
         if not owner or not session_id:
             raise ValueError("当前对话身份尚未就绪。")
-        return service or _service(), owner, session_id
+        backend = service or _service()
+        if backend is None:
+            raise ValueError("财报服务尚未就绪。")
+        return backend, owner, session_id
 
     latest_progress_report = None
     activity = {}

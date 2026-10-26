@@ -71,7 +71,6 @@ TOPICS = (
 
 
 def question_context(report, question):
-    context = model_context(report)
     wanted = set().union(
         *(codes for words, codes in TOPICS if any(w in question for w in words))
     )
@@ -88,6 +87,8 @@ def question_context(report, question):
             entity_ids=entities or None,
             periods=periods or None,
         )
+    else:
+        context = model_context(report)
     if wanted:
         ids = {f["id"] for f in report["facts"] if f["metricCode"] in wanted}
         context["facts"] = [f for f in context["facts"] if f["id"] in ids]

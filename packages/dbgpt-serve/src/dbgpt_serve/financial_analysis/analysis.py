@@ -208,7 +208,7 @@ def model_context(report):
         }
         for e in report["evidence"]
         if e["id"] in evidence_ids
-    ][:100]
+    ]
     result = {
         "company": report["report"]["companyName"],
         "year": year,

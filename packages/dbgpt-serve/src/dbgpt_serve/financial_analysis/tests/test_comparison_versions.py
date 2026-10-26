@@ -70,6 +70,56 @@ def test_json_and_html_export_pin_identical_revision_without_moving_current(
     assert len(service.list_revisions("alice", "scope", run_id)) == 2
 
 
+def test_export_languages_have_distinct_immutable_html_and_identical_data(
+    isolated_service, tmp_path
+):
+    from dbgpt_serve.financial_analysis.workflow import public_snapshot
+
+    service, _, _, _ = isolated_service
+    run_id = create(service)
+    wait_ready(service, run_id)
+    report = service.get("alice", "scope", run_id, report=True)
+    runtime = tmp_path / "runtime.html"
+    runtime.write_text(
+        '<html lang="<!--FINANCIAL_REPORT_LANGUAGE-->"><script type="application/json">'
+        "<!--FINANCIAL_REPORT_JSON--></script></html>",
+        encoding="utf-8",
+    )
+    service.export_runtime = runtime
+    files = [
+        service.create_export(
+            "alice", "scope", run_id, report["revision"], "html", language=language
+        )
+        for language in ("zh", "en")
+    ]
+    assert files[0]["id"] != files[1]["id"]
+    for file, language in zip(files, ("zh-CN", "en")):
+        body = service.download_export("alice", "scope", run_id, file["id"])[0].decode()
+        assert f'<html lang="{language}">' in body
+        embedded = body.split('application/json">', 1)[1].split("</script>")[0]
+        assert json.loads(embedded) == public_snapshot(report)
+    assert (
+        service.create_export("alice", "scope", run_id, report["revision"], "html")
+        == files[0]
+    )
+    assert (
+        service.create_export(
+            "alice", "scope", run_id, report["revision"], "html", language="en"
+        )
+        == files[1]
+    )
+    with pytest.raises(SessionFileApiError) as error:
+        service.create_export(
+            "alice",
+            "scope",
+            run_id,
+            report["revision"],
+            "html",
+            language='en"><script>',
+        )
+    assert error.value.err_code == "EXPORT_LANGUAGE_INVALID"
+
+
 def test_offline_json_cannot_close_data_script(tmp_path):
     from dbgpt_serve.financial_analysis.exports import render_export
 

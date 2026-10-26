@@ -26,8 +26,10 @@ Published revisions are immutable. History, questions, citations and exports can
 
 ## Operations
 
-The runner supports one local service process. Existing databases require an explicit additive migration using `python -m dbgpt_serve.financial_analysis.migrate --database-url <target>`, first without `--apply` to inspect the plan. The application does not silently alter existing tables. Back up the intended database and apply migrations through the normal maintenance process; do not run an old binary against comparison tasks.
+The runner supports one local service process. Existing databases require an explicit additive migration using `uv run --no-sync python -m dbgpt_serve.financial_analysis.migrate --database-url <target>`, first without `--apply` to inspect the plan. The application does not silently alter existing tables. Back up the intended database and apply migrations through the normal maintenance process; do not run an old binary against comparison tasks.
 
-Build the offline runtime with `node standalone/financial-analysis/build.cjs <output.html>` and configure `DBGPT_FINANCIAL_EXPORT_RUNTIME`. The current skill is defined in `skills/financial-report-analyzer/SKILL.md`; legacy scripts and templates remain available for compatibility.
+Build the offline runtime with `node standalone/financial-analysis/build.cjs web/node_modules/.cache/financial-comparison/runtime.html` and configure `DBGPT_FINANCIAL_EXPORT_RUNTIME`. The current skill is defined in `skills/financial-report-analyzer/SKILL.md`; legacy scripts and templates remain available for compatibility.
 
 Implementation details, isolated validation commands, measured results and unverified scenarios are recorded in the repository's `docs/financial-comparison-acceptance.zh-CN.md`. Synthetic fixtures and engineering tests do not replace real-PDF, real-model or human acceptance.
+
+HTML export accepts an optional `language` (`en` or `zh`, default `zh`) and preserves the selected UI language offline. English and Chinese HTML files are separate artifacts of the same unchanged revision; JSON data is language independent. Rebuild the frontend runtime after updates.

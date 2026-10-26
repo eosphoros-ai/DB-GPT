@@ -552,9 +552,9 @@ uv run pytest packages/dbgpt-serve/src/dbgpt_serve/financial_analysis/tests
 # 项目根目录；保留并执行现有历史恢复回归。
 uv run pytest packages/dbgpt-app/src/dbgpt_app/openapi/api_v1/tests/test_financial_history_recovery.py
 
-# web 目录；执行前需在 package.json 添加对应脚本。
-npm.cmd run test:financial
-npm.cmd run test:e2e:financial
+# 项目根目录；前后端代码和依赖均已准备。
+npm.cmd --prefix web run test:financial
+npm.cmd --prefix web run test:e2e:financial
 ```
 
 同时完成改动文件的类型/静态检查和离线导出构建。遇到已有基线错误，记录具体错误并区分新增回归，不能仅引用过去的错误数量。
