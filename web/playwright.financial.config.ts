@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/financial-e2e',
-  testMatch: '**/*.spec.cjs',
+  projects: [
+    { name: 'offline', testMatch: '**/offline-*.spec.cjs' },
+    { name: 'live', testMatch: '**/live-*.spec.cjs' },
+  ],
   outputDir: './node_modules/.cache/financial-comparison/playwright',
   workers: 1,
   timeout: 60000,

@@ -18,7 +18,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
-import tomllib
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -120,6 +119,11 @@ class ConfiguredAnalyzer:
     """Acceptance-only adapter to the explicitly selected compatible endpoint."""
 
     def __init__(self, config_path, env_path):
+        try:
+            import tomllib
+        except ImportError:
+            import tomli as tomllib
+
         from dotenv import dotenv_values
 
         settings = tomllib.loads(Path(config_path).read_text(encoding="utf-8"))

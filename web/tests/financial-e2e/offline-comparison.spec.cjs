@@ -6,6 +6,35 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '../../node_modules/.cache/financial-comparison');
 const open = (page, name) => page.goto(pathToFileURL(path.join(root, name + '.html')).href);
 
+test('comparison controls, table headers and conflicts follow the dark theme', async ({ page }) => {
+  await open(page, 'conflict');
+  const baseline = page.getByLabel('比较基准', { exact: true });
+  await expect(baseline).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await expect(baseline).toHaveCSS('background-color', 'rgb(17, 18, 23)');
+  await expect(baseline).toHaveCSS('color', 'rgb(226, 230, 237)');
+  const matrix = page.getByLabel('财务对比矩阵，可横向滚动');
+  await expect(matrix.locator('thead th').first()).toHaveCSS('background-color', 'rgb(26, 28, 35)');
+  await expect(matrix.locator('td[data-status="conflict"]').first()).toHaveCSS('background-color', 'rgb(48, 38, 27)');
+  await page.screenshot({ path: path.join(root, 'comparison-dark.png'), fullPage: true });
+});
+
+test('offline report shows readable financial citation labels without application URLs', async ({ page }) => {
+  const snapshot = JSON.parse(fs.readFileSync(path.join(root, 'published.json'), 'utf8'));
+  const label = 'OFFLINE_EVIDENCE_LABEL';
+  snapshot.agent.summary = `**Verified finding** [${label}](#financial-report/${snapshot.report.run.id}/fact/revenue?revision=saved)`;
+  const html = fs.readFileSync(path.join(root, 'published.html'), 'utf8').replace(
+    /(<script type="application\/json" id="financial-report-data">)[\s\S]*?(<\/script>)/,
+    (_, start, end) => start + JSON.stringify(snapshot).replace(/</g, '\\u003c') + end,
+  );
+  const target = path.join(root, 'citation-labels.html');
+  fs.writeFileSync(target, html);
+  await page.goto(pathToFileURL(target).href);
+  await expect(page.getByText(new RegExp(label)).first()).toBeVisible();
+  expect(await page.locator('body').innerText()).not.toContain('#financial-report/');
+  expect(await page.locator('body').innerText()).not.toContain(`[${label}](`);
+});
+
 for (const state of ['normal', 'missing', 'conflict', 'incomparable', 'file-failure', 'analyzing', 'published']) {
   test(`offline formal comparison protocol: ${state}`, async ({ page }) => {
     const errors = [];

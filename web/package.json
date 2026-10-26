@@ -29,7 +29,8 @@
     "test:e2e:report": "playwright test --config playwright.report.config.ts",
     "verify:dashboard": "npm run lint && npm run test:dashboard && npm run build",
     "test:financial": "vitest run --config vitest.financial.config.mts",
-    "test:e2e:financial": "playwright test --config playwright.financial.config.ts"
+    "test:e2e:financial": "playwright test --config playwright.financial.config.ts --project=offline",
+    "test:e2e:financial:live": "playwright test --config playwright.financial.config.ts --project=live"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.18.4",
