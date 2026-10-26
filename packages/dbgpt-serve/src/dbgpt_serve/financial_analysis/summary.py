@@ -305,9 +305,9 @@ def render_cited_answer(content, report, *, context=None, include_labels=False):
     calculations = {item["id"]: item for item in context["calculations"]}
     content = re.sub(
         r"\{\{(calc-[A-Za-z0-9_-]+)\}\}",
-        lambda match: "{{calculation:" + match[1] + "}}"
-        if match[1] in calculations
-        else match[0],
+        lambda match: (
+            "{{calculation:" + match[1] + "}}" if match[1] in calculations else match[0]
+        ),
         content,
     )
     _validate_reference_wording(content, calculations)

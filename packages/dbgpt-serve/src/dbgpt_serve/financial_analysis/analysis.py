@@ -239,9 +239,9 @@ def _render_text(
     # Never infer a numeric value or resolve an unknown/undeclared identifier.
     text = re.sub(
         r"\{\{(calc-[A-Za-z0-9_-]+)\}\}",
-        lambda match: "{{calculation:" + match[1] + "}}"
-        if match[1] in calculations
-        else match[0],
+        lambda match: (
+            "{{calculation:" + match[1] + "}}" if match[1] in calculations else match[0]
+        ),
         text,
     )
     # Units are already included in the canonical replacement.

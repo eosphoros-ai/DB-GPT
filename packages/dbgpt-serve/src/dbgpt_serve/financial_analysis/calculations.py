@@ -181,16 +181,14 @@ def calculate(facts, year):
             else "（本期费用 ÷ 本期营业收入－上期费用 ÷ 上期营业收入）× 100",
             (
                 lambda cost, revenue, old_cost, old_revenue: (
-                    old_cost / old_revenue - cost / revenue
+                    (old_cost / old_revenue - cost / revenue) * 100
                 )
-                * 100
             )
             if gross
             else (
                 lambda expense, revenue, old_expense, old_revenue: (
-                    expense / revenue - old_expense / old_revenue
+                    (expense / revenue - old_expense / old_revenue) * 100
                 )
-                * 100
             ),
             "百分点",
         )
