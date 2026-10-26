@@ -38,6 +38,13 @@ interface TemplateCardProps {
 
 type ConnectorCardProps = InstanceCardProps | TemplateCardProps;
 
+// Metadata-row label per MCP transport. Keys match the backend transport values
+// (`sse` / `streamable_http`); anything unknown falls back to the SSE label.
+const TRANSPORT_LABELS: Record<string, string> = {
+  sse: 'MCP / SSE',
+  streamable_http: 'MCP / Streamable HTTP',
+};
+
 /* ------------------------------------------------------------------ */
 /* Brand tokens — each connector type gets a unique gradient + emoji  */
 /* fallback. Keeps cards instantly recognizable in a dense grid.      */
@@ -211,6 +218,13 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
     ? props.template.category
     : (props.catalogEntry?.category ?? (props.connector.connector_type === 'custom_mcp' ? 'custom' : 'project'));
 
+  // Transport precedence: the instance's own config.transport (set in the form),
+  // then the catalog default from /types, then the SSE label.
+  const transport = isTemplate
+    ? props.template.transport
+    : ((props.connector.config?.transport as string | undefined) ?? props.catalogEntry?.transport);
+  const transportLabel = TRANSPORT_LABELS[transport ?? ''] ?? TRANSPORT_LABELS.sse;
+
   // All instance cards are clickable — the whole card surface opens the tools
   // modal. Built-in templates (github / feishu / yuque / dingtalk) now follow
   // the same unified MCP path as custom_mcp, so there's no longer a reason to
@@ -287,7 +301,7 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
             <div className='flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 leading-none'>
               <span>{t(`connector.category.${category}`, category)}</span>
               <span className='text-gray-300 dark:text-gray-600'>·</span>
-              <span>MCP / SSE</span>
+              <span>{transportLabel}</span>
               {isTemplate && (props.instanceCount ?? 0) > 0 && (
                 <>
                   <span className='text-gray-300 dark:text-gray-600'>·</span>

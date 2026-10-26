@@ -61,7 +61,7 @@ A connector lives in one of three states:
 
 ## Managing connectors
 
-Open the **Connectors** page to see every template and custom server as a card. Each card shows the icon, name, a `Template` / `Custom` badge, its category, the `MCP / SSE` (or Streamable HTTP) transport, and a short description. Use the search box and the **All / Active / Inactive / Needs attention** tabs to filter.
+Open the **Connectors** page to see every template and custom server as a card. Each card shows the icon, name, a `Template` / `Custom` badge, its category, its transport (`MCP / SSE` or `MCP / Streamable HTTP`, taken from the instance's own setting or the template's default), and a short description. Use the search box and the **All / Active / Inactive / Needs attention** tabs to filter.
 
 <p align="center">
   <img src={'/img/mcp/mcp_list.png'} width="800px" />
@@ -99,7 +99,7 @@ Keenable Search is a hosted MCP server for web search and page fetching. It does
 
 ### Example: activate deed.page
 
-deed.page is a hosted MCP server that publishes files to a public HTTPS URL, which is handy when an agent has produced an HTML report or chart and you want a link to share. No account or API key is needed to start: the first `publish_site` call returns an owner token. Keep it: every owner-scoped tool, including `update_site`, `delete_site`, `restore_version`, `set_site_access`, and `set_listing`, needs that token as a tool argument.
+deed.page is a hosted MCP server that publishes files to a public HTTPS URL, which is handy when an agent has produced an HTML report or chart and you want a link to share. No account or API key is needed to start: the first `publish_site` call without a token returns an owner token, and it is shown only once. Store it securely right away: every owner-scoped tool, including `update_site`, `delete_site`, `restore_version`, `set_site_access`, and `set_listing`, needs that token as a tool argument. deed.page keeps only a hash of the token, so a lost token cannot be restored unless you attached a recovery email beforehand; without it you can no longer update or delete those sites. Anyone holding the token controls the owner's sites; if it leaks, rotate it with `rotate_token` or revoke it with `revoke_token`.
 
 1. On the **deed.page** card, click **Activate**.
 2. Set **Streamable HTTP Endpoint URL** to `https://deed.page/mcp`.

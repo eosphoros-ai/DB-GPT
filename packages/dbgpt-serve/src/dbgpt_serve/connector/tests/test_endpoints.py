@@ -120,3 +120,59 @@ async def test_pending_confirms_allows_all_without_api_keys(
     response = await client.get("/pending-confirms")
     assert response.status_code == 200
     assert response.json() == [_PENDING_ENTRY]
+
+
+@pytest.mark.asyncio
+async def test_list_connector_types_exposes_catalog_transport(tmp_path, monkeypatch):
+    import json
+
+    from dbgpt.agent.resource.connector.catalog import ConnectorCatalog
+
+    from ..api import endpoints
+
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "connectors": [
+                    {
+                        "type": "sse_tool",
+                        "display_name": "SSE Tool",
+                        "description": "uses the default transport",
+                        "icon": "sse_tool",
+                        "category": "dev",
+                        "mcp_server": {},
+                    },
+                    {
+                        "type": "http_tool",
+                        "display_name": "HTTP Tool",
+                        "description": "uses streamable http",
+                        "icon": "http_tool",
+                        "category": "dev",
+                        "mcp_server": {"transport": "streamable_http"},
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    catalog = ConnectorCatalog()
+    catalog.load(str(catalog_path))
+
+    class _FakeManager:
+        def get_catalog(self):
+            return catalog
+
+    class _FakeSystemApp:
+        def get_component(self, *args, **kwargs):
+            return _FakeManager()
+
+    monkeypatch.setattr(endpoints, "global_system_app", _FakeSystemApp())
+
+    result = await endpoints.list_connector_types()
+    transports = {option["type"]: option["transport"] for option in result.data}
+    assert transports == {
+        "sse_tool": "sse",
+        "http_tool": "streamable_http",
+        "custom_mcp": None,
+    }

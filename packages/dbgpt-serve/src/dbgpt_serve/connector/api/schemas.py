@@ -17,5 +17,9 @@ class ConnectorTypeOption(BaseModel):
     description: str
     icon: Optional[str] = None
     category: str
+    # Default transport from the catalog's ``mcp_server.transport``
+    # (``sse`` or ``streamable_http``). None for the custom_mcp placeholder,
+    # whose transport is chosen per instance.
+    transport: Optional[str] = None
     is_custom: bool = False
     auth_fields: List[Dict[str, Any]]

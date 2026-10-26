@@ -61,7 +61,7 @@ graph LR
 
 ## 管理连接器
 
-打开**连接器管理**页,每个模板和自定义 Server 都以卡片呈现。卡片展示图标、名称、`模板` / `自定义` 徽章、所属分类、`MCP / SSE`(或 Streamable HTTP)传输标识,以及简短描述。可用搜索框和 **全部 / 已激活 / 未激活 / 需要关注** 标签筛选。
+打开**连接器管理**页,每个模板和自定义 Server 都以卡片呈现。卡片展示图标、名称、`模板` / `自定义` 徽章、所属分类、传输标识(`MCP / SSE` 或 `MCP / Streamable HTTP`,取自实例自身的设置或模板的默认传输),以及简短描述。可用搜索框和 **全部 / 已激活 / 未激活 / 需要关注** 标签筛选。
 
 <p align="center">
   <img src={'/img/mcp/mcp_list_zh.png'} width="800px" />
@@ -99,7 +99,7 @@ Keenable Search 是一个托管的 MCP Server,提供网页搜索与网页正文�
 
 ### 示例:激活 deed.page
 
-deed.page 是一个托管的 MCP Server,可以把文件发布到公开的 HTTPS 地址。Agent 生成了 HTML 报告或图表、需要一个可分享的链接时很方便。开始使用无需账号或 API Key:第一次调用 `publish_site` 会返回 owner token,请妥善保存:`update_site`、`delete_site`、`restore_version`、`set_site_access`、`set_listing` 等所有需要站点所有权的工具,都要把该 token 作为工具参数传入。
+deed.page 是一个托管的 MCP Server,可以把文件发布到公开的 HTTPS 地址。Agent 生成了 HTML 报告或图表、需要一个可分享的链接时很方便。开始使用无需账号或 API Key:第一次不带 token 调用 `publish_site` 会返回 owner token,且只显示这一次。请立即安全保存:`update_site`、`delete_site`、`restore_version`、`set_site_access`、`set_listing` 等所有需要站点所有权的工具,都要把该 token 作为工具参数传入。deed.page 只保存 token 的哈希值,除非事先绑定了恢复邮箱,否则丢失的 token 无法找回,也就无法再更新或删除这些站点。持有该 token 的任何人都能控制该所有者的站点;如果泄露,请用 `rotate_token` 轮换或用 `revoke_token` 吊销。
 
 1. 在 **deed.page** 卡片上点击**激活**。
 2. 将 **Streamable HTTP Endpoint URL** 填为 `https://deed.page/mcp`。

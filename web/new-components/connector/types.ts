@@ -57,6 +57,8 @@ export interface ConnectorCatalogEntry {
   description: string;
   icon?: string;
   category: string;
+  /** Default transport from the catalog (`sse` or `streamable_http`); absent for custom_mcp. */
+  transport?: string;
   is_custom?: boolean;
   auth_fields: ConnectorAuthField[];
 }
