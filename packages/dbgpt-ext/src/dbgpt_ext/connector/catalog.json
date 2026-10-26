@@ -89,6 +89,16 @@
       "mcp_server": {"transport": "streamable_http"},
       "confirm_actions": [],
       "read_actions": ["read_wiki_structure", "read_wiki_contents", "ask_question"]
+    },
+    {
+      "type": "deedpage",
+      "display_name": "deed.page",
+      "description": "把 Agent 生成的 HTML 报告或静态文件夹发布为公开网页,无需账号或 API Key;站点支持更新、版本回滚和删除",
+      "icon": "deedpage",
+      "category": "dev",
+      "mcp_server": {"transport": "streamable_http"},
+      "confirm_actions": ["publish_site", "update_site", "delete_site", "restore_version", "set_site_access", "set_listing"],
+      "read_actions": ["get_site", "list_sites", "list_versions", "get_manifest", "whoami"]
     }
   ]
 }

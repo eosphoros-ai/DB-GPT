@@ -15,7 +15,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 
 ## Highlights
 
-- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, Keenable Search, and DeepWiki.
+- **Built-in templates** — One-click activation for Feishu, DingTalk, Yuque, GitHub, Notion, Linear, Tavily, Keenable Search, DeepWiki, and deed.page.
 - **Custom MCP servers** — Connect any SSE or Streamable HTTP MCP endpoint with your own auth.
 - **Per-conversation selection** — Choose which connectors to attach in the composer; the agent's prompt stays focused and token-efficient.
 - **Human-in-the-loop confirmation** — Write actions (create / update / delete) pop a confirmation dialog before they run.
@@ -57,6 +57,7 @@ A connector lives in one of three states:
 | Tavily | Search | Streamable HTTP | LLM-optimized web search, returns Markdown |
 | Keenable Search | Search | Streamable HTTP | Web search and page fetch; works without an account or API key |
 | DeepWiki | Dev Tools | Streamable HTTP | AI reading & Q&A over any GitHub repo |
+| deed.page | Dev Tools | Streamable HTTP | Publish an HTML report or a folder as a public web page; update, roll back, delete |
 
 ## Managing connectors
 
@@ -95,6 +96,15 @@ Keenable Search is a hosted MCP server for web search and page fetching. It does
 2. Set **Streamable HTTP Endpoint URL** to `https://api.keenable.ai/mcp`.
 3. Leave **Auth type** as `none`. To use an API key instead, choose `bearer` and paste the key into the token field (it is sent as `Authorization: Bearer <key>`).
 4. Save. The connector exposes two read-only tools, `search_web_pages` and `fetch_page_content`, so no confirmation dialog is involved.
+
+### Example: activate deed.page
+
+deed.page is a hosted MCP server that publishes files to a public HTTPS URL, which is handy when an agent has produced an HTML report or chart and you want a link to share. No account or API key is needed to start: the first `publish_site` call returns an owner token, and later calls that update or delete the site pass that token as a tool argument.
+
+1. On the **deed.page** card, click **Activate**.
+2. Set **Streamable HTTP Endpoint URL** to `https://deed.page/mcp`.
+3. Leave **Auth type** as `none`.
+4. Save. Publishing, updating, restoring, and deleting sites ask for confirmation first; anything published is public on the web.
 
 ### Inspect the tools
 

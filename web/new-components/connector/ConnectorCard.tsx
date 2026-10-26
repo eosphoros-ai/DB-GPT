@@ -108,6 +108,13 @@ const BRAND_TOKENS: Record<string, BrandToken> = {
     gradient: 'from-amber-500 to-orange-600',
     shadow: 'group-hover:ring-amber-200',
   },
+  deedpage: {
+    // deed.page mark (red seal), contributed by the deed.page team for this
+    // template. White tile like the other real logos; red ring echoes #9c2a1c.
+    logo: '/icons/connectors/deedpage.svg',
+    gradient: 'from-red-700 to-red-900',
+    shadow: 'group-hover:ring-red-200',
+  },
   custom_mcp: {
     // ApiOutlined matches the sidebar "连接器管理" entry and the page hero —
     // the visual recognition is consistent across nav → header → card. The
