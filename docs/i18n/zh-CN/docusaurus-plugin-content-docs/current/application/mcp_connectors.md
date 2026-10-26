@@ -104,7 +104,7 @@ deed.page 是一个托管的 MCP Server,可以把文件发布到公开的 HTTPS 
 1. 在 **deed.page** 卡片上点击**激活**。
 2. 将 **Streamable HTTP Endpoint URL** 填为 `https://deed.page/mcp`。
 3. **认证方式**保持 `none`。
-4. 保存。全部六个会修改站点的工具(`publish_site`、`update_site`、`restore_version`、`delete_site`、`set_site_access`、`set_listing`)执行前都会弹出确认框;发布的内容默认公开可见。
+4. 保存。全部六个会修改站点的工具(`publish_site`、`update_site`、`restore_version`、`delete_site`、`set_site_access`、`set_listing`)以及两个会修改 token 的工具(`rotate_token`、`revoke_token`)执行前都会弹出确认框;发布的内容默认公开可见。
 
 ### 查看工具
 

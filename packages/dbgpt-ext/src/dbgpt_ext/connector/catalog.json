@@ -97,7 +97,7 @@
       "icon": "deedpage",
       "category": "dev",
       "mcp_server": {"transport": "streamable_http"},
-      "confirm_actions": ["publish_site", "update_site", "delete_site", "restore_version", "set_site_access", "set_listing"],
+      "confirm_actions": ["publish_site", "update_site", "delete_site", "restore_version", "set_site_access", "set_listing", "rotate_token", "revoke_token"],
       "read_actions": ["get_site", "list_sites", "list_versions", "get_manifest", "whoami"]
     }
   ]

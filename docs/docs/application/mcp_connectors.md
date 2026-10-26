@@ -104,7 +104,7 @@ deed.page is a hosted MCP server that publishes files to a public HTTPS URL, whi
 1. On the **deed.page** card, click **Activate**.
 2. Set **Streamable HTTP Endpoint URL** to `https://deed.page/mcp`.
 3. Leave **Auth type** as `none`.
-4. Save. All six site-changing tools (`publish_site`, `update_site`, `restore_version`, `delete_site`, `set_site_access`, and `set_listing`) ask for confirmation first; published content is public by default.
+4. Save. All six site-changing tools (`publish_site`, `update_site`, `restore_version`, `delete_site`, `set_site_access`, and `set_listing`) and the two token-changing tools (`rotate_token` and `revoke_token`) ask for confirmation first; published content is public by default.
 
 ### Inspect the tools
 
