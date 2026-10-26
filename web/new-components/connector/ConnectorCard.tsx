@@ -223,7 +223,12 @@ const ConnectorCard: React.FC<ConnectorCardProps> = props => {
   const transport = isTemplate
     ? props.template.transport
     : ((props.connector.config?.transport as string | undefined) ?? props.catalogEntry?.transport);
-  const transportLabel = TRANSPORT_LABELS[transport ?? ''] ?? TRANSPORT_LABELS.sse;
+  // Own-key lookup so a config value like "__proto__" cannot resolve to an
+  // inherited property and bypass the fallback.
+  const transportLabel =
+    typeof transport === 'string' && Object.prototype.hasOwnProperty.call(TRANSPORT_LABELS, transport)
+      ? TRANSPORT_LABELS[transport]
+      : TRANSPORT_LABELS.sse;
 
   // All instance cards are clickable — the whole card surface opens the tools
   // modal. Built-in templates (github / feishu / yuque / dingtalk) now follow
