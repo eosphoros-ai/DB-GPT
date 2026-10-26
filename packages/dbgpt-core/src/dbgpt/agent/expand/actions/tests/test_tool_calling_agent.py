@@ -1,26 +1,34 @@
 """Integration tests for ToolCallingReActAgent action dispatch.
 
-These drive the agent's ``act()`` through the real ``ConversableAgent.act``
-dispatch loop (the same loop ``generate_reply`` — and thus the
-``/api/v1/chat/react-agent`` endpoint — uses) but with a stubbed resource, so
-no LLM/network is required.
+These exercise real tool dispatch without an external model. Focused tests
+bind tools directly; lifecycle coverage also runs ``build()`` and
+``generate_reply()`` with real memory and a mocked model transport.
 """
 
 import json
+from datetime import datetime
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from dbgpt.agent import AgentContext, AgentMessage
+from dbgpt.agent import AgentContext, AgentMemory, AgentMessage, LLMConfig
 from dbgpt.agent.expand.actions.react_action import Terminate
-from dbgpt.agent.expand.actions.tool_action import ToolCallSpec, run_tools_batch
+from dbgpt.agent.expand.actions.tool_action import (
+    ToolCallSpec,
+    run_tool,
+    run_tools_batch,
+)
 from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
-from dbgpt.agent.resource.tool.base import tool
+from dbgpt.agent.resource.tool.base import FunctionTool, tool
 from dbgpt.agent.resource.tool.pack import ToolPack
+from dbgpt.core import LLMClient, ModelMetadata, ModelOutput
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("key", ["output", "result", "final_answer"])
 async def test_text_terminate_returns_only_final_answer(key):
+    """Return the final answer for each supported termination argument."""
     agent = _make_agent(enable_parallel=False)
     agent.agent_context.enable_native_function_calling = True
     out = await agent.act(
@@ -41,6 +49,7 @@ async def test_text_terminate_returns_only_final_answer(key):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("answer", ["...", "…", "", "  "])
 async def test_placeholder_terminate_does_not_end_task(answer):
+    """Reject placeholder answers through both text and native termination."""
     out = await Terminate().run(
         "Thought: Retry with shell.\nAction: terminate\nAction Input: "
         + json.dumps({"output": answer})
@@ -81,6 +90,7 @@ MULTI_STEP = (
 
 
 def _make_agent(enable_parallel: bool) -> ToolCallingReActAgent:
+    """Bind real arithmetic tools to an agent without an external model."""
     agent = ToolCallingReActAgent()
     agent.agent_context = AgentContext(
         conv_id="test",
@@ -105,11 +115,13 @@ def _act_kwargs(agent, enable_parallel):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("name", ["html_interpreter", "append_report_sections"])
 async def test_invalid_report_call_uses_bounded_repair_handler(name):
+    """Pass malformed report calls to the configured repair handler."""
     agent = _make_agent(enable_parallel=False)
     agent.agent_context.enable_native_function_calling = True
     failures = []
 
     def handle(raw_call, reason):
+        """Capture the rejected call and return repair guidance."""
         failures.append((raw_call, reason))
         return "Report call needs valid JSON"
 
@@ -133,6 +145,7 @@ async def test_invalid_report_call_uses_bounded_repair_handler(name):
 
 @pytest.mark.asyncio
 async def test_act_parallel_executes_multiple_steps():
+    """Execute and aggregate both text actions when parallel mode is enabled."""
     agent = _make_agent(enable_parallel=True)
     out = await agent.act(
         AgentMessage(content=MULTI_STEP),
@@ -148,6 +161,7 @@ async def test_act_parallel_executes_multiple_steps():
 
 @pytest.mark.asyncio
 async def test_act_parallel_disabled_preserves_single_step_behaviour():
+    """Keep the legacy single-action behavior when parallel mode is disabled."""
     agent = _make_agent(enable_parallel=False)
     out = await agent.act(
         AgentMessage(content=MULTI_STEP),
@@ -158,3 +172,408 @@ async def test_act_parallel_disabled_preserves_single_step_behaviour():
     assert out.is_exe_success is True
     assert out.action == "add"
     assert out.observations == "3"
+
+
+@pytest.mark.asyncio
+async def test_native_call_keeps_arguments_in_memory_roundtrip():
+    """Persist native arguments and restore them as readable action history."""
+    from dbgpt.agent.core.memory.agent_memory import StructuredAgentMemoryFragment
+
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    calls = [
+        {
+            "id": "call-1",
+            "function": {
+                "name": "add",
+                "arguments": '{"a":2,"b":3,"intention":"calculate"}',
+            },
+        }
+    ]
+    kwargs = _act_kwargs(agent, False)
+    kwargs["tool_calls"] = calls
+    object.__setattr__(agent, "_pending_native_tool_calls", calls)
+    out = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
+    assert out.is_exe_success and out.content == "5"
+    assert json.loads(out.action_input) == {"a": 2, "b": 3}
+    memory = SimpleNamespace(
+        write=AsyncMock(),
+        read=AsyncMock(return_value=[]),
+    )
+    object.__setattr__(agent, "memory", memory)
+    await agent.write_memories(
+        question="compute",
+        ai_message="",
+        action_output=out,
+        check_pass=True,
+        current_retry_counter=0,
+    )
+    fragment = memory.write.call_args.args[0]
+    assert isinstance(fragment, StructuredAgentMemoryFragment)
+    memory.read.return_value = [fragment]
+    restored = await agent.read_memories("continue")
+    assert any(
+        'Action Input: {"a": 2, "b": 3}' in (message.content or "")
+        for message in restored
+    )
+
+
+@pytest.mark.asyncio
+async def test_missing_arguments_stop_after_three_rounds_even_if_tool_changes():
+    """Share the consecutive protocol-failure budget across different tools."""
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    for index, name in enumerate(("add", "add", "multiply")):
+        output = await agent.act(
+            AgentMessage(content=f"Thought: execute.\nAction: {name}"),
+            sender=agent,
+            **_act_kwargs(agent, False),
+        )
+        assert not output.is_exe_success
+        assert output.have_retry is (index < 2)
+        if index < 2:
+            assert "TOOL_ARGUMENT_INVALID" in output.content
+            assert "a, b" in output.content
+        else:
+            assert "TOOL_PROTOCOL_RETRY_EXHAUSTED" in output.content
+            passed, _ = await agent.verify(
+                AgentMessage(content="", action_report=output), sender=agent
+            )
+            assert not passed and not output.terminate
+
+
+@pytest.mark.asyncio
+async def test_valid_call_resets_protocol_failure_budget():
+    """Give a fresh failure budget after a valid tool call."""
+    agent = _make_agent(enable_parallel=False)
+    for _ in range(2):
+        await agent.act(
+            AgentMessage(content="Action: add"),
+            sender=agent,
+            **_act_kwargs(agent, False),
+        )
+    output = await agent.act(
+        AgentMessage(content='Action: add\nAction Input: {"a":2,"b":3}'),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert output.is_exe_success and agent._tool_protocol_failures == 0
+    output = await agent.act(
+        AgentMessage(content="Action: add"),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    assert output.have_retry and agent._tool_protocol_failures == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("arguments", ['{"a":', '["unexpected"]'])
+async def test_malformed_native_arguments_never_execute_parameterless_tool(arguments):
+    """Reject malformed native arguments before a parameterless tool can run."""
+    invoked = []
+
+    @tool(description="Record a call")
+    def record():
+        """Record whether argument rejection allowed execution."""
+        invoked.append(True)
+        return "ok"
+
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    pack = ToolPack([record._tool])
+    agent.resource = pack
+    for action in agent.actions:
+        action.init_resource(pack)
+    calls = [{"function": {"name": "record", "arguments": arguments}}]
+    object.__setattr__(agent, "_pending_native_tool_calls", calls)
+    kwargs = _act_kwargs(agent, False)
+    kwargs["tool_calls"] = calls
+    output = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
+    assert not invoked
+    assert "TOOL_ARGUMENT_INVALID" in output.content
+
+
+@pytest.mark.asyncio
+async def test_protocol_repair_requests_native_function_and_keeps_arguments():
+    """Require a native call during protocol repair and retain its arguments."""
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    await agent.act(
+        AgentMessage(content="Action: add"),
+        sender=agent,
+        **_act_kwargs(agent, False),
+    )
+    calls = [
+        {
+            "id": "call-2",
+            "function": {
+                "name": "add",
+                "arguments": '{"a":2,"b":3}',
+            },
+        }
+    ]
+    create = AsyncMock(return_value=ModelOutput.build("", tool_calls=calls))
+    object.__setattr__(agent, "llm_client", SimpleNamespace(create_with_output=create))
+    object.__setattr__(agent, "memory", SimpleNamespace(gpts_memory=None))
+    object.__setattr__(
+        agent, "_a_select_llm_model", AsyncMock(return_value="synthetic")
+    )
+    await agent.thinking([AgentMessage(role="human", content="continue")])
+    assert create.call_args.kwargs["tool_choice"] == "required"
+    kwargs = agent.prepare_act_param(None, agent)
+    output = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
+    assert output.is_exe_success and output.content == "5"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("placeholder_first", [False, True])
+async def test_built_agent_can_terminate_during_native_protocol_repair(
+    tmp_path, placeholder_first
+):
+    """Finish through the real build/run lifecycle without business side effects.
+
+    Directly assigning resources skips preload registration of ``Terminate``.
+    Mock only the external model so registration, required tool selection,
+    action dispatch, verification, and retry handling all use production code.
+    """
+    invoked = []
+
+    @tool(description="Record a value")
+    def record(value: str) -> str:
+        """Capture an ordinary tool's observable side effect."""
+        invoked.append(value)
+        return value
+
+    final_answer = "No changes were needed."
+    model_calls = [("record", {})]
+    if placeholder_first:
+        model_calls.append(("terminate", {"output": "..."}))
+    model_calls.append(("terminate", {"output": final_answer}))
+    responses = iter(model_calls)
+    requests = []
+
+    async def generate_stream(request):
+        """Return scripted native calls at the model transport boundary."""
+        requests.append(request)
+        name, arguments = next(responses)
+        yield ModelOutput.build(
+            "",
+            tool_calls=[
+                {
+                    "id": f"call-{len(requests)}",
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "arguments": json.dumps(arguments),
+                    },
+                }
+            ],
+        )
+
+    llm_client = MagicMock(spec=LLMClient)
+    llm_client.models = AsyncMock(
+        return_value=[ModelMetadata(model="synthetic", function_calling=True)]
+    )
+    llm_client.generate_stream = MagicMock(side_effect=generate_stream)
+    agent = (
+        ToolCallingReActAgent(max_retry_count=4, stream_out=False)
+        .bind(
+            AgentContext(
+                conv_id="native-termination-repair",
+                enable_native_function_calling=True,
+                output_dir=str(tmp_path),
+            )
+        )
+        .bind(LLMConfig(llm_client=llm_client))
+        .bind(AgentMemory())
+        .bind(ToolPack([record._tool]))
+    )
+    assert [t["function"]["name"] for t in agent._build_native_tools()] == ["record"]
+    await agent.build()
+    assert not agent.is_human
+    assert isinstance(agent.memory, AgentMemory)
+    assert [t["function"]["name"] for t in agent._build_native_tools()].count(
+        "terminate"
+    ) == 1
+    await agent.preload_resource()
+    assert [t["function"]["name"] for t in agent._build_native_tools()].count(
+        "terminate"
+    ) == 1
+
+    events = AsyncMock()
+    reply = await agent.generate_reply(
+        AgentMessage(content="Finish without recording any values."),
+        sender=agent,
+        stream_callback=events,
+    )
+
+    assert reply.success, reply.content
+    assert reply.action_report.is_exe_success
+    assert reply.action_report.action == "terminate"
+    assert reply.action_report.terminate is True
+    assert reply.action_report.content == final_answer
+    assert invoked == []
+    assert len(requests) == len(model_calls)
+    assert requests[0].tool_choice == "auto"
+    assert requests[1].tool_choice == "required"
+    for request in requests:
+        names = [t["function"]["name"] for t in request.tools]
+        assert sorted(names) == ["record", "terminate"]
+
+    actions = [
+        call.args[1]["action_output"]
+        for call in events.await_args_list
+        if call.args[0] == "act"
+    ]
+    assert len(actions) == len(model_calls)
+    assert actions[0]["is_exe_success"] is False
+    assert actions[0]["have_retry"] is True
+    assert "TOOL_ARGUMENT_INVALID" in actions[0]["content"]
+    if placeholder_first:
+        assert actions[1]["is_exe_success"] is False
+        assert actions[1]["terminate"] is not True
+        assert actions[1]["have_retry"] is True
+        assert "non-empty final answer" in actions[1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_generate_reply_stops_protocol_loop_before_sixty_step_budget():
+    """Stop repeated malformed tool calls before exhausting the full run budget."""
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    agent.max_retry_count = 60
+    think = AsyncMock(return_value=("Thought: execute.\nAction: add", "synthetic"))
+    execute = AsyncMock()
+    object.__setattr__(agent, "thinking", think)
+    object.__setattr__(
+        agent, "_load_thinking_messages", AsyncMock(return_value=([], None))
+    )
+    object.__setattr__(agent, "review", AsyncMock(return_value=(True, None)))
+    object.__setattr__(agent, "send", AsyncMock())
+    object.__setattr__(agent, "write_memories", AsyncMock())
+    object.__setattr__(agent, "adjust_final_message", AsyncMock())
+    object.__setattr__(agent.resource, "async_execute", execute)
+    reply = await agent.generate_reply(
+        received_message=AgentMessage(content="compute"), sender=agent
+    )
+    assert think.await_count == 3
+    execute.assert_not_awaited()
+    assert reply.success is False
+    assert reply.action_report.have_retry is False
+    assert "TOOL_PROTOCOL_RETRY_EXHAUSTED" in reply.action_report.content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reparse_input", [False, True])
+async def test_unserializable_arguments_do_not_execute_tool(reparse_input):
+    """Reject non-JSON arguments before direct or reparsed calls cause effects."""
+    recorded = []
+    arguments = {"value": datetime(2026, 10, 26)}
+
+    def record(value):
+        """Capture the tool's externally observable side effect."""
+        recorded.append(value)
+        return "recorded"
+
+    def parse_arguments(raw_input):
+        """Return a custom parser's valid mapping with a non-JSON value."""
+        return "record", arguments
+
+    resource = ToolPack(
+        [
+            FunctionTool(
+                name="record",
+                func=record,
+                description="Record a value",
+                parse_execute_args_func=parse_arguments,
+            )
+        ]
+    )
+    output = await run_tool(
+        "record",
+        {} if reparse_input else arguments,
+        resource,
+        raw_tool_input="custom input" if reparse_input else None,
+    )
+
+    assert not output.is_exe_success
+    assert "not JSON serializable" in output.content
+    assert recorded == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("first_run_steps", [2, 60])
+async def test_reused_agent_starts_each_run_with_full_protocol_budget(first_run_steps):
+    """Reset partial and exhausted budgets between runs, retaining per-run limits."""
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    think = AsyncMock(return_value=("Thought: execute.\nAction: add", "synthetic"))
+    object.__setattr__(agent, "thinking", think)
+    object.__setattr__(agent, "read_memories", AsyncMock(return_value=[]))
+    object.__setattr__(agent, "write_memories", AsyncMock())
+    object.__setattr__(agent, "review", AsyncMock(return_value=(True, None)))
+    object.__setattr__(agent, "send", AsyncMock())
+    object.__setattr__(agent, "adjust_final_message", AsyncMock())
+    execute = AsyncMock()
+    object.__setattr__(agent.resource, "async_execute", execute)
+
+    for run, step_limit in enumerate((first_run_steps, 60)):
+        agent.max_retry_count = step_limit
+        previous_calls = think.await_count
+        reply = await agent.generate_reply(
+            received_message=AgentMessage(content=f"compute run {run}"),
+            sender=agent,
+        )
+        assert think.await_count - previous_calls == min(step_limit, 3)
+        assert reply.success is False
+        if step_limit >= 3:
+            assert reply.action_report.have_retry is False
+            assert "TOOL_PROTOCOL_RETRY_EXHAUSTED" in reply.action_report.content
+        else:
+            assert reply.action_report.have_retry is True
+            assert "TOOL_ARGUMENT_INVALID" in reply.action_report.content
+    execute.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["html_interpreter", "append_report_sections"])
+async def test_report_repair_cannot_restore_exhausted_protocol_retries(name):
+    """Keep the third failure terminal even when report repair rewrites its result."""
+    agent = _make_agent(enable_parallel=False)
+    agent.agent_context.enable_native_function_calling = True
+    failures = []
+    state = {"_report_html_error": "Report repair pending"}
+
+    def handle(raw_call, reason):
+        """Record a repair attempt that is still eligible for report retries."""
+        failures.append((raw_call, reason))
+        state["_report_tool_call_count"] = len(failures)
+        return "Report call needs valid JSON"
+
+    state["_report_invalid_call_handler"] = handle
+    object.__setattr__(agent, "_report_repair_state", state)
+    for _ in range(2):
+        output = await agent.act(
+            AgentMessage(content="Action: add"),
+            sender=agent,
+            **_act_kwargs(agent, False),
+        )
+        assert output.have_retry
+        assert "TOOL_ARGUMENT_INVALID" in output.content
+
+    calls = [{"function": {"name": name, "arguments": '{"sections":['}}]
+    object.__setattr__(agent, "_pending_native_tool_calls", calls)
+    kwargs = _act_kwargs(agent, False)
+    kwargs["tool_calls"] = calls
+    output = await agent.act(AgentMessage(content=""), sender=agent, **kwargs)
+
+    assert len(failures) == 1
+    assert "JSON line" in failures[0][1]
+    assert not output.is_exe_success
+    assert output.have_retry is False
+    assert "TOOL_PROTOCOL_RETRY_EXHAUSTED" in output.content
+    assert output.observations == output.content
+    passed, _ = await agent.verify(
+        AgentMessage(content="", action_report=output), sender=agent
+    )
+    assert not passed and not output.terminate

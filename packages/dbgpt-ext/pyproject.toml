@@ -33,7 +33,7 @@ rag = [
     "python-docx",
     "olefile",
     "pypdf",
-    "pdfplumber",
+    "pdfplumber>=0.10.4",
 ]
 graph_rag = [
     # For visualization in code

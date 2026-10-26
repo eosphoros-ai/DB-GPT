@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import hashlib
 import io
 import json
@@ -29,6 +30,7 @@ from typing import (
 )
 from urllib.parse import urlparse
 
+import anyio
 from fastapi import (
     APIRouter,
     Body,
@@ -50,7 +52,6 @@ from dbgpt.agent.skill.manage import get_skill_manager
 from dbgpt.agent.util.react_parser import extract_terminate_output
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import SKILLS_DIR, resolve_root_path
-from dbgpt.core import PromptTemplate
 from dbgpt.core.interface.report import (
     MAX_REPORT_TITLE_LENGTH,
     ArtifactContent,
@@ -82,7 +83,13 @@ from .attachment_react_adapter import (
     resolve_legacy_chat_file_path,
     scrub_react_history_for_share,
 )
-from .react_final import AgentFinalAnswer, FinalAnswerAssembler
+from .financial_execution import FinancialExecutionStream, interrupt_financial_progress
+from .react_final import (
+    AgentFinalAnswer,
+    FinalAnswerAssembler,
+)
+from .react_history import ReactHistoryCheckpoint, save_history_view
+from .react_prompt import build_react_prompt_template
 from .subagent.dispatcher import DISPATCH_PROMPT_SECTION, make_dispatch_tool
 from .subagent.history import (
     build_subagent_history_snapshot,
@@ -1335,6 +1342,8 @@ def _build_react_history_payload(
     report_status: Optional[str] = None,
     dashboard_refs: Optional[List[Dict[str, Any]]] = None,
     dashboard_generation_failure: Optional[Dict[str, Any]] = None,
+    execution_status: Optional[str] = None,
+    financial_report: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Serialize the persisted react-agent history payload (version 2).
 
@@ -1363,6 +1372,10 @@ def _build_react_history_payload(
         value["report_run_id"] = report_run_id
     if report_status:
         value["report_status"] = report_status
+    if execution_status:
+        value["execution_status"] = execution_status
+    if financial_report:
+        value["financial_report"] = financial_report
     return json.dumps(value, ensure_ascii=False)
 
 
@@ -1572,12 +1585,14 @@ def _react_terminal_events(
     storage_conv: Any,
     history_payload: str,
     final_answer: AgentFinalAnswer,
+    history_checkpoint: Optional[ReactHistoryCheckpoint] = None,
 ) -> Tuple[str, str]:
     """Persist one ReAct round without risking its terminal SSE events."""
     try:
-        storage_conv.add_view_message(history_payload)
+        save_history_view(storage_conv, history_payload)
+        if history_checkpoint is not None:
+            history_checkpoint.finished = True
         storage_conv.end_current_round()
-        storage_conv.save_to_storage()
     except Exception:
         logger.exception("Failed to persist ReAct agent history")
 
@@ -1587,18 +1602,35 @@ def _react_terminal_events(
     )
 
 
+AGENT_CLEANUP_TIMEOUT_SECONDS = 5
+
+
 async def _cancel_and_await_agent_task(task: "asyncio.Task[Any]") -> None:
-    """Cancel a running agent task and always consume its terminal result."""
+    """Bound disconnect cleanup and consume results of late-finishing tasks."""
     was_done = task.done()
     if not was_done:
         task.cancel()
     try:
-        await task
+        # Disconnect cleanup runs inside Starlette's cancelled task group.
+        with anyio.move_on_after(AGENT_CLEANUP_TIMEOUT_SECONDS, shield=True):
+            await asyncio.shield(task)
     except asyncio.CancelledError:
         pass
     except Exception:
         if not was_done:
             logger.exception("ReAct agent task failed during stream cleanup")
+    if not task.done():
+        logger.warning("ReAct agent cancellation exceeded cleanup deadline")
+
+        def consume_result(completed):
+            try:
+                completed.result()
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                logger.exception("ReAct agent failed after stream cleanup")
+
+        task.add_done_callback(consume_result)
 
 
 async def _run_with_artifact_capture(
@@ -1933,6 +1965,7 @@ async def _react_agent_stream_inner(
 ) -> AsyncGenerator[str, None]:
     """Stream ReAct events while owning the lifetime of its background task."""
     agent_task_holder: List["asyncio.Task[Any]"] = []
+    history_checkpoint = ReactHistoryCheckpoint()
     final_emitted = False
     done_emitted = False
     try:
@@ -1941,10 +1974,12 @@ async def _react_agent_stream_inner(
             tool_mode=tool_mode,
             attachment_ctx=attachment_ctx,
             agent_task_holder=agent_task_holder,
+            history_checkpoint=history_checkpoint,
         ):
             event_type = _sse_event_type(event)
             final_emitted = final_emitted or event_type == "final"
             done_emitted = done_emitted or event_type == "done"
+            history_checkpoint.flush()
             yield event
     except Exception:
         logger.exception("ReAct agent stream failed before normal completion")
@@ -1957,8 +1992,12 @@ async def _react_agent_stream_inner(
         if not done_emitted:
             yield _sse_event({"type": "done"})
     finally:
+        # Save after cancellation has retained the financial workflow's partial
+        # results. Shield this cleanup from the response's cancellation scope.
         if agent_task_holder:
             await _cancel_and_await_agent_task(agent_task_holder[0])
+        with anyio.CancelScope(shield=True):
+            history_checkpoint.flush(status="interrupted", force=True)
 
 
 class _AgentStreamingResponse(StreamingResponse):
@@ -1986,6 +2025,7 @@ async def _react_agent_stream_impl(
     tool_mode: str = "full",
     attachment_ctx: Optional[SessionAttachmentContext] = None,
     agent_task_holder: Optional[List["asyncio.Task[Any]"]] = None,
+    history_checkpoint: Optional[ReactHistoryCheckpoint] = None,
 ) -> AsyncGenerator[str, None]:
     """Core ReAct agent streaming logic.
 
@@ -2003,7 +2043,6 @@ async def _react_agent_stream_impl(
         GptsMemory,
     )
     from dbgpt.agent.expand.actions.react_action import Terminate
-    from dbgpt.agent.expand.tool_calling_agent import ToolCallingReActAgent
     from dbgpt.agent.resource import ToolPack
     from dbgpt.agent.resource.manage import get_resource_manager
     from dbgpt.agent.util.llm.llm import LLMConfig, LLMStrategyType
@@ -2320,6 +2359,7 @@ async def _react_agent_stream_impl(
     # Step 3: Load knowledge space resource if specified in ext_info
     knowledge_resources: List[Any] = []
     knowledge_context = ""
+    wiki_available = False
     if knowledge_space:
         try:
             from dbgpt_serve.agent.resource.knowledge import (
@@ -2457,6 +2497,10 @@ async def _react_agent_stream_impl(
     else:
         report_language = "zh" if re.search(r"[\u3400-\u9fff]", user_input) else "en"
     react_state: Dict[str, Any] = {
+        "financial_user_query": user_input,
+        "financial_other_source_selected": bool(
+            database_name or dataset_id or knowledge_space or connector_ids
+        ),
         "_report_original_request": user_input,
         "_report_language": report_language,
         "skills_loaded": True,  # Skills are pre-loaded now
@@ -2900,7 +2944,14 @@ async def _react_agent_stream_impl(
     # ── Stream queue (created early so question tool can use it) ────────
     stream_queue: asyncio.Queue = asyncio.Queue()
 
+    active_react_round = 1
+
     async def stream_callback(event_type: str, payload: Dict[str, Any]) -> None:
+        nonlocal active_react_round
+        if event_type in {"thinking", "thinking_chunk"} and payload.get("round"):
+            active_react_round = int(payload["round"])
+        if event_type in {"financial.execution", "financial.progress"}:
+            payload = {**payload, "round": active_react_round}
         await stream_queue.put({"type": event_type, **payload})
 
     # ── Build tool instances from tools/ directory ───────────────────────
@@ -2972,6 +3023,11 @@ async def _react_agent_stream_impl(
     traceable_report_capability = make_traceable_report_capability(
         react_state, DEFAULT_SKILLS_DIR
     )
+    report_policy_prompt = (
+        "For annual financial reports, use the dedicated financial tools and "
+        "built-in report component. The following policy applies to other reports.\n"
+        + traceable_report_capability.prompt_fragment
+    )
     report_tools = traceable_report_capability.tools
     todowrite_tool = make_todowrite(_todo_list, stream_callback)
     question_tool = make_question(react_state, stream_callback)
@@ -2998,6 +3054,14 @@ async def _react_agent_stream_impl(
     read_file_tool = make_read_file(react_state)
     # Keep local aliases for backward compatibility (SSE loop references these names)
     execute_skill_script_file_tool = make_execute_skill_script_file(react_state)
+    from dbgpt_app.openapi.api_v1.tools.financial_tools import (
+        FINANCIAL_MAX_STEPS,
+        finalize_financial_answer,
+        financial_completion_error,
+        make_financial_tools,
+    )
+
+    financial_tools = make_financial_tools(react_state, stream_callback=stream_callback)
 
     _todo_action_history: Dict[int, List[str]] = {}
 
@@ -3174,6 +3238,10 @@ async def _react_agent_stream_impl(
 
     conv_id = dialogue.conv_uid or str(uuid.uuid4())
     react_state["conv_id"] = conv_id
+    react_state["owner_id"] = dialogue.user_name
+    react_state["model_name"] = dialogue.model_name
+    # Trusted runtime client, never a tool argument or prompt payload.
+    react_state["financial_llm_client"] = llm_client
     artifact_sink: Optional[InMemoryArtifactSink] = None
     try:
         from .tools.report_repair import (
@@ -3300,6 +3368,22 @@ async def _react_agent_stream_impl(
             if _content:
                 historical_dialogues.append(AgentMessage(content=_content))
     storage_conv.add_user_message(user_input)
+    if history_checkpoint is not None:
+        history_checkpoint.bind(
+            storage_conv,
+            lambda status: _build_react_history_payload(
+                final_content="任务执行已中断，可继续任务。"
+                if status == "interrupted"
+                else "",
+                steps=[],
+                task_plan=[],
+                generated_images=[],
+                sub_agents=[],
+                input_files=input_files_snapshot,
+                execution_status=status,
+            ),
+        )
+        history_checkpoint.flush(force=True)
     if react_state.get("dashboard_confirmation_error"):
         confirmation_error = react_state["dashboard_confirmation_error"]
         yield _sse_event(
@@ -3321,6 +3405,7 @@ async def _react_agent_stream_impl(
                 ensure_ascii=False,
             ),
             AgentFinalAnswer(content=confirmation_error),
+            history_checkpoint,
         ):
             yield terminal_event
         return
@@ -3378,14 +3463,6 @@ async def _react_agent_stream_impl(
 3. 阅读技能指令，理解每一步需要调用的工具
 4. 按顺序执行工具调用，完成技能目标
 """
-
-    # Build a hint listing all images currently available in
-    # STATIC_MESSAGE_IMG_PATH so the LLM can reference them correctly in
-    # html_interpreter.
-    # NOTE: This is the initial hint at prompt build time. Images generated
-    # during the session are tracked in react_state["generated_images"] and
-    # appended to html_interpreter output dynamically.
-    available_images_hint = ""
 
     # Check if skill is pre-selected to use simplified prompt
     is_skill_mode = pre_matched_skill is not None
@@ -3484,7 +3561,7 @@ You are the DB-GPT intelligent assistant, executing the skill task selected by t
 1. Strictly follow the instructions of the loaded skill.
 2. For each step, call the supplied native function with JSON arguments.
 3. Wait for the system to return Observation before deciding on the next step.
-4. {traceable_report_capability.prompt_fragment}
+4. {report_policy_prompt}
 5. If the task does not require generating a report, directly call terminate to
 return the final result with {{"output": "final answer"}}.
 
@@ -3493,7 +3570,7 @@ return the final result with {{"output": "final answer"}}.
 
 ## Skill Execution Norms
 ### Resource Usage
-- **Need to execute skill script** -> Use `execute_skill_script_file` with
+- **Skill explicitly provides a script** -> Use `execute_skill_script_file` with
 parameters {{"skill_name": "skill name", "script_file_name": "script file name",
 "args": {{parameters}}}}. This tool will automatically handle image copying and
 data recording.
@@ -3506,7 +3583,7 @@ Pass each CLI argument separately. Never pass both args and argv.
 reference document.
 - **Encounter image file** -> If the model does not support image input, it will
 return an error prompt.
-- **Need to generate report** -> Call `generate_report` with the report title, the
+- **Need to generate a NON-financial report** -> Call `generate_report` with the report title, the
 required sections and the requested recommendation count. A dedicated report agent
 owns the template, the evidence-bound spec and every repair; do not write report HTML
 yourself, do not call `code_interpreter` for the report and do not re-run analysis.
@@ -3553,7 +3630,6 @@ For a saved HTML candidate, use {{"retry_saved": true, "repair_patches":
 [{{"old": "exact text at the reported location", "new": "corrected text"}}]}}.
 For truncation, new must preserve the tail anchor and add the missing remainder.
 Never regenerate the entire document or rerun completed analysis after failure.
-   {available_images_hint}
 5. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
 5.1. **chart_query**: Execute read-only SQL and return a DB-GPT native interactive chart.
@@ -3622,35 +3698,14 @@ Example flow for 3 tasks:
                     question_tool,
                     Terminate(),
                 ]
+                + financial_tools
                 + business_tools
                 + connector_tool_extras
             )
     else:
         # Full prompt with all tools when no skill is pre-selected
-        codegraph_section = (
-            "13.1. **kb_codegraph_explore**: Query the code knowledge graph for "
-            "structural info (classes, call chains, inheritance).\n"
-            'Parameters: {"query": "class/function name or \'who calls X\'"}\n'
-            "13.2. **kb_codegraph_call_chain**: Trace callers/callees of a function.\n"
-            'Parameters: {"function_name": "function name", "depth": 2, '
-            '"direction": "callers or callees"}\n'
-            "13.3. **kb_codegraph_class_hierarchy**: Trace class inheritance and "
-            "implementations.\n"
-            'Parameters: {"class_name": "class or interface name"}\n'
-            if code_graph_available
-            else ""
-        )
         wiki_section = (
-            "13.4. **kb_wiki_search**: Search this space's auto-generated "
-            "LLM-Wiki pages (curated, synthesized knowledge).\n"
-            'Parameters: {"query": "search keywords"}\n'
-            "13.5. **kb_wiki_read_page**: Read one wiki page by slug; use "
-            "slug 'index' for the auto-generated catalog page.\n"
-            'Parameters: {"slug": "page slug like entity/xxx or index"}\n'
-            "13.6. **kb_wiki_index**: List the wiki catalog (folders and "
-            "pages with one-line summaries).\n"
-            "Parameters: none\n"
-            "13.7. Prefer kb_wiki_* when the question is about the space's "
+            "Prefer kb_wiki_* when the question is about the space's "
             "overall knowledge structure; prefer semantic_search/kb_grep "
             "when you need to quote raw source documents verbatim.\n"
             if wiki_available
@@ -3669,7 +3724,7 @@ order, select as needed).
 4. Wait for the system to return Observation before deciding on the next step.
 5. When the task is completed, call the terminate tool to return the final result.
 Parameters: {{"output": "final answer"}}.
-6. {traceable_report_capability.prompt_fragment}
+6. {report_policy_prompt}
 
 7. **[Database-report execution rule]** Use the available tools that best fit the
 analysis. `chart_query` returns DB-GPT's native SQL chart when a database chart is
@@ -3720,8 +3775,8 @@ execution of every step. Prioritize producing results quickly, and perform
 iterative optimization in subsequent steps.
 
 ### 2. Resource Usage Timing
-- **Need to calculate/process data** -> Use `execute_skill_script_file` to execute
-scripts in the skill's scripts directory (this tool automatically handles images
+- **Skill explicitly provides a calculation/data script** -> Use
+`execute_skill_script_file` to execute that script (automatically handles images
 and data recording). Parameters are {{"skill_name": "skill name",
 "script_file_name": "script.py", "args": {{parameters}}}}.
 For CLI scripts use argv (a list of separate strings) instead of args.
@@ -3736,7 +3791,7 @@ Complete each workflow step before moving to the next. Do not mix multiple tool
 calls in the same step.
 
 ### 4. Special Scenarios
-- For report generation: Same as the principle above, must finally call
+- For NON-financial report generation: Same as the principle above, must finally call
 `generate_report` to hand the report to the dedicated report agent.
 
 ## Available Tools Description
@@ -3769,7 +3824,7 @@ Parameters: {{"query": "search keyword", "path": "directory filter (optional)", 
 Parameters: {{"path": "file path like src/main.py", "start_line": "start line (optional)", "end_line": "end line (optional, 0 = to end)"}}
 13. **semantic_search**: Semantic search in the knowledge base. Use when kb_grep returns insufficient results.
 Parameters: {{"query": "search query in natural language", "top_k": "number of results (optional)"}}
-{codegraph_section}{wiki_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
+{wiki_section}14. **sql_query**: Execute a read-only SQL query against the selected database.
 Parameters: {{"sql": "SELECT statement"}}
 14.1. **chart_query**: Execute SQL and return a DB-GPT native interactive chart.
 Parameters: {{"sql": "SELECT statement", "display_type": "response_line_chart", "thought": "chart purpose"}}
@@ -3846,6 +3901,7 @@ Parameters: {{"tasks": [{{"goal": "...", "context": "...", "title": "..."}}]}}
                     question_tool,
                     Terminate(),
                 ]
+                + financial_tools
                 + business_tools
                 + connector_tool_extras
             )
@@ -4070,16 +4126,32 @@ After partial results, finish only missing requested deliverables, then report.
 """
     # Convert workflow_prompt to PromptTemplate so it is used as system prompt
     # Use jinja2 format to avoid issues with JSON braces { } in the prompt
-    workflow_prompt_template = PromptTemplate(
-        template=workflow_prompt,
-        input_variables=[],
-        template_format="jinja2",
+    workflow_prompt_template = build_react_prompt_template(
+        workflow_prompt, financial_enabled=tool_mode != "knowledge"
     )
+
+    from .financial_agent import FinancialWorkflowAgent
+
+    class ReportAwareAgent(FinancialWorkflowAgent):
+        async def correctness_check(self, message):
+            if react_state.get("financial_report_context", {}).get("workflow"):
+                # Six saves, optional reads and bounded repairs/reviews can
+                # exceed the ordinary chat budget. Keep other chats unchanged.
+                self.max_retry_count = max(self.max_retry_count, FINANCIAL_MAX_STEPS)
+            if (
+                message.action_report
+                and message.action_report.terminate
+                and tool_mode != "knowledge"
+            ):
+                error = await financial_completion_error(react_state)
+                if error:
+                    return False, error
+            return await super().correctness_check(message)
 
     workflow_agent = (
         DashboardConfirmationAgent(dashboard_state=react_state, max_retry_count=30)
         if dashboard_agent_mode
-        else ToolCallingReActAgent(
+        else ReportAwareAgent(
             report_repair_state=react_state, max_retry_count=60, max_timeout=900
         )
     )
@@ -4162,8 +4234,50 @@ After partial results, finish only missing requested deliverables, then report.
     # --- History persistence: collect step data during streaming ---
     history_steps: List[Dict[str, Any]] = []
     current_history_step: Optional[Dict[str, Any]] = None
+    financial_execution = FinancialExecutionStream(history_steps)
     subagent_history: Dict[str, Dict[str, Any]] = {}
     final_answer_assembler = FinalAnswerAssembler()
+
+    def checkpoint_payload(status: str) -> str:
+        steps = copy.deepcopy(history_steps)
+        if current_history_step is not None and not any(
+            step["id"] == current_history_step["id"] for step in steps
+        ):
+            steps.append(copy.deepcopy(current_history_step))
+        snapshot_agents = copy.deepcopy(subagent_history)
+        task_plan = copy.deepcopy(react_state.get("financial_plan") or list(_todo_list))
+        if status == "interrupted":
+            for step in steps:
+                if step.get("status") == "running":
+                    step["status"] = "failed"
+            for task in task_plan:
+                if task.get("status") == "in_progress":
+                    task.update(status="cancelled", detail="执行已中断，可继续任务。")
+            fail_running_subagent_history(snapshot_agents)
+        financial_report = None
+        report = react_state.get("financial_report_context")
+        if report:
+            from .tools.financial_tools import _artifact
+
+            financial_report = _artifact(report, conv_id)["content"]
+        return _build_react_history_payload(
+            final_content=(
+                "任务执行已中断，已保存的进度和结果已保留，可继续任务。"
+                if status == "interrupted"
+                else ""
+            ),
+            steps=steps,
+            task_plan=task_plan,
+            generated_images=react_state.get("generated_images", []),
+            sub_agents=build_subagent_history_snapshot(snapshot_agents),
+            input_files=input_files_snapshot,
+            dashboard_refs=react_state.get("dashboard_refs", []),
+            execution_status=status,
+            financial_report=financial_report,
+        )
+
+    if history_checkpoint is not None:
+        history_checkpoint.bind(storage_conv, checkpoint_payload)
 
     # Emit pre-loaded skill as an SSE step before agent starts processing
     if pre_matched_skill:
@@ -4212,6 +4326,8 @@ After partial results, finish only missing requested deliverables, then report.
         try:
             event = await asyncio.wait_for(stream_queue.get(), timeout=0.1)
         except asyncio.TimeoutError:
+            for waiting_event in financial_execution.waiting():
+                yield _sse_event(waiting_event)
             continue
 
         event_type = event.get("type")
@@ -4220,6 +4336,26 @@ After partial results, finish only missing requested deliverables, then report.
             # them verbatim so the web client can render plan/widget progress and
             # the final editor link without scraping tool text.
             yield _sse_event(event)
+        elif event_type == "financial.execution":
+            round_num = event["round"]
+            action = event["action"]
+            if round_num in round_step_map:
+                live_id = round_step_map[round_num]
+            else:
+                live_id, live_start = build_step(action, "Action: " + action)
+                round_step_map[round_num] = live_id
+                yield live_start
+            yield step_meta(live_id, None, action, event["action_input"], action)
+            for chunk in financial_execution.start(
+                round_num, live_id, action, event["action_input"], event["message"]
+            ):
+                yield _sse_event(chunk)
+        elif event_type == "financial.progress":
+            yield _sse_event({"type": "plan.update", "tasks": event["tasks"]})
+            for chunk in financial_execution.progress(
+                event["round"], event["tasks"], event.get("observations", [])
+            ):
+                yield _sse_event(chunk)
         elif event_type == "context.status":
             # Forward context-management status to frontend as-is.
             yield _sse_event(event)
@@ -4277,6 +4413,10 @@ After partial results, finish only missing requested deliverables, then report.
             # Don't emit anything yet - wait for 'act' event to create step
 
         elif event_type == "thinking_chunk":
+            # Financial progress already reports actual persisted work. Model
+            # text is not a tool step, especially while finishing a publication.
+            if react_state.get("financial_plan"):
+                continue
             round_num = int(event.get("round") or (len(round_step_map) + 1))
             delta_thinking = event.get("delta_thinking") or ""
             delta_text = event.get("delta_text") or ""
@@ -4339,12 +4479,9 @@ After partial results, finish only missing requested deliverables, then report.
                 pending_thoughts.pop(round_num, [])
                 pending_action_intentions.pop(round_num, None)
                 pending_action_reasons.pop(round_num, None)
-                # derisk 参考：terminate 是「模拟 action」，不展示为真实工具 step。
-                # 通知前端移除 terminate 这轮在 thinking_chunk 阶段提前创建的
-                # 「思考中」占位 step（前端 step.meta 里 action=terminate 会过滤）。
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
-                    yield step_meta(_stale_id, None, "terminate", None, "terminate")
+                    yield _sse_event({"type": "step.remove", "id": _stale_id})
                 # Do not fabricate plan completion.  Only an explicit
                 # todowrite update can mark a task complete; otherwise an
                 # early terminate must remain visibly incomplete.
@@ -4425,7 +4562,8 @@ After partial results, finish only missing requested deliverables, then report.
                     }
                 )
 
-                yield _sse_event({"type": "plan.update", "tasks": todos_payload})
+                if not react_state.get("financial_plan"):
+                    yield _sse_event({"type": "plan.update", "tasks": todos_payload})
                 yield step_meta(
                     round_step_map[round_num],
                     None,
@@ -4498,9 +4636,7 @@ After partial results, finish only missing requested deliverables, then report.
                 pending_action_reasons.pop(round_num, None)
                 if round_num in round_step_map:
                     _stale_id = round_step_map.pop(round_num)
-                    yield _sse_event(
-                        {"type": "step.done", "id": _stale_id, "status": "done"}
-                    )
+                    yield _sse_event({"type": "step.remove", "id": _stale_id})
                 continue
 
             # Use the actual action name as the step title (Manus-style UI)
@@ -4553,6 +4689,11 @@ After partial results, finish only missing requested deliverables, then report.
                 "outputs": [],
                 "status": "running",
             }
+
+            # Keep streamed observations on the same step in live view and history.
+            current_history_step, was_live = financial_execution.finish(
+                round_num, current_history_step
+            )
 
             # Stream action code to frontend for right panel
             # (code_interpreter)
@@ -4645,12 +4786,13 @@ After partial results, finish only missing requested deliverables, then report.
                 )
             ):
                 updated_todos = advance_todo_list()
-                if updated_todos:
+                if updated_todos and not react_state.get("financial_plan"):
                     yield _sse_event({"type": "plan.update", "tasks": updated_todos})
             # --- History: finalize step ---
             if current_history_step is not None:
                 current_history_step["status"] = status
-                history_steps.append(current_history_step)
+                if not was_live:
+                    history_steps.append(current_history_step)
                 current_history_step = None
 
     # A deadline can interrupt thinking or a tool before an act event arrives.
@@ -4679,10 +4821,16 @@ After partial results, finish only missing requested deliverables, then report.
             )
             yield step_done(pending_id, "failed")
 
+    for failure_event in financial_execution.fail_unfinished():
+        yield _sse_event(failure_event)
+
     try:
         reply = await agent_task
     except Exception as e:
         err_msg = f"React agent failed: {e}"
+        financial_tasks = interrupt_financial_progress(react_state)
+        if financial_tasks:
+            yield _sse_event({"type": "plan.update", "tasks": financial_tasks})
         incomplete = generation_failure(react_state)
         if incomplete:
             yield _sse_event(incomplete)
@@ -4715,7 +4863,7 @@ After partial results, finish only missing requested deliverables, then report.
         error_payload = _build_react_history_payload(
             final_content=err_msg,
             steps=history_steps,
-            task_plan=list(_todo_list),
+            task_plan=react_state.get("financial_plan") or list(_todo_list),
             generated_images=react_state.get("generated_images", []),
             sub_agents=build_subagent_history_snapshot(subagent_history),
             input_files=input_files_snapshot,
@@ -4730,6 +4878,7 @@ After partial results, finish only missing requested deliverables, then report.
             storage_conv,
             error_payload,
             error_answer,
+            history_checkpoint,
         )
         for terminal_event in terminal_events:
             yield terminal_event
@@ -4742,6 +4891,9 @@ After partial results, finish only missing requested deliverables, then report.
     if stopped:
         from .tools.report_repair import render_saved_report, save_execution_checkpoint
 
+        financial_tasks = interrupt_financial_progress(react_state)
+        if financial_tasks:
+            yield _sse_event({"type": "plan.update", "tasks": financial_tasks})
         report_recovered = await render_saved_report(
             react_state, skills_dir, allow_unavailable_references=True
         )
@@ -4753,8 +4905,17 @@ After partial results, finish only missing requested deliverables, then report.
         execution_error = (
             execution_context.get("execution_error")
             or report_error
+            or (
+                reply.action_report.content
+                if reply.action_report and not reply.action_report.is_exe_success
+                else None
+            )
             or (reply.content if not reply.action_report else "主流程未提交完整结果")
         )
+        if str(execution_error).startswith(
+            ("TOOL_PROTOCOL_RETRY_EXHAUSTED:", "FINANCIAL_NO_PROGRESS:")
+        ):
+            execution_status = "failed"
         status_label = {
             "timeout": "运行超时",
             "step_limit": "达到执行步数上限",
@@ -4860,6 +5021,9 @@ After partial results, finish only missing requested deliverables, then report.
     if incomplete:
         yield _sse_event(incomplete)
         final_content = incomplete["message"]
+
+    if not stopped:
+        final_content = finalize_financial_answer(final_content, react_state)
     final_answer = final_answer_assembler.finalize(final_content)
     final_answer = await _finalize_turn_report_persistence(
         dialogue=dialogue,
@@ -4874,7 +5038,7 @@ After partial results, finish only missing requested deliverables, then report.
     history_payload = _build_react_history_payload(
         final_content=final_answer.content,
         steps=history_steps,
-        task_plan=list(_todo_list),
+        task_plan=react_state.get("financial_plan") or list(_todo_list),
         generated_images=react_state.get("generated_images", []),
         sub_agents=build_subagent_history_snapshot(subagent_history),
         input_files=input_files_snapshot,
@@ -4889,6 +5053,7 @@ After partial results, finish only missing requested deliverables, then report.
         storage_conv,
         history_payload,
         final_answer,
+        history_checkpoint,
     )
     for terminal_event in terminal_events:
         yield terminal_event
