@@ -3354,7 +3354,9 @@ async def _react_agent_stream_impl(
         history_checkpoint.bind(
             storage_conv,
             lambda status: _build_react_history_payload(
-                final_content="任务执行已中断，可继续任务。" if status == "interrupted" else "",
+                final_content="任务执行已中断，可继续任务。"
+                if status == "interrupted"
+                else "",
                 steps=[],
                 task_plan=[],
                 generated_images=[],
