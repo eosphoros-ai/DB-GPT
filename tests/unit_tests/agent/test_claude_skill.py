@@ -176,6 +176,135 @@ And this comment: {# not a comment #}.
     assert "49" not in rendered
 
 
+@pytest.mark.asyncio
+async def test_claude_skill_agent_keeps_base_prompt_format_and_variables(tmp_path):
+    """Applying a skill must not drop the format or the variables of the base prompt.
+
+    The base prompt of an agent is usually an f-string template (that is the
+    default of ``PromptTemplate.from_template``). Combining it with the skill
+    prompt must keep its format, otherwise its variables are silently lost and
+    ``{user_name}`` stays in the system prompt.
+    """
+    skill_md = """
+---
+name: json-demo
+description: Skill that documents a JSON payload
+---
+
+Compute {{ 7 * 7 }} before reporting.
+"""
+
+    file_path = tmp_path / "json_demo" / "SKILL.md"
+    _write_skill_md(file_path, skill_md)
+
+    from dbgpt.agent.claude_skill import FileBasedSkill, SkillRegistry
+    from dbgpt.agent.claude_skill.agent import ClaudeSkillAgent
+    from dbgpt.agent.core.profile import ProfileConfig
+    from dbgpt.core import PromptTemplate
+
+    registry = SkillRegistry()
+    registry.register_skill(FileBasedSkill(str(file_path)))
+
+    agent = ClaudeSkillAgent(
+        skill_registry=registry,
+        profile=ProfileConfig(),
+        bind_prompt=PromptTemplate(
+            template="Hello {user_name}, please help.",
+            input_variables=["user_name"],
+            template_format="f-string",
+        ),
+    )
+
+    agent.set_skill("json-demo")
+
+    # The base prompt keeps its format and its variables.
+    assert agent.bind_prompt.template_format == "f-string"
+    assert agent.bind_prompt.input_variables == ["user_name"]
+
+    system_prompt = await agent.build_system_prompt(context={"user_name": "Bob"})
+
+    # The variable of the base prompt is filled ...
+    assert "Hello Bob, please help." in system_prompt
+    # ... and the skill instructions are still literal.
+    assert "{{ 7 * 7 }}" in system_prompt
+
+
+def test_get_skill_content_returns_stored_source_of_other_templates():
+    """get_skill_content must return the stored source of a registered template.
+
+    Only the escaped skill instructions have to be decoded, every other
+    registered template must be returned verbatim.
+    """
+    from dbgpt.agent.skill.base import Skill, SkillMetadata
+    from dbgpt.agent.skill.manage import SkillManager
+    from dbgpt.core import PromptTemplate
+
+    manager = SkillManager(None)
+    template = PromptTemplate(
+        template="Compute {{ 7 * 7 }} then report.",
+        input_variables=[],
+        template_format="jinja2",
+    )
+    manager.register_skill(
+        skill_instance=Skill(
+            metadata=SkillMetadata(name="manual", description="manual skill"),
+            prompt_template=template,
+        )
+    )
+
+    assert manager.get_skill_content("manual") == "Compute {{ 7 * 7 }} then report."
+
+
+def test_get_skill_content_does_not_raise_on_invalid_template():
+    """get_skill_content must not raise when a registered template is invalid."""
+    from dbgpt.agent.skill.base import Skill, SkillMetadata
+    from dbgpt.agent.skill.manage import SkillManager
+    from dbgpt.core import PromptTemplate
+
+    manager = SkillManager(None)
+    template = PromptTemplate(
+        template="Broken {% if %} syntax",
+        input_variables=[],
+        template_format="jinja2",
+    )
+    manager.register_skill(
+        skill_instance=Skill(
+            metadata=SkillMetadata(name="broken", description="broken skill"),
+            prompt_template=template,
+        )
+    )
+
+    assert manager.get_skill_content("broken") == "Broken {% if %} syntax"
+
+
+def test_get_skill_content_returns_original_instructions_of_file_skill(tmp_path):
+    """The content of a file based skill is its original SKILL.md instructions."""
+    skill_md = """
+---
+name: json-demo
+description: Skill that documents a JSON payload
+---
+
+Call the API with `{{ "name": "value" }}`.
+"""
+
+    file_path = tmp_path / "json_demo" / "SKILL.md"
+    _write_skill_md(file_path, skill_md)
+
+    from dbgpt.agent.skill.loader import SkillLoader
+    from dbgpt.agent.skill.manage import SkillManager
+
+    skill = SkillLoader().load_skill_from_file(str(file_path))
+    manager = SkillManager(None)
+    manager.register_skill(skill_instance=skill)
+
+    content = manager.get_skill_content("json-demo")
+
+    assert '{{ "name": "value" }}' in content
+    # The escaped template source must not leak into the content.
+    assert "{{ '{{' }}" not in content
+
+
 def test_filebasedskill_prompt_does_not_execute_instructions(tmp_path):
     """A payload inside the skill instructions must never be executed."""
     marker = tmp_path / "pwned.txt"

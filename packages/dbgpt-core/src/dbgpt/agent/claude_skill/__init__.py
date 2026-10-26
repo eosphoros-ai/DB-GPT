@@ -42,6 +42,20 @@ def escape_jinja2_syntax(text: str) -> str:
     )
 
 
+class SkillPromptTemplate(PromptTemplate):
+    """Prompt template of a skill, keeping the original text of the skill.
+
+    The template source of a skill is the Jinja2 escaped version of the skill
+    instructions, so that the instructions are never evaluated as template
+    source. ``raw_template`` keeps the original text, so that callers can
+    return the skill content verbatim (see
+    ``SkillManager.get_skill_content``) instead of rendering the template.
+    """
+
+    raw_template: str = ""
+    """The original, unescaped text of the skill."""
+
+
 @dataclasses.dataclass
 class SkillMetadata:
     """Metadata for a Claude-style SKILL file."""
@@ -366,8 +380,11 @@ class FileBasedSkill:
             PromptTemplate with the skill instructions.
         """
         prompt = escape_jinja2_syntax(self.instructions)
-        return PromptTemplate.from_template(
-            prompt, template_format="jinja2", template_is_strict=False
+        return SkillPromptTemplate.from_template(
+            prompt,
+            template_format="jinja2",
+            template_is_strict=False,
+            raw_template=self.instructions,
         )
 
     def __str__(self) -> str:

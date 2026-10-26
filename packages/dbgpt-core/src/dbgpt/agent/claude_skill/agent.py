@@ -85,9 +85,26 @@ class ClaudeSkillAgent(ConversableAgent):
                 self._base_prompt = self.bind_prompt
 
             skill_prompt = self._current_skill.get_prompt()
+            base_prompt = self.bind_prompt
 
-            if self.bind_prompt:
-                combined = f"{skill_prompt.template}\n\n{self.bind_prompt.template}"
+            if base_prompt is not None and base_prompt.template_format == "f-string":
+                # 基础提示词是 f-string 模板，必须保留它的格式，否则其中的
+                # {var} 变量不会再被填充。这里取技能指令原文，并按 f-string 的
+                # 规则转义花括号，保证技能指令始终以字面量呈现。
+                skill_text = getattr(skill_prompt, "raw_template", None)
+                if skill_text is None:
+                    skill_text = skill_prompt.format()
+                escaped_skill = skill_text.replace("{", "{{").replace("}", "}}")
+                combined = f"{escaped_skill}\n\n{base_prompt.template}"
+                self.bind_prompt = PromptTemplate.from_template(
+                    combined,
+                    template_format="f-string",
+                    template_is_strict=base_prompt.template_is_strict,
+                )
+                return
+
+            if base_prompt:
+                combined = f"{skill_prompt.template}\n\n{base_prompt.template}"
             else:
                 combined = skill_prompt.template
 
