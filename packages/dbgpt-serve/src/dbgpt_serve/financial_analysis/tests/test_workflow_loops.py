@@ -7,7 +7,7 @@ from dbgpt_serve.financial_analysis import workflow
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
 
 from .test_comparison_analysis import comparison_finding, comparison_report
-from .test_comparison_recovery import RecordingAnalyzer
+from .workflow_fixtures import RecordingAnalyzer
 
 
 def topic_findings(report, topic_id):

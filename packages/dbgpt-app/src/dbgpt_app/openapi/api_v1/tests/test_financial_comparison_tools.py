@@ -13,7 +13,7 @@ from dbgpt_serve.financial_analysis import workflow
 from dbgpt_serve.financial_analysis.tests.conftest import (
     isolated_service as isolated_service,
 )
-from dbgpt_serve.financial_analysis.tests.test_comparison_recovery import (
+from dbgpt_serve.financial_analysis.tests.workflow_fixtures import (
     RecordingAnalyzer,
 )
 from dbgpt_serve.session_file.api.endpoints import SessionFileApiError
