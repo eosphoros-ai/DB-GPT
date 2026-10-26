@@ -1,109 +1,59 @@
 ---
 name: financial-report-analyzer
-description: 专门用于上市公司财报（如年度报告、季度报告）的深度分析。该技能能够自动提取关键财务指标，计算核心财务比率，生成可视化图表，并结合行业背景生成专业的财务分析报告。
+description: 在当前智能体对话中分析中文上市公司文本型年度报告 PDF，支持单报告、同年度多公司及同公司跨年对比。提取真实财务事实，执行确定性计算，由当前智能体撰写带引用的结论，并用固定财报组件展示报告、来源和下载。
 ---
 
-# 财报分析技能 (Financial Report Analyzer)
+# 财报分析技能
 
-本技能旨在帮助 DB-GPT 系统化地分析上市公司财报，通过提取核心数据、计算财务比率、生成可视化图表并结合业务背景，产出高质量的财务分析报告。
+用户直接在智能体对话上传年报或点击首页财报示例。所有步骤在当前对话完成，右侧 Computer 展示财报组件，不要求用户跳转独立页面。
 
-## 核心工作流程
+## 工作流程
 
-1. **数据提取与结构化**：
-   - 使用 `execute_skill_script_file` 工具执行 `scripts/extract_financials.py` 脚本，传入财报文件路径（`file_path` 参数），自动提取营收、净利润、资产、负债等核心数值。
-   - 脚本支持 PDF 文件（通过 pdfplumber 解析）和纯文本文件，返回 JSON 格式的结构化数据。
+1. 调用 `prepare_financial_report`。仅有一份 PDF 可省略参数；有多份时指定当前附件清单的 `file_id`，不猜测路径或 ID。该工具复用页级提取器、Decimal 计算和报告存储，返回真实 facts、calculations、evidence、run_id、revision。它不调用另一个模型生成结论。
+2. 工具的 `model_context` 是模型分析上下文，`chunks` 仅供界面展示。prepare 默认有界并发生成六专题并完整校验，返回 `review_context` 后直接逐项复核，不重复生成或保存。若返回 `topic_context` 则按串行恢复流程分析并 `save_financial_topic`；保存成功交接下个专题。显式读取或重做仍可 `get_financial_topic(run_id, topic_id)`。专题为 operating（经营表现）、recurring（扣非与利润构成）、margins（毛利变化）、expenses（费用变化）、cashflow（现金流）、balance（资产负债）。每个专题有依据时写两到三条互不重复的发现，不机械凑数；盈利质量三个专题分别展开。
+3. 每条发现说明判断、事实或计算依据、反向信息与待核查事项。复制数据的 `reference` 字段，数字、年份和倍数由后端替换；不得直接写数字、追加单位、心算或编造原因。每条最多六个计算引用，过多时拆成多条。只分析当前专题数据，section 使用该专题返回值。费用率变化是百分点；负财务费用不能当缺失。没有附注证据时，仅描述现象和需要核查的可能线索，不能断言因果。
+4. 每次遵循工具返回的 `next_action`。`topic_result.saved=false` 表示结论没有保存成功，一次处理全部 `issues` 的 `finding_index`、`field`；优先使用各错误的 hint 或 suggested_changes 修正，再使用新 revision 直接保存，不重复 get 或用 retry 重置计数。反向信息和待核查事项中的引用也必须声明在同一条发现的 Ids 数组。其他专题已保存结论不会丢失。仅当 `missingRequiredMetrics` 非空时，可提交空 findings，并用 `missing_reason` 说明缺项。连续三次失败后继续其他专题，复核时使用 insufficient，不将失败当成缺少财务数据或成功。
+5. 缺少费用科目覆盖时可用 `append_findings` 只追加缺失科目的分析，保留已通过草稿，也可与 `patches` 合用；不要只追加引用 ID 而不讨论该科目。重复单位错误需同时检查本期金额是否被误写成增减额；无依据的原因假设放入 `unresolvedQuestions`，摘要只保留有依据的观察。
+6. 全部专题处理后调用 `review_financial_report(run_id, revision, reviews)`。逐项覆盖全部专题，检查结论方向是否吻合引用数据、比较期间与口径是否一致、具体原因是否有原文依据。每项包含 topic_id、verdict（pass/revise/insufficient）、directionChecked、scopeChecked、causalityChecked（三项均为 true）和不含数字的具体 note。不要机械全部通过；需修订的专题单独修订后重新复核。失败或缺数据专题不得标记 pass。复核是当前智能体自查，不等于人工确认。
+7. 明确复核完成后后端自动汇总发布；返回 `workflow.status=published` 后无需再次 publish。不再一次提交全报告 findings。只有逐专题处理并完成复核才可发布。按返回的 `completion_instructions`，依据 `completion_context` 正常回答用户的问题并 terminate。宽泛分析默认选择两三个最值得关注的发现，每段先解释变化意味着什么，再用少量数字支撑，段间留空行；不按内部专题逐栏报数，不写固定总结。正文财务数字以四到六处为宜，不反复列本期、上期和同比，用户明确要求明细时再展开。数字必须复制 facts/calculations 的 `reference`，占位符只显示数值及单位，金额会自动简写为万元或亿元；由你按语境写清指标名称、期间及判断，增减方向必须与计算一致；后端在数字旁添加可点击引用，定位到同一 HTML 报告的对应数据与计算依据。不得抄写 findings 中的数字、心算、追加单位或自行生成引用编号。保留具体证据边界，不用保存条数、专题数量等内部统计代替回答。不生成另一套 HTML，不跳转独立页面。
+8. 普通追问调用 `read_financial_report` 后依据已保存数据回答。用户要求重做某专题时，先 read，再 `get_financial_topic(retry=true)`，仅保存该专题，重新复核并发布新版本；不重新提取 PDF。新上传报告才重新 prepare。旧版无 workflow 的报告保持旧协议，需新分析才能启用专题流程。
 
-2. **财务比率计算**：
-   - 使用 `execute_skill_script_file` 执行 `scripts/calculate_ratios.py`，传入 Step 1 的 JSON 数据。
-   - 自动计算毛利率、净利率、ROE、资产负债率等关键指标，输出 30 个模板占位符键值。
-   - 参考 `references/financial_metrics.md` 确保指标定义的准确性。
-   - 系统将脚本的实际 JSON 结果捕获为 Python 产物，并通过通用 `auto_data` 传递模板字段，后续 `html_interpreter` 会自动合并。不使用专用 `ratio_data` 状态。
+## 数据边界
 
-3. **图表生成**：
-   - 使用 `execute_skill_script_file` 执行 `scripts/generate_charts.py`，传入 Step 1 的 JSON 数据。
-   - 自动生成 3 张可视化图表：
-     - `financial_overview.png`：核心财务指标对比柱状图
-     - `profitability.png`：盈利能力指标横向条形图
-     - `asset_structure.png`：资产结构环形饼图
-   - **系统会自动将图片复制到静态目录并记录 URL 映射**（`react_state["image_url_map"]`），后续 html_interpreter 会自动合并。
+- 当前提取器支持中文、人民币、非金融企业的文本型年度报告 PDF，使用真实比较期，缺项不补零。
+- 归母净利润、扣非归母净利润、合并口径及期初/期末不能混用。
+- 自动提取值仍待人工核对，引用校验不等于结论语义已经人工确认。
+- `references/financial_metrics.md` 和 `references/analysis_framework.md` 可供参考，不能用参考材料中的常量补齐当前报告。
+- 旧 scripts 与 HTML 模板保留兼容用途；当前智能体财报交付统一通过上述工具与固定组件完成。
 
-4. **深度分析**：
-   - 遵循 `references/analysis_framework.md` 提供的框架，从盈利质量、偿债风险、营运效率和现金流四个维度进行深度剖析。
-   - 结合"经营情况讨论与分析"章节，解释业绩变动的核心驱动因素。
-   - 撰写以下 7 段分析文本：
-     - `PROFITABILITY_ANALYSIS`：盈利能力分析
-     - `SOLVENCY_ANALYSIS`：偿债与风险分析
-     - `EFFICIENCY_ANALYSIS`：营运效率分析
-     - `CASHFLOW_ANALYSIS`：现金流与利润质量分析
-     - `ADVANTAGES_LIST`：核心优势列表（HTML `<li>` 格式）
-     - `RISKS_LIST`：主要风险列表（HTML `<li>` 格式）
-     - `OVERALL_ASSESSMENT`：综合评价
+保存校验失败时优先只传 `patches=[{"finding_index":错误索引,"changes":{"字段":"修正值"}}]`（省略 findings），后端合并已存草稿并完整重验。期间只使用 `data.periods` 中已提供的年份标签，财务数字仍须事实/计算引用。后端 errorCode/issues 是真实失败原因；复核意见不得将格式错误改写成数据缺失。
 
-5. **渲染报告**：
-   - 调用 `html_interpreter`，使用 `template_path` 模式：
-     ```json
-     {
-       "template_path": "financial-report-analyzer/templates/report_template.html",
-       "data": {
-         "PROFITABILITY_ANALYSIS": "LLM撰写的盈利能力分析...",
-         "SOLVENCY_ANALYSIS": "LLM撰写的偿债分析...",
-         "EFFICIENCY_ANALYSIS": "LLM撰写的营运效率分析...",
-         "CASHFLOW_ANALYSIS": "LLM撰写的现金流分析...",
-         "ADVANTAGES_LIST": "<li>优势1</li><li>优势2</li>",
-         "RISKS_LIST": "<li>风险1</li><li>风险2</li>",
-         "OVERALL_ASSESSMENT": "LLM撰写的综合评价..."
-       },
-       "title": "XX公司 2023年度财报分析报告"
-     }
-     ```
-   - **重要**：`data` 字典中只需传入你撰写的 7 段分析文本！后端会自动合并：
-     - Step 2 的 30 个数据指标（COMPANY_NAME、REVENUE、NET_PROFIT 等）
-     - Step 3 的图表 URL（CHART_FINANCIAL_OVERVIEW、CHART_PROFITABILITY、CHART_ASSET_STRUCTURE）
-   - **绝对不要**在 `data` 中包含数据指标或图表路径，否则 JSON 过大会导致截断。
-   - 分析正文中的业务数值必须引用产生它的 SQL/Python 产物；通过 `report_evidence_manifest` 查看实际字段和路径，不手填或猜测选择器。使用知识库口径时，将对应切片绑定到具体方法说明；来源绑定不代表已通过确定性核验。
+## 多财报对比
 
-6. **完成**：
-   - 调用 `terminate` 返回 1-2 句话的简短摘要。
-   - 报告会以卡片形式展示在左侧面板，用户点击卡片即可在右侧面板查看完整报告。
+- 只有用户明确要求比较时才调用 `prepare_financial_comparison(file_ids, comparison_kind, baseline_file_id?)`。一次选择当前对话中两到五份已授权 PDF；`peer` 是同报告年度多公司，`trend` 是同公司不同报告年度。多附件本身不表示比较意图；单报告继续使用原工具。
+- 比较使用 `schemaVersion=2, mode=comparison`，旧单报告仍是 v1。公司身份由封面/提取元信息识别，不由文件名推断；有歧义时向用户确认，通过 `resolve_financial_comparison(run_id, revision, resolutions)` 保存明确的公司及报告年度。禁止自行编造澄清结果。
+- 复用原六专题保存、局部 patches、重试、复核和发布流程。复制 `findingReferenceTemplates` 的归属字段；每条发现另含 `entityIds`、`periods`、`metricCodes`、`subjectEntityId`、`baselineEntityId`、`comparisonDirection`。集合必须精确覆盖全部输入事实，方向与后端计算一致。单对象发现也必须提供字符串形式的 `subjectEntityId`，其基准为 null、方向为 none。
+- 金额差、百分点和同比只引用已保存计算。横向“较基准公司”和跨年“较基准期”不能写成年同比；同比仅指有效共同披露基础上的相邻年度。业务结构差异不能据此解释为竞争力或经营原因。
+- 同公司重复披露保留全部候选。仅有明确且相容的调整前后关系才按版本化政策取值；未解释冲突不选最新或首个值。跨年没有共同披露基础就保留断点，不拼接连续趋势。
+- 数据就绪不等于模型分析通过或报告发布。文件失败、校验失败和数据不足分别说明；只剩一个有效对象时保存数据但不得声称完成对比。`workflow.status=published` 才可称“报告已生成”，其中的缺口仍须保留。
+- 显式继续只重试失败文档及失败专题，成功文档不重新解析。单专题重做使用原 `get_financial_topic(retry=true)`；基准切换形成新版本，不能改写旧发布版。
+- 追问可调用 `read_financial_report(run_id, revision)` 固定版本，引用链接携带 revision。历史、JSON 和离线 HTML 均读取同一快照；恢复不重新调用模型。离线 HTML 的来源 PDF 需要回到应用授权访问。
 
-## 完整流程示例
+运行、显式迁移和隔离验收见 `docs/financial-comparison-acceptance.zh-CN.md`。当前执行器仅支持单个本地服务进程；扫描 PDF、跨币种换算、金融企业专用口径、季报及自动 OCR 不在本版验收范围。
 
-```
-Step 1: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="extract_financials.py", args={"file_path": "/path/to/report.pdf"})
-  → 返回 JSON: {"revenue": 10500000000, "net_profit": 1200000000, ...}  （记为 raw_data）
+## 底层 PDF 提取契约
 
-Step 2: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="calculate_ratios.py", args=<raw_data>)
-  → 返回 30 个模板键值，系统捕获 Python 产物并通过通用 auto_data 传递模板字段
+以下字段描述 `scripts/extract_financials.py` 的原始提取结果；它与上文的单报告工作流及多报告比较快照分层使用，不替代专用财报工具。
 
-Step 3: execute_skill_script_file(skill_name="financial-report-analyzer", script_file_name="generate_charts.py", args=<raw_data>)
-  → 生成图表，系统自动复制到 /images/ 并记录 URL 映射
 
-Step 4: （LLM 自行撰写 7 段深度分析文本）
-
-Step 5: html_interpreter(template_path="financial-report-analyzer/templates/report_template.html", data={仅包含 7 段分析文本}, title="报告标题")
-  → 后端自动合并数据指标 + 图表 URL + 分析文本，渲染完整报告
-
-Step 6: terminate(result="简短摘要")
-```
-
-## 资源使用说明
-
-- **脚本**（均通过 `execute_skill_script_file` 执行）：
-  - `scripts/extract_financials.py`：接收 `file_path` 参数，读取财报文件（支持 PDF 和文本格式），提取核心财务数据。
-  - `scripts/calculate_ratios.py`：计算财务比率，输出 30 个模板占位符键值。系统捕获实际结果和来源，复用通用模板数据流程。
-  - `scripts/generate_charts.py`：生成 3 张可视化图表（matplotlib），系统自动处理图片复制。
-  - `scripts/fill_template.py`：（备用）接收 `ratio_data`、`chart_paths`、`analysis` 三个参数，读取 HTML 模板并替换所有占位符。正常情况下不需要使用此脚本，因为 html_interpreter 的 template_path 模式会自动完成模板填充。
-- **参考**：
-  - `references/financial_metrics.md`：包含公式定义。
-  - `references/analysis_framework.md`：包含分析逻辑。
-- **模板**：
-  - `templates/report_template.html`：最终交付报告的 HTML 模板（**必须严格遵循**，不得删减章节或修改表格结构）。由 html_interpreter 的 template_path 参数自动读取并填充。
-  - `templates/report_template.md`：Markdown 版本，仅供参考结构说明。
-
-## 注意事项
-
-- **必须使用 `execute_skill_script_file`** 执行脚本（不要用 shell_interpreter），因为 `execute_skill_script_file` 会自动处理图片复制和数据记录。
-- 脚本提取可能受排版影响，建议在计算前人工核对提取的关键数值。
-- 始终关注"非经常性损益"，以评估公司核心业务的真实盈利能力。
-- 对比至少三年的历史数据，以识别趋势。
-- `generate_charts.py` 依赖 matplotlib，请确保环境中已安装该库。
+- `file_path` 必须指向可读取的 `.pdf` 文件，内容为带文本层的中文年度报告。提取范围是可识别的合并财务报表和“主要会计数据和财务指标”规则表格，不提供季度报告、纯文本文件或金融企业专用报表的解析保证。
+- 不执行 OCR，不从叙述段落中的邻近数字补填指标。扫描件、缺少年度标识或无法识别的表格可能返回 `_meta.status: "unsupported"`；此时停止后续自动计算，说明限制。文件格式错误或读取异常返回 `{"error": true, "message": "..."}`。
+- 成功读取后的 JSON 使用 `schemaVersion: 1`，包含：
+  - `document`：文档 ID、文件名、页数和 SHA-256。
+  - `facts`：指标、期间、币种、单位、精确十进制字符串 `normalizedValue`、`extractionStatus`（`parsed` / `missing` / `conflict`）以及 `evidenceExcerptIds`。缺失或冲突值为 `null`，不能按零处理。
+  - `evidence`：原始值、表格行列、单位依据和从 1 开始的 PDF 物理页码。`sourceObservations` 保留表格候选值及来源期间，包括期初余额和调整前数据；这些观察值不能直接视为可比财务事实。
+  - `company_name`、`report_year`、`company_identity`：识别出的公司、年度及公司候选依据；未识别的信息保留空值，`report_date` 当前为 `null`。
+  - `revenue`、`net_profit` 等当年数值及 `prev_` 前缀的上年数值：供现有比率和图表脚本使用的浮点兼容字段。需要精确金额或追溯来源时使用 `facts` 与 `evidence`。
+  - `_meta`：已提取/缺失字段、解析状态、表格问题及限制。`humanVerified` 为 `false`，`parsed` 不表示已经人工核验。
+- 金额按显式的元、千元、万元、百万元或亿元单位换算为人民币元；显式非人民币币种不受支持，不做汇率转换。仅识别显式调整前/后标记，不自动完成重述核对，也不将期初余额当作上年末余额。
+- 提取依赖 `pdfplumber>=0.10.4`（声明在 `dbgpt-ext` 的 `rag` 可选依赖中）。该下限覆盖 `Page.extract_text_lines()` 和 `Page.close()` 两个实际调用的 API；脚本执行环境也必须满足此版本约束。

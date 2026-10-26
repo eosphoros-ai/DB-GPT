@@ -97,7 +97,11 @@ async def test_closing_stream_cancels_and_awaits_agent_task(monkeypatch) -> None
             task_finished.set()
 
     async def _fake_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode
         task = asyncio.create_task(_agent_work())
@@ -129,7 +133,11 @@ async def test_runtime_failure_emits_structured_final_and_done(
     monkeypatch, caplog
 ) -> None:
     async def _failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode, agent_task_holder
         if False:
@@ -157,12 +165,17 @@ async def test_runtime_failure_emits_structured_final_and_done(
         {"type": "done"},
     ]
     assert "ReAct agent stream failed before normal completion" in caplog.text
+    assert "model stream failed" in caplog.text
 
 
 @pytest.mark.asyncio
 async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> None:
     async def _partially_failing_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode, agent_task_holder
         yield agentic_data_api._sse_event(
@@ -187,6 +200,21 @@ async def test_runtime_failure_does_not_duplicate_a_final_event(monkeypatch) -> 
 
 @pytest.mark.asyncio
 async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> None:
+    from dbgpt.core import StorageConversation
+    from dbgpt.core.interface.storage import InMemoryStorage
+
+    conversations, messages = InMemoryStorage(), InMemoryStorage()
+
+    def read_conversation():
+        return StorageConversation(
+            conv_uid="disconnect-recovery",
+            conv_storage=conversations,
+            message_storage=messages,
+        )
+
+    storage = read_conversation()
+    storage.start_new_round()
+    storage.add_user_message("分析年报")
     task_started = asyncio.Event()
     task_finished = asyncio.Event()
     body_send_started = asyncio.Event()
@@ -201,9 +229,22 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
             task_finished.set()
 
     async def _fake_stream_impl(
-        dialogue, tool_mode="full", agent_task_holder=None, attachment_ctx=None
+        dialogue,
+        tool_mode="full",
+        agent_task_holder=None,
+        attachment_ctx=None,
+        history_checkpoint=None,
     ):
         del dialogue, tool_mode
+        history_checkpoint.bind(
+            storage,
+            lambda status: json.dumps(
+                {
+                    "execution_status": status,
+                    "steps": [{"id": "step-1", "outputs": [{"content": "已读取财报"}]}],
+                }
+            ),
+        )
         task = asyncio.create_task(_agent_work())
         created_tasks.append(task)
         agent_task_holder.append(task)
@@ -243,3 +284,37 @@ async def test_response_disconnect_closes_stream_and_agent_task(monkeypatch) -> 
     assert created_tasks[0].cancelled()
     assert created_tasks[0].done()
     assert task_finished.is_set()
+    restored = read_conversation()
+    assert [m.type for m in restored.messages] == ["human", "view"]
+    payload = json.loads(restored.messages[-1].content)
+    assert payload["execution_status"] == "interrupted"
+    assert payload["steps"][0]["outputs"][0]["content"] == "已读取财报"
+
+
+@pytest.mark.asyncio
+async def test_cancel_cleanup_times_out_and_consumes_late_failure(monkeypatch, caplog):
+    monkeypatch.setattr(agentic_data_api, "AGENT_CLEANUP_TIMEOUT_SECONDS", 0.01)
+    started = asyncio.Event()
+    finish = asyncio.Event()
+
+    async def stubborn_task():
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await finish.wait()
+            raise RuntimeError("late cleanup failure")
+
+    task = asyncio.create_task(stubborn_task())
+    await started.wait()
+    try:
+        await asyncio.wait_for(
+            agentic_data_api._cancel_and_await_agent_task(task), timeout=0.5
+        )
+        assert not task.done()
+        assert "exceeded cleanup deadline" in caplog.text
+    finally:
+        finish.set()
+        await asyncio.gather(task, return_exceptions=True)
+        await asyncio.sleep(0)
+    assert "failed after stream cleanup" in caplog.text
