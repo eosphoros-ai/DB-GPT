@@ -114,3 +114,62 @@ def test_storage_failure_does_not_fail_stream_or_retry_on_every_token(caplog):
     checkpoint.flush()
     checkpoint.flush()
     assert caplog.text.count("Failed to persist ReAct progress checkpoint") == 1
+
+
+def test_failed_final_save_allows_disconnect_checkpoint_retry(
+    conversation_factory, monkeypatch
+):
+    storage = conversation_factory()
+    storage.start_new_round()
+    storage.add_user_message("question")
+    checkpoint = ReactHistoryCheckpoint()
+    checkpoint.bind(storage, lambda status: json.dumps({"execution_status": status}))
+    checkpoint.flush(force=True)
+
+    def fail_save(*args):
+        raise RuntimeError("temporarily unavailable")
+
+    monkeypatch.setattr(agentic_data_api, "save_history_view", fail_save)
+    events = agentic_data_api._react_terminal_events(
+        storage,
+        '{"final_content":"answer"}',
+        AgentFinalAnswer(content="answer"),
+        checkpoint,
+    )
+    assert [agentic_data_api._sse_event_type(event) for event in events] == [
+        "final",
+        "done",
+    ]
+    assert not checkpoint.finished
+    checkpoint.flush(status="interrupted", force=True)
+    restored = conversation_factory()
+    assert len(restored.messages) == 2
+    assert (
+        json.loads(restored.messages[-1].content)["execution_status"] == "interrupted"
+    )
+
+
+def test_saved_final_view_is_not_overwritten_when_round_cleanup_fails(
+    conversation_factory, monkeypatch
+):
+    storage = conversation_factory()
+    storage.start_new_round()
+    storage.add_user_message("question")
+    checkpoint = ReactHistoryCheckpoint()
+    checkpoint.bind(storage, lambda status: status)
+
+    def fail_end():
+        raise RuntimeError("round cleanup failed")
+
+    monkeypatch.setattr(storage, "end_current_round", fail_end)
+    agentic_data_api._react_terminal_events(
+        storage,
+        '{"final_content":"answer"}',
+        AgentFinalAnswer(content="answer"),
+        checkpoint,
+    )
+    assert checkpoint.finished
+    checkpoint.flush(status="interrupted", force=True)
+    assert json.loads(conversation_factory().messages[-1].content) == {
+        "final_content": "answer"
+    }

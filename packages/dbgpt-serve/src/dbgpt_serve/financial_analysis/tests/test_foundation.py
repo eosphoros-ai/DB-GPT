@@ -1,6 +1,9 @@
 """Synthetic regressions for extraction boundaries and exact arithmetic."""
 
 import importlib.util
+import json
+import subprocess
+import sys
 from decimal import Decimal
 from pathlib import Path
 
@@ -27,6 +30,48 @@ def extractor(monkeypatch):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+@pytest.mark.parametrize("error_type", [FileNotFoundError, PermissionError, ValueError])
+def test_skill_error_boundary_redacts_paths(monkeypatch, tmp_path, capsys, error_type):
+    scripts = (
+        Path(__file__).resolve().parents[6] / "skills/financial-report-analyzer/scripts"
+    )
+    monkeypatch.syspath_prepend(str(scripts))
+    spec = importlib.util.spec_from_file_location(
+        "financial_skill_entry", scripts / "extract_financials.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    private_path = str(tmp_path / "private-materialized-session.pdf")
+
+    def fail(path):
+        raise error_type("cannot parse " + private_path)
+
+    monkeypatch.setattr(module, "extract_document", fail)
+    result = module.extract_financials(private_path)
+    assert result["error"] is True
+    assert result["code"] == "PDF_EXTRACTION_FAILED"
+    assert result["errorType"] == error_type.__name__
+    captured = capsys.readouterr()
+    assert private_path not in json.dumps(result) + captured.out + captured.err
+
+
+def test_skill_cli_returns_safe_json_for_a_missing_file(tmp_path):
+    script = (
+        Path(__file__).resolve().parents[6]
+        / "skills/financial-report-analyzer/scripts/extract_financials.py"
+    )
+    private_path = str(tmp_path / "missing-materialized-session.pdf")
+    result = subprocess.run(
+        [sys.executable, str(script), private_path],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 1
+    assert json.loads(result.stdout)["code"] == "PDF_EXTRACTION_FAILED"
+    assert private_path not in result.stdout + result.stderr
 
 
 @pytest.mark.parametrize(

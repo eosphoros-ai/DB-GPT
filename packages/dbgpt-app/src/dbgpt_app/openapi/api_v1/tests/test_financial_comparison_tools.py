@@ -6,11 +6,15 @@ import pytest
 
 from dbgpt_app.openapi.api_v1.tools.financial_tools import (
     _artifact,
+    _topic_payload,
     has_comparison_intent,
     make_financial_tools,
 )
 from dbgpt_serve.financial_analysis import workflow
 from dbgpt_serve.financial_analysis.tests import conftest as financial_fixtures
+from dbgpt_serve.financial_analysis.tests.test_comparison_analysis import (
+    comparison_report,
+)
 from dbgpt_serve.financial_analysis.tests.workflow_fixtures import (
     RecordingAnalyzer,
 )
@@ -62,11 +66,23 @@ async def test_comparison_without_model_name_uses_serial_topic_path(
 
 
 @pytest.mark.asyncio
-async def test_comparison_tool_rejects_missing_intent_before_accessing_service():
+@pytest.mark.parametrize(
+    "query",
+    [
+        "阅读附件",
+        "不要做比较，只分析其中一份",
+        "不需要进行对比",
+        "不用做跨年比较",
+        "请别做横向对比",
+        "无需比较",
+        "Don't compare these reports",
+    ],
+)
+async def test_comparison_tool_rejects_missing_intent_before_accessing_service(query):
     state = {
         "owner_id": "alice",
         "conv_id": "scope",
-        "financial_user_query": "阅读附件",
+        "financial_user_query": query,
         "session_files": [
             SimpleNamespace(file_id="a", name="a.pdf"),
             SimpleNamespace(file_id="b", name="b.pdf"),
@@ -76,6 +92,17 @@ async def test_comparison_tool_rejects_missing_intent_before_accessing_service()
     prepare = next(t for t in tools if t.__name__ == "prepare_financial_comparison")
     with pytest.raises(ValueError, match="未明确要求"):
         await prepare(file_ids=["a", "b"], comparison_kind="peer")
+
+
+def test_comparison_expense_save_example_is_valid_for_one_entity():
+    report = workflow.start_topic(comparison_report(), "expenses")
+    payload = _topic_payload(report, "expenses")
+    findings = payload["save_example"]["findings"]
+    assert len(findings[0]["entityIds"]) == 1
+    assert findings[0]["entityIds"] == [findings[0]["subjectEntityId"]]
+    saved = workflow.save_topic(report, "expenses", findings=findings)
+    assert workflow.topic(saved, "expenses")["status"] == "ready"
+    assert saved["findings"]
 
 
 @pytest.mark.asyncio

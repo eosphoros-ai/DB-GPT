@@ -394,6 +394,16 @@ def main():
     parser.add_argument("--resume-run-id")
     parser.add_argument("--review-only", action="store_true")
     args = parser.parse_args()
+    if not args.real_pdfs and (
+        args.resume_database is not None
+        or args.resume_run_id is not None
+        or args.review_only
+        or args.model_config is not None
+    ):
+        parser.error(
+            "--resume-database, --resume-run-id, --review-only and --model-config "
+            "require --real-pdfs"
+        )
     output = Path(args.output_dir).resolve()
     output.mkdir(parents=True, exist_ok=True)
     synthetic_snapshots(output, args.runtime)

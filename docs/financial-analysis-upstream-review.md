@@ -94,6 +94,9 @@ to avoid treating Windows checkout CRLF differences as source changes.
 
 Install the project's dependencies using `CONTRIBUTING.md`. The recorded
 `--no-sync` commands use an already prepared environment.
+The Ruff commands below are non-mutating equivalents of the recorded checks.
+Do not substitute `make fmt-check`: its lint steps currently include `--fix`
+and can modify the checkout.
 
 ```bash
 uv run --no-sync pytest \
@@ -109,7 +112,12 @@ uv run --no-sync pytest \
   packages/dbgpt-core/src/dbgpt/agent/expand/actions/tests \
   packages/dbgpt-serve/src/dbgpt_serve/session_file/tests -q
 
-make fmt-check
+uv run --no-sync ruff format --check packages
+uv run --no-sync ruff format --check --exclude=notebook examples
+uv run --no-sync ruff check --select I packages
+uv run --no-sync ruff check --select I --exclude=notebook examples
+uv run --no-sync ruff check packages --exclude=dbgpt-serve
+uv run --no-sync ruff check packages/dbgpt-serve --ignore F811,F841
 uv run --no-sync mypy --no-incremental --config-file .mypy.ini \
   --ignore-missing-imports packages/dbgpt-core/
 

@@ -59,7 +59,9 @@ def is_financial_turn(state):
 def has_comparison_intent(query):
     query = query or ""
     if re.search(
-        r"不(?:要|需|用)?(?:进行)?(?:对比|比较)|do not compare|no comparison",
+        r"(?:不(?:要|需(?:要)?|用)?|别|无需|无须|勿)\s*"
+        r"(?:(?:做|进行)\s*)?(?:横向|跨年)?(?:对比|比较)|"
+        r"do\s+not\s+compare|don['’]t\s+compare|no\s+comparison",
         query,
         re.I,
     ):
@@ -282,11 +284,21 @@ def _topic_payload(report, topic_id):
     )
     if context["data"]["facts"]:
         fact = context["data"]["facts"][0]
+        if topic_id == "expenses":
+            fact = next(
+                (
+                    f
+                    for f in context["data"]["facts"]
+                    if f["fiscalPeriod"] == context["data"]["year"]
+                ),
+                fact,
+            )
         example_facts = (
             [
                 f
                 for f in context["data"]["facts"]
-                if f["fiscalPeriod"] == context["data"]["year"]
+                if f["fiscalPeriod"] == fact["fiscalPeriod"]
+                and f.get("entityId") == fact.get("entityId")
             ]
             if topic_id == "expenses"
             else [fact]

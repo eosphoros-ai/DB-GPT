@@ -13,7 +13,15 @@ def extract_financials(file_path):
         return extract_document(Path(file_path))
     except Exception as exc:
         # This is the tool boundary: damaged/encrypted PDFs must return JSON too.
-        return {"error": True, "message": f"{type(exc).__name__}: {exc}"}
+        # stderr may also be captured by a tool runner; keep paths out of both streams.
+        print(f"PDF extraction failed ({type(exc).__name__})", file=sys.stderr)
+        return {
+            "error": True,
+            "code": "PDF_EXTRACTION_FAILED",
+            "errorType": type(exc).__name__,
+            "message": "PDF extraction failed; the file may be unavailable, damaged, "
+            "encrypted, or not a text-based annual report.",
+        }
 
 
 if __name__ == "__main__":

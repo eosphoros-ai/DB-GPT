@@ -35,6 +35,7 @@ SYSTEM_PROMPT = """你是财报分析助手。只分析给定 JSON 中的财务�
 counterEvidence、unresolvedQuestions。
 三个 Ids 字段为输入中的真实 ID 数组；后两个字段为短句数组。每条至少引用一个事实或计算。
 每条最多十个 factIds、六个 calculationIds、二十个 evidenceExcerptIds。
+factIds/calculationIds 仅声明文本实际使用的引用；已引用计算的输入事实也可声明。
 所有需要显示的数字（包括年份、金额、百分比、倍数）必须用占位符：
 {{fact:真实事实ID}} 或 {{calculation:真实计算ID}}，并将该 ID 写入对应 Ids 数组。
 占位符将由服务端替换成完整的“期间+指标名称+值+单位”；不要在占位符后再添加单位，
@@ -511,6 +512,7 @@ def validate_findings(
                 for name in ("counterEvidence", "unresolvedQuestions")
                 for pos, text in enumerate(getattr(draft, name))
             ]
+            used_references = set()
             for name, text in texts_to_check:
                 referenced = set()
                 checks = [
@@ -592,6 +594,7 @@ def validate_findings(
                                 text,
                             )
                         field_errors.append(error)
+                used_references.update(referenced)
                 if (
                     name == "summary"
                     and not referenced
@@ -608,6 +611,34 @@ def validate_findings(
                             ),
                         }
                     )
+            used_calculations = {
+                ref for kind, ref in used_references if kind == "calculation"
+            }
+            required_facts = {
+                ref
+                for calc_id in used_calculations
+                for ref in selected_calcs[calc_id]["inputFactIds"]
+            }
+            for name, kind in (("factIds", "fact"), ("calculationIds", "calculation")):
+                for pos, ref in enumerate(getattr(draft, name)):
+                    if ref not in (
+                        selected_facts if kind == "fact" else selected_calcs
+                    ):
+                        continue
+                    if (kind, ref) not in used_references and not (
+                        kind == "fact" and ref in required_facts
+                    ):
+                        field_errors.append(
+                            {
+                                "finding_index": index,
+                                "field": f"{name}[{pos}]",
+                                "code": "unused_reference",
+                                "hint": (
+                                    "仅声明发现文本实际引用的事实、计算，"
+                                    "以及所引用计算的输入事实。"
+                                ),
+                            }
+                        )
             if field_errors:
                 issues.append("invalid_fields")
                 details.extend(field_errors)

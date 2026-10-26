@@ -26,7 +26,7 @@
 
 ## 运行说明
 
-当前执行器仅支持单个本地服务进程。旧数据库需要显式增量迁移。在仓库根目录将 `FINANCIAL_DATABASE_URL` 设置为 SQLAlchemy 数据库 URL，先不加 `--apply` 预览计划。以下命令可直接执行，使用隔离的内存数据库；实际维护前应将 URL 替换为目标数据库地址。
+当前执行器仅支持单个本地服务进程。旧数据库具备对比所需表结构后才能运行对比任务。财报服务自身不执行 `ALTER`，但启用的框架迁移可能在应用启动时更新旧表，随后财报服务会刷新表结构状态。安排单独迁移前，应先检查目标库的实际结构。在仓库根目录将 `FINANCIAL_DATABASE_URL` 设置为 SQLAlchemy 数据库 URL，先不加 `--apply` 预览剩余变更。以下命令可直接执行，使用隔离的内存数据库；实际维护前应将 URL 替换为目标数据库地址。
 
 Bash：
 
@@ -42,9 +42,9 @@ $FINANCIAL_DATABASE_URL = 'sqlite:///:memory:'
 uv run --no-sync python -m dbgpt_serve.financial_analysis.migrate --database-url "$FINANCIAL_DATABASE_URL"
 ```
 
-应用不会静默修改旧表。按正常维护流程备份目标库、核对该库的迁移计划后，再在同一命令末尾加 `--apply`。旧程序不应直接运行在已有对比任务的新库上。
+启用启动迁移或执行维护迁移前应先备份目标库。若预览仍列出缺失变更，按正常维护流程核对后，再在同一命令末尾加 `--apply`；计划为空则无需再次迁移。旧程序不应直接运行在已有对比任务的新库上。
 
-运行 `node standalone/financial-analysis/build.cjs web/node_modules/.cache/financial-comparison/runtime.html` 构建离线组件，通过 `DBGPT_FINANCIAL_EXPORT_RUNTIME` 指向产物。当前工具流程见 `skills/financial-report-analyzer/SKILL.md`；原脚本及模板保留兼容用途。
+离线 HTML 运行时依赖配套财报工作区前端及已安装的 web 依赖，仅有后端的检出不包含构建脚本。在包含该前端的检出中运行 `node standalone/financial-analysis/build.cjs web/node_modules/.cache/financial-comparison/runtime.html`，然后在后端通过 `DBGPT_FINANCIAL_EXPORT_RUNTIME` 指向构建产物。运行时尚未安装时，HTML 导出返回 `EXPORT_RUNTIME_MISSING`，JSON 导出仍可使用。当前工具流程见 `skills/financial-report-analyzer/SKILL.md`；原脚本及模板保留兼容用途。
 
 具体迁移、隔离验证命令、实测记录及未验收场景见仓库 `docs/financial-comparison-acceptance.zh-CN.md`。合成 fixtures 和工程测试不能代替真实 PDF、真实模型与人工验收。
 

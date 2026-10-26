@@ -574,12 +574,12 @@ class ComparisonRunner:
         with self.service._lock:
             report = self.service.get(owner, session_id, run_id, report=True)
             state = self.service.get(owner, session_id, run_id)
-            if (
+            if state["status"] in {"pending", "running"} or (
                 state["stage"] == "agent_topics"
                 and report.get("analysis", {}).get("driver") == "standalone"
             ):
                 raise SessionFileApiError(
-                    409, "RUN_BUSY", "模型分析仍在执行，请完成后切换基准。"
+                    409, "RUN_BUSY", "任务仍在排队或执行，请完成后切换基准。"
                 )
             self.service._check_parallel_idle(report)
             if report["revision"] != revision or report["mode"] != "comparison":

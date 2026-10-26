@@ -326,11 +326,16 @@ def validate_comparison_findings(raw, report, base_validate, **options):
                     clause,
                 ):
                     raise ValueError("unsupported_comparison_cause")
-            if (
-                draft.comparisonDirection == "higher"
-                and re.search(r"低于|小于|少于", draft.summary)
-                or draft.comparisonDirection == "lower"
-                and re.search(r"高于|大于|多于", draft.summary)
+            direction_words = {
+                "higher": r"高于|大于|多于",
+                "lower": r"低于|小于|少于",
+                "equal": r"(?<!不)(?<!非)(?:等于|相等|持平)",
+            }
+            if draft.comparisonDirection in direction_words and any(
+                re.search(pattern, text, re.I)
+                for direction, pattern in direction_words.items()
+                if direction != draft.comparisonDirection
+                for text in (draft.title, draft.summary)
             ):
                 raise ValueError("narrative_direction_mismatch")
             base = draft.model_dump(exclude=EXTRA_FIELDS)

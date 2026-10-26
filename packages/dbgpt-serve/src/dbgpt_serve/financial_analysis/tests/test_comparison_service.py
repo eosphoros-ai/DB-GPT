@@ -58,6 +58,37 @@ def test_idempotency_includes_parameters_and_display_order(isolated_service):
     assert len(calls) == 2
 
 
+@pytest.mark.parametrize(
+    "status,stage",
+    [("pending", "queued"), ("running", "extract"), ("running", "align")],
+)
+def test_busy_reconfiguration_preserves_configuration_and_saved_report(
+    isolated_service, status, stage
+):
+    from dbgpt_serve.financial_analysis.models import FinancialRunEntity as Run
+
+    service, _, calls, _ = isolated_service
+    run_id = create(service)
+    wait_ready(service, run_id)
+    report = service.get("alice", "scope", run_id, report=True)
+    service._update(run_id, status=status, stage=stage)
+    with service.session() as session:
+        before_config = session.query(Run).filter_by(id=run_id).one().config_json
+    with pytest.raises(SessionFileApiError) as error:
+        service.comparisons.reconfigure(
+            "alice", "scope", run_id, report["revision"], report_config(baseline="b")
+        )
+    assert error.value.err_code == "RUN_BUSY"
+    assert service.get("alice", "scope", run_id, report=True) == report
+    state = service.get("alice", "scope", run_id)
+    assert (state["status"], state["stage"]) == (status, stage)
+    with service.session() as session:
+        assert (
+            session.query(Run).filter_by(id=run_id).one().config_json == before_config
+        )
+    assert calls == ["a", "b"]
+
+
 def test_duplicate_hash_and_changed_source_cannot_reuse_another_attachment(
     isolated_service,
 ):

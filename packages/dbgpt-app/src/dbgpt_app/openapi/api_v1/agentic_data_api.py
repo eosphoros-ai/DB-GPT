@@ -1588,10 +1588,10 @@ def _react_terminal_events(
     history_checkpoint: Optional[ReactHistoryCheckpoint] = None,
 ) -> Tuple[str, str]:
     """Persist one ReAct round without risking its terminal SSE events."""
-    if history_checkpoint is not None:
-        history_checkpoint.finished = True
     try:
         save_history_view(storage_conv, history_payload)
+        if history_checkpoint is not None:
+            history_checkpoint.finished = True
         storage_conv.end_current_round()
     except Exception:
         logger.exception("Failed to persist ReAct agent history")

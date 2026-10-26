@@ -11,7 +11,7 @@ from dbgpt_serve.financial_analysis.questions import question_context, validate_
 from .fixtures import extracted, member, report_config
 
 
-def comparison_report():
+def comparison_report(revenue="1500.01"):
     result = build_comparison(
         [
             member(extracted(), "a"),
@@ -19,7 +19,7 @@ def comparison_report():
                 extracted(
                     "合成乙股份有限公司",
                     values={
-                        "revenue": "1500.01",
+                        "revenue": revenue,
                         "net_profit": "200",
                         "non_recurring_net_profit": "160",
                         "operating_cash_flow": "250",
@@ -95,6 +95,41 @@ def test_structural_direction_entity_metric_and_causality_validation():
             validate_findings(
                 json.dumps({"findings": [{**finding, **patch}]}), report, strict=True
             )
+
+
+@pytest.mark.parametrize("field", ["title", "summary"])
+@pytest.mark.parametrize(
+    "direction,revenue",
+    [("higher", "1500.01"), ("lower", "500.01"), ("equal", "1000.01")],
+)
+@pytest.mark.parametrize("claim", ["higher", "lower", "equal"])
+def test_narrative_direction_matches_calculation_in_title_and_summary(
+    field, direction, revenue, claim
+):
+    report = comparison_report(revenue)
+    finding = comparison_finding(report)
+    assert finding["comparisonDirection"] == direction
+    wording = {"higher": "高于基准", "lower": "低于基准", "equal": "与基准持平"}[claim]
+    finding[field] = wording if field == "title" else finding[field] + wording
+    raw = json.dumps({"findings": [finding]})
+    if claim == direction:
+        assert validate_findings(raw, report, strict=True)[0]
+    else:
+        with pytest.raises(InvalidFindings) as error:
+            validate_findings(raw, report, strict=True)
+        assert any(
+            issue["code"] == "narrative_direction_mismatch"
+            for issue in error.value.details
+        )
+
+
+def test_non_equivalence_disclaimer_is_not_an_equality_claim():
+    report = comparison_report()
+    finding = comparison_finding(report)
+    finding["summary"] += "数值差异不等于企业优劣。"
+    assert validate_findings(json.dumps({"findings": [finding]}), report, strict=True)[
+        0
+    ]
 
 
 def test_topic_patches_preserve_other_findings_and_published_versions():
