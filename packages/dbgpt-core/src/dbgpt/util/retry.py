@@ -32,7 +32,7 @@ def async_retry(
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
                 for result in results:
-                    if not isinstance(result, Exception):
+                    if not isinstance(result, BaseException):
                         return result
                     if isinstance(result, catch_exceptions):
                         last_exception = result
@@ -41,6 +41,8 @@ def async_retry(
                             f"{type(result).__name__}, {str(result)}"
                         )
                         logger.debug(traceback.format_exc())
+                    else:
+                        raise result
 
                 logger.info(f"Retrying... (Attempt {attempt + 1} of {retries})")
 
